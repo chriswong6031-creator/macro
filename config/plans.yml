@@ -44,8 +44,14 @@ terminal_indicators:
 products:
   insider:
     tier: insider
-    name: Insider
-    trial_days: 7
+    # Display name only — the `insider` key, `tier: insider`, the lookup keys and every
+    # entitlement string are unchanged (a rename migration owns those separately).
+    name: Essential
+    # No trial (operator 2026-07-31): the funnel puts everyone who wants to try the
+    # product into Pro's 7 days; Essential is a deliberate manual choice, bought outright.
+    # 0 means app/billing.py OMITS trial_period_days rather than sending a zero — Stripe
+    # Checkout rejects trial_period_days below 1, so "no trial" must be an absent field.
+    trial_days: 0
     features: [site_full, terminal_live_options]
     legacy_lookup_keys:
       - insider_monthly

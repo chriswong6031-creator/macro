@@ -25,16 +25,25 @@ def test_both_plans_builders_receive_the_indicator_access_contract():
 
 
 def test_landing_and_onboarding_compare_show_each_tier_access():
+    """The landing cards and the matrix must both quote the SAME ladder as plans.yml.
+
+    The card bullets were cut to their nouns on 2026-07-31 (operator: "too much
+    information") and the module count is now the only bolded thing in the list, so
+    these pins carry the <b> — matching the shipping markup, not a paraphrase of it.
+    Candle Painter moved off the card entirely; the matrix still names it, which is
+    where the last two assertions look.
+    """
     access = _access()
     for rel in ("templates/index.html", "site/index.html"):
         page = (ROOT / rel).read_text()
         assert "Advanced indicator modules" in page
-        assert f"{access['core_count']} core indicators + Candle Painter" in page
-        assert f"{access['access']['insider']} of {access['advanced_total']} advanced modules" in page
-        assert f"All {access['access']['pro']} advanced modules" in page
+        assert f"Terminal charting — {access['core_count']} core indicators" in page
+        assert f"<b>{access['access']['insider']} of {access['advanced_total']}</b> advanced modules" in page
+        assert f"<b>All {access['access']['pro']}</b> advanced modules" in page
         assert f"{access['access']['free']} / {access['advanced_total']}" in page
         assert f"{access['access']['insider']} / {access['advanced_total']}" in page
         assert f"All {access['access']['pro']}" in page
+        assert "Candle Painter" in page
 
     for rel in ("templates/onboard.js", "site/onboard.js"):
         compare = (ROOT / rel).read_text()

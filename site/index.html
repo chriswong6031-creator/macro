@@ -76,7 +76,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=e78fcdd6">
+<link rel="stylesheet" href="landing.css?v=944df4a7">
 <link rel="stylesheet" href="scene-motion.css?v=f426716d">
 </head>
 <body>
@@ -194,7 +194,7 @@
       <p class="sub" data-adtest-slot="hero_sub" data-zh="宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>">Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b></p>
       <div class="cta-row">
         <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
-        <a class="btn" href="#f-terminal" data-zh="看实时演示">See it live</a>
+        <a class="btn" href="start.html" data-zh="看实时演示">See it live</a>
       </div>
       <p class="micro" data-zh="免费试用 · 机构级市场情报">FREE TRIAL · INSTITUTIONAL MARKET INTELLIGENCE</p>
     </div>
@@ -683,8 +683,8 @@
               <button type="button" class="on" data-m="flash">⚡ Flash AI</button>
               <button type="button" data-m="pro">🔬 Pro AI</button>
               <div class="mpop" role="tooltip">
-                <div class="r"><span class="ic">⚡</span><span><b>Flash AI</b><span data-zh="即时回答，基于实时看板。Insider 每月300次 · Pro 无限量。">Instant answers on the live boards. 300/mo on Insider · Unlimited on Pro.</span></span></div>
-                <div class="r"><span class="ic">🔬</span><span><b>Pro AI</b><span data-zh="附出处的深度研究。Insider 每月10份 · Pro 每月150份。">Cited deep dives. 10/mo on Insider · 150/mo on Pro.</span></span></div>
+                <div class="r"><span class="ic">⚡</span><span><b>Flash AI</b><span data-zh="即时回答，基于实时看板。Essential 每月300次 · Pro 无限量。">Instant answers on the live boards. 300/mo on Essential · Unlimited on Pro.</span></span></div>
+                <div class="r"><span class="ic">🔬</span><span><b>Pro AI</b><span data-zh="附出处的深度研究。Essential 每月10份 · Pro 每月150份。">Cited deep dives. 10/mo on Essential · 150/mo on Pro.</span></span></div>
               </div>
             </div>
             <span class="mk demo-tag" data-zh="脚本演示">SCRIPTED DEMO</span>
@@ -718,50 +718,43 @@
     <div class="tiers">
       <div class="tier rv" style="--d:.04s">
         <h3 data-zh="免费">Free</h3>
-        <p class="who" data-zh="每日研判与实时 Terminal——永久免费。">The daily read and the live Terminal — free forever.</p>
         <div class="price">$0</div>
         <p class="bill" data-zh="无需绑卡，没有试用倒计时。">No card. No trial clock.</p>
         <ul class="tf">
-          <li data-zh="<b>全部宏观看板</b> — 美 · 中 · 港 · 加"><b>Every macro dashboard</b> — US · China · HK · Canada</li>
-          <li data-zh="<b>每个列表每天 3 条信号</b>；注册前可预览 1 条"><b>3 signals per daily list</b>; preview 1 before signup</li>
-          <li data-zh="Terminal 图表 — 21 个核心指标 + K 线着色器">Terminal charting — 21 core indicators + Candle Painter</li>
-          <li data-zh="公开战绩与复盘">The public track record &amp; autopsies</li>
+          <li data-zh="全部宏观看板">Every macro dashboard</li>
+          <li data-zh="每日列表各 3 条买入信号">3 buy signals per daily list</li>
+          <li data-zh="Terminal 图表 — 21 个核心指标">Terminal charting — 21 core indicators</li>
         </ul>
         <a class="btn js-plan-cta" data-plan="free" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
       <div class="tier rv" style="--d:.1s">
-        <h3>Insider</h3>
-        <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
-        <div class="price" data-annual="$75" data-monthly="$99">$75 <span class="per">/mo billed annually</span></div>
+        <h3>Essential</h3>
+        <div class="price" data-annual="$75" data-monthly="$99"><span class="wasrow"><span class="wasi"><span class="was">$99</span><span class="was-q" data-zh="/月 · 月付">/mo billed monthly</span></span></span>$75 <span class="per">/mo billed annually</span></div>
         <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — cancel anytime." data-annual-zh="" data-monthly-zh="按月结算——随时取消。"></p>
-        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-insider"><span class="sv-amt" data-zh="每年省 $288">SAVE $288 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-insider" data-zh="相对按月付费：年付全年 $900，按月支付全年为 $1,188。">Compared to paying monthly. Your full annual price is $900 against $1,188 with regular monthly payments.</span></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-insider"><span class="sv-amt" data-zh="每年省 $288">SAVE $288 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-insider" data-zh="相对按月付费：全年 $900，而非 $1,188。">Compared to paying monthly: $900 a year instead of $1,188.</span></p>
         <ul class="tf">
           <li data-zh="Free 全部内容">Everything in Free</li>
-          <li data-zh="<b>31 个高级模块中的 15 个</b>——趋势引擎、市场结构与振荡器信号"><b>15 of 31 advanced modules</b> — Trend Engine, market structure &amp; oscillator signals</li>
-          <li data-zh="<b>每月 300 次 Flash AI</b> + 10 次 Pro AI 深研"><b>300 Flash AI answers</b> + 10 Pro AI deep dives a month</li>
-          <li data-zh="<b>日内期权流</b> — 扫单与大宗实时打印"><b>Intraday options flow</b> — sweeps &amp; blocks as they print</li>
-          <li data-zh="内部人、国会与 13F 台席">The Insider, Congress &amp; 13F desks</li>
-          <li data-zh="电话会记录与每日 AI 简报">Transcripts &amp; the daily AI brief</li>
+          <li data-zh="<b>31 个高级模块中的 15 个</b>"><b>15 of 31</b> advanced modules</li>
+          <li data-zh="每月 300 次 Flash AI + 10 次 Pro AI">300 Flash AI + 10 Pro AI a month</li>
+          <li data-zh="日内期权流">Intraday options flow</li>
         </ul>
-        <a class="btn js-plan-cta" data-plan="insider" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
+        <a class="btn js-plan-cta" data-plan="insider" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="立即订阅">Subscribe now</a>
       </div>
       <div class="tier hot rv" style="--d:.16s" data-founding-tier>
         <h3>Pro</h3>
-        <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
-        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="wasrow"><span class="wasi"><span class="was">$149</span><span class="was-q" data-zh="/月 · 月付">/mo billed monthly</span></span><span class="wasi"><span class="was">$109</span></span></span>$75 <span class="per">/mo billed annually</span></div>
+        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="wasrow"><span class="wasi"><span class="was">$149</span><span class="was-q" data-zh="/月 · 月付">/mo billed monthly</span></span></span>$75 <span class="per">/mo billed annually</span></div>
         <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — the founding rate is annual only." data-annual-zh="" data-monthly-zh="按月结算——创始价仅限年付。"></p>
-        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-pro"><span class="sv-amt" data-founding-badge data-zh="每年省 $888">SAVE $888 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-pro" data-founding-tip data-zh="相对按月付费：创始年付全年 $900，按月支付全年为 $1,788——比常规年付 $1,308 再省 $408。">Compared to paying monthly. Your founding annual price is $900 against $1,788 with regular monthly payments — and $408 under the regular annual rate of $1,308.</span></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-pro"><span class="sv-amt" data-founding-badge data-zh="每年省 $888">SAVE $888 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-pro" data-founding-tip data-zh="相对按月付费：全年 $900，而非 $1,788。">Compared to paying monthly: $900 a year instead of $1,788.</span></p>
         <div class="founding" data-founding>
           <div class="founding-line"><b data-zh="创始名额">FOUNDING MEMBERSHIPS</b><span class="fcount" data-founding-count data-zh="共 2,000 个，先到先得">2,000 total — first come, first served</span></div>
           <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available, out of 2,000" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
           <p class="founding-terms" data-zh="满员即涨价 · 只要不退订，$900/年 永久锁定。">The price rises when space runs out · $900/yr locked in for as long as you stay.</p>
         </div>
         <ul class="tf">
-          <li data-zh="<b>Insider 全部内容</b>"><b>Everything in Insider</b></li>
-          <li data-zh="<b>全部 31 个高级模块</b>——结构核心、趋势波、脉冲、RSI 与 MACD"><b>All 31 advanced modules</b> — Structure Core, Trend Waves, Pulse, RSI &amp; MACD</li>
-          <li data-zh="每月 150 次 Pro AI 深研 + 无限量 Flash AI">150 Pro AI deep dives a month + unlimited Flash AI</li>
-          <li data-zh="Mastermind 与机构研究报告">Mastermind + institutional research reports</li>
-          <li data-zh="机器人组合 · MCP 即将推出">Bot Portfolios · MCP coming soon</li>
+          <li data-zh="Essential 全部内容">Everything in Essential</li>
+          <li data-zh="<b>全部 31 个高级模块</b>"><b>All 31</b> advanced modules</li>
+          <li data-zh="无限量 Flash AI + 每月 150 次 Pro AI">Unlimited Flash AI + 150 Pro AI a month</li>
+          <li data-zh="Mastermind 与机构研究">Mastermind + institutional research</li>
         </ul>
         <a class="btn primary js-plan-cta" data-plan="pro" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
       </div>
@@ -773,7 +766,7 @@
         <p class="mx-mobile-label" data-zh="选择方案查看每项功能">Choose a plan to compare every feature</p>
         <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
           <button type="button" data-mx-plan="free" aria-pressed="false" aria-controls="pricing-matrix"><span data-zh="免费">Free</span><small>$0</small></button>
-          <button type="button" data-mx-plan="insider" aria-pressed="true" aria-controls="pricing-matrix"><span>Insider</span><small class="mx-mobile-price" data-annual="$75/mo" data-monthly="$99/mo" data-annual-zh="$75/月" data-monthly-zh="$99/月">$75/mo</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true" aria-controls="pricing-matrix"><span>Essential</span><small class="mx-mobile-price" data-annual="$75/mo" data-monthly="$99/mo" data-annual-zh="$75/月" data-monthly-zh="$99/月">$75/mo</small></button>
           <button type="button" data-mx-plan="pro" aria-pressed="false" aria-controls="pricing-matrix"><span>Pro</span><small class="mx-mobile-price" data-annual="$75/mo" data-monthly="$149/mo" data-annual-zh="$75/月" data-monthly-zh="$149/月">$75/mo</small></button>
         </div>
         <p class="mx-mobile-hint" data-zh="点击带 ⓘ 的功能查看说明。">Tap any feature marked ⓘ for a plain-language description.</p>
@@ -783,7 +776,7 @@
           <tr>
             <th data-zh="逐项对比">Compare every feature</th>
             <th data-zh="免费<small>$0</small>">Free<small>$0</small></th>
-            <th>Insider<small class="mx-price" data-annual="$75/mo annual" data-monthly="$99/mo monthly" data-annual-zh="$75/月 · 年付" data-monthly-zh="$99/月 · 月付">$75/mo annual</small></th>
+            <th>Essential<small class="mx-price" data-annual="$75/mo annual" data-monthly="$99/mo monthly" data-annual-zh="$75/月 · 年付" data-monthly-zh="$99/月 · 月付">$75/mo annual</small></th>
             <th>Pro<small class="mx-price" data-founding-matrix data-annual="$75/mo annual" data-monthly="$149/mo monthly" data-annual-zh="$75/月 · 年付" data-monthly-zh="$149/月 · 月付">$75/mo annual</small></th>
           </tr>
         </thead>
@@ -794,21 +787,21 @@
           <tr><td class="feat has-tip"><span class="ft" data-zh="主题轮动通道">Theme rotation lanes</span><span class="tipbox" data-zh="全部主题、四条大白话通道——通道名就是操作指令。">Every theme in four plain-word lanes — lane names are instructions.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat"><span class="ft" data-zh="特殊机会">Special situations</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat"><span class="ft" data-zh="比特币 · 大宗 · 外汇">Bitcoin · Commodities · FX</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="内部人 & 国会台席">Insider &amp; Congress desks</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="带入场时机的评分跟随候选。">Scored copy candidates with entry timing.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="13F 机构资金流">13F institutional flows</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="356 只追踪基金，四个季度记忆。">356 tracked funds, four quarters of memory.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="内部人 & 国会台席">Insider &amp; Congress desks</span><span class="mchip ins">ESSENTIAL</span><span class="tipbox" data-zh="带入场时机的评分跟随候选。">Scored copy candidates with entry timing.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="13F 机构资金流">13F institutional flows</span><span class="mchip ins">ESSENTIAL</span><span class="tipbox" data-zh="356 只追踪基金，四个季度记忆。">356 tracked funds, four quarters of memory.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="信号">SIGNALS</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="每日买入信号">Daily buy signals</span><span class="tipbox" data-zh="未注册访客每个列表可预览 1 条；免费账户可查看 3 条。">Visitors preview 1 per list; Free accounts see 3.</span></td><td class="val" data-zh="3 条/列表/天">3 / list / day</td><td class="val" data-zh="完整名册">Full book</td><td class="val" data-zh="完整名册">Full book</td></tr>
           <tr><td class="feat"><span class="ft" data-zh="公开战绩 & 复盘">Track record &amp; autopsies</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="每日 AI 晨间简报">Daily AI morning brief</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="每日 AI 晨间简报">Daily AI morning brief</span><span class="mchip ins">ESSENTIAL</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">TERMINAL</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="实时图表">Live charting</span><span class="tipbox" data-zh="浏览器内运行——无需安装。">In the browser — nothing to install.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat has-tip"><span class="ft" data-zh="高级指标模块">Advanced indicator modules</span><span class="tipbox" data-zh="所有方案均含 21 个核心指标。Free 另含 K 线着色器；Insider 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。">Every plan includes 21 core indicators. Free also includes Candle Painter; Insider unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.</span></td><td class="val">1 / 31<small data-zh="K 线着色器">Candle Painter</small></td><td class="val">15 / 31<small data-zh="核心趋势 + 信号">core trend + signals</small></td><td class="val" data-zh="全部 31 个">All 31<small data-zh="5 套完整工具组">5 complete suites</small></td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="日内期权流">Intraday options flow</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="扫单与大宗成交实时打印。">Sweeps and blocks as they print.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="财报电话会记录">Earnings call transcripts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat has-tip"><span class="ft" data-zh="高级指标模块">Advanced indicator modules</span><span class="tipbox" data-zh="所有方案均含 21 个核心指标。Free 另含 K 线着色器；Essential 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。">Every plan includes 21 core indicators. Free also includes Candle Painter; Essential unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.</span></td><td class="val">1 / 31<small data-zh="K 线着色器">Candle Painter</small></td><td class="val">15 / 31<small data-zh="核心趋势 + 信号">core trend + signals</small></td><td class="val" data-zh="全部 31 个">All 31<small data-zh="5 套完整工具组">5 complete suites</small></td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="日内期权流">Intraday options flow</span><span class="mchip ins">ESSENTIAL</span><span class="tipbox" data-zh="扫单与大宗成交实时打印。">Sweeps and blocks as they print.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="财报电话会记录">Earnings call transcripts</span><span class="mchip ins">ESSENTIAL</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
           <tr><td class="feat has-tip"><span class="ft">Flash AI</span><span class="tipbox" data-zh="每页即时回答。">Instant answers on every page.</span></td><td class="val" data-zh="5 次/周">5 / wk</td><td class="val" data-zh="300 次/月">300 / mo</td><td class="val" data-zh="无限量">Unlimited</td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Pro AI</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="附带出处的深度分析。">Deep dives with receipts.</span></td><td class="no">✗</td><td class="val" data-zh="10 次/月">10 / mo</td><td class="val" data-zh="150 次/月">150 / mo</td></tr>
-          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="操控 Terminal 图表">Drives Terminal charts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Pro AI</span><span class="mchip ins">ESSENTIAL</span><span class="tipbox" data-zh="附带出处的深度分析。">Deep dives with receipts.</span></td><td class="no">✗</td><td class="val" data-zh="10 次/月">10 / mo</td><td class="val" data-zh="150 次/月">150 / mo</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="操控 Terminal 图表">Drives Terminal charts</span><span class="mchip ins">ESSENTIAL</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="研究">RESEARCH</td></tr>
           <tr class="t-pro"><td class="feat"><span class="ft" data-zh="Mastermind 研究报告">Mastermind research reports</span><span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
           <tr class="t-pro"><td class="feat has-tip"><span class="ft" data-zh="机构研究库">Institutional research library</span><span class="mchip pro">PRO</span><span class="tipbox up" data-zh="摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。">JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
@@ -1123,8 +1116,8 @@ LANG.onChange(applyPricing);
            measured against monthly at that rate ($1,788 − $1,308). Same sentence
            shape as the founding tooltip — only the two numbers move. */
         setBi(badge,'SAVE $480 A YEAR','每年省 $480');
-        setBi(tip,'Compared to paying monthly. Your full annual price is $1,308 against $1,788 with regular monthly payments.',
-          '相对按月付费：年付全年 $1,308，按月支付全年为 $1,788。');
+        setBi(tip,'Compared to paying monthly: $1,308 a year instead of $1,788.',
+          '相对按月付费：全年 $1,308，而非 $1,788。');
         document.querySelectorAll('[data-mx-plan="pro"] .mx-mobile-price,[data-founding-matrix]').forEach(el=>{
           el.dataset.annual='$109/mo'+(el.matches('.mx-price')?' annual':'');
           el.dataset.annualZh='$109/月'+(el.matches('.mx-price')?' · 年付':'');
@@ -2254,6 +2247,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
-<script src="onboard.js?v=77624cf4" defer></script>
+<script src="onboard.js?v=8a739a25" defer></script>
 </body>
 </html>

@@ -37,6 +37,14 @@
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
   var TRIAL_DAYS = 7;
+  // Mirrors config/plans.yml products[].trial_days. Essential (internal key
+  // "insider") has NO trial as of 2026-07-31: the funnel puts everyone who wants to
+  // try the desk into Pro's seven days, and Essential is bought outright. Every
+  // trial promise in this sheet is keyed off this map — nothing may offer a trial
+  // the billing spine will not actually create.
+  var TRIAL_BY_PLAN = { insider: 0, pro: TRIAL_DAYS };
+  function trialDaysFor(plan) { return TRIAL_BY_PLAN[plan] || 0; }
+  function planHasTrial(plan) { return trialDaysFor(plan) > 0; }
   // Browser `type=email` accepts local-network shapes such as `name@domain`.
   // Account creation requires a routable domain with a real suffix instead.
   var EMAIL_RE = /^(?=.{3,254}$)(?=.{1,64}@)[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.(?:[A-Za-z]{2,63}|xn--[A-Za-z0-9-]{2,59})$/;
@@ -69,14 +77,19 @@
     panePrefsH:    ["Make it read the way you think.", "让它按你的思路来解读。"],
     panePrefsS:    ["Pick your markets and theme. Everything here is optional — change it any time.", "选择你的市场与主题。此处全部可选，随时可改。"],
     planePlanH:    ["Free to explore. Built for deeper decisions.", "免费探索。为更深的决策而生。"],
-    planePlanS:    ["Start free forever, or add the analyst and the desks. Every paid plan is a 7-day free trial.", "永久免费开始，或加上分析师与各台席。所有付费方案均含 7 天免费试用。"],
+    planePlanS:    ["Start free forever, or add the analyst and the desks. Pro comes with a 7-day free trial.", "永久免费开始，或加上分析师与各台席。Pro 含 7 天免费试用。"],
     paneBillH:     ["7 days free. Cancel in one click.", "7 天免费。一键取消。"],
     paneBillS:     ["Your card starts the trial. We tell you exactly when the first charge lands — and cancelling before then costs nothing.", "绑卡即开启试用。我们会明确告知首次扣款时间——在此之前取消，分文不收。"],
+    // the same pane for a plan with no trial: the promise is a clear price today,
+    // not free days. Never says "trial" — see TRIAL_BY_PLAN.
+    paneBillNoTrialH: ["Starts today. Cancel in one click.", "今日开通。一键取消。"],
+    paneBillNoTrialS: ["We show you exactly what you're charged today before you confirm — and you can cancel from your account whenever you like.", "确认前我们会明确显示今日扣款金额——你也可随时在账户中取消。"],
     paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
     paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
 
     // ── the stage (left column): nameplate, chart, tier lattice, trial meter ──
     asmTrial:  ["7-DAY TRIAL", "7天试用"],
+    asmCheckout:["CHECKOUT", "结算"],
     deskYour:  ["YOUR DESK", "你的工作台"],
     deskTf:    ["DAILY", "日线"],
     deskZone:  ["ENTRY ZONE", "入场区间"],
@@ -86,7 +99,7 @@
     plateLive: ["LIVE", "已上线"],
     // lattice rows = the three tiers, so the picture IS the pricing truth
     rowFree:   ["FREE", "免费版"],
-    rowInsider:["INSIDER", "INSIDER"],
+    rowInsider:["ESSENTIAL", "ESSENTIAL"],
     rowPro:    ["PRO", "PRO"],
     tlRead:    ["Daily market read", "每日市场研判"],
     tlSignals: ["Stock signals", "股票信号"],
@@ -95,7 +108,7 @@
     tlDesks:   ["Insider & Congress", "内部人与国会"],
     tlFlash:   ["Flash AI answers", "Flash AI 问答"],
     tlReports: ["Research reports", "研究报告"],
-    // the quota, not the feature: Insider already includes 10 dives a month, so a
+    // the quota, not the feature: Essential already includes 10 dives a month, so a
     // bare "Pro AI dives" lock on this row would overstate what Pro adds
     tlDives:   ["150 AI dives a month", "每月 150 次 AI 深度分析"],
     tlBots:    ["Bot portfolios", "机器人组合"],
@@ -159,11 +172,11 @@
 
     // step 3 — plan
     planTitle:    ["Choose your plan", "选择你的方案"],
-    planSub:      ["Free forever, or start a 7-day trial of a paid plan.", "永久免费，或开启付费方案的 7 天试用。"],
+    planSub:      ["Free forever, subscribe to Essential, or start a 7-day trial of Pro.", "永久免费；也可订阅 Essential，或开启 Pro 的 7 天试用。"],
     togAnnual:    ["Annual <span class=\"obm-save\">FOUNDING PRO AVAILABLE</span>", "按年 <span class=\"obm-save\">FOUNDING PRO 开放中</span>"],
     togMonthly:   ["Monthly", "按月"],
     planFree:     ["Free", "免费"],
-    planInsider:  ["Insider", "Insider"],
+    planInsider:  ["Essential", "Essential"],
     planPro:      ["Pro", "Pro"],
     whoFree:      ["The daily read, six signals, the Terminal — forever.", "每日研判、六条信号、Terminal——永久免费。"],
     whoInsider:   ["The working desk, with the analyst on call.", "随叫随到的分析师，配上完整的工作台席。"],
@@ -173,15 +186,15 @@
     free0:        ["$0", "$0"],
     ribbon:       ["MOST POPULAR", "最受欢迎"],
     foundingRibbon:["FOUNDING PRO", "FOUNDING PRO"],
-    foundingFine: ["Every Pro feature for the Insider annual price · $__T__/year.",
-                   "以 Insider 年付价格解锁 Pro 全部功能 · 每年 $__T__。"],
+    foundingFine: ["Every Pro feature for the Essential annual price · $__T__/year.",
+                   "以 Essential 年付价格解锁 Pro 全部功能 · 每年 $__T__。"],
     foundingGone: ["The last founding spot was claimed. Review the regular Pro Annual price to continue.",
                    "最后一个创始会员名额已被领取。请查看 Pro 常规年付价格后继续。"],
     // summaries
     sumGetFree:   ["What you get", "你将获得"],
     sumMissFree:  ["What you're missing", "你还缺少"],
     sumPlusInsider:["Everything in Free, plus", "免费版全部功能，另加"],
-    sumPlusPro:   ["Everything in Insider, plus", "Insider 全部功能，另加"],
+    sumPlusPro:   ["Everything in Essential, plus", "Essential 全部功能，另加"],
     getFree1:     ["The daily read + <b>every macro dashboard</b>", "每日研判 + <b>全部宏观看板</b>"],
     getFree2:     ["<b>3 signals per daily list</b> with a public track record", "<b>每个每日列表 3 条信号</b>，战绩公开可查"],
     getFree3:     ["The full Terminal — live charts, no install", "完整 Terminal——实时图表，无需安装"],
@@ -215,11 +228,16 @@
     // step 4 — billing
     billTitle:    ["Add your card", "添加银行卡"],
     billSub:      ["Your 7-day trial starts now. Cancel any time before it ends and you pay nothing.", "7 天试用现在开始。在结束前随时取消，分文不收。"],
+    billSubNoTrial:["Your plan starts as soon as you confirm. Cancel any time from your account.", "确认后方案立即生效。可随时在账户中取消。"],
     billPerMo:    ["/mo", "/月"],
     billBilledAnnually:["Billed $__T__ per year after the trial.", "试用结束后每年扣款 $__T__。"],
     billBilledMonthly: ["Billed monthly after the trial.", "试用结束后按月扣款。"],
+    billBilledAnnuallyNow:["Billed $__T__ per year, starting today.", "自今日起每年扣款 $__T__。"],
+    billBilledMonthlyNow: ["Billed monthly, starting today.", "自今日起按月扣款。"],
     billTrialLine:["<b>7-day free trial</b> — your first charge of $__T__ lands on __D__.", "<b>7 天免费试用</b>——首次扣款 $__T__ 将于 __D__ 进行。"],
+    billChargeLine:["<b>$__T__ today</b> — your subscription starts as soon as you confirm.", "<b>今日扣款 $__T__</b>——确认后订阅立即生效。"],
     billCancelLine:["Cancel before then and you pay nothing.", "在此之前取消，分文不收。"],
+    billCancelAnytime:["Cancel any time from your account.", "可随时在账户中取消。"],
     billLoading:  ["Securely loading checkout…", "正在安全加载结算…"],
     billErr:      ["Something went wrong loading checkout. Please try again.", "加载结算时出错，请重试。"],
     billRetry:    ["Try again", "重试"],
@@ -231,8 +249,10 @@
     billPlansLink:["See plans & pricing", "查看方案与定价"],
     billSubmit:   ["Start 7-day trial", "开始 7 天试用"],
     billSubmitBusy:["Starting your trial…", "正在开启试用…"],
+    billSubmitNow:["Subscribe now", "立即订阅"],
+    billSubmitNowBusy:["Subscribing…", "正在订阅…"],
     billOrFree:   ["or continue with Free", "或改用免费版"],
-    billConfirmFirst:["Confirm your email first, then add your card to start the trial. We've sent a confirmation link.", "请先确认邮箱，再绑卡开启试用。确认链接已发送。"],
+    billConfirmFirst:["Confirm your email first, then add your card. We've sent a confirmation link.", "请先确认邮箱，再绑卡。确认链接已发送。"],
     billConfirmGo:["Continue", "继续"],
 
     // step 5 — done
@@ -240,6 +260,7 @@
     doneTitleNamed:["You're in, __N__.", "你已加入，__N__。"],
     doneConfirm:  ["Check __E__ to confirm your email and finish setting up.", "查收 __E__ 以确认邮箱并完成设置。"],
     doneTrial:    ["Your __T__ trial is live — first charge on __D__.", "你的 __T__ 试用已生效——首次扣款为 __D__。"],
+    doneSubscribed:["Your __T__ plan is live.", "你的 __T__ 方案已开通。"],
     doneReady:    ["Your dashboards, signals and the Terminal are ready.", "你的看板、信号与 Terminal 已就绪。"],
     openDashboard:["Open the dashboard", "打开仪表盘"],
     openTerminal: ["Open the Terminal →", "打开 Terminal →"],
@@ -250,14 +271,14 @@
     upErr:        ["We couldn't load your plan. Please try again.", "无法加载你的方案，请重试。"],
     upRetry:      ["Try again", "重试"],
     // free → start a trial
-    upFreeSub:    ["Start a 7-day free trial of Insider or Pro — your card starts the trial and we tell you exactly when the first charge lands.", "开启 Insider 或 Pro 的 7 天免费试用——绑卡即开始试用，我们会明确告知首次扣款时间。"],
+    upFreeSub:    ["Subscribe to Essential, or start a 7-day free trial of Pro. Either way we tell you exactly what you're charged, and when.", "订阅 Essential，或开启 Pro 的 7 天免费试用。无论哪种，我们都会明确告知扣款金额与时间。"],
     upCurFree:    ["ON FREE", "当前免费版"],
     upNotNow:     ["Not now", "暂不升级"],
     // annual-discount subheads
-    upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Insider time is credited toward it.", "升级到 Pro 年付——以月均最低价获得完整台席。剩余的 Insider 时长将折算抵扣。"],
+    upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Essential time is credited toward it.", "升级到 Pro 年付——以月均最低价获得完整台席。剩余的 Essential 时长将折算抵扣。"],
     upProAnnualSub:["Move up to Pro Annual — everything in Pro, at the lowest per-month price.", "升级到 Pro 年付——Pro 全部功能，月均价格最低。"],
     // lane cards
-    laneInsAnnual:["Insider Annual", "Insider 年付"],
+    laneInsAnnual:["Essential Annual", "Essential 年付"],
     laneProMonthly:["Pro Monthly", "Pro 月付"],
     laneProAnnual:["Pro Annual", "Pro 年付"],
     laneInsAnnualWho:["Your desk, billed yearly — same features, lower monthly price.", "你的台席，按年结算——功能不变，月均更低。"],
@@ -374,7 +395,7 @@
     firstName: "", lastName: "", email: "", password: "",
     prefs: { market_focus: [], trade_types: [], theme_pref: "auto" },
     plan: "pro", period: "annual",
-    confirmPending: false, trialActive: false, trialEnd: null,
+    confirmPending: false, trialActive: false, trialEnd: null, subLive: false,
     // upgrade mode (post-login monetization sheet). upStep is the upgrade lane's
     // OWN progression (plan → billing) — it never borrows the signup stepper.
     pendingUpgrade: false, upgradeOpts: null, me: null, upStep: "plan",
@@ -390,6 +411,7 @@
         firstName: S.firstName, lastName: S.lastName, email: S.email,
         prefs: S.prefs, plan: S.plan, period: S.period,
         confirmPending: S.confirmPending, trialActive: S.trialActive, trialEnd: S.trialEnd,
+        subLive: S.subLive,
         planTouched: S.planTouched
       }));
     } catch (e) { /* storage blocked */ }
@@ -751,15 +773,20 @@
     if (hostThemed()) return hostSkin();
     var hh = new Date().getHours(); return (hh >= 7 && hh < 19) ? "light" : "dark";
   }
+  // The billing pane sells free days on a trial plan and a clear price today on one
+  // without — the honest split, chosen by KEY so the language applier keeps working.
+  function billPaneKeys() {
+    return planHasTrial(S.plan) ? ["paneBillH", "paneBillS"] : ["paneBillNoTrialH", "paneBillNoTrialS"];
+  }
   function renderPane() {
     var map = {
       1: ["paneAccountH", "paneAccountS"], 2: ["panePrefsH", "panePrefsS"],
-      3: ["planePlanH", "planePlanS"], 4: ["paneBillH", "paneBillS"], 5: ["paneDoneH", "paneDoneS"]
+      3: ["planePlanH", "planePlanS"], 4: billPaneKeys(), 5: ["paneDoneH", "paneDoneS"]
     };
     // upgrade mode borrows the billing pane copy ("7 days free · cancel in one
     // click") until it lands, then the Done copy
     var m = (S.mode === "upgrade")
-      ? (S.upDone ? ["paneDoneH", "paneDoneS"] : ["paneBillH", "paneBillS"])
+      ? (S.upDone ? ["paneDoneH", "paneDoneS"] : billPaneKeys())
       : (map[S.step] || map[1]);
     var changed = el.paneH.getAttribute("data-k") !== m[0];
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
@@ -805,7 +832,7 @@
     var stBox = q('[data-stage="state"]'), stTxt = q('[data-stage="statetxt"]');
     var st = "setup", stKey = "plateSetup";
     if (step === 5) { st = "live"; stKey = "plateLive"; }
-    else if (step === 4) { st = "trial"; stKey = "asmTrial"; }
+    else if (step === 4) { st = "trial"; stKey = planHasTrial(S.plan) ? "asmTrial" : "asmCheckout"; }
     else if (step === 3 && tier && tier !== "free") { st = tier === "pro" ? "pro" : "insider"; stKey = tier === "pro" ? "planPro" : "planInsider"; }
     else if (step === 3 && tier === "free") { st = "setup"; stKey = "planFree"; }
     stBox.setAttribute("data-st", st);
@@ -850,7 +877,10 @@
       }
     }
 
-    // ── the trial meter's charge date ──
+    // ── the trial meter: seven ticks, one per free day. A plan with no trial has
+    //    nothing for it to count, so it comes off the stage entirely rather than
+    //    counting down days nobody was given. ──
+    if (el.meter) el.meter.style.display = planHasTrial(S.plan) ? "" : "none";
     var chg = el.meter && el.meter.querySelector('[data-stage="charge"]');
     if (chg) chg.textContent = escLine(LEX.meterChg, { "__D__": fmtDate(trialChargeDate()).toUpperCase() });
 
@@ -1530,7 +1560,7 @@
     function hdm(k) { var p = T("p", "obm-sum-mhd", k); return p; }
   }
   function onPlanContinue() {
-    if (S.plan === "free") { S.trialActive = false; S.trialEnd = null; go(STEP_DONE); }
+    if (S.plan === "free") { S.trialActive = false; S.trialEnd = null; S.subLive = false; go(STEP_DONE); }
     else go(STEP_BILLING);
   }
 
@@ -1724,7 +1754,7 @@
   function freeBailKey() { return S.mode === "upgrade" ? "upNotNow" : "billOrFree"; }
   function bailToFree() {
     if (S.mode === "upgrade") { requestClose(); return; }
-    S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE);
+    S.plan = "free"; S.trialActive = false; S.trialEnd = null; S.subLive = false; go(STEP_DONE);
   }
 
   // The lane matrix (upward-only, tier and interval may each rise, never fall).
@@ -1932,7 +1962,7 @@
       return root;
     }
 
-    root.appendChild(T("p", "obm-sub", "billSub"));
+    root.appendChild(T("p", "obm-sub", planHasTrial(S.plan) ? "billSub" : "billSubNoTrial"));
     if (S.mode === "upgrade") root.appendChild(upgradeRail("billing"));
     root.appendChild(orderCard());
     var host = h("div", "", { "data-obm-billhost": "" });
@@ -1948,12 +1978,15 @@
     var hue = tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
     var mo = perMonth(tier, S.period), total = firstInvoiceTotal(tier, S.period);
     var date = fmtDate(trialChargeDate());
+    var trial = planHasTrial(tier);
     var card = h("div", "obm-order"); card.style.setProperty("--obm-accent", hue);
-    var billed = annual ? LEX.billBilledAnnually : LEX.billBilledMonthly;
+    var billed = trial ? (annual ? LEX.billBilledAnnually : LEX.billBilledMonthly)
+                       : (annual ? LEX.billBilledAnnuallyNow : LEX.billBilledMonthlyNow);
     var billedEn = billed[0].replace("__T__", String(annualBilled(tier)));
     var billedZh = billed[1].replace("__T__", String(annualBilled(tier)));
-    var trialEn = LEX.billTrialLine[0].replace("__T__", String(total)).replace("__D__", date);
-    var trialZh = LEX.billTrialLine[1].replace("__T__", String(total)).replace("__D__", date);
+    var truth = trial ? LEX.billTrialLine : LEX.billChargeLine;
+    var trialEn = truth[0].replace("__T__", String(total)).replace("__D__", date);
+    var trialZh = truth[1].replace("__T__", String(total)).replace("__D__", date);
     card.innerHTML =
       '<div class="obm-order-hd"><span class="obm-order-dot"></span>' +
       '<span class="obm-order-nm" data-k="' + (tier === "pro" ? "planPro" : "planInsider") + '">' + tx(tier === "pro" ? "planPro" : "planInsider") + '</span>' +
@@ -1961,7 +1994,8 @@
       '<div class="obm-order-billed" data-obm-zh="' + esc(billedZh) + '">' + billedEn + '</div>' +
       '<div class="obm-order-truth">' +
       '<p class="obm-order-trial" data-obm-zh="' + esc(trialZh) + '">' + trialEn + '</p>' +
-      '<p class="obm-order-cancel" data-k="billCancelLine">' + tx("billCancelLine") + '</p>' +
+      '<p class="obm-order-cancel" data-k="' + (trial ? "billCancelLine" : "billCancelAnytime") + '">' +
+      tx(trial ? "billCancelLine" : "billCancelAnytime") + '</p>' +
       (offerFor(tier, S.period)
         ? '<p class="obm-order-cancel" data-obm-zh="' +
           esc(LEX.foundingFine[1].replace("__T__", String(annualBilled(tier)))) + '">' +
@@ -1969,6 +2003,7 @@
         : '') + '</div>';
     return card;
   }
+  function payKey() { return planHasTrial(S.plan) ? "billSubmit" : "billSubmitNow"; }
   function trialChargeDate() { var d = new Date(); d.setDate(d.getDate() + TRIAL_DAYS); return d; }
   function fmtDate(d) { try { return d.toLocaleDateString(lang() === "zh" ? "zh-CN" : "en-US", { month: "long", day: "numeric" }); } catch (e) { return d.toDateString(); } }
 
@@ -2021,7 +2056,7 @@
   }
   function billAlready(host) {
     billState(host, '<div class="obm-bill-state-hd" data-k="billAlready">' + tx("billAlready") + '</div><p class="obm-bill-state-msg" data-k="billAlreadySub">' + tx("billAlreadySub") + '</p><button type="button" class="obm-btn" data-obm-already style="width:auto;margin:0 auto"><span data-k="billAlreadyGo">' + tx("billAlreadyGo") + '</span></button>');
-    var b = host.querySelector("[data-obm-already]"); if (b) b.addEventListener("click", function () { S.trialActive = false; billingDone(); });
+    var b = host.querySelector("[data-obm-already]"); if (b) b.addEventListener("click", function () { S.trialActive = false; S.subLive = false; billingDone(); });
   }
   function getAccessToken() {
     return sbClient().then(function (sb) {
@@ -2067,7 +2102,7 @@
       '<form class="obm-bill-form" data-obm-payform>' +
       '<div class="obm-bill-el" data-obm-payel></div>' +
       '<div class="obm-err" data-obm-payerr style="display:none"></div>' +
-      '<button type="submit" class="obm-btn" data-obm-paysubmit disabled style="margin-top:14px"><span data-k="billSubmit">' + tx("billSubmit") + '</span></button>' +
+      '<button type="submit" class="obm-btn" data-obm-paysubmit disabled style="margin-top:14px"><span data-k="' + payKey() + '">' + tx(payKey()) + '</span></button>' +
       '<button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="' + freeBailKey() + '">' + tx(freeBailKey()) + '</span></button>' +
       '</form>';
     var payEl = elements.create("payment");
@@ -2084,16 +2119,16 @@
     var submitBtn = host.querySelector("[data-obm-paysubmit]");
     var errBox = host.querySelector("[data-obm-payerr]");
     function setPayErr(m) { if (!errBox) return; if (!m) { errBox.style.display = "none"; return; } errBox.style.display = ""; errBox.textContent = m; }
-    submitBtn.disabled = true; submitBtn.textContent = tx("billSubmitBusy"); setPayErr("");
+    submitBtn.disabled = true; submitBtn.textContent = tx(planHasTrial(S.plan) ? "billSubmitBusy" : "billSubmitNowBusy"); setPayErr("");
     _stripe.confirmSetup({ elements: _elements, redirect: "if_required" }).then(function (res) {
       if (res.error) {
         // Stripe's own message (declines etc.) — do NOT translate
         setPayErr(res.error.message || tx("billErr"));
-        submitBtn.disabled = false; submitBtn.setAttribute("data-k", "billSubmit"); submitBtn.innerHTML = tx("billSubmit");
+        submitBtn.disabled = false; submitBtn.setAttribute("data-k", payKey()); submitBtn.innerHTML = tx(payKey());
         return;
       }
       var si = res.setupIntent;
-      if (!si || !si.id) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); return; }
+      if (!si || !si.id) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx(payKey()); return; }
       getAccessToken().then(function (token) {
         var headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = "Bearer " + token;
@@ -2103,13 +2138,16 @@
         });
       }).then(function (r) {
         if (r.status === 410) { FOUNDING_PRO.active = false; render(); return; }
-        if (!r.ok) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); return; }
+        if (!r.ok) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx(payKey()); return; }
         return r.json().catch(function () { return {}; }).then(function (data) {
-          S.trialActive = true;
+          // trial_end comes back null for a plan the spine created with no trial —
+          // that is the ONLY thing allowed to make the Done step say "trial".
           S.trialEnd = (data && typeof data.trial_end === "number") ? data.trial_end : null;
+          S.trialActive = S.trialEnd != null;
+          S.subLive = true;
           billingDone();
         });
-      }).catch(function () { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); });
+      }).catch(function () { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx(payKey()); });
     });
   }
 
@@ -2123,13 +2161,15 @@
     head.textContent = name ? tx("doneTitleNamed").replace("__N__", name) : tx("doneTitle");
     var bodyBox = h("div", "obm-done-body");
     if (S.confirmPending) { var l1 = h("p", "obm-done-line"); l1.innerHTML = escLine(LEX.doneConfirm, { "__E__": esc(S.email || (lang() === "zh" ? "你的邮箱" : "your inbox")) }); bodyBox.appendChild(l1); }
-    if (S.trialActive) {
+    if (S.trialActive || S.subLive) {
       var tierNm = tx(S.plan === "pro" ? "planPro" : "planInsider");
       var l2 = h("p", "obm-done-line");
-      l2.innerHTML = escLine(LEX.doneTrial, { "__T__": esc(tierNm), "__D__": esc(fmtDate(doneTrialDate())) });
+      l2.innerHTML = S.trialActive
+        ? escLine(LEX.doneTrial, { "__T__": esc(tierNm), "__D__": esc(fmtDate(doneTrialDate())) })
+        : escLine(LEX.doneSubscribed, { "__T__": esc(tierNm) });
       bodyBox.appendChild(l2);
     }
-    if (!S.confirmPending && !S.trialActive) { bodyBox.appendChild(T("p", "obm-done-line", "doneReady")); }
+    if (!S.confirmPending && !S.trialActive && !S.subLive) { bodyBox.appendChild(T("p", "obm-done-line", "doneReady")); }
     wrap.appendChild(mark); wrap.appendChild(head); wrap.appendChild(bodyBox);
     root.appendChild(wrap);
 
@@ -2665,6 +2705,7 @@
       S.firstName = st.firstName || ""; S.lastName = st.lastName || ""; S.email = st.email || "";
       S.prefs = st.prefs || S.prefs; S.plan = st.plan || S.plan; S.period = st.period || S.period;
       S.confirmPending = !!st.confirmPending; S.trialActive = !!st.trialActive; S.trialEnd = (typeof st.trialEnd === "number") ? st.trialEnd : null;
+      S.subLive = !!st.subLive;
       S.planTouched = !!st.planTouched || (st.step || 1) >= 3;  // stale stashes: reached-plan implies touched
       openSheet(S.mode, {});
     }
