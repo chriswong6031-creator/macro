@@ -20,11 +20,17 @@ ASOF = "2024-06-14"
 EXP = "2024-07-19"
 
 
-def _greeks(rows, spot=100.0):
-    """rows = list of (strike, right 'C'/'P', vega)."""
+def _greeks(rows, spot=100.0, iv=0.20):
+    """rows = list of (strike, right 'C'/'P', vega).
+
+    ``implied_vol`` is carried because the spot-grid VEX flip re-prices the book at
+    trial spots and cannot do so without vols — a chain with no implied vol yields
+    no flip, which is correct and was invisible while the flip was a strike-ladder
+    cumulative sum that never read the column.
+    """
     return pd.DataFrame([
         {"date": ASOF, "expiration": EXP, "strike": k, "right": r,
-         "vega": v, "underlying_price": spot}
+         "vega": v, "implied_vol": iv, "underlying_price": spot}
         for (k, r, v) in rows
     ])
 
@@ -52,15 +58,45 @@ class TestComputeVex:
         oi2 = _oi([(95.0, "P", 50000)])
         assert compute_vex(g2, oi2, ASOF, "TEST")["net_vex_mm"] < 0
 
-    def test_walls_and_flip(self):
+    def test_walls(self):
         # big positive VEX at 105 (call), big negative at 95 (put), small noise at spot
         g = _greeks([(105.0, "C", 0.30), (95.0, "P", 0.30), (100.0, "C", 0.02)])
         oi = _oi([(105.0, "C", 80000), (95.0, "P", 80000), (100.0, "C", 1000)])
         out = compute_vex(g, oi, ASOF, "TEST")
         assert out["pos_vex_wall"] == 105.0   # heaviest positive above spot
         assert out["neg_vex_wall"] == 95.0    # heaviest negative below spot
-        # cumulative net VEX crosses zero somewhere between 95 (neg) and 105 (pos)
-        assert out["vex_flip"] is not None and 95.0 <= out["vex_flip"] <= 105.0
+
+    def test_a_three_contract_book_has_no_flip(self):
+        """The VEX flip is a spot-grid property of a BOOK, so it has a floor.
+
+        ⚠️ This assertion is the reverse of what this file asserted before
+        2026-08-01, and the change is deliberate. The old ``_find_vex_flip``
+        summed vex_net along the strike ladder and returned the cumulative
+        zero-crossing, so any two rows of opposite sign produced a "flip" — this
+        very fixture produced one. That estimator was retired with the gamma-flip
+        repair (charting-app
+        ``docs/audits/2026-08-01-market-structure-core/gamma-flip-defect-rca.md``);
+        the replacement re-prices the book across a ±25% spot grid and, mirroring
+        ``gex_engine._gamma_flip``, declines below 20 contracts rather than
+        reporting a number derived from three.
+        """
+        g = _greeks([(105.0, "C", 0.30), (95.0, "P", 0.30), (100.0, "C", 0.02)])
+        oi = _oi([(105.0, "C", 80000), (95.0, "P", 80000), (100.0, "C", 1000)])
+        assert compute_vex(g, oi, ASOF, "TEST")["vex_flip"] is None
+
+    def test_flip_on_a_real_sized_book_lands_between_the_walls(self):
+        """A book big enough to grade: puts dominate below spot, calls above."""
+        rows_g, rows_oi = [], []
+        for k in range(90, 112, 2):            # 11 strikes, both sides -> 22 contracts
+            for right in ("C", "P"):
+                rows_g.append((float(k), right, 0.30))
+                # put-heavy below spot, call-heavy above -> one sign change near spot
+                heavy = (right == "P" and k <= 100) or (right == "C" and k > 100)
+                rows_oi.append((float(k), right, 60000 if heavy else 2000))
+        out = compute_vex(_greeks(rows_g, spot=100.0), _oi(rows_oi), ASOF, "TEST")
+        flip = out["vex_flip"]
+        assert flip is not None
+        assert 90.0 <= flip <= 110.0, flip
 
     def test_only_positive_oi_used(self):
         g = _greeks([(105.0, "C", 0.20), (110.0, "C", 0.20)])
