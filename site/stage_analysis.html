@@ -217,6 +217,10 @@ html[data-theme="light"] .arc-state .accent{color:color-mix(in srgb,var(--accent
 .filt input[type="number"]{width:74px}
 .filt select:focus,.filt input:focus{outline:2px solid color-mix(in srgb,var(--info) 60%,transparent);
   outline-offset:0;border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
+@media(max-width:640px){
+  .filterbar .filt{min-width:0;flex:1 1 140px;max-width:100%}
+  .filterbar .filt select{width:100%;min-width:0;max-width:100%}
+}
 .fb-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;font-size:12.5px;
   font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--text)}
@@ -841,6 +845,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
         <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
           <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
           <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="government_revenue.html"><span><span class="l-en">Government Revenue</span><span class="l-zh">政府收入前瞻</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
