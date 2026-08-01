@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T03:44:57.913457+00:00",
-  "count": 502,
+  "generated_at": "2026-08-01T03:59:55.515701+00:00",
+  "count": 503,
   "institutions": [
     "Amova",
     "Apollo",
@@ -201,6 +201,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qtx06deelza-28eaf5",
+      "title": "Amazon.com Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:23:22Z",
+      "summary_points": [
+        "**AWS Growth & Margins**: Q2'26 AWS revenue +37% (margin +39%), $25B annual AI/chips run rate, validating capital return; capex raised to $220B (2026) supports multi-year margin thesis.",
+        "**Financial Resilience**: $139.5B operating cash flow (12/25), net debt/EBITDA 0.1x (12/25), enabling strategic reinvestment and shareholder returns.",
+        "**Q3 Guidance Miss**: Revenue/guidance missed by 3%/2% (Q3'26) due to FX headwinds (-80bps) and Prime Day timing shift; management raised FY26 capex to $220B amid input cost risks (memory).",
+        "**Valuation Upside**: Goldman Sachs raises 12-month PT to $375 (59.2% upside) from $335, driven by AWS growth (+37% YoY) and segment multiples (AWS 29x EV/EBIT)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
