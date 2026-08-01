@@ -30,6 +30,7 @@ def _required_env() -> dict[str, str]:
     env = os.environ.copy()
     env.pop("AI_COSTS_STATE_ROOT", None)
     env.pop("METABOLISM_STATE_ROOT", None)
+    env.pop("EARNINGS_RUNTIME_ROOT", None)
     env.update(
         {
             "R2_ENDPOINT": "fixture-endpoint-value",
@@ -245,3 +246,50 @@ def test_runner_rejects_runtime_state_inside_code_clone(tmp_path: Path):
     result = _run(RUNNER, env=env)
     assert result.returncode != 0
     assert "outside the immutable code clone" in result.stderr
+
+
+def test_check_env_rejects_canonical_aliases_into_clone(tmp_path: Path):
+    env = _required_env()
+    ops = tmp_path / "earnings-ops-wt"
+    ops.mkdir()
+    alias = tmp_path / "runtime-link"
+    alias.symlink_to(ops, target_is_directory=True)
+    env.update(
+        {
+            "EARNINGS_OPS_ROOT": str(ops),
+            "EARNINGS_RUNTIME_ROOT": str(alias),
+        }
+    )
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside the immutable code clone" in result.stderr
+
+    env["EARNINGS_RUNTIME_ROOT"] = str(ops / "child" / "..")
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside the immutable code clone" in result.stderr
+
+
+def test_check_env_rejects_relative_broad_and_tcc_unsafe_roots(tmp_path: Path):
+    env = _required_env()
+    home = tmp_path / "home"
+    documents = home / "Documents"
+    documents.mkdir(parents=True)
+    ops = tmp_path / "earnings-ops-wt"
+    runtime = tmp_path / "runtime"
+    env.update(
+        {
+            "HOME": str(home),
+            "EARNINGS_OPS_ROOT": str(ops),
+            "EARNINGS_RUNTIME_ROOT": "relative-runtime",
+        }
+    )
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "must be an absolute path" in result.stderr
+
+    env["EARNINGS_RUNTIME_ROOT"] = str(runtime)
+    env["AI_COSTS_STATE_ROOT"] = str(documents / "ai-costs")
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside ~/Documents" in result.stderr

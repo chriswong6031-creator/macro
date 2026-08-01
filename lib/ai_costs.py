@@ -117,7 +117,21 @@ def _state_root() -> Path:
     ``root=`` test/diagnostic override.
     """
     override = os.environ.get(_STATE_ROOT_ENV, "").strip()
-    return Path(override).expanduser() if override else _repo_root()
+    if not override:
+        return _repo_root()
+
+    candidate = Path(override).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError(f"{_STATE_ROOT_ENV} must be an absolute path")
+    resolved = candidate.resolve(strict=False)
+    repo = _repo_root().resolve(strict=False)
+    home = Path.home().resolve(strict=False)
+    filesystem_root = Path(resolved.anchor)
+    if resolved in {filesystem_root, home}:
+        raise ValueError(f"{_STATE_ROOT_ENV} is too broad for mutable telemetry")
+    if resolved == repo or repo in resolved.parents:
+        raise ValueError(f"{_STATE_ROOT_ENV} must live outside the repository")
+    return resolved
 
 
 def _ledger_path(root: Path | None = None) -> Path:

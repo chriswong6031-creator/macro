@@ -83,6 +83,23 @@ def test_key_pool_explicit_root_wins_over_state_env(tmp_path, monkeypatch):
     assert not runtime.exists()
 
 
+def test_key_pool_state_env_rejects_relative_and_repo_symlink(tmp_path, monkeypatch):
+    from engine.neuralweb import key_pool
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    monkeypatch.setattr(key_pool, "_repo_root", lambda: repo)
+
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", ".")
+    assert key_pool.record_session("deepseek_api_key") is False
+
+    alias = tmp_path / "runtime-link"
+    alias.symlink_to(repo, target_is_directory=True)
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", str(alias))
+    assert key_pool.record_session("deepseek_api_key") is False
+    assert not (repo / "data" / "metabolism" / "key_ledger.jsonl").exists()
+
+
 # ── enabled_key_ids() ─────────────────────────────────────────────────────────
 
 class TestEnabledKeyIds:

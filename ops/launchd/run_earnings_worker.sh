@@ -13,9 +13,7 @@ PYTHON="${EARNINGS_PYTHON:-/Users/chriswong/earnings-venv/bin/python}"
 REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/chriswong6031-creator/macro.git}"
 PROVIDER_ORDER="${EARNINGS_PROVIDER_ORDER:-deepseek}"
 RUNTIME_ROOT="${EARNINGS_RUNTIME_ROOT:-/Users/chriswong/earnings-runtime}"
-STATE_PATH="$OPS_ROOT/data/earnings_calls/terminal_intake_state.json"
 LOCK_DIR="${EARNINGS_LOCK_DIR:-/tmp/mm_earnings_worker.lock}"
-RUNNER="$OPS_ROOT/ops/launchd/run_earnings_worker.sh"
 POST_UPDATE=0
 LOCK_HELD=0
 CHECK_ENV=0
@@ -86,51 +84,81 @@ verify_env_names() {
   echo "OK: required environment variable names are present: ${names[*]}"
 }
 
-if [ "$CHECK_ENV" -eq 1 ]; then
-  verify_env_names
-  exit $?
-fi
-
 verify_env_names
 
-# launchd cannot safely read/exec under ~/Documents because of macOS TCC.
-for path_name in OPS_ROOT RUNTIME_ROOT; do
-  path_value="${!path_name}"
-  case "$path_value" in
-    /*) ;;
-    *) echo "ERROR: $path_name must be an absolute path: $path_value" >&2; exit 1 ;;
+canonical_path() {
+  /usr/bin/python3 -c \
+    'from pathlib import Path; import sys; print(Path(sys.argv[1]).expanduser().resolve(strict=False))' \
+    "$1"
+}
+
+is_within() {
+  case "$1" in
+    "$2"|"$2"/*) return 0 ;;
+    *) return 1 ;;
   esac
-  case "$path_value" in
-    "$HOME/Documents"|"$HOME/Documents"/*)
-      echo "ERROR: $path_name must live outside ~/Documents: $path_value" >&2
-      exit 1
-      ;;
-  esac
-done
-case "$RUNTIME_ROOT" in
-  "$OPS_ROOT"|"$OPS_ROOT"/*)
-    echo "ERROR: EARNINGS_RUNTIME_ROOT must live outside the immutable code clone: $RUNTIME_ROOT" >&2
-    exit 1
-    ;;
+}
+
+case "$OPS_ROOT" in
+  /*) ;;
+  *) echo "ERROR: EARNINGS_OPS_ROOT must be an absolute path: $OPS_ROOT" >&2; exit 1 ;;
 esac
+OPS_ROOT="$(canonical_path "$OPS_ROOT")" || {
+  echo "ERROR: could not canonicalize EARNINGS_OPS_ROOT" >&2
+  exit 1
+}
+HOME_ROOT="$(canonical_path "$HOME")"
+DOCUMENTS_ROOT="$(canonical_path "$HOME/Documents")"
+if [ "$OPS_ROOT" = "/" ] || [ "$OPS_ROOT" = "$HOME_ROOT" ]; then
+  echo "ERROR: EARNINGS_OPS_ROOT is too broad: $OPS_ROOT" >&2
+  exit 1
+fi
+if is_within "$OPS_ROOT" "$DOCUMENTS_ROOT"; then
+  echo "ERROR: EARNINGS_OPS_ROOT must live outside ~/Documents: $OPS_ROOT" >&2
+  exit 1
+fi
+
+validate_state_root() {
+  local label="$1"
+  local raw="$2"
+  local canonical
+  case "$raw" in
+    /*) ;;
+    *) echo "ERROR: $label must be an absolute path: $raw" >&2; return 1 ;;
+  esac
+  canonical="$(canonical_path "$raw")" || {
+    echo "ERROR: could not canonicalize $label" >&2
+    return 1
+  }
+  if [ "$canonical" = "/" ] || [ "$canonical" = "$HOME_ROOT" ]; then
+    echo "ERROR: $label is too broad: $canonical" >&2
+    return 1
+  fi
+  if is_within "$canonical" "$OPS_ROOT"; then
+    echo "ERROR: $label must live outside the immutable code clone: $canonical" >&2
+    return 1
+  fi
+  if is_within "$canonical" "$DOCUMENTS_ROOT"; then
+    echo "ERROR: $label must live outside ~/Documents: $canonical" >&2
+    return 1
+  fi
+  printf '%s\n' "$canonical"
+}
+
+RUNTIME_ROOT="$(validate_state_root EARNINGS_RUNTIME_ROOT "$RUNTIME_ROOT")" || exit 1
 
 # AI authentication records cost and quota telemetry as a side effect. Keep
 # those append-only ledgers outside the fast-forward-only code appliance so a
 # successful model call can never dirty the clone and block its next run.
-export AI_COSTS_STATE_ROOT="${AI_COSTS_STATE_ROOT:-$RUNTIME_ROOT}"
-export METABOLISM_STATE_ROOT="${METABOLISM_STATE_ROOT:-$RUNTIME_ROOT}"
-for telemetry_root in "$AI_COSTS_STATE_ROOT" "$METABOLISM_STATE_ROOT"; do
-  case "$telemetry_root" in
-    /*) ;;
-    *) echo "ERROR: telemetry state roots must be absolute: $telemetry_root" >&2; exit 1 ;;
-  esac
-  case "$telemetry_root" in
-    "$OPS_ROOT"|"$OPS_ROOT"/*)
-      echo "ERROR: telemetry state roots must live outside the immutable code clone: $telemetry_root" >&2
-      exit 1
-      ;;
-  esac
-done
+AI_COSTS_STATE_ROOT="$(validate_state_root AI_COSTS_STATE_ROOT "${AI_COSTS_STATE_ROOT:-$RUNTIME_ROOT}")" || exit 1
+METABOLISM_STATE_ROOT="$(validate_state_root METABOLISM_STATE_ROOT "${METABOLISM_STATE_ROOT:-$RUNTIME_ROOT}")" || exit 1
+export AI_COSTS_STATE_ROOT METABOLISM_STATE_ROOT
+STATE_PATH="$OPS_ROOT/data/earnings_calls/terminal_intake_state.json"
+RUNNER="$OPS_ROOT/ops/launchd/run_earnings_worker.sh"
+
+if [ "$CHECK_ENV" -eq 1 ]; then
+  exit 0
+fi
 
 if [ ! -d "$OPS_ROOT/.git" ]; then
   echo "ERROR: missing standalone earnings ops clone at $OPS_ROOT" >&2

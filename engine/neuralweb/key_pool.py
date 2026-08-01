@@ -139,7 +139,21 @@ def _state_root() -> Path:
     # Literal allowlisted name: this module must never dynamically dereference
     # an environment key because capability ref names can point at secrets.
     override = os.environ.get("METABOLISM_STATE_ROOT", "").strip()
-    return Path(override).expanduser() if override else _repo_root()
+    if not override:
+        return _repo_root()
+
+    candidate = Path(override).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError("METABOLISM_STATE_ROOT must be an absolute path")
+    resolved = candidate.resolve(strict=False)
+    repo = _repo_root().resolve(strict=False)
+    home = Path.home().resolve(strict=False)
+    filesystem_root = Path(resolved.anchor)
+    if resolved in {filesystem_root, home}:
+        raise ValueError("METABOLISM_STATE_ROOT is too broad for mutable telemetry")
+    if resolved == repo or repo in resolved.parents:
+        raise ValueError("METABOLISM_STATE_ROOT must live outside the repository")
+    return resolved
 
 
 def _manifest_path(root: Path | None = None) -> Path:
