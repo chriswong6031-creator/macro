@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_event.schema.json",
+  "title": "Capital Structure event adapter",
+  "description": "Immutable financing-family adapter. It records observations and deliberately does not contain normalized instrument terms. Reverse supersession links are derived from later immutable edge rows and are never written back to an old event.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "event_id", "source", "issuer", "filing", "event", "lifecycle",
+    "relationships", "classification", "evidence", "extraction", "reconciliation", "version",
+    "point_in_time", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.event.v1"},
+    "event_id": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_system", "source_id", "manifest_ids"],
+      "properties": {
+        "source_system": {"type": "string", "minLength": 1},
+        "source_id": {"type": "string", "minLength": 1},
+        "manifest_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "issuer": {"$ref": "#/$defs/issuer"},
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "form", "file_number", "filing_date", "accepted_at", "primary_document_url", "exhibit_urls", "content_hashes"],
+      "properties": {
+        "accession": {"type": ["string", "null"]},
+        "form": {"type": ["string", "null"]},
+        "file_number": {"type": ["string", "null"]},
+        "filing_date": {"type": ["string", "null"], "format": "date"},
+        "accepted_at": {"type": ["string", "null"], "format": "date-time"},
+        "primary_document_url": {"type": ["string", "null"], "format": "uri"},
+        "exhibit_urls": {"type": "array", "items": {"type": "string", "format": "uri"}, "uniqueItems": true},
+        "content_hashes": {"type": "array", "items": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}, "uniqueItems": true}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "subtype", "affected_instrument_candidate_ids"],
+      "properties": {
+        "family": {"type": "string", "enum": ["shelf", "atm", "follow_on", "rdo", "pipe", "eloc", "sepa", "warrant", "convertible", "resale_registration", "rights_offering", "reg_a", "corporate_action", "other"]},
+        "subtype": {"type": ["string", "null"]},
+        "affected_instrument_candidate_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {"type": "string", "enum": ["filed", "amended", "effective", "withdrawn", "priced", "closed", "expired", "unknown"]}
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amendment_of", "supersedes"],
+      "properties": {
+        "amendment_of": {"type": ["string", "null"]},
+        "supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "defer_reason"],
+      "properties": {
+        "state": {"type": "string", "enum": ["classified", "deferred_missing_document", "deferred_unsupported_media", "deferred_ambiguous_content", "deferred_conflict", "deferred_linkage", "not_applicable"]},
+        "defer_reason": {"type": ["string", "null"]}
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "parser_version", "review_status"],
+      "properties": {
+        "method": {"type": "string", "enum": ["deterministic", "manual", "deferred"]},
+        "parser_version": {"type": ["string", "null"]},
+        "review_status": {"type": "string", "enum": ["unreviewed", "reviewed", "rejected", "deferred"]}
+      }
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "contradiction_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["unreconciled", "reconciled", "contradicted", "deferred"]},
+        "contradiction_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutable_record", "correction_version", "correction_of"],
+      "properties": {
+        "immutable_record": {"const": true},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "correction_of": {"type": ["string", "null"]}
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "available_at is the canonical system availability timestamp. system_available_at records the same ingestion-clock concept explicitly; public_available_at is a distinct public-distribution clock.",
+      "required": ["first_seen_at", "public_available_at", "system_available_at", "available_at"],
+      "properties": {
+        "first_seen_at": {"type": "string", "format": "date-time"},
+        "public_available_at": {"type": ["string", "null"], "format": "date-time"},
+        "system_available_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time", "description": "Canonical system availability timestamp used by point-in-time consumers."}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"classification": {"properties": {"state": {"enum": ["deferred_missing_document", "deferred_unsupported_media", "deferred_ambiguous_content", "deferred_conflict", "deferred_linkage"]}}}}},
+      "then": {"properties": {"classification": {"properties": {"defer_reason": {"type": "string", "minLength": 1}}}}},
+      "else": {"properties": {"classification": {"properties": {"defer_reason": {"type": "null"}}}}}
+    }
+  ],
+  "$defs": {
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer_id", "cik", "ticker", "aliases"],
+      "properties": {
+        "issuer_id": {"type": "string", "minLength": 1},
+        "cik": {"type": ["string", "null"], "pattern": "^[0-9]{1,10}$"},
+        "ticker": {"type": ["string", "null"], "pattern": "^[A-Z0-9.\\-]+$"},
+        "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "span_id", "text_sha256"],
+      "properties": {
+        "manifest_id": {"type": "string", "minLength": 1},
+        "span_id": {"type": "string", "minLength": 1},
+        "text_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+      }
+    }
+  }
+}

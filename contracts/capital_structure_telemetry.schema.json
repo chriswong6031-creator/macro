@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_telemetry.schema.json",
+  "title": "Capital Structure compiler telemetry and generation receipt",
+  "description": "A strict context-only receipt emitted on every compiler run, including runs with no source manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "status", "as_of", "generation_id", "authority", "form_policy",
+    "coverage_claim", "known_exclusions", "counts", "compile_failures",
+    "migration_receipt", "source_ledger_receipt", "artifact_hashes"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.telemetry.v1"},
+    "status": {"type": "string", "enum": ["ok", "degraded", "no_source_manifest"]},
+    "as_of": {"type": "string", "format": "date-time"},
+    "generation_id": {
+      "type": ["string", "null"],
+      "pattern": "^generation:cs:[A-Fa-f0-9]{24,64}$"
+    },
+    "authority": {"$ref": "#/$defs/authority"},
+    "form_policy": {"$ref": "#/$defs/form_policy"},
+    "coverage_claim": {"const": "explicit_wave1_form_allowlist_only"},
+    "known_exclusions": {
+      "type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true
+    },
+    "counts": {"$ref": "#/$defs/counts"},
+    "compile_failures": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/compile_failure"}
+    },
+    "migration_receipt": {"$ref": "#/$defs/migration_receipt"},
+    "source_ledger_receipt": {"$ref": "#/$defs/source_ledger_receipt"},
+    "artifact_hashes": {"$ref": "#/$defs/artifact_hashes"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "ok"}}},
+      "then": {
+        "properties": {
+          "generation_id": {"type": "string"},
+          "counts": {"properties": {"compile_failures": {"const": 0}}},
+          "compile_failures": {"maxItems": 0},
+          "source_ledger_receipt": {
+            "properties": {"record_count": {"minimum": 1}}
+          },
+          "artifact_hashes": {
+            "properties": {
+              "event_versions": {"type": "string"},
+              "event_edges": {"type": "string"},
+              "review_queue": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "degraded"}}},
+      "then": {
+        "properties": {
+          "generation_id": {"type": "null"},
+          "counts": {"properties": {"compile_failures": {"minimum": 1}}},
+          "compile_failures": {"minItems": 1},
+          "artifact_hashes": {
+            "properties": {
+              "event_versions": {"type": "null"},
+              "event_edges": {"type": "null"},
+              "review_queue": {"type": "null"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "no_source_manifest"}}},
+      "then": {
+        "properties": {
+          "generation_id": {"type": "null"},
+          "counts": {
+            "properties": {
+              "source_manifests": {"const": 0},
+              "accessions_grouped": {"const": 0},
+              "event_versions": {"const": 0},
+              "new_event_versions": {"const": 0},
+              "event_edges": {"const": 0},
+              "review_queue": {"const": 0},
+              "compile_failures": {"const": 0}
+            }
+          },
+          "compile_failures": {"maxItems": 0},
+          "source_ledger_receipt": {
+            "properties": {"record_count": {"const": 0}}
+          },
+          "artifact_hashes": {
+            "properties": {
+              "event_versions": {"type": "null"},
+              "event_edges": {"type": "null"},
+              "review_queue": {"type": "null"}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "form_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_version", "wave1_discovery", "wave2_declared_not_collected",
+        "capital_relevant_declared_not_collected"
+      ],
+      "properties": {
+        "policy_version": {"type": "string", "minLength": 1},
+        "wave1_discovery": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "wave2_declared_not_collected": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "capital_relevant_declared_not_collected": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifests", "accessions_grouped", "event_versions",
+        "new_event_versions", "event_edges", "review_queue", "compile_failures"
+      ],
+      "properties": {
+        "source_manifests": {"type": "integer", "minimum": 0},
+        "accessions_grouped": {"type": "integer", "minimum": 0},
+        "event_versions": {"type": "integer", "minimum": 0},
+        "new_event_versions": {"type": "integer", "minimum": 0},
+        "event_edges": {"type": "integer", "minimum": 0},
+        "review_queue": {"type": "integer", "minimum": 0},
+        "compile_failures": {"type": "integer", "minimum": 0}
+      }
+    },
+    "compile_failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "state", "errors"],
+      "properties": {
+        "accession": {"type": ["string", "null"]},
+        "state": {"type": "string", "minLength": 1},
+        "errors": {
+          "type": "array", "minItems": 1, "maxItems": 5,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "migration_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "receipt_id", "source_contract", "target_contract", "state",
+        "owner", "review_by", "adjudicator", "acceptance_evidence",
+        "pit_preservation_state", "legacy_writer", "legacy_projection_state",
+        "immutable_record"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.migration_receipt.v1"},
+        "receipt_id": {"type": "string", "minLength": 1},
+        "source_contract": {"const": "capital_structure.event.v1"},
+        "target_contract": {"const": "company_event.v1"},
+        "state": {
+          "type": "string",
+          "enum": ["temporary_adapter_active_pending_target", "migration_in_review", "migration_accepted", "migration_rejected"]
+        },
+        "owner": {"const": "capital-structure-intelligence"},
+        "review_by": {"type": "string", "format": "date"},
+        "adjudicator": {"type": "string", "minLength": 1},
+        "acceptance_evidence": {
+          "type": "array", "minItems": 1,
+          "items": {"type": "string", "minLength": 1}, "uniqueItems": true
+        },
+        "pit_preservation_state": {"type": "string", "enum": ["not_yet_tested", "verified", "failed"]},
+        "legacy_writer": {"const": "collectors/edgar_dilution.py"},
+        "legacy_projection_state": {"type": "string", "enum": ["shadow_only_no_cutover", "cutover_approved", "retired"]},
+        "immutable_record": {"const": true}
+      }
+    },
+    "source_ledger_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "record_count", "prefix_sha256", "form_policy_version",
+        "immutable_prefix"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.source_ledger_receipt.v1"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "prefix_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "form_policy_version": {"type": "string", "minLength": 1},
+        "immutable_prefix": {"const": true}
+      }
+    },
+    "artifact_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_versions", "event_edges", "review_queue"],
+      "properties": {
+        "event_versions": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+        "event_edges": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+        "review_queue": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}
+      }
+    }
+  }
+}

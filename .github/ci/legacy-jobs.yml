@@ -713,6 +713,34 @@ jobs:
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
 
+  capital-structure-intelligence:
+    if: ${{ false }}
+    # W0-W1 is an evidence and event-spine contract, not merely a collector. This
+    # dedicated offline job keeps its schemas, PIT/correction behavior, R2 wrapper,
+    # graph linkage, legacy shadow boundary, and SEC fixtures in one hard gate.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install capital-structure test deps
+        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml
+      - name: capital-structure contracts, compiler, graph, source store, and legacy boundary
+        run: >
+          python -m pytest
+          tests/test_capital_structure_compiler.py
+          tests/test_capital_structure_contracts.py
+          tests/test_capital_structure_event_spine.py
+          tests/test_capital_structure_graph.py
+          tests/test_capital_structure_legacy_compat.py
+          tests/test_capital_structure_pit.py
+          tests/test_capital_structure_source_identity.py
+          tests/test_capital_structure_source_manifest.py
+          tests/test_sec_capital_structure.py
+          tests/test_nwqs_c_dilution.py -q
+
   china-native-collectors:
     if: ${{ false }}
     # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /

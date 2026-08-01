@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_instrument_term_observation.schema.json",
+  "title": "Capital Structure instrument term observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "observation_id", "issuer_id", "instrument_id", "event_id", "term",
+    "reported", "normalized", "effective_from", "observed_at", "evidence", "extraction",
+    "relationships", "version", "point_in_time"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.instrument_term_observation.v1"},
+    "observation_id": {"type": "string", "minLength": 1},
+    "issuer_id": {"type": "string", "minLength": 1},
+    "instrument_id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "term_type"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "term_type": {"type": "string", "enum": ["amount", "share_count", "price", "ratio", "rate", "date", "flag", "text", "other"]}
+      }
+    },
+    "reported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_text", "value", "unit", "currency", "scale"],
+      "properties": {
+        "raw_text": {"type": "string", "minLength": 1, "maxLength": 500},
+        "value": {"type": ["number", "string", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "currency": {"type": ["string", "null"], "pattern": "^[A-Z]{3}$"},
+        "scale": {"type": ["number", "null"], "exclusiveMinimum": 0}
+      }
+    },
+    "normalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "currency", "scale", "state"],
+      "properties": {
+        "value": {"type": ["number", "string", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "currency": {"type": ["string", "null"], "pattern": "^[A-Z]{3}$"},
+        "scale": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "state": {"type": "string", "enum": ["normalized", "unknown", "not_applicable", "contradicted"]}
+      }
+    },
+    "effective_from": {"type": ["string", "null"], "format": "date"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id", "span_id", "text_sha256", "rights_class",
+        "privacy_classification", "contains_personal_data", "publication"
+      ],
+      "properties": {
+        "manifest_id": {"type": "string", "minLength": 1},
+        "span_id": {"type": "string", "minLength": 1},
+        "text_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "rights_class": {
+          "type": "string",
+          "enum": ["public_source_link", "excerpt_permitted", "internal_only", "do_not_redistribute", "unknown"]
+        },
+        "privacy_classification": {"type": "string", "enum": ["public", "restricted", "internal", "unknown"]},
+        "contains_personal_data": {"type": "boolean"},
+        "publication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["disposition", "excerpt_char_count", "personal_data_redacted"],
+          "properties": {
+            "disposition": {
+              "type": "string",
+              "enum": ["internal_evidence_only", "bounded_public_excerpt", "public_fact_only"]
+            },
+            "excerpt_char_count": {"type": "integer", "minimum": 0, "maximum": 500},
+            "personal_data_redacted": {"type": "boolean"}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"publication": {"properties": {"disposition": {"const": "bounded_public_excerpt"}}}}},
+          "then": {
+            "properties": {
+              "rights_class": {"const": "excerpt_permitted"},
+              "publication": {"properties": {"excerpt_char_count": {"minimum": 1}}}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"publication": {"properties": {"disposition": {"enum": ["internal_evidence_only", "public_fact_only"]}}}}},
+          "then": {"properties": {"publication": {"properties": {"excerpt_char_count": {"const": 0}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "contains_personal_data": {"const": true},
+              "publication": {"properties": {"disposition": {"const": "bounded_public_excerpt"}}}
+            }
+          },
+          "then": {"properties": {"publication": {"properties": {"personal_data_redacted": {"const": true}}}}}
+        }
+      ]
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "parser_version", "confidence", "review_status"],
+      "properties": {
+        "method": {"type": "string", "enum": ["deterministic", "manual", "deferred"]},
+        "parser_version": {"type": ["string", "null"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "review_status": {"type": "string", "enum": ["unreviewed", "reviewed", "rejected", "deferred"]}
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amends", "supersedes", "contradiction_ids"],
+      "properties": {
+        "amends": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "contradiction_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutable_record", "correction_version", "correction_of"],
+      "properties": {
+        "immutable_record": {"const": true},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "correction_of": {"type": ["string", "null"]}
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available_at"],
+      "properties": {"available_at": {"type": "string", "format": "date-time"}}
+    }
+  }
+}
