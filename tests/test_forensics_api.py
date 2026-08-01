@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gzip
 import json
+from pathlib import Path
 
 import pytest
 
@@ -14,6 +15,9 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import app.forensics as forensics_api  # noqa: E402
 from engine.fundamental_forensics.private_state import STATE_SCHEMA  # noqa: E402
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _blob() -> bytes:
@@ -143,3 +147,24 @@ def test_production_app_mounts_the_authenticated_forensics_route() -> None:
     assert "/api/forensics/state" in main_mod.app.openapi().get("paths", {}), (
         "app.main must include app.forensics.router or the paid API is unreachable"
     )
+
+
+def test_private_research_r2_credentials_are_delivered_to_macro_api_only() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "deploy-api-secrets.yml").read_text(
+        encoding="utf-8"
+    )
+    for name in (
+        "R2_RESEARCH_ENDPOINT",
+        "R2_RESEARCH_ACCESS_KEY_ID",
+        "R2_RESEARCH_SECRET_ACCESS_KEY",
+        "R2_RESEARCH_BUCKET",
+    ):
+        assert f"secrets.{name}" in workflow
+        assert f"_add {name} " in workflow
+    assert (
+        'grep -vE "^R2_RESEARCH_(ENDPOINT|ACCESS_KEY_ID|SECRET_ACCESS_KEY|BUCKET)="'
+        in workflow
+    )
+    # The second job updates macro-admin. Filing Forensics object credentials
+    # belong only in the first macro-api delivery block.
+    assert workflow.count("secrets.R2_RESEARCH_SECRET_ACCESS_KEY") == 1

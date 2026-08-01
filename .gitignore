@@ -189,6 +189,7 @@ data/_dev_china_vm.pkl
 research/signal_engine/_track_record_audit.md
 data/edgar/company_tickers.json
 data/fundamental_forensics/raw/
+data/fundamental_forensics/archive/
 data/fundamental_forensics/private/
 
 # Special Situations: fetched filing-text cache + LLM summary cache (regenerable)

@@ -89,13 +89,25 @@
           aria-selected="false" aria-controls="ff-panel-statements" tabindex="-1" data-tab="statements">
           <span class="ff-tab-index" aria-hidden="true">02</span>{{ t('Statements', '财务报表') }}
         </button>
+        <button class="ff-tab" id="ff-tab-disclosures" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-disclosures" tabindex="-1" data-tab="disclosures">
+          <span class="ff-tab-index" aria-hidden="true">03</span>{{ t('Filing changes', '披露变化') }}
+        </button>
+        <button class="ff-tab" id="ff-tab-redlines" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-redlines" tabindex="-1" data-tab="redlines">
+          <span class="ff-tab-index" aria-hidden="true">04</span>{{ t('Redlines', '逐字对照') }}
+        </button>
+        <button class="ff-tab" id="ff-tab-timeline" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-timeline" tabindex="-1" data-tab="timeline">
+          <span class="ff-tab-index" aria-hidden="true">05</span>{{ t('Filing trail', '申报轨迹') }}
+        </button>
         <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
-          <span class="ff-tab-index" aria-hidden="true">03</span>{{ t('Compare', '期间对比') }}
+          <span class="ff-tab-index" aria-hidden="true">06</span>{{ t('Compare', '期间对比') }}
         </button>
         <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
-          <span class="ff-tab-index" aria-hidden="true">04</span>{{ t('Sources', '来源') }}
+          <span class="ff-tab-index" aria-hidden="true">07</span>{{ t('Sources', '来源') }}
         </button>
       </div>
       <div class="ff-view-status" id="ff-view-status" role="status" aria-live="polite">
@@ -147,6 +159,50 @@
         </div>
       </header>
       <div id="ff-statements"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-disclosures" role="tabpanel" aria-labelledby="ff-tab-disclosures" tabindex="0" hidden>
+      <header class="ff-panel-head ff-disclosure-head">
+        <div>
+          <p class="ff-kicker">{{ t('Filing change feed', '申报变化动态') }}</p>
+          <h2>{{ t('What changed in the filing', '财报披露有哪些变化') }}</h2>
+          <p>{{ t('This is a text comparison, not an explanation of motive, materiality, or financial impact.', '这是文本对比，不代表对动机、重大性或财务影响的解释。') }}</p>
+        </div>
+        <div class="ff-filter-summary" id="ff-disclosure-summary">—</div>
+      </header>
+      <div class="ff-disclosure-toolbar" aria-label="Disclosure change filters">
+        <label class="ff-topic-filter" for="ff-disclosure-section">
+          <span>{{ t('Section', '章节') }}</span>
+          <select id="ff-disclosure-section">
+            <option value="all">All sections / 全部章节</option>
+          </select>
+        </label>
+        <p class="ff-lexical-note"><span class="ff-lexical-glyph" aria-hidden="true">◇</span>{{ t('Observed wording only — open an item to read both source excerpts.', '仅显示观察到的措辞变化；打开条目可阅读两个来源摘录。') }}</p>
+      </div>
+      <div class="ff-disclosure-feed" id="ff-disclosure-feed" role="list" aria-label="Filing disclosure changes"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-redlines" role="tabpanel" aria-labelledby="ff-tab-redlines" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker">{{ t('Source redlines', '来源逐字对照') }}</p>
+          <h2>{{ t('Read the language side by side', '并列阅读前后措辞') }}</h2>
+          <p>{{ t('Every row links back to the matched SEC filing excerpts. Unchanged boilerplate stays out of the review queue.', '每行都可回到匹配的 SEC 财报摘录；未变化的模板文本不会进入审阅队列。') }}</p>
+        </div>
+        <div class="ff-filter-summary" id="ff-redline-summary">—</div>
+      </header>
+      <div class="ff-redline-list" id="ff-redline-list" role="list" aria-label="Filing redlines"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-timeline" role="tabpanel" aria-labelledby="ff-tab-timeline" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker">{{ t('Filing trail', '申报轨迹') }}</p>
+          <h2>{{ t('The filing record behind this review', '本次审阅对应的财报记录') }}</h2>
+          <p>{{ t('Confirm the reporting form, filing date, accession, and original SEC document before drawing a conclusion.', '在得出结论前，请确认申报表格、申报日期、文件编号及 SEC 原文。') }}</p>
+        </div>
+      </header>
+      <div class="ff-timeline" id="ff-timeline" aria-label="Filing comparison timeline"></div>
     </section>
 
     <section class="ff-panel" id="ff-panel-compare" role="tabpanel" aria-labelledby="ff-tab-compare" tabindex="0" hidden>

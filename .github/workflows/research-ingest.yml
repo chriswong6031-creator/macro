@@ -32,6 +32,11 @@ on:
         required: false
         default: false
         type: boolean
+      bootstrap_forensics_sources:
+        description: "ONE TIME ONLY: create the first private SEC-source snapshot without restore"
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "0 * * * *"   # top of every hour — mirrors btc-live.yml
 
@@ -70,7 +75,7 @@ jobs:
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       # boto3 (R2 client) + pyyaml are already in requirements; pdftotext is a
       # system binary (poppler), not a pip dep. No heavy pandas/scipy needed here.
-      - run: pip install --quiet boto3 pyyaml
+      - run: pip install --quiet boto3 pyyaml requests
       - name: preflight — poppler pdftotext (HOST dependency)
         run: |
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
@@ -80,11 +85,56 @@ jobs:
           fi
       - name: bootstrap Filing Forensics private state
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_forensics }}
-        # Manual launch/recovery hook. The normal refresh owner is daily.yml;
-        # this path lets an operator publish the first private object immediately
-        # after deploy without waiting for the multi-hour nightly engine.
+        # Manual launch/recovery hook. The normal refresh owner is daily.yml.
+        # This deliberately runs the SEC source spine BEFORE the broad state build:
+        # a fresh runner must restore its verified raw/archive snapshot, acquire its
+        # bounded delta, emit local disclosure projections, and read-back-sync the
+        # next snapshot before the compact entitled state may be published.
+        #
+        # `bootstrap_forensics_sources=true` is intentionally explicit and ONE TIME
+        # ONLY: it creates the first source snapshot. On all later runs its false
+        # default requires a verified restore; falling back after a restore failure
+        # would let a shallow checkout replace durable disclosure evidence.
+        #
+        # The first call stops on partial SEC coverage. The second call obtains its
+        # compute clock only after retrieval completes, so it can never claim to have
+        # computed a projection before the source receipt it reads. Neither call
+        # renders or publishes the browser state; that happens only after both pass.
         run: |
+          set -euo pipefail
           pip install --quiet pandas pyarrow jinja2
+
+          targets=(
+            --target SMCI=0001375365
+            --target NVDA=0001045810
+            --target AAPL=0000320193
+            --target MSFT=0000789019
+            --target GOOGL=0001652044
+            --target AMZN=0001018724
+            --target META=0001326801
+            --target TSLA=0001318605
+            --target AVGO=0001730168
+            --target PLTR=0001321655
+            --target AMD=0000002488
+            --target ORCL=0001341439
+          )
+          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
+          as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
+          recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
+          restore_args=(--restore)
+          if [ "${{ inputs.bootstrap_forensics_sources }}" = "true" ]; then
+            restore_args=()
+            echo "::warning title=fundamental_forensics_wave2::creating the initial private SEC-source snapshot (restore deliberately omitted)"
+          fi
+
+          python -m scripts.run_fundamental_forensics_wave2 \
+            "${targets[@]}" "${restore_args[@]}" --acquire --require-complete-acquisition \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
+
+          computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
+          python -m scripts.run_fundamental_forensics_wave2 \
+            "${targets[@]}" --build-projections --sync \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
           python -m scripts.build_fundamental_forensics --publish-private
       - name: research vault ingest (hourly)
         id: ingest
