@@ -43,6 +43,7 @@ from typing import Any, Generator, Iterable
 
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
+from engine.fundamental_forensics.context_projection import compact_disclosure_context
 
 log = logging.getLogger(__name__)
 
@@ -1949,6 +1950,9 @@ def _tool_get_fundamentals(
                 "authority": "context_only",
                 "display_only": True,
             }
+            disclosure_context = compact_disclosure_context(ff_company, max_findings=3)
+            if disclosure_context is not None:
+                out["filing_forensics"]["disclosure_changes"] = disclosure_context
     except Exception:  # noqa: BLE001 — optional context must never break the tool
         pass
     return out
