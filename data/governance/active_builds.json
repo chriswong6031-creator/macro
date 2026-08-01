@@ -1,67 +1,165 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-31T04:04:43.591557+00:00",
+  "generated_at": "2026-08-01T03:42:37.842917+00:00",
   "base": {
-    "sha": "d7dca872ecbb776b0501f15eac2728262c2e874a"
+    "sha": "ffed202405df6a305ed528c1764d0c98eefdc2b1"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 4127,
-      "title": "Refresh non-Bitcoin macro desk surfaces",
-      "head_ref": "claude/refresh-megamenu-pages-20260730",
-      "updated_at": "2026-07-31T03:42:55Z",
+      "number": 4159,
+      "title": "feat(seo): IndexNow adapter + bare-path 301 aliases \u2014 post-outage reindex push",
+      "head_ref": "claude/mastermind-x-seo-assessment-255a36",
+      "updated_at": "2026-08-01T03:07:35Z",
       "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 35,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 8,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "site/allocation.html",
-        "site/allocation_canada.html",
-        "site/allocation_china.html",
-        "site/allocation_hk.html",
-        "site/baskets.html",
-        "site/baskets_canada.html",
-        "site/baskets_china.html",
-        "site/baskets_china_ths.html",
-        "site/baskets_hk.html",
-        "site/baskets_intl.html",
-        "site/macro-desk.css",
-        "site/sector_central.html",
-        "site/sector_central_china.html",
-        "site/sector_cycles.html",
-        "site/sector_cycles_china.html",
-        "site/subsector_rotation.html",
-        "site/subsector_rotation_china.html",
-        "site/subsectors.html",
-        "site/subsectors_china.html",
-        "templates/allocation.html.j2",
-        "templates/baskets.html.j2",
-        "templates/baskets_canada.html.j2",
-        "templates/baskets_china.html.j2",
-        "templates/baskets_hk.html.j2",
-        "templates/baskets_intl.html.j2",
-        "templates/macro-desk.css",
-        "templates/sector_central.html.j2",
-        "templates/sector_central_china.html.j2",
-        "templates/sector_cycles.html.j2",
-        "templates/sector_cycles_china.html.j2",
-        "templates/subsector_rotation.html.j2",
-        "templates/subsector_rotation_china.html.j2",
-        "templates/subsectors.html.j2",
-        "templates/subsectors_china.html.j2",
-        "tests/test_macro_desk_surface.py"
+        ".github/workflows/seo-director.yml",
+        "app/deploy/Caddyfile",
+        "config/site_access.yml",
+        "engine/marketing/indexnow.py",
+        "site/88bb90b05303e3cf469878ebc4dc7543.txt",
+        "tests/test_indexnow.py",
+        "tests/test_support_page.py",
+        "tests/test_unsubscribe_page.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/seo-director.yml"
+      ]
+    },
+    {
+      "number": 4156,
+      "title": "design(pricing): founding meter restored+refreshed, dollar savings, entitlement-aware CTAs",
+      "head_ref": "claude/founding-pricing-refresh",
+      "updated_at": "2026-08-01T03:23:44Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 14,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/refs/pricing_refresh/after-annual-en.png",
+        "mockups/refs/pricing_refresh/after-annual-zh.png",
+        "mockups/refs/pricing_refresh/after-mobile-390.png",
+        "mockups/refs/pricing_refresh/after-tooltip-pro.png",
+        "mockups/refs/pricing_refresh/cta-matrix-strip.png",
+        "mockups/refs/pricing_refresh/cta-pro-monthly-upgrade-sheet.png",
+        "site/index.html",
+        "site/landing.css",
+        "site/onboard.js",
+        "site/unsubscribe.html",
+        "templates/index.html",
+        "templates/landing.css",
+        "templates/onboard.js",
+        "tests/test_landing_pricing_cta.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 4126,
-      "title": "test(nav): fix the icon-set test's render premise, and light up its dark sibling",
-      "head_ref": "claude/nav-icon-test-render-premise",
-      "updated_at": "2026-07-31T03:18:30Z",
+      "number": 4154,
+      "title": "x-growth: superintelligence overhaul W1 \u2014 audit-driven rebuild of the supply, quality, wire, and approval lanes",
+      "head_ref": "claude/x-growth-overhaul",
+      "updated_at": "2026-08-01T01:31:46Z",
+      "is_draft": false,
+      "merge_state": "CLEAN",
+      "merge_state_raw": "CLEAN",
+      "files_count": 77,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/marketing-publish.yml",
+        "admin/marketing_floor.py",
+        "config/marketing.yml",
+        "data/marketing/logos/AMAT_color.png",
+        "data/marketing/logos/AMD_color.png",
+        "data/marketing/logos/BLDP_color.png",
+        "data/marketing/logos/BTDR_color.png",
+        "data/marketing/logos/CIEN_color.png",
+        "data/marketing/logos/CIFR_color.png",
+        "data/marketing/logos/CLSK_color.png",
+        "data/marketing/logos/COHU_color.png",
+        "data/marketing/logos/CORZ_color.png",
+        "data/marketing/logos/EOSE_color.png",
+        "data/marketing/logos/FLNC_color.png",
+        "data/marketing/logos/HUT_color.png",
+        "data/marketing/logos/IREN_color.png",
+        "data/marketing/logos/LITE_color.png",
+        "data/marketing/logos/LRCX_color.png",
+        "data/marketing/logos/MARA_color.png",
+        "data/marketing/logos/MRVL_color.png",
+        "data/marketing/logos/MSFT_color.png",
+        "data/marketing/logos/MU_color.png",
+        "data/marketing/logos/NWFL_white.png",
+        "data/marketing/logos/RGTI_color.png",
+        "data/marketing/logos/RIOT_color.png",
+        "data/marketing/logos/SIMO_color.png",
+        "data/marketing/logos/XRX_color.png",
+        "data/marketing/outbox/status_ledger.jsonl",
+        "engine/llm_auth.py",
+        "engine/marketing/allies.py",
+        "engine/marketing/approval_desk.py",
+        "engine/marketing/chart_facts.py",
+        "engine/marketing/content_studio.py",
+        "engine/marketing/copywriter.py",
+        "engine/marketing/hot_tape.py",
+        "engine/marketing/hot_tape_llm.py",
+        "engine/marketing/hot_tape_wire.py",
+        "engine/marketing/market_facts.py",
+        "engine/marketing/movers_source.py",
+        "engine/marketing/outbox.py",
+        "engine/marketing/press_lane.py",
+        "engine/marketing/publish_time_content.py",
+        "engine/marketing/receipt_source.py",
+        "engine/marketing/rewrite.py",
+        "engine/marketing/sentinel.py",
+        "engine/marketing/weekend_levels.py",
+        "engine/marketing/wire_voice.py",
+        "research/X_GROWTH_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/agentic_media/X_VOICE_FIELD_STUDY_2026_07_BY_FABLE.md",
+        "scripts/hot_tape_radar.py",
+        "scripts/marketing_publisher.py",
+        "scripts/marketing_requeue_stale_copy.py",
+        "tests/test_chart_facts.py",
+        "tests/test_copywriter.py",
+        "tests/test_hot_tape_dark_account_routing.py",
+        "tests/test_llm_auth.py",
+        "tests/test_market_facts.py",
+        "tests/test_marketing_approval_desk.py",
+        "tests/test_marketing_bare_cashtag.py",
+        "tests/test_marketing_content.py",
+        "tests/test_marketing_copy_v2.py",
+        "tests/test_marketing_hot_tape.py",
+        "tests/test_marketing_hot_tape_llm.py",
+        "tests/test_marketing_hot_tape_radar.py",
+        "tests/test_marketing_outbox.py",
+        "tests/test_marketing_press_copy.py",
+        "tests/test_marketing_publish_time_content.py",
+        "tests/test_marketing_publisher_autoapprove.py",
+        "tests/test_marketing_ramp_cta_jitter.py",
+        "tests/test_marketing_rewrite.py",
+        "tests/test_marketing_selection.py",
+        "tests/test_marketing_sentinel.py",
+        "tests/test_marketing_social_publisher.py",
+        "tests/test_marketing_voice_laws.py",
+        "tests/test_marketing_weekend_levels.py",
+        "tests/test_marketing_wire_expiry.py",
+        "tests/test_movers_source.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/marketing-publish.yml"
+      ]
+    },
+    {
+      "number": 4132,
+      "title": "test(options): sweep hover + aria + script-authored copy \u2014 the tier the guard could not see",
+      "head_ref": "claude/options-tip-copy-sweep",
+      "updated_at": "2026-07-31T07:39:35Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -69,37 +167,26 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        "tests/test_nav_submenu_icons.py"
+        "scripts/build_options_command.py",
+        "templates/options.html.j2",
+        "tests/test_build_options_command.py"
       ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
+      "protected_paths_touched": []
     },
     {
-      "number": 4125,
-      "title": "design(options): one verdict surface \u2014 chrome keeps the caveat, drops the chip",
-      "head_ref": "claude/intelligent-elion-7c1bcc",
-      "updated_at": "2026-07-31T03:17:57Z",
+      "number": 4130,
+      "title": "fix(gex): IV-rank band must not render through a directional token",
+      "head_ref": "claude/magical-feynman-5d5479",
+      "updated_at": "2026-07-31T07:39:37Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 11,
+      "files_count": 2,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "mockups/oeu_workspace/options_mockup.html",
-        "mockups/oip_w1/w1_mockup.html",
-        "mockups/refs/oip/one_verdict_surface/01_chrome_en_dark.png",
-        "mockups/refs/oip/one_verdict_surface/02_chrome_en_light.png",
-        "mockups/refs/oip/one_verdict_surface/03_chrome_zh_dark.png",
-        "mockups/refs/oip/one_verdict_surface/04_chrome_mobile_375.png",
-        "mockups/refs/oip/one_verdict_surface/README.md",
-        "research/options_estate/W1_DESIGN_SPEC.md",
-        "research/options_estate/WORKSPACE_DESIGN_SPEC.md",
-        "templates/options.html.j2",
-        "tests/test_build_options_command.py"
+        "site/gex.js",
+        "tests/test_gex_js_iv_rank_color.py"
       ],
       "protected_paths_touched": []
     },
@@ -107,14 +194,15 @@
       "number": 4123,
       "title": "feat(oip-w1): nav front door + Ticker workbench depth \u2014 filmstrip, search, 5 new reads",
       "head_ref": "claude/oip-w1-build",
-      "updated_at": "2026-07-31T02:46:51Z",
+      "updated_at": "2026-07-31T06:43:26Z",
       "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 27,
-      "files_truncated": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 100,
+      "files_truncated": true,
       "files_error": false,
       "files": [
+        "engine/session_digest.py",
         "lib/illus.py",
         "mockups/refs/oip/w1/build/01_nav_flyout_en_dark.png",
         "mockups/refs/oip/w1/build/02_ticker_core_en_dark.png",
@@ -126,110 +214,31 @@
         "mockups/refs/oip/w1/build/06_gex_detail_head_filmstrip_en_dark.png",
         "mockups/refs/oip/w1/build/07_chrome_light_sanity.png",
         "mockups/refs/oip/w1/build/08_ticker_degraded_states_aapl_en_dark.png",
+        "mockups/refs/oip/w1/build/fix_b1_nav_flyout_js_enabled_en.png",
+        "mockups/refs/oip/w1/build/fix_b1_nav_flyout_js_enabled_zh.png",
+        "mockups/refs/oip/w1/build/fix_b2_wall_check_agree_disagree_en.png",
+        "mockups/refs/oip/w1/build/fix_b2_wall_check_agree_disagree_zh.png",
+        "mockups/refs/oip/w1/build/fix_b2_wall_check_disagree_tooltip_en.png",
+        "mockups/refs/oip/w1/build/fix_b2_wall_check_disagree_tooltip_zh.png",
+        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_high_coverage_en.png",
+        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_high_coverage_zh.png",
+        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_low_coverage_en.png",
+        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_low_coverage_zh.png",
+        "mockups/refs/oip/w1/build/fix_m1_filmstrip_real_minutes_zero_and_absent_en.png",
+        "mockups/refs/oip/w1/build/fix_m1_filmstrip_real_minutes_zero_and_absent_zh.png",
+        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_dark_en.png",
+        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_dark_zh.png",
+        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_light_en.png",
+        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_light_zh.png",
+        "mockups/refs/oip/w1/build/fix_m3_wall_check_mobile_375px_en.png",
+        "mockups/refs/oip/w1/build/fix_m3_wall_check_mobile_375px_zh.png",
+        "research/options_estate/W1_DESIGN_SPEC.md",
         "scripts/build_gex_board.py",
         "scripts/build_options_command.py",
         "scripts/build_session_digest.py",
-        "site/gex.js",
-        "site/illus.css",
-        "site/options.html",
-        "templates/_navlinks.html.j2",
-        "templates/gex.html.j2",
-        "templates/illus.css",
-        "templates/options.html.j2",
-        "tests/test_build_options_command.py",
-        "tests/test_gex_board_state_merge.py",
-        "tests/test_illus.py",
-        "tests/test_nav_submenu_icons.py",
-        "tests/test_oip_w1_nav_regroup.py",
-        "tests/test_session_digest.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4122,
-      "title": "fix(brain): plain-word projection for state enums at the chat read-tool boundary",
-      "head_ref": "claude/admiring-visvesvaraya-994feb",
-      "updated_at": "2026-07-31T02:48:00Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "app/deploy/update.sh",
-        "engine/neuralweb/analyst/protocol.md",
-        "engine/neuralweb/ask_brain.py",
-        "engine/neuralweb/chat_plain_words.py",
-        "research/MASTERMIND_SUPERINTELLIGENCE_MASTERPLAN.md",
-        "tests/test_chat_plain_words.py",
-        "tests/test_deploy_update_self_heal.py"
-      ],
-      "protected_paths_touched": [
-        "engine/neuralweb/analyst/protocol.md",
-        "engine/neuralweb/ask_brain.py",
-        "engine/neuralweb/chat_plain_words.py"
-      ]
-    },
-    {
-      "number": 4120,
-      "title": "fix(billing): stop leaking the Stripe runbook in public error bodies",
-      "head_ref": "claude/fervent-diffie-4fdefa",
-      "updated_at": "2026-07-31T02:29:09Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "app/billing.py",
-        "tests/test_billing_offers.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4119,
-      "title": "fix(api): pin /api/health commit to the process's build, surface checkout drift",
-      "head_ref": "claude/zealous-mclaren-ed83dc",
-      "updated_at": "2026-07-31T02:20:05Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "app/main.py",
-        "tests/test_health_commit_process_pinned.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4117,
-      "title": "Normalize navigation families and rank ticker search by volume",
-      "head_ref": "codex/nav-unify-page-families-20260730",
-      "updated_at": "2026-07-31T03:38:27Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 100,
-      "files_truncated": true,
-      "files_error": false,
-      "files": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "collectors/canada_universe.py",
-        "collectors/intl_universe.py",
-        "lib/ticker_popularity.py",
-        "scripts/build_canada_library.py",
-        "scripts/build_china_library.py",
-        "scripts/build_hk_library.py",
-        "scripts/build_intl_library.py",
-        "scripts/build_stock_library.py",
-        "scripts/build_vector.py",
         "site/_mockup_ccw_credit_desk.html",
         "site/about-research.html",
+        "site/account.js",
         "site/advanced.html",
         "site/ai_desk.html",
         "site/aibrief.html",
@@ -240,7 +249,6 @@
         "site/allocation_hk.html",
         "site/alt_data.html",
         "site/anticipation.html",
-        "site/assets/css/afee43a4.css",
         "site/basket/ai_agents.html",
         "site/basket/ai_infra.html",
         "site/basket/ai_neoclouds.html",
@@ -255,6 +263,7 @@
         "site/basket/defense.html",
         "site/basket/defensives.html",
         "site/basket/energy_complex.html",
+        "site/basket/gold_miners.html",
         "site/basket/housing.html",
         "site/basket/industrial_distribution.html",
         "site/basket/insurance.html",
@@ -292,52 +301,9 @@
         "site/basket_canada/ca_base_metals.html",
         "site/basket_canada/ca_consumer.html",
         "site/basket_canada/ca_gold.html",
-        "site/basket_canada/ca_insurers.html",
-        "site/basket_canada/ca_materials.html",
-        "site/basket_canada/ca_oil_gas.html",
-        "site/basket_canada/ca_pipelines.html",
-        "site/basket_canada/ca_rails_ind.html",
-        "site/basket_canada/ca_reits.html",
-        "site/basket_canada/ca_silver_royalty.html",
-        "site/basket_canada/ca_tech.html",
-        "site/basket_canada/ca_telecom.html",
-        "site/basket_canada/ca_uranium.html",
-        "site/basket_canada/ca_utilities.html",
-        "site/basket_china/cn_ai_compute.html",
-        "site/basket_china/cn_appliances.html",
-        "site/basket_china/cn_autos.html",
-        "site/basket_china/cn_baijiu.html",
-        "site/basket_china/cn_banks.html",
-        "site/basket_china/cn_battery.html",
-        "site/basket_china/cn_brokers.html",
-        "site/basket_china/cn_coal.html",
-        "site/basket_china/cn_consumer_elec.html",
-        "site/basket_china/cn_defense.html",
-        "site/basket_china/cn_food_bev.html",
-        "site/basket_china/cn_gold.html",
-        "site/basket_china/cn_insurers.html",
-        "site/basket_china/cn_med_devices.html"
+        "site/basket_canada/ca_insurers.html"
       ],
       "protected_paths_touched": []
-    },
-    {
-      "number": 4112,
-      "title": "fix(brain): ticker-shaped tokens no longer count as English prose in _expected_lang",
-      "head_ref": "claude/adoring-ellis-f0387b",
-      "updated_at": "2026-07-31T01:23:42Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "engine/neuralweb/brain_gateway.py",
-        "tests/test_brain_gateway.py"
-      ],
-      "protected_paths_touched": [
-        "engine/neuralweb/brain_gateway.py"
-      ]
     },
     {
       "number": 4105,
@@ -438,8 +404,8 @@
       "head_ref": "claude/wire-rank-sidecar",
       "updated_at": "2026-07-30T19:22:58Z",
       "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
       "files_count": 7,
       "files_truncated": false,
       "files_error": false,
@@ -668,123 +634,6 @@
       "protected_paths_touched": []
     },
     {
-      "number": 4030,
-      "title": "feat(admin): marketing factory floor \u2014 surface the losses, not just the output",
-      "head_ref": "claude/marketing-factory-floor-console",
-      "updated_at": "2026-07-31T03:11:38Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 100,
-      "files_truncated": true,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        ".gitignore",
-        "admin/marketing_floor.py",
-        "admin/server.py",
-        "admin/static/app.js",
-        "admin/static/styles.css",
-        "config/marketing.yml",
-        "config/personas/chart_gremlin.yml",
-        "config/personas/cici.yml",
-        "config/personas/control_v3.yml",
-        "config/personas/corp_desk.yml",
-        "config/personas/flagship.yml",
-        "config/personas/founder.yml",
-        "config/personas/kelly.yml",
-        "config/personas/mastermind_news.yml",
-        "config/personas/mastermind_research.yml",
-        "config/personas/meagan.yml",
-        "config/personas/news_flash.yml",
-        "config/personas/receipts.yml",
-        "config/personas/research_a.yml",
-        "config/personas/research_b.yml",
-        "config/personas/research_c.yml",
-        "config/personas/sophia.yml",
-        "config/personas/theme_desk.yml",
-        "config/personas/zh_navigator.yml",
-        "data/ai_costs/usage.jsonl",
-        "data/marketing/content_plan.json",
-        "data/marketing/outbox/activity.jsonl",
-        "data/marketing/outbox/items.jsonl",
-        "data/marketing/outbox/media/2026-07-30/chart-001.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-002.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-003.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-004.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-005.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-006.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-007.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-008.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-015.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-019.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-023.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-024.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-039.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-043.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-049.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-056.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-062.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-063.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-064.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-065.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-066.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-067.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-068.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-070.svg",
-        "data/marketing/outbox/media/2026-07-30/chart-072.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1546Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1623Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1635Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1658Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1710Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1721Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1733Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1745Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1809Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1844Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1910Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1923Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acgl-1935Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1533Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1539Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1546Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1558Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1611Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1623Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1635Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1647Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1658Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1710Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1721Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1733Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1745Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1756Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1809Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1821Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1832Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1844Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1856Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1910Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1923Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1935Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1947Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-1958Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-acn-2009Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1546Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1558Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1611Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1623Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1635Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1647Z.svg",
-        "data/marketing/outbox/media/2026-07-30/hottape-mover_drop-adbe-1658Z.svg"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
       "number": 4013,
       "title": "massive_stock_day: revive the frozen whole-market store \u2014 collect-lane creds + R2 round-trip, store-absent fence, loud tripwires",
       "head_ref": "claude/youthful-jang-0434e9",
@@ -879,90 +728,8 @@
   ],
   "collisions": [
     {
-      "pr_a": 4127,
-      "pr_b": 4117,
-      "shared_files": [
-        "site/allocation.html",
-        "site/allocation_canada.html",
-        "site/allocation_china.html",
-        "site/allocation_hk.html"
-      ],
-      "shared_count": 4,
-      "any_protected": false
-    },
-    {
-      "pr_a": 4126,
-      "pr_b": 4070,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4126,
-      "pr_b": 4049,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4126,
-      "pr_b": 4030,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4126,
-      "pr_b": 3879,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4125,
-      "pr_b": 4123,
-      "shared_files": [
-        "templates/options.html.j2",
-        "tests/test_build_options_command.py"
-      ],
-      "shared_count": 2,
-      "any_protected": false
-    },
-    {
-      "pr_a": 4117,
-      "pr_b": 4105,
-      "shared_files": [
-        "AGENTS.md",
-        "CLAUDE.md"
-      ],
-      "shared_count": 2,
-      "any_protected": false
-    },
-    {
       "pr_a": 4070,
       "pr_b": 4049,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4070,
-      "pr_b": 4030,
       "shared_files": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml"
@@ -1002,16 +769,6 @@
     },
     {
       "pr_a": 4049,
-      "pr_b": 4030,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4049,
       "pr_b": 3879,
       "shared_files": [
         ".github/ci/legacy-jobs.yml",
@@ -1021,32 +778,22 @@
       "any_protected": true
     },
     {
-      "pr_a": 4030,
-      "pr_b": 3879,
+      "pr_a": 4154,
+      "pr_b": 4067,
       "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4126,
-      "pr_b": 4123,
-      "shared_files": [
-        "tests/test_nav_submenu_icons.py"
+        "engine/marketing/press_lane.py"
       ],
       "shared_count": 1,
       "any_protected": false
     },
     {
-      "pr_a": 4126,
-      "pr_b": 4056,
+      "pr_a": 4132,
+      "pr_b": 4123,
       "shared_files": [
-        ".github/workflows/ci.yml"
+        "scripts/build_options_command.py"
       ],
       "shared_count": 1,
-      "any_protected": true
+      "any_protected": false
     },
     {
       "pr_a": 4070,
@@ -1077,15 +824,6 @@
     },
     {
       "pr_a": 4056,
-      "pr_b": 4030,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4056,
       "pr_b": 3879,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -1096,9 +834,159 @@
   ],
   "recent_merged": [
     {
+      "number": 4160,
+      "title": "Fix Research Vault stale first paint",
+      "merged_at": "2026-08-01T03:30:49Z"
+    },
+    {
+      "number": 4158,
+      "title": "Preserve mobile dashboard position after Terminal",
+      "merged_at": "2026-08-01T02:33:24Z"
+    },
+    {
+      "number": 4157,
+      "title": "fix(liveflow): retry probe pulls once \u2014 transient flake must not condemn the day to full_day",
+      "merged_at": "2026-08-01T02:08:35Z"
+    },
+    {
+      "number": 4155,
+      "title": "Finalize mobile Terminal cache recovery",
+      "merged_at": "2026-08-01T01:54:03Z"
+    },
+    {
+      "number": 4153,
+      "title": "feat(options-hub): gex_history dates.json index + bounded self-heal (R0.10)",
+      "merged_at": "2026-08-01T01:36:26Z"
+    },
+    {
+      "number": 4152,
+      "title": "fix(options-plane): R0 repair & relight \u2014 seal top-up, cadence probe fix, schema v2, dead-man anchors",
+      "merged_at": "2026-08-01T01:35:14Z"
+    },
+    {
+      "number": 4151,
+      "title": "Fix cached mobile Terminal lifecycle bundle",
+      "merged_at": "2026-08-01T01:28:42Z"
+    },
+    {
+      "number": 4150,
+      "title": "fix(admin): analytics in Pacific time, stitch per-tab sessions into visits, hide dev + scraper traffic",
+      "merged_at": "2026-08-01T01:21:24Z"
+    },
+    {
+      "number": 4149,
+      "title": "Fix mobile Terminal reopen lifecycle",
+      "merged_at": "2026-08-01T00:55:12Z"
+    },
+    {
+      "number": 4148,
+      "title": "prophet: R0.7 quick wires \u2014 market overlay inputs + index whitelist expansion",
+      "merged_at": "2026-08-01T01:31:29Z"
+    },
+    {
+      "number": 4146,
+      "title": "Make folded International markets click-only",
+      "merged_at": "2026-07-31T22:20:03Z"
+    },
+    {
+      "number": 4145,
+      "title": "fix(access): serve public scene motion assets",
+      "merged_at": "2026-07-31T12:35:53Z"
+    },
+    {
+      "number": 4144,
+      "title": "fix(china): align heat grades with published precision",
+      "merged_at": "2026-07-31T11:20:28Z"
+    },
+    {
+      "number": 4143,
+      "title": "Contain long ticker labels and lighten top navigation",
+      "merged_at": "2026-07-31T10:34:31Z"
+    },
+    {
+      "number": 4142,
+      "title": "Replace Macro mono market-data typography",
+      "merged_at": "2026-07-31T11:46:09Z"
+    },
+    {
+      "number": 4141,
+      "title": "Restore top-level market hover; keep folded countries click-only",
+      "merged_at": "2026-07-31T10:23:51Z"
+    },
+    {
+      "number": 4140,
+      "title": "design: ship narrative motion system across public product story",
+      "merged_at": "2026-07-31T11:43:01Z"
+    },
+    {
+      "number": 4139,
+      "title": "Fix click-only market menus and nested drill layout",
+      "merged_at": "2026-07-31T09:19:32Z"
+    },
+    {
+      "number": 4138,
+      "title": "design(macro): adopt Attio typography roles",
+      "merged_at": "2026-07-31T09:35:28Z"
+    },
+    {
+      "number": 4137,
+      "title": "feat: showcase complementary indicator systems",
+      "merged_at": "2026-07-31T23:16:26Z"
+    },
+    {
+      "number": 4136,
+      "title": "Landing: subtle elastic motion for existing hero grid",
+      "merged_at": "2026-07-31T08:52:53Z"
+    },
+    {
+      "number": 4135,
+      "title": "fix(flow-leaders): plain words for same-day expiry, and a guard that can see the hover tier",
+      "merged_at": "2026-07-31T10:19:13Z"
+    },
+    {
+      "number": 4133,
+      "title": "feat(mastermind): live in-chat charts, lane-scaled answers, richer narration (ui.mm_brain_v3)",
+      "merged_at": "2026-07-31T10:19:16Z"
+    },
+    {
+      "number": 4131,
+      "title": "Fix hidden mega-menu drill accessibility",
+      "merged_at": "2026-07-31T07:39:03Z"
+    },
+    {
+      "number": 4129,
+      "title": "feat: show indicator access in pricing tiers",
+      "merged_at": "2026-07-31T04:46:19Z"
+    },
+    {
+      "number": 4128,
+      "title": "Publish canonical product navigation on Start",
+      "merged_at": "2026-07-31T04:19:13Z"
+    },
+    {
+      "number": 4127,
+      "title": "Refresh non-Bitcoin macro desk surfaces",
+      "merged_at": "2026-07-31T04:05:04Z"
+    },
+    {
+      "number": 4126,
+      "title": "test(nav): fix the icon-set test's render premise, and light up its dark sibling",
+      "merged_at": "2026-07-31T04:47:46Z"
+    },
+    {
+      "number": 4125,
+      "title": "design(options): one verdict surface \u2014 chrome keeps the caveat, drops the chip",
+      "merged_at": "2026-07-31T04:47:48Z"
+    },
+    {
       "number": 4124,
       "title": "Align crypto dashboards with MastermindX house style",
       "merged_at": "2026-07-31T03:34:34Z"
+    },
+    {
+      "number": 4122,
+      "title": "fix(brain): plain-word projection for state enums at the chat read-tool boundary",
+      "merged_at": "2026-07-31T04:47:51Z"
     },
     {
       "number": 4121,
@@ -1106,9 +994,24 @@
       "merged_at": "2026-07-31T03:02:40Z"
     },
     {
+      "number": 4120,
+      "title": "fix(billing): stop leaking the Stripe runbook in public error bodies",
+      "merged_at": "2026-07-31T04:47:54Z"
+    },
+    {
+      "number": 4119,
+      "title": "fix(api): pin /api/health commit to the process's build, surface checkout drift",
+      "merged_at": "2026-07-31T04:47:56Z"
+    },
+    {
       "number": 4118,
       "title": "Speed up regional macro dashboard cold loads",
       "merged_at": "2026-07-31T02:34:15Z"
+    },
+    {
+      "number": 4117,
+      "title": "Normalize navigation families and rank ticker search by volume",
+      "merged_at": "2026-07-31T04:11:33Z"
     },
     {
       "number": 4116,
@@ -1129,6 +1032,11 @@
       "number": 4113,
       "title": "Fix reports timeline layout and typography",
       "merged_at": "2026-07-31T01:38:18Z"
+    },
+    {
+      "number": 4112,
+      "title": "fix(brain): ticker-shaped tokens no longer count as English prose in _expected_lang",
+      "merged_at": "2026-07-31T04:47:58Z"
     },
     {
       "number": 4111,
@@ -1459,6 +1367,11 @@
       "number": 4031,
       "title": "Fix PSS-RH1 committed-ledger accrual fence",
       "merged_at": "2026-07-30T05:17:37Z"
+    },
+    {
+      "number": 4030,
+      "title": "fix(marketing): the X pipeline drew 8,081 cards and hosted none \u2014 arm the lanes, close the gates",
+      "merged_at": "2026-07-31T11:58:04Z"
     },
     {
       "number": 4028,
@@ -3419,181 +3332,6 @@
       "number": 3601,
       "title": "fix(billing): unbreak the portal for subscribers, land checkout on the desk, script the portal config",
       "merged_at": "2026-07-26T11:49:52Z"
-    },
-    {
-      "number": 3600,
-      "title": "fix(marketing): serve the launch card from a public path",
-      "merged_at": "2026-07-26T07:19:11Z"
-    },
-    {
-      "number": 3599,
-      "title": "fix(odds): restore data/odds_ohlcv from R2 in the engine preamble",
-      "merged_at": "2026-07-26T07:08:51Z"
-    },
-    {
-      "number": 3598,
-      "title": "feat(support-email): W1 spine \u2014 schema, mailer ledger, public ticket intake, admin Support console",
-      "merged_at": "2026-07-26T07:57:18Z"
-    },
-    {
-      "number": 3597,
-      "title": "fix(china-validation): count evidence, not rows \u2014 the fundflow/chips grid went daily",
-      "merged_at": "2026-07-26T07:19:25Z"
-    },
-    {
-      "number": 3596,
-      "title": "fix(tushare-history): kill the structural 4-day staleness \u2014 contiguous daily grid anchored on the newest close",
-      "merged_at": "2026-07-26T07:48:27Z"
-    },
-    {
-      "number": 3595,
-      "title": "test(desk-writers): run the six scored-ledger suites that no CI job named",
-      "merged_at": "2026-07-26T07:32:33Z"
-    },
-    {
-      "number": 3593,
-      "title": "fix(landing): load real expanded Archivo (wdth 125) \u2014 the display face never rendered",
-      "merged_at": "2026-07-26T07:29:23Z"
-    },
-    {
-      "number": 3592,
-      "title": "feat(legal): Privacy Policy, Terms & Disclaimer pages + public-boundary wiring",
-      "merged_at": "2026-07-26T06:46:54Z"
-    },
-    {
-      "number": 3591,
-      "title": "perf(research-vault): parallelize ingest receipt scan (unblocks 20k backfill)",
-      "merged_at": "2026-07-26T06:58:10Z"
-    },
-    {
-      "number": 3590,
-      "title": "feat(options): the Options workspace \u2014 one canonical surface, 4 modes (OEU M-CMD)",
-      "merged_at": "2026-07-26T07:02:20Z"
-    },
-    {
-      "number": 3589,
-      "title": "test(research-vault): guard report titles over the REAL catalog, not a fixture",
-      "merged_at": "2026-07-26T06:54:46Z"
-    },
-    {
-      "number": 3588,
-      "title": "feat(chronicle): W0 \u2014 deterministic market-context timeline spine",
-      "merged_at": "2026-07-26T11:50:08Z"
-    },
-    {
-      "number": 3587,
-      "title": "fix(ci): un-deaden 69 GitHub annotations that logging silently swallowed",
-      "merged_at": "2026-07-26T07:16:10Z"
-    },
-    {
-      "number": 3586,
-      "title": "feat(brain): live reasoning timeline + Fast/Pro latency overhaul",
-      "merged_at": "2026-07-26T06:50:35Z"
-    },
-    {
-      "number": 3585,
-      "title": "fix(marketing): stop the weekend lane shipping one repeated headline",
-      "merged_at": "2026-07-26T06:48:41Z"
-    },
-    {
-      "number": 3584,
-      "title": "research(china): native data + Mastermind context masterplan \u2014 W0 catalogs + probe harness",
-      "merged_at": "2026-07-26T06:31:11Z"
-    },
-    {
-      "number": 3583,
-      "title": "feat(personality): PSS-W3 Prophet tailored-gate shadow lane",
-      "merged_at": "2026-07-26T06:45:55Z"
-    },
-    {
-      "number": 3582,
-      "title": "feat(nav): fold the non-home country menus into International",
-      "merged_at": "2026-07-26T06:56:08Z"
-    },
-    {
-      "number": 3581,
-      "title": "research(personality): PSS-F1 down-volume envelope decay \u2014 prereg + results (falsifier not cleared)",
-      "merged_at": "2026-07-26T07:14:23Z"
-    },
-    {
-      "number": 3580,
-      "title": "feat(spine): give stock_desk the scored ledger the spine already registered",
-      "merged_at": "2026-07-26T06:40:09Z"
-    },
-    {
-      "number": 3579,
-      "title": "fix(pooling): pre-register an arming margin floor \u2014 a 1e-5 lift must not arm the live desk weights",
-      "merged_at": "2026-07-26T06:40:15Z"
-    },
-    {
-      "number": 3578,
-      "title": "fix(leader-radar): express-lane safety \u2014 provenance gate, PIT view caps, rs freshness, loud fail-softs, byte-stable rebakes",
-      "merged_at": "2026-07-26T07:11:40Z"
-    },
-    {
-      "number": 3577,
-      "title": "research(personality): W-LAB \u00a75 audit verdicts (audit-before-change gate satisfied)",
-      "merged_at": "2026-07-26T06:16:32Z"
-    },
-    {
-      "number": 3576,
-      "title": "feat(txi): W5 \u2014 Loop-C closure (autonomous chain proposals via the CHF lane, gated)",
-      "merged_at": "2026-07-26T11:50:14Z"
-    },
-    {
-      "number": 3575,
-      "title": "docs(support-email): charter the Support & Email Estate masterplan",
-      "merged_at": "2026-07-26T06:17:24Z"
-    },
-    {
-      "number": 3574,
-      "title": "feat(brain): chat turns survive the browser; sticky Pro lane; Deep Research pill",
-      "merged_at": "2026-07-26T06:31:57Z"
-    },
-    {
-      "number": 3573,
-      "title": "fix(assets,onboarding): unfreeze ?v= stamps, load the sheet at any page depth, detect dark-by-default pages",
-      "merged_at": "2026-07-26T06:55:20Z"
-    },
-    {
-      "number": 3572,
-      "title": "fix(odds): loud fail-soft + coverage census for the nightly odds desk",
-      "merged_at": "2026-07-26T06:11:36Z"
-    },
-    {
-      "number": 3571,
-      "title": "fix(ci): drop the deleted test path that was disabling 2084 heartbeat tests",
-      "merged_at": "2026-07-26T06:31:35Z"
-    },
-    {
-      "number": 3570,
-      "title": "fix(research_vault): recover real report titles instead of shipping PDF filenames",
-      "merged_at": "2026-07-26T06:23:31Z"
-    },
-    {
-      "number": 3568,
-      "title": "fix(calibration): sweep thematic_desk's null \u2014 theme_rel_return was unmeasured",
-      "merged_at": "2026-07-26T06:18:35Z"
-    },
-    {
-      "number": 3567,
-      "title": "fix(calibration): thematic_desk's null uses the window it was GRADED on, + its missing outcome spine",
-      "merged_at": "2026-07-26T06:54:54Z"
-    },
-    {
-      "number": 3566,
-      "title": "test(site-access): catch the exemption+gitignore pair, not just the gitignore",
-      "merged_at": "2026-07-26T06:44:33Z"
-    },
-    {
-      "number": 3564,
-      "title": "test(tier-gate): pin the job to its own ci.yml trigger paths",
-      "merged_at": "2026-07-26T06:16:31Z"
-    },
-    {
-      "number": 3563,
-      "title": "fix(render-lanes): light up the daily-only class \u2014 tech_lab/impulse/foresight express coverage, odds/leader_radar documented out, real ::warning annotations",
-      "merged_at": "2026-07-26T06:11:34Z"
     }
   ]
 }
