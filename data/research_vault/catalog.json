@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T14:15:32.683799+00:00",
-  "count": 529,
+  "generated_at": "2026-08-01T14:20:30.605781+00:00",
+  "count": 532,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1233,6 +1233,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ppwhff1xvqo-b7443c",
+      "title": "Reddit July 31",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T15:54:30Z",
+      "summary_points": [
+        "**Strong Monetization Metrics**: Revenue $805mn (+61% YoY), EBITDA $343mn (+43% YoY), ARPU $6.18 (+36% YoY) confirm robust monetization despite user concerns, with ad revenue +64% y/y to $762m and ARPU up 51% (US).",
+        "**Google Policy Shifts & Traffic Risk**: Google search volatility and AI Overviews reducing direct traffic threaten US DAUq decline and international growth, creating near-term headwinds.",
+        "**Critical 2027 Google Renewal Risk**: 2027 agreement expiry central to user acquisition/licensing revenue; renewal requires improved licensing economics and traffic protections, with broad withdrawal damaging mutual value.",
+        "**Price Target Cut Amid Monetization Visibility Risks**: Price target lowered to $200 (-20%) from $250 due to user concerns and data licensing uncertainty, despite Q2 2026 revenue beating estimates ($805mn vs.",
+        "$725mn est)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-bswafebxwrt-a6e31c",
       "title": "JPM JPM International Ma",
       "institution": "J.P. Morgan",
@@ -1348,6 +1369,23 @@
         "**Japan Rate Hike Signals**: MPM statement shifts hinting at September rate hike directly alter global yield curves and JGB positioning, impacting cross-currency flows.",
         "**Fed Policy Ambiguity**: FOMC recap showing no action combined with inflation frameworks task force introduces critical uncertainty on future rate path, complicating asset allocation.",
         "**Corporate Earnings Catalysts**: SpaceX's first report and biotech giants (Eli Lilly, Novo Nordisk) alongside tech (AMD) and industrials (Siemens) amplify sector-specific risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xtatwrhbvxf-6d2ff4",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T10:39:27Z",
+      "summary_points": [
+        "**Bucher H1 Miss**: H1 results miss, low Ag equipment momentum, revised estimates to CHF330 (from CHF340), demand recovery delayed to H1 2027 (critical risk factor) - **Snam Regulation Risk**: Gas transport regulation 2028-31 introduces material downside risk to 2028 earnings, final regulation delayed until 2027 - **Geopolitical Risks**: Oil rebound on Trump’s Iran tensions, Russian fuel supply disruptions (refinery strikes, CPC interruptions), Chinese clean tech exports supporting gold; midterms pose key risk to stock market stability - **Rolls-Royce EBITA Lift**: 2026 EBITA upgraded 19% to upper guide range, FCF lifted 6%, sustained beat-and-raise momentum with operational improvements - **Heidelberg Upgrades**: Q2 results drive FY2026 revenue estimate +3.2%, EBITDA +0.6%, volumes positive since Q1 2022, Transformation Accelerator benefits"
       ],
       "tags": [],
       "tickers": [],
@@ -1541,6 +1579,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jsjbjhdzm4o-c6e299",
+      "title": "EcoFlash 30July2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-31T00:04:41Z",
+      "summary_points": [
+        "Document Missing**: Source document not provided for extraction; critical data unavailable for analysis **Fundamentals Gap**: No fundamental data (earnings, revenue, margins) included to assess company/sector health **Risk Factor Omission**: Key risk factors (geopolitical, policy shifts, flow data) absent from input list"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },
