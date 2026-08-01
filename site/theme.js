@@ -5561,12 +5561,15 @@
     });
   }
 
-  function unlockDashboard() {
+  function unlockDashboard(options) {
     if (!state.bodyStyle) return;
     var restoreX = state.scrollX;
     var restoreY = state.scrollY;
     var restoreBehavior = state.rootScrollBehavior;
-    var restoreFocus = state.activeElement;
+    // Mobile/touch browsers can honor preventScroll late, after our scroll pin,
+    // and jump the dashboard to the focused ticker. The remount path skips that
+    // keyboard-only restoration; desktop keeps it for accessibility.
+    var restoreFocus = options && options.restoreFocus === false ? null : state.activeElement;
     state.locked.forEach(function (rec) {
       try { rec.el.inert = rec.inert; } catch (e) {}
       if (rec.aria == null) rec.el.removeAttribute('aria-hidden');
@@ -5785,7 +5788,7 @@
     if (remount) {
       state.overlay.classList.remove('is-closing');
       destroyFrame();
-      unlockDashboard();
+      unlockDashboard({ restoreFocus: false });
       return;
     }
 
