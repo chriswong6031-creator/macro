@@ -263,3 +263,51 @@ def test_recall_sessions_signed_in_reaches_module(tmp_path, monkeypatch):
     out = _dispatch("recall_sessions", {"days": 7, "limit": 3}, tmp_path, user_id="u1")
     assert out.get("schema") == "brain.session_recall.v1"
     bum.clear_cache()
+
+
+# ── 10. Analyst OS W4 — vault full-report escalation gate (operator ruling) ──
+
+def test_report_mode_insider_gets_pro_required(tmp_path, monkeypatch):
+    """Operator ruling 2026-07-31: full reports are PRO-only; Insider keeps summaries."""
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "insider", "status": "active"})
+    out = _dispatch("search_research",
+                    {"mode": "report", "report_id": "x1"}, tmp_path, user_id="u1")
+    assert out.get("error") == "pro_required"
+    assert out.get("tier") == "insider"
+
+
+def test_report_mode_pro_reaches_module_with_user_ctx(tmp_path, monkeypatch):
+    from engine.neuralweb import brain_market_intel as bmi
+    seen = {}
+
+    def _capture(root, query="", limit=5, *, mode="search", report_id="",
+                 user_ctx=None, now=None):
+        seen.update(mode=mode, report_id=report_id, user_ctx=user_ctx)
+        return {"schema": "brain.research_report.v1"}
+
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "pro", "status": "active"})
+    monkeypatch.setattr(bmi, "search_research", _capture)
+    out = _dispatch("search_research",
+                    {"mode": "report", "report_id": "gs-1"}, tmp_path, user_id="u7")
+    assert out.get("schema") == "brain.research_report.v1"
+    assert seen["mode"] == "report" and seen["report_id"] == "gs-1"
+    assert seen["user_ctx"] == {"user_id": "u7"}
+
+
+def test_search_mode_still_serves_insider_with_no_user_ctx(tmp_path, monkeypatch):
+    from engine.neuralweb import brain_market_intel as bmi
+    seen = {}
+
+    def _capture(root, query="", limit=5, *, mode="search", report_id="",
+                 user_ctx=None, now=None):
+        seen.update(mode=mode, user_ctx=user_ctx)
+        return {"results": []}
+
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "insider", "status": "active"})
+    monkeypatch.setattr(bmi, "search_research", _capture)
+    out = _dispatch("search_research", {"query": "oil"}, tmp_path, user_id="u1")
+    assert "results" in out
+    assert seen["mode"] == "search" and seen["user_ctx"] is None

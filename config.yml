@@ -4297,6 +4297,22 @@ news_translation:
                                   # news tape). Cost ~few cents/day on deepseek-chat (cache-deduped;
                                   # key already wired into those lanes' news steps). Degrades to
                                   # cache-only if a lane has no key (_client() -> None).
+  # PROVIDER — THIS GLOBAL BLOCK STAYS DEEPSEEK (adjudicated 2026-07-31). These
+  # values serve the nightly build_news title_zh fill, the render-family lanes and
+  # the china_news EN direction, which run on GitHub runners that HAVE the
+  # DEEPSEEK_API_KEY repo secret and have NO codex CLI or attached login. Flipping
+  # the global to codex would dark every one of them.
+  #
+  # The press daemon is the exact inverse — the VPS carries the attached codex
+  # login and has never had a DEEPSEEK key — so the codex/Terra routing lives as a
+  # PRESS-LANE OVERRIDE in scripts/marketing_fastlane_daemon.py::_zh_cfg, beside
+  # the cache_dir/usage_sink overrides that lane already applies. Those override
+  # values, for reference (do NOT uncomment here — that would move them global):
+  #   provider: codex
+  #   model: gpt-5.6-terra
+  #   codex_reasoning_effort: low
+  # engine/news_translate.py speaks both; one provider at a time, chosen by the cfg
+  # the caller passes. There is deliberately no auto-failover chain.
   provider: deepseek
   model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic

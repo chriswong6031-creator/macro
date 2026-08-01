@@ -120,9 +120,12 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(research_mod, "_build_store", lambda: store)
 
     # Reset the module-level catalog/corpus caches between tests (they memoize).
+    # The corpus cache moved into engine.research_vault.corpus in W4 (one local
+    # copy per PROCESS, shared with the brain's report reader), so it is reset at
+    # its new home — resetting it here would otherwise be a silent no-op and the
+    # first seeded corpus of the session would decide what every later test reads.
     research_mod._CATALOG_CACHE.clear()
-    research_mod._corpus_path = None
-    research_mod._corpus_fetched_at = 0.0
+    corpus_mod.reset_cache()
 
     # Control knobs the tests flip.
     ctl = {"tier": "free", "lifetime": False,
@@ -856,7 +859,12 @@ def test_view_route_429_when_rate_limited(client, monkeypatch):
 def test_corpus_conn_nonblocking_refresh(monkeypatch, tmp_path):
     """A present local corpus is served immediately; a stale one triggers ONE
     background refresh instead of an inline re-download (a backfilled corpus is
-    far too large to fetch inside a user's search request)."""
+    far too large to fetch inside a user's search request).
+
+    The cache state lives in engine.research_vault.corpus since W4 (the router
+    delegates so the brain's report reader shares the one local copy), so the
+    knobs are pinned there; the route-side entry point under test is unchanged.
+    """
     import time as _time
     from app import research as R
     from engine.research_vault import corpus as C
@@ -875,9 +883,9 @@ def test_corpus_conn_nonblocking_refresh(monkeypatch, tmp_path):
             return src.read_bytes()
 
     monkeypatch.setattr(R, "_build_store", lambda: FakeStore())
-    monkeypatch.setattr(R, "_corpus_path", None)
-    monkeypatch.setattr(R, "_corpus_fetched_at", 0.0)
-    monkeypatch.setattr(R, "_corpus_refreshing", False)
+    monkeypatch.setattr(C, "_corpus_path", None)
+    monkeypatch.setattr(C, "_corpus_fetched_at", 0.0)
+    monkeypatch.setattr(C, "_corpus_refreshing", False)
 
     # First call: no local copy -> blocks once, downloads (fetch #1).
     c1 = R._corpus_conn()
@@ -893,15 +901,15 @@ def test_corpus_conn_nonblocking_refresh(monkeypatch, tmp_path):
 
     # Force stale: the call returns IMMEDIATELY (old copy) and kicks exactly one
     # background refresh (fetch #2).
-    monkeypatch.setattr(R, "_corpus_fetched_at",
-                        _time.monotonic() - R._CORPUS_TTL - 1)
+    monkeypatch.setattr(C, "_corpus_fetched_at",
+                        _time.monotonic() - C.CORPUS_TTL - 1)
     c3 = R._corpus_conn()
     assert c3 is not None
     c3.close()
     deadline = _time.time() + 5
     while _time.time() < deadline:
-        with R._CORPUS_LOCK:
-            if not R._corpus_refreshing:
+        with C.CORPUS_LOCK:
+            if not C._corpus_refreshing:
                 break
         _time.sleep(0.05)
     assert fetches["n"] == 2

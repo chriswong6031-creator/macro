@@ -190,7 +190,11 @@ def test_zh_pass_writes_nothing_inside_the_repo():
                          cwd=ROOT, capture_output=True, text=True)
     assert out.returncode == 0, "the lane cache directory is NOT gitignored"
     assert cfg["usage_sink"] == "none", "must not append to the nightly-owned ledger"
-    assert cfg["max_retries"] == 0 and cfg["timeout_s"] <= 20
+    # The real constraint is the ~75s tick whose heartbeat only touches after it
+    # returns: one hung endpoint must not read to the monitor as a dead daemon.
+    # The bound was 20 while this lane spoke HTTP to DeepSeek; it moved to 45 with
+    # the 2026-07-31 switch to codex, where a turn is a CLI spawn PLUS a model call.
+    assert cfg["max_retries"] == 0 and cfg["timeout_s"] <= 60
 
 
 def test_zh_defaults_off_when_the_config_key_is_removed():

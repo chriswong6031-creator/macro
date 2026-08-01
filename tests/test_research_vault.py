@@ -4,6 +4,10 @@ Covers:
   - sidecar normalization + id derivation + EVERY fallback (missing/blank/bad-JSON);
   - catalog upsert ordering (newest-first) + institutions rollup + idempotent replace;
   - corpus FTS5 build + a body-only search (proves BODY is searchable) + facet filter;
+  - the SHARED corpus reader (W4): the process-wide read-through cache moved out of
+    app/research.py (serve-stale-while-revalidate, one download per process) plus
+    ``get_document`` — its literal field whitelist, its doc_id shape gate, and its
+    fail-soft None on a missing/dead/raising store;
   - ingest end-to-end via the LOCAL store with tiny fixture PDFs — idempotency
     (second run ingests 0), receipt written, needs_metadata path, top-picks prefix;
   - the PUBLIC first-pages excerpt (engine/research_vault/excerpt.py): page-window
@@ -617,6 +621,171 @@ def test_corpus_upsert_replaces_not_duplicates(tmp_path):
     n = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     assert n == 1
     conn.close()
+
+
+# ===========================================================================
+# corpus: the SHARED read-through cache + by-id reader (W4)
+# ===========================================================================
+# These pin the machinery app/research.py used to own privately. It moved here so
+# the router and the Mastermind brain (same FastAPI process) share ONE local copy
+# — see the block comment above corpus.corpus_connection.
+
+def _seed_corpus_store(root: Path, rows: list[tuple[dict, str]]) -> LocalStore:
+    """A LocalStore holding a corpus.sqlite built from (item, body) pairs."""
+    store = LocalStore(root / "store")
+    build = root / "_build_corpus.sqlite"
+    conn = corpus_mod.open_db(build)
+    for item, body in rows:
+        corpus_mod.upsert(conn, item, body)
+    conn.close()
+    store.put_bytes(corpus_mod.CORPUS_KEY, build.read_bytes(),
+                    "application/octet-stream")
+    return store
+
+
+@pytest.fixture
+def corpus_cache(tmp_path, monkeypatch):
+    """Isolate the PROCESS-WIDE corpus cache: a tmp cache dir, empty either side.
+
+    The cache is global by design (one download per process), so a test that left
+    a copy behind would decide what every later test in the session reads —
+    including tests/test_research_api.py, whose fixture resets the same cache.
+    """
+    monkeypatch.setattr(corpus_mod, "_cache_dir", lambda: tmp_path / "corpus_cache")
+    corpus_mod.reset_cache()
+    yield
+    corpus_mod.reset_cache()
+
+
+def test_get_document_returns_the_stored_row(tmp_path, corpus_cache):
+    store = _seed_corpus_store(tmp_path, [(
+        sidecar_mod.normalize({
+            "id": "gs-2026-07-21-oil", "title": "Oil Tracker",
+            "institution": "Goldman Sachs", "side": "sell",
+            "published_at": "2026-07-21T09:00:00Z",
+            "summary_points": ["Inventories drew again."]}),
+        "Brent held the range while inventories drew for a third week.")])
+
+    doc = corpus_mod.get_document("gs-2026-07-21-oil", store_factory=lambda: store)
+    assert doc is not None
+    assert doc["doc_id"] == "gs-2026-07-21-oil"
+    assert doc["title"] == "Oil Tracker"
+    assert doc["institution"] == "Goldman Sachs"
+    assert doc["side"] == "sell"
+    assert doc["published_at"].startswith("2026-07-21")
+    assert "inventories drew for a third week" in doc["body"]
+    assert "Inventories drew again." in doc["summary"]
+
+
+def test_get_document_carries_exactly_the_documented_fields(tmp_path, corpus_cache):
+    """DOCUMENT_FIELDS is a literal whitelist — a column added to `documents`
+    later must not reach a caller (or a chat context) by accident."""
+    store = _seed_corpus_store(tmp_path, [(
+        sidecar_mod.normalize({"id": "d1", "title": "T", "institution": "Citi",
+                               "published_at": "2026-07-01"}), "body")])
+    doc = corpus_mod.get_document("d1", store_factory=lambda: store)
+    assert set(doc) == set(corpus_mod.DOCUMENT_FIELDS)
+
+
+def test_get_document_is_none_for_an_unknown_id(tmp_path, corpus_cache):
+    store = _seed_corpus_store(tmp_path, [(
+        sidecar_mod.normalize({"id": "d1", "title": "T", "institution": "Citi",
+                               "published_at": "2026-07-01"}), "body")])
+    assert corpus_mod.get_document("no-such-report", store_factory=lambda: store) is None
+
+
+@pytest.mark.parametrize("bad", [
+    "../../etc/passwd", "UPPER", "with space", "slash/ed", "-leading-hyphen",
+    "trailing-newline\n", "", "x" * 200, None, 17,
+])
+def test_get_document_rejects_a_malformed_id_before_touching_the_store(bad, corpus_cache):
+    """The shape gate runs FIRST: a malformed id never reaches the store or SQL.
+
+    'trailing-newline\\n' is the specific trap the router's \\A/\\Z anchors exist
+    for — a `$`-anchored regex would have accepted it.
+    """
+    calls = {"n": 0}
+
+    def _factory():
+        calls["n"] += 1
+        raise AssertionError("store must not be built for a malformed doc_id")
+
+    assert corpus_mod.get_document(bad, store_factory=_factory) is None
+    assert calls["n"] == 0
+    assert corpus_mod.valid_doc_id(bad) is False
+
+
+def test_get_document_degrades_to_none_when_no_store_is_configured(corpus_cache):
+    assert corpus_mod.get_document("d1", store_factory=lambda: None) is None
+
+
+def test_get_document_degrades_to_none_when_the_store_raises(corpus_cache):
+    """A dead bucket is a missing document, never an exception at the caller."""
+    class Exploding:
+        def get_bytes(self, key):
+            raise RuntimeError("R2 is down")
+
+    assert corpus_mod.get_document("d1", store_factory=lambda: Exploding()) is None
+
+
+def test_corpus_connection_serves_stale_while_revalidating(tmp_path, corpus_cache):
+    """One inline fetch on a cold process, none inside the TTL, then exactly ONE
+    background refresh when the copy goes stale."""
+    import time as _time
+
+    fetches = {"n": 0}
+    store = _seed_corpus_store(tmp_path, [(
+        sidecar_mod.normalize({"id": "d1", "title": "T", "institution": "Citi",
+                               "published_at": "2026-07-01"}), "body")])
+
+    class Counting:
+        def get_bytes(self, key):
+            fetches["n"] += 1
+            return store.get_bytes(key)
+
+    factory = lambda: Counting()  # noqa: E731
+
+    c1 = corpus_mod.corpus_connection(store_factory=factory)
+    assert c1 is not None
+    c1.close()
+    assert fetches["n"] == 1
+
+    c2 = corpus_mod.corpus_connection(store_factory=factory)
+    assert c2 is not None
+    c2.close()
+    assert fetches["n"] == 1, "a fresh local copy is served without a download"
+
+    corpus_mod._corpus_fetched_at = _time.monotonic() - corpus_mod.CORPUS_TTL - 1
+    c3 = corpus_mod.corpus_connection(store_factory=factory)
+    assert c3 is not None
+    c3.close()
+    deadline = _time.time() + 5
+    while _time.time() < deadline:
+        with corpus_mod.CORPUS_LOCK:
+            if not corpus_mod._corpus_refreshing:
+                break
+        _time.sleep(0.05)
+    assert fetches["n"] == 2
+
+
+def test_reset_cache_forces_a_fresh_fetch(tmp_path, corpus_cache):
+    fetches = {"n": 0}
+    store = _seed_corpus_store(tmp_path, [(
+        sidecar_mod.normalize({"id": "d1", "title": "T", "institution": "Citi",
+                               "published_at": "2026-07-01"}), "body")])
+
+    class Counting:
+        def get_bytes(self, key):
+            fetches["n"] += 1
+            return store.get_bytes(key)
+
+    conn = corpus_mod.corpus_connection(store_factory=lambda: Counting())
+    conn.close()
+    assert fetches["n"] == 1
+    corpus_mod.reset_cache()
+    conn = corpus_mod.corpus_connection(store_factory=lambda: Counting())
+    conn.close()
+    assert fetches["n"] == 2
 
 
 # ===========================================================================

@@ -39,10 +39,8 @@ from __future__ import annotations
 import logging
 import os
 import re
-import tempfile
 import threading
 import time
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -58,8 +56,8 @@ router = APIRouter()
 
 # R2 keys (canonical — mirror the W1 engine constants; do not reinterpolate).
 _CATALOG_KEY = "research_vault/catalog.json"          # catalog_mod.CATALOG_KEY
-_CORPUS_KEY = "research_vault/corpus.sqlite"          # ingest CORPUS_KEY
 _VAULT_PREFIX = "research_vault/"                      # ingest VAULT_PREFIX
+# The corpus key now lives with the reader that fetches it: corpus_mod.CORPUS_KEY.
 
 _UPGRADE_URL = "/plans.html"
 # Reading research (stream PDF + download) is a PRO-only benefit. Insider is a
@@ -190,89 +188,28 @@ def _catalog_title(doc_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# corpus read-through: download corpus.sqlite from R2 to a temp file, TTL-cached
+# corpus read-through — DELEGATED to engine.research_vault.corpus (W4)
 # ---------------------------------------------------------------------------
-
-_CORPUS_TTL = 300.0  # seconds — refresh the local copy when older than this
-_CORPUS_LOCK = threading.Lock()
-_corpus_path: Path | None = None
-_corpus_fetched_at: float = 0.0
-_corpus_refreshing: bool = False  # guarded by _CORPUS_LOCK — one refresher at a time
-
-
-def _refresh_corpus_from_store() -> Path | None:
-    """Download corpus.sqlite from R2 to the local temp path (SYNCHRONOUS).
-
-    Returns the local path on success, None on any failure. Never raises. Called
-    inline only when no local copy exists yet; otherwise runs on a background
-    thread so a user's search never pays the multi-MB download (the corpus grows
-    with the archive — a backfilled corpus is far too large to fetch inline).
-    """
-    global _corpus_path, _corpus_fetched_at
-    store = _build_store()
-    if store is None:
-        return None
-    data = store.get_bytes(_CORPUS_KEY)
-    if not data:
-        return None
-    try:
-        tmp_dir = Path(tempfile.gettempdir()) / "research_vault_corpus"
-        tmp_dir.mkdir(parents=True, exist_ok=True)
-        dst = tmp_dir / "corpus.sqlite"
-        tmp = dst.with_suffix(".sqlite.tmp")
-        tmp.write_bytes(data)
-        os.replace(tmp, dst)
-        with _CORPUS_LOCK:
-            _corpus_path = dst
-            _corpus_fetched_at = time.monotonic()
-        return dst
-    except Exception as exc:  # noqa: BLE001 — write failure → degrade
-        log.debug("research_vault: corpus refresh failed (%s)", exc)
-        return None
-
-
-def _refresh_corpus_bg() -> None:
-    """Background-thread wrapper: refresh, then clear the in-flight flag."""
-    global _corpus_refreshing
-    try:
-        _refresh_corpus_from_store()
-    finally:
-        with _CORPUS_LOCK:
-            _corpus_refreshing = False
+# The fetch + tempdir + TTL + background-refresh machinery used to live here and
+# was the process's only corpus reader. The Mastermind brain now reads the same
+# corpus (mode='report' on search_research) from the SAME process — app/main.py
+# imports brain_gateway in the request path — so the logic moved to the engine
+# module and this router delegates. One local copy, one refresh clock, one
+# download; behaviour otherwise unchanged (serve-stale-while-revalidate, 300s TTL,
+# only the very first call on a cold process blocks).
+#
+# `_build_store` is passed BY NAME and resolved at call time, so this module's
+# store factory (and every test that monkeypatches it) still decides where the
+# bytes come from.
 
 
 def _corpus_conn():
-    """Open the local corpus copy, refreshing it WITHOUT blocking the request.
+    """Open the shared local corpus copy. Returns a connection or None; never raises.
 
-    Serve-stale-while-revalidate: a present local copy is served immediately;
-    when it is older than the TTL a single background thread re-downloads it
-    (dropped-not-queued if one is already in flight). Only the very first call
-    (no local copy at all) downloads inline. Returns a connection or None.
-    Never raises.
+    Thin delegation to :func:`engine.research_vault.corpus.corpus_connection` —
+    see the block comment above. The caller owns closing the connection.
     """
-    global _corpus_refreshing
-    now = time.monotonic()
-
-    with _CORPUS_LOCK:
-        have_local = _corpus_path is not None and _corpus_path.exists()
-        stale = not have_local or (now - _corpus_fetched_at) >= _CORPUS_TTL
-        path = _corpus_path
-        if have_local and stale and not _corpus_refreshing:
-            _corpus_refreshing = True
-            threading.Thread(target=_refresh_corpus_bg, daemon=True,
-                             name="rv-corpus-refresh").start()
-
-    if not have_local:
-        # First fetch ever on this process: nothing to serve yet — block once.
-        path = _refresh_corpus_from_store()
-        if path is None:
-            return None
-
-    try:
-        return corpus_mod.open_db(path)  # type: ignore[arg-type]
-    except Exception as exc:  # noqa: BLE001 — unreadable local copy → degrade
-        log.debug("research_vault: corpus open failed (%s)", exc)
-        return None
+    return corpus_mod.corpus_connection(store_factory=_build_store)
 
 
 # ---------------------------------------------------------------------------

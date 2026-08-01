@@ -3,10 +3,16 @@
 CLASSIFICATION: read-only retrieval helpers for the Mastermind brain gateway.
 This module holds the FUNCTIONS and their Anthropic tool schemas only; the
 gateway owns dispatch, the tool allowlist, and tier gating. Nothing here is
-imported by the nightly, writes a file, opens a socket, or calls an LLM.
+imported by the nightly or calls an LLM.
 
 TIER: display/context — READ-ONLY. Never computes a signal, score, rank, size,
-or gate. Both functions are pure reads over artifacts other lanes publish.
+or gate. Every function is a pure read over artifacts other lanes publish.
+
+TWO EXCEPTIONS, both belonging to mode="report" (W4) and to nothing else: it
+reads the R2-backed corpus (so a cold process may pay ONE download through the
+shared reader in research_vault.corpus) and it debits the hourly view ledger
+(one small JSON file per user per hour, via research_vault.view_ratelimit). No
+other path here touches a socket or writes a byte.
 
 PUBLIC API
 ----------
@@ -16,13 +22,18 @@ get_market_events(root, window_h=12.0, limit=5, symbol=None) -> dict
     is permuted by the desk's ranked-wire sidecar when a fresh one is published
     (W2 — see the _WIRE_RANK_BASENAME block); recency otherwise.
 
-search_research(root, query, limit=5, mode="search") -> dict
+search_research(root, query, limit=5, mode="search", report_id="",
+                user_ctx=None) -> dict
     mode="search"   — deterministic keyword search over the committed
                       research-vault catalog (third-party institutional
                       summaries — never the desk's own signals).
     mode="clusters" — street-convergence view of the SAME catalog: which themes
                       N>=3 fresh notes from >=2 institutions are all writing
                       about. A retrieval summary, never consensus-as-authority.
+    mode="report"   — ONE report by id: catalog metadata + the PUBLIC excerpt +
+                      a capped slice of the stored body. PRO-only (operator
+                      ruling 2026-07-31) and metered — see the FUNCTION 2c block
+                      for the rights reasoning and the caps.
 
 EVENTS_TOOL_SCHEMA / RESEARCH_TOOL_SCHEMA
     Anthropic tool definitions, shaped like brain_gateway._brain_tool_schemas().
@@ -875,18 +886,28 @@ _CLUSTERS_NOTE = (
     "not a view, not consensus-as-authority."
 )
 
-_MODE_SEARCH, _MODE_CLUSTERS = "search", "clusters"
+_MODE_SEARCH, _MODE_CLUSTERS, _MODE_REPORT = "search", "clusters", "report"
 
 
-def _is_clusters_mode(mode) -> bool:
-    """True only for an explicit clusters request; anything else searches.
+def _is_mode(mode, wanted: str) -> bool:
+    """True only for an explicit request for `wanted`; anything else searches.
 
     Lenient on the way in (case, whitespace, a non-string the model invented) and
     strict about the DEFAULT: an unrecognised mode runs the search it always did
     rather than erroring, because the gateway hands model arguments straight
     through and a typo must not cost the user his answer.
     """
-    return isinstance(mode, str) and mode.strip().lower() == _MODE_CLUSTERS
+    return isinstance(mode, str) and mode.strip().lower() == wanted
+
+
+def _is_clusters_mode(mode) -> bool:
+    """True only for an explicit clusters request (see :func:`_is_mode`)."""
+    return _is_mode(mode, _MODE_CLUSTERS)
+
+
+def _is_report_mode(mode) -> bool:
+    """True only for an explicit report request (see :func:`_is_mode`)."""
+    return _is_mode(mode, _MODE_REPORT)
 
 
 def _cluster_tokens(item: dict) -> frozenset[str]:
@@ -1036,6 +1057,295 @@ def _cluster_projection(terms: list[str], members: list[dict],
     return sort_key, payload
 
 
+# --------------------------------------------------------------------------- #
+# FUNCTION 2c — full-report escalation (W4): ONE report, its fuller content
+# --------------------------------------------------------------------------- #
+# OPERATOR RULING (2026-07-31): the vault's full-report escalation is APPROVED
+# for PRO members in chat. What that does and does not license:
+#
+#   * The material is a THIRD PARTY's copyrighted research. engine/research_vault/
+#     excerpt.py frames its own caps as "the entire risk surface … an OPERATOR
+#     decision, never a builder default"; the same rule governs here. The chat
+#     exposure cap is _REPORT_BODY_MAX_CHARS (12,000 chars) — thesis plus core
+#     argument, deliberately far under the 60,000 the corpus stores. Raising it is
+#     an operator decision, not a tuning knob.
+#   * The rights line rides in the payload `note` — the chat equivalent of the
+#     watermark app/research.py stamps into a downloaded PDF. It is addressed to
+#     the model because the model is what renders the answer: attribute, quote
+#     sparingly, synthesize, never reproduce pages.
+#   * TIER is the GATEWAY's job (Pro-only for this mode; insider keeps search and
+#     clusters). This function still fails CLOSED on a missing `user_ctx`: a call
+#     with no identity cannot be metered, and an unmeterable serve of third-party
+#     research is exactly what the cap exists to prevent.
+#
+# The three content layers, cheapest first — a layer that is unavailable is
+# DISCLOSED, never faked:
+#   1. catalog metadata (committed, public);
+#   2. the PUBLIC excerpt (data/research_vault/excerpts.json — already rendered
+#      outside the paywall on site/research/<slug>.html, so it costs no new
+#      exposure and is the honest fallback when the corpus is unreachable);
+#   3. the stored body, via research_vault.corpus.get_document → R2. This is the
+#      only paid layer, so it is the only one that debits the hourly view cap.
+_EXCERPTS_REL = ("data", "research_vault", "excerpts.json")
+
+_REPORT_SCHEMA = "brain.research_report.v1"
+REPORT_BODY_MAX_CHARS = 12_000
+# Named so the model can tell the user where the rest of the report lives. The
+# budget COVERS this marker (the _truncate idiom) — a "12,000 + marker" result
+# would break any caller sizing a context window off the documented number.
+_REPORT_TRUNCATION_MARKER = "…full report continues — available in the Research Vault"
+# The catalog clamps summary_points at 8; all of them are kept for a single
+# report (the point of the escalation is depth), each clamped to the same
+# per-point budget the search results use so the payload stays bounded.
+_REPORT_SUMMARY_POINTS_KEPT = 8
+
+# The EXACT key set the `report` object may carry — the _project_event discipline
+# (see the module's EPISTEMICS LAW). No score, no confidence, no desk read: this
+# is somebody ELSE's note, and the tool's job is to hand it over attributed, not
+# to grade it.
+REPORT_FIELDS: tuple[str, ...] = (
+    "id", "title", "institution", "side", "published_at",
+    "summary_points", "excerpt_paragraphs", "body_text", "body_truncated",
+)
+
+_REPORT_NOTE = (
+    "Third-party institutional research served under the vault's Pro access — "
+    "attribute every claim to {institution}, quote sparingly, synthesize in your "
+    "own words; never reproduce pages verbatim. Not for redistribution."
+)
+_REPORT_NOTE_FALLBACK_INSTITUTION = "the publishing institution"
+_REPORT_EXCERPT_ONLY = (
+    " The full text is not reachable right now, so this is the report's PUBLIC "
+    "opening excerpt only — say plainly that you are reading the opening pages, "
+    "not the whole note."
+)
+
+# view_ratelimit.allow() keys a SECOND ledger on sha256(ip)[:16], and maps an
+# empty/'unknown' ip to the literal bucket 'noip' — every chat user would then
+# share one hourly counter and one Pro member's reading would deny everybody
+# else's. So chat passes a per-user synthetic marker instead: the hash is
+# hex-only and unique per user, which puts the ip ledger in lockstep with the
+# user ledger (effective cap = the plain hourly limit, RESEARCH_VIEW_HOURLY).
+# The gateway's `ip_hint` is deliberately NOT used as that key — an office NAT
+# would collide unrelated Pro members into one bucket, which is the same bug.
+_BRAIN_VIEW_IP_PREFIX = "brain:"
+
+_REPORT_ERR_PRO = (
+    "The full-report reader is a Pro capability and this call carried no "
+    "signed-in Pro identity — explain the gate plainly and answer from the vault "
+    "summaries instead. Never describe a report you have not read."
+)
+_REPORT_ERR_NOT_FOUND = (
+    "No report with that id is in the vault catalog. Re-run search_research "
+    "(mode='search' or mode='clusters') and use an id from those results — never "
+    "guess an id, and never invent what a report says."
+)
+_REPORT_ERR_VAULT = (
+    "The research vault catalog could not be read, so this report could not be "
+    "looked up. Say so plainly rather than describing a note you have not read."
+)
+_REPORT_ERR_LIMIT = (
+    "This account has reached its hourly full-report limit. Tell the user "
+    "plainly, answer from the summaries already retrieved, and note that the cap "
+    "resets at the top of the hour."
+)
+
+
+def _excerpt_paragraphs(root: Path, doc_id: str) -> list[str]:
+    """The committed PUBLIC excerpt paragraphs for `doc_id` ([] when absent).
+
+    Reads data/research_vault/excerpts.json ({"schema":1,"excerpts":{id:[…]}}),
+    the same snapshot the SEO research pages render outside the paywall. Coverage
+    is partial (a scanned PDF with no text layer has no excerpt), so [] is a
+    normal answer, not a failure. Never raises.
+    """
+    payload = _read_json(root.joinpath(*_EXCERPTS_REL))
+    if not isinstance(payload, dict):
+        return []
+    bucket = payload.get("excerpts")
+    if not isinstance(bucket, dict):
+        return []
+    paras = bucket.get(doc_id)
+    if not isinstance(paras, list):
+        return []
+    return [p.strip() for p in paras if isinstance(p, str) and p.strip()]
+
+
+def _load_corpus_document(doc_id: str):
+    """research_vault.corpus.get_document(doc_id), or None. Never raises.
+
+    Imported lazily and called through the MODULE (not a from-import) so the
+    attribute resolves at call time — the corpus reader is the seam tests replace,
+    and an engine module that cannot be imported at all must degrade to the
+    excerpt rather than take the chat turn down.
+    """
+    try:
+        from engine.research_vault import corpus as corpus_mod  # noqa: PLC0415
+        return corpus_mod.get_document(doc_id)
+    except Exception:  # noqa: BLE001 — no corpus → excerpt-only, disclosed
+        return None
+
+
+def _charge_report_view(user_id: str, now: datetime) -> tuple[bool, dict]:
+    """Debit ONE hourly view for this user. Returns (allowed, {remaining, limit}).
+
+    Called exactly once per served BODY and never for the excerpt-only fallback —
+    the excerpt is already public, and metering a public read would deny a member
+    material he can see on the website.
+
+    Fails OPEN on an unusable limiter (import/IO error), mirroring
+    view_ratelimit's own documented rule: a broken ledger must not lock a paying
+    subscriber out of what he bought.
+    """
+    try:
+        from engine.research_vault import view_ratelimit  # noqa: PLC0415
+        return view_ratelimit.allow(
+            user_id, _BRAIN_VIEW_IP_PREFIX + user_id, now=now)
+    except Exception:  # noqa: BLE001 — fail-open, same as the ledger itself
+        return True, {}
+
+
+def _slice_report_body(body) -> tuple[str, bool]:
+    """(body within the cap, was_truncated). Cut at a word boundary, marked.
+
+    The marker is INSIDE the budget, so the returned text never exceeds
+    :data:`REPORT_BODY_MAX_CHARS` — and the model is told where the rest lives
+    instead of being handed a sentence that stops mid-word with no explanation.
+    """
+    text = str(body or "")
+    if len(text) <= REPORT_BODY_MAX_CHARS:
+        return text, False
+    room = max(0, REPORT_BODY_MAX_CHARS - len(_REPORT_TRUNCATION_MARKER) - 2)
+    cut = text[:room].rsplit(" ", 1)[0].rstrip() if room else ""
+    return f"{cut}\n\n{_REPORT_TRUNCATION_MARKER}", True
+
+
+def _meta_field(item: dict, document, key: str) -> str:
+    """Catalog value for `key`, else the corpus row's, else ''.
+
+    Catalog first because it is the PUBLIC, editorially-cleaned record (titles are
+    repaired there — see research_vault.title); the corpus row is the fallback for
+    a catalog field that happens to be blank.
+    """
+    return (_first_text(item, key)
+            or (_first_text(document, key) if isinstance(document, dict) else None)
+            or "")
+
+
+def _project_report(
+    *,
+    report_id: str,
+    title: str,
+    institution: str,
+    side: str,
+    published_at: str,
+    summary_points: list[str],
+    excerpt_paragraphs: list[str],
+    body_text: str,
+    body_truncated: bool,
+) -> dict:
+    """Build the report object from the whitelisted fields only (REPORT_FIELDS).
+
+    Keyword-only and fully literal, exactly like :func:`_project_event`: no dict
+    spread, no passthrough of the catalog item or the corpus row, so nothing an
+    upstream lane adds later can reach the model's context by accident.
+    """
+    return {
+        "id": report_id,
+        "title": title,
+        "institution": institution,
+        "side": side,
+        "published_at": published_at,
+        "summary_points": summary_points,
+        "excerpt_paragraphs": excerpt_paragraphs,
+        "body_text": body_text,
+        "body_truncated": body_truncated,
+    }
+
+
+def _report_error(code: str, note: str, **extra) -> dict:
+    """One honest error envelope. The model explains the gate; it never invents."""
+    return {"schema": _REPORT_SCHEMA, "error": code, "note": note, **extra}
+
+
+def _research_report(root: Path, report_id, *, user_ctx, now: datetime) -> dict:
+    """One report's fuller content for a PRO member. Never raises.
+
+    Order is deliberate and each step is its own gate:
+      1. identity — no `user_ctx`/user_id → pro_required (fail CLOSED; an
+         unmeterable serve of third-party research is the thing being prevented);
+      2. EXISTENCE in the committed catalog — an id the catalog does not carry
+         never reaches the corpus, so a hallucinated id cannot probe the store;
+      3. public layers — catalog metadata + the committed excerpt;
+      4. the corpus body, and ONLY if one comes back, one debit of the hourly cap;
+      5. the cap slice + the rights note.
+    """
+    uid = str((user_ctx or {}).get("user_id") or "").strip()
+    if not uid:
+        return _report_error("pro_required", _REPORT_ERR_PRO)
+
+    rid = str(report_id or "").strip()
+
+    try:
+        items = _catalog_items(root)
+    except Exception:  # noqa: BLE001
+        items = None
+    if items is None:
+        return _report_error("vault_unavailable", _REPORT_ERR_VAULT, report_id=rid)
+
+    item = None
+    if rid:
+        for candidate in items:
+            if str(candidate.get("id") or "") == rid:
+                item = candidate
+                break
+    if item is None:
+        return _report_error("report_not_found", _REPORT_ERR_NOT_FOUND, report_id=rid)
+
+    points = item.get("summary_points")
+    points = [p for p in points if isinstance(p, str)] if isinstance(points, list) else []
+    paragraphs = _excerpt_paragraphs(root, rid)
+
+    document = _load_corpus_document(rid)
+    body_raw = str((document or {}).get("body") or "")
+
+    quota: dict | None = None
+    if body_raw.strip():
+        allowed, info = _charge_report_view(uid, now)
+        if not allowed:
+            return _report_error(
+                "view_limit_reached", _REPORT_ERR_LIMIT,
+                report_id=rid, remaining=0, limit=(info or {}).get("limit"))
+        quota = {"remaining": (info or {}).get("remaining"),
+                 "limit": (info or {}).get("limit")}
+        body_text, truncated = _slice_report_body(body_raw)
+    else:
+        body_text, truncated = "", False
+
+    institution = _meta_field(item, document, "institution")
+    note = _REPORT_NOTE.format(
+        institution=institution or _REPORT_NOTE_FALLBACK_INSTITUTION)
+    if quota is None:
+        note += _REPORT_EXCERPT_ONLY
+
+    return {
+        "schema": _REPORT_SCHEMA,
+        "asof": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "report": _project_report(
+            report_id=rid,
+            title=_meta_field(item, document, "title"),
+            institution=institution,
+            side=_meta_field(item, document, "side"),
+            published_at=_meta_field(item, document, "published_at"),
+            summary_points=[_truncate(p) for p in points[:_REPORT_SUMMARY_POINTS_KEPT]],
+            excerpt_paragraphs=paragraphs,
+            body_text=body_text,
+            body_truncated=truncated,
+        ),
+        "quota": quota,
+        "note": note,
+    }
+
 
 def search_research(
     root: Path,
@@ -1043,6 +1353,8 @@ def search_research(
     limit: int = _RESEARCH_LIMIT_DEFAULT,
     *,
     mode: str | None = None,
+    report_id: str = "",
+    user_ctx: dict | None = None,
     now: datetime | None = None,
 ) -> dict:
     """Keyword-search the research vault — THIRD-PARTY views, not the desk's own.
@@ -1067,13 +1379,33 @@ def search_research(
     mode="clusters" answers a different question over the same catalog — which
     themes several houses are all writing about right now — and returns the
     brain.research_clusters.v1 envelope instead of `results`. `query` and `limit`
-    are not read in that mode (see the clusters block above). Any other mode
-    value, including a typo, searches.
+    are not read in that mode (see the clusters block above).
+
+    mode="report" reads ONE report named by `report_id` and returns the
+    brain.research_report.v1 envelope: catalog metadata, the public excerpt, and
+    a capped slice of the stored body. It is PRO-only and METERED — `user_ctx`
+    ({"user_id": …}) must be present or the call fails closed with pro_required
+    (the gateway owns the tier decision; this is the fail-safe under it).
+    `query` and `limit` are not read in that mode.
+
+    Any other mode value, including a typo, searches.
     """
     reference = now or datetime.now(timezone.utc)
     if reference.tzinfo is None:
         reference = reference.replace(tzinfo=timezone.utc)
     reference = reference.astimezone(timezone.utc)
+
+    # --- report mode (W4) --------------------------------------------------- #
+    # First, because it reads neither `query` nor `limit`: a Pro member asking for
+    # one note's argument is not searching. The whole body is wrapped so a corpus
+    # or ledger surprise degrades to an honest error instead of killing the turn.
+    if _is_report_mode(mode):
+        try:
+            return _research_report(root, report_id, user_ctx=user_ctx,
+                                    now=reference)
+        except Exception:  # noqa: BLE001 — retrieval must not take the turn down
+            return _report_error("vault_unavailable", _REPORT_ERR_VAULT,
+                                 report_id=str(report_id or ""))
 
     cap = _clamp_int(limit, _RESEARCH_LIMIT_MIN, _RESEARCH_LIMIT_MAX, _RESEARCH_LIMIT_DEFAULT)
     note = (
@@ -1236,7 +1568,14 @@ RESEARCH_TOOL_SCHEMA: dict = {
         "what everyone is writing about this week: that returns the themes "
         "several houses hit at once, with the report counts and house names. "
         "Convergence is what was WRITTEN, not evidence the view is right — many "
-        "desks agreeing is a crowding fact, so name the houses and say so."
+        "desks agreeing is a crowding fact, so name the houses and say so. "
+        "Set mode='report' with report_id to open ONE note in depth once a "
+        "search or clusters result has named it — when the user asks what a "
+        "specific report actually argues, or you need its reasoning rather than "
+        "its headline. That returns the fuller text for PRO members and is "
+        "metered hourly, so call it for the one report that matters, not for "
+        "every hit; attribute it to its institution, quote sparingly, and "
+        "synthesize in your own words rather than reproducing pages."
     ),
     "input_schema": {
         "type": "object",
@@ -1246,7 +1585,7 @@ RESEARCH_TOOL_SCHEMA: dict = {
                 "description": (
                     "Search terms — theme, ticker, or institution (needs at "
                     "least 2 words, e.g. 'hedge fund momentum', 'NVDA capex'). "
-                    "Ignored when mode='clusters'; pass '' there."
+                    "Ignored when mode='clusters' or mode='report'; pass '' there."
                 ),
             },
             "limit": {
@@ -1255,11 +1594,23 @@ RESEARCH_TOOL_SCHEMA: dict = {
             },
             "mode": {
                 "type": "string",
-                "enum": [_MODE_SEARCH, _MODE_CLUSTERS],
+                "enum": [_MODE_SEARCH, _MODE_CLUSTERS, _MODE_REPORT],
                 "description": (
                     "'search' (default) ranks individual notes against the "
                     "query; 'clusters' ignores the query and returns the themes "
-                    "3+ notes from 2+ institutions share right now."
+                    "3+ notes from 2+ institutions share right now; 'report' "
+                    "ignores the query and opens the single note named by "
+                    "report_id."
+                ),
+            },
+            "report_id": {
+                "type": "string",
+                "description": (
+                    "The id of ONE report to open in depth, used with "
+                    "mode='report'. Ids come from search or clusters results — "
+                    "never invent or guess one. A Pro capability: on a "
+                    "non-Pro account the call returns the gate, which you "
+                    "explain instead of describing a report you have not read."
                 ),
             },
         },

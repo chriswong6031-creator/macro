@@ -3309,12 +3309,25 @@ def _dispatch_brain_tool(
                 return {"error": "insider_required", "tier": _tier, "note": (
                     "The research vault is an Insider/Pro capability. This user is on "
                     f"the '{_tier}' tier — explain the gate; do not fabricate research.")}
+            _mode = str(tool_params.get("mode") or "search").strip().lower()
+            if _mode == "report":
+                # Analyst OS W4 (operator ruling 2026-07-31): full-report content is
+                # PRO-only, mirroring the vault product's own view gate
+                # (app/research._VIEW_TIERS). Insider keeps summaries/clusters.
+                if not (_tier in ("pro", "unlimited")
+                        and _status in ("active", "trialing")):
+                    return {"error": "pro_required", "tier": _tier, "note": (
+                        "Full report content is a Pro capability — Insider gets the "
+                        "summaries. Explain the upgrade; keep answering from the "
+                        "summary you already have.")}
             from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
             return _bmi.search_research(
                 root,
                 query=str(tool_params.get("query") or ""),
                 limit=tool_params.get("limit", 5),
-                mode=str(tool_params.get("mode") or "search"),
+                mode=_mode,
+                report_id=str(tool_params.get("report_id") or ""),
+                user_ctx={"user_id": user_id} if _mode == "report" else None,
             )
         if tool_name == "get_historical_analogues":
             # Analyst OS W2 — dated episodes whose measured state rhymed with today
@@ -4579,39 +4592,72 @@ def _image_blocks(images: list[str] | None) -> list[dict]:
     return blocks
 
 
-def _pick_vision_provider(providers: list[dict]) -> dict | None:
-    """Return the first vision-capable (claude-*) provider, or None.
+def _is_codex_provider(p: dict) -> bool:
+    return str(p.get("name") or "") == "codex"
 
-    The Fast lane's primary is DeepSeek (text-only), so an image turn must be served
-    by the Anthropic fallback (Haiku 4.5, multimodal). Pro's primary (Opus) is already
-    vision-capable, so this returns providers[0] there.
+
+def _is_claude_provider(p: dict) -> bool:
+    return str(p.get("model") or "").startswith("claude")
+
+
+def _pick_vision_provider(providers: list[dict]) -> dict | None:
+    """Return the provider that should serve an image turn, or None.
+
+    CODEX FIRST (operator directive 2026-07-31): chat vision runs on the attached
+    Codex subscription, which is flat-rate, rather than on metered Anthropic. The
+    Codex CLI has no inline-image field — engine.codex_provider stages each image
+    to a file and enables the CLI's view_image tool for that one call.
+
+    Claude (claude-*) stays the FALLBACK, not the default: a dead, unauthenticated
+    or usage-capped Codex account must not take vision down with it. Text-only
+    providers (DeepSeek) are never selected, so a lane with neither returns None.
     """
     for p in providers:
-        if str(p.get("model") or "").startswith("claude"):
+        if _is_codex_provider(p):
+            return p
+    for p in providers:
+        if _is_claude_provider(p):
             return p
     return None
 
 
-def _vision_providers(lane: str, providers: list[dict], root: Path | None) -> list[dict]:
-    """Ordered list of vision-capable (claude-*) providers for an image turn.
+def _vision_capable(providers: list[dict]) -> list[dict]:
+    """Vision-capable rungs of one provider list, codex first then claude.
 
-    In-lane claude providers first (Haiku on Fast when an Anthropic key exists). When
-    the lane has none — Fast with only DeepSeek (text-only) and no Haiku key — borrow
-    the Pro lane's claude providers (Opus via OAuth) so image turns work regardless of
-    lane. Multiple entries enable OAuth-token failover on 429. [] when none exist.
+    Both need a built client — a descriptor whose client failed to construct is a
+    rung `make_call` would skip, and putting it at the head of a vision chain would
+    read as "vision available" while serving nothing.
     """
-    claude = [p for p in providers
-              if str(p.get("model") or "").startswith("claude") and p.get("client") is not None]
-    if claude:
-        return claude
-    if lane != "pro":
+    usable = [p for p in providers if p.get("client") is not None]
+    return ([p for p in usable if _is_codex_provider(p)]
+            + [p for p in usable if _is_claude_provider(p) and not _is_codex_provider(p)])
+
+
+def _vision_providers(lane: str, providers: list[dict], root: Path | None) -> list[dict]:
+    """Ordered vision-capable providers for an image turn — codex first, claude after.
+
+    CODEX FIRST (operator directive 2026-07-31): the attached Codex subscription is
+    flat-rate and Anthropic is metered, so an image turn is routed to codex when the
+    lane has it (engine.codex_provider stages the image to a file and enables the
+    CLI's view_image tool for that call).
+
+    Claude rungs follow in the same list so the turn FAILS OVER rather than dying
+    when Codex is capped, unauthenticated or absent. When the resulting chain has no
+    claude rung at all — Fast with DeepSeek (text-only) and codex, or with neither —
+    the Pro lane's claude providers (Opus via OAuth) are borrowed as the tail, so
+    image turns work regardless of lane. Multiple entries also enable OAuth-token
+    failover on 429. [] when nothing vision-capable exists anywhere.
+    """
+    chain = _vision_capable(providers)
+    if lane != "pro" and not any(_is_claude_provider(p) for p in chain):
         try:
-            pro = _build_lane_providers("pro", root)
-            return [p for p in pro
-                    if str(p.get("model") or "").startswith("claude") and p.get("client") is not None]
+            borrowed = [p for p in _build_lane_providers("pro", root)
+                        if _is_claude_provider(p) and p.get("client") is not None]
         except Exception:  # noqa: BLE001
-            return []
-    return []
+            borrowed = []
+        already = {id(p) for p in chain}
+        chain = chain + [p for p in borrowed if id(p) not in already]
+    return chain
 
 
 # ---------------------------------------------------------------------------

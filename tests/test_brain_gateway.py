@@ -2129,18 +2129,109 @@ def test_image_blocks_caps_at_four():
     assert len(gw._image_blocks([_TINY_PNG_DATA_URI] * 8)) == gw._VISION_MAX_IMAGES == 4
 
 
-def test_pick_vision_provider_fast_routes_to_claude():
-    providers = [{"model": "deepseek-chat", "client": "DS"}, {"model": "claude-haiku-4-5", "client": "H"}]
-    assert gw._pick_vision_provider(providers)["model"] == "claude-haiku-4-5"
+class TestVisionRoutesToCodexFirstClaudeSecond:
+    """Operator directive 2026-07-31: chat vision is CODEX-routed, not Claude-routed.
 
+    Codex is the attached FLAT-RATE subscription; Anthropic is metered per image.
+    These tests previously pinned "first claude-* provider wins" — that is now the
+    FALLBACK half of the rule, kept because a dead, unauthenticated or usage-capped
+    Codex account must not take vision down with it (every waterfall in this estate
+    fails over). DeepSeek is still never vision.
+    """
 
-def test_pick_vision_provider_pro_is_opus():
-    providers = [{"model": "claude-opus-4-8", "client": "O"}, {"model": "claude-sonnet-4-6"}]
-    assert gw._pick_vision_provider(providers)["model"] == "claude-opus-4-8"
+    CODEX = {"name": "codex", "model": "gpt-5.6-sol", "client": "CODEX"}
 
+    def test_codex_outranks_an_in_lane_claude(self):
+        providers = [{"model": "claude-haiku-4-5", "client": "H"}, self.CODEX]
+        assert gw._pick_vision_provider(providers) is self.CODEX
 
-def test_pick_vision_provider_none_when_text_only():
-    assert gw._pick_vision_provider([{"model": "deepseek-chat"}]) is None
+    def test_claude_serves_when_the_lane_has_no_codex(self):
+        providers = [{"model": "deepseek-chat", "client": "DS"},
+                     {"model": "claude-haiku-4-5", "client": "H"}]
+        assert gw._pick_vision_provider(providers)["model"] == "claude-haiku-4-5"
+
+    def test_pro_without_codex_is_still_opus(self):
+        providers = [{"model": "claude-opus-4-8", "client": "O"}, {"model": "claude-sonnet-4-6"}]
+        assert gw._pick_vision_provider(providers)["model"] == "claude-opus-4-8"
+
+    def test_none_when_text_only(self):
+        assert gw._pick_vision_provider([{"model": "deepseek-chat"}]) is None
+
+    def test_the_chain_keeps_claude_behind_codex_for_failover(self):
+        """Codex first, but the claude rungs stay in the SAME list — a capped Codex
+        account fails over inside the turn instead of ending vision."""
+        providers = [{"model": "deepseek-chat", "client": "DS"},
+                     {"model": "claude-haiku-4-5", "client": "H"},
+                     self.CODEX]
+        chain = gw._vision_providers("fast", providers, None)
+        assert [p.get("name") or p["model"] for p in chain] == ["codex", "claude-haiku-4-5"]
+
+    def test_a_codex_only_lane_borrows_pro_claude_as_the_failover_tail(self):
+        """Fast with codex but no Haiku key: codex serves, and Pro's Opus is borrowed
+        as the tail so a Codex outage does not leave the turn with nowhere to go."""
+        providers = [{"model": "deepseek-chat", "client": "DS"}, self.CODEX]
+        with patch.object(gw, "_build_lane_providers",
+                          return_value=[{"model": "claude-opus-4-8", "client": "O"}]):
+            chain = gw._vision_providers("fast", providers, None)
+        assert [p.get("name") or p["model"] for p in chain] == ["codex", "claude-opus-4-8"]
+
+    def test_a_text_only_lane_still_borrows_pro_vision(self):
+        with patch.object(gw, "_build_lane_providers",
+                          return_value=[{"model": "claude-opus-4-8", "client": "O"}]):
+            chain = gw._vision_providers("fast", [{"model": "deepseek-chat", "client": "DS"}], None)
+        assert [p["model"] for p in chain] == ["claude-opus-4-8"]
+
+    def test_a_clientless_rung_is_not_a_vision_provider(self):
+        """A descriptor whose client failed to build is a rung make_call would skip;
+        heading the chain with it would read as 'vision available' and serve nothing."""
+        providers = [{"name": "codex", "model": "gpt-5.6-sol", "client": None},
+                     {"model": "claude-haiku-4-5", "client": "H"}]
+        assert [p["model"] for p in gw._vision_providers("pro", providers, None)] == ["claude-haiku-4-5"]
+
+    def test_nothing_vision_capable_anywhere_is_an_empty_chain(self):
+        with patch.object(gw, "_build_lane_providers", return_value=[]):
+            assert gw._vision_providers("fast", [{"model": "deepseek-chat", "client": "DS"}], None) == []
+
+    def test_a_broken_pro_lane_does_not_break_the_codex_turn(self):
+        """Borrowing the fallback tail is best-effort: if the Pro lane cannot be built,
+        the turn still runs on codex rather than raising."""
+        with patch.object(gw, "_build_lane_providers", side_effect=RuntimeError("no pool")):
+            chain = gw._vision_providers("fast", [self.CODEX], None)
+        assert [p["name"] for p in chain] == ["codex"]
+
+    def test_chat_with_an_image_routes_the_turn_to_codex(self, tmp_path):
+        """End to end through chat(): the image turn is served by the codex client."""
+        root = _make_temp_root()
+        captured = {}
+
+        def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
+            captured["model"] = model
+            captured["client"] = client
+            captured["providers"] = providers
+            captured["image_blocks"] = image_blocks
+            return "A candlestick chart. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+        mock_providers = [
+            {"client": "DEEPSEEK", "model": "deepseek-chat"},
+            {"client": "HAIKU", "model": "claude-haiku-4-5"},
+            dict(self.CODEX),
+        ]
+        with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+            with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+                with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                    with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                        with patch.object(gw, "_get_allowance", return_value={"limit": 100, "remaining": 100, "period": "month"}):
+                            with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                                with patch("lib.ai_costs.record_usage", return_value=True):
+                                    gw.chat("what pattern is this?", "user_codex_vis", lane="fast",
+                                            images=[_TINY_PNG_DATA_URI], root=root)
+
+        assert captured["client"] == "CODEX", "an image turn must run on the Codex subscription"
+        assert captured["model"] == "gpt-5.6-sol"
+        assert captured["image_blocks"] and captured["image_blocks"][0]["type"] == "image"
+        # Haiku stays available BELOW codex for in-turn failover
+        assert [p.get("name") or p["model"] for p in captured["providers"]] == [
+            "codex", "claude-haiku-4-5"]
 
 
 def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):

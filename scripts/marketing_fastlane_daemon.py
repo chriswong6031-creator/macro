@@ -729,7 +729,28 @@ _WIRES_ZH_CACHE = "data/marketing/press/zh_cache"
 # their English text and the client's plain 英文原文 marker, and roll into the
 # next tick — the rolling window means they are still there.
 _WIRES_ZH_PER_TICK = 16
-_WIRES_ZH_TIMEOUT_S = 20.0
+# A codex turn is a CLI process spawn plus a model call, which the 20 s that sized
+# the HTTP path does not cover. Kept in step with config/press_sources.yml's
+# zh_timeout_s so deleting that key cannot silently restore the too-short budget.
+_WIRES_ZH_TIMEOUT_S = 45.0
+
+# PRESS-LANE PROVIDER OVERRIDE (operator directive 2026-07-31).
+#
+# This lane runs on the ATTACHED CODEX SUBSCRIPTION; the global config.yml
+# news_translation block stays deepseek. The two hosts are exact inverses: the VPS
+# carries the codex login and has never had a DEEPSEEK_API_KEY (so the zh twin was
+# dark here while the config read as armed), while the nightly/render runners have
+# the DEEPSEEK repo secret and no codex CLI (so a global flip would dark THEM).
+# One provider at a time, chosen per-caller by the cfg handed to news_translate.
+#
+# Tier is Terra, which already carries the hot-tape wire under the marketing tier
+# ruling in config/marketing.yml — translated headlines are user-facing words and
+# Terra is the tier cleared to write them. Spend is an attached subscription, not
+# metered. Effort is low because headline translation is mechanical, and a cheaper
+# turn is also a faster one inside a ~75 s tick.
+_WIRES_ZH_PROVIDER = "codex"
+_WIRES_ZH_MODEL = "gpt-5.6-terra"
+_WIRES_ZH_EFFORT = "low"
 
 
 def _zh_cfg(wire_cfg: dict) -> dict:
@@ -740,6 +761,13 @@ def _zh_cfg(wire_cfg: dict) -> dict:
     is a forward ledger that the nightly is the sole advancer of, and an intraday
     poller must not append to it. The spend is surfaced instead in this lane's own
     log line and in the wires payload meta, both of which are host state.
+
+    The PROVIDER is overridden here too (see the constants above): this lane's host
+    and the nightly's host have opposite credentials, so the routing belongs beside
+    the other per-lane overrides rather than in the shared global block. The
+    inherited `base_url`/`api_key_env` are inert under the codex provider —
+    news_translate._client() never reads them on that path, and _record_usage files
+    codex spend by provider name instead of by endpoint shape.
     """
     from lib import config as _config  # noqa: PLC0415
     base = dict(_config.load().get("news_translation", {}) or {})
@@ -753,6 +781,20 @@ def _zh_cfg(wire_cfg: dict) -> dict:
         # of 360 would truncate them mid-sentence.
         "max_chars": int(wire_cfg.get("zh_max_chars", 700)),
     })
+    # Overridable from press_sources.yml (zh_provider/zh_model/zh_effort) so the
+    # operator can flip this lane back to the metered endpoint without a deploy.
+    # The model default FOLLOWS the resolved provider: pinning the Terra id while
+    # someone flips zh_provider back to deepseek would post a codex model name to
+    # the DeepSeek endpoint, which is a 400 dressed up as a config choice.
+    provider = str(wire_cfg.get("zh_provider") or _WIRES_ZH_PROVIDER).strip().lower()
+    base["provider"] = provider
+    base["model"] = str(
+        wire_cfg.get("zh_model")
+        or (_WIRES_ZH_MODEL if provider == "codex" else base.get("model") or "")
+    ) or None
+    if base["model"] is None:
+        base.pop("model")          # let news_translate._model() pick the default
+    base["codex_reasoning_effort"] = str(wire_cfg.get("zh_effort") or _WIRES_ZH_EFFORT)
     return base
 
 
@@ -829,9 +871,17 @@ def _attach_zh(new_items: list, wire_cfg: dict,
 def _zh_preflight(wire_cfg: dict) -> None:
     """One notice when the zh pass is armed but cannot possibly run.
 
-    DEEPSEEK_API_KEY is not provisioned in the VPS unit today, so without this the
-    lane is silently English-only forever and looks like a rail bug rather than a
-    missing secret.
+    Without this the lane is silently English-only forever and reads as a rail bug
+    rather than as a host that cannot reach its translator.
+
+    READINESS BELONGS TO THE TRANSLATOR (2026-07-31). This used to test
+    `secret("DEEPSEEK_API_KEY")` directly. That reads as a correct preflight and is
+    wrong for whichever provider is actually configured: the lane now runs on the
+    attached Codex subscription, where the check would warn every tick about a key
+    nothing needs while translation worked — and would stay SILENT in the one case
+    that matters, codex selected and not attached. `news_translate.translator_ready`
+    answers for both providers and hands back the operator sentence to print, so
+    the check cannot drift away from the client it is checking.
     """
     if not wire_cfg.get("zh_enabled", False):
         return
@@ -840,11 +890,12 @@ def _zh_preflight(wire_cfg: dict) -> None:
         logger.info("[press] wires zh armed but news_translation.enabled is false "
                     "— items ship English-only")
         return
-    from lib import config as _config  # noqa: PLC0415
-    if not _config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY")):
-        logger.warning("[press] wires zh armed but %s is not set on this host "
-                       "— items ship English-only (see docs/marketing_publisher_runbook.md)",
-                       cfg.get("api_key_env", "DEEPSEEK_API_KEY"))
+    from engine.news_translate import translator_ready  # noqa: PLC0415
+    ready, reason = translator_ready(cfg)
+    if not ready:
+        logger.warning("[press] wires zh armed but the translator is not ready on "
+                       "this host (%s) — items ship English-only "
+                       "(see docs/marketing_publisher_runbook.md)", reason)
 
 
 def _attach_desk_llm(packets: list, intelligence_cfg: dict,
