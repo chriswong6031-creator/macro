@@ -76,7 +76,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=e56b52b4">
+<link rel="stylesheet" href="landing.css?v=e78fcdd6">
 <link rel="stylesheet" href="scene-motion.css?v=f426716d">
 </head>
 <body>
@@ -733,8 +733,8 @@
         <h3>Insider</h3>
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$75" data-monthly="$99">$75 <span class="per">/mo billed annually</span></div>
-        <p class="bill" data-bill data-annual-en="Billed $900 a year." data-monthly-en="Billed monthly — cancel anytime." data-annual-zh="按年结算 $900。" data-monthly-zh="按月结算——随时取消。">Billed $900 a year.</p>
-        <span class="badge" data-zh="比月付省 24%">SAVE 24% VS MONTHLY</span>
+        <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — cancel anytime." data-annual-zh="" data-monthly-zh="按月结算——随时取消。"></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-insider"><span class="sv-amt" data-zh="每年省 $288">SAVE $288 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-insider" data-zh="相对按月付费：年付全年 $900，按月支付全年为 $1,188。">Compared to paying monthly. Your full annual price is $900 against $1,188 with regular monthly payments.</span></p>
         <ul class="tf">
           <li data-zh="Free 全部内容">Everything in Free</li>
           <li data-zh="<b>31 个高级模块中的 15 个</b>——趋势引擎、市场结构与振荡器信号"><b>15 of 31 advanced modules</b> — Trend Engine, market structure &amp; oscillator signals</li>
@@ -748,13 +748,13 @@
       <div class="tier hot rv" style="--d:.16s" data-founding-tier>
         <h3>Pro</h3>
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
-        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="was">$109</span>$75 <span class="per">/mo billed annually</span></div>
-        <p class="bill" data-bill data-annual-en="Billed $900 a year — the Insider annual price, for the Pro desk." data-monthly-en="Billed monthly — the founding rate is annual only." data-annual-zh="按年结算 $900——以 Insider 年付价格解锁 Pro 台席。" data-monthly-zh="按月结算——创始价仅限年付。">Billed $900 a year — the Insider annual price, for the Pro desk.</p>
-        <span class="badge" data-founding-badge data-zh="每年省 $408">SAVE $408 A YEAR</span>
+        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="wasrow"><span class="wasi"><span class="was">$149</span><span class="was-q" data-zh="/月 · 月付">/mo billed monthly</span></span><span class="wasi"><span class="was">$109</span></span></span>$75 <span class="per">/mo billed annually</span></div>
+        <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — the founding rate is annual only." data-annual-zh="" data-monthly-zh="按月结算——创始价仅限年付。"></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-pro"><span class="sv-amt" data-founding-badge data-zh="每年省 $888">SAVE $888 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-pro" data-founding-tip data-zh="相对按月付费：创始年付全年 $900，按月支付全年为 $1,788——比常规年付 $1,308 再省 $408。">Compared to paying monthly. Your founding annual price is $900 against $1,788 with regular monthly payments — and $408 under the regular annual rate of $1,308.</span></p>
         <div class="founding" data-founding>
           <div class="founding-line"><b data-zh="创始名额">FOUNDING MEMBERSHIPS</b><span class="fcount" data-founding-count data-zh="共 2,000 个，先到先得">2,000 total — first come, first served</span></div>
-          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
-          <p class="founding-terms" data-zh="名额每日递减 · 只要不退订，$900/年 永久锁定。">The allotment shrinks daily · $900/yr locked in for as long as you stay.</p>
+          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available, out of 2,000" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
+          <p class="founding-terms" data-zh="满员即涨价 · 只要不退订，$900/年 永久锁定。">The price rises when space runs out · $900/yr locked in for as long as you stay.</p>
         </div>
         <ul class="tf">
           <li data-zh="<b>Insider 全部内容</b>"><b>Everything in Insider</b></li>
@@ -1061,9 +1061,13 @@ function applyPricing(){
   const annual = isAnnual(), zh = LANG.cur() === 'zh';
   document.querySelectorAll('.price[data-annual]').forEach(p => {
     p.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = (annual ? p.dataset.annual : p.dataset.monthly) + ' '; });
-    const per = p.querySelector('.per'), was = p.querySelector('.was');
+    const per = p.querySelector('.per');
     if (per) per.textContent = zh ? (annual ? '/月 · 年付' : '/月 · 月付') : (annual ? '/mo billed annually' : '/mo billed monthly');
-    if (was) was.style.display = annual && (!p.dataset.offerKey || p.dataset.offerActive === 'true') ? '' : 'none';
+    /* the dead-price ladder is annual-only, and only while the offer it anchors is
+       live: monthly IS the struck price, so showing it struck beside itself is a lie.
+       Every rung goes together — the row wrapper and each .was inside it. */
+    const showWas = annual && (!p.dataset.offerKey || p.dataset.offerActive === 'true');
+    p.querySelectorAll('.wasrow,.was').forEach(w => { w.style.display = showWas ? '' : 'none'; });
   });
   document.querySelectorAll('.tier .badge').forEach(el => el.style.visibility = annual ? '' : 'hidden');
   document.querySelectorAll('.bill[data-bill]').forEach(el => {
@@ -1104,6 +1108,7 @@ LANG.onChange(applyPricing);
   if(!tier) return;
   const price=tier.querySelector('.price[data-offer-key]');
   const badge=tier.querySelector('[data-founding-badge]');
+  const tip=tier.querySelector('[data-founding-tip]');
   const count=tier.querySelector('[data-founding-count]');
   const fill=tier.querySelector('[data-founding-fill]');
   const track=tier.querySelector('.founding-track');
@@ -1114,7 +1119,12 @@ LANG.onChange(applyPricing);
       price.dataset.offerActive=o.active?'true':'false';
       price.dataset.annual=o.active?'$75':'$109';
       if(!o.active){
-        setBi(badge,'SAVE 27% · $1,308/YR','省 27% · $1,308/年');
+        /* offer closed: the anchor is the regular annual rack rate, so the saving is
+           measured against monthly at that rate ($1,788 − $1,308). Same sentence
+           shape as the founding tooltip — only the two numbers move. */
+        setBi(badge,'SAVE $480 A YEAR','每年省 $480');
+        setBi(tip,'Compared to paying monthly. Your full annual price is $1,308 against $1,788 with regular monthly payments.',
+          '相对按月付费：年付全年 $1,308，按月支付全年为 $1,788。');
         document.querySelectorAll('[data-mx-plan="pro"] .mx-mobile-price,[data-founding-matrix]').forEach(el=>{
           el.dataset.annual='$109/mo'+(el.matches('.mx-price')?' annual':'');
           el.dataset.annualZh='$109/月'+(el.matches('.mx-price')?' · 年付':'');
@@ -1125,8 +1135,10 @@ LANG.onChange(applyPricing);
         const left=cap-taken;
         const showCount=taken>=Number(o.public_count_threshold||0);
         const capLabel=cap.toLocaleString(),leftLabel=left.toLocaleString();
-        setBi(count,showCount?leftLabel+' of '+capLabel+' left':capLabel+' total — first come, first served',
-          showCount?'还剩 '+leftLabel+' / '+capLabel:'共 '+capLabel+' 个，先到先得');
+        /* availability framing, never a member count (HARD TRUTH LAW): the number that
+           moves is what is LEFT. It carries the weight; its frame stays quiet. */
+        setBi(count,showCount?'<b>'+leftLabel+'</b> of '+capLabel+' left':capLabel+' total — first come, first served',
+          showCount?'还剩 <b>'+leftLabel+'</b> / '+capLabel:'共 '+capLabel+' 个，先到先得');
         if(track){
           track.hidden=!showCount;
           track.setAttribute('aria-valuenow',String(taken));
@@ -2242,6 +2254,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
-<script src="onboard.js?v=dd42c793" defer></script>
+<script src="onboard.js?v=77624cf4" defer></script>
 </body>
 </html>
