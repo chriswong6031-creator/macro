@@ -269,7 +269,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed data on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -629,7 +629,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed tail data on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -2368,28 +2368,46 @@ jobs:
         # store survives even if the rest of this job later times out (this
         # job has a documented cancellation history — see its timeout-minutes
         # comment above). Own files — no other job writes these paths.
+        # METADATA-ONLY PUSH — this step must NEVER run `git pull` (P0 2026-08-01,
+        # d29e4dd44d / #4167). It is the one push in this job that runs while the
+        # whole night's render sits DIRTY in the working tree: on 2026-08-01 its
+        # `pull --rebase --autostash` parked ~5.7k uncommitted files, the re-apply
+        # conflicted against three sibling cache-rotation merges (#4151/#4155/#4158,
+        # 1,895 pages each), git left `Updated upstream / Stashed changes` blocks in
+        # 1,707 pages AND STILL EXITED 0 — and "commit engine outputs" below swept
+        # them into main via its broad `git add`. push_metadata_replay_commit builds
+        # the rebased chronicle commit in a temporary index (data/chronicle has a
+        # single writer, so a true replay conflict is a genuine anomaly) and pushes
+        # the object id; the dirty render tree is never touched. Local main stays on
+        # the original chronicle commit — the engine push loop below rebases it out
+        # as an already-applied patch, exactly as the old porcelain flow did.
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/chronicle 2>/dev/null || true
           if git diff --cached --quiet; then echo "no chronicle changes"; exit 0; fi
+          CHRONICLE_PARENT=$(git rev-parse HEAD)
           git commit -m "chronicle: nightly event spine + state_log + rollups $(date -u +%F)"
+          CHRONICLE_COMMIT=$(git rev-parse HEAD)
+          CHRONICLE_MESSAGE=$(git log -1 --format=%B "$CHRONICLE_COMMIT")
           PUSH_ALARM=420
           push_retry_init "chronicle artifacts"
           while push_attempt; do
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
-              if push_do; then echo "pushed chronicle artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            if CHRONICLE_PUBLISH=$(push_metadata_replay_commit "$CHRONICLE_PARENT" origin/main \
+                "$CHRONICLE_COMMIT" "$CHRONICLE_MESSAGE" "${RUNNER_TEMP:-/tmp}/chronicle-replay.idx"); then
+              if push_do origin "$CHRONICLE_PUBLISH:refs/heads/main"; then
+                echo "pushed chronicle artifacts on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
+                push_won; exit 0
+              fi
+            else
+              PUSH_FAIL_CLASS="rebase-conflict"
             fi
-            push_abort_rebase
             push_backoff
           done
           push_lost
-          echo "::warning::could not push chronicle artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
+          echo "::warning::could not push chronicle artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — the local chronicle commit still rides the engine push loop below)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
@@ -2580,6 +2598,31 @@ jobs:
           # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
           # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
+          # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): a conflicted
+          # autostash apply anywhere upstream of this step leaves `Updated upstream /
+          # Stashed changes` blocks that the broad `git add` above stages VERBATIM —
+          # 1,707 pages reached main exactly that way. First try to heal: restore each
+          # offending path WHOLESALE from HEAD (the parent commit is guard-clean, so
+          # this serves the prior nightly's copy — the same restore semantic as the
+          # #4167 emergency heal); a marker-born NEW file has no HEAD copy and is
+          # deleted. If the index still scans dirty afterwards, hard-fail: the Pages
+          # artifact upload below runs on always(), so a polluted tree must never
+          # survive to the deploy either.
+          if ! push_staged_clean data/ site/ reports/ templates/; then
+            printf '%s\n' "$PUSH_STAGED_OFFENDERS" | while IFS= read -r f; do
+              [ -n "$f" ] || continue
+              git checkout HEAD -- "$f" 2>/dev/null || git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true
+            done
+            if ! push_staged_clean data/ site/ reports/ templates/; then
+              printf '%s\n' "$PUSH_STAGED_OFFENDERS" | while IFS= read -r f; do
+                if [ -n "$f" ]; then git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true; rm -f -- "$f" 2>/dev/null || true; fi
+              done
+              echo "::error title=conflict markers persist::tree still scanned dirty after the HEAD restore — offending paths deleted outright; refusing to commit this tree. Inspect the push_staged_clean output above."
+              exit 1
+            fi
+            echo "::warning title=conflict markers healed::marker-polluted path(s) restored from HEAD before the engine commit (prior nightly copy served for those pages — see the offender list above)"
+            if git diff --cached --quiet; then echo "no engine output changes after conflict heal"; exit 0; fi
+          fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
@@ -2608,7 +2651,7 @@ jobs:
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
+            if { perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -2634,8 +2677,18 @@ jobs:
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               python3 scripts/check_conflict_markers.py --file site/start.html
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
-                  || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
+                # push_staged_clean: never bake conflict markers into the follow-up
+                # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the
+                # guarded engine commit alone — same forfeit as a failed render-sync.
+                git add site/
+                git add templates/ 2>/dev/null || true
+                if push_staged_clean site/ templates/; then
+                  git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
+                    || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
+                else
+                  git reset -q -- site/ templates/ || true
+                  echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded engine commit only"
+                fi
               fi
               if push_do; then echo "pushed engine outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi

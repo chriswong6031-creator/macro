@@ -231,14 +231,73 @@ push_abort_rebase() {
   return 0
 }
 
+# ---------------------------------------------------------------------------
+# Conflicted-autostash containment (P0 2026-08-01, engine commit d29e4dd44d,
+# emergency heal #4167).
+#
+# `git pull --rebase --autostash` EXITS 0 when the rebase succeeds but the
+# autostash re-apply conflicts: git leaves `<<<<<<< Updated upstream` /
+# `>>>>>>> Stashed changes` blocks plus unmerged index entries in the tree,
+# stores the autostash entry, prints a stderr warning — and the push loop's
+# success branch keeps running. On 2026-08-01 the nightly's chronicle push did
+# exactly that (its autostash parked the whole not-yet-committed night render;
+# upstream had re-stamped 1,895 pages via #4151/#4155/#4158), and the next
+# step's broad `git add data/ site/ reports/` swept 1,707 marker-polluted
+# pages into main. Two containment layers for the render-family lanes:
+#
+#   push_autostash_ok  — call immediately after a "successful" pull, in the
+#                        same `&&` condition. Detects the conflicted apply,
+#                        discards the leftover dirt (callers pull only AFTER
+#                        their outputs are committed, so tracked dirt at pull
+#                        time is throwaway by lane contract), drops git's own
+#                        `autostash` stash entry ONLY — the stash stack is
+#                        repo-global, so a named/foreign entry is never
+#                        touched — and returns 1 so the loop retries on a
+#                        clean tree.
+#   push_staged_clean  — fail-closed pre-commit gate: refuses the commit when
+#                        the index carries unmerged entries or staged conflict
+#                        markers. Offenders are exported for callers that heal.
+# ---------------------------------------------------------------------------
+
+push_autostash_ok() {
+  [ -n "$(git ls-files -u | head -1)" ] || return 0
+  local n
+  n=$(git ls-files -u | cut -f2 | sort -u | wc -l | tr -d ' ')
+  PUSH_FAIL_CLASS="autostash-conflict"
+  echo "::warning title=conflicted autostash apply::pull --rebase --autostash re-applied the dirty tree with conflicts in ${n} path(s) — discarding post-commit leftovers and retrying on a clean tree (this lane's outputs are already committed; origin is authoritative for the rest)"
+  git reset --hard HEAD >/dev/null
+  # The conflicted apply stores its entry at stash@{0}. Drop it by exact
+  # subject match only — git names its own entries "autostash"; anything else
+  # (operator stashes, retired-worktree parks) is foreign and must survive.
+  if [ "$(git log -g --format=%gs -1 refs/stash 2>/dev/null)" = "autostash" ]; then
+    git stash drop -q 2>/dev/null || true
+  fi
+  return 1
+}
+
+# $@ = pathspecs to scan (empty = the whole index). Sets PUSH_STAGED_OFFENDERS
+# to the newline-joined offending paths on failure.
+push_staged_clean() {
+  local unmerged staged offenders count
+  unmerged=$(git ls-files -u | cut -f2 | sort -u)
+  staged=$(git grep -l --cached -E '^(<<<<<<< |>>>>>>> )' -- "$@" 2>/dev/null || true)
+  offenders=$(printf '%s\n%s\n' "$unmerged" "$staged" | sed '/^$/d' | sort -u)
+  PUSH_STAGED_OFFENDERS="$offenders"
+  [ -n "$offenders" ] || return 0
+  count=$(printf '%s\n' "$offenders" | wc -l | tr -d ' ')
+  echo "::error title=conflict markers staged::refusing to commit — ${count} path(s) carry unresolved conflict markers or unmerged index entries (first: $(printf '%s\n' "$offenders" | head -3 | tr '\n' ' ')); a conflicted autostash apply upstream of this commit is the known cause (d29e4dd44d / #4167)"
+  return 1
+}
+
 # One-line plain-word reason for the current class (used in the retry log line).
 push_why() {
   case "${PUSH_FAIL_CLASS}" in
-    contention)      printf '%s' "lost the race for refs/heads/main — no conflict, just retry" ;;
-    rebase-conflict) printf '%s' "real rebase conflict — replay aborted, letting main settle" ;;
-    push-timeout)    printf '%s' "push exceeded the ${PUSH_ALARM}s alarm" ;;
-    push-error)      printf '%s' "push rejected for a non-contention reason — see the output above" ;;
-    *)               printf '%s' "fetch/rebase leg failed before the push" ;;
+    contention)         printf '%s' "lost the race for refs/heads/main — no conflict, just retry" ;;
+    rebase-conflict)    printf '%s' "real rebase conflict — replay aborted, letting main settle" ;;
+    autostash-conflict) printf '%s' "autostash re-apply conflicted — leftovers discarded, retrying on a clean tree" ;;
+    push-timeout)       printf '%s' "push exceeded the ${PUSH_ALARM}s alarm" ;;
+    push-error)         printf '%s' "push rejected for a non-contention reason — see the output above" ;;
+    *)                  printf '%s' "fetch/rebase leg failed before the push" ;;
   esac
   return 0
 }
@@ -256,6 +315,11 @@ push_backoff() {
       # A conflict needs main to settle, not a faster retry.
       PUSH_N_CONFLICT=$(( PUSH_N_CONFLICT + 1 ))
       cap=60; base=$(( 8 * PUSH_ATTEMPT )) ;;
+    autostash-conflict)
+      # The tree was reset clean by push_autostash_ok; the very next replay
+      # succeeds — retry on the fast ladder like contention.
+      PUSH_N_OTHER=$(( PUSH_N_OTHER + 1 ))
+      cap=20; base=$(( 2 + 3 * PUSH_ATTEMPT )) ;;
     *)
       PUSH_N_OTHER=$(( PUSH_N_OTHER + 1 ))
       cap=45; base=$(( 5 * PUSH_ATTEMPT )) ;;

@@ -224,7 +224,11 @@ jobs:
               comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                        <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
                 | while IFS= read -r f; do rm -f -- "$f" || true; done
-              if git pull --rebase --autostash -X theirs origin main; then
+              # push_autostash_ok (P0 d29e4dd44d/#4167): a conflicted autostash apply
+              # here would leave marker blocks that the broad "commit engine outputs"
+              # add later in THIS job stages verbatim — the exact chronicle-step shape
+              # that polluted the US nightly. Detect, discard, retry clean.
+              if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
                 if push_do; then echo "pushed asia data (attempt $PUSH_ATTEMPT)"; push_won; break; fi
               fi
               push_abort_rebase
@@ -650,6 +654,12 @@ jobs:
           git add templates/ 2>/dev/null || true
           # force-add the gitignored per-market search libraries + reconstructed candles
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
+          # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): the broad
+          # `git add data/ site/` above stages a conflicted-autostash tree VERBATIM
+          # (the "commit collected asia data" push loop earlier in this job pulls
+          # while later-rendered paths are still dirty — the same shape that baked
+          # 1,707 marker pages into the US nightly). Refuse to commit one.
+          push_staged_clean data/ site/ templates/ || exit 1
           git commit -m "engine: asia dashboards $(date -u +%F)"
           PUSH_BUDGET_SECS=600   # sole nightly for CN/HK — an unpushed commit is a silently-dropped day (2026-07-22)
           PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
@@ -675,7 +685,7 @@ jobs:
             # The autoresolver keeps BOTH sides' hashed files byte-pure and completes
             # the rebase (the next externalize_css prunes the orphan); on any other
             # conflict it exits nonzero, leaving the rebase for the abort+retry below.
-            if git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
+            if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
               # post-rebase template↔site re-sync (ui.template_site_sync): externalize_css
               # above lifts the plain-copy landing/chat pages' inline <style> to hashed files,
               # diverging site/index.html + site/chat.html from their templates — and this lane
@@ -702,8 +712,18 @@ jobs:
               # autostash apply was staged wholesale — 1,704 pages shipped markers)
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-heal: restore coherent ms-board post-rebase (ui.ms_board_coherence)" \
-                  || echo "::warning::render-heal commit failed (non-fatal)"
+                # push_staged_clean: never bake conflict markers into the follow-up
+                # commit (P0 d29e4dd44d/#4167); on a dirty scan push the guarded
+                # engine commit alone.
+                git add site/
+                git add templates/ 2>/dev/null || true
+                if push_staged_clean site/ templates/; then
+                  git commit -m "render-heal: restore coherent ms-board post-rebase (ui.ms_board_coherence)" \
+                    || echo "::warning::render-heal commit failed (non-fatal)"
+                else
+                  git reset -q -- site/ templates/ || true
+                  echo "::warning title=render-heal skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped"
+                fi
               fi
               if push_do; then echo "pushed asia engine outputs (attempt $PUSH_ATTEMPT)"; push_won; exit 0; fi
             fi

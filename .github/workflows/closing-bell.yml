@@ -530,6 +530,9 @@ jobs:
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           SESSION_DATE=$(python3 -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import session_date; print(session_date().isoformat())")
           MSG="closingbell: full close render ${SESSION_DATE} (scope=close)"$'\n\n'"provisional close render (full market scope); nightly is canonical"$'\n'"CLOSINGBELL=1 lane - site/ + regime/market-state snapshot pointers (fastpath idiom); ledgers discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+          # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): refuse to
+          # commit staged conflict markers or unmerged index entries.
+          push_staged_clean site/ templates/ data/ || exit 1
           git commit -m "$MSG"
           PUSH_ALARM=420
           push_retry_init "closingbell rendered site"
@@ -553,7 +556,7 @@ jobs:
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
+            if { perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-render arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped
@@ -567,8 +570,18 @@ jobs:
               # autostash apply was staged wholesale — 1,704 pages shipped markers)
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + closingbell)" \
-                  || echo "::warning::render-sync commit failed (non-fatal)"
+                # push_staged_clean: never bake conflict markers into the follow-up
+                # commit (P0 d29e4dd44d/#4167); on a dirty scan push the guarded
+                # render commit alone.
+                git add site/
+                git add templates/ 2>/dev/null || true
+                if push_staged_clean site/ templates/; then
+                  git commit -m "render-sync: post-rebase guards (re-stamp + closingbell)" \
+                    || echo "::warning::render-sync commit failed (non-fatal)"
+                else
+                  git reset -q -- site/ templates/ || true
+                  echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped"
+                fi
               fi
               if push_do; then echo "pushed closingbell rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
