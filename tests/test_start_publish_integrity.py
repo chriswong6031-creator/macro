@@ -76,3 +76,47 @@ def test_start_writing_lanes_guard_before_commit_and_after_rebase() -> None:
 def test_pr_marker_gate_ratchets_from_the_base_branch() -> None:
     manifest = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
     assert 'check_conflict_markers.py --changed-from "origin/${CI_BASE_REF:-main}"' in manifest
+
+
+def test_start_writing_lanes_gate_runtime_single_instance() -> None:
+    """Marker gates can't see the 2026-08-01 second act: a stale-checkout render
+    re-emitted the doubled live pair with zero conflict markers (adad513bdfe) and
+    pushed it over the #4163 fix. Every start-writing lane must pair each marker
+    gate with the runtime single-instance guard — pre-commit healing from HEAD,
+    post-rebase healing from the freshly rebased origin/main."""
+    marker_gate = "python3 scripts/check_conflict_markers.py --file site/start.html"
+    for lane in ("render.yml", "engine-render.yml", "daily.yml"):
+        text = (WORKFLOWS / lane).read_text(encoding="utf-8")
+        assert text.count("python3 scripts/check_start_runtime.py --heal-from HEAD") == 1, (
+            f"{lane} lacks the pre-commit start-runtime gate (heal from HEAD)"
+        )
+        assert text.count("python3 scripts/check_start_runtime.py --heal-from origin/main") == 1, (
+            f"{lane} lacks the post-rebase start-runtime gate (heal from origin/main)"
+        )
+        assert text.count("scripts/check_start_runtime.py") == text.count(marker_gate), (
+            f"{lane}: every start.html marker gate needs a runtime gate beside it"
+        )
+
+
+def test_lane_guard_checks_the_same_runtimes() -> None:
+    """The lane guard and this file must police the same runtime list — a drift
+    (an asset added here but not there) reopens the unguarded-lane hole."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "check_start_runtime", ROOT / "scripts" / "check_start_runtime.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert set(mod.RUNTIMES) == {
+        "globe-deck.js",
+        "sky.js",
+        "hub-welcome.js",
+        "live_config.js",
+        "live.js",
+        "wh_banner.js",
+    }
+    assert not mod.check_text(
+        "".join(f'<script defer src="{a}?v=x"></script>' for a in mod.RUNTIMES)
+    )
+    assert mod.check_text('<script defer src="sky.js"></script>')

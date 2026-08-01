@@ -501,6 +501,50 @@ checks:
     notes: >
       Selftest flag is spelled --self-test (hyphenated).
 
+  - law_id: ui.start_runtime_single_instance
+    summary: >
+      site/start.html must load each page runtime (globe-deck.js, sky.js,
+      hub-welcome.js, live_config.js, live.js, wh_banner.js) exactly once.
+      2026-08-01 second act: an engine-render whose checkout predated the
+      #4163 emitter fix re-rendered start.html with the old builder and pushed
+      it post-rebase (adad513bdfe) — doubled live pair, banner rail gone, zero
+      conflict markers, so git.no_conflict_markers passed and the page shipped
+      to main between PR CI runs. The start-writing lanes gate the page
+      directly: violating copies are healed wholesale from a known-good ref
+      (HEAD pre-commit, origin/main post-rebase) and the lane only goes red if
+      the healed copy still violates.
+    source_ref:
+      - scripts/check_start_runtime.py
+      - tests/test_start_publish_integrity.py
+      - "2026-08-01 incident (adad513bdfe)"
+    severity: hard
+    check_script: scripts/check_start_runtime.py
+    ci_wiring:
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Counts <script src> basenames only; cannot see a runtime inlined into
+        a <script> body or double-executed by client code.
+      - The PR-side twin (tests/test_start_publish_integrity.py) gates pull
+        requests; this guard exists because render lanes push to main without
+        PR CI.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Selftest flag is spelled --self-test (hyphenated). Lanes wire it twice,
+      immediately after each git.no_conflict_markers start.html gate: pre-commit
+      with --heal-from HEAD, post-rebase with --heal-from origin/main —
+      tests/test_start_publish_integrity.py pins both call sites per lane.
+
   # ── Epistemics guards ──────────────────────────────────────────────────────
 
   - law_id: epistemics.validated_claims
