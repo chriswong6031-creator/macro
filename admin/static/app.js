@@ -1398,6 +1398,19 @@ function anTimelineRow(ev) {
   const scr = (ev.scroll != null && ev.scroll !== "") ? `<span class="an-tw">${ev.scroll}%↕</span>` : "";
   return `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ti">${icon}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${detail}</span>${dwell}${scr}</div>`;
 }
+/* A stitched visit can cross origins (macro ↔ terminal), so mark each hop rather than letting
+   the two sites' paths run together as if they were one site's navigation. */
+function anTimeline(path) {
+  if (!path.length) return "<div class='muted sub'>no events</div>";
+  let site = null;
+  return path.map(ev => {
+    const hop = ev.site && ev.site !== site
+      ? `<div class="an-trow sub"><span class="an-tt"></span><span class="an-ti">⌁</span><span class="an-ty">${site ? "moved to" : "on"}</span><span class="an-td"><b>${esc(ev.site)}</b></span></div>`
+      : "";
+    if (ev.site) site = ev.site;
+    return hop + anTimelineRow(ev);
+  }).join("");
+}
 async function anLoad(sub) {
   const body = $("#anBody"); if (!body) return;
   body.innerHTML = `<div class="spin">loading…</div>`;
@@ -1494,7 +1507,7 @@ async function anLoadTable(kind) {
   const rows = kind === "visitors" ? (d.visitors || []) : (d.sessions || []);
   const cnt = $("#anTblCnt");
   if (cnt) cnt.textContent = fmtNum(rows.length) + (rows.length >= st.rows ? "+" : "") + (st.q ? " match" : "") + (st.bots ? " · bots shown" : "");
-  host.innerHTML = (kind === "visitors" ? anVisitorsTable : anSessionsTable)(rows, st.q);
+  host.innerHTML = (kind === "visitors" ? anVisitorsTable : anSessionsTable)(rows, st.q, d.tz_label);
   host.removeAttribute("aria-busy");
 }
 const AN_BOT_PILL = '<span class="statpill s-mut" title="detected crawler/automation">bot</span>';
@@ -1513,9 +1526,15 @@ function anRegisteredIdentity(name, email, visitorId) {
   const emailLine = name && email ? `<div class="mono sub">${esc(email)}</div>` : "";
   return `<a href="#/visitor/${encodeURIComponent(visitorId || "")}"><b>${esc(label)}</b></a> <span class="statpill s-ok">registered</span>${emailLine}`;
 }
-function anSessionsTable(rows, q) {
+/* Tabs-merged pill: this row is a stitched VISIT, so say how many raw per-tab/per-origin
+   sessions folded into it — otherwise a merge is indistinguishable from a single session. */
+function anTabsPill(n) {
+  if (!(n > 1)) return "";
+  return ` <span class="statpill s-mut" title="${esc(`${n} raw tab/origin sessions stitched into one visit (under 30 min apart)`)}">${fmtNum(n)} tabs</span>`;
+}
+function anSessionsTable(rows, q, tz) {
   const empty = q ? "no sessions match this filter" : "no sessions yet";
-  return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
+  return `<table><thead><tr><th>Started${tz ? ` <span class="sub">(${esc(tz)})</span>` : ""}</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
       <td>${s.email || s.name || s.user_id
         ? anRegisteredIdentity(s.name, s.email, s.user_id || s.visitor_id)
@@ -1523,15 +1542,16 @@ function anSessionsTable(rows, q) {
       }${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(s.ip || "—")}</td>
       <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
-      <td class="sub">${esc(s.site || "")}</td>
+      <td class="sub">${esc(s.site || "")}${anTabsPill(s.tab_sessions)}</td>
       <td class="r">${fmtNum(s.pages)}</td><td class="r">${fmtNum(s.events)}</td>
       <td class="r sub">${s.duration_s != null ? fmtElapsedSec(s.duration_s) : "—"}</td>
       <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || `<tr><td colspan='9' class='muted'>${empty}</td></tr>`}
     </tbody></table>`;
 }
-function anVisitorsTable(rows, q) {
+function anVisitorsTable(rows, q, tz) {
   const empty = q ? "no visitors match this filter" : "no visitors yet";
-  return `<table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
+  const seen = tz ? ` <span class="sub">(${esc(tz)})</span>` : "";
+  return `<table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Visits</th><th class="r">Events</th><th class="r">IPs</th><th>First seen${seen}</th><th>Last seen${seen}</th></tr></thead><tbody>
     ${rows.map(v => `<tr>
       <td>${v.is_user
         ? anRegisteredIdentity(v.name, v.email, v.visitor_id)
@@ -1540,13 +1560,13 @@ function anVisitorsTable(rows, q) {
       <td class="mono">${esc(v.last_ip || "—")}</td>
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
       <td>${v.is_vpn ? '<span class="statpill s-warn">VPN</span>' : '<span class="sub">—</span>'}</td>
-      <td class="r"><b>${fmtNum(v.sessions)}</b></td><td class="r">${fmtNum(v.events)}</td><td class="r">${fmtNum(v.ips)}</td>
+      <td class="r"><b title="${esc(`${v.tab_sessions || 0} raw tab/origin sessions`)}">${fmtNum(v.sessions)}</b></td><td class="r">${fmtNum(v.events)}</td><td class="r">${fmtNum(v.ips)}</td>
       <td class="mono sub">${esc(v.first_seen || "")}</td><td class="mono sub">${esc(v.last_seen || "")}</td></tr>`).join("") || `<tr><td colspan='9' class='muted'>${empty}</td></tr>`}
     </tbody></table>`;
 }
 AN_RENDER.sessions = async () => {
   const b = $("#anBody");
-  b.innerHTML = `<div class="section">Recent sessions <span class="sub">— per visit: who (visitor id), their IP + location. Click replay to see the exact path.</span></div>
+  b.innerHTML = `<div class="section">Recent sessions <span class="sub">— one row per VISIT: who (visitor id), their IP + location. The tracker's session id is per browser tab and per origin, so a macro → Terminal → macro sitting used to file three rows; here anything under 30 minutes apart from the same person is stitched into one, and the Site column shows the trip. Click replay to see the exact path.</span></div>
     ${anTableBar("sessions")}
     <div id="anTbl"><div class="spin">loading…</div></div>`;
   anWireTableBar("sessions");
@@ -1554,7 +1574,7 @@ AN_RENDER.sessions = async () => {
 };
 AN_RENDER.visitors = async () => {
   const b = $("#anBody");
-  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by name when available (otherwise email), with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
+  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by name when available (otherwise email), with every device/cookie merged into one; anonymous visitors keep their cookie id. Visits are counted on the same 30-minute stitching rule as the Sessions tab, so the two agree. Most visits first — click to open full history + tickers searched.</span></div>
     ${anTableBar("visitors")}
     <div id="anTbl"><div class="spin">loading…</div></div>`;
   anWireTableBar("visitors");
@@ -1614,9 +1634,9 @@ function currentAnalyticsDetail() {
 }
 async function renderSessionDetail(id) {
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
-  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Session replay");
+  CURRENT = "analytics"; setActiveNav("analytics"); setTopbarTitle("Visit replay");
   const v = $("#view");
-  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Session <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">Visit from <code>${esc(id.slice(0, 12))}…</code></span></div><div id="anDet"><div class="spin">loading…</div></div>`;
   $("#anBack").onclick = (e) => { e.preventDefault(); location.hash = ""; go("analytics"); };
   const d = await api(`/api/analytics/fp/session?id=${encodeURIComponent(id)}`);
   const det = $("#anDet");
@@ -1624,14 +1644,17 @@ async function renderSessionDetail(id) {
   const head = d.head || {}, path = d.path || [];
   const headLabel = head.name || head.email;
   const headTarget = head.user_id || head.visitor_id || "";
+  const tz = d.tz_label ? ` <span class="sub">(${esc(d.tz_label)})</span>` : "";
+  const span = [head.started, head.ended].filter(Boolean).join(" → ");
   det.innerHTML = `
     <div class="grid">
       ${card("Visitor", `<div class="big" style="font-size:15px"><a href="#/visitor/${encodeURIComponent(headTarget)}">${esc(headLabel || ((head.visitor_id || "—").slice(0, 12) + "…"))}</a></div><div class="sub">${head.name && head.email ? esc(head.email) + " · " : ""}${head.user_id ? "registered" : "anonymous"}</div>`)}
       ${card("Origin", `<div class="big" style="font-size:15px">${esc(head.site || "—")}</div><div class="sub mono">${esc(head.ip || "")}</div>`)}
+      ${card(`Visit${tz}`, `<div class="big" style="font-size:15px">${esc(span || "—")}</div><div class="sub">${head.duration_s != null ? fmtElapsedSec(head.duration_s) : "—"}${anTabsPill(head.tab_sessions)}</div>`)}
       ${card("Events", `<div class="big">${fmtNum(path.length)}</div><div class="sub">ordered path below</div>`)}
     </div>
-    <div class="section">Path (in order)</div>
-    <div class="an-timeline">${path.map(anTimelineRow).join("") || "<div class='muted sub'>no events</div>"}</div>`;
+    <div class="section">Path (in order)${tz}</div>
+    <div class="an-timeline">${anTimeline(path)}</div>`;
 }
 async function renderVisitorDetail(id) {
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
@@ -1650,7 +1673,7 @@ async function renderVisitorDetail(id) {
   det.innerHTML = `
     <div class="grid">
       ${card("Identity", `<div class="big" style="font-size:15px">${esc(identityLabel)}</div><div class="sub">${identityEmail}${registeredLabel ? '<span class="statpill s-ok">registered</span> ' : (candidateLabel ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
-      ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
+      ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub" title="${esc(`${p.tab_sessions || 0} raw tab/origin sessions`)}">${fmtNum(p.sessions)} visits${p.first_seen ? ` · ${esc(String(p.first_seen).slice(0, 10))} → ${esc(String(p.last_seen || "").slice(0, 10))}` : ""}</div>`)}
       ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
       ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
     </div>
