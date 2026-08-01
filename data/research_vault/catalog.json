@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T07:14:54.746297+00:00",
-  "count": 512,
+  "generated_at": "2026-08-01T07:29:57.435036+00:00",
+  "count": 513,
   "institutions": [
     "Amova",
     "Apollo",
@@ -582,6 +582,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4kmedtxqcr8-be0baf",
+      "title": "GS Vol Views July 31",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:18:52Z",
+      "summary_points": [
+        "**Vol Panic Index & Positioning**: Low Vol Panic Index (5.1/10) with elevated desk activity (8/10) signals reduced panic but positioning reset in Semis (long delta/short vol), limiting parabolic upside potential.",
+        "**Earnings/NFP Catalyst**: ~14% S&P 500 market cap earnings and July NFP implied move (1.53%) next week create high-impact volatility catalyst for near-term market moves.",
+        "**Macro Flows & Sentiment**: NDX’s 6th consecutive down session (longest since Nov '16) and GS call buying (21,275 QQQ 7Aug 690 calls) indicate client capitulation, hedge monetization, and structural negative spot-vol correlation near peak dealer gamma.",
+        "**Trade Execution**: Tactical plays include short-dated QQQ call spreads for broad tech upside capture and IWM put spreads for protection amid YTD outperformance, poor seasonality, and rates uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
