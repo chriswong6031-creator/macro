@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T23:59:05.979301+00:00",
-  "count": 491,
+  "generated_at": "2026-08-01T00:14:16.133266+00:00",
+  "count": 492,
   "institutions": [
     "Amova",
     "Apollo",
@@ -386,6 +386,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cmfp1h4mrao-a0f1cf",
+      "title": "Global Markets Daily What Could Spark a Reset Higher in FX Vol",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:18Z",
+      "summary_points": [
+        "**FX Volatility Reset Mechanism**: Resets occur only when cross-asset volatility spikes (equities, commodities, rates), driven by liquidity crises (30% equity sell-offs) or supply shocks; historical episodes show direct correlation between growth deterioration and FX volatility spikes.",
+        "**Current Anomaly Amid Uncertainty**: FX volatility (EUR/USD, GBP/USD, USD/JPY) at 2026 lows despite AI, energy, and Fed policy uncertainties, contrasting with historical patterns where similar risks triggered volatility surges.",
+        "**Structural Divergence from History**: Recent weeks show FX volatility failing to reset sharply despite rising cross-asset volatility (unlike historical episodes), indicating a deviation in market dynamics or structural shift in volatility transmission.",
+        "**Key Risk Triggers**: Fed rate hikes, persistent higher energy prices, and end of AI boom create clear paths to cross-asset volatility spikes; stable growth expectations (US, China, Euro area) currently constrain FX volatility but are vulnerable to deterioration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
