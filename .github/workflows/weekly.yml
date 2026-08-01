@@ -279,6 +279,13 @@ jobs:
           # Stock-search libraries are gitignored — force-add so the committed-tree
           # deploy ships their index/detail JSON. See daily.yml.
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
+          # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): same
+          # broad-add + autostash-pull + always()-artifact shape as the daily
+          # engine job. Heal display paths from HEAD, die on ledger paths —
+          # push_staged_heal also sweeps offenders so the always() Pages
+          # artifact can never ship marker bytes.
+          push_staged_heal data/ reports/ site/ templates/ || exit 1
+          if git diff --cached --quiet; then echo "no weekly changes after conflict heal"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the deploy below uses the uploaded artifact). Retry rebase+push,
@@ -311,7 +318,7 @@ jobs:
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
-            if git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
+            if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
               if push_do; then echo "pushed weekly outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
