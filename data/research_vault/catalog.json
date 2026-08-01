@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T07:00:18.053669+00:00",
-  "count": 511,
+  "generated_at": "2026-08-01T07:14:54.746297+00:00",
+  "count": 512,
   "institutions": [
     "Amova",
     "Apollo",
@@ -562,6 +562,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ldjyjjzbtqd-5a6881",
+      "title": "CEEMEA Economics Analyst Factoring War Related Supply Shocks Into Our Russia Forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:19:18Z",
+      "summary_points": [
+        "**Refinery Outage Vulnerability**: 35-40% refinery capacity loss (21% YoY refining output drop) threatens diesel self-sufficiency and gasoline supply, with export bans exacerbating shortages and driving 6pp Putin approval decline.",
+        "**Russia Growth/Inflation Shock**: Growth forecast slashed to 0.2% (2026) from 0.9%, inflation raised to 6.5% (end-year) due to war supply shocks, energy prices, and constrained fiscal policy.",
+        "**Gasoline Export Ban Impact**: Extended gasoline export ban (now including diesel) intensifies domestic shortages, triggering petrol queues and amplifying inflation expectations amid structural supply chain vulnerabilities.",
+        "**South Africa Fiscal Credibility**: FY2025/26 deficit at 4.3% GDP and primary surplus 1.1% GDP drive expected S&P/Moody’s BB→BB+ upgrade, creating bullish SAGB yield compression opportunity ahead of market pricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
