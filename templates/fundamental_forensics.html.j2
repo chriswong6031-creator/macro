@@ -1,0 +1,218 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filing Forensics — MastermindX</title>
+{% set seo_title = "Filing Forensics — MastermindX" %}
+{% set seo_desc = "Inspect review-worthy financial-statement changes through normalized values, transparent formulas, thresholds, and SEC source links." %}
+{% set seo_path = "fundamental_forensics.html" %}
+{% include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="fundamental_forensics.css">
+</head>
+<body class="ff-page">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+<div class="ff-workspace" id="ff-workspace" data-tab="radar">
+  <main class="ff-main" id="ff-main">
+    <header class="ff-hero">
+      <div class="ff-hero-copy">
+        <p class="ff-eyebrow">{{ t('Fundamental forensics', '基本面取证') }}</p>
+        <h1>{{ t('Filing Change Radar', '财报变化雷达') }}</h1>
+        <p class="ff-deck">{{ t('See what changed, why it was flagged, and the SEC source links behind it.', '查看发生了什么变化、为何被标记，以及对应的 SEC 来源链接。') }}</p>
+      </div>
+      <dl class="ff-run-meta" aria-label="Dataset status">
+        <div>
+          <dt>{{ t('As of', '数据截至') }}</dt>
+          <dd id="ff-as-of">—</dd>
+        </div>
+        <div>
+          <dt>{{ t('Generated', '生成时间') }}</dt>
+          <dd id="ff-generated-at">—</dd>
+        </div>
+        <div>
+          <dt>{{ t('Basis', '数据口径') }}</dt>
+          <dd id="ff-source-label">—</dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="ff-context-card" aria-labelledby="ff-company-label">
+      <div class="ff-company-picker">
+        <label id="ff-company-label" for="ff-company-search">{{ t('Company', '公司') }}</label>
+        <div class="ff-combobox-wrap">
+          <span class="ff-search-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m12.6 12.6 4 4"></path></svg>
+          </span>
+          <input id="ff-company-search" class="ff-company-search" type="search" autocomplete="off"
+            role="combobox" aria-autocomplete="list" aria-expanded="false"
+            aria-controls="ff-company-options" aria-activedescendant=""
+            data-placeholder-en="Search ticker or company"
+            data-placeholder-zh="搜索股票代码或公司"
+            placeholder="Search ticker or company">
+          <button class="ff-search-clear" id="ff-search-clear" type="button" hidden
+            aria-label="Clear company search" data-label-en="Clear company search" data-label-zh="清除公司搜索">
+            <span aria-hidden="true">×</span>
+          </button>
+          <div class="ff-company-options" id="ff-company-options" role="listbox"
+            aria-label="Company matches" hidden></div>
+        </div>
+      </div>
+      <div class="ff-company-identity" id="ff-company-identity" aria-live="polite">
+        <div class="ff-company-mark" aria-hidden="true">—</div>
+        <div>
+          <div class="ff-company-name">{{ t('Loading coverage…', '正在载入覆盖范围…') }}</div>
+          <div class="ff-company-detail">—</div>
+        </div>
+      </div>
+      <div class="ff-company-action" id="ff-company-action">
+        <span class="ff-action-glyph" aria-hidden="true">·</span>
+        <span class="ff-action-copy">{{ t('Loading', '正在载入') }}</span>
+      </div>
+    </section>
+
+    <section class="ff-data-notice" id="ff-data-notice" aria-live="polite" hidden></section>
+
+    <nav class="ff-tabs" aria-label="Forensics views">
+      <div class="ff-tablist" role="tablist" aria-label="Forensics views">
+        <button class="ff-tab is-active" id="ff-tab-radar" type="button" role="tab"
+          aria-selected="true" aria-controls="ff-panel-radar" tabindex="0" data-tab="radar">
+          <span class="ff-tab-index" aria-hidden="true">01</span>{{ t('Radar', '雷达') }}
+        </button>
+        <button class="ff-tab" id="ff-tab-statements" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-statements" tabindex="-1" data-tab="statements">
+          <span class="ff-tab-index" aria-hidden="true">02</span>{{ t('Statements', '财务报表') }}
+        </button>
+        <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
+          <span class="ff-tab-index" aria-hidden="true">03</span>{{ t('Compare', '期间对比') }}
+        </button>
+        <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
+          <span class="ff-tab-index" aria-hidden="true">04</span>{{ t('Sources', '来源') }}
+        </button>
+      </div>
+      <div class="ff-view-status" id="ff-view-status" role="status" aria-live="polite">
+        {{ t('Loading filing data…', '正在载入财报数据…') }}
+      </div>
+    </nav>
+
+    <section class="ff-panel" id="ff-panel-radar" role="tabpanel" aria-labelledby="ff-tab-radar" tabindex="0">
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker">{{ t('Ranked review queue', '优先审阅队列') }}</p>
+          <h2>{{ t('What deserves a closer look', '哪些变化值得深入查看') }}</h2>
+          <p>{{ t('Rule-based checks surface changes; each result opens to its normalized inputs, rule math, and SEC source endpoints.', '基于规则的检查会浮现变化；每项结果都可展开查看标准化输入、规则计算及 SEC 来源端点。') }}</p>
+        </div>
+        <div class="ff-filter-summary" id="ff-filter-summary">—</div>
+      </header>
+
+      <div class="ff-filterbar" aria-label="Finding filters">
+        <div class="ff-segmented" id="ff-priority-filters" role="group" aria-label="Priority filter">
+          <button type="button" class="ff-filter is-active" data-priority="all" aria-pressed="true">
+            {{ t('All', '全部') }} <span class="ff-filter-count" data-count-for="all">0</span>
+          </button>
+          <button type="button" class="ff-filter" data-priority="high" aria-pressed="false">
+            <span class="ff-filter-symbol ff-filter-symbol-review" aria-hidden="true">!</span>
+            {{ t('Review now', '立即审阅') }} <span class="ff-filter-count" data-count-for="high">0</span>
+          </button>
+          <button type="button" class="ff-filter" data-priority="watch" aria-pressed="false">
+            <span class="ff-filter-symbol ff-filter-symbol-watch" aria-hidden="true">○</span>
+            {{ t('Watch', '持续关注') }} <span class="ff-filter-count" data-count-for="watch">0</span>
+          </button>
+        </div>
+        <label class="ff-topic-filter" for="ff-topic-select">
+          <span>{{ t('Topic', '主题') }}</span>
+          <select id="ff-topic-select">
+            <option value="all">All topics / 全部主题</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="ff-findings" id="ff-findings" role="list" aria-label="Filing findings"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-statements" role="tabpanel" aria-labelledby="ff-tab-statements" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker">{{ t('Normalized projection', '标准化投影') }}</p>
+          <h2>{{ t('Statement history', '财务报表历史') }}</h2>
+          <p>{{ t('SEC Company Facts values used by the current detector set. Quarterly flows may be derived from year-to-date facts; verify against the filing.', '当前检测器使用的 SEC Company Facts 数值。季度流量可能由年初至今数据推导；请对照原始财报核验。') }}</p>
+        </div>
+      </header>
+      <div id="ff-statements"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-compare" role="tabpanel" aria-labelledby="ff-tab-compare" tabindex="0" hidden>
+      <header class="ff-panel-head ff-compare-head">
+        <div>
+          <p class="ff-kicker">{{ t('Period bridge', '期间变化桥') }}</p>
+          <h2>{{ t('Compare normalized periods', '对比标准化期间') }}</h2>
+          <p>{{ t('Changes are shown neutrally; direction alone is not an accounting verdict.', '变化采用中性呈现；单凭方向并不代表会计结论。') }}</p>
+        </div>
+        <div class="ff-period-controls" id="ff-period-controls">
+          <label for="ff-current-period">
+            <span>{{ t('Current', '本期') }}</span>
+            <select id="ff-current-period"></select>
+          </label>
+          <span class="ff-period-arrow" aria-hidden="true">←</span>
+          <label for="ff-prior-period">
+            <span>{{ t('Prior', '上期') }}</span>
+            <select id="ff-prior-period"></select>
+          </label>
+        </div>
+      </header>
+      <div class="ff-compare-grid" id="ff-compare-grid"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-trace" role="tabpanel" aria-labelledby="ff-tab-trace" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker">{{ t('Source map', '来源映射') }}</p>
+          <h2>{{ t('Coverage and evidence map', '覆盖范围与证据映射') }}</h2>
+          <p>{{ t('Inspect the projection basis, detector inputs, SEC endpoints, and known coverage limits.', '查看投影口径、检测器输入、SEC 来源端点及已知覆盖局限。') }}</p>
+        </div>
+      </header>
+      <div id="ff-trace"></div>
+    </section>
+  </main>
+
+  <aside class="ff-evidence" id="ff-evidence" aria-labelledby="ff-evidence-title" tabindex="-1">
+    <header class="ff-evidence-head">
+      <div>
+        <p class="ff-kicker">{{ t('Evidence inspector', '证据检查器') }}</p>
+        <h2 id="ff-evidence-title">{{ t('Select a finding', '选择一项发现') }}</h2>
+      </div>
+      <button class="ff-evidence-close" id="ff-evidence-close" type="button"
+        aria-label="Close evidence inspector" data-label-en="Close evidence inspector" data-label-zh="关闭证据检查器">
+        <span aria-hidden="true">×</span>
+      </button>
+    </header>
+    <div class="ff-evidence-body" id="ff-evidence-body">
+      <div class="ff-evidence-empty">
+        <span class="ff-empty-mark" aria-hidden="true">↳</span>
+        <p>{{ t('Choose a result to inspect its values, formula, threshold, and SEC source links.', '选择一项结果，查看数值、公式、阈值和 SEC 来源链接。') }}</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="ff-scrim" id="ff-scrim" hidden></div>
+
+<template id="ff-loading-template">
+  <div class="ff-loading" role="status">
+    <span class="ff-loading-dot" aria-hidden="true"></span>
+    <span class="l-en">Loading filing review data…</span><span class="l-zh">正在载入财报审阅数据…</span>
+  </div>
+</template>
+
+<script src="theme.js" defer></script>
+<script src="fundamental_forensics.js" defer></script>
+</body>
+</html>

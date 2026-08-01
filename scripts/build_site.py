@@ -5933,6 +5933,16 @@ def main() -> int:
     except Exception as _nw_public_e:  # noqa: BLE001 — additive; never break main build
         log.warning("neural_web.html render failed (%s); page skipped", _nw_public_e)
 
+    # Filing Forensics — render only the data-free premium workbench shell.
+    # Its assembled state is gitignored and served at runtime through the
+    # authenticated private-state API; build_site never reads or republishes it.
+    try:
+        from scripts.build_fundamental_forensics import render_from_state as _render_forensics
+        _ff_page = _render_forensics(config.ROOT)
+        log.info("wrote %s", _ff_page)
+    except Exception as _ff_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("fundamental_forensics.html render failed (%s); page skipped", _ff_e)
+
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four
     # site/neuralwebdata theme artifacts already written by build_thematic_state.

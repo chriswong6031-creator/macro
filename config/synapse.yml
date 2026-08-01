@@ -40,6 +40,34 @@ meta:
 # ============================================================
 artifacts:
 
+  fundamental-forensics-private-state:
+    path: fundamental_forensics/state.json.gz
+    format: json
+    producer: scripts/build_fundamental_forensics.py
+    known_extra_writers: []
+    owner_program: fundamental-forensics
+    cadence: daily-engine
+    storage: r2
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: fundamental_forensics_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - app/forensics.py
+      - engine/neuralweb/context_api.py
+      - engine/neuralweb/brain_gateway.py
+    external_consumers:
+      - mastermind-x:filing-forensics-workbench
+    qual_ladder_ref: null
+    notes: >
+      Private Research Vault R2 object assembled from the normalized SEC panels.
+      The public repo carries only the shell and detector code; entitled browsers
+      receive this gzip through /api/forensics/state. Display/context only, not a
+      point-in-time accession store, company score, rank, gate, or trading authority.
+
   btc-options:
     path: site/btc_options.json
     format: json

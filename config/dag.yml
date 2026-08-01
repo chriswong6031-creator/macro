@@ -375,6 +375,12 @@ lanes:
           MSP W1 market-structure data spine (VC/CTA systematic flows + gamma +
           dispersion + week_map). Lane-gated ledger (COLLECT_LANE=nightly); artifact
           data/market_structure/latest.json, consumed by build_site's MSP render block.
+      - id: build_fundamental_forensics
+        module: scripts.build_fundamental_forensics
+        note: >
+          Deterministic Filing Forensics display/context projection. Reads the committed
+          SEC quarterly and annual panels, writes an ignored private state plus the public
+          data-free workbench shell, and grants no score or trading authority.
       - id: build_site
         module: scripts.build_site
       - id: build_ticker_pages
@@ -2643,6 +2649,27 @@ modules:
     impure: false
     needs_secrets: false
     event_driven: false
+
+  - module: scripts.build_fundamental_forensics
+    reads:
+      - data/edgar/statements_quarterly.parquet
+      - data/edgar/statements.parquet
+      - data/edgar/fundamentals.parquet
+      - data/universe/membership.parquet
+      - data/breadth/ticker_sectors.parquet
+    writes:
+      - data/fundamental_forensics/private/state.json.gz
+      - site/fundamental_forensics.html
+      - site/fundamental_forensics.css
+      - site/fundamental_forensics.js
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Broad-universe normalized projection only. The separate canonical engine preserves
+      immutable source events and accession coherence; neither lane has trading authority.
+      The local state is gitignored and a credentialed --publish-only step copies it to the
+      private Research Vault R2 bucket after validation and byte-for-byte read-back.
 
   - module: scripts.build_site
     reads:

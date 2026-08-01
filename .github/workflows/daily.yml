@@ -939,6 +939,11 @@ jobs:
           # both committed by the collect job, so it has no dependency on the band.
           # Lane-gated ledger (COLLECT_LANE=nightly) is unaffected by the move.
           run_py "MSP W1 — market structure data spine (build_market_structure)" scripts.build_market_structure
+          # Filing Forensics broad-universe projection — deterministic, display/context only.
+          # Reads the committed SEC quarterly/annual panels, atomically writes a gitignored
+          # private state plus public shell/assets, and never fetches network data here. The
+          # accession-aware raw engine is advanced separately once object storage is bound.
+          run_py "filing forensics workbench (build_fundamental_forensics)" scripts.build_fundamental_forensics
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # Ticker dossier pages (v2) — engine-internal, reads fresh site/stockdata/*.json
           # written by build_site above; rides the engine "commit engine outputs" git add.
@@ -1032,6 +1037,21 @@ jobs:
           # Reads only committed data; returns 0 on error.
           run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
+      - name: publish Filing Forensics private state
+        # Publish only after the full workbench build returned. The publisher validates
+        # gzip/schema, writes the existing PRIVATE Research Vault bucket, reads it back,
+        # and byte-verifies it. Failure is loud but retains the last-good private object;
+        # no premium state is ever staged by the broad site/data commit below.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: python -m scripts.build_fundamental_forensics --publish-only
       - name: backfill regime stamps (nw-macro-rail R5)
         # Calls engine.qledger.backfill_regime_stamps() — stamps regime columns onto qledger
         # rows that have as_of within regime_vector.parquet coverage.  Near-term yield ≈ 2 rows

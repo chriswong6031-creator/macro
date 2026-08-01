@@ -1,0 +1,36 @@
+{
+  "cik": "1",
+  "entityType": "operating",
+  "sic": "3571",
+  "sicDescription": "Electronic Computers",
+  "name": "DETERMINISTIC FIXTURE CORP",
+  "tickers": ["FIXT"],
+  "exchanges": ["NYSE"],
+  "filings": {
+    "recent": {
+      "accessionNumber": [
+        "0000000001-23-000001",
+        "0000000001-24-000001",
+        "0000000001-25-000001"
+      ],
+      "filingDate": ["2023-02-15", "2024-02-15", "2025-02-15"],
+      "reportDate": ["2022-12-31", "2023-12-31", "2024-12-31"],
+      "acceptanceDateTime": [
+        "2023-02-15T16:00:00.000Z",
+        "2024-02-15T16:00:00.000Z",
+        "2025-02-15T16:00:00.000Z"
+      ],
+      "act": ["34", "34", "34"],
+      "form": ["10-K", "10-K", "10-K"],
+      "fileNumber": ["001-00001", "001-00001", "001-00001"],
+      "filmNumber": ["231000001", "241000001", "251000001"],
+      "items": ["", "", ""],
+      "size": [1000, 1100, 1200],
+      "isXBRL": [1, 1, 1],
+      "isInlineXBRL": [1, 1, 1],
+      "primaryDocument": ["fixt-20221231.htm", "fixt-20231231.htm", "fixt-20241231.htm"],
+      "primaryDocDescription": ["10-K", "10-K", "10-K"]
+    },
+    "files": []
+  }
+}

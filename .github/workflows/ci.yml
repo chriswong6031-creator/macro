@@ -489,6 +489,24 @@ on:
       # their globs; the test file needs an explicit path so a test-only re-pin still
       # re-runs the rot-sweep step that carries it.
       - "tests/test_stock_personality_w4_surfaces.py"
+      # Filing Forensics v1: immutable SEC lineage kernel + display-only workbench.
+      # Keep every contract, fixture, page, collector, and context test wired even
+      # when a PR changes only its config/schema/test side.
+      - "engine/fundamental_forensics/**"
+      - "app/forensics.py"
+      - "app/main.py"
+      - "collectors/edgar_forensics.py"
+      - "scripts/build_fundamental_forensics.py"
+      - "config/fundamental_forensics.yml"
+      - "contracts/fundamental_forensics_run.schema.json"
+      - "templates/fundamental_forensics.html.j2"
+      - "templates/fundamental_forensics.css"
+      - "templates/fundamental_forensics.js"
+      - "tests/fixtures/fundamental_forensics/**"
+      - "tests/test_fundamental_forensics_*.py"
+      - "tests/test_forensics_api.py"
+      - "tests/test_edgar_forensics_collector.py"
+      - "tests/test_context_api.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"

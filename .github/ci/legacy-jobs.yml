@@ -252,6 +252,13 @@ jobs:
         run: pip install jsonschema pytest pandas numpy pyyaml
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
+      - name: fundamental forensics lineage, normalization, detector, and schema contracts
+        run: >
+          python -m pytest
+          tests/test_fundamental_forensics_ingest.py
+          tests/test_fundamental_forensics_normalize.py
+          tests/test_fundamental_forensics_detectors.py
+          tests/test_fundamental_forensics_contract.py -q
 
   trial-budgets:
     if: ${{ false }}
@@ -543,7 +550,7 @@ jobs:
       - name: install minimal deps
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema
       # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
       # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
       # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
@@ -614,6 +621,12 @@ jobs:
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
           tests/test_stock_personality_w4_surfaces.py
+          tests/test_fundamental_forensics_page.py
+          tests/test_fundamental_forensics_private_state.py
+          tests/test_fundamental_forensics_ui.py
+          tests/test_forensics_api.py
+          tests/test_edgar_forensics_collector.py
+          tests/test_context_api.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
