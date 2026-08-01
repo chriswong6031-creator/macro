@@ -52,16 +52,43 @@ def test_overlay_has_keyboard_accessibility_and_strict_message_guards():
 def test_overlay_keeps_desktop_warm_but_remounts_mobile_with_a_new_iframe_node():
     code = _read("templates/terminal_overlay.js")
     assert "if (!state.booted)" in code
-    assert "frame.src = config.url" in code
+    assert "frame.src = initialUrl" in code
     assert "terminal:set-symbol" in code
     assert "function shouldRemountFrame()" in code
     assert "window.matchMedia('(max-width: 700px)')" in code
     assert "/iPad|iPhone|iPod/.test(ua)" in code
-    assert "if (!state.open && shouldRemountFrame() && state.frame) destroyFrame()" in code
-    assert "function createFrame()" in code
+    assert "if (!state.open && remount && state.frame) destroyFrame()" in code
+    assert "function createFrame(initialUrl)" in code
     assert "function destroyFrame()" in code
     assert "state.frame = null" in code
     assert "old.parentNode.removeChild(old)" in code
+
+
+def test_mobile_reopen_uses_a_fresh_document_and_defers_webkit_teardown():
+    code = _read("templates/terminal_overlay.js")
+    assert "function freshMobileLaunchUrl(raw)" in code
+    assert "url.searchParams.set('_mm_launch'" in code
+    assert "Date.now().toString(36) + '-' + state.launchSerial" in code
+    assert "var launchUrl = remount ? freshMobileLaunchUrl(config.url) : config.url" in code
+    assert "var frame = ensureFrame(launchUrl)" in code
+    assert "old.classList.add('mmto-retiring-frame')" in code
+    assert "old.style.display = 'none'" in code
+    assert "old.src = 'about:blank'" not in code
+    teardown = code.index("old.classList.add('mmto-retiring-frame')")
+    deferred_remove = code.index("setTimeout(function ()", teardown)
+    remove = code.index("old.parentNode.removeChild(old)", deferred_remove)
+    assert teardown < deferred_remove < remove
+
+
+def test_iframe_load_has_a_bounded_fail_open_path():
+    code = _read("templates/terminal_overlay.js")
+    assert "var FRAME_LOAD_FALLBACK_MS = 6000;" in code
+    assert "var REPEAT_FRAME_LOAD_FALLBACK_MS = 2500;" in code
+    assert "var HARD_LAUNCH_FALLBACK_MS = 9000;" in code
+    assert "scheduleFrameLoadFallback(frame);" in code
+    assert "scheduleFrameLoadFallback(frame, HARD_LAUNCH_FALLBACK_MS);" in code
+    assert "state: 'frame-load-fallback'" in code
+    assert "clearTimeout(state.frameLoadFallbackTimer)" in code
 
 
 def test_overlay_restores_the_exact_dashboard_position_without_smooth_scroll():
