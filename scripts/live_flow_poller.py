@@ -294,6 +294,18 @@ def _probe_delta_mode(session_date: str) -> str:
     """
     from collectors import thetadata as td
 
+    def _pull(**kw):
+        """One probe pull, retried once after a pause. The probe runs exactly once
+        per poller session and decides the WHOLE day's cadence, so a single
+        transient reachable()/contention flake (measured 2026-07-31 while the
+        evening backfill saturated the terminal's 8 slots) must not condemn the
+        day to full_day."""
+        df = td.bulk_trade_quote(PROBE_ROOT, "call", **kw)
+        if df is None:
+            time.sleep(RETRY_PAUSE_SEC)
+            df = td.bulk_trade_quote(PROBE_ROOT, "call", **kw)
+        return df
+
     log.info("poller: probing delta_mode via %s prior session …", PROBE_ROOT)
     try:
         target = datetime.strptime(session_date, "%Y-%m-%d").date()
@@ -312,8 +324,7 @@ def _probe_delta_mode(session_date: str) -> str:
             probe_day -= timedelta(days=1)
             while probe_day.weekday() >= 5:
                 probe_day -= timedelta(days=1)
-            full = td.bulk_trade_quote(PROBE_ROOT, "call", probe_day, probe_day,
-                                       expiration=exp_iso)
+            full = _pull(start_date=probe_day, end_date=probe_day, expiration=exp_iso)
             if full is None:
                 log.info("poller: probe — full pull failed for %s, using full_day",
                          probe_day)
@@ -327,11 +338,9 @@ def _probe_delta_mode(session_date: str) -> str:
             return "full_day"
 
         n_full = len(full)
-        win = td.bulk_trade_quote(
-            PROBE_ROOT, "call", probe_day, probe_day,
-            start_time="10:00:00", end_time="10:15:00",
-            expiration=exp_iso,
-        )
+        win = _pull(start_date=probe_day, end_date=probe_day,
+                    start_time="10:00:00", end_time="10:15:00",
+                    expiration=exp_iso)
         if win is None:
             log.info("poller: probe — windowed pull failed, using full_day")
             return "full_day"
