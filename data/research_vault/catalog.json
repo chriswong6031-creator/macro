@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T10:45:10.578360+00:00",
-  "count": 522,
+  "generated_at": "2026-08-01T11:00:14.007453+00:00",
+  "count": 523,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1001,6 +1001,27 @@
         "**Component Driver**: \"Energy, food, alc.",
         "& tobac.\" component (weight 720) at 2.45% in GS tracker, indicating higher inflation expectations in critical category.",
         "**Regional Divergence**: France HICP forecast at 2.1% (Jul-26 GS Tracker) vs BBG consensus 2.0%, signaling potential ECB policy divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tsi1f8cboll-374b28",
+      "title": "Euro Area Spanish Inflation Slightly Firmer; German Regional Data Broadly in Line; Nudging Down Our Euro Area Core Tracking ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:48Z",
+      "summary_points": [
+        "**Core Inflation Revision**: Goldman Sachs lowers Euro area core inflation forecast to 2.44% yoy (from 2.46% yoy) driven by weaker German core HICP (2.6% yoy vs prior 2.7% yoy), offset by firmer Spanish inflation (3.8% yoy flash HICP).",
+        "**Headline vs Core Divergence**: Euro area headline inflation forecast unchanged at 2.88% yoy for July, while core inflation revised down, signaling potential ECB policy impact amid German regional data weakness.",
+        "**HICP Tracker vs Consensus**: Goldman Sachs' July HICP tracker (2.88%) is 0.02 below BBG Consensus (2.90%), indicating marginal deceleration in inflation expectations affecting ECB rate timing.",
+        "**Critical Basket Inflation**: Energy, food, alc.",
+        "& tobac."
       ],
       "tags": [],
       "tickers": [],
