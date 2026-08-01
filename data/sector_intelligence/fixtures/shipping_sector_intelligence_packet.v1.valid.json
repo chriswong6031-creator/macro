@@ -1,0 +1,30 @@
+{
+  "contract_id": "sector_intelligence_packet.v1",
+  "schema_version": "1.0.0",
+  "packet_id": "packet:shipping:synthetic-lane:20260801",
+  "packet_version": 1,
+  "sector": "shipping_trade",
+  "producer": {"service": "synthetic-shipping-pack", "code_version": "fixture", "owner": "shipping_trade"},
+  "generated_at": "2026-08-01T10:00:00Z",
+  "knowledge_cutoff": "2026-08-01T09:55:00Z",
+  "entity_refs": ["port:SYN-P01", "vessel:SYN-V01", "shipping_lane:SYN-L01"],
+  "security_refs": [],
+  "portfolio_exposure": [],
+  "current_fact_refs": ["claim:shipping:SYN-L01:reported-delay"],
+  "material_change_event_refs": ["event:shipping:SYN-P01:reported-congestion-change"],
+  "upcoming_event_refs": [],
+  "contradictions": [
+    {"claim_ref": "claim:shipping:SYN-L01:reported-delay", "contradicts_claim_ref": "claim:shipping:SYN-L01:carrier-estimate", "state": "open", "resolution_ref": null}
+  ],
+  "freshness": {"state": "degraded", "oldest_required_source_at": "2026-08-01T09:30:00Z", "evaluated_at": "2026-08-01T10:00:00Z", "stale_source_ids": [], "unknown_source_ids": ["synthetic-carrier-feed"]},
+  "quality": {"state": "degraded", "completeness": 0.75, "point_in_time_safe": true, "warnings": ["Synthetic interoperability fixture; no real vessel, port, freight, or trade claim.", "Reported congestion does not establish causal impact on inventory, prices, or issuer margins."]},
+  "feature_snapshot_refs": [],
+  "prediction_refs": [],
+  "evidence_claim_refs": ["claim:shipping:SYN-L01:reported-delay", "claim:shipping:SYN-L01:carrier-estimate"],
+  "source_record_refs": ["src:synthetic-port:SYN-P01", "src:synthetic-carrier:SYN-V01"],
+  "lobe_run_ref": "run:synthetic-shipping:20260801T100000Z",
+  "authority_manifest_ref": "authority:synthetic-shipping-display:v1",
+  "authority_caps": {"max_authority": "A1_EXPLAIN", "allowed_actions": ["observe", "explain"], "forbidden_actions": ["originate_signal", "raise_authority_from_llm", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade"], "llm_may_originate_signals": false},
+  "packet_hash": "6e6ae4722c3446b70af22eb8c601a8663a1f4d6924cc042603f2481695db4e13",
+  "hash_scope": "canonical_payload_excluding_packet_hash"
+}

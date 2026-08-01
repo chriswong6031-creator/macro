@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/sector_intelligence_packet.v1.schema.json",
+  "title": "Sector Intelligence Packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "packet_id", "packet_version", "sector", "producer", "generated_at", "knowledge_cutoff", "entity_refs", "security_refs", "portfolio_exposure", "current_fact_refs", "material_change_event_refs", "upcoming_event_refs", "contradictions", "freshness", "quality", "feature_snapshot_refs", "prediction_refs", "evidence_claim_refs", "source_record_refs", "lobe_run_ref", "authority_manifest_ref", "authority_caps", "packet_hash", "hash_scope"],
+  "properties": {
+    "contract_id": {"const": "sector_intelligence_packet.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "packet_id": {"type": "string", "minLength": 1},
+    "packet_version": {"type": "integer", "minimum": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "code_version", "owner"],
+      "properties": {
+        "service": {"type": "string", "minLength": 1},
+        "code_version": {"type": "string", "minLength": 1},
+        "owner": {"type": "string", "minLength": 1}
+      }
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "entity_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "security_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "portfolio_exposure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["portfolio_ref", "entity_ref", "exposure_state", "as_of"],
+        "properties": {
+          "portfolio_ref": {"type": "string", "minLength": 1},
+          "entity_ref": {"type": "string", "minLength": 1},
+          "exposure_state": {"type": "string", "enum": ["held", "watchlisted", "indirect", "unknown"]},
+          "as_of": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "current_fact_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "material_change_event_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "upcoming_event_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_ref", "contradicts_claim_ref", "state", "resolution_ref"],
+        "properties": {
+          "claim_ref": {"type": "string", "minLength": 1},
+          "contradicts_claim_ref": {"type": "string", "minLength": 1},
+          "state": {"type": "string", "enum": ["open", "resolved", "superseded"]},
+          "resolution_ref": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "oldest_required_source_at", "evaluated_at", "stale_source_ids", "unknown_source_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["fresh", "degraded", "stale", "unknown"]},
+        "oldest_required_source_at": {"type": ["string", "null"], "format": "date-time"},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "stale_source_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "unknown_source_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "completeness", "point_in_time_safe", "warnings"],
+      "properties": {
+        "state": {"type": "string", "enum": ["complete", "degraded", "insufficient"]},
+        "completeness": {"type": "number", "minimum": 0, "maximum": 1},
+        "point_in_time_safe": {"type": "boolean"},
+        "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "feature_snapshot_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "prediction_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "evidence_claim_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_record_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "lobe_run_ref": {"type": "string", "minLength": 1},
+    "authority_manifest_ref": {"type": "string", "minLength": 1},
+    "authority_caps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_authority", "allowed_actions", "forbidden_actions", "llm_may_originate_signals"],
+      "properties": {
+        "max_authority": {"type": "string", "enum": ["A0_OBSERVE", "A1_EXPLAIN", "A2_ATTEND", "A3_DE_ESCALATE", "A4_QUARANTINE", "A5_GOVERN_TIERS", "A6_TUNE"]},
+        "allowed_actions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["observe", "explain", "attend", "de_escalate", "quarantine", "govern_tiers", "tune"]}},
+        "forbidden_actions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "enum": ["originate_signal", "raise_authority_from_llm", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade"]}},
+        "llm_may_originate_signals": {"const": false}
+      }
+    },
+    "packet_hash": {"$ref": "#/$defs/sha256"},
+    "hash_scope": {"const": "canonical_payload_excluding_packet_hash"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

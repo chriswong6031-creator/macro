@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_version_diff.v1.schema.json",
+  "title": "BioCatalyst Exact Trial Registry Diff v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "diff_id", "nct_id", "before_source_snapshot_ref",
+    "after_source_snapshot_ref", "before_observation_ref", "after_observation_ref",
+    "before_content_sha256", "after_content_sha256", "source_record_refs", "evidence_claim_refs",
+    "operations", "observed_interval", "source_last_update_posted_at", "source_published_at",
+    "source_effective_at", "valid_from", "valid_to", "coverage_class", "parser_version",
+    "semantic_alignment", "confidence", "contradiction_state", "interpretation",
+    "allowed_product_language", "protocol_change_asserted", "materiality_assessed", "authority",
+    "transaction_from", "transaction_to", "diff_payload_sha256", "hash_scope"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_version_diff.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "diff_id": {"type": "string", "pattern": "^trial_diff_[a-zA-Z0-9_-]+$"},
+    "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "before_source_snapshot_ref": {"type": "string", "pattern": "^ctgov_snapshot_[a-zA-Z0-9_-]+$"},
+    "after_source_snapshot_ref": {"type": "string", "pattern": "^ctgov_snapshot_[a-zA-Z0-9_-]+$"},
+    "before_observation_ref": {"type": "string", "pattern": "^ctgov_observation_[a-zA-Z0-9_-]+$"},
+    "after_observation_ref": {"type": "string", "pattern": "^ctgov_observation_[a-zA-Z0-9_-]+$"},
+    "before_content_sha256": {"$ref": "#/$defs/sha256"},
+    "after_content_sha256": {"$ref": "#/$defs/sha256"},
+    "source_record_refs": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"}},
+    "evidence_claim_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "operations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/diffOperation"}},
+    "observed_interval": {
+      "type": "object", "additionalProperties": false, "required": ["after", "at_or_before"],
+      "properties": {"after": {"type": "string", "format": "date-time"}, "at_or_before": {"type": "string", "format": "date-time"}}
+    },
+    "source_last_update_posted_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_published_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_effective_at": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "coverage_class": {"const": "current_only"},
+    "parser_version": {"const": "clinicaltrials_v2_parser.v1"},
+    "semantic_alignment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "endpoint_semantics_assessed", "protocol_semantics_assessed"],
+      "properties": {
+        "status": {"const": "exact_source_json_path_only"},
+        "endpoint_semantics_assessed": {"const": false},
+        "protocol_semantics_assessed": {"const": false}
+      }
+    },
+    "confidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "method", "meaning", "calibrated"],
+      "properties": {
+        "value": {"const": 1.0},
+        "method": {"const": "deterministic_json_diff"},
+        "meaning": {"const": "diff_fidelity_not_real_world_materiality"},
+        "calibrated": {"const": false}
+      }
+    },
+    "contradiction_state": {"type": "string", "enum": ["none_known", "open", "resolved", "superseded"]},
+    "interpretation": {"const": "registry_record_changed"},
+    "allowed_product_language": {"const": "ClinicalTrials.gov's registry record changed; first observed within this interval."},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "authority": {
+      "type": "object", "additionalProperties": false, "required": ["decision_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "decision_authority": {"const": false},
+        "allowed_uses": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "enum": ["display", "context", "explain"]}},
+        "forbidden_uses": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "enum": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}
+      }
+    },
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "diff_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "hash_scope": {"const": "canonical_payload_excluding_diff_payload_sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]},
+    "jsonValue": {"oneOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string"}, {"type": "array", "items": {"$ref": "#/$defs/jsonValue"}}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/jsonValue"}}]},
+    "diffOperation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["op", "json_path", "change_family", "before_state", "before_value", "after_state", "after_value"],
+      "properties": {
+        "op": {"type": "string", "enum": ["add", "remove", "replace"]},
+        "json_path": {"type": "string", "pattern": "^/"},
+        "change_family": {"type": "string", "enum": ["registry_status", "enrollment_target", "enrollment_actual", "enrollment_count", "enrollment_type", "primary_completion_date", "completion_date", "site_set", "endpoint_record", "other"]},
+        "before_state": {"type": "string", "enum": ["missing", "present"]},
+        "before_value": {"$ref": "#/$defs/jsonValue"},
+        "after_state": {"type": "string", "enum": ["missing", "present"]},
+        "after_value": {"$ref": "#/$defs/jsonValue"}
+      }
+    }
+  }
+}

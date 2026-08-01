@@ -1,0 +1,42 @@
+{
+  "contract_id": "source_page_receipt.v1",
+  "schema_version": "1.0.0",
+  "receipt_id": "ctgov_receipt_fixture_20260801T150000Z_0",
+  "run_id": "ctgov_run_fixture_20260801T150000Z",
+  "source_id": "clinicaltrials_gov_v2",
+  "page_ordinal": 0,
+  "receipt_object_key": "biocatalyst/receipts/clinicaltrials/2026/08/ctgov_run_fixture_20260801T150000Z/0.json",
+  "request": {
+    "method": "GET",
+    "path": "/studies",
+    "query_sha256": "05f239580500a58b69611bc100befd8fcd5ba54c30f1c5cd3821271dee501dfb",
+    "page_token_sha256": null,
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "MastermindX-BioCatalyst/fixture (synthetic@example.invalid)"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "512",
+      "date": "Sat, 01 Aug 2026 15:00:04 GMT"
+    },
+    "exact_response_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "raw_response_object_key": "biocatalyst/raw/clinicaltrials/v2/pages/2026/08/ctgov_run_fixture_20260801T150000Z/0/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json",
+    "byte_count": 512,
+    "study_count": 1,
+    "next_page_token_sha256": null,
+    "received_at": "2026-08-01T15:00:04Z"
+  },
+  "source_dataset_timestamp_raw": "2026-08-01T09:00:00",
+  "source_api_version": "2.0.5",
+  "sanitization": {
+    "raw_pagination_tokens_stored_in_receipt": false,
+    "credentials_stored_in_receipt": false,
+    "rejected_header_names": ["authorization", "cookie", "proxy-authorization", "set-cookie", "x-api-key"]
+  },
+  "transaction_from": "2026-08-01T15:00:05Z",
+  "transaction_to": null
+}

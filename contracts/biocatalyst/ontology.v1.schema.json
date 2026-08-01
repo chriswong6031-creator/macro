@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/ontology.v1.schema.json",
+  "title": "BioCatalyst Ontology v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "ontology_id", "ontology_version", "sector", "canonical_unit", "released_at", "effective_from", "effective_to", "entity_types", "relationship_types", "vocabulary_registry", "authority_boundaries", "content_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_ontology.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "ontology_id": {"const": "biocatalyst"},
+    "ontology_version": {"type": "string", "minLength": 1},
+    "sector": {"const": "biopharma"},
+    "canonical_unit": {"const": "asset_indication_temporal_owner"},
+    "released_at": {"type": "string", "format": "date-time"},
+    "effective_from": {"type": "string", "format": "date-time"},
+    "effective_to": {"type": ["string", "null"], "format": "date-time"},
+    "entity_types": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type_id", "label", "canonical_id_namespace", "temporally_versioned", "source_owned_by"],
+        "properties": {
+          "type_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "label": {"type": "string", "minLength": 1},
+          "canonical_id_namespace": {"type": "string", "minLength": 1},
+          "temporally_versioned": {"type": "boolean"},
+          "source_owned_by": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "relationship_types": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type_id", "from_types", "to_types", "cardinality", "temporally_versioned", "evidence_required"],
+        "properties": {
+          "type_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "from_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "to_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "cardinality": {"type": "string", "enum": ["one_to_one", "one_to_many", "many_to_one", "many_to_many"]},
+          "temporally_versioned": {"type": "boolean"},
+          "evidence_required": {"type": "boolean"}
+        }
+      }
+    },
+    "vocabulary_registry": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["family", "vocabulary", "release_version", "mapping_method", "confidence", "effective_from", "effective_to", "license_class", "redistribution_allowed"],
+        "properties": {
+          "family": {"type": "string", "enum": ["drug", "disease", "safety", "trial", "company_security"]},
+          "vocabulary": {"type": "string", "minLength": 1},
+          "release_version": {"type": "string", "minLength": 1},
+          "mapping_method": {"type": "string", "enum": ["source_native", "exact_identifier", "curated_mapping", "deterministic_rule", "probabilistic_candidate"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "effective_from": {"type": "string", "format": "date-time"},
+          "effective_to": {"type": ["string", "null"], "format": "date-time"},
+          "license_class": {"type": "string", "enum": ["public_domain", "us_government_source_facts", "public_access_restricted_redistribution", "licensed_internal", "licensed_redistributable", "unknown"]},
+          "redistribution_allowed": {"type": "boolean"}
+        }
+      }
+    },
+    "authority_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_change_label", "protocol_change_requires", "adverse_event_inference", "patent_expiry_inference", "llm_role", "prediction_default_tier"],
+      "properties": {
+        "registry_change_label": {"const": "registry_record_changed"},
+        "protocol_change_requires": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "enum": ["protocol_document", "statistical_analysis_plan", "regulatory_filing", "issuer_confirmation"]}},
+        "adverse_event_inference": {"const": "reporting_not_causality_or_incidence"},
+        "patent_expiry_inference": {"const": "calculated_estimate_not_legal_truth"},
+        "llm_role": {"const": "explanation_only"},
+        "prediction_default_tier": {"const": "SHADOW"}
+      }
+    },
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

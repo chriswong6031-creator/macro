@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_snapshot_observation.v1.schema.json",
+  "title": "BioCatalyst Trial Snapshot Observation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "observation_id", "nct_id", "run_ref", "page_receipt_ref",
+    "source_snapshot_ref", "canonical_content_sha256", "prior_source_snapshot_ref",
+    "prior_canonical_content_sha256", "source_state_changed", "same_content_as_prior",
+    "observed_interval", "source_last_update_posted_at", "source_dataset_timestamp_raw",
+    "retrieved_at", "first_seen_at", "coverage_class", "transaction_from", "transaction_to"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_snapshot_observation.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "observation_id": {"type": "string", "pattern": "^ctgov_observation_[a-zA-Z0-9_-]+$"},
+    "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "run_ref": {"type": "string", "pattern": "^ctgov_run_[a-zA-Z0-9_-]+$"},
+    "page_receipt_ref": {"type": "string", "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"},
+    "source_snapshot_ref": {"type": "string", "pattern": "^ctgov_snapshot_[a-zA-Z0-9_-]+$"},
+    "canonical_content_sha256": {"$ref": "#/$defs/sha256"},
+    "prior_source_snapshot_ref": {"type": ["string", "null"]},
+    "prior_canonical_content_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+    "source_state_changed": {"type": "boolean"},
+    "same_content_as_prior": {"type": "boolean"},
+    "observed_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["after", "at_or_before"],
+      "properties": {
+        "after": {"type": ["string", "null"], "format": "date-time"},
+        "at_or_before": {"type": "string", "format": "date-time"}
+      }
+    },
+    "source_last_update_posted_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_dataset_timestamp_raw": {"$ref": "#/$defs/sourceDataTimestamp"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "coverage_class": {"const": "current_only"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]}
+  }
+}

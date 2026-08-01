@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/evidence_claim.v1.schema.json",
+  "title": "Sector Intelligence Evidence Claim v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "claim_id", "sector", "subject_ref", "predicate", "object", "evidence_class", "assertion_scope", "source_record_refs", "source_locator", "source_published_at", "source_effective_at", "retrieved_at", "first_seen_at", "valid_from", "valid_to", "transaction_from", "transaction_to", "parser_or_model_version", "license_class", "confidence", "contradiction_state", "contradicts_claim_ids", "analyst_review_state", "authority_manifest_ref", "correction_of_claim_id"],
+  "properties": {
+    "contract_id": {"const": "evidence_claim.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "claim_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "subject_ref": {"type": "string", "minLength": 1},
+    "predicate": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]*$"},
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value", "unit", "vocabulary", "code"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["entity_ref", "string", "number", "boolean", "date", "date_time", "null"]},
+        "value": {"type": ["string", "number", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "vocabulary": {"type": ["string", "null"]},
+        "code": {"type": ["string", "null"]}
+      }
+    },
+    "evidence_class": {"type": "string", "enum": ["primary_source_observation", "secondary_source_report", "derived_measurement", "model_output"]},
+    "assertion_scope": {"type": "string", "enum": ["source_says", "registry_observed", "derived_fact", "analyst_assertion", "model_inference"]},
+    "source_record_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["json_path", "span_start", "span_end", "quote_sha256"],
+      "properties": {
+        "json_path": {"type": ["string", "null"]},
+        "span_start": {"type": ["integer", "null"], "minimum": 0},
+        "span_end": {"type": ["integer", "null"], "minimum": 0},
+        "quote_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]}
+      }
+    },
+    "source_published_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_effective_at": {"$ref": "#/$defs/nullableTemporal"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "parser_or_model_version": {"type": "string", "minLength": 1},
+    "license_class": {"type": "string", "enum": ["public_domain", "us_government_source_facts", "public_access_restricted_redistribution", "licensed_internal", "licensed_redistributable", "unknown"]},
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "method", "calibrated"],
+      "properties": {
+        "value": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "method": {"type": "string", "minLength": 1},
+        "calibrated": {"type": "boolean"}
+      }
+    },
+    "contradiction_state": {"type": "string", "enum": ["none_known", "open", "resolved", "superseded"]},
+    "contradicts_claim_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "analyst_review_state": {"type": "string", "enum": ["unreviewed", "machine_checked", "analyst_reviewed", "rejected"]},
+    "authority_manifest_ref": {"type": ["string", "null"]},
+    "correction_of_claim_id": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]}
+  }
+}

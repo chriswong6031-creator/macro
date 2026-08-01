@@ -1,0 +1,43 @@
+{
+  "contract_id": "ctgov_fetch_run.v1",
+  "schema_version": "1.0.0",
+  "run_id": "ctgov_run_fixture_20260801T150000Z",
+  "source_id": "clinicaltrials_gov_v2",
+  "mode": "canary_poll",
+  "query_manifest": {
+    "configured_nct_ids": ["NCT00000001"],
+    "query_sha256": "05f239580500a58b69611bc100befd8fcd5ba54c30f1c5cd3821271dee501dfb",
+    "hash_scope": "canonical_manifest_excluding_query_sha256",
+    "page_size": 100,
+    "overlap_seconds": 21600,
+    "page_cap": 10
+  },
+  "started_at": "2026-08-01T15:00:00Z",
+  "finished_at": "2026-08-01T15:00:05Z",
+  "source_dataset_timestamp_before_raw": "2026-08-01T09:00:00",
+  "source_dataset_timestamp_after_raw": "2026-08-01T09:00:00",
+  "source_api_version": "2.0.5",
+  "receipt_refs": ["ctgov_receipt_fixture_20260801T150000Z_0"],
+  "terminal_receipt_ref": "ctgov_receipt_fixture_20260801T150000Z_0",
+  "receipt_payloads_sha256": "233f2cf0fd98979421d88d3e324649f5ab24ac74b14876dc36a343947f70c550",
+  "counts": {
+    "configured": 1,
+    "pages_attempted": 1,
+    "pages_succeeded": 1,
+    "studies_fetched": 1,
+    "studies_unique": 1,
+    "studies_duplicate": 0,
+    "studies_changed": 1,
+    "studies_published": 1,
+    "errors": 0
+  },
+  "run_state": "complete",
+  "completeness_state": "reconciled",
+  "watermark_before": "2026-07-31T15:00:05Z",
+  "watermark_after": "2026-08-01T15:00:05Z",
+  "parser_version": "clinicaltrials_v2_parser.v1",
+  "code_version": "fixture",
+  "error_codes": [],
+  "transaction_from": "2026-08-01T15:00:06Z",
+  "transaction_to": null
+}

@@ -1,0 +1,23 @@
+{
+  "contract_id": "authority_manifest.v1",
+  "schema_version": "1.0.0",
+  "manifest_id": "authority:biocatalyst-facts:v1",
+  "sector": "biopharma",
+  "artifact_ref": "packet:biocatalyst:trial:NCT00000001:20260801",
+  "artifact_type": "sector_intelligence_packet.v1",
+  "publication_tier": "DISPLAY",
+  "max_authority": "A1_EXPLAIN",
+  "allowed_actions": ["observe", "explain"],
+  "denied_actions": ["originate_signal", "raise_authority_from_llm", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade"],
+  "consumers": ["neural_web", "mastermind_ai", "biocatalyst_cockpit"],
+  "issued_by": "neural_web_governance",
+  "issued_at": "2026-08-01T08:05:00Z",
+  "valid_from": "2026-08-01T08:05:00Z",
+  "valid_to": null,
+  "expires_at": "2026-08-08T08:05:00Z",
+  "promotion_evidence_refs": [],
+  "governance_decision_refs": ["governance:biocatalyst-facts-display:v1"],
+  "kill_switch": {"enabled": false, "owner": "neural_web_governance", "reason": null, "activated_at": null},
+  "transaction_from": "2026-08-01T08:05:01Z",
+  "transaction_to": null
+}

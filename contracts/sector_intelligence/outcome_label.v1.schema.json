@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/outcome_label.v1.schema.json",
+  "title": "Sector Intelligence Outcome Label v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "label_id", "sector", "target_ref", "outcome_type", "outcome_taxonomy_version", "outcome", "observation_window", "resolved_at", "knowledge_cutoff", "evidence_claim_refs", "source_record_refs", "resolution_policy", "resolved_by", "status", "prior_label_ref", "revision_reason", "transaction_from", "transaction_to"],
+  "properties": {
+    "contract_id": {"const": "outcome_label.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "label_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "target_ref": {"type": "string", "minLength": 1},
+    "outcome_type": {"type": "string", "minLength": 1},
+    "outcome_taxonomy_version": {"type": "string", "minLength": 1},
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value", "unit"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["categorical", "numeric", "boolean", "censored", "unknown"]},
+        "value": {"type": ["string", "number", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]}
+      }
+    },
+    "observation_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starts_at", "ends_at"],
+      "properties": {
+        "starts_at": {"type": "string", "format": "date-time"},
+        "ends_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "resolved_at": {"type": "string", "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "evidence_claim_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_record_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "resolution_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_id", "policy_version", "ambiguity_handling"],
+      "properties": {
+        "policy_id": {"type": "string", "minLength": 1},
+        "policy_version": {"type": "string", "minLength": 1},
+        "ambiguity_handling": {"type": "string", "enum": ["abstain", "censor", "provisional", "manual_review"]}
+      }
+    },
+    "resolved_by": {"type": "string", "enum": ["deterministic_policy", "analyst", "adjudication_panel"]},
+    "status": {"type": "string", "enum": ["provisional", "final", "revised", "void"]},
+    "prior_label_ref": {"type": ["string", "null"]},
+    "revision_reason": {"type": ["string", "null"]},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+  }
+}
