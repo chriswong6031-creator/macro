@@ -8851,6 +8851,34 @@ artifacts:
       Consumed by engine/neuralweb/world_state._compose_factor_weather as seasonal_climate
       sub-key (independent seasonality_as_of stamp; no coupling to factor_state_as_of).
 
+  # --- Biopharma seasonality intelligence: claim-bounded foundation contract ---
+  site-biopharma-seasonality-methodology:
+    path: site/seasonalitydata/methodology.json
+    format: json
+    producer: scripts/build_biopharma_seasonality.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 9999
+    schema: biopharma_seasonality.methodology.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - public-methodology-endpoint
+    notes: >
+      Claim-bounded public foundation manifest for the clean-room biopharma
+      seasonality program. Written only by scripts/build_biopharma_seasonality.py.
+      It advertises contracts, planned clocks, validation methods, and the birth
+      authority ceiling; it explicitly says live forecasts, the screener, and the
+      event graph are not yet commissioned. Static methodology, not perishable
+      market data, so the parked 9999h SLA is intentional. No scores, weights,
+      rankings, gates, trade origination, or Prophet geometry write path.
+
   site-momentum-display:
     path: site/factordata/momentum_display.json
     format: json
