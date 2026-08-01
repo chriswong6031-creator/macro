@@ -241,6 +241,61 @@
 }
 .ilx-regime-tape .ilx-d { bottom: 0; }
 
+/* ── Session filmstrip — OIP W1 estate-wide signature (lib/illus.py
+   session_filmstrip, W1_DESIGN_SPEC.md §3) ──────────────────────────────────
+   Local fallback declarations: the filmstrip's THREE homes are options.html
+   (Ticker mode — inside the .oew workspace scope, which already declares these
+   four custom properties) and gex.html (NO .oew ancestor at all). Declaring the
+   same pinned values here, scoped to .oew-film itself rather than only to .oew,
+   means the figure resolves correctly on BOTH pages with one CSS source: inside
+   .oew the two declarations are identical (no visual drift), and on gex.html
+   this is the ONLY place these properties exist. Values copied verbatim from
+   research/options_estate/WORKSPACE_DESIGN_SPEC.md §2.2 — never redeclare a
+   *different* number here. */
+.oew-film {
+  --oew-accent: #8e97c8;
+  --oew-stamp: #b49256;
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --s3: 12px;
+  height: 64px;
+  margin-bottom: 2px;
+}
+html[data-theme="light"] .oew-film {
+  --oew-accent: #4c55a8;
+  --oew-stamp: #8a6a2e;
+  --hair: color-mix(in srgb, var(--line) 92%, transparent);
+}
+.oew-film svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.oew-film-track { stroke: var(--hair); stroke-width: 1; }
+.oew-film-closecap { stroke: var(--oew-stamp); stroke-width: 1.5; opacity: .85; }
+.oew-film-ink {
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.oew-film-dot { fill: currentColor; }
+.oew-film-tick { stroke: var(--oew-accent); stroke-width: 1.2; opacity: .65; }
+.oew-film-d { position: absolute; bottom: -15px; font-size: 9.5px; color: var(--muted); }
+.oew-film-d0 { left: 0; }
+.oew-film-d1 { right: 0; }
+.oew-film-ev {
+  position: absolute; top: 0; left: var(--x); transform: translateX(-50%);
+  width: 16px; height: 64px; cursor: help;
+}
+.oew-film-ev i {
+  position: absolute; top: 8px; left: 50%; width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%; background: var(--oew-accent); opacity: 0; transition: opacity .15s;
+}
+.oew-film-ev:hover i, .oew-film-ev:focus-visible i { opacity: 1; }
+.oew-film-ev:focus-visible { outline: 2px solid var(--oew-accent); outline-offset: 1px; border-radius: 3px; }
+.oew-film-empty {
+  position: absolute; top: 50%; left: var(--s3); transform: translateY(-50%);
+  font-size: 11.5px; color: var(--muted);
+}
+.oew-film-null .oew-film-track { stroke-dasharray: 2 3; }
+@media (prefers-reduced-motion: reduce) {
+  .oew-film-ev i { transition: none; }
+}
+
 /* ── honest null ─────────────────────────────────────────────────────────── */
 .ilx-null { display: flex; align-items: center; justify-content: center; }
 .ilx-null svg { position: absolute; inset: 0; opacity: .5; }

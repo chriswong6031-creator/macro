@@ -360,6 +360,19 @@ class TestArc:
         assert shape.en in [w[0] for w in sd.SHAPE_WORDS.values()]
         assert shape.receipts["points"] == 20
 
+    def test_shape_words_never_carry_their_own_subject(self):
+        """B3 regression (source-level guard, defense in depth alongside the
+        JS-execution test in test_build_options_command.py): every caller
+        composes SHAPE_WORDS by prefixing "Premium "/"权利金" (templates/
+        options.html.j2's filmstripSentence). "flat" and "insufficient" used
+        to embed that subject themselves — "premium barely moved all day",
+        "全天权利金几乎没有变化" — producing a doubled subject once composed
+        ("Premium premium barely moved all day.",
+        "权利金全天权利金几乎没有变化。"). No tag may reintroduce it."""
+        for tag, (en, zh) in sd.SHAPE_WORDS.items():
+            assert "premium" not in en.lower(), f"{tag}: EN twin embeds its own subject: {en!r}"
+            assert "权利金" not in zh, f"{tag}: ZH twin embeds its own subject: {zh!r}"
+
     def test_shape_flat_test_is_skipped_without_a_denominator(self):
         """No gross → no flat claim.  'Barely moved' is absolute; guessing it is worse than null."""
         vals = [float(i) for i in range(20)]
@@ -1057,7 +1070,10 @@ class TestCoverage:
     def test_no_record_says_so_in_plain_words(self):
         cov = sd.coverage_block(session_date=self.D, cadence_sec=300, stamps=[])
         assert cov["minutes"] == 0 and cov["first"] is None
-        assert "no intraday record" in cov["quality_en"] and cov["quality_zh"]
+        # sentence-case at the source: this is a standalone, sentence-initial
+        # disclosure everywhere it renders (minor fix — was lowercase-initial,
+        # inconsistent with every fallback constant that quotes it).
+        assert "No intraday record" in cov["quality_en"] and cov["quality_zh"]
 
     def test_missing_inputs_are_listed_bilingually(self):
         cov = sd.coverage_block(session_date=self.D, cadence_sec=300, stamps=["0930"],
@@ -1354,6 +1370,59 @@ class TestBuilderEndToEnd:
         import pandas as pd
         lg = pd.read_parquet(repo / "data" / "options_session" / "ledger.parquet")
         assert list(lg.columns) == sd.LEDGER_COLUMNS and len(lg) == 1
+
+    def test_filmstrip_html_lives_only_on_the_display_artifact_not_the_ledger(self, repo, monkeypatch):
+        """OIP W1 §3 + RULING (adversarial review): the session filmstrip is an
+        SSR fragment (lib.illus.session_filmstrip), but engine/session_digest.py
+        describes the dated record as a settled, replayable document — rendered
+        SVG markup drifts from CSS and can never be replayed. write_latest (the
+        `site/` pointer Ticker mode / gex.html actually fetch) carries the
+        fragment; write_record (the dated data/options_session/ archive graded
+        as the ledger's source of truth) must NOT — it keeps only the fields the
+        fragment is derived from (arc, coverage, events, flip)."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo)
+        write_gex_state(repo / "site", "SPY", vintage=self.D, flip=100.0,
+                        call_wall=101.0, put_wall=98.0)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        dated = json.loads((repo / "data" / "options_session" / self.D / "SPY.json").read_text())
+        latest = json.loads((repo / "site" / "session" / "SPY.json").read_text())
+        assert "filmstrip_html" not in dated, (
+            "the dated ledger record must not carry rendered markup — it drifts "
+            "from CSS and makes the record un-replayable"
+        )
+        assert "filmstrip_html" in latest
+        frag = latest["filmstrip_html"]
+        assert frag.startswith('<figure class="ilx oew-film')
+        # this archive's coverage is real (n=40, non-zero minutes) — the
+        # present-data variant must draw ink, never silently fall to null.
+        assert latest["coverage"]["minutes"] > 0 and dated["coverage"]["minutes"] > 0
+        assert "oew-film-null" not in frag
+        assert 'class="ilx-path oew-film-ink"' in frag
+        # every OTHER field the fragment is derived from still lands on the
+        # ledger — this is an omission of the rendered field alone, not a
+        # thinner record.
+        for k in ("arc", "coverage", "events", "flip", "arc_shape_en", "arc_shape_zh"):
+            assert k in dated, f"{k} must still be on the ledger record"
+
+    def test_filmstrip_html_degrades_honestly_when_the_archive_is_empty(self, repo, monkeypatch):
+        """A session promised 40 stamps but with EVERY one unreadable (the
+        listed-but-PUT-failed case coverage_block itself is built to disclose)
+        must still carry the field — the honest-null variant, never an absent
+        key or a fabricated shape."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        _, all_stamps = make_frame(root="SPY", n_stamps=40, session_date=self.D)
+        arch = self._archive(repo, n=40, drop=all_stamps)
+        bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        latest = json.loads((repo / "site" / "session" / "SPY.json").read_text())
+        assert latest["coverage"]["minutes"] == 0
+        assert "filmstrip_html" in latest
+        assert 'class="ilx oew-film oew-film-null"' in latest["filmstrip_html"]
+        # coverage_block's own composed sentence, verbatim ("No intraday
+        # record...", sentence-cased at the source) — not the illus.py fallback
+        # string (which only fires when quality_en itself is absent, not the
+        # case here).
+        assert "No intraday record for this session" in latest["filmstrip_html"]
 
     def test_lane_guard_off_lane_writes_zero_data(self, repo, monkeypatch):
         """House law: nightly is the sole writer of `data/`.  Off-lane refreshes only `site/`."""

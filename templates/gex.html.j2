@@ -14,6 +14,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="illus.css">
 <style>
   /* ============================================================================
      OPTIONS DESK — remaster. Built on theme.css tokens (Inter, --up/--down/
@@ -475,5 +476,6 @@
 <script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}"; window.GEX_COVERAGE = {{ coverage_json|safe }};</script>
 <script src="gex.js?v={{ built|replace(' ','')|replace(':','')|replace('UTC','') }}"></script>
 <script src="theme.js"></script>
+<script defer src="illus.js"></script>
 </body>
 </html>
