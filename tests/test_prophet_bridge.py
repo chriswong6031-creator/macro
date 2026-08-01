@@ -31,6 +31,10 @@ Coverage:
   28. originate_plans: ≤ N_CANDIDATES plans produced.
   29. _third_friday: always returns a Friday.
   30. _next_monthly_expiry: always >= min_date.
+  31. R0.7 _load_macro_stance: verdict→stance mapping, PIT + staleness guards.
+  32. R0.7 _load_futures_chg: close-to-close math, PIT filter, honest omission.
+  33. R0.7 index whitelist: entries carry last_price + nested state block
+      (components/geometry/change_reason) with honesty laws untouched.
 """
 from __future__ import annotations
 
@@ -1187,3 +1191,153 @@ class TestLedgerAdvancement:
         missing = required_keys - set(rows[0].keys())
         assert missing == set(), f"Missing ledger row keys: {missing}"
         assert rows[0]["schema"] == "prophet.ledger/v1"
+
+# ---------------------------------------------------------------------------
+# 31–33. R0.7 market-overlay wires + index whitelist expansion
+# ---------------------------------------------------------------------------
+
+class TestMarketOverlayInputs:
+    """_load_macro_stance / _load_futures_chg (R0.7 quick wires)."""
+
+    def test_macro_stance_verdict_mapping(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        ms_path = tmp_path / "latest.json"
+        monkeypatch.setattr(bp, "MARKET_STATE_PATH", ms_path)
+        for verdict, expected in [
+            ("RISK_ON", "bull"), ("MIXED", "neutral"),
+            ("RISK_OFF", "bear"), ("UNKNOWN_WORD", None),
+        ]:
+            ms_path.write_text(json.dumps({"asof": "2026-07-01", "verdict": verdict}))
+            assert bp._load_macro_stance("2026-07-02") == expected, verdict
+
+    def test_macro_stance_pit_guard(self, tmp_path, monkeypatch):
+        """A snapshot dated AFTER asof (backfill --date run) must be omitted."""
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        ms_path = tmp_path / "latest.json"
+        monkeypatch.setattr(bp, "MARKET_STATE_PATH", ms_path)
+        ms_path.write_text(json.dumps({"asof": "2026-07-30", "verdict": "RISK_ON"}))
+        assert bp._load_macro_stance("2026-07-02") is None
+
+    def test_macro_stance_staleness_guard(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        ms_path = tmp_path / "latest.json"
+        monkeypatch.setattr(bp, "MARKET_STATE_PATH", ms_path)
+        ms_path.write_text(json.dumps({"asof": "2026-06-01", "verdict": "RISK_ON"}))
+        assert bp._load_macro_stance("2026-07-02") is None
+
+    def test_macro_stance_missing_file(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        monkeypatch.setattr(bp, "MARKET_STATE_PATH", tmp_path / "absent.json")
+        assert bp._load_macro_stance("2026-07-02") is None
+
+    def test_futures_chg_close_to_close(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        monkeypatch.setattr(bp, "YAHOO_DIR", tmp_path)
+        idx = pd.DatetimeIndex(
+            [pd.Timestamp("2026-06-30"), pd.Timestamp("2026-07-01"),
+             pd.Timestamp("2026-07-02")])
+        pd.DataFrame({"close": [99.0, 100.0, 102.0]}, index=idx).to_parquet(
+            tmp_path / "SPY.parquet")
+        pd.DataFrame({"close": [510.0, 500.0, 495.0]}, index=idx).to_parquet(
+            tmp_path / "QQQ.parquet")
+        out = bp._load_futures_chg("2026-07-02")
+        assert out is not None
+        assert out["SPY"] == pytest.approx(0.02)
+        assert out["QQQ"] == pytest.approx(-0.01)
+
+    def test_futures_chg_pit_filter(self, tmp_path, monkeypatch):
+        """Rows after asof are invisible — the change is computed at the PIT frame."""
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        monkeypatch.setattr(bp, "YAHOO_DIR", tmp_path)
+        idx = pd.DatetimeIndex(
+            [pd.Timestamp("2026-07-01"), pd.Timestamp("2026-07-02"),
+             pd.Timestamp("2026-07-03")])
+        pd.DataFrame({"close": [100.0, 102.0, 250.0]}, index=idx).to_parquet(
+            tmp_path / "SPY.parquet")
+        out = bp._load_futures_chg("2026-07-02")
+        assert out is not None
+        assert out["SPY"] == pytest.approx(0.02)
+
+    def test_futures_chg_stale_store_omitted(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        monkeypatch.setattr(bp, "YAHOO_DIR", tmp_path)
+        idx = pd.DatetimeIndex(
+            [pd.Timestamp("2026-05-29"), pd.Timestamp("2026-06-01")])
+        pd.DataFrame({"close": [100.0, 101.0]}, index=idx).to_parquet(
+            tmp_path / "SPY.parquet")
+        assert bp._load_futures_chg("2026-07-02") is None
+
+    def test_futures_chg_empty_dir_omitted(self, tmp_path, monkeypatch):
+        import scripts.build_prophet as bp  # noqa: PLC0415
+        monkeypatch.setattr(bp, "YAHOO_DIR", tmp_path)
+        assert bp._load_futures_chg("2026-07-02") is None
+
+
+def test_index_entries_carry_last_price_and_state(tmp_path):
+    """R0.7: active index entries publish last_price + a nested state block
+    (components / geometry / change_reason) so the Terminal's GAINERS sort,
+    T1-progress/P&L bars, and ConfidencePanel component bars light up."""
+    import scripts.build_prophet as bp  # noqa: PLC0415
+
+    buys = [_make_buy("AAPL", score=70, act_level=3, spot=150.0)]
+    standouts = _make_standouts(gate_go=False, buys=buys)
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(standouts))
+
+    orig_standouts = bp.STANDOUTS_PATH
+    orig_site = bp.SITE_PROPHET
+    orig_plans = bp.PLANS_DIR
+    orig_states = bp.STATES_DIR
+    orig_index = bp.INDEX_PATH
+    orig_ledger_path = bp.LEDGER_PATH
+    orig_ledger_dir = bp.LEDGER_DIR
+    orig_write_showcase = bp.write_showcase
+
+    try:
+        bp.STANDOUTS_PATH = standouts_path
+        bp.SITE_PROPHET = tmp_path / "site" / "prophet"
+        bp.PLANS_DIR = bp.SITE_PROPHET / "plans"
+        bp.STATES_DIR = bp.SITE_PROPHET / "states"
+        bp.INDEX_PATH = bp.SITE_PROPHET / "index.json"
+        bp.LEDGER_PATH = tmp_path / "data" / "prophet" / "ledger.jsonl"
+        bp.LEDGER_DIR = tmp_path / "data" / "prophet"
+        bp.write_showcase = lambda: orig_write_showcase(
+            out_path=tmp_path / "showcase.json")
+
+        ph = _make_price_history(150.0, 30)
+        # last_price must be the last PIT close — the same bar the management
+        # engine saw — not the frame's final (post-asof) close.
+        expected_last = round(
+            float(ph[ph.index <= pd.Timestamp("2026-07-02")]["close"].iloc[-1]), 4)
+
+        import sys as _sys  # noqa: PLC0415
+        with patch.object(_sys, "argv", ["build_prophet", "--date", "2026-07-02"]):
+            with patch("scripts.build_prophet._load_price_history_for_management") as mock_ph:
+                mock_ph.return_value = ph
+                bp.main()
+
+        idx = json.loads(bp.INDEX_PATH.read_text())
+        assert idx["plans"], "expected at least one active plan"
+        entry = idx["plans"][0]
+        assert entry.get("last_price") == pytest.approx(expected_last)
+        state = entry.get("state")
+        assert isinstance(state, dict), "nested state block missing"
+        for key in ("components", "geometry", "change_reason"):
+            assert key in state, f"state block missing {key}"
+        # the five engine component bars ride through
+        for bar in ("validity", "progress", "pace", "retention", "overlay"):
+            assert bar in state["components"], f"components missing {bar}"
+        # nested/flat agreement + honesty laws untouched
+        assert state["phase"] == entry["phase"]
+        assert idx["authority_tier"] == "display"
+        conf = entry.get("management_confidence")
+        assert conf is None or conf <= 92
+    finally:
+        bp.STANDOUTS_PATH = orig_standouts
+        bp.SITE_PROPHET = orig_site
+        bp.PLANS_DIR = orig_plans
+        bp.STATES_DIR = orig_states
+        bp.INDEX_PATH = orig_index
+        bp.LEDGER_PATH = orig_ledger_path
+        bp.LEDGER_DIR = orig_ledger_dir
+        bp.write_showcase = orig_write_showcase
