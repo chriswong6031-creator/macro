@@ -15523,6 +15523,187 @@ artifacts:
       read-only API fallback. Byte-identical to the canonical payload at build time;
       display/context only with the same all-false authority contract.
 
+  # --- Capital Structure Intelligence W0-W1: immutable SEC evidence/event spine ---
+  capital-structure-discovery:
+    path: data/capital_structure/discovery.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: _first_seen
+    freshness_sla_hours: 30
+    schema: capital_structure.discovery/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Operational point-in-time discovery ledger for in-policy SEC form-index rows.
+      It records what entered the retrieval backlog and when; it is not evidence that
+      the filing bytes were fetched, parsed, or classified.
+
+  capital-structure-index-coverage:
+    path: data/capital_structure/index_coverage.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: last_attempt_at
+    freshness_sla_hours: 30
+    schema: capital_structure.index_coverage/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Operational disclosure of each SEC daily-index date attempted, its state,
+      target count, and last error. Failed index days remain retryable and visible
+      rather than being mistaken for zero relevant filings. Deterministic observed
+      federal holidays close as not_published; repeated HTTP 404 does so only after
+      the seven-day grace gate. Generic HTTP 403 always remains retryable.
+
+  capital-structure-retrieval-attempts:
+    path: data/capital_structure/retrieval_attempts.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: attempted_at
+    freshness_sla_hours: 30
+    schema: capital_structure.retrieval_attempt/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Append-only operational ledger of SEC fetch and source-store attempts. Success
+      here is still not canonical evidence: only a verified source-manifest row proves
+      content-addressed storage and readback.
+
+  capital-structure-source-manifest:
+    path: data/capital_structure/source_manifest.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: retrieval.first_seen_at
+    freshness_sla_hours: 30
+    schema: capital_structure.source_manifest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/compile_capital_structure_events.py]
+    external_consumers: []
+    notes: >
+      Strict manifest for SEC documents whose raw bytes passed content-addressed
+      object-store write plus hash readback. Failed fetch/storage attempts never enter
+      this artifact. Public SEC source bytes live under the unlinked object-store prefix
+      capital_structure/sec/sha256; storage.store_id preserves the non-secret physical
+      namespace, while the compact provenance ledger is git-retained.
+
+  capital-structure-event-versions:
+    path: data/capital_structure/event_versions.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: available_at
+    freshness_sla_hours: 30
+    schema: capital_structure.event.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Immutable event-version adapter compiled offline from verified manifests.
+      Canonical PIT availability is system first-seen, not SEC filing date. This is a
+      temporary adapter until company_event.v1 lands with an explicit owned migration;
+      no normalized terms, score, rank, entry, sizing, or Prophet authority.
+
+  capital-structure-event-edges:
+    path: data/capital_structure/event_edges.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: capital_structure.event_edge.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Immutable amendment/effect/withdrawal/supersession edges. Reverse links are
+      derived from this table; older event rows are never rewritten. Linkage requires
+      explicit accession or a unique CIK + file number + registration family path.
+
+  capital-structure-review-queue:
+    path: data/capital_structure/review_queue.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: first_queued_at
+    freshness_sla_hours: 30
+    schema: capital_structure.review_item.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Rebuildable queue for ambiguous content, missing documents, conflicts, and
+      non-unique graph linkage. A defer is never converted to a negative fact.
+
+  capital-structure-telemetry:
+    path: data/capital_structure/telemetry.json
+    format: json
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: capital_structure.telemetry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Coverage/exclusion disclosure, compile failures, authority zeros, form-policy
+      version, and temporary-adapter migration receipt. It explicitly states that W1
+      covers registration/issuance forms rather than claiming all-SEC completeness.
+
   chronicle-events:
     path: data/chronicle/events.jsonl
     format: jsonl

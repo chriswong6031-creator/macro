@@ -389,6 +389,18 @@ on:
       - "collectors/**"
       - "lib/**"
       - "tests/test_china_news.py"
+      # Capital Structure Intelligence W0-W1: evidence contracts, offline compiler,
+      # PIT graph, and source-store/SEC fixtures must never exist as an unrun suite.
+      # collectors/** and scripts/collect.py cover collector edits; these explicit
+      # paths cover contract-, compiler-, fixture-, and test-only changes too.
+      - "engine/capital_structure/**"
+      - "scripts/compile_capital_structure_events.py"
+      - "contracts/capital_structure_*.schema.json"
+      - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
+      - "tests/test_capital_structure_*.py"
+      - "tests/test_sec_capital_structure.py"
+      - "tests/test_nwqs_c_dilution.py"
+      - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
       - "tests/test_edgar_8k_items.py"
       # LHB-W3 A1 falsifier packet: engine + builder + admin block + test re-run together.

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_review_item.schema.json",
+  "title": "Capital Structure rebuildable review item",
+  "description": "A deterministic queue projection from a current deferred event or unresolved immutable edge candidate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "queue_id", "event_id", "accession", "issuer_id", "form",
+    "classification_state", "defer_reason", "candidate_event_ids",
+    "source_manifest_ids", "first_queued_at", "review_state", "immutable_source"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.review_item.v1"},
+    "queue_id": {"type": "string", "pattern": "^review:cs:[A-Fa-f0-9]{24}$"},
+    "event_id": {"type": "string", "minLength": 1},
+    "accession": {"type": ["string", "null"]},
+    "issuer_id": {"type": "string", "minLength": 1},
+    "form": {"type": ["string", "null"]},
+    "classification_state": {
+      "type": "string",
+      "enum": [
+        "deferred_missing_document", "deferred_unsupported_media",
+        "deferred_ambiguous_content", "deferred_conflict", "deferred_linkage"
+      ]
+    },
+    "defer_reason": {"type": "string", "minLength": 1},
+    "candidate_event_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "source_manifest_ids": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "string", "minLength": 1}, "uniqueItems": true
+    },
+    "first_queued_at": {"type": "string", "format": "date-time"},
+    "review_state": {"const": "pending"},
+    "immutable_source": {"const": true}
+  }
+}
