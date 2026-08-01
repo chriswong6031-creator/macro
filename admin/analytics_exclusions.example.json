@@ -1,8 +1,9 @@
 {
   "_comment": "TEMPLATE — do NOT put real personal data here (this file is committed). Copy to an UNTRACKED file on the admin host (recommended /opt/macro/admin/analytics_exclusions.json — gitignored, survives deploys, read per request) and fill in real values. Optionally point ANALYTICS_EXCLUSIONS at a different path (e.g. /var/lib/macro-admin/…). See admin/analytics_first_party.py:_load_exclusions.",
   "_keys": {
-    "emails/locations/ips": "OPERATOR SELF-EXCLUSION — any visitor matching a registered email, a location (ip_geo city/region/country match), or one of these exact IPs is hidden from every analytics surface, along with cookies linked by device fingerprint or routable IP. Loopback IPs are never used for linking.",
-    "bots": "CRAWLER FILTER — crawlers/automation are hidden by default and shown separately via the 'show bots' toggle. Detection = bot user-agent OR datacenter-not-VPN IP OR known crawler network org OR one of bots.ips. ua_pattern/org_pattern EXTEND the baked-in defaults (Postgres regex, case-insensitive).",
+    "emails/locations/ips/visitor_ids": "OPERATOR SELF-EXCLUSION — any visitor matching a registered email, a location (ip_geo city/region/country match), one of these exact IPs, or one of these exact mm_aid cookie ids is hidden from every analytics surface, along with cookies linked by device fingerprint or routable IP. Loopback IPs are never used for linking.",
+    "_loopback_always_on": "Visitors seen on 127.0.0.1 / ::1 / localhost are ALWAYS hidden (plus their fingerprint-linked cookies) with no config entry. Every public request reaches the collectors through Caddy with X-Forwarded-For set, so a loopback IP can only be a request made ON the box: a local `npm run dev` browser, a curl, an agent driving the app. See _LOOPBACK_IPS in analytics_first_party.py.",
+    "bots": "CRAWLER FILTER — crawlers/automation are hidden by default and shown separately via the 'show bots' toggle. Detection = bot user-agent OR datacenter-not-VPN IP OR known crawler network org OR one of bots.ips OR a farm fingerprint. ua_pattern/org_pattern EXTEND the baked-in defaults (Postgres regex, case-insensitive). fp_fanout = how many distinct cookies AND distinct IPs one device fingerprint must span before it is treated as a residential-proxy scraper farm (default 12; set below 2 to disable) — real visitors are wide on at most one of those axes, never both.",
     "geo_overrides": "DISPLAY RELABEL — force the shown city/region/country for any IP starting with ip_prefix (fixes IPs geolocated to the wrong place, e.g. an HK VPN read as Frankfurt)."
   },
   "emails": [
@@ -14,12 +15,16 @@
   "ips": [
     "203.0.113.7"
   ],
+  "visitor_ids": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
   "bots": {
     "ips": [
       "34.122.147.229"
     ],
     "ua_pattern": "",
-    "org_pattern": ""
+    "org_pattern": "",
+    "fp_fanout": 12
   },
   "geo_overrides": [
     { "ip_prefix": "191.40.", "city": "Hong Kong", "region": "Hong Kong", "country_code": "HK" }

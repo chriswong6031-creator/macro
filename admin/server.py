@@ -826,9 +826,11 @@ class Handler(BaseHTTPRequestHandler):
                 days = _int_param(q, "days", 7, 1, 365)
                 return self._json(ga4.report(days=days))
             # first-party analytics (self-hosted; reads analytics_events/search_events/ip_geo).
-            # Params are string-in; the reader int-clamps days/limit and allowlist-validates ids.
+            # Params are string-in; the reader int-clamps days/limit/gap and allowlist-validates
+            # ids. `gap` = idle minutes that end a visit (default 30) — the knob behind the
+            # per-tab/per-origin session stitching.
             if path == "/api/analytics/fp/overview":
-                return self._json(analytics_first_party.overview(days=(q.get("days") or ["7"])[0], minutes=(q.get("minutes") or [None])[0]))
+                return self._json(analytics_first_party.overview(days=(q.get("days") or ["7"])[0], minutes=(q.get("minutes") or [None])[0], gap=(q.get("gap") or [None])[0]))
             if path == "/api/analytics/fp/pages":
                 return self._json(analytics_first_party.pages(days=(q.get("days") or ["7"])[0], minutes=(q.get("minutes") or [None])[0], limit=(q.get("limit") or ["25"])[0]))
             if path == "/api/analytics/fp/geo":
@@ -837,20 +839,22 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(analytics_first_party.sessions(
                     limit=(q.get("limit") or ["100"])[0], q=(q.get("q") or [""])[0],
                     include_bots=(q.get("bots") or ["0"])[0] in ("1", "true", "yes"),
-                    minutes=(q.get("minutes") or [None])[0]))
+                    minutes=(q.get("minutes") or [None])[0], gap=(q.get("gap") or [None])[0]))
             if path == "/api/analytics/fp/visitors":
                 return self._json(analytics_first_party.visitors(
                     limit=(q.get("limit") or ["250"])[0], q=(q.get("q") or [""])[0],
                     include_bots=(q.get("bots") or ["0"])[0] in ("1", "true", "yes"),
-                    minutes=(q.get("minutes") or [None])[0]))
+                    minutes=(q.get("minutes") or [None])[0], gap=(q.get("gap") or [None])[0]))
             if path == "/api/analytics/fp/session":
-                return self._json(analytics_first_party.session((q.get("id") or [""])[0]))
+                return self._json(analytics_first_party.session(
+                    (q.get("id") or [""])[0], gap=(q.get("gap") or [None])[0]))
             if path == "/api/analytics/fp/flow":
                 return self._json(analytics_first_party.flow(days=(q.get("days") or ["7"])[0], minutes=(q.get("minutes") or [None])[0], limit=(q.get("limit") or ["40"])[0]))
             if path == "/api/analytics/fp/terminal":
                 return self._json(analytics_first_party.terminal(days=(q.get("days") or ["7"])[0], minutes=(q.get("minutes") or [None])[0], limit=(q.get("limit") or ["25"])[0]))
             if path == "/api/analytics/fp/visitor":
-                return self._json(analytics_first_party.visitor((q.get("id") or [""])[0]))
+                return self._json(analytics_first_party.visitor(
+                    (q.get("id") or [""])[0], gap=(q.get("gap") or [None])[0]))
             if path == "/api/analytics/fp/realtime":
                 return self._json(analytics_first_party.realtime())
             # users (Supabase)
