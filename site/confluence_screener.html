@@ -56,153 +56,17 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css">
-<style>
-/* ── bilingual toggle (mirrors theme.css mechanism for the self-contained head) ── */
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--link);text-decoration:none}
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
-.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-
-/* ── page brand / lead ── */
-.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
-.pg-brand .gn{color:var(--info)}
-.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
-
-/* ── HERO — glass state card ── */
-.hero{position:relative;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  border:1px solid var(--glass-brd);border-radius:20px;padding:26px 28px;box-shadow:var(--glass-shadow);overflow:hidden}
-.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(120% 140% at 88% -20%, color-mix(in srgb,var(--info) 20%,transparent), transparent 60%)}
-.hero-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
-.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:9px}
-.hero-state{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0;color:var(--text)}
-.hero-state .n{color:var(--info)}
-.stance{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;margin-top:14px;
-  background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
-.stance::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.hero-sentence{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:46ch;line-height:1.55}
-/* right rail — the "line-up" motif: 3 stacked leg ticks converging into a dot */
-.hero-motif{width:132px;height:112px;flex:none}
-
-/* ── section head ── */
-.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
-.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
-.sec-h .sub{font-size:12.5px;color:var(--muted)}
-
-/* ── LEDGER CARD (signature) ── */
-.ledger{display:flex;flex-direction:column;gap:16px;margin-top:14px}
-.lc{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
-  padding:20px 22px 18px;transition:border-color .16s,box-shadow .16s,transform .16s}
-.lc:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));box-shadow:0 10px 30px -18px rgba(0,0,0,.5)}
-.lc.free{border-color:color-mix(in srgb,var(--info) 34%,var(--line))}
-.lc-top{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start}
-/* rank chip — rank_score IS a real ordering, so the numeral carries information */
-.lc-rank{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--muted);
-  border:1px solid var(--line);border-radius:9px;padding:5px 9px;line-height:1;letter-spacing:.02em;white-space:nowrap;margin-top:2px}
-.lc.free .lc-rank{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
-.lc-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em}
-.lc-since{font-size:11.5px;color:var(--muted);margin-top:3px}
-/* win-rate hero block — the number is the type hero, honestly paired with the older era */
-.lc-wr{text-align:right;flex:none;min-width:118px}
-.lc-wr-big{font-family:var(--font-mono);font-size:30px;font-weight:800;line-height:1;color:var(--up);letter-spacing:-.02em}
-.lc-wr-unit{font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
-.lc-wr-old{font-size:11.5px;color:var(--muted);margin-top:8px;font-family:var(--font-mono)}
-.lc-wr-old b{color:var(--text);font-weight:700}
-
-/* the line-up leg stack */
-.legs{display:flex;flex-direction:column;gap:7px;margin:16px 0 4px}
-.leg{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center}
-.leg-tf{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-align:center;border-radius:6px;padding:3px 0;line-height:1}
-.leg-tf.d{background:color-mix(in srgb,var(--muted) 20%,transparent);color:var(--muted)}
-.leg-tf.w{background:color-mix(in srgb,var(--info) 20%,transparent);color:var(--info)}
-.leg-txt{font-size:13px;color:var(--text);line-height:1.35;display:flex;align-items:center;gap:9px}
-.leg-txt::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--up) 70%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 14%,transparent)}
-
-/* wins-per-10 segmented bar */
-.w10{display:inline-flex;gap:3px;vertical-align:middle}
-.w10 i{width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--muted) 26%,transparent)}
-.w10.tone-free i.on{background:var(--up)}
-.w10.tone-gated i.on{background:color-mix(in srgb,var(--muted) 60%,transparent)}
-
-/* footer receipts row */
-.lc-foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
-.chip.ok{color:var(--up)}
-.chip .w10{margin-left:2px}
-.tickers{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-.tkr{display:inline-flex;align-items:baseline;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--text);
-  background:color-mix(in srgb,var(--up) 12%,transparent);border:1px solid color-mix(in srgb,var(--up) 26%,transparent);
-  border-radius:8px;padding:5px 10px}
-.tkr .nm{font-family:var(--font-ui);font-weight:500;font-size:11px;color:var(--muted)}
-
-/* locked state — honest, built from active_count only. NO blurred text. */
-.locked{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:12px;
-  background:color-mix(in srgb,var(--info) 7%,transparent);border:1px dashed color-mix(in srgb,var(--info) 34%,var(--line))}
-.locked .ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
-  background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
-.locked .lk-tx{flex:1;min-width:180px;font-size:13px;color:var(--text);line-height:1.4}
-.locked .lk-tx b{font-weight:700}
-.locked .lk-tx .sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
-.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
-  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
-.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
-
-/* honesty footer + big CTA */
-.honesty{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
-.honesty h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-.honesty ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
-.honesty li{position:relative;padding-left:20px;font-size:13px;color:var(--text);line-height:1.5}
-.honesty li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 70%,transparent)}
-.cta-band{margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
-  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
-.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
-.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
-
-/* empty state */
-.empty{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center;margin-top:14px}
-.empty .ec-ic{font-size:30px;margin-bottom:10px;opacity:.7}
-.empty h3{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--text)}
-.empty p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:40ch;line-height:1.55}
-
-/* footer */
-.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
-
-/* zh Asia colour convention — theme.css swaps --up/--down globally, but our
-   green-tinted ticker chips + win cells reference --up so they follow for free.
-   Keep the wins bar semantic (win = good), so we DON'T flip it: a win is a win in
-   both languages. Guard only the ticker chip, which reads as "price up = green"
-   and should invert in zh. */
-html[data-lang="zh"] .tkr{background:color-mix(in srgb,var(--down) 12%,transparent);border-color:color-mix(in srgb,var(--down) 26%,transparent)}
-
-/* focus visibility */
-a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
-
-/* responsive */
-@media(max-width:640px){
-  .hero-inner{grid-template-columns:1fr}
-  .hero-motif{display:none}
-  .hero-state{font-size:26px}
-  .lc-top{grid-template-columns:auto 1fr;grid-template-areas:"rank title" "wr wr"}
-  .lc-rank{grid-area:rank}.lc-title-wrap{grid-area:title}.lc-wr{grid-area:wr;text-align:left;margin-top:6px}
-  .lc-wr-old{margin-top:4px}
-}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+<link rel="stylesheet" href="theme.css?v=8d7800c8">
+<link rel="stylesheet" href="assets/css/7d5af2ad.css?v=7d5af2ad">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 </head>
 <body>
 <nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
   
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -416,10 +280,10 @@ a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(-
     </div>
   </div>
   
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
@@ -752,7 +616,7 @@ a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(-
   </div>
 </div>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=e4951de3" defer></script>
 <script>
 (function(){
   'use strict';
