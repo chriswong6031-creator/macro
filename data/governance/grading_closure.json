@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-31T09:36:50.960671+00:00",
+  "generated_at": "2026-08-01T00:48:06.363117+00:00",
   "n_ledgers": 34,
-  "n_closed": 12,
-  "n_grader_starved": 22,
+  "n_closed": 13,
+  "n_grader_starved": 21,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -11,9 +11,9 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 29570,
-      "n_graded": 34582,
-      "last_graded_at": "2026-07-31T09:35:25.652577+00:00",
+      "n_logged": 29575,
+      "n_graded": 34928,
+      "last_graded_at": "2026-08-01T00:47:16.034516+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -22,9 +22,9 @@
       "path": "data/qledger/grades.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 34582,
-      "n_graded": 34582,
-      "last_graded_at": "2026-07-31T09:35:25.652577+00:00",
+      "n_logged": 34928,
+      "n_graded": 34928,
+      "last_graded_at": "2026-08-01T00:47:16.034516+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -33,7 +33,7 @@
       "path": "data/board_ledger/hk_board.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/board_ledger.py",
-      "n_logged": 334,
+      "n_logged": 345,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
@@ -77,8 +77,8 @@
       "path": "data/china_standout_track/board.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/china_standout_track.py",
-      "n_logged": 1091,
-      "n_graded": 60,
+      "n_logged": 1097,
+      "n_graded": 119,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "CLOSED"
@@ -99,7 +99,7 @@
       "path": "data/china_sector_cycles/forward_log.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/china_sector_cycles_grader.py",
-      "n_logged": 1060,
+      "n_logged": 1113,
       "n_graded": 5081,
       "last_graded_at": "2026-07-02T18:59:33.219372+00:00",
       "tune_step": "N",
@@ -122,10 +122,10 @@
       "storage": "present",
       "grader_wired": "Y:scripts/grade_breadth_divergence.py",
       "n_logged": 158,
-      "n_graded": 0,
+      "n_graded": 9,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "GRADER-STARVED"
+      "verdict": "CLOSED"
     },
     {
       "key": "risk_radar_forward_log",

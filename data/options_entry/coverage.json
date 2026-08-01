@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-31T09:36:51.466968+00:00",
-  "as_of": "2026-07-31",
+  "generated_at": "2026-08-01T00:48:06.865207+00:00",
+  "as_of": "2026-08-01",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -349,7 +349,7 @@
       "cond_hit_share": 0.815,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-07-31",
+        "forecast_date": "2026-08-01",
         "basis": "n_cond=27/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=1.000 \u2192 0 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -373,7 +373,7 @@
       "cond_hit_share": 0.9843,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-03",
+        "forecast_date": "2026-08-04",
         "basis": "n_cond=0/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=0.994 \u2192 3 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -470,26 +470,26 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-31",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
           "latest_as_of": "2026-07-31 03:31 UTC",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-21",
-          "age_days_from_today": 10,
+          "age_days_from_today": 11,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-31T09:36:51.423691+00:00",
+      "generated_at": "2026-08-01T00:48:06.816677+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -499,8 +499,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-31T09:36:51.466961+00:00",
-    "as_of": "2026-07-31",
+    "generated_at_utc": "2026-08-01T00:48:06.865198+00:00",
+    "as_of": "2026-08-01",
     "absent_stores": []
   }
 }

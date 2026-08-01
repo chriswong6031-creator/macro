@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-31",
+ "as_of": "2026-08-01",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -106,12 +106,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "ROP",
-     "name": "Roper Technologies Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
     },
     {
      "ticker": "MSTR",
@@ -294,12 +294,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "WDC",
      "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     }
    ]
   },
@@ -466,12 +466,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "SNDK",
-     "name": "Sandisk Corp"
-    },
-    {
      "ticker": "WDC",
      "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
     }
    ]
   },
@@ -548,12 +548,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "ROP",
-     "name": "Roper Technologies Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
     },
     {
      "ticker": "MSTR",
