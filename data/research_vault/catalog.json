@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T00:16:23.395388+00:00",
-  "count": 560,
+  "generated_at": "2026-08-02T00:36:33.464181+00:00",
+  "count": 561,
   "institutions": [
     "Amova",
     "Apollo",
@@ -102,6 +102,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rk0fwfp2l2k-9d1573",
+      "title": "Exelon Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:33Z",
+      "summary_points": [
+        "**Regulatory Risk & Pipeline Revision**: Downward pipeline revision (18GW → 11GW) and PJM affordability constraints drive base case earnings growth to -6% (vs.",
+        "8% coverage average), limiting upside.",
+        "**Debt Sustainability & Valuation Pressure**: Total debt to $133.9B by 2028E, with declining P/E (15.9→14.1) and EV/EBITDA (10.7→9.4), signaling severe valuation and balance sheet risks.",
+        "**Structural Underperformance**: EXC lags S&P 500 by 7.0% (12m) with 10.9% absolute returns vs.",
+        "S&P 500’s 3.9%, indicating persistent relative weakness."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
