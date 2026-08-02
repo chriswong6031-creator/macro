@@ -2927,7 +2927,10 @@ jobs:
     # deliberately bounded to the repository's top-level BioCatalyst test family.
     # app/requirements.txt is an owned trigger above, while the deploy regression
     # suite pins the serving-tier jsonschema/referencing closure used at import.
-    timeout-minutes: 8
+    # The B1/B1b/B2 suite measured 11.5 minutes before the next FDA lane adds
+    # coverage. Keep headroom for normal hosted-runner variance rather than
+    # converting a healthy complete suite into an eight-minute timeout.
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

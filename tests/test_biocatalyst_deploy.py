@@ -51,6 +51,21 @@ def test_record_history_collector_tests_are_owned_by_the_biocatalyst_ci_lane():
     assert "tests/test_clinicaltrials_history.py" in legacy_jobs
 
 
+def test_biocatalyst_ci_timeout_cannot_regress_below_measured_suite_runtime():
+    legacy_jobs = _text(LEGACY_JOBS_PATH)
+    biocatalyst_job = re.search(
+        r"^  biocatalyst:\n(?P<body>.*?)(?=^  [a-z0-9][a-z0-9-]*:|\Z)",
+        legacy_jobs,
+        re.MULTILINE | re.DOTALL,
+    )
+
+    assert biocatalyst_job is not None
+    timeout = re.search(r"^    timeout-minutes: (\d+)$", biocatalyst_job.group("body"), re.MULTILINE)
+    assert timeout is not None
+    # The complete B1/B1b/B2 lane has already exceeded eight minutes in CI.
+    assert int(timeout.group(1)) >= 15
+
+
 def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     service = _text(SERVICE_PATH)
 
