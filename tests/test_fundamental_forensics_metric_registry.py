@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from collections.abc import Mapping
+from dataclasses import replace
+from datetime import datetime, timezone
 import hashlib
 from pathlib import Path
 
@@ -13,6 +16,10 @@ from engine.fundamental_forensics.metric_registry import (
     ALLOWED_CONFIDENCE,
     CORE_V1_DIRECT_METRIC_COUNT,
     CORE_V1_FORMULA_METRIC_COUNT,
+    GovernanceBundle,
+    KNOWN_CONCEPT_ALLOWLIST,
+    KnownConcept,
+    MAX_GOVERNANCE_BUNDLE_WIRE_TEXT_CHARS,
     load_core_metric_registry,
     metric_registry_from_dicts,
 )
@@ -344,3 +351,217 @@ def test_confidence_d_is_a_supported_review_tier_not_an_implicit_rejection() -> 
     ] = "D"
 
     assert _registry((catalog, mappings, formulas)).metric("revenue").confidence == "D"
+
+
+@pytest.mark.parametrize("document", ["catalog", "mappings", "formulas"])
+def test_lane_inception_clocks_cannot_advance_past_existing_definitions(document: str) -> None:
+    catalog, mappings, formulas = deepcopy(_raw())
+    {"catalog": catalog, "mappings": mappings, "formulas": formulas}[document]["available_at"] = (
+        "2026-08-03T00:00:00Z"
+    )
+
+    with pytest.raises(ValueError, match="cannot predate"):
+        _registry((catalog, mappings, formulas))
+
+
+@pytest.mark.parametrize("field", ["available_at", "mapping_pack_available_at", "formula_pack_available_at"])
+def test_registry_replace_cannot_bypass_lane_inception_clock_validation(field: str) -> None:
+    registry = load_core_metric_registry(ROOT)
+    with pytest.raises(ValueError, match="predate|inception"):
+        replace(registry, **{field: datetime(2026, 8, 3, tzinfo=timezone.utc)})
+
+
+def test_future_mapping_append_does_not_retroactively_invalidate_existing_formula(monkeypatch) -> None:
+    catalog, mappings, formulas = deepcopy(_raw())
+    monkeypatch.setitem(
+        KNOWN_CONCEPT_ALLOWLIST,
+        ("us-gaap", "FutureRevenueExtension"),
+        KnownConcept(
+            taxonomy="us-gaap",
+            concept="FutureRevenueExtension",
+            taxonomy_version_start=2027,
+            taxonomy_version_end=2100,
+            period_kind="duration",
+            contract_units=("USD",),
+        ),
+    )
+    future = deepcopy(next(item for item in mappings["mappings"] if item["metric_id"] == "revenue"))
+    future["rule"] = {
+        "rule_id": "mapping.revenue.future_extension/v1",
+        "version": "1.0.0",
+        "available_at": "2026-08-07T00:00:00Z",
+        "confidence": "A",
+    }
+    future["taxonomy_concept_aliases"] = [
+        {
+            "taxonomy": "us-gaap",
+            "concept": "FutureRevenueExtension",
+            "priority": 1,
+            "taxonomy_version_start": 2027,
+            "taxonomy_version_end": 2100,
+        }
+    ]
+    mappings["mappings"].append(future)
+
+    registry = _registry((catalog, mappings, formulas))
+    assert registry.metric("gross_margin").formula is not None
+    assert len(registry.metric("revenue").mappings) == 2
+
+
+def test_mapping_replacements_and_explicit_supersession_are_rejected() -> None:
+    catalog, mappings, formulas = deepcopy(_raw())
+    replacement = deepcopy(mappings["mappings"][0])
+    replacement["rule"]["version"] = "1.0.1"
+    mappings["mappings"].append(replacement)
+    with pytest.raises(ValueError, match="replacement/supersession"):
+        _registry((catalog, mappings, formulas))
+
+    catalog, mappings, formulas = deepcopy(_raw())
+    mappings["mappings"][0]["supersedes"] = "mapping.revenue/v1"
+    with pytest.raises(ValueError, match="unsupported field"):
+        _registry((catalog, mappings, formulas))
+
+
+def test_governance_bundle_is_complete_cutoff_visible_frozen_and_round_trippable() -> None:
+    registry = load_core_metric_registry(ROOT)
+    bundle = registry.governance_bundle_at("2026-08-02T00:00:00Z")
+
+    assert bundle.catalog is not None
+    assert bundle.mapping_pack is not None
+    assert bundle.formula_pack is not None
+    assert len(bundle.contracts) == 50
+    assert bundle.metric("revenue").mappings == bundle.mappings_for("revenue")
+    assert bundle.formula_for("gross_margin") is not None
+    assert bundle.mappings_for("not_visible") == ()
+    assert bundle.formula_for("not_visible") is None
+
+    wire = bundle.to_dict()
+    assert wire["content_id"] == bundle.content_id
+    assert len(wire["metrics"]) == 50
+    assert len(wire["mappings"]) == 40
+    assert len(wire["formulas"]) == 10
+    assert set(wire["metrics"][0]) >= {
+        "rule", "period_constraints", "dimensional_profile", "presentation_constraints", "review", "no_result"
+    }
+    assert set(wire["mappings"][0]) == {"metric_id", "rule", "taxonomy_concept_aliases"}
+    assert set(wire["formulas"][0]) == {
+        "metric_id", "rule", "expression", "dependencies", "output_unit", "dependency_period_alignment"
+    }
+    round_tripped = GovernanceBundle.from_dict(wire)
+    assert round_tripped.to_dict() == wire
+    wire["metrics"][0]["label"] = "forged mutable copy"
+    assert bundle.to_dict()["metrics"][0]["label"] != "forged mutable copy"
+
+
+def test_governance_bundle_rejects_tampering_hidden_children_and_absent_dependencies() -> None:
+    registry = load_core_metric_registry(ROOT)
+    bundle = registry.governance_bundle_at("2026-08-02T00:00:00Z")
+
+    with pytest.raises(ValueError, match="content_id"):
+        replace(bundle, content_id="0" * 64)
+
+    revenue = bundle.metric("revenue")
+    future_mapping = replace(
+        revenue.mappings[0],
+        rule=replace(
+            revenue.mappings[0].rule,
+            rule_id="mapping.revenue.future_extension/v1",
+            available_at=datetime(2026, 8, 7, tzinfo=timezone.utc),
+        ),
+    )
+    future_revenue = replace(revenue, mappings=revenue.mappings + (future_mapping,))
+    with pytest.raises(ValueError, match="hidden at recorded_at"):
+        replace(
+            bundle,
+            contracts=tuple(
+                future_revenue if contract.metric_id == "revenue" else contract
+                for contract in bundle.contracts
+            ),
+            content_id="",
+        )
+
+    wire = deepcopy(bundle.to_dict())
+    wire["unexpected"] = True
+    with pytest.raises(ValueError, match="unsupported field"):
+        GovernanceBundle.from_dict(wire)
+
+    wire = deepcopy(bundle.to_dict())
+    formula = next(item for item in wire["formulas"] if item["metric_id"] == "gross_margin")
+    formula["dependencies"] = ["not_a_visible_metric"]
+    formula["expression"] = "not_a_visible_metric"
+    metric = next(item for item in wire["metrics"] if item["metric_id"] == "gross_margin")
+    metric["declared_formula_dependencies"] = ["not_a_visible_metric"]
+    with pytest.raises(ValueError, match="unknown or multi-unit dependencies"):
+        GovernanceBundle.from_dict(wire)
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement"),
+    [
+        (("metrics", 0, "label"), "x" * (MAX_GOVERNANCE_BUNDLE_WIRE_TEXT_CHARS + 1)),
+        (("formulas", 0, "expression"), "x" * (MAX_GOVERNANCE_BUNDLE_WIRE_TEXT_CHARS + 1)),
+    ],
+)
+def test_governance_bundle_wire_admission_bounds_text_before_schema_parsing(path, replacement) -> None:
+    wire = deepcopy(load_core_metric_registry(ROOT).governance_bundle_at("2026-08-02T00:00:00Z").to_dict())
+    target = wire
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = replacement
+
+    with pytest.raises(ValueError, match="governance text limit"):
+        GovernanceBundle.from_dict(wire)
+
+
+def test_governance_bundle_wire_rejects_hostile_mapping_before_key_iteration() -> None:
+    class HostileMapping(Mapping[str, object]):
+        reads = 0
+
+        def __iter__(self):
+            self.reads += 1
+            raise AssertionError("wire parser must reject non-dict before iteration")
+
+        def __len__(self) -> int:
+            self.reads += 1
+            raise AssertionError("wire parser must reject non-dict before length")
+
+        def __getitem__(self, key: str) -> object:
+            raise AssertionError("wire parser must reject non-dict before lookup")
+
+    hostile = HostileMapping()
+    with pytest.raises(ValueError, match="concrete object"):
+        GovernanceBundle.from_dict(hostile)
+    assert hostile.reads == 0
+
+
+def test_governance_bundle_hides_future_append_only_definitions_without_rewriting_prior_content_id() -> None:
+    registry = load_core_metric_registry(ROOT)
+    revenue = registry.metric("revenue")
+    future_mapping = replace(
+        revenue.mappings[0],
+        rule=replace(
+            revenue.mappings[0].rule,
+            rule_id="mapping.revenue.future_extension/v1",
+            available_at=datetime(2026, 8, 7, tzinfo=timezone.utc),
+        ),
+    )
+    extended = replace(
+        registry,
+        catalog_version="99.0.0",
+        catalog_content_sha256="1" * 64,
+        mapping_pack_version="99.0.0",
+        mapping_pack_content_sha256="2" * 64,
+        formula_pack_version="99.0.0",
+        formula_pack_content_sha256="3" * 64,
+        contracts=tuple(
+            replace(contract, mappings=contract.mappings + (future_mapping,))
+            if contract.metric_id == "revenue"
+            else contract
+            for contract in registry.contracts
+        ),
+    )
+
+    baseline = registry.governance_bundle_at("2026-08-02T00:00:00Z")
+    projected = extended.governance_bundle_at("2026-08-02T00:00:00Z")
+    assert projected.to_dict() == baseline.to_dict()
+    assert projected.content_id == baseline.content_id
