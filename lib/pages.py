@@ -7,7 +7,14 @@ The shim (templates/data_base.js) reroutes the heavy per-ticker OHLC +
 search-library fetches to R2 when window.DATA_BASE is set; empty -> no-op. It
 must load FIRST, before any page code runs a data fetch, so it goes at the TOP
 of <head>, non-deferred, with a depth-aware src prefix ("../" per directory
-under site/). Without write-time injection, committing a standalone builder's
+under site/) — but AFTER an early <meta charset>: the ~1.6KB inline body pushed
+an immediately-following charset declaration past the HTML5 pre-scan window
+(the parser only examines the first 1024 BYTES for it), so any serving path
+that omits charset in Content-Type (python -m http.server previews, mirrors,
+some CDN variants) fell back to windows-1252 and every CJK string literal in
+classic external scripts (nav_market.js, …) decoded as mojibake (更多 →
+æ›´å¤š). A charset meta can never run a fetch, so load-first is intact.
+Without write-time injection, committing a standalone builder's
 output silently strips the tag and regresses the R2 rerouting (nearly shipped
 in #1045). scripts/inject_data_base.py — the CI post-render step — imports
 inject_text() from here and remains the idempotent safety net for any page
@@ -28,6 +35,13 @@ log = logging.getLogger("pages")
 
 DBASE_MARKER = "data-dbase"
 _HEAD_RE = re.compile(r"<head[^>]*>", re.IGNORECASE)
+# An early charset declaration — <meta charset=…> or its http-equiv
+# Content-Type form (whose content attr also carries `charset=`). Lookbehind,
+# NOT `\b`, in front of the attribute name: a word boundary there also matches
+# `-`-joined variants like data-charset (see _EXTERNALIZE_ATTR_RE below).
+_CHARSET_META_RE = re.compile(
+    r"<meta\b[^>]*(?<![\w-])charset\s*=[^>]*>", re.IGNORECASE
+)
 
 # Site-relative pages whose BYTES are hand-authored source, not build output
 # (operator-ordered flagship redesign 2026-07-28) — like site/index.html, the
@@ -600,7 +614,11 @@ def _tag(prefix: str) -> str:
 
 def inject_text(text: str, prefix: str = "") -> str:
     """Return `text` with the shim <script> inserted at the TOP of <head> (so it
-    runs before any body fetch). Idempotent — an up-to-date inline shim is
+    runs before any body fetch) — after the page's <meta charset> when one sits
+    in the first chunk of head, so the declaration stays inside the browser's
+    1024-byte pre-scan window (a charset meta can never fetch, so the shim's
+    load-first guarantee is unchanged; a page with no early charset keeps the
+    plain top-of-head placement). Idempotent — an up-to-date inline shim is
     unchanged; a stale inline body is refreshed in place; and a page still
     carrying the OLD external <script src> tag is upgraded in place (same
     position, so ordering is preserved)."""
@@ -621,6 +639,16 @@ def inject_text(text: str, prefix: str = "") -> str:
     m = _HEAD_RE.search(text)
     if m:
         i = m.end()
+        # Land AFTER an early charset meta, never before it: the ~1.6KB inline
+        # body inserted first pushed the declaration past the 1024-byte HTML5
+        # pre-scan window, and every charset-header-less serving path then
+        # decoded classic external scripts as windows-1252 (CJK → mojibake).
+        # The window is measured from the head-open tag — a charset that deep
+        # was already outside the pre-scan window before the shim existed, and
+        # falling back to top-of-head placement leaves such a page no worse.
+        cm = _CHARSET_META_RE.search(text, i, i + 1024)
+        if cm:
+            i = cm.end()
         return text[:i] + "\n" + tag + text[i:]
     # no <head> — fall back to before </body>, else prepend
     low = text.lower()
