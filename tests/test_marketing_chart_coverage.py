@@ -571,16 +571,44 @@ def test_every_enabled_desk_has_its_own_template_bank():
     import yaml
 
     cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    from engine.marketing.content_studio import (  # noqa: PLC0415
+        _COPY_TEMPLATES, _drafts_nightly_copy,
+    )
+
+    # SCOPED TO THE DESKS THAT ACTUALLY DRAFT (2026-08-02). A desk with no
+    # `copywriter.personas` block is a WIRE relay: content_plan gives it an empty
+    # nightly queue by construction, so it draws no template bank and cannot
+    # collide in one. Scoping here is what lets mastermind_news arm at all — it
+    # is persona-less on purpose (house wire voice, charter §4) and would
+    # otherwise have to borrow a drafting desk's voice key to pass.
     enabled = [a for a in cfg["desk_network"]["accounts"] if a.get("enabled")]
     assert enabled, "no enabled desks — the guard would pass vacuously"
+    drafting = [a for a in enabled if _drafts_nightly_copy(cfg, a["id"])]
+    assert drafting, "no drafting desks — the guard would pass vacuously"
 
     by_voice: dict[str, list[str]] = {}
-    for a in enabled:
+    for a in drafting:
         by_voice.setdefault(str(a.get("voice", "")), []).append(a["id"])
     shared = {v: ids for v, ids in by_voice.items() if len(ids) > 1}
     assert not shared, (
         f"desks sharing a voice (and therefore a template bank): {shared}. "
         f"The later desk will be near-dup quarantined into near-silence."
+    )
+
+    # AND THE COLLISION THE STRING COMPARISON ABOVE CANNOT SEE. `_get_copy` falls
+    # back to the "authoritative desk" bank on an unrecognised voice, so giving a
+    # colliding desk a brand-new voice string turns this guard green while the
+    # desk silently draws FLAGSHIP's templates instead — the same near-dup
+    # quarantine, now invisible. Every drafting desk's voice must be a real key
+    # in _COPY_TEMPLATES, so "distinct" means distinct banks, not distinct words.
+    known = {v for (_t, v) in _COPY_TEMPLATES}
+    unbacked = {a["id"]: a.get("voice") for a in drafting
+                if str(a.get("voice", "")) not in known}
+    assert not unbacked, (
+        f"drafting desks whose voice has no template bank: {unbacked}. "
+        f"_get_copy falls back to 'authoritative desk', so these silently draft "
+        f"the flagship's templates and near-dup against it. Known banks: "
+        f"{sorted(known)}"
     )
 
 

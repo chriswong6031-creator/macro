@@ -3243,14 +3243,249 @@ _BREAK_AMBER = "#F5A623"       # breaking accent — wire-dateline urgency, not 
 _BREAK_GREY = "#6b7a99"        # family neutral (matches earnings-card muted ink)
 _BREAK_UP = "#4CAF50"          # family up-color
 _BREAK_DOWN = "#E23B3B"        # family down-color
+_BREAK_BODY = "#C8D4EA"        # summary ink — raised from #a7b4cc (see _BREAK_BODY_MIN)
+
+# ── Legibility floor (W4g, operator 2026-08-02: "text too small for both
+# mobile and web") ───────────────────────────────────────────────────────────
+# The card is authored on a 1000px-wide canvas and rasterized ×2 to a 2000×1120
+# PNG.  In an X timeline on a phone the media well is ~340–360 CSS px wide, so
+# every design px lands on screen at ~0.34 CSS px.  The old 15.5px summary
+# therefore arrived at ~5.3 CSS px — smaller than any readable caption.  This
+# floor (26 design px ≈ 8.8 CSS px on a 340px well, ≈ 9.4 on a 360px well) is
+# the size below which the body stops being readable at arm's length; it is a
+# LEGIBILITY FLOOR, not a style preference, and the fitter may never go under it.
+_BREAK_BODY_MIN = 26.0
+# Character bounds for what a card can hold at that floor.  Derived from the
+# geometry, not taste: 4 lines × ~68 mixed-case chars at 26px across the 890px
+# text column.  A headline longer than this is compressed to whole sentences
+# UPSTREAM (see derive_card_headline) so the renderer never has to clip.
+_BREAK_HEADLINE_MAX_CHARS = 180
+_BREAK_SUMMARY_MAX_CHARS = 240      # no ticker strip — 4 body lines available
+_BREAK_SUMMARY_MAX_CHARS_STRIP = 170  # ticker strip present — 3 body lines
+
+
+# ── Glyph metrics ────────────────────────────────────────────────────────────
+# Every wrap on this card used to be a raw CHARACTER COUNT, so the char budgets
+# and the font sizes drifted apart whenever either moved (the 15.5px summary was
+# set to 84 chars — ~651px of an available 908px column, a permanently underset
+# line).  These are Helvetica advance widths in 1/1000 em; `sans-serif` resolves
+# to Helvetica on the macOS render host and to a metric-compatible Arial clone
+# on Linux.  Deterministic, no font library, no I/O.
+_ADV_REG: dict[str, int] = {
+    " ": 278, "!": 278, '"': 355, "#": 556, "$": 556, "%": 889, "&": 667,
+    "'": 191, "(": 333, ")": 333, "*": 389, "+": 584, ",": 278, "-": 333,
+    ".": 278, "/": 278, ":": 278, ";": 278, "<": 584, "=": 584, ">": 584,
+    "?": 556, "@": 1015, "[": 278, "\\": 278, "]": 278, "^": 469, "_": 556,
+    "`": 333, "{": 334, "|": 260, "}": 334, "~": 584,
+    "A": 667, "B": 667, "C": 722, "D": 722, "E": 667, "F": 611, "G": 778,
+    "H": 722, "I": 278, "J": 500, "K": 667, "L": 556, "M": 833, "N": 722,
+    "O": 778, "P": 667, "Q": 778, "R": 722, "S": 667, "T": 611, "U": 722,
+    "V": 667, "W": 944, "X": 667, "Y": 667, "Z": 611,
+    "a": 556, "b": 556, "c": 500, "d": 556, "e": 556, "f": 278, "g": 556,
+    "h": 556, "i": 222, "j": 222, "k": 500, "l": 222, "m": 833, "n": 556,
+    "o": 556, "p": 556, "q": 556, "r": 333, "s": 500, "t": 278, "u": 556,
+    "v": 500, "w": 722, "x": 500, "y": 500, "z": 500,
+}
+_ADV_BOLD: dict[str, int] = {
+    " ": 278, "!": 333, '"': 474, "#": 556, "$": 556, "%": 889, "&": 722,
+    "'": 238, "(": 333, ")": 333, "*": 389, "+": 584, ",": 278, "-": 333,
+    ".": 278, "/": 278, ":": 333, ";": 333, "<": 584, "=": 584, ">": 584,
+    "?": 611, "@": 975, "[": 333, "\\": 278, "]": 333, "^": 584, "_": 556,
+    "`": 333, "{": 389, "|": 280, "}": 389, "~": 584,
+    "A": 722, "B": 722, "C": 722, "D": 722, "E": 667, "F": 611, "G": 778,
+    "H": 722, "I": 278, "J": 556, "K": 722, "L": 611, "M": 833, "N": 722,
+    "O": 778, "P": 667, "Q": 778, "R": 722, "S": 667, "T": 611, "U": 722,
+    "V": 667, "W": 944, "X": 667, "Y": 667, "Z": 611,
+    "a": 556, "b": 611, "c": 556, "d": 611, "e": 556, "f": 333, "g": 611,
+    "h": 611, "i": 278, "j": 278, "k": 556, "l": 278, "m": 889, "n": 611,
+    "o": 611, "p": 611, "q": 611, "r": 389, "s": 556, "t": 333, "u": 611,
+    "v": 556, "w": 778, "x": 556, "y": 556, "z": 500,
+}
+for _d in range(10):  # digits are tabular in both weights
+    _ADV_REG[str(_d)] = 556
+    _ADV_BOLD[str(_d)] = 556
+# Punctuation that actually shows up in wire copy. The em dash is the one that
+# matters: it is a FULL em in Helvetica, so leaving it on the generic fallback
+# under-measures a line by ~0.45 em and lets it run past the column.
+for _tbl in (_ADV_REG, _ADV_BOLD):
+    _tbl.update({
+        "—": 1000,  # — em dash
+        "–": 556,   # – en dash
+        "‘": 222, "’": 222,   # ‘ ’
+        "“": 333, "”": 333,   # “ ”
+        "…": 1000,  # …
+        "·": 278,   # ·
+        "°": 400, "€": 556, "£": 556, "¥": 556,
+        "▲": 800, "▼": 800,   # ▲ ▼ (ticker strip arrows)
+    })
+del _tbl, _d
+
+
+def _break_text_w(text: str, size: float, *, bold: bool = False,
+                  tracking_em: float = 0.0) -> float:
+    """Advance width of *text* at *size* px, in px. Deterministic, no I/O.
+
+    Unknown codepoints fall back to the weight's average advance; CJK is charged
+    a full em.  A 6% safety factor is applied so a Linux Arial-clone host (very
+    slightly wider than Helvetica in places) still fits inside the column.
+    """
+    table = _ADV_BOLD if bold else _ADV_REG
+    default = 611 if bold else 556
+    units = 0
+    for ch in str(text or ""):
+        if ch in table:
+            units += table[ch]
+        elif "　" <= ch <= "鿿" or "＀" <= ch <= "￯":
+            units += 1000
+        else:
+            units += default
+    return (units / 1000.0) * size * 1.06 + tracking_em * size * len(str(text or ""))
+
+
+def _break_fit(text: str, max_w: float, size: float, max_lines: int, *,
+               bold: bool = False, tracking_em: float = 0.0) -> tuple[list[str], bool]:
+    """Word-wrap *text* to lines that MEASURE under *max_w*. Deterministic.
+
+    Returns ``(lines, overflow)``.  ``overflow`` is True when the text needs more
+    than *max_lines* lines — the caller then steps down its size ladder instead
+    of clipping.  Nothing is ellipsized here: the clip decision belongs to the
+    caller, and for the headline it is unreachable by construction (the string
+    is bounded by derive_card_headline before it ever arrives).
+
+    A single token wider than the column (a URL, a runaway blob) is broken on a
+    character boundary rather than being allowed to bleed off the card.
+    """
+    words = str(text or "").split()
+    if not words:
+        return [""], False
+    lines: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(words):
+        w = words[i]
+        cand = w if not cur else f"{cur} {w}"
+        if _break_text_w(cand, size, bold=bold, tracking_em=tracking_em) <= max_w:
+            cur = cand
+            i += 1
+            continue
+        if cur:
+            lines.append(cur)
+            cur = ""
+            if len(lines) >= max_lines:
+                return lines[:max_lines], True
+            continue
+        # Single token wider than the whole column → character-break it.
+        cut = len(w)
+        while cut > 1 and _break_text_w(w[:cut], size, bold=bold,
+                                        tracking_em=tracking_em) > max_w:
+            cut -= 1
+        lines.append(w[:cut])
+        words[i] = w[cut:]
+        if len(lines) >= max_lines:
+            return lines[:max_lines], True
+    if cur:
+        lines.append(cur)
+    return lines[:max_lines], len(lines) > max_lines
+
+
+# ── Sentence-bounded compression (the upstream length gate's engine) ─────────
+# Abbreviations whose period is NOT a sentence end.  Without this, "The U.S.A.
+# is locked and loaded…" splits after "U.S.A." and the card headline becomes
+# three words.
+_BREAK_ABBREV: frozenset[str] = frozenset({
+    "u.s", "u.s.a", "u.k", "e.u", "d.c", "a.m", "p.m", "e.g", "i.e",
+    "mr", "mrs", "ms", "dr", "prof", "sen", "rep", "gov", "gen", "lt", "col",
+    "jr", "sr", "inc", "corp", "ltd", "co", "st", "no", "vs", "etc", "approx",
+    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct",
+    "nov", "dec", "est", "fig", "dept", "univ",
+})
+
+_BREAK_CLAUSE_MARKS = ("; ", " — ", " – ", ": ", ", ")
+
+
+def _break_sentence_ends(text: str) -> list[int]:
+    """Indices just past each sentence terminator. Abbreviation-aware."""
+    ends: list[int] = []
+    for m in re.finditer(r'([.!?])(["”’\')\]]*)(\s+)', text):
+        idx = m.start(1)
+        j = idx
+        while j > 0 and (text[j - 1].isalnum() or text[j - 1] == "."):
+            j -= 1
+        token = text[j:idx].lower().rstrip(".")
+        if token in _BREAK_ABBREV:
+            continue
+        if len(token) == 1 and token.isalpha():      # a single initial: "J."
+            continue
+        nxt = text[m.end():m.end() + 1]
+        if nxt and not (nxt.isupper() or nxt.isdigit() or nxt in "\"'“‘("):
+            continue
+        ends.append(m.end(2))
+    if text:
+        ends.append(len(text))
+    return sorted(set(ends))
+
+
+def _break_compress(text: str, max_chars: int) -> str:
+    """Compress *text* to <= max_chars WITHOUT an ellipsis. Deterministic.
+
+    The ladder, in order of how much meaning survives:
+      1. whole sentences (the wire-relay form — verbatim source words, just
+         fewer of them; no rewriting, no ALL-CAPS synthesis, F6-safe);
+      2. a clause boundary (``;`` ``—`` ``:`` ``,``) when the first sentence is
+         itself over budget, provided at least half the budget is used;
+      3. the last word boundary under budget;
+      4. a hard character cut (degenerate input: one token, no punctuation).
+    """
+    s = " ".join(str(text or "").split())
+    if len(s) <= max_chars:
+        return s
+    best = 0
+    for e in _break_sentence_ends(s):
+        if e <= max_chars:
+            best = e
+        else:
+            break
+    if best >= max(24, max_chars // 4):
+        return s[:best].strip()
+    head = s[:max_chars + 1]
+    cut = max(head.rfind(mark) for mark in _BREAK_CLAUSE_MARKS)
+    if cut >= max_chars // 2:
+        return s[:cut].strip()
+    cut = head.rfind(" ")
+    if cut > 0:
+        return s[:cut].strip()
+    return s[:max_chars].strip()
+
+
+def derive_card_headline(text: str, max_chars: int = _BREAK_HEADLINE_MAX_CHARS) -> str:
+    """The card headline for an arbitrarily long source string.
+
+    The breaking lane's ``headline`` field is whatever the wire carried — for a
+    Truth Social relay that is the entire post (the 2026-08-02 Iran item was 814
+    characters), and the card used to render ~156 of them before an ellipsis,
+    cutting mid-sentence before any actual news arrived.  This derives a real
+    headline instead: the leading WHOLE SENTENCES that fit the card's hero, in
+    the source's own words.  Relay, never editorialize — nothing is reworded, no
+    case is changed, and no ellipsis is appended (an ellipsis is the truncation
+    artifact this exists to remove).
+
+    Deterministic and side-effect free; safe on None/empty/degenerate input.
+    """
+    return _break_compress(text, max_chars)
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
     """Map a source_tier to its chip visual treatment (weight encodes trust).
 
     Returns a dict with: key (canonical id — official|wire|aggregator|unknown),
-    label (badge word), fill, ink, stroke, and fill_opacity. Unknown tiers route
-    to the most cautious (aggregator-grade) treatment — never launder up.
+    label (badge word), fill, ink, stroke, fill_opacity, and the rail pair
+    (rail/rail_opacity) used for the summary-block rule. Unknown tiers route to
+    the most cautious (aggregator-grade) treatment — never launder up.
+
+    `ink` is the colour of text ON the chip (dark on the filled official pill);
+    `rail` is the colour of the tier mark drawn ON THE CARD, so the same trust
+    weight reads on the dark ground — solid amber / half amber / faint grey.
+    Using `ink` there would paint an official card's rail near-black.
     """
     t = str(tier or "").strip().lower()
     if t == "official":
@@ -3259,6 +3494,7 @@ def _break_tier_style(tier: str) -> dict[str, str]:
             "key": "official", "label": "OFFICIAL SOURCE",
             "fill": _BREAK_AMBER, "fill_opacity": "1", "ink": "#1A1200",
             "stroke": _BREAK_AMBER,
+            "rail": _BREAK_AMBER, "rail_opacity": "1",
         }
     if t == "wire":
         # Medium: amber outline, hollow — a credible wire, not a primary print.
@@ -3266,12 +3502,14 @@ def _break_tier_style(tier: str) -> dict[str, str]:
             "key": "wire", "label": "WIRE SERVICE",
             "fill": _BREAK_AMBER, "fill_opacity": "0.14", "ink": _BREAK_AMBER,
             "stroke": _BREAK_AMBER,
+            "rail": _BREAK_AMBER, "rail_opacity": "0.5",
         }
     # Aggregator (and any unknown tier): visibly lighter grey outline.
     return {
         "key": "aggregator", "label": "AGGREGATOR",
         "fill": _BREAK_GREY, "fill_opacity": "0.08", "ink": _BREAK_GREY,
         "stroke": _BREAK_GREY,
+        "rail": _BREAK_GREY, "rail_opacity": "0.55",
     }
 
 
@@ -3295,38 +3533,6 @@ def _break_fmt_ts(published_at: str) -> str:
     except Exception:  # noqa: BLE001
         # Unparseable stamp: show a trimmed echo rather than a fake time.
         return raw[:24] if raw else "TIME UNKNOWN"
-
-
-def _break_wrap(text: str, max_chars: int, max_lines: int) -> list[str]:
-    """Greedy word-wrap to at most *max_lines* lines of ~*max_chars* each.
-
-    Overflow past the last line is hard-clipped with a trailing ellipsis so a
-    runaway headline can never blow the card layout. Deterministic.
-    """
-    words = str(text or "").split()
-    if not words:
-        return [""]
-    lines: list[str] = []
-    cur = ""
-    for w in words:
-        cand = w if not cur else f"{cur} {w}"
-        if len(cand) <= max_chars or not cur:
-            cur = cand
-        else:
-            lines.append(cur)
-            cur = w
-            if len(lines) == max_lines:
-                break
-    if len(lines) < max_lines and cur:
-        lines.append(cur)
-    # Hard-clip: if words remain unplaced, ellipsize the final line.
-    placed = sum(len(ln.split()) for ln in lines)
-    if placed < len(words) and lines:
-        last = lines[-1]
-        if len(last) > max_chars - 1:
-            last = last[: max_chars - 1].rstrip()
-        lines[-1] = last + "…"
-    return lines[:max_lines]
 
 
 def _break_fallback_svg(width: int, height: int) -> str:
@@ -3369,7 +3575,10 @@ def render_breaking_card(
     summarizes-with-citation; the card adds no interpretation.
 
     Args:
-        headline: The breaking headline (hero; auto-wraps + scales + hard-clips).
+        headline: The breaking headline (hero). ANY length is safe: it is first
+            compressed to whole sentences by derive_card_headline, then wrapped
+            with MEASURED glyph widths against a size ladder — so it is never
+            truncated with an ellipsis, at any length (W4g).
         source_name: Display name of the source ("Reuters", "Federal Reserve").
         source_tier: "official" | "wire" | "aggregator" (unknown → aggregator).
         published_at: ISO8601 UTC timestamp — the ONLY time input (deterministic).
@@ -3420,7 +3629,7 @@ def render_breaking_card(
         # "RADAR" desk tag, right of the header — signals the intelligence lane.
         desk_svg = (
             f'<text x="{width - 14}" y="{logo_cy + 5:.1f}" fill="{_BREAK_GREY}" '
-            f'font-size="11" text-anchor="end" font-family="sans-serif" '
+            f'font-size="12.5" text-anchor="end" font-family="sans-serif" '
             f'letter-spacing="2">RADAR</text>'
         )
         header_h = 60
@@ -3441,12 +3650,15 @@ def render_breaking_card(
         eyebrow_y = content_top
         # A small amber square + plain-word desk label — restrained, not a siren.
         eyebrow_text = _xesc(str(eyebrow or "BREAKING").strip().upper()[:24])
+        eyebrow_size = 16.0
+        eyebrow_track = 3.5
+        eyebrow_x = pad_l + 20
         eyebrow_svg = (
-            f'<rect x="{pad_l}" y="{eyebrow_y - 12:.1f}" width="11" height="11" '
+            f'<rect x="{pad_l}" y="{eyebrow_y - 13:.1f}" width="12" height="12" '
             f'rx="2" fill="{_BREAK_AMBER}"/>'
-            f'<text x="{pad_l + 19}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
-            f'font-size="15" font-weight="900" font-family="sans-serif" '
-            f'letter-spacing="3.5">{eyebrow_text}</text>'
+            f'<text x="{eyebrow_x}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
+            f'font-size="{eyebrow_size:g}" font-weight="900" font-family="sans-serif" '
+            f'letter-spacing="{eyebrow_track:g}">{eyebrow_text}</text>'
         )
         # Plain-word event-class kicker — quiet grey, subordinate to the tier
         # chip (the signature). Unknown/none keys are omitted, never echoed raw.
@@ -3458,11 +3670,17 @@ def render_breaking_card(
         }
         kicker = _KICKER_WORDS.get(str(event_class or "").strip().lower(), "")
         if kicker:
+            # Measured, not a fixed 152px guess: a longer eyebrow (EARNINGS CALL)
+            # used to run straight under the kicker dot.
+            eyebrow_w = _break_text_w(
+                eyebrow_text, eyebrow_size, bold=True,
+            ) + eyebrow_track * len(eyebrow_text)
+            dot_cx = eyebrow_x + eyebrow_w + 12
             eyebrow_svg += (
-                f'<circle cx="{pad_l + 152:.0f}" cy="{eyebrow_y - 6:.1f}" r="2" '
+                f'<circle cx="{dot_cx:.0f}" cy="{eyebrow_y - 6:.1f}" r="2" '
                 f'fill="{_BREAK_GREY}"/>'
-                f'<text x="{pad_l + 164}" y="{eyebrow_y - 1:.1f}" '
-                f'fill="{_BREAK_GREY}" font-size="12.5" font-weight="700" '
+                f'<text x="{dot_cx + 12:.0f}" y="{eyebrow_y - 1:.1f}" '
+                f'fill="{_BREAK_GREY}" font-size="13.5" font-weight="700" '
                 f'font-family="sans-serif" letter-spacing="2.5" '
                 f'class="bc-kicker">{_xesc(kicker)}</text>'
             )
@@ -3474,83 +3692,175 @@ def render_breaking_card(
         if len(chip_label) > 48:
             chip_label = chip_label[:47] + "…"
         chip_text = _xesc(chip_label)
-        # Caps-aware width estimate (deterministic; no font metrics): bold caps
-        # at 12.5px run ~8.6px vs ~6.9px lowercase, plus tracking — a flat
-        # per-char guess undersizes ALL-CAPS tier labels and the label touches
-        # the pill border. Generous right pad keeps it clear in any renderer.
-        chip_tw = sum(8.6 if (c.isupper() or c.isdigit()) else 6.9 for c in chip_label)
-        chip_tw += 0.4 * len(chip_label)
-        chip_w = 26 + int(chip_tw) + 16
-        chip_h = 30
+        # Measured width (Helvetica advances + tracking) — the old estimate was a
+        # per-character caps/lowercase guess that under- or over-shot by up to a
+        # dozen px depending on the label.
+        chip_fs = 15.0
+        chip_tw = _break_text_w(chip_label, chip_fs, bold=True) + 0.4 * len(chip_label)
+        chip_w = 30 + int(chip_tw) + 18
+        chip_h = 34
         chip_x = pad_l
         chip_y = eyebrow_y + 14
         # A leading dot in the chip echoes the tier ink — a tiny "seal".
         chip_svg = (
             f'<rect x="{chip_x}" y="{chip_y}" width="{chip_w}" height="{chip_h}" '
-            f'rx="6" fill="{tier["fill"]}" fill-opacity="{tier["fill_opacity"]}" '
+            f'rx="7" fill="{tier["fill"]}" fill-opacity="{tier["fill_opacity"]}" '
             f'stroke="{tier["stroke"]}" stroke-width="1.5" '
             f'class="bc-tier bc-tier-{tier["key"]}"/>'
-            f'<circle cx="{chip_x + 15:.0f}" cy="{chip_y + chip_h / 2:.0f}" r="4" '
+            f'<circle cx="{chip_x + 17:.0f}" cy="{chip_y + chip_h / 2:.0f}" r="4.5" '
             f'fill="{tier["ink"]}"/>'
-            f'<text x="{chip_x + 26:.0f}" y="{chip_y + chip_h / 2 + 4:.0f}" '
-            f'fill="{tier["ink"]}" font-size="12.5" font-weight="bold" '
+            f'<text x="{chip_x + 30:.0f}" y="{chip_y + chip_h / 2 + 5:.0f}" '
+            f'fill="{tier["ink"]}" font-size="{chip_fs:g}" font-weight="bold" '
             f'font-family="sans-serif" letter-spacing="0.4">{chip_text}</text>'
         )
         # Timestamp dateline, to the right of the chip.
         ts_svg = (
-            f'<text x="{chip_x + chip_w + 14:.0f}" '
-            f'y="{chip_y + chip_h / 2 + 4:.0f}" fill="{_BREAK_GREY}" '
-            f'font-size="12.5" font-family="sans-serif" letter-spacing="0.5">'
+            f'<text x="{chip_x + chip_w + 16:.0f}" '
+            f'y="{chip_y + chip_h / 2 + 5:.0f}" fill="{_BREAK_GREY}" '
+            f'font-size="14" font-family="sans-serif" letter-spacing="0.5">'
             f'{_xesc(ts_str)}</text>'
         )
 
-        # ── Headline hero — auto-wrap + scale by length + hard-clip ───────────
-        hl = str(headline or "").strip()
-        n = len(hl)
-        # Longer headline → smaller type + more chars/line + up to 3 lines.
-        if n <= 42:
-            hl_size, hl_max_chars, hl_max_lines = 44, 30, 2
-        elif n <= 90:
-            hl_size, hl_max_chars, hl_max_lines = 36, 40, 2
-        elif n <= 150:
-            hl_size, hl_max_chars, hl_max_lines = 30, 48, 3
-        else:
-            hl_size, hl_max_chars, hl_max_lines = 26, 56, 3
-        hl_lines = _break_wrap(hl, hl_max_chars, hl_max_lines)
-        hl_lh = hl_size + 8
-        sm = (summary or "").strip() if summary is not None else ""
-        sm_lines = _break_wrap(sm, 84, 3) if sm else []
-        sm_lh = 22
-        # Vertical balance: center the hero block (headline + summary) between
-        # the dateline row and the bottom zone (ticker strip or footer) instead
-        # of top-anchoring — short cards otherwise leave a dead void mid-card.
-        # The downshift is capped so the headline stays visually attached to
-        # its dateline chip.
-        min_top = chip_y + chip_h + 40
+        # ── Hero typesetting — MEASURED fit, top-anchored, never clipped ──────
+        # Two rules replaced the old char-count size table:
+        #   1. the headline is bounded to whole sentences BEFORE it is wrapped,
+        #      so the wrap never has to ellipsize (belt-and-braces: the same
+        #      bound is applied upstream in breaking_summary.build_breaking_payload,
+        #      and again here so a direct caller — earnings_call_lane — is safe);
+        #   2. sizes come from a ladder searched BODY-FIRST: the largest summary
+        #      size that leaves room for a headline wins, because the body is the
+        #      type the reader actually has to read on a phone.
+        # Top-anchored, not centred: the old `v_offset` centring is what produced
+        # the dead field the operator saw.
         rows_present = bool(tickers if isinstance(tickers, list) else [])
-        bottom_limit = (height - 116 - 26) if rows_present else (height - 64)
-        block_span = (len(hl_lines) - 1) * hl_lh
-        if sm_lines:
-            block_span += 34 + (len(sm_lines) - 1) * sm_lh
-        v_offset = max(0.0, (bottom_limit - (min_top + block_span)) / 2)
-        hl_top = min_top + min(v_offset, 56.0)
+        text_w = width - pad_l * 2                      # 908 on the family default
+        sm_rail_inset = 20.0
+        sm_w = text_w - sm_rail_inset
+        box_top = chip_y + chip_h + 30
+        # Bottom of the text column: above the ticker divider, else above the
+        # brand bar. Both keep a visible breathing gap — tight, not touching.
+        box_bottom = (height - 122 - 20) if rows_present else (height - 46 - 16)
+        avail = max(80.0, box_bottom - box_top)
+
+        hl = derive_card_headline(headline)
+        sm_full = " ".join(str(summary or "").split())
+
+        # (size, max_lines). Headline descends far enough that a 180-char bound
+        # always fits horizontally; the summary floor is the legibility floor.
+        # The ladders reach UP as well as down: a sparse card (a six-word
+        # headline and one sentence) is the other half of the whitespace
+        # complaint — the answer there is bigger type, not more air.
+        _HL_LADDER = ((68.0, 2), (60.0, 2), (52.0, 2), (46.0, 3),
+                      (40.0, 4), (36.0, 4), (32.0, 5), (28.0, 6))
+        _SM_LADDER = ((38.0, 2), (34.0, 2), (32.0, 3), (30.0, 3), (28.0, 4),
+                      (_BREAK_BODY_MIN, 4), (_BREAK_BODY_MIN, 5))
+
+        def _hl_lh(s: float) -> float:
+            return round(s * 1.14, 1)
+
+        def _sm_lh(s: float) -> float:
+            return round(s * 1.32, 1)
+
+        def _block_h(hs: float, hn: int, ss: float, sn: int) -> float:
+            h = (hn - 1) * _hl_lh(hs) + hs
+            if sn:
+                h += round(ss * 1.05, 1) + (sn - 1) * _sm_lh(ss) + ss
+            return h
+
+        def _search(sm_text: str, min_ratio: float):
+            """First (summary-size, headline-size) pair that fits. Body-first.
+
+            *min_ratio* keeps the hero visibly senior to the body; the caller
+            relaxes it before it ever compresses the source text, because losing
+            a sentence costs more than a muddier size step.
+            """
+            cands = _SM_LADDER if sm_text else ((_BREAK_BODY_MIN, 0),)
+            for ss, s_cap in cands:
+                if sm_text:
+                    s_lines, s_over = _break_fit(sm_text, sm_w, ss, s_cap)
+                    if s_over:
+                        continue
+                else:
+                    s_lines = []
+                for hs, h_cap in _HL_LADDER:
+                    if s_lines and hs < ss * min_ratio:
+                        continue
+                    h_lines, h_over = _break_fit(
+                        hl, text_w, hs, h_cap, bold=True, tracking_em=-0.01
+                    )
+                    if h_over:
+                        continue
+                    if _block_h(hs, len(h_lines), ss, len(s_lines)) <= avail:
+                        return hs, h_lines, ss, s_lines
+            return None
+
+        # Pass A: full source text, hero visibly senior to the body.
+        # Pass B: full source text, hierarchy relaxed — keep every sentence.
+        # Pass C: only now is the summary compressed to whole sentences that fit.
+        sm_budget = (_BREAK_SUMMARY_MAX_CHARS_STRIP if rows_present
+                     else _BREAK_SUMMARY_MAX_CHARS)
+        sm = sm_full
+        found = _search(sm_full, 1.30) or _search(sm_full, 0.0)
+        if found is None:
+            sm = _break_compress(sm_full, sm_budget)
+            found = _search(sm, 0.0)
+        if found is not None:
+            hl_size, hl_lines, sm_size, sm_lines = found
+        else:
+            # Terminal rung (unreachable for bounded input; kept so a hostile
+            # direct caller still gets a card). The HEADLINE keeps every line it
+            # needs — the elaboration yields, never the fact.
+            hl_size = _HL_LADDER[-1][0]
+            hl_lines, _ = _break_fit(hl, text_w, hl_size, 8, bold=True, tracking_em=-0.01)
+            sm_size = _BREAK_BODY_MIN
+            used = (len(hl_lines) - 1) * _hl_lh(hl_size) + hl_size + round(sm_size * 1.05, 1)
+            room = int((avail - used - sm_size) // _sm_lh(sm_size)) + 1
+            sm_lines = (_break_fit(sm, sm_w, sm_size, max(0, room))[0]
+                        if (sm and room > 0) else [])
+            sm_lines = [ln for ln in sm_lines if ln]
+
+        hl_lh = _hl_lh(hl_size)
+        sm_lh = _sm_lh(sm_size)
+        # Leftover height is spent on RHYTHM, not on a dead field: most of it
+        # opens the headline→summary gap, a little of it drops the whole block
+        # off the dateline. Both are bounded, so this can never drift back into
+        # the old free-centring that left a void mid-card.
+        slack = max(0.0, avail - _block_h(hl_size, len(hl_lines), sm_size, len(sm_lines)))
+        gap_extra = min(slack * 0.45, sm_size * 1.6) if sm_lines else 0.0
+        # A headline-only card has nothing to open a gap WITH, so its slack goes
+        # into optical centring instead — the one case where centring is right.
+        top_nudge = (min((slack - gap_extra) * 0.40, 40.0) if sm_lines
+                     else min(slack * 0.45, 120.0))
+        hl_top = box_top + top_nudge + hl_size * 0.78          # first baseline
         hl_tspans = "".join(
             f'<text x="{pad_l}" y="{hl_top + i * hl_lh:.1f}" fill="#ffffff" '
-            f'font-size="{hl_size}" font-weight="800" font-family="sans-serif" '
+            f'font-size="{hl_size:g}" font-weight="800" font-family="sans-serif" '
             f'letter-spacing="-0.01em">{_xesc(ln)}</text>'
             for i, ln in enumerate(hl_lines)
         )
         hl_bottom = hl_top + (len(hl_lines) - 1) * hl_lh
 
-        # ── Summary block (quieter secondary) — omit cleanly when None ────────
+        # ── Summary block (the source's account) — omit cleanly when None ─────
+        # The 3px rail at its left edge is tier-inked: the same trust grade the
+        # chip encodes, repeated exactly where the eye lands on the content, so
+        # an aggregator's account can never be read as an official one (the same
+        # anti-laundering law the chip serves — D05).
         summary_svg = ""
         summary_bottom = hl_bottom
         if sm_lines:
-            sm_top = hl_bottom + 34
-            summary_svg = "".join(
-                f'<text x="{pad_l}" y="{sm_top + i * sm_lh:.1f}" '
-                f'fill="#a7b4cc" font-size="15.5" font-family="sans-serif">'
-                f'{_xesc(ln)}</text>'
+            sm_top = hl_bottom + round(sm_size * 1.05, 1) + gap_extra + sm_size * 0.78
+            rail_top = sm_top - sm_size * 0.86
+            rail_h = (len(sm_lines) - 1) * sm_lh + sm_size * 1.12
+            summary_svg = (
+                f'<rect x="{pad_l}" y="{rail_top:.1f}" width="3" '
+                f'height="{rail_h:.1f}" rx="1.5" fill="{tier["rail"]}" '
+                f'fill-opacity="{tier["rail_opacity"]}" '
+                f'class="bc-rail bc-rail-{tier["key"]}"/>'
+            )
+            summary_svg += "".join(
+                f'<text x="{pad_l + sm_rail_inset:.0f}" y="{sm_top + i * sm_lh:.1f}" '
+                f'fill="{_BREAK_BODY}" font-size="{sm_size:g}" '
+                f'font-family="sans-serif">{_xesc(ln)}</text>'
                 for i, ln in enumerate(sm_lines)
             )
             summary_bottom = sm_top + (len(sm_lines) - 1) * sm_lh
@@ -3560,11 +3870,11 @@ def render_breaking_card(
         rows = tickers if isinstance(tickers, list) else []
         rows = rows[:4]
         if rows:
-            strip_y = height - 96
-            # Faint divider above the strip.
+            strip_y = height - 90
+            # Faint divider above the strip (box_bottom is derived from this).
             strip_svg += (
-                f'<line x1="{pad_l}" y1="{strip_y - 20:.0f}" '
-                f'x2="{width - pad_l}" y2="{strip_y - 20:.0f}" '
+                f'<line x1="{pad_l}" y1="{height - 122:.0f}" '
+                f'x2="{width - pad_l}" y2="{height - 122:.0f}" '
                 f'stroke="#232A3D" stroke-width="1"/>'
             )
             cell_w = (width - pad_l * 2) / len(rows)
@@ -3589,24 +3899,24 @@ def render_breaking_card(
                 except (TypeError, ValueError):
                     pass
                 # Cashtag (white) and pct (colored) share line 1; the pct x is
-                # derived from the cashtag length so it can NEVER reach the card's
-                # right edge (fixed far-right offsets overflow on wide cells).
-                pct_x = cx0 + 10 + len(cashtag) * 11
+                # MEASURED off the cashtag so it can never reach the card's right
+                # edge (the old `len(cashtag) * 11` guess drifted with the size).
+                pct_x = cx0 + _break_text_w(cashtag, 22.0, bold=True) + 14
                 strip_svg += (
                     f'<text x="{cx0:.0f}" y="{strip_y:.0f}" fill="#e2e8f0" '
-                    f'font-size="17" font-weight="bold" font-family="sans-serif">'
+                    f'font-size="22" font-weight="bold" font-family="sans-serif">'
                     f'{_xesc(cashtag)}</text>'
                 )
                 if pct_s:
                     strip_svg += (
                         f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
-                        f'font-size="15" font-weight="bold" font-family="sans-serif">'
+                        f'font-size="19" font-weight="bold" font-family="sans-serif">'
                         f'{_xesc(pct_s)}</text>'
                     )
                 if price_s:
                     strip_svg += (
-                        f'<text x="{cx0:.0f}" y="{strip_y + 22:.0f}" fill="{_BREAK_GREY}" '
-                        f'font-size="13" font-family="sans-serif">{_xesc(price_s)}</text>'
+                        f'<text x="{cx0:.0f}" y="{strip_y + 26:.0f}" fill="{_BREAK_GREY}" '
+                        f'font-size="16" font-family="sans-serif">{_xesc(price_s)}</text>'
                     )
 
         # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
