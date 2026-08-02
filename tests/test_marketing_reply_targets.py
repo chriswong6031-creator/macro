@@ -99,17 +99,69 @@ class TestRegisterIsCurated:
             assert "/" not in handle, f"{desk}:{handle}: looks like a URL, not a handle"
 
 
-class TestEnablingIsTheOperatorsCall:
-    def test_every_entry_ships_disabled(self, entries):
-        """THE gate on this file. A builder proposes the room; the operator
-        decides who we actually talk to. An entry that arrives `enabled: true`
-        from a code change has skipped the only editorial review there is."""
-        live = [f"{d}:{e.get('handle')}" for d, e in entries if e.get("enabled") is not False]
-        assert live == [], f"entries enabled without an operator decision: {live}"
+#: The handles the OPERATOR ratified, 2026-08-02 ("enable all 21 handles, but
+#: spread across accs"). This list is the editorial decision, written down.
+#: It is not documentation of the file — it is the independent record the file
+#: is checked against, which is the whole mechanism: a builder who enables a new
+#: handle must come here to do it, and coming here is the review.
+RATIFIED_2026_08_02: frozenset[str] = frozenset({
+    # cici — China / FX / cross-border, her session
+    "michaelxpettis", "Brad_Setser", "AxelMerk", "SantiagoAuFund",
+    # sophia — the Fed narrative desk
+    "DiMartinoBooth", "LizAnnSonders", "TimDuy", "SteveMatthews12",
+    # kelly — rates, vol and the traders who answer levels
+    "biancoresearch", "donnelly_brent", "options_insight", "MacroAlf",
+    "TheBondFreak",
+    # meagan — retail-facing explainers, high reply volume
+    "KobeissiLetter", "StockMKTNewz", "Geiger_Capital", "amitisinvesting",
+    # flagship — ETF / flow / quant analysts
+    "unusual_whales", "EricBalchunas", "choffstein", "badcharts1",
+})
 
-    def test_nothing_is_live_through_the_loader(self, register):
-        for desk in register["accounts"]:
-            assert rd.register_for_account(register, desk) == []
+
+class TestEnablingIsTheOperatorsCall:
+    """THE gate on this file, in its post-ratification form.
+
+    Before 2026-08-02 this class asserted that NOTHING was enabled: a builder
+    proposes the room, the operator decides who we actually talk to, and an
+    entry arriving `enabled: true` from a code change had skipped the only
+    editorial review there is.
+
+    The operator has now made that call for the 21 seeded handles. Deleting the
+    gate would have been the wrong way to record it — the risk it guards
+    (someone quietly widening the company we keep in public) is unchanged for
+    handle 22. So the gate inverted rather than lifted: the live set must equal
+    the ratified set EXACTLY. Enabling a new handle now fails until it is added
+    to `RATIFIED_2026_08_02` above, and that edit is the review.
+    """
+
+    def test_the_live_set_is_exactly_what_the_operator_ratified(self, entries):
+        live = {str(e.get("handle")) for _d, e in entries if e.get("enabled") is True}
+        extra = sorted(live - RATIFIED_2026_08_02)
+        missing = sorted(RATIFIED_2026_08_02 - live)
+        assert not extra, (
+            f"enabled without an operator decision: {extra} — add them to "
+            "RATIFIED_2026_08_02 only when the operator has actually said so")
+        assert not missing, (
+            f"ratified but no longer enabled: {missing} — if the operator "
+            "parked them, drop them from RATIFIED_2026_08_02 in the same change")
+
+    def test_every_ratified_handle_is_real_and_placed(self, entries):
+        """A ratified handle that is not in the file is a typo that reads as a
+        decision. Both directions are checked because only one of them fails
+        loudly on its own."""
+        placed = {str(e.get("handle")): d for d, e in entries}
+        for h in sorted(RATIFIED_2026_08_02):
+            assert h in placed, f"{h} is ratified but absent from the register"
+
+    def test_the_desks_carry_their_own_handles(self, register):
+        """Spread, not a pile on one desk — the operator asked for it explicitly
+        ("spread across accs"). founder is deliberately empty and is excluded."""
+        counts = {d: len(rd.register_for_account(register, d))
+                  for d in register["accounts"]}
+        staffed = {d: n for d, n in counts.items() if n}
+        assert len(staffed) >= 5, f"targets pooled onto too few desks: {counts}"
+        assert max(staffed.values()) <= 8, f"one desk is carrying the register: {counts}"
 
     def test_header_states_who_owns_enabling(self):
         text = REGISTER_PATH.read_text(encoding="utf-8")
