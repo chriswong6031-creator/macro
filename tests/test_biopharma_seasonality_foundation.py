@@ -188,9 +188,21 @@ def test_max_t_uses_family_maximum_and_finite_sample_correction():
 
 
 def test_methodology_manifest_admits_no_live_forecasts():
+    """The status names the tranche that IS live; the absences stay absent.
+
+    The status moved from ``foundation_contracts_live`` to ``calendar_clock_live``
+    when the Lane 1/2/4 calendar clock shipped, because a manifest that still
+    claimed only contracts were live would have been understating — and a
+    manifest nobody may change is a manifest nobody keeps true. What must never
+    move is the list of things that do not exist.
+    """
     manifest = build_methodology_manifest(date(2026, 8, 1))
-    assert manifest["status"] == "foundation_contracts_live"
+    assert manifest["status"] == "calendar_clock_live"
+    assert manifest["availability"]["live_calendar_clock"] is True
+    assert manifest["availability"]["live_selection_correction"] is True
     assert manifest["availability"]["live_forecasts"] is False
+    assert manifest["availability"]["live_screener"] is False
+    assert manifest["availability"]["live_event_graph"] is False
     assert manifest["authority"]["may_rank"] is False
 
 

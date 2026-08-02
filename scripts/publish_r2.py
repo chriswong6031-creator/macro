@@ -89,6 +89,15 @@ DEFAULT_DIRS = [
                    # gitignored) — heavy columnar JSON (~130 names × 35y history);
                    # the light catalog/factor_match JSON under site/oddsdata/ stays
                    # git-tracked on Pages. See research/ODDS_DESK.md.
+    "seasonalitydata/entities",  # Stock seasonality per-symbol year panels
+                   # (site/seasonalitydata/entities/<SYM>.json, gitignored except the
+                   # default symbol) — up to 25 complete-year cumulative paths at 365
+                   # slots, twice (raw + market-neutral), ~28 MB across the covered
+                   # universe and rewritten every trading night. The light
+                   # site/seasonalitydata/{index,methodology}.json stay git-tracked on
+                   # Pages. Nested dir name on purpose: the R2 key must equal the path
+                   # the page fetches, `seasonalitydata/entities/<SYM>.json`.
+                   # See research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md §9.
 ]
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores

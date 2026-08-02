@@ -629,6 +629,19 @@ lanes:
             - scripts.build_index_changes
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
+            # Stock seasonality calendar clock. DAILY-ONLY on purpose: the window
+            # family (2645 windows) and its independent circular year-shift null
+            # (B=2000, on the raw AND the market-neutral panel) are the heavy leg,
+            # and the render budget is law. The null is cached per symbol against
+            # the complete-year panel hash, so a normal night only re-folds panels
+            # and rewrites JSON (~1 min); the full recompute lands once a year when
+            # the panels roll over. Placed LAST in cl_misc so the yearly spike sits
+            # behind every step with an intra-cluster ordering dependency.
+            - scripts.build_stock_seasonality
+            # The methodology manifest was registered on-demand and wired into NO
+            # lane, so its as_of could never refresh. It is a sub-second stdlib
+            # write; it runs here beside the artifact set it describes.
+            - scripts.build_biopharma_seasonality
       # serial post-band
       - id: check_builder_failstreaks
         module: scripts.check_builder_failstreaks

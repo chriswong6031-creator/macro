@@ -8898,10 +8898,10 @@ artifacts:
     producer: scripts/build_biopharma_seasonality.py
     known_extra_writers: []
     owner_program: biopharma-seasonality-intelligence
-    cadence: on-demand
+    cadence: daily-engine
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 9999
+    freshness_sla_hours: 30
     schema: biopharma_seasonality.methodology.v1
     tier: display
     horizon_role: context
@@ -8914,10 +8914,108 @@ artifacts:
       Claim-bounded public foundation manifest for the clean-room biopharma
       seasonality program. Written only by scripts/build_biopharma_seasonality.py.
       It advertises contracts, planned clocks, validation methods, and the birth
-      authority ceiling; it explicitly says live forecasts, the screener, and the
-      event graph are not yet commissioned. Static methodology, not perishable
-      market data, so the parked 9999h SLA is intentional. No scores, weights,
-      rankings, gates, trade origination, or Prophet geometry write path.
+      authority ceiling; it explicitly says the screener and the event graph are
+      not yet commissioned. Was registered on-demand with a parked 9999h SLA and
+      wired into NO lane, so its as_of could never refresh and the manifest was
+      frozen at its birth date; now built nightly in daily.yml cl_misc beside the
+      calendar-clock artifacts it describes, so it carries a real SLA. No scores,
+      weights, rankings, gates, trade origination, or Prophet geometry write path.
+
+  # --- Stock seasonality calendar clock: Lane 1 panel + Lane 2 curve + Lane 4 selection ---
+  site-stock-seasonality-index:
+    path: site/seasonalitydata/index.json
+    format: json
+    producer: scripts/build_stock_seasonality.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: biopharma_seasonality.index.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - public-stock-seasonality-page
+    notes: >
+      Covered-symbol catalog for the stock seasonality calendar clock: one row per
+      symbol (ticker, name, group, sector, complete-year counts) plus the
+      program-level fire rates and the survivorship/adjustment disclosures the
+      honesty strip prints. Membership is MEASURED from data/yahoo/ complete-year
+      counts against config/seasonality_universe.yml, never hand-listed. The light
+      half of the artifact set and therefore git-committed (RUL-P10 path b, single
+      writer scripts/build_stock_seasonality.py); the heavy per-symbol panels ride
+      R2. Carries no score, rank, gate, forecast, or cross-symbol ordering — the
+      program-level rates are disclosure, not a ranking, and are published so a
+      single symbol's result can be read against the 5% chance expectation.
+
+  site-stock-seasonality-entity:
+    path: site/seasonalitydata/entities/<SYM>.json
+    format: json
+    producer: scripts/build_stock_seasonality.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git+r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: biopharma_seasonality.entity.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - public-stock-seasonality-page
+    notes: >
+      Per-symbol year panel on the 365-slot calendar-day clock: up to 25 complete
+      years of rebased cumulative log-return paths (quantised to integers in 1e-5
+      units), the median/p20/p80/mean canonical paths, month/weekday/trading-day
+      views, the 2645-window family with its independent circular year-shift null
+      (B=2000) and Westfall-Young adjusted p-values over a registered panel, and
+      the same block again for the point-in-time market-neutral residual panel.
+      RUL-P10 storage is git+r2 on purpose: ~28 MB across the covered universe
+      rewritten every trading night, so the tree is gitignored and published to
+      Cloudflare R2 (publish_r2 --dirs seasonalitydata/entities) exactly like
+      site/oddsmatrix/, with the DEFAULT symbol committed as a negation exception
+      so the page has an honest first paint without R2. Display tier: no forecast,
+      no score, no rank, no Neural Web state, no Prophet write path. The BY
+      q-values inside family.registered_panel are a labelled sensitivity figure,
+      never the verdict.
+
+  data-stock-seasonality-selection-cache:
+    path: data/seasonality/selection/<SYM>.json
+    format: json
+    producer: scripts/build_stock_seasonality.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: "null"
+    freshness_sla_hours: 9000
+    schema: biopharma_seasonality.selection_cache.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_stock_seasonality.py
+    external_consumers: []
+    notes: >
+      The cached selection correction for one symbol: null-maximum quantiles and
+      quantile ladder, the registered panel with its maxT-adjusted p-values and BY
+      q-values, and the best window, for BOTH the raw and the market-neutral panel.
+      Keyed on a hash of the complete-year panel itself, so a vendor re-adjustment
+      of old prices invalidates it even though no year boundary moved. This is what
+      makes the nightly affordable: the correction depends only on complete years,
+      which change once per calendar year, so the 9000h SLA is intentional and a
+      "stale" entry is the correct state for 364 nights out of 365. Git-committed
+      with a single writer (RUL-P10 path b) so a fresh runner never has to
+      re-derive 290 symbols' worth of resampling. Infrastructure rail: no score,
+      rank, gate, or trade authority.
 
   site-momentum-display:
     path: site/factordata/momentum_display.json

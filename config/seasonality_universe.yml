@@ -1,0 +1,123 @@
+# Stock seasonality (calendar clock) — universe SELECTION POLICY.
+#
+# This file deliberately does NOT carry a ticker roster. The roster is MEASURED
+# by scripts/build_stock_seasonality.py: every symbol in data/yahoo/ whose
+# complete-year count clears `min_complete_years` is covered, and the count is
+# recomputed from the parquet store on every run.
+#
+# Hand-listing tickers is how this program would ship a lie. The store is
+# bimodal — a large cohort of decades-old companies (GILD, BIIB, JNJ, MRK, and
+# every one of the household mega-caps) carries only ~2 complete years here
+# because it was backfilled recently, while unglamorous names carry 40+. A
+# roster written from what "looks established" would promise depth the data does
+# not have. The threshold and the scope fence live here so the covered set can
+# grow without a code change; the membership does not.
+meta:
+  schema: biopharma_seasonality.universe_policy.v1
+  owner_program: biopharma-seasonality-intelligence
+  description: >
+    Selection policy for the stock seasonality calendar clock. Membership is
+    measured from data/yahoo/, never hand-listed.
+
+selection:
+  # A symbol is covered only with at least this many COMPLETE years, where a
+  # complete year is "first session <= Jan 10 and last session >= Dec 20".
+  # The unit of evidence is one complete year, so this is the sample-size floor.
+  min_complete_years: 15
+  # The panel keeps at most this many of the most recent complete years; the
+  # count actually available is published alongside it.
+  years_cap: 25
+  # Scope fence. This tranche is a STOCK/ETF calendar explorer: FX crosses,
+  # continuous futures, and raw index quotes are a different instrument class
+  # with a different adjustment story (an index quote carries no dividend
+  # adjustment at all, so its curve is not comparable to an ETF's). Widening
+  # the fence is a one-line change here, not a code change.
+  exclude_prefixes: ["_"]
+  exclude_suffixes: ["_X", "_F"]
+  exclude:
+    - SPX     # index quote, price-return only; SPY is the tradable, adjusted read
+    - SPXW    # weekly variant of the same index quote
+    - "DX-Y.NYB"
+
+# The benchmark leg for the market-neutral panel. Its own residual against
+# itself is identically zero, so the benchmark ships with no `neutral.market`.
+benchmark: SPY
+default_symbol: SPY
+
+# Display labels for the index picker. Symbols absent from this map fall back to
+# the SEC company title (data/edgar/company_tickers.json) and then to the ticker
+# itself; `sector` is null rather than guessed, because a fabricated sector is
+# worse than an honest blank on a page whose whole thesis is not overclaiming.
+labels:
+  SPY:  {name: "SPDR S&P 500 ETF Trust",             group: index,        sector: Index}
+  QQQ:  {name: "Invesco QQQ Trust",                  group: index,        sector: Index}
+  DIA:  {name: "SPDR Dow Jones Industrial Average",  group: index,        sector: Index}
+  IWM:  {name: "iShares Russell 2000 ETF",           group: index,        sector: Index}
+  RSP:  {name: "Invesco S&P 500 Equal Weight ETF",   group: index,        sector: Index}
+  IJH:  {name: "iShares Core S&P Mid-Cap ETF",       group: index,        sector: Index}
+  IWD:  {name: "iShares Russell 1000 Value ETF",     group: index,        sector: Index}
+  IWF:  {name: "iShares Russell 1000 Growth ETF",    group: index,        sector: Index}
+  FPX:  {name: "First Trust US Equity Opportunities", group: index,       sector: Index}
+  XLB:  {name: "Materials Select Sector SPDR",       group: sector_etf,   sector: Materials}
+  XLE:  {name: "Energy Select Sector SPDR",          group: sector_etf,   sector: Energy}
+  XLF:  {name: "Financial Select Sector SPDR",       group: sector_etf,   sector: Financials}
+  XLI:  {name: "Industrial Select Sector SPDR",      group: sector_etf,   sector: Industrials}
+  XLK:  {name: "Technology Select Sector SPDR",      group: sector_etf,   sector: Technology}
+  XLP:  {name: "Consumer Staples Select Sector SPDR", group: sector_etf,  sector: "Consumer Staples"}
+  XLU:  {name: "Utilities Select Sector SPDR",       group: sector_etf,   sector: Utilities}
+  XLV:  {name: "Health Care Select Sector SPDR",     group: sector_etf,   sector: "Health Care"}
+  XLY:  {name: "Consumer Discretionary Select Sector SPDR", group: sector_etf, sector: "Consumer Discretionary"}
+  XBI:  {name: "SPDR S&P Biotech ETF",               group: industry_etf, sector: "Health Care"}
+  IBB:  {name: "iShares Biotechnology ETF",          group: industry_etf, sector: "Health Care"}
+  SMH:  {name: "VanEck Semiconductor ETF",           group: industry_etf, sector: Technology}
+  SOXX: {name: "iShares Semiconductor ETF",          group: industry_etf, sector: Technology}
+  IGV:  {name: "iShares Expanded Tech-Software ETF", group: industry_etf, sector: Technology}
+  ITB:  {name: "iShares U.S. Home Construction ETF", group: industry_etf, sector: "Consumer Discretionary"}
+  XHB:  {name: "SPDR S&P Homebuilders ETF",          group: industry_etf, sector: "Consumer Discretionary"}
+  XME:  {name: "SPDR S&P Metals & Mining ETF",       group: industry_etf, sector: Materials}
+  XOP:  {name: "SPDR S&P Oil & Gas Exploration",     group: industry_etf, sector: Energy}
+  XRT:  {name: "SPDR S&P Retail ETF",                group: industry_etf, sector: "Consumer Discretionary"}
+  KRE:  {name: "SPDR S&P Regional Banking ETF",      group: industry_etf, sector: Financials}
+  KBE:  {name: "SPDR S&P Bank ETF",                  group: industry_etf, sector: Financials}
+  OIH:  {name: "VanEck Oil Services ETF",            group: industry_etf, sector: Energy}
+  GDX:  {name: "VanEck Gold Miners ETF",             group: industry_etf, sector: Materials}
+  GDXJ: {name: "VanEck Junior Gold Miners ETF",      group: industry_etf, sector: Materials}
+  TAN:  {name: "Invesco Solar ETF",                  group: industry_etf, sector: Energy}
+  ITRI: {name: "Itron Inc",                          group: equity,       sector: Technology}
+  TLT:  {name: "iShares 20+ Year Treasury Bond ETF", group: bond_etf,     sector: "Fixed Income"}
+  IEF:  {name: "iShares 7-10 Year Treasury Bond ETF", group: bond_etf,    sector: "Fixed Income"}
+  HYG:  {name: "iShares iBoxx High Yield Corporate", group: bond_etf,     sector: "Fixed Income"}
+  LQD:  {name: "iShares iBoxx Investment Grade Corporate", group: bond_etf, sector: "Fixed Income"}
+  TIP:  {name: "iShares TIPS Bond ETF",              group: bond_etf,     sector: "Fixed Income"}
+  EMB:  {name: "iShares J.P. Morgan USD EM Bond ETF", group: bond_etf,    sector: "Fixed Income"}
+  EEM:  {name: "iShares MSCI Emerging Markets ETF",  group: country_etf,  sector: International}
+  EFA:  {name: "iShares MSCI EAFE ETF",              group: country_etf,  sector: International}
+  VGK:  {name: "Vanguard FTSE Europe ETF",           group: country_etf,  sector: International}
+  VPL:  {name: "Vanguard FTSE Pacific ETF",          group: country_etf,  sector: International}
+  AAXJ: {name: "iShares MSCI All Country Asia ex Japan", group: country_etf, sector: International}
+  FXI:  {name: "iShares China Large-Cap ETF",        group: country_etf,  sector: International}
+  GXC:  {name: "SPDR S&P China ETF",                 group: country_etf,  sector: International}
+  CQQQ: {name: "Invesco China Technology ETF",       group: country_etf,  sector: International}
+  ILF:  {name: "iShares Latin America 40 ETF",       group: country_etf,  sector: International}
+  ECH:  {name: "iShares MSCI Chile ETF",             group: country_etf,  sector: International}
+  EIDO: {name: "iShares MSCI Indonesia ETF",         group: country_etf,  sector: International}
+  EPOL: {name: "iShares MSCI Poland ETF",            group: country_etf,  sector: International}
+  EWA:  {name: "iShares MSCI Australia ETF",         group: country_etf,  sector: International}
+  EWC:  {name: "iShares MSCI Canada ETF",            group: country_etf,  sector: International}
+  EWD:  {name: "iShares MSCI Sweden ETF",            group: country_etf,  sector: International}
+  EWG:  {name: "iShares MSCI Germany ETF",           group: country_etf,  sector: International}
+  EWH:  {name: "iShares MSCI Hong Kong ETF",         group: country_etf,  sector: International}
+  EWI:  {name: "iShares MSCI Italy ETF",             group: country_etf,  sector: International}
+  EWJ:  {name: "iShares MSCI Japan ETF",             group: country_etf,  sector: International}
+  EWL:  {name: "iShares MSCI Switzerland ETF",       group: country_etf,  sector: International}
+  EWN:  {name: "iShares MSCI Netherlands ETF",       group: country_etf,  sector: International}
+  EWP:  {name: "iShares MSCI Spain ETF",             group: country_etf,  sector: International}
+  EWQ:  {name: "iShares MSCI France ETF",            group: country_etf,  sector: International}
+  EWS:  {name: "iShares MSCI Singapore ETF",         group: country_etf,  sector: International}
+  EWT:  {name: "iShares MSCI Taiwan ETF",            group: country_etf,  sector: International}
+  EWU:  {name: "iShares MSCI United Kingdom ETF",    group: country_etf,  sector: International}
+  EWW:  {name: "iShares MSCI Mexico ETF",            group: country_etf,  sector: International}
+  EWY:  {name: "iShares MSCI South Korea ETF",       group: country_etf,  sector: International}
+  EWZ:  {name: "iShares MSCI Brazil ETF",            group: country_etf,  sector: International}
+  EZA:  {name: "iShares MSCI South Africa ETF",      group: country_etf,  sector: International}
+  TUR:  {name: "iShares MSCI Turkey ETF",            group: country_etf,  sector: International}

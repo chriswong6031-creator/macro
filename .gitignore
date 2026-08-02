@@ -441,6 +441,20 @@ site/oddsmatrix/
 data/odds_ohlcv/*.parquet
 !data/odds_ohlcv/_meta.json
 
+# Stock seasonality calendar clock — heavy per-symbol year panels, R2-plane only.
+# site/seasonalitydata/entities/<SYM>.json carries up to 25 complete-year
+# cumulative paths at 365 slots, twice (raw + market-neutral), so a covered
+# universe of ~290 names is ~28 MB rewritten every trading night. Served from
+# Cloudflare R2 via `scripts/publish_r2 --dirs seasonalitydata/entities`, exactly
+# like site/oddsmatrix/ above; the page fetches
+# (window.DATA_BASE||'') + 'seasonalitydata/entities/<SYM>.json'.
+# The small site/seasonalitydata/{index,methodology}.json stay git-tracked like
+# other sitedata — intentionally NOT listed here.
+# The negation keeps the DEFAULT symbol committed so the page has an honest
+# server-rendered first paint (and something indexable) without R2.
+site/seasonalitydata/entities/*.json
+!site/seasonalitydata/entities/SPY.json
+
 # FS-4 flow-score model artifacts (GITIGNORED per A4 — versioned joblib artifacts
 # never committed; served from Cloudflare R2 and local models_dir in config/flow_score.yml).
 # data/flow_signals/scores.parquet IS committed (like grades.parquet — covered by
