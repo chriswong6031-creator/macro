@@ -686,7 +686,12 @@ PUBLIC_EXACT = frozenset({
 # carve-out are deliberate and predate this program, so only the tree root is barred.
 NEVER_PUBLIC = ("/labdata/", "/premiumdata/")
 PUBLIC_PREFIXES = frozenset({
-    "/assets/css/", "/assets/landing/", "/factordata/tech_events/",
+    # /assets/js/ is the JS twin of /assets/css/: content-hashed page scripts
+    # that scripts/externalize_css.py lifts out of `<script data-externalize>`
+    # blocks. Derived presentation code with no signal payload — the render-time
+    # DATA those scripts read stays inline in the (gated) HTML by construction,
+    # which is why the lift is opt-in per block rather than automatic.
+    "/assets/css/", "/assets/js/", "/assets/landing/", "/factordata/tech_events/",
     "/stocks/", "/products/", "/tools/", "/learn/", "/blog/", "/research/", "/fonts/",
 })
 
