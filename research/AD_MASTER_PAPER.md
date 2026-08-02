@@ -331,6 +331,15 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
   "Institutional-grade signals on every stock — buy, wait or avoid, updated every
   trading day."; caption labels on illustrations rejected too — the composition alone
   must carry the story.
+- **R3.4 operator feedback (2026-08-02, late round)** — (a) a stack's 3D read comes
+  from same-size cards in a near-vertical pile (horizontal jitter ≤16px); wide diagonal
+  steps expose L-shaped flanks that read as different-size sheets; (b) background tapes
+  are **authored paths**, not rectangles — arc them through the composition's free
+  space (e.g. bottom-left sweep rising to the illustration), and let them pass behind a
+  **frosted-glass offer plate** (blur keeps text legible while the tape stays alive);
+  (c) a **price-free arm** joins the flagship test: same creative, single button
+  `7-DAY FREE TRIAL + 50% OFF` — price-anchor vs offer-only is a testable question,
+  not a taste ruling.
 - **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
   defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
   budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap

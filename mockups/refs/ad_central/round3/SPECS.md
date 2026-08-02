@@ -48,6 +48,19 @@ anything without re-opening the brief.
 - **Lane de-emphasis (R3.3):** TAKE PROFITS and STAND ASIDE at 65% opacity so the eye
   lands on BUY NOW first.
 
+## R3.4 additions (operator, 2026-08-02 late)
+
+- **call 1080 deck**: true vertical pile — same-size cards, horizontal jitter ≤16px
+  (the ±38px diagonal read as different-size sheets and was rejected).
+- **Tapes are authored paths now**: the 628's tape is an ARC (bottom-left sweep,
+  passing behind the offer, climbing to the deck); the 1080's is a steep column in
+  the free right band (x≥800). Both bespoke SVGs in `assets/`.
+- **Frosted offer plate** on both call ads: `rgba(17,26,46,.62)` + backdrop blur —
+  the tape reads through it.
+- **`call-trial` variant pair** (A/B arm): identical creative, NO price — single
+  full-width CTA button `7-DAY FREE TRIAL + 50% OFF`. Launch flag retained (operator
+  may rule the double 50% redundant).
+
 ## Verification state
 
 - 4/4 renders exit-0 via `render.py` (exact sizes, Inter loaded), every PNG eyeballed
