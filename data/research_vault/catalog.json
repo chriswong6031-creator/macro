@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T01:46:35.079931+00:00",
-  "count": 564,
+  "generated_at": "2026-08-02T02:01:39.734127+00:00",
+  "count": 565,
   "institutions": [
     "Amova",
     "Apollo",
@@ -236,6 +236,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7lq5lyqyk4p-448492",
+      "title": "EM Weekly Fund Flows Monitor Foreign net selling w w",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:17Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
       "language": "en",
       "needs_metadata": false
     },
