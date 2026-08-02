@@ -551,6 +551,43 @@ on:
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
       - "tests/test_context_api.py"
+      # BioCatalyst B1/B1b: ClinicalTrials.gov evidence lineage, the normalized
+      # trial-fact projection, authenticated read API, and its separately rendered
+      # workbench. Keep the source registry, contracts, public reader, deployment
+      # isolation, and every test half together: current-only source facts must not
+      # silently gain signal authority, and a test-only security re-pin must still
+      # start the pack that executes it.
+      - "engine/biocatalyst/**"
+      - "engine/sector_intelligence/contracts.py"
+      - "collectors/biocatalyst/**"
+      - "app/biocatalyst.py"
+      - "app/main.py"
+      - "app/requirements.txt"
+      - "scripts/biocatalyst_worker.py"
+      - "scripts/build_biocatalyst.py"
+      - "scripts/build_site.py"
+      - "config/biocatalyst_sources.yml"
+      - "config/biocatalyst_outcomes.yml"
+      - "config/site_access.yml"
+      - "contracts/biocatalyst/**"
+      - "data/biocatalyst/fixtures/**"
+      - "templates/biocatalyst.*"
+      - "templates/_navlinks.html.j2"
+      - "templates/_site_nav.html.j2"
+      - "templates/plans.html.j2"
+      - "app/deploy/macro-api.service"
+      - "app/deploy/macro-biocatalyst.service"
+      - "app/deploy/macro-biocatalyst.timer"
+      - "app/deploy/biocatalyst-*.sh"
+      - "app/deploy/biocatalyst-*.py"
+      - "app/deploy/biocatalyst-requirements.txt"
+      - "app/deploy/update.sh"
+      - "docs/biocatalyst_operations_runbook.md"
+      - "tests/test_biocatalyst_*.py"
+      - "tests/test_clinicaltrials_biocatalyst.py"
+      - "tests/test_sector_intelligence_contracts.py"
+      - "tests/test_sector_intelligence_ownership.py"
+      - "tests/test_deploy_update_self_heal.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -718,6 +755,12 @@ on:
       # (previously run by ZERO jobs); test-only edits must trigger a run too.
       - "tests/test_news_translate_render_gate.py"
       - "tests/test_news_translate_en.py"
+      # Analyst OS W5 (latency wave): true token streaming, tool-loop economics,
+      # instant-fact lane + latency instrumentation. Bench script has a parser test.
+      - "tests/test_brain_streaming.py"
+      - "tests/test_brain_tool_economics.py"
+      - "tests/test_brain_instant_lane.py"
+      - "scripts/brain_latency_bench.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it

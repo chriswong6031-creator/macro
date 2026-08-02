@@ -140,7 +140,6 @@ def main() -> int:
         return 0
 
     # THEME ROTATION DESK (regionalized) + region alerts (additive)
-    theme_alerts_recent = []
     try:
         from engine.theme_scoring import compute_theme_intel
         ti = compute_theme_intel('canada')
@@ -148,7 +147,6 @@ def main() -> int:
             data['theme_intel'] = ti
             from engine import theme_alerts
             theme_alerts.rebuild(ti, 'canada')
-            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get('as_of'), region='canada')
     except Exception as e:  # noqa: BLE001
         log.error('canada theme desk failed: %s', e)
 
@@ -196,7 +194,6 @@ def main() -> int:
     html = env.get_template("baskets_canada.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
-        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         ignition_json=json.dumps(ignition, separators=(",", ":"), ensure_ascii=False),
         provenance_json=json.dumps(provenance, separators=(",", ":"), ensure_ascii=False),
         freshness_json=json.dumps(freshness, separators=(",", ":"), ensure_ascii=False),

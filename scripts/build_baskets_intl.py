@@ -47,8 +47,7 @@ def main() -> int:
         return 0
 
     # THEME ROTATION DESK (regionalized) — score/label/recommend + 5-day rotation + act-now +
-    # concentration, rides inside baskets_json; region alerts feed the page bell. Additive.
-    theme_alerts_recent = []
+    # concentration, rides inside baskets_json; region alerts feed the alert ledger. Additive.
     try:
         from engine.theme_scoring import compute_theme_intel
         ti = compute_theme_intel("intl")
@@ -56,7 +55,6 @@ def main() -> int:
             data["theme_intel"] = ti
             from engine import theme_alerts
             theme_alerts.rebuild(ti, "intl")
-            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get("as_of"), region="intl")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("intl theme desk failed: %s", e)
 
@@ -95,7 +93,6 @@ def main() -> int:
     html = env.get_template("baskets_intl.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
-        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         bench_en="Intl ex-US", bench_zh="国际(除美)",
         generated_utc=built)
     write_page(site / "baskets_intl.html", html)

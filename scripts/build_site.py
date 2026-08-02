@@ -3943,10 +3943,22 @@ def alloc_card_state() -> dict:
         return {"present": False}
 
 
-def _ms_history_view() -> list[dict] | None:
+def _ms_history_view(current: dict | None = None) -> list[dict] | None:
     """Last up-to-60 sessions from market_state/forward_log.jsonl.
     Returns list of {asof, score} dicts (de-duped by asof, keep last), or None
-    when the file is absent/unreadable.  Graceful — never fatal."""
+    when the file is absent/unreadable.  Graceful — never fatal.
+
+    `current` is THIS build's market_state snapshot, and it settles a conflict the
+    two artifacts cannot settle between themselves. The forward log is a PIT
+    ledger: engine.market_state_audit.log_snapshot is first-write-wins per as-of
+    on purpose, so a later build of the same session can never rewrite a row that
+    may already be graded. `market_state` is the opposite — engine.market_state
+    .persist rewrites it on EVERY build. So when two builds of one session
+    disagree, the card ships two numbers for the same date: on 2026-07-31 the
+    gauge baked 69 / Risk-on while the chart's endpoint baked 66, and the header's
+    "last graded <date>" stamp disclosed nothing, because the two dates matched.
+    The DISPLAY endpoint therefore follows the board it sits next to; the logged
+    row on disk is left exactly as it was written."""
     try:
         p = config.data_dir() / "market_state" / "forward_log.jsonl"
         if not p.exists():
@@ -3966,8 +3978,16 @@ def _ms_history_view() -> list[dict] | None:
                 continue
         if not rows:
             return None
-        ordered = sorted(rows.items())[-60:]
-        return [{"asof": k, "score": v} for k, v in ordered]
+        out = [{"asof": k, "score": v} for k, v in sorted(rows.items())[-60:]]
+        cur_asof = str((current or {}).get("asof") or "")
+        cur_score = (current or {}).get("score")
+        if cur_asof and cur_score is not None and cur_asof == out[-1]["asof"] \
+                and int(cur_score) != out[-1]["score"]:
+            log.info("ms_history: display endpoint %s %d -> %d (board score; "
+                     "forward_log row untouched)",
+                     cur_asof, out[-1]["score"], int(cur_score))
+            out[-1] = {"asof": cur_asof, "score": int(cur_score)}
+        return out
     except Exception:  # noqa: BLE001 — additive, never fatal
         return None
 
@@ -5206,7 +5226,7 @@ def main() -> int:
         fear_euphoria=fear_euphoria_synthesis(latest, f),
         regime_snap=_rs_view,
         market_state=_us_ms_view,  # Green/Yellow/Red market-state command-center (display-only)
-        ms_history=_ms_history_view(),    # v5 scorecard: last ≤60 sessions {asof,score} — graceful absent
+        ms_history=_ms_history_view(_us_ms_view),  # v5 scorecard: last ≤60 sessions {asof,score} — endpoint reconciled to the board
         idx_spark=_idx_spark_view(),      # v5 scorecard: 20-point sparklines SPY/QQQ/^DJI/^RUT — graceful absent
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
@@ -5942,6 +5962,16 @@ def main() -> int:
         log.info("wrote %s", _ff_page)
     except Exception as _ff_e:  # noqa: BLE001 — additive; never break main build
         log.warning("fundamental_forensics.html render failed (%s); page skipped", _ff_e)
+
+    # BioCatalyst Intelligence — render only the registered preview shell. Trial
+    # facts stay in the authenticated, site-full BioCatalyst API; the static
+    # renderer must never read or copy a current trial generation into site/.
+    try:
+        from scripts.build_biocatalyst import render_from_state as _render_biocatalyst
+        _bci_page = _render_biocatalyst(config.ROOT)
+        log.info("wrote %s", _bci_page)
+    except Exception as _bci_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("biocatalyst.html render failed (%s); page skipped", _bci_e)
 
     # Capital Structure Intelligence — data-free premium observed-filing-state
     # shell. Its browser reads stay inside the authenticated API; this render

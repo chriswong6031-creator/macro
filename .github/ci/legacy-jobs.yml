@@ -2913,6 +2913,38 @@ jobs:
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
+  biocatalyst:
+    if: ${{ false }}
+    # BioCatalyst B1/B1b: verified ClinicalTrials.gov ingestion, immutable
+    # current-generation publication, normalized trial source-fact projection,
+    # deployment isolation, and the authenticated workbench API. This deliberately
+    # exercises the security adversarial cases alongside the normal worker path:
+    # a rehashed artifact must still be bound to current source-state provenance,
+    # never merely look structurally valid.
+    #
+    # The direct wildcard keeps every test_biocatalyst_*.py suite wired at birth
+    # without relying on a brittle manually-maintained list; shell expansion is
+    # deliberately bounded to the repository's top-level BioCatalyst test family.
+    # app/requirements.txt is an owned trigger above, while the deploy regression
+    # suite pins the serving-tier jsonschema/referencing closure used at import.
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst evidence, projection, API, UI, and isolation contracts
+        run: >
+          python -m pytest
+          tests/test_biocatalyst_*.py
+          tests/test_clinicaltrials_biocatalyst.py
+          tests/test_sector_intelligence_contracts.py
+          tests/test_sector_intelligence_ownership.py
+          tests/test_deploy_update_self_heal.py -q
+
   marketing-social-publisher:
     if: ${{ false }}
     # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer
@@ -4107,7 +4139,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.

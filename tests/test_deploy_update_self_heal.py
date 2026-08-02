@@ -152,6 +152,7 @@ MUST_RESTART = [
     "app/regwall.py",
     "app/paywall.py",
     "app/tape.py",
+    "app/biocatalyst.py",
     "app/requirements.txt",
     "app/deploy/macro-api.service",
     "config/site_access.yml",
@@ -165,6 +166,12 @@ MUST_RESTART = [
     "engine/research_vault/corpus.py",
     "engine/research_vault/r2_store.py",
     "engine/research_vault/sidecar.py",
+    # BioCatalyst serving validates and projects the immutable public generation.
+    "engine/biocatalyst/publication.py",
+    "engine/biocatalyst/trials.py",
+    "engine/sector_intelligence/__init__.py",
+    "engine/sector_intelligence/contracts.py",
+
     # Capital Structure serving closure — imported by app/capital_structure.py.
     "engine/capital_structure/__init__.py",
     "engine/capital_structure/event_spine.py",

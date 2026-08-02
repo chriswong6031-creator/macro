@@ -355,13 +355,21 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
         "source_manifest.json",
         "health.json",
         "trials/NCT00000001.json",
+        "trial_snapshots/NCT00000001.json",
     }
+    projection = publisher.read_trial_projection()
+    assert projection is not None
+    assert projection.generation == committed
+    assert projection.trials[0]["facts"]["brief_title"]["value"] == "Synthetic Phase 2 Study"
+    assert projection.trials[0]["authority"]["decision_authority"] is False
     assert any(key.startswith("biocatalyst/runs/") for key in store.objects)
     assert any(key.startswith("biocatalyst/raw/") for key in store.objects)
     assert f"biocatalyst/mirror_receipts/{committed.generation_id}.json" in store.objects
     public_text = "\n".join(path.read_text(encoding="utf-8") for path in generation.rglob("*.json"))
     assert str(cfg.state_root) not in public_text
     assert "test-secret" not in public_text
+    assert '"canonical_study"' not in public_text
+    assert '"raw_object_key"' not in public_text
 
 
 def test_disabled_and_misconfigured_environment_never_calls_collector_or_store(tmp_path, monkeypatch):

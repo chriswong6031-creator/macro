@@ -168,7 +168,6 @@
 const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
 const THEME   = BASKETS.theme_intel || null;
-const THEME_ALERTS = {{ theme_alerts_json|default('[]')|safe }};
 window.BASKET_BASE = 'basket_canada/';
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T04:01:50.833995+00:00",
-  "count": 570,
+  "generated_at": "2026-08-02T04:46:56.311403+00:00",
+  "count": 572,
   "institutions": [
     "Amova",
     "Apollo",
@@ -306,6 +306,21 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-twvaftdjbgr-e21f1f",
+      "title": "Asia Pacific Weekly Kickstart MXAPJ gained 2 , led by China HK and India",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:46Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cp6ztgxmiwb-97c1a2",
       "title": "Weekly Fund Flows Re Acceleration of US Inflows",
       "institution": "Goldman Sachs",
@@ -317,6 +332,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wk2obrjvnxr-63386b",
+      "title": "US Daily July GSAI Heating Up",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:28Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },

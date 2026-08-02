@@ -34,6 +34,20 @@ cross-checks every copy against the engine so they cannot drift):
       note => word != Risk-on (stress/dislocation and alert/regime overrides).
   (g) flip-line shape <-> verdict word ("→ Green if" <=> Mixed,
       "→ Mixed if" <=> Risk-on, "→ Mixed when" <=> Risk-off).
+  (h) score-path endpoint <-> board score, WHEN they claim the same session:
+      the chart's last data-point carries its own date, so a gap between it and
+      the headline is legitimate and disclosed ("last graded <date>") — but only
+      while the dates DIFFER. When the last point's date equals the board's
+      as-of, the two are the same read and must carry the same number and the
+      same band. Added after the 2026-08-02 operator report: macro.html baked a
+      69 / Risk-on gauge beside a Jul 31 endpoint of 66, because the two come
+      from artifacts with opposite write policies for one session —
+      market_state_audit.log_snapshot is first-write-wins per as-of (a PIT
+      ledger must not be rewritten), engine.market_state.persist is
+      last-write-wins (every build) — so any session whose recompute moved
+      shipped two numbers under one date, with the stamp asserting they matched.
+      build_site._ms_history_view now reconciles the DISPLAY endpoint to the
+      board (the logged row is left alone); this pins that it stays reconciled.
 
 Only the l-en spans are parsed: EN and ZH share each <p> source line, so a
 line-granular rebase stitch cannot split the pair.
@@ -53,9 +67,11 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
+from html import unescape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,6 +109,69 @@ _OVERRIDE = re.compile(
 )
 _FLIP = re.compile(r'class="v-flip"><span class="l-en">([^<]*)</span>')
 
+# ── (h) score-path endpoint vs the board it sits beside ─────────────────────
+# The chart's data-points array is single-quoted (it carries JSON), and the board
+# score / as-of stamps carry different attribute orders per page, so both are
+# matched attribute-first rather than by exact markup.
+_PATH_PTS = re.compile(r"<svg class=\"mx5-path-svg\"[^>]*?data-points='(.*?)'", re.S)
+_SCORE_ANY = re.compile(r'id="ms-score"[^>]*>(\d+)<')
+_ASOF_ANY = re.compile(r'id="(?:regime-asof|ms-date)"[^>]*>(\d{4}-\d{2}-\d{2})<')
+
+
+def _band(score: float) -> str:
+    for word, (lo, hi) in BANDS.items():
+        if lo <= score <= hi:
+            return word
+    return "?"
+
+
+def check_path_endpoint(name: str, html: str) -> list[str]:
+    """(h): the score-path chart must not contradict the board for ONE session.
+
+    Runs independently of the ms-verdict section — china.html carries the chart
+    and an #ms-score but bakes its board in its own markup. Pages with no chart,
+    no score, or no parseable as-of are skipped: without a date on both sides
+    there is no way to tell a legitimate "endpoint is yesterday" gap from a
+    split, and inventing a violation there would wedge the render lane. That
+    blind spot is real — hk.html and canada.html bake neither #regime-asof nor
+    a dated #ms-date, so only their per-point band self-consistency is checked.
+    """
+    pts_m = _PATH_PTS.search(html)
+    if not pts_m:
+        return []
+    try:
+        pts = json.loads(unescape(pts_m.group(1)))
+    except Exception as e:  # noqa: BLE001 — a garbled array is a loud violation
+        return [f"(h) {name}: score-path data-points unparseable ({e})"]
+    if not pts:
+        return []
+
+    v: list[str] = []
+    # every point's own verdict word must match its own score band — a stitched
+    # or hand-edited array shows up here even when no date lines up
+    for p in pts:
+        s, word = p.get("s"), p.get("v")
+        if s is None or word is None:
+            continue
+        if _band(float(s)) != word:
+            v.append(f"(h) {name}: path point {p.get('d')} scores {s} but is labelled"
+                     f" {word!r} (band {_band(float(s))})")
+
+    last = pts[-1]
+    score_m, asof_m = _SCORE_ANY.search(html), _ASOF_ANY.search(html)
+    if not score_m or not asof_m or not last.get("d"):
+        return v
+    if str(last["d"]) != asof_m.group(1):
+        return v                      # different sessions — the header stamp discloses it
+    board = int(score_m.group(1))
+    if float(last.get("s")) != float(board):
+        v.append(
+            f"(h) {name}: board and path endpoint both claim {asof_m.group(1)} but score"
+            f" {board} ({_band(board)}) vs {last['s']} ({_band(float(last['s']))}) —"
+            f" one session cannot have two scores"
+        )
+    return v
+
 
 def check_text(name: str, html: str) -> list[str]:
     """Return violation strings for one rendered page. Empty list = clean.
@@ -101,20 +180,24 @@ def check_text(name: str, html: str) -> list[str]:
     board); a section that is present but unparseable is a violation — a
     stitched hybrid may garble the markup itself.
     """
+    # (h) is board-section-independent: a page can ship the chart without the
+    # ms-verdict markup (china.html does), so it is collected either way.
+    path_v = check_path_endpoint(name, html)
+
     section = _SECTION.search(html)
     if not section:
-        return []
+        return path_v
     sec = section.group(1)
 
     word_m, score_m = _WORD.search(sec), _SCORE.search(sec)
     if not word_m or not score_m:
-        return [f"{name}: ms-board present but verdict word / score unparseable"]
+        return path_v + [f"{name}: ms-board present but verdict word / score unparseable"]
     word = word_m.group(1).strip()
     score = int(score_m.group(1))
     if word not in BANDS:
-        return [f"{name}: unknown verdict word {word!r} (expected {sorted(BANDS)})"]
+        return path_v + [f"{name}: unknown verdict word {word!r} (expected {sorted(BANDS)})"]
 
-    v: list[str] = []
+    v: list[str] = list(path_v)
     lo, hi = BANDS[word]
     if not lo <= score <= hi:
         v.append(f"(a) {name}: verdict {word!r} with score {score} outside band {lo}..{hi}")
@@ -192,6 +275,23 @@ def _default_pages() -> list[Path]:
 
 # ── Selftest fixtures (the incident, verbatim, plus synthetic edge cases) ─────
 
+def _path_page(board_asof, board_score, pt_date, pt_score, word=None) -> str:
+    """(h) fixture: a page carrying a score-path chart, and optionally the board
+    stamps (#ms-score + a dated #ms-date) the endpoint is checked against."""
+    pts = [{"d": "2026-07-29", "md": "Jul 29", "s": 40, "v": "Risk-off",
+            "x": 44.0, "y": 120.4},
+           {"d": pt_date, "md": "Jul x", "s": pt_score,
+            "v": word or _band(float(pt_score)), "x": 988.0,
+            "y": round(10 + (100 - pt_score) / 100 * 184, 2)}]
+    head = ""
+    if board_asof is not None and board_score is not None:
+        head = (f'<span class="v-score" id="ms-score">{board_score}</span>'
+                f'<span class="ms-date" id="ms-date">{board_asof}</span>')
+    return (f'<html><body>{head}'
+            f'<svg class="mx5-path-svg" viewBox="0 0 1000 224" '
+            f"data-points='{json.dumps(pts)}'></svg></body></html>")
+
+
 def _board(word, score, thesis, note, flip, tick=None) -> str:
     note_html = (
         f'<p class="v-override"><span class="ic">⚠</span><span class="l-en">{note}</span>'
@@ -248,6 +348,14 @@ def _selftest() -> int:
         ("tick drift", _board("Mixed", 50, "Mixed / transition — x.", "", "", tick=80), 1),
         ("no board", "<html><body>no board here</body></html>", 0),
         ("garbled board", '<section class="ms-verdict"><p>mangled</p></section>', 1),
+        # (h) — the 2026-08-02 report: one date, two scores, two bands
+        ("path endpoint splits the session", _path_page("2026-07-31", 44, "2026-07-31", 66), 1),
+        ("path endpoint agrees", _path_page("2026-07-31", 69, "2026-07-31", 69), 0),
+        # a genuine day gap is legitimate and disclosed by the header stamp
+        ("path endpoint is yesterday", _path_page("2026-07-31", 44, "2026-07-30", 66), 0),
+        # a point mislabelled against its own score, with no date to compare
+        ("path point band mislabelled", _path_page(None, None, "2026-07-30", 66,
+                                                   word="Risk-off"), 1),
     ]
     failed = False
     for label, html, want in cases:
