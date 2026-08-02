@@ -395,6 +395,13 @@ on:
       # and an explicit "templates/baskets.html.j2" above — so only the test file
       # needs a new entry here; both halves do trigger the job (#3488).
       - "tests/test_group_flow.py"
+      # #theme-<id> deep-link contract + Sector Intelligence consolidation invariants
+      # (unrun-suite wiring, 2026-08-02): both suites read baskets/sector_central
+      # templates (covered by "templates/**") and pin engine/alert_triage.py's themes
+      # page (listed above); the test files need explicit entries so a test-only
+      # re-pin still re-runs the engine-render-guards job that carries them (#3488).
+      - "tests/test_theme_hash_deeplink.py"
+      - "tests/test_sector_intelligence_page.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
