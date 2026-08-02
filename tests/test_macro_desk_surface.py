@@ -6,14 +6,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# US baskets + subsector_rotation became redirect stubs in the Sector Intelligence
+# consolidation (#4237) and no longer opt in; stub invariants live in
+# test_sector_intelligence_page.py. The merged sector_central page adopted the
+# baskets desk chrome, so it opts in as page-baskets (the China sibling did not merge).
 PAGE_CLASSES = {
-    "sector_central": "macro-desk page-sector-central",
+    "sector_central": "macro-desk page-baskets",
     "sector_central_china": "macro-desk page-sector-central",
-    "subsector_rotation": "macro-desk page-rotation",
     "subsector_rotation_china": "macro-desk page-rotation",
     "sector_cycles": "macro-desk page-cycle",
     "sector_cycles_china": "macro-desk page-cycle",
-    "baskets": "macro-desk page-baskets",
     "baskets_china": "macro-desk page-baskets",
     "baskets_hk": "macro-desk page-baskets",
     "baskets_canada": "macro-desk page-baskets",
