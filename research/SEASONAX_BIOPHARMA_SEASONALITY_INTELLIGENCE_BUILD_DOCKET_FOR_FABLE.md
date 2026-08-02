@@ -1454,6 +1454,29 @@ The foundation test suite covers temporal leakage, authority boundaries, probabi
 
 ## Build docket
 
+> **Program status — 2026-08-01.** Lane 0 implemented and live. Lanes 1, 2 and
+> the selection-correction slice of Lane 4 are **in build**; their pinned design
+> and artifact contract live in
+> `research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md`, whose §12–§13 record what
+> real-data probes and a built mockup changed before those lanes shipped. Lane 3
+> is **not ours to build** — the boundary with the BioCatalyst program that owns
+> it is pinned in `research/SEASONALITY_BIOCATALYST_INTEGRATION_SEAM.md`, and the
+> event clock is blocked on that program publishing a real (non-fixture)
+> catalyst artifact. Two corrections this docket's own text needs, both from
+> measurement rather than argument:
+>
+> - **the family null is an *independent* circular year-shift, not a
+>   synchronized one** (this docket's §"Dense overlapping scans" says
+>   "synchronized"). A synchronized shift relocates a real seasonal effect
+>   instead of removing it, so the null maximum inherits the structure the test
+>   exists to price. Dependence *between hypotheses* is preserved the way
+>   Westfall–Young requires by recomputing the whole grid inside each resample.
+> - **no election-year, presidential-cycle, or bull/bear cohort filters**, which
+>   the incumbent ships as year-filter presets. `research/DO_NOT_REBUILD.md`
+>   carries `Election / midterm cycle as standalone signal — REFUTED`, and a
+>   cohort chosen after seeing the chart spends testing budget the family
+>   accounting cannot see.
+
 ### Lane 0 — Clean-room and contract foundation — **implemented**
 
 Deliverables:
