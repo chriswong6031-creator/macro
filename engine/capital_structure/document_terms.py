@@ -14,6 +14,7 @@ submission bytes and retains exact child/table/row/cell provenance here.
 from __future__ import annotations
 
 import builtins
+import _markupbase as _stdlib_markupbase
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
@@ -23,6 +24,9 @@ from decimal import Decimal, InvalidOperation
 import dis
 import hashlib
 import hmac
+import html as _stdlib_html
+import html.entities as _stdlib_html_entities
+import html.parser as _stdlib_html_parser
 from html.parser import HTMLParser
 import inspect
 from importlib.metadata import version as distribution_version
@@ -30,6 +34,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import sysconfig
 from types import CodeType, MappingProxyType, ModuleType
 from typing import Any
 from urllib.parse import urlsplit
@@ -75,7 +80,7 @@ class SemanticDispatchRoot:
 
 @dataclass(frozen=True)
 class ParserRuntimeBundle:
-    """Exact process-local dispatch snapshot, rechecked on every parser use."""
+    """Reviewed exact runtime-dispatch digest for one supported interpreter."""
 
     dependency_count: int
     dependency_manifest_sha256: str
@@ -83,14 +88,23 @@ class ParserRuntimeBundle:
 
 
 @dataclass(frozen=True)
+class ParserRuntimeFingerprint:
+    """Reviewed CPython ABI and trusted on-disk stdlib source identity."""
+
+    implementation: str
+    version_info: tuple[int, int, int, str, int]
+    cache_tag: str
+    stdlib_source_sha256: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True)
 class ParserSemanticBundle:
-    """Portable release golden plus an exact process-local dispatch seal."""
+    """Portable project golden; runtime authority has a separate trust root."""
 
     entrypoints: tuple[SemanticEntrypoint, ...]
     dispatch_roots: tuple[SemanticDispatchRoot, ...]
     dependency_count: int
     dependency_manifest_sha256: str
-    runtime_dispatch: ParserRuntimeBundle
 
 
 @dataclass(frozen=True)
@@ -100,8 +114,8 @@ class ParserRegistration:
     Parser versions are evidence provenance, not free-form release labels. A
     historic direct row is trusted only when its declared version remains in
     this closed registry, its project implementation matches the portable
-    release golden, and its inherited runtime still matches the process-local
-    snapshot sealed at import.
+    release golden, and its inherited runtime matches an immutable reviewed
+    build/source/digest allowlist entry.
     """
 
     version: str
@@ -174,6 +188,18 @@ _DOCUMENT_TERM_SCHEMA_PATH = (
     _SEMANTIC_REPO_ROOT
     / "contracts"
     / "capital_structure_document_term_observation.schema.json"
+)
+# These source files contain the inherited HTML dispatch, character-reference
+# conversion/data, and the regular-expression entrypoint used by that dispatch.
+# Their paths are resolved beneath the active interpreter's stdlib root and
+# must also be the live modules' actual origins.  The tuple is deliberately a
+# reviewed closed inventory rather than a runtime-discovered module walk.
+_PARSER_RUNTIME_STDLIB_SOURCES = (
+    ("_markupbase", "_markupbase.py", _stdlib_markupbase),
+    ("html", "html/__init__.py", _stdlib_html),
+    ("html.entities", "html/entities.py", _stdlib_html_entities),
+    ("html.parser", "html/parser.py", _stdlib_html_parser),
+    ("re", "re/__init__.py", re),
 )
 _DOCUMENT_TERM_SCHEMA_SHA256 = (
     "7098f3f4e6e17185da1b7c2ee1d79fa5966e0ac3cfb96c0d6385573f0a0bf78c"
@@ -1544,7 +1570,7 @@ def _is_stdlib_value(value: Any) -> bool:
 
 
 class _SemanticClosureBuilder:
-    """Encode portable release roots or an exact inherited-runtime snapshot."""
+    """Encode portable release roots or an exact inherited-runtime digest."""
 
     def __init__(self, *, stable_stdlib_dispatch: bool = True) -> None:
         self.nodes: dict[str, Any] = {}
@@ -1587,6 +1613,28 @@ class _SemanticClosureBuilder:
         if isinstance(value, frozenset):
             items = [self._reference(item) for item in value]
             return {"kind": "frozenset", "items": sorted(items, key=_semantic_sort_key)}
+        if not self._stable_stdlib_dispatch and isinstance(value, list):
+            return {
+                "kind": "runtime_list",
+                "items": [self._reference(item) for item in value],
+            }
+        if not self._stable_stdlib_dispatch and isinstance(value, dict):
+            items = [
+                [self._reference(key), self._reference(item)]
+                for key, item in value.items()
+            ]
+            return {
+                "kind": "runtime_dict",
+                "items": sorted(items, key=_semantic_sort_key),
+            }
+        if not self._stable_stdlib_dispatch and isinstance(value, set):
+            items = [self._reference(item) for item in value]
+            return {
+                "kind": "runtime_set",
+                "items": sorted(items, key=_semantic_sort_key),
+            }
+        if not self._stable_stdlib_dispatch and isinstance(value, bytearray):
+            return {"kind": "runtime_bytearray", "hex": bytes(value).hex()}
         if isinstance(value, ModuleType):
             return {
                 "kind": "module",
@@ -1686,6 +1734,15 @@ class _SemanticClosureBuilder:
         elif inspect.isclass(value):
             self._walk_class(value, expand=expand)
 
+    def _should_expand_function_dependency(self, value: Any) -> bool:
+        if _is_expandable_project_value(value):
+            return True
+        return (
+            not self._stable_stdlib_dispatch
+            and inspect.isfunction(value)
+            and str(getattr(value, "__module__", "") or "") == "html"
+        )
+
     def _walk_function(self, function: Callable[..., Any], *, expand: bool) -> None:
         identity = _callable_identity(function)
         node_key = f"function:{identity}"
@@ -1694,7 +1751,11 @@ class _SemanticClosureBuilder:
             "default_count": len(function.__defaults__ or ()),
             "kwdefault_names": sorted((function.__kwdefaults__ or {}).keys()),
             "closure_names": list(function.__code__.co_freevars),
-            "stdlib_runtime_primitive": _is_stdlib_value(function) and not expand,
+            "stdlib_runtime_primitive": (
+                self._stable_stdlib_dispatch
+                and _is_stdlib_value(function)
+                and not expand
+            ),
         }
         if not descriptor["stdlib_runtime_primitive"]:
             descriptor["code"] = _semantic_code_descriptor(function.__code__)
@@ -1725,7 +1786,7 @@ class _SemanticClosureBuilder:
                 )
             self.bind(
                 f"{node_key}.{origin}.{name}", value,
-                expand=_is_expandable_project_value(value),
+                expand=self._should_expand_function_dependency(value),
             )
             if isinstance(value, ModuleType):
                 for path in attribute_paths.get(name, ()):
@@ -1740,18 +1801,24 @@ class _SemanticClosureBuilder:
                     self.bind(
                         f"{node_key}.{origin}.{name}.attribute.{'.'.join(path)}",
                         attribute_value,
-                        expand=_is_expandable_project_value(attribute_value),
+                        expand=self._should_expand_function_dependency(
+                            attribute_value,
+                        ),
                     )
 
         for index, value in enumerate(function.__defaults__ or ()):
             self.bind(
                 f"{node_key}.default.{index}", value,
-                expand=expand and _is_expandable_project_value(value),
+                expand=(
+                    expand and self._should_expand_function_dependency(value)
+                ),
             )
         for name, value in sorted((function.__kwdefaults__ or {}).items()):
             self.bind(
                 f"{node_key}.kwdefault.{name}", value,
-                expand=expand and _is_expandable_project_value(value),
+                expand=(
+                    expand and self._should_expand_function_dependency(value)
+                ),
             )
         closure = function.__closure__ or ()
         if len(closure) != len(function.__code__.co_freevars):
@@ -1765,7 +1832,9 @@ class _SemanticClosureBuilder:
                 ) from exc
             self.bind(
                 f"{node_key}.closure.{name}", value,
-                expand=expand and _is_expandable_project_value(value),
+                expand=(
+                    expand and self._should_expand_function_dependency(value)
+                ),
             )
 
     def _walk_class(self, cls: type[Any], *, expand: bool) -> None:
@@ -2039,6 +2108,12 @@ class _SemanticClosureBuilder:
                 )
             global_key = f"{key}.{origin}.{global_name}"
             self._put(global_key, self._reference(global_value))
+            if not self._stable_stdlib_dispatch and inspect.isfunction(global_value):
+                self.bind(
+                    f"{global_key}.runtime_callable",
+                    global_value,
+                    expand=self._should_expand_function_dependency(global_value),
+                )
             if not isinstance(global_value, (ModuleType, type)):
                 continue
             for path in attribute_paths.get(global_name, ()):
@@ -2051,10 +2126,19 @@ class _SemanticClosureBuilder:
                             f"{'.'.join(path)}"
                         )
                     attribute_value = getattr(attribute_value, attribute)
-                self._put(
-                    f"{global_key}.attribute.{'.'.join(path)}",
-                    self._reference(attribute_value),
-                )
+                attribute_key = f"{global_key}.attribute.{'.'.join(path)}"
+                self._put(attribute_key, self._reference(attribute_value))
+                if (
+                    not self._stable_stdlib_dispatch
+                    and inspect.isfunction(attribute_value)
+                ):
+                    self.bind(
+                        f"{attribute_key}.runtime_callable",
+                        attribute_value,
+                        expand=self._should_expand_function_dependency(
+                            attribute_value,
+                        ),
+                    )
                 if (
                     inspect.isclass(global_value)
                     and global_value in receiver.__mro__
@@ -2092,9 +2176,11 @@ def _semantic_closure(
     ):
         raise ValueError("document-term parser semantic entrypoint roles must be unique")
     builder = _SemanticClosureBuilder()
+    # Keep the project golden portable across reviewed 3.12 builds. Exact
+    # micro-version, cache tag, stdlib source bytes, and live dispatch belong to
+    # the separately validated runtime allowlist, not this project-code digest.
     builder._put("runtime:python", {
         "implementation": sys.implementation.name,
-        "cache_tag": sys.implementation.cache_tag,
         "version": [sys.version_info.major, sys.version_info.minor],
     })
     for entrypoint in sorted(entrypoints, key=lambda item: item.role):
@@ -2132,7 +2218,7 @@ def _semantic_closure(
 def _runtime_dispatch_closure(
     dispatch_roots: Sequence[SemanticDispatchRoot],
 ) -> tuple[tuple[str, ...], str, str]:
-    """Capture exact inherited runtime objects outside micro-specific goldens."""
+    """Capture exact inherited runtime objects for reviewed runtime allowlists."""
     builder = _SemanticClosureBuilder(stable_stdlib_dispatch=False)
     builder._put("runtime:python_process", {
         "implementation": sys.implementation.name,
@@ -2161,6 +2247,101 @@ def _runtime_dispatch_closure(
         hashlib.sha256(manifest_bytes).hexdigest(),
         hashlib.sha256(encoded).hexdigest(),
     )
+
+
+def _make_parser_runtime_fingerprint(
+    source_specs: tuple[tuple[str, str, ModuleType], ...],
+    *,
+    system: ModuleType,
+    stdlib_path: Callable[[str], str],
+    path_type: type[Path],
+    path_resolve: Callable[..., Path],
+    path_read_bytes: Callable[[Path], bytes],
+    sha256: Callable[..., Any],
+) -> Callable[[], ParserRuntimeFingerprint]:
+    """Seal the reviewed source inventory and low-level identity primitives."""
+    source_specs = tuple(source_specs)
+
+    def _parser_runtime_fingerprint() -> ParserRuntimeFingerprint:
+        if globals().get("_PARSER_RUNTIME_STDLIB_SOURCES") is not source_specs:
+            raise ValueError("document-term parser runtime source inventory changed")
+        if str(getattr(system.implementation, "name", "") or "") != "cpython":
+            raise ValueError("document-term parser runtime requires CPython")
+        try:
+            stdlib_root = path_resolve(
+                path_type(stdlib_path("stdlib")), strict=True,
+            )
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "document-term parser runtime identity path is unavailable"
+            ) from exc
+
+        source_digests: list[tuple[str, str]] = []
+        for module_name, relative_path, module in source_specs:
+            if str(getattr(module, "__name__", "") or "") != module_name:
+                raise ValueError(
+                    "document-term parser runtime source module identity changed: "
+                    f"{module_name}"
+                )
+            try:
+                source_path = path_resolve(
+                    stdlib_root.joinpath(*relative_path.split("/")), strict=True,
+                )
+                source_path.relative_to(stdlib_root)
+                module_file = path_resolve(
+                    path_type(str(getattr(module, "__file__", "") or "")),
+                    strict=True,
+                )
+                spec = getattr(module, "__spec__", None)
+                spec_origin = path_resolve(
+                    path_type(str(getattr(spec, "origin", "") or "")),
+                    strict=True,
+                )
+            except (OSError, RuntimeError, TypeError, ValueError) as exc:
+                raise ValueError(
+                    "document-term parser runtime source path is unavailable: "
+                    f"{relative_path}"
+                ) from exc
+            if (
+                not source_path.is_file()
+                or module_file != source_path
+                or spec_origin != source_path
+            ):
+                raise ValueError(
+                    "document-term parser runtime source origin mismatch: "
+                    f"{relative_path}"
+                )
+            source_digests.append((
+                relative_path,
+                sha256(path_read_bytes(source_path)).hexdigest(),
+            ))
+
+        version_info = system.version_info
+        return ParserRuntimeFingerprint(
+            implementation=str(system.implementation.name),
+            version_info=(
+                int(version_info.major),
+                int(version_info.minor),
+                int(version_info.micro),
+                str(version_info.releaselevel),
+                int(version_info.serial),
+            ),
+            cache_tag=str(system.implementation.cache_tag or ""),
+            stdlib_source_sha256=tuple(source_digests),
+        )
+
+    return _parser_runtime_fingerprint
+
+
+_parser_runtime_fingerprint = _make_parser_runtime_fingerprint(
+    _PARSER_RUNTIME_STDLIB_SOURCES,
+    system=sys,
+    stdlib_path=sysconfig.get_path,
+    path_type=Path,
+    path_resolve=Path.resolve,
+    path_read_bytes=Path.read_bytes,
+    sha256=hashlib.sha256,
+)
 
 
 def _parser_semantic_entrypoints(
@@ -2209,26 +2390,230 @@ _PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256 = (
     "4939a46ef7ca1a9583f869de398692e6a8736fc4566c6a5f3860b95c5f6e6f0d"
 )
 _PARSER_V1_1_0_DISPATCH_ROOTS = _parser_semantic_dispatch_roots()
-(
-    _parser_v1_1_0_runtime_manifest,
-    _parser_v1_1_0_runtime_manifest_sha256,
-    _parser_v1_1_0_runtime_implementation_sha256,
-) = _runtime_dispatch_closure(_PARSER_V1_1_0_DISPATCH_ROOTS)
-_PARSER_V1_1_0_RUNTIME_BUNDLE = ParserRuntimeBundle(
-    dependency_count=len(_parser_v1_1_0_runtime_manifest),
-    dependency_manifest_sha256=_parser_v1_1_0_runtime_manifest_sha256,
-    implementation_sha256=_parser_v1_1_0_runtime_implementation_sha256,
+
+# Reviewed in clean ``-B`` subprocesses.  These literal entries are the runtime
+# trust root: the current process may be compared with them, but it can never
+# mint or promote an observed fingerprint/digest into release authority. The
+# key is portable across hosts only when the CPython ABI and every governing
+# stdlib source byte match; the separately pinned live dispatch digest then
+# detects in-memory mutation.
+# This detects ordinary source/runtime mutation; it is not a sandbox against a
+# hostile bootstrap that already controls ``sys.modules``, file reads, or the
+# hash primitive before this module starts. Such a threat requires a clean
+# isolated worker and an externally verified/codesigned interpreter image.
+_PARSER_V1_1_0_RUNTIME_ALLOWLIST = MappingProxyType({
+    # python.org CPython 3.12.2
+    ParserRuntimeFingerprint(
+        implementation="cpython",
+        version_info=(3, 12, 2, "final", 0),
+        cache_tag="cpython-312",
+        stdlib_source_sha256=(
+            (
+                "_markupbase.py",
+                "cb14dd6f2e2439eb70b806cd49d19911363d424c2b6b9f4b73c9c08022d47030",
+            ),
+            (
+                "html/__init__.py",
+                "923d82d821e75e8d235392c10c145ab8587927b3faf9c952bbd48081eebd8522",
+            ),
+            (
+                "html/entities.py",
+                "d9c65fb2828dbc1f3e399058a341d51e9375ec5bca95a8e92599c41bd5b78bde",
+            ),
+            (
+                "html/parser.py",
+                "ab5a0a2fce2bec75d969dbe057b490ef574f9ac57cce9e0eaaf7a220b301e838",
+            ),
+            (
+                "re/__init__.py",
+                "8ff3c37c63b917fcf8dc8d50993a502292a3dc159e41de4f4018c72a53d1c07b",
+            ),
+        ),
+    ): ParserRuntimeBundle(
+        dependency_count=136,
+        dependency_manifest_sha256=(
+            "01a61026127c28d7877b1ae3f0011bcd5e9a55b216c434f134a354cc7328dbe7"
+        ),
+        implementation_sha256=(
+            "8e252ee2e0fada926577b9140d6b54c0eb9672c0ab77e0421946fa1939ad6e6a"
+        ),
+    ),
+    # Anaconda CPython 3.12.4
+    ParserRuntimeFingerprint(
+        implementation="cpython",
+        version_info=(3, 12, 4, "final", 0),
+        cache_tag="cpython-312",
+        stdlib_source_sha256=(
+            (
+                "_markupbase.py",
+                "cb14dd6f2e2439eb70b806cd49d19911363d424c2b6b9f4b73c9c08022d47030",
+            ),
+            (
+                "html/__init__.py",
+                "923d82d821e75e8d235392c10c145ab8587927b3faf9c952bbd48081eebd8522",
+            ),
+            (
+                "html/entities.py",
+                "d9c65fb2828dbc1f3e399058a341d51e9375ec5bca95a8e92599c41bd5b78bde",
+            ),
+            (
+                "html/parser.py",
+                "ab5a0a2fce2bec75d969dbe057b490ef574f9ac57cce9e0eaaf7a220b301e838",
+            ),
+            (
+                "re/__init__.py",
+                "8ff3c37c63b917fcf8dc8d50993a502292a3dc159e41de4f4018c72a53d1c07b",
+            ),
+        ),
+    ): ParserRuntimeBundle(
+        dependency_count=136,
+        dependency_manifest_sha256=(
+            "01a61026127c28d7877b1ae3f0011bcd5e9a55b216c434f134a354cc7328dbe7"
+        ),
+        implementation_sha256=(
+            "963bc4b485f6c5431fec61a596ecae4f7d15601e9ec07eece71feec4ced53f26"
+        ),
+    ),
+    # Production VPS /usr/bin/python3.12, measured 2026-08-02; Ubuntu 3.12.3
+    # executable with distro security-backported 3.12.13 stdlib sources.
+    ParserRuntimeFingerprint(
+        implementation="cpython",
+        version_info=(3, 12, 3, "final", 0),
+        cache_tag="cpython-312",
+        stdlib_source_sha256=(
+            (
+                "_markupbase.py",
+                "cb14dd6f2e2439eb70b806cd49d19911363d424c2b6b9f4b73c9c08022d47030",
+            ),
+            (
+                "html/__init__.py",
+                "923d82d821e75e8d235392c10c145ab8587927b3faf9c952bbd48081eebd8522",
+            ),
+            (
+                "html/entities.py",
+                "d9c65fb2828dbc1f3e399058a341d51e9375ec5bca95a8e92599c41bd5b78bde",
+            ),
+            (
+                "html/parser.py",
+                "952f1d7dd5be98b6f78801c6904a38e3e2beceb4783efb76c5e22948f0a58092",
+            ),
+            (
+                "re/__init__.py",
+                "8ff3c37c63b917fcf8dc8d50993a502292a3dc159e41de4f4018c72a53d1c07b",
+            ),
+        ),
+    ): ParserRuntimeBundle(
+        dependency_count=132,
+        dependency_manifest_sha256=(
+            "9fe456c8bc69adf8d3379a44c2721f22ea816a1043edcd4b6916eb67470e35d5"
+        ),
+        implementation_sha256=(
+            "8d01e79c7a378750afc6e74940f4747809f47da80ab8fbc84937ac3940c0b134"
+        ),
+    ),
+    # Homebrew and GitHub Actions setup-python CPython 3.12.13. The Linux
+    # reference was actions/python-versions 3.12.13-27650778726, archive SHA-256
+    # ce7d511228f095b5ea1ad5568543388870f5964688303f9ddc24ba06c336bfba.
+    ParserRuntimeFingerprint(
+        implementation="cpython",
+        version_info=(3, 12, 13, "final", 0),
+        cache_tag="cpython-312",
+        stdlib_source_sha256=(
+            (
+                "_markupbase.py",
+                "cb14dd6f2e2439eb70b806cd49d19911363d424c2b6b9f4b73c9c08022d47030",
+            ),
+            (
+                "html/__init__.py",
+                "923d82d821e75e8d235392c10c145ab8587927b3faf9c952bbd48081eebd8522",
+            ),
+            (
+                "html/entities.py",
+                "d9c65fb2828dbc1f3e399058a341d51e9375ec5bca95a8e92599c41bd5b78bde",
+            ),
+            (
+                "html/parser.py",
+                "952f1d7dd5be98b6f78801c6904a38e3e2beceb4783efb76c5e22948f0a58092",
+            ),
+            (
+                "re/__init__.py",
+                "8ff3c37c63b917fcf8dc8d50993a502292a3dc159e41de4f4018c72a53d1c07b",
+            ),
+        ),
+    ): ParserRuntimeBundle(
+        dependency_count=132,
+        dependency_manifest_sha256=(
+            "9fe456c8bc69adf8d3379a44c2721f22ea816a1043edcd4b6916eb67470e35d5"
+        ),
+        implementation_sha256=(
+            "c402418626c015f58aef7131f9421f9aca394016753adb2ae27d98c6e237c99b"
+        ),
+    ),
+})
+
+
+def _make_validate_released_parser_runtime(
+    allowlist: Mapping[ParserRuntimeFingerprint, ParserRuntimeBundle],
+    fingerprint_builder: Callable[[], ParserRuntimeFingerprint],
+    runtime_dispatch_closure: Callable[
+        [Sequence[SemanticDispatchRoot]], tuple[tuple[str, ...], str, str]
+    ],
+) -> Callable[[Sequence[SemanticDispatchRoot]], ParserRuntimeBundle]:
+    """Seal immutable reviewed runtime records outside caller-controlled state."""
+    allowed_fingerprints = tuple(allowlist)
+    fingerprint_builder_code = fingerprint_builder.__code__
+    runtime_dispatch_closure_code = runtime_dispatch_closure.__code__
+
+    def _validate_released_parser_runtime(
+        dispatch_roots: Sequence[SemanticDispatchRoot],
+    ) -> ParserRuntimeBundle:
+        if globals().get("_PARSER_V1_1_0_RUNTIME_ALLOWLIST") is not allowlist:
+            raise ValueError("document-term parser runtime allowlist binding changed")
+        if tuple(allowlist) != allowed_fingerprints:
+            raise ValueError("document-term parser runtime allowlist keyset changed")
+        if (
+            globals().get("_parser_runtime_fingerprint") is not fingerprint_builder
+            or fingerprint_builder.__code__ is not fingerprint_builder_code
+        ):
+            raise ValueError("document-term parser runtime fingerprint binding changed")
+        if (
+            globals().get("_runtime_dispatch_closure")
+            is not runtime_dispatch_closure
+            or runtime_dispatch_closure.__code__ is not runtime_dispatch_closure_code
+        ):
+            raise ValueError("document-term parser runtime closure binding changed")
+        fingerprint = fingerprint_builder()
+        expected = allowlist.get(fingerprint)
+        if expected is None:
+            raise ValueError(
+                "document-term parser runtime fingerprint is not released"
+            )
+        runtime_manifest, runtime_manifest_sha256, runtime_digest = (
+            runtime_dispatch_closure(dispatch_roots)
+        )
+        observed = ParserRuntimeBundle(
+            dependency_count=len(runtime_manifest),
+            dependency_manifest_sha256=runtime_manifest_sha256,
+            implementation_sha256=runtime_digest,
+        )
+        if observed != expected:
+            raise ValueError(
+                "document-term parser runtime dispatch mismatch: "
+                f"observed={observed!r}"
+            )
+        return expected
+
+    return _validate_released_parser_runtime
+
+
+_validate_released_parser_runtime = _make_validate_released_parser_runtime(
+    _PARSER_V1_1_0_RUNTIME_ALLOWLIST,
+    _parser_runtime_fingerprint,
+    _runtime_dispatch_closure,
 )
 _RELEASED_PARSER_IMPLEMENTATION_DIGESTS = MappingProxyType({
     "capital-structure-document-terms/1.1.0": (
-        "943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08"
-    ),
-})
-_RELEASED_PARSER_RUNTIME_DIGESTS = MappingProxyType({
-    "capital-structure-document-terms/1.1.0": (
-        _PARSER_V1_1_0_RUNTIME_BUNDLE.dependency_count,
-        _PARSER_V1_1_0_RUNTIME_BUNDLE.dependency_manifest_sha256,
-        _PARSER_V1_1_0_RUNTIME_BUNDLE.implementation_sha256,
+        "d47515272069bfc3f3f768b84b94a218f7f66e7c746e36a8702efd97c26af645"
     ),
 })
 _RELEASED_PARSER_VERSIONS = ("capital-structure-document-terms/1.1.0",)
@@ -2245,7 +2630,6 @@ _RELEASED_PARSER_REGISTRY = MappingProxyType({
             dispatch_roots=_PARSER_V1_1_0_DISPATCH_ROOTS,
             dependency_count=_PARSER_V1_1_0_DEPENDENCY_COUNT,
             dependency_manifest_sha256=_PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256,
-            runtime_dispatch=_PARSER_V1_1_0_RUNTIME_BUNDLE,
         ),
     ),
 })
@@ -2259,11 +2643,8 @@ def _validate_parser_registration_core(
     registration: ParserRegistration,
     *,
     semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
-    runtime_dispatch_closure: Callable[
-        [Sequence[SemanticDispatchRoot]], tuple[tuple[str, ...], str, str]
-    ],
 ) -> None:
-    """Recompute and compare one registration's full released semantic bundle."""
+    """Recompute and compare one registration's portable semantic bundle."""
     try:
         manifest, manifest_sha256, digest = semantic_closure(
             registration.semantic_bundle.entrypoints,
@@ -2283,23 +2664,6 @@ def _validate_parser_registration_core(
         raise ValueError(
             f"document-term parser semantic closure mismatch for {registration.version}"
         )
-    runtime = registration.semantic_bundle.runtime_dispatch
-    runtime_manifest, runtime_manifest_sha256, runtime_digest = (
-        runtime_dispatch_closure(registration.semantic_bundle.dispatch_roots)
-    )
-    if (
-        len(runtime_manifest) != runtime.dependency_count
-        or not hmac.compare_digest(
-            runtime_manifest_sha256, runtime.dependency_manifest_sha256,
-        )
-        or not hmac.compare_digest(
-            runtime_digest, runtime.implementation_sha256,
-        )
-    ):
-        raise ValueError(
-            "document-term parser semantic closure mismatch for "
-            f"{registration.version}: runtime dispatch mismatch"
-        )
     extractor_roots = [
         entrypoint.implementation
         for entrypoint in registration.semantic_bundle.entrypoints
@@ -2311,50 +2675,77 @@ def _validate_parser_registration_core(
         )
 
 
-def _make_validate_parser_registration(
+def _make_validate_parser_registration_static(
     registration_core: Callable[..., None],
     semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
-    runtime_dispatch_closure: Callable[
-        [Sequence[SemanticDispatchRoot]], tuple[tuple[str, ...], str, str]
-    ],
 ) -> Callable[[ParserRegistration], None]:
+    registration_core_code = registration_core.__code__
     semantic_closure_code = semantic_closure.__code__
-    runtime_dispatch_closure_code = runtime_dispatch_closure.__code__
 
-    def _validate_parser_registration(registration: ParserRegistration) -> None:
-        if globals().get("_validate_parser_registration_core") is not registration_core:
+    def _validate_parser_registration_static(
+        registration: ParserRegistration,
+    ) -> None:
+        if (
+            globals().get("_validate_parser_registration_core")
+            is not registration_core
+            or registration_core.__code__ is not registration_core_code
+        ):
             raise ValueError("document-term parser registration core binding changed")
         if (
             globals().get("_semantic_closure") is not semantic_closure
             or semantic_closure.__code__ is not semantic_closure_code
         ):
             raise ValueError("document-term parser semantic closure binding changed")
+        registration_core(registration, semantic_closure=semantic_closure)
+
+    return _validate_parser_registration_static
+
+
+_validate_parser_registration_static = _make_validate_parser_registration_static(
+    _validate_parser_registration_core,
+    _semantic_closure,
+)
+
+
+def _make_validate_parser_registration(
+    static_validator: Callable[[ParserRegistration], None],
+    runtime_validator: Callable[
+        [Sequence[SemanticDispatchRoot]], ParserRuntimeBundle
+    ],
+) -> Callable[[ParserRegistration], None]:
+    static_validator_code = static_validator.__code__
+    runtime_validator_code = runtime_validator.__code__
+
+    def _validate_parser_registration(registration: ParserRegistration) -> None:
         if (
-            globals().get("_runtime_dispatch_closure")
-            is not runtime_dispatch_closure
-            or runtime_dispatch_closure.__code__ is not runtime_dispatch_closure_code
+            globals().get("_validate_parser_registration_static")
+            is not static_validator
+            or static_validator.__code__ is not static_validator_code
         ):
-            raise ValueError("document-term parser runtime closure binding changed")
-        registration_core(
-            registration,
-            semantic_closure=semantic_closure,
-            runtime_dispatch_closure=runtime_dispatch_closure,
+            raise ValueError("document-term parser static validator binding changed")
+        if (
+            globals().get("_validate_released_parser_runtime")
+            is not runtime_validator
+            or runtime_validator.__code__ is not runtime_validator_code
+        ):
+            raise ValueError("document-term parser runtime validator binding changed")
+        static_validator(registration)
+        runtime_validator(
+            registration.semantic_bundle.dispatch_roots,
         )
 
     return _validate_parser_registration
 
 
 _validate_parser_registration = _make_validate_parser_registration(
-    _validate_parser_registration_core,
-    _semantic_closure,
-    _runtime_dispatch_closure,
+    _validate_parser_registration_static,
+    _validate_released_parser_runtime,
 )
 
 
 def _make_registered_parser(
     released_registry: Mapping[str, ParserRegistration],
     released_digests: Mapping[str, str],
-    released_runtime_digests: Mapping[str, tuple[int, str, str]],
     released_versions: tuple[str, ...],
     registration_validator: Callable[[ParserRegistration], None],
 ) -> Callable[[Any], ParserRegistration]:
@@ -2367,16 +2758,13 @@ def _make_registered_parser(
         if (
             tuple(released_registry) != released_versions
             or tuple(released_digests) != released_versions
-            or tuple(released_runtime_digests) != released_versions
         ):
             raise ValueError("document-term released parser registry keyset mismatch")
         expected_digest = released_digests.get(raw)
-        expected_runtime_digest = released_runtime_digests.get(raw)
         registration = released_registry.get(raw)
         if (
             registration is None
             or expected_digest is None
-            or expected_runtime_digest is None
         ):
             raise ValueError(f"document-term parser_version is not registered: {raw!r}")
         if (
@@ -2384,12 +2772,6 @@ def _make_registered_parser(
             or not hmac.compare_digest(
                 registration.implementation_sha256, expected_digest,
             )
-            or (
-                registration.semantic_bundle.runtime_dispatch.dependency_count,
-                registration.semantic_bundle.runtime_dispatch.dependency_manifest_sha256,
-                registration.semantic_bundle.runtime_dispatch.implementation_sha256,
-            )
-            != expected_runtime_digest
         ):
             raise ValueError(
                 f"document-term released parser registry mismatch for {raw}"
@@ -2403,7 +2785,6 @@ def _make_registered_parser(
 _registered_parser = _make_registered_parser(
     _RELEASED_PARSER_REGISTRY,
     _RELEASED_PARSER_IMPLEMENTATION_DIGESTS,
-    _RELEASED_PARSER_RUNTIME_DIGESTS,
     _RELEASED_PARSER_VERSIONS,
     _validate_parser_registration,
 )
@@ -2483,21 +2864,29 @@ _records_for_manifest = _make_records_for_manifest(_registered_parser)
 
 
 def _self_check_parser_registry() -> None:
+    """Check release-ledger shape without granting runtime parser authority.
+
+    Import must remain available for projection-only API routes on an unknown
+    interpreter. Exact runtime and semantic admission therefore stays in
+    ``_registered_parser``, immediately before any released extractor can run.
+    """
     if (
         tuple(_RELEASED_PARSER_REGISTRY) != _RELEASED_PARSER_VERSIONS
         or tuple(_RELEASED_PARSER_IMPLEMENTATION_DIGESTS)
         != _RELEASED_PARSER_VERSIONS
-        or tuple(_RELEASED_PARSER_RUNTIME_DIGESTS)
-        != _RELEASED_PARSER_VERSIONS
+        or len(_PARSER_V1_1_0_RUNTIME_ALLOWLIST) != 4
     ):
         raise RuntimeError("document-term production parser registry is not release-exact")
     for version in _RELEASED_PARSER_VERSIONS:
-        try:
-            _registered_parser(version)
-        except ValueError as exc:
+        registration = _RELEASED_PARSER_REGISTRY[version]
+        if (
+            registration.version != version
+            or registration.implementation_sha256
+            != _RELEASED_PARSER_IMPLEMENTATION_DIGESTS[version]
+        ):
             raise RuntimeError(
                 f"document-term parser registry startup self-check failed for {version}"
-            ) from exc
+            )
 
 
 def _validate_observation_source_binding_core(
@@ -3275,7 +3664,7 @@ _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
     "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039"
+    "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

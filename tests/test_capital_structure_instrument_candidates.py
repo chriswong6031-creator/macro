@@ -258,7 +258,7 @@ def test_candidate_authority_policy_has_release_golden_closure():
         "5c93c5790e103ebc82f9e7865e27bb9576370235ddd27c64ff57a84fbc1bb9eb"
     )
     assert implementation_sha256 == (
-        "5e2add814e04bc32d88ac1b198023d2301b37085ed690a1e0f53daa22e7f1e6b"
+        "7adefd79136224d8c0ca0c84cd4ef41bd206690f9ec28622cdf95f682c811b28"
     )
     for required in (
         "._validate_candidate_term_records_contract",

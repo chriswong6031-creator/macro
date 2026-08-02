@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from types import MappingProxyType
 
 import pandas as pd
 import pytest
@@ -39,6 +40,48 @@ from scripts.compile_capital_structure_document_terms import (
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/capital_structure/document_terms/registration_fee_table_submission.txt"
+SUPPORTED_RUNTIME_EXECUTABLES = (
+    pytest.param(sys.executable, id="active-reviewed-runtime"),
+    pytest.param(
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        id="cpython-3.12.2-python-org",
+    ),
+    pytest.param(
+        "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+        id="cpython-3.12.4-anaconda",
+    ),
+    pytest.param(
+        "/opt/homebrew/bin/python3.12",
+        id="cpython-3.12.13-homebrew",
+    ),
+)
+
+
+def _copy_tracked_authority_source(export_root: Path) -> None:
+    export_root.mkdir()
+    tracked = subprocess.check_output(
+        [
+            "git", "ls-files", "-z", "--", "engine", "contracts",
+            "app/__init__.py", "app/capital_structure.py",
+        ],
+        cwd=ROOT,
+    ).split(b"\0")
+    for encoded in tracked:
+        if not encoded:
+            continue
+        relative = Path(os.fsdecode(encoded))
+        source = ROOT / relative
+        if not source.exists():
+            continue
+        destination = export_root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
+def _supported_runtime_or_skip(interpreter: str) -> str:
+    if not Path(interpreter).is_file() or not os.access(interpreter, os.X_OK):
+        pytest.skip(f"reviewed runtime is not installed: {interpreter}")
+    return interpreter
 
 
 def _manifest(raw: bytes, *, form: str = "S-3", parser_eligibility: str = "eligible") -> dict:
@@ -119,9 +162,6 @@ def _fixture_prior_parser_lane() -> tuple[str, object, object]:
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         entrypoints, dispatch_roots,
     )
-    runtime_manifest, runtime_manifest_sha256, runtime_implementation_sha256 = (
-        document_terms._runtime_dispatch_closure(dispatch_roots)
-    )
     registration = document_terms.ParserRegistration(
         version=_FIXTURE_PRIOR_PARSER_VERSION,
         implementation_sha256=implementation_sha256,
@@ -131,11 +171,6 @@ def _fixture_prior_parser_lane() -> tuple[str, object, object]:
             dispatch_roots=dispatch_roots,
             dependency_count=len(manifest),
             dependency_manifest_sha256=manifest_sha256,
-            runtime_dispatch=document_terms.ParserRuntimeBundle(
-                dependency_count=len(runtime_manifest),
-                dependency_manifest_sha256=runtime_manifest_sha256,
-                implementation_sha256=runtime_implementation_sha256,
-            ),
         ),
     )
     capability = document_terms._PRIVATE_TEST_PARSER_CAPABILITY
@@ -392,7 +427,7 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         "4939a46ef7ca1a9583f869de398692e6a8736fc4566c6a5f3860b95c5f6e6f0d"
     )
     assert implementation_sha256 == (
-        "943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08"
+        "d47515272069bfc3f3f768b84b94a218f7f66e7c746e36a8702efd97c26af645"
     )
     assert len(manifest) == registration.semantic_bundle.dependency_count
     assert manifest_sha256 == registration.semantic_bundle.dependency_manifest_sha256
@@ -402,11 +437,15 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
             registration.semantic_bundle.dispatch_roots,
         )
     )
-    runtime = registration.semantic_bundle.runtime_dispatch
+    runtime = document_terms._validate_released_parser_runtime(
+        registration.semantic_bundle.dispatch_roots,
+    )
     assert len(runtime_manifest) == runtime.dependency_count
     assert runtime_manifest_sha256 == runtime.dependency_manifest_sha256
     assert runtime_implementation_sha256 == runtime.implementation_sha256
     assert any("_markupbase.ParserBase.reset" in node for node in runtime_manifest)
+    assert any("function:html.unescape" in node for node in runtime_manifest)
+    assert any("function:html._replace_charref" in node for node in runtime_manifest)
     for required in (
         "._digest_id", "._parse_time", "._iso", "._unique_spans",
         ".make_stable_span", "._materialize_observation", ".observation_id_for",
@@ -438,9 +477,51 @@ def test_parser_runtime_dispatch_seal_recovers_after_in_process_monkeypatch(monk
     assert registration.version == document_terms.PARSER_VERSION
 
 
+def test_parser_runtime_html_helper_code_seal_recovers_after_mutation(monkeypatch):
+    original_code = document_terms._stdlib_html.unescape.__code__
+
+    def altered_unescape(value):
+        return value
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            document_terms._stdlib_html.unescape,
+            "__code__",
+            altered_unescape.__code__,
+        )
+        with pytest.raises(ValueError, match="runtime dispatch mismatch"):
+            document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+    assert document_terms._stdlib_html.unescape.__code__ is original_code
+    assert (
+        document_terms._registered_parser(document_terms.PARSER_VERSION).version
+        == document_terms.PARSER_VERSION
+    )
+
+
+def test_parser_runtime_html_entity_data_seal_recovers_after_mutation(monkeypatch):
+    original = document_terms._stdlib_html._html5["Aacute"]
+    with monkeypatch.context() as patch:
+        patch.setitem(
+            document_terms._stdlib_html._html5,
+            "Aacute",
+            "forged character reference",
+        )
+        with pytest.raises(ValueError, match="runtime dispatch mismatch"):
+            document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+    assert document_terms._stdlib_html._html5["Aacute"] == original
+    assert (
+        document_terms._registered_parser(document_terms.PARSER_VERSION).version
+        == document_terms.PARSER_VERSION
+    )
+
+
 def test_parser_runtime_dispatch_helper_rebinding_fails_closed(monkeypatch):
     registration = document_terms._PARSER_REGISTRY[document_terms.PARSER_VERSION]
-    runtime = registration.semantic_bundle.runtime_dispatch
+    runtime = document_terms._validate_released_parser_runtime(
+        registration.semantic_bundle.dispatch_roots,
+    )
     monkeypatch.setattr(
         document_terms,
         "_runtime_dispatch_closure",
@@ -454,23 +535,238 @@ def test_parser_runtime_dispatch_helper_rebinding_fails_closed(monkeypatch):
         document_terms._registered_parser(document_terms.PARSER_VERSION)
 
 
+def test_released_runtime_allowlist_is_closed_reviewed_and_current():
+    allowlist = document_terms._PARSER_V1_1_0_RUNTIME_ALLOWLIST
+    assert isinstance(allowlist, type(MappingProxyType({})))
+    assert len(allowlist) == 4
+    assert {
+        fingerprint.version_info[:3]
+        for fingerprint in allowlist
+    } == {
+        (3, 12, 2),
+        (3, 12, 3),
+        (3, 12, 4),
+        (3, 12, 13),
+    }
+    assert all(
+        tuple(path for path, _digest in fingerprint.stdlib_source_sha256)
+        == (
+            "_markupbase.py",
+            "html/__init__.py",
+            "html/entities.py",
+            "html/parser.py",
+            "re/__init__.py",
+        )
+        for fingerprint in allowlist
+    )
+    current = document_terms._parser_runtime_fingerprint()
+    assert current in allowlist
+    registration = document_terms._PARSER_REGISTRY[document_terms.PARSER_VERSION]
+    assert allowlist[current] == document_terms._validate_released_parser_runtime(
+        registration.semantic_bundle.dispatch_roots,
+    )
+    with pytest.raises(TypeError):
+        allowlist[current] = allowlist[current]
+
+
+def test_released_runtime_allowlist_rebinding_cannot_mint_authority(monkeypatch):
+    current = document_terms._parser_runtime_fingerprint()
+    forged = MappingProxyType({
+        current: document_terms.ParserRuntimeBundle(
+            dependency_count=0,
+            dependency_manifest_sha256="0" * 64,
+            implementation_sha256="0" * 64,
+        ),
+    })
+    monkeypatch.setattr(
+        document_terms, "_PARSER_V1_1_0_RUNTIME_ALLOWLIST", forged,
+    )
+    with pytest.raises(ValueError, match="allowlist binding changed"):
+        document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+
+def test_parser_runtime_source_digest_change_fails_closed_and_recovers(monkeypatch):
+    original_code = Path.read_bytes.__code__
+
+    def altered_read_bytes(self):
+        with self.open(mode="rb") as source:
+            payload = source.read()
+        if self.as_posix().endswith("/html/parser.py"):
+            return payload + b"\n# ordinary on-disk source mutation probe\n"
+        return payload
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path.read_bytes, "__code__", altered_read_bytes.__code__)
+        with pytest.raises(ValueError, match="fingerprint is not released"):
+            document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+    assert Path.read_bytes.__code__ is original_code
+    assert (
+        document_terms._registered_parser(document_terms.PARSER_VERSION).version
+        == document_terms.PARSER_VERSION
+    )
+
+
+@pytest.mark.parametrize("interpreter", SUPPORTED_RUNTIME_EXECUTABLES)
+def test_clean_preimport_forged_stdlib_method_imports_but_parser_fails_closed(
+    tmp_path, interpreter,
+):
+    interpreter = _supported_runtime_or_skip(interpreter)
+    export_root = tmp_path / "preimport-spoof-export"
+    _copy_tracked_authority_source(export_root)
+    probe = """
+from html.parser import HTMLParser
+
+original = HTMLParser.feed
+
+def altered_feed(self, data):
+    return original(self, data)
+
+altered_feed.__module__ = "html.parser"
+altered_feed.__name__ = "feed"
+altered_feed.__qualname__ = "HTMLParser.feed"
+HTMLParser.feed = altered_feed
+
+import engine.capital_structure.document_terms as document_terms
+
+try:
+    document_terms._registered_parser(document_terms.PARSER_VERSION)
+except ValueError as exc:
+    if "runtime dispatch mismatch" not in str(exc):
+        raise
+    print("PREIMPORT_STDLIB_SPOOF_PARSER_REJECTED")
+else:
+    raise SystemExit("PREIMPORT_STDLIB_SPOOF_ACCEPTED")
+"""
+    result = subprocess.run(
+        [interpreter, "-B", "-c", probe],
+        cwd=export_root,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": str(export_root),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "PREIMPORT_STDLIB_SPOOF_PARSER_REJECTED"
+    assert "ACCEPTED" not in result.stderr
+    assert not list(export_root.rglob("__pycache__"))
+
+
+@pytest.mark.parametrize("interpreter", SUPPORTED_RUNTIME_EXECUTABLES)
+def test_clean_preimport_forged_html_helper_imports_but_parser_fails_closed(
+    tmp_path, interpreter,
+):
+    interpreter = _supported_runtime_or_skip(interpreter)
+    export_root = tmp_path / "preimport-html-helper-export"
+    _copy_tracked_authority_source(export_root)
+    probe = """
+import html
+
+original = html.unescape
+
+def altered_unescape(value):
+    return original(value)
+
+altered_unescape.__module__ = "html"
+altered_unescape.__name__ = "unescape"
+altered_unescape.__qualname__ = "unescape"
+html.unescape = altered_unescape
+
+import engine.capital_structure.document_terms as document_terms
+
+try:
+    document_terms._registered_parser(document_terms.PARSER_VERSION)
+except ValueError as exc:
+    if not any(
+        message in str(exc)
+        for message in ("semantic node collision", "runtime dispatch mismatch")
+    ):
+        raise
+    print("PREIMPORT_HTML_HELPER_SPOOF_PARSER_REJECTED")
+else:
+    raise SystemExit("PREIMPORT_HTML_HELPER_SPOOF_ACCEPTED")
+"""
+    result = subprocess.run(
+        [interpreter, "-B", "-c", probe],
+        cwd=export_root,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": str(export_root),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "PREIMPORT_HTML_HELPER_SPOOF_PARSER_REJECTED"
+    assert "ACCEPTED" not in result.stderr
+    assert not list(export_root.rglob("__pycache__"))
+
+
+@pytest.mark.parametrize("interpreter", SUPPORTED_RUNTIME_EXECUTABLES)
+def test_clean_unknown_interpreter_imports_router_but_parser_fails_closed(
+    tmp_path, interpreter,
+):
+    interpreter = _supported_runtime_or_skip(interpreter)
+    export_root = tmp_path / "unknown-runtime-export"
+    _copy_tracked_authority_source(export_root)
+    probe = """
+import sys
+import importlib.util
+
+original_cache_tag = sys.implementation.cache_tag
+sys.implementation.cache_tag = "unsupported-cpython-312-audit-probe"
+import engine.capital_structure as capital_structure
+import engine.capital_structure.document_terms as document_terms
+
+if capital_structure.DOCUMENT_TERM_PARSER_VERSION != document_terms.PARSER_VERSION:
+    raise SystemExit("UNKNOWN_RUNTIME_PACKAGE_IMPORT_MISMATCH")
+router_state = "ROUTER_DEPENDENCY_ABSENT"
+if importlib.util.find_spec("fastapi") is not None:
+    from app.capital_structure import router
+    if router is None:
+        raise SystemExit("UNKNOWN_RUNTIME_ROUTER_MISSING")
+    router_state = "ROUTER_OK"
+try:
+    document_terms._registered_parser(document_terms.PARSER_VERSION)
+except ValueError as exc:
+    if "runtime fingerprint is not released" not in str(exc):
+        raise
+    print(f"UNKNOWN_RUNTIME_IMPORT_OK_{router_state}_PARSER_REJECTED")
+else:
+    raise SystemExit("UNKNOWN_RUNTIME_ACCEPTED")
+finally:
+    sys.implementation.cache_tag = original_cache_tag
+"""
+    result = subprocess.run(
+        [interpreter, "-B", "-c", probe],
+        cwd=export_root,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": str(export_root),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() in {
+        "UNKNOWN_RUNTIME_IMPORT_OK_ROUTER_OK_PARSER_REJECTED",
+        "UNKNOWN_RUNTIME_IMPORT_OK_ROUTER_DEPENDENCY_ABSENT_PARSER_REJECTED",
+    }
+    assert "ACCEPTED" not in result.stderr
+    assert not list(export_root.rglob("__pycache__"))
+
+
 def test_cold_tracked_source_export_import_is_repeatable_without_bytecode(tmp_path):
     export_root = tmp_path / "cold-export"
-    export_root.mkdir()
-    tracked = subprocess.check_output(
-        ["git", "ls-files", "-z", "--", "engine", "contracts"],
-        cwd=ROOT,
-    ).split(b"\0")
-    for encoded in tracked:
-        if not encoded:
-            continue
-        relative = Path(os.fsdecode(encoded))
-        source = ROOT / relative
-        if not source.exists():
-            continue
-        destination = export_root / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
+    _copy_tracked_authority_source(export_root)
 
     command = [
         sys.executable,
@@ -498,9 +794,9 @@ def test_cold_tracked_source_export_import_is_repeatable_without_bytecode(tmp_pa
     ]
     assert outputs == [outputs[0]] * 3
     assert outputs[0] == (
-        "263 943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08 "
-        "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039 "
-        "5e2add814e04bc32d88ac1b198023d2301b37085ed690a1e0f53daa22e7f1e6b"
+        "263 d47515272069bfc3f3f768b84b94a218f7f66e7c746e36a8702efd97c26af645 "
+        "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c "
+        "7adefd79136224d8c0ca0c84cd4ef41bd206690f9ec28622cdf95f682c811b28"
     )
     assert not list(export_root.rglob("__pycache__"))
 
@@ -515,7 +811,7 @@ def test_released_authority_policy_has_independent_golden_closure():
         "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
     )
     assert implementation_sha256 == (
-        "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039"
+        "3650894df320e83771b1d9c0de6fd658cde50e2d7533cb958fc835837c32a18c"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -565,12 +861,12 @@ def test_parser_closure_rejects_mutated_inherited_dispatch_and_callbacks(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(owner, method, altered_dispatch)
-    with pytest.raises(ValueError, match="closure mismatch"):
+    with pytest.raises(ValueError, match="(?:closure|runtime dispatch) mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw),
             generated_at="2026-08-03T00:00:00Z",
         )
-    with pytest.raises(ValueError, match="closure mismatch"):
+    with pytest.raises(ValueError, match="(?:closure|runtime dispatch) mismatch"):
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
@@ -587,12 +883,12 @@ def test_parser_closure_rejects_mutated_inherited_class_data(monkeypatch):
         "CDATA_CONTENT_ELEMENTS",
         (*document_terms.HTMLParser.CDATA_CONTENT_ELEMENTS, "audit-unused-element"),
     )
-    with pytest.raises(ValueError, match="closure mismatch"):
+    with pytest.raises(ValueError, match="(?:closure|runtime dispatch) mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw),
             generated_at="2026-08-03T00:00:00Z",
         )
-    with pytest.raises(ValueError, match="closure mismatch"):
+    with pytest.raises(ValueError, match="(?:closure|runtime dispatch) mismatch"):
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
