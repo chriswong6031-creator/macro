@@ -381,6 +381,10 @@ def validate_manifest(payload: object, *, allow_unmaterialized_files: bool = Fal
             raise ContractError("manifest file bytes invalid")
     if item.get("status") not in {"ready", "partial", "empty"}:
         raise ContractError("manifest.status invalid")
+    if item["status"] == "empty" and (item["company_count"] or item["covered_company_count"] or item["position_record_count"]):
+        raise ContractError("empty manifest must have zero counts")
+    if item["status"] != "empty" and item["company_count"] == 0:
+        raise ContractError("nonempty manifest must have companies")
     warnings = item.get("warnings")
     if not isinstance(warnings, list) or warnings != sorted(set(warnings)) or any(w not in _WARNINGS for w in warnings):
         raise ContractError("manifest.warnings invalid")

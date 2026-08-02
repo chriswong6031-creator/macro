@@ -460,7 +460,9 @@ def build_bundle(
         },
         "files": {},
         "status": "empty" if not all_contexts else ("partial" if manifest_warnings else "ready"),
-        "warnings": sorted(manifest_warnings - {"history_coverage_incomplete"}),
+        # The manifest must never claim a clean tree when every per-company
+        # trend correctly declined to assert a direction on incomplete history.
+        "warnings": sorted(manifest_warnings),
     }
     generation_id = derive_generation_id(all_contexts, manifest)
     manifest["generation_id"] = generation_id
