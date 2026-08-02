@@ -358,9 +358,11 @@ def main() -> int:
 
     # SECTOR INTELLIGENCE HANDOFF — the merged page (rendered by build_sector_central, which
     # runs after this in the DAG band) needs the server-side hero/lane context this builder
-    # computes. Written as one small artifact; build_sector_central reads it fail-soft.
+    # computes. Written as one small artifact (si_handoff.json — NOT theme_context.json,
+    # which engine.theme_context owns and the Neural Web theme_rotation lobe reads);
+    # build_sector_central reads it fail-soft.
     try:
-        (fdir / "theme_context.json").write_text(json.dumps({
+        (fdir / "si_handoff.json").write_text(json.dumps({
             "theme_context": _theme_context,
             "factor_season": factor_season,
             "flow": ({"cluster": {"regime": ((flow or {}).get("cluster") or {}).get("regime")}}

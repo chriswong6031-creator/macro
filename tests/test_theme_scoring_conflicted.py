@@ -503,37 +503,25 @@ class TestBasketTemplateParses:
         html = env.get_template("baskets.html.j2").render(basket_member_syms=[])
         assert len(html) > 100
 
-    def test_baskets_has_actnow_footnote_element(self):
-        """The actnow-footnote ELEMENT must exist in baskets.html.j2 markup.
+    def test_merged_page_keeps_live_mlc_split_view(self):
+        """The MLC conflicted-view surface that is actually LIVE on the merged page.
 
-        Pins the element (id="..."), not merely the string appearing somewhere:
-        the #3282 rvx revamp deleted the element while JS kept referencing it, and
-        the old bare-substring assertion stayed green on the dead surface.
+        History (Sector Intelligence consolidation, 2026-08): the old
+        baskets.html.j2 pins here (actnow-footnote element / renderStanceChips call
+        / stance_matrix.json fetch) all pointed INSIDE the V1 "Theme Rotation Desk"
+        fork, whose boot path was never invoked after the rvx revamp — the surface
+        was dead in production and the pins were transitional-state time bombs.
+        baskets.html.j2 is now a redirect stub; the live MLC split-view surface is
+        the conviction-card divergence note (xsr-split + split_copy) rendered on
+        sector_central.html.j2. Reconnecting the stance-matrix fetch to the rvx
+        lanes is a separately-tracked follow-up, not silently asserted here.
         """
-        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert 'id="actnow-footnote"' in src
-
-    def test_baskets_invokes_renderStanceChips(self):
-        """renderStanceChips must be INVOKED, not merely defined (#3282 regression).
-
-        The V1 fork left the function defined with no caller — dead in production.
-        The call statement `renderStanceChips();` only appears at a live call site.
-        """
-        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert "function renderStanceChips" in src
-        assert "renderStanceChips();" in src
-
-    def test_baskets_has_mlcdata_stance_matrix_url(self):
-        """baskets.html.j2 must reference mlcdata/stance_matrix.json for the fetch."""
-        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert "stance_matrix.json" in src
-
-    def test_baskets_v1_actnow_fork_stays_deleted(self):
-        """The dead V1 renderActNow fork must not return; the live rvx act board owns
-        the conflicted display (fold into the wait lane + _conflicted row tag)."""
-        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert "function renderActNow(" not in src
-        assert "_conflicted" in src
+        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
+        assert "xsr-split" in src, "conviction split-view note lost"
+        assert "split_copy_en" in src, "split-view copy wiring lost"
+        # the stub must not silently regrow a stance fetch nobody boots
+        stub = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
+        assert "stance_matrix.json" not in stub
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
