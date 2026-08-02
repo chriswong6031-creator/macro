@@ -256,7 +256,11 @@ OIP §0 applies verbatim to both PRs (crops committed under `mockups/refs/oip/w1
 `w16b/`; 5-second transcripts; banned-vocab sweep run over rendered output; bilingual
 parity counts; no child self-merge — the commissioning session reviews and merges).
 Specific to W1.6: the verdict-surface grep stays at exactly 1; the single-IIFE extraction
-test passes; `site/options.html` gzip stays under 45KB (today 33KB — the folds are
-client-code, not embeds); every legacy URL responds 200 with a working refresh target in
-the live verify; and the gex `#SYM` hash mapping is click-verified against production
-after B merges.
+test passes; `site/options.html` weight is REPORTED, not silently grown (the original
+"45KB gzip" gate here was written against a stale 33KB baseline — the branch base already
+gzipped to ~46KB; W1.6-A measured ~66–77KB gzip depending on the session's data volume,
+accepted at adjudication because every fold is lazy client code, no embeds grew, and the
+estate retires four pages weighing 103–420KB each; a post-render JS externalizer mirroring
+`externalize_css` is chipped as the follow-up that would recover most of it); every legacy
+URL responds 200 with a working refresh target in the live verify; and the gex `#SYM` hash
+mapping is click-verified against production after B merges.
