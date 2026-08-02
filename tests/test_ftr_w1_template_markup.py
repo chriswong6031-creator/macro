@@ -5,7 +5,7 @@ Guards:
 - lever chip reads framing/framing_zh from fetched JSON (d.framing_zh), NOT hardcoded ZH
 - allocation.html.j2 carries the FT-R11 horizon label
 - basket_detail.html.j2 uses relative paths (../live/...) for shock_state / policy_lever
-- baskets.html.j2 full render with basket_member_syms emits data-sym spans
+- sector_central.html.j2 full render with basket_member_syms emits data-sym spans
 
 These are display-tier / de-escalation additions (FT-R2, PS-R3, PS-W2-F, FT-R11).
 """
@@ -33,7 +33,7 @@ def _render_baskets(syms: list[str]) -> str:
     from jinja2 import Environment, FileSystemLoader, Undefined
     env = Environment(loader=FileSystemLoader(str(TMPL_DIR)), autoescape=False,
                       undefined=Undefined)
-    t = env.get_template("baskets.html.j2")
+    t = env.get_template("sector_central.html.j2")
     return t.render(basket_member_syms=syms)
 
 
@@ -41,7 +41,7 @@ def _render_baskets(syms: list[str]) -> str:
 
 class TestFtrTemplatesParse:
     def test_baskets_parses(self):
-        _parse("baskets.html.j2")
+        _parse("sector_central.html.j2")
 
     def test_allocation_parses(self):
         _parse("allocation.html.j2")
@@ -56,19 +56,19 @@ class TestFtrStaticSource:
     """Check static source strings that can't be overridden by Jinja rendering."""
 
     @pytest.mark.parametrize("template", [
-        "baskets.html.j2", "allocation.html.j2", "basket_detail.html.j2",
+        "sector_central.html.j2", "allocation.html.j2", "basket_detail.html.j2",
     ])
     def test_shock_banner_div_present(self, template):
         assert "ftr-shock-banner" in _src(template)
 
     @pytest.mark.parametrize("template", [
-        "baskets.html.j2", "allocation.html.j2", "basket_detail.html.j2",
+        "sector_central.html.j2", "allocation.html.j2", "basket_detail.html.j2",
     ])
     def test_lever_chip_div_present(self, template):
         assert "ftr-lever-chip" in _src(template)
 
     @pytest.mark.parametrize("template", [
-        "baskets.html.j2", "allocation.html.j2", "basket_detail.html.j2",
+        "sector_central.html.j2", "allocation.html.j2", "basket_detail.html.j2",
     ])
     def test_framing_read_from_json_not_hardcoded(self, template):
         """Lever chip must use d.framing_zh from the fetched JSON, not a hardcoded ZH string."""
@@ -117,14 +117,14 @@ class TestFtrStaticSource:
         assert "nb-chg" in src
 
     def test_baskets_member_sym_registry_div(self):
-        """baskets.html.j2 must have the hidden registry div for live-quotes scrape."""
-        assert "ftr-member-sym-registry" in _src("baskets.html.j2")
+        """sector_central.html.j2 must have the hidden registry div for live-quotes scrape."""
+        assert "ftr-member-sym-registry" in _src("sector_central.html.j2")
 
 
-# ── Full-render guard for baskets.html.j2 ─────────────────────────────────
+# ── Full-render guard for sector_central.html.j2 ─────────────────────────────────
 
 class TestFtrBasketsRender:
-    """Full Jinja render of baskets.html.j2 with basket_member_syms context."""
+    """Full Jinja render of sector_central.html.j2 with basket_member_syms context."""
 
     def test_member_sym_spans_emitted(self):
         html = _render_baskets(["AAPL", "NVDA", "MSFT"])

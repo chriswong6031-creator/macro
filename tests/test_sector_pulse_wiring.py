@@ -218,7 +218,7 @@ class TestDashboardConsumerContract:
         assert "sh-heat" in out and "▲" in out
         assert "sh-cool" in out and "▽" in out
         assert "Technology" in out and "科技" in out
-        assert "baskets.html#theme-us_sector_tech" in out
+        assert "basket/us_sector_tech.html" in out
         assert "#3" in out and "#41" in out
 
     def test_strip_suppressed_when_pulse_unavailable(self):
