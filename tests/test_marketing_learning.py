@@ -946,6 +946,13 @@ class TestPerAccountHaltIsolation:
 
         store = tmp_path / "desk"
         m1 = json.loads(json.dumps(cfg))
+        # PACING OFF: this test pins HALT ISOLATION, one axis. Burst pacing is a
+        # second, orthogonal gate that holds every desk outside its session
+        # window — with it on at a fixed NOW the whole fleet is held for a
+        # reason that has nothing to do with kelly's halt, and the test would
+        # pass or fail on what time the fixture happens to name. The
+        # halt-vs-pacing INTERACTION is pinned separately below.
+        m1.setdefault("reply_desk", {}).setdefault("pacing", {})["enabled"] = False
         for acc in self.FLEET:
             m1["reply_desk"]["mode"].setdefault("accounts", {})[acc] = "M1"
             m1.setdefault("reply_desk", {}).setdefault("daily_caps", {}) \
@@ -969,6 +976,39 @@ class TestPerAccountHaltIsolation:
                 continue
             assert ids[acc] in out["exported"], f"{acc} must be unaffected by kelly's halt"
         assert out["halted_accounts"] == ["kelly"]
+
+    def test_a_pacing_hold_is_reported_apart_from_a_spent_daily_cap(self, tmp_path, cfg):
+        """The two holds have OPPOSITE remedies, so they may not share a bucket.
+
+        Outside its burst window an item used to report as `skipped_cap` with
+        `cap: 0`, which reads as "the daily cap is spent — raise it". Raising it
+        releases nothing: the gate is the burst schedule, and it clears itself
+        when the next window opens. The bucket IS the remedy, so it is pinned.
+        """
+        from tests._xgw6_helpers import make_reply_item  # type: ignore
+
+        store = tmp_path / "desk"
+        m1 = json.loads(json.dumps(cfg))
+        m1["reply_desk"]["mode"].setdefault("accounts", {})["sophia"] = "M1"
+        m1.setdefault("reply_desk", {}).setdefault("daily_caps", {}) \
+          .setdefault("accounts", {})["sophia"] = 5
+        # Pacing ON with no burst that can contain NOW: zero planned bursts is
+        # the unambiguous "outside every window" state, and it needs no guess
+        # about which hour the fixture clock lands on.
+        pacing = m1.setdefault("reply_desk", {}).setdefault("pacing", {})
+        pacing["enabled"] = True
+        pacing.setdefault("bursts", {})["per_day"] = 0
+
+        item = make_reply_item(account="sophia", thread="19000000000000900")
+        assert rq.enqueue(item, store)["ok"]
+        assert rq.approve(item["id"], root=store)
+
+        out = rx.export_approved(cfg=m1, root=store, repo_root=tmp_path, now=NOW)
+
+        assert item["id"] in out["skipped_pacing"], (
+            "a burst-window hold must report as pacing, never as a spent daily cap")
+        assert item["id"] not in out["skipped_cap"]
+        assert item["id"] not in out["exported"]
 
     def test_reply_rail_refuses_a_claim_on_a_halted_desk(self, tmp_path, cfg):
         from tests._xgw6_helpers import make_reply_item  # type: ignore

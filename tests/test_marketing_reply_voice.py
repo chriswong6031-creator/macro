@@ -67,7 +67,13 @@ DRAFT = (
 )
 #: A model line that clears every gate for kelly: keeps the fact, one thought,
 #: no advice, no invented figure, inside the char cap.
-VOICED = "Credit is the test, not the tape. IG spreads widened 12.5% while capex guidance held."
+#: WARMED 2026-08-01 (the warmth build): was "Credit is the test, not the tape.
+#: ..." — fifteen content units with no human-register marker, which the
+#: `warmth_register` critic now rejects on an employee desk (W1) and which
+#: `validate_reply_copy` therefore refuses. "the thing that" is the Class B
+#: marker; the fact, the shape and the length are unchanged.
+VOICED = ("Credit is the thing that settles this, not the tape. "
+          "IG spreads widened 12.5% while capex guidance held.")
 WHITELIST = ["12.5%"]
 
 FACTS = {
@@ -76,6 +82,41 @@ FACTS = {
 }
 TARGET = {"subject": "capex", "mechanism": "credit",
           "text": PARENT, "author": "somequant"}
+
+#: The DETERMINISTIC draft the drafter now produces for this (account, family,
+#: parent) — the plain DRAFT above with Kelly's warmth opener fused onto it.
+#:
+#: COMPUTED, NOT TRANSCRIBED, and that is the point of the constant: these
+#: tests assert "the deterministic draft is what ships when the model path does
+#: not", and pinning the pre-warmth string turned that into "the deterministic
+#: draft is the one the warmth build replaced". Composing it here keeps the
+#: assertion about the FALLBACK CONTRACT and lets the register evolve; the
+#: warmth register itself is pinned by tests/test_marketing_reply_warmth.py.
+#:
+#: THE ``thread_id`` IS LOAD-BEARING (added 2026-08-01, the tail build). The
+#: doorway is now drawn from a per-desk pool by a stable hash of (account,
+#: family, thread), so a fixture that reconstructs the drafter's ctx WITHOUT the
+#: parent id composes a different closing sentence from the one `draft_reply`
+#: ships and every fallback-contract test below fails on a sentence neither the
+#: drafter nor the model got wrong. The chain mirrors `draft_reply`'s exactly:
+#: thread root, then this post's id, then the URL, then the author.
+def _warmed(family: str = "missing_variable") -> str:
+    move = rdr._select_warmth(
+        "kelly", family=family, parent_shape=rdr.classify_parent(TARGET),
+        root=None, recent_warmth=None, has_detail=True,
+        parent_author=str(TARGET["author"]),
+    )
+    return rdr.compose(family, GIFT, {
+        "subject": TARGET["subject"], "mechanism": TARGET["mechanism"],
+        "account": "kelly", "detail": rdr.extract_detail(PARENT),
+        "thread_id": str(TARGET.get("thread_root_id")
+                         or TARGET.get("status_id")
+                         or TARGET.get("url")
+                         or TARGET.get("author") or ""),
+    }, warmth=move)
+
+
+WARMED_DRAFT = _warmed()
 
 #: The voice cfg block, injected directly so no test depends on the shipped
 #: `enabled:` value in config/marketing.yml.
@@ -245,11 +286,28 @@ class TestGates:
         # because the second is what would have judged this text downstream.
         assert any(h.startswith("fact_discipline:") for h in hits)
 
-    def test_a_number_from_the_parent_post_is_not_admissible(self):
-        """The parent's figures are numbers OUR engine did not compute."""
-        hits = _gates("Spreads at 4.75 are the tell here.",
+    def test_a_figure_the_parent_carries_verbatim_is_admissible(self):
+        """THE LAW CHANGED HERE, and this test is the record of it.
+
+        It previously read "the parent's figures are numbers OUR engine did not
+        compute" and asserted a rejection. XG-W4b §D.1 overturns that for the
+        verbatim case, adjudicated in §H.2: reacting to the poster's own number
+        ("The 18% inventory increase is the part that worries me") is the single
+        specific-reaction shape the operator's brief is built around, and it was
+        unshippable while this gate and `fact_discipline` both refused it. We
+        are QUOTING them, not asserting a figure, and verbatim presence in the
+        parent is checkable by anyone reading the thread.
+
+        The whitelist stays authoritative for everything the parent does NOT
+        contain, which is the second assertion — a gate that licensed any figure
+        near a parent post would be worse than the blocker it removed.
+        """
+        assert _gates("Spreads at 4.75 are the tell here.",
+                      parent_text="Spreads at 4.75 and climbing.") == []
+        hits = _gates("Spreads at 4.85 are the tell here.",
                       parent_text="Spreads at 4.75 and climbing.")
-        assert any("4.75" in h for h in hits)
+        assert any("4.85" in h for h in hits)
+        assert any(h.startswith("fact_discipline:") for h in hits)
 
     def test_call_language_is_rejected(self):
         assert any("call_language" in h for h in _gates("Credit is the test. I'd add here."))
@@ -435,11 +493,24 @@ class TestArming:
 # 6. The drafter hook
 # ===========================================================================
 class TestDrafterHook:
+    """The E4 phrasing hook, pinned against the FULL shape.
+
+    EVERY `draft_reply` CALL BELOW PASSES `shape="full"` (added 2026-08-02, the
+    shape build) and that is a scope pin, not a workaround. These tests assert a
+    LITERAL deterministic draft — `WARMED_DRAFT` — in order to prove that the
+    voice pass changed nothing, and the literal is a `full`-shape composition.
+    XG-W4b makes the shape a drawn axis, so leaving it unpinned would have this
+    suite asserting a fixed string against whichever of five shapes the sampler
+    rolled: the test would fail on a shape change rather than on a voice defect,
+    which is the opposite of what it is for. What the voice hook does to the
+    OTHER shapes is `reply_voice`'s own lane (§F.7) and is pinned there.
+    """
+
     def test_the_deterministic_path_is_untouched_when_disarmed(self, monkeypatch, cfg):
         monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
         out = rdr.draft_reply(account="kelly", target=TARGET, facts=FACTS,
-                              family="missing_variable", cfg=cfg)
-        assert out["draft"] == DRAFT
+                              family="missing_variable", shape="full", cfg=cfg)
+        assert out["draft"] == WARMED_DRAFT
         assert out["voice"]["mode"] == "off"
         assert out["components"]["voice_mode"] == "off"
 
@@ -447,7 +518,8 @@ class TestDrafterHook:
         _arm(monkeypatch)
         monkeypatch.setattr(llm_auth, "make_call", _returns(VOICED))
         out = rdr.draft_reply(account="kelly", target=TARGET, facts=FACTS,
-                              family="missing_variable", cfg=cfg, n_alts=2)
+                              family="missing_variable", shape="full", cfg=cfg,
+                              n_alts=2)
         assert out["draft"] == VOICED
         assert out["voice"]["mode"] == "llm"
         # Alternates are NOT voiced: they exist to differ in reasoning MOVE, and
@@ -460,8 +532,8 @@ class TestDrafterHook:
         monkeypatch.setattr(llm_auth, "make_call",
                             _returns("Buy the widening. Spreads at 13.5% now."))
         out = rdr.draft_reply(account="kelly", target=TARGET, facts=FACTS,
-                              family="missing_variable", cfg=cfg)
-        assert out["draft"] == DRAFT
+                              family="missing_variable", shape="full", cfg=cfg)
+        assert out["draft"] == WARMED_DRAFT
         assert out["voice"]["mode"] == "fallback_validation"
         assert out["voice"]["violations"]
 
@@ -470,8 +542,8 @@ class TestDrafterHook:
         monkeypatch.setattr(rv, "voice_or_fallback",
                             lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
         out = rdr.draft_reply(account="kelly", target=TARGET, facts=FACTS,
-                              family="missing_variable", cfg=cfg)
-        assert out["draft"] == DRAFT and out["voice"]["mode"] == "off"
+                              family="missing_variable", shape="full", cfg=cfg)
+        assert out["draft"] == WARMED_DRAFT and out["voice"]["mode"] == "off"
 
     def test_dial_findings_describe_the_text_that_ships(self, monkeypatch, cfg):
         """Grading the pre-voice text would report on copy nobody sees."""
@@ -479,10 +551,10 @@ class TestDrafterHook:
         monkeypatch.setattr(llm_auth, "make_call",
                             _returns("Credit is the test \U0001F58B️"))
         out = rdr.draft_reply(account="kelly", target=TARGET, facts=FACTS,
-                              family="missing_variable", cfg=cfg)
+                              family="missing_variable", shape="full", cfg=cfg)
         # The borrowed-quirk line never reaches the draft (the gates catch it),
         # so the shipping text is the deterministic one and grades clean.
-        assert out["draft"] == DRAFT
+        assert out["draft"] == WARMED_DRAFT
         assert out["dial_violations"] == []
 
 
@@ -551,7 +623,10 @@ class TestReplyValueCritic:
         assert rc.reply_value(DRAFT, {"family": "missing_variable"})["verdict"] == "pass"
 
     def test_the_critic_is_wired_into_the_pass(self, cfg):
-        verdict = rc.run_critics(DRAFT, {
+        # WARMED_DRAFT, not DRAFT: the plain composition is now a cold printout
+        # and `warmth_register` rejects it, which would make this test about the
+        # wrong critic. The deterministic drafter ships the warmed form.
+        verdict = rc.run_critics(WARMED_DRAFT, {
             "account": "kelly", "parent_text": PARENT, "numbers_whitelist": WHITELIST,
             "corpus": [], "theses": [], "cfg": cfg, "family": "missing_variable",
         })
@@ -583,10 +658,14 @@ class TestRosterCompleteness:
     def test_the_new_critic_is_in_the_register(self):
         assert "reply_value" in rc.CRITICS
         assert "reply_value" in rc._CRITIC_FUNCS
-        assert len(rc.CRITICS) == 9
+        # 9 at E4; the warmth build (2026-08-01) added `warmth_register` (the
+        # anti-cold law) and `fabrication` (AM-R1 on every account, including
+        # the codex-less flagship the dial could never reach); XG-W4b
+        # (2026-08-02) added `reply_elements` and `register_discipline`.
+        assert len(rc.CRITICS) == 13
 
     def test_a_full_stamp_still_enqueues(self, tmp_path, cfg):
-        verdict, stamp = rc.screen(DRAFT, {
+        verdict, stamp = rc.screen(WARMED_DRAFT, {
             "account": "kelly", "parent_text": PARENT, "numbers_whitelist": WHITELIST,
             "corpus": [], "theses": [], "cfg": cfg, "family": "missing_variable",
         })

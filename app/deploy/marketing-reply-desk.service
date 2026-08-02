@@ -1,0 +1,69 @@
+[Unit]
+# XG-W7 REPLY DESK PRODUCER — the lane that fills the reply queue.
+#
+# WHY THIS IS A SEPARATE UNIT and not `--lane all` on marketing-press-feeds:
+#   * ONE CADENCE CANNOT SERVE BOTH. The wire unit runs `--interval 75` to stay
+#     inside the Truth-mirror hot-poll window. The reply desk's charter window is
+#     5-15 minutes and its quality bar is 15-20 replies a DAY; ticking it every
+#     75 s would poll twitterapi.io ~1,150 times a day per desk against a $15
+#     sub-budget, for opportunities that do not refresh that fast.
+#   * INDEPENDENT FAILURE. `Restart=on-failure` on one process means a reply-lane
+#     crash restarts the Trump wire, and vice versa. The wire is the one lane
+#     that must not flap.
+#   * INDEPENDENT ARMING AND KILL. `systemctl stop marketing-reply-desk` leaves
+#     the wire running. With `--lane all` the only stop is stopping both.
+#
+# NOTHING SENDS. This unit fills the M0 queue: drafts appear in the admin rail
+# and not one byte reaches the desktop lane until an operator flips an account to
+# M1 (docs/reply_desk_runbook.md §4). The unit does not touch the dial.
+#
+# DARK BY DEFAULT, on FOUR independent switches — see
+# `docs/reply_desk_runbook.md` §9 for the ordered arming walk, and run
+#   /opt/macro/.venv/bin/python -m scripts.marketing_fastlane_daemon \
+#       --lane reply --preflight
+# first: it reports all four in one readout and exits 1 while any blocks.
+#   1. MARKETING_FASTLANE_ENABLED=1 in /etc/macro-live.env (shared with the wire)
+#   2. this unit enabled+started
+#   3. reply_desk.producer.enabled: true in config/marketing.yml
+#   4. TWITTERAPI_IO_KEY in /etc/macro-live.env
+Description=Mastermind reply-desk producer (discovery -> score -> draft -> critics -> M0 queue)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/macro
+# Kill-switches + TWITTERAPI_IO_KEY live in this env file (unset ships dark).
+EnvironmentFile=-/etc/macro-live.env
+# Attached Codex subscription, same idiom as macro-api.service and the wire unit.
+# The reply lane's LLM PHRASING pass (engine/marketing/reply_voice.py) resolves a
+# provider through this login; without it the pass degrades to the deterministic
+# template on every reply and announces itself with
+# `::warning title=reply_voice_mute::` — armed-but-mute, the failure class that
+# shipped dark for months in a sibling lane (2026-07-26). macro-api.service owns
+# the StateDirectory= that creates /var/lib/macro-codex; this unit only reads it.
+Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_PROVIDER_ENABLED=1
+# NO --interval: the reply lane reads reply_desk.producer.tick_interval_s from
+# config/marketing.yml (300 s). Deliberate — retuning the cadence must be a
+# config PR that CI sees, not a hand-edit to a unit file on one host.
+ExecStart=/opt/macro/.venv/bin/python -m scripts.marketing_fastlane_daemon --lane reply
+Restart=on-failure
+RestartSec=30
+# Lighter than the wire on every axis: this lane makes a handful of HTTP reads
+# and some string work per tick, and it must never contend with the wire or with
+# the live-data timers on the same box.
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=512M
+MemoryMax=768M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+# The queue, the claims, the receipts and the producer heartbeat live under
+# $HOME/.mastermind/reply_desk (or MASTERMIND_REPLY_DESK_DIR). ProtectHome would
+# make the whole desk unwritable, so it is deliberately NOT set here.
+
+[Install]
+WantedBy=multi-user.target

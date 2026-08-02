@@ -2205,6 +2205,67 @@ reply_desk:
     per_account_target: 18
     accounts: {}          # per-account overrides, e.g. cici: 12
 
+  # ── Pacing: bursts, not a drip (operator 2026-08-01) ──────────────────────
+  # The daily cap says HOW MANY. This says WHEN, and the two are independent —
+  # the effective allowance at any moment is the smaller of the two.
+  #
+  # A real desk works in 2-4 bursts of 15-25 minutes clustered on the session
+  # hours it cares about, with counts that vary and some bursts skipped. Eighteen
+  # replies spread evenly over 24 hours satisfies the daily cap perfectly and is
+  # the single most legible bot signature there is.
+  #
+  # The schedule is a pure function of (seed, account, day): reproducible hours
+  # later from a different process, different every day, and different per
+  # account on the same day. Change `seed` to reshuffle every account's whole
+  # schedule; that is the only knob that does that, and it invalidates any plan
+  # an operator has already printed.
+  #
+  # WHAT THIS DOES NOT DO: it does not guarantee two desks are never awake in
+  # the same minute. Plans are drawn per account, independently, so two US desks
+  # overlap for part of a burst on roughly 1 pair-day in 6 (measured over 90
+  # simulated days across the four US desks). The one-owner lock still makes a
+  # same-thread collision impossible, and the runbook's "work one account at a
+  # time" protocol is still the human-side rule. Cici does not overlap the US
+  # desks at all, because her sessions are on a different clock.
+  #
+  # FOUR windows, not three: one burst per session, so a three-window map would
+  # make `bursts_per_day.max: 4` unreachable and silently turn the operator's
+  # 2-4 into a 2-3.
+  #
+  # `enabled: true` here is load-bearing. reply_queue.PACING_DEFAULTS ships
+  # `enabled: False` so that an ad-hoc cfg dict in a script is never silently
+  # burst-gated by a rule it does not declare; this key is what turns the rule
+  # on for the real desk, and tests/test_marketing_reply_pacing.py fails if it
+  # is removed or flipped.
+  pacing:
+    enabled: true
+    seed: "reply-desk-v1"
+    bursts_per_day: {min: 2, max: 4}
+    burst_minutes: {min: 15, max: 25}
+    items_per_burst: {min: 2, max: 5}
+    skip_probability: 0.18      # a skipped burst is a feature; so is a quiet day
+    per_account_weekly: 70      # rolling 7 days, NOT a calendar week
+    min_minutes_between_same_author: 360
+    max_per_conversation: 2     # entries into one conversation, ever
+    tz: America/New_York        # local clock, so the windows survive DST
+    sessions:
+      pre_open:   {start: "08:05", end: "09:25"}
+      open:       {start: "09:40", end: "10:45"}
+      midday:     {start: "11:40", end: "13:20"}
+      post_close: {start: "16:10", end: "17:40"}
+    accounts:
+      # Cici runs Asia hours. Her sessions REPLACE the fleet map rather than
+      # merging with it — a merge would leave her awake for the New York close,
+      # which is the "replying at 3am in its own time zone" tell the runbook
+      # tells a human to avoid. HK cash hours: 09:30-12:00, 13:00-16:00 local.
+      cici:
+        tz: Asia/Hong_Kong
+        sessions:
+          pre_open:   {start: "08:45", end: "09:25"}
+          open:       {start: "09:40", end: "10:40"}
+          midday:     {start: "13:05", end: "14:30"}
+          post_close: {start: "16:15", end: "17:40"}
+
   # ── Queue lifecycle ───────────────────────────────────────────────────────
   # A stale reply is dead, not a backlog: past ttl_min the queue auto-kills the
   # draft rather than presenting a late reply for approval. lease_s is how long
@@ -2245,6 +2306,46 @@ reply_desk:
   critic_thresholds:
     parent_jaccard: 0.55
     corpus_jaccard: 0.50
+
+  # ── Response-type mixture (XG-W4b §B.3) ───────────────────────────────────
+  # The operator's brief: "do NOT make every reply an analytical mini-essay",
+  # with an approximate target of 30% short reactions / 25% analytical additions
+  # / 15% agreement-with-nuance / 15% disagreement / 10% genuine questions / 5%
+  # humor — and "percentages SHOULD VARY BY PERSONA", because an INTJ-shaped
+  # account challenges assumptions more and an ENFP-shaped one reacts more.
+  #
+  # THESE ARE OVERRIDES, NOT THE SOURCE OF TRUTH. The rows live in code
+  # (engine/marketing/persona_model.DEFAULT_RESPONSE_MIX) so that a missing or
+  # truncated config can never silently disarm the mix — the same posture as
+  # reply_queue.PACING_DEFAULTS. What is written here is the committed copy of
+  # those rows, so an operator can see and retune them in one place; a partial
+  # override (e.g. `cici: {humor: 0.08}`) LAYERS onto the code row rather than
+  # replacing it, so tuning one bucket never silently zeroes the other five.
+  #
+  # EVERY WEIGHT IS A DESIGNED PRIOR WITH NO OUTCOME EVIDENCE BEHIND IT
+  # (charter §8). Each row is derived from that desk's own pinned codex —
+  # kelly's terse fragments and "what would prove this wrong" give her the
+  # highest short and disagreement shares; sophia's is the only codex that
+  # licenses length, so she carries the highest analytical share and the lowest
+  # short one; cici's "polite corrections" express disagreement AS agreement, so
+  # her agreement share is highest and her raw disagreement lowest; meagan opens
+  # on a human reaction, so hers is the highest short and humor share. The
+  # four-employee MEAN lands on the operator's distribution to within a point
+  # and a half on every bucket while no two desks share a row. Nothing here has
+  # been graded against engagement yet, and the reply label loop is what will
+  # grade it.
+  #
+  # flagship/founder carry humor 0.00 because the `dry_understatement` family
+  # sits above their reply dial. That is a real zero, not a placeholder, and the
+  # normaliser is built to survive a zero-weight bucket.
+  response_mix:
+    accounts:
+      kelly:    {short_reaction: 0.34, analytical_addition: 0.24, agreement_nuance: 0.10, disagreement: 0.18, question: 0.08, humor: 0.06}
+      sophia:   {short_reaction: 0.22, analytical_addition: 0.34, agreement_nuance: 0.18, disagreement: 0.14, question: 0.06, humor: 0.06}
+      cici:     {short_reaction: 0.28, analytical_addition: 0.28, agreement_nuance: 0.20, disagreement: 0.12, question: 0.08, humor: 0.04}
+      meagan:   {short_reaction: 0.36, analytical_addition: 0.20, agreement_nuance: 0.16, disagreement: 0.10, question: 0.10, humor: 0.08}
+      flagship: {short_reaction: 0.30, analytical_addition: 0.45, agreement_nuance: 0.05, disagreement: 0.12, question: 0.08, humor: 0.00}
+      founder:  {short_reaction: 0.34, analytical_addition: 0.34, agreement_nuance: 0.10, disagreement: 0.12, question: 0.10, humor: 0.00}
 
   # ── Reply voice (E4) — the LLM PHRASING pass, not a drafter ───────────────
   # research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md, distilled from the
@@ -2322,6 +2423,19 @@ reply_desk:
     # Alternates per draft. The drafter composes them from DIFFERENT families
     # (constitution §9.4: three paraphrases of one thought is the failure mode).
     n_alts: 2
+    # Seconds between reply-lane ticks, read by scripts/marketing_fastlane_daemon
+    # when it runs `--lane reply` with no explicit --interval. The wire lane's
+    # 75 s hot-poll window is wrong here: the reply charter window is 5-15 minutes
+    # and the quality bar is 15-20 replies a DAY. Living in config rather than in
+    # app/deploy/marketing-reply-desk.service means retuning the cadence is a PR
+    # CI can see, not a hand-edit to a unit file on one host.
+    tick_interval_s: 300
+    # How many consecutive ticks may enqueue NOTHING before the lane announces
+    # itself with a start-of-line `::warning title=reply-desk-silent::` naming the
+    # FIRST stage that zeroed. 12 ticks at 300 s is one hour. A quiet desk is
+    # legal (Law 1: value before activity); an hour of silence with no diagnosis
+    # is how four independent dark switches stayed indistinguishable for months.
+    silent_tick_warn_after: 12
     # Outcome polling — the reply half of the labels loop, run by the nightly
     # (scripts/marketing_learning_nightly.py step 0). Charter §3: author
     # reply-back is the highest-value outcome, so that is what gets read. Bills

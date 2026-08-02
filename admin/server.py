@@ -713,6 +713,14 @@ class Handler(BaseHTTPRequestHandler):
             # these never travel the outbox rail.
             if path == "/api/marketing/reply-queue":
                 return self._json(marketing.reply_queue())
+            # THE REPLY DECK — the surface the operator decides on. Same store,
+            # richer payload: the parent post beside our draft, the score's own
+            # features as the sentences they encode, the burst plan from each
+            # persona's territory clock, per-item export/receipt state, and an
+            # honest dark list naming which of the five arming keys are off.
+            # Read-only; approving still goes through the decide route below.
+            if path == "/api/marketing/reply-deck":
+                return self._json(marketing.reply_deck())
             # XG-W6 learning loop: the weekly hook x format x register x account
             # scorecard plus the learned-rule version log that ships beside it.
             # Operator console only — nothing here is user-facing.
@@ -1120,6 +1128,36 @@ class Handler(BaseHTTPRequestHandler):
                 if not item_id or not isinstance(item_id, str):
                     return self._json({"ok": False, "error": "id required"}, 400)
                 res = marketing.reject_reply(item_id, reason=reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # REPLY DECK EDIT — dry-run half. Runs the REAL critic roster
+            # over proposed text and writes nothing, so the sheet can show every
+            # objection verbatim before the operator commits. The save route
+            # below re-runs all of them: this endpoint is a courtesy, never the
+            # gate.
+            if path == "/api/marketing/reply-deck/validate":
+                item_id = b.get("id") or b.get("item_id")
+                text = b.get("text")
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                if not isinstance(text, str):
+                    return self._json({"ok": False, "error": "text must be a string"}, 400)
+                res = marketing.validate_reply_text(item_id, text)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # REPLY DECK EDIT — the write. A SUPERSESSION, not an overwrite: the
+            # item id hashes the draft text, so the original is retired and a
+            # re-screened replacement is enqueued and approved in one operation.
+            # Nothing is sent — at M1 the export tick still hands it to the
+            # desktop session, and at M0 it parks.
+            if path == "/api/marketing/reply-deck/edit":
+                item_id = b.get("id") or b.get("item_id")
+                text = b.get("text")
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                if not isinstance(text, str):
+                    return self._json({"ok": False, "error": "text must be a string"}, 400)
+                res = marketing.edit_reply(item_id, text)
                 return self._json(res, 200 if res.get("ok") else 400)
 
             # XG-W6 — clear ONE halted account. The health monitor cannot clear

@@ -35,9 +35,16 @@ from engine.marketing import sentinel  # noqa: E402
 NOW = datetime(2026, 7, 28, 15, 0, tzinfo=timezone.utc)
 THREAD = "1900000000000000001"
 PARENT = "Hyperscaler capex keeps climbing but credit spreads are widening."
+#: WARMED 2026-08-01 (the warmth build). The previous text was the same fact
+#: with the closing line "Credit is the test." — twenty content units on an
+#: employee desk with no human-register marker anywhere in it, which is exactly
+#: the instrument-readout shape the `warmth_register` critic now rejects (W1).
+#: The fixture was updated rather than the bar: a long cold reply from Kelly is
+#: no longer a clean draft, and a "clean draft" fixture that the shipped gate
+#: rejects would be testing the old law.
 CLEAN_DRAFT = (
     "IG spreads widened 12.5% this week while capex guidance held.\n\n"
-    "The price move is the reaction. Credit is the test."
+    "The price move is the reaction. Credit is the thing that settles it."
 )
 
 
@@ -56,9 +63,18 @@ def press_cfg() -> dict:
 
 @pytest.fixture()
 def m1_cfg(cfg: dict) -> dict:
-    """A config with kelly dialled to M1 (approved items export)."""
+    """A config with kelly dialled to M1 (approved items export).
+
+    Burst pacing is switched OFF here on purpose. Every test taking this fixture
+    is about the mode dial, the daily cap, or mirror lifecycle — one subject
+    each. Leaving pacing on would make all of them additionally depend on
+    whether the module's fixed ``NOW`` happens to fall inside a burst window,
+    which is a second unrelated reason to go red and would hide the first.
+    Pacing has its own suite: tests/test_marketing_reply_pacing.py.
+    """
     out = json.loads(json.dumps(cfg))
     out["reply_desk"]["mode"]["accounts"]["kelly"] = "M1"
+    out["reply_desk"].setdefault("pacing", {})["enabled"] = False
     return out
 
 
@@ -127,11 +143,38 @@ class TestAuthorRegister:
         }
         assert live <= set(reg["accounts"]), "every live desk needs a register block"
 
-    def test_seed_entries_are_parked_for_operator_curation(self):
-        """The handle list is the operator's call, not a builder's invention."""
+    def test_the_register_is_operator_ratified_not_builder_invented(self):
+        """The handle list is the operator's call, not a builder's invention.
+
+        This pinned "every account is empty" while the register was parked. The
+        operator has since ratified 21 handles (config/reply_targets.yml), so the
+        empty form would now fail on the ratified data — but simply deleting it
+        would drop the invariant it was written to hold. The invariant is not
+        "empty", it is "nothing here was invented by a builder": the founder desk
+        still curates its own conversations and must stay empty, and every handle
+        that IS present has to come from the committed, operator-ratified config
+        rather than being synthesised at load time.
+
+        Per-entry shape, placeholder handles, and the exact ratified set are
+        covered in depth by tests/test_marketing_reply_targets.py.
+        """
         reg = rd.load_register(ROOT)
+        assert rd.register_for_account(reg, "founder") == [], (
+            "founder curates its own conversations (charter §1) — it must stay "
+            "parked even after ratification")
+
+        import yaml
+        committed = yaml.safe_load(
+            (ROOT / "config" / "reply_targets.yml").read_text(encoding="utf-8"))
         for account in reg["accounts"]:
-            assert rd.register_for_account(reg, account) == []
+            loaded = {e["handle"] for e in rd.register_for_account(reg, account)}
+            on_disk = {
+                e["handle"]
+                for e in ((committed.get("accounts") or {}).get(account) or {}).get("authors") or []
+            }
+            assert loaded <= on_disk, (
+                f"{account}: register_for_account returned handles that are NOT in "
+                f"the committed config — invented at load time: {sorted(loaded - on_disk)}")
 
     def test_bad_tier_rejects(self):
         errs = rd.validate_register(
@@ -726,7 +769,15 @@ FACTS = {
 
 class TestReplyDrafter:
     def test_register_matches_the_constitution_family_count(self):
-        assert len(rdr.FAMILIES) == 14, "constitution §9.4 lists 14 reply families"
+        # 14 at XG-W4 (constitution §9.4). XG-W4b adds the FIFTEENTH,
+        # `dry_understatement`, and it is a doctrine amendment plus a test rather
+        # than a dictionary edit (doctrine §13.4, the standard §11.9 sets for a
+        # ninth warmth move): the operator's response mix puts 5% on humor, dry
+        # wit is the single largest WINNING category in the top-60 corpus at
+        # 28.3%, and no existing family's MOVE produces it — a humor quota routed
+        # to `human_reaction` is a plain reaction with a comedy label on it.
+        assert len(rdr.FAMILIES) == 15, "constitution §9.4 + XG-W4b §B.2"
+        assert "dry_understatement" in rdr.FAMILIES
         for spec in rdr.FAMILIES.values():
             assert spec["move"] and spec["trigger"]
 
@@ -749,11 +800,33 @@ class TestReplyDrafter:
         assert rdr.rotate_family(fams[:-1], allowed=[fams[0], fams[1]]) == fams[0]
 
     def test_gift_grip_doorway_present(self, cfg):
+        """One gift, one grip, one doorway (constitution §9.3).
+
+        REWRITTEN 2026-08-01 (the tail build). This used to assert the literal
+        words "reaction" and "test", which were the two halves of the ONE welded
+        doorway sentence `missing_variable` closed on for every desk and every
+        thread. Asserting a specific sentence is asserting the defect: the law is
+        that a doorway is present and comes from THIS desk's pool for THIS
+        family, not that it is any particular line.
+
+        SCOPED TO `shape="full"` 2026-08-02 (the shape build). The gift-grip-
+        doorway formula is the law for the FULL shape and for nothing else: the
+        four short shapes suppress the doorway on purpose (a one-line reaction
+        that ends on an invitation is not a one-line reaction), and
+        `reply_shape.REPLY_SHAPES[*]["doorway"]` is where that is declared. Left
+        unpinned this test asserted §9.3 against whichever shape the sampler
+        happened to draw, which is a test of a coin flip. The short shapes'
+        no-doorway law is pinned in `tests/test_marketing_reply_shape.py`.
+        """
         out = rdr.draft_reply(account="kelly", target={"subject": "capex", "mechanism": "credit"},
-                              facts=FACTS, family="missing_variable", cfg=cfg)
+                              facts=FACTS, family="missing_variable", shape="full",
+                              cfg=cfg)
+        assert out["shape"] == "full"
         assert "12.5%" in out["draft"]            # gift, from own-feed facts
-        assert "reaction" in out["draft"]          # grip
-        assert "test" in out["draft"]              # doorway
+        assert out["tail"] in rdr.tails_for("kelly", "missing_variable")
+        doorway = rdr.render_tail(out["tail"], {"subject": "capex",
+                                                "mechanism": "credit"})
+        assert doorway and doorway in out["draft"]
 
     def test_abstains_with_no_own_feed_fact(self, cfg):
         out = rdr.draft_reply(account="kelly", target={}, facts={"facts": []}, cfg=cfg)
@@ -898,9 +971,22 @@ class TestCriticsCleanDraft:
         assert {c["critic"] for c in verdict["critics"]} == set(rc.CRITICS)
 
     def test_every_drafted_family_clears_every_critic(self, cfg, critic_ctx):
-        """The generator and the gate must agree, or the desk drafts nothing."""
-        out = rdr.draft_reply(account="kelly", target={"subject": "capex", "mechanism": "credit"},
-                              facts=FACTS, cfg=cfg, n_alts=13)
+        """The generator and the gate must agree, or the desk drafts nothing.
+
+        THE TARGET CARRIES ITS PARENT TEXT, which it did not before the warmth
+        build and which every production target always does. The warmth register
+        is SHAPE-CONDITIONED: with no parent text there is no parent shape, so
+        no warmth move is admissible, so every family composes the plain
+        template — and a plain template over twelve content units on an employee
+        desk is precisely what `warmth_register` now rejects. Drafting against a
+        textless target was testing a state the discovery lane cannot produce.
+        """
+        out = rdr.draft_reply(
+            account="kelly",
+            target={"subject": "capex", "mechanism": "credit",
+                    "text": PARENT, "author": "somequant"},
+            facts=FACTS, cfg=cfg, n_alts=13)
+        assert out["warmth"], "an employee desk on a classifiable parent must be warmed"
         for text in [out["draft"], *out["alt_drafts"]]:
             verdict = rc.run_critics(text, critic_ctx)
             assert verdict["verdict"] == "pass", (text, verdict["reasons"])
@@ -1032,7 +1118,8 @@ class TestCriticMutations:
         # from the register would keep the test green.
         "informational_surplus", "corpus_near_dup", "blocklist",
         "position_consistency", "persona_label", "reply_value",
-        "fact_discipline", "vocab", "dignity",
+        "fact_discipline", "vocab", "warmth_register", "reply_elements",
+        "register_discipline", "fabrication", "dignity",
     ])
     def test_every_critic_is_wired_into_the_pass(self, critic, critic_ctx):
         verdict = rc.run_critics(CLEAN_DRAFT, critic_ctx)
@@ -1040,8 +1127,12 @@ class TestCriticMutations:
         assert critic in rc.CRITICS and critic in rc._CRITIC_FUNCS
 
     def test_the_critic_register_has_not_silently_shrunk(self):
-        # 8 at XG-W4; `reply_value` (E4 reply doctrine) is the ninth.
-        assert len(rc.CRITICS) == 9
+        # 8 at XG-W4; `reply_value` (E4 reply doctrine) is the ninth; the
+        # warmth build (2026-08-01) added `warmth_register` and `fabrication`;
+        # XG-W4b (2026-08-02) added `reply_elements` (the positive two-of-five
+        # floor) and `register_discipline` (the hedging / I-think / anti-polish
+        # laws).
+        assert len(rc.CRITICS) == 13
         assert set(rc.CRITICS) == set(rc._CRITIC_FUNCS)
 
     def test_a_crashing_critic_rejects_rather_than_passes(self, monkeypatch, critic_ctx):
@@ -1202,6 +1293,16 @@ class TestCriticStampIsStructural:
         The bar is unchanged in substance — a second, un-reviewed path into the
         queue is still a defect, and the store-side critic stamp is still what
         makes the safety claim true regardless of who fills the store.
+
+        TWO ways in, as of the reply deck (2026-08-01). `admin/marketing.py`
+        joined the list when the operator got an EDIT button: `_item_id` hashes
+        the draft text, so rewriting a draft is a supersession — retire the
+        original, enqueue a re-screened replacement — and there is no way to
+        express that without a second enqueue call. It is admitted here and
+        NOT waved through: the loop below additionally requires every enqueuing
+        module to import `reply_critics`, so a second entrance cannot be one
+        that skips the pass. The store-side stamp check remains the real gate;
+        this is the census that keeps the list of entrances short and reviewed.
         """
         import ast
 
@@ -1237,9 +1338,17 @@ class TestCriticStampIsStructural:
                             and getattr(node.func.value, "id", None) in aliases):
                         callers.append(f"{path.relative_to(ROOT)}:{node.lineno}")
         modules = sorted({c.split(":")[0] for c in callers})
-        assert modules == ["engine/marketing/reply_producer.py"], (
-            f"exactly one production module may fill the reply queue; found {modules}. "
+        assert modules == ["admin/marketing.py", "engine/marketing/reply_producer.py"], (
+            f"only reviewed modules may fill the reply queue; found {modules}. "
             "A second path in is a second place the critic contract has to hold.")
+
+        # ...and each of them faces the critics. A module that enqueues without
+        # importing the pass is the exact defect the census exists to catch,
+        # and "it is on the allowlist" must never be the reason it is safe.
+        for module in modules:
+            src = (ROOT / module).read_text(encoding="utf-8")
+            assert "reply_critics" in src, (
+                f"{module} fills the reply queue without importing reply_critics")
 
     def test_the_docs_describe_the_producer_that_exists(self):
         runbook = (ROOT / "docs" / "reply_desk_runbook.md").read_text(encoding="utf-8")
@@ -2374,21 +2483,32 @@ class TestAdminRoutesAreWired:
         src = (ROOT / "admin" / "server.py").read_text(encoding="utf-8")
         for route in ("/api/marketing/reply-queue",
                       "/api/marketing/reply-queue/decide",
-                      "/api/marketing/reply-queue/reject"):
+                      "/api/marketing/reply-queue/reject",
+                      # The deck (2026-08-01): the payload the page renders, and
+                      # the two halves of edit-then-approve.
+                      "/api/marketing/reply-deck",
+                      "/api/marketing/reply-deck/validate",
+                      "/api/marketing/reply-deck/edit"):
             assert f'path == "{route}"' in src, f"missing route {route}"
 
     def test_handlers_exist(self):
         from admin import marketing as adm
 
-        for fn in ("reply_queue", "decide_reply", "reject_reply"):
+        for fn in ("reply_queue", "decide_reply", "reject_reply",
+                   "reply_deck", "validate_reply_text", "edit_reply"):
             assert callable(getattr(adm, fn))
 
     def test_spa_view_is_registered(self):
+        """The view id is the contract; the LABEL is copy and moved with the
+        rebuild ("Reply Queue" -> "Reply Deck", 2026-08-01). Pinned on the id so
+        this guard fails when the page is unwired, not when it is renamed."""
         src = (ROOT / "admin" / "static" / "app.js").read_text(encoding="utf-8")
-        assert '["marketing_reply_queue", "Reply Queue"]' in src, "nav entry missing"
+        assert '["marketing_reply_queue", "Reply Deck"]' in src, "nav entry missing"
         assert "RENDER.marketing_reply_queue" in src, "renderer missing"
         assert "marketing_reply_queue:" in src, "nav icon missing"
-        for fn in ("rqDecide", "rqReject"):
+        # rqSkip is the former rqReject: same store call, a name that says what
+        # the operator is doing rather than what the ledger records.
+        for fn in ("rqDecide", "rqSkip", "rqeOpen", "rqeCheck", "rqeSave"):
             assert f"function {fn}(" in src
 
     def test_no_panel_read_in_this_suite_relies_on_the_wall_clock(self):

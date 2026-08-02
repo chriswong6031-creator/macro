@@ -1,4 +1,4 @@
-# Reply desk — operator runbook (XG-W4)
+# Reply desk — operator runbook (XG-W4 · arming + handoff contract XG-W7)
 
 The reply desk drafts replies for the seven X accounts and hands the approved
 ones to a **desktop session** that actually sends them. It is **DARK BY
@@ -10,13 +10,21 @@ Nothing sends until you flip a per-account dial.
 approve in admin → export (M1 only) → desktop session claims → sends → receipt →
 sent`, with every transition recorded in `~/.mastermind/reply_desk/store/ledger.jsonl`.
 
+**If you are here to turn it on, read §9 first** — arming is four independent
+switches, and `--lane reply --preflight` reports all four in one command.
+**If you are here to write the sending side, §6 is your interface** — it is a
+versioned contract (`marketing.reply.handoff/v1`), and a test compares its worked
+examples against what the code actually writes.
+
 Pieces:
 - `engine/marketing/reply_discovery.py` — twitterapi.io target discovery (own provider, own sub-budget).
 - `engine/marketing/reply_score.py` — deterministic opportunity scoring. No LLM.
 - `engine/marketing/reply_drafter.py` — per-persona drafting, reply-family rotation, chart slot.
 - `engine/marketing/reply_critics.py` — the independent critic pass.
 - `engine/marketing/reply_queue.py` — the store, the mode dial, the caps, the one-owner lock.
-- `engine/marketing/reply_export.py` — the M1 handoff to the desktop session.
+- `engine/marketing/reply_producer.py` — the tick that fills the queue (§9), plus the heartbeat.
+- `engine/marketing/reply_export.py` — the M1 handoff to the desktop session (§6).
+- `app/deploy/marketing-reply-desk.service` — the sibling unit that runs the producer on the VPS.
 - `config/reply_targets.yml` — the author register **you curate**.
 - Admin → **Marketing → Reply Queue** — approve / hold / reject with reasons.
 
@@ -241,110 +249,249 @@ accounts into one profile, and never sign one account into two profiles.
 
 ---
 
-## 6. The desktop session contract
+## 6. The desktop session contract (`marketing.reply.handoff/v1`)
 
-The session reads and writes three directories under
-`~/.mastermind/reply_desk/` (override with `MASTERMIND_REPLY_DESK_DIR`):
+This section is a **versioned interface**, not a description of our internals.
+The consumer is your own system, written outside this repo and updated on its
+own schedule, so the shapes below are a promise:
+
+- Every file we write carries `"contract": "marketing.reply.handoff/v1"`. Read
+  it. A consumer that does not recognise the version should refuse the file
+  rather than half-act on it.
+- **Adding** a field is not a version bump — read by key, never by position, and
+  ignore keys you do not know. **Removing or retyping** one is a major bump, and
+  the version string changes with it.
+- The contract ends at these three directories. Nothing in this repo drives a
+  browser, synthesises input, or times a keystroke, and nothing in it ever will
+  — that is your side of the boundary.
+
+`tests/test_marketing_reply_arming.py` parses the worked examples below out of
+this file and compares them against what the code actually writes, so this
+document cannot drift away from the interface it documents.
+
+### 6.1 The directories
 
 ```
-~/.mastermind/reply_desk/
-  queue/     <id>.json    approved items, ready to send
-  claims/    <id>.json    your lease on an item
-  receipts/  <id>.json    proof that a reply went out
-  store/                  the queue's own ledgers (do not hand-edit)
-  discovery/              cursors + spend (do not hand-edit)
+~/.mastermind/reply_desk/          (override with MASTERMIND_REPLY_DESK_DIR)
+  queue/     <id>.json    WE write, YOU read     — approved items, ready to send
+  claims/    <id>.json    WE write, YOU read     — your lease on an item
+  receipts/  <id>.json    YOU write, WE consume  — what actually happened
+  store/                  ours; never hand-edit  — items + ledger
+  discovery/              ours; never hand-edit  — cursors + spend
+  producer_heartbeat.json ours; read-only for you — lane liveness (§9.5)
 ```
 
-### Protocol
+Who writes what is the whole design. You never edit `store/`; we never invent a
+receipt. Every state change is an append to `store/ledger.jsonl` with an actor.
 
-1. **Read** `queue/`. Each file carries `draft`, `target_url`, `parent_author`,
-   `parent_excerpt`, `chart` (`local_path` + `public_url`), `tier`, `not_before`,
-   and `expires_at`. A file in `queue/` is a live instruction: the sweep deletes
-   the mirror as soon as its item expires, is rejected, or loses its lease, so
-   you are not relying on your own vigilance to avoid sending a dead draft.
-2. **Check `expires_at` anyway.** Belt and braces — the sweep runs on a tick, and
-   you may be reading between ticks.
-3. **Claim before navigating.** Take the lease first, then open the thread:
+### 6.2 Protocol
 
-   ```bash
-   python3 -c "import yaml; from engine.marketing import reply_export as x; \
-               print(x.claim_for_desktop('<item-id>', holder='desk-1', \
-                     cfg=yaml.safe_load(open('config/marketing.yml'))))"
-   ```
+1. **Read `queue/`.** A file there is a live instruction: the sweep deletes the
+   mirror as soon as its item expires, is rejected, fails, or loses its lease.
+2. **Check `expires_at` anyway.** The sweep runs on a tick and you may be
+   reading between ticks. Charter §3: a reply lives in a 5–15 minute window, and
+   a late reply under a cold thread is the automation tell we are avoiding.
+3. **Claim before navigating** (§6.4). Take the lease, then open the thread.
+4. **Send the reply** in that account's own browser profile. Attach the chart
+   from `chart.local_path` when present; it carries an as-of stamp, and charts
+   are EOD-only, so yesterday's bar must never be presented as live.
+5. **Write a receipt** (§6.5) — success *or* failure. Both are file-level
+   outcomes; neither needs you to import our Python.
+6. The next `sweep()` ingests it, records the send against the daily cap,
+   escalates the author's relation row, and clears the mirror and the claim.
 
-   This writes `claims/<id>.json` and takes the lease in one step. The default
-   lease is **600 seconds** (`reply_desk.lease_s`). An expired lease returns the
-   item to `queued` — deliberately *not* to `approved`, because a lease that
-   timed out gives us no way to know whether the reply was posted. A human
-   re-approves. That friction is the point; it is what prevents a double-post.
+### 6.3 What you receive
 
-   **A claimed item is never expired out from under you.** The lease governs an
-   in-flight item, so a TTL that lapses mid-send cannot orphan a reply you have
-   already posted.
-4. **Send the reply** in the account's own browser profile. Attach the chart from
-   `chart.local_path` when present. The chart carries an as-of stamp — charts are
-   EOD-only, and yesterday's bar must never be presented as live.
-5. **Write a receipt** to `receipts/<id>.json`:
+#### `queue/<id>.json`
 
-   ```json
-   {
-     "id": "rq-2026-07-28-92235b6304",
-     "url": "https://x.com/mastermindkelly/status/1900000000000000123",
-     "screenshot": "/path/to/screenshot.png",
-     "holder": "desk-1",
-     "sent_at": "2026-07-28T15:04:00Z"
-   }
-   ```
+```json
+{
+  "contract": "marketing.reply.handoff/v1",
+  "id": "rq-2026-08-01-9f3c55f112",
+  "as_of": "2026-08-01",
+  "account": "kelly",
+  "target_url": "https://x.com/somequant/status/1900000000000000042",
+  "target_status_id": "1900000000000000042",
+  "thread_key": "1900000000000000042",
+  "parent_author": "somequant",
+  "parent_excerpt": "Hyperscaler capex keeps climbing but credit spreads are widening.",
+  "draft": "IG spreads widened 12.5% while capex guidance held.",
+  "chart": null,
+  "tier": "relationship",
+  "mode": "M1",
+  "not_before": "2026-08-01T15:00:00Z",
+  "expires_at": "2026-08-01T15:45:00Z",
+  "exported_at": "2026-08-01T15:00:00Z"
+}
+```
 
-   **Always write both fields.** They are enforced differently on purpose:
+| Field | Meaning |
+|---|---|
+| `id` | the item id. Use it as the receipt's `id` and as the claim/receipt filename. |
+| `account` | which browser profile must send this. Never send from another. |
+| `target_status_id` / `target_url` | the post being replied to. |
+| `thread_key` | the conversation. One conversation has exactly one owning desk, enforced in the store — you do not need to check it, but do not work around it. |
+| `parent_excerpt` | the parent's text, for eyeball confirmation you are under the right post. |
+| `draft` | the text to send, verbatim. Edits are a taste decision and belong in the admin rail, not here. |
+| `chart` | `null`, or `{local_path, public_url, chart_id}`. Attach `local_path`. |
+| `tier` | `relationship` / `conversion` / `breakout` / `inbound`. |
+| `mode` | the dial **stamped at enqueue time**, not now. Informational. |
+| `not_before` / `expires_at` | the send window, UTC. |
 
-   - **`url` is required.** A receipt without one is refused and parked as
-     `.invalid` — an empty receipt is not evidence of anything.
-   - **`screenshot` is expected but not blocking.** A receipt missing one warns
-     and still records the send, because refusing it would leave a reply that is
-     already public permanently uncounted — and an uncounted send silently buys
-     back room under the daily cap. Fill it in anyway: it is the only artefact
-     that lets a human audit how the reply rendered under the parent post.
-6. The next sweep ingests receipts, records the send against the daily cap, and
-   clears the queue mirror and the claim. A consumed receipt is renamed `.done`
-   so a re-run never double-counts a send.
+Deliberately absent: scores, score components, alternates, the critic stamp, the
+drafting family, and anything resembling a credential. A leaked queue file leaks
+no strategy and no secret.
 
-Run a full tick (ingest receipts, reclaim leases, expire, sweep mirrors, export):
+#### `claims/<id>.json`
+
+```json
+{
+  "contract": "marketing.reply.handoff/v1",
+  "id": "rq-2026-08-01-9f3c55f112",
+  "holder": "desk-1",
+  "lease_until": "2026-08-01T15:10:00Z",
+  "reclaimed": false
+}
+```
+
+### 6.4 Claiming — lease semantics and double-claim
+
+```bash
+python3 -c "import yaml; from engine.marketing import reply_export as x; \
+            print(x.claim_for_desktop('<item-id>', holder='desk-1', \
+                  cfg=yaml.safe_load(open('config/marketing.yml'))))"
+```
+
+- The default lease is **600 s** (`reply_desk.lease_s`).
+- **Double claim by the same holder while the lease is live** returns the *same*
+  lease with `"reclaimed": true`. It is safe to retry: the lease is **not**
+  extended, so a crash-loop cannot hold an item forever.
+- **Claim by a different holder** returns `null`. Two sessions on one item is the
+  collision the lease exists to stop.
+- **A lapsed lease is never handed back**, not even to its own holder. We cannot
+  know whether the dead session posted, so the item returns to `queued` on the
+  next sweep and a human re-approves. That friction is what prevents a
+  double-post.
+- **A claimed item is never expired out from under you.** The lease governs an
+  in-flight item, so a TTL that lapses mid-send cannot orphan a reply you have
+  already posted.
+- Claiming is refused for an item past `expires_at`, for an account at **M0**,
+  and for a **halted** account — in that order, before any file is written.
+
+**Abandoned item:** lease lapses → next `sweep()` returns it to `queued`, and
+both `queue/<id>.json` and `claims/<id>.json` are deleted. Nothing to clean up
+by hand.
+
+**Unclaimed item:** stays `approved` with its mirror in `queue/` until
+`expires_at`, then it is expired and the mirror is swept.
+
+### 6.5 What you send back
+
+A receipt says exactly one of two things. `status` is the discriminator; an
+**absent** `status` means `"sent"` (the pre-v1 shape, still accepted forever), and
+an **unrecognised** `status` is refused rather than guessed — reading a field you
+got wrong as the charitable case is how a failed send becomes a recorded one.
+
+#### `receipts/<id>.json` — success
+
+```json
+{
+  "id": "rq-2026-08-01-9f3c55f112",
+  "status": "sent",
+  "url": "https://x.com/mastermindkelly/status/1900000000000000999",
+  "screenshot": "/path/to/screenshot.png",
+  "holder": "desk-1",
+  "sent_at": "2026-08-01T15:04:00Z"
+}
+```
+
+- **`url` is required** and must be the URL of *our* posted reply — it is where
+  the posted reply id comes from, and the nightly outcome poll reads that id to
+  ask whether the author answered. A receipt without it is refused and parked
+  `.invalid`.
+- **`screenshot` is expected but not blocking.** Missing it warns and still
+  records the send: refusing would leave a reply that is already public
+  permanently uncounted, and an uncounted send silently buys back room under the
+  daily cap. Fill it in anyway — it is the only artefact a human can audit by eye.
+- `holder` and `sent_at` are advisory; `sent_at` defaults to ingest time.
+
+#### `receipts/<id>.json` — failure
+
+```json
+{
+  "id": "rq-2026-08-01-9f3c55f113",
+  "status": "failed",
+  "reason": "compose box never loaded",
+  "holder": "desk-1",
+  "sent_at": "2026-08-01T15:06:00Z"
+}
+```
+
+- **No `url`** — there is no URL when nothing was posted, and requiring one would
+  force you to fabricate evidence of a send that did not happen.
+- `reason` is free text and lands in the ledger note. Write something a human can
+  act on; it is the only record of why this thread went unanswered.
+- The item moves to `failed`. It may be re-armed **twice**; after the second
+  failure it is dead. Do not retry it by hand — retry-spamming one thread is
+  exactly the pattern that gets an account actioned.
+
+### 6.6 Idempotency, in one table
+
+| You do this twice | What happens |
+|---|---|
+| Claim, same holder, live lease | second call returns the same lease, `reclaimed: true`. No lease extension. |
+| Claim, different holder | second call returns `null`. |
+| Write a success receipt | first records the send; second is retired `.duplicate` with **no** orphan warning and **no** second count against the cap. |
+| Write a failure receipt after a send | retired `.duplicate` — the send is already terminal and wins. |
+| Run `sweep()` | fully idempotent. Consumed receipts are renamed, so nothing is re-read. |
+
+Receipt files are consumed by renaming, never deleting, and the rename never
+clobbers (a second `.done` becomes `.done.1`). The suffix tells you what happened:
+
+| Suffix | Meaning |
+|---|---|
+| `.done` | recorded — a send or a reported failure |
+| `.duplicate` | already on the books; no action needed |
+| `.invalid` | malformed (no URL, or an unknown `status`) |
+| `.unresolved` | **read these.** The reply may be public but unrecorded, which means the daily cap is under-counting and will hand out room that is already spent. Reconcile by hand before raising any dial. |
+
+A receipt refused only because the account hit its **cap** is *kept*, not retired,
+and the item keeps its lease so the send can still be recorded once the cap
+clears at midnight.
+
+### 6.7 What a receipt changes
+
+1. **The ledger.** `store/ledger.jsonl` gains a row (`to: "sent"` or
+   `to: "failed"`) with the actor, plus an outcome row carrying `sent_at`. The
+   item file itself is never mutated — it stays an immutable record of what we
+   drafted.
+2. **The daily cap.** `sends_today` counts ledger `sent` rows, so the cap is
+   sized against real sends and nothing else.
+3. **Relationship memory.** A recorded send writes a relation row for the parent
+   author on that persona (`stage: "engaged"`); the nightly outcome poll upgrades
+   it to `"reciprocal"` when the author answers. The scorer reads that store for
+   its `relationship_stage` feature, which is how talking to someone changes who
+   we talk to next. The write goes to the gitignored persona host spool and is
+   folded into the tracked ledger by the nightly consolidation, so it takes
+   effect on the next nightly, not the next tick.
+
+### 6.8 Who runs the sweep
+
+**The reply lane runs it every tick** (§9), on the host that owns the store — so
+a receipt you write is ingested within `tick_interval_s` and you do not have to
+trigger anything. Ingest runs **first** in the sweep so a send from the previous
+tick is on the books before the cap is sized; otherwise the export step hands out
+headroom already spent.
+
+To force one by hand (a fixture store, or the lane is stopped):
 
 ```bash
 python3 -c "import yaml; from engine.marketing import reply_export as x; \
             print(x.sweep(cfg=yaml.safe_load(open('config/marketing.yml'))))"
 ```
 
-Ingest runs **first** so a send from the previous tick is on the books before
-the cap is sized; otherwise the export step hands out headroom already spent.
-
-### Receipts that cannot be resolved
-
-A receipt for an item that can no longer record a send — already sent, rejected,
-unknown, or belonging to a desk you disabled after it went out — is parked as
-`.unresolved` with a `::warning title=reply-receipt-orphan::`. Read these: the
-reply may be **public but unrecorded**, which means the daily cap is
-under-counting and will hand out room that is already spent. Reconcile by hand
-before raising any dial.
-
-A receipt refused only because the account hit its cap is **kept**, and the
-item keeps its lease so the send can still be recorded once the cap clears.
-
-### If a send fails
-
-Mark it failed rather than leaving the lease to rot:
-
-```bash
-python3 -c "from engine.marketing import reply_queue as q; \
-            q.transition('<item-id>', 'failed', actor='desk-1')"
-```
-
-An item may be re-armed **twice**. After the second failure it is dead; do not
-retry it by hand. Retry-spamming one thread is exactly the pattern that gets an
-account actioned.
-
----
+The sweep is fully idempotent, so running it by hand while the lane is up is
+harmless — consumed receipts are already renamed.
 
 ## 7. Approving drafts
 
@@ -435,50 +582,175 @@ a browser acting on an item a human approved.
 
 ---
 
-## 9. The producer (XG-W6) — how the queue fills
+## 9. The producer (XG-W6) — arming it (XG-W7), and how the queue fills
 
 `engine/marketing/reply_producer.py` is the connective tissue XG-W4 deliberately
 left out: discovery → score → draft → critics → `enqueue`, in one tick.
 
-**It sends nothing.** Output lands in the M0 queue for you to review in §7. The
-dial is untouched by the producer; `reply_export` at M1+ is still the only thing
-that hands an item to the desktop lane.
+Each reply-lane tick runs **two** halves:
 
-### Where it runs
+1. **the producer** — fill the queue (this section);
+2. **the desk sweep** — `reply_export.sweep`: ingest receipts, reclaim abandoned
+   leases, expire, sweep stale mirrors, export at M1 (§6.8). It runs even while
+   the producer is dark, because items already in flight still have to be swept
+   and receipts already written still have to be read.
 
-The same daemon and the same host as the wire lane — never the render path:
+**It sends nothing.** Output lands in the M0 queue for you to review in §7.
+Arming this lane means **drafts appear**, not that anything leaves; the dial
+(§3, §4) is a separate and later decision.
+
+### 9.1 Four switches, and each one used to fail as silence
+
+The lane was fully built and never ran, because four independent gates each turn
+it off and **all four look identical in the log** — a tick reporting zeroes.
+
+| # | Switch | Where | Ships |
+|---|---|---|---|
+| 1 | `MARKETING_FASTLANE_ENABLED=1` | `/etc/macro-live.env` | already set for the wire |
+| 2 | a process actually running `--lane reply` | `app/deploy/marketing-reply-desk.service` | unit ships **disabled** |
+| 3 | `reply_desk.producer.enabled: true` | `config/marketing.yml` | `false` |
+| 4 | `TWITTERAPI_IO_KEY` | `/etc/macro-live.env` | already set for the wire |
+
+Switch 1 is shared with the wire daemon (`main()` exits 0 without it). Switch 3
+is **not** inherited from the wire's arming, deliberately: this lane bills
+twitterapi.io against its own sub-budget, so arming it is a separate act.
+
+### 9.2 Preflight — run this first
 
 ```bash
-# one inspection tick: zero network, zero spend, zero writes
-python -m scripts.marketing_fastlane_daemon --lane reply --once --dry-run
-
-# live loop (needs the arming below)
-python -m scripts.marketing_fastlane_daemon --lane reply --interval 300
+python -m scripts.marketing_fastlane_daemon --lane reply --preflight
 ```
 
-To run it beside the wire lane on the VPS, change the `marketing-press-feeds`
-unit's `ExecStart` from `--lane press` to `--lane all`. The producer's own config
-gate keeps it dark until you arm it, so `--lane all` on an unarmed deployment is
-a logged no-op rather than a surprise spend.
+Zero network, zero spend, zero writes, and it runs *even when switch 1 is off*,
+because "switch 1 is off" is the answer it most often has to give. It reports all
+four switches, the register, each desk's dial and curated-author count, and the
+last heartbeat; it exits `1` while any blocker stands. Read the first `BLOCKER`
+line, fix it, re-run.
 
-### Arming it (two switches, both required)
+`warning` lines are not blockers. Two are expected at launch and are correct:
+every desk at **M0** (the launch state), and a **placeholder register** (only
+inbound mentions can produce a target until you curate §1).
 
-| Switch | Where | Default |
-|---|---|---|
-| `reply_desk.producer.enabled: true` | `config/marketing.yml` | `false` |
-| `TWITTERAPI_IO_KEY` | `/etc/macro-live.env` | already set for the wire |
+### 9.3 The arming walk, in order
 
-The producer does **not** inherit `MARKETING_FASTLANE_ENABLED`, deliberately: it
-bills twitterapi.io, so arming it is a separate act from arming the wire.
+1. **Curate `config/reply_targets.yml`** (§1). Until real handles are enabled,
+   the curated-timeline half of discovery is structurally dark and the lane
+   spends money polling mentions for essentially nothing. This is editorial work
+   and it comes first.
+2. **Flip `reply_desk.producer.enabled: true`** in `config/marketing.yml`. Commit
+   and merge as normal; no render is required.
+3. **Dry-run once, on the host, before installing the unit:**
 
-### Spend
+   ```bash
+   python -m scripts.marketing_fastlane_daemon --lane reply --once --dry-run
+   ```
+
+   `--dry-run` maps to the producer's `offline=True`: zero network, zero spend,
+   **zero targets**, and no heartbeat write. It proves the wiring, config load
+   and account resolution — not discovery.
+4. **Install and start the unit:**
+
+   ```bash
+   sudo cp app/deploy/marketing-reply-desk.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now marketing-reply-desk
+   journalctl -u marketing-reply-desk -f
+   ```
+
+   It is a **sibling** of `marketing-press-feeds`, not a widening of it. The wire
+   runs `--interval 75` to stay inside the Truth-mirror hot-poll window; the
+   reply desk's own window is 5–15 minutes and its bar is 15–20 replies a day.
+   One `--interval` cannot serve both, a shared process makes a reply-lane crash
+   restart the Trump wire, and `systemctl stop marketing-reply-desk` must leave
+   the wire alone.
+5. **Watch the first hour** (§9.5). Then, and only then, consider §4 (M1).
+
+### 9.4 Cadence
+
+The unit passes **no** `--interval`. The reply lane reads
+`reply_desk.producer.tick_interval_s` (default **300 s**) from
+`config/marketing.yml`, so retuning the cadence is a PR that CI sees rather than
+a hand-edit to a unit file on one host. An explicit `--interval` still wins if
+you are driving it by hand.
+
+### 9.5 What to watch
+
+**The heartbeat** — `~/.mastermind/reply_desk/producer_heartbeat.json`, rewritten
+every live tick:
+
+```bash
+python3 -c "from engine.marketing import reply_producer as p; \
+            print(p.read_heartbeat())"
+```
+
+| Field | Read it as |
+|---|---|
+| `at` / `tick` | frozen ⇒ the **daemon is dead**. Check `systemctl status`. |
+| `consecutive_empty` | climbing ⇒ the daemon is **alive and finding nothing**. |
+| `diagnosis` | why the last tick was empty, naming the first stage that zeroed. |
+| `last` | the stage counts: curated authors, targets, eligible, drafted, abstained, critic-rejected, enqueued, refused. |
+| `last_enqueued_at` | `null` after arming means the lane has never produced. |
+
+Those first two need **opposite** responses, which is exactly what the old shared
+`fastlane_heartbeat.txt` could not tell you: it proves the daemon is alive and
+nothing more.
+
+**The silent-desk warning** — after `silent_tick_warn_after` consecutive ticks
+that enqueued nothing (default **12**, i.e. one hour at 300 s), the lane prints a
+start-of-line annotation and repeats it once per further full run:
+
+```
+::warning title=reply-desk-silent::the reply desk has enqueued nothing for 12
+consecutive ticks (last enqueue: never) — config/reply_targets.yml has no
+ENABLED authors for any live desk …
+```
+
+The text names the **first** stage that zeroed, not the fact that the total is
+zero. A quiet desk is legal — Law 1, value before activity, and a tick reporting
+`drafted=0 abstained=7` is the system working. An *hour* of it with no diagnosis
+is not.
+
+**`::warning title=reply_voice_mute::`** in the journal means the LLM phrasing
+pass found no provider and every reply is shipping the deterministic template.
+That failure class shipped dark for months in a sibling lane. Preflight flags it
+when `reply_desk.voice.enabled` is true and `MARKETING_LLM_ENABLED` is unset.
+
+**The desk sweep line** — one per tick, beside the producer line:
+
+```
+[reply] desk sweep | recorded=0 failed=0 duplicates=0 refused=0 released=0 \
+        expired=2 exported=0 swept_mirrors=2
+```
+
+`refused` climbing is the one to chase: those are receipts parked `.unresolved`
+or `.invalid` (§6.6). `exported=0` at M0 is correct and permanent.
+
+**Where the drafts appear:** admin → Marketing → Reply Queue, on the machine that
+can read the store (§7). A queue that stays empty while the heartbeat says
+`enqueued` is climbing means you are looking at the wrong host, not at a broken
+producer.
+
+### 9.6 How to stop it
+
+| Scope | Action |
+|---|---|
+| This lane, now | `sudo systemctl stop marketing-reply-desk` (the wire is unaffected) |
+| This lane, permanently | `sudo systemctl disable --now marketing-reply-desk` |
+| Keep the unit, stop producing | `reply_desk.producer.enabled: false` — the next tick is a logged no-op |
+| Stop the spend, keep the queue | `reply_discovery.enabled: false` in `config/press_sources.yml` |
+| Everything, both lanes | unset `MARKETING_FASTLANE_ENABLED` in `/etc/macro-live.env` |
+
+Stopping the producer does not touch anything already queued, and it can never
+cause a send: sending is the dial, and the dial is §3.
+
+### 9.7 Spend
 
 Unchanged from §2. The producer calls `reply_discovery.run_tick`, which owns the
 cursors, the monthly counter, the reply sub-cap and the shared-bucket stop that
 makes reply polling yield to the Trump wire and never the reverse. The producer
 adds no second budget and no second counter.
 
-### Per-tick knobs
+### 9.8 Per-tick knobs
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -486,14 +758,14 @@ adds no second budget and no second counter.
 | `max_draft_attempts_per_account` | 12 | stop drafting after this many scored targets |
 | `family_history` | 20 | how far back the LRU family rotation looks |
 | `n_alts` | 2 | alternates, composed from **different** families |
+| `tick_interval_s` | 300 | seconds between ticks (§9.4) |
+| `silent_tick_warn_after` | 12 | empty ticks before the silence warning (§9.5) |
 
-### What it does when it has nothing to say
+### 9.9 What it does when it has nothing to say
 
 Abstains, and counts the abstention. An empty own-feed fact list produces an
 empty draft and no queue item — Law 1, value before activity. A tick reporting
 `drafted=0 abstained=7` is the system working, not failing.
-
----
 
 ## 10. Per-account halt (XG-W6)
 
@@ -574,6 +846,16 @@ that tripped it, and the registry's `log` carries every halt/clear with an actor
   reuses the nightly render machinery, but nothing schedules it yet. Until it is
   scheduled, `attach_chart()` only references charts the nightly lane already
   produced.
+- **The relationship-stage FEATURE, as opposed to the store.** A recorded send
+  now writes a relation row and an author reply-back upgrades it (§6.7), so the
+  store finally fills. The scorer's half is still inert: `reply_score._STAGE_SCALE`
+  grades `cold / seen / liked / replied / recurring`, while
+  `persona_memory.RELATION_STAGES` — the vocabulary the store will accept, and
+  the only one it will accept — is `cold / engaged / reciprocal / declined`. Only
+  `cold` overlaps, so every written row currently scores `0.0` while reporting
+  `source: "relations.jsonl"`, which reads as measured. Until the two
+  vocabularies are reconciled, treat `relationship_stage` in a score breakdown as
+  a null, not a zero. The weight is 0.04, so nothing else is distorted.
 - **Follower-cohort retention** — the north-star metric needs a follower series
   the Buffer poller does not return. The denominator is live; the numerator is
   not, so the metric stays inactive and the bottleneck table on raw counts is

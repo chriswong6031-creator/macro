@@ -7,12 +7,27 @@
 # of our own accounts. There is no keyword firehose and no first-party scraping;
 # twitterapi.io is the only X read path.
 #
-# WHO CURATES IT: the OPERATOR. The schema, the loader, and the validator are
-# the engineering deliverable; the handle list is an editorial judgment about
-# who is worth being in conversation with, and it is not a builder's call to
-# invent. The entries below are deliberately a handful of placeholders marked
-# `enabled: false` — they document the shape and exercise the validator without
-# committing us to poll anyone.
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║ ENABLING IS THE OPERATOR'S EDITORIAL CALL — AND IT WAS MADE ON 2026-08-02 ║
+# ║ ("enable all 21 handles, but spread across accs"). All 21 seeded entries  ║
+# ║ are LIVE. The law is unchanged for everything added AFTER that ruling: a  ║
+# ║ new entry ships `enabled: false` until the operator says otherwise, and   ║
+# ║ tests/test_marketing_reply_targets.py now pins the ratified set by name   ║
+# ║ so a later builder cannot quietly widen the company we keep.              ║
+# ║                                                                           ║
+# ║ This is a STARTER PROPOSAL, not a curation. It was assembled from the     ║
+# ║ 2026-07-31 harvested corpora (macro / persona-women / technical /         ║
+# ║ replies / winning_replies) — real handles with real observed engagement —  ║
+# ║ so that the operator edits a concrete list instead of inventing one from   ║
+# ║ a blank file. Choosing WHO WE TALK TO is an editorial judgment about the   ║
+# ║ company we keep in public, and no builder and no model gets to make it.    ║
+# ║                                                                           ║
+# ║ Every handle here was verified live against twitterapi.io on 2026-08-01:  ║
+# ║ the account exists, is public (not protected), and is posting. A dead or   ║
+# ║ renamed handle is a SILENT hole — discovery polls it, bills for it, and    ║
+# ║ returns nothing, with no error anywhere. Re-verify before enabling, and    ║
+# ║ re-verify periodically after.                                             ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 #
 # TIERS (constitution §9.2):
 #   relationship — smaller/mid-sized experts who answer good replies. These
@@ -27,7 +42,10 @@
 #
 # The portfolio needs all three, but the charter is explicit that conversion and
 # relationship carry more weight than vanity reach — that ordering is encoded in
-# reply_score.DEFAULT_TIER_PRIOR, not here.
+# reply_score.DEFAULT_TIER_PRIOR, not here. The proposal below is deliberately
+# relationship/conversion-heavy: exactly two breakout entries exist across the
+# whole fleet, because a desk that lives under giant posts is a desk nobody
+# remembers.
 #
 # ONE AUTHOR, ONE DESK: the validator rejects a handle registered to two
 # accounts. One conversation / one owner is enforced again at enqueue time, but
@@ -39,10 +57,17 @@
 #   beats:   optional; overrides the desk's default beats for scoring beat-fit
 #   notes:   free text for the curator (never read by the engine)
 #   enabled: false parks an entry without deleting the curation work
+#            (and is the required state for any entry added after 2026-08-02
+#             until the operator ratifies it in the test's RATIFIED set)
 #
 # Validate after editing:
 #   python3 -c "from engine.marketing import reply_discovery as r; \
 #               print(r.validate_register(r.load_register()) or 'OK')"
+#
+# The shape of this file is additionally pinned by
+# tests/test_marketing_reply_targets.py, which fails on a placeholder handle, a
+# missing WHY note, and — deliberately — on any entry that ships `enabled: true`
+# from a builder's hand.
 # ─────────────────────────────────────────────────────────────────────────────
 
 schema: marketing.reply_targets/v1
@@ -52,46 +77,96 @@ accounts:
   # ── Kelly — the mechanism detective ────────────────────────────────────────
   # Constitution §14.2: "Kelly core: macro, credit, vol, market structure /
   # Kelly bridge: AI/semis, tech investors, portfolio managers"
+  #
+  # Curation logic: Kelly's gift is the mechanism nobody named. That lands with
+  # people who argue about mechanisms in public, which is a much smaller room
+  # than "macro X". Four of the five below answer replies in their own threads —
+  # observed, not assumed (winning_replies.jsonl carries their outgoing replies).
   kelly:
     beats: ["macro", "credit", "spreads", "volatility", "market structure",
             "cross-asset", "rates", "curve", "semis", "capex"]
     authors:
-      - handle: PLACEHOLDER_credit_analyst
+      - handle: biancoresearch
         tier: relationship
-        enabled: false
-        notes: "OPERATOR: a mid-tier credit/spreads account that answers replies."
-      - handle: PLACEHOLDER_vol_desk
+        enabled: true
+        notes: "Rates/Fed/credit research read by PMs and desk economists; argues in his own replies (12 outgoing replies in the harvested corpus) — the highest-value room for a mechanism correction."
+      - handle: MacroAlf
+        tier: relationship
+        enabled: true
+        notes: "Institutional macro audience (rates, liquidity, risk premia); the corpus's cleanest concede-then-hold interlocutor — he engages disagreement instead of ignoring it."
+      - handle: donnelly_brent
+        tier: relationship
+        enabled: true
+        notes: "FX/macro trader writing for other traders; short-horizon, mechanism-first audience that rewards a fast counter-read and replies back."
+      - handle: TheBondFreak
         tier: conversion
-        enabled: false
-        notes: "OPERATOR: vol/options account with a highly relevant audience."
+        enabled: true
+        notes: "Small, dense bond/credit following built over 30 years on the desk — low reach, high qualification, exactly the conversion tier's shape."
+      - handle: options_insight
+        tier: conversion
+        enabled: true
+        notes: "Professional options/vol educator; audience is people who already care about gamma and term structure, so Kelly's vol reads land without translation."
 
   # ── Cici — the cross-border correspondent ─────────────────────────────────
   # §14.2: "Cici core: China/HK/Asia markets / bridge: commodities, shipping,
   # luxury, semis, global macro"
+  #
+  # CURATION GAP, STATED PLAINLY: the 2026-07-31 harvest is US-fintwit-shaped and
+  # contains almost no Asia-hours community. These four are the defensible
+  # China/flows/commodities bridge that the corpus DOES evidence, not a map of
+  # the Asia-hours room Cici actually needs. The operator should expect to add
+  # 3-5 genuinely Asia-timezone handles here before this desk is real; polling
+  # only US-hours accounts from an Asia-hours persona is the "replying at 3am in
+  # its own time zone" failure the runbook warns about, one layer up.
   cici:
     beats: ["china", "hong kong", "asia", "a-shares", "pboc", "yuan",
             "commodities", "shipping", "freight", "exports", "semis"]
     authors:
-      - handle: PLACEHOLDER_asia_macro
+      - handle: michaelxpettis
         tier: relationship
-        enabled: false
-        notes: "OPERATOR: China/HK macro voice active during Asia hours."
-      - handle: PLACEHOLDER_shipping_desk
+        enabled: true
+        notes: "Beijing-based China balance-sheet economist; posts and replies through Asia hours (65% of his recent timeline is replies) — the single best fit for Cici's core beat and her session."
+      - handle: Brad_Setser
+        tier: relationship
+        enabled: true
+        notes: "Sovereign flows, FX reserves and trade imbalances; a data-literate audience that will argue a China export or reserve number with you rather than at you."
+      - handle: AxelMerk
         tier: conversion
-        enabled: false
-        notes: "OPERATOR: shipping/commodities bridge community."
+        enabled: true
+        notes: "Currency and precious-metals manager with a small, self-selected global-macro following — the natural conversion room for Cici's FX and commodities bridge."
+      - handle: SantiagoAuFund
+        tier: conversion
+        enabled: true
+        notes: "Gold/miners and hard-commodity community, extremely reply-active; Cici's shipping and freight reads reach commodity people here without competing with US equity noise."
 
   # ── Sophia — the narrative architect ──────────────────────────────────────
   # §14.2: "Sophia core: policy, economics, narrative / bridge: brand, media,
   # technology, consumer behaviour"
+  #
+  # Curation logic: Sophia's move is the frame, so her room is people who publish
+  # frames — policy economists and the reporters who quote them. Two relationship
+  # entries and two conversion entries; no breakout, because a measured frame
+  # under a viral post is the definition of invisible clutter.
   sophia:
     beats: ["policy", "economics", "inflation", "fiscal", "central banks",
             "elections", "regulation", "consumer", "media"]
     authors:
-      - handle: PLACEHOLDER_policy_econ
+      - handle: TimDuy
         tier: relationship
-        enabled: false
-        notes: "OPERATOR: policy/econ writer who engages thoughtfully."
+        enabled: true
+        notes: "Fed-watcher economist writing for people who read the statement themselves; a policy audience that will engage a careful reframe and correct you when it is wrong."
+      - handle: SteveMatthews12
+        tier: relationship
+        enabled: true
+        notes: "Long-time Fed reporter with a small, extremely well-placed following; his threads are where policy language gets parsed, which is Sophia's home ground."
+      - handle: LizAnnSonders
+        tier: conversion
+        enabled: true
+        notes: "Chart-led economics for a large advisor/allocator audience (median ~24k views in the harvest) — high-qualification readers for a history-and-pattern frame."
+      - handle: DiMartinoBooth
+        tier: conversion
+        enabled: true
+        notes: "Ex-Fed policy and credit commentary with a committed, opinionated following; a room that rewards an elegant concession followed by a held position."
 
   # ── Meagan — the crowd translator ─────────────────────────────────────────
   # §14.2: "Meagan core: retail market conversation and sentiment / bridge:
@@ -104,26 +179,54 @@ accounts:
     beats: ["retail", "sentiment", "consumer", "earnings reactions",
             "tech", "positioning", "flows"]
     authors:
-      - handle: PLACEHOLDER_retail_sentiment
+      - handle: StockMKTNewz
+        tier: relationship
+        enabled: true
+        notes: "Fast retail market-news account whose threads ARE the retail conversation; posts constantly and answers in-thread, so recognition compounds faster here than anywhere else on this desk."
+      - handle: amitisinvesting
         tier: conversion
-        enabled: false
-        notes: "OPERATOR: retail-conversation account with a real audience."
+        enabled: true
+        notes: "Tech/stocks explainer for a large retail audience with unusually high reply counts (median ~135 in the harvest) — a talking room, not a broadcast."
+      - handle: Geiger_Capital
+        tier: conversion
+        enabled: true
+        notes: "Markets-and-economics commentary for engaged retail; the audience argues in the replies, which is where Meagan's playful-then-useful shape works."
+      - handle: KobeissiLetter
+        tier: breakout
+        enabled: true
+        notes: "The largest retail-macro conversation on the platform (median ~326k views, ~133 replies per post) — enter ONLY with a fast differentiated chart or a correction, never with commentary."
 
   # ── Flagship — the evidence desk ──────────────────────────────────────────
   # Charter §1: chart / state-change / receipts. Dial 1 on replies (§2
   # amendment 3) — flagship stays evidence-forward even in conversation.
+  #
+  # Curation logic: the flagship's only admissible entry is a better number or a
+  # faster chart, so its register is people whose posts ARE numbers and charts.
   flagship:
     beats: ["data", "quant", "backtest", "breadth", "charts", "receipts",
             "statistics", "market internals"]
     authors:
-      - handle: PLACEHOLDER_quant_researcher
+      - handle: choffstein
         tier: relationship
-        enabled: false
-        notes: "OPERATOR: data/quant account where our chart speed is the edge."
+        enabled: true
+        notes: "Quant research (return stacking, rebalance timing) for a methodologically literate audience — the one room where our backtest caveats read as a feature."
+      - handle: EricBalchunas
+        tier: conversion
+        enabled: true
+        notes: "ETF flows and fund data for allocators and press; his posts are data posts, so our faster chart is a direct, legible addition rather than commentary."
+      - handle: badcharts1
+        tier: conversion
+        enabled: true
+        notes: "Weight-of-evidence chart trader with a chart-first following; an audience that judges a reply on whether the picture is better than theirs."
+      - handle: unusual_whales
+        tier: breakout
+        enabled: true
+        notes: "Enormous options/flow data audience (median ~530k views in the harvest) — breakout tier, admissible only with a chart or correction that is materially faster or more precise."
 
   # ── Founder — the founder's own read ──────────────────────────────────────
   # Charter §1: first-person, dry, never pitches. Register intentionally empty:
-  # the founder curates his own conversations.
+  # the founder curates his own conversations, and a builder proposing who the
+  # founder should talk to is a category error.
   founder:
     beats: ["macro", "markets", "building", "research"]
     authors: []

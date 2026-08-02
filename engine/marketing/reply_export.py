@@ -36,12 +36,45 @@ re-reads it per item.
 Credentials never appear here. They live only in the browser profiles; nothing
 in this repo reads them (see ``docs/reply_desk_runbook.md``).
 
+**THE HANDOFF IS A VERSIONED CONTRACT (XG-W7).** The consumer on the other side
+of these three directories is the operator's OWN system, written outside this
+repo and updated on its own schedule. That makes the file shapes a published
+interface, not an implementation detail, so every file this module writes now
+carries ``contract: HANDOFF_CONTRACT``. A consumer that reads the version can
+refuse a shape it does not understand instead of half-acting on it; a consumer
+that ignores it is unaffected, because the field is additive. The contract is
+specified with a worked example in ``docs/reply_desk_runbook.md`` §6, and
+``tests/test_marketing_reply_arming.py`` pins the runbook's example against this
+code so the document cannot drift away from the interface it documents.
+
+Idempotency is part of that contract, because the consumer is a browser session
+that can crash between any two steps:
+
+    * **double claim** — the same holder re-claiming an item it already holds
+      gets its live lease back (``reclaimed: true``), not a refusal. A DIFFERENT
+      holder is refused, because that is a genuine two-sessions-one-item bug.
+    * **double receipt** — a second receipt for an item already recorded as
+      ``sent`` retires as ``.duplicate`` with a calm note. It used to fall into
+      the ``.unresolved`` orphan branch, whose warning means "a reply may be
+      public but unrecorded — reconcile by hand". Sending an operator to
+      reconcile a send that IS recorded trains them to ignore the one warning
+      that matters.
+    * **failure report** — a receipt carrying ``"status": "failed"`` marks the
+      item ``failed`` (re-armable twice) and needs no URL, because there is no
+      URL when the send did not happen. Before this, the file contract had no
+      way to say "it did not go out": the runbook told the operator to call
+      ``reply_queue.transition`` in Python, i.e. to reach around the interface
+      into our internals for one of the three outcomes.
+
 Public API:
+    HANDOFF_CONTRACT
     queue_dir/claims_dir/receipts_dir(root=None) -> Path
-    export_approved(*, cfg, root=None, now=None) -> dict
-    ingest_receipts(*, cfg, root=None, now=None) -> dict
-    sweep(*, cfg, root=None, now=None) -> dict
+    export_approved(*, cfg, root=None, repo_root=None, now=None) -> dict
+    ingest_receipts(*, cfg, root=None, repo_root=None, now=None) -> dict
+    claim_for_desktop(item_id, *, holder, ...) -> dict | None
+    sweep(*, cfg, root=None, repo_root=None, now=None) -> dict
     exported_ids(root=None) -> set[str]
+    note_relation(*, account, handle, stage, repo_root, now) -> bool
 """
 from __future__ import annotations
 
@@ -55,6 +88,13 @@ from engine.marketing import reply_queue as _rq
 
 log = logging.getLogger(__name__)
 
+#: The published interface version. BUMP THIS, never edit a shape in place: the
+#: consumer is outside this repo and cannot be migrated in the same commit.
+#: Removing or retyping a field in `_EXPORT_FIELDS` or the receipt vocabulary is
+#: a major bump; ADDING a field is not, because every documented consumer reads
+#: by key.
+HANDOFF_CONTRACT = "marketing.reply.handoff/v1"
+
 #: Only these fields cross the boundary. The desktop session needs what to post,
 #: where, and by when — not our scoring internals. Keeping the export narrow
 #: means a leaked queue file leaks no strategy and no credentials.
@@ -63,6 +103,12 @@ _EXPORT_FIELDS: tuple[str, ...] = (
     "parent_author", "parent_excerpt", "draft", "chart", "tier", "mode",
     "not_before", "expires_at",
 )
+
+#: Receipt outcome vocabulary. A receipt says exactly one of these three things,
+#: and the third exists because a browser session fails as often as it succeeds.
+#: Absent `status` means "sent" — the pre-XG-W7 shape, kept working forever
+#: because receipts written by an older consumer must still record their send.
+RECEIPT_STATUSES: frozenset[str] = frozenset({"sent", "failed"})
 
 
 def queue_dir(root: Path | str | None = None) -> Path:
@@ -94,6 +140,17 @@ def _write_json(path: Path, payload: dict) -> bool:
     except Exception as exc:  # noqa: BLE001
         log.warning("reply_export: cannot write %s: %s", path, exc)
         return False
+
+
+def _parse_iso(value: object) -> datetime | None:
+    """Parse a UTC stamp, or None. Local rather than borrowed from reply_queue:
+    the store's parser is private, and a published-contract module reaching into
+    a sibling's privates is how a refactor there breaks an interface here."""
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def _read_json(path: Path) -> dict | None:
@@ -157,6 +214,13 @@ def sweep_mirrors(root: Path | str | None = None, *, _state: dict | None = None)
     return removed
 
 
+#: The `held_by` values `reply_queue.pacing_gate` can return. Kept as a frozen
+#: set next to its only consumer so a new pacing check that forgets to land here
+#: degrades to the DAILY-CAP bucket (visible, wrong remedy) rather than silently
+#: exporting past the gate.
+_PACING_HOLDS: frozenset[str] = frozenset({"weekly_cap", "burst_window", "burst_capacity"})
+
+
 def export_approved(
     *,
     cfg: dict | None,
@@ -186,7 +250,8 @@ def export_approved(
     ``root`` is the reply desk's HOST state dir; ``repo_root`` is the checkout
     the halt registry is read from. They are different directories.
 
-    Returns {exported, count, skipped_mode, skipped_cap, skipped_halt,
+    Returns {exported, count, skipped_mode, skipped_cap, skipped_pacing,
+             skipped_halt,
              halted_accounts, skipped_expired, expired_ids, swept_mirrors,
              modes, headroom}.
     """
@@ -205,6 +270,14 @@ def export_approved(
     exported: list[str] = []
     skipped_mode: list[str] = []
     skipped_cap: list[str] = []
+    # PACING IS NOT THE DAILY CAP, AND SAYING SO MATTERS. Before this split
+    # an item held outside its burst window reported as `skipped_cap` with
+    # `cap: 0`, so the console told the operator to raise a daily cap that
+    # was never the gate — raising it would have changed nothing. Pacing
+    # holds clear on their own (the next burst opens); a spent daily cap
+    # clears at midnight. Different remedies, different buckets.
+    skipped_pacing: list[str] = []
+    pacing_reasons: dict[str, str] = {}
     skipped_halt: list[str] = []
     modes: dict[str, str] = {}
     headroom: dict[str, int] = {}
@@ -245,15 +318,20 @@ def export_approved(
                 if str((state["items"].get(other) or {}).get("account") or "") == account
             )
             caps_seen[account] = int(gate["cap"])
+            if not gate.get("ok") and gate.get("held_by") in _PACING_HOLDS:
+                pacing_reasons[account] = str(
+                    (gate.get("pacing") or {}).get("note")
+                    or gate.get("reason") or gate.get("held_by"))
             headroom[account] = max(0, int(gate["cap"]) - int(gate["sent"]) - in_flight)
 
         if iid in already:
             continue
         if headroom[account] <= 0:
-            skipped_cap.append(iid)
+            (skipped_pacing if account in pacing_reasons else skipped_cap).append(iid)
             continue
 
-        payload = {k: item.get(k) for k in _EXPORT_FIELDS}
+        payload = {"contract": HANDOFF_CONTRACT}
+        payload.update({k: item.get(k) for k in _EXPORT_FIELDS})
         payload["exported_at"] = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
         if _write_json(queue_dir(root) / f"{iid}.json", payload):
             exported.append(iid)
@@ -268,6 +346,20 @@ def export_approved(
             f"{'ies' if len(skipped_halt) != 1 else 'y'} held back — account(s) "
             f"{halted_here} are HALTED (health monitor / network tripwire). Every "
             "other desk exported normally. Clear the halt in the admin health panel.",
+            flush=True,
+        )
+
+    if skipped_pacing:
+        held = sorted({
+            str((state["items"].get(i) or {}).get("account") or "")
+            for i in skipped_pacing
+        })
+        why = "; ".join(f"{a}: {pacing_reasons[a]}" for a in held if a in pacing_reasons)
+        print(
+            f"::warning title=reply-pacing-export::{len(skipped_pacing)} approved repl"
+            f"{'ies' if len(skipped_pacing) != 1 else 'y'} held by BURST PACING, not "
+            f"the daily cap — {why}. These clear themselves when the next burst "
+            "opens; raising the daily cap will not release them.",
             flush=True,
         )
 
@@ -289,6 +381,7 @@ def export_approved(
         "count": len(exported),
         "skipped_mode": skipped_mode,
         "skipped_cap": skipped_cap,
+        "skipped_pacing": skipped_pacing,
         "skipped_halt": skipped_halt,
         "halted_accounts": sorted(halts),
         "skipped_expired": len(expired),
@@ -315,7 +408,15 @@ def claim_for_desktop(
     ``claims/`` keeps the published directory contract honest — a directory in a
     contract that no code ever touches grows divergent implementations on the
     other side of the boundary.
+
+    **Idempotent for the SAME holder** (XG-W7). A browser session that crashed
+    after taking the lease but before recording it locally must be able to
+    resume: re-claiming returns the live lease with ``reclaimed: True`` and
+    re-writes the claim file. A DIFFERENT holder is still refused — that is two
+    sessions racing one item, which is the collision the lease exists to stop,
+    and answering it with a shrug would let both of them post.
     """
+    ts = now or datetime.now(timezone.utc)
     if lease_s is None:
         # Via the fail-soft helper: a typo'd lease_s must not take down the
         # desktop claim path, which is step 3 of the runbook.
@@ -342,20 +443,94 @@ def claim_for_desktop(
                     account)
         return None
 
-    claim = _rq.claim(item_id, holder=holder, lease_s=lease_s, root=root, now=now)
+    # DOUBLE-CLAIM, resolved by WHO holds it. `claimed` has no self-edge in the
+    # status machine, so `_rq.claim` refuses both cases identically — and "you
+    # already hold this" and "someone else holds this" need opposite handling.
+    held = state["claims"].get(item_id) or {}
+    if state["status"].get(item_id) == "claimed":
+        lease_until = _parse_iso(held.get("lease_until"))
+        live = lease_until is None or ts < lease_until
+        if str(held.get("holder") or "") == str(holder) and live:
+            claim = {"contract": HANDOFF_CONTRACT, "id": item_id, "holder": holder,
+                     "lease_until": held.get("lease_until"), "reclaimed": True}
+            _write_json(claims_dir(root) / f"{item_id}.json", claim)
+            return claim
+        log.warning(
+            "reply_export.claim_for_desktop: %r is already claimed by %r (lease %s) — "
+            "refusing the claim by %r", item_id, held.get("holder"),
+            held.get("lease_until"), holder)
+        return None
+
+    claim = _rq.claim(item_id, holder=holder, lease_s=lease_s, root=root, now=ts)
     if claim is None:
         return None
+    claim = {"contract": HANDOFF_CONTRACT, **claim, "reclaimed": False}
     _write_json(claims_dir(root) / f"{item_id}.json", claim)
     return claim
+
+
+def note_relation(
+    *,
+    account: str,
+    handle: str,
+    stage: str,
+    repo_root: Path | str | None,
+    now: datetime,
+) -> bool:
+    """Record a PUBLIC interaction with an author on the persona's relation store.
+
+    This is the seam that turns a send into memory. ``reply_score`` already reads
+    ``data/marketing/personas/<id>/relations.jsonl`` for its
+    ``relationship_stage`` feature, and ``persona_memory.record_relation``
+    already writes it — but no production caller sat between them, so the
+    feature scored ``0.0`` with ``source: "absent"`` forever. The receipt is the
+    right event to close that: it is the first moment we know we actually spoke
+    to someone.
+
+    **Requires an explicit ``repo_root``.** The persona spool lives in the
+    checkout (gitignored ``data/marketing/personas_host/``, consolidated nightly
+    into the tracked ledger), and a caller that did not NAME a checkout does not
+    get a write into an inferred one — an admin or a test running against a
+    fixture store must not dirty whatever tree this module happens to live in.
+
+    Never raises. A memory write rides on the send-recording path, and it must
+    never be able to make a recorded send look unrecorded.
+    """
+    if repo_root is None:
+        log.debug("reply_export.note_relation: no repo_root — skipping the relation write")
+        return False
+    handle = str(handle or "").strip().lstrip("@")
+    if not account or not handle:
+        return False
+    try:
+        from engine.marketing import persona_memory as _pm  # noqa: PLC0415
+
+        _pm.record_relation(account, handle, now=now, stage=stage, root=repo_root)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_export.note_relation: %s/%s -> %s failed: %s",
+                    account, handle, stage, exc)
+        return False
+
+
+def _clear_handoff_files(root: Path | str | None, iid: str) -> None:
+    """Drop the queue mirror and claim for an item that has left the lane."""
+    for stale in (queue_dir(root) / f"{iid}.json", claims_dir(root) / f"{iid}.json"):
+        if stale.exists():
+            try:
+                stale.unlink()
+            except OSError as exc:
+                log.warning("reply_export: cannot clear %s: %s", stale, exc)
 
 
 def ingest_receipts(
     *,
     cfg: dict | None,
     root: Path | str | None = None,
+    repo_root: Path | str | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Read screenshot+URL receipts back and record real sends.
+    """Read receipts back and record what the desktop session actually did.
 
     A receipt is the ONLY evidence a reply went out. ``mark_sent`` re-checks the
     per-account daily cap here rather than trusting the export-time check: the
@@ -364,19 +539,102 @@ def ingest_receipts(
 
     Receipt files are consumed (renamed to ``.done``) so a re-run never
     double-counts a send against the cap.
+
+    THREE OUTCOMES, one file shape (XG-W7):
+
+    ``status: "sent"`` (or absent, the legacy shape)
+        Requires ``url``. Records the send, escalates the persona's relation
+        row, and clears the queue mirror and claim.
+    ``status: "failed"``
+        Requires ``reason``, not ``url`` — there is no URL when nothing was
+        posted. Moves the item to ``failed``, where the attempts cap allows two
+        re-arms and no more. Without this branch the file contract could only
+        express success, and the runbook had to tell the operator's system to
+        import ``reply_queue`` and call ``transition`` directly, i.e. to reach
+        around the published interface into our internals for one of the three
+        outcomes.
+    already ``sent``
+        A duplicate report, retired ``.duplicate``. NOT the ``.unresolved``
+        orphan branch: that warning means "a reply may be public but unrecorded"
+        and it costs an operator a manual reconciliation, so spending it on a
+        send that IS correctly on the books is how a real orphan gets ignored.
+
+    ``repo_root`` is the CHECKOUT (for the persona relation spool), distinct
+    from ``root`` (the reply desk's host state). Omitting it skips the relation
+    write and records the send normally.
     """
     ts = now or datetime.now(timezone.utc)
     d = receipts_dir(root)
     recorded: list[str] = []
     refused: list[dict] = []
+    failed: list[str] = []
+    duplicates: list[str] = []
     if not d.exists():
-        return {"recorded": recorded, "refused": refused, "count": 0}
+        return {"recorded": recorded, "refused": refused, "failed": failed,
+                "duplicates": duplicates, "count": 0}
+
+    # ONE fold for the whole pass, used only for the "is this already sent /
+    # what status is it in" questions; mark_sent re-folds for the transition
+    # itself. `settled` carries what THIS pass has already resolved, because the
+    # item id is read from the JSON body and only defaults to the filename — two
+    # differently-named files may name the same item, and without this the second
+    # one lands in the orphan branch and sends an operator to reconcile a send
+    # that is correctly on the books.
+    state = _rq.fold_state(root)
+    settled: set[str] = set()
 
     for path in sorted(d.glob("*.json")):
         payload = _read_json(path)
         if not payload:
             continue
         iid = str(payload.get("id") or payload.get("item_id") or path.stem)
+
+        # An unparseable status is NOT read as "sent". Guessing the charitable
+        # meaning of a field the consumer got wrong is how a failed send becomes
+        # a recorded one, and this ledger is the only record either way.
+        status = str(payload.get("status") or "sent").strip().lower()
+        if status not in RECEIPT_STATUSES:
+            refused.append({"id": iid, "reason": "receipt_unknown_status"})
+            _retire(path, ".invalid")
+            print(
+                f"::warning title=reply-receipt-invalid::receipt for {iid} carries "
+                f"status={status!r}, which is not one of {sorted(RECEIPT_STATUSES)} "
+                "— refusing rather than guessing whether the reply went out",
+                flush=True,
+            )
+            continue
+
+        # A duplicate report of a send already on the books (or already settled
+        # earlier in THIS pass). Answered calmly and consumed, so the orphan
+        # warning keeps meaning what it says.
+        if iid in settled or state["status"].get(iid) == "sent":
+            duplicates.append(iid)
+            _retire(path, ".duplicate")
+            log.info("reply_export: receipt for %s duplicates a recorded send — retired", iid)
+            continue
+
+        if status == "failed":
+            reason = str(payload.get("reason") or "").strip() or "unspecified"
+            holder = str(payload.get("holder") or "desktop")
+            if _rq.transition(iid, "failed", actor=holder, root=root, now=ts,
+                              note=f"desktop reported failure: {reason}"):
+                failed.append(iid)
+                settled.add(iid)
+                _retire(path, ".done")
+                # `failed` is not a mirrored status, so a leftover queue file
+                # would be a live instruction to post what the session just
+                # said it could not post.
+                _clear_handoff_files(root, iid)
+            else:
+                refused.append({"id": iid, "reason": "illegal_transition"})
+                _retire(path, ".unresolved")
+                print(
+                    f"::warning title=reply-receipt-orphan::failure receipt for {iid} "
+                    f"could not move the item to 'failed' (status is "
+                    f"{state['status'].get(iid)!r}) — parked as .unresolved for review",
+                    flush=True,
+                )
+            continue
 
         # A receipt is the only evidence a reply went out, so an empty one is
         # not evidence. The URL is the machine-checkable half and is required;
@@ -409,14 +667,18 @@ def ingest_receipts(
                                root=root, cfg=cfg, now=ts)
         if result.get("ok"):
             recorded.append(iid)
+            settled.add(iid)
             _retire(path, ".done")
             # The item has left; its queue mirror and claim are stale.
-            for stale in (queue_dir(root) / f"{iid}.json", claims_dir(root) / f"{iid}.json"):
-                if stale.exists():
-                    try:
-                        stale.unlink()
-                    except OSError as exc:
-                        log.warning("reply_export: cannot clear %s: %s", stale, exc)
+            _clear_handoff_files(root, iid)
+            # …and we have now demonstrably spoken to this author. The relation
+            # row is what makes the NEXT tick's scorer rank them differently.
+            item = state["items"].get(iid) or {}
+            note_relation(
+                account=str(item.get("account") or ""),
+                handle=str(item.get("parent_author") or ""),
+                stage="engaged", repo_root=repo_root, now=ts,
+            )
         else:
             reason = result.get("reason")
             refused.append({"id": iid, "reason": reason})
@@ -447,7 +709,8 @@ def ingest_receipts(
                     flush=True,
                 )
 
-    return {"recorded": recorded, "refused": refused, "count": len(recorded)}
+    return {"recorded": recorded, "refused": refused, "failed": failed,
+            "duplicates": duplicates, "count": len(recorded)}
 
 
 def _retire(path: Path, suffix: str) -> None:
@@ -489,7 +752,7 @@ def sweep(
     sized the cap against a stale send count.
     """
     ts = now or datetime.now(timezone.utc)
-    ingested = ingest_receipts(cfg=cfg, root=root, now=ts)
+    ingested = ingest_receipts(cfg=cfg, root=root, repo_root=repo_root, now=ts)
     # A receipt that survived ingest (a cap deferral, say) still describes a
     # PUBLIC reply. Releasing its lease would move the item to `queued`, which
     # has no edge to `sent`, so the send could never be recorded afterwards —
@@ -506,7 +769,8 @@ def sweep(
 
 
 __all__ = [
+    "HANDOFF_CONTRACT", "RECEIPT_STATUSES",
     "queue_dir", "claims_dir", "receipts_dir", "exported_ids",
     "export_approved", "ingest_receipts", "sweep", "sweep_mirrors",
-    "claim_for_desktop", "pending_receipt_ids",
+    "claim_for_desktop", "pending_receipt_ids", "note_relation",
 ]

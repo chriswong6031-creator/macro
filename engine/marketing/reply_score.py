@@ -142,11 +142,42 @@ def load_relations(account: str, root: Path | str | None = None) -> dict[str, di
 
 
 #: Relationship escalation ladder (constitution §14.4). Higher = warmer.
+#:
+#: THIS TABLE SCORED EVERY REAL ROW AT ZERO UNTIL XG-W4b, and it did it
+#: silently. The vocabulary below was written against a ladder that was never
+#: built: `persona_memory.RELATION_STAGES` — the CLOSED set `record_relation`
+#: validates against, and the only vocabulary that can ever appear in
+#: relations.jsonl — is `{"", cold, engaged, reciprocal, declined}`. The two
+#: production writers use exactly two of those words (`reply_export` records
+#: `engaged` when a reply is confirmed sent, `reply_producer` records
+#: `reciprocal` when the author answers us), and NEITHER appeared here. So
+#: `_STAGE_SCALE.get(stage, 0.0)` returned the 0.0 default for every row the
+#: store will ever hold, the `relationship_stage` feature was dead weight at any
+#: weight, and the failure was invisible because 0.0 is also the honest answer
+#: for an ABSENT store — the state the desk is in today at M0. The feature would
+#: have looked correct right up to the moment it mattered.
+#:
+#: The live vocabulary is now first-class. `seen`/`liked`/`replied`/`recurring`
+#: are retained as aliases of their nearest live stage rather than deleted, so a
+#: historical row written before the closed vocabulary existed still scores
+#: something rather than silently reverting to the same 0.0 this defect was.
 _STAGE_SCALE: dict[str, float] = {
+    # The live vocabulary (persona_memory.RELATION_STAGES).
+    "": 0.0,
     "cold": 0.0,
+    # We have demonstrably spoken to them (a receipt landed).
+    "engaged": 0.60,
+    # They answered us — the charter's highest-value outcome.
+    "reciprocal": 1.0,
+    # They declined engagement. The LOWEST rung, deliberately equal to cold and
+    # never negative: this feature is a ranking prior, and the actual "do not
+    # approach" enforcement is the warmth suppression in persona_model, not a
+    # number that a re-weighting could flip.
+    "declined": 0.0,
+    # Legacy aliases — see the WHY above.
     "seen": 0.25,
     "liked": 0.50,
-    "replied": 0.75,
+    "replied": 0.60,
     "recurring": 1.0,
 }
 
