@@ -2927,7 +2927,11 @@ jobs:
     # deliberately bounded to the repository's top-level BioCatalyst test family.
     # app/requirements.txt is an owned trigger above, while the deploy regression
     # suite pins the serving-tier jsonschema/referencing closure used at import.
-    timeout-minutes: 8
+    # The wildcard suite reached 531 tests after the B4A expansion. Measured
+    # 2026-08-02: 9m24s locally, while the hosted pack was killed at the old
+    # 8m cap with otherwise-green sibling packs. Twenty minutes preserves a
+    # real hang fence while covering dependency/bootstrap and runner variance.
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
