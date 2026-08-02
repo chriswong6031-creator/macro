@@ -1161,6 +1161,15 @@ def test_theme_lanes_ships_basket_keyed_projection(tmp_path):
     (tmp_path / "config").mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO_ROOT / "config" / "theme_crosswalk.yml",
                  tmp_path / "config" / "theme_crosswalk.yml")
+    # Pin the CAUSE before the consequences. load_primary_basket_ids fail-opens to {}
+    # when the registry cannot be read — including when the lane has no PyYAML — and an
+    # empty map makes every assertion below fail as an untraceable "0 > 7" instead of
+    # naming the registry. This assert is the sentinel that outranks that fail-open.
+    assert sot.load_primary_basket_ids(tmp_path), (
+        "theme_crosswalk primary_basket_id map loaded EMPTY — the registry did not "
+        "parse (PyYAML missing from this lane, or the crosswalk moved/lost the key). "
+        "Fix the loader or the lane's deps; do NOT relax the assertions below."
+    )
     out = sot.write_theme_lanes(ctx, tmp_path)
     payload = json.loads(out.read_text(encoding="utf-8"))
 

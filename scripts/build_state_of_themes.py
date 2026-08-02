@@ -1393,12 +1393,20 @@ def load_primary_basket_ids(root: Path) -> dict[str, str]:
     closest healthcare proxy, but a managed_care holder does not own that theme).
     Themes the crosswalk marks null are simply absent here — an honest no-basket.
 
-    Fail-open: missing/corrupt crosswalk, or no PyYAML, → {} (the caller then emits an
-    empty basket map and the consumer falls back to its legacy same-id join).
+    Fail-open in BOTH failure modes — a crosswalk problem must never break the page
+    render — but they are not the same event and are not reported the same way:
+      * registry ABSENT → expected (sandboxed roots, a region without one). Silent {}.
+      * registry PRESENT but unreadable (parse error, or no PyYAML in a thin lane) →
+        a DEFECT wearing a fail-open's clothes. It still returns {}, but it announces
+        itself: the projection collapsing to empty is otherwise invisible until some
+        downstream assertion fails with a number nobody can trace back to here (PR
+        #4300 shipped red as a baffling "0 > 7" for exactly this reason).
     """
+    path = root / "config" / "theme_crosswalk.yml"
+    if not path.exists():
+        return {}
     try:
         import yaml  # local: the crosswalk is the only YAML this builder reads
-        path = root / "config" / "theme_crosswalk.yml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         out: dict[str, str] = {}
         for row in (data or {}).get("themes", []) or []:
@@ -1407,6 +1415,12 @@ def load_primary_basket_ids(root: Path) -> dict[str, str]:
                 out[str(tid)] = bid
         return out
     except Exception as exc:  # noqa: BLE001
+        # Bare print + flush, NOT log.warning: this builder's log format prefixes the
+        # line, and GitHub silently drops an annotation that does not START the line.
+        print(f"::warning title=theme-crosswalk-unreadable::{path} is present but its "
+              f"primary_basket_id map failed to load ({exc}); basket_lanes ships EMPTY "
+              f"and the Portfolio lane join falls back to the same-id subset",
+              flush=True)
         log.warning("theme_crosswalk primary_basket_id load failed (%s); "
                     "basket_lanes will be empty", exc)
         return {}
