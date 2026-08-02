@@ -22,12 +22,15 @@ from typing import Any, Callable, Mapping
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.earnings_narrative.contracts import (
+    AUTHORITY,
+    EXECUTION_RECEIPT,
     TERMINAL_TRANSCRIPT_SCHEMA,
     canonical_json_bytes,
     canonical_transcript_body_bytes,
     sha256_bytes,
     validate_manifest as validate_evidence_manifest,
 )
+from engine.earnings_narrative.admission import ROOT_AUDIT_SCHEMA
 
 
 log = logging.getLogger("publish_earnings_story_packets_r2")
@@ -417,8 +420,10 @@ def _shrink_allowed(local: Mapping[str, Any], remote: Mapping[str, Any] | None) 
     return _catalog_keys(remote).issubset(_catalog_keys(local))
 
 
-def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any]:
-    """Replay every public root receipt and all immutable objects it cites."""
+def _hydrate_and_verify_current_story_root(
+    *, s3: Any | None = None, bucket: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return a sealed binding plus the original detailed audit health."""
     client = s3 if s3 is not None else _client()
     if client is None:
         raise ImmutableAddressIntegrityError("R2 credentials are required for a public story packet audit")
@@ -426,8 +431,12 @@ def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None)
     if not target_bucket:
         raise ImmutableAddressIntegrityError("R2_BUCKET not set for public story packet audit")
     try:
-        marker_raw = client.get_object(Bucket=target_bucket, Key=f"{PREFIX}/manifest.json")["Body"].read()
-        marker = _canonical_object(marker_raw, label="public story packet marker")
+        marker, marker_etag = _remote_marker(client, target_bucket)
+        if marker is None:
+            raise ValueError("public story packet marker is absent")
+        if marker_etag is None:
+            raise ValueError("public story packet root ETag is absent before audit")
+        marker_raw = canonical_json_bytes(marker)
         _validate_manifest(marker)
         generation_id = _generation_id(marker)
         immutable = client.get_object(
@@ -493,11 +502,48 @@ def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None)
             )
         if health.get("status") != "ready":
             raise ValueError("full public story packet replay is not ready")
-        return dict(health)
+        current, current_etag = _remote_marker(client, target_bucket)
+        if current is None:
+            raise ValueError("public story packet root changed during audit")
+        if current_etag is None:
+            raise ValueError("public story packet root ETag is absent after audit")
+        if current_etag != marker_etag or canonical_json_bytes(current) != marker_raw:
+            raise ValueError("public story packet root changed during audit")
+        return {
+            "schema": ROOT_AUDIT_SCHEMA,
+            "authority": AUTHORITY,
+            "generation_id": generation_id,
+            "marker_sha256": sha256_bytes(marker_raw),
+            # Bind the second read: it is the identity proven current after
+            # every immutable object and evidence receipt was replayed.
+            "marker_etag": current_etag,
+            "manifest": dict(marker),
+            "execution": dict(EXECUTION_RECEIPT),
+        }, dict(health)
     except ImmutableAddressIntegrityError:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise ImmutableAddressIntegrityError("public earnings story packet audit failed") from exc
+        raise ImmutableAddressIntegrityError(f"public earnings story packet audit failed: {exc}") from exc
+
+
+def hydrate_and_verify_current_story_root(
+    *, s3: Any | None = None, bucket: str | None = None,
+) -> dict[str, Any]:
+    """Return a sealed binding for a fully replayed, still-current R2 root.
+
+    The helper deliberately rereads the sole mutable root marker after every
+    lineage/evidence replay.  A root move during the audit is a race, not a
+    harmless refresh: callers must start over rather than stage a packet from a
+    root that is no longer current.
+    """
+    binding, _health = _hydrate_and_verify_current_story_root(s3=s3, bucket=bucket)
+    return binding
+
+
+def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any]:
+    """Replay every public root receipt and all immutable objects it cites."""
+    _binding, health = _hydrate_and_verify_current_story_root(s3=s3, bucket=bucket)
+    return health
 
 
 def publish(
