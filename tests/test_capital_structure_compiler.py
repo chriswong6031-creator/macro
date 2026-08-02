@@ -646,15 +646,38 @@ def test_generation_receipt_hashes_artifacts_and_failed_promotion_rolls_back(tmp
 
 
 def test_nightly_order_and_render_network_firewall_are_pinned():
+    """A capital-structure integrity failure must BLOCK the nightly checkpoint.
+
+    The step is located STRUCTURALLY — its own parsed step dict — never by
+    slicing the file text between two step names. The old slice ran from
+    "- name: compile capital-structure" to "- name: refresh Finviz themes", so
+    it only held while those two steps stayed adjacent: on 2026-08-01 #4013
+    inserted an audit step (legitimately `continue-on-error: true`) between
+    them, the slice swallowed it, and this test failed while its own subject
+    was untouched and still correct. A sibling's continue-on-error can neither
+    break nor satisfy the pin below.
+    """
+    import yaml
+
     daily = (ROOT / ".github/workflows/daily.yml").read_text()
     compile_call = "python -m scripts.compile_capital_structure_events"
-    assert daily.index("python -m scripts.collect") < daily.index(compile_call)
-    assert daily.index(compile_call) < daily.index("- name: commit data")
-    compile_step = daily[
-        daily.index("- name: compile capital-structure"):
-        daily.index("- name: refresh Finviz themes")
+    steps = [
+        step
+        for job in yaml.safe_load(daily)["jobs"].values()
+        for step in (job.get("steps") or [])
     ]
-    assert "continue-on-error" not in compile_step
+    runs = [str(step.get("run") or "") for step in steps]
+    collect_at = next(
+        i for i, run in enumerate(runs) if "python -m scripts.collect " in run
+    )
+    compile_at = next(i for i, run in enumerate(runs) if compile_call in run)
+    commit_at = next(
+        i for i, step in enumerate(steps)
+        if str(step.get("name") or "").startswith("commit data")
+    )
+    assert collect_at < compile_at
+    assert compile_at < commit_at
+    assert "continue-on-error" not in steps[compile_at]
     assert "R2_BUCKET: ${{ secrets.R2_BUCKET }}" in daily
     assert (
         "R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}"
