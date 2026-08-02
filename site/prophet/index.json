@@ -159,12 +159,12 @@
       "_conviction_score": 89,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 63.5,
+      "management_confidence": 62.8,
       "recommended_action": "hold",
       "last_price": 34.3,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.5,
+        "management_confidence": 62.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -227,12 +227,12 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.0,
+      "management_confidence": 64.5,
       "recommended_action": "hold",
       "last_price": 184.02,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.0,
+        "management_confidence": 64.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -363,12 +363,12 @@
       "_conviction_score": 86,
       "_signal_date": "2026-06-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.1,
+      "management_confidence": 60.2,
       "recommended_action": "hold",
       "last_price": 36.33,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.1,
+        "management_confidence": 60.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -635,12 +635,12 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 61.2,
+      "management_confidence": 61.1,
       "recommended_action": "hold",
       "last_price": 316.07,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.2,
+        "management_confidence": 61.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -1470,12 +1470,12 @@
       "_conviction_score": 73,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 42.1,
+      "management_confidence": 40.7,
       "recommended_action": "hold",
       "last_price": 172.62,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 42.1,
+        "management_confidence": 40.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -1606,12 +1606,12 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-26",
       "phase": "triggered_pre_t1",
-      "management_confidence": 74.0,
+      "management_confidence": 74.6,
       "recommended_action": "hold",
       "last_price": 582.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 74.0,
+        "management_confidence": 74.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -1742,12 +1742,12 @@
       "_conviction_score": 70,
       "_signal_date": "2026-07-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 70.5,
+      "management_confidence": 70.7,
       "recommended_action": "hold",
       "last_price": 124.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 70.5,
+        "management_confidence": 70.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -1820,12 +1820,12 @@
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
       "phase": "pre_trigger",
-      "management_confidence": 38.3,
+      "management_confidence": 38.5,
       "recommended_action": "wait",
       "last_price": 70.36,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 38.3,
+        "management_confidence": 38.5,
         "recommended_action": "wait",
         "components": {
           "validity": 37.5,
@@ -2246,12 +2246,12 @@
       "_conviction_score": 64,
       "_signal_date": "2026-07-13",
       "phase": "pre_trigger",
-      "management_confidence": 31.8,
+      "management_confidence": 31.5,
       "recommended_action": "wait",
       "last_price": 7.59,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 31.8,
+        "management_confidence": 31.5,
         "recommended_action": "wait",
         "components": {
           "validity": 0.0,
@@ -2538,12 +2538,12 @@
       "_conviction_score": 62,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 62.5,
+      "management_confidence": 61.6,
       "recommended_action": "wait",
       "last_price": 13.42,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 62.5,
+        "management_confidence": 61.6,
         "recommended_action": "wait",
         "components": {
           "validity": 79.7,
@@ -2616,12 +2616,12 @@
       "_conviction_score": 62,
       "_signal_date": "2026-06-05",
       "phase": "overtime",
-      "management_confidence": 34.1,
+      "management_confidence": 33.3,
       "recommended_action": "trim",
       "last_price": 80.29,
       "state": {
         "phase": "overtime",
-        "management_confidence": 34.1,
+        "management_confidence": 33.3,
         "recommended_action": "trim",
         "components": {
           "validity": 38.9,
@@ -3142,12 +3142,12 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 49.1,
+      "management_confidence": 47.0,
       "recommended_action": "hold",
       "last_price": 14.66,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.1,
+        "management_confidence": 47.0,
         "recommended_action": "hold",
         "components": {
           "validity": 78.9,
@@ -3288,12 +3288,12 @@
       "_conviction_score": 57,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 67.1,
+      "management_confidence": 67.5,
       "recommended_action": "hold",
       "last_price": 14.72,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 67.1,
+        "management_confidence": 67.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -3580,12 +3580,12 @@
       "_conviction_score": 54,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.7,
+      "management_confidence": 67.8,
       "recommended_action": "wait",
       "last_price": 46.08,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.7,
+        "management_confidence": 67.8,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
@@ -3892,12 +3892,12 @@
       "_conviction_score": 52,
       "_signal_date": "2026-07-23",
       "phase": "pre_trigger",
-      "management_confidence": 53.6,
+      "management_confidence": 52.0,
       "recommended_action": "wait",
       "last_price": 175.05,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 53.6,
+        "management_confidence": 52.0,
         "recommended_action": "wait",
         "components": {
           "validity": 43.8,
@@ -4271,12 +4271,12 @@
       "_conviction_score": 50,
       "_signal_date": "2026-07-27",
       "phase": "pre_trigger",
-      "management_confidence": 67.7,
+      "management_confidence": 67.8,
       "recommended_action": "wait",
       "last_price": 871.0,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.7,
+        "management_confidence": 67.8,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
@@ -4739,12 +4739,12 @@
       "_conviction_score": 48,
       "_signal_date": "2026-07-13",
       "phase": "triggered_pre_t1",
-      "management_confidence": 50.6,
+      "management_confidence": 49.1,
       "recommended_action": "hold",
       "last_price": 35.62,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.6,
+        "management_confidence": 49.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4815,12 +4815,12 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 48.1,
+      "management_confidence": 48.0,
       "recommended_action": "wait",
       "last_price": 216.14,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 48.1,
+        "management_confidence": 48.0,
         "recommended_action": "wait",
         "components": {
           "validity": 68.9,
@@ -4961,12 +4961,12 @@
       "_conviction_score": 43,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 50.9,
+      "management_confidence": 50.2,
       "recommended_action": "hold",
       "last_price": 62.65,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.9,
+        "management_confidence": 50.2,
         "recommended_action": "hold",
         "components": {
           "validity": 99.6,

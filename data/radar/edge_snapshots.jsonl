@@ -8450,3 +8450,4 @@
 {"date":"2026-08-01","kind":"ticker","subject":"SYF","ticker":"SYF","edge_score":1,"state":"POSITIVE_DIVERGENCE"}
 {"date":"2026-08-01","kind":"ticker","subject":"L","ticker":"L","edge_score":1,"state":"POSITIVE_DIVERGENCE"}
 {"date":"2026-08-01","kind":"ticker","subject":"AAPL","ticker":"AAPL","edge_score":0,"state":"CONFIRMED_UP"}
+{"date":"2026-08-01","kind":"ticker","subject":"AXP","ticker":"AXP","edge_score":2,"state":"POSITIVE_DIVERGENCE"}

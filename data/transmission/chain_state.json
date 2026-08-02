@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-07-31",
-  "built": "2026-08-01 20:23 UTC",
+  "built": "2026-08-02 02:21 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -93,15 +93,15 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "expressed",
+      "state": "arming",
       "state_label": {
-        "en": "Expressed",
-        "zh": "已兑现"
+        "en": "Arming",
+        "zh": "触发中"
       },
-      "hop": 2,
+      "hop": 0,
       "n_hops": 2,
       "armable": true,
-      "episode_id": "dollar_spike_em_multinational@r3:2026-07-30",
+      "episode_id": "dollar_spike_em_multinational@r3:2026-07-31",
       "hops": [
         {
           "id": "dollar_spike->usd_transmission_on",
@@ -111,8 +111,8 @@
             0,
             20
           ],
-          "confirmed": true,
-          "asof": "2026-07-31",
+          "confirmed": false,
+          "asof": null,
           "value_receipt": [
             {
               "path": "transmission.usd_dir",
@@ -145,8 +145,8 @@
             0,
             90
           ],
-          "confirmed": true,
-          "asof": "2026-07-31",
+          "confirmed": false,
+          "asof": null,
           "value_receipt": [
             {
               "series": "FXI",
@@ -237,9 +237,9 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 46,
+          "n": 49,
           "cuts": {},
-          "unevaluable": 2816,
+          "unevaluable": 2808,
           "names": [
             "A",
             "AAPL",
@@ -265,6 +265,7 @@
             "EL",
             "FCFS",
             "FCX",
+            "FMC",
             "INGR",
             "ITT",
             "JBL",
@@ -278,12 +279,14 @@
             "NEM",
             "NVDA",
             "NXPI",
+            "PHIN",
             "PLXS",
             "PSN",
             "QRVO",
             "SNPS",
             "ST",
             "TEL",
+            "TER",
             "VC",
             "WAB",
             "WHR"
@@ -299,9 +302,9 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 171,
+          "n": 185,
           "cuts": {},
-          "unevaluable": 2587,
+          "unevaluable": 2557,
           "names": [
             "A",
             "AA",
@@ -337,6 +340,7 @@
             "BG",
             "BKNG",
             "BKR",
+            "BRKR",
             "BWA",
             "C",
             "CARR",
@@ -349,8 +353,10 @@
             "CE",
             "CMI",
             "CNH",
+            "COLM",
             "COO",
             "CPAY",
+            "CPRI",
             "CRL",
             "CROX",
             "CSCO",
@@ -375,6 +381,8 @@
             "EQIX",
             "EXPE",
             "FCX",
+            "FFIV",
+            "FMC",
             "FTNT",
             "GE",
             "GEHC",
@@ -386,6 +394,7 @@
             "HPE",
             "HPQ",
             "HWM",
+            "IEX",
             "ILMN",
             "INGR",
             "INTC",
@@ -416,7 +425,9 @@
             "MMM",
             "MRK",
             "MRVL",
+            "MSCI",
             "MSFT",
+            "MTCH",
             "NATL",
             "NEM",
             "NFLX",
@@ -434,6 +445,7 @@
             "PCAR",
             "PEP",
             "PFE",
+            "PHIN",
             "PLXS",
             "PPC",
             "PRGO",
@@ -454,8 +466,10 @@
             "SW",
             "TDY",
             "TEL",
+            "TER",
             "TKR",
             "TMO",
+            "TRMB",
             "TTWO",
             "UBER",
             "V",
@@ -464,9 +478,12 @@
             "VRT",
             "VTRS",
             "WAB",
+            "WAT",
             "WKC",
             "WMG",
+            "WST",
             "WTW",
+            "WWD",
             "XPO",
             "XRAY",
             "XYL",
@@ -486,11 +503,11 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 19,
+          "n": 21,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2715,
+          "unevaluable": 2695,
           "names": [
             "APTV",
             "AVGO",
@@ -500,6 +517,8 @@
             "DCH",
             "ELAN",
             "ITW",
+            "MSCI",
+            "MTCH",
             "NATL",
             "NXPI",
             "OGN",
@@ -1073,7 +1092,7 @@
   ],
   "display_only": true,
   "substrate": {
-    "universe": 2937,
+    "universe": 2936,
     "substrate_asof": {
       "min": "2026-05-07",
       "max": "2026-08-01"

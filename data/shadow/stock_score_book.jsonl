@@ -2812,3 +2812,4 @@
 {"date": "2026-07-31", "ticker": "PMT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "FMC", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "AVAV", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "ETSY", "score": 23.0, "percentile": 23.0, "regime": "mixed", "horizons": [21, 63, 126]}

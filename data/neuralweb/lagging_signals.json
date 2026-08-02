@@ -234,7 +234,7 @@
       ]
     },
     "altdata_conv": {
-      "n_recent_fires": 43,
+      "n_recent_fires": 44,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 2,
       "n_repeat_fire": 0,
@@ -2989,10 +2989,10 @@
       ]
     },
     "intel_hub": {
-      "n_recent_fires": 1668,
+      "n_recent_fires": 1672,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 250,
-      "n_repeat_fire": 974,
+      "n_repeat_fire": 976,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
         {
@@ -3045,6 +3045,22 @@
         },
         {
           "engine": "intel_hub",
+          "symbol": "AXP",
+          "as_of": "2026-08-01",
+          "flags": [
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "intel_hub",
+          "symbol": "AXP",
+          "as_of": "2026-08-01",
+          "flags": [
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "intel_hub",
           "symbol": "BA",
           "as_of": "2026-08-01",
           "flags": [
@@ -3376,31 +3392,13 @@
           "symbol": "TTWO",
           "as_of": "2026-08-01",
           "flags": [
-            "repeat_fire"
-          ]
-        },
-        {
-          "engine": "intel_hub",
-          "symbol": "AAPL",
-          "as_of": "2026-07-31",
-          "flags": [
-            "breadth_unconfirmed",
-            "repeat_fire"
-          ]
-        },
-        {
-          "engine": "intel_hub",
-          "symbol": "AAPL",
-          "as_of": "2026-07-31",
-          "flags": [
-            "breadth_unconfirmed",
             "repeat_fire"
           ]
         }
       ]
     },
     "narrative": {
-      "n_recent_fires": 311,
+      "n_recent_fires": 322,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 2,
       "n_repeat_fire": 0,
@@ -4267,12 +4265,97 @@
       "flagged": []
     },
     "reflex.options_flow_attention": {
-      "n_recent_fires": 158,
+      "n_recent_fires": 168,
       "n_hostile_regime": 0,
-      "n_breadth_unconfirmed": 0,
-      "n_repeat_fire": 17,
+      "n_breadth_unconfirmed": 10,
+      "n_repeat_fire": 22,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "AMZN",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed",
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "AMZN",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed",
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "BEN",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "BKR",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed",
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "GNRC",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "LVS",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "PEP",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed",
+            "repeat_fire"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "TER",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "TER",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed"
+          ]
+        },
+        {
+          "engine": "reflex.options_flow_attention",
+          "symbol": "TJX",
+          "as_of": "2026-07-31",
+          "flags": [
+            "breadth_unconfirmed",
+            "repeat_fire"
+          ]
+        },
         {
           "engine": "reflex.options_flow_attention",
           "symbol": "SNDK",
@@ -4412,9 +4495,9 @@
       ]
     },
     "stock_personality": {
-      "n_recent_fires": 2933,
+      "n_recent_fires": 2932,
       "n_hostile_regime": 0,
-      "n_breadth_unconfirmed": 2933,
+      "n_breadth_unconfirmed": 2932,
       "n_repeat_fire": 0,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
@@ -6567,7 +6650,7 @@
   "gaps": [],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/lagging.py",
-  "produced_at": "2026-08-01T21:16:03Z",
-  "inputs_hash": "sha256:117c23ce517b7e805d3bf3d3fdf4835476c13cda4e91226190c48ff245b23de8",
+  "produced_at": "2026-08-02T03:10:57Z",
+  "inputs_hash": "sha256:45431ef27a4b64fa363ff5cbf68c3796ecc874647c2d846e9605c32c92a4552b",
   "tier": "infrastructure"
 }

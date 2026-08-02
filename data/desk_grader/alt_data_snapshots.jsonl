@@ -1564,3 +1564,9 @@
 {"date":"2026-08-01","ticker":"NFLX","departed":true,"left_desk":"2026-08-01","last_rank":null,"last_score":18}
 {"date":"2026-08-01","ticker":"PAA","departed":true,"left_desk":"2026-08-01","last_rank":29,"last_score":27}
 {"date":"2026-08-01","ticker":"T","departed":true,"left_desk":"2026-08-01","last_rank":14,"last_score":37}
+{"date":"2026-08-01","ticker":"T","rank":25,"score":31,"lean":1,"broken":false}
+{"date":"2026-08-01","ticker":"PAA","rank":28,"score":27,"lean":1,"broken":false}
+{"date":"2026-08-01","ticker":"KO","rank":29,"score":27,"lean":1,"broken":false}
+{"date":"2026-08-01","ticker":"FINS","rank":30,"score":26,"lean":1,"broken":false}
+{"date":"2026-08-01","ticker":"NFLX","rank":null,"score":18,"lean":1,"entry_tier":"T2","broken":true}
+{"date":"2026-08-01","ticker":"ETSY","rank":27,"score":30,"lean":1,"broken":false}

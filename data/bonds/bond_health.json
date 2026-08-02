@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-07-31",
-    "built": "2026-08-01T20:23:06.390469+00:00",
+    "built": "2026-08-02T02:20:54.342093+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -679,10 +679,10 @@
         "asof": "2026-07-30"
       },
       "em_fx_basket": {
-        "value": -0.68,
+        "value": -0.62,
         "vel_5d_z": null,
-        "vel_20d_z": 0.589,
-        "asof": "2026-08-01"
+        "vel_20d_z": 0.535,
+        "asof": "2026-08-02"
       },
       "em_equity_breadth": {
         "value": 57.1,

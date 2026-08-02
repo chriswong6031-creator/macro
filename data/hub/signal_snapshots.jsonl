@@ -155659,3 +155659,15 @@
 {"date":"2026-08-01","t":"ZVRA","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
 {"date":"2026-08-01","t":"ZVSA","opp":0.0,"edge":0.511,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
 {"date":"2026-08-01","t":"LULU","opp":0.0,"edge":0.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"CHDN","opp":0.0,"edge":0.933,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"DAICW","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"EQH-PC","opp":0.0,"edge":0.956,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"FLEX","opp":0.0,"edge":0.578,"stage":"faltering","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"GPI","opp":0.0,"edge":0.956,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"HXL","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"IMAX","opp":0.0,"edge":1.0,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"QNCX","opp":0.0,"edge":0.956,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"SHOP","opp":0.0,"edge":0.4,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"TWLO","opp":0.0,"edge":0.585,"stage":"faltering","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"XLV","opp":0.0,"edge":0.734,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}
+{"date":"2026-08-01","t":"YYAI","opp":0.0,"edge":0.956,"stage":"building","lean":0,"engine_version":"hub-v3-trajectory","regime":"Q2"}

@@ -26,21 +26,21 @@
         "receding_scare": "growth",
         "dominant_velocity": 7.9,
         "drawdown_prob_h21": 0.13,
-        "drawdown_prob_trend": "flat",
+        "drawdown_prob_trend": "falling",
         "deescalated": [
+          {
+            "key": "internals",
+            "label_en": "Breadth internals deterioration",
+            "label_zh": "内部广度恶化",
+            "from": 100.0,
+            "to": 18.5
+          },
           {
             "key": "growth",
             "label_en": "Growth scare / defensive rotation",
             "label_zh": "增长恐慌/防御轮动",
             "from": 90.8,
             "to": 43.6
-          },
-          {
-            "key": "internals",
-            "label_en": "Breadth internals deterioration",
-            "label_zh": "内部广度恶化",
-            "from": 100.0,
-            "to": 68.5
           },
           {
             "key": "bubble",
@@ -292,9 +292,9 @@
         "market": false,
         "veto": false
       },
-      "odds_now": 0.16,
+      "odds_now": 0.13,
       "odds_peak": 0.19,
-      "odds_delta": 0.0,
+      "odds_delta": -0.03,
       "peak_days_ago": 24,
       "velocity": -4.7,
       "off_peak": 29.8,
@@ -343,18 +343,18 @@
       "drivers": {
         "faded": [
           {
+            "key": "internals",
+            "label_en": "Breadth internals deterioration",
+            "label_zh": "内部广度恶化",
+            "peak": 100.0,
+            "now": 18.5
+          },
+          {
             "key": "growth",
             "label_en": "Growth scare / defensive rotation",
             "label_zh": "增长恐慌/防御轮动",
             "peak": 90.8,
             "now": 43.6
-          },
-          {
-            "key": "internals",
-            "label_en": "Breadth internals deterioration",
-            "label_zh": "内部广度恶化",
-            "peak": 100.0,
-            "now": 68.5
           },
           {
             "key": "bubble",
@@ -371,13 +371,6 @@
             "label_zh": "信用压力",
             "peak": 72.7,
             "now": 61.0
-          },
-          {
-            "key": "internals",
-            "label_en": "Breadth internals deterioration",
-            "label_zh": "内部广度恶化",
-            "peak": 100.0,
-            "now": 68.5
           }
         ]
       },
@@ -403,30 +396,6 @@
     "top_score": 61.0,
     "conjunction": false,
     "scares": [
-      {
-        "scare": "internals",
-        "tier": "B",
-        "label_en": "Breadth internals deterioration",
-        "label_zh": "内部广度恶化",
-        "score": 68.5,
-        "band": "caution",
-        "firing_legs": [
-          {
-            "leg": "ai_breadth_divergence",
-            "pctile": 1.0,
-            "confirmed": true,
-            "lift_2020": null,
-            "lead_d": 5,
-            "era_robust": false,
-            "accruing": true
-          }
-        ],
-        "lead_weighted": 68.5,
-        "n_legs_registered": 1,
-        "n_legs_resolved": 1,
-        "weight_coverage": 1.0,
-        "partial_composition": false
-      },
       {
         "scare": "credit",
         "tier": "A",
@@ -529,6 +498,20 @@
         "partial_composition": false
       },
       {
+        "scare": "internals",
+        "tier": "B",
+        "label_en": "Breadth internals deterioration",
+        "label_zh": "内部广度恶化",
+        "score": 18.5,
+        "band": "calm",
+        "firing_legs": [],
+        "lead_weighted": 18.5,
+        "n_legs_registered": 1,
+        "n_legs_resolved": 1,
+        "weight_coverage": 1.0,
+        "partial_composition": false
+      },
+      {
         "scare": "vol",
         "tier": "B",
         "label_en": "Volatility event",
@@ -589,10 +572,10 @@
       "velocity": -4.7,
       "phase": "receding",
       "reached_risk": true,
-      "state_now": "caution",
-      "odds_now": 0.16,
+      "state_now": "watch",
+      "odds_now": 0.13,
       "odds_peak": 0.19,
-      "odds_delta": 0.0,
+      "odds_delta": -0.03,
       "spark": [
         86.7,
         82.8,
@@ -634,18 +617,18 @@
       "drivers": {
         "faded": [
           {
+            "key": "internals",
+            "label_en": "Breadth internals deterioration",
+            "label_zh": "内部广度恶化",
+            "peak": 100.0,
+            "now": 18.5
+          },
+          {
             "key": "growth",
             "label_en": "Growth scare / defensive rotation",
             "label_zh": "增长恐慌/防御轮动",
             "peak": 90.8,
             "now": 43.6
-          },
-          {
-            "key": "internals",
-            "label_en": "Breadth internals deterioration",
-            "label_zh": "内部广度恶化",
-            "peak": 100.0,
-            "now": 68.5
           },
           {
             "key": "bubble",
@@ -662,13 +645,6 @@
             "label_zh": "信用压力",
             "peak": 72.7,
             "now": 61.0
-          },
-          {
-            "key": "internals",
-            "label_en": "Breadth internals deterioration",
-            "label_zh": "内部广度恶化",
-            "peak": 100.0,
-            "now": 68.5
           }
         ]
       }
@@ -679,21 +655,21 @@
       "receding_scare": "growth",
       "dominant_velocity": 7.9,
       "drawdown_prob_h21": 0.13,
-      "drawdown_prob_trend": "flat",
+      "drawdown_prob_trend": "falling",
       "deescalated": [
+        {
+          "key": "internals",
+          "label_en": "Breadth internals deterioration",
+          "label_zh": "内部广度恶化",
+          "from": 100.0,
+          "to": 18.5
+        },
         {
           "key": "growth",
           "label_en": "Growth scare / defensive rotation",
           "label_zh": "增长恐慌/防御轮动",
           "from": 90.8,
           "to": 43.6
-        },
-        {
-          "key": "internals",
-          "label_en": "Breadth internals deterioration",
-          "label_zh": "内部广度恶化",
-          "from": 100.0,
-          "to": 68.5
         },
         {
           "key": "bubble",
@@ -853,9 +829,9 @@
     "display_only_legs": [
       {
         "leg": "ai_breadth_divergence",
-        "pctile": 1.0,
-        "firing": true,
-        "confirmed": true,
+        "pctile": 0.0,
+        "firing": false,
+        "confirmed": false,
         "scare": "internals",
         "lift_2020": null,
         "reason_en": "Display-only until gauntlet-promoted — it cannot set a risk tier or move the sub-score.",
@@ -5152,8 +5128,8 @@
     ],
     "freshness": {
       "asof": "2026-07-31",
-      "built_at": "2026-08-01T19:20:14Z",
-      "age_days": 1,
+      "built_at": "2026-08-02T01:22:54Z",
+      "age_days": 2,
       "age_sessions": 0,
       "max_age_sessions": 1,
       "stale": false,
@@ -5189,7 +5165,7 @@
     "date": "2026-07-31"
   },
   "rotation": {
-    "asof": "2026-08-01",
+    "asof": "2026-08-02",
     "regime": {
       "n_active_complexes": 0,
       "breadth": null,
@@ -5391,7 +5367,7 @@
               0.1389
             ],
             [
-              "smooth_compounder_grind",
+              "basing_accumulator",
               0.0556
             ]
           ],
@@ -5441,7 +5417,7 @@
               0.0972
             ],
             [
-              "stair_step_leader",
+              "failed_breakout_trap",
               0.0833
             ]
           ],
@@ -5614,13 +5590,12 @@
     "liquidity_overlay": "neutral"
   },
   "data_health": {
-    "last_run": "2026-08-01T16:10:17.357645+00:00",
+    "last_run": "2026-08-02T00:47:10.752005+00:00",
     "counts": {
-      "ok": 162,
-      "failed": 3,
+      "ok": 161,
+      "failed": 7,
       "blocked": 8,
-      "dead": 4,
-      "stale": 1,
+      "stale": 2,
       "non_session": 1,
       "no_creds": 1,
       "empty": 1
@@ -5631,12 +5606,32 @@
       {
         "source": "sentiment_naaim",
         "error": "ValueError: NAAIM since-inception workbook link not found on page",
-        "checked_at": "2026-08-01T16:10:17.357992+00:00"
+        "checked_at": "2026-08-02T00:47:10.753058+00:00"
+      },
+      {
+        "source": "coingecko",
+        "error": "HTTPError: 403 Client Error: Forbidden for url: https://api.coingecko.com/api/v3/global",
+        "checked_at": "2026-08-02T00:47:10.754070+00:00"
       },
       {
         "source": "intl_universe",
         "error": "RuntimeError: intl_universe: no closes downloaded",
-        "checked_at": "2026-08-01T16:10:17.358418+00:00"
+        "checked_at": "2026-08-02T00:47:10.753893+00:00"
+      },
+      {
+        "source": "finnhub_altdata",
+        "error": "RuntimeError: finnhub_altdata: no rows from 120 tickers (errors=120)",
+        "checked_at": "2026-08-02T00:47:10.753496+00:00"
+      },
+      {
+        "source": "massive_stock_day",
+        "error": "RuntimeError: massive_stock_day: no_creds",
+        "checked_at": "2026-08-02T00:47:10.753716+00:00"
+      },
+      {
+        "source": "lbnl_queue",
+        "error": "RuntimeError: lbnl_queue: emp.lbl.gov unreachable (Cloudflare WAF); the committed seed JSON data/eia/interconnection_que",
+        "checked_at": "2026-08-02T00:47:10.754199+00:00"
       },
       {
         "source": "china_einteraction",
@@ -5647,18 +5642,18 @@
   },
   "alerts": {
     "asof": "2026-07-31",
-    "generated_utc": "2026-08-01 19:27",
+    "generated_utc": "2026-08-02 01:31",
     "total": 60,
     "critical": 2,
-    "major": 35,
-    "minor": 23,
+    "major": 31,
+    "minor": 27,
     "actionable": 2,
     "backtested": 2
   },
   "factor_weather": {
     "style_regime": "mixed",
     "style_regime_pending": null,
-    "style_regime_hold_days": 11,
+    "style_regime_hold_days": 10,
     "factor_leader": "composite",
     "factor_leader_ic": -0.0072,
     "etf_pulse_summary": "IWF/IWD_20d=-0.0437; QQQ/SPY_20d=-0.0376; IWM/SPY_20d=-0.0245",
@@ -6407,10 +6402,10 @@
   },
   "intelligence": {
     "as_of": "2026-08-01",
-    "n_universe": 3014,
+    "n_universe": 2872,
     "n_priority": 25,
-    "n_actionable": 6,
-    "n_divergences": 32,
+    "n_actionable": 7,
+    "n_divergences": 33,
     "macro_context": {
       "regime": "Reflation",
       "posture": "Reflation — growth and inflation both heating up. Posture: CAREFUL — reduce size, tighten stops, let cash build.",
@@ -6424,28 +6419,28 @@
         "read": "early_edge"
       },
       {
-        "ticker": "PSKY",
-        "priority": 0.49,
-        "lean": 1,
-        "read": "early_edge"
-      },
-      {
-        "ticker": "ETN",
-        "priority": 0.465,
-        "lean": -1,
-        "read": "fading"
-      },
-      {
         "ticker": "F",
         "priority": 0.464,
         "lean": -1,
         "read": "fading"
       },
       {
-        "ticker": "ECHO",
-        "priority": 0.39,
+        "ticker": "ETN",
+        "priority": 0.458,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
+        "ticker": "PSKY",
+        "priority": 0.42,
         "lean": 1,
         "read": "early_edge"
+      },
+      {
+        "ticker": "KO",
+        "priority": 0.403,
+        "lean": -1,
+        "read": "fading"
       }
     ],
     "display_only": true
@@ -6709,7 +6704,7 @@
   "stock_personality_summary": {
     "available": true,
     "as_of": "2026-07-31",
-    "n_tickers": 2933,
+    "n_tickers": 2932,
     "coverage": {
       "archetype": 0.501,
       "dna_class": 0.379,
@@ -6734,11 +6729,11 @@
     "top_chart_shares": [
       [
         "mixed_chart",
-        0.4777
+        0.4778
       ],
       [
         "failed_breakout_trap",
-        0.1501
+        0.1502
       ],
       [
         "volatile_momentum_vehicle",
@@ -6751,7 +6746,7 @@
   },
   "context_risk": {
     "available": true,
-    "as_of": "2026-08-01T03:47Z",
+    "as_of": "2026-08-01T21:40Z",
     "board_top_overweights": [
       {
         "archetype": "broken_growth",
@@ -6761,21 +6756,21 @@
         "member_n": 3
       },
       {
-        "archetype": "cyclical",
-        "ratio": 1.428,
-        "member_share": 0.2,
-        "universe_share": 0.1401,
-        "member_n": 13
+        "archetype": "quality_compounder",
+        "ratio": 1.656,
+        "member_share": 0.0462,
+        "universe_share": 0.0279,
+        "member_n": 3
       },
       {
         "archetype": "rate_sensitive",
-        "ratio": 1.371,
-        "member_share": 0.2462,
+        "ratio": 1.456,
+        "member_share": 0.2615,
         "universe_share": 0.1796,
-        "member_n": 16
+        "member_n": 17
       }
     ],
-    "weighted_p10_21d": -0.0807,
+    "weighted_p10_21d": -0.0803,
     "weighted_median_21d": 0.0122,
     "p10_interpretation": "per-type share-weighted average of marginal worst-decile returns; NOT a portfolio P10 — diversification and cross-type correlation are not modeled.",
     "n_board": 71,
@@ -7011,8 +7006,8 @@
   "live_overlay": {
     "source": "data/regime/latest.json:freshness",
     "asof": "2026-07-31",
-    "built_at": "2026-08-01T19:20:14Z",
-    "age_days": 1,
+    "built_at": "2026-08-02T01:22:54Z",
+    "age_days": 2,
     "stale": false
   },
   "contradictions": {
@@ -7079,7 +7074,7 @@
       "med_dd": -0.3334,
       "state_since": "2026-07-07"
     },
-    "n_alert": 0,
+    "n_alert": 1,
     "d3_alert": 0,
     "n_mature": 10,
     "immature": [],
@@ -7090,14 +7085,14 @@
     "display_only": true
   },
   "special_situations": {
-    "asof": "2026-08-01",
+    "asof": "2026-08-02",
     "counts": {
-      "total": 1203,
-      "new_today": 91,
+      "total": 1199,
+      "new_today": 18,
       "grade_a": 0,
-      "grade_b": 2,
-      "with_arb": 12,
-      "cross_border": 517
+      "grade_b": 3,
+      "with_arb": 15,
+      "cross_border": 516
     },
     "setups_display": [
       {
@@ -7123,6 +7118,19 @@
         "why": [
           "Buy setup live",
           "Strong history for this event type",
+          "EDGAR filing confirmed"
+        ]
+      },
+      {
+        "ticker": "DLB",
+        "company": "Dolby Laboratories, Inc.",
+        "category": "Capital Returns",
+        "stage": "announced",
+        "grade": "B",
+        "score": 55.0,
+        "why": [
+          "Buy setup live",
+          "Deeply oversold (weeks)",
           "EDGAR filing confirmed"
         ]
       },
@@ -7160,75 +7168,64 @@
         "why": [
           "Buy setup live"
         ]
-      },
-      {
-        "ticker": "GCO",
-        "company": "Genesco Inc.",
-        "category": "Activist Campaigns",
-        "stage": "",
-        "grade": "C",
-        "score": 48.0,
-        "why": [
-          "Buy setup live"
-        ]
       }
     ],
     "changes": [
       {
-        "kind": "new",
-        "ticker": "BSBR",
-        "category": "Tender Offers",
-        "from": null,
-        "to": "announced"
+        "kind": "terminal",
+        "ticker": "CYCUW",
+        "category": "Acquisitions",
+        "from": "announced",
+        "to": "terminated"
       },
       {
         "kind": "new",
-        "ticker": "FULC",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "NDAQ",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "NXPI",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "PAYP",
-        "category": "Strategic Reviews",
-        "from": null,
-        "to": "announced"
-      },
-      {
-        "kind": "new",
-        "ticker": "PLMUF",
+        "ticker": "TCX",
         "category": "Strategic Reviews",
         "from": null,
         "to": "initiated"
       },
       {
         "kind": "new",
-        "ticker": "SEER",
-        "category": "Strategic Reviews",
+        "ticker": "ZNB",
+        "category": "Rights Offerings",
         "from": null,
-        "to": "initiated"
+        "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "CCJ",
-        "category": "SPACs",
+        "ticker": "WBQNL",
+        "category": "Restructuring",
         "from": null,
-        "to": "de-SPAC"
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "GSCCF",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CRBD",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "VYNE",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "CROX",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
       }
     ],
     "risk_arb_top": [
@@ -7459,7 +7456,7 @@
     "display_only": true
   },
   "stage_analysis": {
-    "as_of": "2026-08-01",
+    "as_of": "2026-08-02",
     "counts": {
       "total": 2722,
       "stage1": 141,
@@ -7468,7 +7465,7 @@
       "stage3": 152,
       "stage4": 857,
       "too_young": 353,
-      "new_today": 20
+      "new_today": 0
     },
     "market": {
       "pct_stage2": 57.8,
@@ -7579,48 +7576,7 @@
         ]
       }
     ],
-    "changes": [
-      {
-        "kind": "entered_stage4",
-        "ticker": "AEM",
-        "detail": "Now in a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "AFCG",
-        "detail": "Rolled over into a declining stage"
-      },
-      {
-        "kind": "entered_stage4",
-        "ticker": "AGI",
-        "detail": "Now in a declining stage"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ALHC",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "topping",
-        "ticker": "ALMU",
-        "detail": "Advance is stalling — topping out"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "AMC",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "AMP",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "AMZN",
-        "detail": "Moved into an advancing stage"
-      }
-    ],
+    "changes": [],
     "display_only": true,
     "is_context_only": true
   },
@@ -7728,15 +7684,15 @@
       {
         "chain": "dollar_spike_em_multinational",
         "title_en": "Dollar spike → EM & multinational-EPS headwind",
-        "state": "expressed",
+        "state": "arming",
         "tier": "hypothesis",
-        "links_confirmed": 2,
+        "links_confirmed": 0,
         "n_hops": 2,
         "base_rates": null,
         "blast": {
           "em_revenue_exposure": {
-            "n": 46,
-            "unevaluable": 2816,
+            "n": 49,
+            "unevaluable": 2808,
             "names": [
               "A",
               "AAPL",
@@ -7749,8 +7705,8 @@
             ]
           },
           "multinational_fx_translation": {
-            "n": 171,
-            "unevaluable": 2587,
+            "n": 185,
+            "unevaluable": 2557,
             "names": [
               "A",
               "AA",
@@ -7763,8 +7719,8 @@
             ]
           },
           "dollar_debt_burden": {
-            "n": 19,
-            "unevaluable": 2715,
+            "n": 21,
+            "unevaluable": 2695,
             "names": [
               "APTV",
               "AVGO",
@@ -7844,8 +7800,8 @@
     "data/market_state/latest.json": "2026-07-31",
     "data/regime/latest.json": "2026-07-31",
     "data/breadth/breadth.parquet": "2026-07-31",
-    "site/basketdata/oracle_state.json": "2026-08-01",
-    "data/run_status.json": "2026-08-01T16:10:17.357645+00:00",
+    "site/basketdata/oracle_state.json": "2026-08-02",
+    "data/run_status.json": "2026-08-02T00:47:10.752005+00:00",
     "site/factordata/alerts_triage.json": "2026-07-31",
     "data/neuralweb/liquidity_plumbing.json": "2026-07-31",
     "data/rebalance_pulse/latest.json": "2026-07-31",
@@ -7864,7 +7820,7 @@
     "data/intl_risk/latest.json": null,
     "site/basketdata/theme_context.json": "2026-07-31",
     "data/market_structure/latest.json": "2026-07-31",
-    "data/stage_analysis/context/latest.json": "2026-08-01",
+    "data/stage_analysis/context/latest.json": "2026-08-02",
     "data/darkpool/context/latest.json": "2026-07-31",
     "data/transmission/chain_state.json": "2026-07-31",
     "data/mag7_washout/latest.json": "2026-07-31",
@@ -7872,7 +7828,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-08-01T21:34:35Z",
-  "inputs_hash": "sha256:34db5760714c5097783a8cef5980a382f4cc313e4c18d7c7f9bb50f8d81bc888",
+  "produced_at": "2026-08-02T03:30:58Z",
+  "inputs_hash": "sha256:b5ac023b66cc388f7dc0ef2da92d201f951eb6fd83aa93750a18262578354553",
   "tier": "infrastructure"
 }

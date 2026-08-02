@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-08-01T21:32:42Z",
+  "asof": "2026-08-02T03:28:51Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -2070,8 +2070,8 @@
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
     "asof": "2026-08-01",
-    "last_nightly_asof": "2026-07-31",
-    "nightly_gap_days": 1,
+    "last_nightly_asof": "2026-08-01",
+    "nightly_gap_days": 0,
     "past_due_unscored": [
       {
         "release": "ppi_finaldemand",
@@ -2096,7 +2096,7 @@
       }
     ],
     "enricher_staleness": {
-      "kalshi_releases_asof": "2026-08-01",
+      "kalshi_releases_asof": "2026-08-02",
       "cleveland_nowcast_asof": "2026-08-01",
       "work_stoppages_asof": "2024-10-01",
       "print_integrity_asof": "2024-01-01"

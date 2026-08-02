@@ -7,7 +7,7 @@
    "receiver": "xlv",
    "tier": "primary",
    "started": "2026-07-13",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",
@@ -43,7 +43,7 @@
    "receiver": "xlv",
    "tier": "primary",
    "started": "2026-07-13",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",
@@ -71,78 +71,6 @@
     "blowoff": null,
     "turn": null,
     "asof": "2026-07-29"
-   }
-  },
-  "smh->xlf": {
-   "pair_id": "smh->xlf",
-   "donor": "smh",
-   "receiver": "xlf",
-   "tier": "secondary",
-   "started": "2026-07-10",
-   "lapse_count": 4,
-   "confirm_streak": 0,
-   "last_receipts": {
-    "event_type": "into_strength",
-    "donor_signature": "contagion_bleed",
-    "donor": {
-     "state": "contagion_bleed",
-     "rs20": null,
-     "at_40d_low": true,
-     "asof": "2026-07-28"
-    },
-    "receiver": {
-     "off_low_pct": 0.1363,
-     "rs20": 0.0724,
-     "ratio_chg_20s": 0.2795,
-     "ratio_20s_high": true,
-     "breadth_above50": 91.89,
-     "breadth_rising": true,
-     "breadth_above_donor": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.1622,
-     "inflected": true,
-     "ratio_20s_high": true
-    },
-    "blowoff": null,
-    "turn": null,
-    "asof": "2026-07-28"
-   }
-  },
-  "xlk->xlf": {
-   "pair_id": "xlk->xlf",
-   "donor": "xlk",
-   "receiver": "xlf",
-   "tier": "secondary",
-   "started": "2026-07-10",
-   "lapse_count": 4,
-   "confirm_streak": 0,
-   "last_receipts": {
-    "event_type": "into_strength",
-    "donor_signature": "contagion_bleed",
-    "donor": {
-     "state": "contagion_bleed",
-     "rs20": null,
-     "at_40d_low": true,
-     "asof": "2026-07-28"
-    },
-    "receiver": {
-     "off_low_pct": 0.1363,
-     "rs20": 0.0724,
-     "ratio_chg_20s": 0.162,
-     "ratio_20s_high": true,
-     "breadth_above50": 91.89,
-     "breadth_rising": true,
-     "breadth_above_donor": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.1004,
-     "inflected": true,
-     "ratio_20s_high": true
-    },
-    "blowoff": null,
-    "turn": null,
-    "asof": "2026-07-28"
    }
   }
  },
