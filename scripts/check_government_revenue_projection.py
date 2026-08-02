@@ -5,7 +5,8 @@ The serialized Government Revenue lane owns canonical evidence under
 ``data/government_revenue``. Generic render lanes may restyle/re-stamp the
 public page, but they must never publish an older JSON twin, a full-payload
 HTML regression, or a shell whose bundle identity differs from canonical
-workspace bytes.
+workspace bytes. The independently generation-bound dossier artifact is held
+to the same byte-identical canonical/public-twin boundary.
 """
 
 from __future__ import annotations
@@ -74,6 +75,12 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     public_workspace_raw, public_workspace = _read_json(
         public_dir / "workspace.json", "public workspace twin"
     )
+    canonical_dossier_raw, canonical_dossier = _read_json(
+        canonical_dir / "dossiers.json", "canonical dossier"
+    )
+    public_dossier_raw, _public_dossier = _read_json(
+        public_dir / "dossiers.json", "public dossier twin"
+    )
 
     try:
         build_government_revenue._validate_payload(canonical_latest)
@@ -86,6 +93,18 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             "public workspace twin differs from canonical workspace bytes"
         )
+    if public_dossier_raw != canonical_dossier_raw:
+        raise ProjectionDriftError(
+            "public dossier twin differs from canonical dossier bytes"
+        )
+    try:
+        build_government_revenue._validate_dossier_payload(canonical_dossier)
+    except ValueError as exc:
+        raise ProjectionDriftError("canonical dossier schema is invalid") from exc
+    if build_government_revenue._canonical_json(canonical_dossier).encode("utf-8") != (
+        canonical_dossier_raw
+    ):
+        raise ProjectionDriftError("canonical dossier bytes are non-canonical")
 
     embedded_workspace = _object(
         canonical_latest.get("procurement_workspace"),
@@ -156,6 +175,8 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         "bundle_id": bundle_id,
         "html_bytes": len(html_raw),
         "events": len(canonical_workspace.get("events") or []),
+        "dossier_content_id": canonical_dossier.get("content_id"),
+        "dossier_awards": len(canonical_dossier.get("awards") or []),
     }
 
 
@@ -173,7 +194,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "government revenue projection OK — "
         f"bundle={result['bundle_id']} html={result['html_bytes']}B "
-        f"events={result['events']}"
+        f"events={result['events']} dossier={result['dossier_content_id']} "
+        f"awards={result['dossier_awards']}"
     )
     return 0
 

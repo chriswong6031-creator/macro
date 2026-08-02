@@ -13,6 +13,7 @@ from scripts.check_government_revenue_projection import (
     validate_projection,
 )
 from engine.government_revenue.workspace import build_procurement_workspace
+from engine.government_revenue.dossiers import build_dossier_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +77,10 @@ def _generation(root: Path) -> tuple[Path, Path, Path]:
     canonical_dir.joinpath("workspace.json").write_text(
         build_government_revenue._canonical_json(workspace), encoding="utf-8"
     )
+    dossier = build_dossier_payload(root, as_of="2026-08-02")
+    canonical_dir.joinpath("dossiers.json").write_text(
+        build_government_revenue._canonical_json(dossier), encoding="utf-8"
+    )
     return build_government_revenue.build_site_only(root)
 
 
@@ -86,6 +91,7 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
 
     assert result["events"] == 1
     assert result["bundle_id"].startswith("grw2-")
+    assert result["dossier_content_id"].startswith("grd1-")
     assert result["html_bytes"] < 250_000
 
 
@@ -95,6 +101,15 @@ def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> No
     public_latest.write_text('{"stale":true}', encoding="utf-8")
 
     with pytest.raises(ProjectionDriftError, match="latest twin differs"):
+        validate_projection(tmp_path)
+
+
+def test_projection_fence_rejects_stale_public_dossier_twin(tmp_path: Path) -> None:
+    _generation(tmp_path)
+    public_dossier = tmp_path / "site" / "government-revenue-data" / "dossiers.json"
+    public_dossier.write_text('{"stale":true}', encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match="dossier twin differs"):
         validate_projection(tmp_path)
 
 
@@ -196,6 +211,7 @@ def test_render_lanes_refuse_to_push_an_uncommitted_projection(lane: Path) -> No
     assert "site/government_revenue.html" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/latest.json" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/workspace.json" in post_rebase[head_gate:final_guard]
+    assert "site/government-revenue-data/dossiers.json" in post_rebase[head_gate:final_guard]
 
 
 def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> None:

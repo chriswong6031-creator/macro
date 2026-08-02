@@ -3060,8 +3060,10 @@ modules:
     writes:
       - data/government_revenue/latest.json
       - data/government_revenue/workspace.json
+      - data/government_revenue/dossiers.json
       - site/government-revenue-data/latest.json
       - site/government-revenue-data/workspace.json
+      - site/government-revenue-data/dossiers.json
       - site/government_revenue.html
     impure: false
     needs_secrets: false
@@ -3075,7 +3077,9 @@ modules:
       sole serialized SAM ledger and canonical projection writer and re-renders after
       every rebase. Generic site-wide render lanes may call the builder only with a
       fail-closed canonical-byte guard, so they can refresh matching site twins without
-      advancing evidence state. The builder emits public-company exposure candidates
+      advancing evidence state. A separate content-addressed dossier generation exposes
+      bounded official award/action history and byte-identical canonical/public twins.
+      The builder emits public-company exposure candidates
       and procurement events with explicit provenance/limitations, never bidder odds,
       revenue forecasts, an investment rank, sizing rule, gate, or new signal.
 

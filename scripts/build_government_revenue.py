@@ -33,6 +33,12 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from engine.government_revenue import build_payload  # noqa: E402
+from engine.government_revenue.dossiers import (  # noqa: E402
+    DOSSIER_CONTRACT,
+    build_dossier_payload,
+    dossier_content_id,
+    is_valid_dossier_payload,
+)
 from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -264,7 +270,7 @@ def _display_payload(payload: dict) -> dict:
     shell = {
         key: value
         for key, value in payload.items()
-        if key not in {"companies", "opportunity_intelligence", "procurement_workspace"}
+        if key not in {"companies", "opportunity_intelligence", "procurement_workspace", "workbench"}
     }
     shell["companies"] = [
         {
@@ -417,6 +423,33 @@ def _validate_payload(payload: object) -> dict:
     return payload
 
 
+def _validate_dossier_payload(payload: object) -> dict:
+    """Reject a dossier generation before either public twin is replaced."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != DOSSIER_CONTRACT
+        or not is_valid_dossier_payload(payload)
+        or dossier_content_id(payload) != payload.get("content_id")
+    ):
+        raise ValueError("government revenue dossier returned an invalid schema")
+    return payload
+
+
+def _write_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
+    """Atomically replace byte-identical canonical/site dossier twins.
+
+    The two directories cannot share one filesystem rename.  Each replacement
+    is individually atomic and both bytes originate from the same validated
+    in-memory generation.  The serving layer requires both twins and their
+    exact bytes, so it fails closed during the very small replacement window.
+    """
+    canonical = root / "data" / "government_revenue" / "dossiers.json"
+    site = root / "site" / "government-revenue-data" / "dossiers.json"
+    _atomic_write_text(canonical, dossier_raw)
+    _atomic_write_text(site, dossier_raw)
+    return canonical, site
+
+
 def _write_site_projection(
     root: Path,
     payload: dict,
@@ -461,6 +494,9 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     """Build canonical JSON, its site twin, and the HTML page."""
     root = root.resolve()
     payload = _validate_payload(build_payload(root=root, as_of=as_of))
+    dossier = _validate_dossier_payload(
+        build_dossier_payload(root=root, as_of=payload.get("as_of"))
+    )
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
@@ -471,6 +507,8 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     latest_raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
     _atomic_write_text(canonical_dir / "workspace.json", workspace_raw)
     _atomic_write_text(canonical_path, latest_raw)
+    dossier_raw = _canonical_json(dossier)
+    _write_dossier_twins(root, dossier_raw)
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -518,6 +556,20 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
     bundle_id = workspace.get("bundle_id")
     if not bundle_id or bundle_id != _workspace_bundle_id(workspace):
         raise ValueError("canonical workspace bundle identity mismatch")
+    # A renderer must never rebuild a dossier from mutable source rails.  When
+    # a live collector has already published a canonical dossier, verify and
+    # mirror those exact bytes; pre-dossier historical checkouts remain able to
+    # re-render their Government Revenue page without synthesizing new data.
+    dossier_path = canonical_dir / "dossiers.json"
+    if dossier_path.exists():
+        try:
+            dossier_raw = dossier_path.read_text(encoding="utf-8")
+            dossier = _validate_dossier_payload(json.loads(dossier_raw))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical government revenue dossier is invalid") from exc
+        if _canonical_json(dossier) != dossier_raw:
+            raise ValueError("canonical government revenue dossier bytes are non-canonical")
+        _write_dossier_twins(root, dossier_raw)
     html_path, json_path = _write_site_projection(
         root,
         payload,

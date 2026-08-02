@@ -15786,6 +15786,29 @@ artifacts:
       hydrates this generation-bound artifact. Display/context only; every authority
       field is false and display_priority is explicitly not an investment rank.
 
+  government-revenue-dossiers:
+    path: data/government_revenue/dossiers.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_revenue_dossiers.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Canonical content-addressed, bounded award/action dossier generation. Award
+      identity prefers the source-native generated USAspending award identifier and
+      never collapses separate awards on PIID alone. Discovery tickers are collection
+      scope only, not recipient-to-issuer attribution. Display/context only; request
+      handlers paginate precomputed records and cannot recalculate or enrich them.
+
   site-government-revenue-latest:
     path: site/government-revenue-data/latest.json
     format: json
@@ -15828,6 +15851,27 @@ artifacts:
       workbench after a bounded first paint. Its bundle id must match the embedded shell
       before the browser accepts it. It is display/context only and cannot rank, size,
       gate, originate, or escalate a signal.
+
+  site-government-revenue-dossiers:
+    path: site/government-revenue-data/dossiers.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_revenue_dossiers.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py]
+    external_consumers: []
+    notes: >
+      Public byte-identical twin of government-revenue-dossiers. The API requires both
+      twins, exact bytes, strict schema validation, and a matching content-derived ID;
+      malformed, stale, or mixed generations fail closed.
 
   # --- Capital Structure Intelligence W0-W1: immutable SEC evidence/event spine ---
   capital-structure-discovery:

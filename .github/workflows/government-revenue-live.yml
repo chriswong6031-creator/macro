@@ -516,8 +516,10 @@ jobs:
             data/government_revenue/sam_opportunity_heartbeat.parquet
             data/government_revenue/latest.json
             data/government_revenue/workspace.json
+            data/government_revenue/dossiers.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
+            site/government-revenue-data/dossiers.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -545,8 +547,10 @@ jobs:
             data/government_revenue/award_event_projection_state.json \
             data/government_revenue/latest.json \
             data/government_revenue/workspace.json \
+            data/government_revenue/dossiers.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
+            site/government-revenue-data/dossiers.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
@@ -577,8 +581,10 @@ jobs:
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
+                data/government_revenue/dossiers.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
+                site/government-revenue-data/dossiers.json \
                 site/government_revenue.html
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
@@ -586,8 +592,10 @@ jobs:
                 data/government_revenue/award_event_projection_state.json \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
+                data/government_revenue/dossiers.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
+                site/government-revenue-data/dossiers.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

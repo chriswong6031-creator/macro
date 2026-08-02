@@ -183,6 +183,20 @@ def test_display_payload_is_first_page_only_while_canonical_workspace_stays_comp
     assert "awards" not in shell["companies"][0]
 
 
+def test_display_payload_excludes_unused_workbench_contract_metadata() -> None:
+    payload = _payload()
+    payload["workbench"] = {
+        "id": "government_revenue",
+        "provenance_contract": "vertical_provenance.v1",
+        "context_contract": "vertical_intelligence_context.v1",
+    }
+
+    shell = build_government_revenue._display_payload(payload)
+
+    assert "workbench" not in shell
+    assert "provenance_contract" not in json.dumps(shell, sort_keys=True)
+
+
 def test_compact_shell_keeps_current_state_truth_without_full_receipt_duplication() -> None:
     payload = _payload()
     payload["procurement_workspace"]["events"] = [{
