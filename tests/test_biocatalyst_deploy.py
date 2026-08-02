@@ -88,6 +88,7 @@ def test_biocatalyst_ci_uses_bounded_complete_lanes_with_no_unowned_test_file():
         "biocatalyst-history": 12,
         "biocatalyst-contracts": 10,
         "biocatalyst-deploy-integration": 12,
+        "biocatalyst-regulatory": 12,
     }
     assert "\n  biocatalyst:\n" not in legacy_jobs
     seen_paths: set[str] = set()
