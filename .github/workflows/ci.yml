@@ -413,6 +413,7 @@ on:
       - "app/capital_structure.py"
       - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
+      - "scripts/compile_capital_structure_document_terms.py"
       - "scripts/build_capital_structure_projection.py"
       - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"

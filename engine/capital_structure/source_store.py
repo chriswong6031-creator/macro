@@ -154,6 +154,49 @@ def build_source_store(
     return ContentAddressedSourceStore(store, backend="r2", store_id=store_id)
 
 
+def build_source_stores(
+    *, local_dir: str | Path | None = None
+) -> dict[str, ContentAddressedSourceStore]:
+    """Resolve every configured immutable manifest namespace independently.
+
+    The collector writes to one preferred store, but offline consumers can meet
+    a ledger spanning an older shared bucket and a newer dedicated bucket. They
+    must select by the manifest's stable ``store_id``; using whichever bucket
+    happens to be preferred today would silently rebind source identity.
+    """
+    stores: dict[str, ContentAddressedSourceStore] = {}
+    resolved_local = local_dir or os.environ.get("CAPITAL_STRUCTURE_LOCAL_STORE")
+    if resolved_local:
+        stores[STORE_ID_LOCAL] = ContentAddressedSourceStore(
+            LocalStore(resolved_local), backend="local", store_id=STORE_ID_LOCAL
+        )
+
+    capital_bucket = os.environ.get("R2_CAPITAL_STRUCTURE_BUCKET")
+    if capital_bucket:
+        capital = R2Store(capital_bucket, client=_capital_structure_r2_client())
+        if capital.available:
+            stores[STORE_ID_DEDICATED_R2] = ContentAddressedSourceStore(
+                capital, backend="r2", store_id=STORE_ID_DEDICATED_R2
+            )
+
+    research_bucket = os.environ.get("R2_RESEARCH_BUCKET")
+    if research_bucket:
+        research = R2Store(research_bucket)
+        if research.available:
+            stores[STORE_ID_RESEARCH_R2] = ContentAddressedSourceStore(
+                research, backend="r2", store_id=STORE_ID_RESEARCH_R2
+            )
+
+    shared_bucket = os.environ.get("R2_BUCKET")
+    if shared_bucket:
+        shared = R2Store(shared_bucket, client=_shared_r2_client())
+        if shared.available:
+            stores[STORE_ID_SHARED_R2] = ContentAddressedSourceStore(
+                shared, backend="r2", store_id=STORE_ID_SHARED_R2
+            )
+    return stores
+
+
 def _make_r2_client(
     *, endpoint: str | None, access_key: str | None, secret_key: str | None
 ):

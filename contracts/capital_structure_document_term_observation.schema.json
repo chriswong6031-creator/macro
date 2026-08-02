@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_document_term_observation.schema.json",
+  "title": "Capital Structure document-row direct term observation",
+  "description": "An immutable, row/security-scoped observation of a directly reported registration-fee-table field. It is not an instrument, issuer state, capacity, risk, or probability record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "observation_id", "logical_observation_id", "issuer_id", "filing",
+    "document", "security", "term", "state", "reported", "normalized", "evidence",
+    "extraction", "relationships", "version", "point_in_time"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.document_term_observation.v1"},
+    "observation_id": {"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"},
+    "logical_observation_id": {"type": "string", "pattern": "^document-term-slot:cs:[a-f0-9]{24}$"},
+    "issuer_id": {"type": "string", "minLength": 1},
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "form", "filing_date", "accepted_at"],
+      "properties": {
+        "accession": {"type": "string", "minLength": 1},
+        "form": {"type": "string", "minLength": 1},
+        "filing_date": {"type": ["string", "null"], "format": "date"},
+        "accepted_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_id", "source_id", "document_role", "canonical_url",
+        "content_sha256", "child_document_type", "child_sequence", "child_filename",
+        "child_text_start", "child_text_end"
+      ],
+      "properties": {
+        "source_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "source_id": {"type": "string", "minLength": 1},
+        "document_role": {"const": "complete_submission"},
+        "canonical_url": {"type": "string", "format": "uri"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "child_document_type": {"type": ["string", "null"]},
+        "child_sequence": {"type": ["string", "null"]},
+        "child_filename": {"type": ["string", "null"]},
+        "child_text_start": {"type": ["integer", "null"], "minimum": 0},
+        "child_text_end": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id", "table_index", "row_index", "title_raw", "title_normalized",
+        "classification"
+      ],
+      "properties": {
+        "row_id": {"oneOf": [{"type": "string", "pattern": "^fee-row:cs:[a-f0-9]{24}$"}, {"type": "null"}]},
+        "table_index": {"type": ["integer", "null"], "minimum": 0},
+        "row_index": {"type": ["integer", "null"], "minimum": 0},
+        "title_raw": {"type": ["string", "null"], "maxLength": 500},
+        "title_normalized": {"type": ["string", "null"], "maxLength": 500},
+        "classification": {
+          "type": "string",
+          "enum": ["common_stock", "preferred_stock", "debt", "units", "warrants", "other", "unknown"]
+        }
+      }
+    },
+    "term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "term_type", "scope"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "amount_to_be_registered",
+            "proposed_maximum_offering_price_per_unit",
+            "proposed_maximum_aggregate_offering_price",
+            "registration_fee",
+            "filing_fee_rate"
+          ]
+        },
+        "term_type": {"type": "string", "enum": ["share_count", "principal_amount", "quantity", "price", "amount", "rate"]},
+        "scope": {"const": "registration_fee_table_row"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason"],
+      "properties": {
+        "disposition": {"type": "string", "enum": ["observed", "unavailable", "ambiguous"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "direct_table_value",
+            "fee_table_not_detected",
+            "eligible_document_not_found",
+            "manifest_parser_not_eligible",
+            "manifest_corruption_not_clean",
+            "multiple_fee_tables_detected",
+            "duplicate_header_mapping",
+            "header_without_direct_value",
+            "unit_semantics_ambiguous",
+            "multiple_numeric_tokens",
+            "unsupported_dimensional_value"
+          ]
+        }
+      }
+    },
+    "reported": {"$ref": "#/$defs/value"},
+    "normalized": {"$ref": "#/$defs/value"},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_id", "source_document_sha256", "rights_class",
+        "privacy_classification", "contains_personal_data", "publication", "spans"
+      ],
+      "properties": {
+        "source_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "source_document_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "rights_class": {"type": "string", "enum": ["public_source_link", "excerpt_permitted", "internal_only", "do_not_redistribute", "unknown"]},
+        "privacy_classification": {"type": "string", "enum": ["public", "restricted", "internal", "unknown"]},
+        "contains_personal_data": {"type": "boolean"},
+        "publication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["disposition", "excerpt_char_count", "personal_data_redacted"],
+          "properties": {
+            "disposition": {"const": "public_fact_only"},
+            "excerpt_char_count": {"const": 0},
+            "personal_data_redacted": {"type": "boolean"}
+          }
+        },
+        "spans": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/span"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "parser_version", "review_status"],
+      "properties": {
+        "method": {"type": "string", "enum": ["deterministic", "deferred"]},
+        "parser_version": {"type": "string", "minLength": 1},
+        "review_status": {"type": "string", "enum": ["unreviewed", "deferred"]}
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amends", "supersedes", "contradiction_ids"],
+      "properties": {
+        "amends": {"type": "array", "maxItems": 0},
+        "supersedes": {"type": "array", "items": {"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"}, "uniqueItems": true, "maxItems": 1},
+        "contradiction_ids": {"type": "array", "maxItems": 0}
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutable_record", "correction_version", "correction_of"],
+      "properties": {
+        "immutable_record": {"const": true},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "correction_of": {"oneOf": [{"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"}, {"type": "null"}]}
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_available_at", "available_at"],
+      "properties": {
+        "source_available_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "state": {"properties": {"reason": {"const": "direct_table_value"}}},
+          "reported": {"$ref": "#/$defs/observedValue"},
+          "normalized": {"$ref": "#/$defs/observedValue"},
+          "security": {
+            "properties": {
+              "row_id": {"type": "string"}, "table_index": {"type": "integer"},
+              "row_index": {"type": "integer"}, "title_raw": {"type": "string", "minLength": 1},
+              "title_normalized": {"type": "string", "minLength": 1}
+            }
+          },
+          "document": {
+            "properties": {
+              "child_document_type": {"type": "string"}, "child_text_start": {"type": "integer"},
+              "child_text_end": {"type": "integer"}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reported": {"$ref": "#/$defs/nullValue"},
+          "normalized": {"$ref": "#/$defs/nullValue"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "ambiguous"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"state": {"properties": {"reason": {"enum": ["multiple_fee_tables_detected", "duplicate_header_mapping", "unit_semantics_ambiguous", "multiple_numeric_tokens", "unsupported_dimensional_value"]}}}}}
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "unavailable"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"state": {"properties": {"reason": {"enum": ["fee_table_not_detected", "eligible_document_not_found", "manifest_parser_not_eligible", "manifest_corruption_not_clean", "header_without_direct_value"]}}}}}
+    },
+    {
+      "if": {"properties": {"term": {"properties": {"name": {"const": "amount_to_be_registered"}}, "required": ["name"]}}, "required": ["term"]},
+      "then": {"properties": {"term": {"properties": {"term_type": {"enum": ["share_count", "principal_amount", "quantity"]}}}}}
+    },
+    {
+      "if": {"properties": {"term": {"properties": {"name": {"const": "proposed_maximum_offering_price_per_unit"}}, "required": ["name"]}}, "required": ["term"]},
+      "then": {"properties": {"term": {"properties": {"term_type": {"const": "price"}}}}}
+    },
+    {
+      "if": {"properties": {"term": {"properties": {"name": {"enum": ["proposed_maximum_aggregate_offering_price", "registration_fee"]}}, "required": ["name"]}}, "required": ["term"]},
+      "then": {"properties": {"term": {"properties": {"term_type": {"const": "amount"}}}}}
+    },
+    {
+      "if": {"properties": {"term": {"properties": {"name": {"const": "filing_fee_rate"}}, "required": ["name"]}}, "required": ["term"]},
+      "then": {"properties": {"term": {"properties": {"term_type": {"const": "rate"}}}}}
+    },
+    {"$ref": "#/$defs/observedUnitBinding"},
+    {"$ref": "#/$defs/observedSecurityBinding"},
+    {"$ref": "#/$defs/versionBinding"}
+  ],
+  "$defs": {
+    "decimal": {"type": "string", "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"},
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_text", "value", "unit", "currency", "scale"],
+      "properties": {
+        "raw_text": {"type": ["string", "null"], "maxLength": 500},
+        "value": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+        "unit": {"type": ["string", "null"], "enum": ["shares", "units", "securities", "USD", "USD/share", "USD/unit", "USD/security", "rate", "USD_per_USD", null]},
+        "currency": {"type": ["string", "null"], "enum": ["USD", null]},
+        "scale": {
+          "description": "Exact denominator when unit is USD_per_USD; otherwise the direct scalar scale 1. This field is not a precomputed normalized ratio.",
+          "oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]
+        }
+      }
+    },
+    "observedValue": {
+      "allOf": [
+        {"$ref": "#/$defs/value"},
+        {"properties": {"raw_text": {"type": "string", "minLength": 1}, "value": {"$ref": "#/$defs/decimal"}, "unit": {"type": "string"}, "scale": {"$ref": "#/$defs/decimal"}}}
+      ]
+    },
+    "nullValue": {
+      "allOf": [
+        {"$ref": "#/$defs/value"},
+        {"properties": {"raw_text": {"type": "null"}, "value": {"type": "null"}, "unit": {"type": "null"}, "currency": {"type": "null"}, "scale": {"type": "null"}}}
+      ]
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "span_id", "locator_type", "locator", "text_sha256"],
+      "properties": {
+        "manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "span_id": {"type": "string", "pattern": "^(?:span:cs:[a-f0-9]{24}|root:[a-f0-9]{64})$"},
+        "locator_type": {"type": "string", "enum": ["document", "table", "text_range"]},
+        "locator": {"type": "string", "minLength": 1},
+        "text_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "observedSecurityBinding": {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {
+        "allOf": [
+          {
+            "if": {"properties": {"term": {"properties": {"name": {"const": "amount_to_be_registered"}}, "required": ["name"]}}},
+            "then": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"enum": ["common_stock", "preferred_stock"]}}},
+                    "term": {"properties": {"term_type": {"const": "share_count"}}},
+                    "reported": {"properties": {"unit": {"const": "shares"}, "currency": {"type": "null"}}},
+                    "normalized": {"properties": {"unit": {"const": "shares"}, "currency": {"type": "null"}}}
+                  }
+                },
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"const": "debt"}}},
+                    "term": {"properties": {"term_type": {"const": "principal_amount"}}},
+                    "reported": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}},
+                    "normalized": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}}
+                  }
+                },
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"const": "units"}}},
+                    "term": {"properties": {"term_type": {"const": "quantity"}}},
+                    "reported": {"properties": {"unit": {"const": "units"}, "currency": {"type": "null"}}},
+                    "normalized": {"properties": {"unit": {"const": "units"}, "currency": {"type": "null"}}}
+                  }
+                },
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"const": "warrants"}}},
+                    "term": {"properties": {"term_type": {"const": "quantity"}}},
+                    "reported": {"properties": {"unit": {"const": "securities"}, "currency": {"type": "null"}}},
+                    "normalized": {"properties": {"unit": {"const": "securities"}, "currency": {"type": "null"}}}
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"name": {"const": "proposed_maximum_offering_price_per_unit"}}, "required": ["name"]}}},
+            "then": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"enum": ["common_stock", "preferred_stock"]}}},
+                    "reported": {"properties": {"unit": {"const": "USD/share"}, "currency": {"const": "USD"}}},
+                    "normalized": {"properties": {"unit": {"const": "USD/share"}, "currency": {"const": "USD"}}}
+                  }
+                },
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"const": "units"}}},
+                    "reported": {"properties": {"unit": {"const": "USD/unit"}, "currency": {"const": "USD"}}},
+                    "normalized": {"properties": {"unit": {"const": "USD/unit"}, "currency": {"const": "USD"}}}
+                  }
+                },
+                {
+                  "properties": {
+                    "security": {"properties": {"classification": {"const": "warrants"}}},
+                    "reported": {"properties": {"unit": {"const": "USD/security"}, "currency": {"const": "USD"}}},
+                    "normalized": {"properties": {"unit": {"const": "USD/security"}, "currency": {"const": "USD"}}}
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "versionBinding": {
+      "if": {"properties": {"version": {"properties": {"correction_version": {"const": 1}}, "required": ["correction_version"]}}, "required": ["version"]},
+      "then": {
+        "properties": {
+          "version": {"properties": {"correction_of": {"type": "null"}}},
+          "relationships": {"properties": {"supersedes": {"maxItems": 0}}}
+        }
+      },
+      "else": {
+        "properties": {
+          "version": {"properties": {"correction_version": {"minimum": 2}, "correction_of": {"type": "string"}}},
+          "relationships": {"properties": {"supersedes": {"minItems": 1, "maxItems": 1}}}
+        }
+      }
+    },
+    "observedUnitBinding": {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {
+        "allOf": [
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "share_count"}}, "required": ["term_type"]}}},
+            "then": {"properties": {"reported": {"properties": {"unit": {"const": "shares"}, "currency": {"type": "null"}}}, "normalized": {"properties": {"unit": {"const": "shares"}, "currency": {"type": "null"}}}}}
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "principal_amount"}}, "required": ["term_type"]}}},
+            "then": {"properties": {"reported": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}}, "normalized": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}}}}
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "quantity"}}, "required": ["term_type"]}}},
+            "then": {"properties": {"reported": {"properties": {"unit": {"enum": ["units", "securities"]}, "currency": {"type": "null"}}}, "normalized": {"properties": {"unit": {"enum": ["units", "securities"]}, "currency": {"type": "null"}}}}}
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "price"}}, "required": ["term_type"]}}},
+            "then": {"properties": {"reported": {"properties": {"unit": {"enum": ["USD/share", "USD/unit", "USD/security"]}, "currency": {"const": "USD"}}}, "normalized": {"properties": {"unit": {"enum": ["USD/share", "USD/unit", "USD/security"]}, "currency": {"const": "USD"}}}}}
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "amount"}}, "required": ["term_type"]}}},
+            "then": {"properties": {"reported": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}}, "normalized": {"properties": {"unit": {"const": "USD"}, "currency": {"const": "USD"}}}}}
+          },
+          {
+            "if": {"properties": {"term": {"properties": {"term_type": {"const": "rate"}}, "required": ["term_type"]}}},
+            "then": {
+              "oneOf": [
+                {"properties": {"reported": {"properties": {"unit": {"const": "rate"}, "currency": {"type": "null"}, "scale": {"const": "1"}}}, "normalized": {"properties": {"unit": {"const": "rate"}, "currency": {"type": "null"}, "scale": {"const": "1"}}}}},
+                {"properties": {"reported": {"properties": {"unit": {"const": "USD_per_USD"}, "currency": {"const": "USD"}}}, "normalized": {"properties": {"unit": {"const": "USD_per_USD"}, "currency": {"const": "USD"}}}}}
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

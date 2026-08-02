@@ -225,6 +225,10 @@ jobs:
           R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID: ${{ secrets.R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID }}
           R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY: ${{ secrets.R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY }}
           R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
           COLLECT_LANE: nightly  # lane sentinel: forward-ledger graders (grade_breadth_divergence,
                                  # grade_policy_calendar) check COLLECT_LANE==nightly before writing;
                                  # asia-close/weekly/intl_etf leave it unset → no-op in those lanes.
@@ -245,6 +249,28 @@ jobs:
         # Any source-bundle, ledger, or generation-receipt integrity failure blocks
         # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
+      - name: compile capital-structure direct document terms (SEC-network-free, context-only)
+        # The fee-table compiler reads only source-manifest-addressed complete
+        # submissions through their exact R2 namespace. The collector's source-store
+        # environment is step-local, so wire it again here rather than pretending a
+        # manifest object key is independently resolvable. It transcribes direct SEC
+        # cells only: no aggregate capacity, instrument, risk, probability, or Prophet
+        # claim may originate in this step. A missing/mismatched source aborts instead
+        # of committing a partial term ledger.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}
+          R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID: ${{ secrets.R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID }}
+          R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY: ${{ secrets.R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY }}
+          R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: python -m scripts.compile_capital_structure_document_terms
       - name: build capital-structure projection (offline, context-only)
         # Reads only the verified telemetry-last event generation. It publishes an
         # observed-filing-state artifact and byte-identical public twin; terms,

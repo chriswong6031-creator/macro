@@ -101,6 +101,57 @@ def _term() -> dict:
     }
 
 
+def _document_term() -> dict:
+    return {
+        "schema": "capital_structure.document_term_observation.v1",
+        "observation_id": "document-term:cs:" + ("d" * 24),
+        "logical_observation_id": "document-term-slot:cs:" + ("e" * 24),
+        "issuer_id": "sec:cik:0000320193",
+        "filing": {
+            "accession": "0000320193-26-000001", "form": "S-3",
+            "filing_date": "2026-08-01", "accepted_at": "2026-08-01T11:00:00Z",
+        },
+        "document": {
+            "source_manifest_id": "manifest:cs:" + HASH,
+            "source_id": "0000320193-26-000001:0:complete-submission.txt",
+            "document_role": "complete_submission",
+            "canonical_url": "https://www.sec.gov/Archives/example.txt",
+            "content_sha256": HASH,
+            "child_document_type": "EX-FILING FEES", "child_sequence": "2",
+            "child_filename": "filing-fees.htm", "child_text_start": 10,
+            "child_text_end": 200,
+        },
+        "security": {
+            "row_id": "fee-row:cs:" + ("c" * 24), "table_index": 0,
+            "row_index": 1, "title_raw": "Common stock",
+            "title_normalized": "common stock", "classification": "common_stock",
+        },
+        "term": {
+            "name": "registration_fee", "term_type": "amount",
+            "scope": "registration_fee_table_row",
+        },
+        "state": {"disposition": "observed", "reason": "direct_table_value"},
+        "reported": {"raw_text": "$1,234.50", "value": "1234.5", "unit": "USD", "currency": "USD", "scale": "1"},
+        "normalized": {"raw_text": "$1,234.50", "value": "1234.5", "unit": "USD", "currency": "USD", "scale": "1"},
+        "evidence": {
+            "source_manifest_id": "manifest:cs:" + HASH,
+            "source_document_sha256": HASH,
+            "rights_class": "public_source_link", "privacy_classification": "public",
+            "contains_personal_data": True,
+            "publication": {"disposition": "public_fact_only", "excerpt_char_count": 0, "personal_data_redacted": False},
+            "spans": [{
+                "manifest_id": "manifest:cs:" + HASH,
+                "span_id": "span:cs:" + ("f" * 24), "locator_type": "text_range",
+                "locator": "complete_submission:type=EX-FILING FEES:sequence=2:table=0:row=1:cell=4:role=registration_fee:bytes:10-200", "text_sha256": HASH,
+            }],
+        },
+        "extraction": {"method": "deterministic", "parser_version": "capital-structure-document-terms/1.1.0", "review_status": "unreviewed"},
+        "relationships": {"amends": [], "supersedes": [], "contradiction_ids": []},
+        "version": {"immutable_record": True, "correction_version": 1, "correction_of": None},
+        "point_in_time": {"source_available_at": "2026-08-01T12:00:00Z", "available_at": "2026-08-02T12:00:00Z"},
+    }
+
+
 def _metric() -> dict:
     return {"value": None, "unit": "shares", "state": "unknown", "evidence_ids": []}
 
@@ -211,6 +262,7 @@ def _telemetry() -> dict:
     ("capital_structure_source_manifest.schema.json", _source_manifest),
     ("capital_structure_event.schema.json", _event),
     ("capital_structure_instrument_term_observation.schema.json", _term),
+    ("capital_structure_document_term_observation.schema.json", _document_term),
     ("capital_structure_context.schema.json", _context),
     ("capital_structure_event_edge.schema.json", _edge),
     ("capital_structure_review_item.schema.json", _review_item),
@@ -299,6 +351,99 @@ def test_term_observation_preserves_reported_value_and_allows_unknown_as_null_no
     record["normalized"]["value"] = None
     record["normalized"]["state"] = "unknown"
     _validate("capital_structure_instrument_term_observation.schema.json", record)
+
+
+def test_document_term_requires_decimal_strings_and_cannot_tunnel_an_issuer_state_claim():
+    name = "capital_structure_document_term_observation.schema.json"
+    _validate(name, _document_term())
+
+    record = _document_term()
+    record["reported"]["value"] = 1234.5
+    _invalid(name, record, "is not valid under any of the given schemas")
+
+    record = _document_term()
+    record["state"] = {"disposition": "observed", "reason": "fee_table_not_detected"}
+    _invalid(name, record, "'direct_table_value' was expected")
+
+    record = _document_term()
+    record["remaining_capacity"] = "1234.5"
+    _invalid(name, record, "Additional properties")
+
+    record = _document_term()
+    record["state"] = {"disposition": "ambiguous", "reason": "multiple_fee_tables_detected"}
+    _invalid(name, record, "is not of type 'null'")
+
+    record = _document_term()
+    record["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
+    record["normalized"] = dict(record["reported"])
+    _invalid(name, record, "is not of type 'string'")
+
+    record = _document_term()
+    record["reported"]["unit"] = "shares"
+    record["reported"]["currency"] = None
+    record["normalized"] = dict(record["reported"])
+    _invalid(name, record, "'USD' was expected")
+
+    record = _document_term()
+    record["term"]["term_type"] = "share_count"
+    _invalid(name, record, "'amount' was expected")
+
+
+def test_document_term_schema_binds_security_class_to_amount_and_price_dimensions():
+    name = "capital_structure_document_term_observation.schema.json"
+
+    debt_as_shares = _document_term()
+    debt_as_shares["security"]["classification"] = "debt"
+    debt_as_shares["security"]["title_raw"] = "Senior notes"
+    debt_as_shares["security"]["title_normalized"] = "senior notes"
+    debt_as_shares["term"] = {
+        "name": "amount_to_be_registered", "term_type": "share_count",
+        "scope": "registration_fee_table_row",
+    }
+    debt_as_shares["reported"] = {
+        "raw_text": "50,000,000", "value": "50000000", "unit": "shares",
+        "currency": None, "scale": "1",
+    }
+    debt_as_shares["normalized"] = dict(debt_as_shares["reported"])
+    _invalid(name, debt_as_shares, "is not valid under any of the given schemas")
+
+    unknown_amount = _document_term()
+    unknown_amount["security"]["classification"] = "unknown"
+    unknown_amount["term"] = {
+        "name": "amount_to_be_registered", "term_type": "quantity",
+        "scope": "registration_fee_table_row",
+    }
+    unknown_amount["reported"] = {
+        "raw_text": "1,000", "value": "1000", "unit": "securities",
+        "currency": None, "scale": "1",
+    }
+    unknown_amount["normalized"] = dict(unknown_amount["reported"])
+    _invalid(name, unknown_amount, "is not valid under any of the given schemas")
+
+    debt_price = _document_term()
+    debt_price["security"]["classification"] = "debt"
+    debt_price["term"] = {
+        "name": "proposed_maximum_offering_price_per_unit", "term_type": "price",
+        "scope": "registration_fee_table_row",
+    }
+    debt_price["reported"] = {
+        "raw_text": "$100", "value": "100", "unit": "USD/security",
+        "currency": "USD", "scale": "1",
+    }
+    debt_price["normalized"] = dict(debt_price["reported"])
+    _invalid(name, debt_price, "is not valid under any of the given schemas")
+
+
+def test_document_term_schema_binds_correction_version_to_lineage_presence():
+    name = "capital_structure_document_term_observation.schema.json"
+    version_one_with_parent = _document_term()
+    version_one_with_parent["version"]["correction_of"] = "document-term:cs:" + ("b" * 24)
+    version_one_with_parent["relationships"]["supersedes"] = ["document-term:cs:" + ("b" * 24)]
+    _invalid(name, version_one_with_parent, "is not of type 'null'")
+
+    version_two_without_parent = _document_term()
+    version_two_without_parent["version"]["correction_version"] = 2
+    _invalid(name, version_two_without_parent, "is not of type 'string'")
 
 
 @pytest.mark.parametrize("factory", [_event, _term])
