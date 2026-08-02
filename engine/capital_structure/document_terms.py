@@ -232,23 +232,153 @@ def _assert_zero_authority(value: Any, *, path: str = "<root>") -> None:
 
 
 def _make_document_term_contract_validator(
-    validator_class: type[Any], format_checker_class: type[Any],
-) -> Callable[[], Any]:
-    """Capture validator providers in cells callers cannot override by keyword."""
-    def _document_term_contract_validator() -> Any:
-        """Load only the release-pinned closed schema used at trust boundaries."""
-        encoded = _DOCUMENT_TERM_SCHEMA_PATH.read_bytes()
-        digest = hashlib.sha256(encoded).hexdigest()
-        if not hmac.compare_digest(digest, _DOCUMENT_TERM_SCHEMA_SHA256):
+    schema_path: Path,
+    schema_sha256: str,
+    validator_class: type[Any],
+    format_checker_class: type[Any],
+) -> Callable[[], Callable[[Mapping[str, Any]], Any]]:
+    """Prebuild and seal the actually invoked schema-validation method."""
+    def descriptor_codes(value: Any) -> tuple[CodeType, ...]:
+        functions: tuple[Any, ...]
+        if inspect.isfunction(value):
+            functions = (value,)
+        elif isinstance(value, (staticmethod, classmethod)):
+            functions = (value.__func__,)
+        elif isinstance(value, property):
+            functions = tuple(
+                function
+                for function in (value.fget, value.fset, value.fdel)
+                if function is not None
+            )
+        else:
+            functions = ()
+        return tuple(function.__code__ for function in functions)
+
+    def execution_surface(
+        cls: type[Any],
+    ) -> tuple[tuple[str, Any, tuple[CodeType, ...]], ...]:
+        names = {
+            name
+            for owner in cls.__mro__
+            if owner is not object
+            for name, value in vars(owner).items()
+            if callable(value)
+            or isinstance(value, (staticmethod, classmethod, property))
+        }
+        bindings: list[tuple[str, Any, tuple[CodeType, ...]]] = []
+        for name in sorted(names):
+            for owner in cls.__mro__:
+                if name in vars(owner):
+                    descriptor = vars(owner)[name]
+                    bindings.append((name, descriptor, descriptor_codes(descriptor)))
+                    break
+        return tuple(bindings)
+
+    encoded = schema_path.read_bytes()
+    if not hmac.compare_digest(hashlib.sha256(encoded).hexdigest(), schema_sha256):
+        raise ValueError("document-term observation schema release digest mismatch")
+    schema = json.loads(encoded.decode("utf-8"))
+    validator_class.check_schema(schema)
+    format_checker = format_checker_class()
+    validator = validator_class(schema, format_checker=format_checker)
+    bound_iter_errors = validator.iter_errors
+    validator_bindings = tuple(
+        (keyword, implementation, getattr(implementation, "__code__", None))
+        for implementation, keyword, _value in validator._validators
+    )
+    format_checker_bindings = tuple(
+        (
+            name,
+            implementation,
+            getattr(implementation, "__code__", None),
+            raises,
+        )
+        for name, (implementation, raises) in sorted(
+            format_checker.checkers.items(),
+        )
+    )
+    execution_surfaces = (
+        (validator_class, execution_surface(validator_class)),
+        (format_checker_class, execution_surface(format_checker_class)),
+    )
+
+    def _document_term_contract_validator() -> Callable[[Mapping[str, Any]], Any]:
+        """Recheck schema bytes and executable class bindings before each use."""
+        current = schema_path.read_bytes()
+        digest = hashlib.sha256(current).hexdigest()
+        if not hmac.compare_digest(digest, schema_sha256):
             raise ValueError("document-term observation schema release digest mismatch")
-        schema = json.loads(encoded.decode("utf-8"))
-        validator_class.check_schema(schema)
-        return validator_class(schema, format_checker=format_checker_class())
+        for cls, bindings in execution_surfaces:
+            for name, expected, expected_codes in bindings:
+                actual_owner = next(
+                    (owner for owner in cls.__mro__ if name in vars(owner)),
+                    None,
+                )
+                if (
+                    actual_owner is None
+                    or vars(actual_owner)[name] is not expected
+                ):
+                    raise ValueError(
+                        "document-term schema validator executable binding changed"
+                    )
+                actual_codes = descriptor_codes(vars(actual_owner)[name])
+                if (
+                    len(actual_codes) != len(expected_codes)
+                    or any(
+                        actual is not expected_code
+                        for actual, expected_code in zip(
+                            actual_codes, expected_codes, strict=True,
+                        )
+                    )
+                ):
+                    raise ValueError(
+                        "document-term schema validator executable binding changed"
+                    )
+        current_validators = bound_iter_errors.__self__._validators
+        if len(current_validators) != len(validator_bindings):
+            raise ValueError(
+                "document-term schema validator executable binding changed"
+            )
+        for current_validator, expected in zip(
+            current_validators, validator_bindings, strict=True,
+        ):
+            implementation, keyword, _value = current_validator
+            expected_keyword, expected_implementation, expected_code = expected
+            if (
+                keyword != expected_keyword
+                or implementation is not expected_implementation
+                or getattr(implementation, "__code__", None) is not expected_code
+            ):
+                raise ValueError(
+                    "document-term schema validator executable binding changed"
+                )
+        current_checkers = bound_iter_errors.__self__.format_checker.checkers
+        if set(current_checkers) != {
+            name for name, _implementation, _code, _raises in format_checker_bindings
+        }:
+            raise ValueError(
+                "document-term schema validator executable binding changed"
+            )
+        for name, expected_implementation, expected_code, expected_raises in (
+            format_checker_bindings
+        ):
+            implementation, raises = current_checkers[name]
+            if (
+                implementation is not expected_implementation
+                or getattr(implementation, "__code__", None) is not expected_code
+                or raises != expected_raises
+            ):
+                raise ValueError(
+                    "document-term schema validator executable binding changed"
+                )
+        return bound_iter_errors
 
     return _document_term_contract_validator
 
 
 _document_term_contract_validator = _make_document_term_contract_validator(
+    _DOCUMENT_TERM_SCHEMA_PATH,
+    _DOCUMENT_TERM_SCHEMA_SHA256,
     Draft202012Validator, FormatChecker,
 )
 
@@ -257,13 +387,13 @@ def _validate_document_term_records_contract(
     records: Sequence[Mapping[str, Any]], *, label: str,
 ) -> None:
     """Apply the closed schema and zero-authority law to every admitted row."""
-    validator = _document_term_contract_validator()
+    iter_errors = _document_term_contract_validator()
     for index, record in enumerate(records):
         if not isinstance(record, Mapping):
             raise ValueError(f"{label} row {index} must be an object")
         _assert_zero_authority(record)
         errors = sorted(
-            validator.iter_errors(record),
+            iter_errors(record),
             key=lambda error: tuple(str(part) for part in error.absolute_path),
         )
         if errors:
@@ -1203,6 +1333,8 @@ class _SemanticClosureBuilder:
             return {"kind": "literal", "value": value}
         if isinstance(value, bytes):
             return {"kind": "bytes", "hex": value.hex()}
+        if isinstance(value, CodeType):
+            return {"kind": "code", "descriptor": _semantic_code_descriptor(value)}
         if isinstance(value, (float, complex, Decimal)):
             return {"kind": type(value).__name__, "value": str(value)}
         if isinstance(value, Path):
@@ -1234,6 +1366,17 @@ class _SemanticClosureBuilder:
             }
         if inspect.isfunction(value):
             return {"kind": "function", "identity": _callable_identity(value)}
+        if inspect.ismethod(value):
+            return {
+                "kind": "bound_method",
+                "identity": _callable_identity(value.__func__),
+                "receiver_class": _callable_identity(type(value.__self__)),
+            }
+        if isinstance(value, (staticmethod, classmethod)):
+            return {
+                "kind": type(value).__name__,
+                "identity": _callable_identity(value.__func__),
+            }
         if inspect.isbuiltin(value):
             descriptor = {"kind": "builtin", "identity": _callable_identity(value)}
             bound_self = getattr(value, "__self__", None)
@@ -1261,6 +1404,11 @@ class _SemanticClosureBuilder:
                 "identity": _callable_identity(value),
                 "owner": _callable_identity(owner) if inspect.isclass(owner) else None,
             }
+        if (
+            type(value).__module__ == "operator"
+            and type(value).__qualname__ == "methodcaller"
+        ):
+            return {"kind": "operator.methodcaller", "value": repr(value)}
         if inspect.isclass(value):
             return {"kind": "class", "identity": _callable_identity(value)}
         if isinstance(value, (list, dict, set, bytearray)):
@@ -2692,12 +2840,12 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 # Release goldens are recalculated only when the authority implementation or its
 # closed schema intentionally changes. They are independent of parser-version
 # goldens so a mutable parser registration can never rewrite trust policy.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 388
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 406
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "05ee20c56aba76a047feb45f60c49e560063d880c01685520766b600020eb8b4"
+    "769a05557320e9c0715471d002c60ddb1b8cbcf1346093339d63702d638b758f"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "6f583de17d77a9b0d3e59267d5ee4f8dc59bf30274acae9413d1f25182bb0c83"
+    "7e6ebe3debabf914a033fd298e7d1bed58764fa8c998bb3bb34189b71cba0b35"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

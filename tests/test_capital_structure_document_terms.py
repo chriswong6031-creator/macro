@@ -401,12 +401,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 388
+    assert len(manifest) == 406
     assert manifest_sha256 == (
-        "05ee20c56aba76a047feb45f60c49e560063d880c01685520766b600020eb8b4"
+        "769a05557320e9c0715471d002c60ddb1b8cbcf1346093339d63702d638b758f"
     )
     assert implementation_sha256 == (
-        "6f583de17d77a9b0d3e59267d5ee4f8dc59bf30274acae9413d1f25182bb0c83"
+        "7e6ebe3debabf914a033fd298e7d1bed58764fa8c998bb3bb34189b71cba0b35"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -731,6 +731,63 @@ def test_public_admission_uses_captured_schema_validator_not_provider_alias(monk
     for call in calls:
         with pytest.raises(ValueError, match="contract violation"):
             call()
+
+
+@pytest.mark.parametrize("method_name", ["iter_errors", "descend"])
+def test_public_admission_rejects_mutated_captured_validator_methods(
+    monkeypatch, method_name,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+
+    monkeypatch.setattr(
+        Draft202012Validator,
+        method_name,
+        lambda self, instance, *args, **kwargs: iter(()),
+    )
+    calls = (
+        lambda: validate_document_term_history(tampered),
+        lambda: current_document_terms_as_of(
+            tampered, "2026-08-04T00:00:00Z",
+        ),
+        lambda: validate_document_term_source_authority(
+            tampered, source_manifests=[manifest], source_reader=_reader(raw),
+        ),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="validator executable binding changed"):
+            call()
+
+
+def test_public_admission_rejects_in_place_validator_code_mutation(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+
+    marker = object()
+
+    def noop_iter_errors(self, instance, *args, **kwargs):
+        _ = marker
+        return iter(())
+
+    monkeypatch.setattr(
+        Draft202012Validator.iter_errors,
+        "__code__",
+        noop_iter_errors.__code__,
+    )
+    with pytest.raises(ValueError, match="validator executable binding changed"):
+        validate_document_term_history(tampered)
 
 
 def test_complete_submission_header_binds_exact_source_id_and_form():

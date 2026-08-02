@@ -253,12 +253,12 @@ def test_candidate_authority_policy_has_release_golden_closure():
             instrument_candidates._CANDIDATE_AUTHORITY_ENTRYPOINTS,
         )
     )
-    assert len(manifest) == 150
+    assert len(manifest) == 168
     assert manifest_sha256 == (
-        "33357e304f22bb5eec30cf1e735baf620f0acc196e02bcf75926f394ed957d0c"
+        "b311244bc19244f30628d2d8fbc63c7d8ae2cf07cc347543de055bfe7b3fa0b9"
     )
     assert implementation_sha256 == (
-        "f0433c13949146550368354504185544849bb63b3abd58f25f43c15588299e32"
+        "934ff7b880f98f3f9419152dafd2e3a8cf71b18c23861609f6db6f01581cf363"
     )
     for required in (
         "._validate_candidate_term_structure",
@@ -317,6 +317,68 @@ def test_candidate_schema_provider_monkeypatch_cannot_admit_unknown_fields(monke
 
     monkeypatch.setattr(jsonschema, "Draft202012Validator", NoopValidator)
     with pytest.raises(ValueError, match="contract violation"):
+        instrument_candidates.validate_candidate_term_structure(tampered)
+
+
+@pytest.mark.parametrize("method_name", ["iter_errors", "descend"])
+def test_candidate_gates_reject_mutated_captured_validator_methods(
+    monkeypatch, method_name,
+):
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["candidate_term_id"] = candidate_term_id_for(tampered[0])
+
+    monkeypatch.setattr(
+        Draft202012Validator,
+        method_name,
+        lambda self, instance, *args, **kwargs: iter(()),
+    )
+    calls = (
+        lambda: instrument_candidates.validate_candidate_term_structure(tampered),
+        lambda: validate_candidate_term_history(
+            tampered,
+            document_term_observations=source,
+            source_manifests=manifests,
+            source_reader=reader,
+        ),
+        lambda: current_candidate_terms_as_of(
+            tampered,
+            "2026-08-04T00:00:00Z",
+            document_term_observations=source,
+            source_manifests=manifests,
+            source_reader=reader,
+        ),
+    )
+    for call in calls:
+        with pytest.raises(
+            ValueError, match="schema validator executable binding changed",
+        ):
+            call()
+
+
+def test_candidate_gate_rejects_in_place_validator_code_mutation(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["candidate_term_id"] = candidate_term_id_for(tampered[0])
+
+    marker = object()
+
+    def noop_iter_errors(self, instance, *args, **kwargs):
+        _ = marker
+        return iter(())
+
+    monkeypatch.setattr(
+        Draft202012Validator.iter_errors,
+        "__code__",
+        noop_iter_errors.__code__,
+    )
+    with pytest.raises(
+        ValueError, match="schema validator executable binding changed",
+    ):
         instrument_candidates.validate_candidate_term_structure(tampered)
 
 

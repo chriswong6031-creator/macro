@@ -19,8 +19,10 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
 import hmac
+import inspect
 import json
 from pathlib import Path
+from types import CodeType
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -99,15 +101,140 @@ def _make_candidate_term_contract_validator(
     schema_sha256: str,
     validator_class: type[Any],
     format_checker_class: type[Any],
-) -> Callable[[], Any]:
-    """Capture the candidate schema and providers outside caller arguments."""
-    def _candidate_term_contract_validator() -> Any:
-        encoded = schema_path.read_bytes()
-        if not hmac.compare_digest(hashlib.sha256(encoded).hexdigest(), schema_sha256):
+) -> Callable[[], Callable[[Mapping[str, Any]], Any]]:
+    """Prebuild and seal the actually invoked candidate validation method."""
+    def descriptor_codes(value: Any) -> tuple[CodeType, ...]:
+        functions: tuple[Any, ...]
+        if inspect.isfunction(value):
+            functions = (value,)
+        elif isinstance(value, (staticmethod, classmethod)):
+            functions = (value.__func__,)
+        elif isinstance(value, property):
+            functions = tuple(
+                function
+                for function in (value.fget, value.fset, value.fdel)
+                if function is not None
+            )
+        else:
+            functions = ()
+        return tuple(function.__code__ for function in functions)
+
+    def execution_surface(
+        cls: type[Any],
+    ) -> tuple[tuple[str, Any, tuple[CodeType, ...]], ...]:
+        names = {
+            name
+            for owner in cls.__mro__
+            if owner is not object
+            for name, value in vars(owner).items()
+            if callable(value)
+            or isinstance(value, (staticmethod, classmethod, property))
+        }
+        bindings: list[tuple[str, Any, tuple[CodeType, ...]]] = []
+        for name in sorted(names):
+            for owner in cls.__mro__:
+                if name in vars(owner):
+                    descriptor = vars(owner)[name]
+                    bindings.append((name, descriptor, descriptor_codes(descriptor)))
+                    break
+        return tuple(bindings)
+
+    encoded = schema_path.read_bytes()
+    if not hmac.compare_digest(hashlib.sha256(encoded).hexdigest(), schema_sha256):
+        raise ValueError("instrument candidate-term schema release digest mismatch")
+    schema = json.loads(encoded.decode("utf-8"))
+    validator_class.check_schema(schema)
+    format_checker = format_checker_class()
+    validator = validator_class(schema, format_checker=format_checker)
+    bound_iter_errors = validator.iter_errors
+    validator_bindings = tuple(
+        (keyword, implementation, getattr(implementation, "__code__", None))
+        for implementation, keyword, _value in validator._validators
+    )
+    format_checker_bindings = tuple(
+        (
+            name,
+            implementation,
+            getattr(implementation, "__code__", None),
+            raises,
+        )
+        for name, (implementation, raises) in sorted(
+            format_checker.checkers.items(),
+        )
+    )
+    execution_surfaces = (
+        (validator_class, execution_surface(validator_class)),
+        (format_checker_class, execution_surface(format_checker_class)),
+    )
+
+    def _candidate_term_contract_validator() -> Callable[[Mapping[str, Any]], Any]:
+        current = schema_path.read_bytes()
+        if not hmac.compare_digest(hashlib.sha256(current).hexdigest(), schema_sha256):
             raise ValueError("instrument candidate-term schema release digest mismatch")
-        schema = json.loads(encoded.decode("utf-8"))
-        validator_class.check_schema(schema)
-        return validator_class(schema, format_checker=format_checker_class())
+        for cls, bindings in execution_surfaces:
+            for name, expected, expected_codes in bindings:
+                actual_owner = next(
+                    (owner for owner in cls.__mro__ if name in vars(owner)),
+                    None,
+                )
+                if (
+                    actual_owner is None
+                    or vars(actual_owner)[name] is not expected
+                ):
+                    raise ValueError(
+                        "instrument candidate schema validator executable binding changed"
+                    )
+                actual_codes = descriptor_codes(vars(actual_owner)[name])
+                if (
+                    len(actual_codes) != len(expected_codes)
+                    or any(
+                        actual is not expected_code
+                        for actual, expected_code in zip(
+                            actual_codes, expected_codes, strict=True,
+                        )
+                    )
+                ):
+                    raise ValueError(
+                        "instrument candidate schema validator executable binding changed"
+                    )
+        current_validators = bound_iter_errors.__self__._validators
+        if len(current_validators) != len(validator_bindings):
+            raise ValueError(
+                "instrument candidate schema validator executable binding changed"
+            )
+        for current_validator, expected in zip(
+            current_validators, validator_bindings, strict=True,
+        ):
+            implementation, keyword, _value = current_validator
+            expected_keyword, expected_implementation, expected_code = expected
+            if (
+                keyword != expected_keyword
+                or implementation is not expected_implementation
+                or getattr(implementation, "__code__", None) is not expected_code
+            ):
+                raise ValueError(
+                    "instrument candidate schema validator executable binding changed"
+                )
+        current_checkers = bound_iter_errors.__self__.format_checker.checkers
+        if set(current_checkers) != {
+            name for name, _implementation, _code, _raises in format_checker_bindings
+        }:
+            raise ValueError(
+                "instrument candidate schema validator executable binding changed"
+            )
+        for name, expected_implementation, expected_code, expected_raises in (
+            format_checker_bindings
+        ):
+            implementation, raises = current_checkers[name]
+            if (
+                implementation is not expected_implementation
+                or getattr(implementation, "__code__", None) is not expected_code
+                or raises != expected_raises
+            ):
+                raise ValueError(
+                    "instrument candidate schema validator executable binding changed"
+                )
+        return bound_iter_errors
 
     return _candidate_term_contract_validator
 
@@ -334,13 +461,13 @@ def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> 
     evidence, direct-value, or source-receipt authority.  Public validation and
     all PIT reads bind these rows to verified direct observations below.
     """
-    validator = _candidate_term_contract_validator()
+    iter_errors = _candidate_term_contract_validator()
     by_id: set[str] = set()
     by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for index, raw in enumerate(records):
         record = dict(raw)
         errors = sorted(
-            validator.iter_errors(record),
+            iter_errors(record),
             key=lambda error: tuple(str(part) for part in error.absolute_path),
         )
         if errors:
@@ -832,12 +959,12 @@ def _candidate_authority_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 
 # Release goldens are filled only when an intentional candidate authority
 # implementation or closed-schema change is reviewed.
-_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 150
+_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 168
 _CANDIDATE_AUTHORITY_DEPENDENCY_MANIFEST_SHA256 = (
-    "33357e304f22bb5eec30cf1e735baf620f0acc196e02bcf75926f394ed957d0c"
+    "b311244bc19244f30628d2d8fbc63c7d8ae2cf07cc347543de055bfe7b3fa0b9"
 )
 _CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256 = (
-    "f0433c13949146550368354504185544849bb63b3abd58f25f43c15588299e32"
+    "934ff7b880f98f3f9419152dafd2e3a8cf71b18c23861609f6db6f01581cf363"
 )
 _CANDIDATE_AUTHORITY_ENTRYPOINTS = _candidate_authority_entrypoints()
 _CANDIDATE_AUTHORITY_ALIAS_BINDINGS = (
