@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T13:17:52.059655+00:00",
-  "count": 596,
+  "generated_at": "2026-08-02T13:47:53.839553+00:00",
+  "count": 597,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-x4qc2sq4pis-da65cb",
+      "title": "ING Think asia week ahead",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:32Z",
+      "summary_points": [
+        "**India's Rate Hold & Inflation Risks**: RBI holds repo rate at 5.25% amid core inflation below target; oil prices and El Niño pose near-term inflation risks requiring policy vigilance.",
+        "**China's Trade Surplus & Tech Dominance**: $112.6bn trade surplus with 28.1% YoY export growth (tech exports dominant), signaling robust manufacturing and potential yuan support.",
+        "**Taiwan's Trade Surge**: $15.2bn trade surplus expected with 43.6% YoY export growth, critical for semiconductor sector flows and regional trade dynamics.",
+        "**China Services PMI Decline**: Services PMI at 54.1 (previous) indicates slowing services sector, undermining consumer-driven growth momentum ahead of household spending data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-amdunuthhkf-e33b3d",
       "title": "ING Think boj leaves rates at 100 with no surprises",
