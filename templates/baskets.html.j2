@@ -1327,6 +1327,29 @@ function renderRegimeSizing(){
 function themeById(id){ return ((THEME&&THEME.themes)||[]).find(t=>t&&t.id===id)||null; }
 function relPct(t,win){ const p=t&&t.perf&&t.perf[win]; return (p&&p.rel!=null)?p.rel:null; }
 
+// ── Inbound #theme-<id> deep links ────────────────────────────────────────────
+// alerts.html rows, the dashboard sector-heat/cool chips and engine/theme_alerts.py
+// anchors all point at baskets.html#theme-<id>. The 2026-07 revamp (#3282) replaced
+// this page's per-theme desk cards — the only source of #theme-<id> elements — with
+// the verdict hero / act board / rotation map, so openTheme() (shared, and still
+// load-bearing for the china/hk/canada/intl pages, which do render .tcard ids) has
+// found nothing here since. Every inbound link landed on the page and silently did
+// nothing.
+//
+// Anchoring to a board row instead would only half-fix it: renderRotBoard() filters
+// by RVX_FILT and slices to the top 10, and a theme can appear in both a .rvx-trow
+// act lane and a .rvx-brow board row, so the id would be absent for most themes and
+// duplicated for some. Send the visitor to the theme's own page — the destination
+// every row already links to, and the one surface that exists for all of them.
+// replace() rather than href keeps the redirect out of history, so Back returns to
+// the alert that sent them here instead of bouncing forward through the hash again.
+function resolveThemeHash(){
+  let id=location.hash.slice(7);          // '#theme-'.length
+  try{ id=decodeURIComponent(id); }catch(e){}
+  if(!id||!themeById(id)) return;         // unknown id → stay put rather than 404
+  location.replace('basket/'+encodeURIComponent(id)+'.html');
+}
+
 // ── Verdict hero enrichment (server renders the shell; JS fills counts + handoff perf) ──
 function renderVerdictHero(){
   const zh=isZh();
@@ -1538,7 +1561,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; localStorage.setItem('fw-brange',String(n)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   initChartDefaults();
   renderBTable(); renderChart();
-  if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
+  if(location.hash.startsWith('#theme-')) resolveThemeHash();
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
