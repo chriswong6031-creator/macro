@@ -52,7 +52,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="assets/css/ee27eef3.css?v=ee27eef3">
+<link rel="stylesheet" href="illus.css?v=8032719c">
+<link rel="stylesheet" href="assets/css/fc816bbe.css?v=fc816bbe">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=8fccad75">
 </head>
@@ -95,6 +96,8 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        
+        <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
@@ -110,14 +113,11 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="gex.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="gex.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-            <a href="options_screener.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
-            <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-            <a href="flow_desk.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
+            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
             <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
-            <a href="flow_leaders.html"><span class="submenu-icon submenu-icon-leader" aria-hidden="true"></span><span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -789,7 +789,7 @@
           <span class="oew-bet-amt neg mono">−$86M</span>
           <span class="oew-bet-note"><span class="l-en">put-leaning</span><span class="l-zh">偏看跌</span></span>
           <span class="oew-bet-r">
-            
+            <span class="cau" data-tip-en="Same-day contracts are usually day-trading, not positioning for a move." data-tip-zh="当日到期合约通常用于日内交易，而非布局趋势。"><span class="l-en">Same-day heavy</span><span class="l-zh">当日到期为主</span></span>
             <span class="tone"><span class="l-en">66% same-day</span><span class="l-zh">66% 当日到期</span></span>
           </span>
         </div>
@@ -859,7 +859,23 @@
 <section class="oew-mode" id="mode-scanner" role="tabpanel" aria-labelledby="tab-scanner"></section>
 
 <!-- ══════════════════ MODE 3 · TICKER (lazy) ══════════════════ -->
-<section class="oew-mode" id="mode-ticker" role="tabpanel" aria-labelledby="tab-ticker"></section>
+<section class="oew-mode" id="mode-ticker" role="tabpanel" aria-labelledby="tab-ticker">
+  <div class="oew-tktoolbar">
+    <div class="oew-tksearch">
+      <span class="mag" aria-hidden="true">⌕</span>
+      <input id="oew-tk-q" type="text" autocomplete="off"
+        aria-label="Look up a ticker" aria-expanded="false" aria-controls="oew-tk-sugg" role="combobox"
+        placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
+      <div class="oew-tksugg" id="oew-tk-sugg" role="listbox"></div>
+    </div>
+    <span class="oew-tkhint"><span class="l-en">press <kbd>/</kbd> to search</span><span class="l-zh">按 <kbd>/</kbd> 搜索</span></span>
+  </div>
+  <!-- renderTicker() targets #oew-tk-body ONLY, never this section — the toolbar
+       above is a static sibling node the render function never touches (W1_DESIGN_
+       SPEC.md §0.15: getting this wrong recreates the search box, and re-triggers
+       its "/" focus race, on every ticker change). -->
+  <div id="oew-tk-body"></div>
+</section>
 
 <!-- ══════════════════ MODE 4 · LEADERS (lazy) ══════════════════ -->
 <section class="oew-mode" id="mode-leaders" role="tabpanel" aria-labelledby="tab-leaders"></section>
@@ -868,6 +884,17 @@
 </div><!-- /oew -->
 
 <script>
+/* OIP W1 §2.3: the SAME manifest array gex.html bakes as window.GEX_MANIFEST
+   (scripts/build_gex_board.py writes it to site/gex/index.json; this page's
+   builder — scripts/build_options_command.py — reads that existing file back
+   and re-embeds it here) so Ticker mode's search shares gex.html's exact
+   universe rather than growing a second, possibly-drifting one. Assigned as the
+   first statement of the SAME script tag as the workspace IIFE below — not a
+   second <script> — so the page keeps exactly one inline script after the
+   chrome (test_build_options_command.py's _extract_workspace_script anchors on
+   that). Execution order is unaffected either way: this is a plain top-level
+   statement that runs before the IIFE which reads it. */
+window.OEW_TICKER_MANIFEST = [{"key": "SPX", "en": "S&P 500", "zh": "\u6807\u666e500"}, {"key": "NDX", "en": "Nasdaq 100", "zh": "\u7eb3\u6307100"}, {"key": "RUT", "en": "Russell 2000", "zh": "\u7f57\u7d202000"}, {"key": "SPY", "en": "S&P 500 ETF", "zh": "\u6807\u666e500 ETF"}, {"key": "QQQ", "en": "Nasdaq 100 ETF", "zh": "\u7eb3\u6307100 ETF"}, {"key": "IWM", "en": "Russell 2000 ETF", "zh": "\u5c0f\u76d8ETF"}, {"key": "DIA", "en": "Dow ETF", "zh": "\u9053\u6307ETF"}, {"key": "SMH", "en": "Semiconductors ETF", "zh": "\u534a\u5bfc\u4f53ETF"}, {"key": "XLK", "en": "Technology ETF", "zh": "\u79d1\u6280\u677f\u5757ETF"}, {"key": "XLF", "en": "Financials ETF", "zh": "\u91d1\u878d\u677f\u5757ETF"}, {"key": "XLE", "en": "Energy ETF", "zh": "\u80fd\u6e90\u677f\u5757ETF"}, {"key": "GLD", "en": "Gold ETF", "zh": "\u9ec4\u91d1ETF"}, {"key": "TLT", "en": "20Y+ Treasury ETF", "zh": "\u957f\u503aETF"}, {"key": "HYG", "en": "High-Yield Credit ETF", "zh": "\u9ad8\u6536\u76ca\u503aETF"}, {"key": "ARKK", "en": "ARK Innovation ETF", "zh": "ARK\u521b\u65b0ETF"}, {"key": "NVDA", "en": "Nvidia", "zh": "\u82f1\u4f1f\u8fbe"}, {"key": "AAPL", "en": "Apple", "zh": "\u82f9\u679c"}, {"key": "MSFT", "en": "Microsoft", "zh": "\u5fae\u8f6f"}, {"key": "AMZN", "en": "Amazon", "zh": "\u4e9a\u9a6c\u900a"}, {"key": "GOOGL", "en": "Alphabet", "zh": "\u8c37\u6b4c"}, {"key": "META", "en": "Meta", "zh": "Meta"}, {"key": "TSLA", "en": "Tesla", "zh": "\u7279\u65af\u62c9"}, {"key": "AMD", "en": "AMD", "zh": "\u8d85\u5a01"}, {"key": "AVGO", "en": "Broadcom", "zh": "\u535a\u901a"}, {"key": "MU", "en": "Micron", "zh": "\u7f8e\u5149"}, {"key": "SMCI", "en": "Super Micro", "zh": "\u8d85\u5fae\u7535\u8111"}, {"key": "MRVL", "en": "Marvell", "zh": "\u8fc8\u5a01\u5c14"}, {"key": "ARM", "en": "Arm Holdings", "zh": "Arm"}, {"key": "PLTR", "en": "Palantir", "zh": "Palantir"}, {"key": "COIN", "en": "Coinbase", "zh": "Coinbase"}, {"key": "MSTR", "en": "MicroStrategy", "zh": "\u5fae\u7b56\u7565"}, {"key": "NFLX", "en": "Netflix", "zh": "\u5948\u98de"}, {"key": "BABA", "en": "Alibaba", "zh": "\u963f\u91cc\u5df4\u5df4"}, {"key": "HOOD", "en": "Robinhood", "zh": "Robinhood"}, {"key": "UBER", "en": "Uber", "zh": "\u4f18\u6b65"}, {"key": "GME", "en": "GameStop", "zh": "\u6e38\u620f\u9a7f\u7ad9"}, {"key": "ANET", "en": "", "zh": ""}, {"key": "VRT", "en": "", "zh": ""}, {"key": "DELL", "en": "", "zh": ""}, {"key": "CIEN", "en": "", "zh": ""}, {"key": "LITE", "en": "", "zh": ""}, {"key": "COHR", "en": "", "zh": ""}, {"key": "CBRS", "en": "", "zh": ""}, {"key": "NBIS", "en": "", "zh": ""}, {"key": "CRWV", "en": "", "zh": ""}, {"key": "AMAT", "en": "", "zh": ""}, {"key": "LRCX", "en": "", "zh": ""}, {"key": "KLAC", "en": "", "zh": ""}, {"key": "QCOM", "en": "", "zh": ""}, {"key": "TER", "en": "", "zh": ""}, {"key": "APH", "en": "", "zh": ""}, {"key": "GLW", "en": "", "zh": ""}, {"key": "MPWR", "en": "", "zh": ""}, {"key": "NOW", "en": "", "zh": ""}, {"key": "CRM", "en": "", "zh": ""}, {"key": "ORCL", "en": "", "zh": ""}, {"key": "ADBE", "en": "", "zh": ""}, {"key": "DDOG", "en": "", "zh": ""}, {"key": "INTU", "en": "", "zh": ""}, {"key": "IBM", "en": "", "zh": ""}, {"key": "WDAY", "en": "", "zh": ""}, {"key": "PANW", "en": "", "zh": ""}, {"key": "CRWD", "en": "", "zh": ""}, {"key": "APP", "en": "", "zh": ""}, {"key": "SNOW", "en": "", "zh": ""}, {"key": "NET", "en": "", "zh": ""}, {"key": "LMT", "en": "", "zh": ""}, {"key": "RTX", "en": "", "zh": ""}, {"key": "NOC", "en": "", "zh": ""}, {"key": "GD", "en": "", "zh": ""}, {"key": "LHX", "en": "", "zh": ""}, {"key": "HII", "en": "", "zh": ""}, {"key": "BA", "en": "", "zh": ""}, {"key": "TDG", "en": "", "zh": ""}, {"key": "HWM", "en": "", "zh": ""}, {"key": "AVAV", "en": "", "zh": ""}, {"key": "KTOS", "en": "", "zh": ""}, {"key": "RKLB", "en": "", "zh": ""}, {"key": "ASTS", "en": "", "zh": ""}, {"key": "GE", "en": "", "zh": ""}, {"key": "LDOS", "en": "", "zh": ""}, {"key": "TXT", "en": "", "zh": ""}, {"key": "CW", "en": "", "zh": ""}, {"key": "TDY", "en": "", "zh": ""}, {"key": "HEI", "en": "", "zh": ""}, {"key": "DRS", "en": "", "zh": ""}, {"key": "MRCY", "en": "", "zh": ""}, {"key": "GEV", "en": "", "zh": ""}, {"key": "ETN", "en": "", "zh": ""}, {"key": "PWR", "en": "", "zh": ""}, {"key": "NEE", "en": "", "zh": ""}, {"key": "CEG", "en": "", "zh": ""}, {"key": "VST", "en": "", "zh": ""}, {"key": "NRG", "en": "", "zh": ""}, {"key": "PCG", "en": "", "zh": ""}, {"key": "D", "en": "", "zh": ""}, {"key": "EME", "en": "", "zh": ""}, {"key": "FIX", "en": "", "zh": ""}, {"key": "TLN", "en": "", "zh": ""}, {"key": "OKLO", "en": "", "zh": ""}, {"key": "SMR", "en": "", "zh": ""}, {"key": "LEU", "en": "", "zh": ""}, {"key": "DUK", "en": "", "zh": ""}, {"key": "SO", "en": "", "zh": ""}, {"key": "AEP", "en": "", "zh": ""}, {"key": "SRE", "en": "", "zh": ""}, {"key": "HUBB", "en": "", "zh": ""}, {"key": "GNRC", "en": "", "zh": ""}, {"key": "BWXT", "en": "", "zh": ""}, {"key": "POWL", "en": "", "zh": ""}, {"key": "PH", "en": "", "zh": ""}, {"key": "EMR", "en": "", "zh": ""}, {"key": "ROK", "en": "", "zh": ""}, {"key": "CAT", "en": "", "zh": ""}, {"key": "DE", "en": "", "zh": ""}, {"key": "URI", "en": "", "zh": ""}, {"key": "FAST", "en": "", "zh": ""}, {"key": "HON", "en": "", "zh": ""}, {"key": "ITW", "en": "", "zh": ""}, {"key": "DOV", "en": "", "zh": ""}, {"key": "AME", "en": "", "zh": ""}, {"key": "IR", "en": "", "zh": ""}, {"key": "NDSN", "en": "", "zh": ""}, {"key": "RF", "en": "", "zh": ""}, {"key": "KEY", "en": "", "zh": ""}, {"key": "CFG", "en": "", "zh": ""}, {"key": "HBAN", "en": "", "zh": ""}, {"key": "FITB", "en": "", "zh": ""}, {"key": "MTB", "en": "", "zh": ""}, {"key": "TFC", "en": "", "zh": ""}, {"key": "USB", "en": "", "zh": ""}, {"key": "PNC", "en": "", "zh": ""}, {"key": "WAL", "en": "", "zh": ""}, {"key": "EWBC", "en": "", "zh": ""}, {"key": "CFR", "en": "", "zh": ""}, {"key": "WTFC", "en": "", "zh": ""}, {"key": "SSB", "en": "", "zh": ""}, {"key": "UMBF", "en": "", "zh": ""}, {"key": "BPOP", "en": "", "zh": ""}, {"key": "COLB", "en": "", "zh": ""}, {"key": "FCNCA", "en": "", "zh": ""}, {"key": "UNH", "en": "", "zh": ""}, {"key": "ELV", "en": "", "zh": ""}, {"key": "CI", "en": "", "zh": ""}, {"key": "HUM", "en": "", "zh": ""}, {"key": "CNC", "en": "", "zh": ""}, {"key": "MOH", "en": "", "zh": ""}, {"key": "CVS", "en": "", "zh": ""}, {"key": "OSCR", "en": "", "zh": ""}, {"key": "DHI", "en": "", "zh": ""}, {"key": "LEN", "en": "", "zh": ""}, {"key": "PHM", "en": "", "zh": ""}, {"key": "BLDR", "en": "", "zh": ""}, {"key": "MAS", "en": "", "zh": ""}, {"key": "SHW", "en": "", "zh": ""}, {"key": "HD", "en": "", "zh": ""}, {"key": "LOW", "en": "", "zh": ""}, {"key": "TOL", "en": "", "zh": ""}, {"key": "KBH", "en": "", "zh": ""}, {"key": "OC", "en": "", "zh": ""}, {"key": "FBIN", "en": "", "zh": ""}, {"key": "CARR", "en": "", "zh": ""}, {"key": "MHK", "en": "", "zh": ""}, {"key": "LII", "en": "", "zh": ""}, {"key": "MTH", "en": "", "zh": ""}, {"key": "IBP", "en": "", "zh": ""}, {"key": "V", "en": "", "zh": ""}, {"key": "MA", "en": "", "zh": ""}, {"key": "PYPL", "en": "", "zh": ""}, {"key": "FIS", "en": "", "zh": ""}, {"key": "GPN", "en": "", "zh": ""}, {"key": "AXP", "en": "", "zh": ""}, {"key": "COF", "en": "", "zh": ""}, {"key": "SYF", "en": "", "zh": ""}, {"key": "CRCL", "en": "", "zh": ""}, {"key": "XYZ", "en": "", "zh": ""}, {"key": "FOUR", "en": "", "zh": ""}, {"key": "JKHY", "en": "", "zh": ""}, {"key": "AFRM", "en": "", "zh": ""}, {"key": "SOFI", "en": "", "zh": ""}, {"key": "TOST", "en": "", "zh": ""}, {"key": "UPST", "en": "", "zh": ""}, {"key": "XOM", "en": "", "zh": ""}, {"key": "CVX", "en": "", "zh": ""}, {"key": "COP", "en": "", "zh": ""}, {"key": "EOG", "en": "", "zh": ""}, {"key": "SLB", "en": "", "zh": ""}, {"key": "MPC", "en": "", "zh": ""}, {"key": "PSX", "en": "", "zh": ""}, {"key": "VLO", "en": "", "zh": ""}, {"key": "OXY", "en": "", "zh": ""}, {"key": "WMB", "en": "", "zh": ""}, {"key": "KMI", "en": "", "zh": ""}, {"key": "FANG", "en": "", "zh": ""}, {"key": "DVN", "en": "", "zh": ""}, {"key": "HAL", "en": "", "zh": ""}, {"key": "BKR", "en": "", "zh": ""}, {"key": "OKE", "en": "", "zh": ""}, {"key": "TRGP", "en": "", "zh": ""}, {"key": "EQT", "en": "", "zh": ""}, {"key": "LNG", "en": "", "zh": ""}, {"key": "PR", "en": "", "zh": ""}, {"key": "PAA", "en": "", "zh": ""}, {"key": "DINO", "en": "", "zh": ""}, {"key": "PG", "en": "", "zh": ""}, {"key": "KO", "en": "", "zh": ""}, {"key": "PEP", "en": "", "zh": ""}, {"key": "JNJ", "en": "", "zh": ""}, {"key": "WMT", "en": "", "zh": ""}, {"key": "COST", "en": "", "zh": ""}, {"key": "CL", "en": "", "zh": ""}, {"key": "MDLZ", "en": "", "zh": ""}, {"key": "KMB", "en": "", "zh": ""}, {"key": "GIS", "en": "", "zh": ""}, {"key": "KVUE", "en": "", "zh": ""}, {"key": "MO", "en": "", "zh": ""}, {"key": "PM", "en": "", "zh": ""}, {"key": "CHD", "en": "", "zh": ""}, {"key": "CLX", "en": "", "zh": ""}, {"key": "HSY", "en": "", "zh": ""}, {"key": "KDP", "en": "", "zh": ""}, {"key": "MKC", "en": "", "zh": ""}, {"key": "BKNG", "en": "", "zh": ""}, {"key": "MAR", "en": "", "zh": ""}, {"key": "HLT", "en": "", "zh": ""}, {"key": "RCL", "en": "", "zh": ""}, {"key": "CCL", "en": "", "zh": ""}, {"key": "NCLH", "en": "", "zh": ""}, {"key": "DAL", "en": "", "zh": ""}, {"key": "UAL", "en": "", "zh": ""}, {"key": "LUV", "en": "", "zh": ""}, {"key": "ABNB", "en": "", "zh": ""}, {"key": "EXPE", "en": "", "zh": ""}, {"key": "LVS", "en": "", "zh": ""}, {"key": "MGM", "en": "", "zh": ""}, {"key": "LYV", "en": "", "zh": ""}, {"key": "AAL", "en": "", "zh": ""}, {"key": "WYNN", "en": "", "zh": ""}, {"key": "H", "en": "", "zh": ""}, {"key": "WH", "en": "", "zh": ""}, {"key": "DKNG", "en": "", "zh": ""}, {"key": "ALK", "en": "", "zh": ""}, {"key": "VIK", "en": "", "zh": ""}, {"key": "ALGT", "en": "", "zh": ""}, {"key": "BYD", "en": "", "zh": ""}, {"key": "TGT", "en": "", "zh": ""}, {"key": "TJX", "en": "", "zh": ""}, {"key": "ROST", "en": "", "zh": ""}, {"key": "DG", "en": "", "zh": ""}, {"key": "DLTR", "en": "", "zh": ""}, {"key": "BBY", "en": "", "zh": ""}, {"key": "AZO", "en": "", "zh": ""}, {"key": "ORLY", "en": "", "zh": ""}, {"key": "ULTA", "en": "", "zh": ""}, {"key": "BJ", "en": "", "zh": ""}, {"key": "FIVE", "en": "", "zh": ""}, {"key": "BURL", "en": "", "zh": ""}, {"key": "DKS", "en": "", "zh": ""}, {"key": "TSCO", "en": "", "zh": ""}, {"key": "OLLI", "en": "", "zh": ""}, {"key": "ASO", "en": "", "zh": ""}, {"key": "GLXY", "en": "", "zh": ""}, {"key": "MARA", "en": "", "zh": ""}, {"key": "CLSK", "en": "", "zh": ""}, {"key": "ETHA", "en": "", "zh": ""}, {"key": "IBIT", "en": "", "zh": ""}, {"key": "CME", "en": "", "zh": ""}, {"key": "BLK", "en": "", "zh": ""}, {"key": "BEN", "en": "", "zh": ""}, {"key": "CORZ", "en": "", "zh": ""}, {"key": "IREN", "en": "", "zh": ""}, {"key": "HUT", "en": "", "zh": ""}, {"key": "APLD", "en": "", "zh": ""}, {"key": "WULF", "en": "", "zh": ""}, {"key": "CIFR", "en": "", "zh": ""}, {"key": "BTDR", "en": "", "zh": ""}, {"key": "RIOT", "en": "", "zh": ""}, {"key": "TEAM", "en": "", "zh": ""}, {"key": "HUBS", "en": "", "zh": ""}, {"key": "MDB", "en": "", "zh": ""}, {"key": "DOCU", "en": "", "zh": ""}, {"key": "PCOR", "en": "", "zh": ""}, {"key": "GTLB", "en": "", "zh": ""}, {"key": "KVYO", "en": "", "zh": ""}, {"key": "CSCO", "en": "", "zh": ""}, {"key": "HPQ", "en": "", "zh": ""}, {"key": "TEL", "en": "", "zh": ""}, {"key": "TXN", "en": "", "zh": ""}, {"key": "ADI", "en": "", "zh": ""}, {"key": "MCHP", "en": "", "zh": ""}, {"key": "ON", "en": "", "zh": ""}, {"key": "NXPI", "en": "", "zh": ""}, {"key": "STM", "en": "", "zh": ""}, {"key": "HPE", "en": "", "zh": ""}, {"key": "ALAB", "en": "", "zh": ""}, {"key": "CRDO", "en": "", "zh": ""}, {"key": "ENTG", "en": "", "zh": ""}, {"key": "MKSI", "en": "", "zh": ""}, {"key": "ONTO", "en": "", "zh": ""}, {"key": "ACLS", "en": "", "zh": ""}, {"key": "COHU", "en": "", "zh": ""}, {"key": "FORM", "en": "", "zh": ""}, {"key": "ICHR", "en": "", "zh": ""}, {"key": "AEIS", "en": "", "zh": ""}, {"key": "UCTT", "en": "", "zh": ""}, {"key": "NVMI", "en": "", "zh": ""}, {"key": "CAMT", "en": "", "zh": ""}, {"key": "KLIC", "en": "", "zh": ""}, {"key": "VECO", "en": "", "zh": ""}, {"key": "WDC", "en": "", "zh": ""}, {"key": "STX", "en": "", "zh": ""}, {"key": "SNDK", "en": "", "zh": ""}, {"key": "NXT", "en": "", "zh": ""}, {"key": "NVT", "en": "", "zh": ""}, {"key": "FTNT", "en": "", "zh": ""}, {"key": "OKTA", "en": "", "zh": ""}, {"key": "QLYS", "en": "", "zh": ""}, {"key": "ZS", "en": "", "zh": ""}, {"key": "S", "en": "", "zh": ""}, {"key": "RBRK", "en": "", "zh": ""}, {"key": "TENB", "en": "", "zh": ""}, {"key": "NNE", "en": "", "zh": ""}, {"key": "ISRG", "en": "", "zh": ""}, {"key": "CGNX", "en": "", "zh": ""}, {"key": "NOVT", "en": "", "zh": ""}, {"key": "TRMB", "en": "", "zh": ""}, {"key": "ZBRA", "en": "", "zh": ""}, {"key": "PTC", "en": "", "zh": ""}, {"key": "SYM", "en": "", "zh": ""}, {"key": "LLY", "en": "", "zh": ""}, {"key": "NVO", "en": "", "zh": ""}, {"key": "PFE", "en": "", "zh": ""}, {"key": "AMGN", "en": "", "zh": ""}, {"key": "AZN", "en": "", "zh": ""}, {"key": "VKTX", "en": "", "zh": ""}, {"key": "GPCR", "en": "", "zh": ""}, {"key": "ALT", "en": "", "zh": ""}, {"key": "SRRK", "en": "", "zh": ""}, {"key": "WST", "en": "", "zh": ""}, {"key": "DXCM", "en": "", "zh": ""}, {"key": "HIMS", "en": "", "zh": ""}, {"key": "DVA", "en": "", "zh": ""}, {"key": "IONQ", "en": "", "zh": ""}, {"key": "RGTI", "en": "", "zh": ""}, {"key": "QBTS", "en": "", "zh": ""}, {"key": "QUBT", "en": "", "zh": ""}, {"key": "QNT", "en": "", "zh": ""}, {"key": "NEM", "en": "", "zh": ""}, {"key": "AEM", "en": "", "zh": ""}, {"key": "GOLD", "en": "", "zh": ""}, {"key": "KGC", "en": "", "zh": ""}, {"key": "AU", "en": "", "zh": ""}, {"key": "GFI", "en": "", "zh": ""}, {"key": "HMY", "en": "", "zh": ""}, {"key": "AGI", "en": "", "zh": ""}, {"key": "IAG", "en": "", "zh": ""}, {"key": "EGO", "en": "", "zh": ""}, {"key": "BTG", "en": "", "zh": ""}, {"key": "CCJ", "en": "", "zh": ""}, {"key": "UEC", "en": "", "zh": ""}, {"key": "UUUU", "en": "", "zh": ""}, {"key": "NXE", "en": "", "zh": ""}, {"key": "DNN", "en": "", "zh": ""}, {"key": "UROY", "en": "", "zh": ""}, {"key": "ASPI", "en": "", "zh": ""}, {"key": "MP", "en": "", "zh": ""}, {"key": "USAR", "en": "", "zh": ""}, {"key": "ALB", "en": "", "zh": ""}, {"key": "SGML", "en": "", "zh": ""}, {"key": "LAC", "en": "", "zh": ""}, {"key": "CRML", "en": "", "zh": ""}, {"key": "FLY", "en": "", "zh": ""}, {"key": "VSAT", "en": "", "zh": ""}, {"key": "PL", "en": "", "zh": ""}, {"key": "BKSY", "en": "", "zh": ""}, {"key": "LUNR", "en": "", "zh": ""}, {"key": "RDW", "en": "", "zh": ""}, {"key": "KRMN", "en": "", "zh": ""}, {"key": "MDA", "en": "", "zh": ""}, {"key": "SPCX", "en": "", "zh": ""}, {"key": "VOYG", "en": "", "zh": ""}, {"key": "DUOL", "en": "", "zh": ""}, {"key": "SOUN", "en": "", "zh": ""}, {"key": "PATH", "en": "", "zh": ""}, {"key": "TEM", "en": "", "zh": ""}, {"key": "PGR", "en": "", "zh": ""}, {"key": "CB", "en": "", "zh": ""}, {"key": "TRV", "en": "", "zh": ""}, {"key": "ALL", "en": "", "zh": ""}, {"key": "AIG", "en": "", "zh": ""}, {"key": "MET", "en": "", "zh": ""}, {"key": "PRU", "en": "", "zh": ""}, {"key": "AFL", "en": "", "zh": ""}, {"key": "HIG", "en": "", "zh": ""}, {"key": "CINF", "en": "", "zh": ""}, {"key": "ACGL", "en": "", "zh": ""}, {"key": "AON", "en": "", "zh": ""}, {"key": "AJG", "en": "", "zh": ""}, {"key": "WRB", "en": "", "zh": ""}, {"key": "BRO", "en": "", "zh": ""}, {"key": "KNSL", "en": "", "zh": ""}, {"key": "WTW", "en": "", "zh": ""}, {"key": "MRK", "en": "", "zh": ""}, {"key": "BMY", "en": "", "zh": ""}, {"key": "ABBV", "en": "", "zh": ""}, {"key": "GILD", "en": "", "zh": ""}, {"key": "VRTX", "en": "", "zh": ""}, {"key": "BIIB", "en": "", "zh": ""}, {"key": "REGN", "en": "", "zh": ""}, {"key": "GWW", "en": "", "zh": ""}, {"key": "WSO", "en": "", "zh": ""}, {"key": "AIT", "en": "", "zh": ""}, {"key": "MSM", "en": "", "zh": ""}, {"key": "POOL", "en": "", "zh": ""}, {"key": "GGG", "en": "", "zh": ""}, {"key": "FERG", "en": "", "zh": ""}, {"key": "WCC", "en": "", "zh": ""}, {"key": "ACN", "en": "", "zh": ""}, {"key": "ADSK", "en": "", "zh": ""}, {"key": "AKAM", "en": "", "zh": ""}, {"key": "CDNS", "en": "", "zh": ""}, {"key": "CDW", "en": "", "zh": ""}, {"key": "CTSH", "en": "", "zh": ""}, {"key": "FFIV", "en": "", "zh": ""}, {"key": "FICO", "en": "", "zh": ""}, {"key": "FLEX", "en": "", "zh": ""}, {"key": "FSLR", "en": "", "zh": ""}, {"key": "GDDY", "en": "", "zh": ""}, {"key": "GEN", "en": "", "zh": ""}, {"key": "INTC", "en": "", "zh": ""}, {"key": "IT", "en": "", "zh": ""}, {"key": "JBL", "en": "", "zh": ""}, {"key": "KEYS", "en": "", "zh": ""}, {"key": "MSI", "en": "", "zh": ""}, {"key": "NTAP", "en": "", "zh": ""}, {"key": "Q", "en": "", "zh": ""}, {"key": "ROP", "en": "", "zh": ""}, {"key": "SNPS", "en": "", "zh": ""}, {"key": "SWKS", "en": "", "zh": ""}, {"key": "TYL", "en": "", "zh": ""}, {"key": "VRSN", "en": "", "zh": ""}, {"key": "AIZ", "en": "", "zh": ""}, {"key": "AMP", "en": "", "zh": ""}, {"key": "APO", "en": "", "zh": ""}, {"key": "ARES", "en": "", "zh": ""}, {"key": "BAC", "en": "", "zh": ""}, {"key": "BNY", "en": "", "zh": ""}, {"key": "BX", "en": "", "zh": ""}, {"key": "C", "en": "", "zh": ""}, {"key": "CBOE", "en": "", "zh": ""}, {"key": "CPAY", "en": "", "zh": ""}, {"key": "ERIE", "en": "", "zh": ""}, {"key": "FDS", "en": "", "zh": ""}, {"key": "GL", "en": "", "zh": ""}, {"key": "GS", "en": "", "zh": ""}, {"key": "IBKR", "en": "", "zh": ""}, {"key": "ICE", "en": "", "zh": ""}, {"key": "IVZ", "en": "", "zh": ""}, {"key": "JPM", "en": "", "zh": ""}, {"key": "KKR", "en": "", "zh": ""}, {"key": "L", "en": "", "zh": ""}, {"key": "MCO", "en": "", "zh": ""}, {"key": "MS", "en": "", "zh": ""}, {"key": "MSCI", "en": "", "zh": ""}, {"key": "NDAQ", "en": "", "zh": ""}, {"key": "NTRS", "en": "", "zh": ""}, {"key": "PFG", "en": "", "zh": ""}, {"key": "RJF", "en": "", "zh": ""}, {"key": "SCHW", "en": "", "zh": ""}, {"key": "SPGI", "en": "", "zh": ""}, {"key": "STT", "en": "", "zh": ""}, {"key": "TROW", "en": "", "zh": ""}, {"key": "WFC", "en": "", "zh": ""}, {"key": "A", "en": "", "zh": ""}, {"key": "ABT", "en": "", "zh": ""}, {"key": "ALGN", "en": "", "zh": ""}, {"key": "BAX", "en": "", "zh": ""}, {"key": "BDX", "en": "", "zh": ""}, {"key": "BSX", "en": "", "zh": ""}, {"key": "CAH", "en": "", "zh": ""}, {"key": "COO", "en": "", "zh": ""}, {"key": "COR", "en": "", "zh": ""}, {"key": "CRL", "en": "", "zh": ""}, {"key": "DGX", "en": "", "zh": ""}, {"key": "DHR", "en": "", "zh": ""}, {"key": "EW", "en": "", "zh": ""}, {"key": "GEHC", "en": "", "zh": ""}, {"key": "HCA", "en": "", "zh": ""}, {"key": "HSIC", "en": "", "zh": ""}, {"key": "IDXX", "en": "", "zh": ""}, {"key": "INCY", "en": "", "zh": ""}, {"key": "IQV", "en": "", "zh": ""}, {"key": "LH", "en": "", "zh": ""}, {"key": "MCK", "en": "", "zh": ""}, {"key": "MDT", "en": "", "zh": ""}, {"key": "MRNA", "en": "", "zh": ""}, {"key": "MTD", "en": "", "zh": ""}, {"key": "PODD", "en": "", "zh": ""}, {"key": "RMD", "en": "", "zh": ""}, {"key": "RVTY", "en": "", "zh": ""}, {"key": "STE", "en": "", "zh": ""}, {"key": "SYK", "en": "", "zh": ""}, {"key": "TMO", "en": "", "zh": ""}, {"key": "UHS", "en": "", "zh": ""}, {"key": "VEEV", "en": "", "zh": ""}, {"key": "VTRS", "en": "", "zh": ""}, {"key": "WAT", "en": "", "zh": ""}, {"key": "ZBH", "en": "", "zh": ""}, {"key": "ZTS", "en": "", "zh": ""}, {"key": "APTV", "en": "", "zh": ""}, {"key": "CMG", "en": "", "zh": ""}, {"key": "CVNA", "en": "", "zh": ""}, {"key": "DASH", "en": "", "zh": ""}, {"key": "DECK", "en": "", "zh": ""}, {"key": "DPZ", "en": "", "zh": ""}, {"key": "DRI", "en": "", "zh": ""}, {"key": "EBAY", "en": "", "zh": ""}, {"key": "F", "en": "", "zh": ""}, {"key": "GM", "en": "", "zh": ""}, {"key": "GPC", "en": "", "zh": ""}, {"key": "GRMN", "en": "", "zh": ""}, {"key": "HAS", "en": "", "zh": ""}, {"key": "LULU", "en": "", "zh": ""}, {"key": "MCD", "en": "", "zh": ""}, {"key": "NKE", "en": "", "zh": ""}, {"key": "RL", "en": "", "zh": ""}, {"key": "SBUX", "en": "", "zh": ""}, {"key": "TPR", "en": "", "zh": ""}, {"key": "WSM", "en": "", "zh": ""}, {"key": "YUM", "en": "", "zh": ""}, {"key": "CHTR", "en": "", "zh": ""}, {"key": "CMCSA", "en": "", "zh": ""}, {"key": "DIS", "en": "", "zh": ""}, {"key": "ECHO", "en": "", "zh": ""}, {"key": "FOX", "en": "", "zh": ""}, {"key": "FOXA", "en": "", "zh": ""}, {"key": "GOOG", "en": "", "zh": ""}, {"key": "OMC", "en": "", "zh": ""}, {"key": "PSKY", "en": "", "zh": ""}, {"key": "T", "en": "", "zh": ""}, {"key": "TKO", "en": "", "zh": ""}, {"key": "TMUS", "en": "", "zh": ""}, {"key": "TTD", "en": "", "zh": ""}, {"key": "TTWO", "en": "", "zh": ""}, {"key": "VZ", "en": "", "zh": ""}, {"key": "WBD", "en": "", "zh": ""}, {"key": "ADP", "en": "", "zh": ""}, {"key": "AXON", "en": "", "zh": ""}, {"key": "BR", "en": "", "zh": ""}, {"key": "CHRW", "en": "", "zh": ""}, {"key": "CMI", "en": "", "zh": ""}, {"key": "CPRT", "en": "", "zh": ""}, {"key": "CSX", "en": "", "zh": ""}, {"key": "CTAS", "en": "", "zh": ""}, {"key": "EFX", "en": "", "zh": ""}, {"key": "EXPD", "en": "", "zh": ""}, {"key": "FDX", "en": "", "zh": ""}, {"key": "FDXF", "en": "", "zh": ""}, {"key": "FTV", "en": "", "zh": ""}, {"key": "IEX", "en": "", "zh": ""}, {"key": "J", "en": "", "zh": ""}, {"key": "JBHT", "en": "", "zh": ""}, {"key": "JCI", "en": "", "zh": ""}, {"key": "MMM", "en": "", "zh": ""}, {"key": "NSC", "en": "", "zh": ""}, {"key": "ODFL", "en": "", "zh": ""}, {"key": "OTIS", "en": "", "zh": ""}, {"key": "PAYX", "en": "", "zh": ""}, {"key": "PCAR", "en": "", "zh": ""}, {"key": "PNR", "en": "", "zh": ""}, {"key": "RSG", "en": "", "zh": ""}, {"key": "SWK", "en": "", "zh": ""}, {"key": "TT", "en": "", "zh": ""}, {"key": "UNP", "en": "", "zh": ""}, {"key": "UPS", "en": "", "zh": ""}, {"key": "VLTO", "en": "", "zh": ""}, {"key": "VRSK", "en": "", "zh": ""}, {"key": "WAB", "en": "", "zh": ""}, {"key": "WM", "en": "", "zh": ""}, {"key": "XYL", "en": "", "zh": ""}, {"key": "ADM", "en": "", "zh": ""}, {"key": "BG", "en": "", "zh": ""}, {"key": "CAG", "en": "", "zh": ""}, {"key": "CASY", "en": "", "zh": ""}, {"key": "EL", "en": "", "zh": ""}, {"key": "HRL", "en": "", "zh": ""}, {"key": "KHC", "en": "", "zh": ""}, {"key": "KR", "en": "", "zh": ""}, {"key": "MNST", "en": "", "zh": ""}, {"key": "SJM", "en": "", "zh": ""}, {"key": "STZ", "en": "", "zh": ""}, {"key": "SYY", "en": "", "zh": ""}, {"key": "TAP", "en": "", "zh": ""}, {"key": "TSN", "en": "", "zh": ""}, {"key": "APA", "en": "", "zh": ""}, {"key": "EXE", "en": "", "zh": ""}, {"key": "TPL", "en": "", "zh": ""}, {"key": "AEE", "en": "", "zh": ""}, {"key": "AWK", "en": "", "zh": ""}, {"key": "CMS", "en": "", "zh": ""}, {"key": "CNP", "en": "", "zh": ""}, {"key": "DTE", "en": "", "zh": ""}, {"key": "ED", "en": "", "zh": ""}, {"key": "EIX", "en": "", "zh": ""}, {"key": "ETR", "en": "", "zh": ""}, {"key": "EVRG", "en": "", "zh": ""}, {"key": "EXC", "en": "", "zh": ""}, {"key": "FE", "en": "", "zh": ""}, {"key": "LNT", "en": "", "zh": ""}, {"key": "PEG", "en": "", "zh": ""}, {"key": "PNW", "en": "", "zh": ""}, {"key": "PPL", "en": "", "zh": ""}, {"key": "WEC", "en": "", "zh": ""}, {"key": "XEL", "en": "", "zh": ""}, {"key": "AMT", "en": "", "zh": ""}, {"key": "ARE", "en": "", "zh": ""}, {"key": "AVB", "en": "", "zh": ""}, {"key": "BXP", "en": "", "zh": ""}, {"key": "CBRE", "en": "", "zh": ""}, {"key": "CCI", "en": "", "zh": ""}, {"key": "CPT", "en": "", "zh": ""}, {"key": "DLR", "en": "", "zh": ""}, {"key": "EQIX", "en": "", "zh": ""}, {"key": "EQR", "en": "", "zh": ""}, {"key": "ESS", "en": "", "zh": ""}, {"key": "FRT", "en": "", "zh": ""}, {"key": "HST", "en": "", "zh": ""}, {"key": "INVH", "en": "", "zh": ""}, {"key": "IRM", "en": "", "zh": ""}, {"key": "MAA", "en": "", "zh": ""}, {"key": "O", "en": "", "zh": ""}, {"key": "PLD", "en": "", "zh": ""}, {"key": "PSA", "en": "", "zh": ""}, {"key": "REG", "en": "", "zh": ""}, {"key": "SBAC", "en": "", "zh": ""}, {"key": "SPG", "en": "", "zh": ""}, {"key": "VTR", "en": "", "zh": ""}, {"key": "WELL", "en": "", "zh": ""}, {"key": "WY", "en": "", "zh": ""}, {"key": "AMCR", "en": "", "zh": ""}, {"key": "APD", "en": "", "zh": ""}, {"key": "AVY", "en": "", "zh": ""}, {"key": "BALL", "en": "", "zh": ""}, {"key": "CF", "en": "", "zh": ""}, {"key": "CRH", "en": "", "zh": ""}, {"key": "CTVA", "en": "", "zh": ""}, {"key": "DD", "en": "", "zh": ""}, {"key": "DOW", "en": "", "zh": ""}, {"key": "ECL", "en": "", "zh": ""}, {"key": "FCX", "en": "", "zh": ""}, {"key": "IFF", "en": "", "zh": ""}, {"key": "IP", "en": "", "zh": ""}, {"key": "LIN", "en": "", "zh": ""}, {"key": "LYB", "en": "", "zh": ""}, {"key": "MLM", "en": "", "zh": ""}, {"key": "MOS", "en": "", "zh": ""}, {"key": "NUE", "en": "", "zh": ""}, {"key": "PKG", "en": "", "zh": ""}, {"key": "PPG", "en": "", "zh": ""}, {"key": "STLD", "en": "", "zh": ""}, {"key": "VMC", "en": "", "zh": ""}];
 /* ══════════════════════════════════════════════════════════════════════════
    OPTIONS WORKSPACE — mode switching + the lazy payload fetches.
    PAYLOAD LAW: the chrome and the Brief are baked above and need no network.
@@ -1057,7 +1084,14 @@ function renderScanner(host, payload){
     + '<div class="oew-panel">'
       + '<div class="oew-phead">'
         + '<h2 class="oew-ph-title">' + bi('Screener','筛选台') + '</h2>'
-        + '<span class="oew-ph-sub">' + bi(rows.length + ' names, sorted by premium', rows.length + ' 个标的，按权利金排序') + '</span>'
+        // §0.20 fix: "Top 200" is only true when the table's own .slice(0, 200)
+        // (scBody(), above) actually truncates something — otherwise every row
+        // on file is already shown, and the cap language is the exact
+        // undeclared-cap-shaped lie this sentence exists to prevent.
+        + '<span class="oew-ph-sub">' + (rows.length > 200
+            ? bi('Top 200 by premium, sorted', '按权利金排序，前200')
+            : bi(rows.length + ' names, sorted by premium', rows.length + ' 个标的，按权利金排序')) + '</span>'
+        + '<a class="oew-ph-more" href="options_screener.html">' + bi('Open the full screener for all ' + rows.length, '打开完整筛选台，查看全部 ' + rows.length) + ' ↗</a>'
         + '<span class="oew-help" tabindex="0" role="button"'
           + ' data-tip-en="Chains are snapshots taken after the close. Implied volatility, walls and max-pain come from those snapshots; volume and premium come from the day’s tape. IV rank compares today with the history we hold for that name, so a name we have tracked only briefly has a short history behind its number. Direction is approximate; size is reliable."'
           + ' data-tip-zh="期权链为收盘后的快照。隐含波动率、墙位与最大痛点来自这些快照；成交量与权利金来自当日逐笔。隐波分位将今日与我们持有的该标的历史比较，因此跟踪时间较短的标的，其数字背后的历史也较短。方向为近似值，规模数据可靠。">?</span>'
@@ -1100,17 +1134,44 @@ function pipRow(strength){
   for(var i = 0; i < 5; i++) s += '<i class="oew-pip' + (i < on ? ' on' : '') + '"></i>';
   return s + '</span>';
 }
-function lvRow(color, en, zh, sEn, sZh, strength, spot, value){
+function lvRow(color, en, zh, sEn, sZh, strength, spot, value, wcheck){
   var v = num(value), sp = num(spot);
   var d = (v !== null && sp) ? ((v - sp) / sp * 100) : null;
   return '<div class="oew-lvrow">'
     + '<span class="oew-lv-sw" style="background:' + color + '"></span>'
-    + '<span class="oew-lv-main"><span class="n">' + bi(en, zh) + pipRow(strength) + '</span>'
+    + '<span class="oew-lv-main"><span class="n">' + bi(en, zh) + pipRow(strength) + (wcheck || '') + '</span>'
       + '<span class="s">' + bi(sEn, sZh) + '</span></span>'
     + '<span class="oew-lv-pct mono">' + (d === null ? '—' : (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1) + '% ')
       + bi('from close', '距收盘') + '</span>'
     + '<span class="oew-lv-px mono">' + lvl(value) + '</span>'
   + '</div>';
+}
+/* OIP W1 §4: the wall-persistence cross-check chip — a calm confirm/disagree/no-data
+   mark, NOT a stance and not a pip (§0.6). Silent (returns '') when the block is
+   absent (coverage gap, PR #3976) or matches_board_wall is null (either side
+   unreadable) — no chip at all on that row, never a "no data" placeholder. Flip and
+   Magnet have no open-interest-wall equivalent, so callers only pass this for the
+   Ceiling/Floor rows. */
+function wcheckChip(gx, side, ownValue){
+  var wp = gx && gx.wall_persistence; if(!wp) return '';
+  var block = side === 'call' ? wp.call_side : wp.put_side;
+  if(!block || block.matches_board_wall === null || block.matches_board_wall === undefined) return '';
+  if(block.matches_board_wall){
+    return '<span class="oew-wcheck oew-wcheck-yes"'
+      + ' data-tip-en="The open-interest wall (a signing-free count of contracts, independent of the dealer-gamma model) sits at the same strike as this dealer-gamma wall — two different measurements agree."'
+      + ' data-tip-zh="未平仓量墙位（合约数量统计，不依赖做市商模型的独立测算）与该做市商Gamma墙位落在同一行权价 — 两种独立测算结果一致。">'
+      + '✓ <span class="l-en">confirmed by open interest</span><span class="l-zh">未平仓量印证</span></span>';
+  }
+  // B2 fix: block.board_wall is the SAME dealer-gamma wall as ownValue (it exists
+  // only as the comparison operand matches_board_wall was computed against —
+  // engine/gex_state.py's _wall_persistence sets it from the model's own
+  // call_wall/put_wall, the identical value this row already shows). The
+  // independent open-interest wall this chip exists to surface is block.level.
+  var oiw = '$' + lvl(block.level), own = '$' + lvl(ownValue);
+  return '<span class="oew-wcheck oew-wcheck-no"'
+    + ' data-tip-en="The open-interest wall sits at a different strike (' + oiw + ') than this dealer-gamma wall (' + own + '). Two independent measurements, two different answers — worth knowing, not a contradiction to resolve."'
+    + ' data-tip-zh="未平仓量墙位（' + oiw + '）与该做市商Gamma墙位（' + own + '）不在同一行权价 — 两种独立测算给出不同答案，值得留意，但并非需要解决的矛盾。">'
+    + '<span class="l-en">open interest disagrees</span><span class="l-zh">未平仓量不一致</span></span>';
 }
 function rdCard(hEn, hZh, vEn, vZh, sEn, sZh){
   return '<div class="oew-panel"><div class="oew-pbody">'
@@ -1122,7 +1183,265 @@ function rdCard(hEn, hZh, vEn, vZh, sEn, sZh){
 function mt(kEn, kZh, v){
   return '<span class="oew-mt"><span class="k">' + bi(kEn, kZh) + '</span><span class="v mono">' + esc(v) + '</span></span>';
 }
-function renderTicker(host, tk, gx, fl){
+/* ── OIP W1 §3.5: the session filmstrip panel — "How the day traded" ──
+   The <figure> itself is an SSR fragment lib/illus.py baked into
+   site/session/<T>.json's filmstrip_html field at nightly build time (§3.1: never
+   re-derive the geometry client-side). sess is null when the fetch 404s or hasn't
+   resolved (a name outside the digest's coverage, or before the first nightly run
+   populates the store) — that degrades to the SAME honest-null figure the server
+   emits for coverage.minutes===0, composed here only because there is no record at
+   all to read a pre-rendered field from. NO stance chip (§0.13 ruling) — this is
+   not the verdict surface; the Name-header panel above carries the page's one
+   verdict-marker decision element (OIP_MASTERPLAN §3 verdict law). */
+var FILM_NULL_HTML = '<figure class="ilx oew-film oew-film-null" role="img" '
+  + 'aria-label="No intraday record for this session" style="color:var(--oew-accent);--ilx-h:64px">'
+  + '<svg viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">'
+  + '<line class="oew-film-track" x1="0" y1="32" x2="560" y2="32"/>'
+  + '<line class="oew-film-closecap" x1="560" y1="14" x2="560" y2="50"/></svg>'
+  + '<span class="oew-film-empty"><span class="l-en">No intraday record for this session</span>'
+  + '<span class="l-zh">本交易日没有盘中记录</span></span></figure>';
+function filmCount(n){
+  if(n === 1) return ['once','一次'];
+  if(n === 2) return ['twice','两次'];
+  return [n + ' times', n + '次'];
+}
+function filmstripSentence(sess){
+  var cov = (sess && sess.coverage) || null;
+  if(!cov) return bi('No intraday record for this session', '本交易日没有盘中记录');
+  var minutes = num(cov.minutes) || 0;
+  if(minutes === 0) return bi(cov.quality_en || 'No intraday record for this session', cov.quality_zh || '本交易日没有盘中记录');
+  var expected = num(cov.expected);
+  var ratio = expected ? minutes / expected : null;
+  var shapeEn = sess.arc_shape_en || '', shapeZh = sess.arc_shape_zh || '';
+  if(ratio !== null && ratio < 0.70){
+    return bi((cov.quality_en || '') + (shapeEn ? ' — Premium ' + shapeEn + '.' : ''),
+               (cov.quality_zh || '') + (shapeZh ? '——权利金' + shapeZh + '。' : ''));
+  }
+  var flip = sess.flip || {}, crosses = num(flip.crosses) || 0, flipEn = '', flipZh = '';
+  var side = flip.last_side === 'above' ? ['above','上方'] : flip.last_side === 'below' ? ['below','下方'] : null;
+  if(crosses > 0 && side){
+    var c = filmCount(crosses);
+    flipEn = ' Crossed the flip ' + c[0] + ', closed ' + side[0] + ' it.';
+    // NOT a leading '，' — shapeZh below already ends its own sentence in '。'
+    // (worked example, W1_DESIGN_SPEC.md §3.4: "...并维持。穿越翻转位两次...",
+    // period then directly 穿越, never '。，' — a leading comma there would
+    // collide with that full stop).
+    flipZh = '穿越翻转位' + c[1] + '，收于其' + side[1] + '。';
+  }
+  return bi((shapeEn ? 'Premium ' + shapeEn + '.' : '') + flipEn,
+             (shapeZh ? '权利金' + shapeZh + '。' : '') + flipZh);
+}
+function filmstripPanelHTML(sess){
+  var fig = (sess && sess.filmstrip_html) ? sess.filmstrip_html : FILM_NULL_HTML;
+  // M1 fix: the null figure (client FILM_NULL_HTML above, or the server's own
+  // honest-null filmstrip_html) already embeds this exact disclosure in its own
+  // .oew-film-empty span (§3.3's markup contract). filmstripSentence() returns
+  // the SAME text for the same condition (!cov or minutes===0), so printing it
+  // again in the footer doubled it. Suppress the footer sentence for that one
+  // condition only — every other state keeps it (the figure carries no prose
+  // there). The as-of stamp is independent of this and still prints whenever a
+  // real record (any coverage) is on hand.
+  var cov = (sess && sess.coverage) || null;
+  // Minor fix (PR #4123 adversarial review round 2): must use the exact same
+  // numeric-safe predicate as filmstripSentence()'s own `minutes === 0` check
+  // just above, never a bare truthiness read of cov.minutes — a future string
+  // "0" is truthy in JS ("0" would NOT satisfy !cov.minutes) and would silently
+  // re-open the M1 duplication this suppression exists to prevent.
+  var isNull = !cov || (num(cov.minutes) || 0) === 0;
+  var footBits = (isNull ? '' : '<span>' + filmstripSentence(sess) + '</span>')
+    + (sess && sess.session_date ? '<span class="oew-asof mono">' + esc(sess.session_date) + '</span>' : '');
+  return '<div class="oew-panel">'
+    + '<div class="oew-phead"><h2 class="oew-ph-title">' + bi('How the day traded','今日如何交易') + '</h2></div>'
+    + '<div class="oew-pbody" id="oew-film-body">' + fig + '</div>'
+    + (footBits ? '<div class="oew-pfoot">' + footBits + '</div>' : '')
+  + '</div>';
+}
+
+/* ── OIP W1 §5.2: "Rich or cheap?" — real read, young-window honesty ──
+   Band WORDS reused VERBATIM from gex.js's own IVRANK map (site/gex.js:76-80) —
+   never invented here. The COLORS are deliberately NOT verbatim: gex.js resolves
+   its own cls ("down"/"up"/"warn"/"neu") to var(--down)/var(--up) downstream
+   (moodReadHTML), which is itself a §0.5 violation on that page (pre-existing,
+   out of scope for this file) — a non-directional vol level must never reach
+   --up/--down, since site/theme.css flips that pair under ZH and the same
+   reading would render red in EN and green in ZH. IV rank is not one of the
+   two sanctioned direction instruments (tape_flow, ΔOI — masterplan §0.8), so
+   every band below stays in the warn/accent/muted family.
+
+   Minor, intentional (PR #4123 adversarial review round 2): `normal` and
+   `cheap` both resolve to var(--muted) — this is a deliberate 4-WEIGHT visual
+   ladder (warn > orange > muted > accent), not a bug in a would-be 5-color
+   one. The two middle bands share a word (gex.js's own verbatim mapping keeps
+   them textually distinct) but not a color, because neither "unremarkably
+   normal" nor "somewhat cheap" is worth a dedicated visual weight next to the
+   two bands that actually call for attention (rich, and genuinely very
+   cheap) — and the constraint above already rules out reaching for --up/--down
+   to manufacture a fifth one. If a future pass wants 5 distinct weights,
+   pick a new non-directional color for one of these two explicitly; do not
+   read the shared var(--muted) as an oversight. */
+var IVR_BAND = {
+  rich:      ['Vol rich','波动偏贵','var(--warn)'],
+  elevated:  ['Elevated','偏高','var(--orange)'],
+  normal:    ['Normal','正常','var(--muted)'],
+  cheap:     ['Cheap','偏低','var(--muted)'],
+  very_cheap:['Very cheap','便宜','var(--oew-accent)']
+};
+function filmOrdinal(n){
+  var s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function richOrCheapHTML(tk, gx){
+  var ivr = (gx.summary || {}).iv_rank;
+  var head = '<div class="oew-phead"><h2 class="oew-ph-title">' + bi('Rich or cheap?','偏贵还是偏便宜？') + '</h2>'
+    + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="Where today’s 30-day implied volatility sits versus this name’s own recent daily readings. This is a SHORT window (about 40 trading days) — not a full-year IV rank. A young or thin window is flagged, not hidden."'
+      + ' data-tip-zh="今日30日隐含波动率相对该标的近期每日读数的位置。这是一个较短窗口（约40个交易日）— 并非完整一年的隐波分位。窗口较短或较薄时会明确标注，而非隐藏。">?</span></div>'
+  + '</div>';
+  if(!ivr){
+    return '<div class="oew-panel">' + head
+      + '<div class="oew-pbody"><div class="oew-notyet"><p class="oew-notyet-say">' + bi(
+          "Not enough price history on file yet for this name to place today's cost against its own past.",
+          '该标的历史价格记录不足，暂无法将今日成本与自身历史比较。') + '</p></div></div>'
+      + '<div class="oew-pfoot"><span>' + bi('Not measured yet — nothing here to act on.', '尚未测量 — 此处暂无可据以行动的内容。') + '</span></div>'
+    + '</div>';
+  }
+  var rankPct = num(ivr.rank_pct), nDays = ivr.n_days;
+  var body;
+  if(ivr.low_confidence){
+    body = '<div class="oew-rich-track" role="img">'
+      + '<span class="oew-rich-building">' + bi('history building — ' + (nDays || '?') + 'd', '历史积累中 — ' + (nDays || '?') + '天') + '</span>'
+    + '</div>';
+  } else {
+    var on = rankPct === null ? 0 : Math.max(0, Math.min(5, Math.round(rankPct / 100 * 5)));
+    var pips = '';
+    for(var i = 0; i < 5; i++) pips += '<i class="oew-rich-pip' + (i < on ? ' on' : '') + '"></i>';
+    var band = IVR_BAND[ivr.band];
+    var tipEn = (rankPct !== null && nDays) ? filmOrdinal(Math.round(rankPct)) + ' percentile of the last ' + nDays + ' trading sessions on file for this name.' : '';
+    var tipZh = (rankPct !== null && nDays) ? '该标的近' + nDays + '个交易日记录中的第' + Math.round(rankPct) + '百分位。' : '';
+    body = '<div class="oew-rich-track" role="img" tabindex="0" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">' + pips
+      + (band ? '<span class="oew-rich-band" style="color:' + band[2] + '">' + bi(band[0], band[1]) + '</span>' : '')
+    + '</div>';
+  }
+  var say = '';
+  // Minor fix: low_confidence already replaces the pip track with the plain
+  // "history building — Nd" chip above (n_days < 20) — printing the full
+  // percentile sentence here too claims a settled reading the chip next to
+  // it just disclaimed. Suppress the sentence in that state; keep the chip.
+  if(!ivr.low_confidence && rankPct !== null && nDays){
+    var pctTxt = Math.round(rankPct) + '%';
+    say = '<p class="oew-tk-say"><span class="l-en">Options on ' + esc(tk) + ' cost more than <b class="mono">' + pctTxt
+      + '</b> of the last <b class="mono">' + nDays + '</b> sessions we have on file.</span>'
+      + '<span class="l-zh">' + esc(tk) + ' 期权价格高于我们记录的近 <b class="mono">' + nDays + '</b> 个交易日中的 <b class="mono">' + pctTxt + '</b>。</span></p>';
+  }
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody">' + body + say + '</div>'
+    + '<div class="oew-pfoot">'
+      + '<span>' + bi('Still building toward a full year of history — read this as a rough placement, not a settled rank.',
+          '仍在积累完整一年的历史 — 请视为粗略定位，而非确定分位。') + '</span>'
+      + (gx.meta && gx.meta.asof ? '<span class="oew-asof mono">' + esc(gx.meta.asof) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* ── OIP W1 §5.2/§4.4: "Where positions built" — top-3 build/unwind, diverging bars ── */
+function pbStrikeLabel(K, right){
+  var n = num(K);
+  var k = n === null ? '—' : (n % 1 === 0 ? n.toFixed(0) : n.toFixed(1));
+  return k + String(right || '').charAt(0).toUpperCase();
+}
+function pbDelta(v){
+  var n = num(v); if(n === null) return '—';
+  return (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString('en-US');
+}
+/* MAJOR-2 fix (PR #4123 adversarial review round 2): `sharedMax` is now the
+   caller's responsibility (one value computed across BOTH columns' rendered
+   rows — see wherePositionsBuiltHTML) rather than each call normalizing to its
+   own rows' own max. Two independently-scaled columns drew a smaller unwind
+   at the same length as a larger build (or vice versa) whenever the two
+   columns' own maxima differed — the spec's own §0.10 length-encoding idiom
+   requires one shared maximum across the whole panel, not per-column. */
+function pbCol(rows, unwind, sharedMax){
+  return rows.map(function(r){
+    var a = Math.abs(num(r.oi_delta) || 0);
+    var w = sharedMax > 0 ? Math.round(a / sharedMax * 100) : 0;
+    return '<div class="oew-pb-row"><span class="k mono">' + esc(pbStrikeLabel(r.K, r.right)) + '</span>'
+      + '<span class="bar-track"><span class="bar' + (unwind ? ' unwind' : '') + '" style="width:' + w + '%"></span></span>'
+      + '<span class="v' + (unwind ? '' : ' build') + ' mono">' + pbDelta(r.oi_delta) + '</span></div>';
+  }).join('');
+}
+function wherePositionsBuiltHTML(gx){
+  var od = gx.oi_delta_clusters;
+  var newOi = (od && od.new_oi) || [], exitOi = (od && od.exit_oi) || [];
+  var helpTip = (od && od.spot_note_en)
+    ? '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="' + esc(od.spot_note_en) + '" data-tip-zh="' + esc(od.spot_note_zh || od.spot_note_en) + '">?</span></div>'
+    : '';
+  var head = '<div class="oew-phead">'
+    + '<h2 class="oew-ph-title">' + bi('Where positions built','仓位在何处建立') + '</h2>'
+    + '<span class="oew-ph-sub">' + bi('open-interest change between the last two chain snapshots','最近两次期权链快照之间的未平仓量变化') + '</span>'
+    + helpTip
+  + '</div>';
+  var body;
+  // §0.18 payload check, verbatim: `if ('oi_delta_clusters' in gx && gx.oi_delta_clusters.new_oi.length)`.
+  if(newOi.length){
+    var pbBuilt = newOi.slice(0, 3), pbUnwound = exitOi.slice(0, 3);
+    // Shared maximum across BOTH columns' rendered rows — bar length must stay
+    // comparable across the whole panel, never reset per column (MAJOR-2 fix).
+    var pbMax = 0;
+    pbBuilt.concat(pbUnwound).forEach(function(r){
+      var a = Math.abs(num(r.oi_delta) || 0); if(a > pbMax) pbMax = a;
+    });
+    body = '<div class="oew-pb">'
+      + '<div class="oew-pb-col"><div class="oew-pb-h">' + bi('Built','新增') + '</div>' + pbCol(pbBuilt, false, pbMax) + '</div>'
+      + '<div class="oew-pb-col"><div class="oew-pb-h">' + bi('Unwound','平仓') + '</div>' + pbCol(pbUnwound, true, pbMax) + '</div>'
+    + '</div>';
+  } else {
+    var noteEn = (od && od.note_en) || 'This name has no matched open-interest change on file for this close.';
+    var noteZh = (od && od.note_zh) || '该标的本次收盘暂无匹配的未平仓量变化记录。';
+    body = '<p class="oew-pb-note">' + bi(noteEn, noteZh) + '</p>';
+  }
+  var pctile = (gx.net_gex_pctile && gx.net_gex_pctile.note_en)
+    ? '<div class="oew-pb-pctile"><span>' + bi('Also on file:','另有记录：') + '</span> ' + bi(gx.net_gex_pctile.note_en, gx.net_gex_pctile.note_zh) + '</div>'
+    : '';
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody">' + body + pctile + '</div>'
+    + '<div class="oew-pfoot">'
+      + '<span>' + bi('A count of contracts opened or closed, not a direction call.', '合约新增或平仓的计数，并非方向判断。') + '</span>'
+      + (od && od.latest_snapshot ? '<span class="oew-asof mono">' + esc(od.latest_snapshot) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* ── OIP W1 §5.3: the two full empty-state panels — E4/E7, not built yet ──
+   Both use the shared .oew-notyet shell; neither carries a stance chip (§0.13). */
+function whatMoveWorthHTML(){
+  return '<div class="oew-panel">'
+    + '<div class="oew-phead"><h2 class="oew-ph-title">' + bi('What the move is worth','本次波幅是否值得') + '</h2></div>'
+    + '<div class="oew-pbody"><div class="oew-notyet">'
+      + '<div class="oew-notyet-ghost oew-notyet-cone" aria-hidden="true"></div>'
+      + '<p class="oew-notyet-say"><span class="l-en">The expected move itself is in the header above. '
+        + 'What we don’t yet track is whether that number is usually <em>right</em> — we’re building a nightly '
+        + 'record that grades each session’s implied move against what actually happened.</span>'
+        + '<span class="l-zh">预期波幅本身已显示在上方页头。我们尚未跟踪的是这个数字是否<em>通常准确</em> — '
+        + '正在建立一份每夜记录，用以对照隐含波幅与实际结果。</span></p>'
+    + '</div></div>'
+    + '<div class="oew-pfoot"><span>' + bi('Not measured yet — nothing here to act on.', '尚未测量 — 此处暂无可据以行动的内容。') + '</span></div>'
+  + '</div>';
+}
+function expirationPressureHTML(){
+  return '<div class="oew-panel">'
+    + '<div class="oew-phead"><h2 class="oew-ph-title">' + bi('Expiration pressure','到期压力') + '</h2></div>'
+    + '<div class="oew-pbody"><div class="oew-notyet">'
+      + '<div class="oew-notyet-ghost oew-notyet-bar" aria-hidden="true"></div>'
+      + '<p class="oew-notyet-say">' + bi(
+          "Not measured yet. The idea: how much of this name's open interest rolls off in the next few days, and whether that concentration tends to feed on itself into expiry.",
+          '尚未测量。设想中的内容：该标的近几日到期的未平仓量占比，以及该集中度在到期前是否会自我强化。') + '</p>'
+    + '</div></div>'
+    + '<div class="oew-pfoot"><span>' + bi('Not measured yet — nothing here to act on.', '尚未测量 — 此处暂无可据以行动的内容。') + '</span></div>'
+  + '</div>';
+}
+
+function renderTicker(host, tk, gx, fl, sess){
   if(!gx || !gx.summary){
     host.innerHTML = emptyPanel('We have no options structure for ' + tk + ' in this close. Pick a name from the Scanner or the Brief.',
       '本次收盘没有 ' + tk + ' 的期权结构数据。请从筛选或简报中选择标的。');
@@ -1175,6 +1494,8 @@ function renderTicker(host, tk, gx, fl){
     + '</div>'
   + '</div></div>'
 
+  + filmstripPanelHTML(sess)
+
   + '<div class="oew-panel">'
     + '<div class="oew-phead">'
       + '<h2 class="oew-ph-title">' + bi('The map — where dealer hedging sits','地图 — 做市商对冲所在位置') + '</h2>'
@@ -1187,7 +1508,7 @@ function renderTicker(host, tk, gx, fl){
         + lvRow('var(--up)', 'Ceiling — call wall', '上方墙 — 看涨墙',
             'Rallies tend to stall into this wall. Only a daily close above it opens the upside.',
             '涨势往往在此墙位停滞。只有日线收于其上方才会打开上行空间。',
-            num(s.call_wall_strength), spot, s.call_wall)
+            num(s.call_wall_strength), spot, s.call_wall, wcheckChip(gx, 'call', s.call_wall))
         + lvRow('var(--oew-accent)', 'Flip — the regime line', '翻转位 — 状态分界',
             'Calm above this line, jumpy below.',
             '此线上方平静，下方剧烈。',
@@ -1199,7 +1520,7 @@ function renderTicker(host, tk, gx, fl){
         + lvRow('var(--down)', 'Floor — put wall', '下方墙 — 看跌墙',
             'Sell-offs tend to slow into this wall. A daily close below it pulls that cushion away.',
             '抛售往往在此墙位放缓。日线收于其下方将使该缓冲消失。',
-            num(s.put_wall_strength), spot, s.put_wall)
+            num(s.put_wall_strength), spot, s.put_wall, wcheckChip(gx, 'put', s.put_wall))
       + '</div>'
     + '</div>'
     + '<div class="oew-pfoot">'
@@ -1208,6 +1529,9 @@ function renderTicker(host, tk, gx, fl){
       + (meta.asof ? '<span class="oew-asof mono">' + esc(meta.asof) + '</span>' : '')
     + '</div>'
   + '</div>'
+
+  + richOrCheapHTML(tk, gx)
+  + wherePositionsBuiltHTML(gx)
 
   + '<div class="oew-reads">'
     + rdCard('The tape — calm or jumpy?', '盘面 — 平静还是剧烈？',
@@ -1226,6 +1550,9 @@ function renderTicker(host, tk, gx, fl){
         'Weaker evidence than the tape read — treat this as context, not a signal.',
         '证据强度弱于盘面读数 — 应作为背景参考，而非信号。')
   + '</div>'
+
+  + whatMoveWorthHTML()
+  + expirationPressureHTML()
 
   + (fl && fl.available !== false ? '<div class="oew-panel">'
     + '<div class="oew-phead">'
@@ -1270,6 +1597,10 @@ function renderTicker(host, tk, gx, fl){
     + '<a class="oew-cta" href="https://app.mastermind-x.com/?symbol=' + encodeURIComponent(tk) + '" target="_blank" rel="noopener">'
       + bi('Open ' + tk + ' live in Terminal', '在交易终端打开 ' + tk + ' 实时行情') + ' ↗</a>'
   + '</div>';
+  // illus.js's IntersectionObserver already scanned the page before this innerHTML
+  // write landed the filmstrip's .ilx figure, so the reveal must be requested
+  // explicitly (W1_DESIGN_SPEC.md §0.17 — the same pattern dialogs already use).
+  if(window.ilxReveal) window.ilxReveal(host);
 }
 
 /* ══════════ LEADERS ══════════ */
@@ -1365,11 +1696,26 @@ function ldRows(rows, legs, fireKey, ctx){
 function renderLeaders(host, L){
   if(!L){ host.innerHTML = emptyPanel('The leader boards did not report for this close.',
     '本次收盘没有领头股榜单数据。'); return; }
-  var A = (L.board_a || []).slice(0, 12);
+  var boardAAll = L.board_a || [];
+  var A = boardAAll.slice(0, 12);
   /* Board B admission mirrors the builder's own corrected rule (#3496): B5, the
      washout-flip verdict — NOT days_since_inflection, which stays populated for
      stale flips so the freshness column can tell the truth about them. */
-  var B = (L.board_b || []).filter(function(r){ return r.B5_flow_inflect; }).slice(0, 12);
+  var boardBFiltered = (L.board_b || []).filter(function(r){ return r.B5_flow_inflect; });
+  var B = boardBFiltered.slice(0, 12);
+  /* MAJOR-1 fix (PR #4123 adversarial review round 2): the denominator must equal
+     what site/flow_leaders.html actually renders — never the payload's own
+     pre-cap "board_a_total"/"board_b_total" fields. Both are computed by
+     scripts/build_flow_leaders.py BEFORE its top-25 slice (measured:
+     board_a_total 130 while board_a itself ships 25 rows), and board_b_total is
+     additionally unfiltered by B5_flow_inflect while this panel's own numerator
+     (and flow_leaders.html.j2's) is filtered. templates/flow_leaders.html.j2
+     iterates `board_a` (fl.board_a, this SAME post-cap array) and the
+     B5_flow_inflect-filtered `board_b` in full, with no further slice — so each
+     array's own pre-slice(0,12) length IS the true "of N" by construction, and
+     can never drift from the linked page the way a separately-tracked total can. */
+  var aTotal = boardAAll.length;
+  var bTotal = boardBFiltered.length;
   var etf = L.etf_strip || [];
   var asof = (L.as_of || '').slice(0, 10);
   var stamp = asof ? '<span class="oew-asof mono">' + esc(asof) + '</span>' : '';
@@ -1381,7 +1727,8 @@ function renderLeaders(host, L){
   + '<div class="oew-panel">'
     + '<div class="oew-phead">'
       + '<h2 class="oew-ph-title">' + bi('Money keeps showing up','资金反复出现') + '</h2>'
-      + '<span class="oew-ph-sub">' + bi('names with heavy options buying on many of the last ten days','近十个交易日中多日出现大量期权买入的标的') + '</span>'
+      + '<span class="oew-ph-sub">' + bi('top 12 of ' + aTotal + ', by recurrence', '按出现频率排序，前12（共 ' + aTotal + '）') + '</span>'
+      + '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
       + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
         + ' data-tip-en="Each bar in the row is one sign we check. A filled bar means that sign is confirming right now; an empty bar means it is not; a dotted bar means the data for it has not arrived. Hover the bars to see which is which. More filled bars means more agreement — it does not mean a stronger expected return."'
         + ' data-tip-zh="每行中的每个方块代表我们检查的一项信号。实心表示该信号当前确认，空心表示尚未确认，虚线边框表示数据尚未到位。将鼠标悬停在方块上可查看具体项目。实心越多表示信号越一致 — 但并不代表预期收益更高。">?</span></div>'
@@ -1406,7 +1753,8 @@ function renderLeaders(host, L){
   + '<div class="oew-panel">'
     + '<div class="oew-phead">'
       + '<h2 class="oew-ph-title">' + bi('Turned back up after a washout','洗盘后重新转强') + '</h2>'
-      + '<span class="oew-ph-sub">' + bi('money flipped positive right after a run of selling','在连续卖出之后资金刚刚转为流入') + '</span>'
+      + '<span class="oew-ph-sub">' + bi('top 12 of ' + bTotal + ', most recent first', '最新转向在前，前12（共 ' + bTotal + '）') + '</span>'
+      + '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
     + '</div>'
     + (B.length ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld">'
         + ldRows(B, B_LEGS, 'fire_b', function(r){
@@ -1452,22 +1800,32 @@ function renderLeaders(host, L){
 function loadMode(mode){
   var host = document.getElementById('mode-' + mode);
   if(!host) return;
-  host.innerHTML = skeleton(SKEL[mode][0], SKEL[mode][1]);
+  // OIP W1 §0.15: Ticker mode's render target is #oew-tk-body, a sibling of the
+  // static search toolbar — NEVER #mode-ticker itself, which would wipe the
+  // toolbar (and re-trigger its "/" focus race) on every skeleton paint and every
+  // ticker change.
+  var tgt = (mode === 'ticker') ? (document.getElementById('oew-tk-body') || host) : host;
+  tgt.innerHTML = skeleton(SKEL[mode][0], SKEL[mode][1]);
   var fail = function(){
-    host.innerHTML = emptyPanel('That data did not load. Reload the page to try again — nothing above depends on it.',
+    tgt.innerHTML = emptyPanel('That data did not load. Reload the page to try again — nothing above depends on it.',
       '该数据未能加载。请重新加载页面重试 — 上方内容不依赖于它。');
   };
   if(mode === 'scanner'){
-    getJSON('screenerdata/rows.json').then(function(j){ renderScanner(host, j); loaded.scanner = true; }).catch(fail);
+    getJSON('screenerdata/rows.json').then(function(j){ renderScanner(tgt, j); loaded.scanner = true; }).catch(fail);
   } else if(mode === 'leaders'){
-    getJSON('flowleaders/leaders.json').then(function(j){ renderLeaders(host, j); loaded.leaders = true; }).catch(fail);
+    getJSON('flowleaders/leaders.json').then(function(j){ renderLeaders(tgt, j); loaded.leaders = true; }).catch(fail);
   } else if(mode === 'ticker'){
     var tk = curTicker;
     Promise.all([
       getJSON('gex/' + encodeURIComponent(tk) + '.json').catch(function(){ return null; }),
-      getJSON('flow/' + encodeURIComponent(tk) + '.json').catch(function(){ return null; })
+      getJSON('flow/' + encodeURIComponent(tk) + '.json').catch(function(){ return null; }),
+      // OIP W1 §3.5/§7: additive third fetch, same .catch(() => null) pattern as
+      // the flow fetch above — a 404 (outside the digest's coverage, or before the
+      // first nightly populates the store) degrades the filmstrip to its honest-
+      // null variant and changes nothing else on the page.
+      getJSON('session/' + encodeURIComponent(tk) + '.json').catch(function(){ return null; })
     ]).then(function(res){
-      renderTicker(host, tk, res[0], res[1]);
+      renderTicker(tgt, tk, res[0], res[1], res[2]);
       loaded.ticker = tk;
       var c = document.getElementById('oew-tk-cnt'); if(c) c.textContent = tk;
     }).catch(fail);
@@ -1516,6 +1874,67 @@ document.addEventListener('click', function(e){
   }
 });
 
+/* OIP W1 §2: Ticker-mode search/typeahead — exact parity with gex.html's #gx-q
+   (site/gex.js setupSearch, ~line 282) — same match predicate, same 12-row cap,
+   same keyboard model, same mousedown-not-click row selection (survives the
+   input's own blur handler), same 150ms blur-close delay. #oew-tk-q is STATIC
+   markup present from first paint (§0.15's toolbar-as-sibling fix), so this binds
+   ONCE here — never inside renderTicker(), which would re-bind on every ticker
+   change exactly the class of bug that fix exists to avoid. */
+function setupTickerSearch(){
+  var inp = document.getElementById('oew-tk-q'), sg = document.getElementById('oew-tk-sugg');
+  if(!inp || !sg) return;
+  var M = window.OEW_TICKER_MANIFEST || [];
+  var hl = -1, shown = [];
+  function close(){ sg.classList.remove('on'); inp.setAttribute('aria-expanded', 'false'); hl = -1; }
+  function render(q){
+    q = q.trim().toUpperCase();
+    shown = M.filter(function(m){
+      return !q || m.key.indexOf(q) === 0 || m.key.indexOf(q) >= 0 || (m.en || '').toUpperCase().indexOf(q) >= 0;
+    }).slice(0, 12);
+    if(!shown.length){ close(); return; }
+    sg.innerHTML = shown.map(function(m, i){
+      return '<div class="row' + (i === hl ? ' hl' : '') + '" data-key="' + esc(m.key) + '" role="option">'
+        + '<span><b>' + esc(m.key) + '</b> <span class="g">' + bi(m.en || m.key, m.zh || m.en || m.key) + '</span></span>'
+      + '</div>';
+    }).join('');
+    sg.classList.add('on'); inp.setAttribute('aria-expanded', 'true');
+    sg.querySelectorAll('.row').forEach(function(r){
+      r.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        curTicker = r.getAttribute('data-key') || curTicker;
+        activate('ticker');
+        inp.value = ''; close();
+      });
+    });
+  }
+  inp.addEventListener('input', function(){ hl = -1; render(inp.value); });
+  inp.addEventListener('focus', function(){ render(inp.value); });
+  inp.addEventListener('blur', function(){ setTimeout(close, 150); });
+  inp.addEventListener('keydown', function(e){
+    if(!sg.classList.contains('on')) return;
+    if(e.key === 'ArrowDown'){ hl = Math.min(shown.length - 1, hl + 1); render(inp.value); e.preventDefault(); }
+    else if(e.key === 'ArrowUp'){ hl = Math.max(0, hl - 1); render(inp.value); e.preventDefault(); }
+    else if(e.key === 'Enter'){
+      var pick = shown[hl < 0 ? 0 : hl];
+      if(pick){ curTicker = pick.key; activate('ticker'); inp.value = ''; close(); }
+    }
+    else if(e.key === 'Escape'){ close(); }
+  });
+  // §0.16: gex.html's sitewide .nav-search has zero "/" bindings (verified by
+  // grep), so this cannot collide with it — but it must still fire ONLY while
+  // Ticker mode's panel is active, or an unconditional binding would silently
+  // focus an off-screen, inactive tab's input.
+  document.addEventListener('keydown', function(e){
+    if(e.key !== '/') return;
+    if(/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;
+    var section = document.getElementById('mode-ticker');
+    if(!section || !section.classList.contains('active')) return;
+    inp.focus(); e.preventDefault();
+  });
+}
+setupTickerSearch();
+
 /* Terminal handoff clock — computed at READ time, never baked. A countdown
    frozen into static HTML is wrong by morning. */
 (function(){
@@ -1545,6 +1964,7 @@ document.addEventListener('click', function(e){
 })();
 })();
 </script>
+<script defer src="illus.js?v=8e0a3779"></script>
 <script src="theme.js?v=ba799a17" defer></script>
 </body>
 </html>
