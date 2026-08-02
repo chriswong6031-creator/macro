@@ -17,7 +17,7 @@ from typing import Any, Mapping
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.earnings_narrative.contracts import canonical_json_bytes, sha256_bytes
+from engine.earnings_narrative.contracts import canonical_json_bytes, sha256_bytes, validate_manifest
 from engine.earnings_narrative.health import validate_generation
 
 
@@ -102,6 +102,11 @@ def load_remote_root_marker(*, s3: Any | None = None, bucket: str | None = None)
     if not target_bucket:
         raise ImmutableAddressIntegrityError("R2_BUCKET not set for marker hydration")
     marker, _etag = _remote_marker(client, target_bucket)
+    if marker is not None:
+        try:
+            validate_manifest(marker)
+        except Exception as exc:  # noqa: BLE001 - invalid public state cannot grant lineage.
+            raise ImmutableAddressIntegrityError("current earnings evidence marker fails its contract") from exc
     return marker
 
 

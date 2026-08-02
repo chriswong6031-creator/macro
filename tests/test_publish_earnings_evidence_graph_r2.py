@@ -4,10 +4,18 @@ import io
 import json
 from pathlib import Path
 
+import pytest
+
 from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
 from engine.earnings_transcript_intake import canonical_body_sha256
-from scripts.publish_earnings_evidence_graph_r2 import PUBLISH_CONFLICT, PREFIX, publish
+from scripts.publish_earnings_evidence_graph_r2 import (
+    ImmutableAddressIntegrityError,
+    PUBLISH_CONFLICT,
+    PREFIX,
+    load_remote_root_marker,
+    publish,
+)
 
 
 class _PreconditionFailed(RuntimeError):
@@ -92,3 +100,9 @@ def test_absent_credentials_is_deliberate_noop(monkeypatch, tmp_path: Path) -> N
     _tree(tmp_path)
     monkeypatch.setattr("scripts.publish_earnings_evidence_graph_r2._client", lambda: None)
     assert publish(tmp_path) == 0
+
+
+def test_remote_lineage_hydration_rejects_an_invalid_public_marker() -> None:
+    fake = _FakeR2(marker={"schema": "untrusted"})
+    with pytest.raises(ImmutableAddressIntegrityError, match="fails its contract"):
+        load_remote_root_marker(s3=fake, bucket="bucket")
