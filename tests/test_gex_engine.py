@@ -111,3 +111,65 @@ def test_gamma_regime_passport_single_name_vs_index():
     # no symbol -> still assumption-basis, but constancy is unknown (None)
     anon = compute_gex(_chain(1000, 1000, S), S)["regime_passport"]
     assert anon["basis"] == "assumption" and anon["structurally_constant"] is None
+
+
+# ── gamma_profile — the ±25% spot-grid exposure curve (masterplan §4.2) ──────────────
+# One definition: _gamma_flip is a thin wrapper over gamma_profile, so the published
+# curve and the published crossing can never disagree.
+
+def test_gamma_profile_shape_and_center():
+    from engine.gex_engine import DEFAULTS, _window, gamma_profile
+    S = 100.0
+    cfg = dict(DEFAULTS)
+    c = _window(_chain(1000, 10, S), S, cfg)
+    grid, net, flips = gamma_profile(c, S, cfg)
+    assert grid is not None and len(grid) == 101 and len(net) == 101
+    # centre grid point IS the current spot (linspace 0.75..1.25 × S, index 50)
+    assert grid[50] == pytest.approx(S)
+    # grid strictly increasing
+    assert all(grid[i] < grid[i + 1] for i in range(100))
+
+
+def test_gamma_profile_sign_at_spot_matches_book():
+    from engine.gex_engine import DEFAULTS, _window, gamma_profile
+    S = 100.0
+    cfg = dict(DEFAULTS)
+    call_heavy = gamma_profile(_window(_chain(1000, 10, S), S, cfg), S, cfg)
+    put_heavy = gamma_profile(_window(_chain(10, 1000, S), S, cfg), S, cfg)
+    assert call_heavy[1][50] > 0   # dealers long-call heavy → positive gamma at spot
+    assert put_heavy[1][50] < 0    # dealers short-put heavy → negative gamma at spot
+
+
+def test_gamma_flip_is_nearest_profile_crossing():
+    from engine.gex_engine import DEFAULTS, _gamma_flip, _window, gamma_profile
+    S = 100.0
+    cfg = dict(DEFAULTS)
+    # A mixed book whose sign changes across the grid: heavy puts below spot,
+    # heavy calls above — the classic index shape with a flip near spot.
+    rows = []
+    for k in range(80, 121, 2):
+        rows.append(dict(K=float(k), T=0.08, iv=0.25, oi=3000 if k >= 100 else 50, is_call=True))
+        rows.append(dict(K=float(k), T=0.08, iv=0.25, oi=3000 if k < 100 else 50, is_call=False))
+    c = _window(pd.DataFrame(rows), S, cfg)
+    grid, net, flips = gamma_profile(c, S, cfg)
+    flip, dist, regime = _gamma_flip(c, S, cfg)
+    if flip is None:
+        assert not flips
+    else:
+        assert flips, "wrapper found a flip the profile did not"
+        assert flip == pytest.approx(min(flips, key=lambda f: abs(f - S)))
+        # the crossing really is a sign change of the published curve
+        i = int(np.searchsorted(grid, flip))
+        assert 0 < i < 101
+        assert (net[i - 1] < 0) != (net[i] < 0) or net[i - 1] == 0.0
+
+
+def test_gamma_profile_thin_chain_declines():
+    from engine.gex_engine import DEFAULTS, gamma_profile
+    S = 100.0
+    few = pd.DataFrame([
+        dict(K=100.0, T=0.08, iv=0.25, oi=100, is_call=True),
+        dict(K=105.0, T=0.08, iv=0.25, oi=100, is_call=False),
+    ])
+    grid, net, flips = gamma_profile(few, S, dict(DEFAULTS))
+    assert grid is None and net is None and flips == []

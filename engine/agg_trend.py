@@ -249,7 +249,15 @@ def _stats(values: np.ndarray) -> dict | None:
     if v.size < 2:
         return None
     last = float(values[-1]) if np.isfinite(values[-1]) else None
-    pctile = float((v < values[-1]).mean() * 100.0) if last is not None else None
+    # Midrank on ties — strict-less rank reads a value tying the series minimum as
+    # "0th percentile" (an extreme-low claim about an unexceptional value) and a
+    # flat series as 0th rather than ~50th. Matches the Terminal's
+    # lib/aggTrend.windowStats so both sides stay on ONE definition.
+    pctile = (
+        float(((v < values[-1]).mean() + (v == values[-1]).mean() / 2.0) * 100.0)
+        if last is not None
+        else None
+    )
     return {
         "mean": round(float(v.mean()), 4),
         "sd": round(float(v.std(ddof=1)), 4),

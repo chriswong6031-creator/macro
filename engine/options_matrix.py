@@ -264,10 +264,14 @@ def _compute_levels(
     spot: float,
     asof_date: str,
     median_iv: float,
+    precomputed_flip: float | None = None,
 ) -> dict:
-    """Compute call_wall, put_support, hvl/magnet, gamma_flip, max_pain.
+    """Compute call_wall, put_support, hvl/magnet, max_pain — and carry the flip.
 
     by_strike: {strike: {call_oi, put_oi, call_gex, put_gex, ...}}
+    precomputed_flip: the spot-grid flip from ``gex_engine.gamma_profile`` computed
+    by the caller over the raw chain; this function no longer derives one (see the
+    retirement note at the old computation site below).
     """
     if not by_strike:
         return {
@@ -323,26 +327,17 @@ def _compute_levels(
             hvl_val = score
             hvl = k
 
-    # ── gamma flip: cumulative net GEX zero-crossing (prism_spec §7) ─────────
-    # net per strike = call_gex − put_gex (calls +, puts −, dealer-short assumption)
-    cum_net = 0.0
-    gamma_flip = None
-    prev_k = None
-    prev_cum = None
-    for k in sorted(strikes):
-        net_k = (by_strike[k].get("call_gex") or 0.0) - (by_strike[k].get("put_gex") or 0.0)
-        cum_net += net_k
-        if prev_cum is not None and (prev_cum < 0) != (cum_net < 0):
-            # linear interpolation
-            denom = abs(prev_cum) + abs(cum_net)
-            if denom > 0:
-                ratio = abs(prev_cum) / denom
-                crossing = prev_k + ratio * (k - prev_k)
-                # keep crossing nearest to spot
-                if gamma_flip is None or abs(crossing - spot) < abs(gamma_flip - spot):
-                    gamma_flip = crossing
-        prev_k = k
-        prev_cum = cum_net
+    # ── gamma flip: RETIRED here (2026-08-01) ─────────────────────────────────
+    # This function used to walk the cumulative net GEX across the STRIKE ladder
+    # and call its zero-crossing "gamma_flip" (prism_spec §7) — the same retired
+    # estimator that produced SPY 275.00 against spot 741.69 in options_hub and
+    # was measured LIVE here at 594.28 against 741.69 on 2026-08-01. A flip is the
+    # SPOT at which the whole book, re-priced there, has zero net gamma; it is not
+    # reconstructable from per-strike aggregates. The caller (build_matrix) now
+    # computes it with ``gex_engine.gamma_profile`` over the raw chain and passes
+    # it in; when it cannot, None is the honest answer. Mirrors
+    # engine/levels_engine._flip_from_rows's retirement.
+    gamma_flip = precomputed_flip
 
     # ── max pain ──────────────────────────────────────────────────────────────
     rows = []
@@ -621,6 +616,10 @@ def build_matrix(
         return cell_map[key]
 
     # ── OI[t-1] accumulation with GEX + VEX (experimental) ──────────────────
+    # The raw per-contract chain is collected alongside so the FLIP can be
+    # computed by re-pricing the book on a spot grid (gex_engine.gamma_profile)
+    # instead of the retired cumulative-by-strike walk — see _compute_levels.
+    chain_rows: list[tuple[float, float, float, float, bool]] = []
     for _, row in oi_t1_w.iterrows():
         k   = float(row["strike"])
         exp = _to_iso_date(row.get("expiration", ""))
@@ -638,6 +637,12 @@ def build_matrix(
         gex         = _gex_dollar(oi, gamma, spot)
         vanna       = _bs_vanna_scalar(spot, k, T_years, iv_contract, median_iv)
         vex         = _vex_mn(oi, vanna, spot)
+
+        if right in ("C", "P"):
+            # Same iv fallback the builder's own pricing uses, so the flip sees
+            # exactly the book the cells describe.
+            eff_iv = iv_contract if iv_contract > _MIN_IV else median_iv
+            chain_rows.append((k, T_years, eff_iv, oi, right == "C"))
 
         cell = _get_cell(k, exp)
         if right == "C":
@@ -729,7 +734,25 @@ def build_matrix(
         strike_set.add(k)
 
     # ── key levels ───────────────────────────────────────────────────────────
-    levels = _compute_levels(by_strike, spot, asof, median_iv)
+    # Flip via the spot-grid profile method over the RAW chain (one definition,
+    # engine/gex_engine). Fail-open: a chain too thin to re-price yields None,
+    # never the retired cumulative-walk estimate.
+    grid_flip: float | None = None
+    if chain_rows and spot and spot > 0:
+        try:
+            from engine import gex_engine as _gex
+
+            chain_df = pd.DataFrame(
+                chain_rows, columns=["K", "T", "iv", "oi", "is_call"],
+            )
+            _cfg = dict(_gex.DEFAULTS)
+            chain_df = _gex._window(chain_df, float(spot), _cfg)
+            if not chain_df.empty:
+                grid_flip, _dist, _regime = _gex._gamma_flip(chain_df, float(spot), _cfg)
+        except Exception:
+            grid_flip = None
+
+    levels = _compute_levels(by_strike, spot, asof, median_iv, precomputed_flip=grid_flip)
 
     # ── heat-seeker ──────────────────────────────────────────────────────────
     # Try GEX first, then OI, then VOL
