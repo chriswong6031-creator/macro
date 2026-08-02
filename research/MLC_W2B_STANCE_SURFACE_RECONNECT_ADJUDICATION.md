@@ -25,13 +25,16 @@ MLC-W1's forced-call class — unrelated to this de-escalation layer).
 
 ## What was actually dead (evidence, and premise corrections)
 
-- The referred brief said the rvx lanes live on `sector_central.html.j2` — **they live
-  on `baskets.html.j2`** (`#actnow.rvx-lanes`, filled by `renderActBoard()`).
-  `sector_central` is an *input* to the stance matrix, not the act_now host.
-- The referred test name `test_merged_page_keeps_live_mlc_split_view` **does not exist**;
-  the real documentation is `tests/test_theme_scoring_conflicted.py` (engine demotion
-  tests + template smoke tests).
-- No consolidation deleted the fork. The kill was **PR #3282 (baskets rvx revamp)**:
+- The referred brief said the rvx lanes live on `sector_central.html.j2` — on main at
+  ruling time **they live on `baskets.html.j2`** (`#actnow.rvx-lanes`, filled by
+  `renderActBoard()`); `sector_central` is an *input* to the stance matrix. (The brief
+  spoke from the in-flight consolidation's vantage — see Consolidation interplay below.)
+- The referred test name `test_merged_page_keeps_live_mlc_split_view` **does not exist
+  on main**; it reads as the consolidation masterplan's pin-to-write for the merged
+  page. The documentation on main is `tests/test_theme_scoring_conflicted.py` (engine
+  demotion tests + template smoke tests, re-pinned by this PR).
+- Nothing landed on main had deleted the fork. The kill was **PR #3282 (baskets rvx
+  revamp)**:
   it replaced `renderActNow`/`renderThemeDesk` with `renderActBoard`/rotation map and
   dropped the call sites. What remained on main until this PR: `renderStanceChips`
   defined-never-called (US inline copy), `#actnow-footnote` referenced-but-nonexistent,
@@ -64,6 +67,20 @@ MLC-W1's forced-call class — unrelated to this de-escalation layer).
 4. Dead fork deleted: `renderActNow`, old `renderStanceChips`, `actNowPulseBar`
    (`renderRegimeSizing` stays live via the hero path). Tests re-pinned to the live
    contract: footnote *element*, chips *invocation*, fork *absence* + `_conflicted` tag.
+
+## Consolidation interplay (in-flight at ruling time)
+
+The Sector Intelligence consolidation (operator-chartered 2026-08-01; masterplan
+`research/SECTOR_INTELLIGENCE_CONSOLIDATION_MASTERPLAN_BY_FABLE.md` on the program's
+in-flight branch, **not yet on main**) merges baskets.html INTO sector_central.html
+(URL kept). This ruling therefore changes one of that program's dispositions: the MLC
+client surface is no longer part of the deletable dead fork — it is a **live surface
+the merged page must carry**: `renderActBoard`'s conflicted fold+tag, the `actRow`
+`mlcchip`, the `#actnow-footnote` element, and the cache-based `renderStanceChips`
+(`data-mlc-bid`), pinned on the merged page by the masterplan's
+`test_merged_page_keeps_live_mlc_split_view`. The consolidation session has been
+notified; whichever branch rebases second takes this PR's `renderActBoard` shape
+verbatim.
 
 ## Follow-ups (not this PR)
 
