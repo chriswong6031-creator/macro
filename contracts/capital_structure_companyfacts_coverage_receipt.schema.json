@@ -136,7 +136,11 @@
       },
       "allOf": [
         {"if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "null"}}}},
-        {"if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "string", "minLength": 1}}}}
+        {"if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"store_id": {"const": "capital_structure_local"}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "local"}}}},
+        {"if": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "r2"}}}},
+        {"if": {"properties": {"backend": {"const": "local"}}, "required": ["backend"]}, "then": {"properties": {"store_id": {"const": "capital_structure_local"}}}},
+        {"if": {"properties": {"backend": {"const": "r2"}}, "required": ["backend"]}, "then": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}}}
       ]
     },
     "retention_verification": {

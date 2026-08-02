@@ -20,8 +20,13 @@ _TEST_TRUST: dict[str, tuple[companyfacts.CompanyFactsSigner, companyfacts.Compa
 
 SUBMISSION = b"""\
 <SEC-DOCUMENT>0001234567-26-000001.txt
+<SEC-HEADER>
+<ACCESSION-NUMBER>0001234567-26-000001
+<CENTRAL-INDEX-KEY>0001234567
+<CONFORMED-SUBMISSION-TYPE>S-3
 <ACCEPTANCE-DATETIME>20260801123456
 <FILE-NUMBER>333-123456
+</SEC-HEADER>
 <DOCUMENT>
 <TYPE>S-3
 <SEQUENCE>1
@@ -241,6 +246,33 @@ def test_publish_uses_immutable_generation_receipt_and_tiny_pointer(tmp_path, mo
     assert pointer["generation_id"] == receipt["generation"]["generation_id"]
 
 
+@pytest.mark.parametrize("surface", ["source_storage", "source_anchor", "receipt_anchor"])
+def test_closed_contracts_reject_backend_store_namespace_mismatch(
+    tmp_path, monkeypatch, surface,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    _, receipt, sources, _ = _selected(root)
+    if surface == "receipt_anchor":
+        forged = deepcopy(receipt)
+        forged["queue"]["anchor_verifications"][0]["backend"] = "r2"
+        filename = "capital_structure_companyfacts_coverage_receipt.schema.json"
+        label = "forged receipt"
+    else:
+        forged = deepcopy(sources[0])
+        if surface == "source_storage":
+            forged["storage"]["backend"] = "r2"
+        else:
+            forged["anchor"]["complete_submission_backend"] = "r2"
+        filename = "capital_structure_companyfacts_source_manifest.schema.json"
+        label = "forged source"
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="contract violation"):
+        companyfacts._validate_contract(forged, filename, label=label)
+
+
 def test_force_refresh_appends_history_and_authenticates_full_chain(tmp_path, monkeypatch):
     store = _store(tmp_path)
     anchor = _anchor_manifest(store)
@@ -355,6 +387,49 @@ def test_missing_or_self_hashed_forged_anchor_never_calls_sec(tmp_path, monkeypa
     assert forged_receipt["queue"]["anchor_verifications"][0]["status"] == "failed"
 
 
+@pytest.mark.parametrize("axis", ["cik", "accession", "form", "source_id"])
+def test_reauthored_anchor_cannot_bind_different_sec_submission_bytes(
+    tmp_path, monkeypatch, axis,
+):
+    store = _store(tmp_path)
+    forged = deepcopy(_anchor_manifest(store))
+    old_accession = forged["filing"]["accession"]
+    if axis == "cik":
+        cik = "0007654321"
+        accession = f"{cik}-26-000001"
+        forged["issuer"]["cik"] = cik.lstrip("0")
+        forged["issuer"]["issuer_id"] = f"sec:cik:{cik}"
+        forged["filing"]["accession"] = accession
+        forged["source_id"] = f"{accession}:0:complete-submission.txt"
+        forged["document"]["canonical_url"] = (
+            f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession}.txt"
+        )
+    elif axis == "accession":
+        accession = "0001234567-26-000002"
+        forged["filing"]["accession"] = accession
+        forged["source_id"] = f"{accession}:0:complete-submission.txt"
+        forged["document"]["canonical_url"] = (
+            f"https://www.sec.gov/Archives/edgar/data/1234567/{accession}.txt"
+        )
+    elif axis == "form":
+        forged["filing"]["form"] = "S-1"
+        forged["document"]["document_type"] = "S-1"
+    else:
+        forged["source_id"] = f"{old_accession}:0:forged-complete-submission.txt"
+    forged["manifest_id"] = filings.manifest_id_for(forged)
+
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    _write_anchor(root, forged)
+    result = adapter.fetch()
+    _, receipt, sources, coverage = _selected(root)
+    assert called == [] and sources == []
+    assert coverage[0]["state"] == "deferred"
+    assert result["sec_companyfacts_intake"].iloc[0]["anchor_failed"] == 1
+    assert receipt["queue"]["anchor_verifications"][0]["status"] == "failed"
+
+
 @pytest.mark.parametrize("variant", ["corrupt", "backend_rebound", "store_rebound", "unknown_store"])
 def test_anchor_store_resolution_is_exact_and_never_rebound(tmp_path, variant):
     store = _store(tmp_path)
@@ -394,7 +469,10 @@ def test_anchor_verification_obeys_deadline_and_byte_budget(tmp_path, monkeypatc
         backend = anchor["storage_backend"]
 
         @staticmethod
-        def get_verified(object_key, content_sha256):
+        def get_verified_strict_bounded(
+            object_key, content_sha256, *, expected_byte_length, max_byte_length,
+        ):
+            assert expected_byte_length <= max_byte_length
             time.sleep(0.15)
             return SUBMISSION
 
@@ -820,12 +898,12 @@ def test_fsync_after_replace_is_indeterminate_not_success(tmp_path, monkeypatch)
     adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
     _write_anchor(root, anchor)
     adapter.fetch()
-    original = companyfacts._fsync_directory
-    def fail_pointer_directory(path):
+    original = companyfacts._fsync_held_directory
+    def fail_pointer_directory(descriptor, path):
         if path == root:
             raise OSError("injected pointer fsync failure")
-        return original(path)
-    monkeypatch.setattr(companyfacts, "_fsync_directory", fail_pointer_directory)
+        return original(descriptor, path)
+    monkeypatch.setattr(companyfacts, "_fsync_held_directory", fail_pointer_directory)
     with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="durability is indeterminate"):
         adapter.fetch(full_history=True)
 
@@ -844,6 +922,38 @@ def test_startup_refuses_selected_generation_when_raw_object_is_missing(tmp_path
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="source object is missing"):
         adapter.fetch()
     assert called == []
+
+
+@pytest.mark.parametrize("position", ["current", "historical"])
+def test_selected_current_and_historical_store_mapping_cannot_rebind_store_identity(
+    tmp_path, monkeypatch, position,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    adapter.fetch(full_history=True)
+    _, _, sources, _ = _selected(root)
+    assert len(sources) == 2
+    selected = sources[-1] if position == "current" else sources[0]
+    declared_store_id = selected["storage"]["store_id"]
+    calls = []
+
+    class ReboundStore:
+        store_id = "r2_shared"
+        backend = selected["storage"]["backend"]
+
+        @staticmethod
+        def get_verified(object_key, content_sha256):
+            calls.append((object_key, content_sha256))
+            return _payload()
+
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="store identity is detached"):
+        companyfacts._verify_selected_source_objects(
+            [selected], source_stores={declared_store_id: ReboundStore()},
+        )
+    assert calls == []
 
 
 def test_authenticated_receipt_telemetry_is_rederived_from_predecessor_delta(tmp_path, monkeypatch):
@@ -1054,6 +1164,140 @@ def test_ancestor_symlink_blocks_lock_pointer_stage_generation_receipt_and_read(
         assert not (outside / "companyfacts").exists()
 
 
+def test_held_lane_rejects_root_rename_swap_before_install_or_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    signer, guard = _trust(root)
+    del signer
+    displaced = root.parent / "companyfacts-displaced"
+    original_install = companyfacts._install_generation
+    swapped = False
+
+    def swap_then_install(root_arg, prepared, *, lane=None):
+        nonlocal swapped
+        assert root_arg == root and lane is not None and not swapped
+        swapped = True
+        root.rename(displaced)
+        root.mkdir(mode=0o700)
+        return original_install(root_arg, prepared, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="lane root was rebound"):
+        adapter.fetch()
+    assert swapped
+    assert guard.read() == (None, None)
+    assert list(root.iterdir()) == []
+    assert not (displaced / "coverage_receipt.json").exists()
+    assert list((displaced / "receipts").iterdir()) == []
+    assert list((displaced / "generations").iterdir()) == []
+    assert not any(path.name.startswith(".generation-stage-") for path in displaced.iterdir())
+
+
+def test_held_lane_rejects_generations_directory_swap_before_install_or_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_install = companyfacts._install_generation
+    trusted_displaced = root.parent / "trusted-generations-displaced"
+    outside_origin = tmp_path / "outside-origin-generations"
+    outside_origin.mkdir()
+    marker = outside_origin / "marker.txt"
+    marker.write_text("outside")
+
+    def swap_then_install(root_arg, prepared, *, lane=None):
+        assert lane is not None
+        (root / "generations").rename(trusted_displaced)
+        outside_origin.rename(root / "generations")
+        return original_install(root_arg, prepared, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generations namespace was rebound"):
+        adapter.fetch()
+    assert guard.read() == (None, None)
+    installed_marker = root / "generations" / marker.name
+    assert installed_marker.read_text() == "outside"
+    assert list((root / "generations").iterdir()) == [installed_marker]
+    assert list(trusted_displaced.iterdir()) == []
+    assert list((root / "receipts").iterdir()) == []
+    assert not (root / "coverage_receipt.json").exists()
+    assert not any(path.name.startswith(".generation-stage-") for path in root.iterdir())
+
+
+def test_held_stage_inode_rejects_stage_directory_swap_before_install(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_install = companyfacts._install_generation
+    outside_origin = tmp_path / "outside-origin-stage"
+    outside_origin.mkdir()
+    marker = outside_origin / "marker.txt"
+    marker.write_text("outside")
+    displaced_stage = tmp_path / "sealed-stage-displaced"
+    replacement_stage = None
+
+    def swap_then_install(root_arg, prepared, *, lane=None):
+        nonlocal replacement_stage
+        assert prepared.stage_path is not None and prepared.stage_fd is not None
+        replacement_stage = prepared.stage_path
+        prepared.stage_path.rename(displaced_stage)
+        outside_origin.rename(prepared.stage_path)
+        return original_install(root_arg, prepared, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generation stage was rebound"):
+        adapter.fetch()
+    assert guard.read() == (None, None)
+    assert replacement_stage is not None
+    assert (replacement_stage / marker.name).read_text() == "outside"
+    assert list((root / "receipts").iterdir()) == []
+    assert list((root / "generations").iterdir()) == []
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_held_lane_rejects_receipts_directory_swap_before_receipt_or_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_write = companyfacts._write_immutable_bytes
+    trusted_displaced = root.parent / "trusted-receipts-displaced"
+    outside_origin = tmp_path / "outside-origin-receipts"
+    outside_origin.mkdir()
+    marker = outside_origin / "marker.txt"
+    marker.write_text("outside")
+
+    def swap_then_write(path, content, *, root=None, lane=None):
+        assert lane is not None and root is not None
+        (root / "receipts").rename(trusted_displaced)
+        outside_origin.rename(root / "receipts")
+        return original_write(path, content, root=root, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_write_immutable_bytes", swap_then_write)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="receipts namespace was rebound"):
+        adapter.fetch()
+    assert guard.read() == (None, None)
+    installed_marker = root / "receipts" / marker.name
+    assert installed_marker.read_text() == "outside"
+    assert list((root / "receipts").iterdir()) == [installed_marker]
+    assert list(trusted_displaced.iterdir()) == []
+    assert not (root / "coverage_receipt.json").exists()
+
+
 def test_retention_audit_is_capped_rotating_and_deadline_bounded():
     records = []
     for issuer in range(10):
@@ -1086,13 +1330,20 @@ def test_retention_audit_is_capped_rotating_and_deadline_bounded():
         backend = "local"
 
         @staticmethod
-        def get_verified(object_key, content_sha256):
+        def get_verified_strict_bounded(
+            object_key, content_sha256, *, expected_byte_length, max_byte_length,
+        ):
+            assert expected_byte_length <= max_byte_length
             time.sleep(0.15)
             return b"x"
 
+    slow_digest = companyfacts.sha256(b"x").hexdigest()
     source = {
-        "storage": {"store_id": "slow", "backend": "local", "object_key": "sha256/x"},
-        "content": {"content_sha256": "x", "byte_length": 1},
+        "storage": {
+            "store_id": "slow", "backend": "local",
+            "object_key": companyfacts.object_key_for_sha256(slow_digest),
+        },
+        "content": {"content_sha256": slow_digest, "byte_length": 1},
     }
     started = time.monotonic()
     with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="remaining run deadline"):
@@ -1101,6 +1352,67 @@ def test_retention_audit_is_capped_rotating_and_deadline_bounded():
             monotonic=time.monotonic,
         )
     assert time.monotonic() - started < 0.12
+
+
+def test_retention_read_rejects_legacy_unbounded_store_without_fallback():
+    payload = b"x"
+    digest = companyfacts.sha256(payload).hexdigest()
+    source = {
+        "storage": {
+            "store_id": "legacy", "backend": "local",
+            "object_key": companyfacts.object_key_for_sha256(digest),
+        },
+        "content": {"content_sha256": digest, "byte_length": len(payload)},
+    }
+    calls = []
+
+    class LegacyStore:
+        store_id = "legacy"
+        backend = "local"
+
+        @staticmethod
+        def get_verified(object_key, content_sha256):
+            calls.append((object_key, content_sha256))
+            return payload
+
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="lacks bounded strict-read"):
+        companyfacts._verify_selected_source_objects(
+            [source], source_stores={"legacy": LegacyStore()},
+        )
+    assert calls == []
+
+
+def test_retention_declared_length_respects_aggregate_remaining_byte_budget():
+    payload = b"x"
+    digest = companyfacts.sha256(payload).hexdigest()
+    source = {
+        "storage": {
+            "store_id": "bounded", "backend": "local",
+            "object_key": companyfacts.object_key_for_sha256(digest),
+        },
+        "content": {"content_sha256": digest, "byte_length": len(payload)},
+    }
+    calls = []
+
+    class BoundedStore:
+        store_id = "bounded"
+        backend = "local"
+
+        @staticmethod
+        def get_verified_strict_bounded(
+            object_key, content_sha256, *, expected_byte_length, max_byte_length,
+        ):
+            calls.append((expected_byte_length, max_byte_length))
+            return payload
+
+    observed = []
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="remaining run byte"):
+        companyfacts._verify_selected_source_objects(
+            [source, source], source_stores={"bounded": BoundedStore()},
+            byte_observer=observed.append, remaining_byte_budget=1,
+        )
+    assert calls == [(1, 1)]
+    assert observed == [1]
 
 
 def test_generation_storage_cap_and_request_timeout_obey_remaining_budget(tmp_path, monkeypatch):
