@@ -12,12 +12,24 @@ parser-clean `complete_submission` row in
 
 It retains current SEC Company Facts JSON only after all of these gates pass:
 
-1. canonical `data.sec.gov/api/xbrl/companyfacts/CIK##########.json` request;
-2. streamed response under the declared and actual byte caps;
-3. UTF-8 JSON with a CIK exactly equal to the requested CIK;
-4. SHA-256 content-addressed source-store write and exact read-back; and
-5. closed-contract manifest and append-only coverage-row validation; and
-6. an immutable generation, chained receipt, and atomic selector publish.
+1. the selected complete-submission anchor resolves through its declared stable
+   `store_id` and backend, with its digest-derived object key, exact hash, and
+   byte length independently read-verified under the run deadline/byte budget;
+2. canonical `data.sec.gov/api/xbrl/companyfacts/CIK##########.json` request;
+3. streamed response under the declared and actual byte caps;
+4. UTF-8 JSON with a CIK exactly equal to the requested CIK;
+5. SHA-256 content-addressed source-store write and exact read-back;
+6. closed-contract manifest and append-only coverage-row validation; and
+7. an immutable generation, chained receipt, and atomic selector publish.
+
+An unknown, missing, corrupt, or rebound anchor store/object never falls back to
+the currently preferred R2 bucket and never permits an SEC Company Facts call.
+It becomes an explicit deferred coverage outcome. The signed receipt binds each
+selected CIK to the declared anchor store, backend, object key, digest, length,
+and verification outcome; successful Company Facts manifests repeat that exact
+anchor binding. Mixed success/failure runs therefore remain honestly
+`partial`, while a stale prior success plus a failed refresh anchor is
+`degraded` rather than silently healthy.
 
 The queue is deterministic and hard capped at 24 CIKs/run (64 maximum). A
 2:1:1 rotating retry/new/refresh schedule, ordered by due clock then CIK within
@@ -39,9 +51,14 @@ are separately counted; a deferred request never becomes a negative issuer fact.
 The collector stages and read-backs both Parquet ledgers under an identity-named
 generation directory, seals an immutable receipt under `receipts/`, performs the
 external exact-predecessor head CAS, then advances only the tiny local pointer.
-It never overwrites a ledger or receipt. Root-relative receipt, generation,
-pointer, lock, and stage operations use no-follow directory descriptors, so a
-parent symlink cannot redirect a read, create, link, or rename outside the lane.
+It never overwrites a ledger or receipt. The absolute lane root is traversed
+from `/` one component at a time: every existing ancestor is lstat/openat
+identity-checked with `O_NOFOLLOW|O_DIRECTORY`, and every missing component is
+created with `mkdirat`, re-opened, verified, and parent-dir-fsynced. Receipt,
+generation, pointer, lock, stage, and anchor-ledger reads then remain relative
+to held directory descriptors. An ancestor or descendant symlink — including a
+not-yet-created lane beneath `inside/parent -> outside` — cannot redirect a
+read, create, link, or rename outside the lane.
 On startup it authenticates the complete predecessor chain, every required
 generation, and the selected generation's exact bytes and ordered prefixes. An
 orphaned stage or receipt is unreachable evidence, not a source claim.
@@ -152,7 +169,10 @@ byte caps, unique verified-anchor selection, deterministic starvation-free queue
 progress, source-store failure, honest `ok`/`partial`/`degraded`/`blocked` status,
 force-refresh history preservation, body/semantic/cross-ledger identity checks,
 full-chain startup authentication, authenticated queue telemetry re-derivation,
-raw-object re-verification before startup, retry-after persistence, total run
-budgets, R2 conditional-CAS/provider-conflict behavior, both head/pointer
-split-brain refusal orders, receipt/no-op cap behavior, and last-good survival
-across generation/receipt/pointer publish faults.
+bounded Company Facts retention re-verification, exact filing-anchor store/hash/
+length verification before SEC access, missing/corrupt/rebound/unknown anchor
+failure telemetry, deadline and byte-budget enforcement, ancestor/descendant
+symlink and swap-race refusal across every lane path, retry-after persistence,
+R2 conditional-CAS/provider-conflict behavior, both head/pointer split-brain
+refusal orders, receipt/no-op cap behavior, and last-good survival across
+generation/receipt/pointer publish faults.

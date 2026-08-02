@@ -66,21 +66,23 @@ def _store(tmp_path):
     return ContentAddressedSourceStore(LocalStore(tmp_path / "objects"))
 
 
-def _anchor_manifest(store):
-    receipt = store.put_verified(SUBMISSION, media_type="text/plain")
+def _anchor_manifest(store, *, cik: str = "0001234567", ticker: str = "ACME"):
+    raw = SUBMISSION.replace(b"0001234567", cik.encode("ascii"))
+    receipt = store.put_verified(raw, media_type="text/plain")
     assert receipt is not None
+    accession = f"{cik}-26-000001"
     discovery = {
-        "accession": "0001234567-26-000001", "cik": "0001234567", "ticker": "ACME",
-        "company_name": "ACME CORP", "form": "S-3", "filing_date": "2026-08-01",
+        "accession": accession, "cik": cik, "ticker": ticker,
+        "company_name": f"{ticker} CORP", "form": "S-3", "filing_date": "2026-08-01",
         "collection_scope": "registration_issuance",
     }
-    bundle = filings.parse_submission(SUBMISSION)
+    bundle = filings.parse_submission(raw)
     record = filings.SecCapitalStructureAdapter._manifest_record(
-        discovery=discovery, bundle=bundle, source_id="0001234567-26-000001:0:complete-submission.txt",
-        canonical_url="https://www.sec.gov/Archives/edgar/data/1234567/0001234567-26-000001.txt",
+        discovery=discovery, bundle=bundle, source_id=f"{accession}:0:complete-submission.txt",
+        canonical_url=f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession}.txt",
         document_name="complete-submission.txt", document_type="S-3", document_role="complete_submission",
-        sequence="0", raw=SUBMISSION, receipt=receipt,
-        inspection=filings.inspect_source_document(SUBMISSION, filename="complete-submission.txt", document_role="complete_submission"),
+        sequence="0", raw=raw, receipt=receipt,
+        inspection=filings.inspect_source_document(raw, filename="complete-submission.txt", document_role="complete_submission"),
         retrieved_at="2026-08-02T10:00:00Z", first_seen_at="2026-08-02T10:00:00Z",
         document_version=1, parent_manifest_id=None,
     )
@@ -91,14 +93,18 @@ def _anchor_manifest(store):
 def _write_anchor(root, manifest):
     anchor_path = root.parent / "source_manifest.parquet"
     anchor_path.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([manifest]).to_parquet(anchor_path, index=False)
+    records = manifest if isinstance(manifest, list) else [manifest]
+    pd.DataFrame(records).to_parquet(anchor_path, index=False)
 
 
 def _payload(cik: str = "0001234567") -> bytes:
     return json.dumps({"cik": cik, "entityName": "Acme Corp", "facts": {"us-gaap": {}}}).encode()
 
 
-def _adapter(tmp_path, monkeypatch, response: Response, *, source_store=None, max_ciks=24, clock=None, **limits):
+def _adapter(
+    tmp_path, monkeypatch, response: Response, *, source_store=None, source_stores=None,
+    max_ciks=24, clock=None, **limits,
+):
     root = tmp_path / "data" / "capital_structure" / "companyfacts"
     monkeypatch.setattr(companyfacts, "_data_root", lambda: root)
     signer = companyfacts.DeterministicTestCompanyFactsSigner("T" * 32, key_id="companyfacts-test-v1")
@@ -110,7 +116,8 @@ def _adapter(tmp_path, monkeypatch, response: Response, *, source_store=None, ma
     def sleeper(delay):
         ticks[0] += delay
     return companyfacts.SecCapitalStructureCompanyFactsAdapter(
-        source_store=source_store or _store(tmp_path), now_fn=clock or Clock(),
+        source_store=source_store or _store(tmp_path), source_stores=source_stores,
+        now_fn=clock or Clock(),
         fetcher=lambda *args, **kwargs: response, sleeper=sleeper,
         monotonic=monotonic, max_ciks_per_run=max_ciks, signer=signer, head_guard=guard, **limits,
     ), root
@@ -219,6 +226,12 @@ def test_publish_uses_immutable_generation_receipt_and_tiny_pointer(tmp_path, mo
     assert receipt["sequence"] == 1 and receipt["previous_receipt"] is None
     assert receipt["status"] == "ok"
     assert len(sources) == len(coverage) == 1
+    assert receipt["queue"]["anchor_verifications"] == [{
+        **companyfacts._anchor_storage_binding(companyfacts._anchor_candidate(anchor)),
+        "status": "verified", "error": None,
+    }]
+    assert sources[0]["anchor"]["complete_submission_store_id"] == anchor["storage"]["store_id"]
+    assert sources[0]["anchor"]["complete_submission_object_key"] == anchor["storage"]["object_key"]
     assert not (root / "source_manifest.parquet").exists()
     assert not (root / "coverage.parquet").exists()
     loaded_sources, loaded_coverage, loaded_receipt = _load_selected(root, anchor)
@@ -288,13 +301,167 @@ def test_source_store_failure_is_retry_not_manifest(tmp_path, monkeypatch):
 
     anchor_store = _store(tmp_path)
     anchor = _anchor_manifest(anchor_store)
-    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=FailingStore())
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=FailingStore(),
+        source_stores={anchor_store.store_id: anchor_store},
+    )
     _write_anchor(root, anchor)
     adapter.fetch()
     _, receipt, sources, coverage = _selected(root)
     assert receipt["status"] == "blocked"
     assert sources == []
     assert coverage[0]["state"] == "retry"
+
+
+def test_missing_or_self_hashed_forged_anchor_never_calls_sec(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    object_path = tmp_path / "objects" / anchor["storage"]["object_key"]
+    object_path.unlink()
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    _write_anchor(root, anchor)
+    result = adapter.fetch()
+    _, receipt, sources, coverage = _selected(root)
+    assert called == [] and sources == []
+    assert result["sec_companyfacts_intake"].iloc[0]["anchor_failed"] == 1
+    assert coverage[0]["state"] == "deferred"
+    assert "anchor source object is missing" in coverage[0]["error"]
+    assert receipt["queue"]["anchor_verifications"][0]["status"] == "failed"
+
+    forged_store = _store(tmp_path / "forged")
+    forged = _anchor_manifest(forged_store)
+    forged = deepcopy(forged)
+    forged_digest = "f" * 64
+    forged["document"]["content_sha256"] = forged_digest
+    forged["document"]["root_locator"] = f"sha256:{forged_digest}"
+    forged["storage"]["object_key"] = companyfacts.object_key_for_sha256(forged_digest)
+    forged["spans"][0].update(
+        span_id=f"root:{forged_digest}", text_sha256=forged_digest,
+    )
+    forged["manifest_id"] = filings.manifest_id_for(forged)
+    forged_adapter, forged_root = _adapter(
+        tmp_path / "forged", monkeypatch, Response(_payload()), source_store=forged_store,
+    )
+    forged_called = []
+    forged_adapter._fetcher = lambda *args, **kwargs: forged_called.append(args)
+    _write_anchor(forged_root, forged)
+    forged_adapter.fetch()
+    _, forged_receipt, forged_sources, forged_coverage = _selected(forged_root)
+    assert forged_called == [] and forged_sources == []
+    assert forged_coverage[0]["state"] == "deferred"
+    assert forged_receipt["queue"]["anchor_verifications"][0]["content_sha256"] == forged_digest
+    assert forged_receipt["queue"]["anchor_verifications"][0]["status"] == "failed"
+
+
+@pytest.mark.parametrize("variant", ["corrupt", "backend_rebound", "store_rebound", "unknown_store"])
+def test_anchor_store_resolution_is_exact_and_never_rebound(tmp_path, variant):
+    store = _store(tmp_path)
+    anchor = companyfacts._anchor_candidate(_anchor_manifest(store))
+    assert anchor is not None
+
+    class DeclaredStore:
+        store_id = anchor["storage_store_id"]
+        backend = anchor["storage_backend"]
+
+        @staticmethod
+        def get_verified(object_key, content_sha256):
+            return b"corrupt"
+
+    declared = DeclaredStore()
+    stores = {anchor["storage_store_id"]: declared}
+    if variant == "backend_rebound":
+        declared.backend = "r2" if anchor["storage_backend"] == "local" else "local"
+    elif variant == "store_rebound":
+        declared.store_id = "r2_shared"
+    elif variant == "unknown_store":
+        stores = {}
+    with pytest.raises(companyfacts.CompanyFactsAnchorVerificationError):
+        companyfacts._verify_anchor_source_object(
+            anchor, source_stores=stores, deadline=None, monotonic=time.monotonic,
+        )
+
+
+def test_anchor_verification_obeys_deadline_and_byte_budget(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    manifest = _anchor_manifest(store)
+    anchor = companyfacts._anchor_candidate(manifest)
+    assert anchor is not None
+
+    class SlowStore:
+        store_id = anchor["storage_store_id"]
+        backend = anchor["storage_backend"]
+
+        @staticmethod
+        def get_verified(object_key, content_sha256):
+            time.sleep(0.15)
+            return SUBMISSION
+
+    started = time.monotonic()
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="remaining run deadline"):
+        companyfacts._verify_anchor_source_object(
+            anchor, source_stores={anchor["storage_store_id"]: SlowStore()},
+            deadline=started + 0.02, monotonic=time.monotonic,
+        )
+    assert time.monotonic() - started < 0.12
+
+    limited, root = _adapter(
+        tmp_path / "limited", monkeypatch, Response(_payload()), source_store=store,
+        source_stores={store.store_id: store}, max_run_bytes=len(SUBMISSION) - 1,
+    )
+    called = []
+    limited._fetcher = lambda *args, **kwargs: called.append(args)
+    _write_anchor(root, manifest)
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="byte budget"):
+        limited.fetch()
+    assert called == []
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_anchor_verification_failures_produce_honest_partial_and_degraded_telemetry(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    first = _anchor_manifest(store, cik="0001234567", ticker="ACME")
+    second = _anchor_manifest(store, cik="0007654321", ticker="BETA")
+    second_path = tmp_path / "objects" / second["storage"]["object_key"]
+    second_path.unlink()
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store, max_ciks=2,
+    )
+    called = []
+
+    def fetch_by_url(url, **kwargs):
+        cik = url.rsplit("CIK", 1)[-1].removesuffix(".json")
+        called.append(cik)
+        return Response(_payload(cik))
+
+    adapter._fetcher = fetch_by_url
+    _write_anchor(root, [first, second])
+    partial = adapter.fetch()["sec_companyfacts_intake"].iloc[0]
+    _, partial_receipt, partial_sources, partial_coverage = _selected(root)
+    assert called == ["0001234567"]
+    assert partial["status"] == partial_receipt["status"] == "partial"
+    assert partial["anchor_verified"] == 1 and partial["anchor_failed"] == 1
+    assert len(partial_sources) == 1
+    assert {row["state"] for row in partial_coverage} == {"retrieved", "deferred"}
+
+    one_store = _store(tmp_path / "degraded")
+    one_anchor = _anchor_manifest(one_store)
+    degraded, degraded_root = _adapter(
+        tmp_path / "degraded", monkeypatch, Response(_payload()), source_store=one_store,
+    )
+    _write_anchor(degraded_root, one_anchor)
+    degraded.fetch()
+    (tmp_path / "degraded" / "objects" / one_anchor["storage"]["object_key"]).unlink()
+    degraded._now_fn = Clock(datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc))
+    degraded_called = []
+    degraded._fetcher = lambda *args, **kwargs: degraded_called.append(args)
+    degraded_result = degraded.fetch(full_history=True)["sec_companyfacts_intake"].iloc[0]
+    _, degraded_receipt, _, degraded_coverage = _selected(degraded_root)
+    assert degraded_called == []
+    assert degraded_result["status"] == degraded_receipt["status"] == "degraded"
+    assert degraded_receipt["population"]["stale_ciks"] == 1
+    assert degraded_coverage[-1]["state"] == "deferred"
 
 
 @pytest.mark.parametrize("target", ["_install_generation", "_write_immutable_bytes", "_atomic_write_bytes"])
@@ -374,6 +541,18 @@ def test_body_identity_and_cross_ledger_semantics_are_fail_closed(tmp_path, monk
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="source_id/CIK/hash binding"):
         companyfacts._validate_companyfacts_bundle(
             anchor_records=[anchor], source_records=[bad_source], coverage_records=[bad_coverage],
+        )
+
+    rebound_source = deepcopy(sources[0])
+    rebound_source["anchor"]["complete_submission_backend"] = "r2"
+    rebound_source["anchor"]["complete_submission_store_id"] = "r2_shared"
+    rebound_source["manifest_id"] = companyfacts._source_manifest_id(rebound_source)
+    rebound_coverage = deepcopy(coverage[0])
+    rebound_coverage["result"]["source_manifest_id"] = rebound_source["manifest_id"]
+    rebound_coverage["coverage_id"] = companyfacts._coverage_id(rebound_coverage)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="source/filing-anchor semantic binding"):
+        companyfacts._validate_companyfacts_bundle(
+            anchor_records=[anchor], source_records=[rebound_source], coverage_records=[rebound_coverage],
         )
 
 
@@ -684,9 +863,19 @@ def test_authenticated_receipt_telemetry_is_rederived_from_predecessor_delta(tmp
     forged["counts"].update(retrieved=0, retry=0, deferred=0, skipped_fresh=777)
     forged["auth"]["signature"] = ""
     forged = companyfacts._sign_receipt(forged, signer=signer)
-    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="queue telemetry"):
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="queue telemetry|anchor verification"):
         companyfacts._validate_receipt_semantics(
             forged, anchor_records=[anchor], source_records=sources, coverage_records=coverage,
+        )
+
+    rebound = deepcopy(receipt)
+    rebound["queue"]["anchor_verifications"][0]["store_id"] = "r2_shared"
+    rebound["queue"]["anchor_verifications"][0]["backend"] = "r2"
+    rebound["auth"]["signature"] = ""
+    rebound = companyfacts._sign_receipt(rebound, signer=signer)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="detached from selected anchor"):
+        companyfacts._validate_receipt_semantics(
+            rebound, anchor_records=[anchor], source_records=sources, coverage_records=coverage,
         )
 
 
@@ -750,18 +939,51 @@ def test_root_relative_paths_refuse_parent_symlink_escapes_and_traversal(tmp_pat
         "source_manifest": {"path": "generations/" + "b" * 64 + "/source_manifest.parquet"},
         "coverage": {"path": "generations/" + "b" * 64 + "/coverage.parquet"},
     }
-    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generations directory cannot be a symlink"):
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
         companyfacts._generation_paths(other_root, descriptor)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="path traversal"):
         with companyfacts._open_companyfacts_parent(root, ("receipts", "..", "escaped"), create=True):
             pass
+
+    # Exact original exploit: a missing lane root beneath an ancestor symlink
+    # must not create the root or lock in the symlink target.
+    inside = tmp_path / "inside"
+    inside.mkdir()
+    (inside / "parent").symlink_to(outside, target_is_directory=True)
+    escaped_root = inside / "parent" / "companyfacts"
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
+        with companyfacts._companyfacts_publish_lease(escaped_root):
+            pass
+    assert not (outside / "companyfacts").exists()
+
+    # Swap an already-lstat'd root ancestor immediately before openat. Identity
+    # and O_NOFOLLOW checks must reject the replacement before root creation.
+    ancestor_race = tmp_path / "ancestor-race"
+    ancestor_race.mkdir()
+    (ancestor_race / "parent").mkdir()
+    original_open = companyfacts.os.open
+    ancestor_switched = False
+
+    def swap_ancestor_before_open(path, flags, *args, **kwargs):
+        nonlocal ancestor_switched
+        if path == "parent" and kwargs.get("dir_fd") is not None and not ancestor_switched:
+            ancestor_switched = True
+            (ancestor_race / "parent").rmdir()
+            (ancestor_race / "parent").symlink_to(outside, target_is_directory=True)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(companyfacts.os, "open", swap_ancestor_before_open)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
+        with companyfacts._companyfacts_publish_lease(ancestor_race / "parent" / "companyfacts"):
+            pass
+    assert not (outside / "companyfacts").exists()
+    monkeypatch.setattr(companyfacts.os, "open", original_open)
 
     # Swap a checked directory for a symlink exactly at open time.  The secure
     # descriptor walk refuses it rather than continuing into ``outside``.
     race_root = tmp_path / "race-companyfacts"
     race_root.mkdir()
     (race_root / "receipts").mkdir()
-    original_open = companyfacts.os.open
     switched = False
 
     def swap_before_open(path, flags, *args, **kwargs):
@@ -776,6 +998,60 @@ def test_root_relative_paths_refuse_parent_symlink_escapes_and_traversal(tmp_pat
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
         with companyfacts._open_companyfacts_directory(race_root, ("receipts",)):
             pass
+
+
+def test_ancestor_symlink_blocks_lock_pointer_stage_generation_receipt_and_read(tmp_path):
+    inside = tmp_path / "inside"
+    outside = tmp_path / "outside"
+    inside.mkdir()
+    outside.mkdir()
+    (inside / "parent").symlink_to(outside, target_is_directory=True)
+    root = inside / "parent" / "companyfacts"
+    digest = "c" * 64
+    descriptor = {
+        "generation_id": "generation:cs-companyfacts:" + digest,
+        "source_manifest": {
+            "path": f"generations/{digest}/source_manifest.parquet",
+            "sha256": "1" * 64, "byte_length": 1,
+        },
+        "coverage": {
+            "path": f"generations/{digest}/coverage.parquet",
+            "sha256": "2" * 64, "byte_length": 1,
+        },
+    }
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("P" * 32, key_id="path-test")
+
+    def lock():
+        with companyfacts._companyfacts_publish_lease(root):
+            pass
+
+    actions = [
+        lock,
+        lambda: companyfacts._atomic_write_bytes(
+            root / "coverage_receipt.json", b"pointer", expected_previous=None, root=root,
+        ),
+        lambda: companyfacts._prepare_generation(
+            source_manifests=pd.DataFrame(columns=companyfacts._SOURCE_MANIFEST_COLUMNS),
+            coverage=pd.DataFrame(columns=companyfacts._COVERAGE_COLUMNS), root=root,
+            prior_receipt=None,
+        ),
+        lambda: companyfacts._install_generation(
+            root, companyfacts._PreparedGeneration(
+                descriptor=descriptor, stage_path=root / ".generation-stage-test",
+            ),
+        ),
+        lambda: companyfacts._write_immutable_bytes(
+            root / "receipts" / f"{digest}.json", b"receipt", root=root,
+        ),
+        lambda: companyfacts._load_committed_bundle(
+            root=root, receipt_path=root / "coverage_receipt.json", anchor_records=[],
+            signer=signer, head_witness=None,
+        ),
+    ]
+    for action in actions:
+        with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
+            action()
+        assert not (outside / "companyfacts").exists()
 
 
 def test_retention_audit_is_capped_rotating_and_deadline_bounded():

@@ -23,7 +23,7 @@
     "retention_verification": {"$ref": "#/$defs/retention_verification"},
     "queue": {
       "type": "object", "additionalProperties": false,
-      "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason"],
+      "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason", "anchor_verifications"],
       "properties": {
         "max_ciks": {"type": "integer", "minimum": 0},
         "force_refresh": {"type": "boolean"},
@@ -33,7 +33,11 @@
         "deferred_ciks": {"type": "integer", "minimum": 0},
         "priority_order": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]{10}$"}, "uniqueItems": true},
         "due_by_reason": {"$ref": "#/$defs/reason_counts"},
-        "selected_by_reason": {"$ref": "#/$defs/reason_counts"}
+        "selected_by_reason": {"$ref": "#/$defs/reason_counts"},
+        "anchor_verifications": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/anchor_verification"}
+        }
       }
     },
     "counts": {
@@ -115,6 +119,25 @@
         "new_anchor": {"type": "integer", "minimum": 0},
         "refresh_due": {"type": "integer", "minimum": 0}
       }
+    },
+    "anchor_verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cik", "anchor_manifest_id", "backend", "store_id", "object_key", "content_sha256", "byte_length", "status", "error"],
+      "properties": {
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "anchor_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "backend": {"type": "string", "enum": ["r2", "local"]},
+        "store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "status": {"type": "string", "enum": ["verified", "failed"]},
+        "error": {"type": ["string", "null"], "maxLength": 500}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "null"}}}},
+        {"if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "string", "minLength": 1}}}}
+      ]
     },
     "retention_verification": {
       "type": "object", "additionalProperties": false,

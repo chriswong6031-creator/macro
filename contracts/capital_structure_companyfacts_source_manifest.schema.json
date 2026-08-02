@@ -23,11 +23,15 @@
     },
     "anchor": {
       "type": "object", "additionalProperties": false,
-      "required": ["capital_structure_manifest_id", "capital_structure_source_id", "complete_submission_sha256", "first_seen_at"],
+      "required": ["capital_structure_manifest_id", "capital_structure_source_id", "complete_submission_sha256", "complete_submission_byte_length", "complete_submission_backend", "complete_submission_store_id", "complete_submission_object_key", "first_seen_at"],
       "properties": {
         "capital_structure_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
         "capital_structure_source_id": {"type": "string", "minLength": 1},
         "complete_submission_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "complete_submission_byte_length": {"type": "integer", "minimum": 1},
+        "complete_submission_backend": {"type": "string", "enum": ["r2", "local"]},
+        "complete_submission_store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "complete_submission_object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
         "first_seen_at": {"type": "string", "format": "date-time"}
       }
     },

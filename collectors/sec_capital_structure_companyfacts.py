@@ -45,7 +45,7 @@ from engine.capital_structure.source_store import object_key_for_sha256
 log = logging.getLogger(__name__)
 
 GROUP = "capital_structure"
-POLICY_VERSION = "capital-structure-companyfacts-intake/1.1.0"
+POLICY_VERSION = "capital-structure-companyfacts-intake/1.2.0"
 SEC_DATA_ORIGIN = "https://data.sec.gov"
 MAX_CIKS_PER_RUN = 24
 HARD_MAX_CIKS_PER_RUN = 64
@@ -118,6 +118,14 @@ class CompanyFactsRunBudgetExceeded(CompanyFactsDeferred):
     def __init__(self, message: str, *, retry_after_at: datetime | None = None) -> None:
         super().__init__(message)
         self.retry_after_at = retry_after_at
+
+
+class CompanyFactsPathMissing(CompanyFactsIntakeError):
+    """A securely traversed Company Facts directory component is absent."""
+
+
+class CompanyFactsAnchorVerificationError(CompanyFactsDeferred):
+    """A filing anchor's declared immutable bytes could not be verified exactly."""
 
 
 class CompanyFactsPublishIndeterminate(CompanyFactsIntakeError):
@@ -532,16 +540,16 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
 
 
 def _read_ledger(path: Path, columns: Sequence[str]) -> pd.DataFrame:
-    if not path.exists():
-        return pd.DataFrame(columns=list(columns))
     try:
-        frame = pd.read_parquet(path)
-    except Exception as exc:  # noqa: BLE001
-        raise CompanyFactsIntakeError(f"unreadable Company Facts ledger {path}: {exc}") from exc
-    missing = [column for column in columns if column not in frame.columns]
-    if missing:
-        raise CompanyFactsIntakeError(f"Company Facts ledger {path} lacks columns: {', '.join(missing)}")
-    return frame[list(columns)]
+        with _open_absolute_directory(path.parent) as parent_fd:
+            body = _read_regular_bytes_at(
+                parent_fd, path.name, label=f"ledger {path.name}", missing_ok=True,
+            )
+    except CompanyFactsPathMissing:
+        return pd.DataFrame(columns=list(columns))
+    if body is None:
+        return pd.DataFrame(columns=list(columns))
+    return _read_ledger_bytes(body, columns, label=str(path))
 
 
 def _read_ledger_bytes(body: bytes, columns: Sequence[str], *, label: str) -> pd.DataFrame:
@@ -553,6 +561,22 @@ def _read_ledger_bytes(body: bytes, columns: Sequence[str], *, label: str) -> pd
     missing = [column for column in columns if column not in frame.columns]
     if missing:
         raise CompanyFactsIntakeError(f"Company Facts ledger {label} lacks columns: {', '.join(missing)}")
+    if list(columns) == _COVERAGE_COLUMNS:
+        # Arrow promotes a nested nullable integer to float when one outcome has
+        # ``byte_length=null``. Restore the contract-native integer before the
+        # ordered-prefix digest is checked (mixed retrieved/deferred generations).
+        frame = frame.copy()
+
+        def normalize_result(value: Any) -> Any:
+            result = _native(value)
+            if isinstance(result, Mapping):
+                result = dict(result)
+                length = result.get("byte_length")
+                if isinstance(length, float) and math.isfinite(length) and length.is_integer():
+                    result["byte_length"] = int(length)
+            return result
+
+        frame["result"] = frame["result"].map(normalize_result)
     return frame[list(columns)]
 
 
@@ -574,57 +598,102 @@ def _relative_parts(root: Path, path: Path) -> tuple[str, ...]:
     return _safe_relative_parts(relative)
 
 
-@contextmanager
-def _open_companyfacts_directory(
-    root: Path, parts: Sequence[str] = (), *, create: bool = False,
-) -> Iterator[int]:
-    """Open a root-relative directory chain without following any component link.
+_DIRECTORY_OPEN_FLAGS = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
 
-    Holding these directory descriptors turns every later read, create, link, and
-    rename into an ``openat`` operation.  This closes the lstat/open and
-    parent-replacement windows that a path-only check cannot close.
-    """
-    if create:
-        root.mkdir(parents=True, exist_ok=True)
+
+def _open_verified_directory_component(
+    parent_fd: int, part: str, *, create: bool, label: str,
+) -> int:
+    """lstat/openat one component and prove the opened inode is the checked inode."""
+    if part in {"", ".", ".."} or "/" in part or "\\" in part:
+        raise CompanyFactsIntakeError("Company Facts path traversal is forbidden")
     try:
-        root_stat = os.lstat(root)
-    except FileNotFoundError as exc:
-        raise CompanyFactsIntakeError("Company Facts root is missing") from exc
-    if stat.S_ISLNK(root_stat.st_mode) or not stat.S_ISDIR(root_stat.st_mode):
-        raise CompanyFactsIntakeError("Company Facts root must be a real directory, not a symlink")
-    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        checked = os.stat(part, dir_fd=parent_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        if not create:
+            raise CompanyFactsPathMissing(f"Company Facts directory is missing: {label}") from None
+        try:
+            os.mkdir(part, mode=0o700, dir_fd=parent_fd)
+            os.fsync(parent_fd)
+        except FileExistsError:
+            # An uncooperative writer won the create race. Re-lstat and accept
+            # only a real directory whose identity survives the no-follow open.
+            pass
+        try:
+            checked = os.stat(part, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError as exc:
+            raise CompanyFactsIntakeError(
+                f"Company Facts directory vanished during secure creation: {label}"
+            ) from exc
+    if stat.S_ISLNK(checked.st_mode) or not stat.S_ISDIR(checked.st_mode):
+        raise CompanyFactsIntakeError(
+            f"Company Facts directory cannot be opened without following links: {label}"
+        )
+    try:
+        descriptor = os.open(part, _DIRECTORY_OPEN_FLAGS, dir_fd=parent_fd)
+    except OSError as exc:
+        raise CompanyFactsIntakeError(
+            f"Company Facts directory cannot be opened without following links: {label}"
+        ) from exc
+    opened = os.fstat(descriptor)
+    if (
+        not stat.S_ISDIR(opened.st_mode)
+        or (opened.st_dev, opened.st_ino) != (checked.st_dev, checked.st_ino)
+    ):
+        os.close(descriptor)
+        raise CompanyFactsIntakeError(f"Company Facts directory changed during secure open: {label}")
+    return descriptor
+
+
+@contextmanager
+def _open_absolute_directory(path: Path, *, create: bool = False) -> Iterator[int]:
+    """Traverse/create an absolute directory from ``/`` via no-follow dirfds."""
+    if not path.is_absolute() or path.anchor != "/":
+        raise CompanyFactsIntakeError("Company Facts root must be an absolute POSIX path")
+    components = path.parts[1:]
     descriptors: list[int] = []
     try:
-        root_fd = os.open(root, flags)
-        descriptors.append(root_fd)
-        opened_stat = os.fstat(root_fd)
-        if (opened_stat.st_dev, opened_stat.st_ino) != (root_stat.st_dev, root_stat.st_ino):
-            raise CompanyFactsIntakeError("Company Facts root changed during secure open")
-        current = root_fd
-        for part in parts:
-            if part in {"", ".", ".."} or "/" in part or "\\" in part:
-                raise CompanyFactsIntakeError("Company Facts path traversal is forbidden")
-            try:
-                next_fd = os.open(part, flags, dir_fd=current)
-            except FileNotFoundError:
-                if not create:
-                    raise CompanyFactsIntakeError(f"Company Facts directory is missing: {part}") from None
-                os.mkdir(part, mode=0o700, dir_fd=current)
-                next_fd = os.open(part, flags, dir_fd=current)
-            except OSError as exc:
-                raise CompanyFactsIntakeError(
-                    f"Company Facts directory cannot be opened without following links: {part}"
-                ) from exc
-            opened = os.fstat(next_fd)
-            if not stat.S_ISDIR(opened.st_mode):
-                os.close(next_fd)
-                raise CompanyFactsIntakeError(f"Company Facts path component is not a directory: {part}")
-            descriptors.append(next_fd)
-            current = next_fd
+        anchor_fd = os.open("/", _DIRECTORY_OPEN_FLAGS)
+        descriptors.append(anchor_fd)
+        current = anchor_fd
+        rendered: list[str] = []
+        for part in components:
+            rendered.append(part)
+            current = _open_verified_directory_component(
+                current, part, create=create, label="/" + "/".join(rendered),
+            )
+            descriptors.append(current)
         yield current
     finally:
         for descriptor in reversed(descriptors):
             os.close(descriptor)
+
+
+@contextmanager
+def _open_companyfacts_directory(
+    root: Path, parts: Sequence[str] = (), *, create: bool = False,
+) -> Iterator[int]:
+    """Open the absolute lane root and all descendants without following links.
+
+    The root itself is never created with ``Path.mkdir(parents=True)``. Every
+    ancestor starts at the trusted filesystem root and crosses an lstat/openat
+    identity check, so a missing lane beneath an ancestor symlink cannot escape.
+    """
+    descriptors: list[int] = []
+    with _open_absolute_directory(root, create=create) as root_fd:
+        try:
+            current = root_fd
+            rendered: list[str] = []
+            for part in parts:
+                rendered.append(part)
+                current = _open_verified_directory_component(
+                    current, part, create=create, label="/".join(rendered),
+                )
+                descriptors.append(current)
+            yield current
+        finally:
+            for descriptor in reversed(descriptors):
+                os.close(descriptor)
 
 
 @contextmanager
@@ -691,11 +760,8 @@ def _write_new_regular_bytes_at(parent_fd: int, name: str, content: bytes, *, la
 
 
 def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0))
-    try:
+    with _open_absolute_directory(path) as descriptor:
         os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
 
 
 @contextmanager
@@ -958,14 +1024,6 @@ def _generation_paths(root: Path, descriptor: Mapping[str, Any]) -> tuple[Path, 
         raise CompanyFactsIntakeError("generation coverage path is not identity-bound")
     generation_root = root / "generations" / digest
     try:
-        parent = os.lstat(root / "generations")
-    except FileNotFoundError:
-        parent = None
-    if parent is not None:
-        if stat.S_ISLNK(parent.st_mode) or not stat.S_ISDIR(parent.st_mode):
-            raise CompanyFactsIntakeError("Company Facts generations directory cannot be a symlink")
-        # A no-follow open is intentionally repeated by every actual reader/writer;
-        # this check catches malformed descriptors before a pending stage is installed.
         with _open_companyfacts_directory(root, ("generations",)) as generations_fd:
             try:
                 generation_fd = os.open(
@@ -983,6 +1041,9 @@ def _generation_paths(root: Path, descriptor: Mapping[str, Any]) -> tuple[Path, 
                         raise CompanyFactsIntakeError("Company Facts generation path is not a directory")
                 finally:
                     os.close(generation_fd)
+    except CompanyFactsPathMissing:
+        # A descriptor can be computed before its immutable generation is installed.
+        pass
     return generation_root / "source_manifest.parquet", generation_root / "coverage.parquet"
 
 
@@ -1263,9 +1324,16 @@ def _anchor_candidate(record: Mapping[str, Any]) -> dict[str, Any] | None:
     digest = str(document.get("content_sha256") or "").lower()
     if len(digest) != 64 or document.get("root_locator") != f"sha256:{digest}":
         return None
+    byte_length = document.get("byte_length")
+    if isinstance(byte_length, bool) or not isinstance(byte_length, int) or byte_length < 1:
+        return None
     if storage.get("content_addressed") is not True or storage.get("retention_state") != "retained":
         return None
     if storage.get("object_key") != object_key_for_sha256(digest):
+        return None
+    store_id = storage.get("store_id")
+    backend = storage.get("backend")
+    if not isinstance(store_id, str) or backend not in {"local", "r2"}:
         return None
     try:
         cik = canonical_cik(issuer.get("cik"))
@@ -1282,14 +1350,18 @@ def _anchor_candidate(record: Mapping[str, Any]) -> dict[str, Any] | None:
         "manifest_id": manifest_id,
         "source_id": source_id,
         "content_sha256": digest,
+        "byte_length": byte_length,
+        "storage_backend": backend,
+        "storage_store_id": store_id,
+        "storage_object_key": storage["object_key"],
         "first_seen_at": first_seen,
         "ticker": issuer.get("ticker") if isinstance(issuer.get("ticker"), str) else None,
         "aliases": sorted({str(value) for value in issuer.get("aliases", []) if str(value)}),
     }
 
 
-def _verified_complete_submission_anchors(records: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    """Collapse only verified complete-submission manifests to one anchor per CIK."""
+def _complete_submission_anchor_candidates(records: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Collapse manifest-valid candidates; selected raw bytes are verified later."""
     if records:
         # Existing filing manifests retain their own strict immutable identity law.
         validate_manifest_ledger([dict(record) for record in records])
@@ -1305,7 +1377,72 @@ def _verified_complete_submission_anchors(records: Sequence[Mapping[str, Any]]) 
     return anchors
 
 
-def _verified_anchor_index(records: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+def _anchor_storage_binding(anchor: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "cik": str(anchor["cik"]),
+        "anchor_manifest_id": str(anchor["manifest_id"]),
+        "backend": str(anchor["storage_backend"]),
+        "store_id": str(anchor["storage_store_id"]),
+        "object_key": str(anchor["storage_object_key"]),
+        "content_sha256": str(anchor["content_sha256"]),
+        "byte_length": int(anchor["byte_length"]),
+    }
+
+
+def _anchor_verification_record(
+    anchor: Mapping[str, Any], *, status: str, error: str | None,
+) -> dict[str, Any]:
+    if status not in {"verified", "failed"} or (status == "verified") != (error is None):
+        raise CompanyFactsIntakeError("invalid Company Facts anchor verification outcome")
+    return {**_anchor_storage_binding(anchor), "status": status, "error": error}
+
+
+def _verify_anchor_source_object(
+    anchor: Mapping[str, Any], *, source_stores: Mapping[str, Any],
+    deadline: float | None, monotonic: Callable[[], float],
+    byte_observer: Callable[[int], None] | None = None,
+    remaining_byte_budget: int | None = None,
+) -> dict[str, Any]:
+    """Verify the exact filing bytes before its CIK may call Company Facts."""
+    binding = _anchor_storage_binding(anchor)
+    try:
+        expected_key = object_key_for_sha256(binding["content_sha256"])
+    except ValueError as exc:
+        raise CompanyFactsAnchorVerificationError("anchor content digest is invalid") from exc
+    if binding["object_key"] != expected_key:
+        raise CompanyFactsAnchorVerificationError("anchor object key is detached from its content digest")
+    if remaining_byte_budget is not None and binding["byte_length"] > remaining_byte_budget:
+        raise CompanyFactsRunBudgetExceeded("Company Facts anchor verification exceeds run byte budget")
+    store = source_stores.get(binding["store_id"])
+    if store is None:
+        raise CompanyFactsAnchorVerificationError(
+            f"anchor source store is unavailable: {binding['store_id']!r}"
+        )
+    if getattr(store, "store_id", None) != binding["store_id"]:
+        raise CompanyFactsAnchorVerificationError("anchor source store identity is rebound")
+    if getattr(store, "backend", None) != binding["backend"]:
+        raise CompanyFactsAnchorVerificationError("anchor source store backend is rebound")
+    try:
+        body = _get_verified_before_deadline(
+            store, binding["object_key"], binding["content_sha256"],
+            deadline=deadline, monotonic=monotonic,
+        )
+    except CompanyFactsRunBudgetExceeded:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsAnchorVerificationError("anchor source object verification failed") from exc
+    if isinstance(body, bytes) and byte_observer is not None:
+        byte_observer(len(body))
+    if (
+        not isinstance(body, bytes)
+        or len(body) != binding["byte_length"]
+        or sha256(body).hexdigest() != binding["content_sha256"]
+    ):
+        raise CompanyFactsAnchorVerificationError("anchor source object is missing or mismatched")
+    return _anchor_verification_record(anchor, status="verified", error=None)
+
+
+def _anchor_candidate_index(records: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
     index: dict[str, dict[str, Any]] = {}
     for raw in records:
         candidate = _anchor_candidate(_native(raw))
@@ -1357,6 +1494,10 @@ def _validate_source_manifest_semantics(
         anchor_record["cik"] != cik
         or anchor["capital_structure_source_id"] != anchor_record["source_id"]
         or anchor["complete_submission_sha256"] != anchor_record["content_sha256"]
+        or int(anchor["complete_submission_byte_length"]) != int(anchor_record["byte_length"])
+        or anchor["complete_submission_backend"] != anchor_record["storage_backend"]
+        or anchor["complete_submission_store_id"] != anchor_record["storage_store_id"]
+        or anchor["complete_submission_object_key"] != anchor_record["storage_object_key"]
         or anchor["first_seen_at"] != _iso(anchor_record["first_seen_at"])
     ):
         raise CompanyFactsIntakeError("Company Facts source/filing-anchor semantic binding mismatch")
@@ -1377,7 +1518,7 @@ def _validate_companyfacts_bundle(
 ) -> None:
     if anchor_records:
         validate_manifest_ledger([dict(record) for record in anchor_records])
-    anchors_by_id = _verified_anchor_index(anchor_records)
+    anchors_by_id = _anchor_candidate_index(anchor_records)
     sources_by_id: dict[str, dict[str, Any]] = {}
     for index, raw in enumerate(source_records):
         source = _validate_source_manifest_semantics(raw, anchors_by_id=anchors_by_id)
@@ -1765,14 +1906,12 @@ def _load_committed_bundle(
                 pointer_body = _read_regular_bytes_at(
                     parent_fd, pointer_name, label="current pointer", missing_ok=True,
                 )
-    except CompanyFactsIntakeError:
-        # A missing root is an empty bootstrap only; every other unsafe component is fatal.
-        if not root.exists():
-            immutable_history = False
-            pointer_body = None
-            names = set()
-        else:
-            raise
+    except CompanyFactsPathMissing:
+        # A securely proven missing root is an empty bootstrap. Unsafe ancestors
+        # and symlinks raise a different error and remain fatal.
+        immutable_history = False
+        pointer_body = None
+        names = set()
     if pointer_body is None:
         if {"source_manifest.parquet", "coverage.parquet"} & names or immutable_history or head_witness is not None:
             raise CompanyFactsIntakeError(
@@ -2273,6 +2412,10 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 "capital_structure_manifest_id": anchor["manifest_id"],
                 "capital_structure_source_id": anchor["source_id"],
                 "complete_submission_sha256": anchor["content_sha256"],
+                "complete_submission_byte_length": int(anchor["byte_length"]),
+                "complete_submission_backend": anchor["storage_backend"],
+                "complete_submission_store_id": anchor["storage_store_id"],
+                "complete_submission_object_key": anchor["storage_object_key"],
                 "first_seen_at": _iso(anchor["first_seen_at"]),
             },
             "request": {"canonical_url": companyfacts_url(cik), "endpoint": "companyfacts", "method": "GET"},
@@ -2339,7 +2482,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 "retrieval", "storage", "rights", "privacy", "parser", "spans",
             ])
             anchor_records = _records(anchor_frame)
-            anchors = _verified_complete_submission_anchors(anchor_records)
+            anchors = _complete_submission_anchor_candidates(anchor_records)
             existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
                 root=root, receipt_path=receipt_path, anchor_records=anchor_records,
                 signer=signer, head_witness=witnessed_head,
@@ -2362,6 +2505,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
 
             def heartbeat(*, status: str, population: Mapping[str, int], published_at: datetime | pd.Timestamp,
                           selected: int, counts: Mapping[str, int], retention_verification: Mapping[str, Any],
+                          anchor_verifications: Sequence[Mapping[str, Any]] = (),
                           checkpoint_blocked: bool = False) -> dict[str, pd.DataFrame]:
                 stamp = _parse_stamp(published_at, field="heartbeat published_at")
                 return {"sec_companyfacts_intake": pd.DataFrame({
@@ -2377,6 +2521,8 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     "retention_admission_verified": [len(retention_verification["admission_verified_manifest_ids"])],
                     "retention_freshness": [retention_verification["freshness"]],
                     "retention_all_objects_reverified": [bool(retention_verification["all_objects_reverified"])],
+                    "anchor_verified": [sum(row.get("status") == "verified" for row in anchor_verifications)],
+                    "anchor_failed": [sum(row.get("status") == "failed" for row in anchor_verifications)],
                     "checkpoint_blocked": [checkpoint_blocked],
                     "published_at": [_iso(stamp.to_pydatetime())],
                 }, index=[pd.Timestamp(stamp.date())])}
@@ -2410,17 +2556,42 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 source_store_error: Exception | None = None
                 source_store_id = getattr(source_store, "store_id", None)
                 if isinstance(source_store_id, str):
-                    source_stores[source_store_id] = source_store
+                    source_stores.setdefault(source_store_id, source_store)
             except Exception as exc:  # noqa: BLE001
                 source_store = None
                 source_store_error = exc
             fresh_manifests: list[dict[str, Any]] = []
             fresh_coverage: list[dict[str, Any]] = []
+            anchor_verifications: list[dict[str, Any]] = []
             counts = {"retrieved": 0, "retry": 0, "deferred": 0}
             for item in queue:
                 self._require_run_budget()
                 attempted = _strict_utc(self._now_fn(), field="attempted_at")
                 attempted_at = _iso(attempted)
+                try:
+                    anchor_verifications.append(_verify_anchor_source_object(
+                        item["anchor"], source_stores=source_stores,
+                        deadline=self._run_deadline, monotonic=self._monotonic,
+                        byte_observer=self._consume_run_bytes,
+                        remaining_byte_budget=self.max_run_bytes - self._run_bytes,
+                    ))
+                    self._require_run_budget()
+                except CompanyFactsRunBudgetExceeded:
+                    raise
+                except CompanyFactsAnchorVerificationError as exc:
+                    error = f"{type(exc).__name__}: {exc}"[:500]
+                    anchor_verifications.append(_anchor_verification_record(
+                        item["anchor"], status="failed", error=error,
+                    ))
+                    log.warning(
+                        "sec_capital_structure_companyfacts: %s deferred: %s", item["cik"], error,
+                    )
+                    fresh_coverage.append(self._coverage_row(
+                        item=item, attempted_at=attempted_at, state="deferred", error=error,
+                        retry_after=_iso(attempted + DEFER_AFTER), manifest=None,
+                    ))
+                    counts["deferred"] += 1
+                    continue
                 try:
                     if source_store is None:
                         if source_store_error is not None:
@@ -2489,7 +2660,8 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     coverage_records=combined_coverage, eligible_ciks=len(anchors), queue=queue,
                     max_ciks=self.max_ciks_per_run, deferred_queue_count=deferred_queue_count,
                     skipped_fresh_count=skipped_fresh_count, counts=counts,
-                    queue_diagnostics=queue_diagnostics, retention_verification=retention, signer=signer,
+                    queue_diagnostics=queue_diagnostics, retention_verification=retention,
+                    anchor_verifications=anchor_verifications, signer=signer,
                 )
                 _validate_contract(sealed_receipt, "capital_structure_companyfacts_coverage_receipt.schema.json", label="Company Facts coverage receipt")
                 _validate_receipt_identity(sealed_receipt)
@@ -2517,7 +2689,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             return heartbeat(
                 status=sealed_receipt["status"], population=sealed_receipt["population"],
                 published_at=published_at, selected=len(queue), counts=counts,
-                retention_verification=retention,
+                retention_verification=retention, anchor_verifications=anchor_verifications,
             )
 
 
@@ -2619,6 +2791,9 @@ def _validate_receipt_semantics(
     selected = int(queue["selected_ciks"])
     if selected != len(queue["priority_order"]):
         raise CompanyFactsIntakeError("receipt selected count/priority order mismatch")
+    anchor_verifications = queue.get("anchor_verifications")
+    if not isinstance(anchor_verifications, list) or len(anchor_verifications) != selected:
+        raise CompanyFactsIntakeError("receipt selected count/anchor verification mismatch")
     if selected > int(queue["max_ciks"]) or int(queue["eligible_ciks"]) < selected:
         raise CompanyFactsIntakeError("receipt queue bounds are inconsistent")
     if selected != int(counts["retrieved"]) + int(counts["retry"]) + int(counts["deferred"]):
@@ -2630,7 +2805,7 @@ def _validate_receipt_semantics(
             raise CompanyFactsIntakeError("receipt selected lane count exceeds due lane count")
     if sum(int(value) for value in queue["selected_by_reason"].values()) != selected:
         raise CompanyFactsIntakeError("receipt selected lane counts do not sum to selected_ciks")
-    anchors = _verified_complete_submission_anchors(anchor_records)
+    anchors = _complete_submission_anchor_candidates(anchor_records)
     eligible = len(anchors)
     if eligible != int(queue["eligible_ciks"]):
         raise CompanyFactsIntakeError("receipt eligible count does not match verified anchors")
@@ -2680,7 +2855,9 @@ def _validate_receipt_semantics(
     observed_counts = {state: sum(row.get("state") == state for row in coverage_suffix) for state in ("retrieved", "retry", "deferred")}
     if any(int(counts[state]) != observed_counts[state] for state in observed_counts):
         raise CompanyFactsIntakeError("receipt outcome counts do not match coverage suffix")
-    for item, row in zip(expected_queue, coverage_suffix, strict=True):
+    for item, row, verification in zip(
+        expected_queue, coverage_suffix, anchor_verifications, strict=True,
+    ):
         if (
             row.get("cik") != item["cik"]
             or row.get("anchor_manifest_id") != item["anchor"]["manifest_id"]
@@ -2688,6 +2865,26 @@ def _validate_receipt_semantics(
             or row.get("queue_reason") != item["queue_reason"]
         ):
             raise CompanyFactsIntakeError("receipt coverage suffix is detached from selected queue")
+        if not isinstance(verification, Mapping):
+            raise CompanyFactsIntakeError("receipt anchor verification is malformed")
+        expected_binding = _anchor_storage_binding(item["anchor"])
+        if any(verification.get(key) != value for key, value in expected_binding.items()):
+            raise CompanyFactsIntakeError("receipt anchor verification is detached from selected anchor")
+        verification_status = verification.get("status")
+        verification_error = verification.get("error")
+        if verification_status == "verified":
+            if verification_error is not None:
+                raise CompanyFactsIntakeError("verified anchor carries a failure error")
+        elif verification_status == "failed":
+            if (
+                not isinstance(verification_error, str)
+                or not verification_error
+                or row.get("state") != "deferred"
+                or row.get("error") != verification_error
+            ):
+                raise CompanyFactsIntakeError("failed anchor verification is detached from deferred coverage")
+        else:
+            raise CompanyFactsIntakeError("receipt anchor verification status is invalid")
     source_ids = {str(row.get("manifest_id")) for row in source_suffix}
     retrieved_source_ids = {
         str(row["result"]["source_manifest_id"])
@@ -2709,11 +2906,12 @@ def _coverage_receipt(
     anchor_records: Sequence[Mapping[str, Any]], source_records: Sequence[Mapping[str, Any]],
     coverage_records: Sequence[Mapping[str, Any]], eligible_ciks: int, queue: Sequence[Mapping[str, Any]], max_ciks: int,
     deferred_queue_count: int, skipped_fresh_count: int, counts: Mapping[str, int],
-    queue_diagnostics: Mapping[str, Any], retention_verification: Mapping[str, Any], signer: CompanyFactsSigner,
+    queue_diagnostics: Mapping[str, Any], retention_verification: Mapping[str, Any],
+    anchor_verifications: Sequence[Mapping[str, Any]], signer: CompanyFactsSigner,
 ) -> dict[str, Any]:
     published_at = _strict_utc(published_at, field="published_at")
     selection_as_of = _strict_utc(selection_as_of, field="selection_as_of")
-    anchors = _verified_complete_submission_anchors(anchor_records)
+    anchors = _complete_submission_anchor_candidates(anchor_records)
     population = _coverage_population(anchors, coverage_records, as_of=published_at)
     record: dict[str, Any] = {
         "schema": COVERAGE_RECEIPT_SCHEMA,
@@ -2739,6 +2937,7 @@ def _coverage_receipt(
             "priority_order": [str(item["cik"]) for item in queue],
             "due_by_reason": dict(queue_diagnostics["due_by_reason"]),
             "selected_by_reason": dict(queue_diagnostics["selected_by_reason"]),
+            "anchor_verifications": [dict(row) for row in anchor_verifications],
         },
         "counts": {
             "retrieved": int(counts["retrieved"]), "retry": int(counts["retry"]),
