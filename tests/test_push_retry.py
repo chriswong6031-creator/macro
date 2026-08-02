@@ -344,7 +344,9 @@ def test_untracked_collision_helper_fails_closed_outside_actions(tmp_path):
     runner_temp = tmp_path / "runner-temp"; runner_temp.mkdir()
     r = run_sh(
         "push_quarantine_untracked_collisions origin/main",
-        env={"RUNNER_TEMP": str(runner_temp)},
+        # GitHub Actions exports this in the outer process running CI; make this
+        # fixture explicitly emulate a local checkout instead.
+        env={"GITHUB_ACTIONS": "false", "RUNNER_TEMP": str(runner_temp)},
         cwd=lane,
     )
     assert r.returncode != 0
