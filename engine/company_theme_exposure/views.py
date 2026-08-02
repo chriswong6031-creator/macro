@@ -1,7 +1,7 @@
 """Pure, deterministic projections for Company Theme Exposure."""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -29,28 +29,54 @@ def _as_date(value: object) -> date | None:
         return None
 
 
-def _theme_state_receipt(payload: Mapping[str, Any] | None, *, as_of: date) -> tuple[dict[str, Any], list[str]]:
+def _theme_state_receipt(
+    payload: Mapping[str, Any] | None,
+    *,
+    as_of: date,
+    canonical_theme_ids: set[str],
+) -> tuple[dict[str, Any], list[str]]:
     if not isinstance(payload, Mapping):
         return {"status": "missing", "as_of": None, "sha256": None}, ["theme_state_missing"]
     stamp = _as_date(payload.get("as_of"))
     # ``stale_legs`` is an explicit producer admission. Do not turn it into
     # narrative; it is a freshness gate for the entire descriptive receipt.
+    source_hash = canonical_json_sha256(payload)
+    themes = payload.get("themes")
+    theme_ids = [item.get("theme_id") for item in themes] if isinstance(themes, list) and all(isinstance(item, Mapping) for item in themes) else []
+    authority = payload.get("authority")
+    structurally_complete = (
+        isinstance(themes, list)
+        and bool(themes)
+        and isinstance(payload.get("n_themes"), int)
+        and payload["n_themes"] == len(themes)
+        and len(theme_ids) == len(set(theme_ids))
+        and set(theme_ids) == canonical_theme_ids
+        and isinstance(authority, Mapping)
+        and authority.get("is_context_only") is True
+    )
     valid_schema = payload.get("schema") == "neuralweb.theme_state.v1"
-    if not valid_schema or stamp is None:
-        return {"status": "missing", "as_of": None, "sha256": None}, ["theme_state_invalid"]
-    receipt = {"status": "fresh", "as_of": stamp.isoformat(), "sha256": canonical_json_sha256(payload)}
+    if not valid_schema or stamp is None or not structurally_complete or stamp > as_of:
+        return {
+            "status": "invalid", "as_of": stamp.isoformat() if stamp else None, "sha256": source_hash,
+        }, ["theme_state_invalid"]
+    receipt = {"status": "fresh", "as_of": stamp.isoformat(), "sha256": source_hash}
     if (as_of - stamp).days > THEME_STATE_MAX_AGE_DAYS or payload.get("stale_legs"):
         receipt["status"] = "stale"
         return receipt, ["theme_state_stale"]
     return receipt, []
 
 
-def _active_membership(membership: Mapping[str, Any]) -> dict[str, set[str]]:
-    """Return ticker → active basket IDs; removed members are never carried forward."""
+def _active_membership(membership: Mapping[str, Any], *, as_of: date) -> dict[str, set[str]]:
+    """Return current ticker → basket IDs; malformed history fails closed.
+
+    Membership is a point-in-time curated roster.  A removed row is validated
+    before exclusion, so a bad historical row cannot silently alter coverage.
+    """
     baskets = membership.get("baskets")
     if not isinstance(baskets, Mapping):
         raise ContractError("membership.baskets must be an object")
     result: dict[str, set[str]] = {}
+    seen: set[tuple[str, str]] = set()
     for basket_id, raw_basket in baskets.items():
         if not isinstance(basket_id, str) or not isinstance(raw_basket, Mapping):
             raise ContractError("membership basket invalid")
@@ -58,12 +84,23 @@ def _active_membership(membership: Mapping[str, Any]) -> dict[str, set[str]]:
         if not isinstance(members, list):
             raise ContractError(f"membership {basket_id} members invalid")
         for member in members:
-            if not isinstance(member, Mapping) or member.get("removed") is not None:
-                continue
+            if not isinstance(member, Mapping):
+                raise ContractError(f"membership {basket_id} member invalid")
             try:
                 ticker = safe_ticker(member.get("ticker"))
             except ContractError as exc:
                 raise ContractError(f"membership {basket_id} member ticker invalid") from exc
+            added = _as_date(member.get("added"))
+            removed_raw = member.get("removed")
+            removed = _as_date(removed_raw) if removed_raw is not None else None
+            if added is None or (removed_raw is not None and removed is None) or (removed is not None and removed < added):
+                raise ContractError(f"membership {basket_id} member dates invalid")
+            identity = (basket_id, ticker)
+            if identity in seen:
+                raise ContractError(f"membership duplicate active identity: {basket_id}/{ticker}")
+            seen.add(identity)
+            if added > as_of or (removed is not None and removed <= as_of):
+                continue
             result.setdefault(ticker, set()).add(basket_id)
     return result
 
@@ -98,7 +135,18 @@ def _crosswalk_index(crosswalk: Mapping[str, Any], membership: Mapping[str, Any]
                 raise ContractError(f"theme crosswalk mapped basket invalid: {basket_id!r}")
             if basket_id in index:
                 raise ContractError(f"theme crosswalk basket mapped twice: {basket_id}")
-            index[basket_id] = {"theme_id": theme_id, "name_en": names[0], "name_zh": names[1]}
+            note = str(raw.get("note") or "").lower()
+            proxy_terms = ("closest", "no dedicated", "broader", "parent", "supply chain", "fuel supply", "covers")
+            qualifier = "proxy" if any(term in note for term in proxy_terms) else ("direct" if "direct" in note else "curated")
+            index[basket_id] = {
+                "theme_id": theme_id,
+                "name_en": names[0],
+                "name_zh": names[1],
+                # A source-methodology qualifier, never an asserted company
+                # relationship. It prevents a curated proxy basket from
+                # presenting as a literal business exposure.
+                "mapping_qualifier": qualifier,
+            }
     unmapped = crosswalk.get("unmapped_baskets")
     if not isinstance(unmapped, list):
         raise ContractError("theme crosswalk unmapped_baskets invalid")
@@ -116,6 +164,27 @@ def _crosswalk_index(crosswalk: Mapping[str, Any], membership: Mapping[str, Any]
     if unaccounted:
         raise ContractError(f"theme crosswalk does not account for baskets: {sorted(unaccounted)}")
     return index
+
+
+def _canonical_theme_ids(crosswalk: Mapping[str, Any]) -> set[str]:
+    return {str(raw["id"]) for raw in crosswalk["themes"] if isinstance(raw, Mapping)}
+
+
+def _coverage(active: set[str], theme_by_basket: Mapping[str, Mapping[str, str]]) -> dict[str, int | str]:
+    mapped = len(active & set(theme_by_basket))
+    unmapped = len(active) - mapped
+    status = (
+        "no_active_membership" if not active else
+        "mapped" if mapped == len(active) else
+        "unmapped_only" if unmapped == len(active) else
+        "mixed"
+    )
+    return {
+        "status": status,
+        "active_basket_count": len(active),
+        "mapped_basket_count": mapped,
+        "unmapped_basket_count": unmapped,
+    }
 
 
 def build_exposures(
@@ -140,9 +209,11 @@ def build_exposures(
     run_date = _as_date(as_of) if as_of is not None else _as_date(company_manifest.get("generated_at"))
     if run_date is None:
         raise ContractError("as_of or company intelligence generated_at required")
-    current_by_ticker = _active_membership(membership)
+    current_by_ticker = _active_membership(membership, as_of=run_date)
     theme_by_basket = _crosswalk_index(crosswalk, membership)
-    state_receipt, warnings = _theme_state_receipt(theme_state, as_of=run_date)
+    state_receipt, state_warnings = _theme_state_receipt(
+        theme_state, as_of=run_date, canonical_theme_ids=_canonical_theme_ids(crosswalk),
+    )
     exposures: dict[str, dict[str, Any]] = {}
     for ticker in sorted(contexts):
         context = contexts[ticker]
@@ -152,12 +223,14 @@ def build_exposures(
         if context.get("generation_id") != ci_generation:
             raise ContractError("context does not match pinned company intelligence generation")
         active = current_by_ticker.get(ticker, set())
+        coverage = _coverage(active, theme_by_basket)
         items = [
             {**theme_by_basket[basket], "basket_id": basket}
             for basket in active
             if basket in theme_by_basket
         ]
         items.sort(key=lambda value: (value["theme_id"], value["basket_id"]))
+        warnings = sorted({*state_warnings, *( ["active_membership_unmapped"] if coverage["unmapped_basket_count"] else [])})
         latest = context.get("latest_event")
         if latest is not None and not isinstance(latest, Mapping):
             raise ContractError("context latest event invalid")
@@ -175,6 +248,7 @@ def build_exposures(
                 "latest_event_call_date": latest.get("call_date") if latest else None,
             },
             "exposures": items,
+            "coverage": coverage,
             "theme_state": state_receipt,
             "warnings": warnings,
         }
@@ -197,13 +271,31 @@ def build_bundle(
     )
     run_date = _as_date(as_of) if as_of is not None else _as_date(company_manifest.get("generated_at"))
     assert run_date is not None
-    state_receipt, warnings = _theme_state_receipt(theme_state, as_of=run_date)
+    current_by_ticker = _active_membership(membership, as_of=run_date)
+    theme_by_basket = _crosswalk_index(crosswalk, membership)
+    state_receipt, state_warnings = _theme_state_receipt(
+        theme_state, as_of=run_date, canonical_theme_ids=_canonical_theme_ids(crosswalk),
+    )
+    active_sets = list(current_by_ticker.values())
+    active_membership_count = sum(len(items) for items in active_sets)
+    mapped_membership_count = sum(len(items & set(theme_by_basket)) for items in active_sets)
+    unmapped_membership_count = active_membership_count - mapped_membership_count
+    coverage = {
+        "active_membership_count": active_membership_count,
+        "mapped_membership_count": mapped_membership_count,
+        "unmapped_membership_count": unmapped_membership_count,
+        "active_member_ticker_count": len(current_by_ticker),
+        "unmapped_only_ticker_count": sum(1 for items in active_sets if items and not (items & set(theme_by_basket))),
+        "active_member_tickers_without_company_context": len(set(current_by_ticker) - set(contexts)),
+    }
+    warnings = sorted({*state_warnings, *( ["active_memberships_unmapped"] if unmapped_membership_count else [])})
     manifest = {
         "schema": MANIFEST_SCHEMA,
         "generation_id": "0" * 24,
         "generated_at": str(company_manifest["generated_at"]),
         "company_count": len(exposures),
         "exposure_count": sum(len(item["exposures"]) for item in exposures.values()),
+        "coverage": coverage,
         "source": {
             "company_intelligence": {
                 "generation_id": str(company_manifest["generation_id"]),
@@ -218,17 +310,31 @@ def build_bundle(
         "status": "empty" if not exposures else ("partial" if warnings else "ready"),
         "warnings": warnings,
     }
-    identity = {
-        "contexts": {ticker: exposures[ticker] for ticker in sorted(exposures)},
-        "manifest": {key: value for key, value in manifest.items() if key not in {"generation_id", "files"}},
-    }
-    generation_id = canonical_json_sha256(identity)[:24]
+    generation_id = derive_generation_id(exposures, manifest)
     manifest["generation_id"] = generation_id
     for exposure in exposures.values():
         exposure["generation_id"] = generation_id
         validate_exposure(exposure)
     validate_manifest(manifest, allow_unmaterialized_files=True)
     return exposures, manifest
+
+
+def derive_generation_id(exposures: Mapping[str, Mapping[str, Any]], manifest: Mapping[str, Any]) -> str:
+    """Derive the immutable address from final semantic object content.
+
+    IDs themselves and byte receipts are deliberately normalised out of the
+    preimage.  This prevents circular hashing while still binding every other
+    exposure field and every semantic manifest field to the address.
+    """
+    normalised: dict[str, dict[str, Any]] = {}
+    for ticker in sorted(exposures):
+        value = json.loads(json.dumps(exposures[ticker], ensure_ascii=False))
+        value["generation_id"] = "0" * 24
+        normalised[ticker] = value
+    manifest_value = json.loads(json.dumps(manifest, ensure_ascii=False))
+    manifest_value["generation_id"] = "0" * 24
+    manifest_value["files"] = {}
+    return canonical_json_sha256({"contexts": normalised, "manifest": manifest_value})[:24]
 
 
 def load_company_generation(root: Path) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
@@ -299,12 +405,23 @@ def _atomic_write(path: Path, body: bytes) -> None:
 def write_generation(out_dir: Path, exposures: Mapping[str, Mapping[str, Any]], manifest: Mapping[str, Any]) -> Path:
     """Write immutable sidecars then immutable manifest, then the sole marker."""
     validate_manifest(manifest, allow_unmaterialized_files=True)
-    generation_id = str(manifest["generation_id"])
+    # Validate map key ↔ payload ticker before deriving the address. This turns
+    # a swapped file into a specific failure, rather than allowing a later hash
+    # mismatch to obscure a serious address/content bug.
+    for ticker in sorted(exposures):
+        exposure = dict(exposures[ticker])
+        validate_exposure(exposure)
+        if safe_ticker(ticker) != safe_ticker(exposure["company"]["ticker"]):
+            raise ContractError("exposure filename ticker does not match payload company ticker")
+    generation_id = derive_generation_id(exposures, manifest)
+    if manifest["generation_id"] != generation_id:
+        raise ContractError("generation_id does not bind final exposure/manifest content")
     generation = out_dir / "generations" / generation_id
     file_receipts: dict[str, dict[str, Any]] = {}
     for ticker in sorted(exposures):
         exposure = dict(exposures[ticker])
-        validate_exposure(exposure)
+        if exposure["generation_id"] != generation_id:
+            raise ContractError("exposure generation_id does not bind final content")
         relative = company_filename(ticker)
         body = canonical_json_bytes(exposure)
         path = generation / relative

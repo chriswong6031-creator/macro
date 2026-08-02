@@ -26,22 +26,30 @@ _BASKET_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,95}$")
 
 _EXPOSURE_KEYS = frozenset({
     "schema", "authority", "generated_at", "generation_id", "status", "company",
-    "company_intelligence", "exposures", "theme_state", "warnings",
+    "company_intelligence", "exposures", "coverage", "theme_state", "warnings",
 })
 _COMPANY_KEYS = frozenset({"ticker"})
 _PIN_KEYS = frozenset({"generation_id", "context_sha256", "latest_event_id", "latest_event_call_date"})
-_EXPOSURE_ITEM_KEYS = frozenset({"theme_id", "name_en", "name_zh", "basket_id"})
+_EXPOSURE_ITEM_KEYS = frozenset({"theme_id", "name_en", "name_zh", "basket_id", "mapping_qualifier"})
 _THEME_STATE_KEYS = frozenset({"status", "as_of", "sha256"})
+_COVERAGE_KEYS = frozenset({"status", "active_basket_count", "mapped_basket_count", "unmapped_basket_count"})
 _MANIFEST_KEYS = frozenset({
     "schema", "generation_id", "generated_at", "company_count", "exposure_count",
-    "source", "files", "status", "warnings",
+    "coverage", "source", "files", "status", "warnings",
 })
 _SOURCE_KEYS = frozenset({"company_intelligence", "membership", "crosswalk", "theme_state", "builder"})
 _CI_SOURCE_KEYS = frozenset({"generation_id", "sha256"})
 _STATIC_SOURCE_KEYS = frozenset({"sha256"})
 _THEME_STATE_SOURCE_KEYS = frozenset({"status", "as_of", "sha256"})
 _FILE_KEYS = frozenset({"sha256", "bytes"})
-_WARNINGS = frozenset({"theme_state_missing", "theme_state_invalid", "theme_state_stale"})
+_MANIFEST_COVERAGE_KEYS = frozenset({
+    "active_membership_count", "mapped_membership_count", "unmapped_membership_count",
+    "active_member_ticker_count", "unmapped_only_ticker_count", "active_member_tickers_without_company_context",
+})
+_WARNINGS = frozenset({
+    "theme_state_missing", "theme_state_invalid", "theme_state_stale", "theme_state_future",
+    "active_membership_unmapped", "active_memberships_unmapped",
+})
 
 
 def canonical_json_bytes(payload: object) -> bytes:
@@ -113,7 +121,7 @@ def _theme_state(value: object, *, name: str) -> None:
     item = _mapping(value, name=name)
     _keys(item, _THEME_STATE_KEYS, name=name)
     status = item.get("status")
-    if status not in {"fresh", "stale", "missing"}:
+    if status not in {"fresh", "stale", "missing", "invalid"}:
         raise ContractError(f"{name}.status invalid")
     as_of = item.get("as_of")
     source_hash = item.get("sha256")
@@ -121,9 +129,36 @@ def _theme_state(value: object, *, name: str) -> None:
         if as_of is not None or source_hash is not None:
             raise ContractError(f"{name}.missing must not carry a receipt")
         return
+    if status == "invalid":
+        _sha(source_hash, name=f"{name}.sha256")
+        if as_of is not None and (not isinstance(as_of, str) or iso_timestamp(as_of) is None):
+            raise ContractError(f"{name}.as_of invalid")
+        return
     if not isinstance(as_of, str) or iso_timestamp(as_of) is None:
         raise ContractError(f"{name}.as_of invalid")
     _sha(source_hash, name=f"{name}.sha256")
+
+
+def _coverage(value: object, *, name: str) -> tuple[str, int, int, int]:
+    item = _mapping(value, name=name)
+    _keys(item, _COVERAGE_KEYS, name=name)
+    status = item.get("status")
+    counts: list[int] = []
+    for field in ("active_basket_count", "mapped_basket_count", "unmapped_basket_count"):
+        raw = item.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int) or not 0 <= raw <= 64:
+            raise ContractError(f"{name}.{field} invalid")
+        counts.append(raw)
+    active, mapped, unmapped = counts
+    expected = (
+        "no_active_membership" if active == 0 else
+        "mapped" if mapped == active else
+        "unmapped_only" if unmapped == active else
+        "mixed"
+    )
+    if active != mapped + unmapped or status != expected:
+        raise ContractError(f"{name} status/counts mismatch")
+    return str(status), active, mapped, unmapped
 
 
 def validate_exposure(payload: object) -> None:
@@ -168,20 +203,29 @@ def validate_exposure(payload: object) -> None:
             raise ContractError("exposure basket_id invalid")
         _text(exposure.get("name_en"), name="exposure.name_en")
         _text(exposure.get("name_zh"), name="exposure.name_zh")
+        if exposure.get("mapping_qualifier") not in {"direct", "proxy", "curated"}:
+            raise ContractError("exposure.mapping_qualifier invalid")
         identities.append((theme_id, basket_id))
     if identities != sorted(set(identities)):
         raise ContractError("exposure.exposures must be sorted and unique")
+    coverage_status, _active, mapped, unmapped = _coverage(item.get("coverage"), name="exposure.coverage")
+    if len(exposures) != mapped:
+        raise ContractError("exposure.exposures must match mapped coverage")
     _theme_state(item.get("theme_state"), name="exposure.theme_state")
     warnings = item.get("warnings")
     if not isinstance(warnings, list) or warnings != sorted(set(warnings)) or any(value not in _WARNINGS for value in warnings):
         raise ContractError("exposure.warnings invalid")
     state = item["theme_state"]["status"]
-    expected_sets = {
-        "fresh": [[]],
-        "stale": [["theme_state_stale"]],
-        "missing": [["theme_state_missing"], ["theme_state_invalid"]],
-    }
-    if warnings not in expected_sets[state] or (item["status"] == "ready") != (not warnings):
+    expected = []
+    if state == "stale":
+        expected.append("theme_state_stale")
+    elif state == "missing":
+        expected.append("theme_state_missing")
+    elif state == "invalid":
+        expected.append("theme_state_invalid")
+    if unmapped:
+        expected.append("active_membership_unmapped")
+    if warnings != sorted(expected) or (item["status"] == "ready") != (not warnings):
         raise ContractError("exposure freshness status/warnings mismatch")
 
 
@@ -206,6 +250,18 @@ def validate_manifest(payload: object, *, allow_unmaterialized_files: bool = Fal
     warnings = item.get("warnings")
     if not isinstance(warnings, list) or warnings != sorted(set(warnings)) or any(value not in _WARNINGS for value in warnings):
         raise ContractError("manifest.warnings invalid")
+    coverage = _mapping(item.get("coverage"), name="manifest.coverage")
+    _keys(coverage, _MANIFEST_COVERAGE_KEYS, name="manifest.coverage")
+    values: dict[str, int] = {}
+    for field in _MANIFEST_COVERAGE_KEYS:
+        raw = coverage.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+            raise ContractError(f"manifest.coverage.{field} invalid")
+        values[field] = raw
+    if values["active_membership_count"] != values["mapped_membership_count"] + values["unmapped_membership_count"]:
+        raise ContractError("manifest.coverage membership counts mismatch")
+    if values["unmapped_only_ticker_count"] > values["active_member_ticker_count"] or values["active_member_tickers_without_company_context"] > values["active_member_ticker_count"]:
+        raise ContractError("manifest.coverage ticker counts invalid")
     source = _mapping(item.get("source"), name="manifest.source")
     _keys(source, _SOURCE_KEYS, name="manifest.source")
     ci = _mapping(source.get("company_intelligence"), name="manifest.source.company_intelligence")
@@ -235,3 +291,15 @@ def validate_manifest(payload: object, *, allow_unmaterialized_files: bool = Fal
         raise ContractError("ready manifest cannot have warnings")
     if item["status"] == "partial" and not warnings:
         raise ContractError("partial manifest requires warnings")
+    state = source["theme_state"]["status"]
+    expected = []
+    if state == "stale":
+        expected.append("theme_state_stale")
+    elif state == "missing":
+        expected.append("theme_state_missing")
+    elif state == "invalid":
+        expected.append("theme_state_invalid")
+    if values["unmapped_membership_count"]:
+        expected.append("active_memberships_unmapped")
+    if warnings != sorted(expected):
+        raise ContractError("manifest coverage/freshness warnings mismatch")

@@ -7,9 +7,10 @@ import yaml
 
 from engine.company_intelligence.views import build_bundle as build_company_bundle
 from engine.company_intelligence.views import write_generation as write_company_generation
-from engine.company_theme_exposure.contracts import ContractError, canonical_json_sha256, validate_exposure, validate_manifest
+from engine.company_theme_exposure.contracts import ContractError, canonical_json_bytes, canonical_json_sha256, validate_exposure, validate_manifest
 from engine.company_theme_exposure.health import validate_generation
 from engine.company_theme_exposure.views import build_bundle, load_company_generation, write_generation
+from engine.company_theme_exposure.views import _crosswalk_index
 from scripts.build_company_theme_exposure import main as build_cli
 
 
@@ -62,7 +63,11 @@ def _crosswalk():
 
 
 def _state(*, as_of: str = "2026-02-02", stale_legs=None):
-    return {"schema": "neuralweb.theme_state.v1", "as_of": as_of, "stale_legs": stale_legs or [], "themes": []}
+    return {
+        "schema": "neuralweb.theme_state.v1", "as_of": as_of, "stale_legs": stale_legs or [],
+        "n_themes": 1, "themes": [{"theme_id": "canonical_theme"}],
+        "authority": {"is_context_only": True},
+    }
 
 
 def _bundle(tmp_path, **kwargs):
@@ -81,7 +86,7 @@ def test_active_membership_crosswalk_and_ci_event_are_exactly_receipted(tmp_path
     )
     aapl = exposures["AAPL"]
     assert aapl["exposures"] == [{
-        "theme_id": "canonical_theme", "name_en": "Canonical Theme", "name_zh": "规范主题", "basket_id": "mapped",
+        "theme_id": "canonical_theme", "name_en": "Canonical Theme", "name_zh": "规范主题", "basket_id": "mapped", "mapping_qualifier": "curated",
     }]
     # NVDA was removed: no historical membership leakage into current exposure.
     assert exposures["NVDA"]["exposures"] == []
@@ -108,9 +113,9 @@ def test_missing_stale_or_invalid_theme_state_is_honest_partial_and_contains_no_
             contexts, company_manifest=ci_manifest, membership=_membership(), crosswalk=_crosswalk(),
             theme_state=state, as_of="2026-02-02",
         )
-        assert manifest["status"] == "partial" and manifest["warnings"] == [warning]
+        assert manifest["status"] == "partial" and warning in manifest["warnings"]
         assert exposures["AAPL"]["status"] == "partial"
-        assert exposures["AAPL"]["warnings"] == [warning]
+        assert warning in exposures["AAPL"]["warnings"]
         assert not {"score", "signal", "ranking", "recommendation", "stage"} & set(exposures["AAPL"])
 
 
@@ -123,6 +128,23 @@ def test_crosswalk_requires_all_baskets_to_be_explicitly_mapped_or_unmapped(tmp_
             contexts, company_manifest=ci_manifest, membership=_membership(), crosswalk=broken,
             theme_state=_state(), as_of="2026-02-02",
         )
+
+
+def test_lossy_crosswalk_membership_carries_a_bounded_proxy_qualifier() -> None:
+    membership = {
+        "baskets": {"managed_care": {"members": []}, "reshoring": {"members": []}},
+    }
+    crosswalk = {
+        "version": 1,
+        "themes": [
+            {"id": "medical_devices", "foresight_id": "medical_devices", "name_en": "Medical Devices", "name_zh": "医疗器械", "basket_ids": ["managed_care"], "note": "No dedicated basket; managed_care is the closest healthcare basket."},
+            {"id": "copper", "foresight_id": "copper", "name_en": "Copper", "name_zh": "铜", "basket_ids": ["reshoring"], "note": "reshoring basket is the closest match."},
+        ],
+        "unmapped_baskets": [],
+    }
+    index = _crosswalk_index(crosswalk, membership)
+    assert index["managed_care"]["mapping_qualifier"] == "proxy"
+    assert index["reshoring"]["mapping_qualifier"] == "proxy"
 
 
 @pytest.mark.parametrize(
@@ -163,9 +185,92 @@ def test_immutable_write_and_health_verify_marker_tree(tmp_path) -> None:
     marker = json.loads((tmp_path / "out" / "manifest.json").read_text())
     validate_manifest(marker)
     assert generation.name == marker["generation_id"]
-    assert validate_generation(tmp_path / "out")["status"] == "ready"
+    assert validate_generation(tmp_path / "out")["status"] == "partial"
     (generation / "companies" / "AAPL.json").write_text("{}")
     assert validate_generation(tmp_path / "out")["status"] == "degraded"
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        _state(as_of="2026-02-03"),
+        {"schema": "neuralweb.theme_state.v1", "as_of": "2026-02-02", "n_themes": 0, "themes": [], "authority": {"is_context_only": True}},
+    ],
+)
+def test_future_or_structurally_empty_theme_state_is_never_fresh(tmp_path, state) -> None:
+    contexts, ci_manifest = _company_tree(tmp_path / "company")
+    exposures, manifest = build_bundle(
+        contexts, company_manifest=ci_manifest, membership=_membership(), crosswalk=_crosswalk(), theme_state=state, as_of="2026-02-02",
+    )
+    assert manifest["status"] == "partial"
+    assert exposures["AAPL"]["theme_state"]["status"] == "invalid"
+
+
+def test_unmapped_and_no_membership_coverage_are_explicitly_distinct(tmp_path) -> None:
+    contexts, ci_manifest = _company_tree(tmp_path / "company")
+    membership = _membership()
+    membership["baskets"]["unmapped"]["members"].append({"ticker": "NVDA", "added": "2025-01-01", "removed": None})
+    exposures, manifest = build_bundle(
+        contexts, company_manifest=ci_manifest, membership=membership, crosswalk=_crosswalk(), theme_state=_state(), as_of="2026-02-02",
+    )
+    assert exposures["AAPL"]["coverage"] == {
+        "status": "mixed", "active_basket_count": 2, "mapped_basket_count": 1, "unmapped_basket_count": 1,
+    }
+    assert exposures["AAPL"]["warnings"] == ["active_membership_unmapped"]
+    assert exposures["NVDA"]["coverage"]["status"] == "unmapped_only"
+    assert manifest["coverage"]["unmapped_membership_count"] == 2
+    assert manifest["warnings"] == ["active_memberships_unmapped"]
+
+
+@pytest.mark.parametrize(
+    "member",
+    [
+        {"ticker": "../AAPL", "added": "2025-01-01", "removed": "2026-01-01"},
+        {"ticker": "AAPL", "added": "2025-01-01", "removed": "not-a-date"},
+        {"ticker": "AAPL", "added": "not-a-date", "removed": None},
+    ],
+)
+def test_malformed_member_rows_fail_closed_even_when_removed(tmp_path, member) -> None:
+    contexts, ci_manifest = _company_tree(tmp_path / "company")
+    membership = _membership()
+    membership["baskets"]["mapped"]["members"] = [member]
+    with pytest.raises(ContractError, match="member"):
+        build_bundle(
+            contexts, company_manifest=ci_manifest, membership=membership, crosswalk=_crosswalk(), theme_state=_state(), as_of="2026-02-02",
+        )
+
+
+def test_writer_rejects_mutated_object_stale_generation_and_swapped_ticker(tmp_path) -> None:
+    exposures, manifest = _bundle(tmp_path)
+    exposures["AAPL"]["exposures"][0]["mapping_qualifier"] = "direct"
+    with pytest.raises(ContractError, match="generation_id does not bind"):
+        write_generation(tmp_path / "mutated", exposures, manifest)
+    exposures, manifest = _bundle(tmp_path / "fresh")
+    swapped = dict(exposures)
+    swapped["AAPL"] = exposures["NVDA"]
+    with pytest.raises(ContractError, match="filename ticker"):
+        write_generation(tmp_path / "swapped", swapped, manifest)
+
+
+def test_health_rejects_same_generation_with_changed_object_or_swapped_path(tmp_path) -> None:
+    exposures, manifest = _bundle(tmp_path)
+    generation = write_generation(tmp_path / "out", exposures, manifest)
+    marker = json.loads((tmp_path / "out" / "manifest.json").read_text())
+    aapl = generation / "companies" / "AAPL.json"
+    nvda = generation / "companies" / "NVDA.json"
+    aapl_body, nvda_body = aapl.read_bytes(), nvda.read_bytes()
+    aapl.write_bytes(nvda_body)
+    nvda.write_bytes(aapl_body)
+    # Forge both receipts to isolate the filename/payload guard from the byte guard.
+    from hashlib import sha256
+    marker["files"]["companies/AAPL.json"] = {"sha256": sha256(nvda_body).hexdigest(), "bytes": len(nvda_body)}
+    marker["files"]["companies/NVDA.json"] = {"sha256": sha256(aapl_body).hexdigest(), "bytes": len(aapl_body)}
+    forged_marker = canonical_json_bytes(marker)
+    (tmp_path / "out" / "manifest.json").write_bytes(forged_marker)
+    (generation / "manifest.json").write_bytes(forged_marker)
+    health = validate_generation(tmp_path / "out")
+    assert health["status"] == "degraded"
+    assert any("filename ticker" in warning for warning in health["warnings"])
 
 
 def test_cli_builds_from_verified_ci_tree_and_missing_state_becomes_partial(tmp_path) -> None:
@@ -185,4 +290,4 @@ def test_cli_builds_from_verified_ci_tree_and_missing_state_becomes_partial(tmp_
     ]) == 0
     marker = json.loads((output / "manifest.json").read_text())
     assert marker["status"] == "partial"
-    assert marker["warnings"] == ["theme_state_missing"]
+    assert marker["warnings"] == ["active_memberships_unmapped", "theme_state_missing"]

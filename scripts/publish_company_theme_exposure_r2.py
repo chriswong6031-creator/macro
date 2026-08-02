@@ -144,12 +144,11 @@ def publish(out_dir: Path, *, dry_run: bool = False, s3: Any | None = None, buck
         return 1
     marker = _read_manifest(out_dir)
     health = validate_generation(out_dir, marker)
-    if marker is None or health["status"] != "ready":
+    if marker is None or health["status"] not in {"ready", "partial"}:
         log.error("refusing invalid company theme exposure generation: %s", ", ".join(health["warnings"]))
         return 1
     remote, remote_etag = _remote_manifest(client, target)
-    if remote is not None and canonical_json_bytes(remote) == canonical_json_bytes(marker):
-        return 0
+    same_root = remote is not None and canonical_json_bytes(remote) == canonical_json_bytes(marker)
     generation_id = str(marker["generation_id"])
     errors = 0
     def upload(item: tuple[str, Mapping[str, Any]]) -> Exception | None:
@@ -178,6 +177,11 @@ def publish(out_dir: Path, *, dry_run: bool = False, s3: Any | None = None, buck
         log.error("payload publish incomplete; root marker not promoted")
         return 1
     if dry_run:
+        return 0
+    # A matching root marker is not proof that a prior interrupted publication
+    # completed its immutable tree. The verified immutable upload loop above
+    # heals any absent object before this safe no-op return.
+    if same_root:
         return 0
     args: dict[str, Any] = {
         "Bucket": target, "Key": f"{PREFIX}/manifest.json", "Body": (out_dir / "manifest.json").read_bytes(),

@@ -46,3 +46,21 @@ def test_immutable_objects_and_generation_manifest_precede_root_marker(tmp_path)
     assert all(f"{PREFIX}/generations/" in key for key in keys[:-1])
     assert keys[-2].endswith("/manifest.json")
     assert client.puts[-1][1]["Metadata"]["generation-id"] == manifest["generation_id"]
+
+
+def test_equal_root_marker_heals_missing_immutable_tree_before_safe_noop(tmp_path) -> None:
+    contexts, ci_manifest = _company_tree(tmp_path / "company")
+    exposures, manifest = build_bundle(
+        contexts, company_manifest=ci_manifest, membership=_membership(), crosswalk=_crosswalk(), theme_state=_state(), as_of="2026-02-02",
+    )
+    write_generation(tmp_path / "out", exposures, manifest)
+    client = FakeR2()
+    assert publish(tmp_path / "out", s3=client, bucket="bucket") == 0
+    root = f"{PREFIX}/manifest.json"
+    client.objects = {key: value for key, value in client.objects.items() if key == root}
+    client.puts.clear()
+    assert publish(tmp_path / "out", s3=client, bucket="bucket") == 0
+    healed = [key for key, _ in client.puts]
+    assert root not in healed
+    assert any(key.endswith("companies/AAPL.json") for key in healed)
+    assert any(key.endswith("/manifest.json") for key in healed)
