@@ -990,7 +990,7 @@ def publish_public_wire(
 
 def build(
     *, out_dir: Path | None = None, source_base: str = DEFAULT_SOURCE_BASE,
-    offline: bool = False, workers: int = 12, timeout: float = 30.0,
+    offline: bool = False, force: bool = False, workers: int = 12, timeout: float = 30.0,
     fetch: Callable[[str], bytes] | None = None,
     company_reader: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
     now: datetime | None = None,
@@ -1042,7 +1042,7 @@ def build(
         ):
             raise PublicWireBuildError("mutable story packet marker does not equal immutable generation manifest")
         _validate_remote_manifest(immutable)
-        if state is not None and (
+        if not force and state is not None and (
             state["source_generation_id"] == generation_id
             and state["source_manifest_sha256"] == marker_sha
             and state["renderer_version"] == _renderer_version()
@@ -1077,6 +1077,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", type=Path, default=None)
     parser.add_argument("--source-base", default=DEFAULT_SOURCE_BASE)
     parser.add_argument("--offline", action="store_true", help="Validate and retain a recent existing publication without fetching.")
+    parser.add_argument(
+        "--force", action="store_true",
+        help="Rehydrate and render even when the verified source generations are unchanged.",
+    )
     parser.add_argument("--workers", type=int, default=12)
     parser.add_argument("--timeout", type=float, default=30.0)
     args = parser.parse_args(argv)
@@ -1084,7 +1088,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = build(
             out_dir=args.out_dir,
-            source_base=args.source_base, offline=args.offline,
+            source_base=args.source_base, offline=args.offline, force=args.force,
             workers=args.workers, timeout=args.timeout,
         )
     except PublicWireBuildError as exc:

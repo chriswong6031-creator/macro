@@ -254,6 +254,14 @@ def test_wire_builder_verifies_immutable_generation_aligns_and_persists_only_red
     assert unchanged.source == "unchanged"
     assert packet_url not in calls, "same verified generation must not hydrate packets again"
 
+    calls.clear()
+    forced = build(
+        out_dir=out_dir, fetch=fetch, workers=1, company_reader=_current_company,
+        force=True, now=datetime(2026, 2, 1, 1, 15, tzinfo=timezone.utc),
+    )
+    assert forced.source == "remote"
+    assert packet_url in calls, "--force must deliberately bypass the generation fast path"
+
     stale_renderer = json.loads((out_dir / ROUTE_CATALOG_FILENAME).read_text(encoding="utf-8"))
     stale_renderer["renderer_version"] = "0" * 64
     (out_dir / ROUTE_CATALOG_FILENAME).write_text(
