@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T10:23:54.671780+00:00",
-  "count": 587,
+  "generated_at": "2026-08-02T10:32:29.043746+00:00",
+  "count": 588,
   "institutions": [
     "Amova",
     "Apollo",
@@ -227,6 +227,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o51fcsxnh5q-bf7b0d",
+      "title": "Mohawk Industries Inc. (MHK) 2Q26 Recap New Product Development and Operating Acumen Help Offset Rising Inflationary Headwi...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:22Z",
+      "summary_points": [
+        "Document not provided"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
