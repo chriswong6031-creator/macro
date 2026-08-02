@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T12:54:13.356450+00:00",
-  "count": 594,
+  "generated_at": "2026-08-02T13:02:48.621338+00:00",
+  "count": 595,
   "institutions": [
     "Amova",
     "Apollo",
@@ -81,6 +81,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bc4uw3rh5el-4741c7",
+      "title": "fxfistrategy docs",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T10:54:52Z",
+      "summary_points": [
+        "**OPEC+ Supply Restoration & Oil Market Stability**: OPEC+ to approve 0.2mb/d quota increase (Sept 2), completing supply restoration post-Iran conflict; markets stabilize as regional tensions ease and supply clarity improves.",
+        "**US Labor Market Resilience**: US unemployment at 4.2% (lowest since 2021) amid 57k NFP growth (June), signaling sustained job creation with low inflation risk from productivity gains.",
+        "**US CPI Outlook**: Headline/core CPI forecasted to rise 0.2% mom (July), driven by gasoline prices; housing inflation shows shallow downtrend, cooling inflation trajectory.",
+        "**Fed Policy Uncertainty**: 10Y Bund near 4% amid hawkish FOMC rhetoric, creating yield curve tension for fixed income/equity valuations and testing market resolve on steady rates.",
+        "**Commodities & Geopolitics**: Copper/aluminium scarcity escalating energy transition costs, compounded by Hormuz bypass economics, highlighting acute supply chain risks and strategic resource allocation pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
