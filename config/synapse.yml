@@ -15955,6 +15955,8 @@ artifacts:
     external_consumers: []
     notes: >
       Operational point-in-time discovery ledger for in-policy SEC form-index rows.
+      Registration/issuance forms enter directly; broad current-report, periodic, and
+      proxy forms enter only for a CIK already anchored by an in-policy registration.
       It records what entered the retrieval backlog and when; it is not evidence that
       the filing bytes were fetched, parsed, or classified.
 
@@ -16002,7 +16004,31 @@ artifacts:
     notes: >
       Append-only operational ledger of SEC fetch and source-store attempts. Success
       here is still not canonical evidence: only a verified source-manifest row proves
-      content-addressed storage and readback.
+      content-addressed storage and readback. Every attempt records its deterministic
+      retrieval lane and collection scope for later audit.
+
+  capital-structure-retrieval-queue-receipt:
+    path: data/capital_structure/retrieval_queue_receipt.json
+    format: json
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: capital_structure.retrieval_queue_receipt.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Strict operational receipt for the bounded SEC retrieval selector. It exposes
+      per-lane selected/deferred counts, the oldest observable backlog age, and the
+      date-rotated quota slots. It is fairness/provenance telemetry, not issuer truth,
+      a risk score, or a trading authority.
 
   capital-structure-source-manifest:
     path: data/capital_structure/source_manifest.parquet
@@ -16028,7 +16054,9 @@ artifacts:
       object-store write plus hash readback. Failed fetch/storage attempts never enter
       this artifact. Public SEC source bytes live under the unlinked object-store prefix
       capital_structure/sec/sha256; storage.store_id preserves the non-secret physical
-      namespace, while the compact provenance ledger is git-retained.
+      namespace, while the compact provenance ledger is git-retained. Filing metadata
+      records legacy/modern/EFFECT XML file-number provenance and each new bundle
+      retains EX-1 underwriting and EX-FILING FEES children when present.
 
   capital-structure-document-term-observations:
     path: data/capital_structure/document_term_observations.parquet

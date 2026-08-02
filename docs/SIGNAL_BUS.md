@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 1 |
 | btc-vector | 6 |
-| capital-structure-intelligence | 11 |
+| capital-structure-intelligence | 12 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 356 |
-| infrastructure | 122 |
+| infrastructure | 123 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 534 |
+| git | 535 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -171,6 +171,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-index-coverage | `data/capital_structure/index_coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-projection | `data/capital_structure/projection.json` | json | collect | display | 1 | 0 |
 | capital-structure-retrieval-attempts | `data/capital_structure/retrieval_attempts.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-retrieval-queue-receipt | `data/capital_structure/retrieval_queue_receipt.json` | json | collect | infrastructure | 1 | 0 |
 | capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 1 | 0 |
 | capital-structure-document-term-observations | `data/capital_structure/document_term_observations.parquet` | parquet | collect | infrastructure | 0 | 0 |

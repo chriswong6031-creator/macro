@@ -37,6 +37,7 @@ def _manifest(
     parser_eligibility: str = "eligible",
     corruption_state: str = "clean",
     content_marker: str = "v1",
+    include_file_number_provenance: bool = True,
 ) -> dict:
     raw = f"{accession}|{form}|{document_role}|{content_marker}".encode()
     digest = sha256(raw).hexdigest()
@@ -89,6 +90,19 @@ def _manifest(
             "locator": f"bytes:0-{len(raw)}", "text_sha256": digest,
         }],
     }
+    if include_file_number_provenance:
+        record["filing"]["file_number_provenance"] = (
+            {
+                "state": "observed", "value": file_number,
+                "candidate_values": [file_number],
+                "sources": ["legacy_sgml_file_number"],
+            }
+            if file_number
+            else {
+                "state": "unavailable", "value": None,
+                "candidate_values": [], "sources": [],
+            }
+        )
     record["manifest_id"] = manifest_id_for(record)
     return record
 
@@ -170,10 +184,97 @@ def test_compiler_skips_intervening_prospectus_when_linking_registration_amendme
     assert by_form["S-3/A"]["classification"] == {
         "state": "classified", "defer_reason": None,
     }
+    assert by_form["S-3/A"]["filing"]["file_number_provenance"] == {
+        "state": "observed", "value": "333-123",
+        "candidate_values": ["333-123"],
+        "sources": ["legacy_sgml_file_number"],
+    }
     queued_forms = {row["form"] for row in result["review_queue"]}
     assert "S-3/A" not in queued_forms
     assert queued_forms == {"424B5"}
     assert result["telemetry"]["authority"]["prophet_authority"] is False
+
+
+def test_legacy_file_number_without_provenance_cannot_create_exact_linkage():
+    records = [
+        *_bundle(
+            "0000000001-26-000001", "S-3",
+            accepted_at="2026-08-01T10:00:00Z",
+            first_seen_at="2026-08-01T10:00:03Z",
+            include_file_number_provenance=False,
+        ),
+        *_bundle(
+            "0000000001-26-000002", "S-3/A",
+            accepted_at="2026-08-02T10:00:00Z",
+            first_seen_at="2026-08-02T10:00:03Z",
+            include_file_number_provenance=False,
+        ),
+    ]
+
+    result = compile_manifest_records(records, manifest_schema=_schema())
+
+    assert result["telemetry"]["counts"]["compile_failures"] == 0
+    assert all(event["filing"]["file_number"] is None for event in result["events"])
+    assert all(
+        "file_number_provenance" not in event["filing"]
+        for event in result["events"]
+    )
+    assert not [
+        edge for edge in result["edges"] if edge["relationship"] == "amendment_of"
+    ]
+    assert any(
+        item["accession"] == "0000000001-26-000002"
+        and item["classification_state"] == "deferred_linkage"
+        and item["defer_reason"] == "missing_exact_linkage_keys"
+        for item in result["review_queue"]
+    )
+
+
+def test_provenance_backfill_emits_a_new_hardened_event_version():
+    accession = "0000000001-26-000001"
+    legacy_bundle = _bundle(
+        accession, "S-3",
+        accepted_at="2026-08-01T10:00:00Z",
+        first_seen_at="2026-08-01T10:00:03Z",
+        include_file_number_provenance=False,
+    )
+    first = compile_manifest_records(
+        legacy_bundle,
+        manifest_schema=_schema(),
+        generated_at="2026-08-01T12:00:00Z",
+    )
+    hardened_bundle = _bundle(
+        accession, "S-3",
+        accepted_at="2026-08-01T10:00:00Z",
+        first_seen_at="2026-08-02T10:00:03Z",
+        content_marker="provenance-backfill",
+    )
+    _set_bundle_version(hardened_bundle, 2)
+
+    corrected = compile_manifest_records(
+        [*legacy_bundle, *hardened_bundle],
+        existing_events=first["events"],
+        manifest_schema=_schema(),
+        generated_at="2026-08-02T12:00:00Z",
+    )
+
+    assert len(corrected["events"]) == 2
+    legacy_event, hardened_event = corrected["events"]
+    assert "file_number_provenance" not in legacy_event["filing"]
+    assert legacy_event["filing"]["file_number"] is None
+    assert hardened_event["filing"]["file_number"] == "333-123"
+    assert hardened_event["filing"]["file_number_provenance"] == {
+        "state": "observed", "value": "333-123",
+        "candidate_values": ["333-123"],
+        "sources": ["legacy_sgml_file_number"],
+    }
+    assert hardened_event["version"]["correction_of"] == legacy_event["event_id"]
+    assert any(
+        edge["relationship"] == "supersedes"
+        and edge["from_event_id"] == hardened_event["event_id"]
+        and edge["to_event_id"] == legacy_event["event_id"]
+        for edge in corrected["edges"]
+    )
 
 
 def test_compiler_uses_system_first_seen_clock_for_backfilled_filing():

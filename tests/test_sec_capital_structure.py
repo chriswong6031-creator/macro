@@ -16,10 +16,12 @@ from collectors.sec_capital_structure import (
     SubmissionBundle,
     SubmissionDocument,
     due_index_dates,
+    file_number_provenance_errors,
     inspect_source_document,
     parse_form_index,
     parse_submission,
     retrieval_priority,
+    retrieval_lane_quotas,
     select_retrieval_queue,
     select_relevant_documents,
 )
@@ -87,6 +89,74 @@ Form Type   Company Name                                                  CIK
 S-3               ACME CORP                                                     1234567     20260801    edgar/data/1234567/0001234567-26-000001.txt
 """
 
+ISSUER_SCOPED_RECONCILIATION_INDEX = """\
+Form Type                            Company Name                              CIK         Date Filed  Filename
+-------------------------------------------------------------------------------------------------------------------------------------------
+S-3                                  ANCHORED CO                               1234567     20260801    edgar/data/1234567/0001234567-26-000001.txt
+8-K                                  ANCHORED CO                               1234567     20260801    edgar/data/1234567/0001234567-26-000002.txt
+10-Q                                 ANCHORED CO                               1234567     20260801    edgar/data/1234567/0001234567-26-000003.txt
+8-K                                  UNANCHORED CO                             7654321     20260801    edgar/data/7654321/0007654321-26-000004.txt
+"""
+
+RECONCILIATION_ONLY_INDEX = """\
+Form Type                            Company Name                              CIK         Date Filed  Filename
+-------------------------------------------------------------------------------------------------------------------------------------------
+8-K                                  ANCHORED CO                               1234567     20260802    edgar/data/1234567/0001234567-26-000010.txt
+"""
+
+REGISTRATION_ONLY_INDEX = """\
+Form Type                            Company Name                              CIK         Date Filed  Filename
+-------------------------------------------------------------------------------------------------------------------------------------------
+S-3                                  ANCHORED CO                               1234567     20260801    edgar/data/1234567/0001234567-26-000011.txt
+"""
+
+MODERN_HEADER_SUBMISSION = b"""\
+<SEC-DOCUMENT>0001234567-26-000002.txt
+<SEC-HEADER>
+SEC FILE NUMBER: 333 - 765432
+</SEC-HEADER>
+<DOCUMENT>
+<TYPE>S-3
+<SEQUENCE>1
+<FILENAME>modern.htm
+<TEXT><html><body>Modern registration.</body></html></TEXT>
+</DOCUMENT>
+"""
+
+EFFECT_XML_SUBMISSION = b"""\
+<SEC-DOCUMENT>0001234567-26-000003.txt
+<DOCUMENT>
+<TYPE>EFFECT
+<SEQUENCE>1
+<FILENAME>effect.xml
+<TEXT><?xml version="1.0"?><submission><fileNumber>333-765432</fileNumber></submission></TEXT>
+</DOCUMENT>
+"""
+
+CONFLICTING_FILE_NUMBER_SUBMISSION = b"""\
+<SEC-DOCUMENT>0001234567-26-000004.txt
+<FILE-NUMBER>333-111111
+SEC FILE NUMBER: 333-222222
+<DOCUMENT>
+<TYPE>S-3
+<SEQUENCE>1
+<FILENAME>conflict.htm
+<TEXT><html><body>Conflicting header.</body></html></TEXT>
+</DOCUMENT>
+"""
+
+MULTI_VALUE_FILE_NUMBER_SUBMISSION = b"""\
+<SEC-DOCUMENT>0001234567-26-000005.txt
+<FILE-NUMBER>333-111111 and 333-222222
+SEC FILE NUMBER: 333-111111
+<DOCUMENT>
+<TYPE>S-3
+<SEQUENCE>1
+<FILENAME>multi-value.htm
+<TEXT><html><body>Malformed multi-value header.</body></html></TEXT>
+</DOCUMENT>
+"""
+
 
 def test_form_index_policy_is_explicit_and_does_not_claim_broad_reconciliation():
     rows = parse_form_index(INDEX)
@@ -132,6 +202,89 @@ def test_submission_parser_retains_acceptance_file_number_and_relevant_documents
     selected = select_relevant_documents("S-3", bundle.documents)
     assert [(role, doc.filename) for role, doc in selected] == [
         ("primary", "forms3.htm"), ("exhibit", "purchase.htm")
+    ]
+
+
+def test_submission_parser_accepts_modern_header_and_effect_xml_file_numbers():
+    modern = parse_submission(MODERN_HEADER_SUBMISSION)
+    effect = parse_submission(EFFECT_XML_SUBMISSION)
+
+    assert modern.file_number == "333-765432"
+    assert modern.file_number_provenance == {
+        "state": "observed",
+        "value": "333-765432",
+        "candidate_values": ["333-765432"],
+        "sources": ["sec_header_file_number"],
+    }
+    assert effect.file_number == "333-765432"
+    assert effect.file_number_provenance == {
+        "state": "observed",
+        "value": "333-765432",
+        "candidate_values": ["333-765432"],
+        "sources": ["effect_xml_file_number"],
+    }
+
+
+def test_conflicting_authoritative_file_numbers_are_null_and_provenanced():
+    bundle = parse_submission(CONFLICTING_FILE_NUMBER_SUBMISSION)
+
+    assert bundle.file_number is None
+    assert bundle.file_number_provenance == {
+        "state": "ambiguous",
+        "value": None,
+        "candidate_values": ["333-111111", "333-222222"],
+        "sources": ["legacy_sgml_file_number", "sec_header_file_number"],
+    }
+    assert not file_number_provenance_errors({
+        "file_number": None,
+        "file_number_provenance": bundle.file_number_provenance,
+    })
+    assert file_number_provenance_errors({
+        "file_number": "333-111111",
+        "file_number_provenance": bundle.file_number_provenance,
+    }) == ["non-observed file-number provenance requires null filing.file_number"]
+
+
+def test_multiple_file_numbers_inside_one_header_field_cannot_disappear():
+    bundle = parse_submission(MULTI_VALUE_FILE_NUMBER_SUBMISSION)
+
+    assert bundle.file_number is None
+    assert bundle.file_number_provenance == {
+        "state": "ambiguous",
+        "value": None,
+        "candidate_values": ["333-111111", "333-222222"],
+        "sources": ["legacy_sgml_file_number", "sec_header_file_number"],
+    }
+
+
+def test_relevant_document_selection_retains_underwriting_and_fee_exhibits():
+    documents = (
+        SubmissionDocument("1", "8-K", "current.htm", None, b"current"),
+        SubmissionDocument("2", "EX-1.1", "underwriting.htm", None, b"underwriting"),
+        SubmissionDocument("3", "EX-FILING FEES", "fees.htm", None, b"fees"),
+        SubmissionDocument("4", "EX-2.1", "unrelated.htm", None, b"unrelated"),
+    )
+
+    selected = select_relevant_documents("8-K", documents)
+
+    assert [(role, doc.filename) for role, doc in selected] == [
+        ("primary", "current.htm"),
+        ("underwriting_exhibit", "underwriting.htm"),
+        ("filing_fee_exhibit", "fees.htm"),
+    ]
+
+
+def test_form_index_admits_reconciliation_only_for_anchored_issuer_scope():
+    rows = parse_form_index(
+        ISSUER_SCOPED_RECONCILIATION_INDEX,
+        reconciliation_ciks=set(),
+        include_same_index_issuers=True,
+    )
+
+    assert [(row["form"], row["cik"], row["collection_scope"]) for row in rows] == [
+        ("S-3", "0001234567", "registration_issuance"),
+        ("8-K", "0001234567", "issuer_reconciliation"),
+        ("10-Q", "0001234567", "issuer_reconciliation"),
     ]
 
 
@@ -209,18 +362,81 @@ def test_source_inspector_defers_suspect_complete_submission_and_extension_confl
 def test_only_clean_eligible_complete_submission_closes_retrieval_queue():
     manifests = pd.DataFrame([
         {
-            "filing": {"accession": "clean"},
+            "filing": {
+                "accession": "clean",
+                "file_number": "333-123456",
+                "file_number_provenance": {
+                    "state": "observed", "value": "333-123456",
+                    "candidate_values": ["333-123456"],
+                    "sources": ["legacy_sgml_file_number"],
+                },
+            },
             "document": {"document_role": "complete_submission"},
             "parser": {"eligibility": "eligible", "corruption_state": "clean"},
         },
         {
-            "filing": {"accession": "suspect"},
+            "filing": {
+                "accession": "suspect",
+                "file_number": None,
+                "file_number_provenance": {
+                    "state": "unavailable", "value": None,
+                    "candidate_values": [], "sources": [],
+                },
+            },
             "document": {"document_role": "complete_submission"},
             "parser": {"eligibility": "deferred", "corruption_state": "suspect"},
+        },
+        {
+            "filing": {"accession": "legacy", "file_number": "333-123456"},
+            "document": {"document_role": "complete_submission"},
+            "parser": {"eligibility": "eligible", "corruption_state": "clean"},
         },
     ])
 
     assert sec._eligible_complete_accessions(manifests) == {"clean"}
+
+
+def test_legacy_complete_manifest_gets_one_bounded_provenance_backfill():
+    discovery = pd.DataFrame([{
+        "accession": "legacy", "cik": "0001234567", "form": "S-3",
+        "filing_date": "2026-08-01", "collection_scope": None,
+        "_first_seen": "2026-08-01T11:00:00Z",
+    }])
+    legacy = pd.DataFrame([{
+        "filing": {"accession": "legacy", "file_number": "333-123456"},
+        "document": {"document_role": "complete_submission"},
+        "parser": {"eligibility": "eligible", "corruption_state": "clean"},
+    }])
+    hardened = pd.concat([legacy, pd.DataFrame([{
+        "filing": {
+            "accession": "legacy", "file_number": None,
+            "file_number_provenance": {
+                "state": "unavailable", "value": None,
+                "candidate_values": [], "sources": [],
+            },
+        },
+        "document": {"document_role": "complete_submission"},
+        "parser": {"eligibility": "eligible", "corruption_state": "clean"},
+    }])], ignore_index=True)
+    now = datetime(2026, 8, 2, 13, 0, tzinfo=timezone.utc)
+
+    first = select_retrieval_queue(
+        discovery,
+        have_complete=sec._eligible_complete_accessions(legacy),
+        max_filings=1,
+        now=now,
+    )
+    second = select_retrieval_queue(
+        discovery,
+        have_complete=sec._eligible_complete_accessions(hardened),
+        max_filings=1,
+        now=now,
+    )
+
+    assert first["accession"].tolist() == ["legacy"]
+    assert first.attrs["retrieval_queue_receipt"]["selected_count"] == 1
+    assert second.empty
+    assert second.attrs["retrieval_queue_receipt"]["selected_count"] == 0
 
 
 def test_zero_target_index_day_is_complete_and_not_due_again():
@@ -346,6 +562,183 @@ def test_retrieval_queue_hard_priority_and_aging_prevent_starvation():
     assert not queue["form"].eq("424B2").any()
 
 
+def test_saturated_prospectus_lane_cannot_starve_effect_or_scoped_reconciliation():
+    now = datetime(2026, 8, 14, 13, 0, tzinfo=timezone.utc)
+    rows = [
+        {
+            "accession": f"prospectus-{index:03d}",
+            "cik": "0001234567",
+            "form": "424B5",
+            "collection_scope": "registration_issuance",
+            "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        }
+        for index in range(100)
+    ]
+    rows.extend([
+        {
+            "accession": "registration-anchor", "cik": "0001234567", "form": "S-3",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-14",
+            "_first_seen": "2026-08-14T11:00:00Z",
+        },
+        {
+            "accession": "effect-notice", "cik": "0001234567", "form": "EFFECT",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-14",
+            "_first_seen": "2026-08-14T11:00:00Z",
+        },
+        {
+            "accession": "current-report-fee-exhibit", "cik": "0001234567", "form": "8-K",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-14",
+            "_first_seen": "2026-08-14T11:00:00Z",
+        },
+        {
+            "accession": "periodic-reconciliation", "cik": "0001234567", "form": "10-Q",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-14",
+            "_first_seen": "2026-08-14T11:00:00Z",
+        },
+    ])
+
+    queue = select_retrieval_queue(
+        pd.DataFrame(rows),
+        have_complete=set(),
+        max_filings=sum(sec.RETRIEVAL_LANE_WEIGHTS.values()),
+        now=now,
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+    schema = json.loads((
+        Path(__file__).resolve().parents[1]
+        / "contracts/capital_structure_retrieval_queue_receipt.schema.json"
+    ).read_text())
+
+    assert {"effect-notice", "current-report-fee-exhibit", "periodic-reconciliation"} <= set(
+        queue["accession"]
+    )
+    assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(receipt))
+    by_lane = {row["lane"]: row for row in receipt["lanes"]}
+    assert by_lane["prospectus"]["deferred_count"] > 0
+    assert by_lane["state"]["selected_count"] == 1
+    assert by_lane["issuer_current_report"]["selected_count"] == 1
+    assert by_lane["issuer_periodic"]["selected_count"] == 1
+    assert by_lane["prospectus"]["oldest_pending_age_days"] == 13
+    assert sum(receipt["lane_quota_slots"].values()) == receipt["max_filings"]
+
+    fee_documents = (
+        SubmissionDocument("1", "8-K", "current.htm", None, b"current"),
+        SubmissionDocument("2", "EX-FILING FEES", "fees.htm", None, b"fees"),
+    )
+    assert ("filing_fee_exhibit", fee_documents[1]) in select_relevant_documents(
+        "8-K", fee_documents
+    )
+
+
+def test_rotating_quota_ties_eventually_offer_every_populated_lane_a_turn():
+    rows = [
+        {
+            "accession": "registration", "cik": "0001234567", "form": "S-3",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "state", "cik": "0001234567", "form": "EFFECT",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "prospectus", "cik": "0001234567", "form": "424B5",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "reg-a", "cik": "0001234567", "form": "1-A",
+            "collection_scope": "registration_issuance", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "current", "cik": "0001234567", "form": "8-K",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "periodic", "cik": "0001234567", "form": "10-Q",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+        {
+            "accession": "proxy", "cik": "0001234567", "form": "DEF 14A",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        },
+    ]
+    discovery = pd.DataFrame(rows)
+    offered: set[str] = set()
+    for day in range(sum(sec.RETRIEVAL_LANE_WEIGHTS.values())):
+        now = datetime(2026, 8, 1 + day, 13, 0, tzinfo=timezone.utc)
+        queue = select_retrieval_queue(
+            discovery, have_complete=set(), max_filings=1, now=now
+        )
+        offered.add(queue.iloc[0]["accession"])
+        assert retrieval_lane_quotas(max_filings=1, now=now) == (
+            queue.attrs["retrieval_queue_receipt"]["lane_quota_slots"]
+        )
+
+    assert offered == {row["accession"] for row in rows}
+
+
+def test_full_weighted_cycle_records_exact_per_lane_selection_counts():
+    now = datetime(2026, 8, 14, 13, 0, tzinfo=timezone.utc)
+    lane_forms = {
+        "registration": ("S-3", "registration_issuance"),
+        "state": ("EFFECT", "registration_issuance"),
+        "prospectus": ("424B5", "registration_issuance"),
+        "reg_a": ("1-A", "registration_issuance"),
+        "issuer_current_report": ("8-K", "issuer_reconciliation"),
+        "issuer_periodic": ("10-Q", "issuer_reconciliation"),
+        "issuer_proxy": ("DEF 14A", "issuer_reconciliation"),
+    }
+    rows = [
+        {
+            "accession": f"{lane}-{index}", "cik": "0001234567", "form": form,
+            "collection_scope": scope, "filing_date": "2026-08-14",
+            "_first_seen": "2026-08-14T11:00:00Z",
+        }
+        for lane, (form, scope) in lane_forms.items()
+        for index in range(5)
+    ]
+
+    queue = select_retrieval_queue(
+        pd.DataFrame(rows),
+        have_complete=set(),
+        max_filings=sum(sec.RETRIEVAL_LANE_WEIGHTS.values()),
+        now=now,
+    )
+    receipt = queue.attrs["retrieval_queue_receipt"]
+
+    assert len(queue) == sum(sec.RETRIEVAL_LANE_WEIGHTS.values())
+    assert retrieval_lane_quotas(
+        max_filings=receipt["max_filings"], now=now
+    ) == sec.RETRIEVAL_LANE_WEIGHTS
+    assert {
+        row["lane"]: row["selected_count"] for row in receipt["lanes"]
+    } == sec.RETRIEVAL_LANE_WEIGHTS
+    assert all(row["deferred_count"] >= 0 for row in receipt["lanes"])
+
+
+def test_reconciliation_row_without_registration_anchor_is_not_queue_eligible():
+    queue = select_retrieval_queue(
+        pd.DataFrame([{
+            "accession": "unanchored-current", "cik": "0007654321", "form": "8-K",
+            "collection_scope": "issuer_reconciliation", "filing_date": "2026-08-01",
+            "_first_seen": "2026-08-01T11:00:00Z",
+        }]),
+        have_complete=set(),
+        max_filings=10,
+        now=datetime(2026, 8, 2, 13, 0, tzinfo=timezone.utc),
+    )
+
+    assert queue.empty
+    assert queue.attrs["retrieval_queue_receipt"]["selected_count"] == 0
+
+
 def test_manifest_record_conforms_to_strict_contract():
     discovery = parse_form_index(INDEX)[0] | {
         "ticker": "ACME", "_first_seen": "2026-08-01T12:35:00+00:00"
@@ -407,6 +800,17 @@ class OneDayAdapter(SecCapitalStructureAdapter):
 
     def _fetch_submission(self, url, ua):
         return SUBMISSION
+
+
+class CrossIndexScopeAdapter(SecCapitalStructureAdapter):
+    def _fetch_index(self, value, ua):
+        return {
+            date(2026, 8, 2): RECONCILIATION_ONLY_INDEX,
+            date(2026, 8, 1): REGISTRATION_ONLY_INDEX,
+        }[value]
+
+    def _fetch_submission(self, url, ua):
+        raise AssertionError("zero-budget scope test must not fetch a submission")
 
 
 class HtmlIndexAdapter(SecCapitalStructureAdapter):
@@ -578,6 +982,7 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     coverage = pd.read_parquet(root / "index_coverage.parquet")
     manifests = pd.read_parquet(root / "source_manifest.parquet")
     attempts = pd.read_parquet(root / "retrieval_attempts.parquet")
+    queue_receipt = json.loads((root / "retrieval_queue_receipt.json").read_text())
     assert len(discovery) == 4
     assert coverage.iloc[0]["status"] == "complete"
     assert set(manifests["document"].map(lambda value: value["document_role"])) == {
@@ -592,12 +997,71 @@ def test_adapter_materializes_discovery_coverage_verified_manifests_and_attempts
     assert manifest_by_name["purchase.htm"][0]["media_type"] == "text/html"
     assert manifest_by_name["forms3.htm"][1]["eligibility"] == "eligible"
     assert attempts.iloc[0]["state"] == "stored"
+    assert set(attempts["retrieval_lane"]) == {
+        "registration", "state", "prospectus", "reg_a"
+    }
+    assert queue_receipt["selected_count"] == 4
+    assert queue_receipt["deferred_count"] == 0
+    assert [row["lane"] for row in queue_receipt["lanes"]] == list(
+        sec.RETRIEVAL_LANE_ORDER
+    )
     assert int(heartbeat.iloc[0]["retrieved"]) == 4
 
     rerun = adapter.fetch()["sec_evidence__ingest"]
     assert len(pd.read_parquet(root / "source_manifest.parquet")) == len(manifests)
     assert len(pd.read_parquet(root / "retrieval_attempts.parquet")) == len(attempts)
     assert int(rerun.iloc[0]["retrieved"]) == 0
+
+
+def test_cross_index_registration_anchor_scopes_newer_reconciliation_row(
+    tmp_path, monkeypatch
+):
+    """A current-first traversal must not discard a recon row before its anchor."""
+    monkeypatch.setattr(sec, "_data_dir", lambda: tmp_path / "capital_structure")
+    monkeypatch.setattr(sec, "_cik_map", lambda: {})
+    monkeypatch.setattr(sec, "_ua", lambda: "test@example.com")
+    monkeypatch.setattr(sec, "PACE_SECONDS", 0)
+    monkeypatch.setattr(
+        sec,
+        "due_index_dates",
+        lambda *args, **kwargs: [date(2026, 8, 2), date(2026, 8, 1)],
+    )
+    adapter = CrossIndexScopeAdapter(
+        source_store=object(),
+        now_fn=lambda: datetime(2026, 8, 2, 13, 0, tzinfo=timezone.utc),
+        max_filings_per_run=0,
+    )
+
+    adapter.fetch()
+
+    discovery = pd.read_parquet(
+        tmp_path / "capital_structure" / "discovery.parquet"
+    )
+    scopes = dict(zip(discovery["form"], discovery["collection_scope"]))
+    assert scopes == {
+        "8-K": "issuer_reconciliation",
+        "S-3": "registration_issuance",
+    }
+
+
+def test_old_discovery_ledger_is_migrated_with_null_collection_scope(tmp_path):
+    """Wave 2C must not make a pre-existing append-only ledger unreadable."""
+    legacy_columns = [
+        column for column in sec._DISCOVERY_COLUMNS if column != "collection_scope"
+    ]
+    path = tmp_path / "discovery.parquet"
+    pd.DataFrame([{
+        "accession": "legacy", "cik": "0001234567", "ticker": "ACME",
+        "company_name": "Acme Corp", "form": "S-3", "filing_date": "2026-08-01",
+        "file_path": "edgar/data/1234567/legacy.txt",
+        "canonical_url": "https://www.sec.gov/Archives/edgar/data/1234567/legacy.txt",
+        "_first_seen": "2026-08-01T12:00:00Z",
+    }])[legacy_columns].to_parquet(path, index=False)
+
+    migrated = sec._read_table(path, sec._DISCOVERY_COLUMNS)
+
+    assert list(migrated.columns) == sec._DISCOVERY_COLUMNS
+    assert pd.isna(migrated.iloc[0]["collection_scope"])
 
 
 def test_existing_manifest_identity_mismatch_aborts_before_append(

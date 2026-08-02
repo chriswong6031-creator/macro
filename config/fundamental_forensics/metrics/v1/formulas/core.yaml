@@ -1,0 +1,67 @@
+schema: fundamental_forensics.metric_formulas/v1
+formula_pack_id: fundamental_forensics_core_gaap_formulas
+formula_pack_version: 1.0.0
+available_at: "2026-08-02T00:00:00Z"
+content_sha256: fdfca7fbaa4ef926232f771603146b2d9b44cdd5e74d43bb8e9bf47c6e0c54a8
+
+formulas:
+  - metric_id: gross_margin
+    rule: {rule_id: formula.gross_margin/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: gross_profit / revenue
+    dependencies: [gross_profit, revenue]
+    output_unit: ratio
+    dependency_period_alignment: same_period
+  - metric_id: working_capital
+    rule: {rule_id: formula.working_capital/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: current_assets - current_liabilities
+    dependencies: [current_assets, current_liabilities]
+    output_unit: USD
+    dependency_period_alignment: same_period
+  - metric_id: total_debt
+    rule: {rule_id: formula.total_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: short_term_debt + long_term_debt_current + long_term_debt
+    dependencies: [short_term_debt, long_term_debt_current, long_term_debt]
+    output_unit: USD
+    dependency_period_alignment: same_period
+  - metric_id: current_ratio
+    rule: {rule_id: formula.current_ratio/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: current_assets / current_liabilities
+    dependencies: [current_assets, current_liabilities]
+    output_unit: ratio
+    dependency_period_alignment: same_period
+  - metric_id: cash_to_total_debt
+    rule: {rule_id: formula.cash_to_total_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: cash_and_cash_equivalents / total_debt
+    dependencies: [cash_and_cash_equivalents, total_debt]
+    output_unit: ratio
+    dependency_period_alignment: same_period
+  - metric_id: net_debt
+    rule: {rule_id: formula.net_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: total_debt - cash_and_cash_equivalents
+    dependencies: [total_debt, cash_and_cash_equivalents]
+    output_unit: USD
+    dependency_period_alignment: same_period
+  - metric_id: free_cash_flow
+    rule: {rule_id: formula.free_cash_flow/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: net_cash_from_operating_activities - capital_expenditures
+    dependencies: [net_cash_from_operating_activities, capital_expenditures]
+    output_unit: USD
+    dependency_period_alignment: same_period
+  - metric_id: debt_to_equity
+    rule: {rule_id: formula.debt_to_equity/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: total_debt / stockholders_equity
+    dependencies: [total_debt, stockholders_equity]
+    output_unit: ratio
+    dependency_period_alignment: same_period
+  - metric_id: receivables_to_revenue
+    rule: {rule_id: formula.receivables_to_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: accounts_receivable_net / revenue
+    dependencies: [accounts_receivable_net, revenue]
+    output_unit: ratio
+    dependency_period_alignment: ending_instant_to_duration
+  - metric_id: inventory_to_revenue
+    rule: {rule_id: formula.inventory_to_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    expression: inventory_net / revenue
+    dependencies: [inventory_net, revenue]
+    output_unit: ratio
+    dependency_period_alignment: ending_instant_to_duration
