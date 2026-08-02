@@ -62,14 +62,14 @@ def test_load_exclusions_reads_and_normalises(tmp_path, monkeypatch):
 def test_load_exclusions_missing_file_is_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(a, "_EXCL_PATH", tmp_path / "nope.json")
     # fail-safe: nothing hidden/relabelled
-    assert a._load_exclusions() == {"emails": [], "locations": [], "ips": [], "bots": {}, "geo_overrides": []}
+    assert a._load_exclusions() == {"emails": [], "locations": [], "ips": [], "visitor_ids": [], "bots": {}, "geo_overrides": []}
 
 
 def test_excluded_cte_contains_emails_and_location(monkeypatch):
     monkeypatch.setattr(a, "_load_exclusions", lambda: {
         "emails": ["me@x.com"],
         "locations": [{"city": "Richmond", "region": "British Columbia", "country_code": "CA"}],
-        "ips": [], "bots": {}, "geo_overrides": [],
+        "ips": [], "visitor_ids": [], "bots": {}, "geo_overrides": [],
     })
     cte = a._excluded_cte()
     assert "'me@x.com'" in cte
@@ -83,7 +83,7 @@ def test_excluded_cte_contains_emails_and_location(monkeypatch):
 
 def test_excluded_cte_empty_config_is_valid_and_matches_nothing(monkeypatch):
     monkeypatch.setattr(a, "_load_exclusions",
-                        lambda: {"emails": [], "locations": [], "ips": [], "bots": {}, "geo_overrides": []})
+                        lambda: {"emails": [], "locations": [], "ips": [], "visitor_ids": [], "bots": {}, "geo_overrides": []})
     cte = a._excluded_cte()
     assert "auth.users where false" in cte
     assert "ip_geo where false" in cte
@@ -185,7 +185,7 @@ def test_visitors_adds_soft_candidate_for_anon(monkeypatch):
     assert "c.basis as candidate_basis" in sql
     assert "as name" in sql
     # counts are still identity-honest (candidate never feeds the aggregates)
-    assert "count(distinct session_id)::int as sessions" in sql
+    assert "count(distinct vn)::int as sessions" in sql
 
 
 def test_session_and_visitor_profiles_select_names(monkeypatch):
@@ -227,7 +227,7 @@ def test_clean_ips_keeps_only_ip_chars():
 
 def test_ips_seed_the_excluded_set(monkeypatch):
     monkeypatch.setattr(a, "_load_exclusions", lambda: {
-        "emails": [], "locations": [], "ips": ["50.92.196.43", "170.124.173.16"],
+        "emails": [], "locations": [], "ips": ["50.92.196.43", "170.124.173.16"], "visitor_ids": [],
         "bots": {}, "geo_overrides": [],
     })
     cte = a._excluded_cte()
