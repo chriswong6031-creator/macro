@@ -38,15 +38,40 @@ counter — a lane with two budgets has none.
 per account before any billed request is made for it, so a halted desk costs
 neither money nor drafts while it is dark.
 
+**A SILENT DESK IS THE FAILURE MODE.** Every gate above is a legal reason to
+produce nothing, and until XG-W7 they were all indistinguishable from each
+other AND from a dead daemon: the tick logged one INFO line of zeroes and moved
+on. Four separate switches (the systemd lane, ``producer.enabled``, the author
+register, ``TWITTERAPI_IO_KEY``) each fail that way, which is how a desk stays
+dark for months while an operator believes it is armed. So this module now
+carries its own observability:
+
+    * ``heartbeat_path``/``read_heartbeat`` — a host-state artifact written on
+      every live tick, carrying the tick counter, the consecutive-empty run and
+      the last tick's stage counts. A frozen file means the daemon is dead; a
+      climbing ``consecutive_empty`` means it is alive and finding nothing.
+    * a start-of-line ``::warning title=reply-desk-silent::`` after
+      ``silent_tick_warn_after`` consecutive ticks that enqueued nothing, whose
+      text names the FIRST stage that zeroed rather than reporting the zero.
+    * ``preflight()`` — an offline, zero-spend, zero-write readiness readout an
+      operator runs BEFORE arming (``--lane reply --preflight``), so the
+      placeholder register and the missing API key are found by a command
+      instead of by a week of quiet.
+
 Public API:
     DEFAULTS
     run_producer(*, cfg, press_cfg, root, store, now, ...) -> dict
+    preflight(*, cfg, press_cfg, root, store, now) -> dict
+    heartbeat_path(store) -> Path
+    read_heartbeat(store) -> dict
     eligible_accounts(cfg, *, root, register) -> list[str]
     persona_beats(cfg, register, account) -> list[str]
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
@@ -73,7 +98,21 @@ DEFAULTS: dict[str, Any] = {
     # for sent replies worth re-polling, and the per-night request ceiling.
     "outcome_lookback_days": 7,
     "max_outcome_polls_per_night": 40,
+    # Seconds between reply-lane ticks. THE DAEMON READS THIS: the wire lane's
+    # 75 s hot-poll window is wrong for a lane whose own charter window is 5-15
+    # minutes, and a single `--interval` on one process cannot serve both — which
+    # is why the reply lane gets its own systemd unit rather than `--lane all`.
+    "tick_interval_s": 300,
+    # How many consecutive ticks may enqueue NOTHING before the lane announces
+    # itself. 12 ticks at the 300 s default is one hour of silence. A quiet desk
+    # is legal (Law 1: value before activity); an hour of it with no diagnosis is
+    # the failure this whole wave exists to end.
+    "silent_tick_warn_after": 12,
 }
+
+#: Heartbeat schema. Versioned because the operator's monitoring reads this file
+#: and a shape change must be visible rather than inferred.
+HEARTBEAT_SCHEMA = "marketing.reply.producer_heartbeat/v1"
 
 
 def _cfg(cfg: dict | None) -> dict:
@@ -199,9 +238,334 @@ def _allowed_families(account: str, *, root: Path | str | None, cfg: dict | None
 
 
 # ---------------------------------------------------------------------------
+# Heartbeat + the silent-desk warning (XG-W7)
+# ---------------------------------------------------------------------------
+def heartbeat_path(store: Path | str | None = None) -> Path:
+    """Where the producer's liveness artifact lives.
+
+    HOST STATE, beside the queue — never the repo checkout. The wire lane's
+    ``data/marketing/fastlane_heartbeat.txt`` is a bare timestamp shared by every
+    lane in that process, so it cannot answer "is the REPLY lane alive" and it
+    cannot say anything about why the lane is quiet. This one is per-lane, and it
+    carries the counts rather than only the clock: a frozen file means the daemon
+    is dead, a climbing ``consecutive_empty`` means it is alive and finding
+    nothing, and those two need opposite responses.
+    """
+    from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+    return _rq.state_dir(store) / "producer_heartbeat.json"
+
+
+def read_heartbeat(store: Path | str | None = None) -> dict:
+    """Last heartbeat, or {} when the lane has never ticked. Never raises."""
+    path = heartbeat_path(store)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_producer.read_heartbeat: %s", exc)
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _silence_diagnosis(result: dict[str, Any]) -> str:
+    """Name the FIRST stage that zeroed, not the fact that the total is zero.
+
+    Ordered by pipeline position, so the reason returned is the earliest one that
+    actually explains the silence. Reporting "enqueued=0" is what the tick log
+    already did, and it is exactly the report that let four different dark
+    switches look identical for months.
+    """
+    if not result.get("enabled"):
+        return ("reply_desk.producer.enabled is false in config/marketing.yml — the "
+                "daemon lane is running but the producer is a no-op. This is the "
+                "switch an operator most often believes is already flipped.")
+    if result.get("note") and not result.get("accounts"):
+        # Register invalid, discovery lane off, or every desk halted/ineligible.
+        return str(result["note"])
+    curated = result.get("curated_authors") or {}
+    if curated and not sum(curated.values()):
+        return ("config/reply_targets.yml has no ENABLED authors for any live desk "
+                "(the shipped file is all PLACEHOLDER_* at enabled:false) — only "
+                "inbound mentions of our own handles can produce a target, so the "
+                "curated-timeline half of discovery is structurally dark. Curating "
+                "the register is operator editorial work, not a code change.")
+    if not result.get("targets"):
+        return ("discovery returned zero targets — check TWITTERAPI_IO_KEY is set in "
+                "the lane's environment (an unset key skips the poll and bills "
+                "nothing, which reads as a quiet day), and check the discovery "
+                "sub-cap has not stopped the lane")
+    if not result.get("eligible"):
+        return (f"{result.get('targets')} target(s) polled, none cleared "
+                "reply_desk.score_params.min_score — the desks are being shown posts "
+                "outside the reply window or off-beat")
+    if not result.get("drafted"):
+        return (f"{result.get('abstained')} abstention(s) and no draft — the own-feed "
+                "fact list is empty, so every gift was empty (Law 1: value before "
+                "activity). Check engine/marketing/market_facts.py inputs.")
+    if result.get("critic_rejected"):
+        return (f"every draft was rejected by the critics "
+                f"({result.get('critic_rejected')} rejection(s)) — read the labels "
+                "spool's abstention rows for which critic bound")
+    if result.get("refused"):
+        return ("every item was refused at enqueue (thread already owned by a sibling "
+                "desk, or a duplicate id) — see the refused list in the tick log")
+    return "no stage reported a zero, which means this diagnosis is incomplete"
+
+
+def _write_heartbeat(store: Path | str | None, result: dict[str, Any], *,
+                     conf: dict, now: datetime) -> dict:
+    """Advance and persist the heartbeat; announce a persistently silent desk.
+
+    Returns the heartbeat written (or the prior one on a write failure), so a
+    caller — and the tests — can read the counter without a second file read.
+
+    NEVER RAISES. A heartbeat that can take down a tick is worse than no
+    heartbeat: the artifact exists to prove the lane is alive, and a crash here
+    would make the lane look dead in exactly the way it is meant to disprove.
+    """
+    prior = read_heartbeat(store)
+    enqueued = int(result.get("enqueued") or 0)
+    empty_run = 0 if enqueued else int(prior.get("consecutive_empty") or 0) + 1
+    beat = {
+        "schema": HEARTBEAT_SCHEMA,
+        "at": _iso(now),
+        "enabled": bool(result.get("enabled")),
+        "tick": int(prior.get("tick") or 0) + 1,
+        "consecutive_empty": empty_run,
+        "last_enqueued_at": (_iso(now) if enqueued else prior.get("last_enqueued_at")),
+        "last": {
+            "accounts": list(result.get("accounts") or []),
+            "halted": list(result.get("halted") or []),
+            "curated_authors": dict(result.get("curated_authors") or {}),
+            "targets": int(result.get("targets") or 0),
+            "eligible": int(result.get("eligible") or 0),
+            "drafted": int(result.get("drafted") or 0),
+            "abstained": int(result.get("abstained") or 0),
+            "critic_rejected": int(result.get("critic_rejected") or 0),
+            "enqueued": enqueued,
+            "refused": len(result.get("refused") or []),
+            "note": result.get("note"),
+        },
+        "spend": dict(result.get("spend") or {}),
+        "diagnosis": None if enqueued else _silence_diagnosis(result),
+    }
+
+    threshold = max(1, _int(conf.get("silent_tick_warn_after"), 12))
+    # Announce ON the threshold and then once per further full run, never on
+    # every tick: a warning that repeats 288 times a day is a warning nobody
+    # reads, which is the same outcome as not warning at all.
+    if empty_run and empty_run % threshold == 0:
+        last_seen = beat["last_enqueued_at"] or "never"
+        print(
+            f"::warning title=reply-desk-silent::the reply desk has enqueued nothing "
+            f"for {empty_run} consecutive ticks (last enqueue: {last_seen}) — "
+            f"{beat['diagnosis']}",
+            flush=True,
+        )
+
+    try:
+        path = heartbeat_path(store)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(beat, indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(path)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_producer: heartbeat write failed: %s", exc)
+        return prior
+    return beat
+
+
+# ---------------------------------------------------------------------------
+# Preflight — the readiness readout an operator runs BEFORE arming
+# ---------------------------------------------------------------------------
+def preflight(
+    *,
+    cfg: dict | None,
+    press_cfg: dict | None = None,
+    root: Path | str | None = None,
+    store: Path | str | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Answer "would a tick produce anything, and if not, why" — offline.
+
+    ZERO network, ZERO spend, ZERO writes. Every check reads config, the
+    register, the halt registry, or the process environment.
+
+    The four arming switches each fail silently and independently (§module
+    docstring), so this returns an ORDERED ``blockers`` list — the things that
+    make a draft impossible — separately from ``warnings``, which are things
+    that degrade quality but still produce drafts. An operator arming the desk
+    reads the first blocker, fixes it, and re-runs.
+    """
+    from engine.marketing import health_monitor as _health  # noqa: PLC0415
+    from engine.marketing import reply_discovery as _discovery  # noqa: PLC0415
+    from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+    ts = now or datetime.now(timezone.utc)
+    conf = _cfg(cfg)
+    rd_cfg = ((press_cfg or {}).get("reply_discovery") or {})
+    key_env = str(rd_cfg.get("key_env") or "TWITTERAPI_IO_KEY")
+
+    register = _discovery.load_register(root)
+    reg_errors = _discovery.validate_register(register) if register else []
+    want = eligible_accounts(cfg, root=root, register=register)
+    halts = _health.load_halts(root)
+
+    accounts: list[dict[str, Any]] = []
+    for account in want:
+        accounts.append({
+            "id": account,
+            "mode": _rq.resolve_mode(cfg, account),
+            "curated_authors": len(_discovery.register_for_account(register, account)),
+            "halted": bool(_health.is_halted(account, halts=halts)),
+        })
+    curated_total = sum(int(a["curated_authors"]) for a in accounts)
+
+    voice_cfg = bool((((cfg or {}).get("reply_desk") or {}).get("voice") or {}).get("enabled"))
+    checks: dict[str, Any] = {
+        "at": _iso(ts),
+        "producer_enabled": bool(conf.get("enabled")),
+        "desk_enabled": bool(((cfg or {}).get("reply_desk") or {}).get("enabled", True)),
+        "discovery_enabled": bool(rd_cfg.get("enabled")),
+        "api_key_env": key_env,
+        "api_key_present": bool(os.environ.get(key_env, "").strip()),
+        "daemon_switch": os.environ.get("MARKETING_FASTLANE_ENABLED") == "1",
+        "register_errors": reg_errors,
+        "accounts": accounts,
+        "curated_authors_total": curated_total,
+        "tick_interval_s": max(1, _int(conf.get("tick_interval_s"), 300)),
+        "silent_tick_warn_after": max(1, _int(conf.get("silent_tick_warn_after"), 12)),
+        "store": str(_rq.state_dir(store)),
+        "heartbeat": read_heartbeat(store),
+        "voice_config_enabled": voice_cfg,
+        "voice_env_enabled": bool(os.environ.get("MARKETING_LLM_ENABLED", "").strip()
+                                  not in ("", "0", "false", "False")),
+    }
+
+    blockers: list[str] = []
+    warnings: list[str] = []
+    if not checks["daemon_switch"]:
+        blockers.append(
+            "MARKETING_FASTLANE_ENABLED != '1' — main() exits 0 before any lane runs. "
+            "The reply lane does not inherit the wire's ARMING (its config gate is "
+            "separate) but it does share this process switch. Set it in "
+            "/etc/macro-live.env.")
+    if not checks["producer_enabled"]:
+        blockers.append("reply_desk.producer.enabled is false in config/marketing.yml.")
+    if not checks["discovery_enabled"]:
+        blockers.append("reply_discovery.enabled is false in config/press_sources.yml.")
+    if reg_errors:
+        blockers.append(f"config/reply_targets.yml is invalid: {reg_errors[:3]}")
+    if not want:
+        blockers.append(
+            "no eligible desks — an account must be BOTH enabled in "
+            "marketing.yml desk_network AND present in config/reply_targets.yml.")
+    elif all(a["halted"] for a in accounts):
+        blockers.append(f"every eligible desk is HALTED: {[a['id'] for a in accounts]}")
+    if not checks["api_key_present"]:
+        blockers.append(
+            f"{key_env} is unset — reply_discovery.fetch() skips the poll and bills "
+            "nothing, which is indistinguishable from a quiet day in the tick log.")
+    if not curated_total:
+        warnings.append(
+            "config/reply_targets.yml has zero ENABLED authors — only inbound "
+            "mentions can produce a target. The curated-timeline half of discovery "
+            "is dark until you replace the PLACEHOLDER_* entries (editorial work).")
+    if voice_cfg and not checks["voice_env_enabled"]:
+        warnings.append(
+            "reply_desk.voice.enabled is true but MARKETING_LLM_ENABLED is unset — "
+            "every reply ships the deterministic template. Look for "
+            "'::warning title=reply_voice_mute::' in the lane's logs.")
+    modes = {a["id"]: a["mode"] for a in accounts}
+    if modes and set(modes.values()) == {"M0"}:
+        warnings.append(
+            f"every desk is at M0 ({sorted(modes)}) — drafts will appear in the admin "
+            "queue and NOTHING will export to the desktop lane. This is the intended "
+            "launch state; §4 of the runbook is the flip.")
+
+    return {"ready": not blockers, "blockers": blockers, "warnings": warnings,
+            "checks": checks}
+
+
+def format_preflight(report: dict[str, Any]) -> str:
+    """Render ``preflight()`` for a terminal. Pure formatting, no I/O."""
+    c = report.get("checks") or {}
+    lines = [
+        "reply desk preflight — " + str(c.get("at") or ""),
+        f"  ready              : {'YES' if report.get('ready') else 'NO'}",
+        f"  producer.enabled   : {c.get('producer_enabled')}",
+        f"  reply_desk.enabled : {c.get('desk_enabled')}",
+        f"  discovery.enabled  : {c.get('discovery_enabled')}",
+        f"  {str(c.get('api_key_env') or 'API key'):<19}: "
+        f"{'present' if c.get('api_key_present') else 'MISSING'}",
+        f"  daemon switch      : "
+        f"{'armed' if c.get('daemon_switch') else 'MARKETING_FASTLANE_ENABLED != 1'}",
+        f"  tick interval      : {c.get('tick_interval_s')}s "
+        f"(silent warning after {c.get('silent_tick_warn_after')} empty ticks)",
+        f"  store              : {c.get('store')}",
+    ]
+    for account in (c.get("accounts") or []):
+        lines.append(
+            f"    - {account.get('id'):<10} mode={account.get('mode')} "
+            f"curated_authors={account.get('curated_authors')}"
+            + ("  HALTED" if account.get("halted") else ""))
+    beat = c.get("heartbeat") or {}
+    if beat:
+        lines.append(
+            f"  heartbeat          : tick={beat.get('tick')} "
+            f"consecutive_empty={beat.get('consecutive_empty')} "
+            f"last_enqueue={beat.get('last_enqueued_at') or 'never'}")
+    else:
+        lines.append("  heartbeat          : none — this lane has never ticked")
+    for blocker in report.get("blockers") or []:
+        lines.append(f"  BLOCKER  {blocker}")
+    for warning in report.get("warnings") or []:
+        lines.append(f"  warning  {warning}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # The producer
 # ---------------------------------------------------------------------------
 def run_producer(
+    *,
+    cfg: dict | None,
+    press_cfg: dict | None = None,
+    root: Path | str | None = None,
+    store: Path | str | None = None,
+    now: datetime | None = None,
+    offline: bool = False,
+    accounts: Sequence[str] | None = None,
+    facts_for: Callable[[str, dict], dict] | None = None,
+    provider: Any = None,
+) -> dict[str, Any]:
+    """One producer tick, plus the heartbeat and the silent-desk announcement.
+
+    The pipeline itself is ``_produce_once``; this wrapper owns observability so
+    that EVERY early return in there — dark config, invalid register, no live
+    accounts, discovery off — still advances the heartbeat and still gets a
+    diagnosis. An early return that skipped the heartbeat would make the four
+    dark switches look like a dead daemon, which is the confusion this wave is
+    closing.
+
+    ``offline=True`` writes NO heartbeat: the dry-run law for a billed provider
+    is zero network and zero writes, and an offline tick returns zero targets by
+    construction, so counting it as a silent tick would manufacture a false
+    alarm out of an inspection command.
+    """
+    ts = now or datetime.now(timezone.utc)
+    result = _produce_once(
+        cfg=cfg, press_cfg=press_cfg, root=root, store=store, now=ts,
+        offline=offline, accounts=accounts, facts_for=facts_for, provider=provider,
+    )
+    if not offline:
+        result["heartbeat"] = _write_heartbeat(store, result, conf=_cfg(cfg), now=ts)
+    return result
+
+
+def _produce_once(
     *,
     cfg: dict | None,
     press_cfg: dict | None = None,
@@ -240,6 +604,11 @@ def run_producer(
         "accounts": [], "halted": [], "targets": 0, "eligible": 0, "drafted": 0,
         "abstained": 0, "critic_rejected": 0, "enqueued": 0, "refused": [],
         "spend": {}, "wire_spend": None,
+        # {account: enabled curated authors}. Carried on EVERY tick because the
+        # placeholder register is the single loudest reason this lane produces
+        # nothing, and a count of zero here is the difference between "quiet day"
+        # and "structurally dark". The silence diagnosis reads it.
+        "curated_authors": {},
     }
 
     if not conf.get("enabled"):
@@ -266,6 +635,9 @@ def run_producer(
     live = [a for a in want if a not in set(halted)]
     result["halted"] = halted
     result["accounts"] = live
+    result["curated_authors"] = {
+        a: len(_discovery.register_for_account(register, a)) for a in live
+    }
     if halted:
         print(
             f"::warning title=reply-producer-halted::skipping halted account(s) "
@@ -463,6 +835,7 @@ def poll_reply_outcomes(
     tick uses. No second budget.
     """
     from engine.marketing import reply_discovery as _discovery  # noqa: PLC0415
+    from engine.marketing import reply_export as _export  # noqa: PLC0415
     from engine.marketing import reply_queue as _rq  # noqa: PLC0415
 
     ts = now or datetime.now(timezone.utc)
@@ -490,7 +863,13 @@ def poll_reply_outcomes(
             continue
         sid = _rq.status_id_from_url(str(receipt.get("url") or ""))
         if sid:
-            by_status[sid] = {"id": iid, "parent_author": str(item.get("parent_author") or "")}
+            by_status[sid] = {
+                "id": iid,
+                "parent_author": str(item.get("parent_author") or ""),
+                # Carried so an author reply-back can escalate the relation row
+                # on the RIGHT desk. Relationship memory is per persona.
+                "account": str(item.get("account") or ""),
+            }
     result["sent"] = len(by_status)
 
     if not by_status:
@@ -545,6 +924,15 @@ def poll_reply_outcomes(
             result["recorded"] += 1
             if replied:
                 result["author_replied"] += 1
+                # THE LOOP CLOSES HERE. An author answering us is the highest-
+                # value outcome in the charter, and it is also the only event
+                # that can move a relation past "we spoke at them". Escalate the
+                # persona's relation row so the NEXT tick's scorer ranks that
+                # author higher (reply_score.load_relations reads it).
+                _export.note_relation(
+                    account=meta["account"], handle=meta["parent_author"],
+                    stage="reciprocal", repo_root=root, now=ts,
+                )
 
     month = ts.strftime("%Y-%m")
     result["spend"] = ((session.get(_discovery.STATE_NS) or {}).get("spend") or {}
@@ -657,5 +1045,6 @@ def _record_abstention(root: Path | str | None, *, account: str, as_of: str,
     _labels.record_observation(row, root=root)
 
 
-__all__ = ["DEFAULTS", "run_producer", "poll_reply_outcomes",
+__all__ = ["DEFAULTS", "HEARTBEAT_SCHEMA", "run_producer", "poll_reply_outcomes",
+           "preflight", "format_preflight", "heartbeat_path", "read_heartbeat",
            "eligible_accounts", "persona_beats"]

@@ -31,6 +31,14 @@ The critics:
                            one-word reactions all reject
     fact_discipline        numbers only from whitelisted own-feed values
     vocab                  the shared banned-vocab guard + the expression dial
+    warmth_register        the ANTI-COLD law: a twelve-unit instrument readout
+                           on an employee desk rejects, a cold RUN of replies
+                           rejects, and warmth bolted on as its own sentence in
+                           front of the analysis rejects
+    fabrication            AM-R1 on every account: a first-person claim about a
+                           life event, a purchase or a position that the
+                           persona spec does not license rejects, with the
+                           offending sentence quoted
     dignity                screenshot rubric; the LLM hook lives here
 
 Public API:
@@ -66,6 +74,8 @@ CRITICS: tuple[str, ...] = (
     "reply_value",
     "fact_discipline",
     "vocab",
+    "warmth_register",
+    "fabrication",
     "dignity",
 )
 
@@ -76,6 +86,21 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
     "parent_jaccard": 0.55,
     #: Jaccard against our own recent replies (same account and across desks).
     "corpus_jaccard": 0.50,
+    #: W1. Below this many content units a reply is TERSE, and terseness is
+    #: doing the work warmth would otherwise do — the corpus's best analytical
+    #: replies are 3 to 5 units ("Support at 900-925", "Actually closer to
+    #: -10%") and killing those would contradict the strongest measured effect
+    #: in the data. At twelve-plus units, carrying no human register at all is a
+    #: CHOICE, and that choice is the instrument-readout defect.
+    "warmth_min_units": 12.0,
+    #: W2. How many of the account's recent items the register share is read
+    #: over, and the floor below which the run is cold.
+    "warmth_window": 20.0,
+    "warmth_min_history": 8.0,
+    "warmth_share_floor": 0.45,
+    #: W3. Content units a referent-free FIRST SENTENCE may spend before it
+    #: stops being a delivery register and becomes bolted-on praise.
+    "warmth_opener_units": 5.0,
 }
 
 #: Sensitive-event vocabulary. A reply desk chases live conversations, and the
@@ -441,9 +466,21 @@ def persona_label(draft: str, ctx: dict) -> dict[str, Any]:
     LLM may not make here. The deterministic proxy: the draft must carry at
     least one concrete market referent (ticker, level, or named mechanism).
     Judgment adjectives alone are a personality, not a contribution.
+
+    THE ONE EXEMPTION, and it is DOUBLE GATED. ``quiet_sympathy`` is the single
+    warmth move that ships without an analytical gift: eight words on a
+    professional setback, then stop. It carries no referent BY DESIGN and it is
+    explicitly not a growth reply — it exists for relationship maintenance and
+    is measured at the floor of the corpus (0.0026 eng/view). So the exemption
+    requires BOTH ``ctx["relationship_only"]`` (the producer's tier routing) AND
+    ``ctx["warmth"] == "quiet_sympathy"``: either alone would be a hole big
+    enough to smuggle a referent-free growth reply through.
     """
     refs = _referents(draft)
     if refs:
+        return _verdict("persona_label", [])
+    if (bool(ctx.get("relationship_only"))
+            and str(ctx.get("warmth") or "") == "quiet_sympathy"):
         return _verdict("persona_label", [])
     return _verdict("persona_label", [
         "no concrete market referent (ticker, level, or mechanism) — the draft "
@@ -646,7 +683,399 @@ def vocab(draft: str, ctx: dict) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# 9. Dignity / screenshot rubric — the ONE place an LLM may speak
+# 9. Warmth register — the ANTI-COLD law
+# ---------------------------------------------------------------------------
+#
+# THE OPERATOR NAMED THE FAILURE: replies that are "completely analytical and
+# cold". This critic is that complaint turned into three deterministic checks.
+#
+# WHY A NEW CRITIC RATHER THAN AN EXTENSION OF `reply_value`. That critic
+# enforces the doctrine's §8 anti-patterns and coldness is not one of them (the
+# prior corpus never tested for it). Folding this in would put two unrelated
+# laws behind one `rejected_by` label, and an operator reading a rejection would
+# not know which one fired. The roster pin in `reply_queue.validate_critic_stamp`
+# also makes adding a critic a LOUD, schema-visible change, which is the correct
+# ceremony for a new law.
+#
+# WHAT THIS DELIBERATELY DOES NOT DO: it does not require warmth on any single
+# reply. It cannot — the evidence points the other way per reply (pure
+# analytical median eng/view 0.0122 against pure warmth 0.0032, both THIN). It
+# requires that the REGISTER is not cold (W2, rolling, per account) and that no
+# single reply is a twelve-unit printout (W1, length-scoped). If a future edit
+# here starts asserting "every reply must contain a feeling", it has misread the
+# fusion law and should stop.
+
+#: Class A — FIRST-PERSON ANALYTICAL STANCE. What she is watching, reading,
+#: waiting on, unable to settle. NEVER a transaction verb: bought/sold/own/
+#: hold/long/short/up-N% belong to `expression_dial.AM_R1_DETECTORS` and are
+#: BARRED, so a test pins that this list and that one are disjoint.
+_STANCE_VERBS: tuple[str, ...] = (
+    "watching", "watched", "reading", "read", "waiting", "wondering", "wonder",
+    "noticing", "noticed", "expecting", "expected", "doubting", "doubt",
+    "missing", "missed", "learning", "learned", "keep", "kept", "cannot",
+    "can't", "struggle", "struggling", "was wrong", "had this wrong",
+    "changed my mind", "settle", "turning over",
+)
+#: Distance a stance verb may sit behind its first-person pronoun and still be
+#: the same clause. Wide enough for "I keep turning over", narrow enough that
+#: "we" in one clause and "watched" three clauses later is not a stance.
+_STANCE_GAP_CHARS = 24
+_FIRST_PERSON_RE = re.compile(r"\b(?:i|we)\b", re.IGNORECASE)
+
+#: Class B — REACTION AND EVALUATION. Phrases, not bare adjectives, wherever
+#: ambiguity exists: "risk" is a subject, "the part that" is a stance.
+_REACTION_TOKENS: tuple[str, ...] = (
+    "fair point", "fair.", "fair,", "agreed", "worth adding", "worth saying",
+    "actually", "honestly", "genuinely", "quietly", "the part that",
+    "the thing that", "what strikes me", "far fetched", "far-fetched",
+    "not obvious", "underrated", "overrated", "wild", "brutal", "rough",
+    "grim", "neat", "fun", "impressive", "appreciated", "the whole story", "load bearing",
+    "load-bearing", "people skip", "keep turning over", "hope", "sorry to see",
+    "that is a rough", "the one that carries", "gets rediscovered",
+    "simpler", "plainly", "the harder part", "the open question",
+    "the bit i", "the human version", "the frustrating part",
+    # Added when `test_every_sanctioned_opener_carries_a_warmth_marker` caught
+    # four openers the drafter offers and this list could not see — the exact
+    # generator-and-gate disagreement that would have made a warm reply reject
+    # for coldness. Every one is a reaction or evaluation phrase, not a subject.
+    "will be told", "looks different", "same read", "the plain version",
+)
+
+#: W3's discriminator. The bolted-on shape is warmth ABOUT THE POST OR THE
+#: POSTER, spending a whole sentence and returning nothing — "Great point,
+#: really appreciate you laying this out so clearly!" in front of the analysis.
+#:
+#: THIS SCOPING IS LOAD-BEARING AND WAS ADDED AFTER A FALSE POSITIVE, not for
+#: safety margin. W3 phrased as "first sentence, no referent, over five units"
+#: also rejects biancoresearch's cold Fed-vote correction (18 likes, 0.0067
+#: eng/view) — an eleven-unit opening CLAIM with no referent in it — which is a
+#: winning reply and is the doctrine's own calibration fixture. A claim and a
+#: compliment are both long and referent-free; what separates them is whether
+#: the sentence is ABOUT the thread rather than about the market.
+_PRAISE_META_TOKENS: tuple[str, ...] = (
+    "great point", "great post", "great thread", "great read", "great call",
+    "good point", "good post", "well said", "well put", "nice work",
+    "love this", "loved this", "thanks for", "thank you for", "appreciate",
+    "appreciated", "spot on", "so true", "brilliant", "excellent",
+    "insightful", "fantastic", "amazing", "laying this out", "sharing this",
+    "this is gold", "underrated post", "must read", "must-read",
+)
+
+
+def reply_dial_for(account: str, root: Path | str | None = None) -> int:
+    """The account's reply dial, read from its persona spec. 1 when unknown.
+
+    The flagship declares no ``dial_profile`` (``expression_dial`` deliberately
+    leaves it off the dial), and an unreadable spec is not evidence about a
+    register — so both resolve to 1, the evidence-desk dial. That is the
+    conservative direction for this critic in particular: W1 and W2 fire only at
+    dial >= 2, so an unknown register is never rejected for coldness on the
+    strength of a lookup failure.
+    """
+    try:
+        from engine.marketing import expression_dial as _dial  # noqa: PLC0415
+
+        codex = _dial.codex_for(str(account or ""), root=root)
+        if codex is None:
+            return 1
+        return int(codex.dial("reply"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_critics.reply_dial_for: %s for %r", exc, account)
+        return 1
+
+
+def _signature_emoji_hit(draft: str, account: str,
+                         root: Path | str | None = None) -> str | None:
+    """Class C — the persona's GRANTED signature emoji, present in the draft.
+
+    One emoji is a register act by construction, and the dial already caps it,
+    so this class needs no threshold of its own. Read from the live codex rather
+    than a list here: an emoji this module named would be a second definition of
+    a signature the spec already owns.
+    """
+    try:
+        from engine.marketing import expression_dial as _dial  # noqa: PLC0415
+
+        codex = _dial.codex_for(str(account or ""), root=root)
+        if codex is None or codex.emoji_policy != "signature-set":
+            return None
+        decl = codex.declared.get("signature_emoji")
+        if decl is None or not decl.enabled:
+            return None
+        for glyph in codex.emoji_signature:
+            if _dial._bare(glyph) in "".join(_dial._bare(c) for c in draft):
+                return glyph
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_critics._signature_emoji_hit: %s for %r", exc, account)
+    return None
+
+
+def warmth_markers(draft: str, ctx: dict | None = None) -> list[str]:
+    """Every human-register marker in *draft*. ``[]`` means an instrument readout.
+
+    Three CLOSED classes, deliberately narrow. A fuzzy warmth classifier would
+    be an LLM judgment wearing a regex costume and charter §2 amendment 9 says
+    the LLM does not score. Marker ids come back tagged by class ("A:watching",
+    "B:fair point", "C:🔍") so a rejection can name what was missing instead of
+    asserting a mood.
+    """
+    ctx = dict(ctx or {})
+    text = str(draft or "")
+    low = text.lower()
+    out: list[str] = []
+
+    # Class A: first person + a stance verb inside the same clause.
+    for sentence in _sentences(low):
+        for pronoun in _FIRST_PERSON_RE.finditer(sentence):
+            window = sentence[pronoun.end(): pronoun.end() + _STANCE_GAP_CHARS]
+            for verb in _STANCE_VERBS:
+                if re.search(rf"(?<!\w){re.escape(verb)}", window):
+                    tag = f"A:{verb}"
+                    if tag not in out:
+                        out.append(tag)
+
+    # Class B: reaction / evaluation phrases.
+    for token in _REACTION_TOKENS:
+        if token in low:
+            tag = f"B:{token}"
+            if tag not in out:
+                out.append(tag)
+
+    # Class C: the granted signature emoji.
+    glyph = _signature_emoji_hit(text, str(ctx.get("account") or ""), ctx.get("root"))
+    if glyph:
+        out.append(f"C:{glyph}")
+    return out
+
+
+def _warmth_enabled(ctx: dict) -> bool:
+    """``reply_desk.warmth.enabled`` — the kill switch, defaulting to ON."""
+    block = ((ctx.get("cfg") or {}).get("reply_desk") or {}).get("warmth") or {}
+    return bool(block.get("enabled", True))
+
+
+def warmth_register(draft: str, ctx: dict) -> dict[str, Any]:
+    """W1 cold printout, W2 cold register drift, W3 bolted-on warmth."""
+    reasons: list[str] = []
+    text = str(draft or "").strip()
+    if not text or not _warmth_enabled(ctx):
+        return _verdict("warmth_register", reasons)
+
+    account = str(ctx.get("account") or "")
+    dial = reply_dial_for(account, ctx.get("root"))
+    markers = warmth_markers(text, ctx)
+
+    # W1 — cold printout. THE LENGTH CONDITION IS LOAD-BEARING AND IS NOT A
+    # HEDGE. flagship and founder are exempt by the dial: charter §2 amendment 3
+    # pins the flagship at reply dial 1 and the doctrine's §5 register map lists
+    # "anything warm" in its Never column, so a warm flagship reply is the
+    # defect there, not a cold one.
+    if dial >= 2 and not markers:
+        units = _content_units(text)
+        bar = int(_threshold(ctx, "warmth_min_units"))
+        if units >= bar:
+            reasons.append(
+                f"cold printout: {units} content units on an employee desk "
+                f"(dial {dial}) with no human register marker at all (bar "
+                f"{bar} units). Terse is fine; a long instrument readout is the "
+                "shape the operator named"
+            )
+
+        # W2 — cold register DRIFT. Coldness is a property of a FEED, not of a
+        # reply, so the eleventh consecutive cold reply is impossible while the
+        # first is free. Self-heals the moment a warm item enqueues.
+        #
+        # FAIL DIRECTION IS OPEN AND THAT IS A REAL COST: below
+        # `warmth_min_history` this is inert, so a freshly armed account can
+        # ship its first few replies cold. The mitigation is SUPPLY SIDE — the
+        # drafter's warmth LRU offers a move from item one — and NOT a tighter
+        # gate: making an empty history reject would block the lane at arming,
+        # which is exactly the failure class that kept this desk dark.
+        window = int(_threshold(ctx, "warmth_window"))
+        min_history = int(_threshold(ctx, "warmth_min_history"))
+        floor = float(_threshold(ctx, "warmth_share_floor"))
+        mine = [row for row in (ctx.get("corpus") or [])
+                if isinstance(row, dict) and str(row.get("account") or "") == account]
+        recent = mine[-window:] if window > 0 else []
+        if len(recent) >= min_history:
+            warm = sum(1 for row in recent
+                       if warmth_markers(str(row.get("draft") or ""), ctx))
+            share = warm / len(recent)
+            if share < floor:
+                reasons.append(
+                    f"cold register: {warm} of this desk's last {len(recent)} "
+                    f"replies carry any human register (share {share:.2f} < "
+                    f"{floor:.2f}) and this one carries none either"
+                )
+
+    # W3 — bolted-on warmth. Kills "Great point, really appreciate you laying
+    # this out so clearly!" in front of the analysis, and permits every
+    # sanctioned opener: the fused ones are not standalone sentences at all, and
+    # the sentence-terminating ones are short or carry a referent
+    # ("Much appreciated:" is 2 units, and "Fair point but" is fused).
+    #
+    # NOT dial-scoped: a bolted-on praise sentence is the wrong shape on every
+    # desk, including the flagship, where it is worse.
+    sentences = _sentences(text)
+    if sentences:
+        head = sentences[0]
+        head_low = head.lower()
+        opener_bar = int(_threshold(ctx, "warmth_opener_units"))
+        head_units = _content_units(head)
+        meta = next((t for t in _PRAISE_META_TOKENS if t in head_low), None)
+        if meta and head_units > opener_bar and not _referents(head):
+            reasons.append(
+                f"bolted-on warmth: the opening sentence {head[:60]!r} is about "
+                f"the thread ({meta!r}), spends {head_units} content units (bar "
+                f"{opener_bar}) and carries no concrete referent. Warmth is "
+                "fused into the clause that delivers the gift, never a sentence "
+                "in front of one"
+            )
+    return _verdict("warmth_register", reasons)
+
+
+# ---------------------------------------------------------------------------
+# 10. Fabrication — AM-R1 on EVERY account, with the sentence quoted
+# ---------------------------------------------------------------------------
+#
+# WHY THIS IS NOT LEFT TO `vocab`. `vocab` reaches AM-R1 only through
+# `expression_dial.violations`, and that function returns [] for any account
+# with NO codex — which is the flagship (its spec declares no `dial_profile`)
+# and every account whose spec fails to load. So the ONE gate standing between a
+# real named human and a fabricated first-person claim was silently absent for
+# part of the roster. This critic calls `am_r1_hits` DIRECTLY, so the three
+# pinned lines bind on every draft on every desk regardless of codex.
+#
+# THE BRIGHT LINE, one sentence:
+#
+#   A reader may learn from a reply how she THINKS and how she REACTS.
+#   They may never learn anything about her LIFE.
+#
+# The builder's test on any candidate sentence: "could a journalist print this
+# as a fact about her?" — "Sophia thinks the tariff read is mispriced" is not a
+# life fact and is lawful; "Sophia was at a museum this weekend" is, and is not.
+# Note the asymmetry that makes a genuinely warm register possible with zero
+# fabrication: every lawful item is a predicate about her THINKING, every
+# forbidden one is a predicate about her CIRCUMSTANCES.
+
+#: First person + a LIFE OBJECT. `AM_R1_DETECTORS` covers trades, meetings and
+#: testimonials; this covers the FOURTH class the warmth register creates
+#: pressure on — circumstance. Every pattern requires a first-person subject,
+#: because the register is first person by design and the pronoun alone must
+#: never be the tell.
+#:
+#: This is deliberately NOT added to `expression_dial.AM_R1_DETECTORS`: that
+#: dict's key set is pinned by test against `personas.AM_R1_BANNED_PATTERNS`, so
+#: a new key would force a `banned_patterns` edit across all 20 persona specs —
+#: a schema change for a copy law, with no upside.
+_LIFE_FACT_RE: tuple[re.Pattern[str], ...] = tuple(re.compile(p, re.IGNORECASE) for p in (
+    r"\b(?:I|we)(?:'m|'ve|\s+am|\s+have)?\s+(?:just\s+)?(?:back|home|here|there|"
+    r"outside|travell?ing|flying|driving|walking|sitting|standing|eating|drinking)\b",
+    # ONE optional intervening word, because the ordinal is where the claim
+    # actually lives: "my third coffee" and "my trading desk" are the register
+    # this is here to stop, and `my\s+(?:coffee|desk)` sees neither of them.
+    r"\bmy\s+(?:\w+\s+)?(?:morning|afternoon|evening|weekend|flight|commute|"
+    r"desk|office|kitchen|coffee|matcha|tea|run|dog|cat|apartment|"
+    r"neighbou?rhood)\b",
+    r"\b(?:over\s+here\s+in|out\s+here\s+in|from\s+my\s+(?:desk|couch|kitchen))\b",
+    r"\b(?:I|we)(?:'m|\s+am)?\s+(?:on|running\s+on)\s+(?:my\s+)?(?:\w+\s+)?"
+    r"(?:coffee|cup|espresso|matcha|hour\s+of\s+sleep|no\s+sleep)\b",
+    r"\b(?:rough|long|brutal|great)\s+(?:week|day|morning|night)\s+(?:for\s+me|"
+    r"over\s+here|on\s+this\s+end)\b",
+))
+
+
+def _quote_sentence(text: str, needle_start: int) -> str:
+    """The sentence containing the character offset, for the reject reason.
+
+    A fabrication rejection has to be ACTIONABLE by a human reading the queue —
+    "AM-R1 violation" alone does not say which clause to delete.
+    """
+    sentences = _sentences(text)
+    cursor = 0
+    body = str(text or "")
+    for sentence in sentences:
+        idx = body.find(sentence, cursor)
+        if idx == -1:
+            continue
+        if idx <= needle_start < idx + len(sentence):
+            return sentence
+        cursor = idx + len(sentence)
+    return sentences[0] if sentences else body
+
+
+def fabrication(draft: str, ctx: dict) -> dict[str, Any]:
+    """No fabricated biography on a real person's account (AM-R1).
+
+    Three layers, in order of how much they already existed:
+
+      1. the three PINNED AM-R1 lines, called directly so they bind on every
+         account and not only the ones carrying a codex;
+      2. ``_LIFE_FACT_RE`` — the circumstance class the warmth register creates
+         pressure on, which nothing detected before this build;
+      3. the parent author's display-name tokens, barred on EVERY draft. A first
+         name implies a relationship we have not established and reads worse
+         screenshotted; the winning corpus's own sympathy register uses first
+         names, and it is the one thing in it we may not borrow.
+
+    Every reason QUOTES the offending sentence, and names AM-R1, so an operator
+    reading ``rejected_by`` next to a ``vocab: AM-R1 violation (...)`` line can
+    tell the two apart and knows which clause to cut.
+    """
+    reasons: list[str] = []
+    text = str(draft or "")
+    if not text.strip():
+        return _verdict("fabrication", reasons)
+
+    try:
+        from engine.marketing.expression_dial import AM_R1_DETECTORS  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        # A gate we cannot load is not a gate that passed. This is the ONE
+        # hard line protecting a real employee's name; hold the draft.
+        return _verdict("fabrication", [
+            f"AM-R1 detectors unavailable ({exc}) — cannot clear a real name"
+        ])
+
+    for line, patterns in AM_R1_DETECTORS.items():
+        for pattern in patterns:
+            match = pattern.search(text)
+            if match:
+                reasons.append(
+                    f"AM-R1 ({line}): {_quote_sentence(text, match.start())!r}"
+                )
+                break
+        if reasons:
+            break
+
+    for pattern in _LIFE_FACT_RE:
+        match = pattern.search(text)
+        if match:
+            reasons.append(
+                "AM-R1 class (circumstance, not analysis): "
+                f"{_quote_sentence(text, match.start())!r} — a reader may learn "
+                "how this desk thinks, never anything about its life"
+            )
+            break
+
+    author = str(ctx.get("parent_author") or "")
+    if author:
+        try:
+            from engine.marketing.reply_drafter import author_name_hits  # noqa: PLC0415
+
+            hits = author_name_hits(text, author)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("reply_critics.fabrication: name check unavailable (%s)", exc)
+            hits = []
+        if hits:
+            reasons.append(
+                f"first-name address to the parent author ({hits[0]!r}) implies a "
+                "relationship we have not established and reads worse screenshotted"
+            )
+    return _verdict("fabrication", reasons)
+
+
+# ---------------------------------------------------------------------------
+# 11. Dignity / screenshot rubric — the ONE place an LLM may speak
 # ---------------------------------------------------------------------------
 def dignity(draft: str, ctx: dict) -> dict[str, Any]:
     """Would this read as a serious desk if screenshotted next to our profile?
@@ -690,6 +1119,8 @@ _CRITIC_FUNCS: dict[str, Callable[[str, dict], dict]] = {
     "reply_value": reply_value,
     "fact_discipline": fact_discipline,
     "vocab": vocab,
+    "warmth_register": warmth_register,
+    "fabrication": fabrication,
     "dignity": dignity,
 }
 
@@ -806,5 +1237,6 @@ __all__ = [
     "run_critics", "screen", "stamp", "our_handles", "load_theses", "number_tokens",
     "informational_surplus", "corpus_near_dup", "blocklist",
     "position_consistency", "persona_label", "reply_value", "fact_discipline",
-    "vocab", "dignity",
+    "vocab", "warmth_register", "fabrication", "dignity",
+    "warmth_markers", "reply_dial_for",
 ]

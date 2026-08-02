@@ -3667,6 +3667,35 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
 # up dirtying the render tree.
 # ---------------------------------------------------------------------------
 
+def _reply_desk_open(store, *, ts) -> tuple[list, list, dict]:
+    """The ONE preamble every reply panel runs before it reads the store.
+
+    Two panels now read this queue (the legacy rail and the deck). Factored to
+    ONE function on purpose: the dangerous half of opening a reply panel is the
+    lease release, and two copies of it are two chances for one of them to drift
+    into releasing a lease whose receipt is still pending.
+
+    Order is `reply_export.sweep`'s order: release leases FIRST so an item whose
+    desktop session died is reclaimable, then expire. Expiring before releasing
+    would leave an in-flight item unreachable.
+
+    ``skip_ids`` is NOT optional. A panel read that releases a lease whose
+    receipt is still pending drops the item to `queued`, which has no edge to
+    `sent` — so ingest then fails with illegal_transition and a reply that is
+    already PUBLIC goes permanently uncounted while the cap hands its slot back.
+    Opening an admin page must not be able to do that.
+
+    Returns ``(released, killed, folded_state)``.
+    """
+    from engine.marketing import reply_export as _rx  # noqa: PLC0415
+    from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+    released = _rq.release_expired_claims(now=ts, root=store,
+                                          skip_ids=_rx.pending_receipt_ids(store))
+    killed = _rq.expire_due(now=ts, root=store)
+    return released, killed, _rq.fold_state(store)
+
+
 def reply_queue(root=None, *, store=None, now=None) -> dict:
     """Reply-queue panel payload: per-account two-zone rail + dial + caps.
 
@@ -3684,22 +3713,7 @@ def reply_queue(root=None, *, store=None, now=None) -> dict:
         cfg = _read_yaml(repo / "config" / "marketing.yml")
         ts = now or datetime.now(timezone.utc)
 
-        # Same order as reply_export.sweep: release leases FIRST so an item
-        # whose desktop session died is reclaimable, then expire. Expiring
-        # before releasing would leave an in-flight item unreachable.
-        #
-        # skip_ids is NOT optional here. A panel read that releases a lease whose
-        # receipt is still pending drops the item to `queued`, which has no edge
-        # to `sent` — so ingest then fails with illegal_transition and a reply
-        # that is already PUBLIC goes permanently uncounted while the cap hands
-        # its slot back. Opening the admin page must not be able to do that.
-        from engine.marketing import reply_export as _rx  # noqa: PLC0415
-
-        released = _rq.release_expired_claims(now=ts, root=store,
-                                              skip_ids=_rx.pending_receipt_ids(store))
-        killed = _rq.expire_due(now=ts, root=store)
-
-        state = _rq.fold_state(store)
+        released, killed, state = _reply_desk_open(store, ts=ts)
         outcomes = _rq.outcomes(store)
         accounts: dict[str, dict] = {}
 
@@ -3851,6 +3865,951 @@ def reject_reply(item_id: str, reason: str | None = None, root=None, *, store=No
                         "rejected, but the feedback row could not be written"}
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.reject_reply failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# THE REPLY DECK — the surface the operator actually works
+#
+# `reply_queue()` above is the rail that shipped with XG-W4: it lists what is in
+# the store. That is enough to prove the store works and not enough to DECIDE
+# with, because approving a reply is a judgement about a conversation and the
+# rail shows one half of it — our draft, with the parent reduced to an excerpt
+# and the reason this target was chosen at all reduced to a row of float
+# contributions with no labels.
+#
+# The deck is the other half. Three things the rail does not carry:
+#
+#   1. THE PARENT BESIDE THE DRAFT, with the score's own features rendered as
+#      the sentences they encode ("posted 8 minutes ago — inside the 5-15 minute
+#      window", "3 replies so far — the thread has room"). The numbers are
+#      `reply_score`'s, unchanged; only the labels are new. An operator who
+#      cannot see WHY the machine picked a target cannot tell a good pick from a
+#      lucky one, and the whole scoring hypothesis stays ungraded.
+#
+#   2. AN HONEST DARK STATE. This desk has FIVE independent arming keys (the
+#      daemon lane, `producer.enabled`, a curated register, the mode dial, and
+#      the voice pair) and four of them fail SILENTLY — an empty register polls
+#      cleanly and produces nothing, which reads as "quiet desk", not "dark
+#      desk". `_reply_dark_reasons` reads each key from the tree it actually
+#      lives in and names the ones that are off, so an empty deck says why it is
+#      empty instead of implying there was nothing worth replying to.
+#
+#   3. THE EXPORT/RECEIPT STATE PER ITEM. Approving is not sending. At M0
+#      approval parks the item forever by design; at M1 it is mirrored, claimed
+#      by a desktop session, sent, and confirmed back by a receipt file. Four
+#      states with four different operator meanings, none of which the rail
+#      distinguished from "approved".
+#
+# WRITES. The deck's decide/skip actions go through `decide_reply`/
+# `reject_reply` above — the real store API, no second write path. The one new
+# write is the edit (`edit_reply`), and it is a SUPERSESSION rather than an
+# overwrite for the same reason the outbox edit is: `reply_queue._item_id`
+# hashes account|thread_key|draft|as_of, so a row whose text changed under a
+# kept id is a row whose id no longer describes its content.
+# ---------------------------------------------------------------------------
+
+#: Feature id -> (label, the sentence the number means). The value formatter is
+#: chosen per key because these are NOT the same kind of number: `age_fit` is a
+#: window fit in [0,1] and `age_min` is minutes. Labels only — every figure on
+#: the card is `reply_score`'s own.
+_RQ_FEATURE_WORDS: dict[str, tuple[str, str]] = {
+    "author_tier": ("who they are", "the tier this author was curated at"),
+    "age_fit": ("how fresh", "how well the post's age fits the reply window"),
+    "velocity": ("how fast", "engagement per minute since it posted"),
+    "saturation": ("room left", "how far the thread is from crowded"),
+    "beat_fit": ("on her beat", "overlap between the post and this desk's beats"),
+    "own_post": ("ours", "a reply under one of our own posts"),
+    "relationship_stage": ("known to us", "how far this author relationship has got"),
+}
+
+#: Codes `_reply_dark_reasons` may emit, in the order an operator would fix
+#: them. Kept as a tuple so a test can pin the set — a dark reason that stops
+#: being emitted is a diagnosis that silently disappeared.
+_RQ_DARK_CODES: tuple[str, ...] = (
+    "desk_disabled", "lane_not_invoked", "producer_off",
+    "no_targets_enabled", "all_m0",
+)
+
+
+def _rq_char_cap() -> int:
+    """The reply length ceiling, read from the gate that enforces it.
+
+    Never a local constant: `reply_voice.MAX_REPLY_CHARS` is what actually
+    rejects a long reply, and a meter drawn against a second copy of the number
+    would disagree with the gate the first time either moved.
+    """
+    try:
+        from engine.marketing import reply_voice as _rv  # noqa: PLC0415
+        return int(_rv.MAX_REPLY_CHARS)
+    except Exception:  # noqa: BLE001
+        return 240
+
+
+def _rq_minutes(a: datetime | None, b: datetime | None) -> float | None:
+    if a is None or b is None:
+        return None
+    return round((a - b).total_seconds() / 60.0, 1)
+
+
+def _rq_parse_iso(value) -> datetime | None:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _reply_lane_invoked(repo: Path) -> dict:
+    """Does any deployed unit actually start the reply lane?
+
+    THE DEFECT THIS PANEL EXISTS TO SURFACE. `--lane reply` is fully built in
+    `scripts/marketing_fastlane_daemon.py`, and the only deployed unit
+    (`marketing-press-feeds.service`) hardcodes `--lane press`. Flipping every
+    config key below therefore changes NOTHING, with no error anywhere, because
+    the process that would run the tick is never started with the reply lane.
+
+    Read from the committed unit files rather than from the host: the admin may
+    not be running on the daemon's machine, and a systemd probe that returns
+    "unknown" would be indistinguishable from "not wired". The unit files are
+    the deployment contract, and they are in this tree.
+    """
+    lanes: list[str] = []
+    units: list[str] = []
+    deploy = repo / "app" / "deploy"
+    try:
+        for unit in sorted(deploy.glob("*.service")):
+            text = unit.read_text(encoding="utf-8", errors="replace")
+            if "marketing_fastlane_daemon" not in text:
+                continue
+            units.append(unit.name)
+            for m in re.finditer(r"--lane[=\s]+([a-z,]+)", text):
+                lanes.extend(p for p in m.group(1).split(",") if p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing._reply_lane_invoked: %s", exc)
+        return {"invoked": None, "lanes": [], "units": []}
+    if not units:
+        # No daemon unit in this tree at all — an admin pointed at a checkout
+        # without app/deploy, or a fixture root. UNKNOWN, never a confident
+        # "not wired": a false dark reason is as misleading as a missing one.
+        return {"invoked": None, "lanes": [], "units": []}
+    invoked = any(lane in {"reply", "all"} for lane in lanes)
+    return {"invoked": invoked, "lanes": sorted(set(lanes)), "units": units}
+
+
+def _reply_register_raw(repo: Path) -> dict:
+    """The curated author register as YAML, fail-soft to {}."""
+    try:
+        from engine.marketing import reply_discovery as _rd  # noqa: PLC0415
+        return _rd.load_register(repo) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing._reply_register_raw: %s", exc)
+        return {}
+
+
+def _reply_register_state(repo: Path) -> dict:
+    """Per-account curated-author counts + the register's own schema errors.
+
+    `register_for_account` drops any entry with `enabled: false`, so a register
+    of 100% placeholders resolves to zero authors per desk and discovery polls
+    nothing — cleanly, with no warning. Counting BOTH sides (enabled and total)
+    is what turns that silence into a sentence.
+    """
+    out = {"ok": True, "errors": [], "accounts": {}, "enabled_total": 0, "listed_total": 0}
+    try:
+        from engine.marketing import reply_discovery as _rd  # noqa: PLC0415
+
+        reg = _reply_register_raw(repo)
+        out["errors"] = list(_rd.validate_register(reg) or [])
+        for acct, block in ((reg or {}).get("accounts") or {}).items():
+            listed = len((block or {}).get("authors") or []) if isinstance(block, dict) else 0
+            enabled = len(_rd.register_for_account(reg, acct))
+            out["accounts"][str(acct)] = {"enabled": enabled, "listed": listed}
+            out["enabled_total"] += enabled
+            out["listed_total"] += listed
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing._reply_register_state: %s", exc)
+        out["ok"] = False
+        out["error"] = str(exc)
+    return out
+
+
+def _reply_dark_reasons(cfg: dict, lane: dict, register: dict,
+                        modes: dict[str, str]) -> list[dict]:
+    """Every arming key that is OFF, in the order an operator would fix them.
+
+    Each row is {code, title, detail, fix} — `fix` names the exact file and key,
+    because the whole failure mode here is a key that is off in a place nobody
+    looked. An empty list means the desk is armed end to end; it does NOT mean
+    replies exist.
+    """
+    rd = (cfg or {}).get("reply_desk") or {}
+    rows: list[dict] = []
+
+    if rd.get("enabled") is False:
+        rows.append({
+            "code": "desk_disabled", "title": "The whole desk is switched off",
+            "detail": "reply_desk.enabled is false, so every account resolves to "
+                      "M0 whatever its own dial says.",
+            "fix": "config/marketing.yml → reply_desk.enabled",
+        })
+
+    if lane.get("invoked") is False:
+        rows.append({
+            "code": "lane_not_invoked",
+            "title": "No deployed unit starts the reply lane",
+            "detail": "The daemon implements --lane reply, but "
+                      + (", ".join(lane.get("units") or []) or "the deployed units")
+                      + " only start "
+                      + (", ".join(lane.get("lanes") or []) or "other lanes")
+                      + ". Nothing runs the producer tick, so config alone cannot "
+                        "make a draft appear.",
+            "fix": "app/deploy/*.service → ExecStart --lane all (or a second unit)",
+        })
+
+    if ((rd.get("producer") or {}).get("enabled")) is not True:
+        rows.append({
+            "code": "producer_off", "title": "The drafter is dark",
+            "detail": "reply_desk.producer.enabled is false, so run_producer "
+                      "returns immediately even when the lane does run.",
+            "fix": "config/marketing.yml → reply_desk.producer.enabled",
+        })
+
+    if register.get("ok") and not register.get("enabled_total"):
+        rows.append({
+            "code": "no_targets_enabled", "title": "No curated author is enabled",
+            "detail": f"{register.get('listed_total', 0)} authors are listed and 0 "
+                      "are enabled, so discovery polls no timelines. Only inbound "
+                      "mentions could ever produce a target.",
+            "fix": "config/reply_targets.yml → set real handles, enabled: true",
+        })
+    if register.get("errors"):
+        rows.append({
+            "code": "no_targets_enabled", "title": "The author register does not validate",
+            "detail": "; ".join(str(e) for e in register["errors"][:3]),
+            "fix": "config/reply_targets.yml",
+        })
+
+    if modes and all(m == "M0" for m in modes.values()):
+        rows.append({
+            "code": "all_m0", "title": "Every desk is at M0 — nothing exports",
+            "detail": "Drafts still appear here and you can still approve them, "
+                      "but at M0 an approved item is parked: it is never mirrored "
+                      "to the desktop lane and can never be claimed or sent.",
+            "fix": "config/marketing.yml → reply_desk.mode.accounts.<desk>: M1",
+        })
+    return rows
+
+
+def _rq_window_label(win) -> str:
+    def hhmm(mins: int) -> str:
+        return f"{int(mins) // 60 % 24:02d}:{int(mins) % 60:02d}"
+    return f"{hhmm(win.start_min)}-{hhmm(win.end_min)}"
+
+
+def _reply_burst_plan(repo: Path, accounts: list[dict], *, ts: datetime) -> dict:
+    """Today's burst plan, derived from each persona's OWN territory clock.
+
+    A "burst" here is one session window of one desk: the runbook's §5 working
+    discipline is one account at a time, inside its own hours, with irregular
+    gaps ("Cici runs Asia hours, the others US hours — a desk replying at 3am in
+    its own time zone reads as a bot").
+
+    NOT INVENTED FOR THIS PANEL. The windows come from `cadence.session` in the
+    committed persona specs and are resolved through `cadence_resolver`, the
+    same module the publisher uses, so the deck cannot disagree with the lane
+    about when a desk is awake. A desk whose spec declares no session is ALWAYS
+    in window — that is `in_session`'s own semantics, and it is reported as
+    "no territory clock" rather than as a live burst, because a permanent window
+    is not a burst and calling it one would make the header meaningless.
+
+    "How many remain in it" is deliberately TWO numbers: items waiting on this
+    desk, and the send headroom its cap allows. They bind independently, and an
+    operator with nine drafts and two slots left needs to see both.
+    """
+    # Provenance worded WITHOUT the spec path literal on purpose: the fence in
+    # tests/test_marketing_personas.py counts any occurrence of that path as a
+    # spec read, "whatever else is on the line" — deliberately, so a fence
+    # cannot be talked around. A display string is not worth loosening it.
+    plan = {"source": "each persona's committed spec — its cadence.session block",
+            "as_of": ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "live": [], "accounts": [], "note": None}
+    try:
+        # THE SPEC LAYER IS NOT READ HERE, DELIBERATELY. `cadence_resolver` is
+        # one of the fence's adjudicated spec readers (tests/
+        # test_marketing_personas.py::test_no_generation_module_reads_a_persona_spec);
+        # this panel is not, and pre-loading `personas.load_all` to hand it a
+        # `specs=` map — which is only a call-count optimisation, since
+        # `load_profile` reads them itself when `specs is None` — would put a
+        # second, unadjudicated reader in the tree for nothing. Asking the
+        # resolver is also what keeps the deck and the lane on ONE answer about
+        # when a desk is awake.
+        from engine.marketing import cadence_resolver as _cad  # noqa: PLC0415
+
+        for block in accounts:
+            acct = str(block.get("id") or "")
+            profile = _cad.load_profile(acct, root=repo)
+            row = {
+                "id": acct,
+                "mode": block.get("mode"),
+                "tz": "",
+                "windows": [],
+                "has_session": False,
+                "live": False,
+                "local_time": None,
+                "waiting": len(block.get("awaiting") or []),
+                "cleared": len(block.get("approved") or []),
+                "cap": block.get("cap"),
+                "sent_today": block.get("sent_today"),
+                "headroom": None,
+            }
+            cap = block.get("cap")
+            sent = block.get("sent_today") or 0
+            if isinstance(cap, (int, float)):
+                row["headroom"] = max(0, int(cap) - int(sent))
+            if profile is not None and profile.has_session:
+                row["tz"] = profile.tz
+                row["windows"] = [_rq_window_label(w) for w in profile.windows]
+                row["has_session"] = True
+                row["live"] = bool(_cad.in_session(profile, ts))
+                try:
+                    from zoneinfo import ZoneInfo  # noqa: PLC0415
+                    local = ts.astimezone(ZoneInfo(profile.tz))
+                    row["local_time"] = local.strftime("%H:%M")
+                except Exception:  # noqa: BLE001
+                    row["local_time"] = None
+            if row["live"]:
+                plan["live"].append(acct)
+            plan["accounts"].append(row)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing._reply_burst_plan: %s", exc)
+        plan["note"] = f"burst plan unavailable: {exc}"
+    return plan
+
+
+def _reply_export_state(iid: str, *, status: str, mode: str, state: dict,
+                        exported: set, pending: set) -> dict:
+    """Where one item sits on the handoff rail, in operator words.
+
+    The rail has four hops after approval and the queue's own `status` collapses
+    three of them: `approved` covers "waiting for the next export tick", "handed
+    over and sitting in the desktop lane", and "parked forever because this desk
+    is at M0". Those are three different things to do next.
+    """
+    claim = (state.get("claims") or {}).get(iid)
+    last = (state.get("last") or {}).get(iid) or {}
+    receipt = last.get("receipt") if isinstance(last.get("receipt"), dict) else None
+
+    if status == "sent":
+        return {"stage": "sent", "label": "Sent and confirmed",
+                "detail": "the desktop session filed a receipt",
+                "url": (receipt or {}).get("url"),
+                "screenshot": (receipt or {}).get("screenshot"),
+                "holder": (receipt or {}).get("holder"),
+                "claim": claim}
+    if iid in pending:
+        return {"stage": "receipt_pending", "label": "Receipt filed, not yet ingested",
+                "detail": "the next sweep books the send", "claim": claim}
+    if status == "claimed":
+        return {"stage": "claimed", "label": "Claimed by a desktop session",
+                "detail": (f"held by {claim.get('holder')} until {claim.get('lease_until')}"
+                           if isinstance(claim, dict) else "lease held"),
+                "claim": claim}
+    if status == "failed":
+        return {"stage": "failed", "label": "The send failed",
+                "detail": str(last.get("note") or "no reason recorded"), "claim": claim}
+    if status == "approved":
+        if mode == "M0":
+            return {"stage": "parked", "label": "Parked — M0 exports nothing",
+                    "detail": "approved and going nowhere until this desk is at M1",
+                    "claim": None}
+        if iid in exported:
+            return {"stage": "exported", "label": "Handed to the desktop lane",
+                    "detail": "mirrored and waiting for a session to claim it",
+                    "claim": claim}
+        return {"stage": "awaiting_export", "label": "Cleared, not yet handed over",
+                "detail": "the next export tick mirrors it, cap and halt permitting",
+                "claim": None}
+    if status == "rejected":
+        # An EDIT retires the original through the same `rejected` edge a skip
+        # uses — the store has one terminal kill and no separate "superseded".
+        # Reading the ledger actor is the only way to tell the operator which
+        # of the two he is looking at, and "you passed on this" is a false
+        # sentence about a draft he actually improved.
+        if str(last.get("actor") or "") == _RQ_EDIT_ACTOR:
+            return {"stage": "replaced", "label": "Replaced by your edit",
+                    "detail": "the version above took its place", "claim": None}
+        return {"stage": "rejected", "label": "Skipped",
+                "detail": "you passed on it — the thread is free for another desk",
+                "claim": None}
+    if status == "expired":
+        return {"stage": "expired", "label": "Expired",
+                "detail": "its reply window closed before it was approved",
+                "claim": None}
+    return {"stage": "queued", "label": "Waiting on you", "detail": "", "claim": None}
+
+
+def _reply_why_draft(item: dict, families: dict, warmths: dict) -> dict:
+    """The gift / grip / doorway breakdown, and an honest note on what is missing.
+
+    THE FORMULA IS ONE GIFT, ONE GRIP, ONE DOORWAY. The item carries the family
+    (and, once the warmth lane lands, the warmth move), and `reply_drafter`'s
+    registers carry the MOVE and the author-response TRIGGER each family serves
+    — so grip and doorway-intent are reconstructable from committed data.
+
+    The GIFT is not. `reply_drafter.draft_reply` computes `components.gift` and
+    `reply_queue.make_item` has no parameter for it, so the own-feed sentence
+    the reply pays with is dropped on the way into the store. This function
+    reads `item["components"]` anyway (a sibling lane may persist it) and
+    otherwise SAYS SO in `missing` rather than substituting the draft's first
+    line, which would read as the gift and frequently not be it.
+    """
+    comps = item.get("components") if isinstance(item.get("components"), dict) else {}
+    fam_id = str(item.get("family") or "")
+    fam = families.get(fam_id) or {}
+    warm_id = str(item.get("warmth") or "")
+    warm = warmths.get(warm_id) or {}
+
+    numbers: list[str] = []
+    try:
+        from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+        numbers = list(_rc.number_tokens(str(item.get("draft") or "")))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing._reply_why_draft: number tokens: %s", exc)
+
+    out = {
+        "gift": comps.get("gift"),
+        "family": {"id": fam_id or None, "label": fam.get("label"),
+                   "move": fam.get("move") or comps.get("family_move"),
+                   "trigger": fam.get("trigger") or comps.get("trigger")},
+        "warmth": ({"id": warm_id, "label": warm.get("label"), "does": warm.get("does")}
+                   if warm_id else None),
+        "numbers": numbers,
+        "chart": bool(item.get("chart")),
+        "voice_mode": comps.get("voice_mode"),
+        "missing": [],
+    }
+    if not out["gift"]:
+        out["missing"].append(
+            "the gift sentence is not stored on the item — reply_drafter computes "
+            "components.gift and reply_queue.make_item has no field for it")
+    if not fam_id:
+        out["missing"].append("no reasoning family was recorded")
+    return out
+
+
+def _reply_card(iid: str, item: dict, status: str, *, state: dict, outcomes: dict,
+                decisions: dict, exported: set, pending: set, mode: str,
+                ts: datetime, families: dict, warmths: dict) -> dict:
+    """One deck card: the parent, the draft, and every reason for both."""
+    feats = item.get("score_features") if isinstance(item.get("score_features"), dict) else {}
+    ctxf = feats.get("_context") if isinstance(feats.get("_context"), dict) else {}
+    comps = item.get("score_components") if isinstance(item.get("score_components"), dict) else {}
+
+    why_target = []
+    for key, contribution in comps.items():
+        label, means = _RQ_FEATURE_WORDS.get(str(key), (str(key), ""))
+        why_target.append({
+            "key": str(key), "label": label, "means": means,
+            "contribution": round(float(contribution), 4),
+            "feature": feats.get(key),
+        })
+    why_target.sort(key=lambda r: -abs(r["contribution"]))
+
+    expires = _rq_parse_iso(item.get("expires_at"))
+    stamp = item.get("critics") if isinstance(item.get("critics"), dict) else {}
+
+    return {
+        "id": iid,
+        "status": status,
+        "account": str(item.get("account") or ""),
+        "mode": mode,
+        "tier": item.get("tier"),
+        "family": item.get("family"),
+        "warmth": item.get("warmth"),
+        "score": item.get("score"),
+        # ── the parent ──
+        "target_url": item.get("target_url"),
+        "parent_author": item.get("parent_author"),
+        "parent_excerpt": item.get("parent_excerpt"),
+        "parent_age_min": ctxf.get("age_min"),
+        "parent_replies": ctxf.get("reply_count"),
+        "parent_engagement": ctxf.get("engagement"),
+        "author_tier": ctxf.get("tier"),
+        "relationship_source": ctxf.get("relationship_source"),
+        "why_target": why_target,
+        # ── our draft ──
+        "draft": item.get("draft"),
+        "chars": len(str(item.get("draft") or "")),
+        "alt_drafts": [
+            {"text": t, "family": (item.get("alt_families") or [None] * (i + 1))[i]
+             if isinstance(item.get("alt_families"), list)
+             and len(item.get("alt_families") or []) > i else None}
+            for i, t in enumerate(item.get("alt_drafts") or [])
+        ],
+        "why_draft": _reply_why_draft(item, families, warmths),
+        "critics": {
+            "verdict": stamp.get("verdict"),
+            "ran": list(stamp.get("critics_run") or []),
+            "rejected_by": list(stamp.get("rejected_by") or []),
+            "stamped_at": stamp.get("stamped_at"),
+        },
+        "chart": item.get("chart"),
+        # ── clocks + rail ──
+        "created_at": item.get("created_at"),
+        "expires_at": item.get("expires_at"),
+        "expires_in_min": _rq_minutes(expires, ts),
+        "attempts": (state.get("attempts") or {}).get(iid, 0),
+        "decisions": list((decisions or {}).get(iid) or [])[-3:],
+        "outcome": (outcomes or {}).get(iid) or {},
+        "export": _reply_export_state(iid, status=status, mode=mode, state=state,
+                                      exported=exported, pending=pending),
+    }
+
+
+def reply_deck(root=None, *, store=None, now=None) -> dict:
+    """The operator's reply deck: ranked drafts, burst header, export state.
+
+    Read-only apart from the lease/expiry preamble every reply panel runs
+    (`_reply_desk_open`). Nothing here approves, exports, sends, or arms
+    anything — opening the deck must not be able to move an item.
+    """
+    try:
+        from engine.marketing import reply_export as _rx  # noqa: PLC0415
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+        from engine.marketing import sentinel as _sentinel  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        cfg = _read_yaml(repo / "config" / "marketing.yml")
+        ts = now or datetime.now(timezone.utc)
+
+        released, killed, state = _reply_desk_open(store, ts=ts)
+        outcomes = _rq.outcomes(store)
+        decisions = _rq.decisions(store)
+        exported = _rx.exported_ids(store)
+        pending = _rx.pending_receipt_ids(store)
+
+        # The drafter's registers, for the "why this draft" expander. Soft: the
+        # warmth register is landing in a sibling lane, and a deck that crashed
+        # on its absence would be a page that only works after another PR.
+        families: dict = {}
+        warmths: dict = {}
+        try:
+            from engine.marketing import reply_drafter as _rdft  # noqa: PLC0415
+            families = dict(getattr(_rdft, "FAMILIES", {}) or {})
+            warmths = dict(getattr(_rdft, "WARMTH_MOVES", {}) or {})
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing.reply_deck: drafter registers unavailable: %s", exc)
+
+        # Every desk that MAY produce replies gets a block, whether or not it
+        # has items — a desk with nothing queued is the case this page exists
+        # for, and it cannot be diagnosed if it is simply absent from the
+        # payload. `eligible_accounts` is the producer's own definition
+        # (enabled in desk_network AND present in the register), so the deck
+        # lists exactly the desks the lane would work, not all thirteen accounts
+        # in the fleet. Anything with items in the store is added below even if
+        # it has since fallen out of that set, because a live item nobody can
+        # see is worse than an unexpected column.
+        modes: dict[str, str] = {}
+        try:
+            from engine.marketing import reply_producer as _rp  # noqa: PLC0415
+            for acct in _rp.eligible_accounts(cfg, root=repo,
+                                              register=_reply_register_raw(repo)):
+                modes[str(acct)] = _rq.resolve_mode(cfg, str(acct))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing.reply_deck: eligible accounts unavailable: %s", exc)
+        for acct in ((cfg.get("reply_desk") or {}).get("mode") or {}).get("accounts") or {}:
+            modes.setdefault(str(acct), _rq.resolve_mode(cfg, str(acct)))
+
+        blocks: dict[str, dict] = {}
+
+        def _block(acct: str) -> dict:
+            mode = modes.setdefault(acct, _rq.resolve_mode(cfg, acct))
+            return blocks.setdefault(acct, {
+                "id": acct, "mode": mode, "awaiting": [], "approved": [],
+                "recent": [], "counts": {},
+                "cap": _sentinel.reply_send_cap(cfg, acct, mode=mode),
+                "sent_today": _rq.sends_today(acct, ts.strftime("%Y-%m-%d"), store),
+            })
+
+        for acct in modes:
+            _block(acct)
+
+        for iid, item in (state.get("items") or {}).items():
+            status = (state.get("status") or {}).get(iid, "queued")
+            acct = str(item.get("account") or "unknown")
+            block = _block(acct)
+            block["counts"][status] = block["counts"].get(status, 0) + 1
+            card = _reply_card(iid, item, status, state=state, outcomes=outcomes,
+                               decisions=decisions, exported=exported, pending=pending,
+                               mode=block["mode"], ts=ts, families=families,
+                               warmths=warmths)
+            if status == "queued":
+                block["awaiting"].append(card)
+            elif status in {"approved", "claimed", "failed"}:
+                block["approved"].append(card)
+            else:
+                block["recent"].append(card)
+
+        for block in blocks.values():
+            # Ranked, because the deck is a work queue: the top card is the one
+            # to decide first. Ties break on id so the order is stable across
+            # refreshes — a list that reshuffles under the cursor is a list the
+            # operator stops trusting.
+            block["awaiting"].sort(key=lambda c: (-float(c.get("score") or 0.0), c["id"]))
+            block["approved"].sort(key=lambda c: (-float(c.get("score") or 0.0), c["id"]))
+            block["recent"] = sorted(block["recent"],
+                                     key=lambda c: str(c.get("created_at") or ""),
+                                     reverse=True)[:20]
+            cap = block.get("cap")
+            block["headroom"] = (max(0, int(cap) - int(block.get("sent_today") or 0))
+                                 if isinstance(cap, (int, float)) else None)
+
+        accounts = sorted(blocks.values(), key=lambda b: b["id"])
+        lane = _reply_lane_invoked(repo)
+        register = _reply_register_state(repo)
+        rd = cfg.get("reply_desk") or {}
+
+        return {
+            "ok": True,
+            "as_of": ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "store": str(_rq.state_dir(store)),
+            "char_cap": _rq_char_cap(),
+            "arming": {
+                "desk_enabled": rd.get("enabled") is not False,
+                "producer_enabled": (rd.get("producer") or {}).get("enabled") is True,
+                "voice_enabled": (rd.get("voice") or {}).get("enabled") is True,
+                "modes_enabled": sorted(_rq.SHIPPABLE_MODES),
+                "hard_ceiling": _sentinel.REPLY_HARD_CEILING_PER_ACCOUNT_PER_DAY,
+                "lane": lane,
+                "register": register,
+                # Stated, never probed: the LLM phrasing pass needs
+                # MARKETING_LLM_ENABLED and a provider credential in the DAEMON's
+                # environment, and the admin may not be on that host. Reading our
+                # own env here would answer a different question convincingly.
+                "voice_note": "the phrasing pass also needs MARKETING_LLM_ENABLED "
+                              "and a provider credential in the daemon's own "
+                              "environment — not checkable from this page",
+            },
+            "dark": _reply_dark_reasons(cfg, lane, register, modes),
+            "burst": _reply_burst_plan(repo, accounts, ts=ts),
+            "accounts": accounts,
+            "export": {
+                "queue_dir": str(_rx.queue_dir(store)),
+                "receipts_dir": str(_rx.receipts_dir(store)),
+                "mirrored": len(exported),
+                "receipts_pending": len(pending),
+            },
+            "totals": {
+                "awaiting": sum(len(b["awaiting"]) for b in accounts),
+                "cleared": sum(len(b["approved"]) for b in accounts),
+                "expired_now": len(killed or []),
+                "released_now": len(released or []),
+            },
+            "summary": _rq.summary(store),
+            "note": ("Replies never post from this repo. At M0 nothing exports; at "
+                     "M1 what you approve is handed to the desktop session, which "
+                     "is the only sender. See docs/reply_desk_runbook.md."),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.reply_deck failed: %s", exc)
+        return {"ok": False, "error": str(exc), "accounts": [], "dark": [],
+                "burst": {}, "totals": {}}
+
+
+# ---------------------------------------------------------------------------
+# The edit path — a SUPERSESSION, re-screened by the real critics
+#
+# WHY THE OPERATOR MAY EDIT AT ALL. The rail's only controls were approve, hold
+# and reject, so a draft that was 90% right had one outcome: rejection, and a
+# thread we had a genuine read on went unanswered inside its 15-minute window.
+# Rejecting a nearly-right reply also poisons the taste corpus, which is the one
+# signal that says what this desk should sound like.
+#
+# WHY IT IS NOT AN OVERWRITE. `reply_queue._item_id` hashes
+# account|thread_key|draft|as_of. A row whose text changed under a kept id is a
+# row whose id no longer describes its content, and the store's own duplicate
+# and near-dup machinery keys off that id.
+#
+# WHY THE CRITICS RUN AGAIN, NOT AS A COURTESY. `reply_queue.validate_item`
+# refuses any item without a full-roster PASSING stamp, so a superseding item
+# cannot enter the store unless the critics actually cleared the new text. The
+# operator is a second writer, and the queue is a bypass around every generation
+# law unless the gate is in front of him too.
+# ---------------------------------------------------------------------------
+
+#: Actor on every ledger row an operator reply-edit writes, so "what did the
+#: edit button do" is an exact ledger query.
+_RQ_EDIT_ACTOR = "operator-edit"
+
+
+def _reply_edit_ctx(repo: Path, cfg: dict, store, item: dict, *, item_id: str) -> dict:
+    """The critic ctx for re-screening edited reply copy.
+
+    Built to match `reply_producer`'s ctx field for field, because a gate that
+    sees a different context is a different gate. Two deliberate differences:
+
+      * `corpus` EXCLUDES the item being edited. The near-dup critic compares
+        against our own recent drafts, and the draft being rewritten is by
+        construction the nearest neighbour of its own rewrite — leaving it in
+        would reject every small edit as a repeat of itself. This is the same
+        reasoning `rewrite.apply_rewrite` encodes by quarantining first.
+
+        The rows are built HERE rather than by calling `reply_producer._corpus`,
+        which is otherwise the exact shape wanted: that helper projects each
+        item down to {draft, account} and drops the id, so there would be
+        nothing left to exclude the edited item BY. Same window (fleet-wide,
+        last 200, no status filter) so the gate sees the same corpus it would
+        during a producer tick.
+
+      * `numbers_whitelist` is the ORIGINAL DRAFT's number tokens, not the
+        own-feed whitelist the producer used — which `make_item` does not
+        persist. This is strictly TIGHTER than the permission the machine had:
+        the draft passed `fact_discipline`, so its numbers are a subset of the
+        whitelist that cleared it. The operator may keep any figure the machine
+        already vetted and may not introduce one, which is exactly the law a
+        hand-edited reply needs.
+    """
+    from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+    from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+    corpus = [
+        {"draft": str(row.get("draft") or ""), "account": str(row.get("account") or "")}
+        for row in _rq.read_items(store)[-200:]
+        if str(row.get("id") or "") != item_id
+    ]
+    press = _read_yaml(repo / "config" / "press_sources.yml")
+    return {
+        "account": str(item.get("account") or ""),
+        "root": repo,
+        "parent_text": item.get("parent_excerpt"),
+        "parent_author": item.get("parent_author"),
+        "thread_authors": item.get("thread_authors") or [],
+        "numbers_whitelist": _rc.number_tokens(str(item.get("draft") or "")),
+        "family": item.get("family"),
+        "corpus": corpus,
+        "our_handles": _rc.our_handles(cfg),
+        "satire_blocklist": list((press or {}).get("satire_blocklist") or []),
+        "cfg": cfg,
+    }
+
+
+def _reply_edit_findings(repo: Path, cfg: dict, store, item: dict, item_id: str,
+                         text: str) -> dict:
+    """Run the REAL critic roster over edited reply copy. Raises on an import error.
+
+    PUBLISH-ADJACENT POLARITY, same as the outbox edit path: every other read in
+    this module fails soft because a dark panel beats a 500, but this one stands
+    in front of copy going onto someone else's post under a real person's name.
+    A gate that cannot run must refuse, not wave the copy through.
+    """
+    from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+
+    ctx = _reply_edit_ctx(repo, cfg, store, item, item_id=item_id)
+    verdict = _rc.run_critics(text, ctx)
+    cap = _rq_char_cap()
+    warnings: list[str] = []
+    n = len(str(text))
+    if cap * 0.9 < n <= cap:
+        warnings.append(f"{n} of {cap} characters — close to the limit")
+    return {
+        "verdict": verdict,
+        # VERBATIM. The reasons an operator reads must be the reasons the
+        # machine gave, or the modal teaches him a vocabulary the pipeline
+        # does not use and he stops believing either one.
+        "violations": list(verdict.get("reasons") or []),
+        "rejected_by": list(verdict.get("rejected_by") or []),
+        "warnings": warnings,
+    }
+
+
+def validate_reply_text(item_id: str, text, root=None, *, store=None, now=None) -> dict:
+    """Dry-run the reply critics over proposed copy. NO WRITES, ever.
+
+    What the deck's "Check it" button calls. `edit_reply` re-runs every one of
+    these server-side, so a client that skipped this step is refused anyway.
+    """
+    try:
+        repo = Path(root) if root is not None else _default_root()
+        cfg = _read_yaml(repo / "config" / "marketing.yml")
+        iid = str(item_id or "").strip()
+        new_text = str(text if text is not None else "")
+        if not iid:
+            return {"ok": False, "error": "id required"}
+
+        state = _reply_desk_open(store, ts=now or datetime.now(timezone.utc))[2]
+        item = (state.get("items") or {}).get(iid)
+        if item is None:
+            return {"ok": False, "error": "unknown item id"}
+        status = (state.get("status") or {}).get(iid, "queued")
+
+        cap = _rq_char_cap()
+        n = len(new_text)
+        over = n > cap
+        if not new_text.strip():
+            return {"ok": True, "id": iid, "chars": n, "over": over, "clean": False,
+                    "violations": ["the reply is empty"], "rejected_by": [],
+                    "warnings": [], "editable": status == "queued", "char_cap": cap}
+
+        found = _reply_edit_findings(repo, cfg, store, item, iid, new_text)
+        unchanged = new_text.strip() == str(item.get("draft") or "").strip()
+        return {
+            "ok": True, "id": iid, "chars": n, "over": over, "char_cap": cap,
+            "clean": (not found["violations"]) and (not over) and (not unchanged),
+            "unchanged": unchanged,
+            "violations": found["violations"],
+            "rejected_by": found["rejected_by"],
+            "warnings": found["warnings"],
+            "editable": status == "queued",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.validate_reply_text failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def edit_reply(item_id: str, text, root=None, *, store=None,
+               approve: bool = True, now=None) -> dict:
+    """Replace one queued draft with operator-edited copy, then approve it.
+
+    ORDER, AND WHY. Every refusal that can be checked without writing is checked
+    BEFORE the original is killed, because `enqueue`'s one-owner lock means the
+    replacement cannot be written while the original is still live, and a
+    replacement refused AFTER the kill would leave the operator with a fixed
+    typo and no reply at all. What survives that ordering is a disk write
+    failure, which is reported as `superseded_but_lost` rather than swallowed.
+
+    The new item inherits the ORIGINAL's `expires_at`. Editing must not buy a
+    stale reply more time: a reply window closes on the parent post's clock, not
+    on ours, and a fresh TTL here would let an operator keep a dead thread alive
+    by retyping it.
+    """
+    try:
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        cfg = _read_yaml(repo / "config" / "marketing.yml")
+        ts = now or datetime.now(timezone.utc)
+        iid = str(item_id or "").strip()
+        new_text = str(text if text is not None else "").strip()
+        if not iid:
+            return {"ok": False, "error": "id required"}
+        if not new_text:
+            return {"ok": False, "error": "a reply needs words"}
+
+        released, killed, state = _reply_desk_open(store, ts=ts)
+        item = (state.get("items") or {}).get(iid)
+        if item is None:
+            return {"ok": False, "error": "unknown item id"}
+        status = (state.get("status") or {}).get(iid, "queued")
+        if status != "queued":
+            return {"ok": False,
+                    "error": f"only a draft still waiting on you can be edited; "
+                             f"this one is {status!r}"}
+        if new_text == str(item.get("draft") or "").strip():
+            return {"ok": False, "error": "nothing changed"}
+
+        cap = _rq_char_cap()
+        if len(new_text) > cap:
+            return {"ok": False, "error": f"{len(new_text)} characters — "
+                                          f"{len(new_text) - cap} over the {cap} a "
+                                          f"reply may carry"}
+
+        found = _reply_edit_findings(repo, cfg, store, item, iid, new_text)
+        if found["violations"]:
+            return {"ok": False, "error": "the edited reply does not clear the critics",
+                    "violations": found["violations"],
+                    "rejected_by": found["rejected_by"],
+                    "warnings": found["warnings"]}
+
+        # Build and validate the replacement while the original is STILL LIVE.
+        from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+
+        stamp = _rc.stamp(found["verdict"])
+        account = str(item.get("account") or "")
+        try:
+            replacement = _rq.make_item(
+                account=account,
+                target_url=str(item.get("target_url") or ""),
+                parent_author=str(item.get("parent_author") or ""),
+                parent_excerpt=str(item.get("parent_excerpt") or ""),
+                draft=new_text,
+                alt_drafts=list(item.get("alt_drafts") or []),
+                tier=str(item.get("tier") or ""),
+                score=float(item.get("score") or 0.0),
+                score_components=dict(item.get("score_components") or {}),
+                family=item.get("family"),
+                chart=item.get("chart"),
+                thread_root_id=item.get("thread_key"),
+                target_status_id=item.get("target_status_id"),
+                as_of=item.get("as_of"),
+                critics=stamp,
+                cfg=cfg,
+                now=ts,
+                provenance="operator_edit",
+            )
+        except ValueError as exc:
+            return {"ok": False, "error": f"the edited reply is not a valid item: {exc}"}
+
+        # Carry the drafter's own record forward, and inherit the deadline.
+        for field in ("score_features", "alt_families", "components", "warmth",
+                      "dial_violations"):
+            if item.get(field) is not None:
+                replacement[field] = item[field]
+        if item.get("expires_at"):
+            replacement["expires_at"] = item["expires_at"]
+
+        new_id = str(replacement["id"])
+        if new_id in (state.get("items") or {}):
+            return {"ok": False,
+                    "error": "this exact reply is already in the queue under "
+                             f"{new_id}"}
+        errors = _rq.validate_item(replacement)
+        if errors:
+            return {"ok": False, "error": "the edited reply is not a valid item",
+                    "violations": errors}
+
+        # The one-owner lock: the original owns this thread, and rejecting it
+        # frees the lock. Anything ELSE holding it means the enqueue below would
+        # be refused after the kill, so it is checked here instead.
+        thread_key = str(item.get("thread_key") or "")
+        other_owner = [
+            oid for oid, other in (state.get("items") or {}).items()
+            if oid != iid and str(other.get("thread_key") or "") == thread_key
+            and (state.get("status") or {}).get(oid) in _rq.OWNING_STATUSES
+        ]
+        if other_owner:
+            return {"ok": False,
+                    "error": f"another live item ({other_owner[0]}) already owns this "
+                             f"conversation — one conversation, one owner"}
+
+        # ── writes start here ──
+        if not _rq.reject(iid, actor=_RQ_EDIT_ACTOR, root=store,
+                          reason="superseded by an operator edit"):
+            return {"ok": False, "error": "could not retire the original draft"}
+
+        # Deliberately NOT `record_rejection`: the taste corpus is what the desk
+        # should not sound like, and "the operator improved this one" is the
+        # opposite signal. The ledger row above carries the trace.
+        outcome = _rq.enqueue(replacement, store, cfg=cfg)
+        if not outcome.get("ok"):
+            return {"ok": False, "superseded_but_lost": True, "id": iid,
+                    "error": f"the original was retired but the replacement could "
+                             f"not be stored ({outcome.get('reason')}) — the thread "
+                             f"is free, nothing was sent",
+                    "violations": list(outcome.get("errors") or [])}
+
+        approved = False
+        if approve:
+            approved = bool(_rq.approve(new_id, actor=_RQ_EDIT_ACTOR, root=store,
+                                        note="operator edit"))
+        return {"ok": True, "id": new_id, "superseded": iid, "approved": approved,
+                "warnings": found["warnings"],
+                "note": ("saved and approved" if approved else
+                         "saved — approve it when the read is right")}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.edit_reply failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 

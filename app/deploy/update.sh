@@ -379,6 +379,26 @@ fi
 #                          /api/marketing/sentinel panel endpoints — the ramp
 #                          caps would deploy dead to the running panel without
 #                          a restart (2026-07-28, same class as the outbox gap).
+#   marketing/{approval_desk,rewrite}
+#                          the Outbox EDIT path (2026-08-01): _outbox_edit_findings
+#                          → approval_desk's chart-law helpers, and the save →
+#                          rewrite.apply_rewrite. A copy gate that deployed dead
+#                          would wave edited copy through to X.
+#   marketing/reply_*      the REPLY DECK (2026-08-01). /api/marketing/reply-deck
+#                          → reply_producer (eligible desks), reply_discovery
+#                          (the author register), reply_drafter (the family +
+#                          warmth registers behind "why this draft"), reply_voice
+#                          (MAX_REPLY_CHARS — the meter must draw against the gate
+#                          that enforces it). /reply-deck/{validate,edit} →
+#                          reply_critics, which is the gate standing in front of
+#                          operator-edited copy going onto someone else's post:
+#                          a stale critic roster here is a reply screened by
+#                          yesterday's laws.
+#   marketing/cadence_resolver
+#                          the burst header resolves each persona's own
+#                          cadence.session windows through the same module the
+#                          publisher uses. A stale copy would tell the operator a
+#                          desk is awake when the lane thinks it is asleep.
 #   scripts/               marketing.py's publish dry-run → marketing_publisher
 #                          → copywriter (top-level import: the post-time language
 #                          gate banned_language() must fail loudly, so the publisher
@@ -438,7 +458,7 @@ fi
 # the panel queueing against the OLD rule out of sys.modules — the outbox gap
 # (2026-07-26) again, but on the path where being stale means a wrong-desk or
 # double-owner post rather than a stale reading.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_export|reply_queue|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|tiers)\.py|engine/(codex_provider|llm_auth)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|copywriter|departments|economics|events|ledgers|opportunity_bus|outbox|personas|publication|rejections|rewrite|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|sentinel|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 

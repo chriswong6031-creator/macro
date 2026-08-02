@@ -18,14 +18,22 @@ Drives three intraday lanes:
 
 Usage:
     python scripts/marketing_fastlane_daemon.py [--lane earnings|press|reply|all] \
-        [--once] [--dry-run] [--interval N]
+        [--once] [--dry-run] [--interval N] [--preflight]
 
 Flags:
     --lane L     Which lane(s) to drive (default: earnings, for back-compat).
     --once       Run exactly one tick then exit (useful for cron / one-shot jobs).
     --dry-run    Compute the full tick (fetch, dedupe, score, corroborate, summarize,
                  card) but write NOTHING to disk. Prints a would-emit summary.
-    --interval N Poll interval in seconds (default: 120).  Ignored with --once.
+    --interval N Poll interval in seconds. Default 120, except --lane reply, which
+                 reads reply_desk.producer.tick_interval_s (300 s) so the cadence is
+                 a config key rather than a number frozen into a systemd unit.
+                 An explicit flag always wins. Ignored with --once.
+    --preflight  Reply lane only. Print the readiness readout (the four arming
+                 switches, the author register, per-desk modes, the heartbeat) and
+                 exit 0/1. Zero network, zero spend, zero writes; runs even when
+                 the kill switch is off, because "the kill switch is off" is
+                 exactly the answer it most often has to give.
 
 Kill-switches (BOTH gate press emission):
     MARKETING_FASTLANE_ENABLED != "1"  -> the whole daemon prints a note and exits
@@ -35,15 +43,28 @@ Kill-switches (BOTH gate press emission):
                                           emits NOTHING to the social outbox.
                                           --dry-run forces outbound off too.
 
-Reply-lane arming (separate from the two above — the producer bills
-twitterapi.io, so it does not inherit the wire lane's switch):
-    reply_desk.producer.enabled: true in config/marketing.yml, AND
-    TWITTERAPI_IO_KEY in the environment. Absent either, the lane is a clean
-    no-op. Sending is a further, independent step (the mode dial).
+Reply-lane arming — FOUR independent switches, each of which fails as silence:
+    1. the process runs at all:      MARKETING_FASTLANE_ENABLED=1 (shared with
+                                     the wire; main() exits 0 without it)
+    2. the lane is invoked:          --lane reply|all, i.e. the sibling unit
+                                     app/deploy/marketing-reply-desk.service
+    3. the producer is armed:        reply_desk.producer.enabled: true
+                                     (config/marketing.yml — NOT inherited from
+                                     the wire's switch: this lane bills
+                                     twitterapi.io on its own sub-budget)
+    4. discovery can poll:           TWITTERAPI_IO_KEY in the environment
+    Sending is a FURTHER, independent step (the per-account mode dial).
+    `--preflight` reports all four in one readout; the runbook §9 is the walk.
 
 Heartbeat:
     Each successful tick touches data/marketing/fastlane_heartbeat.txt with the
-    current UTC timestamp.  --dry-run skips the heartbeat write.
+    current UTC timestamp.  --dry-run skips the heartbeat write. That file is
+    shared by every lane in this process, so it proves the DAEMON is alive and
+    nothing more; the reply lane additionally writes its own per-lane artifact
+    (<reply desk state>/producer_heartbeat.json) carrying the tick counter, the
+    consecutive-empty run and the last tick's stage counts — the difference
+    between "dead daemon" and "alive and finding nothing", which need opposite
+    responses.
 
 Press-lane local state (gitignored — data/marketing/press/):
     provider cursors / conditional-GET ETags / spend accounting / flagship counter
@@ -368,19 +389,116 @@ def _run_reply_tick(*, dry_run: bool) -> dict:
     )
 
 
+def _resolve_interval(explicit: int | None, *, lane: str) -> int:
+    """Poll interval: explicit flag > config (reply lane) > module default.
+
+    THE REPLY LANE NEEDS ITS OWN CADENCE. The wire lane runs at 75 s to stay
+    inside the Truth-mirror hot-poll window; the reply desk's own charter window
+    is 5-15 minutes and its quality bar is 15-20 replies a DAY. One `--interval`
+    on one process cannot serve both, which is why the reply lane ships as a
+    SIBLING systemd unit (`app/deploy/marketing-reply-desk.service`) rather than
+    by widening the wire unit to `--lane all` — and why the number lives in
+    config rather than in the unit file, where changing it means a deploy.
+    """
+    if explicit is not None:
+        return max(1, int(explicit))
+    if lane == "reply":
+        from engine.marketing import reply_producer as _rp  # noqa: PLC0415
+
+        cfg = _load_yaml(ROOT / "config" / "marketing.yml")
+        block = {**_rp.DEFAULTS,
+                 **(((cfg.get("reply_desk") or {}).get("producer")) or {})}
+        try:
+            return max(1, int(block.get("tick_interval_s")))
+        except (TypeError, ValueError):
+            logger.warning("[reply] bad tick_interval_s %r — using %ds",
+                           block.get("tick_interval_s"), _DEFAULT_INTERVAL_S)
+    return _DEFAULT_INTERVAL_S
+
+
+def _run_reply_preflight(*, lane: str) -> int:
+    """Print the reply desk's readiness readout. Zero network, zero writes.
+
+    Exit code is INFORMATIONAL, not a gate: 0 when a tick could produce drafts,
+    1 when a blocker would stop it. An operator arming the desk reads the first
+    BLOCKER line, fixes it, and re-runs — which is the loop the four independent
+    dark switches never allowed, because each of them failed as silence.
+    """
+    if lane not in ("reply", "all"):
+        print("[fastlane_daemon] --preflight is a reply-lane readout; "
+              "run it with --lane reply", file=sys.stderr)
+        return 2
+    from engine.marketing import reply_producer as _rp  # noqa: PLC0415
+
+    report = _rp.preflight(
+        cfg=_load_yaml(ROOT / "config" / "marketing.yml"),
+        press_cfg=_load_yaml(ROOT / "config" / "press_sources.yml"),
+        root=ROOT, store=None, now=datetime.now(timezone.utc),
+    )
+    print(_rp.format_preflight(report), flush=True)
+    return 0 if report.get("ready") else 1
+
+
+def _run_reply_sweep() -> dict:
+    """Run the desk half of the tick: ingest receipts, reclaim, expire, export.
+
+    THE OTHER HALF OF THE LOOP HAD NO CALLER EITHER. `reply_export.sweep` shipped
+    with the runbook telling an operator to run it from a `python3 -c` one-liner,
+    which means that at M1 a receipt is only read when a human remembers — and
+    the daily cap is sized against that count, so a forgotten sweep hands out
+    headroom that is already spent, leaves stale mirrors sitting in the desktop
+    lane as live instructions, and never releases an abandoned lease.
+
+    It belongs on this tick because this is the process that already owns the
+    store's host. Zero network: every step is a file read, an append, or an
+    unlink. At M0 it is a near no-op (nothing exports, nothing can be claimed,
+    so no receipt can exist) EXCEPT expiry, which is correct at any dial.
+
+    ``repo_root=ROOT`` is what lets the halt registry gate the export and the
+    receipt feed the persona relation store; ``root=None`` resolves the reply
+    desk's own host state. The two are different directories on purpose.
+    """
+    from engine.marketing.reply_export import sweep
+
+    marketing_cfg = _load_yaml(ROOT / "config" / "marketing.yml")
+    return sweep(cfg=marketing_cfg, root=None, repo_root=ROOT,
+                 now=datetime.now(timezone.utc))
+
+
+def _log_reply_sweep(result: dict) -> None:
+    ingest = result.get("ingest") or {}
+    export = result.get("export") or {}
+    logger.info(
+        "[reply] desk sweep | recorded=%d failed=%d duplicates=%d refused=%d "
+        "released=%d expired=%d exported=%d swept_mirrors=%d",
+        len(ingest.get("recorded") or []), len(ingest.get("failed") or []),
+        len(ingest.get("duplicates") or []), len(ingest.get("refused") or []),
+        len(result.get("released_claims") or []), int(export.get("skipped_expired") or 0),
+        int(export.get("count") or 0), len(export.get("swept_mirrors") or []),
+    )
+
+
 def _log_reply_tick(result: dict, now: datetime, *, dry_run: bool) -> None:
     tag = " [DRY-RUN]" if dry_run else ""
+    beat = result.get("heartbeat") or {}
     if not result.get("enabled"):
-        logger.info("[reply]%s tick skipped — %s", tag,
-                    result.get("note") or "producer disabled")
+        # A dark tick still reports its heartbeat counter. "Skipped" alone reads
+        # as a healthy no-op; "skipped for the 300th tick in a row" reads as an
+        # operator who believes this lane is armed and is wrong.
+        logger.info("[reply]%s tick skipped — %s (consecutive_empty=%s)", tag,
+                    result.get("note") or "producer disabled",
+                    beat.get("consecutive_empty", "?"))
         return
     logger.info(
-        "[reply]%s tick | targets=%d eligible=%d drafted=%d critic_rejected=%d "
-        "enqueued=%d abstained=%d halted=%s spend=%s",
-        tag, result.get("targets", 0), result.get("eligible", 0),
+        "[reply]%s tick | curated=%s targets=%d eligible=%d drafted=%d "
+        "critic_rejected=%d enqueued=%d abstained=%d halted=%s "
+        "consecutive_empty=%s spend=%s",
+        tag, result.get("curated_authors") or {},
+        result.get("targets", 0), result.get("eligible", 0),
         result.get("drafted", 0), result.get("critic_rejected", 0),
         result.get("enqueued", 0), result.get("abstained", 0),
-        result.get("halted") or [], result.get("spend") or {},
+        result.get("halted") or [], beat.get("consecutive_empty", "?"),
+        result.get("spend") or {},
     )
     for refusal in (result.get("refused") or [])[:5]:
         logger.info("[reply] refused: %s", refusal)
@@ -1274,8 +1392,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--interval",
         type=int,
-        default=_DEFAULT_INTERVAL_S,
-        help=f"Poll interval in seconds (default: {_DEFAULT_INTERVAL_S}).",
+        default=None,
+        help=(
+            f"Poll interval in seconds. Default: {_DEFAULT_INTERVAL_S}, except on "
+            "--lane reply, which reads reply_desk.producer.tick_interval_s from "
+            "config/marketing.yml (300 s) so the cadence is a config key rather "
+            "than a number frozen into a systemd unit. An explicit flag always wins."
+        ),
+    )
+    parser.add_argument(
+        "--preflight",
+        action="store_true",
+        help=(
+            "Reply lane only: print the readiness readout (config switches, the "
+            "author register, the API key, per-desk modes, the heartbeat) and exit. "
+            "Zero network, zero spend, zero writes — run this BEFORE arming."
+        ),
     )
     parser.add_argument(
         "--no-spool",
@@ -1291,6 +1423,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # PREFLIGHT runs ahead of the kill-switch on purpose: it is a read-only
+    # readout, and the single most useful thing it can tell an operator is that
+    # the kill switch is the reason nothing happens. Gating it behind that
+    # switch would hide the answer behind the question.
+    if args.preflight:
+        return _run_reply_preflight(lane=args.lane)
+
     # Kill-switch: unless we are in a pure --dry-run (which writes nothing and is
     # the operator's way to inspect the pipeline), a live run requires the fast
     # lane to be explicitly armed. A dry-run is a safe no-op regardless.
@@ -1303,9 +1442,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    interval = _resolve_interval(args.interval, lane=args.lane)
     logger.info(
         "[fastlane_daemon] starting | lane=%s once=%s dry_run=%s armed=%s interval=%ds",
-        args.lane, args.once, args.dry_run, armed, args.interval,
+        args.lane, args.once, args.dry_run, armed, interval,
     )
 
     while True:
@@ -1326,6 +1466,13 @@ def main(argv: list[str] | None = None) -> int:
                 # than a surprise spend against the twitterapi.io bucket.
                 reply_result = _run_reply_tick(dry_run=args.dry_run)
                 _log_reply_tick(reply_result, now, dry_run=args.dry_run)
+                # The desk half — ingest receipts, reclaim abandoned leases,
+                # expire, sweep stale mirrors, export at M1. Runs even while the
+                # producer is dark, because items already in flight still have to
+                # be swept and receipts already written still have to be read.
+                # Skipped on --dry-run: it writes.
+                if not args.dry_run:
+                    _log_reply_sweep(_run_reply_sweep())
             if not args.dry_run:
                 _touch_heartbeat(now)
         except Exception as exc:  # noqa: BLE001
@@ -1354,7 +1501,7 @@ def main(argv: list[str] | None = None) -> int:
         # conditional-GET backoff (press_providers._conditional_get) softens this
         # for RSS/JSON, but a persistently failing tick burns the fixed interval.
         # Acceptable for B1; revisit with an adaptive interval if it matters.
-        time.sleep(args.interval)
+        time.sleep(interval)
 
     return 0
 
