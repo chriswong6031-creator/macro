@@ -418,6 +418,18 @@ def test_wire_filter_hidden_state_wins_over_card_layout() -> None:
     assert ".ew-card[hidden]{display:none!important}" in committed_css
 
 
+def test_wire_header_cta_keeps_contrast_against_estate_link_rule() -> None:
+    """The estate-wide anchor color must not turn the blue header CTA text blue."""
+    repo = Path(__file__).resolve().parents[1]
+    rule = ".earnings-wire .public-nav-cta,.earnings-wire .public-nav-cta:hover{color:#fff}"
+    template_css = (repo / "templates" / "earnings_wire" / "earnings-wire.css").read_text(encoding="utf-8")
+    committed_css = (repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.css").read_text(
+        encoding="utf-8"
+    )
+    assert rule in template_css
+    assert rule in committed_css
+
+
 def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None:
     repo = Path(__file__).resolve().parents[1]
     workflow = (repo / ".github" / "workflows" / "earnings-public-wire.yml").read_text(encoding="utf-8")
