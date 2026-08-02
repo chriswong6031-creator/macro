@@ -85,119 +85,6 @@
   .pfx { color:var(--muted); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
 
-  /* ---- Theme Rotation Desk ---- */
-  .mctx { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; font-size:12.5px;
-    background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:6px 0 12px; }
-  .mctx b { font-weight:650; }
-  .mctx .mc-k { color:var(--muted); }
-  .desk { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:13px; }
-  .tcard { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--tc,#888);
-    border-radius:11px; padding:12px 13px 11px; scroll-margin-top:14px; transition:border-color .15s; }
-  .tcard:hover { border-color:var(--muted); }
-  .tcard .top { display:flex; align-items:center; gap:8px; }
-  .tcard .nm { font-weight:660; font-size:14.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .tcard .sc { font-size:23px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
-  .tcard .sc small { font-size:11px; color:var(--muted); font-weight:500; }
-  .tlabel { font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
-  .treco { font-size:11px; font-weight:700; letter-spacing:.03em; padding:2px 9px; border-radius:7px; white-space:nowrap; }
-  .tcard .subrow { display:flex; align-items:center; gap:10px; margin:8px 0 7px; font-size:12px; color:var(--muted); }
-  .tcard .subrow .spark { margin-left:auto; }
-  .cbar { display:flex; height:7px; border-radius:5px; overflow:hidden; background:var(--line); margin:7px 0 6px; }
-  .cbar i { display:block; height:100%; }
-  .clegend { display:flex; flex-wrap:wrap; gap:3px 11px; font-size:10.5px; color:var(--muted); margin-bottom:6px; }
-  .clegend span b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:600; }
-  .clegend .sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:3px; vertical-align:middle; }
-  .treason { font-size:11.5px; color:var(--text); opacity:.85; line-height:1.4; margin:2px 0 6px; }
-  .tstats { display:flex; flex-wrap:wrap; gap:4px 6px; font-size:10.5px; }
-  .tpill { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
-  .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
-  .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
-  .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
-  .tmore > summary { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
-    cursor:pointer; list-style:none; user-select:none; margin:6px 0 0; display:flex; align-items:center; gap:4px; }
-  .tmore > summary::-webkit-details-marker { display:none; }
-  .tmore > summary::before { content:'▾'; display:inline-block; transition:transform .15s; }
-  .tmore[open] > summary::before { transform:rotate(-180deg); }
-  .tflagrow { margin:2px 0 4px; }
-  /* M7C-R12: split-tape chip on basket cards */
-  .m7-split-chip { display:flex; align-items:flex-start; gap:5px; margin:4px 0;
-    background:color-mix(in srgb,var(--warn) 10%,var(--panel2));
-    border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line));
-    border-radius:6px; padding:4px 9px; font-size:11.5px; cursor:help; }
-  .m7-split-chip .m7-split-icon { flex:none; }
-  .m7-split-chip .l-en,.m7-split-chip .l-zh { color:var(--warn); font-weight:700; }
-  .m7-split-chip .l-en b,.m7-split-chip .l-zh b { font-weight:700; }
-
-  /* ---- rotation this week panel ---- */
-  #rotation-this-week { background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:14px 16px; margin-top:10px; }
-  #rotation-this-week h2 { margin:0 0 8px; font-size:15px; }
-  .rtw-verdict { font-size:13.5px; font-weight:600; margin-bottom:10px; }
-  .rtw-gauges { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; margin-bottom:10px; }
-  .rtw-gauge { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 10px; }
-  .rtw-gauge .gk { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:4px; }
-  .rtw-gauge .gv { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
-  .rtw-gauge .gb { height:5px; border-radius:3px; background:var(--line); margin-top:5px; overflow:hidden; }
-  .rtw-gauge .gb i { display:block; height:100%; border-radius:3px; background:var(--link); }
-  .rtw-chip-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
-  .rtw-chip-row .rchip { display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:3px 10px;
-    border:1px solid var(--line); border-radius:999px; background:var(--panel2); cursor:pointer; }
-  .rtw-chip-row .rchip:hover { border-color:var(--muted); }
-  /* ---- 5-day rotation ---- */
-  .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:640px){ .rotwrap{ grid-template-columns:1fr; } }
-  .rotcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; }
-  .rotcol h4 { margin:0 0 6px; font-size:13px; display:flex; align-items:center; gap:6px; }
-  .rotrow { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--line); font-size:12.5px; }
-  .rotrow:first-of-type { border-top:0; }
-  .rotrow .rn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rotrow .rv { font-variant-numeric:tabular-nums; font-weight:650; }
-  .rotrow .rk { font-size:10.5px; color:var(--muted); width:34px; text-align:right; }
-
-  /* ---- impulse / extremes scorecards ---- */
-  .scards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:13px; }
-  .scard { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:13px 15px; }
-  .scard .sk { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
-  .scard .bigrow { display:flex; align-items:baseline; gap:14px; margin:7px 0 8px; }
-  .scard .big { font-size:30px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
-  .scard .big.dn { color:var(--down); } .scard .big.up { color:var(--up); }
-  .scard .sublbl { font-size:11px; color:var(--muted); }
-  .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
-  .duo i { height:100%; display:block; }
-  .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
-  .scard.clk { cursor:pointer; transition:border-color .15s, transform .08s; }
-  .scard.clk:hover { border-color:var(--muted); }
-  .scard.clk:active { transform:translateY(1px); }
-  .scm-hint { font-size:10.5px; color:var(--link); margin-top:9px; opacity:.9; }
-  /* ---- scorecard detail popup ---- */
-  .scmodal { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none;
-    align-items:flex-start; justify-content:center; padding:6vh 14px; }
-  .scmodal.open { display:flex; }
-  .scm-card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
-    box-shadow:0 24px 60px rgba(0,0,0,.45); width:min(760px,96vw); max-height:84vh; overflow:auto;
-    padding:16px 18px 18px; position:relative; }
-  .scm-x { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--muted);
-    font-size:17px; cursor:pointer; line-height:1; }
-  .scm-x:hover { color:var(--text); }
-  .scm-hd { font-size:16px; font-weight:740; margin:0 24px 2px 0; }
-  .scm-sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
-  .scm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-  .scm-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-  @media (max-width:620px){ .scm-2col,.scm-3col { grid-template-columns:1fr; } }
-  .scm-col { min-width:0; }
-  .scm-colh { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
-    padding-bottom:6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
-  .scm-colh b { color:var(--text); font-variant-numeric:tabular-nums; }
-  .scm-colh.up { color:var(--up); } .scm-colh.dn { color:var(--down); }
-  .scm-row { display:flex; align-items:center; gap:8px; padding:5px 2px; border-bottom:1px solid var(--line); font-size:12.5px; color:inherit; }
-  .scm-row:last-child { border-bottom:0; }
-  a.scm-row:hover { background:var(--panel2); }
-  .scm-nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:620; }
-  .scm-tk { color:var(--muted); font-weight:400; font-size:11px; margin-left:5px; }
-  .scm-th { font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
-    padding:0 6px; white-space:nowrap; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
-  a.scm-th:hover { color:var(--link); border-color:var(--link); }
-  .scm-r { font-variant-numeric:tabular-nums; font-weight:700; min-width:46px; text-align:right; }
-  .scm-empty { color:var(--muted); font-size:12px; padding:8px 2px; }
   /* ---- flow lens ---- */
   .fl-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; margin:11px 0 4px; }
   .fl-tile { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
@@ -223,70 +110,11 @@
   .fl-more { font-size:11.5px; } .fl-more summary { color:var(--muted); cursor:pointer; }
   .fl-more[open] summary { color:var(--text); }
 
-  .sect-tag { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
-  /* ---- card textures + detail link ---- */
-  .tcard .nm { color:inherit; } .tcard a.nm:hover { color:var(--link); }
-  .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
-  #theme-desk .tc-extra { display:none; }
-  /* Compact chip scale inside desk-table Flags cells — keeps rows one line tall */
-  #theme-desk td .txrow { margin:0; gap:3px; max-height:38px; overflow:hidden; align-content:flex-start; }
-  #theme-desk td .txrow .chip, #theme-desk td .txrow .ftr-stale-chip, #theme-desk td .txrow .ftr-heat-chip,
-  #theme-desk td .txrow [class^="te-"], #theme-desk td .txrow [class^="ra-"] {
-    font-size:9px; padding:1px 5px; line-height:14px; border-radius:4px; }
-  .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
-  .tpill.up { color:var(--up); } .tpill.dn { color:var(--down); } .tpill.wn { color:var(--warn); }
-  .sigrow { margin-top:5px; padding-top:5px; border-top:1px dashed var(--line); }
-  .sigrow .tpill { font-weight:600; }
-  .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
-  .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
-  /* ---- W4 Velocity / Heat pills — parity with _baskets_desk.html.j2 ---- */
-  .heat-pill { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 5px; border-radius:5px;
-    white-space:nowrap; border:1px solid; margin-left:3px; }
-  .heat-pill.heating { color:var(--up); border-color:var(--up); background:rgba(34,197,94,.10); }
-  .heat-pill.hot     { color:var(--orange); border-color:var(--orange); background:color-mix(in srgb, var(--orange) 12%, transparent); }
-  .heat-pill.cooling { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.10); }
-  .heat-pill.broken  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); opacity:.8; }
-  .heat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0;
-    vertical-align:middle; margin-right:4px; border:0; padding:0; font-size:0; }
-  .rot-sub { font-size:11.5px; color:var(--muted); margin:4px 0 8px; font-style:italic; }
-  .rk20 { font-size:9.5px; opacity:.72; font-variant-numeric:tabular-nums; }
-  .pulse-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px;
-    padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); margin:0 0 10px; }
-  .pulse-bar a { color:var(--link); text-decoration:none; }
-  .pulse-bar a:hover { text-decoration:underline; }
-  .pulse-grp { white-space:normal; }
+  /* .pulse-size — the only Theme-Rotation-Desk chip this page still renders:
+     renderRegimeSizing() writes the sizing pill into the verdict hero (#hero-sizing).
+     Parity twin: the .pulse-size rule in templates/_baskets_desk.html.j2. */
   .pulse-size { border:1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); border-left:3px solid var(--warn);
     border-radius:7px; padding:2px 8px; background:color-mix(in srgb, var(--warn) 8%, transparent); }
-  /* ---- Leadership Health (contested label / flip-distance / term-structure) — parity with _baskets_desk.html.j2 ---- */
-  .flipcap { font-size:10.5px; color:var(--warn); margin:3px 0 0; font-variant-numeric:tabular-nums; }
-  .termstrip { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; margin:2px 0 6px; font-size:10.5px; }
-  .tsc { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
-  .tsc b { font-variant-numeric:tabular-nums; font-weight:650; }
-  .tsc.pos b { color:var(--up); } .tsc.neg b { color:var(--down); }
-  .tspat { font-weight:650; color:var(--text); opacity:.85; }
-  .tstag { color:var(--muted); font-size:9.5px; border:1px solid var(--line); border-radius:5px; padding:0 4px; }
-  .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
-  .detail-link:hover { text-decoration:underline; }
-  /* ---- concentration ---- */
-  .adgrid { display:flex; gap:14px; }
-  .adc { text-align:center; } .adc .k { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
-  .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
-  /* ---- what to act on now ---- */
-  .anwrap { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-  .anwrap.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .anwrap.four  { grid-template-columns:repeat(4,minmax(0,1fr)); }
-  @media (max-width:1200px){ .anwrap.four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-  @media (max-width:980px){ .anwrap.three,.anwrap.four{ grid-template-columns:1fr; } }
-  @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
-  .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; min-width:0; }
-  .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
-  .anh.wait { color:var(--warn); }
-  .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; min-width:0; }
-  .anrow:hover { background:var(--panel2); }
-  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
-  .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-  .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
 
   /* ── FTR W3: Tape band v3 (two-column ranked, ported from #2227 us_stocks band) ── */
   .ftr-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; }
@@ -1264,8 +1092,12 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 
   {# Theme Rotation Desk add-ons (display-only): ETF Pulse (style/risk/sector rotation),
      vol-regime + CBOE put/call chip, and per-theme ATR extension. Renders from
-     basketdata/{etf_pulse,vol_sentiment,theme_extension}.json via theme_addons.js. #}
-  {# _theme_addons.html.j2 include removed (Op 7 — Stage B rebuilds into Money-flow; partial stays untouched) #}
+     basketdata/{etf_pulse,vol_sentiment}.json, read by the Money-flow IIFE below and
+     written into #mf-etf-chips / #mf-vol-chip. #}
+  {# _theme_addons.html.j2 include removed (Op 7 — Stage B rebuilds into Money-flow; partial stays untouched).
+     The third add-on, per-theme ATR extension (basketdata/theme_extension.json), injected
+     its ⚠ chip into #theme-<id> desk cards; #3282 removed those cards, so that leg had been
+     fetching and discarding since the revamp and was dropped with the rest of the dead desk. #}
 
   {# ══ ACT BOARD (revamp) — the shortlist, by action. Filled by renderActBoard(). ══ #}
   <section class="rvx-sec rvx-reveal" id="actnow-section" style="animation-delay:.05s">
@@ -1382,6 +1214,12 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   </footer>
 
 <script src="lightweight-charts.js"></script>
+{# Shared Theme Rotation Desk renderer. This page does NOT render the desk
+   surfaces — #3282 replaced them with the verdict hero / act board / rotation
+   map — so deskBoot() is deliberately never called here. It is loaded for the
+   three definitions this page genuinely shares with the china / hk / canada /
+   intl pages: L, isZh and openTheme. #}
+<script src="baskets_desk.js"></script>
 <script>
 var BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
@@ -1398,32 +1236,16 @@ function deepStrip(obj) {
   }
 }
 deepStrip(BASKETS);
-const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
-function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
-// ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
-// All labels are DESCRIPTIVE — they characterise current rank/score trajectory; no
-// forward-return forecast is implied (house rule: honest framing).
-const HEAT_PILL = {
-  heating: ['heat-pill heating', '▲', 'heating', '加热'],
-  hot:     ['heat-pill hot',     '★', 'hot',     '强势'],
-  cooling: ['heat-pill cooling', '▽', 'cooling', '降温'],
-  broken:  ['heat-pill broken',  '✕', 'broken',  '破位'],
-};
-function heatDot(t){
-  const h = t && t.pulse_heat;
-  if(!h || h==='idle') return '';
-  const p = HEAT_PILL[h];
-  if(!p) return '';
-  return `<span class="${p[0]} heat-dot" data-tip-en="${esc(p[2])} — descriptive" data-tip-zh="${esc(p[3])} — 描述性"></span>`;
-}
-function rankTrajectory(t){
-  const r5 = t && t.pulse_rank_delta_5d;
-  const r20 = t && t.pulse_rank_delta_20d;
-  if(r5 == null) return '';
-  const fmt5 = (r5>0?'▲':'▼')+Math.abs(r5);
-  const fmt20 = r20!=null ? ' · 20d '+(r20>0?'▲':'▼')+Math.abs(r20) : '';
-  return fmt5 + fmt20;
-}
+/* L(), isZh() and openTheme() come from baskets_desk.js, loaded just above —
+   the same definitions the four regional baskets pages use. Do NOT re-declare
+   them here: two classic scripts declaring `const L` at top level is a
+   SyntaxError that kills whichever one runs second.
+
+   renderRegimeSizing() below is NOT taken from the shared file: this page's copy
+   additionally discloses the caution_passport / regime_caution_shadow read. It is
+   a plain function declaration in the later script, so it deliberately overrides
+   the shared one for this page; the shared copy is unreachable here because
+   deskBoot() never runs. See the matching note in templates/baskets_desk.js. */
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
 const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
 const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
@@ -1614,308 +1436,6 @@ function renderStory(){
 }
 
 // ---- Theme Rotation Desk --------------------------------------------------
-const LABEL_COLOR = {
-  dominant:      ['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],
-  emerging:      ['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],
-  fading:        ['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],
-  deteriorating: ['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],
-  neutral:       ['var(--panel2)','var(--line)','var(--muted)'],
-};
-const RECO_COLOR = {
-  enter:      ['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],
-  accumulate: ['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],
-  hold:       ['var(--panel2)','var(--line)','var(--muted)'],
-  trim:       ['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],
-  avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
-};
-// zh 红涨绿跌: swap green↔red in a CSS color triplet [bg, border, text]
-const ZH_G2R={'rgba(74,222,128,.15)':'rgba(248,113,113,.15)','rgba(74,222,128,.5)':'rgba(248,113,113,.5)','#22c55e':'#ef4444','rgba(34,197,94,.20)':'rgba(248,113,113,.16)','rgba(34,197,94,.65)':'rgba(248,113,113,.6)','#16a34a':'#ef4444'};
-const ZH_R2G={'rgba(248,113,113,.15)':'rgba(74,222,128,.15)','rgba(248,113,113,.5)':'rgba(74,222,128,.5)','#ef4444':'#22c55e','rgba(248,113,113,.16)':'rgba(34,197,94,.20)','rgba(248,113,113,.6)':'rgba(34,197,94,.65)'};
-function zhColor(c){if(!isZh())return c;return c.map(v=>ZH_G2R[v]||ZH_R2G[v]||v);}
-const badge = (cls,c,en,zh)=>{const cc=zhColor(c);return`<span class="${cls}" style="background:${cc[0]};border:1px solid ${cc[1]};color:${cc[2]}">${L(en,zh)}</span>`;};
-// A1 — display-only verb demotion: never render a green ACCUMULATE/ENTER chip when the
-// theme's own clean_entry texture is false (the act_now board already refuses these).
-// The payload reco is NOT mutated (alerts + downstream readers keep continuity) — only
-// what the chip says changes. Amber, descriptive, no forward verb. (Mirrors baskets_desk.js.)
-const RECO_NOENTRY = ['rgba(245,158,11,.16)','rgba(245,158,11,.55)','#d97706'];
-const recoNoEntry = t => (t.reco==='accumulate'||t.reco==='enter') && !(((t.textures||{}).clean_entry)||{}).flag;
-const RECO_NOENTRY_WHY = () => L('In favour, but no member has a clean entry — do not chase; wait for a setup.','看好，但无成分股具备干净入场点 — 勿追，等待入场时机。');
-// ---- Leadership Health (display-only, deterministic — a shape/fragility read, not a forecast)
-// Ported verbatim from the shared desk renderer (templates/baskets_desk.js) for US-page parity.
-// The US overview payload attaches no per-basket `cycle` record (that map is a China-only
-// build step), so the cycle leg of the contested predicate silently drops out and the
-// predicate degrades to the remaining three legs — same behavior as the shared renderer.
-function _basketOf(id){ try{ return (((typeof BASKETS!=='undefined'&&BASKETS)||{}).baskets||[]).find(b=>b&&b.id===id)||null; }catch(e){ return null; } }
-// "early cracks": rollover band still low but reasons exist AND the theme is very extended.
-function earlyCracks(t){
-  const rr=(t.textures||{}).rollover_risk||{};
-  return rr.band==='low' && (rr.reasons||[]).length>0 && t.rs_pctile!=null && t.rs_pctile>=0.9;
-}
-// A4 — absolute-drawdown "cracks" (descriptive): the fading guard is RELATIVE-only, so an
-// all-boats selloff can leave a constructive label on a basket that is falling hard in
-// absolute terms. This pill states the absolute tape; it complements (never replaces)
-// the relative early-cracks pill. Two legs: 5d abs return ≤ −3%, or the ±3% impulse
-// tape ≥6 down-movers outnumbering up-movers ≥3×. No forward verbs. (Mirrors baskets_desk.js.)
-function absCracks(t){
-  if(t.label!=='dominant'&&t.label!=='emerging') return null;
-  const p5=(((t.perf||{})['5d'])||{}).ret, im=t.impulse||{};
-  const leg5d=(p5!=null&&p5<=-0.03);
-  const legImp=((im.down3||0)>=6&&(im.down3||0)>=3*(im.up3||0));
-  return (leg5d||legImp)?{p5:p5,leg5d:leg5d,legImp:legImp,up3:im.up3||0,down3:im.down3||0}:null;
-}
-// The faster counter-textures that DISAGREE with a constructive label. Each entry is
-// [en, zh] — purely descriptive, computed from already-published payload fields.
-function contestedTextures(t, cyc){
-  const rr=(t.textures||{}).rollover_risk||{};
-  const list=[];
-  if(cyc && (((cyc.turns||[]).some(x=>x&&x.provisional&&x.k==='peak')) || ((cyc.proj||{}).nextTurn==='trough')))
-    list.push(['cycle clock at a provisional peak / projecting a trough next','周期时钟处于临时顶部 / 推演下一拐点为底部']);
-  if(t.rs_pctile!=null && t.rs_pctile>=0.95)
-    list.push(['very extended (RS ≥95%ile)','相对强度极端延展（≥95分位）']);
-  if(rr.band==='elevated'||rr.band==='high')
-    list.push(['roll-over risk '+rr.band+(rr.reasons&&rr.reasons.length?': '+rr.reasons.join(' · '):''),'回落风险'+(rr.band_zh||rr.band)+(rr.reasons&&rr.reasons.length?'：'+rr.reasons.join(' · '):'')]);
-  else if(earlyCracks(t))
-    list.push(['early cracks: '+(rr.reasons||[]).join(' · '),'初现裂痕：'+(rr.reasons||[]).join(' · ')]);
-  if(t.delta_5d!=null && t.delta_5d<0)
-    list.push(['negative 5-day relative return ('+fmtPct(t.delta_5d)+')','5日相对收益为负（'+fmtPct(t.delta_5d)+'）']);
-  return list;
-}
-function isContested(t){
-  return (t.label==='dominant'||t.label==='emerging')
-    && contestedTextures(t,(_basketOf(t.id)||{}).cycle).length>=2;
-}
-// themeCard() removed — renderThemeDesk now builds table/cards directly.
-// openTheme() retained for #theme-<id> hash-scroll navigation (still works on new desk elements).
-// ── Desk table row sparkline (plain numeric path, no t() inside svg) ──────
-function _sparkPath(levels,n,w,h){
-  const vs=(levels||[]).slice(-n).filter(v=>v!=null);
-  if(vs.length<2) return '';
-  const mn=Math.min(...vs),mx=Math.max(...vs),sp=(mx-mn)||1;
-  const pts=vs.map((v,i)=>[i/(vs.length-1)*w, h-2-(v-mn)/sp*(h-5)]);
-  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  const col=vs[vs.length-1]>=vs[0]?'var(--up)':'var(--down)';
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.3"/></svg>`;
-}
-function renderThemeDesk(){
-  const sec=document.getElementById('theme-desk-section');
-  if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
-  const themes=(THEME.themes||[]).slice().sort((a,b)=>(a.rank||999)-(b.rank||999));
-  const d=THEME.disclaimer||{};
-  const cal=THEME.signal_calibration||{};
-  const ic=(cal.cross_sectional_momentum||{}).mean_ic_21d;
-  const nbt=themes.filter(t=>(t.signal_strength||{}).grade==='backtested').length;
-  // Plain bilingual disclaimer — no calNote/rank-IC block; numbers in Tier-2 tip
-  const tipEn=`Backtested on 27y of sector history: risk labels precede deeper drawdowns; entry labels show no forward-return edge (rank-IC ≈ ${ic==null?'~0':ic}). The 🔬 chip marks ${nbt} theme(s) with a backtested risk read.`;
-  const tipZh=`基于27年行业历史回测：风险标签领先回撤；入场标签无前向收益优势（rank-IC≈${ic==null?'~0':ic}）。🔬 标记 ${nbt} 个带已回测风险信号的主题。`;
-  const disc=`${L(esc(d.en||''),esc(d.zh||''))} <span data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}" style="cursor:default;color:var(--muted)">?</span>`;
-  document.getElementById('theme-disclaimer').innerHTML=disc;
-
-  const deskEl=document.getElementById('theme-desk');
-  const isDesktop=(window.innerWidth||document.documentElement.clientWidth||1280)>=720;
-  const SHOW=12;
-  if(isDesktop){
-    // ── Ranked table (desktop ≥720px) ──────────────────────────────────────
-    // the .desk class carries the card-grid CSS — switch to block for table mode
-    deskEl.style.display='block';
-    let rows=themes.map((t,i)=>{
-      const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral;
-      const rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
-      const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
-      const spk=_sparkPath(ratio(CHART.baskets[t.id]||[]),20,56,18);
-      const contested=isContested(t);
-      const cTex=contested?contestedTextures(t,(_basketOf(t.id)||{}).cycle):[];
-      const fd=t.flip_distance||null;
-      // plain-word downgrade-proximity note (Tier-2 tip only; no state enums, no raw bps)
-      const flipNear=!!(fd&&fd.route_a_bps>0&&fd.route_a_bps<=150&&(t.label==='dominant'||t.label==='emerging'));
-      const flipEn=flipNear?'close to a downgrade — a modest pullback would flip this label':'';
-      const flipZh=flipNear?'接近下调——小幅回撤即可能翻转该标签':'';
-      const labelTip=contested
-        ? esc(cTex.map(x=>x[0]).join(' | '))+(flipEn?' | '+esc(flipEn):'')
-        : (flipEn?esc(flipEn):'');
-      const labelHtml=badge('tlabel',lc,
-        t.label_en+(contested?' · contested':''), t.label_zh+(contested?'·分歧':''));
-      const labelCell=labelTip
-        ? `<span data-tip-en="${labelTip}" data-tip-zh="${esc(cTex.map(x=>x[1]).join(' | ')+(flipZh?(cTex.length?' | ':'')+flipZh:''))}">${labelHtml}</span>`
-        : labelHtml;
-      const recoHtml=recoNoEntry(t)
-        ? `<span class="treco" style="background:${RECO_NOENTRY[0]};border:1px solid ${RECO_NOENTRY[1]};color:${RECO_NOENTRY[2]}">${L('IN FAVOUR — NO ENTRY','看好但无入场')}</span>`
-        : badge('treco',rc,t.reco_en,t.reco_zh);
-      const scoreBar=`<span style="display:inline-block;width:${Math.round(t.score*0.4)}px;height:4px;border-radius:2px;background:var(--link);opacity:.65;vertical-align:middle;margin-left:5px"></span>`;
-      return `<tr${i>=SHOW?' class="td-extra" style="display:none"':''}>
-        <td class="num muted" style="width:22px">${t.rank||i+1}</td>
-        <td><span class="dot" style="background:${colorOf[t.id]||'#888'}"></span><a href="basket/${t.id}.html" class="bname">${L(esc(t.name),esc(t.name_zh))}</a></td>
-        <td class="num"><b>${t.score}</b>${scoreBar}</td>
-        <td>${labelCell}</td>
-        <td>${recoHtml}</td>
-        <td class="num ${cls(r20)}">${fmtPct(r20)}</td>
-        <td>${spk}</td>
-        <td><div id="theme-${t.id}" class="txrow" style="display:inline-flex;flex-wrap:wrap;gap:3px"></div></td>
-      </tr>`;
-    }).join('');
-    let showall='';
-    if(themes.length>SHOW){
-      showall=`<tr id="td-showall"><td colspan="8" style="text-align:center;padding:6px">
-        <button class="lst-more" onclick="document.querySelectorAll('.td-extra').forEach(r=>r.style.display='');this.closest('tr').remove()">
-          ${L('Show all','显示全部')} (${themes.length}) ▾
-        </button></td></tr>`;
-    }
-    deskEl.innerHTML=`<div class="ts"><table style="font-size:12.5px">
-      <thead><tr>
-        <th class="num">#</th>
-        <th>${L('Theme','主题')}</th>
-        <th class="num">${L('Score','评分')}</th>
-        <th>${L('State','状态')}</th>
-        <th>${L('Action','操作')}</th>
-        <th class="num">${L('5d vs mkt','5日对比')}</th>
-        <th>${L('20d','20日')}</th>
-        <th>${L('Flags','标记')}</th>
-      </tr></thead>
-      <tbody>${rows}${showall}</tbody>
-    </table></div>`;
-  } else {
-    // ── Compact 2-up card grid (mobile <720px) ─────────────────────────────
-    const CARD_SHOW=6;
-    const cards=themes.map((t,i)=>{
-      const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral;
-      const spk=_sparkPath(ratio(CHART.baskets[t.id]||[]),20,56,18);
-      const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
-      return `<div class="tcard${i>=CARD_SHOW?' tc-extra':''}" id="theme-${t.id}" style="--tc:${lc[2]};border-top:3px solid ${lc[2]};border-left:none">
-        <div class="top">
-          <span class="muted" style="font-size:10px;min-width:18px">#${t.rank||i+1}</span>
-          <a class="nm" href="basket/${t.id}.html">${L(esc(t.name),esc(t.name_zh))}</a>
-          <span class="sc">${t.score}<small>/100</small></span>
-        </div>
-        <div class="subrow">
-          ${badge('tlabel',lc,t.label_en,t.label_zh)}
-          ${spk}
-          <span class="${cls(r20)}">${fmtPct(r20)}</span>
-        </div>
-        <div class="txrow" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px"></div>
-      </div>`;
-    });
-    let extra=themes.length>CARD_SHOW
-      ? `<button class="lst-more" style="width:100%;margin-top:8px" onclick="document.querySelectorAll('#theme-desk .tc-extra').forEach(el=>el.classList.remove('tc-extra'));this.remove()">${L('Show all','显示全部')} (${themes.length})</button>`
-      : '';
-    deskEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">`
-      +cards.join('')
-      +`</div>${extra}`;
-  }
-  renderMacroCtx();
-  decorateRealActivity();
-}
-// Display-only: stamp each theme card with the Divergence Radar real-activity read
-// Shared module promise for basketdata/radar.json — deduplicates the double fetch.
-// Both decorateRealActivity (card pills) and the radar heading chip use this.
-let _radarJsonP = null;
-function _fetchRadar(){
-  if(!_radarJsonP) _radarJsonP = fetch('basketdata/radar.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
-  return _radarJsonP;
-}
-// (basketdata/radar.json). Bilingual l-en/l-zh spans (toggle-proof). Non-invasive — appends
-// one pill to the card's .txrow; silent if the radar JSON is absent. See site/radar.html.
-function decorateRealActivity(){
-  const ST={POSITIVE_DIVERGENCE:[L('🛰️ activity ahead','🛰️ 活动领先'),'var(--up)'],
-            NEGATIVE_DIVERGENCE:[L('🛰️ price ahead','🛰️ 价格领先'),'var(--warn)'],
-            CONFIRMED_UP:[L('🛰️ confirmed','🛰️ 已印证'),'var(--muted)'],
-            CONFIRMED_DOWN:[L('🛰️ weak','🛰️ 走弱'),'var(--muted)'],
-            QUIET:[L('🛰️ quiet','🛰️ 平静'),'var(--muted)']};
-  _fetchRadar().then(function(d){
-    if(!d||!d.flags) return;
-    // Compact radar heading chip
-    const chip=document.getElementById('radar-chip');
-    if(chip){
-      const ahead=d.flags.filter(f=>f.state==='POSITIVE_DIVERGENCE').length;
-      const behind=d.flags.filter(f=>f.state==='NEGATIVE_DIVERGENCE').length;
-      if(ahead||behind){
-        chip.style.display='';
-        chip.innerHTML=L('🛰️ activity check: '+ahead+' ahead · '+behind+' behind',
-                         '🛰️ 实际活动: '+ahead+' 领先 · '+behind+' 落后');
-      }
-    }
-    d.flags.forEach(function(f){
-      // On desktop #theme-<id> IS the .txrow element itself (a div.txrow in the table cell).
-      // On mobile #theme-<id> is a .tcard and .txrow is a child. Support both layouts.
-      const anchor=document.getElementById('theme-'+(f.basket||''));
-      const row=anchor&&anchor.classList.contains('txrow')?anchor:anchor&&anchor.querySelector('.txrow');
-      if(!row||row.querySelector('.ra-pill')) return;
-      const s=ST[f.state]||ST.QUIET;
-      const dv=f.divergence==null?'':' '+(f.divergence>0?'+':'')+f.divergence.toFixed(1);
-      const pill=document.createElement('span');
-      pill.className='tpill ra-pill'; pill.style.borderColor=s[1]; pill.title='real-activity radar';
-      pill.innerHTML=s[0]+dv;
-      row.appendChild(pill);
-    });
-  });
-}
-function renderMacroCtx(){
-  if(!THEME) return;
-  const m=THEME.macro_context||{};
-  const item=(en,zh,v)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${esc(v==null?'—':v)}</b></span>`;
-  document.getElementById('macro-ctx').innerHTML=
-    `<span>${L('Macro backdrop','宏观背景')}: <b>${esc(m.quad_name||m.quad||'—')}</b></span>`
-    +item('cycle','周期',m.cycle)+item('Fed','美联储',m.fed_dir)
-    +item('NFCI','NFCI',(m.nfci_state||'—')+(m.nfci_trend?(' / '+m.nfci_trend):''))
-    +item('USD','美元',m.dollar_regime)+item('bonds','债券',m.bond_cycle);
-}
-// ---- Rotation This Week unified panel ----
-// Verdict enum → plain words map
-const BREADTH_VERDICT_MAP={
-  narrow:    [L('Advance is narrow — a handful of themes carry the market.','行情集中——少数主题在领涨。'),'var(--warn)'],
-  broad:     [L('Advance is broad — most themes participating.','行情广泛——大多数主题参与上涨。'),'var(--up)'],
-  mixed:     [L('Mixed breadth — no strong consensus direction.','广度混合——无明确方向共识。'),'var(--muted)'],
-  declining: [L('Broad retreat — most themes under pressure.','普跌——大多数主题承压。'),'var(--down)'],
-};
-function renderRotationThisWeek(){
-  const sec=document.getElementById('rotation-this-week');
-  if(!THEME){ if(sec) sec.style.display='none'; return; }
-  const mc=THEME.market_concentration||{};
-  const imp=THEME.impulse_scorecard||{};
-  const rc=THEME.recommendations||{};
-  // Breadth verdict plain words
-  const vv=BREADTH_VERDICT_MAP[mc.verdict]||BREADTH_VERDICT_MAP.mixed;
-  const vEl=document.getElementById('rtw-verdict'); if(vEl) vEl.innerHTML=`<span style="color:${vv[1]}">${vv[0]}</span>`;
-  // 4 compact gauges
-  const cnt=k=>(rc[k]||[]).length;
-  const gauge=(k,en,zh,v,max,col)=>`<div class="rtw-gauge"><div class="gk">${L(en,zh)}</div>
-    <div class="gv" style="color:${col||'inherit'}">${v==null?'—':v}</div>
-    ${max?`<div class="gb"><i style="width:${Math.min(100,Math.round((v||0)/max*100))}%;background:${col||'var(--link)'}"></i></div>`:''}
-  </div>`;
-  const gEl=document.getElementById('rtw-gauges'); if(gEl) gEl.innerHTML=
-    gauge('ad','A/D ratio','涨跌比',mc.ad_ratio!=null?(+mc.ad_ratio).toFixed(2):null,null,mc.ad_ratio>=1?'var(--up)':'var(--down)')
-    +gauge('nh','New highs','新高',imp.nh,Math.max(10,imp.nh+imp.nl),'var(--up)')
-    +gauge('nl','New lows','新低',imp.nl,Math.max(10,imp.nh+imp.nl),'var(--down)')
-    +gauge('reco','Enter / add','建仓／加仓',cnt('enter')+cnt('accumulate'),THEME.themes?THEME.themes.length:20,'var(--up)');
-  // Bottom chip row — opens existing .scmodal modals
-  const cEl=document.getElementById('rtw-chip-row'); if(cEl){
-    const netImp=(imp.net!=null?`${imp.net>=0?'+':''}${imp.net} ${L('impulse','脉冲')}`:null);
-    const nhLo=(imp.nh!=null?`${imp.nh} ${L('hi','高')} / ${imp.nl} ${L('lo','低')}`:null);
-    const recoTally=`${cnt('enter')+cnt('accumulate')} ${L('enter/add','建仓/加仓')} · ${cnt('trim')+cnt('avoid')} ${L('trim/avoid','减/回避')}`;
-    cEl.innerHTML=[
-      netImp?`<button class="rchip" onclick="openSc('impulse')">⚡ ${netImp}</button>`:'',
-      nhLo?`<button class="rchip" onclick="openSc('extremes')">🎯 ${nhLo}</button>`:'',
-      `<button class="rchip" onclick="openSc('reco')">📋 ${recoTally}</button>`,
-    ].join('');
-  }
-}
-function renderRotation(){
-  // rotation content is now inside #rotation-this-week; no section hide needed
-  if(!THEME||!THEME.rotation_5d) return;
-  const rot=THEME.rotation_5d;
-  const pulseById = {};
-  (THEME.themes||[]).forEach(t=>{ if(t&&t.id) pulseById[t.id]=t; });
-  const row=t=>{
-    const ar=t.rank_5d>0?'▲':t.rank_5d<0?'▼':'·'; const ac=t.rank_5d>0?'pos':t.rank_5d<0?'neg':'muted';
-    const pt = pulseById[t.id] || t;
-    const traj = rankTrajectory(pt);
-    const dot = heatDot(pt);
-    return `<div class="rotrow">${dot}<span class="rn"><a href="basket/${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
-      <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
-      <span class="rk ${ac}" title="5d rank change${traj?' · '+traj:''}">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}${traj?`<span class="rk20"> · ${traj}</span>`:''}</span></div>`;};
-  const subtitle=`<p class="rot-sub">${L('Rank changes across themes; descriptive only.','主题排名变化；仅作描述。')}</p>`;
-  const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
-  const rotEl=document.getElementById('rotation');
-  rotEl.innerHTML=`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`+subtitle;
-}
 // Honest TRANSPARENCY: returns the sizing pill HTML string (empty string when calm).
 // Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
 // drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
@@ -1946,107 +1466,6 @@ function renderRegimeSizing(){
   const tipZh='计算方式：'+factorsZh.join(' · ')+' → '+pct+'%'+(demoted?' · '+demoted+'个主题降为仅持有':'')+' | 市场波动加大时仓位会缩小，但不改变篮子排名。'+tipSuffixZh;
   return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
-function renderConcentration(){
-  // now inside #rotation-this-week — no section hide; just early return when no data
-  if(!THEME) return;
-  const mc=THEME.market_concentration||{};
-  const vmap={narrow:['var(--down)','narrow','狭窄'],broad:['var(--up)','broad','广泛'],mixed:['var(--warn)','mixed','中性']};
-  const vv=vmap[mc.verdict]||vmap.mixed;
-  const adc=(en,zh,v)=>`<div class="adc"><div class="k">${L(en,zh)}</div><div class="v ${v==null?'muted':(v<1?'neg':'pos')}">${v==null?'—':(+v).toFixed(2)}</div></div>`;
-  const narrow=`<div class="panel pad" style="border-left:3px solid ${vv[0]}">
-    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center">
-      <div><span class="muted sm">${L((THEME.bench_label||'S&P')+' breadth',(THEME.bench_label_zh||'标普')+'广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
-      <div class="adgrid">${adc('A/D today','今日',mc.ad_ratio)}${adc('3-day','3日',mc.ad_3d)}${adc('weekly','周',mc.ad_w)}${adc('monthly','月',mc.ad_m)}</div>
-      <div class="muted sm">${L('above 50d','站上50日')} <b>${mc.pct_above_50!=null?mc.pct_above_50+'%':'—'}</b> · ${L('above 200d','站上200日')} <b>${mc.pct_above_200!=null?mc.pct_above_200+'%':'—'}</b> · ${L('new hi/lo','新高/低')} <b class="pos">${mc.nh}</b>/<b class="neg">${mc.nl}</b></div>
-    </div></div>`;
-  const cPulseById = {};
-  (THEME.themes||[]).forEach(t=>{ if(t&&t.id) cPulseById[t.id]=t; });
-  const lead=(arr,en,zh,sign)=>`<div class="rotcol"><h4>${sign} ${L(en,zh)}</h4>${(arr||[]).map(x=>{const pt=cPulseById[x.id]||x;return `<div class="rotrow">${heatDot(pt)}<span class="rn"><a href="basket/${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv ${x.net_ad>=0?'pos':'neg'}">${x.net_ad>=0?'+':''}${x.net_ad}</span><span class="rk muted">${x.adv}/${x.dec}</span></div>`}).join('')}</div>`;
-  const tlist=(arr,en,zh,kind)=>`<div class="rotcol"><h4>${kind==='entry'?'✦':'⚠'} ${L(en,zh)}</h4>${(arr||[]).length?arr.map(x=>`<div class="rotrow"><span class="rn"><a href="basket/${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv">${kind==='entry'?Math.round(x.quality*100)+'%':esc(x.band)}</span></div>`).join(''):`<div class="muted sm" style="padding:6px 0">${L('none right now','暂无')}</div>`}</div>`;
-  document.getElementById('concentration').innerHTML = narrow
-    + `<div class="rotwrap" style="margin-top:12px">${lead(THEME.breadth_leaders,'Owns the advance','主导上涨','▲')}${lead(THEME.breadth_laggards,'In the decline','处于下跌','▽')}</div>`
-    + `<div class="rotwrap" style="margin-top:12px">${tlist(THEME.entries,'Clean entries (emerging)','干净入场（新兴）','entry')}${tlist(THEME.rollover,'Roll-over watch','回落观察','roll')}</div>`;
-}
-// ---- scorecard detail popups (click a scorecard → floating list of names) ---
-function _bbase(){ return window.BASKET_BASE||'basket/'; }
-function _scOverlay(){
-  let ov=document.getElementById('sc-modal');
-  if(!ov){
-    ov=document.createElement('div'); ov.id='sc-modal'; ov.className='scmodal';
-    ov.innerHTML='<div class="scm-card" role="dialog" aria-modal="true"><button class="scm-x" aria-label="close">✕</button><div class="scm-hd"></div><div class="scm-sub"></div><div class="scm-bd"></div></div>';
-    document.body.appendChild(ov);
-    ov.addEventListener('click',e=>{ if(e.target===ov) scClose(); });
-    ov.querySelector('.scm-x').onclick=scClose;
-    document.addEventListener('keydown',e=>{ if(e.key==='Escape') scClose(); });
-  }
-  return ov;
-}
-function scClose(){ const ov=document.getElementById('sc-modal'); if(ov) ov.classList.remove('open'); }
-function _nmRow(x,withRet){
-  // name shows the human name where we have one, else the ticker; the ticker sub-label
-  // appears only in the language that actually has a name (else it would duplicate the ticker).
-  const nm=`<span class="l-en">${esc(x.n||x.t)}</span><span class="l-zh">${esc(x.n_zh||x.n||x.t)}</span>`;
-  const tk=`<span class="l-en">${x.n?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span><span class="l-zh">${x.n_zh?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span>`;
-  const th=x.tid?`<a class="scm-th" href="${_bbase()}${esc(x.tid)}.html" title="${esc(x.th||'')}">${L(esc(x.th||''),esc(x.th_zh||x.th||''))}</a>`:'';
-  const ret=withRet?`<span class="scm-r ${cls(x.r)}">${fmtPct(x.r)}</span>`:'';
-  return `<div class="scm-row"><span class="scm-nm">${nm}${tk}</span>${th}${ret}</div>`;
-}
-function _scCol(title,arr,withRet,tone){
-  const rows=(arr&&arr.length)?arr.map(x=>_nmRow(x,withRet)).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
-  return `<div class="scm-col"><div class="scm-colh ${tone||''}">${title} <b>${(arr||[]).length}</b></div>${rows}</div>`;
-}
-function openSc(kind){
-  if(!THEME) return;
-  const s=THEME.impulse_scorecard||{}, rc=THEME.recommendations||{};
-  const ov=_scOverlay(); let hd='',sub='',bd='';
-  if(kind==='impulse'){
-    hd=L('±3% daily impulse','±3% 当日脉冲');
-    sub=L('Basket members that moved at least 3% today.','今日涨跌至少 3% 的篮子成分。');
-    bd=`<div class="scm-2col">${_scCol(L('Surged ≥3%','涨≥3%'),s.up_names,true,'up')}${_scCol(L('Dropped ≥3%','跌≥3%'),s.down_names,true,'dn')}</div>`;
-  } else if(kind==='extremes'){
-    hd=L('52-week extremes','52周极值');
-    sub=L('Members printing a fresh 52-week high or low today.','今日创出52周新高或新低的成分。');
-    bd=`<div class="scm-2col">${_scCol(L('New 52-wk highs','创52周新高'),s.nh_names,false,'up')}${_scCol(L('New 52-wk lows','创52周新低'),s.nl_names,false,'dn')}</div>`;
-  } else if(kind==='reco'){
-    hd=L('Recommendation tally','建议统计');
-    sub=L('Action buckets for every theme. Click a theme to open it.','每个主题的操作分组。点击主题打开详情。');
-    const grp=(en,zh,keys,tone)=>{ const arr=[].concat(...keys.map(k=>rc[k]||[]));
-      const rows=arr.length?arr.map(t=>`<a class="scm-row" href="${_bbase()}${esc(t.id)}.html"><span class="scm-nm">${L(esc(t.name),esc(t.name_zh||t.name))}</span><span class="scm-th">${esc((t.label||'').toUpperCase())}</span><span class="scm-r">${t.score}</span></a>`).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
-      return `<div class="scm-col"><div class="scm-colh ${tone}">${L(en,zh)} <b>${arr.length}</b></div>${rows}</div>`; };
-    bd=`<div class="scm-3col">${grp('Enter / add','建仓／加仓',['enter','accumulate'],'up')}${grp('Hold','持有',['hold'],'')}${grp('Trim / avoid','减仓／回避',['trim','avoid'],'dn')}</div>`;
-  } else return;
-  ov.querySelector('.scm-hd').innerHTML=hd;
-  ov.querySelector('.scm-sub').innerHTML=sub;
-  ov.querySelector('.scm-bd').innerHTML=bd;
-  ov.classList.add('open');
-}
-function renderScorecards(){
-  // scorecards now inside #rotation-this-week > #impulse-section
-  if(!THEME||!THEME.impulse_scorecard) return;
-  const s=THEME.impulse_scorecard, rc=THEME.recommendations||{};
-  const duo=(a,b)=>{const t=(a+b)||1;return `<div class="duo"><i style="width:${a/t*100}%;background:var(--up)"></i><i style="width:${b/t*100}%;background:var(--down)"></i></div>`;};
-  const cnt=k=>(rc[k]||[]).length;
-  const hint=`<div class="scm-hint">${L('Click for the names →','点击查看个股 →')}</div>`;
-  const c1=`<div class="scard clk" data-sc="impulse"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
-    <div class="bigrow"><div><div class="big up">${s.up3}</div><div class="sublbl">${L('up ≥3%','涨≥3%')}</div></div>
-    <div><div class="big dn">${s.down3}</div><div class="sublbl">${L('down ≥3%','跌≥3%')}</div></div></div>
-    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div>${hint}</div>`;
-  const c2=`<div class="scard clk" data-sc="extremes"><div class="sk">${L('52-week extremes','52周极值')}</div>
-    <div class="bigrow"><div><div class="big up">${s.nh}</div><div class="sublbl">${L('new highs','新高')}</div></div>
-    <div><div class="big dn">${s.nl}</div><div class="sublbl">${L('new lows','新低')}</div></div></div>
-    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div>${hint}</div>`;
-  const c3=`<div class="scard clk" data-sc="reco"><div class="sk">${L('recommendation tally','建议统计')}</div>
-    <div class="bigrow" style="gap:12px;flex-wrap:wrap">
-      <div><div class="big up">${cnt('enter')+cnt('accumulate')}</div><div class="sublbl">${L('enter / add','建仓／加仓')}</div></div>
-      <div><div class="big" style="color:var(--muted)">${cnt('hold')}</div><div class="sublbl">${L('hold','持有')}</div></div>
-      <div><div class="big dn">${cnt('trim')+cnt('avoid')}</div><div class="sublbl">${L('trim / avoid','减仓／回避')}</div></div>
-    </div>${hint}</div>`;
-  const box=document.getElementById('scorecards');
-  box.innerHTML=c1+c2+c3;
-  box.querySelectorAll('.scard.clk').forEach(c=>c.onclick=()=>openSc(c.dataset.sc));
-}
-function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return;const det=d.querySelector('details');if(det)det.open=true;
-  d.scrollIntoView({behavior:'smooth',block:'center'});d.style.transition='box-shadow .3s';d.style.boxShadow='0 0 0 2px var(--link)';setTimeout(()=>{d.style.boxShadow='';},1200);}
 
 // ---- Money flow: ETF style/risk tone + vol pill (Op 2) ----
 // Fetched once each; fail-silent on any error.
@@ -2080,24 +1499,6 @@ function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return
     const tc={warn:'var(--warn)',ok:'var(--up)',dn:'var(--down)'}[vr.tone]||'var(--muted)';
     const pcNote=pc&&pc.sentiment_en?` · ${L('options traders '+esc(String(pc.sentiment_en).replace(/\s*\(.*\)$/,'')),esc(pc.sentiment_zh))}` :'';
     el.innerHTML=`<span class="chip" style="font-size:11px;color:${tc}" data-tip-en="VIX ${vr.vix} (${Math.round(vr.vix_pctile*100)}th %ile) · ${vr.term_state||''}" data-tip-zh="VIX ${vr.vix}（${Math.round(vr.vix_pctile*100)}分位）· ${vr.term_state||''}">${L('Volatility: '+esc(String(vr.label_en).toLowerCase()),'波动率：'+esc(vr.label_zh))}${pcNote}</span>`;
-  });
-  // theme_extension stretch flag — inject ⚠ chip into desk Flags cells via theme-<bid> divs
-  fetch('basketdata/theme_extension.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null).then(d=>{
-    if(!d||!(d.themes||[]).length) return;
-    d.themes.forEach(te=>{
-      if(!te||te.tone!=='neg') return; // only stretched/parabolic
-      const els=document.querySelectorAll('#theme-'+CSS.escape(te.id));
-      els.forEach(el=>{
-        if(el.querySelector('.te-stretch')) return; // already injected
-        const tipEn=`${te.band_en} — pullbacks common from here`;
-        const tipZh=`${te.band_zh}——历史上常见回撤`;
-        const chip=document.createElement('span');
-        chip.className='chip te-stretch'; chip.style.fontSize='10.5px'; chip.style.color='var(--warn)';
-        chip.setAttribute('data-tip-en',tipEn); chip.setAttribute('data-tip-zh',tipZh);
-        chip.innerHTML=L('⚠ '+esc(te.band_en),'⚠ '+esc(te.band_zh));
-        el.appendChild(chip);
-      });
-    });
   });
 })();
 

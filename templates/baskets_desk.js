@@ -1,6 +1,14 @@
 // Shared Theme Rotation Desk renderer — used by every baskets page (US/CN/HK/CA/Intl).
 // Relies on per-page globals: BASKETS, CHART, THEME + helpers esc/cssv/
 // fmtPct/cls/sparkSvg/ratio/sparkTail. Call deskBoot() after those are defined.
+//
+// NOT every consumer renders the desk. baskets.html.j2 (US) loads this file but
+// never calls deskBoot(): #3282 replaced its desk surfaces with the verdict hero /
+// act board / rotation map, so the container ids below (#theme-desk, #macro-ctx,
+// #rotation, #concentration, #scorecards, #actnow) do not exist there. It uses only
+// L, isZh and openTheme. Changing those three changes the US page too — which is the
+// point; they used to be a hand-copied duplicate that a shared-renderer fix missed.
+// Everything else here is china / hk / canada / intl only.
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
 // ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
@@ -438,6 +446,12 @@ function renderSleeveChip(){
 }
 // renderRegimeSizing() — returns the sizing pill HTML string ('' when calm / inactive).
 // Called from actNowPulseBar(); no longer writes to a standalone DOM element.
+// KNOWN DIVERGENCE: baskets.html.j2 keeps its own renderRegimeSizing(), which also
+// discloses the caution_passport / regime_caution_shadow read (a further cut the
+// vol-regime would suggest but which has no measured drawdown edge, so it is shown
+// for awareness and does NOT size anyone down). That page loads this file, so its
+// later declaration wins there — deliberately. The regional payloads carry those
+// fields too; porting the disclosure here is open work, not an oversight.
 function renderRegimeSizing(){
   const rs=THEME&&THEME.regime_sizing;
   if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm
