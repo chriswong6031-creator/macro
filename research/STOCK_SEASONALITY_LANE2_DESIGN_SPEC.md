@@ -9,6 +9,29 @@ not a builder decision.
 **Parent docket:** `research/SEASONAX_BIOPHARMA_SEASONALITY_INTELLIGENCE_BUILD_DOCKET_FOR_FABLE.md`
 (Lane 2 — Truthful calendar explorer).
 
+### Revision log — where each contested decision landed
+
+This spec was revised four times while the build lanes ran, each time because a
+measurement or a render contradicted it. Where an early section and a later one
+disagree, **the later one wins**; the table below is the authority.
+
+| Decision | Current state | Why | Recorded in |
+|---|---|---|---|
+| Family null | **Independent** circular year-shift | a synchronized shift relocates a real effect instead of removing it | §11 |
+| Window grid | 2,645 windows; never wraps the year; leap day folds into Feb 28 | keeps "one year = one observation" clean | §4, §9 |
+| Verdict | **Graded**, not pass/fail | after correction nearly every symbol fails; a binary page has one answer forever | §3, §12 |
+| Default window | the symbol's **own strongest**, not a preset | so opening a symbol answers something that varies | §9, §12 |
+| Chip 4 | **four-state**, incl. `The market's pattern` | most calendar structure is inherited from the market, not name-specific | §3, §12.6 |
+| Market-neutral leg | **required**, scanner + its own null run on both panels | it is the discriminator, not a display option | §9, §12.6 |
+| Signature | the **window fan** in §5 — *not* lit strands inside the year field | rendered, in-gate lighting is illegible at the year's y-scale | §5, §13 |
+| Dot row | **removed** — the fan's end-dot column replaces it | same fact, better picture, one fewer element | §5, §13 |
+| Entity storage | **gitignored + R2**, fetched via `DATA_BASE`; default symbol tracked | ~28 MB/night in git otherwise | §9, §14 |
+| Page + artifacts | **public** | no forecast, no ranking, and search visibility is the point | §10 |
+| Year-cohort filters | **none** (no election / bull-bear presets) | standing kill, and post-hoc cohorts spend unaccounted budget | §11 |
+
+Committed reference renders: `mockups/refs/stock_seasonality/` — `window_fan.html`
+is the thing to build; `variants.html` records what failed.
+
 ---
 
 ## §0 ACCEPTANCE GATES (not done unless)
@@ -97,15 +120,16 @@ chart is the first proof under it.
 │ CALENDAR CLOCK · 日历时钟                     [symbol search]    │
 │ SPDR S&P 500 ETF  SPY                                            │
 │                                                                   │
-│ Looks strong, but not after counting every                       │
-│ window tried. Stand aside.                                       │
+│ Late-summer strength here is really the                          │
+│ market's calendar. Watch, don't chase.                           │
 │                                                                   │
-│ [Aug 3 → Sep 11] [15 years] [9 of 15 up] [doesn't hold up] [thru │
-│                                                       Jul 31]     │
+│ [Aug 3 → Sep 11] [15 years] [9 of 15 up] [The market's pattern]  │
+│ [Through Jul 31]                                                  │
 ├─────────────────────────────────────────────────────────────────┤
+│  THE YEAR FIELD — when in the year, and what shape               │
 │  J    F    M    A    M    J    J    A    S    O    N    D        │
 │  ╎    ╎    ╎    ╎    ╎    ╎    ╎  ┌─────┐ ╎    ╎    ╎    ╎        │
-│  ~~~~~~~~~~~~~~~~ 15 faint year strands ~~~~~~│▲today            │
+│  ~~~~~~~~~~~~~~ 15 year strands, never dimmed ~~~~~~│▲today      │
 │  ━━━━━ median ink ━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━        │
 │  ╎    ╎    ╎    ╎    ╎    ╎    ╎  └──╫──┘ ╎    ╎    ╎    ╎        │
 │                                   [▮]   [▮]  ← drag handles      │
@@ -113,8 +137,14 @@ chart is the first proof under it.
 ├───────────────────────────┬─────────────────────────────────────┤
 │ THIS WINDOW               │ THE YEARS                            │
 │   +2.1%  typical year     │  2011  +3.14%  ▬▬▬▬▬▬                │
-│   ●●●○●●●●○●●○●●  9 of 15 │  2012  −1.02%  ▬▬                    │
-│   ⓘ doesn't hold up …  ?  │  …                                   │
+│                           │  2012  −1.02%  ▬▬                    │
+│   THE WINDOW FAN ⟵ signature                                     │
+│   every year from zero    │  …                                   │
+│      ╱╱╱⟋⟋⟋⟋⟋⟋⟋⟋⟋⟋⟋ ●●●●● │                                      │
+│   ───────────────────────●●│  ← end-dot column, countable        │
+│      ╲╲╲╲⟍⟍⟍⟍⟍⟍⟍⟍⟍⟍⟍ ●●●● │                                      │
+│   "We shuffled SPY's history 2,000 times…"  ?                    │
+│   ▁▁▂▂▃▃▄▄▅▅▆▆▇▇█ ╎  ← chance track                              │
 ├───────────────────────────┴─────────────────────────────────────┤
 │ BY MONTH · BY WEEKDAY · BY TRADING DAY  (small multiples)        │
 ├─────────────────────────────────────────────────────────────────┤
