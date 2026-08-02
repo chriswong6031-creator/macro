@@ -221,6 +221,33 @@ template-site sync, markup-pin updates: ftr_w1/ftr_w3/group_flow/validated-claim
 weight assertion). **Reviewer (opus)** adversarial pass before ship; main loop
 verifies visually and ships.
 
+## §4b Build notes — deviations from §2/§4 (recorded during the build, 2026-08-01)
+
+1. **Map scopes shipped as Sectors/Themes over the rvx instrument** (11 EW proxies vs
+   36 themes, one scope filter) with the cycle clock beside it; the SRR-with-47-unit
+   upgrade (§2's adapter/server-unit idea) is DEFERRED — instead the whole-market SRR
+   app ships intact in MOVEMENT pinned to its broadest universe (269 subsectors + 11
+   ETFs). Rationale: zero-risk transplant of two proven instruments beats a new
+   cross-payload adapter in the consolidation PR; the IA story stays clean ("the map
+   = our curated universes; movement = the whole market").
+2. **Finviz-41 themes unit killed by FLAG, not by data removal**
+   (`themes_unit:false` + renderer guard): `engine/neuralweb/thematic_state.py`
+   consumes the themes array for quadrant rollups — data product survives, UI dies,
+   China (no flag) unaffected.
+3. **Handoff artifact is `basketdata/si_handoff.json`**, NOT theme_context.json —
+   that path already had a single owner (`engine.theme_context.write_context`) and a
+   Neural Web lobe reader (`world_state.py`); one-writer law respected.
+4. **The 11 cap-weighted sector conviction cards keep a compact board** inside the
+   map section (sectors-only render of the donor board); basket-kind conviction
+   surfaces exclusively via the lane trace-expands. Prevents the sector reads from
+   becoming unreachable (lanes are basket-native).
+5. **deepStrip stays** (display cleanliness); the ambiguity defect is solved by kind
+   chips (`SECTOR EW`) on lane rows, not by un-stripping names everywhere.
+6. **Wave A builder was killed** after 33 minutes of zero-output analysis; the
+   template merge was executed in the main loop via marker-asserted assembly
+   scripts; narrow extraction (rotation_events/desk_watch/time_machine JS) went to a
+   bounded builder instead.
+
 ## §5 Vocabulary bridge (Tier-2 `?` receipt, one place)
 
 "**Leading/Improving/Weakening/Lagging** describe where a group sits vs the market
