@@ -1,0 +1,87 @@
+{% extends "seo_base.html.j2" %}
+{% block body_class %}earnings-wire earnings-wire-index{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="assets/earnings-wire.css">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
+{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ jsonld|safe }}</script>{% endblock %}
+
+{% block main %}
+<section class="ew-hero">
+  <div class="ew-wrap">
+    <div class="ew-kicker"><span class="ew-pulse" aria-hidden="true"></span>{{ t('Earnings call record', '财报电话会记录') }}</div>
+    <div class="ew-hero-grid">
+      <div>
+        <h1>{{ t('Source-first earnings records.', '来源优先的财报记录。') }}</h1>
+        <p class="ew-dek">{{ t('A live archive of receipt-bound excerpts from company earnings calls. No generated thesis, no recommendation — just the recorded language, its source coordinates, and a direct path into the ticker dossier or live Terminal.', '来自公司财报电话会的可追溯摘录档案。没有生成式投资结论，也没有推荐——只有原始表述、来源坐标，以及进入个股档案或实时终端的直接入口。') }}</p>
+        <a class="ew-conversion" href="https://app.mastermind-x.com/terminal?signup=1&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer">{{ t('Start free in Terminal', '免费开始使用终端') }} <span aria-hidden="true">↗</span></a>
+      </div>
+      <aside class="ew-hero-proof">
+        <span class="ew-proof-k">{{ t('Method', '方法') }}</span>
+        <strong>{{ t('Exact approved spans only', '仅展示已核验原文片段') }}</strong>
+        <p>{{ t('Every visible excerpt is bound to a verified source snapshot by hash and byte coordinates.', '每段可见摘录都通过哈希与字节坐标绑定到已核验的来源快照。') }}</p>
+      </aside>
+    </div>
+    <div class="ew-ledger">
+      <span><b class="mono">{{ summary.article_count }}</b>{{ t(' admitted call records', ' 份准入电话会记录') }}</span>
+      <span><b class="mono">{{ summary.source_packet_count }}</b>{{ t(' ingested packets', ' 份已摄取数据包') }}</span>
+      <span><b class="mono">{{ summary.held_count }}</b>{{ t(' held by evidence policy', ' 份因证据策略暂缓') }}</span>
+      <span><b class="mono">{{ summary.ticker_count }}</b>{{ t(' tickers', ' 个代码') }}</span>
+      <span><b class="mono">0</b>{{ t(' model calls in this publication', ' 次模型调用') }}</span>
+      <a href="feed.xml">RSS <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="ew-directory" aria-labelledby="wire-directory-heading">
+  <div class="ew-wrap">
+    <div class="ew-section-head">
+      <div><span>{{ t('Directory', '目录') }}</span><h2 id="wire-directory-heading">{{ t('Currently admissible records', '当前符合准入条件的记录') }}</h2></div>
+      <p>{{ t('Browse the full archive page by page. Search on this page by ticker, period, category, or speaker; every card preview is a verbatim call excerpt.', '分页浏览完整档案。在本页按代码、期间、分类或发言人搜索；每张卡片预览均为电话会原文摘录。') }}</p>
+    </div>
+    <div class="ew-controls" role="search">
+      <label class="ew-search"><span class="sr-only">{{ t('Search records', '搜索记录') }}</span><input id="wire-search" type="search" autocomplete="off" placeholder="Search ticker, period, topic or speaker" data-placeholder-en="Search ticker, period, topic or speaker" data-placeholder-zh="搜索代码、期间、主题或发言人"></label>
+      <button type="button" class="ew-filter active" data-wire-filter="all" aria-pressed="true">{{ t('This page', '本页全部') }} <b>{{ items|length }}</b></button>
+      <button type="button" class="ew-filter" data-wire-filter="guidance" aria-pressed="false">{{ t('Guidance', '指引') }}</button>
+      <button type="button" class="ew-filter" data-wire-filter="performance" aria-pressed="false">{{ t('Performance', '表现') }}</button>
+      <button type="button" class="ew-filter" data-wire-filter="risks" aria-pressed="false">{{ t('Risks', '风险') }}</button>
+    </div>
+    <p class="ew-results" id="wire-results" aria-live="polite">{{ t('Showing records ' ~ pagination.start ~ '–' ~ pagination.end ~ ' of ' ~ summary.article_count ~ '.', '显示第 ' ~ pagination.start ~ '–' ~ pagination.end ~ ' 条，共 ' ~ summary.article_count ~ ' 条。') }}</p>
+    <div class="ew-grid" id="wire-grid">
+      {% for item in items %}
+      <article class="ew-card" data-wire-card data-categories="{{ item.category_search }}" data-search="{{ item.search_text }}">
+        <div class="ew-card-top"><span class="ew-ticker">{{ item.event.ticker }}</span><span class="ew-date mono">{{ item.event.date }}</span></div>
+        <h3><a href="{{ item.href }}">{{ item.company_label }} · {{ item.event.period }} {{ t('call record', '电话会记录') }} <span aria-hidden="true">↗</span></a></h3>
+        <div class="ew-tags">{% for category in item.display_categories %}<span>{{ category }}</span>{% endfor %}</div>
+        <blockquote>“{{ item.preview_quote }}”</blockquote>
+        <div class="ew-card-foot"><span>{{ item.preview_speaker or t('Management', '管理层') }}</span><span>{{ item.fact_count }} {{ t('receipted excerpts', '条可追溯摘录') }}</span></div>
+      </article>
+      {% endfor %}
+    </div>
+    <div class="ew-empty" id="wire-empty" hidden>
+      <strong>{{ t('No records match that search.', '没有符合该搜索的记录。') }}</strong>
+      <p>{{ t('Try a ticker, period, category, or a call speaker.', '请尝试代码、期间、分类或电话会发言人。') }}</p>
+    </div>
+    {% if pagination.count > 1 %}
+    <nav class="ew-pagination" aria-labelledby="wire-pagination-label">
+      <span class="sr-only" id="wire-pagination-label">{{ t('Earnings record pages', '财报记录分页') }}</span>
+      {% if pagination.previous %}<a href="{{ pagination.previous }}" rel="prev">← {{ t('Newer', '较新') }}</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+      <div>{% for entry in pagination.pages %}{% if entry.current %}<span class="current" aria-current="page">{{ entry.number }}</span>{% else %}<a href="{{ entry.href }}">{{ entry.number }}</a>{% endif %}{% endfor %}</div>
+      {% if pagination.next %}<a href="{{ pagination.next }}" rel="next">{{ t('Older', '较早') }} →</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+    </nav>
+    {% endif %}
+  </div>
+</section>
+
+<section class="ew-protocol">
+  <div class="ew-wrap ew-protocol-in">
+    <span class="ew-protocol-no mono">01</span>
+    <div><span>{{ t('Read it correctly', '如何正确阅读') }}</span><h2>{{ t('A record of what was said — not a market call.', '这是对已说内容的记录，而非市场判断。') }}</h2></div>
+    <p>{{ t('This is a transcript-only, historically incomplete publication. Releases, filings, slides, consensus and price reaction are visibly marked as not joined; lower-evidence packets remain held instead of being inferred.', '这是仅基于电话会文本且历史覆盖尚不完整的发布。新闻稿、申报文件、演示材料、一致预期和股价反应均明确标注为未接入；证据不足的数据包会被暂缓，而非由推断补齐。') }}</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="assets/earnings-wire.js" defer></script>
+{% endblock %}

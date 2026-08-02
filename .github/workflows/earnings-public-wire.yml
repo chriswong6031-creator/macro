@@ -1,0 +1,75 @@
+name: earnings-public-wire
+
+# Public, token-free projection of the receipt-bound earnings story catalog.
+# The source-packet and Company Intelligence lanes move independently. Follow
+# either successful promotion, then keep the :47 backstop so a missed
+# workflow_run cannot leave the public archive waiting for a manual backfill.
+on:
+  workflow_run:
+    workflows: ["earnings-story-packets", "company-intelligence"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: earnings-public-wire
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 20
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deterministic wire dependencies
+        run: python -m pip install --quiet jinja2 pyyaml requests
+
+      - name: hydrate, verify and render the current public wire
+        run: python -m scripts.build_earnings_public_wire
+
+      - name: commit current wire and discovery routes
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          if ! push_on_main_ok; then exit 0; fi
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # This lane owns only its nested public estate. It persists no
+          # packet/source manifests; site/sitemap.xml remains nightly-owned.
+          git add site/stocks/earnings
+          if git diff --cached --quiet; then
+            echo "earnings-public-wire: current publication is already committed"
+            exit 0
+          fi
+          git commit -m "earnings-wire: publish current verified records [skip ci]"
+          push_retry_init "earnings public wire"
+          while push_attempt; do
+            git fetch --depth 20 origin main || true
+            if git pull --rebase --autostash origin main && push_autostash_ok; then
+              if push_do origin HEAD:main; then
+                echo "earnings-public-wire: pushed on attempt ${PUSH_ATTEMPT}"
+                push_won
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::error title=earnings-public-wire::could not publish after ${PUSH_ATTEMPT} attempts"
+          exit 1

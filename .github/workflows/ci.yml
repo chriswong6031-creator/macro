@@ -2143,6 +2143,21 @@ on:
       # history and Terminal transcript marker. Its focused contract and
       # refresh tests run in the publish-r2-client pack; list every source and
       # test half so a workflow-only/test-only edit cannot evade that proof.
+      #
+      # The public product has two additional release surfaces: the bounded API
+      # + ticker dossier, and the deterministic earnings wire.  Name their
+      # subjects explicitly even where a broad engine/templates/site glob also
+      # matches them.  That keeps the release-audit reachability contract
+      # reviewable and prevents a future narrowing of those globs from making
+      # either product face ship without its focused pack.
+      - "app/company_intelligence.py"
+      - "tests/test_company_intelligence_api.py"
+      - "site/assets/js/company-intelligence-dossier.js"
+      - "templates/ticker.html.j2"
+      - "engine/earnings_narrative/public_wire.py"
+      - "scripts/build_earnings_public_wire.py"
+      - "templates/earnings_wire/**"
+      - "tests/test_earnings_public_wire.py"
       - "engine/company_intelligence/**"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
