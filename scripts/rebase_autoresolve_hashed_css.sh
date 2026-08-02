@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Finish a `git pull --rebase` that stopped ONLY on rename/rename (or rename/delete)
-# conflicts among content-hashed derived stylesheets under site/assets/css/
-# (written by scripts/externalize_css.py; filename == sha256(content)[:8]).
+# conflicts among content-hashed derived assets under site/assets/css/ and
+# site/assets/js/ (both minted by scripts/externalize_css.py from inline <style> /
+# <script data-externalize> blocks; filename == sha256(content)[:8]; the script
+# name predates the js tree).
 #
-# Why: concurrent render lanes re-externalize the same inline <style> block after
-# divergent re-renders, so each side renames site/assets/css/<old>.css to a DIFFERENT
+# Why: concurrent render lanes re-externalize the same inline block after
+# divergent re-renders, so each side renames site/assets/<tree>/<old> to a DIFFERENT
 # new hash. `-X theirs` only settles content-level conflicts — a rename/rename path
 # conflict stops the rebase identically on every retry, and the push loops used to
 # give up after 5 attempts with a green run (2026-07-22 asia-close run 29904079071:
@@ -20,12 +22,14 @@
 # relies on. A source path renamed away on both sides is dropped from the index.
 #
 # Exit 0: rebase completed — caller proceeds to push.
-# Exit 1: no rebase in progress, or unmerged paths outside the derived-CSS scope —
-#         the rebase (if any) is left in place so the caller's existing
+# Exit 1: no rebase in progress, or unmerged paths outside the derived hashed-asset
+#         scope — the rebase (if any) is left in place so the caller's existing
 #         `git rebase --abort` + retry/fail path is unchanged. Never aborts itself.
 set -u
 
-ALLOW_RE='^site/assets/css/[0-9a-f]{6,64}\.css$'
+# Strictly the two content-hashed trees (hex filename, extension matching its
+# tree) — a real, hand-authored asset must never be auto-resolved here.
+ALLOW_RE='^site/assets/(css/[0-9a-f]{6,64}\.css|js/[0-9a-f]{6,64}\.js)$'
 
 gitdir=$(git rev-parse --git-dir 2>/dev/null) || exit 1
 in_rebase() { [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; }
@@ -39,7 +43,7 @@ for _pass in 1 2 3 4 5 6 7 8 9 10; do
   if [ -n "$unmerged" ]; then
     bad=$(printf '%s\n' "$unmerged" | grep -Ev "$ALLOW_RE" || true)
     if [ -n "$bad" ]; then
-      echo "autoresolve_hashed_css: refusing — unmerged paths outside hashed site/assets/css:"
+      echo "autoresolve_hashed_css: refusing — unmerged paths outside the hashed site/assets/{css,js} trees:"
       printf '%s\n' "$bad" | sed 's/^/  /'
       exit 1
     fi

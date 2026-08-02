@@ -18,7 +18,9 @@ from collectors.sec_document_spine import (
 )
 from engine.fundamental_forensics.sec_document_spine import (
     FilingManifestError,
+    archive_directory_url,
     build_filing_manifests,
+    canonical_cik,
     documents_from_archive_index,
     manifest_from_json_bytes,
     manifest_json_bytes,
@@ -28,6 +30,33 @@ from engine.fundamental_forensics.sec_document_spine import (
 
 
 RECORDED_AT = "2026-08-01T12:00:00Z"
+
+
+@pytest.mark.parametrize(
+    "value",
+    ("0", "0000000000", "١", "１２", "1\u0662", "1e2", "-1"),
+)
+def test_sec_identifiers_are_ascii_decimal_only(value: str):
+    with pytest.raises(FilingManifestError, match="invalid CIK"):
+        canonical_cik(value)
+
+
+@pytest.mark.parametrize(
+    "accession",
+    (
+        "٠٠٠٠٠٠٠٠٠١-26-000001",
+        "0000000001-٢٦-000001",
+        "0000000001-26-٠٠٠٠٠١",
+    ),
+)
+def test_accession_segments_are_ascii_decimal_only(accession: str):
+    with pytest.raises(FilingManifestError, match="invalid accession"):
+        archive_directory_url(1, accession)
+
+
+def test_sec_cik_range_is_positive_and_ten_digit_bounded() -> None:
+    assert canonical_cik(1) == "0000000001"
+    assert canonical_cik("9999999999") == "9999999999"
 
 
 def _submissions() -> dict:

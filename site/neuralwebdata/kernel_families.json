@@ -579,25 +579,25 @@
     },
     "us_board": {
       "horizon_curve": {
-        "5": 0.011711,
-        "10": 0.014962,
-        "21": 0.022144
+        "5": 0.011735,
+        "10": 0.014986,
+        "21": 0.02229
       },
       "horizon_detail": {
         "5": {
-          "ic": 0.011711,
+          "ic": 0.011735,
           "n_eff": 1508,
           "sd": 0.000118
         },
         "10": {
-          "ic": 0.014962,
+          "ic": 0.014986,
           "n_eff": 704,
           "sd": 0.000318
         },
         "21": {
-          "ic": 0.022144,
+          "ic": 0.02229,
           "n_eff": 70,
-          "sd": 0.004342
+          "sd": 0.004337
         }
       },
       "recency_trend": {
@@ -684,10 +684,10 @@
       "regime_coverage": 1.0
     }
   },
-  "generated_from": "sha256:0a0b30861a3b1b8cd8b0a790d7d6fdad40fed1ca39265299c09df1eba367e66a",
+  "generated_from": "sha256:9c02debefc8f456f63c1729c5f8a5db8b2a83c7ed1c0c4d893ae6e19853c7711",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-08-01T21:16:01Z",
-  "inputs_hash": "sha256:dfb15e0bae85052635c9acf4e0f11aa35beebcb219423963a65e0921d2abaa8a",
+  "produced_at": "2026-08-02T03:10:55Z",
+  "inputs_hash": "sha256:4b802663c3209582b2378a4d9eadc1a8404e665d418fd4c79a6958644d1a5203",
   "tier": "infrastructure"
 }

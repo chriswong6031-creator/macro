@@ -458,6 +458,14 @@ def build_event_version(
             "prophet_authority": False,
         },
     }
+    file_number_provenance = observation.get("file_number_provenance")
+    if isinstance(file_number_provenance, Mapping):
+        # Optional for immutable legacy compatibility. New compiler output
+        # carries the closed source observation so lifecycle consumers can
+        # distinguish hardened exact keys from pre-provenance file numbers.
+        event["filing"]["file_number_provenance"] = copy.deepcopy(
+            dict(file_number_provenance)
+        )
     identity_body = copy.deepcopy(event)
     identity_body.pop("event_id")
     event["event_id"] = "event:cs:" + hashlib.sha256(_canonical_json(identity_body)).hexdigest()[:24]

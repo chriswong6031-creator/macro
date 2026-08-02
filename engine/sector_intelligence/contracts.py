@@ -263,10 +263,20 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
     return True
 
 
+# Draft 2020-12 self-checks cost ~20ms per schema and every registry consumer
+# rebuilds a ContractRegistry per document, so byte-identical re-checks are
+# remembered for the life of the process. check_schema is a pure function of
+# the parsed bytes: files are still re-read and re-parsed on every discovery
+# pass (an edited file re-checks under its new digest) and failures are never
+# cached.
+_CHECKED_SCHEMA_DIGESTS: set[bytes] = set()
+
+
 def _load_schema(path: Path, root: Path) -> _SchemaRecord:
     shown = _display_path(path, root)
     try:
-        schema = json.loads(path.read_text(encoding="utf-8"))
+        raw = path.read_bytes()
+        schema = json.loads(raw.decode("utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ContractRegistryError(f"cannot load schema {shown}: {exc}") from exc
     if not isinstance(schema, dict):
@@ -274,10 +284,13 @@ def _load_schema(path: Path, root: Path) -> _SchemaRecord:
     if schema.get("$schema") not in _DRAFT_2020_12_URIS:
         raise ContractRegistryError(f"schema {shown} must declare JSON Schema Draft 2020-12")
 
-    try:
-        Draft202012Validator.check_schema(schema)
-    except Exception as exc:
-        raise ContractRegistryError(f"invalid Draft 2020-12 schema {shown}: {exc}") from exc
+    digest = hashlib.sha256(raw).digest()
+    if digest not in _CHECKED_SCHEMA_DIGESTS:
+        try:
+            Draft202012Validator.check_schema(schema)
+        except Exception as exc:
+            raise ContractRegistryError(f"invalid Draft 2020-12 schema {shown}: {exc}") from exc
+        _CHECKED_SCHEMA_DIGESTS.add(digest)
 
     properties = schema.get("properties")
     contract_definition = properties.get("contract_id") if isinstance(properties, dict) else None
