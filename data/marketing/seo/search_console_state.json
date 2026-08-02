@@ -1,8 +1,8 @@
 {
   "schema": "gsc_state.v1",
   "as_of": "2026-08-02",
-  "available": false,
-  "reason": "service account mas***@***.gserviceaccount.com lacks access to sc-domain:mastermind-x.com — add it as a user in Search Console",
+  "available": true,
+  "reason": null,
   "property": "sc-domain:mastermind-x.com",
   "service_account": {
     "client_email": "mas***@***.gserviceaccount.com"
@@ -11,6 +11,6 @@
     "start": "2026-07-06",
     "end": "2026-08-02"
   },
-  "rows_fetched": 0,
+  "rows_fetched": 74,
   "rows_may_be_incomplete": true
 }
