@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T14:22:30.916231+00:00",
-  "count": 599,
+  "generated_at": "2026-08-02T14:47:59.464742+00:00",
+  "count": 600,
   "institutions": [
     "Amova",
     "Apollo",
@@ -575,6 +575,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lm56xhqu95n-4fb0a4",
+      "title": "LATAM Week Ahead MPC Meeting Brazil ( 25bp to 14.0 ) and Mexico (Hold at 6)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:05Z",
+      "summary_points": [
+        "**Brazil Current Account Surprise**: Actual May CA deficit -US$3.2bn vs consensus -US$4.5bn (+US$1.3bn beat), FDI May at US$8.0bn vs consensus US$6.0bn (+US$2.0bn), signaling easing inflation and improved external accounts reducing policy pressure.",
+        "**Selic Expectations & Growth Crosscurrents**: FOCUS Survey shows End-2026 Selic at 14.00% (+25bp) and 2027 growth down to 1.60% (-10bp), indicating tightening risks amid economic slowdown concerns.",
+        "**Mexico Trade Data Discrepancy**: May trade balance US$2.3bn vs consensus US$4.9bn miss (weaker exports), core inflation Jun 0.24% vs consensus 0.31%, signaling FX vulnerability and potential inflation misalignment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
