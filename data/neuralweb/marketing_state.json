@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 35,
+    "opportunity_queue_depth": 36,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,14 +1690,14 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 35,
+      "open": 36,
       "scored": 122,
       "newest": [
         {
           "id": "radar-confluence-COST-2026-08-01",
           "problem_or_desire": "$COST: confluence combo Weekly long-term uptrend + weekly reclaims 100-day line + reclaims 35-day line firing, test WR 64%",
           "expected_value": 0.55,
-          "score": 0.502637,
+          "score": 0.490294,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-confluence-CTVA-2026-08-01",
           "problem_or_desire": "$CTVA: confluence combo Weekly MACD bullish cross + RSI-14 washed out + band breakout up firing, test WR 72%",
           "expected_value": 0.55,
-          "score": 0.502637,
+          "score": 0.490294,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-confluence-ETR-2026-08-01",
           "problem_or_desire": "$ETR: confluence combo Weekly short-term uptrend + RSI-14 washed out + POC retest holds firing, test WR 65%",
           "expected_value": 0.55,
-          "score": 0.502637,
+          "score": 0.490294,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1738,10 +1738,17 @@
       ]
     },
     "publications": {
-      "total": 56,
-      "receipts": 56,
+      "total": 57,
+      "receipts": 57,
       "corrections": 0,
       "newest": [
+        {
+          "id": "pub-ob-2026-08-01-2f58387ed9",
+          "channel": "x",
+          "account": "sophia",
+          "status": "clean",
+          "published_at": "2026-08-01T22:43:16Z"
+        },
         {
           "id": "pub-ob-2026-08-01-170b51e475",
           "channel": "x",
@@ -1755,13 +1762,6 @@
           "account": "flagship",
           "status": "clean",
           "published_at": "2026-08-01T01:10:21Z"
-        },
-        {
-          "id": "pub-ob-2026-07-31-e0ba40838d",
-          "channel": "x",
-          "account": "flagship",
-          "status": "clean",
-          "published_at": "2026-07-31T19:12:57Z"
         }
       ]
     },
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 153,
+    "total_posts": 154,
     "signal_posts": 0,
-    "charts": 111,
+    "charts": 97,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-08-01"
+    "as_of": "2026-08-02"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-01T21:49:32Z",
-  "inputs_hash": "sha256:7001bbaab4cc63b2da6d4f8b7b9f5812d8a8adb3376b847d9d9d02dbb1633658",
+  "produced_at": "2026-08-02T03:51:07Z",
+  "inputs_hash": "sha256:22485d5111dad1503e179be107ebdcbf7133196199bb180aae73021b92e5f07e",
   "tier": "display"
 }

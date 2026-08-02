@@ -2,7 +2,7 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-01T21:49:32Z",
+  "produced_at": "2026-08-02T03:51:07Z",
   "tier": "display",
   "as_of": "2026-08-01",
   "feeds": [
@@ -15,7 +15,7 @@
     {
       "name": "confluence",
       "ok": true,
-      "n_assets": 16,
+      "n_assets": 17,
       "as_of": "2026-08-01"
     },
     {
@@ -38,7 +38,7 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 107,
+    "n_tickers": 111,
     "window_plans": 7
   },
   "surplus": [
@@ -83,6 +83,14 @@
       "opportunity_id": "radar-confluence-META-2026-08-01"
     },
     {
+      "ticker": "MS",
+      "feed": "confluence",
+      "why": "confluence combo Ribbon uptrend + RSI-21 washed out + double bottom (fast) firing, test WR 67%",
+      "as_of": "2026-08-01",
+      "staleness_days": 0,
+      "opportunity_id": "radar-confluence-MS-2026-08-01"
+    },
+    {
       "ticker": "PEG",
       "feed": "confluence",
       "why": "confluence combo Weekly 7/35 golden cross + weekly RSI-14 washed out + double bottom (fast) firing, test WR 72%",
@@ -123,14 +131,6 @@
       "opportunity_id": "radar-movers-EIX-2026-07-31"
     },
     {
-      "ticker": "ETN",
-      "feed": "movers",
-      "why": "S&P mover +7.3% 1D (Industrials)",
-      "as_of": "2026-07-31",
-      "staleness_days": 1,
-      "opportunity_id": "radar-movers-ETN-2026-07-31"
-    },
-    {
       "ticker": "GDDY",
       "feed": "movers",
       "why": "S&P mover -16.7% 1D (Technology)",
@@ -161,6 +161,14 @@
       "as_of": "2026-07-31",
       "staleness_days": 1,
       "opportunity_id": "radar-movers-MPWR-2026-07-31"
+    },
+    {
+      "ticker": "NXPI",
+      "feed": "movers",
+      "why": "S&P mover -6.5% 1D (Technology)",
+      "as_of": "2026-07-31",
+      "staleness_days": 1,
+      "opportunity_id": "radar-movers-NXPI-2026-07-31"
     },
     {
       "ticker": "AAMI",
@@ -353,22 +361,14 @@
       "as_of": "2026-07-02",
       "staleness_days": 30,
       "opportunity_id": "radar-prophet-BA-2026-07-02"
-    },
-    {
-      "ticker": "PRGO",
-      "feed": "prophet",
-      "why": "active Prophet plan PRGO-BULL-20260702, phase pre_trigger, conviction 68",
-      "as_of": "2026-07-02",
-      "staleness_days": 30,
-      "opportunity_id": "radar-prophet-PRGO-2026-07-02"
     }
   ],
   "queue": {
-    "added": 8,
+    "added": 1,
     "expired": 0,
     "total": 123,
-    "open": 35,
-    "doa_skipped": 23
+    "open": 36,
+    "doa_skipped": 22
   },
   "tiers_summary": {
     "as_of": "2026-07-31",
