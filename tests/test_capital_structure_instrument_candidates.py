@@ -253,12 +253,12 @@ def test_candidate_authority_policy_has_release_golden_closure():
             instrument_candidates._CANDIDATE_AUTHORITY_ENTRYPOINTS,
         )
     )
-    assert len(manifest) == 168
+    assert len(manifest) == 181
     assert manifest_sha256 == (
-        "b311244bc19244f30628d2d8fbc63c7d8ae2cf07cc347543de055bfe7b3fa0b9"
+        "65294bb1d775764cb62f91dd1a8bd32049cb7f2195e0a7484b2ea12e8c3b74a4"
     )
     assert implementation_sha256 == (
-        "934ff7b880f98f3f9419152dafd2e3a8cf71b18c23861609f6db6f01581cf363"
+        "bdb1f39c21373eddc860995066d34d62415e83909d8266043c71c72208f395b1"
     )
     for required in (
         "._validate_candidate_term_structure",
@@ -375,6 +375,74 @@ def test_candidate_gate_rejects_in_place_validator_code_mutation(monkeypatch):
         Draft202012Validator.iter_errors,
         "__code__",
         noop_iter_errors.__code__,
+    )
+    with pytest.raises(
+        ValueError,
+        match="schema validator executable binding changed|authority closure mismatch",
+    ):
+        instrument_candidates.validate_candidate_term_structure(tampered)
+
+
+def test_candidate_schema_validator_state_is_fresh_for_every_trust_use():
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    leaked = instrument_candidates._candidate_term_contract_validator()
+    properties = next(
+        value
+        for _implementation, keyword, value in leaked.__self__._validators
+        if keyword == "properties"
+    )
+    properties["version"]["additionalProperties"] = True
+    assert (
+        instrument_candidates._candidate_term_contract_validator().__self__
+        is not leaked.__self__
+    )
+
+    tampered = deepcopy(rows)
+    tampered[0]["version"]["unexpected_nested"] = "smuggled"
+    tampered[0]["candidate_term_id"] = candidate_term_id_for(tampered[0])
+    calls = (
+        lambda: instrument_candidates.validate_candidate_term_structure(tampered),
+        lambda: validate_candidate_term_history(
+            tampered,
+            document_term_observations=source,
+            source_manifests=manifests,
+            source_reader=reader,
+        ),
+        lambda: current_candidate_terms_as_of(
+            tampered,
+            "2026-08-04T00:00:00Z",
+            document_term_observations=source,
+            source_manifests=manifests,
+            source_reader=reader,
+        ),
+        lambda: _compile(
+            source,
+            manifests=manifests,
+            reader=reader,
+            existing=tampered,
+            generated_at="2026-08-05T00:00:00Z",
+        ),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="contract violation"):
+            call()
+
+
+def test_candidate_gate_rejects_mutated_validator_helper_global(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["candidate_term_id"] = candidate_term_id_for(tampered[0])
+
+    additional_properties = Draft202012Validator.VALIDATORS[
+        "additionalProperties"
+    ]
+    monkeypatch.setitem(
+        additional_properties.__globals__,
+        "find_additional_properties",
+        lambda _instance, _schema: iter(()),
     )
     with pytest.raises(
         ValueError, match="schema validator executable binding changed",

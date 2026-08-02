@@ -238,21 +238,74 @@ def _make_document_term_contract_validator(
     format_checker_class: type[Any],
 ) -> Callable[[], Callable[[Mapping[str, Any]], Any]]:
     """Prebuild and seal the actually invoked schema-validation method."""
-    def descriptor_codes(value: Any) -> tuple[CodeType, ...]:
-        functions: tuple[Any, ...]
+    def descriptor_functions(value: Any) -> tuple[Callable[..., Any], ...]:
         if inspect.isfunction(value):
-            functions = (value,)
-        elif isinstance(value, (staticmethod, classmethod)):
-            functions = (value.__func__,)
-        elif isinstance(value, property):
-            functions = tuple(
+            return (value,)
+        if isinstance(value, (staticmethod, classmethod)):
+            return (value.__func__,)
+        if isinstance(value, property):
+            return tuple(
                 function
                 for function in (value.fget, value.fset, value.fdel)
                 if function is not None
             )
-        else:
-            functions = ()
-        return tuple(function.__code__ for function in functions)
+        return ()
+
+    def descriptor_codes(value: Any) -> tuple[CodeType, ...]:
+        return tuple(
+            function.__code__ for function in descriptor_functions(value)
+        )
+
+    def function_dependency_bindings(
+        roots: Sequence[Callable[..., Any]],
+    ) -> tuple[
+        tuple[
+            Callable[..., Any],
+            CodeType,
+            tuple[tuple[str, Any, CodeType | None], ...],
+        ],
+        ...,
+    ]:
+        pending = list(roots)
+        seen: set[Callable[..., Any]] = set()
+        bindings: list[
+            tuple[
+                Callable[..., Any],
+                CodeType,
+                tuple[tuple[str, Any, CodeType | None], ...],
+            ]
+        ] = []
+        while pending:
+            function = pending.pop()
+            if not inspect.isfunction(function) or function in seen:
+                continue
+            seen.add(function)
+            globals_bound: list[tuple[str, Any, CodeType | None]] = []
+            for name in sorted(set(function.__code__.co_names)):
+                if name not in function.__globals__:
+                    continue
+                value = function.__globals__[name]
+                globals_bound.append(
+                    (name, value, getattr(value, "__code__", None)),
+                )
+                if (
+                    inspect.isfunction(value)
+                    and str(value.__module__).startswith(
+                        ("jsonschema.", "referencing."),
+                    )
+                ):
+                    pending.append(value)
+            bindings.append(
+                (function, function.__code__, tuple(globals_bound)),
+            )
+        return tuple(
+            sorted(
+                bindings,
+                key=lambda item: (
+                    str(item[0].__module__), str(item[0].__qualname__),
+                ),
+            ),
+        )
 
     def execution_surface(
         cls: type[Any],
@@ -279,12 +332,16 @@ def _make_document_term_contract_validator(
         raise ValueError("document-term observation schema release digest mismatch")
     schema = json.loads(encoded.decode("utf-8"))
     validator_class.check_schema(schema)
-    format_checker = format_checker_class()
-    validator = validator_class(schema, format_checker=format_checker)
-    bound_iter_errors = validator.iter_errors
-    validator_bindings = tuple(
+    original_iter_errors = validator_class.iter_errors
+    validator_registry_bindings = tuple(
         (keyword, implementation, getattr(implementation, "__code__", None))
-        for implementation, keyword, _value in validator._validators
+        for keyword, implementation in sorted(validator_class.VALIDATORS.items())
+    )
+    type_checker_bindings = tuple(
+        (name, implementation, getattr(implementation, "__code__", None))
+        for name, implementation in sorted(
+            validator_class.TYPE_CHECKER._type_checkers.items(),
+        )
     )
     format_checker_bindings = tuple(
         (
@@ -294,13 +351,43 @@ def _make_document_term_contract_validator(
             raises,
         )
         for name, (implementation, raises) in sorted(
-            format_checker.checkers.items(),
+            format_checker_class.checkers.items(),
         )
     )
     execution_surfaces = (
         (validator_class, execution_surface(validator_class)),
         (format_checker_class, execution_surface(format_checker_class)),
     )
+    dependency_roots = [
+        implementation
+        for _name, implementation, _code in (
+            *validator_registry_bindings,
+            *type_checker_bindings,
+        )
+    ]
+    dependency_roots.extend(
+        implementation
+        for _name, implementation, _code, _raises in format_checker_bindings
+    )
+    validator_runtime_methods = frozenset({
+        "__init__", "__attrs_post_init__", "iter_errors", "descend",
+        "evolve", "is_type", "_validate_reference", "is_valid",
+    })
+    format_checker_runtime_methods = frozenset({
+        "__init__", "check", "conforms",
+    })
+    dependency_roots.extend(
+        function
+        for cls, bindings in execution_surfaces
+        for name, descriptor, _codes in bindings
+        if name in (
+            validator_runtime_methods
+            if cls is validator_class
+            else format_checker_runtime_methods
+        )
+        for function in descriptor_functions(descriptor)
+    )
+    schema_execution_dependencies = function_dependency_bindings(dependency_roots)
 
     def _document_term_contract_validator() -> Callable[[Mapping[str, Any]], Any]:
         """Recheck schema bytes and executable class bindings before each use."""
@@ -334,27 +421,63 @@ def _make_document_term_contract_validator(
                     raise ValueError(
                         "document-term schema validator executable binding changed"
                     )
-        current_validators = bound_iter_errors.__self__._validators
-        if len(current_validators) != len(validator_bindings):
+        for function, expected_code, globals_bound in schema_execution_dependencies:
+            if function.__code__ is not expected_code:
+                raise ValueError(
+                    "document-term schema validator executable binding changed"
+                )
+            for name, expected, expected_code in globals_bound:
+                if name not in function.__globals__:
+                    raise ValueError(
+                        "document-term schema validator executable binding changed"
+                    )
+                actual = function.__globals__[name]
+                if (
+                    actual is not expected
+                    or getattr(actual, "__code__", None) is not expected_code
+                ):
+                    raise ValueError(
+                        "document-term schema validator executable binding changed"
+                    )
+        current_registry = validator_class.VALIDATORS
+        if set(current_registry) != {
+            name
+            for name, _implementation, _code in validator_registry_bindings
+        }:
             raise ValueError(
                 "document-term schema validator executable binding changed"
             )
-        for current_validator, expected in zip(
-            current_validators, validator_bindings, strict=True,
+        for keyword, expected_implementation, expected_code in (
+            validator_registry_bindings
         ):
-            implementation, keyword, _value = current_validator
-            expected_keyword, expected_implementation, expected_code = expected
+            implementation = current_registry[keyword]
             if (
-                keyword != expected_keyword
-                or implementation is not expected_implementation
+                implementation is not expected_implementation
                 or getattr(implementation, "__code__", None) is not expected_code
             ):
                 raise ValueError(
                     "document-term schema validator executable binding changed"
                 )
-        current_checkers = bound_iter_errors.__self__.format_checker.checkers
-        if set(current_checkers) != {
-            name for name, _implementation, _code, _raises in format_checker_bindings
+        current_type_checkers = validator_class.TYPE_CHECKER._type_checkers
+        if set(current_type_checkers) != {
+            name for name, _implementation, _code in type_checker_bindings
+        }:
+            raise ValueError(
+                "document-term schema validator executable binding changed"
+            )
+        for name, expected_implementation, expected_code in type_checker_bindings:
+            implementation = current_type_checkers[name]
+            if (
+                implementation is not expected_implementation
+                or getattr(implementation, "__code__", None) is not expected_code
+            ):
+                raise ValueError(
+                    "document-term schema validator executable binding changed"
+                )
+        current_format_checkers = format_checker_class.checkers
+        if set(current_format_checkers) != {
+            name
+            for name, _implementation, _code, _raises in format_checker_bindings
         }:
             raise ValueError(
                 "document-term schema validator executable binding changed"
@@ -362,7 +485,7 @@ def _make_document_term_contract_validator(
         for name, expected_implementation, expected_code, expected_raises in (
             format_checker_bindings
         ):
-            implementation, raises = current_checkers[name]
+            implementation, raises = current_format_checkers[name]
             if (
                 implementation is not expected_implementation
                 or getattr(implementation, "__code__", None) is not expected_code
@@ -371,7 +494,11 @@ def _make_document_term_contract_validator(
                 raise ValueError(
                     "document-term schema validator executable binding changed"
                 )
-        return bound_iter_errors
+        fresh_schema = json.loads(current.decode("utf-8"))
+        validator = validator_class(
+            fresh_schema, format_checker=format_checker_class(),
+        )
+        return original_iter_errors.__get__(validator, validator_class)
 
     return _document_term_contract_validator
 
@@ -1409,6 +1536,35 @@ class _SemanticClosureBuilder:
             and type(value).__qualname__ == "methodcaller"
         ):
             return {"kind": "operator.methodcaller", "value": repr(value)}
+        if (
+            type(value).__module__ == "referencing._core"
+            and type(value).__qualname__ == "Registry"
+        ):
+            return {
+                "kind": "referencing.Registry",
+                "class": _callable_identity(type(value)),
+                "value": repr(value),
+            }
+        if (
+            type(value).__module__ == "jsonschema._utils"
+            and type(value).__qualname__ == "Unset"
+        ):
+            return {
+                "kind": "jsonschema.Unset",
+                "class": _callable_identity(type(value)),
+                "value": repr(value),
+            }
+        if (
+            type(value).__module__ == "jsonschema._utils"
+            and type(value).__qualname__ == "URIDict"
+        ):
+            return {
+                "kind": "jsonschema.URIDict",
+                "items": [
+                    [str(key), self._reference(item)]
+                    for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+                ],
+            }
         if inspect.isclass(value):
             return {"kind": "class", "identity": _callable_identity(value)}
         if isinstance(value, (list, dict, set, bytearray)):
@@ -2840,12 +2996,12 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 # Release goldens are recalculated only when the authority implementation or its
 # closed schema intentionally changes. They are independent of parser-version
 # goldens so a mutable parser registration can never rewrite trust policy.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 406
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 419
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "769a05557320e9c0715471d002c60ddb1b8cbcf1346093339d63702d638b758f"
+    "a4932a0f734dd14d5b53538ee762d767ad6de77c7d7efcabe3b64beed639ad0f"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "7e6ebe3debabf914a033fd298e7d1bed58764fa8c998bb3bb34189b71cba0b35"
+    "809ba010f6ae55ab0bd69949c94e49f8be0d978d62041a53e2d125c4eaa41d54"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

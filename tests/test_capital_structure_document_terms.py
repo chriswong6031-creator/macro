@@ -401,12 +401,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 406
+    assert len(manifest) == 419
     assert manifest_sha256 == (
-        "769a05557320e9c0715471d002c60ddb1b8cbcf1346093339d63702d638b758f"
+        "a4932a0f734dd14d5b53538ee762d767ad6de77c7d7efcabe3b64beed639ad0f"
     )
     assert implementation_sha256 == (
-        "7e6ebe3debabf914a033fd298e7d1bed58764fa8c998bb3bb34189b71cba0b35"
+        "809ba010f6ae55ab0bd69949c94e49f8be0d978d62041a53e2d125c4eaa41d54"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -785,6 +785,73 @@ def test_public_admission_rejects_in_place_validator_code_mutation(monkeypatch):
         Draft202012Validator.iter_errors,
         "__code__",
         noop_iter_errors.__code__,
+    )
+    with pytest.raises(
+        ValueError,
+        match="validator executable binding changed|authority policy closure mismatch",
+    ):
+        validate_document_term_history(tampered)
+
+
+def test_schema_validator_instance_state_is_fresh_for_every_trust_use():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    leaked = document_terms._document_term_contract_validator()
+    properties = next(
+        value
+        for _implementation, keyword, value in leaked.__self__._validators
+        if keyword == "properties"
+    )
+    properties["version"]["additionalProperties"] = True
+    assert (
+        document_terms._document_term_contract_validator().__self__
+        is not leaked.__self__
+    )
+
+    tampered = deepcopy(rows)
+    tampered[0]["version"]["unexpected_nested"] = "smuggled"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+    calls = (
+        lambda: validate_document_term_history(tampered),
+        lambda: current_document_terms_as_of(
+            tampered, "2026-08-04T00:00:00Z",
+        ),
+        lambda: validate_observation_source_binding(tampered[0], manifest, raw),
+        lambda: validate_document_term_source_authority(
+            tampered, source_manifests=[manifest], source_reader=_reader(raw),
+        ),
+        lambda: compile_document_term_records(
+            [manifest],
+            source_reader=_reader(raw),
+            existing_observations=tampered,
+            generated_at="2026-08-04T00:00:00Z",
+        ),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="contract violation"):
+            call()
+
+
+def test_public_admission_rejects_mutated_validator_helper_global(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+
+    additional_properties = Draft202012Validator.VALIDATORS[
+        "additionalProperties"
+    ]
+    monkeypatch.setitem(
+        additional_properties.__globals__,
+        "find_additional_properties",
+        lambda _instance, _schema: iter(()),
     )
     with pytest.raises(ValueError, match="validator executable binding changed"):
         validate_document_term_history(tampered)
