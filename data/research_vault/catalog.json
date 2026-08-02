@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T05:17:20.609273+00:00",
-  "count": 573,
+  "generated_at": "2026-08-02T05:32:06.505701+00:00",
+  "count": 574,
   "institutions": [
     "Amova",
     "Apollo",
@@ -362,6 +362,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9jk9zbktmfz-3bc7a4",
+      "title": "Korea Weekly Kickstart KOSPI Posts Worst Month Since the GFC Despite Record Daily Gain Fueled by The Largest Single Day Fore...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:22Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
       "language": "en",
       "needs_metadata": false
     },
