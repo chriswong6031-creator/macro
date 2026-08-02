@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T11:52:00.698970+00:00",
-  "count": 591,
+  "generated_at": "2026-08-02T12:02:41.046128+00:00",
+  "count": 592,
   "institutions": [
     "Amova",
     "Apollo",
@@ -15,6 +15,7 @@
     "Franklin",
     "Goldman Sachs",
     "ING",
+    "Ing Econ",
     "J.P. Morgan",
     "MUFG",
     "Mizuho",
@@ -42,6 +43,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-amdunuthhkf-e33b3d",
+      "title": "ING Think boj leaves rates at 100 with no surprises",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:01:58Z",
+      "summary_points": [
+        "**Hike Timing Shift**: BoJ hints at September rate hike (vs October market pricing), with 25bp possible in Sept (18 Sept meeting), altering near-term FX and rates positioning.",
+        "**Inflation Catalysts**: CPI to rise to 2.0% early 2025 post-energy suppression, driven by wage growth, energy volatility, AI boom, and persistent weak yen—key upside risks for portfolio inflation exposure.",
+        "**Policy vs Market Gap**: Market prices 20bp tightening in Oct (vs BoJ’s slow 2.00% target in 2 years), but BoJ signals no urgency to accelerate, creating mispricing opportunity in JPY and JGBs.",
+        "**Yen Intervention Reality**: US-backed guerrilla tactics curb USD/JPY but no policy support for yen/JGBs; negative real rates cap BoJ’s tightening impact, leaving JPY vulnerable despite intervention."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-3ejxooqfoi1-5a732f",
       "title": "How fixed income investors can strengthen their core with flexible bond strategies 1",
