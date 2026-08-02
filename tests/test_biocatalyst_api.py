@@ -1,12 +1,13 @@
 """Adversarial contract tests for the paid BioCatalyst trial API.
 
 The API is deliberately a read-only, fact-only edge over the worker-promoted
-public generation.  These tests create a real v1.1 generation through the
+public generation.  These tests create a real B2 generation through the
 worker fixture, then exercise the authentication, availability, and disclosure
 boundaries without reaching private worker state or external services.
 """
 from __future__ import annotations
 
+from hashlib import sha256
 import json
 from pathlib import Path
 from typing import Any, Iterator
@@ -52,6 +53,118 @@ _FORBIDDEN_KEY_FRAGMENTS = (
 )
 
 
+def _history_authority() -> dict[str, Any]:
+    return {
+        "classification": "source_fact",
+        "decision_authority": False,
+        "allowed_uses": ["display", "context", "explain"],
+        "forbidden_uses": [
+            "originate_signal",
+            "rank_security",
+            "select_security",
+            "size_position",
+            "gate_decision",
+            "execute_trade",
+            "raise_authority",
+        ],
+    }
+
+
+def _history_model(*, changes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    model: dict[str, Any] = {
+        "contract_id": "trial_history_read_model.v1",
+        "schema_version": "1.0.0",
+        "history_model_id": "trial_history_model_NCT00000001_fixture",
+        "nct_id": "NCT00000001",
+        "available": True,
+        "source_name": "ClinicalTrials.gov",
+        "source_history_url": "https://clinicaltrials.gov/study/NCT00000001?tab=history",
+        "coverage_class": "record_history_complete",
+        "current_only": False,
+        "unavailable_reason": None,
+        "retrieved_at": "2026-08-01T15:00:02.000000Z",
+        "versions": [
+            {
+                "display_version": 1,
+                "source_submitted_at": "2026-07-01",
+                "url": "https://clinicaltrials.gov/study/NCT00000001?a=1&tab=history",
+            },
+            {
+                "display_version": 2,
+                "source_submitted_at": "2026-08-01",
+                "url": "https://clinicaltrials.gov/study/NCT00000001?a=2&tab=history",
+            },
+        ],
+        "changes": changes
+        if changes is not None
+        else [
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "NOT_YET_RECRUITING",
+                "after_value": "RECRUITING",
+            }
+        ],
+        "authority": _history_authority(),
+        "generated_at": "2026-08-01T15:00:02.000000Z",
+        "hash_scope": "canonical_payload_excluding_model_payload_sha256",
+    }
+    model["model_payload_sha256"] = canonical_json_sha256(model)
+    return model
+
+
+def _unavailable_history_model(reason: str = "incomplete_chain") -> dict[str, Any]:
+    model = _history_model(changes=[])
+    model.update(
+        {
+            "available": False,
+            "coverage_class": "unavailable",
+            "unavailable_reason": reason,
+            "retrieved_at": None,
+            "versions": [],
+        }
+    )
+    model["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in model.items() if key != "model_payload_sha256"}
+    )
+    return model
+
+
+def _replace_v12_history_model(config: Any, model: dict[str, Any]) -> None:
+    """Replace one public B2 artifact to exercise request-time redactions."""
+
+    pointer_path = config.public_root / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = config.public_root / "generations" / pointer["generation_id"]
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    history_path = generation / "history" / "NCT00000001.json"
+    history_path.parent.mkdir(exist_ok=True)
+    history_bytes = canonical_json_bytes(model) + b"\n"
+    history_path.write_bytes(history_bytes)
+    manifest["schema_version"] = "1.2.0"
+    manifest["artifacts"] = [
+        artifact
+        for artifact in manifest["artifacts"]
+        if artifact["name"] != "history/NCT00000001.json"
+    ]
+    manifest["artifacts"].append(
+        {
+            "name": "history/NCT00000001.json",
+            "sha256": sha256(history_bytes).hexdigest(),
+            "byte_count": len(history_bytes),
+        }
+    )
+    manifest["artifacts"].sort(key=lambda row: row["name"])
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+
+
 def _assert_private_headers(response) -> None:
     for name, expected in _PRIVATE_HEADERS.items():
         assert response.headers[name] == expected
@@ -70,7 +183,7 @@ def _walk_keys(value: Any) -> Iterator[str]:
 
 @pytest.fixture
 def promoted_config(tmp_path: Path):
-    """Publish a genuine v1.1 product projection by the worker's normal seam."""
+    """Publish a genuine B2 generation by the worker's normal seam."""
 
     config = worker_config(tmp_path)
     result = worker.run_once(
@@ -162,9 +275,12 @@ def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_cli
         "retrieved_at": "2026-08-01T15:00:02.000000Z",
         "coverage": "current_only",
     }
+    # The default B2-disabled lane publishes an explicit unavailable artifact
+    # instead of treating its current registry cut as a historical version feed.
     assert detail_payload["trial"]["history"] == {
         "available": False,
-        "reason": "current_only_source_cut",
+        "state": "unavailable",
+        "reason": "disabled",
     }
 
 
@@ -204,6 +320,125 @@ def test_list_filters_sorting_cursor_and_bounds_are_deterministic(entitled_clien
     # a paid, private data route and must not lose the response privacy policy.
     _assert_private_headers(invalid_sort)
     _assert_private_headers(invalid_limit)
+
+
+def test_v12_detail_serves_only_the_pointer_bound_public_history_model(
+    entitled_client, promoted_config
+) -> None:
+    _replace_v12_history_model(promoted_config, _history_model())
+
+    detail = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
+    assert detail.status_code == 200
+    _assert_private_headers(detail)
+    history = detail.json()["trial"]["history"]
+    assert history == {
+        "available": True,
+        "state": "available",
+        "source": {
+            "name": "ClinicalTrials.gov",
+            "url": "https://clinicaltrials.gov/study/NCT00000001?tab=history",
+        },
+        "coverage": "record_history_complete",
+        "retrieved_at": "2026-08-01T15:00:02.000000Z",
+        "versions": [
+            {
+                "display_version": 1,
+                "submitted_at": "2026-07-01",
+                "url": "https://clinicaltrials.gov/study/NCT00000001?a=1&tab=history",
+            },
+            {
+                "display_version": 2,
+                "submitted_at": "2026-08-01",
+                "url": "https://clinicaltrials.gov/study/NCT00000001?a=2&tab=history",
+            },
+        ],
+        "changes": [
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "NOT_YET_RECRUITING",
+                "after_value": "RECRUITING",
+            }
+        ],
+    }
+    for key in _walk_keys(history):
+        lowered = key.casefold()
+        assert not any(fragment in lowered for fragment in _FORBIDDEN_KEY_FRAGMENTS), key
+
+
+def test_history_nested_provenance_is_rejected_even_after_the_public_tree_is_rehashed(
+    entitled_client, promoted_config
+) -> None:
+    model = _history_model(
+        changes=[
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": {"raw_object_key": "must-not-escape"},
+                "after_value": "RECRUITING",
+            }
+        ]
+    )
+    _replace_v12_history_model(promoted_config, model)
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(response)
+
+
+def test_v12_explicit_unavailable_history_artifact_is_served_honestly(
+    entitled_client, promoted_config
+) -> None:
+    _replace_v12_history_model(
+        promoted_config,
+        _unavailable_history_model("incomplete_chain"),
+    )
+
+    detail = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
+    assert detail.status_code == 200
+    _assert_private_headers(detail)
+    assert detail.json()["trial"]["history"] == {
+        "available": False,
+        "state": "unavailable",
+        "reason": "incomplete_chain",
+    }
+
+
+def test_v11_generation_remains_readable_with_an_explicit_history_unavailable_state(
+    entitled_client, promoted_config
+) -> None:
+    pointer_path = promoted_config.public_root / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = promoted_config.public_root / "generations" / pointer["generation_id"]
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    history = generation / "history" / "NCT00000001.json"
+    history.unlink()
+    history.parent.rmdir()
+    manifest["schema_version"] = "1.1.0"
+    manifest["artifacts"] = [
+        artifact
+        for artifact in manifest["artifacts"]
+        if not artifact["name"].startswith("history/")
+    ]
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    assert response.json()["trial"]["history"] == {
+        "available": False,
+        "state": "unavailable",
+        "reason": "not_collected",
+    }
 
 
 def test_detail_validates_id_before_any_public_generation_read(
@@ -295,11 +530,15 @@ def test_legacy_projection_is_not_silently_served(entitled_client, promoted_conf
     trial_snapshot = generation / "trial_snapshots" / "NCT00000001.json"
     trial_snapshot.unlink()
     (generation / "trial_snapshots").rmdir()
+    history = generation / "history" / "NCT00000001.json"
+    history.unlink()
+    (generation / "history").rmdir()
     manifest["schema_version"] = "1.0.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if not artifact["name"].startswith("trial_snapshots/")
+        and not artifact["name"].startswith("history/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}

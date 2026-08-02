@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_history_read_model.v1.schema.json",
+  "title": "BioCatalyst Public Historical Trial Change Read Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "history_model_id", "nct_id", "available", "source_name", "source_history_url", "coverage_class", "current_only", "unavailable_reason", "retrieved_at", "versions", "changes", "authority", "generated_at", "model_payload_sha256", "hash_scope"],
+  "properties": {
+    "contract_id": {"const": "trial_history_read_model.v1"}, "schema_version": {"const": "1.0.0"}, "history_model_id": {"type": "string", "pattern": "^trial_history_model_[A-Za-z0-9_-]+$"}, "nct_id": {"$ref": "#/$defs/nctId"}, "available": {"type": "boolean"},
+    "source_name": {"const": "ClinicalTrials.gov"}, "source_history_url": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}\\?tab=history$"}, "coverage_class": {"type": "string", "enum": ["record_history_complete", "unavailable"]}, "current_only": {"const": false}, "unavailable_reason": {"type": ["string", "null"], "enum": ["disabled", "not_collected", "incomplete_chain", "source_shape_drift", "last_good_unavailable", null]}, "retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+    "versions": {"type": "array", "items": {"$ref": "#/$defs/version"}}, "changes": {"type": "array", "items": {"$ref": "#/$defs/change"}}, "authority": {"$ref": "#/$defs/authority"}, "generated_at": {"type": "string", "format": "date-time"}, "model_payload_sha256": {"$ref": "#/$defs/sha256"}, "hash_scope": {"const": "canonical_payload_excluding_model_payload_sha256"}
+  },
+  "allOf": [
+    {"if": {"properties": {"available": {"const": true}}}, "then": {"properties": {"coverage_class": {"const": "record_history_complete"}, "unavailable_reason": {"const": null}, "retrieved_at": {"type": "string", "format": "date-time"}, "versions": {"minItems": 1}}}},
+    {"if": {"properties": {"available": {"const": false}}}, "then": {"properties": {"coverage_class": {"const": "unavailable"}, "unavailable_reason": {"type": "string", "enum": ["disabled", "not_collected", "incomplete_chain", "source_shape_drift", "last_good_unavailable"]}, "retrieved_at": {"const": null}, "versions": {"maxItems": 0}, "changes": {"maxItems": 0}}}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"}, "jsonValue": {"oneOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string"}, {"type": "array", "items": {"$ref": "#/$defs/jsonValue"}}, {"type": "object", "additionalProperties": {"$ref": "#/$defs/jsonValue"}}]},
+    "version": {"type": "object", "additionalProperties": false, "required": ["display_version", "source_submitted_at", "url"], "properties": {"display_version": {"type": "integer", "minimum": 1}, "source_submitted_at": {"type": "string", "format": "date"}, "url": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}\\?a=[1-9][0-9]*&tab=history$"}}},
+    "change": {"type": "object", "additionalProperties": false, "required": ["kind", "before_display_version", "after_display_version", "before_value", "after_value"], "properties": {"kind": {"type": "string", "enum": ["endpoint_added", "endpoint_removed", "endpoint_role_changed", "endpoint_measure_changed", "endpoint_time_frame_changed", "endpoint_description_changed", "enrollment_changed", "registry_status_changed", "study_date_changed", "site_listing_changed", "lead_sponsor_text_changed", "intervention_added", "intervention_removed", "intervention_changed"]}, "before_display_version": {"type": "integer", "minimum": 1}, "after_display_version": {"type": "integer", "minimum": 1}, "before_value": {"$ref": "#/$defs/jsonValue"}, "after_value": {"$ref": "#/$defs/jsonValue"}}},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"], "properties": {"classification": {"const": "source_fact"}, "decision_authority": {"const": false}, "allowed_uses": {"const": ["display", "context", "explain"]}, "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}}
+  }
+}

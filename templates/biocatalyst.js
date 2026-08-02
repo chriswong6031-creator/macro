@@ -167,6 +167,66 @@
     });
     if (!list.childNodes.length) section.appendChild(el('p', 'bci-detail-note', fallback)); else section.appendChild(list); return section;
   }
+  function historyValue(value, depth) {
+    depth = depth || 0; if (depth > 4) return tr('Structured value', '结构化值');
+    if (value === null || typeof value === 'undefined') return tr('Not recorded', '未记录');
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return clean(String(value)) || tr('Not recorded', '未记录');
+    if (Array.isArray(value)) return value.slice(0, 12).map(function (item) { return historyValue(item, depth + 1); }).join(' · ') || tr('Empty', '空');
+    if (typeof value === 'object') return Object.keys(value).slice(0, 12).map(function (key) { return clean(key) + ': ' + historyValue(value[key], depth + 1); }).join(' · ') || tr('Empty', '空');
+    return tr('Not recorded', '未记录');
+  }
+  function historyUnavailableCopy(reason) {
+    var copy = {
+      disabled: [ 'Registry history is not enabled for this record.', '该记录的登记历史尚未启用。' ],
+      not_collected: [ 'No verified registry history has been collected for this record yet.', '该记录尚未收集到已核验的登记历史。' ],
+      incomplete_chain: [ 'The available registry version chain is incomplete, so no change rows are shown.', '可用的登记版本链不完整，因此不会显示变化行。' ],
+      source_shape_drift: [ 'The registry history response changed shape; no change rows are shown until it is verified.', '登记历史响应结构已变化；完成核验前不会显示变化行。' ],
+      last_good_unavailable: [ 'No last verified registry history is available for this record.', '该记录暂无最近一次已核验的登记历史。' ]
+    };
+    var pair = copy[clean(reason)] || copy.not_collected; return tr(pair[0], pair[1]);
+  }
+  function historyKindLabel(kind) {
+    var labels = {
+      endpoint_added: [ 'Endpoint added', '新增终点' ],
+      endpoint_removed: [ 'Endpoint removed', '移除终点' ],
+      endpoint_role_changed: [ 'Endpoint role updated', '终点角色更新' ],
+      endpoint_measure_changed: [ 'Endpoint measure updated', '终点指标更新' ],
+      endpoint_time_frame_changed: [ 'Endpoint timeframe updated', '终点时间范围更新' ],
+      endpoint_description_changed: [ 'Endpoint description updated', '终点说明更新' ],
+      enrollment_changed: [ 'Enrollment record updated', '入组记录更新' ],
+      registry_status_changed: [ 'Registry status updated', '登记状态更新' ],
+      study_date_changed: [ 'Study date record updated', '研究日期记录更新' ],
+      site_listing_changed: [ 'Site listing updated', '研究中心列表更新' ],
+      lead_sponsor_text_changed: [ 'Lead sponsor text updated', '牵头申办方文字更新' ],
+      intervention_added: [ 'Intervention added', '新增干预措施' ],
+      intervention_removed: [ 'Intervention removed', '移除干预措施' ],
+      intervention_changed: [ 'Intervention record updated', '干预措施记录更新' ]
+    };
+    var normalized = clean(kind), pair = labels[normalized];
+    return pair ? tr(pair[0], pair[1]) : tr('Registry field updated', '登记字段更新');
+  }
+  function historySection(history) {
+    var section = el('section', 'bci-detail-section'); section.appendChild(el('h3', '', tr('Registry record updates', '登记记录更新')));
+    if (!history || typeof history !== 'object' || history.available !== true) { section.appendChild(el('p', 'bci-detail-note', historyUnavailableCopy(valueAt(history, 'reason')))); return section; }
+    var changes = arr(valueAt(history, 'changes')), versions = arr(valueAt(history, 'versions')), versionByNumber = {};
+    versions.forEach(function (version) { var number = valueAt(version, 'display_version'); if (typeof number === 'number') versionByNumber[number] = version; });
+    if (!changes.length) { section.appendChild(el('p', 'bci-detail-note', tr('No registry record differences are listed in the verified version chain.', '已核验版本链中未列出登记记录差异。'))); return section; }
+    var groups = {};
+    changes.forEach(function (change) {
+      if (!change || typeof change !== 'object') return; var before = valueAt(change, 'before_display_version'), after = valueAt(change, 'after_display_version');
+      if (typeof before !== 'number' || typeof after !== 'number') return; var key = before + ':' + after; if (!groups[key]) groups[key] = { before: before, after: after, changes: [] }; groups[key].changes.push(change);
+    });
+    Object.keys(groups).sort(function (left, right) { return groups[right].after - groups[left].after || groups[right].before - groups[left].before; }).forEach(function (key) {
+      var group = groups[key], card = el('article', 'bci-endpoint bci-history-group'), heading = el('strong', '', 'V' + group.before + ' → V' + group.after), version = versionByNumber[group.after]; card.appendChild(heading);
+      if (version && clean(valueAt(version, 'url'))) { var link = el('a', 'bci-detail-link', tr('Submitted ', '提交日期 ') + dateLabel(clean(valueAt(version, 'submitted_at'))) + ' · ClinicalTrials.gov ↗'); link.href = clean(valueAt(version, 'url')); link.target = '_blank'; link.rel = 'noopener noreferrer'; card.appendChild(link); }
+      group.changes.forEach(function (change) {
+        var delta = el('div', 'bci-history-delta'), kind = historyKindLabel(valueAt(change, 'kind')); if (kind) delta.appendChild(el('span', 'bci-history-kind', kind));
+        delta.appendChild(el('p', '', tr('Before: ', '之前：') + historyValue(valueAt(change, 'before_value')))); delta.appendChild(el('p', '', tr('After: ', '之后：') + historyValue(valueAt(change, 'after_value')))); card.appendChild(delta);
+      }); section.appendChild(card);
+    });
+    if (!section.querySelector('.bci-history-group')) section.appendChild(el('p', 'bci-detail-note', tr('No display-safe registry record differences are available.', '暂无可安全展示的登记记录差异。')));
+    return section;
+  }
   function showInspectorEmpty(title, copy) { text(ui.inspectorTitle, title); clearChildren(ui.inspectorBody); var empty = el('div', 'bci-inspector-empty'); empty.appendChild(el('span', 'bci-empty-orbit')); empty.appendChild(el('p', '', copy)); ui.inspectorBody.appendChild(empty); }
   function showDetail(trial) {
     var detail = state.detail && nctOf(state.detail) === nctOf(trial) ? state.detail : trial, id = nctOf(trial); text(ui.inspectorTitle, tr('Trial detail', '试验详情')); clearChildren(ui.inspectorBody);
@@ -176,7 +236,7 @@
     var countries = arr(valueAt(detail, 'countries')).map(clean).filter(Boolean); ui.inspectorBody.appendChild(listSection(tr('Countries', '国家与地区'), countries, tr('No trial-site country is listed in the current record.', '当前记录未列出研究中心所在国家或地区。')));
     var interventions = arr(valueAt(detail, 'interventions')).map(function (item) { return clean(valueAt(item, 'name')) || clean(item); }).filter(Boolean); ui.inspectorBody.appendChild(listSection(tr('Interventions', '干预措施'), interventions, tr('No intervention detail is available in this current view.', '当前视图暂无干预措施详情。')));
     var endpoints = valueAt(detail, 'endpoints') || {}; ui.inspectorBody.appendChild(endpointSection(tr('Primary endpoints', '主要终点'), arr(valueAt(endpoints, 'primary')), tr('No primary endpoint is listed in the current record.', '当前记录未列出主要终点。'))); ui.inspectorBody.appendChild(endpointSection(tr('Secondary endpoints', '次要终点'), arr(valueAt(endpoints, 'secondary')), tr('No secondary endpoint is listed in the current record.', '当前记录未列出次要终点。')));
-    var history = arr(valueAt(detail, 'history')); if (!history.length) ui.inspectorBody.appendChild(listSection(tr('Change history', '变化历史'), [], tr('No earlier official version is available in this current view.', '当前视图中暂无更早的官方版本。')));
+    ui.inspectorBody.appendChild(historySection(valueAt(detail, 'history')));
   }
   function openInspector(focus) { ui.inspector.classList.add('is-open'); document.body.classList.add('bci-inspector-open'); ui.scrim.hidden = false; if (focus) ui.inspector.focus({ preventScroll: true }); }
   function closeInspector() { ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; updateUrl(''); }

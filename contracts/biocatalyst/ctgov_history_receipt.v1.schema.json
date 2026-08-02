@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/ctgov_history_receipt.v1.schema.json",
+  "title": "BioCatalyst ClinicalTrials.gov Record History Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "receipt_id", "run_id", "source_id", "resource_kind", "nct_id", "source_version", "request", "response", "parser_version", "transaction_from", "transaction_to", "receipt_payload_sha256", "hash_scope"],
+  "properties": {
+    "contract_id": {"const": "ctgov_history_receipt.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "receipt_id": {"type": "string", "pattern": "^ctgov_history_receipt_[A-Za-z0-9_-]+$"},
+    "run_id": {"type": "string", "pattern": "^ctgov_history_run_[A-Za-z0-9_-]+$"},
+    "source_id": {"const": "clinicaltrials_gov_record_history"},
+    "resource_kind": {"type": "string", "enum": ["history_index", "history_version"]},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "source_version": {"type": ["integer", "null"], "minimum": 0},
+    "request": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "source_uri", "headers", "credentials_stored"],
+      "properties": {
+        "method": {"const": "GET"},
+        "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/api/int/studies/NCT[0-9]{8}(\\?history=true|/history/[0-9]+)$"},
+        "headers": {"type": "object", "propertyNames": {"enum": ["accept", "accept-encoding", "user-agent"]}, "additionalProperties": {"type": "string", "minLength": 1}},
+        "credentials_stored": {"const": false}
+      }
+    },
+    "response": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status_code", "headers", "exact_response_sha256", "raw_response_object_key", "byte_count", "received_at"],
+      "properties": {
+        "status_code": {"type": "integer", "minimum": 100, "maximum": 599},
+        "headers": {"type": "object", "propertyNames": {"enum": ["content-type", "content-length", "content-encoding", "date", "etag", "last-modified"]}, "additionalProperties": {"type": "string"}},
+        "exact_response_sha256": {"$ref": "#/$defs/sha256"},
+        "raw_response_object_key": {"type": "string", "pattern": "^biocatalyst/raw/clinicaltrials/history/NCT[0-9]{8}/(index|version-[0-9]+)/[a-f0-9]{64}\\.json$"},
+        "byte_count": {"type": "integer", "minimum": 1},
+        "received_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "parser_version": {"const": "clinicaltrials_record_history_parser.v1"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "receipt_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "hash_scope": {"const": "canonical_payload_excluding_receipt_payload_sha256"}
+  },
+  "allOf": [
+    {"if": {"properties": {"resource_kind": {"const": "history_index"}}}, "then": {"properties": {"source_version": {"const": null}, "request": {"properties": {"source_uri": {"pattern": "^https://clinicaltrials\\.gov/api/int/studies/NCT[0-9]{8}\\?history=true$"}}}, "response": {"properties": {"raw_response_object_key": {"pattern": "^biocatalyst/raw/clinicaltrials/history/NCT[0-9]{8}/index/[a-f0-9]{64}\\.json$"}}}}}},
+    {"if": {"properties": {"resource_kind": {"const": "history_version"}}}, "then": {"properties": {"source_version": {"type": "integer", "minimum": 0}, "request": {"properties": {"source_uri": {"pattern": "^https://clinicaltrials\\.gov/api/int/studies/NCT[0-9]{8}/history/[0-9]+$"}}}, "response": {"properties": {"raw_response_object_key": {"pattern": "^biocatalyst/raw/clinicaltrials/history/NCT[0-9]{8}/version-[0-9]+/[a-f0-9]{64}\\.json$"}}}}}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"}
+  }
+}
