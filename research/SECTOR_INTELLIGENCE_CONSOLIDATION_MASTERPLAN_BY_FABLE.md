@@ -99,15 +99,24 @@ different page:
    grade history) becomes the row's expand/popover instead of a second board. Footer
    links "Drill to stocks → Subsector Confluence". Scope-independent (curated,
    gated universes only — subsectors never enter this layer).
-3. **THE MAP** — ONE positioning instrument, two lenses, three scopes:
-   - Lens **Rotation** (RRG quadrant; engine = existing `subsector_rotation.js`
-     mounted via `SR_CFG`, exactly as the China variant proves portable) — scopes:
-     Sectors 11 / Themes 47 / Subsectors 269.
-   - Lens **Cycle** (0–100 clock; engine = existing `sector_cycles.js` embed) —
-     scopes: Sectors / Themes (subsectors have no cycle series; the scope pill
-     disables with an honest note).
-   - Below-map summary: phase/quadrant counts ("Where they stand") in the unified
-     vocabulary; deep links to `sector_cycles.html#<id>` for full history.
+3. **THE MAP** — one section, ONE scope control (Sectors 11 · Themes 47 ·
+   Subsectors 269), two stacked instruments sharing it:
+   - **Rotation card** (now): the `SRR` renderer from `subsector_rotation.js`
+     mounted via `SR_CFG` (portability proven by the China variant). Scope units:
+     Sectors = the existing real-price ETF unit; **Themes = OUR 47 baskets fed into
+     the SRR node schema via a small adapter over the `BASKETS` payload** (the rvx
+     map's RS×momentum data, same RRG concept); Subsectors = the existing Finviz
+     269 unit. **The Finviz "Themes 41" unit dies** — "Themes" on this page means
+     our 47 curated baskets, always; the Finviz taxonomy survives only at subsector
+     granularity where it is the only source (scope caption carries the source
+     honesty: "broad Finviz universe — display only"). This kill resolves the
+     two-meanings-of-"theme" defect at the root.
+   - **Cycle card** (history): the existing `sector_cycles.js` embed
+     (`window.SECTOR_CYCLES`), families sectors/baskets as today. At Subsectors
+     scope the card quiets with an honest note (no cycle series exists there).
+   - Below each card: its phase/quadrant counts in the unified vocabulary; deep
+     links to `sector_cycles.html#<id>` for full history. The §5 vocabulary bridge
+     `?` lives on this section's heading.
 4. **MOVEMENT** — the subsector_rotation evidence suite, compressed: Turns this week
    (turned up/down, still forming, handoffs) · Rotating in / Rotating out · Rotation
    events (donor→receiver flow lanes + fragmented-sector chips) · one compact
@@ -138,27 +147,79 @@ to the new anchor).
 
 ## §3 Data plumbing (no new signals; presentation-tier only)
 
-- `build_sector_central.py` renders the consolidated template; extends its context
-  with the baskets story/action payload it already sequences after (`build_baskets`
-  runs earlier in the same DAG band and `sector_central` already reads
-  `baskets.json`).
-- `build_baskets.py`: stops inlining `var BASKETS` into HTML; emits
-  `site/baskets_data.js` (stamped by optimize_assets like `sector_central_data.js`);
-  renders the redirect stub at `baskets.html`.
-- `build_subsector_rotation.py`: unchanged (its JSON feeds the map/movement layers);
-  the page template becomes a stub; `subsector_rotation.js` mounts on
-  sector_central with `SR_CFG` (China contract untouched).
+Census-verified facts this rests on: `site/baskets.html`'s 1.5MB = three inline
+blobs (BASKETS 841,707 + CHART 305,139 + THEME_ALERTS 209,759 chars = 86.2% of the
+file), and `site/basketdata/baskets.json` (1.14MB) ALREADY carries the same
+baskets+chart+theme_intel payload on disk nightly. The V1 "Theme Rotation Desk"
+fork inside `baskets.html.j2` (~1651–2179 + CSS ~88–309: renderThemeDesk /
+renderConcentration / renderRotation / renderScorecards / renderMacroCtx /
+decorateRealActivity / renderStanceChips) is dead — `boot()` never calls it and its
+container ids don't exist. The intl pages' live twin (`_baskets_desk.html.j2` +
+`baskets_desk.js`) is untouched by this program.
+
+- The consolidated page **fetches `basketdata/baskets.json`** (the artifact that
+  already exists) instead of embedding; `THEME_ALERTS` moves to a new
+  `basketdata/theme_alerts.json` fetched lazily by the bell. Verdict hero stays
+  server-rendered from `theme_context` (paints before any fetch).
+- `build_baskets.py` keeps computing everything it computes today; its render step
+  emits the redirect stub at `baskets.html` + the alerts JSON; all other outputs
+  (basketdata/*, detail-page inputs, radar.html, addons) unchanged.
+- `build_sector_central.py` renders the consolidated template with the merged
+  context (theme_context + factor_season + flows + its own payload emission,
+  unchanged); self-grader unchanged. DAG order already correct
+  (`build_baskets` → … → `build_sector_central`).
+- `build_subsector_rotation.py` unchanged (JSON feeds the map/movement layers);
+  its page template becomes a stub; `subsector_rotation.js` mounts on the merged
+  page via `SR_CFG` (China contract untouched).
+- Conviction-trace expands join lanes rows to `SECTOR_CENTRAL` records by id
+  (`b-<basket_id>` / sector id). Kind separation is law (engine already prevents
+  proxy-basket ↔ sector rank borrowing): a row's expand shows ITS record only, with
+  a link to the sibling read (cap-weighted ETF ↔ EW basket), never a merged rank.
 - Rotation events / Turn Desk / TAPE-ONSET / Time Machine feeds unchanged.
-- Self-grader continues to run inside `build_sector_central.py`.
+
+## §3b Found defects fixed in-scope
+
+1. Dead V1 desk fork in `baskets.html.j2` (~27% of the template) — deleted with the
+   template's retirement.
+2. Dead "Momentum & flow board" on subsector_rotation (reads `velocity_board` from
+   the wrong artifact; hidden in production) — killed, not rewired (redundant with
+   Rotating in/out).
+3. `basket_detail.html.j2` back-link label "← Theme Rotation Desk" (names a design
+   that no longer exists) → "← Sector Intelligence", href unchanged
+   (`../sector_central.html`... adjust to actual filename with anchor).
+4. Bell deep-link `openTheme()` no-ops (targets nonexistent `#theme-<id>`) →
+   repoint items at `basket/<id>.html`.
+5. "(Equal-Weight)" de-labeling at boot (FIX 1a/1b) — replaced by explicit kind
+   chips (`SECTOR` / `SECTOR EW` / `THEME`) on lane rows and card surfaces.
+6. `risk_state_live.js` loaded by sector_central but targeting other pages'
+   elements — script tag dropped from the merged page.
+7. `engine/subsector_rotation.py` docstring "34 hand-curated baskets" is stale
+   (47) — corrected in passing.
 
 ## §4 Build plan
 
-Opus `builder` lanes (design pinned by this doc + main-loop markup direction):
-B1 page shell + hero/verdict + do-this-now (template + server-side context),
-B2 map/movement mounting (SR_CFG + cycle embed + section JS glue),
-B3 money/breadth/explore + stubs + nav + inbound-link sweep + weight budget,
-B4 tests: stub redirects, nav-gap, template-site sync, copy-tier lint pass on new
-copy, page-weight assertion. Reviewer (opus) adversarial pass before ship.
+**Base-shell decision:** the consolidated template STARTS FROM `baskets.html.j2`'s
+rvx layer (the estate's most modern, doctrine-compliant shell: tape band, alerts
+bell, hero, lanes, under-the-hood, explorer) — renamed, re-titled Sector
+Intelligence, emitted at `sector_central.html`. The old `sector_central.html.j2`
+contributes organs (cycle-map embed block + data preloads, conviction/trace data,
+flow table, heat scorecard, LAS strip, grader); `subsector_rotation.html.j2`
+contributes organs (SRR map mount, turns rail, rotating in/out, rotation events,
+Desk watch, lazy Time Machine). Rework-in-place of the older shells is explicitly
+rejected.
+
+Opus `builder` lanes, sequential on this branch (one template file — no parallel
+edits): **Wave A** = merged template (baskets shell → sector_central.html) + hero/
+lanes with conviction-trace expands + payload externalization (`baskets_data.js`) +
+build script rewiring + redirect stubs (clone `vector_allocation.html.j2` pattern).
+**Wave B** = map section (SRR mount + 47-basket adapter unit + cycle embed + scope
+control) + movement section (turns/in-out/events/Desk watch) + explore (scope-aware
+table + chart + lazy Time Machine + merged track record) + nav rewiring + primary
+inbound-link sweep (`dashboard.html.j2`, `sector_heatmap` strip PAGE_HREF,
+`subsectors.html.j2`; long-tail links ride the stubs) + tests (stubs, nav-gap,
+template-site sync, markup-pin updates: ftr_w1/ftr_w3/group_flow/validated-claims,
+weight assertion). **Reviewer (opus)** adversarial pass before ship; main loop
+verifies visually and ships.
 
 ## §5 Vocabulary bridge (Tier-2 `?` receipt, one place)
 
@@ -167,3 +228,105 @@ copy, page-weight assertion. Reviewer (opus) adversarial pass before ship.
 over** describe where it sits in its own multi-year cycle. **Lanes** (Buy now / Wait
 for a pullback / Take profits / Reduce–avoid) are the only rows that carry a gated,
 graded call — everything else on this page is context, measured nightly."
+
+## §6 Pinned design spec — VERDICT + DO THIS NOW (main-loop design, builders implement)
+
+Census facts this leans on: `BASKETS.story` (leader/handoff/state chips) already
+exists in the baskets payload; `SECTOR_CENTRAL.market` carries ~28 regime fields of
+which the current page renders ONE sentence; conviction cards already compute
+score+tier+phase+trace; the "(Equal-Weight)" disambiguating suffix is currently
+STRIPPED at boot (both FIX 1a/1b blocks) — that de-labeling dies.
+
+Render-mode law for the whole merge: **transplant, don't rewrite.** The baskets
+hero/lanes/map are client-rendered by the `rvx-*` layer from the `BASKETS` payload —
+they stay client-rendered from the externalized payload, mounted in the new shell
+with the copy/IA changes below. Same for the rotation-app (`SR_CFG` mount) and the
+cycle embed (`SECTOR_CYCLES`). New code is glue, wayfinding, and copy — not engine
+rewrites.
+
+### 6.1 VERDICT hero (`.si-hero`, rvx hero transplanted)
+
+Layout: two-column ≥880px (left = state, right = handoff card), stacked below.
+
+- Kicker: `US SECTOR INTELLIGENCE 🇺🇸` (ZH 美国行业智慧). H1 = the state headline,
+  dynamic from the rotation state, e.g. **"Money is rotating"** / "Leadership is
+  narrow" / "A quiet tape" — the existing baskets hero-state vocabulary, verbatim
+  reuse of its state → headline map.
+- One plain sentence under it (≤14 words wins the glance): "Money is moving into
+  Software and out of Semiconductors. Favour the fresh leaders."
+- Right card `THIS WEEK'S HANDOFF`: losing → taking the lead (name + 20d line each),
+  arrow between; whole card links to the two names' detail pages.
+- Chip row (max 5, one line): rotation-state chip (▸ stance phrasing, e.g. "Rotation
+  under way — favour the fresh leaders, not the old one"), days-in-state,
+  seasonality chip, policy-risk chip, sizing chip. Every chip carries its existing
+  `data-tip-en/zh` receipt. Regime enrichment: the seasonality/policy chips may draw
+  from `SECTOR_CENTRAL.market` fields already computed (quad_name, liquidity) —
+  display-tier phrasing only, no new scores.
+- One as-of stamp, top right of hero. The old sector_central methodology paragraph
+  moves to the footer `?` receipt; the "New here?" clock explainer moves to a `?`
+  next to the Map lens toggle (Tier 2), not a hero strip.
+
+### 6.2 DO THIS NOW (`.si-actnow`, server-rendered rows + JS expand)
+
+- Four lanes in fixed order, each a titled group with count + one-line meaning:
+  🟢 **Buy now** — "In favour and a clean entry is set up right now."
+  🔵 **Wait for a pullback** — "In favour, but stretched — no clean entry yet."
+  🟠 **Take profits** — "Was leading — momentum now rolling over."
+  ⚪ **Reduce / avoid** — "Weak and getting weaker — stand aside." (collapsed past 5,
+  "+ N more ▾")
+- Row anatomy (one line, grid-aligned): name · kind chip (`SECTOR` / `SECTOR EW` /
+  `THEME` — the de-label bug fix) · 20d-vs-S&P mono figure · reason phrase
+  ("accelerating · 2 report soon" / "entry quality 85%") · disclosure caret.
+- Row expand (click; `.si-trace`) = the conviction board's gated read, relocated:
+  conviction tier + score, cycle phase chip, the reasoning-trace line (cycle leads →
+  gate → confirm), mini cycle sparkline, grade history when present, links
+  "open cycle →" (`sector_cycles.html#<id>`) and "members →" (`basket/<id>.html`).
+  One row open at a time; deep-linkable via `#read-<id>`.
+- Lane footer (once, not per-row): "Lanes are the only gated, graded calls on this
+  page" + self-grader chip ("N calls logged · grades mature at 5/10/21/63d —
+  measured, not asserted") + "Drill to stocks → Subsector Confluence".
+- Universe: sectors (11, cap-weighted ETF read) + themes (36) + sector-EW proxies
+  (11) — the current conviction universe, unchanged. No subsectors here, ever.
+
+### 6.2b Disposition table (every current section, accounted)
+
+| Today | Where | Disposition |
+|---|---|---|
+| baskets hero (verdict + handoff + chips) | baskets | **→ VERDICT hero** (transplant, retitled) |
+| baskets tape strip/band + shock banner | baskets | → top of merged page, one instance |
+| baskets alerts bell + THEME_ALERTS | baskets | → merged nav row; alerts JSON externalized; deep-link fixed |
+| baskets "Do this now" lanes | baskets | **→ DO THIS NOW** + conviction-trace expands |
+| sector_central "Conviction board" cards | sector_central | → absorbed into lane-row expands (trace, tier, sparkline, grade) |
+| sector_central self-grader | sector_central | → lane footer chip + EXPLORE track-record module |
+| baskets "The rotation map" (rvx SVG, 47) | baskets | → **killed as a separate instrument**; its RS×velocity data feeds the SRR Themes-47 unit |
+| subsector_rotation "Rotation map" (SRR) | subsector_rotation | **→ THE MAP rotation card** (scopes 11/47/269; Finviz-41-themes unit dies) |
+| sector_central "Cycle map" embed | sector_central | **→ THE MAP cycle card** (unchanged engine, shared scope control) |
+| sector_central "New here?" strip + methodology hero prose | sector_central | → `?` receipts (map heading / footer) |
+| subsector_rotation "Turns this week" | subsector_rotation | **→ MOVEMENT** (unchanged) |
+| subsector_rotation "Rotating in/out" | subsector_rotation | → MOVEMENT (unchanged) |
+| subsector_rotation "Rotation Events" + fragmented sectors | subsector_rotation | → MOVEMENT (unchanged mechanics, compressed caveats) |
+| subsector_rotation "Turn Desk" + "Earliest flow signs" | subsector_rotation | → MOVEMENT "Desk watch" compact module (quiet-state honest) |
+| subsector_rotation "Momentum & flow board" | subsector_rotation | **KILLED** (dead in production; redundant) |
+| subsector_rotation "Time Machine" | subsector_rotation | → EXPLORE, collapsed + lazy |
+| subsector_rotation track record | subsector_rotation | → EXPLORE track-record module (beside conviction grader; separate readouts, never merged stats) |
+| subsector_rotation full ranked table | subsector_rotation | → EXPLORE table, Subsectors scope |
+| baskets "Performance table" + category chips | baskets | → EXPLORE table, Themes scope |
+| baskets "Performance" chart | baskets | → EXPLORE chart (unchanged) |
+| baskets "Under the hood" breadth+money flow | baskets | **→ MONEY & BREADTH** (unchanged) |
+| sector_central "Sector flow" SPDR table | sector_central | → MONEY & BREADTH (unchanged) |
+| sector_central "Market heat" scorecard + expand | sector_central | → MONEY & BREADTH (unchanged) |
+| sector_central "Index leadership rotation" (LAS) | sector_central | → MONEY & BREADTH compact card |
+| baskets dead V1 desk fork | baskets | **DELETED** |
+| baskets hidden member-symbol registry | baskets | → merged page (live-quote scraper contract preserved) |
+| both pages' stacked disclaimers | all | → one merged footer + `?` receipts |
+
+### 6.3 Visual system
+
+No new palette or type: the page keeps `macro-desk.css` + `theme.css` tokens (this
+is a consolidation, not a rebrand — restraint IS the risk here). The one signature
+element: the **handoff card** in the hero (losing → taking, with the accent arrow) —
+everything else stays quiet. Section h2s follow the existing house pattern
+("Do this now — the shortlist, by action"). Mono numerals for figures only, never
+words. Dark/light parity via existing tokens; zh copy written at parity, not
+translated literally. Reduced-motion: no new animations beyond existing ilx
+draw-on-reveal.
