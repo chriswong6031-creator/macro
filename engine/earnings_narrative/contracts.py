@@ -338,6 +338,21 @@ def _validate_event(value: object, *, name: str) -> Mapping[str, Any]:
     return row
 
 
+def validate_event_identity(value: object) -> dict[str, Any]:
+    """Validate and copy the public earnings-event identity envelope.
+
+    Distribution-layer contracts reuse the evidence graph's exact event law;
+    keeping this wrapper public prevents those consumers from forking ticker,
+    quarter, date, and title validation.
+    """
+    return dict(_validate_event(value, name="event"))
+
+
+def validate_source_receipt(value: object) -> dict[str, Any]:
+    """Validate and copy the immutable transcript source receipt."""
+    return dict(_validate_source(value, name="source"))
+
+
 def _validate_receipt(value: object, *, source_sha: str, text: str, name: str) -> Mapping[str, Any]:
     row = _mapping(value, name=name)
     _keys(row, _RECEIPT_KEYS, name=name)
@@ -357,6 +372,16 @@ def _validate_receipt(value: object, *, source_sha: str, text: str, name: str) -
     if row.get("text_sha256") != sha256_bytes(encoded):
         raise ContractError(f"{name}.text_sha256 mismatch")
     return row
+
+
+def validate_span_receipt(value: object, *, source_sha256: str, text: str) -> dict[str, Any]:
+    """Validate and copy one exact UTF-8 source-span receipt."""
+    return dict(_validate_receipt(
+        value,
+        source_sha=source_sha256,
+        text=text,
+        name="span_receipt",
+    ))
 
 
 def _warnings(value: object, *, allowed: frozenset[str], name: str) -> list[str]:

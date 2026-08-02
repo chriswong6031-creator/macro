@@ -212,6 +212,11 @@ def build_prompt(slot: dict, cfg: dict, *, attempt: int = 0,
 
     story = slot.get("story") or {}
     primary = slot.get("primary_source") or {}
+    approved_claim_ids = sorted({
+        str(claim_id)
+        for claim_id in (slot.get("approved_claim_ids") or [])
+        if claim_id
+    })
 
     # Planner facts can contain upstream model-produced earnings prose.  Treat
     # every evidence line as untrusted data at the final prompt boundary; the
@@ -226,7 +231,16 @@ def build_prompt(slot: dict, cfg: dict, *, attempt: int = 0,
         if not fact_text:
             continue
         tag = "first_party" if str(f.get("tier")) == "first_party" else "third_party"
-        line = f"- [{tag}] {fact_text}"
+        fact_claim_ids = sorted({
+            str(claim_id)
+            for claim_id in (f.get("claim_ids") or [])
+            if claim_id in approved_claim_ids
+        })
+        claim_tag = (
+            f" [claims: {' '.join(fact_claim_ids)}]"
+            if approved_claim_ids else ""
+        )
+        line = f"- [{tag}]{claim_tag} {fact_text}"
         if f.get("source_name"):
             line += f"  (source: {f['source_name']})"
         facts_lines.append(line)
@@ -257,6 +271,19 @@ def build_prompt(slot: dict, cfg: dict, *, attempt: int = 0,
                  f"in the body, byline and footer excluded.")
     parts.append(f"MINIMUM RECEIPTS: {slot.get('min_anchored_receipts') or 0} distinct "
                  f"numbers drawn from SOURCE FACTS.")
+    if approved_claim_ids:
+        parts.append(
+            "CLAIM SCOPE: this earnings slot is closed to the approved claim IDs "
+            "printed beside SOURCE FACTS. Every editorial <p>, <li>, <h2>, "
+            "<h3>, <h4>, and <blockquote> must carry "
+            "data-claim-ids=\"claim_id claim_id\" using "
+            "only the exact IDs that support every sentence in that block. The "
+            "press-byline and press-footer paragraphs are exempt. Do not add a "
+            "cause, forecast, implication, comparison, or judgment that is not "
+            "stated by those source facts. Preserve direction, negation, and "
+            "uncertainty exactly; the deterministic claim-scope gate "
+            "rejects missing, unknown, or lexically unrelated attribution."
+        )
     parts.append("")
 
     # SOURCE LAW (masterplan §0 W1 gate 2, amended at W1 review). Only an

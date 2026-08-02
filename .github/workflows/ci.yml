@@ -1670,10 +1670,13 @@ on:
       # a guard the guarded change cannot trigger is not a guard, and the press
       # suite lives in the `press-lane` job in .github/ci/legacy-jobs.yml.
       - "engine/press/**"
+      - "engine/earnings_narrative/**"
+      - "scripts/build_earnings_story_packet.py"
       - "scripts/run_press.py"
       - "config/press.yml"
       - "admin/press.py"
       - "tests/test_press_*.py"
+      - "tests/test_earnings_canonical_story.py"
       - ".github/workflows/press-publish.yml"
       # D14 W2R / X Growth XG-W8 (2026-07-28): the research triage layer that
       # decides WHICH vault report the Research Desk covers, its demote-only LLM

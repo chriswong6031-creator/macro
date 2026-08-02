@@ -14,6 +14,8 @@ The suite, in report order:
 
   fact_anchor          every number and every attributed quote in the draft
                        appears in the planner's source facts
+  claim_scope          canonical earnings prose attributes each substantive
+                       block to approved claim IDs and stays lexically bound
   close_paraphrase     windowed shingle Jaccard of UNATTRIBUTED prose vs each
                        raw source document
   our_value            computed share of word count in SENTENCES carrying an
@@ -94,6 +96,44 @@ _NUM_RE = re.compile(
 # Quoted spans.  Straight and typographic double quotes.  Single quotes are NOT
 # treated as quotation marks — they are apostrophes far more often than not.
 _QUOTE_RE = re.compile(r"[\"“]([^\"“”]{1,600})[\"”]")
+
+_CLAIM_ID_RE = re.compile(r"^claim_[0-9a-f]{32}$")
+_CLAIM_BLOCK_RE = re.compile(
+    r"<(?P<tag>p|li|h2|h3|h4|blockquote)\b(?P<attrs>[^>]*)>(?P<body>.*?)</(?P=tag)>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# A numeric receipt can be rewritten as English words by a model.  We only
+# parse a word-number when it carries an explicit financial unit, which keeps
+# ordinary prose ("one question remains") outside the number gate while
+# closing "twelve percent" -> "thirteen percent" invention.  This is a finite
+# compositional grammar, not a sentiment/semantic word list.
+_SPELLED_NUMBER_VALUES = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40,
+    "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80,
+    "ninety": 90,
+}
+_SPELLED_NUMBER_SCALES = {
+    "hundred": 100, "thousand": 1_000, "million": 1_000_000,
+    "billion": 1_000_000_000, "trillion": 1_000_000_000_000,
+}
+_SPELLED_NUMBER_TOKEN = "|".join(
+    sorted((*_SPELLED_NUMBER_VALUES, *_SPELLED_NUMBER_SCALES, "and"), key=len, reverse=True)
+)
+_SPELLED_QUANTITY_RE = re.compile(
+    rf"\b(?P<words>(?:{_SPELLED_NUMBER_TOKEN})(?:[\s-]+(?:{_SPELLED_NUMBER_TOKEN})){{0,8}})"
+    r"\s+(?P<unit>percent|percentage\s+points?|bps|basis\s+points?)\b",
+    re.IGNORECASE,
+)
+_CLASS_ATTR_RE = re.compile(r"\bclass\s*=\s*([\"'])(?P<value>.*?)\1", re.IGNORECASE | re.DOTALL)
+_CLAIM_ATTR_RE = re.compile(
+    r"\bdata-claim-ids\s*=\s*([\"'])(?P<value>.*?)\1",
+    re.IGNORECASE | re.DOTALL,
+)
 
 _MIN_QUOTE_WORDS = 4  # below this a "quoted" span is a scare quote, not a quotation
 
@@ -260,6 +300,55 @@ def extract_numbers(text: str) -> list[Num]:
     return out
 
 
+def _parse_spelled_integer(text: str) -> int | None:
+    """Parse the bounded English integer grammar used by financial receipts."""
+    total = 0
+    current = 0
+    saw_value = False
+    for token in re.findall(r"[a-z]+", str(text or "").lower()):
+        if token == "and":
+            continue
+        if token in _SPELLED_NUMBER_VALUES:
+            current += _SPELLED_NUMBER_VALUES[token]
+            saw_value = True
+            continue
+        if token == "hundred":
+            current = max(current, 1) * 100
+            saw_value = True
+            continue
+        scale = _SPELLED_NUMBER_SCALES.get(token)
+        if scale is None:
+            return None
+        total += max(current, 1) * scale
+        current = 0
+        saw_value = True
+    return total + current if saw_value else None
+
+
+def extract_quantities(text: str) -> list[Num]:
+    """Numeric literals plus explicit-unit English financial quantities.
+
+    The source/draft comparison stays value-based, so ``12%`` and ``twelve
+    percent`` are the same receipt.  A failed parser simply contributes no
+    receipt; it never guesses at a number.
+    """
+    out = extract_numbers(text)
+    for match in _SPELLED_QUANTITY_RE.finditer(str(text or "")):
+        value = _parse_spelled_integer(match.group("words"))
+        if value is None:
+            continue
+        unit = re.sub(r"\s+", " ", match.group("unit").lower())
+        out.append(Num(
+            raw=match.group(0),
+            value=float(value),
+            decimals=0,
+            is_pct=unit.startswith("percent") or unit == "percentage point",
+            has_currency=False,
+            has_suffix=unit in {"bps", "basis point", "basis points"},
+        ))
+    return out
+
+
 def _anchors(draft_num: Num, source_values: list[float]) -> bool:
     """True when `draft_num` is a correct rounding of some source value.
 
@@ -303,7 +392,7 @@ def source_number_pool(slot: dict) -> tuple[list[float], str]:
                 vals.append(float(str(v).replace(",", "").strip().rstrip("%")))
             except (TypeError, ValueError):
                 continue
-        for n in extract_numbers(text):
+        for n in extract_quantities(text):
             vals.append(n.value)
     return vals, "\n".join(texts)
 
@@ -320,7 +409,7 @@ def fact_tier_index(slot: dict) -> list[tuple[float, str]]:
                 idx.append((float(str(v).replace(",", "").strip().rstrip("%")), tier))
             except (TypeError, ValueError):
                 continue
-        for n in extract_numbers(str(f.get("text") or "")):
+        for n in extract_quantities(str(f.get("text") or "")):
             idx.append((n.value, tier))
     return idx
 
@@ -373,7 +462,7 @@ def check_fact_anchor(draft: dict, slot: dict, cfg: dict) -> dict:
 
     unanchored: list[str] = []
     checked = 0
-    for num in extract_numbers(prose):
+    for num in extract_quantities(prose):
         # Small bare integers are prose counts ("three drivers", "two
         # sessions"), not market data.  Anything with a decimal point, a
         # percent sign, a currency symbol or a magnitude suffix must anchor no
@@ -407,6 +496,209 @@ def check_fact_anchor(draft: dict, slot: dict, cfg: dict) -> dict:
     return _row("fact_anchor", ok, detail,
                 numbers_checked=checked, unanchored=unanchored,
                 source_pool_size=len(pool), unsourced_quotes=bad_quotes)
+
+
+def _claim_text_key(text: str) -> str:
+    """Canonical comparison form for a direct-evidence statement.
+
+    This deliberately normalizes formatting, not language.  A current
+    ``canonical_story.v1`` packet is source-ready evidence, not a verified
+    prose artifact.  Treating a few shared words plus a number as semantic
+    proof left open exactly the failures that matter in earnings copy: causal
+    stories, a changed negation, ``could`` rewritten as ``will``, and values
+    rewritten as words.  The safe current contract is therefore extractive:
+    a claim-scoped statement must be the exact visible text of one frozen
+    source fact.  A future verifier may introduce a different, explicitly
+    attested approval path; this deterministic gate must not approximate one.
+    """
+    return re.sub(r"\s+", " ", _html.unescape(str(text or ""))).strip()
+
+
+def _canonical_fact_records(slot: dict, approved_set: set[str]) -> list[tuple[str, frozenset[str]]]:
+    """Exact (visible text, direct claim IDs) records frozen by the adapter.
+
+    Invalid source-fact shape returns no records.  ``check_claim_scope`` then
+    fails closed rather than guessing how a malformed canonical slot should be
+    interpreted.
+    """
+    records: list[tuple[str, frozenset[str]]] = []
+    for fact in slot.get("facts") or []:
+        if not isinstance(fact, dict):
+            return []
+        text = _claim_text_key(str(fact.get("text") or ""))
+        claim_ids = fact.get("claim_ids")
+        if (
+            not text
+            or not isinstance(claim_ids, list)
+            or not claim_ids
+            or any(not isinstance(claim_id, str) or claim_id not in approved_set
+                   for claim_id in claim_ids)
+            or len(claim_ids) != len(set(claim_ids))
+        ):
+            return []
+        records.append((text, frozenset(claim_ids)))
+    return records
+
+
+def _canonical_statement_is_exact(
+    statement: str,
+    claim_ids: set[str],
+    records: list[tuple[str, frozenset[str]]],
+) -> bool:
+    """Whether one rendered statement is exactly one frozen direct fact.
+
+    Its ``data-claim-ids`` must name precisely that fact's direct claim set.
+    This prevents a sentence from borrowing the receipt of an adjacent claim,
+    and the exact-text test makes semantic transformation impossible in this
+    source-ready lane without relying on an ever-growing linguistic lexicon.
+    """
+    key = _claim_text_key(statement)
+    return any(key == fact_text and claim_ids == fact_claim_ids
+               for fact_text, fact_claim_ids in records)
+
+
+def check_claim_scope(draft: dict, slot: dict, cfg: dict) -> dict:
+    """Bind canonical earnings prose to the story's frozen direct claims.
+
+    Generic Press slots predate ``canonical_story.v1`` and remain unaffected.
+    The gate activates only when the adapter supplies ``approved_claim_ids``.
+    Canonical material is source-ready, not verifier-approved prose: each
+    substantive statement is extractive direct evidence.  This is intentionally
+    narrower than the generic Press path, because word overlap cannot prove
+    that a generated sentence preserved causality, polarity, uncertainty, or a
+    number's meaning.
+    """
+    if "approved_claim_ids" not in slot:
+        return _row("claim_scope", True, "not a canonical claim-scoped slot", active=False)
+
+    # The current adapter can only create source-ready packets.  No mutable
+    # staging field is an approval credential: a future approved story needs a
+    # separate verifier and ingress contract, not a value flip in this slot.
+    if (
+        slot.get("canonical_story_status") != "source_ready"
+        or slot.get("canonical_emit_allowed") is not False
+    ):
+        return _row(
+            "claim_scope", False,
+            "canonical source-ready slot cannot self-attest approval",
+            active=True,
+        )
+
+    approved = slot.get("approved_claim_ids")
+    if (
+        not isinstance(approved, list)
+        or not approved
+        or approved != sorted(set(approved))
+        or any(not isinstance(claim_id, str) or not _CLAIM_ID_RE.fullmatch(claim_id) for claim_id in approved)
+    ):
+        return _row("claim_scope", False, "slot approved_claim_ids contract invalid", active=True)
+    approved_set = set(approved)
+
+    support: dict[str, list[str]] = {claim_id: [] for claim_id in approved}
+    fact_claims: set[str] = set()
+    for fact in slot.get("facts") or []:
+        if not isinstance(fact, dict):
+            continue
+        text = str(fact.get("text") or "")
+        for claim_id in fact.get("claim_ids") or []:
+            if isinstance(claim_id, str) and claim_id in approved_set:
+                support[claim_id].append(text)
+                fact_claims.add(claim_id)
+    if fact_claims != approved_set:
+        missing = sorted(approved_set - fact_claims)
+        return _row(
+            "claim_scope", False, "approved claims are absent from source facts",
+            active=True, missing_claim_ids=missing,
+        )
+    fact_records = _canonical_fact_records(slot, approved_set)
+    if not fact_records:
+        return _row(
+            "claim_scope", False,
+            "canonical source facts lack an exact direct-claim record",
+            active=True,
+        )
+
+    missing_attributes: list[str] = []
+    unknown_claim_ids: list[str] = []
+    unsupported_sentences: list[str] = []
+    blocks_checked = 0
+    used_claim_ids: set[str] = set()
+    claim_body = _body(draft)
+    matched_ranges: list[tuple[int, int]] = []
+    validator_cfg = _v(cfg)
+    byline_class = str(validator_cfg.get("byline_class") or "press-byline")
+    footer_class = str(validator_cfg.get("footer_class") or "press-footer")
+    required_footer = re.sub(
+        r"\s+", " ", str(validator_cfg.get("footer_required_text") or
+        "Educational content — not investment advice. Markets involve risk.").strip(),
+    )
+    required_byline = re.sub(r"\s+", " ", str(slot.get("byline") or "").strip())
+    for match in _CLAIM_BLOCK_RE.finditer(claim_body):
+        matched_ranges.append(match.span())
+        attrs = match.group("attrs") or ""
+        class_match = _CLASS_ATTR_RE.search(attrs)
+        classes = set((class_match.group("value") if class_match else "").split())
+        block_text = strip_tags(match.group("body")).strip()
+        if not block_text:
+            continue
+        flat_block = re.sub(r"\s+", " ", block_text)
+        if byline_class in classes and flat_block == required_byline:
+            continue
+        if footer_class in classes and flat_block == required_footer:
+            continue
+        blocks_checked += 1
+        claim_match = _CLAIM_ATTR_RE.search(attrs)
+        if claim_match is None:
+            missing_attributes.append(block_text[:100])
+            continue
+        claim_ids = [
+            token for token in re.split(r"[\s,]+", claim_match.group("value").strip()) if token
+        ]
+        invalid = [claim_id for claim_id in claim_ids if claim_id not in approved_set]
+        if not claim_ids or len(claim_ids) != len(set(claim_ids)) or invalid:
+            unknown_claim_ids.extend(invalid or claim_ids)
+            continue
+        used_claim_ids.update(claim_ids)
+        if not _canonical_statement_is_exact(block_text, set(claim_ids), fact_records):
+            unsupported_sentences.append(block_text[:140])
+
+    residual_parts: list[str] = []
+    cursor = 0
+    for start, end in matched_ranges:
+        residual_parts.append(claim_body[cursor:start])
+        cursor = end
+    residual_parts.append(claim_body[cursor:])
+    residual_text = strip_tags(" ".join(residual_parts)).strip()
+    if residual_text:
+        missing_attributes.append("unscoped: " + residual_text[:100])
+
+    title_hint = _claim_text_key(str((slot.get("story") or {}).get("title_hint") or ""))
+    if not title_hint or _claim_text_key(str(draft.get("title") or "")) != title_hint:
+        unsupported_sentences.append("title: " + str(draft.get("title") or "")[:120])
+    if not any(
+        _claim_text_key(str(draft.get("description") or "")) == fact_text
+        for fact_text, _claim_ids in fact_records
+    ):
+        unsupported_sentences.append("description: " + str(draft.get("description") or "")[:140])
+
+    ok = (
+        blocks_checked > 0
+        and not missing_attributes
+        and not unknown_claim_ids
+        and not unsupported_sentences
+    )
+    detail = "every substantive block resolves to approved source claims"
+    if not ok:
+        detail = (
+            f"claim scope failed: blocks={blocks_checked}, missing_attrs={len(missing_attributes)}, "
+            f"unknown_ids={len(unknown_claim_ids)}, unsupported={len(unsupported_sentences)}"
+        )
+    return _row(
+        "claim_scope", ok, detail, active=True, blocks_checked=blocks_checked,
+        used_claim_ids=sorted(used_claim_ids), missing_attributes=missing_attributes,
+        unknown_claim_ids=sorted(set(unknown_claim_ids)),
+        unsupported_sentences=unsupported_sentences,
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -475,8 +767,10 @@ def sentences(text: str) -> list[str]:
 def _anchored_values(text: str, pool: list[float], generic_max: int) -> list[float]:
     """The distinct source values `text` anchors to (its receipts)."""
     hits: list[float] = []
-    for nm in extract_numbers(text):
+    for nm in extract_quantities(text):
         if nm.is_bare_int and nm.value <= generic_max:
+            continue
+        if nm.is_bare_int and 1900 <= nm.value <= 2100:
             continue
         for s in pool:
             if _anchors(nm, [s]) and s not in hits:
@@ -521,7 +815,7 @@ def check_our_value(draft: dict, slot: dict, cfg: dict) -> dict:
             if not wc:
                 continue
             total_words += wc
-            nums = [nm for nm in extract_numbers(sent)
+            nums = [nm for nm in extract_quantities(sent)
                     if not (nm.is_bare_int and nm.value <= generic_max)]
             if not nums:
                 per_sentence.append({"words": wc, "tier": "neutral"})
@@ -1088,6 +1382,7 @@ def check_self_similarity(draft: dict, slot: dict, cfg: dict, root=None) -> dict
 # (name, callable, takes_root) — order is report order.
 _SUITE = (
     ("fact_anchor", check_fact_anchor, False),
+    ("claim_scope", check_claim_scope, False),
     ("close_paraphrase", check_close_paraphrase, False),
     ("our_value", check_our_value, False),
     ("receipts", check_receipts, False),
