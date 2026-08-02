@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T15:33:06.224475+00:00",
-  "count": 602,
+  "generated_at": "2026-08-02T15:48:08.688315+00:00",
+  "count": 603,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-2t4ls0vv4y7-0ae831",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:15:41Z",
+      "summary_points": [
+        "**AI Capex & Monetization Dynamics**: Near-term strong hyperscaler capex (Amazon 2026 $220bn, Meta $130-145bn) with cloud revenue acceleration, but FCF pressure may cap AI spending beyond 2027.",
+        "**AI Capex Risk & Strategic Shift**: Hyperscalers' cash flow strain risks semiconductor price weakness; recommend barbell positioning: semi-cap equipment, foundries, compute names, and defensive tech (smartphones, payment networks, data center REITs).",
+        "**South Korea Downgrade**: Downgraded to Neutral; focus on semicap equipment, foundries, compute names, and defensive markets (India, Singapore, Malaysia, China) amid memory chip catalysts.",
+        "**Policy & Fixed Income Outlook**: BoE likely holds rates amid energy shock; favor GBP-denominated bonds (2-6yr) and A/BBB corporates for carry/declining yields targeting 2% inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-wknelafcr0l-441486",
       "title": "JPM PI Monthly Wrap Metrics 2026.07.31 1",
