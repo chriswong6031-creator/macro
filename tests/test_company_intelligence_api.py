@@ -102,7 +102,7 @@ def test_company_intelligence_is_a_one_event_cacheable_teaser(client, monkeypatc
         calls.append(params)
         return _success_projection()
 
-    monkeypatch.setattr(company_intelligence_api._reader, "read_company_intelligence", fake_reader)
+    monkeypatch.setattr(company_intelligence_api, "_read_company_intelligence", fake_reader)
 
     response = client.get("/api/company-intelligence/aapl?limit=12")
 
@@ -129,8 +129,8 @@ def test_company_intelligence_recursively_withholds_transport_and_internal_field
     reader_result["latest_event"]["sources"][0]["object_key"] = "source-object-secret"
 
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: reader_result,
     )
 
@@ -178,7 +178,7 @@ def test_company_intelligence_never_forwards_requested_history_depth(client, mon
         calls.append(params)
         return _success_projection()
 
-    monkeypatch.setattr(company_intelligence_api._reader, "read_company_intelligence", fake_reader)
+    monkeypatch.setattr(company_intelligence_api, "_read_company_intelligence", fake_reader)
 
     response = client.get(f"/api/company-intelligence/AAPL?limit={requested_limit}")
 
@@ -190,8 +190,8 @@ def test_company_intelligence_never_forwards_requested_history_depth(client, mon
 @pytest.mark.parametrize("limit", ["0", "13", "not-a-number"])
 def test_company_intelligence_rejects_invalid_history_limit(client, monkeypatch, limit) -> None:
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: (_ for _ in ()).throw(AssertionError("reader must not run")),
     )
 
@@ -203,8 +203,8 @@ def test_company_intelligence_rejects_invalid_history_limit(client, monkeypatch,
 
 def test_company_intelligence_rate_limits_one_client_and_errors_are_not_cached(client, monkeypatch) -> None:
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: _success_projection(),
     )
     headers = {"EO-Client-IP": "203.0.113.7"}
@@ -229,8 +229,8 @@ def test_company_intelligence_peer_backstop_stops_rotating_claimed_edge_ips(clie
     """
     monkeypatch.setattr(company_intelligence_api, "_PEER_RATE_LIMIT_REQUESTS", 3)
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: _success_projection(),
     )
     trusted_peer = "caddy-overwritten-peer-198.51.100.9"
@@ -254,8 +254,8 @@ def test_company_intelligence_peer_backstop_stops_rotating_claimed_edge_ips(clie
 
 def test_company_intelligence_rejects_unsafe_ticker_before_reader(client, monkeypatch) -> None:
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: (_ for _ in ()).throw(AssertionError("reader must not run")),
     )
 
@@ -268,8 +268,8 @@ def test_company_intelligence_rejects_unsafe_ticker_before_reader(client, monkey
 
 def test_company_intelligence_maps_known_coverage_absence_to_404(client, monkeypatch) -> None:
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: {
             "available": False,
             "ticker": "MISSING",
@@ -286,8 +286,8 @@ def test_company_intelligence_maps_known_coverage_absence_to_404(client, monkeyp
 
 def test_company_intelligence_maps_verification_failure_to_503_without_internal_note(client, monkeypatch) -> None:
     monkeypatch.setattr(
-        company_intelligence_api._reader,
-        "read_company_intelligence",
+        company_intelligence_api,
+        "_read_company_intelligence",
         lambda _params: {
             "available": False,
             "ticker": "AAPL",
@@ -306,7 +306,7 @@ def test_company_intelligence_maps_unexpected_reader_exception_to_503(client, mo
     def fail(_params: dict) -> dict:
         raise RuntimeError("unexpected upstream problem")
 
-    monkeypatch.setattr(company_intelligence_api._reader, "read_company_intelligence", fail)
+    monkeypatch.setattr(company_intelligence_api, "_read_company_intelligence", fail)
 
     response = client.get("/api/company-intelligence/AAPL")
 

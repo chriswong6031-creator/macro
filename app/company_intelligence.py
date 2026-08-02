@@ -21,9 +21,6 @@ from typing import Any, Mapping
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 
 from engine.company_intelligence.contracts import ContractError, safe_ticker
-from engine.neuralweb import company_intelligence_reader as _reader
-
-
 router = APIRouter()
 log = logging.getLogger("macro.api.company_intelligence")
 
@@ -295,6 +292,22 @@ def _normalized_ticker_or_422(ticker: str) -> str:
         ) from exc
 
 
+def _read_company_intelligence(params: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Load the network-backed reader only when this route is exercised.
+
+    ``app.main`` mounts many independent routers and is intentionally imported
+    by narrow, dependency-isolated security suites.  Importing the reader at
+    module load time would make those unrelated surfaces require its HTTP
+    transport dependency merely to start the app.  Production installs the
+    complete app requirements; this lazy boundary keeps startup composable and
+    still fails closed at the route's existing 503 boundary if the reader or
+    transport cannot load.
+    """
+    from engine.neuralweb import company_intelligence_reader
+
+    return company_intelligence_reader.read_company_intelligence(dict(params))
+
+
 @router.get("/api/company-intelligence/{ticker}")
 def company_intelligence(
     ticker: str,
@@ -326,7 +339,7 @@ def company_intelligence(
     # route.  ``limit`` remains parsed only to avoid a hard frontend break.
     del limit
     try:
-        result = _reader.read_company_intelligence({"ticker": normalized, "limit": 1})
+        result = _read_company_intelligence({"ticker": normalized, "limit": 1})
     except Exception:  # noqa: BLE001 - an API source boundary must fail closed
         log.exception("company intelligence reader raised for %s", normalized)
         raise HTTPException(
