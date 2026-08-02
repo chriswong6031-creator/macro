@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T22:18:46.224172+00:00",
-  "count": 622,
+  "generated_at": "2026-08-02T22:33:48.515052+00:00",
+  "count": 623,
   "institutions": [
     "Amova",
     "Apollo",
@@ -551,6 +551,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-01mqlm8tfbr-eceafe",
+      "title": "fxfistrategy docs",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T10:55:20Z",
+      "summary_points": [
+        "**Market Performance Divergence**: Taiwan/S.",
+        "Korea equities (+53%) outperform US/EU stocks (+9-10%) and commodities (Brent +44%, TTF gas +105%), driven by AI boom and safe-haven rotation despite Middle East conflict and energy price pressures.",
+        "**Geopolitical-AI Nexus**: US-Iran conflict spiked energy prices (Brent +40%, TTF gas +100%), while AI-driven demand fueled semiconductor rallies (Taiwan/S.",
+        "Korea stocks +50% vs US/Europe +10%); energy/bond prices unlikely to revert to pre-March levels.",
+        "**BoJ Policy & FX Technicals**: BoJ holds rates at 1.00% with next hike likely Oct/Dec; USD-JPY consolidates near 160 (post-intervention) below 164, reflecting Middle East crisis-driven energy inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
