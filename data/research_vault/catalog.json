@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T03:31:46.562180+00:00",
-  "count": 568,
+  "generated_at": "2026-08-02T03:47:02.900430+00:00",
+  "count": 569,
   "institutions": [
     "Amova",
     "Apollo",
@@ -272,6 +272,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u4nvjaqiadt-c35ca5",
+      "title": "Global Rates Trader Paradigm Lost",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:58Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
