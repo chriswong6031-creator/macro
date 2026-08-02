@@ -644,6 +644,41 @@ def compile_registration_lifecycles(
                 blocked_corrections.add(event_id)
             else:
                 correction_target = visible_by_id.get(correction_of)
+                assert correction_target is not None
+                target_version = int(
+                    (correction_target.get("version") or {}).get(
+                        "correction_version"
+                    )
+                    or 1
+                )
+                # A ``supersedes`` edge is necessary but not sufficient to
+                # establish correction ancestry.  It must remain within one
+                # immutable SEC logical observation and point to the direct
+                # preceding version.  The disk reader independently enforces
+                # this history, but the pure compiler must fail closed too:
+                # callers can supply immutable event rows without going
+                # through that reader.
+                if (
+                    _logical_key(event) != _logical_key(correction_target)
+                    or target_version != correction_version - 1
+                ):
+                    add_issue(
+                        "correction_history_mismatch",
+                        event_ids=[event_id, correction_of],
+                        edge_ids=[str(matching[0]["edge_id"])],
+                        candidate_event_ids=[event_id, correction_of],
+                        event=event,
+                        family=route_form(
+                            (event.get("filing") or {}).get("form")
+                        ).registration_family,
+                        detail=(
+                            "A correction must supersede the direct prior "
+                            "version of the same immutable SEC logical "
+                            "observation."
+                        ),
+                    )
+                    blocked_corrections.update({event_id, correction_of})
+                    continue
                 current_route = route_form(
                     (event.get("filing") or {}).get("form")
                 )
@@ -1689,6 +1724,282 @@ def validate_registration_lifecycle_bundle(
             f"registration lifecycle bundle violates contract at {location}: "
             f"{first.message}"
         )
+
+    # JSON Schema intentionally owns shape and closed-field validation.  The
+    # following relations are data-dependent and cannot be expressed there;
+    # without them a syntactically valid artifact could claim observed coverage
+    # while carrying no useful lifecycle evidence.
+    def invariant(condition: bool, detail: str) -> None:
+        if not condition:
+            raise ValueError(
+                "registration lifecycle bundle semantic invariant failed: " + detail
+            )
+
+    def stable_identity(
+        value: Mapping[str, Any], *, id_field: str, prefix: str, label: str
+    ) -> None:
+        body = deepcopy(dict(value))
+        observed = str(body.pop(id_field, ""))
+        invariant(
+            observed == _stable_id(prefix, body),
+            f"{label} does not bind its immutable body",
+        )
+
+    stable_identity(
+        bundle,
+        id_field="generation_id",
+        prefix="registration-lifecycle:cs:",
+        label="generation_id",
+    )
+    source_receipt = bundle["source_receipt"]
+    stable_identity(
+        source_receipt,
+        id_field="receipt_id",
+        prefix="receipt:registration-lifecycle:cs:",
+        label="source_receipt.receipt_id",
+    )
+    invariant(
+        source_receipt["visible_event_version_count"]
+        == len(source_receipt["visible_event_ids"]),
+        "source receipt event count does not match its visible event IDs",
+    )
+    invariant(
+        source_receipt["visible_edge_count"]
+        == len(source_receipt["visible_edge_ids"]),
+        "source receipt edge count does not match its visible edge IDs",
+    )
+
+    records = bundle["records"]
+    deferred = bundle["deferred"]
+    coverage = bundle["coverage"]
+    invariant(
+        coverage["lifecycle_count"] == len(records),
+        "coverage lifecycle_count does not match records",
+    )
+    invariant(
+        coverage["timeline_event_count"]
+        == sum(len(record["timeline"]) for record in records),
+        "coverage timeline_event_count does not match record timelines",
+    )
+    invariant(
+        coverage["deferred_count"] == len(deferred),
+        "coverage deferred_count does not match deferred items",
+    )
+    invariant(
+        coverage["candidate_event_count"] >= coverage["timeline_event_count"],
+        "coverage candidate_event_count is smaller than emitted timeline evidence",
+    )
+    coverage_state = coverage["state"]
+    coverage_reason = coverage["reason"]
+    if coverage_state == "observed":
+        invariant(
+            coverage_reason == "linked_observed_registration_lifecycles_only",
+            "observed coverage has an incompatible reason",
+        )
+        invariant(
+            bool(records)
+            and coverage["candidate_event_count"] > 0
+            and coverage["timeline_event_count"] > 0
+            and not deferred,
+            "observed coverage must contain linked lifecycle evidence and no defers",
+        )
+    elif coverage_state == "partial":
+        invariant(
+            coverage_reason == "deferred_registration_lifecycle_observations_present",
+            "partial coverage has an incompatible reason",
+        )
+        invariant(bool(deferred), "partial coverage requires at least one defer")
+    else:
+        invariant(
+            coverage_reason
+            in {
+                "no_visible_registration_lifecycle_observations",
+                "upstream_generation_unavailable",
+            },
+            "unavailable coverage has an incompatible reason",
+        )
+        invariant(
+            not records
+            and not deferred
+            and coverage["candidate_event_count"] == 0
+            and coverage["timeline_event_count"] == 0,
+            "unavailable coverage cannot contain lifecycle evidence or defers",
+        )
+
+    source_event_ids = set(source_receipt["visible_event_ids"])
+    source_edge_ids = set(source_receipt["visible_edge_ids"])
+    deferred_by_id = {item["defer_id"]: item for item in deferred}
+    invariant(
+        len(deferred_by_id) == len(deferred),
+        "deferred items contain duplicate defer_id values",
+    )
+    for item in deferred:
+        stable_identity(
+            item,
+            id_field="defer_id",
+            prefix="defer:registration-lifecycle:cs:",
+            label=f"deferred {item['defer_id']}",
+        )
+
+    lifecycle_ids: set[str] = set()
+    as_of_dt = _parse_time(bundle["as_of"], "bundle.as_of")
+    assert as_of_dt is not None
+    for record in records:
+        lifecycle_id = str(record["lifecycle_id"])
+        invariant(
+            lifecycle_id not in lifecycle_ids,
+            f"duplicate lifecycle_id {lifecycle_id}",
+        )
+        lifecycle_ids.add(lifecycle_id)
+        identity = {
+            "issuer_id": record["issuer"]["issuer_id"],
+            "file_number": record["registration"]["file_number"],
+            "registration_family": record["registration"]["registration_family"],
+        }
+        invariant(
+            lifecycle_id == _stable_id("lifecycle:registration:cs:", identity),
+            f"lifecycle_id {lifecycle_id} does not bind its grouping identity",
+        )
+        invariant(
+            record["as_of"] == bundle["as_of"],
+            f"lifecycle {lifecycle_id} as_of differs from the bundle",
+        )
+        invariant(
+            record["scope"] == bundle["scope"]
+            and record["unavailable"] == bundle["unavailable"]
+            and record["authority"] == bundle["authority"],
+            f"lifecycle {lifecycle_id} escapes bundle authority/scope bounds",
+        )
+
+        derivation = record["derivation_receipt"]
+        stable_identity(
+            derivation,
+            id_field="receipt_id",
+            prefix="receipt:lifecycle:cs:",
+            label=f"lifecycle {lifecycle_id} derivation receipt",
+        )
+        derivation_event_ids = set(derivation["event_ids"])
+        derivation_edge_ids = set(derivation["edge_ids"])
+        derivation_manifest_ids = set(derivation["manifest_ids"])
+        invariant(
+            derivation_event_ids <= source_event_ids,
+            f"lifecycle {lifecycle_id} receipt cites events outside source receipt",
+        )
+        invariant(
+            derivation_edge_ids <= source_edge_ids,
+            f"lifecycle {lifecycle_id} receipt cites edges outside source receipt",
+        )
+
+        timeline = record["timeline"]
+        timeline_event_ids = [str(item["event_id"]) for item in timeline]
+        invariant(
+            len(timeline_event_ids) == len(set(timeline_event_ids)),
+            f"lifecycle {lifecycle_id} repeats a timeline event",
+        )
+        invariant(
+            set(timeline_event_ids) <= derivation_event_ids,
+            f"lifecycle {lifecycle_id} timeline is not covered by its receipt",
+        )
+        invariant(
+            record["latest_observed_event_id"] == timeline_event_ids[-1],
+            f"lifecycle {lifecycle_id} latest event does not match its timeline",
+        )
+        invariant(
+            record["observed_registration_state"]
+            == timeline[-1]["state_after_event"],
+            f"lifecycle {lifecycle_id} state does not match its latest timeline event",
+        )
+
+        prior_accepted: datetime | None = None
+        state: str | None = None
+        timeline_edge_ids: set[str] = set()
+        timeline_manifest_ids: set[str] = set()
+        for index, item in enumerate(timeline):
+            accepted = _parse_time(
+                item["sec_accepted_at"],
+                f"lifecycle {lifecycle_id} timeline {index} sec_accepted_at",
+            )
+            available = _parse_time(
+                item["mastermind_available_at"],
+                f"lifecycle {lifecycle_id} timeline {index} mastermind_available_at",
+            )
+            assert accepted is not None and available is not None
+            invariant(
+                accepted <= available <= as_of_dt,
+                f"lifecycle {lifecycle_id} timeline {index} violates PIT clocks",
+            )
+            invariant(
+                prior_accepted is None or prior_accepted < accepted,
+                f"lifecycle {lifecycle_id} timeline SEC acceptance clocks are ambiguous",
+            )
+            prior_accepted = accepted
+            transition = item["transition"]
+            if transition == "filed":
+                invariant(
+                    state is None and item["relationship"] is None,
+                    f"lifecycle {lifecycle_id} has a non-root filed transition",
+                )
+                state = "filed"
+            elif transition == "amended":
+                invariant(
+                    state is not None and state != "withdrawn",
+                    f"lifecycle {lifecycle_id} amends an unavailable or withdrawn state",
+                )
+                state = "effective" if state == "effective" else "amended"
+            elif transition == "effective":
+                invariant(
+                    state is not None and state != "withdrawn",
+                    f"lifecycle {lifecycle_id} becomes effective from an invalid state",
+                )
+                state = "effective"
+            else:
+                invariant(
+                    state is not None,
+                    f"lifecycle {lifecycle_id} withdraws without a registration root",
+                )
+                state = "withdrawn"
+            invariant(
+                item["state_after_event"] == state,
+                f"lifecycle {lifecycle_id} timeline state is inconsistent at {index}",
+            )
+            relationship = item["relationship"]
+            if relationship is not None:
+                timeline_edge_ids.add(str(relationship["edge_id"]))
+            timeline_manifest_ids.update(str(value) for value in item["manifest_ids"])
+        invariant(
+            timeline_edge_ids <= derivation_edge_ids,
+            f"lifecycle {lifecycle_id} relationship edges are absent from its receipt",
+        )
+        invariant(
+            timeline_manifest_ids <= derivation_manifest_ids,
+            f"lifecycle {lifecycle_id} timeline manifests are absent from its receipt",
+        )
+
+        key = identity
+        expected_defer_ids = {
+            item["defer_id"]
+            for item in deferred
+            if item["registration_key"] == key
+        }
+        actual_defer_ids = set(record["coverage"]["deferred_ids"])
+        invariant(
+            actual_defer_ids == expected_defer_ids,
+            f"lifecycle {lifecycle_id} coverage does not bind its matching defers",
+        )
+        if actual_defer_ids:
+            invariant(
+                record["coverage"]["state"] == "partial"
+                and record["coverage"]["reason"]
+                == "one_or_more_registration_events_deferred",
+                f"lifecycle {lifecycle_id} hides linked defers behind observed coverage",
+            )
+        else:
+            invariant(
+                record["coverage"]["state"] == "observed"
+                and record["coverage"]["reason"]
+                == "linked_observed_registration_events_only",
+                f"lifecycle {lifecycle_id} reports partial coverage without linked defers",
+            )
 
 
 # Singular alias for call sites that name the returned artifact rather than the

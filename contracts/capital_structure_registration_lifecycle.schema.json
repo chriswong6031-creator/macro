@@ -367,6 +367,7 @@
             "ambiguous_sec_chronology",
             "conflicting_issuer_cik",
             "correction_group_changed",
+            "correction_history_mismatch",
             "correction_link_missing",
             "cross_issuer_link",
             "disconnected_registration_graph",
