@@ -455,10 +455,11 @@ and the seen-ledger. Production desk/rail snapshots live under
 2. **Chinese wire items on the news.html rail (B4c) translate via the attached
    codex subscription (gpt-5.6-terra) — no API key to provision (operator ruling
    2026-07-31).** The press lane's `_zh_cfg` overrides the translator to
-   provider `codex`; the service unit carries `CODEX_HOME=/var/lib/macro-codex`
-   and reads the same attached login `macro-api.service` owns (its
-   `StateDirectory` creates `auth.json` — if macro-api never attached a login,
-   zh stays in fallback). Without a reachable codex login the lane still runs:
+   provider `codex`; the service unit carries the two root-only stores in
+   `CODEX_ACCOUNT_HOMES` and uses the same load-balanced accounts as
+   `macro-api.service` (its `StateDirectory` entries create the stores — if no
+   account is attached, zh stays in fallback). Without a reachable Codex login
+   the lane still runs:
    items ship English-only and the rail marks them 「英文原文」 rather than
    faking a translation — the daemon logs one `wires zh armed but …` warning
    per tick with `translator_ready()`'s reason, so the gap is visible instead

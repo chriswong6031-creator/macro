@@ -607,6 +607,51 @@ capabilities:
       existing ~/.codex/auth.json login. Public hosts without that login skip
       this provider. CODEX_PROVIDER_ENABLED=0 is the emergency kill switch.
 
+  - capability_id: codex_account_2
+    kind: llm_subscription
+    secret_ref: CODEX_ACCESS_TOKEN_2
+    scope: >
+      Second isolated Codex/ChatGPT account in the same subscription-provider
+      waterfall. It has its own CODEX_HOME auth cache, cooling state, rate-limit
+      telemetry, and usage identity; requests fail over between Codex accounts
+      before reaching metered providers.
+    storage_locus: self-hosted-runner-auth-cache
+    allowed_lanes:
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
+      - brain-fast
+      - brain-pro
+      - marketing-copywriter
+      - marketing-breaking
+      - marketing-copy-review
+      - marketing-critic
+      - hot-tape-wire
+      - reply-voice
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      Production selects this account from the second path in
+      CODEX_ACCOUNT_HOMES. The standard VPS path is /var/lib/macro-codex-2.
+      No credential value enters application memory or a git artifact.
+
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 
   - capability_id: github_token

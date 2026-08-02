@@ -57,6 +57,24 @@ def test_availability_uses_vps_codex_home(monkeypatch, tmp_path):
     assert cp.is_available() is True
 
 
+def test_two_isolated_codex_homes_become_two_stable_accounts(monkeypatch, tmp_path):
+    homes = [tmp_path / "macro-codex", tmp_path / "macro-codex-2"]
+    for home in homes:
+        home.mkdir()
+        (home / "auth.json").write_text('{"auth_mode":"chatgpt"}', encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_PROVIDER_ENABLED", "1")
+    monkeypatch.setenv("CODEX_ACCOUNT_HOMES", os.pathsep.join(map(str, homes)))
+    monkeypatch.delenv("CODEX_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("CODEX_API_KEY", raising=False)
+    monkeypatch.setattr(cp, "resolve_codex_bin", lambda: "/usr/bin/true")
+
+    assert cp.available_accounts() == [
+        ("codex_account", homes[0]),
+        ("codex_account_2", homes[1]),
+    ]
+
+
 def test_create_runs_locked_text_only_codex_turn(monkeypatch):
     captured = {}
 
@@ -98,6 +116,31 @@ def test_create_runs_locked_text_only_codex_turn(monkeypatch):
     assert "features.shell_tool=false" in joined_args
     assert 'web_search="disabled"' in joined_args
     assert "agents.enabled=false" in joined_args
+
+
+def test_client_pins_its_isolated_home_in_the_child_only(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run(prompt, **kwargs):
+        captured.update(kwargs)
+        return {
+            "ok": True,
+            "final_message": "secondary",
+            "token_usage": {},
+            "rate_limits": None,
+            "error_kind": None,
+        }
+
+    monkeypatch.setattr(cp, "run_codex", fake_run)
+    monkeypatch.setenv("CODEX_HOME", "/primary")
+    secondary = tmp_path / "macro-codex-2"
+    cp.CodexClient(
+        codex_home=secondary,
+        capability_id="codex_account_2",
+    ).messages.create(model=cp.SOL_MODEL, messages=[])
+
+    assert captured["env"]["CODEX_HOME"] == str(secondary)
+    assert os.environ["CODEX_HOME"] == "/primary"
 
 
 def test_create_applies_configured_reasoning_effort(monkeypatch):
