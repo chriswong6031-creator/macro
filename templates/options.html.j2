@@ -600,6 +600,149 @@ html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
   white-space:nowrap;margin-left:auto}
 .oew-ph-more:hover{text-decoration:underline}
 .oew-ph-more:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px;border-radius:3px}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OIP W1.6-A — the One-Door consolidation
+   (research/options_estate/ONE_DOOR_RULING_AND_SPEC.md §2). Three new blocks:
+   FLOW mode (.oew-fl-*), the Ticker raw-structure shelf (.oew-raw-*), and the
+   Scanner's filter/sort/export controls. NOTHING here touches .oew-seg or
+   .oew-lseg — the collision case law in WORKSPACE_DESIGN_SPEC §3.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── FLOW · the deviation flag on a sector row ──
+   A mark, not a chip: the sector bar already carries the size and the tone, and
+   a second filled pill on the row would read as a second verdict. */
+.oew-fl-flag{color:var(--warn);margin-right:5px;cursor:help;font-size:11px}
+
+/* ── FLOW · theme-group tiles ── */
+.oew-fl-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3)}
+@media (max-width:900px){.oew-fl-tiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.oew-fl-tiles{grid-template-columns:1fr}}
+.oew-fl-tile{border:1px solid var(--hair);border-radius:var(--r-ctl);background:var(--tile);padding:var(--s3)}
+.oew-fl-tile .nm{font-size:12.5px;font-weight:700}
+.oew-fl-tile .v{font-size:16px;font-weight:700;margin-top:3px}
+.oew-fl-tile .v.pos{color:var(--up)}.oew-fl-tile .v.neg{color:var(--down)}
+.oew-fl-tile .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.oew-fl-tile .sub{font-size:10.5px;color:var(--muted);margin-top:6px}
+
+/* ── FLOW · sector-ETF money grid (the .oew-etfc card, plus the horizon line) ── */
+.oew-fl-etfh{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.01em}
+
+/* ── FLOW · the tide. Two canvases, drawn once, never animated. ── */
+.oew-fl-tide{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:760px){.oew-fl-tide{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-fl-cvh{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+html[data-lang="zh"] .oew-fl-cvh{letter-spacing:.02em;text-transform:none}
+.oew-fl-cv{position:relative;height:104px}
+.oew-fl-cv canvas{width:100%;height:100%;display:block}
+.oew-fl-read{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s2);font-size:11.5px;color:var(--muted)}
+.oew-fl-read .net{font-size:14px;font-weight:700;color:var(--text)}
+.oew-fl-read .net.pos{color:var(--up)}.oew-fl-read .net.neg{color:var(--down)}
+/* the honest flat track the unfolded curve degrades to when no intraday record
+   exists — a labelled absence, never a blank box (spec §2.1 panel 4). */
+.oew-fl-null{height:104px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-ctl);font-size:11.5px;color:var(--ink-2);text-align:center;padding:0 var(--s3);
+  background:linear-gradient(var(--hair),var(--hair)) 0 50%/100% 1px no-repeat}
+
+/* ═══ TICKER · the raw-structure shelf (ported from site/gex.js) ═══
+   Hand-SVG, drawn on first <details> open from the ALREADY-fetched gex/<T>.json.
+   Every colour is a CSS var inside an inline style (`style="fill:var(--up)"`),
+   never a resolved hex: --up/--down flip in zh, and an SVG that baked its colour
+   at draw time would keep the wrong direction after the language toggle. */
+.oew-raw-item{margin-top:var(--s5)}
+.oew-raw-item:first-child{margin-top:var(--s4)}
+.oew-raw-h{font-size:12.5px;font-weight:700;margin:0 0 2px}
+.oew-raw-sub{font-size:11px;color:var(--muted);margin:0 0 var(--s2);line-height:1.45;max-width:78ch}
+.oew-raw-box{width:100%}
+.oew-raw-box svg{width:100%;height:auto;display:block}
+.oew-raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:820px){.oew-raw-grid{grid-template-columns:1fr}}
+.oew-raw-empty{font-size:11.5px;color:var(--ink-2);padding:var(--s3) 0}
+.oew-raw-leg{display:flex;gap:var(--s3);flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:var(--s2)}
+.oew-raw-leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.oew-raw-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+table.oew-raw-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+table.oew-raw-tbl th{text-align:right;color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;
+  letter-spacing:.06em;padding:6px 9px 5px;white-space:nowrap;border-bottom:1px solid var(--line)}
+html[data-lang="zh"] table.oew-raw-tbl th{letter-spacing:.02em;text-transform:none;font-size:10.5px}
+table.oew-raw-tbl th:first-child,table.oew-raw-tbl td:first-child{text-align:left}
+table.oew-raw-tbl td{padding:5px 9px;border-bottom:1px solid var(--hair);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+table.oew-raw-heat{border-collapse:collapse;font-size:10px}
+table.oew-raw-heat th{font-size:9.5px;font-weight:600;color:var(--muted);padding:3px 4px;white-space:nowrap}
+table.oew-raw-heat td{padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;
+  border:1px solid transparent;min-width:34px}
+table.oew-raw-heat td.kk{color:var(--muted);text-align:left;font-family:var(--font-mono);font-size:9.5px}
+table.oew-raw-heat tr.spotrow td{border-top-color:var(--hair);border-bottom-color:var(--hair)}
+.oew-raw-greeks{display:flex;gap:var(--s5);flex-wrap:wrap}
+.oew-raw-greeks .g{min-width:72px}
+.oew-raw-greeks .g .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
+html[data-lang="zh"] .oew-raw-greeks .g .k{letter-spacing:.02em;text-transform:none}
+.oew-raw-greeks .g .v{font-size:13.5px;font-weight:700;display:block;margin-top:1px}
+.oew-raw-greeks .g .s{font-size:10px;color:var(--muted);display:block}
+
+/* ── TICKER · the options primer (ported verbatim from gex.html) ── */
+.oew-primer .oew-pbody{border-top:1px solid var(--hair)}
+.oew-primer p{margin:0 0 var(--s2);font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:76ch}
+.oew-primer ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.oew-primer li{font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:76ch}
+.oew-primer b{color:var(--text)}
+
+/* ═══ SCANNER · more filters, per-column sort, CSV ═══ */
+.oew-sc-more{border-top:1px solid var(--hair)}
+.oew-sc-more summary{cursor:pointer;font-size:11.5px;font-weight:650;color:var(--muted);
+  padding:9px var(--s4);list-style:none}
+.oew-sc-more summary::-webkit-details-marker{display:none}
+.oew-sc-more summary::before{content:'▸ ';color:var(--oew-accent)}
+.oew-sc-more[open] summary::before{content:'▾ '}
+.oew-sc-more summary:hover{color:var(--text)}
+.oew-sc-more summary:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+.oew-sc-fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:var(--s3);
+  padding:0 var(--s4) var(--s4)}
+.oew-sc-f{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+html[data-lang="zh"] .oew-sc-f{letter-spacing:.02em;text-transform:none}
+.oew-sc-f.wide{grid-column:span 2}
+@media (max-width:560px){.oew-sc-f.wide{grid-column:span 1}}
+.oew-sc-pair{display:flex;align-items:center;gap:6px}
+.oew-sc-pair .sep{color:var(--muted)}
+.oew-sc-more input,.oew-sc-more select{width:100%;min-width:0;padding:6px 9px;border:1px solid var(--hair);
+  border-radius:var(--r-ctl);background:var(--tile);color:var(--text);font:inherit;font-size:12px;
+  font-family:var(--font-ui);font-weight:400;text-transform:none;letter-spacing:0}
+.oew-sc-more input:focus-visible,.oew-sc-more select:focus-visible{outline:2px solid var(--oew-accent);
+  outline-offset:1px;border-color:var(--oew-accent)}
+.oew-sc-more input::placeholder{color:var(--muted)}
+.oew-sc-fbar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;padding:0 var(--s4) var(--s4)}
+.oew-sc-clear{appearance:none;font:inherit;font-size:11.5px;font-weight:600;padding:5px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);background:var(--tile);color:var(--ink-2);cursor:pointer}
+.oew-sc-clear:hover{border-color:var(--oew-accent);color:var(--text)}
+.oew-sc-clear:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+.oew-sc-csv{appearance:none;font:inherit;font-size:11px;font-weight:650;padding:4px 11px;
+  border-radius:var(--r-pill);border:1px solid var(--hair);background:var(--tile);color:var(--ink-2);
+  cursor:pointer;white-space:nowrap}
+.oew-sc-csv:hover{border-color:var(--oew-accent);color:var(--text)}
+.oew-sc-csv:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px}
+/* the sort affordance rides aria-sort, so the arrow can never disagree with the
+   state a screen reader is told */
+table.oew-tbl thead th[data-sort]{cursor:pointer;user-select:none}
+table.oew-tbl thead th[data-sort]:hover{color:var(--text)}
+table.oew-tbl thead th[data-sort]:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
+table.oew-tbl thead th[data-sort]::after{content:'';opacity:.35;margin-left:4px}
+table.oew-tbl thead th[aria-sort="ascending"]{color:var(--text)}
+table.oew-tbl thead th[aria-sort="descending"]{color:var(--text)}
+table.oew-tbl thead th[aria-sort="ascending"]::after{content:'▲';opacity:1;color:var(--oew-accent);font-size:8px}
+table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;color:var(--oew-accent);font-size:8px}
+
+/* ═══ LEADERS · the "show all N" expander ═══
+   No fetch: the rows are already client-side, so the extra rows ship hidden and
+   the button toggles one class on the list. */
+.oew-ld .oew-ldrow.oew-ld-more{display:none}
+.oew-ld.on .oew-ldrow.oew-ld-more{display:grid}
+.oew-ld-exp{appearance:none;font:inherit;font-size:11.5px;font-weight:650;width:100%;
+  padding:9px var(--s3);border:none;border-top:1px solid var(--hair);background:var(--tile);
+  color:var(--oew-accent);cursor:pointer;text-align:center}
+.oew-ld-exp:hover{background:var(--panel2)}
+.oew-ld-exp:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-2px}
 </style>
 </head>
 <body class="page-options">
@@ -698,6 +841,13 @@ html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
   <nav class="oew-tabs" role="tablist" aria-label="Options workspace modes">
     <button class="oew-tab" role="tab" aria-selected="true" data-mode="brief" id="tab-brief" aria-controls="mode-brief">
       {{ t('Daily Brief', '每日简报') }}
+    </button>
+    {#- Tab order is PINNED: brief · flow · scanner · ticker · leaders — the five
+        evening questions in reading order (ONE_DOOR_RULING_AND_SPEC §2.0.1). The
+        .cnt figure is the covered-sector count, from the same filter the panel
+        it opens uses. -#}
+    <button class="oew-tab" role="tab" aria-selected="false" data-mode="flow" id="tab-flow" aria-controls="mode-flow">
+      {{ t('Flow', '资金流') }}{% if counts.flow %}<span class="cnt mono">{{ counts.flow }}</span>{% endif %}
     </button>
     <button class="oew-tab" role="tab" aria-selected="false" data-mode="scanner" id="tab-scanner" aria-controls="mode-scanner">
       {{ t('Scanner', '筛选') }}{% if counts.scanner %}<span class="cnt mono">{{ counts.scanner }}</span>{% endif %}
@@ -920,19 +1070,34 @@ html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
     <div>
       <div class="oew-ho-t">{{ t('This page is the settled close', '本页呈现的是已结算的收盘') }}</div>
       <div class="oew-ho-s">{{ t("Levels here hold until tomorrow's data run. For walls that move during the session, live tape and replay, the Terminal is the live surface.",
-                                 '此处水位在明日数据更新前保持不变。若需盘中实时移动的墙位、实时逐笔与回放，请使用交易终端。') }}</div>
+                                 '此处水位在明日数据更新前保持不变。若需盘中实时移动的墙位、实时逐笔与回放，请使用交易终端。') }}
+        {#- The positioning sentence (ONE_DOOR §5): both desks ship on the same
+            subscription, so this states the DIVISION OF LABOUR, never an upsell. -#}
+        {{ t('Same subscription, two clocks — the Terminal is the live desk (tape, replay, alerts); this workspace is the settled record.',
+             '同一订阅，两种时钟 — 交易终端是盘中实时台（逐笔、回放、警报）；本工作台是收盘后的定格记录。') }}</div>
       <div class="oew-ho-clock mono" id="oew-clock">
         <span class="l-en">closed 16:00 ET</span><span class="l-zh">美东 16:00 收盘</span>
       </div>
     </div>
-    <a class="oew-cta" href="https://app.mastermind-x.com" target="_blank" rel="noopener">{{ t('Open the Terminal', '打开交易终端') }} ↗</a>
+    {#- href is a working no-JS destination AND the fallback: the script below
+        re-points it through MDXTerminal.url() once theme.js has defined the
+        helper, so the &from=macro/&ret= stamp the Terminal reads is never lost. -#}
+    <a class="oew-cta" id="oew-brief-cta" href="https://app.mastermind-x.com" target="_blank" rel="noopener">{{ t('Open the Terminal', '打开交易终端') }} ↗</a>
   </div>
 </section>
 
-<!-- ══════════════════ MODE 2 · SCANNER (lazy) ══════════════════ -->
+<!-- ══════════════════ MODE 2 · FLOW (lazy) ══════════════════
+     Empty shell, exactly like Scanner and Leaders: renderFlow() fills it from
+     flow_desk.json + flowdata/cohorts.json on first activation, and the tide
+     panel's intraday overlay comes from the R2 tape store through window.DATA_BASE
+     (the pattern flow_desk.html already ships). ZERO stance chips in this mode —
+     Ticker's name header keeps the page's one decision element. -->
+<section class="oew-mode" id="mode-flow" role="tabpanel" aria-labelledby="tab-flow"></section>
+
+<!-- ══════════════════ MODE 3 · SCANNER (lazy) ══════════════════ -->
 <section class="oew-mode" id="mode-scanner" role="tabpanel" aria-labelledby="tab-scanner"></section>
 
-<!-- ══════════════════ MODE 3 · TICKER (lazy) ══════════════════ -->
+<!-- ══════════════════ MODE 4 · TICKER (lazy) ══════════════════ -->
 <section class="oew-mode" id="mode-ticker" role="tabpanel" aria-labelledby="tab-ticker">
   <div class="oew-tktoolbar">
     <div class="oew-tksearch">
@@ -949,9 +1114,29 @@ html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
        SPEC.md §0.15: getting this wrong recreates the search box, and re-triggers
        its "/" focus race, on every ticker change). -->
   <div id="oew-tk-body"></div>
+
+  {#- THE PRIMER — ported VERBATIM from gex.html (templates/gex.html.j2:400-412),
+      the page this workspace absorbs. It is Ticker mode's footer (ONE_DOOR §1
+      table): fixed reference copy that belongs to the mode, not to any one name,
+      so it is STATIC markup — a sibling of #oew-tk-body that renderTicker() never
+      touches — and it therefore keeps working when a name's chain 404s. Closed by
+      default; not a read, so no stance chip and no as-of. -#}
+  <details class="oew-panel oew-shelf oew-primer">
+    <summary>{{ t('New to options? Read this first.', '不熟悉期权？先读这里。') }}</summary>
+    <div class="oew-pbody">
+      <p>{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels — not a buy/sell signal, not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图 — 并非买卖信号、也非目标价。") }}</p>
+      <ul>
+        <li>{{ t("<b>Dealers</b> are the banks that sell most options. To stay neutral they constantly buy and sell the stock against what they've sold — and that hedging quietly pushes the price around.", "<b>做市商</b>是卖出大部分期权的银行。为保持中性，它们不断反向买卖股票 — 这种对冲会悄悄推动价格。")|safe }}</li>
+        <li>{{ t("Sometimes their hedging <b>calms</b> the market, sometimes it makes it <b>jumpy</b>. Leaning against moves keeps price in a range; piling into moves makes trends and air-pockets bigger. It's about how volatile — not which direction.", "对冲有时让市场<b>平静</b>、有时让市场<b>跳动</b>。逆势对冲使价格停在区间；顺势对冲使趋势与急跌更大。这关乎波动多大 — 而非方向。")|safe }}</li>
+        <li>{{ t("<b>Walls</b> are the prices where that hedging is heaviest — a call wall above acts like a ceiling, a put wall below like a floor. Each is scored Strong → Faint. Price tends to stall there; it doesn't aim there.", "<b>墙</b>是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。每面墙有强弱评分。价格倾向在此停滞，而非以此为目标。")|safe }}</li>
+        <li>{{ t("<b>The flip</b> is the line between the calm and jumpy regimes — watch it like a thermostat, not like support/resistance.", "<b>翻转</b>是平静与跳动体制的分界 — 像恒温器一样观察它，而非支撑/阻力。")|safe }}</li>
+        <li>{{ t("How to use it: pick a name, read the one-line verdict, look at the ladder, then watch the <b>daily-close</b> triggers. The math is solid for indices and big ETFs, loose for single stocks.", "用法：选一个标的，读一行结论，看价位图，再关注<b>日线收盘</b>触发。对指数与大型ETF稳健，对个股宽松。")|safe }}</li>
+      </ul>
+    </div>
+  </details>
 </section>
 
-<!-- ══════════════════ MODE 4 · LEADERS (lazy) ══════════════════ -->
+<!-- ══════════════════ MODE 5 · LEADERS (lazy) ══════════════════ -->
 <section class="oew-mode" id="mode-leaders" role="tabpanel" aria-labelledby="tab-leaders"></section>
 
 </div><!-- /oew-wrap -->
@@ -986,7 +1171,7 @@ window.OEW_DEFAULT_TICKER = {{ (counts.ticker or 'SPY') | tojson }};
    ══════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-var MODES = ['brief','scanner','ticker','leaders'];
+var MODES = ['brief','flow','scanner','ticker','leaders'];
 var loaded = { brief: true };
 var cache  = {};
 var tabs = Array.prototype.slice.call(document.querySelectorAll('.oew-tab'));
@@ -1027,10 +1212,26 @@ function emptyPanel(en, zh){
   return '<div class="oew-panel"><div class="oew-pbody"><p class="oew-empty">' + bi(en, zh) + '</p></div></div>';
 }
 var SKEL = {
+  flow:    ['Loading the flow desk for this close…', '正在加载本次收盘的资金流台…'],
   scanner: ['Loading the screener table for this close…', '正在加载本次收盘的筛选表…'],
   ticker:  ["Loading this name's options structure…", '正在加载该标的的期权结构…'],
   leaders: ['Loading the leader boards…', '正在加载领头股榜单…']
 };
+
+/* The Terminal destination, through the house helper.
+   theme.js is the LAST body script, so window.MDXTerminal does NOT exist while
+   this IIFE runs — every caller here is a render or a DOM-ready callback, by
+   which time it does. The literal stays as the no-JS/helper-absent fallback:
+   it reaches the Terminal, it just loses the &from=macro/&ret= stamp the
+   Terminal reads to draw its "← Dashboard" button. gex.js already routes its
+   own CTA this way (site/gex.js:528). The old '?symbol=' spelling was never
+   read by the Terminal at all — its readers take `sym`. */
+function terminalUrl(sym){
+  try{
+    if(window.MDXTerminal && window.MDXTerminal.url) return window.MDXTerminal.url(sym || '');
+  }catch(e){}
+  return 'https://app.mastermind-x.com/' + (sym ? '?sym=' + encodeURIComponent(sym) : '');
+}
 
 function getJSON(url){
   if(cache[url]) return Promise.resolve(cache[url]);
@@ -1040,38 +1241,397 @@ function getJSON(url){
   }).then(function(j){ cache[url] = j; return j; });
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FLOW  (OIP W1.6-A · ONE_DOOR_RULING_AND_SPEC §2.1)
+   The US Options Flow desk, absorbed. Four panels, in this order: the full
+   sector desk · theme groups · sector-ETF money · the tide.
+
+   ZERO STANCE CHIPS IN THIS MODE. Every panel closes with a caveat SENTENCE
+   instead: Ticker mode's name header carries the page's one decision element
+   (OIP_MASTERPLAN §3 verdict law), and a second verdict on a mode a reader
+   reaches from the same tab strip is exactly the stacking that law exists to
+   stop. Panels here state facts about where money went.
+
+   Payload: flow_desk.json + flowdata/cohorts.json, both lazy (the same stores
+   the Brief bake already reads — no new embeds). The tide's intraday overlay
+   comes from the R2 tape store through window.DATA_BASE, the fetch discipline
+   flow_desk.html.j2 already ships: null URL when the store is unset, .ok check,
+   .catch(→ null), and an honest labelled absence on every failure path.
+   ══════════════════════════════════════════════════════════════════════════ */
+var flDesk = null, flTide = null;
+
+function r2Url(path){
+  var base = String((window && window.DATA_BASE) || '').replace(/\/+$/, '');
+  return base ? base + '/' + path : null;
+}
+/* Canvas cannot resolve var(--up) — a colour has to be a resolved string at
+   putImageData time — so the tide curves READ the tokens at draw time and
+   redraw on 'langchange'. --up/--down swap to 红涨绿跌 in Chinese, and a cached
+   colour would leave the curve encoding the wrong direction after the toggle.
+   (The raw shelf below has the opposite problem and the better answer: SVG
+   takes var() in an inline style, so it flips with no redraw at all.) */
+function cssVar(name, fallback){
+  try{
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v || '').trim() || fallback;
+  }catch(e){ return fallback; }
+}
+function flMoney(mn){ return money(mn); }
+function flSoft(mn){ var v = num(mn); return v === null ? '—' : '~' + smoney(v); }
+
+/* ── panel 1 · every covered sector, shared scale, unusual days flagged ── */
+function flSectorPanel(desk){
+  var rows = ((desk && desk.sector_heatmap) || []).filter(function(r){
+    return r && num(r.gross_premium_mn) !== null;
+  }).sort(function(a,b){ return (num(b.gross_premium_mn)||0) - (num(a.gross_premium_mn)||0); });
+  var head = '<div class="oew-phead">'
+    + '<h2 class="oew-ph-title">' + bi('Premium by sector — the full desk','按板块的权利金 — 完整视图') + '</h2>'
+    + '<span class="oew-ph-sub">' + bi('every covered sector, shared scale, unusual days flagged',
+        '覆盖的全部板块，同一比例，异常日标旗') + '</span>'
+    + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="Every sector we cover, sorted by the options premium it drew today. Bars share one scale, so lengths compare directly. The tone chip is the buy/sell lean from the tape and is approximate; size is a solid read."'
+      + ' data-tip-zh="我们覆盖的每个板块，按今日吸引的期权权利金排序。所有柱状图共用同一刻度，长度可直接比较。倾向标签为盘面推断的买卖方向，为近似值；规模数据可靠。">?</span></div>'
+  + '</div>';
+  if(!rows.length){
+    return '<div class="oew-panel">' + head + '<div class="oew-pbody"><p class="oew-empty">'
+      + bi('Sector premium did not report for this close. It returns with the next options tape.',
+           '本次收盘没有板块权利金数据。下一次期权盘面数据到位后会恢复。') + '</p></div></div>';
+  }
+  var top = num(rows[0].gross_premium_mn) || 0;
+  var body = rows.map(function(r){
+    var g = num(r.gross_premium_mn) || 0;
+    var w = top > 0 ? (g / top * 100) : 0;
+    var tone = r.tone;
+    var cls = tone === 'pos~' ? 'buy' : (tone === 'neg~' ? 'sell' : 'mix');
+    var toneEn = tone === 'pos~' ? 'buying ~' : (tone === 'neg~' ? 'selling ~' : 'mixed');
+    var toneZh = tone === 'pos~' ? '买入 ~' : (tone === 'neg~' ? '卖出 ~' : '混合');
+    var z = num(r.premium_z);
+    /* The ⚑ is a MARK, not a chip: the row already carries size and tone, and a
+       filled pill here would read as a third reading on one line. */
+    var flag = (z !== null && Math.abs(z) >= 1) ? '<span class="oew-fl-flag" role="img"'
+      + ' data-tip-en="Today’s premium in this sector sits well outside its own recent range — an unusual day for it, not a direction call."'
+      + ' data-tip-zh="该板块今日权利金明显偏离自身近期区间 — 对它而言是不寻常的一天，并非方向判断。">⚑</span>' : '';
+    var n = num(r.n_names);
+    var tipEn = flMoney(g) + ' of premium' + (n !== null ? ' across ' + n.toFixed(0) + ' names' : '')
+      + '. Net ' + flSoft(r.net_premium_mn) + ' — size is a solid read, direction is approximate.';
+    var tipZh = '权利金 ' + flMoney(g) + (n !== null ? '，覆盖 ' + n.toFixed(0) + ' 个标的' : '')
+      + '。净额 ' + flSoft(r.net_premium_mn) + ' — 规模数据可靠，方向为近似值。';
+    return '<div class="oew-sr" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">'
+      + '<span class="oew-sr-name">' + flag + esc(r.sector || '—') + '</span>'
+      + '<span class="oew-sr-track"><i class="oew-sr-fill ' + cls + '" style="width:' + w.toFixed(1) + '%"></i></span>'
+      + '<span class="oew-sr-val mono">' + flMoney(g) + '</span>'
+      + '<span class="tone ' + (cls === 'mix' ? '' : cls) + '">' + bi(toneEn, toneZh) + '</span>'
+    + '</div>';
+  }).join('');
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody"><div class="oew-sect">' + body + '</div></div>'
+    + '<div class="oew-pfoot"><span>'
+      + bi('A record of where options money went today — not a forecast of where it goes next.',
+           '这是今日期权资金去向的记录，而非对后续走向的预测。') + '</span>'
+      + (rows[0].asof ? '<span class="oew-asof mono">' + esc(rows[0].asof) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* ── panel 2 · theme groups (the four cohorts that cross sector lines) ── */
+function flThemePanel(desk, cohorts){
+  var rows = (cohorts && cohorts.cohorts) || (desk && desk.cohorts) || [];
+  var head = '<div class="oew-phead">'
+    + '<h2 class="oew-ph-title">' + bi('Theme groups','主题组合') + '</h2>'
+    + '<span class="oew-ph-sub">' + bi('how the big themes traded as groups','大主题作为整体的交易情况') + '</span>'
+    + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="Four themes that cross sector lines. Premium size and the call/put tilt are solid reads; the net buy/sell mark is approximate. Watch for a group leaning the opposite way to the rest — that divergence is what these groups exist to surface."'
+      + ' data-tip-zh="四个跨越行业边界的主题。权利金规模与看涨/看跌倾向为可靠读数；净买卖标记为近似值。留意与其余部分反向的组合 — 这种背离正是设立这些组合的意义所在。">?</span></div>'
+  + '</div>';
+  var covered = rows.filter(function(c){ return num(c.n_members_covered); }).length;
+  if(!rows.length || !covered){
+    return '<div class="oew-panel">' + head + '<div class="oew-pbody"><p class="oew-empty">'
+      + bi('No theme-group data for this close. It returns with the next options tape.',
+           '本次收盘没有主题组合数据。下一次期权盘面数据到位后会恢复。') + '</p></div></div>';
+  }
+  var tiles = rows.map(function(c){
+    var net = num(c.net_premium_mn);
+    var chips = '';
+    if(c.pc_ratio !== null && c.pc_ratio !== undefined){
+      chips += '<span class="tone ' + (c.pc_tone === 'call-tilted' ? 'buy' : (c.pc_tone === 'put-tilted' ? 'sell' : '')) + '">'
+        + (c.pc_tone === 'call-tilted' ? bi('calls','偏看涨')
+           : c.pc_tone === 'put-tilted' ? bi('puts','偏看跌') : bi('balanced','均衡')) + '</span>';
+    }
+    if(net !== null){
+      chips += '<span class="tone ' + (c.net_tone === 'pos~' ? 'buy' : (c.net_tone === 'neg~' ? 'sell' : '')) + '">'
+        + (c.net_tone === 'pos~' ? bi('net buy ~','净买 ~')
+           : c.net_tone === 'neg~' ? bi('net sell ~','净卖 ~') : bi('flat ~','持平 ~')) + '</span>';
+    }
+    var cov = num(c.n_members_covered), tot = num(c.n_members);
+    var sub = cov ? bi(cov.toFixed(0) + ' of ' + (tot === null ? '—' : tot.toFixed(0)) + ' covered',
+                       '已覆盖 ' + cov.toFixed(0) + '/' + (tot === null ? '—' : tot.toFixed(0)))
+                  : bi('no data today','今日无数据');
+    return '<div class="oew-fl-tile">'
+      + '<div class="nm">' + bi(c.name_en || c.key || '—', c.name_zh || c.name_en || c.key || '—') + '</div>'
+      + '<div class="v ' + (net === null ? '' : (net >= 0 ? 'pos' : 'neg')) + ' mono">' + flSoft(net) + '</div>'
+      + '<div class="chips">' + chips + '</div>'
+      + '<div class="sub">' + sub + '</div>'
+    + '</div>';
+  }).join('');
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody"><div class="oew-fl-tiles">' + tiles + '</div></div>'
+    + '<div class="oew-pfoot"><span>'
+      + bi('Size is a solid read. Direction comes from tick-rule signing and is not reliable enough to read on its own.',
+           '规模数据可靠。方向数据来自 tick 规则签署，其本身不足以作为方向依据。') + '</span>'
+      + ((cohorts && cohorts.asof) ? '<span class="oew-asof mono">' + esc(cohorts.asof) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* ── panel 3 · the passive tape: 11 sector-ETF creation/redemption estimates ── */
+function flEtfPanel(desk){
+  var tile = (desk && desk.etf_tile) || null;
+  var funds = (tile && tile.funds) || [];
+  var head = '<div class="oew-phead">'
+    + '<h2 class="oew-ph-title">' + bi('Sector ETF money','板块ETF资金') + '</h2>'
+    + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="Money moving in and out of the 11 sector SPDR funds, estimated from the daily change in shares outstanding times net asset value. The 5D and 21D figures are rolling sums over the same estimate."'
+      + ' data-tip-zh="11只板块SPDR基金的资金进出，按流通份额日变化乘以净值估算。5D与21D为同一估算的滚动合计。">?</span></div>'
+  + '</div>';
+  if(!funds.length){
+    return '<div class="oew-panel">' + head + '<div class="oew-pbody"><p class="oew-empty">'
+      + bi('The sector-ETF estimate did not report for this close. It returns with the next fund update.',
+           '本次收盘没有板块ETF估算数据。下一次基金数据更新后会恢复。') + '</p></div></div>';
+  }
+  var cards = funds.slice().sort(function(a,b){ return (num(b.flow_1d)||0) - (num(a.flow_1d)||0); })
+    .map(function(f){
+      var v = num(f.flow_1d);
+      return '<div class="oew-etfc">'
+        + '<div class="sym">' + esc(f.ticker || '—') + '</div>'
+        + '<div class="v ' + (v === null ? '' : (v >= 0 ? 'pos' : 'neg')) + ' mono">' + flSoft(v) + '</div>'
+        + '<div class="oew-fl-etfh mono">5D ' + flSoft(f.flow_5d) + ' · 21D ' + flSoft(f.flow_21d) + '</div>'
+      + '</div>';
+    }).join('');
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody"><div class="oew-etf">' + cards + '</div></div>'
+    + '<div class="oew-pfoot"><span>'
+      + bi('Estimates from share-count changes, not reported fund flows — a background check, not a signal.',
+           '根据份额变动推算的估算值，而非公布的基金流量 — 可作背景参考，不构成信号。') + '</span>'
+      + (tile.asof ? '<span class="oew-asof mono">' + esc(tile.asof) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* ── panel 4 · the tide: 30 sessions of net premium + how today unfolded ── */
+function flTidePanel(desk){
+  var spark = ((desk && desk.market_tide) || {}).spark || [];
+  var head = '<div class="oew-phead">'
+    + '<h2 class="oew-ph-title">' + bi('The tide','资金潮汐') + '</h2>'
+    + '<span class="oew-ph-sub">' + bi('thirty sessions of net premium, and how today unfolded',
+        '三十个交易日的净权利金，以及今日的展开过程') + '</span>'
+    + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
+      + ' data-tip-en="Left: each session’s net options premium — call premium bought minus put premium bought — against a zero line. Right: the same measure minute by minute through the completed session, from the live tape store. Read the shape, not the level; direction is approximate."'
+      + ' data-tip-zh="左：各交易日的净期权权利金（买入看涨减买入看跌），以零轴为基准。右：同一指标在已收盘交易时段内的逐分钟走势，数据来自实时盘面存储。请看形态而非绝对水平；方向为近似值。">?</span></div>'
+  + '</div>';
+  if(!spark.length){
+    return '<div class="oew-panel">' + head + '<div class="oew-pbody"><p class="oew-empty">'
+      + bi('No session history on file yet for the tide. It fills in as closes accrue.',
+           '资金潮汐暂无历史场次记录。随着收盘场次积累会逐步填充。') + '</p></div></div>';
+  }
+  return '<div class="oew-panel">' + head
+    + '<div class="oew-pbody"><div class="oew-fl-tide">'
+      + '<div>'
+        + '<div class="oew-fl-cvh">' + bi('Thirty sessions','近三十个交易日') + '</div>'
+        + '<div class="oew-fl-cv"><canvas id="oew-fl-spark" role="img"'
+          + ' aria-label="Net options premium over the last thirty sessions"></canvas></div>'
+      + '</div>'
+      + '<div>'
+        + '<div class="oew-fl-cvh">' + bi('Today, minute by minute','今日逐分钟') + '</div>'
+        + '<div id="oew-fl-unfold"><div class="oew-fl-null">'
+          + bi('No intraday record for this session.','本场次暂无盘中记录。') + '</div></div>'
+        + '<div class="oew-fl-read" id="oew-fl-read"></div>'
+      + '</div>'
+    + '</div></div>'
+    + '<div class="oew-pfoot"><span>'
+      + bi('Shape only. Direction is approximate ~ and this is never a buy or sell signal.',
+           '仅供观察形态。方向为近似值 ~，从不构成买卖信号。') + '</span>'
+      + (((desk && desk.market_tide) || {}).asof
+          ? '<span class="oew-asof mono">' + esc(desk.market_tide.asof) + '</span>' : '')
+    + '</div>'
+  + '</div>';
+}
+
+/* Both curves are ZERO-ANCHORED: the baseline is 0, never the series minimum,
+   because the SIGN is the read. Drawn once per paint — no animation, no loop. */
+function flDrawSpark(){
+  var cv = document.getElementById('oew-fl-spark');
+  var spark = ((flDesk && flDesk.market_tide) || {}).spark || [];
+  if(!cv || !cv.getContext || spark.length < 2) return;
+  var W = cv.offsetWidth, H = cv.offsetHeight;
+  if(!W || !H) return;
+  var dpr = window.devicePixelRatio || 1, ctx = cv.getContext('2d');
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  var up = cssVar('--up','#45b873'), dn = cssVar('--down','#e06464'), line = cssVar('--line','#2a2f3a');
+  var vals = spark.map(function(d){ return num(d.net_premium_mn) || 0; });
+  var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+  var top = Math.max(mx, 0), bot = Math.min(mn, 0), rng = (top - bot) || 1, pad = 5;
+  function X(i){ return (i / (vals.length - 1)) * W; }
+  function Y(v){ return H - pad - ((v - bot) / rng) * (H - pad * 2); }
+  var zeroY = Y(0);
+  [true,false].forEach(function(above){
+    ctx.save(); ctx.beginPath();
+    if(above) ctx.rect(0,0,W,zeroY); else ctx.rect(0,zeroY,W,H-zeroY);
+    ctx.clip(); ctx.beginPath(); ctx.moveTo(X(0), zeroY);
+    vals.forEach(function(v,i){ ctx.lineTo(X(i), Y(v)); });
+    ctx.lineTo(X(vals.length-1), zeroY); ctx.closePath();
+    ctx.globalAlpha = .20; ctx.fillStyle = above ? up : dn; ctx.fill(); ctx.restore();
+  });
+  ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(W, zeroY);
+  ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  var last = vals[vals.length-1];
+  ctx.beginPath();
+  vals.forEach(function(v,i){ i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v)); });
+  ctx.strokeStyle = last >= 0 ? up : dn; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(vals.length-1), Y(last), 2.6, 0, Math.PI*2);
+  ctx.fillStyle = last >= 0 ? up : dn; ctx.fill();
+}
+function flDrawUnfold(){
+  var cv = document.getElementById('oew-fl-curve');
+  var mins = (flTide && flTide.minutes) || [];
+  if(!cv || !cv.getContext || mins.length < 2) return;
+  var W = cv.offsetWidth, H = cv.offsetHeight;
+  if(!W || !H) return;
+  var dpr = window.devicePixelRatio || 1, ctx = cv.getContext('2d');
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  var up = cssVar('--up','#45b873'), dn = cssVar('--down','#e06464'), line = cssVar('--line','#2a2f3a');
+  /* minutes[] carries CUMULATIVE ncp/npp, so the lean at each minute is ncp − npp. */
+  var vals = mins.map(function(m){ return (num(m.ncp) || 0) - (num(m.npp) || 0); });
+  var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+  var top = Math.max(mx, 0), bot = Math.min(mn, 0), rng = (top - bot) || 1, pad = 5;
+  function X(i){ return (i / (vals.length - 1)) * W; }
+  function Y(v){ return H - pad - ((v - bot) / rng) * (H - pad * 2); }
+  var zeroY = Y(0);
+  [true,false].forEach(function(above){
+    ctx.save(); ctx.beginPath();
+    if(above) ctx.rect(0,0,W,zeroY); else ctx.rect(0,zeroY,W,H-zeroY);
+    ctx.clip(); ctx.beginPath(); ctx.moveTo(X(0), zeroY);
+    vals.forEach(function(v,i){ ctx.lineTo(X(i), Y(v)); });
+    ctx.lineTo(X(vals.length-1), zeroY); ctx.closePath();
+    ctx.globalAlpha = .20; ctx.fillStyle = above ? up : dn; ctx.fill(); ctx.restore();
+  });
+  ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(W, zeroY);
+  ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+  var last = vals[vals.length-1];
+  ctx.beginPath();
+  vals.forEach(function(v,i){ i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v)); });
+  ctx.strokeStyle = last >= 0 ? up : dn; ctx.lineWidth = 1.7; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(vals.length-1), Y(last), 2.8, 0, Math.PI*2);
+  ctx.fillStyle = last >= 0 ? up : dn; ctx.fill();
+}
+/* The intraday overlay. Absent store, unreachable file, or fewer than two
+   minutes on record all land in the SAME place: the labelled flat track the
+   panel already renders stays, and nothing else on the page changes. */
+function flApplyTide(tide){
+  var host = document.getElementById('oew-fl-unfold');
+  var readEl = document.getElementById('oew-fl-read');
+  var mins = (tide && tide.minutes) || [];
+  if(!host || mins.length < 2) return;
+  flTide = tide;
+  var grossSum = 0, vals = mins.map(function(m){
+    grossSum += Math.abs(num(m.gross) || 0);
+    return (num(m.ncp) || 0) - (num(m.npp) || 0);
+  });
+  var last = vals[vals.length-1], peak = 0;
+  vals.forEach(function(v){ if(Math.abs(v) > Math.abs(peak)) peak = v; });
+  var peakAbs = Math.abs(peak);
+  /* "Two-way" is an honest state, not a rounding artefact: a close inside 2% of
+     the day's gross premium is noise, not a lean. (flow_desk's own rule.) */
+  var flat = grossSum > 0 && Math.abs(last) < grossSum * 0.02;
+  host.innerHTML = '<div class="oew-fl-cv"><canvas id="oew-fl-curve" role="img"'
+    + ' aria-label="Net options premium through the completed session"></canvas></div>';
+  if(readEl){
+    var lean = flat ? bi('Two-way','多空均衡') : (last > 0 ? bi('Calls led','看涨主导') : bi('Puts led','看跌主导'));
+    var shape;
+    if(peakAbs > 0 && !flat && (last > 0) !== (peak > 0)) shape = bi('turned the other way during the day','盘中方向反转');
+    else if(peakAbs > 0 && Math.abs(last) >= peakAbs * 0.95) shape = bi('the lean built right into the close','倾向持续加强至收盘');
+    else if(peakAbs > 0 && Math.abs(last) < peakAbs * 0.6) shape = bi('it faded well off the day’s peak','较当日峰值明显回落');
+    else shape = bi('it held one side most of the day','全天基本维持单边');
+    readEl.innerHTML = '<span class="net ' + (flat ? '' : (last > 0 ? 'pos' : 'neg')) + ' mono">'
+      + '~' + smoney(last / 1e6) + '</span><span>' + lean + '</span><span>· ' + shape + '</span>';
+  }
+  flDrawUnfold();
+}
+function renderFlow(host, desk, cohorts){
+  if(!desk || !desk.sector_heatmap){
+    host.innerHTML = emptyPanel('The flow desk did not report for this close. It returns with the next options tape.',
+      '本次收盘没有资金流台数据。下一次期权盘面数据到位后会恢复。');
+    return;
+  }
+  flDesk = desk;
+  host.innerHTML = flSectorPanel(desk) + flThemePanel(desk, cohorts) + flEtfPanel(desk) + flTidePanel(desk);
+  flDrawSpark();
+  var url = r2Url('live_flow/tide_current.json');
+  if(!url) return;                                   // no store configured — stay flat
+  fetch(url, { cache:'no-cache' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .catch(function(){ return null; })
+    .then(function(t){ if(t){ try{ flApplyTide(t); }catch(e){} } });
+}
+
 /* ══════════ SCANNER ══════════ */
+/* Column tuple: [view class, extra class, EN, ZH, sort key]. The sort key is the
+   payload field the header sorts on — the same field the cell renders, so a
+   column can never sort by something other than what it shows. */
 var SC_COLS = [
-  ['c-ovr','',       'Spot','现价'],
-  ['c-ovr','',       'IV 30d','30日隐波'],
-  ['c-ovr','hide-sm','IV rank','隐波分位'],
-  ['c-ovr','',       'Expected move','预期波幅'],
-  ['c-ovr','hide-sm','Put/call OI','认沽认购持仓比'],
-  ['c-ovr','hide-sm','Volume','成交量'],
-  ['c-ovr','',       'Premium','权利金'],
-  ['c-flow','',      'Net premium','净权利金'],
-  ['c-flow','',      'Same-day share','当日到期占比'],
-  ['c-flow','hide-sm','Volume','成交量'],
-  ['c-flow','',      'Premium','权利金'],
-  ['c-pos','',       'Spot','现价'],
-  ['c-pos','',       'From flip','距翻转位'],
-  ['c-pos','hide-sm','Ceiling','上方墙'],
-  ['c-pos','hide-sm','Floor','下方墙'],
-  ['c-pos','',       'Behaviour','表现'],
-  ['','',            'Tone','方向'],
-  ['','',            'Data age','数据新鲜度']
+  ['c-ovr','',       'Spot','现价','spot'],
+  ['c-ovr','',       'IV 30d','30日隐波','iv30'],
+  ['c-ovr','hide-sm','IV rank','隐波分位','iv_rank'],
+  ['c-ovr','',       'Expected move','预期波幅','implied_move_30d'],
+  ['c-ovr','hide-sm','Put/call OI','认沽认购持仓比','pc_oi'],
+  ['c-ovr','hide-sm','Volume','成交量','volume'],
+  ['c-ovr','',       'Premium','权利金','gross_premium_mn'],
+  ['c-flow','',      'Net premium','净权利金','net_prem_mn'],
+  ['c-flow','',      'Same-day share','当日到期占比','zerodte_share'],
+  ['c-flow','hide-sm','Volume','成交量','volume'],
+  ['c-flow','',      'Premium','权利金','gross_premium_mn'],
+  ['c-pos','',       'Spot','现价','spot'],
+  ['c-pos','',       'From flip','距翻转位','dist_to_flip_pct'],
+  ['c-pos','hide-sm','Ceiling','上方墙','wall_up'],
+  ['c-pos','hide-sm','Floor','下方墙','wall_down'],
+  ['c-pos','',       'Behaviour','表现','gamma_regime'],
+  ['','',            'Tone','方向','net_prem_tone'],
+  ['','',            'Data age','数据新鲜度','asof']
 ];
 /* Preset values are the options_screener page's OWN shipped thresholds — reused,
-   never reinvented (templates/options_screener.html.j2 applyPreset). */
+   never reinvented (templates/options_screener.html.j2 applyPreset). The seventh,
+   put-heavy open interest, comes over with the same page's own predicate. */
 var SC_PRESETS = [
   ['premium',  'Premium leaders','权利金居前'],
   ['volsurge', 'Volume surge','成交激增'],
   ['highrank', 'Expensive options','期权偏贵'],
   ['zerodte',  'Same-day heavy','当日到期为主'],
   ['putskew',  'Downside cover bid','下行保护受追捧'],
-  ['nearflip', 'Near a flip level','接近翻转位']
+  ['nearflip', 'Near a flip level','接近翻转位'],
+  ['putheavy', 'Put-heavy OI','认沽持仓偏重']
 ];
+/* The range filters, ported from options_screener.html.j2:279-394. Labels are the
+   COLUMN's own words wherever the field has a column (so the control reads like
+   the thing it filters); the three fields with no column keep the screener's own
+   shipped pair. `flip` is max-only and absolute, exactly as the screener has it. */
+var SC_RANGES = [
+  ['iv30',   'iv30',             'IV 30d','30日隐波'],
+  ['ivrank', 'iv_rank',          'IV rank','隐波分位'],
+  ['impl',   'implied_move_30d', 'Expected move','预期波幅'],
+  ['pc',     'pc_oi',            'Put/call OI','认沽认购持仓比'],
+  ['vol',    'volume',           'Volume','成交量'],
+  ['prem',   'gross_premium_mn', 'Premium','权利金'],
+  ['dte',    'zerodte_share',    'Same-day share','当日到期占比'],
+  ['relvol', 'rel_volume',       'Rel vol ×','相对成交量×'],
+  ['skew',   'skew_pp',          'Put-skew pp','认沽溢价pp'],
+  ['ivsp',   'ivspread_pp',      'IV-spread pp','IV价差pp']
+];
+var SC_TONE_ORDER = { 'call-leaning':1, 'neutral':0, 'put-leaning':-1 };
 var scRows = [], scPreset = 'premium', scSkew75 = null, scAsof = null;
+/* idx is the header POSITION, not the key: three fields appear in two views
+   each, and aria-sort must mark exactly one header, never both copies. */
+var scSort = { key:'gross_premium_mn', dir:'desc', idx:7 };
 
 function ageCell(rowAsof, freshest){
   var d = 0;
@@ -1088,11 +1648,12 @@ function ageCell(rowAsof, freshest){
   for(var i = 0; i < 3; i++) s += '<i class="oew-pip' + (i < on ? ' on' : '') + '"></i>';
   return s + '</span><span class="d' + (d > 3 ? ' stale' : '') + ' mono">' + d + 'd</span></span>';
 }
-function scFilter(rows){
+function scPresetFilter(rows){
   if(scPreset === 'volsurge') return rows.filter(function(r){ return num(r.rel_volume) !== null && num(r.rel_volume) >= 2; });
   if(scPreset === 'highrank') return rows.filter(function(r){ return num(r.iv_rank) !== null && num(r.iv_rank) >= 80; });
   if(scPreset === 'zerodte')  return rows.filter(function(r){ return num(r.zerodte_share) !== null && num(r.zerodte_share) >= 60; });
   if(scPreset === 'nearflip') return rows.filter(function(r){ var d = num(r.dist_to_flip_pct); return d !== null && Math.abs(d) <= 1; });
+  if(scPreset === 'putheavy') return rows.filter(function(r){ return num(r.pc_oi) !== null && num(r.pc_oi) >= 1.5; });
   if(scPreset === 'putskew'){
     if(scSkew75 === null){
       var vals = rows.map(function(r){ return num(r.skew_pp); }).filter(function(v){ return v !== null; }).sort(function(a,b){ return a-b; });
@@ -1102,8 +1663,72 @@ function scFilter(rows){
   }
   return rows.slice();
 }
+/* A range input reads NaN when empty or unparseable, and NaN comparisons are all
+   false — which is exactly the "no bound set" behaviour, and why every check
+   below is guarded by !isNaN rather than by a truthiness test (0 is a real
+   bound). A row missing the field fails an ACTIVE bound: a null is not a zero
+   and must not slip through a filter the reader set. */
+function scInputNum(id){
+  var el = document.getElementById(id);
+  return el ? parseFloat(el.value) : NaN;
+}
+function scInputStr(id){
+  var el = document.getElementById(id);
+  return el ? String(el.value || '').trim() : '';
+}
+function scRangeFilter(rows){
+  var q = scInputStr('oew-f-q').toUpperCase();
+  var sector = scInputStr('oew-f-sector');
+  var flipMax = scInputNum('oew-f-flip-max');
+  var bounds = SC_RANGES.map(function(R){
+    return [R[1], scInputNum('oew-f-' + R[0] + '-min'), scInputNum('oew-f-' + R[0] + '-max')];
+  });
+  return rows.filter(function(r){
+    if(q && String(r.ticker || '').toUpperCase().indexOf(q) === -1
+         && String(r.sector || '').toUpperCase().indexOf(q) === -1) return false;
+    if(sector && r.sector !== sector) return false;
+    for(var i = 0; i < bounds.length; i++){
+      var key = bounds[i][0], lo = bounds[i][1], hi = bounds[i][2];
+      if(isNaN(lo) && isNaN(hi)) continue;
+      var v = num(r[key]);
+      if(v === null) return false;
+      if(!isNaN(lo) && v < lo) return false;
+      if(!isNaN(hi) && v > hi) return false;
+    }
+    if(!isNaN(flipMax)){
+      var d = num(r.dist_to_flip_pct);
+      if(d === null || Math.abs(d) > flipMax) return false;
+    }
+    return true;
+  });
+}
+/* Preset FIRST, then the ranges — the composition the spec pins, and the order a
+   reader expects: the chip picks the population, the ranges narrow it. */
+function scFilter(rows){ return scRangeFilter(scPresetFilter(rows)); }
+function scSortRows(rows){
+  var col = scSort.key, dir = scSort.dir;
+  return rows.slice().sort(function(a, b){
+    var av = a[col], bv = b[col];
+    if(av === null || av === undefined){ return (bv === null || bv === undefined) ? 0 : 1; }
+    if(bv === null || bv === undefined) return -1;
+    if(col === 'net_prem_tone'){
+      var ao = SC_TONE_ORDER[av] === undefined ? 0 : SC_TONE_ORDER[av];
+      var bo = SC_TONE_ORDER[bv] === undefined ? 0 : SC_TONE_ORDER[bv];
+      return dir === 'desc' ? bo - ao : ao - bo;
+    }
+    if(num(av) === null || num(bv) === null){
+      return dir === 'desc' ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+    }
+    return dir === 'desc' ? num(bv) - num(av) : num(av) - num(bv);
+  });
+}
+function scVisibleRows(){ return scSortRows(scFilter(scRows)); }
 function scBody(){
-  var rows = scFilter(scRows).sort(function(a,b){ return (num(b.gross_premium_mn)||0) - (num(a.gross_premium_mn)||0); }).slice(0, 200);
+  /* NO SLICE. Every screened name on file renders — the cap this line used to
+     carry is what the subtitle now declares away ("All N screened names"), and a
+     truncation a reader cannot see is the exact defect the declared-cap sentence
+     existed to work around. */
+  var rows = scVisibleRows();
   if(!rows.length) return '<tr><td colspan="19" class="left"><span class="oew-empty">'
     + bi('No name in this close matched that view. Pick another chip to widen the list.',
          '本次收盘没有符合该视图的标的。选择其他标签可扩大范围。')
@@ -1141,12 +1766,93 @@ function scBody(){
       + '</tr>';
   }).join('');
 }
+function scAria(i){
+  return ' aria-sort="' + (scSort.idx === i ? (scSort.dir === 'asc' ? 'ascending' : 'descending') : 'none') + '"';
+}
 function scHead(){
-  var h = '<th class="left">' + bi('Name','标的') + '</th>';
-  SC_COLS.forEach(function(c){
-    h += '<th class="' + c[0] + (c[1] ? ' ' + c[1] : '') + '">' + bi(c[2], c[3]) + '</th>';
+  var h = '<th class="left" data-sort="ticker" data-i="0" tabindex="0"' + scAria(0) + '>' + bi('Name','标的') + '</th>';
+  SC_COLS.forEach(function(c, i){
+    h += '<th class="' + c[0] + (c[1] ? ' ' + c[1] : '') + '" data-sort="' + c[4] + '" data-i="' + (i + 1) + '"'
+      + ' tabindex="0"' + scAria(i + 1) + '>' + bi(c[2], c[3]) + '</th>';
   });
   return h;
+}
+/* The collapsed "More filters" disclosure. Operates on the rows ALREADY fetched —
+   no second request, no server round trip. */
+function scFiltersHTML(rows){
+  var sectors = {}, opts = '';
+  rows.forEach(function(r){ if(r.sector) sectors[r.sector] = 1; });
+  Object.keys(sectors).sort().forEach(function(s){
+    opts += '<option value="' + esc(s) + '">' + esc(s) + '</option>';
+  });
+  var ranges = SC_RANGES.map(function(R){
+    return '<label class="oew-sc-f">' + bi(R[2], R[3]) + '<span class="oew-sc-pair">'
+      + '<input type="number" id="oew-f-' + R[0] + '-min" step="any" aria-label="' + esc(R[2]) + ' minimum">'
+      + '<span class="sep">–</span>'
+      + '<input type="number" id="oew-f-' + R[0] + '-max" step="any" aria-label="' + esc(R[2]) + ' maximum">'
+      + '</span></label>';
+  }).join('');
+  return '<details class="oew-sc-more" id="oew-sc-more">'
+    + '<summary>' + bi('More filters — ranges, sector, text','更多筛选 — 数值区间、板块、文本') + '</summary>'
+    + '<div class="oew-sc-fgrid">'
+      + '<label class="oew-sc-f wide">' + bi('Name or sector','标的或板块')
+        + '<input type="text" id="oew-f-q" autocomplete="off" spellcheck="false"'
+        + ' placeholder="Filter ticker or sector…" data-ph-zh="按代码或板块筛选…"></label>'
+      + '<label class="oew-sc-f">' + bi('Sector','板块')
+        + '<select id="oew-f-sector"><option value="" data-en="All sectors" data-zh="全部板块">All sectors</option>'
+        + opts + '</select></label>'
+      + ranges
+      + '<label class="oew-sc-f">' + bi('From flip','距翻转位') + '<span class="oew-sc-pair">'
+        + '<input type="number" id="oew-f-flip-max" step="any" min="0" aria-label="Distance from flip, maximum">'
+        + '</span></label>'
+    + '</div>'
+    + '<div class="oew-sc-fbar">'
+      + '<button class="oew-sc-clear" type="button" id="oew-f-clear">' + bi('Clear all','清除全部') + '</button>'
+    + '</div>'
+  + '</details>';
+}
+/* Repaint after a preset, a filter or a sort. The thead is re-rendered too: the
+   sort arrow is drawn from aria-sort, so the two can never disagree. */
+function scRepaint(){
+  var body = document.getElementById('oew-sc-body');
+  if(body) body.innerHTML = scBody();
+  var head = document.getElementById('oew-sc-head');
+  if(head) head.innerHTML = scHead();
+}
+/* CSV of what is on screen — the filtered, sorted rows, every field the payload
+   carries. Same Blob pattern the screener page ships. */
+function scExportCSV(){
+  var rows = scVisibleRows();
+  if(!rows.length) return;
+  var keys = Object.keys(rows[0]);
+  var lines = [keys.join(',')];
+  rows.forEach(function(r){
+    lines.push(keys.map(function(k){
+      var v = r[k];
+      if(v === null || v === undefined) return '';
+      var s = String(v);
+      if(s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) s = '"' + s.replace(/"/g,'""') + '"';
+      return s;
+    }).join(','));
+  });
+  var url = URL.createObjectURL(new Blob([lines.join('\n')], { type:'text/csv' }));
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'options_scanner_' + (scAsof || new Date().toISOString().slice(0,10)) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+/* <option> and placeholder cannot hold the l-en/l-zh dual span, so they are
+   single-language markup relabelled on theme.js's own 'langchange' event — the
+   options_screener page's shipped pattern. */
+function scApplyLang(){
+  var zh = document.documentElement && document.documentElement.getAttribute('data-lang') === 'zh';
+  var q = document.getElementById('oew-f-q');
+  if(q) q.placeholder = zh ? (q.getAttribute('data-ph-zh') || q.placeholder) : 'Filter ticker or sector…';
+  var opts = document.querySelectorAll('#oew-f-sector option[data-zh]');
+  Array.prototype.forEach.call(opts, function(o){
+    o.textContent = zh ? o.getAttribute('data-zh') : (o.getAttribute('data-en') || o.textContent);
+  });
 }
 function renderScanner(host, payload){
   var rows = (payload && payload.rows) || [];
@@ -1166,14 +1872,15 @@ function renderScanner(host, payload){
     + '<div class="oew-panel">'
       + '<div class="oew-phead">'
         + '<h2 class="oew-ph-title">' + bi('Screener','筛选台') + '</h2>'
-        // §0.20 fix: "Top 200" is only true when the table's own .slice(0, 200)
-        // (scBody(), above) actually truncates something — otherwise every row
-        // on file is already shown, and the cap language is the exact
-        // undeclared-cap-shaped lie this sentence exists to prevent.
-        + '<span class="oew-ph-sub">' + (rows.length > 200
-            ? bi('Top 200 by premium, sorted', '按权利金排序，前200')
-            : bi(rows.length + ' names, sorted by premium', rows.length + ' 个标的，按权利金排序')) + '</span>'
-        + '<a class="oew-ph-more" href="options_screener.html">' + bi('Open the full screener for all ' + rows.length, '打开完整筛选台，查看全部 ' + rows.length) + ' ↗</a>'
+        // The cap is GONE (scBody no longer slices), so the subtitle no longer
+        // has to declare one — it states the population and the two controls
+        // that work on it. The old conditional "Top 200" wording, and the
+        // "open the full screener" link that existed to escape that cap, retire
+        // with the truncation itself: nothing is withheld here any more.
+        + '<span class="oew-ph-sub">'
+          + '<span class="l-en">All <b class="mono">' + rows.length + '</b> screened names — sort any column, filter below.</span>'
+          + '<span class="l-zh">全部 <b class="mono">' + rows.length + '</b> 个筛选标的 — 可按列排序、下方筛选。</span>'
+        + '</span>'
         + '<span class="oew-help" tabindex="0" role="button"'
           + ' data-tip-en="Chains are snapshots taken after the close. Implied volatility, walls and max-pain come from those snapshots; volume and premium come from the day’s tape. IV rank compares today with the history we hold for that name, so a name we have tracked only briefly has a short history behind its number. Direction is approximate; size is reliable."'
           + ' data-tip-zh="期权链为收盘后的快照。隐含波动率、墙位与最大痛点来自这些快照；成交量与权利金来自当日逐笔。隐波分位将今日与我们持有的该标的历史比较，因此跟踪时间较短的标的，其数字背后的历史也较短。方向为近似值，规模数据可靠。">?</span>'
@@ -1181,10 +1888,13 @@ function renderScanner(host, payload){
           + '<button type="button" data-view="ovr" aria-pressed="true">' + bi('Overview','总览') + '</button>'
           + '<button type="button" data-view="flow" aria-pressed="false">' + bi('Flow','资金') + '</button>'
           + '<button type="button" data-view="pos" aria-pressed="false">' + bi('Positioning','持仓结构') + '</button>'
-        + '</span></div>'
+        + '</span>'
+        + '<button class="oew-sc-csv" type="button" id="oew-sc-csv">' + bi('Export CSV','导出CSV') + '</button>'
+        + '</div>'
       + '</div>'
+      + scFiltersHTML(rows)
       + '<div class="tbl-scroll oew-tblwrap"><table class="oew-tbl" data-view="ovr">'
-        + '<thead><tr>' + scHead() + '</tr></thead><tbody id="oew-sc-body">' + scBody() + '</tbody>'
+        + '<thead><tr id="oew-sc-head">' + scHead() + '</tr></thead><tbody id="oew-sc-body">' + scBody() + '</tbody>'
       + '</table></div>'
       + '<div class="oew-pfoot">'
         + '<span class="oew-stance st-aside">' + bi('Stand aside','暂时观望') + '</span>'
@@ -1193,6 +1903,7 @@ function renderScanner(host, payload){
         + (scAsof ? '<span class="oew-asof mono">' + esc(scAsof) + '</span>' : '')
       + '</div>'
     + '</div>';
+  scApplyLang();
 }
 
 /* ══════════ TICKER ══════════ */
@@ -1523,6 +2234,337 @@ function expirationPressureHTML(){
   + '</div>';
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   THE RAW-STRUCTURE SHELF  (OIP W1.6-A · ONE_DOOR_RULING_AND_SPEC §2.2)
+   gex.html's six charts, re-homed inside the "Under the hood" <details> this
+   page already ships. Three rules make the port safe:
+
+   1. ZERO extra network. Every figure below is read off the gex/<T>.json
+      renderTicker already fetched — the shelf adds charts, never a request.
+   2. Drawn on FIRST OPEN, not on render: a closed shelf costs nothing, and a
+      reader who never opens it never pays for 300 heatmap cells.
+   3. Colour is `style="fill:var(--up)"`, never a resolved hex. SVG resolves
+      CSS variables live, so the zh 红涨绿跌 flip repaints these charts with no
+      redraw and no listener — the failure mode gex.js has (it re-renders the
+      whole detail view on 'langchange') simply cannot occur here.
+
+   Each sub-chart owns its own honest empty slot: a name whose payload lacks the
+   block says so in that slot and the other five still draw.
+   ══════════════════════════════════════════════════════════════════════════ */
+function rawEmpty(en, zh){ return '<p class="oew-raw-empty">' + bi(en, zh) + '</p>'; }
+function cnum(v){
+  var n = num(v); if(n === null) return '—';
+  var a = Math.abs(n), s = n < 0 ? '−' : '';
+  if(a >= 1e6) return s + (a/1e6).toFixed(2) + 'M';
+  if(a >= 1e3) return s + (a/1e3).toFixed(1) + 'k';
+  return s + a.toFixed(0);
+}
+function rawItem(hEn, hZh, sEn, sZh, body){
+  return '<div class="oew-raw-item"><h3 class="oew-raw-h">' + bi(hEn, hZh) + '</h3>'
+    + '<p class="oew-raw-sub">' + bi(sEn, sZh) + '</p>' + body + '</div>';
+}
+
+/* ── dealer gamma by strike — diverging bars, strikes down the y axis ── */
+function rawGammaBarsSVG(gx){
+  var rows = ((gx.walls || {}).by_strike || []).filter(function(r){ return num(r.K) !== null; });
+  if(!rows.length) return rawEmpty('No per-strike record on file for this name in this close.',
+    '本次收盘没有该标的的逐行权价记录。');
+  var s = gx.summary || {};
+  var W = 540, H = 400, mL = 52, mR = 78, mT = 12, mB = 20;
+  var ks = rows.map(function(r){ return num(r.K); });
+  var loK = Math.min.apply(null, ks), hiK = Math.max.apply(null, ks);
+  var spot = num(s.spot);
+  if(spot !== null){ loK = Math.min(loK, spot); hiK = Math.max(hiK, spot); }
+  var padK = (hiK - loK) * 0.04 || 1; loK -= padK; hiK += padK;
+  function Y(v){ return mT + (hiK - v) / (hiK - loK) * (H - mT - mB); }
+  var plotW = W - mL - mR, x0 = mL + plotW / 2, maxAbs = 0;
+  rows.forEach(function(r){ maxAbs = Math.max(maxAbs, Math.abs(num(r.net_mn) || 0)); });
+  maxAbs = maxAbs || 1;
+  var sc = (plotW / 2 - 4) / maxAbs;
+  var bh = Math.max(2, Math.min(13, (H - mT - mB) / rows.length * 0.78));
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Dealer gamma by strike">';
+  svg += '<line x1="' + x0 + '" y1="' + mT + '" x2="' + x0 + '" y2="' + (H - mB)
+    + '" style="stroke:var(--line)" stroke-width="1"/>';
+  for(var i = 0; i <= 5; i++){
+    var pv = loK + (hiK - loK) * i / 5, yy = Y(pv);
+    svg += '<text x="' + (mL - 6) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="10"'
+      + ' style="fill:var(--muted)">' + esc(lvl(pv)) + '</text>';
+    svg += '<line x1="' + mL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + yy.toFixed(1)
+      + '" style="stroke:var(--line)" stroke-width="0.5" opacity="0.4"/>';
+  }
+  rows.forEach(function(r){
+    var v = num(r.net_mn) || 0, yy = Y(num(r.K)), w = Math.abs(v) * sc;
+    if(!w) return;
+    var x = v >= 0 ? x0 : x0 - w;
+    svg += '<rect x="' + x.toFixed(1) + '" y="' + (yy - bh/2).toFixed(1) + '" width="' + w.toFixed(1)
+      + '" height="' + bh.toFixed(1) + '" style="fill:var(' + (v >= 0 ? '--up' : '--down') + ')" opacity="0.82"/>';
+  });
+  [['--up', s.call_wall, 'call wall', '看涨墙'], ['--text', s.spot, 'last close', '最新收盘'],
+   ['--oew-accent', s.gamma_flip, 'flip', '翻转位'], ['--down', s.put_wall, 'put wall', '看跌墙']]
+    .forEach(function(L){
+      var v = num(L[1]); if(v === null) return;
+      var yy = Y(v);
+      svg += '<line x1="' + mL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + yy.toFixed(1)
+        + '" style="stroke:var(' + L[0] + ')" stroke-width="1.2" stroke-dasharray="4 3"/>';
+      svg += '<text x="' + (W - mR + 5) + '" y="' + (yy + 3).toFixed(1) + '" font-size="10" style="fill:var('
+        + L[0] + ')" class="l-en">' + esc(L[2]) + '</text>';
+      svg += '<text x="' + (W - mR + 5) + '" y="' + (yy + 3).toFixed(1) + '" font-size="10" style="fill:var('
+        + L[0] + ')" class="l-zh">' + esc(L[3]) + '</text>';
+    });
+  svg += '</svg>';
+  return '<div class="oew-raw-box">' + svg + '</div>'
+    + '<div class="oew-raw-leg"><span><i style="background:var(--up)"></i>' + bi('call gamma','看涨 Gamma')
+    + '</span><span><i style="background:var(--down)"></i>' + bi('put gamma','看跌 Gamma') + '</span></div>';
+}
+
+/* ── net-gamma profile — the curve re-evaluated across spot ── */
+function rawProfileSVG(gx){
+  var p = gx.profile || {};
+  var xs = p.spots || [], ys = p.gamma_bn || [];
+  if(xs.length < 2 || ys.length !== xs.length) return rawEmpty(
+    'No profile curve on file for this name in this close.', '本次收盘没有该标的的曲线记录。');
+  var W = 540, H = 300, mL = 46, mR = 14, mT = 14, mB = 26;
+  var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs);
+  var ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
+  if(ylo > 0) ylo = 0; if(yhi < 0) yhi = 0;
+  var ypad = (yhi - ylo) * 0.08 || 1; ylo -= ypad; yhi += ypad;
+  function X(v){ return mL + (v - xlo) / ((xhi - xlo) || 1) * (W - mL - mR); }
+  function Y(v){ return mT + (yhi - v) / ((yhi - ylo) || 1) * (H - mT - mB); }
+  var zeroY = Y(0);
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Net dealer gamma against spot">';
+  for(var i = 0; i <= 4; i++){
+    var gv = ylo + (yhi - ylo) * i / 4, yy = Y(gv);
+    svg += '<line x1="' + mL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + yy.toFixed(1)
+      + '" style="stroke:var(--line)" stroke-width="0.5" opacity="0.4"/>';
+    svg += '<text x="' + (mL - 5) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="10"'
+      + ' style="fill:var(--muted)">' + gv.toFixed(1) + '</text>';
+  }
+  for(var k = 0; k < xs.length - 1; k++){
+    var xA = X(xs[k]), xB = X(xs[k+1]), yA = ys[k], yB = ys[k+1];
+    var col = ((yA + yB) / 2 >= 0) ? '--up' : '--down';
+    svg += '<path d="M' + xA.toFixed(1) + ' ' + zeroY.toFixed(1) + ' L' + xA.toFixed(1) + ' ' + Y(yA).toFixed(1)
+      + ' L' + xB.toFixed(1) + ' ' + Y(yB).toFixed(1) + ' L' + xB.toFixed(1) + ' ' + zeroY.toFixed(1)
+      + 'Z" style="fill:var(' + col + ')" opacity="0.16"/>';
+  }
+  svg += '<line x1="' + mL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + zeroY.toFixed(1)
+    + '" style="stroke:var(--muted)" stroke-width="1"/>';
+  svg += '<path d="' + xs.map(function(v,i2){ return (i2 ? 'L' : 'M') + X(v).toFixed(1) + ' ' + Y(ys[i2]).toFixed(1); }).join(' ')
+    + '" fill="none" style="stroke:var(--text)" stroke-width="1.6"/>';
+  var sp = num(p.spot), fp = num(p.flip);
+  if(sp !== null) svg += '<line x1="' + X(sp).toFixed(1) + '" y1="' + mT + '" x2="' + X(sp).toFixed(1)
+    + '" y2="' + (H - mB) + '" style="stroke:var(--text)" stroke-width="1" stroke-dasharray="3 3"/>';
+  if(fp !== null) svg += '<line x1="' + X(fp).toFixed(1) + '" y1="' + mT + '" x2="' + X(fp).toFixed(1)
+    + '" y2="' + (H - mB) + '" style="stroke:var(--oew-accent)" stroke-width="1.2" stroke-dasharray="4 3"/>';
+  for(var j = 0; j <= 4; j++){
+    var xv = xlo + (xhi - xlo) * j / 4;
+    svg += '<text x="' + X(xv).toFixed(1) + '" y="' + (H - mB + 14) + '" text-anchor="middle" font-size="9.5"'
+      + ' style="fill:var(--muted)">' + esc(lvl(xv)) + '</text>';
+  }
+  svg += '</svg>';
+  return '<div class="oew-raw-box">' + svg + '</div>'
+    + '<div class="oew-raw-leg"><span><i style="background:var(--text)"></i>' + bi('last close','最新收盘')
+    + '</span><span><i style="background:var(--oew-accent)"></i>' + bi('flip','翻转位') + '</span></div>';
+}
+
+/* ── strike × expiry surface ── */
+function rawHeatHTML(gx){
+  var sf = gx.surface || {}, s = gx.summary || {};
+  var strikes = sf.strikes || [], exps = sf.expiries || [], z = sf.z_gex || [];
+  if(!strikes.length || !exps.length || !z.length) return rawEmpty(
+    'No expiry surface on file for this name in this close.', '本次收盘没有该标的的到期曲面记录。');
+  var mx = num(sf.gex_max) || 1, spot = num(s.spot);
+  var nearest = null, best = Infinity;
+  strikes.forEach(function(k){
+    if(spot === null) return;
+    var d = Math.abs(k - spot); if(d < best){ best = d; nearest = k; }
+  });
+  var h = '<table class="oew-raw-heat"><thead><tr><th></th>';
+  exps.forEach(function(e, i){
+    h += '<th>' + esc(e) + '<br><span class="mono">' + esc(String((sf.days || [])[i] == null ? '' : sf.days[i] + 'd')) + '</span></th>';
+  });
+  h += '</tr></thead><tbody>';
+  strikes.forEach(function(k, ri){
+    h += '<tr' + (k === nearest ? ' class="spotrow"' : '') + '><td class="kk">' + esc(lvl(k)) + '</td>';
+    exps.forEach(function(e, ci){
+      var v = (z[ri] || [])[ci];
+      if(v === null || v === undefined){ h += '<td style="background:color-mix(in srgb,var(--text) 4%,transparent)"></td>'; return; }
+      var a = Math.round((0.12 + 0.8 * Math.min(1, Math.abs(v) / mx)) * 100);
+      h += '<td class="mono" style="background:color-mix(in srgb,var(' + (v >= 0 ? '--up' : '--down') + ') ' + a
+        + '%,transparent)">' + (Math.abs(v) >= 1 ? Math.round(v) : '') + '</td>';
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  return '<div class="oew-raw-scroll">' + h + '</div>'
+    + '<div class="oew-raw-leg"><span><i style="background:var(--up)"></i>' + bi('call gamma','看涨 Gamma')
+    + '</span><span><i style="background:var(--down)"></i>' + bi('put gamma','看跌 Gamma')
+    + '</span><span>' + bi('outlined row = the strike nearest the close','加框行 = 最接近收盘价的行权价') + '</span></div>';
+}
+
+/* ── volatility smile / skew (front expiry) ── */
+function rawSmileSVG(gx){
+  var sm = gx.smile || {}, s = gx.summary || {};
+  var ks = sm.strikes || [], cIV = sm.call_iv || [], pIV = sm.put_iv || [];
+  if(ks.length < 3) return rawEmpty('Not enough strikes on file to draw the smile for this name.',
+    '该标的行权价记录不足，暂无法绘制波动率微笑。');
+  var W = 540, H = 280, mL = 40, mR = 14, mT = 26, mB = 26;
+  var all = cIV.concat(pIV).filter(function(v){ return num(v) !== null; });
+  if(all.length < 3) return rawEmpty('Not enough implied-volatility points on file for this name.',
+    '该标的隐含波动率记录点不足。');
+  var ylo = Math.min.apply(null, all), yhi = Math.max.apply(null, all);
+  var yp = (yhi - ylo) * 0.12 || 1; ylo -= yp; yhi += yp; if(ylo < 0) ylo = 0;
+  var xlo = ks[0], xhi = ks[ks.length - 1];
+  function X(v){ return mL + (v - xlo) / ((xhi - xlo) || 1) * (W - mL - mR); }
+  function Y(v){ return mT + (yhi - v) / ((yhi - ylo) || 1) * (H - mT - mB); }
+  function poly(vals, tok){
+    var d = '', started = false;
+    for(var i = 0; i < ks.length; i++){
+      if(num(vals[i]) === null){ started = false; continue; }
+      d += (started ? 'L' : 'M') + X(ks[i]).toFixed(1) + ' ' + Y(vals[i]).toFixed(1) + ' ';
+      started = true;
+    }
+    return '<path d="' + d + '" fill="none" style="stroke:var(' + tok + ')" stroke-width="1.6" stroke-linejoin="round"/>';
+  }
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Implied volatility by strike">';
+  for(var i = 0; i <= 4; i++){
+    var gv = ylo + (yhi - ylo) * i / 4, yy = Y(gv);
+    svg += '<line x1="' + mL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + yy.toFixed(1)
+      + '" style="stroke:var(--line)" stroke-width="0.5" opacity="0.4"/>';
+    svg += '<text x="' + (mL - 5) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="10"'
+      + ' style="fill:var(--muted)">' + gv.toFixed(0) + '%</text>';
+  }
+  svg += poly(pIV, '--down') + poly(cIV, '--up');
+  var sp = num(s.spot);
+  if(sp !== null && sp >= xlo && sp <= xhi){
+    svg += '<line x1="' + X(sp).toFixed(1) + '" y1="' + mT + '" x2="' + X(sp).toFixed(1) + '" y2="' + (H - mB)
+      + '" style="stroke:var(--text)" stroke-width="1" stroke-dasharray="3 3"/>';
+  }
+  for(var j = 0; j <= 4; j++){
+    var xv = xlo + (xhi - xlo) * j / 4;
+    svg += '<text x="' + X(xv).toFixed(1) + '" y="' + (H - mB + 14) + '" text-anchor="middle" font-size="9.5"'
+      + ' style="fill:var(--muted)">' + esc(lvl(xv)) + '</text>';
+  }
+  svg += '</svg>';
+  return '<div class="oew-raw-box">' + svg + '</div>'
+    + '<div class="oew-raw-leg"><span><i style="background:var(--up)"></i>' + bi('call side','看涨一侧')
+    + '</span><span><i style="background:var(--down)"></i>' + bi('put side','看跌一侧') + '</span>'
+    + (sm.expiry ? '<span class="mono">' + esc(sm.expiry) + (sm.days != null ? ' · ' + sm.days + 'd' : '') + '</span>' : '')
+    + '</div>';
+}
+
+/* ── implied-volatility term structure ── */
+function rawTermSVG(gx){
+  var tm = (gx.term || []).filter(function(r){ return num(r.days) !== null && num(r.atm_iv) !== null; });
+  if(tm.length < 2) return rawEmpty('Not enough expiries on file to draw the term structure for this name.',
+    '该标的到期日记录不足，暂无法绘制期限结构。');
+  var W = 540, H = 280, mL = 40, mR = 14, mT = 16, mB = 26;
+  var xs = tm.map(function(r){ return num(r.days); }), ys = tm.map(function(r){ return num(r.atm_iv); });
+  var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs);
+  var ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
+  var yp = (yhi - ylo) * 0.15 || 1; ylo -= yp; yhi += yp; if(ylo < 0) ylo = 0;
+  function X(v){ return mL + (v - xlo) / ((xhi - xlo) || 1) * (W - mL - mR); }
+  function Y(v){ return mT + (yhi - v) / ((yhi - ylo) || 1) * (H - mT - mB); }
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="At-the-money implied volatility by expiry">';
+  for(var i = 0; i <= 4; i++){
+    var gv = ylo + (yhi - ylo) * i / 4, yy = Y(gv);
+    svg += '<line x1="' + mL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + yy.toFixed(1)
+      + '" style="stroke:var(--line)" stroke-width="0.5" opacity="0.4"/>';
+    svg += '<text x="' + (mL - 5) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="10"'
+      + ' style="fill:var(--muted)">' + gv.toFixed(0) + '%</text>';
+  }
+  svg += '<path d="' + xs.map(function(v,i2){ return (i2 ? 'L' : 'M') + X(v).toFixed(1) + ' ' + Y(ys[i2]).toFixed(1); }).join(' ')
+    + '" fill="none" style="stroke:var(--oew-accent)" stroke-width="1.8" stroke-linejoin="round"/>';
+  xs.forEach(function(v, i3){
+    svg += '<circle cx="' + X(v).toFixed(1) + '" cy="' + Y(ys[i3]).toFixed(1) + '" r="2.6" style="fill:var(--oew-accent)"/>';
+  });
+  var step = Math.ceil(tm.length / 6);
+  xs.forEach(function(v, i4){
+    if(i4 % step !== 0 && i4 !== xs.length - 1) return;
+    svg += '<text x="' + X(v).toFixed(1) + '" y="' + (H - mB + 14) + '" text-anchor="middle" font-size="9.5"'
+      + ' style="fill:var(--muted)">' + v.toFixed(0) + 'd</text>';
+  });
+  svg += '</svg>';
+  return '<div class="oew-raw-box">' + svg + '</div>';
+}
+
+/* ── the expiry ladder — the full record behind the levels above ── */
+function rawLadderHTML(gx){
+  var tm = gx.term || [];
+  if(!tm.length) return rawEmpty('No expiry record on file for this name in this close.',
+    '本次收盘没有该标的的到期日记录。');
+  var head = '<tr><th>' + bi('Expiry','到期') + '</th><th>' + bi('Days','天数') + '</th><th>'
+    + bi('At-the-money IV','平值隐波') + '</th><th>' + bi('Implied move','隐含波幅') + '</th><th>'
+    + bi('Straddle','跨式') + '</th><th>' + bi('Magnet','磁吸位') + '</th></tr>';
+  var body = tm.map(function(r){
+    return '<tr><td>' + esc(r.expiry || '—') + '</td>'
+      + '<td class="mono">' + (num(r.days) === null ? '—' : num(r.days).toFixed(0)) + '</td>'
+      + '<td class="mono">' + pctv(r.atm_iv) + '</td>'
+      + '<td class="mono">' + (num(r.move_pct) === null ? '—' : '±' + pctv(r.move_pct)) + '</td>'
+      + '<td class="mono">' + (num(r.straddle_pct) === null ? '—' : '±' + pctv(r.straddle_pct)) + '</td>'
+      + '<td class="mono">' + lvl(r.max_pain) + '</td></tr>';
+  }).join('');
+  return '<div class="oew-raw-scroll"><table class="oew-raw-tbl"><thead>' + head + '</thead><tbody>'
+    + body + '</tbody></table></div>';
+}
+
+/* ── the positioning greeks row ── */
+function rawGreeksHTML(gx){
+  var s = gx.summary || {};
+  function g(kEn, kZh, v, sEn, sZh){
+    return '<div class="g"><span class="k">' + bi(kEn, kZh) + '</span><span class="v mono">' + v + '</span>'
+      + (sEn ? '<span class="s">' + bi(sEn, sZh) + '</span>' : '') + '</div>';
+  }
+  var charm = num(s.charm_net_sign);
+  var cells = g('Net delta','净 Delta', num(s.net_delta_bn) === null ? '—' : smoney(num(s.net_delta_bn) * 1000))
+    + g('Net vanna','净 Vanna', cnum(s.net_vex))
+    + g('Charm bias','Charm 偏向', charm === null || charm === 0 ? '—' : (charm > 0 ? '↑' : '↓'),
+        charm === null || charm === 0 ? '' : (charm > 0 ? 'drifts up' : 'drifts down'),
+        charm === null || charm === 0 ? '' : (charm > 0 ? '向上漂移' : '向下漂移'))
+    + g('Put/call OI','认沽认购持仓比', num(s.put_call_oi_ratio) === null ? '—' : num(s.put_call_oi_ratio).toFixed(2) + 'x')
+    + g('Put/call volume','认沽认购成交比', num(s.put_call_vol_ratio) === null ? '—' : num(s.put_call_vol_ratio).toFixed(2) + 'x')
+    + g('Largest open interest','最大未平仓', lvl(s.largest_oi))
+    + g('Strikes','行权价数', s.n_strikes == null ? '—' : String(s.n_strikes),
+        s.tier === 'full' ? 'deep chain' : 'thin chain', s.tier === 'full' ? '期权链较深' : '期权链较薄');
+  return '<div class="oew-raw-greeks">' + cells + '</div>';
+}
+
+/* The whole shelf body, as one string. Pure — no DOM, no fetch — so it can be
+   driven straight from a test with a fixture payload. */
+function rawShelfBody(gx){
+  if(!gx) return rawEmpty('No options structure on file for this name in this close.',
+    '本次收盘没有该标的的期权结构记录。');
+  return rawItem('Dealer gamma by strike','按行权价的做市商 Gamma',
+      'Net dealer gamma summed at each strike. The long bars are the walls the levels above are read from.',
+      '每个行权价上汇总的做市商净 Gamma。较长的柱状即上方水位所依据的墙位。',
+      rawGammaBarsSVG(gx))
+    + rawItem('Net gamma against price','净 Gamma 对价格',
+        'The same measure re-evaluated as price moves. Where the curve crosses zero is the flip.',
+        '同一指标随价格变动重新计算。曲线穿越零点之处即翻转位。',
+        rawProfileSVG(gx))
+    + rawItem('The surface — strikes by expiry','曲面 — 行权价与到期日',
+        'Rows are strikes, columns are expiries. The bright cells are where positioning concentrates.',
+        '行为行权价，列为到期日。颜色越深处即仓位集中之处。',
+        rawHeatHTML(gx))
+    + '<div class="oew-raw-grid">'
+      + rawItem('What cover costs by strike','各行权价的保护成本',
+          'Implied volatility by strike for the front expiry. A steeper put side means downside cover is pricier.',
+          '近月到期各行权价的隐含波动率。看跌一侧越陡，下行保护越贵。',
+          rawSmileSVG(gx))
+      + rawItem('What cover costs by date','各到期日的保护成本',
+          'At-the-money implied volatility by expiry. Rising with time is the calm default; the reverse flags an event.',
+          '各到期日的平值隐含波动率。随时间上行为平静常态；反向倒挂则预示事件。',
+          rawTermSVG(gx))
+    + '</div>'
+    + rawItem('Every expiry on file','全部到期日记录',
+        'The full record behind the levels above, one row per expiry.',
+        '上方水位背后的完整记录，每个到期日一行。',
+        rawLadderHTML(gx))
+    + rawItem('Positioning greeks','持仓希腊字母',
+        'The chain-wide sensitivities the model reconstructs. Reference material, not a read.',
+        '模型重构的全链敏感度。仅为参考资料，并非解读。',
+        rawGreeksHTML(gx));
+}
+
 function renderTicker(host, tk, gx, fl, sess){
   if(!gx || !gx.summary){
     host.innerHTML = emptyPanel('We have no options structure for ' + tk + ' in this close. Pick a name from the Scanner or the Brief.',
@@ -1657,8 +2699,11 @@ function renderTicker(host, tk, gx, fl, sess){
     + '</div>'
   + '</div>' : '')
 
-  + '<details class="oew-panel oew-shelf">'
-    + '<summary>' + bi('Under the hood — the raw options structure','底层数据 — 原始期权结构') + '</summary>'
+  + '<details class="oew-panel oew-shelf" id="oew-shelf">'
+    + '<summary>' + bi('Under the hood — the raw options structure','底层数据 — 原始期权结构')
+      + ' <span class="oew-ph-sub">'
+      + bi('charts and the full strike record — for readers who want the plumbing',
+           '图表与完整行权价记录 — 供想看底层结构的读者') + '</span></summary>'
     + '<div class="oew-pbody" style="border-top:1px solid var(--hair)">'
       + '<div class="oew-metrics">'
         + mt('Net gamma','净 Gamma', num(s.net_gex_bn) === null ? '—' : num(s.net_gex_bn).toFixed(2) + 'B')
@@ -1669,16 +2714,34 @@ function renderTicker(host, tk, gx, fl, sess){
       + '</div>'
       + '<p class="oew-tk-say" style="margin:12px 0 0">' + bi('This shelf is closed by default because it is reference material, not a read. Every figure here is reconstructed from the options chain: real dealer books are unobservable.',
           '该抽屉默认折叠，因为它是参考资料而非解读。此处每一个数字均由期权链重构而来：真实做市商持仓不可观测。') + '</p>'
+      /* filled by rawShelfBody() on the FIRST open only — see the toggle wiring
+         below. Empty until then: a closed shelf costs the reader nothing. */
+      + '<div id="oew-raw-slot"></div>'
     + '</div>'
   + '</details>'
 
   + '<div class="oew-handoff">'
     + '<div><div class="oew-ho-t">' + bi('These levels are frozen until tomorrow','这些水位在明日前保持不变') + '</div>'
       + '<div class="oew-ho-s">' + bi('Walls move during the session as positions change. To watch this name’s structure update live, open it in the Terminal.',
-          '墙位会随持仓变化在盘中移动。若要实时观察该标的结构的更新，请在交易终端中打开。') + '</div></div>'
-    + '<a class="oew-cta" href="https://app.mastermind-x.com/?symbol=' + encodeURIComponent(tk) + '" target="_blank" rel="noopener">'
+          '墙位会随持仓变化在盘中移动。若要实时观察该标的结构的更新，请在交易终端中打开。')
+        + ' ' + bi('Same subscription, two clocks — the Terminal is the live desk (tape, replay, alerts); this workspace is the settled record.',
+          '同一订阅，两种时钟 — 交易终端是盘中实时台（逐笔、回放、警报）；本工作台是收盘后的定格记录。') + '</div></div>'
+    + '<a class="oew-cta" href="' + esc(terminalUrl(tk)) + '" target="_blank" rel="noopener">'
       + bi('Open ' + tk + ' live in Terminal', '在交易终端打开 ' + tk + ' 实时行情') + ' ↗</a>'
   + '</div>';
+
+  /* The shelf's charts are drawn on first open, from the gx payload already in
+     hand. Bound HERE rather than delegated: renderTicker replaces this subtree on
+     every ticker change, so the listener dies with the node it was bound to and
+     can never fire against a previous name's payload. */
+  if(host.querySelector){
+    var shelf = host.querySelector('#oew-shelf');
+    if(shelf) shelf.addEventListener('toggle', function(){
+      var slot = shelf.querySelector('#oew-raw-slot');
+      if(!shelf.open || !slot || slot.innerHTML) return;
+      slot.innerHTML = rawShelfBody(gx);
+    });
+  }
   // illus.js's IntersectionObserver already scanned the page before this innerHTML
   // write landed the filmstrip's .ilx figure, so the reveal must be requested
   // explicitly (W1_DESIGN_SPEC.md §0.17 — the same pattern dialogs already use).
@@ -1757,7 +2820,11 @@ function ldState(row, fireKey){
   if(rc !== null && rc >= 4) return ['ld-crowd','Crowding in','资金涌入'];
   return ['ld-radar','On the radar','雷达关注'];
 }
-function ldRows(rows, legs, fireKey, ctx){
+/* Rows past `shown` ship HIDDEN, not withheld: the payload is already in hand
+   (the builder no longer caps the boards), so the expander is a class toggle —
+   no second fetch, no re-render, and the count in its label is the real length
+   of the array behind it. */
+function ldRows(rows, legs, fireKey, ctx, shown){
   return rows.map(function(r, i){
     var st = ldState(r, fireKey);
     var de = r.de_escalation || {};
@@ -1765,7 +2832,7 @@ function ldRows(rows, legs, fireKey, ctx){
     Object.keys(CAU).forEach(function(k){ if(de[k]) caus += cauChip(CAU[k]); });
     if(r.zerodte_dominated) caus += cauChip(ZDTE);
     var c = ctx(r);
-    return '<div class="oew-ldrow">'
+    return '<div class="oew-ldrow' + ((shown && i >= shown) ? ' oew-ld-more' : '') + '">'
       + '<span class="oew-ld-rank">' + ('0' + (i+1)).slice(-2) + '</span>'
       + '<span class="oew-ld-tk"><span class="sym">' + esc(r.ticker) + '</span>'
         + '<span class="sec">' + esc(r.sector || '') + '</span></span>'
@@ -1779,12 +2846,11 @@ function renderLeaders(host, L){
   if(!L){ host.innerHTML = emptyPanel('The leader boards did not report for this close.',
     '本次收盘没有领头股榜单数据。'); return; }
   var boardAAll = L.board_a || [];
-  var A = boardAAll.slice(0, 12);
+  var LD_SHOWN = 12;
   /* Board B admission mirrors the builder's own corrected rule (#3496): B5, the
      washout-flip verdict — NOT days_since_inflection, which stays populated for
      stale flips so the freshness column can tell the truth about them. */
   var boardBFiltered = (L.board_b || []).filter(function(r){ return r.B5_flow_inflect; });
-  var B = boardBFiltered.slice(0, 12);
   /* MAJOR-1 fix (PR #4123 adversarial review round 2): the denominator must equal
      what site/flow_leaders.html actually renders — never the payload's own
      pre-cap "board_a_total"/"board_b_total" fields. Both are computed by
@@ -1795,9 +2861,23 @@ function renderLeaders(host, L){
      iterates `board_a` (fl.board_a, this SAME post-cap array) and the
      B5_flow_inflect-filtered `board_b` in full, with no further slice — so each
      array's own pre-slice(0,12) length IS the true "of N" by construction, and
-     can never drift from the linked page the way a separately-tracked total can. */
+     can never drift from the linked page the way a separately-tracked total can.
+
+     W1.6-A keeps this derivation unchanged and it now has a second job: with the
+     builder's own top-25 cap gone, these lengths ARE the full boards, so they are
+     both the "of N" in the subtitle and the N in the expander's label — one
+     number, two places, no way for them to disagree. */
   var aTotal = boardAAll.length;
   var bTotal = boardBFiltered.length;
+  /* The expander: hidden rows are already rendered, so this is a class toggle.
+     Withheld when there is nothing to expand — a button that opens nothing is a
+     worse lie than no button. */
+  function ldExpander(id, total){
+    if(total <= LD_SHOWN) return '';
+    return '<button class="oew-ld-exp" type="button" data-expand="' + id + '" data-total="' + total + '"'
+      + ' aria-expanded="false"><span class="l-en">Show all ' + total + '</span>'
+      + '<span class="l-zh">显示全部 ' + total + ' 项</span></button>';
+  }
   var etf = L.etf_strip || [];
   var asof = (L.as_of || '').slice(0, 10);
   var stamp = asof ? '<span class="oew-asof mono">' + esc(asof) + '</span>' : '';
@@ -1815,13 +2895,13 @@ function renderLeaders(host, L){
         + ' data-tip-en="Each bar in the row is one sign we check. A filled bar means that sign is confirming right now; an empty bar means it is not; a dotted bar means the data for it has not arrived. Hover the bars to see which is which. More filled bars means more agreement — it does not mean a stronger expected return."'
         + ' data-tip-zh="每行中的每个方块代表我们检查的一项信号。实心表示该信号当前确认，空心表示尚未确认，虚线边框表示数据尚未到位。将鼠标悬停在方块上可查看具体项目。实心越多表示信号越一致 — 但并不代表预期收益更高。">?</span></div>'
     + '</div>'
-    + (A.length ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld">'
-        + ldRows(A, A_LEGS, 'fire_a', function(r){
+    + (aTotal ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld" id="oew-ld-a">'
+        + ldRows(boardAAll, A_LEGS, 'fire_a', function(r){
             var rc = num(r.recurrence_count);
             return rc === null ? ['building history','积累历史中']
                                : [rc.toFixed(0) + ' of the last 10 days', '近10日中有' + rc.toFixed(0) + '日'];
-          })
-        + '</div></div>'
+          }, LD_SHOWN)
+        + '</div>' + ldExpander('oew-ld-a', aTotal) + '</div>'
       : '<div class="oew-pbody"><p class="oew-empty">' + bi('No names yet — options-flow sessions are still accruing.',
           '暂无标的 — 期权资金流场次仍在积累。') + '</p></div>')
     + '<div class="oew-pfoot">'
@@ -1838,14 +2918,14 @@ function renderLeaders(host, L){
       + '<span class="oew-ph-sub">' + bi('top 12 of ' + bTotal + ', most recent first', '最新转向在前，前12（共 ' + bTotal + '）') + '</span>'
       + '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
     + '</div>'
-    + (B.length ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld">'
-        + ldRows(B, B_LEGS, 'fire_b', function(r){
+    + (bTotal ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld" id="oew-ld-b">'
+        + ldRows(boardBFiltered, B_LEGS, 'fire_b', function(r){
             var d = num(r.days_since_inflection);
             if(d === null) return ['turned up recently','近期转强'];
             return d === 0 ? ['turned up today','今日转强']
                            : [d.toFixed(0) + ' day' + (d === 1 ? '' : 's') + ' ago', d.toFixed(0) + '日前转强'];
-          })
-        + '</div></div>'
+          }, LD_SHOWN)
+        + '</div>' + ldExpander('oew-ld-b', bTotal) + '</div>'
       : '<div class="oew-pbody"><p class="oew-empty">' + bi('No fresh turns in this close.',
           '本次收盘没有新的转向。') + '</p></div>')
     + '<div class="oew-pfoot">'
@@ -1892,7 +2972,15 @@ function loadMode(mode){
     tgt.innerHTML = emptyPanel('That data did not load. Reload the page to try again — nothing above depends on it.',
       '该数据未能加载。请重新加载页面重试 — 上方内容不依赖于它。');
   };
-  if(mode === 'scanner'){
+  if(mode === 'flow'){
+    /* Both stores are lazy and BOTH are optional: cohorts.json missing costs the
+       theme-group panel and nothing else (renderFlow falls back to flow_desk's
+       own cohorts array), while flow_desk.json missing is what `fail` is for. */
+    Promise.all([
+      getJSON('flow_desk.json'),
+      getJSON('flowdata/cohorts.json').catch(function(){ return null; })
+    ]).then(function(res){ renderFlow(tgt, res[0], res[1]); loaded.flow = true; }).catch(fail);
+  } else if(mode === 'scanner'){
     getJSON('screenerdata/rows.json').then(function(j){ renderScanner(tgt, j); loaded.scanner = true; }).catch(fail);
   } else if(mode === 'leaders'){
     getJSON('flowleaders/leaders.json').then(function(j){ renderLeaders(tgt, j); loaded.leaders = true; }).catch(fail);
@@ -1951,9 +3039,63 @@ document.addEventListener('click', function(e){
   if(p){
     p.parentNode.querySelectorAll('.oew-preset').forEach(function(x){ x.setAttribute('aria-pressed', String(x === p)); });
     scPreset = p.getAttribute('data-preset');
-    var body = document.getElementById('oew-sc-body');
-    if(body) body.innerHTML = scBody();
+    scRepaint();
+    return;
   }
+  /* per-column sort. First click on a new column sorts DESCENDING (the useful
+     end of a screen is the top of the range), then toggles. */
+  var th = e.target.closest && e.target.closest('.oew-tbl thead th[data-sort]');
+  if(th){
+    var key = th.getAttribute('data-sort'), idx = parseInt(th.getAttribute('data-i'), 10);
+    if(scSort.idx === idx) scSort.dir = (scSort.dir === 'desc') ? 'asc' : 'desc';
+    else { scSort.key = key; scSort.idx = idx; scSort.dir = 'desc'; }
+    scRepaint();
+    return;
+  }
+  if(e.target.closest && e.target.closest('#oew-sc-csv')){ scExportCSV(); return; }
+  if(e.target.closest && e.target.closest('#oew-f-clear')){
+    var more = document.getElementById('oew-sc-more');
+    if(more){
+      more.querySelectorAll('input').forEach(function(el){ el.value = ''; });
+      more.querySelectorAll('select').forEach(function(el){ el.value = ''; });
+    }
+    scRepaint();
+    return;
+  }
+  /* Leaders "show all N" — a class toggle over rows already in the DOM. */
+  var ex = e.target.closest && e.target.closest('[data-expand]');
+  if(ex){
+    var list = document.getElementById(ex.getAttribute('data-expand'));
+    if(!list) return;
+    var open = !list.classList.contains('on');
+    list.classList.toggle('on', open);
+    ex.setAttribute('aria-expanded', String(open));
+    ex.innerHTML = open
+      ? '<span class="l-en">Fold back</span><span class="l-zh">收起</span>'
+      : '<span class="l-en">Show all ' + esc(ex.getAttribute('data-total')) + '</span>'
+        + '<span class="l-zh">显示全部 ' + esc(ex.getAttribute('data-total')) + ' 项</span>';
+  }
+});
+/* Filter inputs are live: typing or stepping a range repaints the table. Bound
+   on the document because the disclosure is rendered after this runs. */
+document.addEventListener('input', function(e){
+  var t = e.target;
+  if(!t || !t.id || t.id.indexOf('oew-f-') !== 0) return;
+  scRepaint();
+});
+document.addEventListener('change', function(e){
+  var t = e.target;
+  if(!t || t.id !== 'oew-f-sector') return;
+  scRepaint();
+});
+/* Keyboard parity for the sort headers: they are <th> elements with tabindex,
+   so Enter/Space must do what a click does. */
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  var th = e.target && e.target.closest && e.target.closest('.oew-tbl thead th[data-sort]');
+  if(!th) return;
+  e.preventDefault();
+  th.click();
 });
 
 /* OIP W1 §2: Ticker-mode search/typeahead — exact parity with gex.html's #gx-q
@@ -2016,6 +3158,33 @@ function setupTickerSearch(){
   });
 }
 setupTickerSearch();
+
+/* The Brief's Terminal CTA, re-pointed through the house helper.
+   It CANNOT be done inline above: theme.js is the last body script, so
+   window.MDXTerminal does not exist while this IIFE runs. DOMContentLoaded fires
+   after every synchronous body script has executed, which is exactly the moment
+   the helper becomes available. The baked href stays a working destination the
+   whole time — this only adds the &from=macro/&ret= stamp. */
+function wireBriefCta(){
+  var a = document.getElementById('oew-brief-cta');
+  if(a) a.href = terminalUrl('');
+  scApplyLang();
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireBriefCta);
+else wireBriefCta();
+
+/* Canvas cannot resolve a CSS variable, so the two tide curves are the only
+   things on this page that must be REDRAWN when the language flips (--up/--down
+   swap to 红涨绿跌) or the box is resized. Not animation — one repaint per
+   event, and only while Flow mode has already rendered. */
+var flRsz;
+window.addEventListener('resize', function(){
+  clearTimeout(flRsz);
+  flRsz = setTimeout(function(){ flDrawSpark(); flDrawUnfold(); }, 120);
+});
+document.addEventListener('langchange', function(){
+  setTimeout(function(){ flDrawSpark(); flDrawUnfold(); scApplyLang(); }, 0);
+});
 
 /* Terminal handoff clock — computed at READ time, never baked. A countdown
    frozen into static HTML is wrong by morning. */
