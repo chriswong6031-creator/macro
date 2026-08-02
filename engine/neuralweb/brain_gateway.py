@@ -5593,6 +5593,105 @@ _TERMINAL_TOOL_BUDGET_FLOOR = 12
 # Minimum gap between `writing` beats during Phase-2 accumulation.
 _WRITING_BEAT_S = 1.5
 
+# ── Contract S: true token streaming (W5 latency wave, operator 2026-08-01) ──────────
+# Phase-2 synthesis forwards display text AS IT IS WRITTEN instead of holding the whole
+# answer back for one buffered delta (SPEC §D's buffered-delta law is superseded — see
+# the 2026-08-01 amendment in research/mastermind_transparency_latency/SPEC.md).  The
+# advice filter that law protected is a documented no-op; the leak screen that still
+# matters keeps its authority through the holdback below plus the `retract` event.
+#
+#   _STREAM_FLUSH_CHARS  flush once this much eligible text has piled up …
+#   _STREAM_FLUSH_S      … or once this long has passed since the last flush.
+#   _LEAK_HOLDBACK_CHARS trailing characters that are NEVER emitted mid-stream.  This is
+#                        the runway the sentinel scan needs: a system-prompt echo lands in
+#                        the holdback zone and is caught there, so no part of it can reach
+#                        the wire.  It must stay comfortably above the longest sentinel
+#                        (_MAX_SENTINEL_LEN, currently 50) — _stream_flush_cfg enforces
+#                        that floor even if the operator configures a smaller value.
+# All three are overridable from the `streaming:` block of config/brain.yml (absent → these).
+_STREAM_FLUSH_CHARS = 120
+_STREAM_FLUSH_S = 0.35
+_LEAK_HOLDBACK_CHARS = 256
+
+# The suggestions marker _split_suggestions() recognises: a line that is EXACTLY this
+# after stripping. Streaming must never put a fragment of it on the wire.
+_NEXT_MARKER = "[NEXT]"
+
+
+def _stream_flush_cfg(root: Path | None = None) -> tuple[int, float, int]:
+    """(flush_chars, flush_seconds, leak_holdback_chars) for Phase-2 streaming.
+
+    Reads the optional `streaming:` block of config/brain.yml (MNZ-R12 config-not-literals)
+    and falls back to the module constants for any absent or unparseable key.  Never
+    raises — a malformed config must never break a turn, only lose the override.
+    """
+    chars, secs, hold = _STREAM_FLUSH_CHARS, _STREAM_FLUSH_S, _LEAK_HOLDBACK_CHARS
+    try:
+        blk = (_load_brain_config(root) or {}).get("streaming") or {}
+        if isinstance(blk, dict):
+            chars = max(1, int(blk.get("flush_chars", chars)))
+            secs = max(0.0, float(blk.get("flush_seconds", secs)))
+            hold = max(0, int(blk.get("leak_holdback_chars", hold)))
+    except Exception:  # noqa: BLE001 — bad config → defaults, never a dead turn
+        return _STREAM_FLUSH_CHARS, _STREAM_FLUSH_S, _LEAK_HOLDBACK_CHARS
+    # Floor, not a suggestion: a holdback shorter than the longest sentinel would let a
+    # split prompt echo ship before the scan that catches it ever sees the whole string.
+    return chars, secs, max(hold, _MAX_SENTINEL_LEN)
+
+
+def _trim_ws_end(body: str, cut: int) -> int:
+    """Walk `cut` back off trailing whitespace.  _split_suggestions rstrips its clean
+    text, so a streamed prefix that ends in a newline would stop being a prefix of the
+    final answer — and the finalize reconciliation would retract a perfectly good reply."""
+    while cut > 0 and body[cut - 1].isspace():
+        cut -= 1
+    return cut
+
+
+def _stream_display_cut(body: str, hold: int) -> tuple[int, bool]:
+    """How much of a partially-written answer is safe to put on the wire.
+
+    Returns `(cut, sealed)`: `body[:cut]` may be emitted as display text, and `sealed` is
+    True once a COMPLETE line equal to the `[NEXT]` marker has been written — after that
+    no further display text may stream, because everything from there on is suggestions
+    material that `_split_suggestions` owns at finalize.
+
+    Three holdbacks, applied in order:
+      1. the marker line itself — cut at its start and seal;
+      2. the last `hold` characters are never eligible (the leak screen's runway);
+      3. a trailing PARTIAL line that could still GROW into the marker (`" [NE"`) is held
+         whole.  That is what stops a `[NEXT]` split across two SDK chunks from putting a
+         `[NE` on the wire: any prefix of `<ws>[NEXT]<ws>` strips to a prefix of `[NEXT]`.
+    """
+    if not body:
+        return 0, False
+    pos = 0                                   # start of the trailing (incomplete) line
+    nl = body.find("\n")
+    while nl >= 0:                            # COMPLETE lines only — the tail has no \n
+        if body[pos:nl].strip() == _NEXT_MARKER:
+            return _trim_ws_end(body, pos), True
+        pos = nl + 1
+        nl = body.find("\n", pos)
+    limit = len(body) - hold
+    if _NEXT_MARKER.startswith(body[pos:].strip()):
+        limit = min(limit, pos)               # the partial line may still become a marker
+    return _trim_ws_end(body, max(0, min(limit, len(body)))), False
+
+
+def _leak_hit(text: str, start: int = 0) -> bool:
+    """True when a system-prompt sentinel appears in `text[start:]`.
+
+    `start` lets a streaming caller re-scan only the new tail.  Callers MUST back it up by
+    `_MAX_SENTINEL_LEN - 1` so a sentinel split across two SDK chunks is still seen whole;
+    with that overlap the windowed scan is exactly equivalent to re-scanning the full
+    answer on every chunk, at O(n) instead of O(n²) (a 60k-char answer would otherwise
+    cost hundreds of millions of character comparisons).
+    """
+    if not text:
+        return False
+    window = text[max(0, start):]
+    return any(sentinel in window for sentinel in _LEAK_SENTINELS)
+
 
 def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
                   detail: str = "", n: int | None = None) -> str:
@@ -5703,13 +5802,27 @@ def _run_brain_loop_stream(
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) → delta →
-    suggest (0/1, W6d) → done (last).
-    `status` events are ADDITIVE reasoning transparency (the answer is buffered, so they
-    are the only progress the user sees); their copy comes from _STAGE_LABELS/_TOOL_LABELS
-    and costs no network or file I/O — see the leak note above those tables.
-    Filter must run on full answer before any delta bytes are emitted (same constraint
-    as ask_brain: advice cannot be un-sent once on the wire).
+    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) →
+    delta+ (1 or more, W5) → retract (0/1) → suggest (0/1, W6d) → done (last).
+    `status` events are ADDITIVE reasoning transparency; their copy comes from
+    _STAGE_LABELS/_TOOL_LABELS and costs no network or file I/O — see the leak note above
+    those tables.
+
+    W5 / Contract S — TRUE TOKEN STREAMING (operator 2026-08-01, Deepvue docket §6.6/§6.8;
+    SPEC §D's buffered-single-delta law is superseded by the amendment dated there).
+    Phase-2 synthesis emits display text as it is written, under three guards:
+      * a `_LEAK_HOLDBACK_CHARS` tail is never emitted, and every chunk is swept for
+        system-prompt sentinels BEFORE the flush decision, so an echo is caught while it
+        is still server-side (_leak_hit / _stream_display_cut);
+      * a trailing line that could still become the `[NEXT]` marker is held whole, and
+        once the marker lands display text stops for good;
+      * the FULL pipeline (citations → advice filter → _leak_screen → _split_suggestions)
+        still runs on the complete answer at the end and remains the authority. When it
+        disagrees with what streamed, a `retract` event replaces the text wholesale.
+    The advice filter this used to buffer for is a documented no-op
+    (ask_brain._post_filter_advice); the leak screen keeps its teeth through the holdback
+    plus `retract`. Nothing changes for the non-streaming chat(), /api/ask, or a provider
+    whose text_stream yields once (one chunk → one delta, exactly as before).
     usage_out: optional single-element list; if provided, usage_dict is placed in [0]
                after streaming completes (fix #1: lets caller access real token counts).
     answer_out: optional single-element list; if provided, the filtered assistant answer
@@ -5929,18 +6042,29 @@ def _run_brain_loop_stream(
     # Phase 2: synthesize final answer
     last_stop = getattr(resp, "stop_reason", None) if resp is not None else None
 
-    # Buffer the full answer before emitting (post-filter must run on complete text)
+    # Accumulate the full answer; Contract S streams the SAFE prefix of it as it grows
+    # (see _stream_display_cut) and reconciles whatever is left at finalize.
     full_answer = ""
     usage_dict: dict = {}
     _synth_stop: str | None = None   # synthesis stop_reason, for the degraded-stub log
+
+    # ── Contract S streaming state (survives a Phase-2 failover) ─────────────────────
+    _flush_chars, _flush_s, _hold = _stream_flush_cfg(root)
+    # `_emitted` is what the CLIENT currently holds — the single source of truth for the
+    # reconciliation below. The server-side buffer restarts on failover; this does not,
+    # which is how a dead candidate's half-written draft gets taken back off the screen.
+    _emitted = ""
+    _leak_tripped = False   # a sentinel was caught mid-stream → stop reading the model
+    _retracted = False      # a `retract` REPLACED text (screen/filter), not a wipe-and-retry
 
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
         messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
         yield _status_event("synthesis", _t0, _STAGE_LABELS["synthesis"])
-        # Stream with OAuth-token failover: the answer is buffered server-side (emitted
-        # as one delta below), so a candidate that 429s on open is retried from scratch
-        # with a fresh buffer — no partial/duplicated text reaches the client.
+        # Stream with OAuth-token failover. Text now goes out as it is written, so a
+        # candidate that dies MID-BODY cannot simply restart with a fresh buffer the way
+        # it used to — anything it already put on screen is taken back with an explicit
+        # `retract` before the next candidate writes a character (see the except branch).
         _last_err: Exception | None = None
         _n_shown = 0  # progress floor across candidates: a failover restarts the buffer,
         #               but the visible count must never run backwards (review MINOR-3)
@@ -5949,9 +6073,14 @@ def _run_brain_loop_stream(
             if _cl is None:
                 continue
             full_answer = ""
-            # Writing beats are throttled and carry only a character count — the text
-            # stays buffered until the advice filter has run on ALL of it.
+            _emit_len = 0    # cursor into THIS candidate's full_answer
+            _scan_len = 0    # how much of it the sentinel scan has already covered
+            _chunks = 0      # SDK chunks seen — the first one never flushes (see below)
+            _sealed = False  # a [NEXT] marker line has been written — display text is over
+            # Writing beats mark the THINKING gap: they speak only while no text is
+            # flowing, so the answer's own bytes replace them the moment they arrive.
             _beat_at = time.monotonic()
+            _flush_at = _beat_at
             try:
                 with _cl.messages.stream(
                     model=_p.get("model"),
@@ -5967,11 +6096,63 @@ def _run_brain_loop_stream(
                 ) as s:
                     for chunk in s.text_stream:
                         full_answer += chunk
-                        if time.monotonic() - _beat_at >= _WRITING_BEAT_S:
-                            _beat_at = time.monotonic()
+                        _chunks += 1
+                        # LEAK SCREEN FIRST, on every chunk, before any flush decision.
+                        # The scan window is backed up by the longest sentinel so an echo
+                        # split across two chunks is still seen whole; the holdback below
+                        # guarantees the scan has read every character before it can ship.
+                        if _leak_hit(full_answer, _scan_len - (_MAX_SENTINEL_LEN - 1)):
+                            _leak_tripped = True
+                            break
+                        _scan_len = len(full_answer)
+                        _now = time.monotonic()
+                        if not _sealed:
+                            _cut, _sealed = _stream_display_cut(full_answer, _hold)
+                            _ready = _cut - _emit_len
+                            # `_chunks > 1`: a provider that hands the whole answer over in
+                            # ONE piece is not streaming, and splitting it into a flush plus
+                            # a tail would be churn for no gain — the codex-served pro lane
+                            # yields exactly once, and keeps its single buffered delta.
+                            if _chunks > 1 and _ready > 0 and (_ready >= _flush_chars
+                                                               or _now - _flush_at >= _flush_s):
+                                _txt = full_answer[_emit_len:_cut]
+                                _emit_len = _cut
+                                _emitted += _txt
+                                _flush_at = _now
+                                _n_shown = max(_n_shown, len(full_answer))
+                                yield f"data: {json.dumps({'type': 'delta', 'text': _txt})}\n\n"
+                        # A beat is the SILENCE between text, not a progress bar: it speaks
+                        # only when nothing has flushed for _WRITING_BEAT_S (the thinking
+                        # gap before the first token, or a long pause mid-answer).
+                        if (_now - _beat_at >= _WRITING_BEAT_S
+                                and _now - _flush_at >= _WRITING_BEAT_S):
+                            _beat_at = _now
                             _n_shown = max(_n_shown, len(full_answer))
                             yield _status_event("writing", _t0, _STAGE_LABELS["writing"],
                                                 n=_n_shown)
+                    if _leak_tripped:
+                        # Deliberately abandoned mid-body — do NOT call get_final_message()
+                        # on a stream we stopped reading. The aborted call's usage is lost;
+                        # a prompt echo on a paying user's screen costs more than a token
+                        # count. Exiting the `with` closes the stream.
+                        model = _p.get("model") or model
+                if _leak_tripped:
+                    log.warning("brain_gateway: prompt-echo sentinel caught MID-STREAM "
+                                "(lane=%s model=%s chars=%d emitted=%d)",
+                                lane, _p.get("model"), len(full_answer), len(_emitted))
+                    if _emitted:
+                        # Text is already on screen: take it back NOW rather than after the
+                        # citation pass. The refusal is exactly what _leak_screen returns at
+                        # finalize from this same text, so the reconciliation below then
+                        # sees the client already holding it and stays silent.
+                        _retracted = True
+                        _emitted = _REFUSAL_DISTILL_ZH if _has_cjk(full_answer) else _REFUSAL_DISTILL_EN
+                        yield f"data: {json.dumps({'type': 'retract', 'text': _emitted})}\n\n"
+                    # Nothing shipped (the usual case — the holdback is five sentinels
+                    # deep): no retract at all. The finalize pass ships the refusal as an
+                    # ordinary single delta, which is byte-for-byte the old behavior and
+                    # is also what a widget too old to know `retract` needs.
+                    break
                 final_resp = s.get_final_message()
                 # Synthesis reasoning — held per-candidate and only merged into the trace
                 # at the success point below, so a failed-over candidate's partial
@@ -5995,6 +6176,9 @@ def _run_brain_loop_stream(
                                 _p.get("model"))
                     _last_err = RuntimeError("empty synthesis")
                     if _i < len(_cands) - 1:
+                        if _emitted:      # defensive: never let a fresh candidate APPEND
+                            yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                            _emitted = ""
                         continue
                 thinking_trace.extend(_cand_thinking)  # only the candidate that SHIPPED
                 _pool_record_success(_p, final_resp)  # load-balancing ledger
@@ -6007,6 +6191,13 @@ def _run_brain_loop_stream(
                 if _is_failover_error(exc) and _i < len(_cands) - 1:
                     log.warning("brain_gateway: stream provider %s failed (%s) — failover",
                                 _p.get("model"), str(exc)[:80])
+                    if _emitted:
+                        # This candidate died MID-BODY after putting text on screen. The
+                        # next one restarts from scratch, so wipe the draft first — an
+                        # empty retract resets the client's bubble, and the retry streams
+                        # into a clean one instead of appending to a stranger's sentence.
+                        yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                        _emitted = ""
                     continue
                 log.warning("brain_gateway: stream synthesis failed (%s) — fallback", exc)
                 full_answer = ""
@@ -6038,6 +6229,10 @@ def _run_brain_loop_stream(
 
     yield _status_event("review", _t0, _STAGE_LABELS["review"])
 
+    # FINAL AUTHORITY. Everything below runs on the WHOLE answer, exactly as it did when
+    # the delta was buffered — the streaming holdback above is an early net, never a
+    # replacement for this pass. Whatever this produces is what the user ends up holding:
+    # the reconciliation at the bottom either tops up the streamed prefix or retracts it.
     citations = _extract_citations_brain(messages, extra=ambient_citations)
     filtered_answer, was_filtered = _post_filter_advice(full_answer, citations)
     filtered_answer = _leak_screen(filtered_answer)  # PART B: prompt-echo → distill refusal
@@ -6072,7 +6267,34 @@ def _run_brain_loop_stream(
             lane, model, "synthesis" if need_synthesis else "tool-round",
             _synth_stop or last_stop,
             usage_dict.get("input_tokens"), usage_dict.get("output_tokens"), max_tokens)
-    yield f"data: {json.dumps({'type': 'delta', 'text': display_answer})}\n\n"
+
+    # ── Contract S reconciliation ────────────────────────────────────────────────────
+    # `_emitted` is exactly what the client holds. It is EMPTY on every non-streaming
+    # path (a tool-round answer, the degraded stub, a prescreen refusal) and on any
+    # synthesis short enough to stay inside the holdback — those all take the first
+    # branch with an empty prefix and ship ONE delta carrying the whole answer, which is
+    # byte-for-byte the pre-Contract-S behavior.
+    if display_answer.startswith(_emitted):
+        _tail = display_answer[len(_emitted):]
+        # An empty final delta is still emitted when nothing streamed (an advice-filtered
+        # -to-empty answer has always shipped one, and the widget expects it); after a
+        # stream it would be noise, so it is dropped.
+        if _tail or not _emitted:
+            yield f"data: {json.dumps({'type': 'delta', 'text': _tail})}\n\n"
+    else:
+        # The final screen disagrees with what streamed: the leak screen fired on the
+        # held-back tail, or the advice filter rewrote the answer. Belt and suspenders —
+        # take the whole thing back and replace it. (A candidate that merely died
+        # mid-body was already wiped with an empty retract at the failover, so reaching
+        # here means the TEXT was rejected, not the provider.)
+        _retracted = True
+        yield f"data: {json.dumps({'type': 'retract', 'text': display_answer})}\n\n"
+    # A retract that REPLACED text is a screened turn: the eval corpus reads `filtered`
+    # to separate a clean answer from one the guards rewrote (response_eval flags it),
+    # and a turn whose text was withdrawn on the wire is not a clean answer. A wipe
+    # -and-retry retract (empty text, provider failover) never sets this.
+    if _retracted:
+        was_filtered = True
 
     # Emit suggestions (W6d) — between delta and done, only when non-empty
     if suggestions:
@@ -6593,6 +6815,12 @@ try:
     _LEAK_SENTINELS = _LEAK_SENTINELS + _analyst_sentinels.LEAK_SENTINELS
 except Exception:  # noqa: BLE001
     pass
+
+# Longest sentinel, in characters. Contract S reads this twice: as the overlap the
+# streaming scan must keep between chunks (_leak_hit) and as the hard floor under the
+# streaming holdback (_stream_flush_cfg). Computed from the assembled tuple so a longer
+# sentinel shipped by a future doctrine module widens both automatically.
+_MAX_SENTINEL_LEN = max((len(s) for s in _LEAK_SENTINELS), default=0)
 
 
 def _screen_client_history(items: list[dict]) -> list[dict]:

@@ -238,3 +238,72 @@ shift when the answer lands (chip + text occupy the same bubble).
   /etc/macro-api.env or Max-tier subs — see mastermind-pro-opus5-intensity memory). This PR
   makes Pro fast + honest while capped, it cannot un-cap the pool.
 - Cross-provider ThinkingBlock-in-history edge (pre-existing, rare).
+
+---
+
+## §E AMENDMENT 2026-08-01 — Contract S supersedes the buffered single delta (W5)
+
+Operator order 2026-08-01 (latency wave; Deepvue teardown docket
+`research/DEEPVUE_COMPETITIVE_TEARDOWN_AND_MASTERMIND_BUILD_DOCKET_2026-08-01.md`
+§6.6 "Mastermind's latency cause" and §6.8 "Exact Mastermind latency path").
+**§D bullet 1 and the `delta` clause of §0 gate 2 are SUPERSEDED. The historical
+sections above are left exactly as written — they record what shipped in July, not what
+ships now.**
+
+### What changed
+
+`_run_brain_loop_stream` Phase 2 now emits display text AS IT IS WRITTEN: one or more
+`delta` events instead of exactly one. The SSE sequence becomes
+
+```
+meta → status*/tool*/annotate*/command*/chart* → delta+ → retract? → suggest? → done
+```
+
+`suggest` and `done` keep their existing shape and position. `delta` keeps its shape
+(`{"type":"delta","text":…}`); it is now append-only and may arrive many times — which the
+deployed widget already handles, because `MdStream` has been an accumulate-and-drain
+incremental renderer since W6. ONE new event type, `retract`
+(`{"type":"retract","text":…}`), replaces everything streamed so far with `text` (empty
+text = wipe only). It is a generator-emitted, buffered event, so it obeys the §B7 cursor
+law like any other data event and replays correctly on re-attach.
+
+### Why the old law no longer holds
+
+§D bullet 1 protected the advice filter: "advice cannot be un-sent once on the wire."
+That filter — `ask_brain._post_filter_advice` — has been a documented **no-op
+pass-through** since the operator's 2026-07-26 directive allowing direct buy/sell
+answers. The law was costing 30–77s of perceived latency (measured live, docket §6.7) to
+protect a function that returns its input unchanged.
+
+### What still holds, and how
+
+The leak screen (`_leak_screen` over `_LEAK_SENTINELS`) is real and keeps full authority:
+
+1. **Holdback.** The trailing `_LEAK_HOLDBACK_CHARS` (default 256, floored at the longest
+   sentinel) of the accumulated answer is never emitted. A system-prompt echo therefore
+   lands inside a window that is still server-side when it is caught.
+2. **Per-chunk sentinel sweep.** Every SDK chunk is swept before any flush decision, over
+   a window backed up by `_MAX_SENTINEL_LEN - 1` so a sentinel split across two chunks is
+   still seen whole (equivalent to re-scanning the full answer, at O(n) not O(n²)). A hit
+   stops the stream mid-body, emits `retract` carrying the distill refusal, and marks the
+   turn `filtered`.
+3. **`[NEXT]` holdback.** A trailing partial line that could still grow into the marker is
+   held whole; once a complete `[NEXT]` line lands, display text stops for good and the
+   remainder is suggestions material. No marker fragment can reach the wire.
+4. **Final full-answer pass, unchanged and still the authority.** Citations → advice
+   filter → `_leak_screen` → `_split_suggestions` → `_screen_suggestions` all still run on
+   the COMPLETE answer. The streamed prefix is then reconciled against the result: a
+   prefix match tops it up with the remaining text, a mismatch retracts and replaces it.
+   That is the belt-and-suspenders path for anything the streaming guards missed.
+5. **Mid-body provider failure.** A candidate that dies after putting text on screen is
+   wiped with an empty `retract` before the next candidate writes a character, so a
+   failover can never append one model's sentence to another's.
+
+Config lives in the new `streaming:` block of `config/brain.yml`
+(`flush_chars` / `flush_seconds` / `leak_holdback_chars`); an absent block or key takes
+the module defaults. §0 gates 1, 3, 4, 5 and 6 are unchanged and still binding — leak
+safety in particular is *stricter* here, not looser. Tests: `tests/test_brain_streaming.py`.
+
+Unchanged by this amendment: the non-streaming `chat()`, `/api/ask`, Phase-1 tool rounds,
+quota paths, and the `status` contract (the `writing` beat now speaks only in the gaps
+where no text is flowing, which is what it always meant).
