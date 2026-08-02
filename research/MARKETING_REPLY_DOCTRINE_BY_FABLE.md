@@ -314,3 +314,255 @@ forward from `playbook.md` §(a) and §(c):
 | OP-directed questions, boilerplate, one-word reactions, unclosed length | `reply_critics.reply_value` |
 | everything in §6 | the eight pre-existing critics, unchanged |
 | the model never scores | `reply_critics.run_critics` — the LLM hook may only de-escalate |
+
+---
+
+## §11. AMENDMENT — the warmth register (2026-08-01)
+
+**Status:** amendment, not a revision. Everything above stands. This section
+adds the half of the reply formula the original doctrine did not have, and where
+it constrains a rule above it says so explicitly.
+
+### §11.1 Why the doctrine needed amending
+
+The register audit found the gap and it is structural, not stylistic: every
+entry in `reply_drafter.FAMILIES` is an analytical move — missing variable,
+second order, respectful disagreement, correction, compression. `human_reaction`
+is the closest thing to warmth in the whole register and its template is still
+gift-led analysis wearing one canned line of affect ("okay, this one is actually
+interesting."). Nothing in the register could carry warmth, delight, curiosity,
+or the shared-frustration move.
+
+The operator's brief names the consequence: replies come out "completely
+analytical and cold", and people follow accounts that are **both** insightful
+and high emotional value. Four of the six desks are real named women whose
+warmth is a hiring fact, not a copy device — so the warmth has to be real and
+it has to be fabrication-free.
+
+### §11.2 The one law that governs all of it
+
+> **Warmth is FUSED into the clause that delivers the gift. It is never a
+> second sentence bolted on in front of one.**
+
+This is the sharpest finding in the winning-reply corpus and the only one
+consistent across every account sampled. The winner shape is a three-word
+concession running straight into the mechanism with no full stop. The absent
+shape — "Great point! Also, here's a stat:" — does not appear anywhere near the
+top of the corpus, and **its absence is the finding**.
+
+Two supporting numbers, both **THIN** (fewer than ~15 rows per bucket, one live
+news cycle, nothing here is a measurement):
+
+| bucket | n | median eng/view |
+|---|---|---|
+| pure reaction warmth, zero information | 14 | 0.0032 |
+| pure analytical, zero warmth markers | 10 | 0.0122 |
+
+Read correctly this does **not** say "be cold". It says **warmth is not a
+payload**: warmth that occupies its own sentence spends words and returns
+nothing, while warmth that shapes the *delivery* of a real point costs zero
+words and changes who replies. §1's one-sentence law is unchanged — one gift,
+one grip, one doorway — and warmth is now an attribute of the gift's delivery.
+
+**Consequence for §2.** The five-value taxonomy is unchanged. A warmth move is
+not a sixth value: a reply still has to carry one of the five, and abstention on
+an empty gift (Law 1) is unchanged. The single exception is `quiet_sympathy`
+(§11.3), which ships without a gift, is explicitly not a growth move, and is
+confined to the relationship tier.
+
+### §11.3 The eight moves
+
+The register is `reply_drafter.WARMTH_MOVES`, a **second rotation axis** beside
+`FAMILIES` with its own LRU. Two independent LRUs is deliberate: one rotation
+over the product would let a single family×warmth pairing recur while reading as
+rotated.
+
+| Move | The sentence-level mechanic | Fits | dial floor |
+|---|---|---|---|
+| `concede_and_hold` | grant the other side in ≤5 words, no full stop, into the mechanism | claim, hot take, prediction, correction | 1 |
+| `flat_confession` | a prior wrong read stated flatly, then the corrected model | claim, prediction, hot take | 2 |
+| `verdict_first` | an unhedged verdict of ≤5 words, then the gift | claim, chart, data, question to the room | 1 |
+| `specific_credit` | credit one NAMED detail, never an adjective, then add | chart, thread, claim, data, personal win | 1 |
+| `wry_solidarity` | a frustration aimed at a process, a crowd or an institution — never a person | wire, hot take, prediction, claim | 2 |
+| `concrete_image` | the point delivered as one physical image instead of the mechanism | claim, data, wire, chart | 2 |
+| `open_curiosity` | name what we cannot resolve, as a statement not a question | claim, chart, prediction, thread | 2 |
+| `quiet_sympathy` | ≤8 words on a professional setback, no first name, then stop | personal setback ONLY | 2 |
+
+`wry_solidarity` is the most tightly fenced, and the fence is the TARGET. The
+corpus's highest-liked cluster in this register (15 rows, 226–4,564 likes) is
+the same emotional energy pointed at *people*, and it is a standing brand
+exclusion under §4 — highest ceiling in the data, zero information, incompatible
+with AM-R1 personas. Aimed at a process it is the move; aimed at a person it is
+the antipattern, so a draft whose object resolves to a handle, a named
+individual or a second-person pronoun withdraws the move.
+
+`open_curiosity` survives on **charter grounds with the like evidence against
+it** (§9's second bullet is the ground: an author reply-back is the objective
+function and likes are not). Its default form is therefore a statement, and the
+question form is capped.
+
+### §11.4 `dial_floor` is wired here, and it is what §5's "Never: anything warm" means
+
+Every `FAMILIES` entry declares a `dial_floor` and **nothing reads it**. Here it
+is load-bearing: a warmth move is admissible only when the account's reply dial
+(`expression_dial`, from `voice_codex.dial_profile`) reaches the move's floor.
+Employees resolve to 2, the flagship and the founder to 1. That is the mechanism
+that keeps the flagship an evidence desk in someone else's thread — until now
+the §5 register map's "Never: anything warm" was prose with no enforcement
+behind it.
+
+**§5 gains a warmth column.** Availability is derived from each desk's own
+codex, never from a table in the module, so it moves when the spec moves:
+
+| Desk | Warmth channel | Moves | Out of character, and why |
+|---|---|---|---|
+| **Kelly** | flat concessions and dry solidarity; her codex bans every hedging softener, so a concession is `fair.`, never `fair point, maybe` | concede, confession, verdict, credit, wry, image, curiosity | `quiet_sympathy` — a terse dry register makes sympathy read as stiff or sarcastic, the worst possible miss |
+| **Sophia** | generosity of frame: she concedes ground elegantly and holds position | concede, confession, verdict, credit, wry, image, curiosity, sympathy | zero exclamations, absolute; her metaphor budget is 1/7d so her image frame spends none of it |
+| **Cici** | generosity with context, and the glossed local term is free — `zh_gloss` is classed PRECISION, not personality, so it is not charged to her dial | concede, confession, verdict, credit, image, curiosity, sympathy | `wry_solidarity` — "bright, worldly" is her pinned register and world-weariness is off-register |
+| **Meagan** | the playful line then the useful one, which is §11.2 in her own pinned codex words | concede, confession, credit, wry (warm variant), image, curiosity, sympathy | `verdict_first` — her codex requires the playful line THEN the useful one, so a bare verdict is off-shape; and no irony, ever |
+| **flagship / founder** | none | none | charter §2 amendment 3; the dial floor enforces it |
+
+**Kelly's confession is a franchise, not a weakness.** "What Would Prove This
+Wrong?" is her pinned method; `flat_confession` is that method applied to
+herself. Note the wiring: every confession opener must contain a literal
+`reply_critics._CHANGE_MARKERS` phrase, because `position_consistency` rejects a
+draft that contradicts an open thesis without one — an opener phrased "I read
+this backwards" would trip the very critic the move exists to satisfy. And the
+move needs an OPEN thesis in the ledger: AM-R1 applied to our own reasoning
+history, we do not invent having been wrong any more than we invent having been
+anywhere.
+
+### §11.5 The bright line — feminine energy without fabrication
+
+> **A reader may learn from a reply how she THINKS and how she REACTS. They may
+> never learn anything about her LIFE.**
+
+The test on any candidate clause: *could a journalist print this as a fact about
+her?* "Sophia thinks the tariff read is mispriced" is not a life fact and is
+lawful. "Sophia was at a museum this weekend" is, and is forbidden twice over
+(AM-R1, and `museum` is on her own banned list).
+
+Lawful — every item is a predicate about her **thinking**: register and rhythm;
+reaction to information; first person about analysis (watching, reading, waiting
+on, unable to settle); first person about having been wrong in a prior public
+read; craft judgment about a chart or an argument; delight and curiosity about a
+market fact; warmth toward the interlocutor's **idea**; humour aimed at
+forecasts, crowds and institutions; sympathy for a professional setback.
+
+Forbidden — every item is a predicate about her **circumstances**: positions and
+P&L; meetings, sources and colleagues; product testimonials; **any place, meal,
+drink, purchase, commute, travel, weather, time of day or physical state**; any
+claimed routine; any claimed feeling implying a life event; any dark
+`lifestyle_*` canon noun; any implied physical presence; the other person's
+first name.
+
+That asymmetry is why the register can be genuinely warm with zero fabricated
+facts. The corpus's own warmth exemplars lean on real biography and are cited
+here as **register anchors only**, never as templates. Lifestyle canon stays
+DARK on every employee spec pending that employee's own confirmation; nothing in
+this amendment flips a `lifestyle_*` marker or edits a `voice_codex` block,
+which remain §5-FROZEN.
+
+### §11.6 The anti-cold law, and what it deliberately does NOT do
+
+`reply_critics.warmth_register` is three checks:
+
+* **W1 — cold printout.** An employee-desk reply of ≥12 content units carrying
+  no human-register marker at all rejects. **The length condition is
+  load-bearing and is not a hedge:** the corpus's best analytical replies are 3
+  to 5 units ("Support at 900-925", "Actually closer to -10%") and killing those
+  would contradict the strongest measured effect in the data. Coldness is a
+  defect of *length* — at twelve-plus units, carrying no register is a choice.
+* **W2 — cold register drift.** Coldness is a property of a **feed**, not of a
+  reply. Below a 45% warm share over the desk's last 20 items, another
+  marker-free reply rejects. The first cold reply is free and the eleventh
+  consecutive one is impossible. **Its fail direction is open and that is a
+  real cost:** under 8 items of history it is inert, so a freshly armed account
+  can ship its first few replies cold. The mitigation is supply side — the
+  drafter offers a move from item one — and must not be "fixed" by making an
+  empty history reject, which would block the lane at arming.
+* **W3 — bolted-on warmth.** An opening sentence that is *about the thread*
+  ("great point", "appreciate you laying this out"), spends more than 5 content
+  units and carries no referent, rejects. **Scoped to thread-directed warmth on
+  purpose:** phrased as "any long referent-free first sentence" it also rejects
+  biancoresearch's cold Fed-vote correction (18 likes, 0.0067 eng/view), which
+  is a winning reply and is this rule's calibration fixture.
+
+**What it does not do: it does not require warmth on any single reply.** It
+cannot — the evidence points the other way per reply. It requires that the
+*register* is not cold and that no single reply is a long printout. Anyone
+implementing "every reply must contain a feeling" has misread §11.2.
+
+### §11.7 Fabrication is its own critic, on its own line
+
+`reply_critics.fabrication` calls `expression_dial.am_r1_hits` **directly**,
+plus a circumstance-class detector the AM-R1 lines never covered, plus the
+parent author's name. It is separate from `vocab` for a reason that is a defect
+fix, not a preference: `vocab` reaches AM-R1 only through
+`expression_dial.violations`, which returns `[]` for any account with **no
+codex** — which is the flagship, and any account whose spec fails to load. The
+one gate between a real named human and a fabricated first-person claim was
+silently absent for part of the roster. Every rejection quotes the offending
+sentence, because a reject an operator cannot act on is a reject that gets
+overridden.
+
+### §11.8 The doorway, re-ranked
+
+§1 already says the doorway need not be a question. The corpus says something
+sharper: **the question is the weakest doorway form and the verdict is the
+strongest.** Question rate across 75 landing replies is 16%, and the highest
+per-view replies carry no question at all.
+
+| # | Form | Why it earns an answer | Grade |
+|---|---|---|---|
+| D1 | **verdict left standing** plus a clause implying a division | people reply to disagree with confidence far more readily than to answer a question | strong |
+| D2 | **named condition** — a falsifiable if/then with a level | a standing invitation with a scoreboard | strong |
+| D3 | **specific credit with a named detail** | highest author-reply-back rate in the sample | strong |
+| D4 | room-aimed rhetorical question, no second person | an accusation aimed at everyone reading | medium |
+| D5 | the half-step — stop one clause short of the conclusion | the room finishes it in the replies | medium |
+| D6 | author-directed question | highest value when it lands, lowest like rate in both corpora | weak, capped |
+
+D1–D3 are the defaults. **D2 is X-legal in plain terms** — charter §2 amendment
+4 makes falsification formats legal on X and "What Would Prove This Wrong?" is
+Kelly's franchise. The #3821 operator ruling banning falsifier language is
+**site surfaces only** and a builder pattern-matching on it must not scrub D2
+off the reply desk.
+
+The question caps (≤20% of an account's replies ending in a question, ≤2
+author-directed per account per 7 days, never two to the same author inside 30
+days) belong at **selection** time in `reply_producer`, not in a critic: a
+critic sees one draft and cannot express a rolling week, and rejecting at critic
+time wastes an already-composed draft. They fail **closed** on a store read
+error — an unreadable history must not license an uncapped week.
+
+### §11.9 What this amendment does NOT claim
+
+* **The effect sizes are THIN and are not measurements.** Both buckets in §11.2
+  are under 15 rows, from one live news cycle. They are a documented prior with
+  its evidence attached; the labels loop is what will grade it.
+* **It does not claim warm replies beat cold ones.** Per reply the corpus says
+  the opposite, which is exactly why W1 is length-scoped and W2 is a rolling
+  register test rather than a per-reply requirement.
+* **It does not claim these eight moves are the register.** They are the eight
+  the corpus supports today. A ninth is a doctrine amendment plus a test, not a
+  dictionary edit.
+* **It measures none of the objective function.** Charter §3's objective is the
+  author replying back and a follow. Every number here is a like or a view.
+
+---
+
+## §12. Where the warmth register is enforced
+
+| Law | Enforced by |
+|---|---|
+| the fusion law, the bright line, lawful vs forbidden | `reply_voice.SYSTEM_PROMPT` (`WHAT WARMTH IS AND IS NOT`) + the warmth-move intent in `build_user_message` |
+| warmth exists before the model runs | `reply_drafter.compose(..., warmth=)` — deterministic, so a muted model still ships a warm reply |
+| a move wrong for the parent shape is unavailable | `reply_drafter.classify_parent` + `fits`/`wrong_when` in `warmth_moves_for` |
+| a move out of character is unavailable | `warmth_moves_for`: the account's dial, its `zh` flag, and a live sweep of every opener through `banned_language` + `expression_dial.violations` + `am_r1_hits` |
+| no move hardens into a tell | `reply_drafter.rotate_warmth` — an LRU independent of the family LRU, keyed on the LAST use |
+| the flagship stays an evidence desk | `dial_floor` against `expression_dial.dial_for("reply", ...)` |
+| a cold reply, and a cold RUN of replies | `reply_critics.warmth_register` (W1, W2) |
+| warmth bolted on in front of the analysis | `reply_critics.warmth_register` (W3) |
+| no fabricated biography, on ANY account | `reply_critics.fabrication` — `am_r1_hits` called directly, plus the circumstance class and the author's name, with the sentence quoted |
+| a model that fabricates or goes cold cannot ship | `reply_voice.validate_reply_copy` runs both critics before the copy is accepted; ONE repair turn, then the warm deterministic draft |
+| the question caps | `reply_producer` at selection time (§11.8) |

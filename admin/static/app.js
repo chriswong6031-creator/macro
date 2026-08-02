@@ -251,7 +251,7 @@ const NAV_GROUPS = [
      looks wrong, and the strategy surfaces he reads occasionally. Floor leads
      because it is the only page that answers "is it working" without clicking. */
   { label: "Marketing · Floor", items: [["marketing_floor", "Floor"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_publish", "Publisher"]] },
-  { label: "Marketing · Lanes", items: [["marketing_lanes", "X Lanes"], ["marketing_radar", "Radar"], ["marketing_reply_queue", "Reply Queue"], ["marketing_seo", "SEO"]] },
+  { label: "Marketing · Lanes", items: [["marketing_lanes", "X Lanes"], ["marketing_radar", "Radar"], ["marketing_reply_queue", "Reply Deck"], ["marketing_seo", "SEO"]] },
   { label: "Marketing · Engine room", items: [["marketing_models", "Model Desk"], ["marketing_health", "Desk Health"], ["marketing_learning", "Learning"], ["marketing_lab", "Lab"], ["marketing_lobes", "Engines"]] },
   { label: "Marketing · Strategy", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_allies", "Allies"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
@@ -288,7 +288,7 @@ const TAB_PREFETCH_PATHS = {
   marketing_floor: ["/api/marketing/floor"],
   marketing_content: ["/api/marketing/content"],
   marketing_lab: ["/api/marketing/lab"],
-  marketing_reply_queue: ["/api/marketing/reply-queue"],
+  marketing_reply_queue: ["/api/marketing/reply-deck"],
   marketing_health: ["/api/marketing/health"],
   marketing_learning: ["/api/marketing/learning"],
   marketing_outbox: ["/api/marketing/outbox", "/api/marketing/rejections"],
@@ -6818,13 +6818,34 @@ function obxRejectionBox(rej) {
   </div>`;
 }
 
-/* ── Reply Queue (XG-W4) ───────────────────────────────────────────────────
-   The reply desk's own rail. Two zones per account, same approve/hold/reject
-   discipline as the Outbox, but a SEPARATE store: Buffer cannot post replies,
-   so these items never travel the outbox rail and never reach the publisher.
+/* ══ THE REPLY DECK ════════════════════════════════════════════════════════
+   The surface the operator works. Replaces the XG-W4 rail, which listed what
+   was in the store — enough to prove the store worked, not enough to DECIDE
+   with, because approving a reply is a judgement about a CONVERSATION and the
+   rail showed one half of it.
 
-   Approving here does not post. At M0 nothing leaves the machine at all; at M1
-   the item is handed to the desktop session, which is the only sender. */
+   THE CARD IS TWO COLUMNS, and that is the whole design. Left: the post we
+   would be replying to, with the scorer's own features rendered as the
+   sentences they encode ("8 minutes old — inside the window", "3 replies —
+   room left"). Right: our draft, what produced it, and what the critics said.
+   An operator who cannot see WHY a target was picked cannot tell a good pick
+   from a lucky one, and the scoring weights — every one of them a hypothesis
+   the charter says is ungraded — never get argued with.
+
+   THREE THINGS THIS PAGE REFUSES TO DO:
+     1. Imply an empty deck means there was nothing worth replying to. Five
+        arming keys gate this desk and four fail SILENTLY; the dark card names
+        the ones that are off and the exact file and key that flips each.
+     2. Treat "approved" as one state. At M0 approval parks the item forever
+        BY DESIGN; at M1 it is mirrored, claimed, sent and confirmed back by a
+        receipt. Four states, four different next actions.
+     3. Render an unbounded list. Same law as the other five pages.
+
+   Nothing here posts. At M0 nothing leaves the machine; at M1 an approved item
+   is handed to the desktop session, which is the only sender. */
+
+let RQ_LAST = null;   /* last deck payload — the edit sheet reads it, never refetches */
+
 function rqModeChip(mode) {
   const cls = mode === "M0" ? "pill" : "pill ok";
   const what = mode === "M0" ? "draft-only, nothing exports"
@@ -6832,101 +6853,364 @@ function rqModeChip(mode) {
   return `<span class="${cls}" title="${esc(what)}">${esc(mode)}</span>`;
 }
 
-function rqCard(it, zone) {
-  const score = it.score == null ? "—" : Number(it.score).toFixed(2);
-  const comps = Object.entries(it.score_components || {})
-    .map(([k, val]) => `${esc(k)} ${Number(val).toFixed(3)}`).join(" · ");
-  const chart = it.chart && (it.chart.local_path || it.chart.public_url)
-    ? `<div class="muted small">chart: ${esc(it.chart.chart_id || "attached")}</div>` : "";
-  const alts = (it.alt_drafts || []).map((a, i) =>
-    `<details class="rq-alt"><summary>alternate ${i + 1}</summary><pre>${esc(a)}</pre></details>`
-  ).join("");
-  const outcome = it.outcome && it.outcome.sent_at
-    ? `<div class="muted small">sent ${esc(it.outcome.sent_at)}</div>` : "";
-  const actions = zone === "awaiting"
-    ? `<div class="row gap">
-         <button class="btn sm" onclick="rqDecide('${esc(it.id)}','approve',this)">Approve</button>
-         <button class="btn sm ghost" onclick="rqDecide('${esc(it.id)}','hold',this)">Hold</button>
-         <button class="btn sm danger" onclick="rqReject('${esc(it.id)}',this)">Reject</button>
-       </div>`
-    : `<div class="row gap">
-         <button class="btn sm danger" onclick="rqReject('${esc(it.id)}',this)">Reject</button>
-       </div>`;
-  return `<div class="card rq-item">
-    <div class="row between">
-      <div class="small muted">
-        <a href="${esc(it.target_url || "#")}" target="_blank" rel="noopener noreferrer">@${esc(it.parent_author || "?")}</a>
-        · ${esc(it.tier || "—")} · ${esc(it.family || "—")} · score ${esc(score)}
+/* Minutes → the words a person uses. Nulls say "not recorded", never "0m":
+   a substituted zero reads as a measurement. */
+function rqMins(m) {
+  if (m === null || m === undefined) return null;
+  const n = Number(m);
+  if (!isFinite(n)) return null;
+  if (n < 1) return "under a minute";
+  if (n < 90) return `${Math.round(n)}m`;
+  return `${(n / 60).toFixed(1)}h`;
+}
+
+/* ── The dark card ──────────────────────────────────────────────────────────
+   Every arming key that is off, with the file and key that flips it. Shown
+   whenever anything is off, not only when the deck is empty: a desk that is
+   drafting fine while every account sits at M0 is producing work that can
+   never leave, and that is exactly the state that looks healthy. */
+function rqDarkCard(dark, totals) {
+  if (!dark || !dark.length) return "";
+  const rows = dark.map(r => `<div class="rqd-row">
+      <div class="rqd-title">${esc(r.title || "")}</div>
+      <div class="rqd-detail">${esc(r.detail || "")}</div>
+      ${r.fix ? `<div class="rqd-fix"><code>${esc(r.fix)}</code></div>` : ""}
+    </div>`);
+  const lead = (totals && totals.awaiting)
+    ? `${dark.length} thing${dark.length === 1 ? " is" : "s are"} switched off — drafts exist, but read these first`
+    : `Nothing is waiting on you, and here is why`;
+  return `<section class="card rq-dark">
+    <div class="section">Why this deck is quiet <span class="cnt">${esc(lead)}</span></div>
+    ${rows.join("")}
+  </section>`;
+}
+
+/* ── The burst header ───────────────────────────────────────────────────────
+   A burst is one session window of one desk. The windows are each persona's
+   OWN `cadence.session` from her committed spec, resolved through the same
+   cadence_resolver the publisher uses — the deck cannot disagree with the lane
+   about when a desk is awake.
+
+   TWO numbers per desk, because they bind independently: how many drafts are
+   waiting on you, and how many sends the cap still allows. Nine drafts and two
+   slots is a different afternoon from two drafts and nine slots. */
+function rqBurstHeader(burst, accounts) {
+  if (!burst || burst.note) {
+    return `<section class="card rq-burst"><div class="section">Today's bursts</div>
+      <div class="muted small">${esc((burst && burst.note) || "no burst plan available")}</div></section>`;
+  }
+  const rows = (burst.accounts || []);
+  if (!rows.length) {
+    return `<section class="card rq-burst"><div class="section">Today's bursts</div>
+      ${blEmpty("No desk is eligible for replies",
+                "A desk needs to be enabled in desk_network AND present in the author register.")}</section>`;
+  }
+  /* Live desks first, then the ones with work waiting, then the rest. */
+  const order = rows.slice().sort((a, b) =>
+    (b.live - a.live) || ((b.waiting || 0) - (a.waiting || 0)) || a.id.localeCompare(b.id));
+  const cells = order.map(r => {
+    const when = r.has_session
+      ? `${esc(r.local_time || "—")} ${esc(r.tz || "")} · ${esc((r.windows || []).join(", "))}`
+      : "no territory clock — every hour is in window";
+    const live = r.live
+      ? `<span class="rqb-live">live now</span>`
+      : (r.has_session ? `<span class="rqb-off">out of window</span>` : `<span class="rqb-off">always on</span>`);
+    const cap = (r.headroom === null || r.headroom === undefined)
+      ? `<span class="muted">cap unknown</span>`
+      : (r.mode === "M0"
+          ? `<span class="rqb-parked">M0 — 0 sends allowed</span>`
+          : `${esc(String(r.headroom))} of ${esc(String(r.cap))} sends left today`);
+    return `<div class="rqb-cell${r.live ? " is-live" : ""}">
+      <div class="rqb-head"><b>${esc(r.id)}</b> ${rqModeChip(r.mode)} ${live}</div>
+      <div class="rqb-when">${when}</div>
+      <div class="rqb-nums">
+        <span class="rqb-n"><b>${esc(String(r.waiting || 0))}</b> waiting on you</span>
+        <span class="rqb-n"><b>${esc(String(r.cleared || 0))}</b> cleared</span>
+        <span class="rqb-n">${cap}</span>
       </div>
-      <div class="small muted">${esc(it.status || "")}${it.attempts ? ` · ${it.attempts} attempt(s)` : ""}</div>
+    </div>`;
+  });
+  const liveIds = burst.live || [];
+  const lead = liveIds.length
+    ? `${liveIds.map(esc).join(", ")} ${liveIds.length === 1 ? "is" : "are"} in window`
+    : "no desk is inside its own session window right now";
+  return `<section class="card rq-burst">
+    <div class="section">Today's bursts <span class="cnt">${lead}</span></div>
+    <div class="rqb-grid">${cells.join("")}</div>
+    <div class="muted small">Windows come from each persona's <code>cadence.session</code>.
+      One desk at a time, irregular gaps — a metronome is more detectable than volume
+      (docs/reply_desk_runbook.md §5).</div>
+  </section>`;
+}
+
+/* ── Why this target ────────────────────────────────────────────────────────
+   The scorer's own contributions, labelled. Bars are drawn against the largest
+   contribution in THIS card, not against 1.0: every contribution is weight ×
+   feature and no weight exceeds 0.26, so a 0..1 scale would render every reason
+   as a stub and say nothing about which one carried the pick. */
+function rqWhyTarget(card) {
+  const rows = card.why_target || [];
+  if (!rows.length) return `<div class="muted small">no scoring record on this item</div>`;
+  const top = Math.max(...rows.map(r => Math.abs(r.contribution || 0)), 0.0001);
+  const bar = r => `<div class="rqw-row" title="${esc(r.means || "")}">
+      <span class="rqw-label">${esc(r.label || r.key)}</span>
+      <span class="rqw-bar"><i style="width:${Math.max(2, Math.abs(r.contribution || 0) / top * 100).toFixed(0)}%"></i></span>
+      <span class="rqw-val">${Number(r.contribution || 0).toFixed(3)}</span>
+    </div>`;
+  const head = rows.slice(0, 3).map(bar).join("");
+  const rest = rows.slice(3);
+  return head + (rest.length
+    ? `<details class="rqw-more"><summary>${rest.length} more reason${rest.length === 1 ? "" : "s"}</summary>${rest.map(bar).join("")}</details>`
+    : "");
+}
+
+/* ── Why this draft ─────────────────────────────────────────────────────────
+   One gift, one grip, one doorway. The family and warmth registers carry the
+   MOVE and the author-response trigger, so grip and doorway-intent come from
+   committed data. The GIFT does not: reply_drafter computes it and
+   reply_queue.make_item has no field for it, so it is dropped on the way into
+   the store. The payload says so in `missing` and this prints that, rather
+   than passing off the draft's first line as the gift. */
+function rqWhyDraft(card) {
+  const w = card.why_draft || {};
+  const fam = w.family || {};
+  const parts = [];
+  parts.push(`<div class="rqy-part"><span class="rqy-k">Gift</span>
+    <span class="rqy-v">${w.gift ? esc(w.gift) : `<i class="muted">not recorded on the item</i>`}</span></div>`);
+  parts.push(`<div class="rqy-part"><span class="rqy-k">Grip</span>
+    <span class="rqy-v">${fam.move ? esc(fam.move) : `<i class="muted">no reasoning family recorded</i>`}
+      ${fam.label ? `<em class="muted">(${esc(fam.label)})</em>` : ""}</span></div>`);
+  parts.push(`<div class="rqy-part"><span class="rqy-k">Doorway</span>
+    <span class="rqy-v">${fam.trigger ? esc(fam.trigger) : `<i class="muted">not recorded</i>`}</span></div>`);
+  if (w.warmth) {
+    parts.push(`<div class="rqy-part"><span class="rqy-k">Warmth</span>
+      <span class="rqy-v">${esc(w.warmth.does || w.warmth.label || w.warmth.id)}</span></div>`);
+  }
+  if ((w.numbers || []).length) {
+    parts.push(`<div class="rqy-part"><span class="rqy-k">Figures</span>
+      <span class="rqy-v">${w.numbers.map(n => `<code>${esc(n)}</code>`).join(" ")}
+      <em class="muted">— every one had to come from our own feed</em></span></div>`);
+  }
+  if (w.voice_mode) {
+    parts.push(`<div class="rqy-part"><span class="rqy-k">Phrasing</span>
+      <span class="rqy-v">${esc(w.voice_mode)}</span></div>`);
+  }
+  const alts = (card.alt_drafts || []).map((a, i) =>
+    `<details class="rq-alt"><summary>alternate ${i + 1}${a.family ? ` · ${esc(a.family)}` : ""}</summary><pre>${esc(a.text || "")}</pre></details>`
+  ).join("");
+  const missing = (w.missing || []).length
+    ? `<div class="rqy-missing">${w.missing.map(m => `<div>${esc(m)}</div>`).join("")}</div>` : "";
+  return `<div class="rqy">${parts.join("")}${missing}${alts}</div>`;
+}
+
+/* Critic verdict as one chip. "N critics cleared it" is the claim the runbook
+   makes to the operator, and it is true only because the STORE refuses an item
+   without a full-roster passing stamp — so print the count, not the word. */
+function rqCriticChip(card) {
+  const c = card.critics || {};
+  const n = (c.ran || []).length;
+  if (c.verdict === "pass" && n) {
+    return `<span class="rz rz-ok" title="${esc((c.ran || []).join(", "))}"><b>${n} critics cleared it</b></span>`;
+  }
+  if ((c.rejected_by || []).length) {
+    return (c.rejected_by || []).map(r => rzChip("blocked by", r, "hot")).join("");
+  }
+  return `<span class="rz rz-inert"><b>no critic stamp</b></span>`;
+}
+
+/* State chip, DERIVED FROM THE HANDOFF STAGE the server computed.
+
+   NOT stChip(). That helper is the OUTBOX vocabulary and it is wrong here in
+   both directions: it has no row for `claimed` or `sent`, so it silently falls
+   back to "Ready · awaiting your call" on an item a desktop session is holding;
+   and its `approved` stance is "goes at the next slot", which on this rail is
+   a sentence about a machine that does not exist — at M0 an approved reply goes
+   NOWHERE, and at M1 it goes to a human's browser, not to a publish slot.
+
+   The chip and the detail line below it read from the same `export.stage`, so
+   they cannot disagree: one fact, two renderings, no second source. */
+function rqStateChip(card) {
+  const RS = {
+    queued:           { cls: "st-queued",      label: "Ready",       stance: "waiting on you" },
+    parked:           { cls: "st-held",        label: "Cleared",     stance: "parked — M0 sends nothing" },
+    awaiting_export:  { cls: "st-approved",    label: "Cleared",     stance: "next export tick hands it over" },
+    exported:         { cls: "st-scheduled",   label: "Handed over", stance: "waiting for a session to claim it" },
+    claimed:          { cls: "st-posting",     label: "Claimed",     stance: "a session is holding it" },
+    receipt_pending:  { cls: "st-posting",     label: "Reported sent", stance: "receipt not yet ingested" },
+    sent:             { cls: "st-posted",      label: "Sent",        stance: "confirmed by receipt" },
+    failed:           { cls: "st-failed",      label: "Failed",      stance: "did not send" },
+    rejected:         { cls: "st-quarantined", label: "Skipped",     stance: "you passed on it" },
+    /* The store has ONE terminal kill, so an edit retires the original through
+       the same `rejected` edge a skip uses. Only the ledger actor distinguishes
+       them, and "you passed on this" is a false sentence about a draft the
+       operator actually improved — so the server splits the stage and the page
+       gives it its own word. */
+    replaced:         { cls: "st-recalled",    label: "Replaced",    stance: "your edit took its place" },
+    expired:          { cls: "st-expired",     label: "Expired",     stance: "its window closed" },
+  };
+  const m = RS[(card.export || {}).stage] || RS.queued;
+  return `<span class="st ${m.cls}">${esc(m.label)} <i>· ${esc(m.stance)}</i></span>`;
+}
+
+/* The handoff detail. The LABEL lives on the chip above; this line carries only
+   what the chip cannot — who holds it, until when, and the link to the posted
+   reply. A line with nothing left to add does not render. */
+function rqExportLine(card) {
+  const e = card.export || {};
+  if (!e.stage || e.stage === "queued") return "";
+  const link = e.url
+    ? ` <a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">open the reply</a>` : "";
+  /* A send we cannot see is a send we cannot check. Say so — the receipt
+     contract expects a screenshot and records the send without one. */
+  const shot = (e.stage === "sent" && !e.screenshot)
+    ? ` <em class="muted">— no screenshot was filed</em>` : "";
+  if (!e.detail && !link && !shot) return "";
+  return `<div class="rqx rqx-${esc(e.stage)}">${esc(e.detail || "")}${link}${shot}</div>`;
+}
+
+/* ── One deck card ──────────────────────────────────────────────────────── */
+function rqCard(card) {
+  const zone = card.status === "queued" ? "awaiting"
+             : (card.status === "approved" || card.status === "claimed" || card.status === "failed") ? "cleared"
+             : "done";
+  const age = rqMins(card.parent_age_min);
+  const ttl = rqMins(card.expires_in_min);
+  const parentMeta = [
+    card.author_tier ? `${card.author_tier} tier` : null,
+    age ? `posted ${age} ago` : null,
+    (card.parent_replies !== null && card.parent_replies !== undefined)
+      ? `${Math.round(card.parent_replies)} replies` : null,
+    (card.parent_engagement !== null && card.parent_engagement !== undefined)
+      ? `${Math.round(card.parent_engagement)} engagements` : null,
+  ].filter(Boolean).join(" · ");
+
+  const actions = zone === "awaiting"
+    ? `<div class="rq-actions">
+         <button class="btn primary sm" onclick="rqDecide('${esc(card.id)}','approve',this)">Approve</button>
+         <button class="btn sm" onclick="rqeOpen('${esc(card.id)}',this)">Edit</button>
+         <button class="btn sm ghost" onclick="rqDecide('${esc(card.id)}','hold',this)">Hold</button>
+         <button class="btn sm danger" onclick="rqSkip('${esc(card.id)}',this)">Skip…</button>
+       </div>`
+    : (zone === "cleared"
+        /* Pulling back a CLAIMED item is a legal store transition and a real
+           hazard: a desktop session holds a live lease and may already have
+           posted. The button stays — the operator owns that call — but it says
+           what it is doing, and rqSkip warns before it fires. */
+        ? `<div class="rq-actions">
+             <button class="btn sm danger" onclick="rqSkip('${esc(card.id)}',this,'${esc((card.export || {}).stage || "")}')">Pull it back</button>
+           </div>`
+        : "");
+
+  /* TTL is the loudest clock on the card when it is short. A reply window
+     closes on the PARENT's clock; a draft nobody decided in time is dead, not
+     backlog, and the queue kills it without asking. */
+  const ttlCls = (card.expires_in_min !== null && card.expires_in_min !== undefined
+                  && Number(card.expires_in_min) < 10) ? " is-urgent" : "";
+
+  return `<article class="rq-card rq-${esc(zone)}">
+    <div class="rq-cols">
+      <div class="rq-parent-col">
+        <div class="rq-eyebrow">Replying to</div>
+        <div class="rq-parent-who">
+          <a href="${esc(card.target_url || "#")}" target="_blank" rel="noopener noreferrer">@${esc(card.parent_author || "unknown")}</a>
+          ${card.tier ? `<span class="pill">${esc(card.tier)}</span>` : ""}
+        </div>
+        <blockquote class="rq-parent">${esc(card.parent_excerpt || "(the parent text was not stored)")}</blockquote>
+        <div class="rq-eyebrow">Why this one</div>
+        ${rqWhyTarget(card)}
+      </div>
+      <div class="rq-draft-col">
+        <div class="rq-eyebrow">
+          Our draft
+          <span class="rq-chars">${esc(String(card.chars || 0))} chars</span>
+          ${ttl ? `<span class="rq-ttl${ttlCls}">expires in ${esc(ttl)}</span>` : ""}
+        </div>
+        <p class="rq-draft">${esc(card.draft || "")}</p>
+        <div class="rq-chips">
+          ${rqStateChip(card)}
+          ${card.family ? `<span class="rz rz-inert"><b>${esc(card.family)}</b></span>` : ""}
+          ${card.warmth ? `<span class="rz rz-warm"><b>${esc(card.warmth)}</b></span>` : ""}
+          ${rqCriticChip(card)}
+          ${card.attempts ? rzChip("send attempts", String(card.attempts), "hot") : ""}
+        </div>
+        ${rqExportLine(card)}
+        <details class="rq-why"><summary>Why this draft</summary>${rqWhyDraft(card)}</details>
+        ${actions}
+      </div>
     </div>
-    <blockquote class="rq-parent">${esc(it.parent_excerpt || "")}</blockquote>
-    <pre class="rq-draft">${esc(it.draft || "")}</pre>
-    ${alts}${chart}${outcome}
-    <div class="muted small">expires ${esc(it.expires_at || "—")}</div>
-    <div class="muted small">${esc(comps)}</div>
-    ${actions}
-  </div>`;
+  </article>`;
 }
 
 RENDER.marketing_reply_queue = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
-  const d = await api("/api/marketing/reply-queue");
+  const d = await api("/api/marketing/reply-deck");
   if (!d || !d.ok) {
-    v.innerHTML = nwEmpty("Reply queue unavailable", (d && d.error) || "panel error");
+    v.innerHTML = nwEmpty("The reply deck could not be read", (d && d.error) || "panel error");
     return;
   }
+  RQ_LAST = d;
   const accounts = d.accounts || [];
-  const summary = d.summary || {};
+  const totals = d.totals || {};
+  const arming = d.arming || {};
+
   const head = `<div class="head">
-      <h2>Reply Queue</h2>
+      <h2>Reply Deck</h2>
       <div class="muted small">${esc(d.note || "")}</div>
-      <div class="muted small">store: <code>${esc(d.store || "")}</code> ·
-        modes shipped: ${esc((d.modes_enabled || []).join(", "))} ·
-        hard ceiling ${esc(String(d.hard_ceiling))}/account/day</div>
+      <div class="muted small">modes shipped ${esc((arming.modes_enabled || []).join(", "))} ·
+        hard ceiling ${esc(String(arming.hard_ceiling))}/desk/day ·
+        ${esc(String(d.export && d.export.mirrored || 0))} mirrored to the desktop lane ·
+        ${esc(String(d.export && d.export.receipts_pending || 0))} receipts pending</div>
+      <div class="rq-store" title="${esc(d.store || "")}">host state <code>${esc(d.store || "")}</code></div>
     </div>`;
 
-  if (!accounts.length) {
-    v.innerHTML = head + nwEmpty("Nothing queued",
-      "Discovery has not produced a target that cleared the critics yet.");
-    return;
-  }
-
   const body = accounts.map(a => {
-    const awaiting = (a.awaiting || []);
-    const approved = (a.approved || []);
-    const done = (a.done || []);
-    return `<section class="card">
-      <div class="row between">
-        <h3>${esc(a.id)} ${rqModeChip(a.mode)}</h3>
-        <div class="muted small">sent today ${esc(String(a.sent_today || 0))}/${esc(String(a.cap))}</div>
-      </div>
-      <div class="obx-zone-label">Awaiting your approval (${awaiting.length})</div>
-      ${awaiting.length ? awaiting.map(it => rqCard(it, "awaiting")).join("")
-                        : `<div class="muted small">nothing waiting.</div>`}
-      ${approved.length ? `<details class="obx-cleared-group" open>
-          <summary>Approved (${approved.length})${a.mode === "M0"
-            ? " — parked: M0 exports nothing" : " — exporting to the desktop lane"}</summary>
-          ${approved.map(it => rqCard(it, "approved")).join("")}
+    const awaiting = a.awaiting || [], cleared = a.approved || [], recent = a.recent || [];
+    if (!awaiting.length && !cleared.length && !recent.length) return "";
+    const capLine = a.mode === "M0"
+      ? `M0 — approving parks it here`
+      : `${esc(String(a.sent_today || 0))} sent today of ${esc(String(a.cap))}`;
+    return `<section class="card rq-desk">
+      <div class="section">${esc(a.id)} ${rqModeChip(a.mode)}
+        <span class="cnt">${capLine}</span></div>
+      <div class="obx-zone-label">Waiting on you (${awaiting.length})</div>
+      ${awaiting.length ? blList(awaiting.map(rqCard), 6, 44)
+                        : `<div class="muted small">nothing waiting on this desk.</div>`}
+      ${cleared.length ? `<details class="obx-cleared-group" open>
+          <summary>Cleared (${cleared.length})${a.mode === "M0"
+            ? " — parked: M0 exports nothing" : " — on the handoff rail"}</summary>
+          ${blList(cleared.map(rqCard), 4, 26)}
         </details>` : ""}
-      ${done.length ? `<details class="obx-cleared-group">
-          <summary>Recent (${done.length})</summary>
-          ${done.map(it => rqCard(it, "done")).join("")}
+      ${recent.length ? `<details class="obx-cleared-group">
+          <summary>History (${recent.length})</summary>
+          ${blList(recent.map(rqCard), 3, 17)}
         </details>` : ""}
     </section>`;
   }).join("");
 
-  const counts = Object.entries(summary.by_status || {})
-    .map(([k, n]) => `${esc(k)} ${esc(String(n))}`).join(" · ");
-  v.innerHTML = head + `<div class="muted small">${counts}</div>` + body;
+  /* The honest empty state. It names WHICH key is off rather than implying
+     there was nothing worth replying to — four of the five arming keys fail
+     silently, and "quiet desk" and "dark desk" look identical from here. */
+  const nothing = !totals.awaiting && !totals.cleared;
+  const empty = nothing
+    ? blEmpty("No reply is waiting on you",
+              (d.dark || []).length
+                ? "The desk is not fully armed — the card above names every switch that is off."
+                : "Every arming key is on. Discovery has not yet produced a target that cleared the critics.")
+    : "";
+
+  v.innerHTML = head
+    + rqDarkCard(d.dark, totals)
+    + rqBurstHeader(d.burst, accounts)
+    + empty + body
+    + `<div id="rqe-root"></div>`;
 };
 
 async function rqDecide(id, decision, btn) {
   btn.disabled = true; const orig = btn.textContent; btn.textContent = "…";
   const r = await post("/api/marketing/reply-queue/decide", { id, decision });
   if (r && r.ok) {
-    toast(decision === "approve" ? "Approved." : "Held in the rail.");
+    toast(decision === "approve" ? "Approved — it does not send from here." : "Held in the deck.");
     RENDER.marketing_reply_queue();
   } else {
     btn.disabled = false; btn.textContent = orig;
@@ -6934,22 +7218,237 @@ async function rqDecide(id, decision, btn) {
   }
 }
 
-async function rqReject(id, btn) {
+/* SKIP WITH A REASON. The reason is the deliverable, not the kill: rejections
+   are the reply desk's taste corpus and the only signal that says what this
+   desk should sound like. Skipping also releases the thread's one-owner lock,
+   so a sibling desk may legitimately take a conversation this one declined. */
+async function rqSkip(id, btn, stage) {
+  /* Naming the hazard where the decision is made. `claimed` and
+     `receipt_pending` mean a desktop session is on this thread right now, and
+     the store admits the kill either way. */
+  const inFlight = (stage === "claimed" || stage === "receipt_pending")
+    ? "\n\nA desktop session is holding this one — it may already be posted. " +
+      "Killing it here removes it from the lane; it does not unpost anything."
+    : "";
   const reason = window.prompt(
-    "Reject this reply. What is wrong with it? (optional — Enter to skip)\n\n" +
-    "Rejections are the taste corpus: name the phrase or the reasoning, not " +
-    "just the feeling. Rejecting also frees the thread for another desk.", "");
+    "Skip this reply. What is wrong with it? (optional — Enter to skip)\n\n" +
+    "This is the taste corpus: name the phrase or the reasoning, not just the " +
+    "feeling. Skipping also frees the thread for another desk." + inFlight, "");
   if (reason === null) return;            /* cancelled — do nothing */
-  btn.disabled = true; const orig = btn.textContent; btn.textContent = "rejecting…";
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "skipping…";
   const r = await post("/api/marketing/reply-queue/reject", { id, reason: reason || null });
   if (r && r.ok) {
     toast(r.logged === false
-      ? "Rejected, but the feedback row could not be written."
-      : "Rejected — thread released.");
+      ? "Skipped, but the reason could not be written."
+      : "Skipped — thread released.");
     RENDER.marketing_reply_queue();
   } else {
     btn.disabled = false; btn.textContent = orig;
-    toast((r && r.error) || "Could not reject", true);
+    toast((r && r.error) || "Could not skip", true);
+  }
+}
+
+/* ── EDIT-THEN-APPROVE ──────────────────────────────────────────────────────
+   Same contract as the Outbox edit sheet, against the reply critics:
+
+     1. Opens only from a card still waiting on you — the Edit button exists
+        nowhere else.
+     2. Typing re-locks Save. A check that ran against the previous text has
+        proved nothing about this one.
+     3. "Check it" runs the REAL critic roster server-side and prints
+        every objection VERBATIM. The vocabulary the sheet teaches must be the
+        vocabulary the pipeline uses.
+     4. Save re-runs all of it on the server anyway, and the store refuses any
+        item without a full-roster passing stamp. A client that skipped step 3
+        is refused, not trusted.
+     5. A refusal is named ON the sheet, never in a toast alone.
+
+   The save is a SUPERSESSION: the item id hashes the draft text, so the
+   original is retired and the re-screened replacement is enqueued in its place,
+   inheriting the original's deadline. Editing does not buy a stale reply more
+   time. */
+let RQE_ITEM = null;      /* {id, text, account} of the reply being edited */
+let RQE_CHECKED = false;  /* has a check run against the CURRENT text? */
+let RQE_OPENER = null;    /* the Edit button, so focus can go back to it */
+let RQE_CAP = 240;        /* server's char cap, from the payload — never hardcoded here */
+
+function rqFindCard(id) {
+  if (!RQ_LAST) return null;
+  let found = null;
+  (RQ_LAST.accounts || []).forEach(a =>
+    ["awaiting", "approved", "recent"].forEach(zone =>
+      (a[zone] || []).forEach(c => { if (c.id === id) found = c; })));
+  return found;
+}
+
+function rqeOpen(id, btn) {
+  const card = rqFindCard(id);
+  if (!card) { toast("That draft is no longer in the deck", true); return; }
+  RQE_ITEM = { id, text: card.draft || "", account: card.account || "" };
+  RQE_CHECKED = false;
+  RQE_OPENER = btn || null;
+  RQE_CAP = (RQ_LAST && RQ_LAST.char_cap) || 240;
+  const root = document.getElementById("rqe-root");
+  if (!root) return;
+  const ttl = rqMins(card.expires_in_min);
+  root.innerHTML = `<div class="allies-backdrop" onclick="if(event.target===this)rqeClose()">
+    <div class="allies-dialog wide obe" role="dialog" aria-modal="true" aria-labelledby="rqe-t">
+      <div class="allies-dialog-head">
+        <div>
+          <div class="allies-dialog-title" id="rqe-t">Edit this reply</div>
+          <div class="allies-dialog-sub">${esc(card.account || "")} → @${esc(card.parent_author || "?")}
+            ${ttl ? ` · expires in ${esc(ttl)}` : ""} · <code>${esc(id)}</code></div>
+        </div>
+        <button class="allies-x" onclick="rqeClose()" aria-label="Close">✕</button>
+      </div>
+      <div class="obe-body">
+        <div class="rqe-parent">
+          <div class="eyebrow">The post you are answering</div>
+          <blockquote class="rq-parent">${esc(card.parent_excerpt || "")}</blockquote>
+        </div>
+        <textarea class="obe-ta" id="rqe-ta" rows="5" spellcheck="true"
+          aria-describedby="rqe-count" oninput="rqeInput()"></textarea>
+        <div class="obe-meter">
+          <div class="obx-meter-bar"><div class="obx-meter-fill" id="rqe-fill"></div></div>
+          <span class="obx-count" id="rqe-count"></span>
+        </div>
+        <div class="obe-findings" id="rqe-findings"></div>
+        <div class="rqe-law muted small">Figures are locked to the ones the machine already
+          cleared for this reply. A number it did not vet is a number nobody vetted.</div>
+        <div class="obe-orig" id="rqe-orig">
+          <div class="eyebrow">What it said before</div>
+          <p class="pc-excerpt">${esc(card.draft || "")}</p>
+        </div>
+      </div>
+      <div class="allies-confirm-actions">
+        <span class="obe-msg" id="rqe-msg"></span>
+        <button class="btn" onclick="rqeClose()">Cancel</button>
+        <button class="btn" id="rqe-check" onclick="rqeCheck(this)">Check it</button>
+        <button class="btn primary" id="rqe-save" onclick="rqeSave(this)" disabled>Save and approve</button>
+      </div>
+    </div>
+  </div>`;
+  const ta = document.getElementById("rqe-ta");
+  if (ta) { ta.value = card.draft || ""; ta.focus(); }
+  rqeInput();
+  document.addEventListener("keydown", rqeKey);
+}
+
+function rqeKey(e) { if (e.key === "Escape") rqeClose(); }
+
+function rqeClose() {
+  const root = document.getElementById("rqe-root");
+  if (root) root.innerHTML = "";
+  document.removeEventListener("keydown", rqeKey);
+  RQE_ITEM = null; RQE_CHECKED = false;
+  if (RQE_OPENER && document.body.contains(RQE_OPENER)) RQE_OPENER.focus();
+  RQE_OPENER = null;
+}
+
+/* Live meter + the re-lock. Save stays disabled while the text is over budget,
+   empty, unchanged, or unchecked since the last keystroke — four different
+   reasons, one honest line saying which. */
+function rqeInput() {
+  const ta = document.getElementById("rqe-ta");
+  const cnt = document.getElementById("rqe-count");
+  const fill = document.getElementById("rqe-fill");
+  const save = document.getElementById("rqe-save");
+  const msg = document.getElementById("rqe-msg");
+  if (!ta || !RQE_ITEM) return;
+  const text = ta.value || "";
+  const n = [...text].length;          /* codepoints: an emoji is one char to X */
+  const over = n > RQE_CAP;
+  const near = !over && n > RQE_CAP * 0.9;
+  const cls = over ? "obx-over" : near ? "obx-near" : "";
+  if (cnt) { cnt.className = "obx-count " + cls; cnt.textContent = `${n} / ${RQE_CAP}${over ? " · over limit" : ""}`; }
+  if (fill) { fill.className = "obx-meter-fill " + cls; fill.style.width = Math.min(100, (n / RQE_CAP) * 100).toFixed(1) + "%"; }
+  ta.classList.toggle("is-bad", over);
+  RQE_CHECKED = false;
+  /* The objections on screen were about the PREVIOUS text. Keeping them is
+     useful (they are the list being worked through) and asserting them is a
+     lie (the keystroke may have fixed one), so they are dimmed rather than
+     kept crisp or thrown away. */
+  const box = document.getElementById("rqe-findings");
+  if (box) box.classList.add("is-stale");
+  const unchanged = text.trim() === String(RQE_ITEM.text || "").trim();
+  const empty = !text.trim();
+  if (save) save.disabled = true;
+  if (msg) {
+    msg.className = "obe-msg";
+    msg.textContent = over ? "Too long for one reply."
+      : empty ? "A reply needs words."
+      : unchanged ? "Nothing changed yet."
+      : "Run the critics before saving.";
+    if (over || empty) msg.className = "obe-msg is-bad";
+  }
+}
+
+/* Print every objection the server returned, VERBATIM, as its own chip. An
+   unmapped reason still prints — a critic nobody has written a label for must
+   still be readable, or the operator learns to distrust the ones that are. */
+function rqeRenderFindings(res) {
+  const box = document.getElementById("rqe-findings");
+  if (!box) return;
+  const viols = (res && res.violations) || [];
+  const warns = (res && res.warnings) || [];
+  box.classList.remove("is-stale");     /* these are about the CURRENT text */
+  box.innerHTML = viols.map(v => `<span class="rz rz-hot"><b>${esc(v)}</b></span>`).join("")
+    + warns.map(w => `<span class="rz rz-inert"><b>${esc(w)}</b></span>`).join("");
+}
+
+async function rqeCheck(btn) {
+  const ta = document.getElementById("rqe-ta");
+  const msg = document.getElementById("rqe-msg");
+  const save = document.getElementById("rqe-save");
+  if (!ta || !RQE_ITEM) return;
+  const text = ta.value || "";
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "checking…";
+  try {
+    const r = await post("/api/marketing/reply-deck/validate", { id: RQE_ITEM.id, text });
+    if (!r || !r.ok) throw new Error((r && r.error) || "the critics could not run");
+    rqeRenderFindings(r);
+    RQE_CHECKED = !!r.clean;
+    if (save) save.disabled = !RQE_CHECKED;
+    if (msg) {
+      msg.className = "obe-msg " + (r.clean ? "is-ok" : "is-bad");
+      const nv = (r.violations || []).length;
+      msg.textContent = r.clean
+        ? "Every critic cleared it. Save and approve."
+        : (r.unchanged ? "Nothing changed yet."
+                       : `${nv} thing${nv === 1 ? "" : "s"} to fix.`);
+    }
+  } catch (e) {
+    if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = (e && e.message) || "the critics could not run"; }
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+async function rqeSave(btn) {
+  const ta = document.getElementById("rqe-ta");
+  const msg = document.getElementById("rqe-msg");
+  if (!ta || !RQE_ITEM) return;
+  const text = ta.value || "";
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "saving…";
+  try {
+    const r = await post("/api/marketing/reply-deck/edit", { id: RQE_ITEM.id, text });
+    if (!r || !r.ok) {
+      rqeRenderFindings(r);
+      const why = (r && r.error) || "the edit was refused";
+      if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = why; }
+      /* A supersession that killed the original and could not store the
+         replacement is not a retryable refusal — the sheet's item is gone.
+         Close and reload so the deck shows the truth. */
+      if (r && r.superseded_but_lost) { rqeClose(); toast(why, true); RENDER.marketing_reply_queue(); return; }
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+    rqeClose();
+    toast(r.approved ? "Saved and approved — it does not send from here." : (r.note || "Saved"));
+    RENDER.marketing_reply_queue();
+  } catch (e) {
+    if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = (e && e.message) || "could not save"; }
+    btn.disabled = false; btn.textContent = orig;
   }
 }
 

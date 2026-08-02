@@ -226,6 +226,38 @@ WHAT EARNS A REPLY (the five things a reply may carry)
 - USEFUL REFRAME: grant the frame, change what the move is about.
 - MISSING-NUMBER CORRECTION: fix or sharpen the record with one figure, without naming anyone.
 
+WHAT WARMTH IS AND IS NOT
+This desk is written by real, named people, and people follow an account that is BOTH insightful and worth being around. A reply that is only an instrument readout gets read and forgotten. So warmth is required of the register, and it has exactly one legal shape:
+
+WARMTH IS FUSED INTO THE CLAUSE THAT DELIVERS THE FACT. It is never a second sentence bolted on in front of one.
+- YES: "Fair point but risk premia could plausibly be supportive, and breadth never followed the index up."
+- NO: "Great point! Really appreciate you laying this out. Anyway, here is a stat:"
+The second shape spends a whole sentence and returns nothing. It is the losing pattern in the data, not a politeness.
+
+THE BRIGHT LINE. A reader may learn from this reply how she THINKS and how she REACTS. They may never learn anything about her LIFE. Before writing any clause, ask: could a journalist print this as a fact about her? "She thinks the tariff read is mispriced" is not a fact about her life and is lawful. "She was at a museum this weekend" is, and is forbidden.
+
+LAWFUL, and this is where all the warmth lives:
+- rhythm, sentence length, lowercase asides, fragments, the persona's own granted emoji;
+- reaction to INFORMATION ("that is the whole story");
+- first person about ANALYSIS: what she is watching, reading, waiting on, cannot settle;
+- first person about having been WRONG in a prior public read, when the draft already says so;
+- craft judgment about a chart, an argument or a dataset ("the second chart is the load bearing one");
+- delight or curiosity about a market fact;
+- warmth toward the other person's IDEA, never their person, looks or career;
+- humour aimed at forecasts, crowds, institutions and processes, never at a person;
+- sympathy for a professional setback, eight words at most, no first name.
+
+FORBIDDEN, all of it, with no exceptions and no hedging:
+- any position, trade, entry, exit, P&L or portfolio;
+- any meeting, call, source, colleague or conversation;
+- any testimonial about our own product;
+- any place, meal, drink, purchase, commute, travel, weather, time of day or physical state;
+- any claimed routine ("my third coffee", "back at my desk");
+- any claimed feeling that implies a life event ("rough week for me", "running on no sleep");
+- any implied physical presence ("over here in Hong Kong", "watching from the floor");
+- the other person's first name.
+Every one of those is a fabricated fact about a real employee. Inventing one is the single worst thing you can do here, and it is worse than writing a dull reply.
+
 EXEMPLARS. Real replies under real finance posts, with the likes they earned. This is the REGISTER, not a phrasebook; our own laws above still decide what may ship.
 {_exemplar_block()}
 
@@ -288,8 +320,11 @@ def system_prompt(cfg: dict | None = None, root: Path | str | None = None) -> st
 # Module counters (the producer's fallback-rate report reads these)
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: ``repairs`` counts SECOND turns taken after a validation rejection (see the
+#: repair block in ``voice_or_fallback``); it is not a fallback and is not
+#: counted as one, so ``fallback_rate`` still means "did not ship model copy".
 _STAT_KEYS = ("calls", "llm", "fallback_validation", "fallback_provider", "off",
-              "cap_hits")
+              "cap_hits", "repairs")
 _STATS: dict[str, int] = {k: 0 for k in _STAT_KEYS}
 #: ``time.monotonic()`` of every provider call still inside the rolling window,
 #: oldest first. A TIMESTAMP LOG, not a counter: see ``_take_call_slot``.
@@ -301,7 +336,8 @@ def fallback_stats() -> dict:
 
     Keys: ``calls`` (voice attempts), ``llm``, ``fallback_validation``,
     ``fallback_provider``, ``off``, ``cap_hits`` (attempts refused by the
-    runaway guard, which are ALSO counted as ``fallback_provider``), plus a
+    runaway guard, which are ALSO counted as ``fallback_provider``),
+    ``repairs`` (second turns taken after a validation rejection), plus a
     derived ``fallback_rate`` (the share of attempts that did NOT ship model
     copy). A copy — mutating it is a no-op.
     """
@@ -407,6 +443,21 @@ def persona_card(account: str, cfg: dict | None) -> str:
     return "\n".join(lines)
 
 
+def _dashless(text: str) -> str:
+    """A rule message with the house-banned dashes taken out.
+
+    Violation strings are echoed VERBATIM into the repair turn, and a model that
+    has just read an em dash writes one, which the dash ban then rejects —
+    burning the reply's one repair round on a defect the gate itself supplied.
+    Lifted deliberately from ``copywriter._dashless``: same failure, same fix,
+    and the reply desk's violation strings come from four different modules.
+    """
+    out = str(text or "")
+    for ch in _DASH_TELLS:
+        out = out.replace(f" {ch} ", ": ").replace(ch, ":")
+    return out
+
+
 def build_user_message(
     *,
     draft: str,
@@ -417,24 +468,52 @@ def build_user_message(
     numbers_whitelist: Sequence[str] = (),
     cfg: dict | None = None,
     family_spec: dict | None = None,
+    warmth: str = "",
+    warmth_spec: dict | None = None,
+    violations: Sequence[str] | None = None,
 ) -> str:
-    """The user turn: the parent post, our draft, the family intent, the card.
+    """The user turn: the parent post, our draft, the two intents, the card.
 
-    ``family_spec`` is the ``reply_drafter.FAMILIES`` entry, passed IN by the
-    caller so this module never imports the drafter (the dependency points one
-    way). Absent → the family id alone.
+    ``family_spec`` is the ``reply_drafter.FAMILIES`` entry and ``warmth_spec``
+    the ``WARMTH_MOVES`` entry, both passed IN by the caller so this module
+    never imports the drafter (the dependency points one way). Absent → the id
+    alone.
+
+    THE WARMTH MOVE IS STATED AS AN INTENT, NOT AS A PHRASE TO REUSE. The
+    deterministic draft already carries the move's opener; what the model needs
+    is the SENTENCE-LEVEL MECHANIC ("grant the other side in five words, no full
+    stop, then run straight into the mechanism") so a rewrite keeps the shape
+    instead of politely deleting it and handing back the cold version.
+
+    ``violations`` turns this into a REPAIR turn: it names the failures and
+    nothing else, never restates the laws (they are in the system prompt) and
+    never suggests a rewrite — the model has to fix its own copy, so a repair
+    that drifts is caught by the same validators rather than smuggled through by
+    a helpful instruction. Same discipline as ``copywriter._v2_user_message``.
     """
     spec = family_spec or {}
     intent = " / ".join(str(v) for v in (spec.get("move"), spec.get("trigger")) if v)
     allowed = allowed_numbers(draft, numbers_whitelist)
     who = f" by @{str(parent_author).lstrip('@')}" if parent_author else ""
     long_ok = str(family) in _long_form_families()
-    return (
+    warm_block = ""
+    if warmth:
+        does = str((warmth_spec or {}).get("does") or "")
+        warm_block = (
+            f"WARMTH MOVE: {warmth}"
+            + (f": {does}\n" if does else "\n")
+            + "The draft already opens in this move. Keep it fused to the fact: "
+              "if you drop the move you have handed back the cold version, and "
+              "if you give it its own sentence you have written the losing "
+              "shape.\n"
+        )
+    out = (
         f"THE POST WE ARE REPLYING TO{who}:\n{str(parent_text or '').strip() or '(not available)'}\n\n"
         f"OUR DETERMINISTIC DRAFT (true, legal, and what ships unchanged if you do "
         f"not beat it):\n{str(draft or '').strip()}\n\n"
         f"REPLY FAMILY: {family}"
         + (f": {intent}\n" if intent else "\n")
+        + warm_block
         + (
             "This family may run long: its structure IS the payload. Still one "
             "thought.\n" if long_ok else
@@ -445,6 +524,13 @@ def build_user_message(
         "exactly as shown; using none of them is fine):\n"
         + ("\n".join(f"  {n}" for n in allowed) if allowed else "  (none; write no numbers)")
     )
+    if violations:
+        out += (
+            "\n\nYOUR PREVIOUS REPLY WAS REJECTED. Fix exactly these and keep "
+            "everything that was fine:\n"
+            + "\n".join(f"- {_dashless(v)}" for v in list(violations)[:10])
+        )
+    return out
 
 
 def allowed_numbers(draft: str, numbers_whitelist: Sequence[str] = ()) -> list[str]:
@@ -499,8 +585,11 @@ def validate_reply_copy(
     draft: str,
     numbers_whitelist: Sequence[str] = (),
     parent_text: str = "",
+    parent_author: str = "",
     account: str = "",
     family: str = "",
+    warmth: str = "",
+    relationship_only: bool = False,
     root: Path | str | None = None,
 ) -> list[str]:
     """Every gate a voiced reply must clear, ALL hits reported.
@@ -508,6 +597,7 @@ def validate_reply_copy(
     (a) numbers trace to the own-feed whitelist   (hard; two imported checks)
     (b) house banned language + call language     (hard; imported)
     (c) the reply-value doctrine bar              (hard; imported critic)
+    (c2) fabrication (AM-R1) + the warmth register (hard; imported critics)
     (d) length, links, hashtags, mentions, dashes (hard; doctrine §3/§6)
     (e) smuggled cashtags                         (hard)
     (f) the per-persona expression dial           (hard; imported)
@@ -556,6 +646,21 @@ def validate_reply_copy(
     # (c) The doctrine bar, run against the SAME critic the producer will run.
     value = _rc.reply_value(body, {"parent_text": parent_text, "family": family})
     violations.extend(f"reply_value: {r}" for r in value.get("reasons") or [])
+
+    # (c2) THE WARMTH LAWS, run here as well as downstream, and the ORDER is the
+    # point. The model is the most likely originator of a plausible fabricated
+    # circumstance ("back at my desk", "my third coffee") and of a cold rewrite
+    # that quietly deletes the warmth move the deterministic draft carried.
+    # Catching both HERE means the failure costs one phrasing attempt and the
+    # WARM deterministic draft ships — a warmth law must never be a reason to
+    # lose the fallback.
+    warm_ctx = {"account": account, "root": root, "parent_author": parent_author,
+                "warmth": warmth, "relationship_only": bool(relationship_only),
+                "corpus": []}
+    fab = _rc.fabrication(body, warm_ctx)
+    violations.extend(f"fabrication: {r}" for r in fab.get("reasons") or [])
+    warm = _rc.warmth_register(body, warm_ctx)
+    violations.extend(f"warmth_register: {r}" for r in warm.get("reasons") or [])
 
     # (d) Shape.
     if len(body) > MAX_REPLY_CHARS:
@@ -673,6 +778,9 @@ def voice_or_fallback(
     parent_author: str = "",
     numbers_whitelist: Sequence[str] = (),
     family_spec: dict | None = None,
+    warmth: str | None = None,
+    warmth_spec: dict | None = None,
+    relationship_only: bool = False,
     cfg: dict | None = None,
     root: Path | str | None = None,
 ) -> dict[str, Any]:
@@ -788,6 +896,7 @@ def voice_or_fallback(
             draft=fallback_text, family=family, account=account,
             parent_text=parent_text, parent_author=parent_author,
             numbers_whitelist=numbers_whitelist, cfg=cfg, family_spec=family_spec,
+            warmth=str(warmth or ""), warmth_spec=warmth_spec,
         )
 
         # §10 E3: SYSTEM_PROMPT plus whatever the config pins, which is nothing
@@ -821,11 +930,66 @@ def voice_or_fallback(
         return _done("fallback_provider", fallback_text)
 
     text = _tidy(raw_text)
-    try:
-        violations = validate_reply_copy(
-            text, draft=fallback_text, numbers_whitelist=numbers_whitelist,
-            parent_text=parent_text, account=account, family=family, root=root,
+
+    def _validate(candidate: str) -> list[str]:
+        return validate_reply_copy(
+            candidate, draft=fallback_text, numbers_whitelist=numbers_whitelist,
+            parent_text=parent_text, parent_author=parent_author,
+            account=account, family=family, warmth=str(warmth or ""),
+            relationship_only=bool(relationship_only), root=root,
         )
+
+    try:
+        violations = _validate(text)
+        if violations:
+            # ONE REPAIR TURN, the same discipline the copywriter v2 path uses:
+            # restate only the violations, never the laws, never a suggested
+            # rewrite. The reply desk needs it MORE than the post lane does,
+            # because a warmth move is exactly the kind of instruction a model
+            # obeys at the cost of a different gate (it writes the fused
+            # concession and slips in a hedge her codex bans), and without a
+            # repair a single recoverable slip costs the whole phrasing pass.
+            #
+            # The repair claims its OWN slot from the runaway guard. A guard
+            # that counts one call per draft while the code makes two is a cap
+            # of 80/hour wearing a 40 label, which is the exact bug the rolling
+            # window was introduced to fix.
+            if _take_call_slot(max_calls, window_s):
+                _STATS["repairs"] += 1
+                repair_msg = build_user_message(
+                    draft=fallback_text, family=family, account=account,
+                    parent_text=parent_text, parent_author=parent_author,
+                    numbers_whitelist=numbers_whitelist, cfg=cfg,
+                    family_spec=family_spec, warmth=str(warmth or ""),
+                    warmth_spec=warmth_spec, violations=violations,
+                )
+
+                def _do_repair(client, model):
+                    resp = client.messages.create(
+                        model=model, max_tokens=max_tokens, system=_system,
+                        messages=[{"role": "user", "content": repair_msg}],
+                    )
+                    if getattr(resp, "stop_reason", None) == "refusal":
+                        return None, "stop_refusal", resp
+                    out = "".join(b.text for b in resp.content
+                                  if getattr(b, "type", "") == "text")
+                    return (out.strip() or None), None, resp
+
+                try:
+                    retry_text, _reason, retry_provider = llm_auth.make_call(
+                        providers, _do_repair, context="reply_voice_repair")
+                except Exception as exc:  # noqa: BLE001 — repair is best-effort
+                    log.warning("reply_voice: repair turn failed for account=%s "
+                                "(%s: %s)", account, type(exc).__name__, exc)
+                    retry_text, retry_provider = None, None
+                if retry_text:
+                    candidate = _tidy(retry_text)
+                    retry_violations = _validate(candidate)
+                    if not retry_violations:
+                        return _done("llm", candidate, provider=retry_provider or provider)
+                    violations = retry_violations
+            else:
+                _STATS["cap_hits"] += 1
     except Exception as exc:  # noqa: BLE001 — "Never raises" is the contract
         # THE GATE IS NOT ALLOWED TO BE THE CRASH. `validate_reply_copy` does
         # four LAZY imports (hot_tape_llm, reply_critics, copywriter,

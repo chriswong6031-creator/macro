@@ -6081,3 +6081,162 @@ button.obx-btn-reject:hover:not(:disabled) {
   .obx-dead-ghead .flr-blk-go, .obx-dead-ghead .dz-dead { margin-left: 0; width: 100%; }
   .obx-desk-slots-body { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE REPLY DECK
+   The XG-W4 rail shipped with no stylesheet of its own — it borrowed .card,
+   .small and .muted, which is why every part of a reply card carried the same
+   weight and the operator read it as one grey block. The deck's whole claim is
+   that a reply is a JUDGEMENT ABOUT A CONVERSATION, so the card is two columns
+   and they are deliberately not equals:
+
+     LEFT  someone else's post. Quoted voice: recessed panel, a left rule, text
+           one step down. It is context, and it should read as borrowed.
+     RIGHT our draft and the machinery behind it. The actor's column: full
+           contrast, the draft in READING type (never mono — mono numerals are
+           for figures, never for words), and every control.
+
+   Colour is used for exactly two things: liveness (a burst that is open, a TTL
+   that is nearly up) and refusal. Nothing else is tinted, so the things that
+   are tinted mean something.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The dark card: which arming key is off ─────────────────────────────── */
+.rq-dark { border-color: rgba(255,184,77,.30); background:
+  linear-gradient(140deg, var(--warn-bg) 0, var(--surface) 42%); }
+.rqd-row { padding: 10px 0; border-top: 1px solid var(--grid); }
+.rqd-row:first-of-type { border-top: none; }
+.rqd-title  { font-size: 13.5px; font-weight: 620; color: var(--text); }
+.rqd-detail { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 3px;
+  max-width: 68ch; }
+.rqd-fix    { margin-top: 5px; }
+.rqd-fix code { font-family: var(--mono); font-size: 11px; color: var(--warn);
+  background: var(--warn-bg); padding: 2px 7px; border-radius: 4px; }
+
+/* ── Burst header ───────────────────────────────────────────────────────── */
+.rqb-grid { display: grid; gap: 10px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.rqb-cell { border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface2); padding: 10px 11px; }
+/* A live burst is the one thing on this page that gets the accent. */
+.rqb-cell.is-live { border-color: rgba(56,224,212,.38);
+  box-shadow: inset 3px 0 0 var(--accent-cyan); }
+.rqb-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: 13px; }
+.rqb-live { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent-cyan); font-weight: 640; }
+.rqb-off  { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--faint); }
+.rqb-when { font-size: 11.5px; color: var(--muted); margin-top: 5px;
+  font-variant-numeric: tabular-nums; }
+.rqb-nums { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 7px;
+  font-size: 11.5px; color: var(--muted); }
+.rqb-n b { color: var(--text); font-variant-numeric: tabular-nums; }
+.rqb-parked { color: var(--faint); }
+
+/* ── The card ───────────────────────────────────────────────────────────── */
+.rq-card { border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); margin: 10px 0; overflow: hidden; }
+.rq-card.rq-done { opacity: .68; }
+.rq-cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.rq-parent-col { padding: 12px 14px; background: var(--bg);
+  border-right: 1px solid var(--grid); }
+.rq-draft-col  { padding: 12px 14px; min-width: 0; }
+.rq-eyebrow { font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--faint); font-weight: 640; display: flex; align-items: baseline;
+  gap: 9px; flex-wrap: wrap; }
+.rq-parent-who { margin-top: 6px; display: flex; align-items: center; gap: 7px;
+  flex-wrap: wrap; font-size: 13px; }
+.rq-parent-who a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.rq-parent-who a:hover { text-decoration: underline; }
+.rq-parent { margin: 8px 0 12px; padding-left: 10px;
+  border-left: 2px solid var(--grid); color: var(--muted);
+  font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; }
+
+/* The draft is the thing being judged: reading type, full contrast, no mono. */
+.rq-draft { margin: 8px 0 10px; font-size: 14px; line-height: 1.62;
+  color: var(--text); white-space: pre-wrap; }
+.rq-chars { font-variant-numeric: tabular-nums; color: var(--muted);
+  letter-spacing: 0; text-transform: none; }
+.rq-ttl { font-variant-numeric: tabular-nums; color: var(--muted);
+  letter-spacing: 0; text-transform: none; }
+.rq-ttl.is-urgent { color: var(--warn); font-weight: 640; }
+.rq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.rz-ok   { background: var(--ok-bg);   border-color: rgba(61,220,132,.28); }
+.rz-warm { background: rgba(177,140,255,.13); border-color: rgba(177,140,255,.30); }
+
+.rq-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px;
+  padding-top: 10px; border-top: 1px solid var(--grid); }
+
+/* ── Why this target: the scorer's own contributions ────────────────────── */
+.rqw-row { display: grid; grid-template-columns: 8.5em 1fr 3.4em;
+  align-items: center; gap: 8px; margin-top: 5px; font-size: 11.5px;
+  color: var(--muted); }
+.rqw-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rqw-bar { height: 5px; border-radius: 3px; background: var(--grid);
+  overflow: hidden; }
+.rqw-bar i { display: block; height: 100%; background: var(--accent);
+  opacity: .72; }
+.rqw-val { text-align: right; font-variant-numeric: tabular-nums;
+  font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+.rqw-more { margin-top: 7px; }
+.rqw-more summary { font-size: 11px; color: var(--faint); cursor: pointer; }
+
+/* ── Why this draft: gift / grip / doorway ──────────────────────────────── */
+.rq-why { margin-top: 4px; }
+.rq-why > summary { font-size: 11.5px; color: var(--muted); cursor: pointer;
+  user-select: none; }
+.rq-why > summary:hover { color: var(--text); }
+.rqy { margin-top: 9px; padding: 10px 12px; background: var(--surface2);
+  border-radius: var(--r-sm); border: 1px solid var(--grid); }
+.rqy-part { display: grid; grid-template-columns: 5.5em 1fr; gap: 10px;
+  padding: 4px 0; font-size: 12px; line-height: 1.55; }
+.rqy-k { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--faint); font-weight: 640; padding-top: 2px; }
+.rqy-v { color: var(--text); min-width: 0; }
+.rqy-v code { font-family: var(--mono); font-size: 11px; color: var(--accent-cyan); }
+.rqy-v em { font-style: normal; }
+/* A named gap reads as a finding, not as a styling accident. */
+.rqy-missing { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--grid);
+  font-size: 11.5px; color: var(--warn); line-height: 1.55; }
+.rq-alt { margin-top: 8px; }
+.rq-alt summary { font-size: 11px; color: var(--faint); cursor: pointer; }
+.rq-alt pre { margin: 6px 0 0; padding: 8px 10px; background: var(--bg);
+  border-radius: 5px; font-family: var(--sans); font-size: 12px; line-height: 1.55;
+  color: var(--muted); white-space: pre-wrap; }
+
+/* ── The handoff rail ───────────────────────────────────────────────────── */
+.rqx { margin: 0 0 9px; padding: 7px 10px; border-radius: 5px; font-size: 11.5px;
+  line-height: 1.5; background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--grid); }
+.rqx b { color: var(--text); font-weight: 620; }
+.rqx a { color: var(--accent); }
+.rqx-parked    { color: var(--faint); }
+.rqx-exported,
+.rqx-claimed   { border-color: rgba(106,141,255,.28); background: var(--info-bg); }
+.rqx-sent      { border-color: rgba(61,220,132,.28); background: var(--ok-bg); }
+.rqx-failed    { border-color: rgba(255,107,107,.30); background: var(--bad-bg); }
+.rqx-receipt_pending { border-color: rgba(255,184,77,.30); background: var(--warn-bg); }
+
+/* ── Edit sheet additions (the rest is inherited from .obe-*) ───────────── */
+.rqe-parent { margin-bottom: 11px; }
+.rqe-parent .rq-parent { margin-bottom: 0; }
+.rqe-law { margin-top: 9px; }
+
+@media (max-width: 860px) {
+  .rq-cols { grid-template-columns: minmax(0, 1fr); }
+  .rq-parent-col { border-right: none; border-bottom: 1px solid var(--grid); }
+  .rqy-part { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .rqw-row { grid-template-columns: 7em 1fr 3.2em; }
+}
+
+/* The store path is diagnostic, not headline: an absolute host path is long
+   and reflowing it through the meta line pushed the real numbers off screen. */
+.rq-store { font-size: 11px; color: var(--faint); margin-top: 3px; }
+.rq-store code { font-family: var(--mono); font-size: 10.5px; word-break: break-all; }
+
+/* An objection about the PREVIOUS keystroke is not a finding about this text.
+   Dimmed, not deleted: the list is what the operator is working through, and
+   throwing it away on every keypress would make the sheet unusable. */
+.obe-findings.is-stale { opacity: .42; filter: saturate(.5); }
+.rqx-replaced { color: var(--faint); }
