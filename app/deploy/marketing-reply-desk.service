@@ -41,7 +41,7 @@ EnvironmentFile=-/etc/macro-live.env
 # template on every reply and announces itself with
 # `::warning title=reply_voice_mute::` — armed-but-mute, the failure class that
 # shipped dark for months in a sibling lane (2026-07-26). macro-api.service owns
-# the StateDirectory= that creates /var/lib/macro-codex; this unit only reads it.
+# the StateDirectory= entries that create both Codex stores; this unit reads them.
 Environment=CODEX_HOME=/var/lib/macro-codex
 Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
 Environment=CODEX_PROVIDER_ENABLED=1
