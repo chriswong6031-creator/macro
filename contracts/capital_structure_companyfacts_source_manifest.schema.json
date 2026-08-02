@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_source_manifest.schema.json",
+  "title": "Capital Structure SEC Company Facts source manifest",
+  "description": "A closed, immutable manifest for one byte-verified SEC Company Facts response. It is intentionally distinct from capital_structure.source_manifest/v1, which owns filing-document evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "manifest_id", "source_system", "source_id", "issuer", "anchor", "request", "retrieval", "content", "storage", "rights", "privacy", "parser", "spans", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_source_manifest/v1"},
+    "manifest_id": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"},
+    "source_system": {"const": "sec_edgar_companyfacts"},
+    "source_id": {"type": "string", "pattern": "^sec-companyfacts:[0-9]{10}:[a-f0-9]{64}$"},
+    "issuer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["issuer_id", "cik", "ticker", "aliases"],
+      "properties": {
+        "issuer_id": {"type": "string", "pattern": "^sec:cik:[0-9]{10}$"},
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "ticker": {"type": ["string", "null"], "pattern": "^[A-Z0-9.\\-]+$"},
+        "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "anchor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["capital_structure_manifest_id", "capital_structure_source_id", "complete_submission_sha256", "first_seen_at"],
+      "properties": {
+        "capital_structure_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "capital_structure_source_id": {"type": "string", "minLength": 1},
+        "complete_submission_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "first_seen_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "request": {
+      "type": "object", "additionalProperties": false,
+      "required": ["canonical_url", "endpoint", "method"],
+      "properties": {
+        "canonical_url": {"type": "string", "format": "uri", "pattern": "^https://data\\.sec\\.gov/api/xbrl/companyfacts/CIK[0-9]{10}\\.json$"},
+        "endpoint": {"const": "companyfacts"},
+        "method": {"const": "GET"}
+      }
+    },
+    "retrieval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retrieved_at", "first_seen_at", "transport_status"],
+      "properties": {
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "first_seen_at": {"type": "string", "format": "date-time"},
+        "transport_status": {"const": "retrieved"}
+      }
+    },
+    "content": {
+      "type": "object", "additionalProperties": false,
+      "required": ["media_type", "byte_length", "content_sha256", "root_locator"],
+      "properties": {
+        "media_type": {"const": "application/json"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "root_locator": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      }
+    },
+    "storage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["backend", "store_id", "object_key", "content_addressed", "retention_state"],
+      "properties": {
+        "backend": {"type": "string", "enum": ["r2", "local"]},
+        "store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "content_addressed": {"const": true},
+        "retention_state": {"const": "retained"}
+      }
+    },
+    "rights": {
+      "type": "object", "additionalProperties": false,
+      "required": ["redistribution_class", "attribution_required", "license_note"],
+      "properties": {
+        "redistribution_class": {"const": "public_source_link"},
+        "attribution_required": {"const": true},
+        "license_note": {"const": "United States SEC EDGAR public Company Facts response"}
+      }
+    },
+    "privacy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "contains_personal_data"],
+      "properties": {"classification": {"const": "public"}, "contains_personal_data": {"const": false}}
+    },
+    "parser": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligibility", "corruption_state", "parser_version"],
+      "properties": {
+        "eligibility": {"const": "eligible"},
+        "corruption_state": {"const": "clean"},
+        "parser_version": {"const": "companyfacts-json-cik-validator/1.0.0"}
+      }
+    },
+    "spans": {
+      "type": "array", "minItems": 1, "maxItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["span_id", "locator_type", "locator", "text_sha256"],
+        "properties": {
+          "span_id": {"type": "string", "pattern": "^root:[a-f0-9]{64}$"},
+          "locator_type": {"const": "document"},
+          "locator": {"type": "string", "pattern": "^bytes:0-[1-9][0-9]*$"},
+          "text_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "share_count_ledger_authority": {"const": false},
+        "instrument_authority": {"const": false},
+        "capacity_authority": {"const": false},
+        "runway_authority": {"const": false},
+        "risk_authority": {"const": false},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  }
+}

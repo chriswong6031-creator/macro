@@ -238,6 +238,11 @@ jobs:
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           # --skip-shadow-importance: the ~13-14m shadow passes run standalone in
           # collect_tail (2026-07-14 split) — off the engine job's critical path.
+          # sec_capital_structure_companyfacts is serially registered immediately
+          # after sec_capital_structure in scripts.collect's shared SEC host group.
+          # It can therefore consume only same-run verified complete-submission
+          # anchors, while retaining raw Company Facts JSON separately and without
+          # invoking any share-count consumer.
           # sam_gov_opportunities is excluded because government-revenue-live.yml
           # is its sole serialized ledger owner. Two workflows must never merge and
           # overwrite the same revision/document Parquets concurrently.

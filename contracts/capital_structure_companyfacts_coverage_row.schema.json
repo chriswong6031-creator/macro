@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_coverage_row.schema.json",
+  "title": "Capital Structure Company Facts coverage row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "coverage_id", "cik", "anchor_manifest_id", "anchor_first_seen_at", "attempted_at", "attempt_count", "queue_reason", "state", "retry_after", "error", "result"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_coverage_row/v1"},
+    "coverage_id": {"type": "string", "pattern": "^coverage:cs-companyfacts:[a-f0-9]{64}$"},
+    "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+    "anchor_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+    "anchor_first_seen_at": {"type": "string", "format": "date-time"},
+    "attempted_at": {"type": "string", "format": "date-time"},
+    "attempt_count": {"type": "integer", "minimum": 1},
+    "queue_reason": {"type": "string", "enum": ["new_anchor", "retry_due", "refresh_due"]},
+    "state": {"type": "string", "enum": ["retrieved", "retry", "deferred"]},
+    "retry_after": {"type": ["string", "null"], "format": "date-time"},
+    "error": {"type": ["string", "null"], "maxLength": 500},
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_manifest_id", "content_sha256", "byte_length"],
+      "properties": {
+        "source_manifest_id": {"type": ["string", "null"], "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"},
+        "content_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": ["integer", "null"], "minimum": 1}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"state": {"const": "retrieved"}}, "required": ["state"]}, "then": {"properties": {"retry_after": {"type": "null"}, "error": {"type": "null"}, "result": {"properties": {"source_manifest_id": {"type": "string"}, "content_sha256": {"type": "string"}, "byte_length": {"type": "integer"}}}}}},
+    {"if": {"properties": {"state": {"enum": ["retry", "deferred"]}}, "required": ["state"]}, "then": {"properties": {"retry_after": {"type": "string"}, "error": {"type": "string", "minLength": 1}, "result": {"properties": {"source_manifest_id": {"type": "null"}, "content_sha256": {"type": "null"}, "byte_length": {"type": "null"}}}}}}
+  ]
+}

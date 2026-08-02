@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_coverage_receipt.schema.json",
+  "title": "Capital Structure Company Facts coverage receipt",
+  "description": "Telemetry-last receipt. Consumers may trust the paired Company Facts source-manifest and coverage ledgers only when this receipt hash-binds both immutable prefixes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt_id", "as_of", "policy_version", "status", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "nonclaims", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["ok", "no_eligible_anchors"]},
+    "anchor_manifest_ledger": {"$ref": "#/$defs/ledger"},
+    "companyfacts_manifest_ledger": {"$ref": "#/$defs/ledger"},
+    "coverage_ledger": {"$ref": "#/$defs/ledger"},
+    "queue": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_ciks", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order"],
+      "properties": {
+        "max_ciks": {"type": "integer", "minimum": 0},
+        "eligible_ciks": {"type": "integer", "minimum": 0},
+        "selected_ciks": {"type": "integer", "minimum": 0},
+        "deferred_ciks": {"type": "integer", "minimum": 0},
+        "priority_order": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]{10}$"}, "uniqueItems": true}
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retrieved", "retry", "deferred", "skipped_fresh"],
+      "properties": {
+        "retrieved": {"type": "integer", "minimum": 0},
+        "retry": {"type": "integer", "minimum": 0},
+        "deferred": {"type": "integer", "minimum": 0},
+        "skipped_fresh": {"type": "integer", "minimum": 0}
+      }
+    },
+    "nonclaims": {"type": "array", "minItems": 6, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "ledger": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_count", "prefix_sha256", "immutable_prefix"],
+      "properties": {
+        "record_count": {"type": "integer", "minimum": 0},
+        "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "immutable_prefix": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "prophet_authority": {"const": false}
+      }
+    }
+  }
+}
