@@ -143,11 +143,38 @@ class TestAuthorRegister:
         }
         assert live <= set(reg["accounts"]), "every live desk needs a register block"
 
-    def test_seed_entries_are_parked_for_operator_curation(self):
-        """The handle list is the operator's call, not a builder's invention."""
+    def test_the_register_is_operator_ratified_not_builder_invented(self):
+        """The handle list is the operator's call, not a builder's invention.
+
+        This pinned "every account is empty" while the register was parked. The
+        operator has since ratified 21 handles (config/reply_targets.yml), so the
+        empty form would now fail on the ratified data — but simply deleting it
+        would drop the invariant it was written to hold. The invariant is not
+        "empty", it is "nothing here was invented by a builder": the founder desk
+        still curates its own conversations and must stay empty, and every handle
+        that IS present has to come from the committed, operator-ratified config
+        rather than being synthesised at load time.
+
+        Per-entry shape, placeholder handles, and the exact ratified set are
+        covered in depth by tests/test_marketing_reply_targets.py.
+        """
         reg = rd.load_register(ROOT)
+        assert rd.register_for_account(reg, "founder") == [], (
+            "founder curates its own conversations (charter §1) — it must stay "
+            "parked even after ratification")
+
+        import yaml
+        committed = yaml.safe_load(
+            (ROOT / "config" / "reply_targets.yml").read_text(encoding="utf-8"))
         for account in reg["accounts"]:
-            assert rd.register_for_account(reg, account) == []
+            loaded = {e["handle"] for e in rd.register_for_account(reg, account)}
+            on_disk = {
+                e["handle"]
+                for e in ((committed.get("accounts") or {}).get(account) or {}).get("authors") or []
+            }
+            assert loaded <= on_disk, (
+                f"{account}: register_for_account returned handles that are NOT in "
+                f"the committed config — invented at load time: {sorted(loaded - on_disk)}")
 
     def test_bad_tier_rejects(self):
         errs = rd.validate_register(
