@@ -25,6 +25,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 
+from engine.government_revenue.award_events import build_award_change_events
 from engine.government_revenue.opportunities import SOURCE_URL as SAM_OPPORTUNITIES_URL
 from engine.government_revenue.opportunities import build_opportunity_intelligence
 from engine.government_revenue.workspace import build_procurement_workspace
@@ -36,10 +37,25 @@ PROVENANCE_CONTRACT = "vertical_provenance.v1"
 REPORTING_LAG_MONTHS = 3
 AGGREGATE_FRESHNESS_SLA_DAYS = 35
 DETAIL_FRESHNESS_SLA_DAYS = 4
+AWARD_EVENT_FRESHNESS_SLA_DAYS = 4
 MONTHLY_HISTORY_LIMIT = 24
 AWARD_LIMIT = 12
 ACTION_LIMIT = 20
 
+# The public award-change lane has a deliberately separate, forward-only
+# evidence spine.  Do not substitute the legacy mutable awards/actions tables
+# below when any of these artifacts are absent: those tables remain useful for
+# descriptive company context, but cannot safely reconstruct event history.
+AWARD_EVENT_SNAPSHOTS_FILENAME = "award_event_snapshots.parquet"
+AWARD_ACTION_VERSIONS_FILENAME = "award_action_versions.parquet"
+AWARD_EVENT_PROJECTION_STATE_FILENAME = "award_event_projection_state.json"
+COLLECTION_RECEIPTS_FILENAME = "collection_receipts.jsonl"
+AWARD_EVENT_PROJECTION_STATE_SCHEMA = "government_revenue.award_event_projection_state.v1"
+AWARD_EVENT_COVERAGE_MANIFEST_PREFIX = "award-coverage-"
+AWARD_EVENT_FORWARD_SCOPE = (
+    "receipt-bound forward-only USAspending award-event ledgers; legacy mutable "
+    "award/action tables and discovery-query tickers are never event sources or issuer proof"
+)
 SPENDING_OVER_TIME_URL = "https://api.usaspending.gov/api/v2/search/spending_over_time/"
 SPENDING_BY_AWARD_URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
 AWARD_DETAIL_URL = "https://api.usaspending.gov/api/v2/awards/{award_id}/"
@@ -140,6 +156,668 @@ def _read_frame(path: Path) -> pd.DataFrame:
         return pd.read_parquet(path)
     except Exception:  # noqa: BLE001 - a malformed optional rail degrades explicitly
         return pd.DataFrame()
+
+
+def _read_required_frame(path: Path) -> tuple[pd.DataFrame, str]:
+    """Read a dedicated event artifact while preserving absence vs. corruption.
+
+    The normal context rails deliberately degrade to empty data frames.  The
+    event projector instead needs a hard boundary: an unreadable forward ledger
+    is not equivalent to a verified empty ledger.
+    """
+
+    if not path.exists():
+        return pd.DataFrame(), "absent"
+    try:
+        return pd.read_parquet(path), "ready"
+    except Exception:  # noqa: BLE001 - public event projection must fail closed
+        return pd.DataFrame(), "unreadable"
+
+
+def _read_required_json(path: Path) -> tuple[Any, str]:
+    """Read an immutable-control artifact without silently accepting corruption."""
+
+    if not path.exists():
+        return None, "absent"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")), "ready"
+    except (OSError, ValueError, TypeError):
+        return None, "unreadable"
+
+
+def _read_receipt_ledger(path: Path) -> tuple[list[dict[str, Any]], str]:
+    """Read the canonical JSONL receipt ledger atomically or reject the whole rail."""
+
+    if not path.exists():
+        return [], "absent"
+    try:
+        rows: list[dict[str, Any]] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                return [], "invalid"
+            rows.append(row)
+        return rows, "ready"
+    except (OSError, ValueError, TypeError):
+        return [], "unreadable"
+
+
+def _strict_bool(value: Any) -> bool | None:
+    """Accept only an actual JSON boolean at a governance boundary."""
+
+    return value if isinstance(value, bool) else None
+
+
+def _coverage_manifest_id(manifest: dict[str, Any]) -> str | None:
+    """Recompute the collector's stable coverage-manifest identity.
+
+    This intentionally mirrors the collector's canonical JSON recipe rather
+    than treating a manifest label as proof of the bounded collection contract.
+    """
+
+    try:
+        canonical = json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            default=str,
+        ).encode("utf-8")
+    except (TypeError, ValueError):
+        return None
+    return AWARD_EVENT_COVERAGE_MANIFEST_PREFIX + hashlib.sha256(canonical).hexdigest()
+
+
+def _award_event_sample_contract(
+    event_spine: dict[str, Any],
+    projection_state: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Validate the declared bounded-sample contract independently of corpus size.
+
+    ``source_exhausted`` is a corpus-coverage fact, not a freshness condition:
+    a fresh run may intentionally complete every request in its declared bounded
+    manifest while leaving the much larger public source corpus unexhausted.
+    A missing flag, failed bounded pass, or manifest mismatch remains
+    fail-closed.  ``truncated_by_safety_cap`` is deliberately not an error by
+    itself: when the declared manifest intentionally ends at that cap, it is
+    explicit corpus-coverage metadata rather than a failed collection.
+    """
+
+    names = (
+        "bounded_sample_complete",
+        "source_exhausted",
+        "truncated_by_safety_cap",
+    )
+    values = {name: _strict_bool(event_spine.get(name)) for name in names}
+    manifest_id = event_spine.get("coverage_manifest_id")
+    manifest = event_spine.get("coverage_manifest")
+    if (
+        any(value is None for value in values.values())
+        or not isinstance(manifest_id, str)
+        or not manifest_id
+        or not isinstance(manifest, dict)
+        or not manifest
+    ):
+        return {
+            "status": "partial",
+            "reason": "ingest award-event spine lacks a complete bounded-sample coverage contract",
+            **values,
+            "coverage_manifest_id": manifest_id if isinstance(manifest_id, str) else None,
+            "coverage_manifest": manifest if isinstance(manifest, dict) else None,
+        }
+    if _coverage_manifest_id(manifest) != manifest_id:
+        return {
+            "status": "failed",
+            "reason": "ingest award-event coverage manifest does not match its content identity",
+            **values,
+            "coverage_manifest_id": manifest_id,
+            "coverage_manifest": manifest,
+        }
+    if isinstance(projection_state, dict):
+        state_values = {name: _strict_bool(projection_state.get(name)) for name in names}
+        state_manifest_id = projection_state.get("coverage_manifest_id")
+        state_manifest = projection_state.get("coverage_manifest")
+        if (
+            any(value is None for value in state_values.values())
+            or state_manifest_id != manifest_id
+            or state_manifest != manifest
+            or state_values != values
+        ):
+            return {
+                "status": "failed",
+                "reason": "ingest award-event bounded-sample contract does not match projection state",
+                **values,
+                "coverage_manifest_id": manifest_id,
+                "coverage_manifest": manifest,
+            }
+    if values["bounded_sample_complete"] is not True:
+        reason = "declared bounded award-event sample did not complete"
+        status = "partial"
+    else:
+        # Neither ``source_exhausted`` nor ``truncated_by_safety_cap`` changes
+        # the result here.  The former says whether the source corpus ended;
+        # the latter says the declared sample stopped at its published cap.
+        # Both remain explicit coverage metadata for operators and downstream
+        # consumers, while ``bounded_sample_complete`` is the collection gate.
+        reason = (
+            "declared bounded award-event sample completed at its published cap; "
+            "source coverage remains explicit"
+            if values["truncated_by_safety_cap"]
+            else "declared bounded award-event sample completed and manifest binding verified"
+        )
+        status = "ok"
+    return {
+        "status": status,
+        "reason": reason,
+        **values,
+        "coverage_manifest_id": manifest_id,
+        "coverage_manifest": manifest,
+    }
+
+
+def _award_event_ingest_health(
+    ingest_status: Any,
+    *,
+    knowledge_cutoff: pd.Timestamp,
+    projection_state: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Describe collector health without letting a status file create events.
+
+    The immutable state + ledger-generation binding is the event publication
+    gate.  This secondary check makes freshness honest about the collector run
+    that produced it, while preserving a verified last-good event ledger when a
+    later status heartbeat is unavailable.
+    """
+
+    if not isinstance(ingest_status, dict):
+        return {
+            "status": "unverified",
+            "reason": "ingest status was not supplied",
+            "observed_at": None,
+            "visible_at_as_of": False,
+        }
+    observed_at = _timestamp(ingest_status.get("observed_at"))
+    if observed_at is None:
+        return {
+            "status": "unverified",
+            "reason": "ingest status lacks an observation clock",
+            "observed_at": None,
+            "visible_at_as_of": False,
+        }
+    if observed_at > knowledge_cutoff:
+        return {
+            "status": "future_at_asof",
+            "reason": "ingest status was not yet known at this as-of cutoff",
+            "observed_at": None,
+            "visible_at_as_of": False,
+        }
+    event_spine = ingest_status.get("award_event_spine")
+    if not isinstance(event_spine, dict):
+        return {
+            "status": "unverified",
+            "reason": "ingest status does not describe the award-event spine",
+            "observed_at": _instant_iso(observed_at),
+            "visible_at_as_of": True,
+        }
+    if event_spine.get("schema_version") != AWARD_EVENT_PROJECTION_STATE_SCHEMA:
+        return {
+            "status": "failed",
+            "reason": "ingest award-event spine schema is not recognized",
+            "observed_at": _instant_iso(observed_at),
+            "visible_at_as_of": True,
+        }
+    if isinstance(projection_state, dict):
+        expected_activation = projection_state.get("activation_state")
+        expected_observed = _instant_iso(projection_state.get("last_observed_at"))
+        actual_observed = _instant_iso(event_spine.get("last_observed_at"))
+        if (
+            event_spine.get("activation_state") != expected_activation
+            or not expected_observed
+            or actual_observed != expected_observed
+        ):
+            return {
+                "status": "failed",
+                "reason": "ingest award-event spine does not match projection state",
+                "observed_at": _instant_iso(observed_at),
+                "visible_at_as_of": True,
+            }
+    sample_contract = _award_event_sample_contract(event_spine, projection_state)
+    contract_status = str(sample_contract.get("status") or "partial")
+    if contract_status != "ok":
+        return {
+            "status": contract_status,
+            "reason": sample_contract.get("reason") or "award-event bounded-sample contract is not verified",
+            "observed_at": _instant_iso(observed_at),
+            "visible_at_as_of": True,
+            **{
+                key: sample_contract.get(key)
+                for key in (
+                    "bounded_sample_complete",
+                    "source_exhausted",
+                    "truncated_by_safety_cap",
+                    "coverage_manifest_id",
+                    "coverage_manifest",
+                )
+            },
+        }
+    run_state = str(
+        ingest_status.get("run_state") or ingest_status.get("status") or ""
+    ).strip().lower()
+    # The top-level collector run may be ``partial`` solely because the public
+    # corpus was intentionally not exhausted.  That is a coverage limitation,
+    # not a failure of the declared receipt-bound bounded sample.  Actual
+    # failure/staleness still wins, and an unknown heartbeat remains partial.
+    if run_state in {"failed", "stale"}:
+        status = run_state
+    elif run_state == "ok":
+        status = "ok"
+    elif run_state == "partial":
+        status = "ok"
+    else:
+        status = "partial"
+    return {
+        "status": status,
+        "reason": (
+            "declared bounded award-event sample is complete; source exhaustion remains coverage metadata"
+            if status == "ok"
+            else "collector run failed, aged, or did not provide a usable health state"
+        ),
+        "observed_at": _instant_iso(observed_at),
+        "visible_at_as_of": True,
+        "collector_run_status": run_state or None,
+        "contract_mode": sample_contract.get("contract_mode") or "manifest",
+        **{
+            key: sample_contract.get(key)
+            for key in (
+                "bounded_sample_complete",
+                "source_exhausted",
+                "truncated_by_safety_cap",
+                "coverage_manifest_id",
+                "coverage_manifest",
+            )
+        },
+    }
+
+
+_FORWARD_SNAPSHOT_REQUIRED_COLUMNS = {
+    "generated_unique_award_id",
+    "award_key",
+    "known_at",
+    "effective_at",
+    "source_field_presence",
+    "event_state_sha256",
+    "source_receipt_id",
+    "source_response_sha256",
+    "source_url",
+    "receipt_verified",
+    "event_eligible",
+}
+_FORWARD_ACTION_REQUIRED_COLUMNS = {
+    "generated_unique_award_id",
+    "award_key",
+    "action_id",
+    "known_at",
+    "effective_at",
+    "source_field_presence",
+    "event_state_sha256",
+    "source_receipt_id",
+    "source_response_sha256",
+    "source_url",
+    "receipt_verified",
+    "event_eligible",
+}
+
+
+def _forward_receipt_ids(frame: pd.DataFrame) -> set[str]:
+    """Return only explicit receipt IDs claimed by a visible forward ledger."""
+
+    if frame.empty or "source_receipt_id" not in frame.columns:
+        return set()
+    result: set[str] = set()
+    for value in frame["source_receipt_id"].tolist():
+        rendered = _first_text({"value": value}, ("value",))
+        if rendered:
+            result.add(rendered)
+    return result
+
+
+def _award_event_projection(
+    repo: Path,
+    *,
+    companies: list[dict[str, Any]],
+    as_of_day: pd.Timestamp,
+    knowledge_cutoff: pd.Timestamp,
+    ingest_status: Any,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Project only the separate receipt-bound, forward award-event spine.
+
+    This never adapts mutable legacy context rows.  A missing/invalid state,
+    ledger, or canonical receipt ledger yields an explicit zero-event envelope
+    rather than borrowing a discovery-query ticker. There is no shape-based
+    legacy bypass: a migration would require its own versioned receipt.
+    """
+
+    data_dir = repo / "data" / "government_revenue"
+    state_value, state_artifact = _read_required_json(
+        data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
+    )
+    ingest_health = _award_event_ingest_health(
+        ingest_status,
+        knowledge_cutoff=knowledge_cutoff,
+    )
+
+    def envelope(
+        *,
+        status: str,
+        availability: str,
+        reason: str,
+        activation_state: str | None = None,
+        observed_at: pd.Timestamp | None = None,
+        visible_at_as_of: bool = False,
+        coverage_scope: str | None = None,
+        snapshots_visible: int = 0,
+        actions_visible: int = 0,
+        receipt_claims_visible: int = 0,
+        receipts_available: int = 0,
+        events_visible: int = 0,
+        artifacts: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        result = {
+            "status": status,
+            "availability": availability,
+            "reason": reason,
+            "activation_state": activation_state,
+            "known_at": _instant_iso(observed_at) if visible_at_as_of else None,
+            "observed_at": _instant_iso(observed_at) if visible_at_as_of else None,
+            "visible_at_as_of": bool(visible_at_as_of),
+            "freshness_sla_days": AWARD_EVENT_FRESHNESS_SLA_DAYS,
+            "coverage_scope": coverage_scope or AWARD_EVENT_FORWARD_SCOPE,
+            "scope": AWARD_EVENT_FORWARD_SCOPE,
+            "snapshot_versions_visible": int(snapshots_visible),
+            "action_versions_visible": int(actions_visible),
+            "receipt_claims_visible": int(receipt_claims_visible),
+            "collection_receipts_available": int(receipts_available),
+            "events_visible": int(events_visible),
+            "artifacts": artifacts or {"projection_state": state_artifact},
+            "ingest": ingest_health,
+            # This separates a successfully observed declared sample from an
+            # exhausted USAspending corpus.  Consumers may suppress the event
+            # rail when the bounded sample is incomplete, but must not read
+            # ``source_exhausted: false`` as a stale collection clock.
+            "limitations": [
+                "Only receipt-bound forward ledgers may emit award-change events.",
+                "Legacy award/action context and discovery-query tickers are excluded from this lane.",
+                "Listed-company impacts require a separately asserted exact-ID resolution with evidence.",
+            ],
+        }
+        result.update({
+            "bounded_sample_complete": ingest_health.get("bounded_sample_complete"),
+            "source_exhausted": ingest_health.get("source_exhausted"),
+            "truncated_by_safety_cap": ingest_health.get("truncated_by_safety_cap"),
+            "coverage_manifest": ingest_health.get("coverage_manifest"),
+            "coverage_manifest_id": ingest_health.get("coverage_manifest_id"),
+        })
+        return result
+
+    if state_artifact != "ready" or not isinstance(state_value, dict):
+        return [], envelope(
+            status="unavailable",
+            availability=f"projection_state_{state_artifact}",
+            reason="award-event projection state is absent or unreadable",
+        )
+    if state_value.get("schema_version") != AWARD_EVENT_PROJECTION_STATE_SCHEMA:
+        return [], envelope(
+            status="unavailable",
+            availability="projection_state_invalid",
+            reason="award-event projection state schema is not recognized",
+        )
+    activation_state = state_value.get("activation_state")
+    if activation_state not in {"baseline", "live"}:
+        return [], envelope(
+            status="unavailable",
+            availability="projection_state_invalid",
+            reason="award-event projection state has no valid activation state",
+        )
+    coverage_scope = _first_text(state_value, ("coverage_scope",))
+    observed_at = _timestamp(state_value.get("last_observed_at"))
+    if not coverage_scope or observed_at is None:
+        return [], envelope(
+            status="unavailable",
+            availability="projection_state_unverified",
+            reason="award-event projection state lacks an auditable coverage scope or observation clock",
+            activation_state=activation_state,
+        )
+    ingest_health = _award_event_ingest_health(
+        ingest_status,
+        knowledge_cutoff=knowledge_cutoff,
+        projection_state=state_value,
+    )
+    if observed_at > knowledge_cutoff:
+        return [], envelope(
+            status="partial",
+            availability="future_at_asof",
+            reason="award-event projection state was not yet known at this as-of cutoff",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            coverage_scope=coverage_scope,
+        )
+
+    if activation_state == "baseline":
+        return [], envelope(
+            status="partial",
+            availability="warming",
+            reason="receipt-bound baseline is still warming; forward award events are intentionally withheld",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+        )
+
+    baseline_completed_at = _timestamp(state_value.get("baseline_completed_at"))
+    if baseline_completed_at is None or baseline_completed_at > observed_at:
+        return [], envelope(
+            status="unavailable",
+            availability="projection_state_unverified",
+            reason="live award-event state lacks a completed receipt-bound baseline",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+        )
+
+    snapshot_path = data_dir / AWARD_EVENT_SNAPSHOTS_FILENAME
+    action_path = data_dir / AWARD_ACTION_VERSIONS_FILENAME
+    receipt_path = data_dir / COLLECTION_RECEIPTS_FILENAME
+    snapshots, snapshot_artifact = _read_required_frame(snapshot_path)
+    actions, action_artifact = _read_required_frame(action_path)
+    receipts, receipt_artifact = _read_receipt_ledger(receipt_path)
+    artifact_states = {
+        "projection_state": state_artifact,
+        "award_event_snapshots": snapshot_artifact,
+        "award_action_versions": action_artifact,
+        "collection_receipts": receipt_artifact,
+    }
+    if snapshot_artifact != "ready" or action_artifact != "ready":
+        unavailable = "award_event_snapshots" if snapshot_artifact != "ready" else "award_action_versions"
+        return [], envelope(
+            status="unavailable",
+            availability=f"{unavailable}_{artifact_states[unavailable]}",
+            reason="one or more dedicated forward event ledgers are absent or unreadable",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            artifacts=artifact_states,
+        )
+    if receipt_artifact != "ready":
+        return [], envelope(
+            status="unavailable",
+            availability=f"collection_receipts_{receipt_artifact}",
+            reason="canonical collection receipt ledger is absent or unreadable",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            artifacts=artifact_states,
+        )
+    if not _FORWARD_SNAPSHOT_REQUIRED_COLUMNS.issubset(snapshots.columns) or not _FORWARD_ACTION_REQUIRED_COLUMNS.issubset(actions.columns):
+        return [], envelope(
+            status="unavailable",
+            availability="forward_ledger_invalid",
+            reason="forward event ledger does not carry the required receipt-bound projection fields",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+
+    # A state marker alone is not enough: a process can fail between the two
+    # atomic parquet replacements.  The collector owns the canonical semantic
+    # digest recipe, so recompute it over the *full*, unfiltered pair before
+    # any point-in-time projection.  This rejects a mixed generation rather
+    # than allowing an old live state to bless whichever ledger happened to
+    # survive the interrupted write.
+    generation_fields = (
+        "projection_generation_id",
+        "award_event_snapshots_semantic_sha256",
+        "award_event_snapshots_row_count",
+        "award_action_versions_semantic_sha256",
+        "award_action_versions_row_count",
+        "projection_semantic_sha256",
+    )
+    if any(field not in state_value for field in generation_fields):
+        artifact_states["projection_generation"] = "unverified"
+        return [], envelope(
+            status="partial",
+            availability="projection_generation_unverified",
+            reason="live award-event state lacks a complete two-ledger generation binding",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+    try:
+        # Keep this import local: normal context payloads do not need the
+        # collector module, while forward event readers must use its exact
+        # canonicalization formula rather than a subtly divergent copy.
+        from collectors.usaspending_awards import award_event_projection_generation_matches
+
+        generation_matches = award_event_projection_generation_matches(
+            state_value,
+            snapshots,
+            actions,
+        )
+    except Exception:  # noqa: BLE001 - a failed integrity verifier is not a pass
+        artifact_states["projection_generation"] = "verification_failed"
+        return [], envelope(
+            status="failed",
+            availability="projection_generation_verification_failed",
+            reason="award-event generation binding could not be verified",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+    if not generation_matches:
+        artifact_states["projection_generation"] = "mismatch"
+        return [], envelope(
+            status="failed",
+            availability="projection_generation_mismatch",
+            reason="forward event ledgers do not match the live projection generation",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+    artifact_states["projection_generation"] = "verified"
+
+    snapshots_visible = _filter_point_in_time(snapshots, knowledge_cutoff, knowledge_cutoff)
+    actions_visible = _filter_point_in_time(actions, knowledge_cutoff, knowledge_cutoff)
+    receipt_claims = _forward_receipt_ids(snapshots_visible) | _forward_receipt_ids(actions_visible)
+    ledger_receipt_ids = {
+        receipt_id
+        for row in receipts
+        for receipt_id in [_first_text(row, ("receipt_id", "source_receipt_id"))]
+        if receipt_id
+    }
+    if receipt_claims - ledger_receipt_ids:
+        return [], envelope(
+            status="unavailable",
+            availability="receipt_binding_incomplete",
+            reason="a visible forward event row lacks its canonical collection receipt",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            snapshots_visible=len(snapshots_visible),
+            actions_visible=len(actions_visible),
+            receipt_claims_visible=len(receipt_claims),
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+
+    try:
+        events = build_award_change_events(
+            snapshots_visible,
+            actions_visible,
+            companies=companies,
+            source_receipts=receipts,
+            as_of=as_of_day.date().isoformat(),
+            known_at=knowledge_cutoff,
+            effective_as_of=knowledge_cutoff,
+        )
+    except Exception:  # noqa: BLE001 - public award lane has no best-effort fallback
+        return [], envelope(
+            status="unavailable",
+            availability="projection_rejected_inputs",
+            reason="forward award-event inputs could not pass the strict projector",
+            activation_state=activation_state,
+            observed_at=observed_at,
+            visible_at_as_of=True,
+            coverage_scope=coverage_scope,
+            snapshots_visible=len(snapshots_visible),
+            actions_visible=len(actions_visible),
+            receipt_claims_visible=len(receipt_claims),
+            receipts_available=len(receipts),
+            artifacts=artifact_states,
+        )
+
+    ingest_state = str(ingest_health.get("status") or "unverified")
+    status = "ok" if ingest_state == "ok" else (
+        "failed" if ingest_state == "failed" else "stale" if ingest_state == "stale" else "partial"
+    )
+    availability = "available" if events else "available_empty"
+    if status != "ok":
+        availability = f"{availability}_ingest_{ingest_state}"
+    return events, envelope(
+        status=status,
+        availability=availability,
+        reason=(
+            "receipt-bound forward award-event projection completed"
+            if status == "ok"
+            else "receipt-bound forward projection completed, but collector health is not fully verified"
+        ),
+        activation_state=activation_state,
+        observed_at=observed_at,
+        visible_at_as_of=True,
+        coverage_scope=coverage_scope,
+        snapshots_visible=len(snapshots_visible),
+        actions_visible=len(actions_visible),
+        receipt_claims_visible=len(receipt_claims),
+        receipts_available=len(receipts),
+        events_visible=len(events),
+        artifacts=artifact_states,
+    )
 
 
 def _knowledge_column(frame: pd.DataFrame) -> str | None:
@@ -854,13 +1532,61 @@ def _freshness_contract(
         value = str(rail(name).get("state") or "").strip().lower()
         return value or None
 
+    def bounded_collection_state(name: str) -> str | None:
+        """Return current collection health without relabeling corpus coverage.
+
+        The collector's legacy ``state`` remains an upstream-pagination/corpus
+        observation.  When its newer completeness contract is present, a
+        planned bounded pass can be fresh even while the wider source is not
+        exhausted.  Missing or contradictory new metadata stays partial.
+        """
+
+        raw_state = current_rail_state(name)
+        value = rail(name)
+        completeness = value.get("completeness")
+        completeness = completeness if isinstance(completeness, dict) else {}
+        fields = (
+            "bounded_sample_complete",
+            "source_exhausted",
+            "truncated_by_safety_cap",
+        )
+        has_bounded_contract = any(
+            field in completeness or field in value for field in fields
+        )
+        if raw_state in {"failed", "not_requested"}:
+            return raw_state
+        if not has_bounded_contract:
+            return raw_state
+        values = {
+            field: _strict_bool(completeness.get(field, value.get(field)))
+            for field in fields
+        }
+        if raw_state is None or any(item is None for item in values.values()):
+            return "partial"
+        if values["bounded_sample_complete"] is True:
+            # ``source_exhausted`` deliberately does not participate in the
+            # collection-health result; it is retained below as coverage.
+            return "complete"
+        return "partial"
+
+    def bounded_collection_stamp(name: str) -> pd.Timestamp | None:
+        """Use the current observation for a verified planned bounded pass."""
+
+        if (
+            bounded_collection_state(name) == "complete"
+            and current_rail_state(name) != "complete"
+        ):
+            return ingest_ts
+        stamp = _timestamp(rail(name).get("last_successful_observed_at"))
+        return stamp if stamp is not None else ingest_ts
+
     def combined_v2_status(names: tuple[str, ...]) -> str:
         """Map explicit collector rails to presentation health without inflating coverage."""
         if not status_doc:
             return "unavailable"
         if not ingest_visible:
             return "future_at_asof"
-        states = [current_rail_state(name) for name in names]
+        states = [bounded_collection_state(name) for name in names]
         if not any(states):
             return "unavailable"
         if "failed" in states:
@@ -869,9 +1595,7 @@ def _freshness_contract(
             return "partial"
         if any(state not in {"complete"} for state in states):
             return "partial"
-        successful_stamps = [
-            _timestamp(rail(name).get("last_successful_observed_at")) for name in names
-        ]
+        successful_stamps = [bounded_collection_stamp(name) for name in names]
         successful_stamps = [stamp for stamp in successful_stamps if stamp is not None]
         oldest_success = min(successful_stamps) if successful_stamps else ingest_ts
         if oldest_success is None:
@@ -902,13 +1626,20 @@ def _freshness_contract(
     def rail_metadata(names: tuple[str, ...]) -> dict:
         selected = {name: rail(name) for name in names if rail(name)}
         successful = [
-            _timestamp(value.get("last_successful_observed_at"))
-            for value in selected.values()
+            bounded_collection_stamp(name)
+            for name in selected
         ]
         successful = [stamp for stamp in successful if stamp is not None]
+        def completeness_for(value: dict) -> dict:
+            raw = value.get("completeness")
+            return raw if isinstance(raw, dict) else {}
         return {
             "collection_state": {
                 name: str(value.get("state") or "unavailable") for name, value in selected.items()
+            },
+            "collection_freshness": {
+                name: bounded_collection_state(name) or "unavailable"
+                for name in selected
             },
             "last_successful_observed_at": (
                 min(successful).isoformat() if successful else None
@@ -924,6 +1655,20 @@ def _freshness_contract(
             "completeness": {
                 name: value.get("completeness") for name, value in selected.items()
                 if isinstance(value.get("completeness"), dict)
+            },
+            "corpus_coverage": {
+                name: {
+                    "bounded_sample_complete": completeness_for(value).get(
+                        "bounded_sample_complete", value.get("bounded_sample_complete")
+                    ),
+                    "source_exhausted": completeness_for(value).get(
+                        "source_exhausted", value.get("source_exhausted")
+                    ),
+                    "truncated_by_safety_cap": completeness_for(value).get(
+                        "truncated_by_safety_cap", value.get("truncated_by_safety_cap")
+                    ),
+                }
+                for name, value in selected.items()
             },
             "response_receipts": sum(
                 int(value.get("response_receipts") or 0) for value in selected.values()
@@ -1147,6 +1892,18 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
             opportunity_context.get(company["ticker"]) or []
         )
     known_values.append(opportunity_intelligence.get("known_at"))
+    # The event lane intentionally receives no legacy mutable award/action
+    # tables.  It can only emit from the dedicated forward ledgers after a
+    # receipt-bound baseline has completed; direct resolution artifacts, if
+    # present, are the sole route to a listed-company impact.
+    award_events, award_event_freshness = _award_event_projection(
+        repo,
+        companies=company_payloads,
+        as_of_day=as_of_day,
+        knowledge_cutoff=knowledge_cutoff,
+        ingest_status=ingest_status,
+    )
+    known_values.append(award_event_freshness.get("known_at"))
 
     ttm_values = [c["metrics"].get("ttm_obligations") for c in company_payloads]
     valid_ttm = [float(v) for v in ttm_values if v is not None]
@@ -1236,6 +1993,7 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
     )
     detail_freshness = freshness["award_detail"]
     freshness["opportunities"] = opportunity_intelligence.get("freshness", {})
+    freshness["award_events"] = award_event_freshness
     payload_known_at = _latest_known_at(known_values)
     vertical_links_by_ticker = {
         company["ticker"]: [{
@@ -1256,6 +2014,8 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
         as_of=as_of_day.date().isoformat(),
         known_at=payload_known_at,
         award_freshness=detail_freshness,
+        award_events=award_events,
+        award_event_freshness=award_event_freshness,
         vertical_links_by_ticker=vertical_links_by_ticker,
     )
 
@@ -1300,9 +2060,25 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
             "detail_ingest_visible_at_as_of": detail_freshness.get("visible_at_as_of"),
             "detail_ingest_status": detail_freshness.get("status"),
             "detail_ingest_error_count": detail_freshness.get("error_count"),
+            "award_event_snapshots_visible": award_event_freshness.get("snapshot_versions_visible", 0),
+            "award_action_versions_visible": award_event_freshness.get("action_versions_visible", 0),
+            "award_event_records_visible": len(award_events),
+            "award_event_availability": award_event_freshness.get("availability"),
+            "award_event_status": award_event_freshness.get("status"),
+            "award_event_bounded_sample_complete": award_event_freshness.get(
+                "bounded_sample_complete"
+            ),
+            "award_event_source_exhausted": award_event_freshness.get("source_exhausted"),
+            "award_event_truncated_by_safety_cap": award_event_freshness.get(
+                "truncated_by_safety_cap"
+            ),
+            "award_event_coverage_manifest_id": award_event_freshness.get(
+                "coverage_manifest_id"
+            ),
             "historical_replay_note": (
-                "award actions and snapshots are first-seen ledgers; the legacy monthly frame is only "
-                "replayable from its collection-level known_at"
+                "award actions and snapshots are first-seen ledgers; public award changes use only the "
+                "separate receipt-bound forward spine; the legacy monthly frame is only replayable "
+                "from its collection-level known_at"
             ),
             "opportunity_records_visible": opportunity_intelligence.get("coverage", {}).get("records_visible", 0),
             "opportunity_revision_records_visible": opportunity_intelligence.get("coverage", {}).get("revision_records_visible", 0),

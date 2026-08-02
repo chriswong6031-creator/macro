@@ -510,6 +510,9 @@ class TestLiveConformance:
             "data/government_revenue/awards.parquet",
             "data/government_revenue/award_actions.parquet",
             "data/government_revenue/award_snapshots.parquet",
+            "data/government_revenue/award_event_snapshots.parquet",
+            "data/government_revenue/award_action_versions.parquet",
+            "data/government_revenue/award_event_projection_state.json",
             "data/government_revenue/entities.json",
             "data/government_revenue/ingest_status.json",
             "data/government_revenue/collection_receipts.jsonl",
@@ -520,6 +523,7 @@ class TestLiveConformance:
             "data/usaspending/obligations.parquet",
             "data/usaspending/_meta.json",
             "collectors/sam_gov.py",
+            "collectors/usaspending_awards.py",
             "lib/pages.py",
             "templates/_interfonts.html.j2",
             "templates/_navlinks.html.j2",
@@ -547,6 +551,11 @@ class TestLiveConformance:
         assert collect["run"] == (
             "python -m scripts.collect --only sam_gov_opportunities "
             "--skip-quality --skip-shadow-importance"
+        )
+        assert "default historical sweep is 1,826 days" in text
+        assert "--only usaspending_awards" not in collect["run"], (
+            "The bounded SAM fast path must not turn the long-lookback USAspending "
+            "event collector into a frequent live poll."
         )
 
         gate = next(step for step in steps if step.get("id") == "gate")
@@ -579,13 +588,21 @@ class TestLiveConformance:
             "data/government_revenue/opportunity_documents.parquet",
             "data/government_revenue/opportunity_ingest_status.json",
             "data/government_revenue/sam_opportunity_heartbeat.parquet",
+            "data/government_revenue/award_event_snapshots.parquet",
+            "data/government_revenue/award_action_versions.parquet",
+            "data/government_revenue/award_event_projection_state.json",
             "data/government_revenue/workspace.json",
             "site/government-revenue-data/workspace.json",
         ):
             assert path in commit["run"]
-        assert "data/government_revenue/collection_receipts.jsonl" not in commit["run"], (
-            "The SAM-only fast path must never stage USAspending's append-only receipt ledger."
+        assert "assert_award_event_bundle" in commit["run"]
+        assert "assert_award_event_source_clean" in commit["run"]
+        assert "receipt-bound award artifacts must arrive as one committed bundle" in commit["run"]
+        assert "data/government_revenue/collection_receipts.jsonl" in commit["run"], (
+            "The source guard must preserve the receipt binding even though the SAM lane "
+            "does not stage or collect the receipt ledger."
         )
+        assert 'stage_candidates+=("${award_event_bundle_paths[@]}")' in commit["run"]
         assert "scripts/ci/push_retry.sh" in commit["run"]
         assert "push_autostash_ok" in commit["run"]
         assert "Rebuild AFTER every successful rebase" in commit["run"]

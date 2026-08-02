@@ -2499,7 +2499,11 @@ lanes:
           Sole serialized SAM ledger and canonical projection owner. Runs after each
           complete SAM health/evidence fold, a synchronous daily reusable call, or a
           path-filtered main push carrying evidence/source changes, then re-renders
-          after every rebase before pushing. Generic site-wide render lanes may repeat
+          after every rebase before pushing. The 30-minute schedule intentionally does
+          not collect USAspending's receipt-bound award-event spine: its historical
+          collector sweep is not a bounded live poll. It only folds a complete,
+          already committed snapshot/action-version/activation-state bundle and fails
+          closed if that bundle is partial. Generic site-wide render lanes may repeat
           the deterministic build only when the canonical generation stays byte-clean,
           preventing an older embedded page from overwriting newer evidence. No
           scoring, ranking, sizing, gating, or candidate origination is permitted.
@@ -2958,10 +2962,21 @@ modules:
   - module: collectors.usaspending_awards
     reads:
       - data/government_revenue/entities.json
+      - data/government_revenue/awards.parquet
+      - data/government_revenue/award_actions.parquet
+      - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/award_event_snapshots.parquet
+      - data/government_revenue/award_action_versions.parquet
+      - data/government_revenue/award_event_projection_state.json
+      - data/government_revenue/collection_receipts.jsonl
+      - data/government_revenue/ingest_status.json
     writes:
       - data/government_revenue/awards.parquet
       - data/government_revenue/award_actions.parquet
       - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/award_event_snapshots.parquet
+      - data/government_revenue/award_action_versions.parquet
+      - data/government_revenue/award_event_projection_state.json
       - data/government_revenue/collection_receipts.jsonl
       - data/government_revenue/ingest_status.json
       - data/government_revenue/collector_heartbeat.parquet
@@ -2969,10 +2984,13 @@ modules:
     needs_secrets: false
     event_driven: false
     note: >
-      Keyless official USAspending award-search/detail/transaction collector.
-      Granular composite-key ledgers and an append-only hash-only retrieval-receipt
-      ledger persist atomically inside the collector; both direct CLI and standard
-      Adapter runs emit the dated heartbeat frame.
+      Keyless official USAspending award-search/detail/transaction collector. Legacy
+      composite-key context ledgers remain distinct from the direct-source,
+      receipt-bound forward award-event snapshots/action versions. The collector writes
+      those immutable ledgers before its activation state and only turns the spine live
+      after a complete configured-universe baseline; partial/failed collection retains
+      the last good bundle. Its append-only hash-only retrieval-receipt ledger and both
+      direct CLI and standard Adapter runs emit the dated heartbeat frame.
 
   - module: collectors.sam_gov
     reads:
@@ -3021,6 +3039,10 @@ modules:
       - data/government_revenue/awards.parquet
       - data/government_revenue/award_actions.parquet
       - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/award_event_snapshots.parquet
+      - data/government_revenue/award_action_versions.parquet
+      - data/government_revenue/award_event_projection_state.json
+      - data/government_revenue/collection_receipts.jsonl
       - data/government_revenue/ingest_status.json
       - data/government_revenue/opportunities.parquet
       - data/government_revenue/opportunity_revisions.parquet
@@ -3037,13 +3059,16 @@ modules:
     event_driven: false
     note: >
       Deterministic context/display projection over committed USAspending and SAM
-      first-seen evidence. government-revenue-live.yml is the sole serialized SAM
-      ledger and canonical projection writer and re-renders after every rebase.
-      Generic site-wide render lanes may call the builder only with a fail-closed
-      canonical-byte guard, so they can refresh matching site twins without advancing
-      evidence state. The builder emits public-company exposure candidates
-      and procurement events with explicit provenance/limitations, never bidder
-      odds, revenue forecasts, an investment rank, sizing rule, gate, or new signal.
+      first-seen evidence. The dedicated receipt-bound award-event projector consumes
+      only the forward snapshot/action-version/state bundle plus the canonical retrieval
+      receipts; missing, unreadable, warming, or unverified inputs fail closed rather
+      than falling back to mutable context ledgers. government-revenue-live.yml is the
+      sole serialized SAM ledger and canonical projection writer and re-renders after
+      every rebase. Generic site-wide render lanes may call the builder only with a
+      fail-closed canonical-byte guard, so they can refresh matching site twins without
+      advancing evidence state. The builder emits public-company exposure candidates
+      and procurement events with explicit provenance/limitations, never bidder odds,
+      revenue forecasts, an investment rank, sizing rule, gate, or new signal.
 
   - module: scripts.build_baskets_canada
     reads:

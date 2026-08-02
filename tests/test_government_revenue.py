@@ -435,6 +435,101 @@ def test_ingest_freshness_consumes_v2_rail_denominators_without_corpus_overclaim
     assert partial["freshness"]["actions"]["status"] == "partial"
 
 
+def test_declared_bounded_caps_are_current_without_relabeling_corpus_coverage(tmp_path):
+    """A current planned cap is not a stale legacy detail rail.
+
+    The raw rail state remains ``partial`` because USAspending reported more
+    source pages.  Its manifest-era bounded contract says this collector
+    successfully completed the published sample, so freshness uses the current
+    observation clock while the UI/API keep the corpus limitation visible.
+    """
+
+    root = _fixture_root(tmp_path)
+    status_path = root / "data" / "government_revenue" / "ingest_status.json"
+    observed_at = "2026-08-01T12:00:00+00:00"
+    old_last_good = "2026-07-01T12:00:00+00:00"
+
+    def rail(*, pages: dict, denominators: dict, receipts: int) -> dict:
+        return {
+            "state": "partial",
+            "last_successful_observed_at": old_last_good,
+            "pages": pages,
+            "denominators": denominators,
+            "completeness": {
+                "state": "partial",
+                "full_usaspending_corpus": False,
+                "bounded_sample_complete": True,
+                "source_exhausted": False,
+                "truncated_by_safety_cap": True,
+                "scope": "declared bounded sample",
+            },
+            "response_receipts": receipts,
+        }
+
+    status = {
+        "schema_version": "government_revenue.ingest_status.v2",
+        "status": "partial",
+        "observed_at": observed_at,
+        "entities_requested": 2,
+        "awards_seen": 2,
+        "awards_total": 2,
+        "actions_seen": 3,
+        "actions_total": 3,
+        "errors": [],
+        "rails": {
+            "awards": rail(
+                pages={"requested": 2, "succeeded": 2, "unresolved_has_next": 2},
+                denominators={"entities_requested": 2, "queries_complete": 2},
+                receipts=2,
+            ),
+            "award_detail": rail(
+                pages={"requested": 2, "succeeded": 2},
+                denominators={"candidate_awards": 2, "succeeded": 2},
+                receipts=2,
+            ),
+            "actions": rail(
+                pages={"requested": 3, "succeeded": 3, "unresolved_has_next_awards": 2},
+                denominators={"sampled_awards": 2, "queries_complete": 2},
+                receipts=3,
+            ),
+        },
+    }
+    status_path.write_text(json.dumps(status))
+
+    payload = build_payload(root, as_of="2026-08-01")
+    detail = payload["freshness"]["award_detail"]
+    actions = payload["freshness"]["actions"]
+
+    assert payload["freshness"]["status"] == "ok"
+    assert detail["status"] == "ok"
+    assert actions["status"] == "ok"
+    assert detail["collection_state"] == {
+        "awards": "partial",
+        "award_detail": "partial",
+    }
+    assert actions["collection_state"]["actions"] == "partial"
+    assert all(state == "complete" for state in detail["collection_freshness"].values())
+    assert all(state == "complete" for state in actions["collection_freshness"].values())
+    assert detail["last_successful_observed_at"] == observed_at
+    assert actions["last_successful_observed_at"] == observed_at
+    assert detail["corpus_coverage"]["awards"] == {
+        "bounded_sample_complete": True,
+        "source_exhausted": False,
+        "truncated_by_safety_cap": True,
+    }
+    assert actions["corpus_coverage"]["actions"]["truncated_by_safety_cap"] is True
+    assert actions["denominators"]["actions"]["queries_complete"] == 2
+    assert actions["pages"]["actions"]["unresolved_has_next_awards"] == 2
+
+    status["rails"]["actions"]["completeness"]["bounded_sample_complete"] = False
+    status_path.write_text(json.dumps(status))
+    incomplete = build_payload(root, as_of="2026-08-01")
+
+    assert incomplete["freshness"]["award_detail"]["status"] == "ok"
+    assert incomplete["freshness"]["actions"]["status"] == "partial"
+    assert incomplete["freshness"]["status"] == "partial"
+
+
 def test_market_capacity_deduplicates_shared_joint_venture_award_ids(tmp_path):
     root = _fixture_root(tmp_path)
     path = root / "data" / "government_revenue" / "awards.parquet"

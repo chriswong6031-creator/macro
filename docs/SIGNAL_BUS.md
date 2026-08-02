@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 2 |
-| government-revenue-foresight | 16 |
+| government-revenue-foresight | 19 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 354 |
-| infrastructure | 116 |
+| infrastructure | 119 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 526 |
+| git | 529 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -386,7 +386,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| government-revenue-collection-receipts | `data/government_revenue/collection_receipts.jsonl` | jsonl | collect | infrastructure | 4 | 0 |
 | government-revenue-latest | `data/government_revenue/latest.json` | json | intraday | display | 3 | 1 |
+| government-revenue-award-action-versions | `data/government_revenue/award_action_versions.parquet` | parquet | collect | infrastructure | 3 | 0 |
+| government-revenue-award-event-snapshots | `data/government_revenue/award_event_snapshots.parquet` | parquet | collect | infrastructure | 3 | 0 |
+| government-revenue-award-event-projection-state | `data/government_revenue/award_event_projection_state.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
@@ -394,7 +398,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-award-actions | `data/government_revenue/award_actions.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-award-snapshots | `data/government_revenue/award_snapshots.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-awards | `data/government_revenue/awards.parquet` | parquet | collect | infrastructure | 1 | 0 |
-| government-revenue-collection-receipts | `data/government_revenue/collection_receipts.jsonl` | jsonl | collect | infrastructure | 1 | 0 |
 | government-revenue-collector-heartbeat | `data/government_revenue/collector_heartbeat.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-sam-opportunities | `data/government_revenue/opportunities.parquet` | parquet | intraday | infrastructure | 1 | 0 |
 | government-revenue-sam-opportunity-documents | `data/government_revenue/opportunity_documents.parquet` | parquet | intraday | infrastructure | 1 | 0 |

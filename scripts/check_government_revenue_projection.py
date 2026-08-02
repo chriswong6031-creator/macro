@@ -21,7 +21,7 @@ from scripts import build_government_revenue
 
 _ROOT = Path(__file__).resolve().parents[1]
 _RAW_HTML_BUDGET_BYTES = build_government_revenue.RAW_HTML_BUDGET_BYTES
-_BUNDLE_RE = re.compile(r"grw1-[a-f0-9]{24}")
+_BUNDLE_RE = re.compile(r"grw2-[a-f0-9]{24}")
 _SHELL_RE = re.compile(
     r'<script id="gov-data" type="application/json">(.*?)</script>',
     re.DOTALL,
@@ -138,7 +138,10 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             "public HTML workspace bundle_id differs from canonical"
         )
-    if shell_workspace.get("schema_version") != "government_procurement_workspace.v1":
+    if (
+        shell_workspace.get("schema_version") != "government_procurement_workspace.v2"
+        or shell_workspace.get("event_contract") != "government_procurement_event.v2"
+    ):
         raise ProjectionDriftError("public HTML workspace schema is invalid")
 
     expected_shell = build_government_revenue._display_payload(canonical_latest)

@@ -70,6 +70,7 @@ from typing import Any
 
 import pandas as pd
 
+from engine.government_revenue.federation import reviewed_award_change_context
 from engine.government_revenue.freshness import effective_freshness
 
 log = logging.getLogger(__name__)
@@ -437,6 +438,9 @@ def _load_government_revenue_context(
                 else []
             ),
             "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
+            "award_change_events": reviewed_award_change_context(
+                payload, ticker, cutoff
+            ),
             "confidence": company.get("confidence"),
             "provenance": (company.get("provenance") or [])[:3],
             "allowed_behavior": "annotate_only",
@@ -509,6 +513,25 @@ def _government_revenue_sentence(context: dict | None) -> tuple[str, str] | None
         )
         parts_zh.append(
             f"SAM.gov 列出“{title}”{timing_zh}；发行人关联来自规则匹配，并非投标方或授标预测"
+        )
+    award_change = next(
+        (
+            row for row in context.get("award_change_events") or []
+            if isinstance(row, dict) and row.get("event_type")
+        ),
+        None,
+    )
+    if award_change:
+        event_type = str(award_change.get("event_type") or "award change").replace("_", " ")
+        recipient = " ".join(str(award_change.get("recipient_name") or "covered recipient").split())[:96]
+        effective = award_change.get("effective_at")
+        timing_en = f" effective {str(effective)[:10]}" if effective else ""
+        timing_zh = f"（生效日 {str(effective)[:10]}）" if effective else ""
+        parts_en.append(
+            f"USAspending recorded {event_type} for {recipient}{timing_en} through a reviewed issuer path; it is not recognized revenue"
+        )
+        parts_zh.append(
+            f"USAspending 记录了 {recipient} 的 {event_type}{timing_zh}，并经核验的发行人路径关联；这不等同于确认收入"
         )
     if not parts_en:
         return None
