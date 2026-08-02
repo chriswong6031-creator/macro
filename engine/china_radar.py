@@ -660,7 +660,7 @@ def _candidates(etf, sign, conv_map, n=3):
 def _build_row(cv, key, sen, szh, etf, sec_en, sec_zh, sig, thesis,
                by_pair, by_signal, conv_map) -> dict:
     """One radar row: signal-A direction vs the sector ETF's price RS → divergence verdict,
-    conviction-scored (strength × ledger reliability) with falsifiable hypothesis + candidates.
+    conviction-scored (strength × ledger reliability) with checkable hypothesis + candidates.
     Shared by the macro/policy/flow pairs AND the per-sector sector-flow pairs. PURE-ish (reads
     price + ledger + convergence)."""
     rs_pct, rs_z = _price_rs(etf)
@@ -856,9 +856,9 @@ def scan(asof: date | str | None = None) -> dict | None:
             "divergences": active,
             "in_line": [r for r in rows if r["sign"] == "in_line"],
             "n_active": len(active), "n_pairs": len(rows),
-            "disclaimer_en": "Context only — a divergence is a falsifiable hypothesis, not a trade. "
+            "disclaimer_en": "Context only — a divergence is a checkable hypothesis, not a trade. "
                              "No validated edge; the ledger tracks whether these calls hold.",
-            "disclaimer_zh": "仅作背景——背离是可证伪的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。",
+            "disclaimer_zh": "仅作背景——背离是可检验的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。",
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_radar.scan failed (%s)", e)

@@ -38,7 +38,7 @@ def _calibration_note(overall: dict, by_conv: dict) -> str:
     parts = [f"{overall['n']} leans scored, hit-rate {overall['hit_rate']} "
              f"(directional accuracy {overall['dir_accuracy']})."]
     if hi.get("n"):
-        parts.append(f"High-conviction calls: {hi['hits']}/{hi['n']} not falsified.")
+        parts.append(f"High-conviction calls: {hi['hits']}/{hi['n']} holding.")
     if overall["n"] < 10:
         parts.append("Sample is tiny — the brain's leans are accountability, not yet a validated edge.")
     return " ".join(parts)
@@ -51,7 +51,7 @@ def _calibration_note_zh(overall: dict, by_conv: dict) -> str:
     parts = [f"已评分 {overall['n']} 条，命中率 {overall['hit_rate']}"
              f"（方向准确率 {overall['dir_accuracy']}）。"]
     if hi.get("n"):
-        parts.append(f"高置信判断：{hi['hits']}/{hi['n']} 未被证伪。")
+        parts.append(f"高置信判断：{hi['hits']}/{hi['n']} 仍成立。")
     if overall["n"] < 10:
         parts.append("样本极小 —— 大脑的判断是问责，尚非验证过的优势。")
     return "".join(parts)

@@ -1,5 +1,5 @@
 /* AI Desk renderer — fetches ai_desk.json (written by engine/ai_desk.py) and builds
-   the desk note client-side: track-record badge, falsifiable theses, the analyst
+   the desk note client-side: track-record badge, checkable theses, the analyst
    panel, and recent graded outcomes. Labels are bilingual (l-en/l-zh; theme.js
    toggles); the AI-authored content is shown as-is. Resilient: any missing field
    degrades to a muted note, never throws. */
@@ -32,13 +32,13 @@
     if (c.kind === "rel_return") {
       var thr = (c.threshold * 100).toFixed(0) + "%";
       return esc(c.subject_ticker) + " vs " + esc(c.vs) + " · " +
-        bi("falsified if relative return " + c.op + " " + thr + " over " + c.horizon_d + "d",
-           "若 " + c.horizon_d + "日相对收益 " + c.op + " " + thr + " 则证伪");
+        bi("read changes if relative return " + c.op + " " + thr + " over " + c.horizon_d + "d",
+           "若 " + c.horizon_d + "日相对收益 " + c.op + " " + thr + " 则改判");
     }
     if (c.kind === "level") {
       return esc(c.subject_ticker) + " · " +
-        bi("falsified if a new high above entry within " + c.horizon_d + "d",
-           "若 " + c.horizon_d + "日内创出高于入场的新高则证伪");
+        bi("read changes on a new high above entry within " + c.horizon_d + "d",
+           "若 " + c.horizon_d + "日内创出高于入场的新高则改判");
     }
     return bi("not machine-scorable (soft)", "无法机械打分（软）");
   }
@@ -58,7 +58,7 @@
     }
     if (t.dissent) h += '<div class="dissent"><span class="k">' + bi("Dissent", "异议") + "</span> " + esc(t.dissent) + "</div>";
     var f = t.falsifier || {};
-    h += '<div class="fals"><span class="k">' + bi("Falsifier", "证伪条件") + "</span> " +
+    h += '<div class="fals"><span class="k">' + bi("Changes this read", "改判条件") + "</span> " +
       esc(f.text || "") + '<div class="mono" style="margin-top:4px">' + checkText(f.check) +
       (t.check_by ? " · " + bi("check by ", "检验日 ") + esc(t.check_by) : "") + "</div></div>";
     h += "</div>";
@@ -80,7 +80,7 @@
     var ov = tr.overall;
     h += '<div class="tr-grid">';
     h += '<div class="tr-cell"><div class="v">' + (ov.hit_rate != null ? (ov.hit_rate * 100).toFixed(0) + "%" : "—") +
-      '</div><div class="l">' + bi("not-falsified", "未证伪率") + " (" + ov.hits + "/" + ov.n + ")</div></div>";
+      '</div><div class="l">' + bi("holding", "成立率") + " (" + ov.hits + "/" + ov.n + ")</div></div>";
     h += '<div class="tr-cell"><div class="v">' + (ov.dir_accuracy != null ? (ov.dir_accuracy * 100).toFixed(0) + "%" : "—") +
       '</div><div class="l">' + bi("directional", "方向正确率") + "</div></div>";
     ["high", "medium", "low"].forEach(function (c) {

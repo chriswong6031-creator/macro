@@ -1,6 +1,6 @@
 /* Accountable AI-JUDGMENT panel — fetches site/stockdata/ai_desk_notes.json (the top-pick
    leans written by engine/stock_desk.py) + ai_desk_track.json (the graded track record).
-   Shows the FALSIFIABLE lean for a name ONLY if it's a covered top pick (panel stays hidden
+   Shows the CHECKABLE lean for a name ONLY if it's a covered top pick (panel stays hidden
    otherwise). HONEST: the cross-sectional rank has no validated forward edge — the lean is a
    fallible, scored conditional, never a size, never alpha. All model output is escaped before
    insertion. Bilingual chrome (model prose stays English); re-renders on 'langchange'.
@@ -8,17 +8,17 @@
 (function () {
   var NOTES = null, TRACK = null, CUR = null, FETCHED = false;
   var LBL = {
-    en: { head: "AI judgment", why: "Why", bear: "Bear case", fals: "Falsifier",
+    en: { head: "AI judgment", why: "Why", bear: "Bear case", fals: "Changes this read",
           by: "check by", track: "AI track record", scored: "scored", hit: "hit-rate",
           none: "no leans scored yet — provisional",
-          foot: "Accountable, falsifiable lean vs SPY — graded against reality. The board's "
+          foot: "Accountable, checkable lean vs SPY — graded against reality. The board's "
               + "rank has no validated forward edge; this is accountability, not alpha. Never a size.",
           leans: { constructive: "Constructive", neutral: "Neutral", cautious: "Cautious", avoid: "Avoid" },
           conv: { low: "low", medium: "medium", high: "high" } },
-    zh: { head: "AI 研判", why: "理由", bear: "看空理由", fals: "证伪条件",
+    zh: { head: "AI 研判", why: "理由", bear: "看空理由", fals: "改判条件",
           by: "复核日期", track: "AI 战绩", scored: "已评", hit: "命中率",
           none: "暂无已评判断 — 暂定",
-          foot: "相对标普500的可问责、可证伪判断 — 接受现实检验。榜单排名无经验证的前瞻优势；"
+          foot: "相对标普500的可问责、可检验判断 — 接受现实检验。榜单排名无经验证的前瞻优势；"
               + "这是问责机制，而非阿尔法。从不给出仓位。",
           leans: { constructive: "建设性", neutral: "中性", cautious: "谨慎", avoid: "回避" },
           conv: { low: "低", medium: "中", high: "高" } },

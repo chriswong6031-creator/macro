@@ -169,10 +169,10 @@ def _conviction(type_: str) -> dict:
         edge = "Real-time risk event — act on it, don't wait for confirmation."
         edge_zh = "实时风险事件 — 应立即行动，无需等待确认。"
     elif type_ == "override_release":
-        edge = ("Pre-committed structural falsifier — the release rule was registered "
-                "in advance and fired mechanically; sizing returns to the engine's "
-                "validated strategy output.")
-        edge_zh = ("预先承诺的结构性证伪条件——解除规则事先登记、机械触发；"
+        edge = ("Pre-committed structural release rule — registered in advance and "
+                "fired mechanically; sizing returns to the engine's validated "
+                "strategy output.")
+        edge_zh = ("预先承诺的结构性解除规则——事先登记、机械触发；"
                    "仓位交还给引擎经验证的策略输出。")
     elif type_ in ("impulse_warn_down", "impulse_trigger_down"):
         edge = ("Forward de-risk window from a verified LEADING precursor cross "

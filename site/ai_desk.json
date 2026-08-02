@@ -4,7 +4,7 @@
   "generated_at": "2026-08-01T21:10:49.014676+00:00",
   "state_asof": "2026-07-31",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow detectors are explicitly display-only with no validated forward edge (rank-IC ~0). The regime snap is building from a fragile, catalyst-free relief that is prone to reversal. No asset-class-level or sector-level directional signal meets the falsifiability bar.",
+  "regime_context": "Flow detectors are explicitly display-only with no validated forward edge (rank-IC ~0). The regime snap is building from a fragile, catalyst-free relief that is prone to reversal. No asset-class-level or sector-level directional signal meets the checkability bar.",
   "theses": [],
   "source_verdicts": {
     "flow": "display_only",
@@ -181,7 +181,7 @@
   },
   "confidence": "high",
   "degraded_reason": null,
-  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
+  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, CHECKABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
       "stance": "Flow concentration is singularly strong in Energy while Health Care, Real Estate, and Industrials register the most negative scores, pointing to a rotation away from recent leaders; the fragile relief snap tentatively supports risk-on, but lack of a structural catalyst keeps conviction low.",

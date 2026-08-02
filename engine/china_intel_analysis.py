@@ -39,9 +39,9 @@ SIGNAL_THEME = {
 
 DISCLAIMER_EN = ("Context only — a cross-surface join, not a signal/score/size. "
                  "context_conviction is salience (how many independent surfaces line up), "
-                 "never a position. Chains are falsifiable hypotheses the radar ledger tracks.")
+                 "never a position. Chains are checkable hypotheses the radar ledger tracks.")
 DISCLAIMER_ZH = ("仅作背景——跨面板的关联，而非信号/评分/仓位。context_conviction 是显著性"
-                 "（多少独立面板共振），绝非仓位。链条是可证伪的假设，由雷达台账追踪。")
+                 "（多少独立面板共振），绝非仓位。链条是可检验的假设，由雷达台账追踪。")
 
 
 def _read(rel: str):

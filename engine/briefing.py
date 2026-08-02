@@ -48,7 +48,8 @@ HOW_TO_USE = (
     "confidence + high strength = act-worthy; low confidence = watch. The divergences list "
     "is the subset worth deep research — demand and supply disagree, so the consensus is "
     "incomplete. Pull the full 4-facet record for any name via the by_ticker bundle. Every "
-    "item carries a falsifier — track it; a thesis you cannot kill is not a thesis."
+    "item carries its change-this-read condition — track it; a thesis you cannot kill is "
+    "not a thesis."
 )
 
 # read labels where demand-tape and supply/ smart-money point opposite ways

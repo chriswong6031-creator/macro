@@ -265,7 +265,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
             "horizons": out_h, "lead_time_d": lead_time, "peak_ic": peak_ic,
             "proven": proven, "any_matured": any_matured, "verdict": verdict, "note": note,
             "recent_misses": misses,
-            "disclaimer": ("A falsifiable scorecard of the leadership read's OWN calls — RUNNING "
+            "disclaimer": ("An accountable scorecard of the leadership read's OWN calls — RUNNING "
                            "(momentum continuation) and COILING (confirmed bottom) — graded against "
                            "realized member-equal-weight SPY-relative forward returns. Until a horizon "
                            "matures and clears a Newey-West significance bar it is 'measuring', never "

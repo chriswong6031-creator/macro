@@ -609,7 +609,7 @@ def compute(desk: str, today: date | str | None = None, root: Path | None = None
             "any_matured": any_matured, "any_alarm": any_alarm, "any_proven": any_proven,
             "auto_findings": findings, "notes": notes, "note": note,
             "disclaimer": (
-                "A falsifiable scorecard of this desk's own surfaced names — its ranking score "
+                "An accountable scorecard of this desk's own surfaced names — its ranking score "
                 "(level AND velocity) graded against realized SPY-relative forward returns at "
                 "5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is "
                 "'proven' only past n>=40 with a significant Newey-West t of the right sign; a "

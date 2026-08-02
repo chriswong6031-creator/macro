@@ -314,11 +314,11 @@
   </section>
   {% endif %}
 
-  {# ---------- FALSIFIABLE LEDGER ---------- #}
+  {# ---------- ACCOUNTABLE LEDGER ---------- #}
   {% if track and (track.scored_total is not none) %}
   <section class="sid-sec">
     <h2>📊 {{ t('Track record', '战绩') }}
-      <span class="h-note">{{ t('every convergence logged as a dated, falsifiable thesis vs SPY', '每次汇聚记为带日期、可证伪的对标普论点') }}</span></h2>
+      <span class="h-note">{{ t('every convergence logged as a dated, checkable thesis vs SPY', '每次汇聚记为带日期、可检验的对标普论点') }}</span></h2>
     <div class="sid-card">
       <div class="sid-meta">
         <span class="chip">{{ track.scored_total }} {{ t('scored','已评分') }}</span>
@@ -488,8 +488,8 @@
         {% endfor %}
       </div>
       <p class="mut" style="font-size:11px;margin:11px 0 0;">{{ t(
-        'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · FINRA short interest · analyst estimate revisions · earnings calendar · StockTwits retail · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
-        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · FINRA 空头持仓 · 分析师预期修正 · 财报日历 · StockTwits 散户 · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
+        'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · FINRA short interest · analyst estimate revisions · earnings calendar · StockTwits retail · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the accountable ledger, not assumed right.',
+        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · FINRA 空头持仓 · 分析师预期修正 · 财报日历 · StockTwits 散户 · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可问责战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
 

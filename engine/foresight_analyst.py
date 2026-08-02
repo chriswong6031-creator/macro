@@ -414,7 +414,7 @@ def compute_foresight_analyst(convergence: dict | None, cascade: dict | None = N
     out["asof"] = convergence.get("asof")
     out["n_theses"] = len(out["theses"])
     out["disclaimer"] = ("An AI reading of the desk's OWN deterministic convergence — "
-                         "falsifiable and forward-graded, never a price forecast.")
+                         "checkable and forward-graded, never a price forecast.")
     if write_ledger:
         try:
             _append_ledger(out, convergence)
@@ -485,7 +485,7 @@ def load_committed_theses() -> dict | None:
         ),
         "confidence": "low",
         "disclaimer": ("An AI reading of the desk's OWN deterministic convergence — "
-                       "falsifiable and forward-graded, never a price forecast. "
+                       "checkable and forward-graded, never a price forecast. "
                        "Replayed from the last saved read; not regenerated for this page."),
     }
 

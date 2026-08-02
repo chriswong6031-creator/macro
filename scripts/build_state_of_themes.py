@@ -62,7 +62,7 @@ _LEG_LABELS = {
     "cyclical_dislocation": ("dis", "Cyclical dislocation", "周期错位"),
     "entry_cleanliness": ("cln", "Entry cleanliness", "入场质量"),
     "crowding_hazard": ("crw", "Crowding hazard", "拥挤风险"),
-    "falsifier_clarity": ("fal", "Falsifier clarity", "假证伪清晰度"),
+    "falsifier_clarity": ("fal", "Testability", "可检验性"),
     "orthogonality": ("ort", "Orthogonality vs market", "市场正交性"),
 }
 
@@ -389,7 +389,7 @@ _LANE_META: dict[str, dict[str, str]] = {
         "stance_en": "A break-rule tripped — stand aside",
         "stance_zh": "触发否定条件——暂避观望",
         "guide_en": "A rule that would break the story has tripped. Stand aside until it clears.",
-        "guide_zh": "一条会证伪论点的规则已触发。在其解除前暂避。",
+        "guide_zh": "一条会改变论点的规则已触发。在其解除前暂避。",
     },
     "quiet": {
         "key": "quiet",

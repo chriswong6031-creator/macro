@@ -900,7 +900,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
             "lagging, consensus condition). 'emerging' = a leading desk firing ahead of a quiet "
             "crowd with most of the move still ahead (where the edge is); 'exhausted' = already "
             "run, fade-risk. catalysts = fresh dated special-situation events. Every dossier "
-            "names its falsifier and its edge_remaining; track both."),
+            "names what would change its read and its edge_remaining; track both."),
         "disclaimer": DISCLAIMER,
     }
 

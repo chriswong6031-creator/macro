@@ -262,8 +262,8 @@
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
     <h2 style="margin:0">{{ t("The brief's own record", '简报自身记录') }}</h2>
     {{ help(
-      "The AI brief logs a lean for each major call — subject, direction, horizon, and a falsifier. These are scored against realized prices. Below 20 graded calls the scoreboard shows the artifact's own calibration note, not a hit-rate.",
-      '简报为每次主要判断记录倾向 — 标的、方向、时间窗口与证伪条件，并依据实际价格评分。评分次数不足20次时不显示命中率，仅显示校准说明。'
+      "The AI brief logs a lean for each major call — subject, direction, horizon, and the condition that would change it. These are scored against realized prices. Below 20 graded calls the scoreboard shows the artifact's own calibration note, not a hit-rate.",
+      '简报为每次主要判断记录倾向 — 标的、方向、时间窗口与改判条件，并依据实际价格评分。评分次数不足20次时不显示命中率，仅显示校准说明。'
     ) }}
   </div>
   {# n-floor law (ADB-R12c): fixed plain-word sentence on visible tier when n < 20;
@@ -287,8 +287,8 @@
       <span class="l-en">{{ lean.stance_en }}</span>
       <span class="l-zh">{{ lean.stance_zh or lean.stance_en }}</span>
       {% if lean.get('falsifier_en') %}
-      {{ help('Falsifier: ' + lean.falsifier_en + (' · Check by: ' + lean.check_by if lean.get('check_by') else ''),
-              '证伪条件：' + lean.falsifier_en + (' · 截止：' + lean.check_by if lean.get('check_by') else '')) }}
+      {{ help('Changes this read: ' + lean.falsifier_en + (' · Check by: ' + lean.check_by if lean.get('check_by') else ''),
+              '改判条件：' + lean.falsifier_en + (' · 截止：' + lean.check_by if lean.get('check_by') else '')) }}
       {% endif %}
     </div>
     {% endfor %}

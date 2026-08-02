@@ -316,7 +316,7 @@ html[data-theme="dark"] body::before{
 
 {# ── FILTER BAR ── #}
 <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--good)"></span>{{ t('The board', '主题看板') }}</div>
-<p class="sec-sub">{{ t('Every theme sorted into one plain-word lane: what it\'s doing, and what to do about it. Tap a card for the full story, the setup, and what would break it.', '每个主题归入一个直白的分组：它在做什么、你该怎么应对。点击卡片查看完整故事、结构与证伪条件。') }}</p>
+<p class="sec-sub">{{ t('Every theme sorted into one plain-word lane: what it\'s doing, and what to do about it. Tap a card for the full story, the setup, and what would break it.', '每个主题归入一个直白的分组：它在做什么、你该怎么应对。点击卡片查看完整故事、结构与改判条件。') }}</p>
 <div class="filter-row" id="filter-row">
   <button class="fchip on" data-filter="all" style="--fc:var(--link)">{{ t('All', '全部') }} <span class="fc-n">{{ n_themes }}</span></button>
   <button class="fchip" data-filter="lane:working" style="--fc:var(--good)"><span class="fc-sw"></span>{{ t('Working', '正在奏效') }} <span class="fc-n">{{ n_working }}</span></button>
@@ -401,7 +401,7 @@ html[data-theme="dark"] body::before{
           {% endif %}
           {% if th.falsifiers %}
           <div class="drawer-sec full">
-            <h4>{{ t('What would break the story', '什么会证伪该论点') }}</h4>
+            <h4>{{ t('What would break the story', '什么会改变该论点') }}</h4>
             <table class="fals-table">
               <thead><tr><th>{{ t('Status', '状态') }}</th><th>{{ t('Rule', '规则') }}</th></tr></thead>
               <tbody>
@@ -500,7 +500,7 @@ html[data-theme="dark"] body::before{
         <div class="leg-def"><span class="k">{{ t('Cyclical dislocation', '周期错位') }}</span><span class="v">{{ t('A long-term story trading at cycle-lows.', '长期故事却处于周期低位。') }}</span></div>
         <div class="leg-def"><span class="k">{{ t('Entry cleanliness', '入场质量') }}</span><span class="v">{{ t('Whether the entry looks clean or overheated.', '入场点是否干净、还是过热。') }}</span></div>
         <div class="leg-def"><span class="k">{{ t('Crowding', '拥挤风险') }}</span><span class="v">{{ t('How many are already positioned here.', '已有多少人押注于此。') }}</span></div>
-        <div class="leg-def"><span class="k">{{ t('Testability', '假证伪清晰度') }}</span><span class="v">{{ t('Are there clear tripwires that would disprove it?', '是否有清晰的触发线可以证伪？') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Testability', '可检验性') }}</span><span class="v">{{ t('Are there clear tripwires that would disprove it?', '是否有清晰的触发线会改变判断？') }}</span></div>
         <div class="leg-def"><span class="k">{{ t('Moves on its own', '市场正交性') }}</span><span class="v">{{ t('Does it move on its story, not just the market?', '它是否走自身逻辑、而非随大盘？') }}</span></div>
       </div>
     </div>

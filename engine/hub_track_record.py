@@ -313,7 +313,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
             "is_context_only": True, "n_snapshots": len(rows),
             "horizons": out_h, "lead_time_d": lead_time, "peak_opportunity_ic": peak_ic,
             "proven": proven, "any_matured": any_matured, "note": note, "benchmark": bench,
-            "disclaimer": ("A falsifiable scorecard of the hub's own claims — opportunity rank and "
+            "disclaimer": ("An accountable scorecard of the hub's own claims — opportunity rank and "
                            f"lifecycle stage graded against realized {bench}-relative forward returns. "
                            "Until a signal matures and clears a Newey-West significance bar it is "
                            "'measuring', never trusted. Nothing here sizes a position."),
