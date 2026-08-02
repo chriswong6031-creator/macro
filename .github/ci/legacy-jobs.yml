@@ -4150,6 +4150,10 @@ jobs:
       # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
       - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
         run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
+      # MSC R2.4 (2026-08-01): the live Level Report Card publisher. Wired at birth —
+      # pure pandas/pytest, same import closure as the step above (pandas+pyarrow only).
+      - name: Level Report Card — grade-summary publisher (Wilson CI vs null, coverage honesty)
+        run: python -m pytest tests/test_level_grades_summary.py -q
       # OIP E3 positioning persistence (2026-07-29). Three suites, ~11 s serial.
       #
       # test_gex_state.py and test_index_gex_history.py were BOTH dark: named by no
