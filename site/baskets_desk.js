@@ -1,14 +1,6 @@
 // Shared Theme Rotation Desk renderer — used by every baskets page (US/CN/HK/CA/Intl).
 // Relies on per-page globals: BASKETS, CHART, THEME + helpers esc/cssv/
 // fmtPct/cls/sparkSvg/ratio/sparkTail. Call deskBoot() after those are defined.
-//
-// NOT every consumer renders the desk. baskets.html.j2 (US) loads this file but
-// never calls deskBoot(): #3282 replaced its desk surfaces with the verdict hero /
-// act board / rotation map, so the container ids below (#theme-desk, #macro-ctx,
-// #rotation, #concentration, #scorecards, #actnow) do not exist there. It uses only
-// L, isZh and openTheme. Changing those three changes the US page too — which is the
-// point; they used to be a hand-copied duplicate that a shared-renderer fix missed.
-// Everything else here is china / hk / canada / intl only.
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
 // ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
@@ -446,12 +438,22 @@ function renderSleeveChip(){
 }
 // renderRegimeSizing() — returns the sizing pill HTML string ('' when calm / inactive).
 // Called from actNowPulseBar(); no longer writes to a standalone DOM element.
-// KNOWN DIVERGENCE: baskets.html.j2 keeps its own renderRegimeSizing(), which also
-// discloses the caution_passport / regime_caution_shadow read (a further cut the
-// vol-regime would suggest but which has no measured drawdown edge, so it is shown
-// for awareness and does NOT size anyone down). That page loads this file, so its
-// later declaration wins there — deliberately. The regional payloads carry those
-// fields too; porting the disclosure here is open work, not an oversight.
+//
+// PROVENANCE (why the copy names the US): THEME.regime_sizing is NOT computed per market.
+// engine/theme_scoring.py calls vol_regime.published_snapshot() with no region argument, so
+// the single global snapshot (CBOE VIX complex) is stamped onto all five basket pages —
+// us / china / hk / canada / intl carry byte-identical regime_sizing. The tip therefore says
+// whose volatility it is reading; without that, "volatility target 75%" on an A-share page
+// reads as a statement about A-share volatility, which was never measured.
+//
+// The caution note is a NULL DISCLOSURE (house epistemics: nulls printed, not hidden). The
+// regime-state caution is computed but withheld from gross because basket_overlay_gate.json
+// says it adds nothing over plain vol-targeting. That gate was measured on US books only
+// (scripts/backtest_vol_overlay.py — SPY primary + a US basket book), so the body claims only
+// "no measured edge" and the Tier-2 receipt carries the scope. Keep this text BYTE-IDENTICAL
+// to the US page's own copy in templates/baskets.html.j2 — the US flagship loads no
+// baskets_desk.js, so the two cannot be collapsed into one function; the pairing is pinned by
+// tests/test_regime_sizing_disclosure_parity.py instead.
 function renderRegimeSizing(){
   const rs=THEME&&THEME.regime_sizing;
   if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm
@@ -464,13 +466,28 @@ function renderRegimeSizing(){
   const factorsZh=[`波动率目标 ${mech}%`];
   if(reg<100) factorsZh.push(`风险状态 ${reg}%`);
   if(sc<100) factorsZh.push(`信号组合 ${sc}%`);
+  const regLblEn={'backwardation-stress':'stress in the volatility market','warning':'warning signs building'}[rs.regime]||'';
+  const regLblZh={'backwardation-stress':'波动率市场承压','warning':'风险信号增多'}[rs.regime]||'';
+  const cautionScored=!!(rs.caution_passport&&rs.caution_passport.verdict==='scored');
+  const shadow=Math.round((rs.regime_caution_shadow||1)*100);
+  const showNote=!cautionScored&&shadow<100&&!!regLblEn;
+  const noteEn=showNote?` | Note: that US reading is risk-off (${regLblEn}) and would suggest a further ×${shadow}% caution — but that caution has no measured edge, so it is shown for awareness only and does NOT reduce your positions.`:'';
+  const noteZh=showNote?` | 提示：该美国读数偏向避险（${regLblZh}），本会再施加约 ×${shadow}% 的审慎——但该审慎没有可测的优势，因此仅作提示，不会减少您的仓位。`:'';
   const tipEn=`How it's set: ${factorsEn.join(' · ')} → ${pct}%`
     +(demoted?` · ${demoted} theme(s) eased to hold-only`:'')
-    +` · Volatile markets get smaller position sizes. This does not change the basket ranking.`;
+    +` | Read from US volatility, applied on every market page. Volatile markets get smaller position sizes. This does not change the basket ranking.`
+    +noteEn;
   const tipZh=`计算方式：${factorsZh.join(' · ')} → ${pct}%`
     +(demoted?` · ${demoted}个主题降为仅持有`:'')
-    +` · 波动加大时降低仓位；不改变篮子排序。`;
-  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+    +` | 依据美国波动率读数，各市场页面同用此读数。波动加大时降低仓位；不改变篮子排序。`
+    +noteZh;
+  // Tier-2 receipt (mono line under the dashed perforation) — the sanctioned home for scope
+  // and sources, which are banned from the tip body. Only shown alongside the note it scopes.
+  const asof=(rs.caution_passport&&rs.caution_passport.validation&&rs.caution_passport.validation.asof)||'';
+  const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
+  const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
+  const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }

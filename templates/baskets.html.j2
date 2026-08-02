@@ -1259,30 +1259,50 @@ function renderStory(){
 // drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
 // drawdown value is mechanical vol-targeting; the regime layer adds no measured edge, so the
 // decomposition leads with vol-target and the note says so. Never implies the overlay lifts returns.
+//
+// PROVENANCE (why the copy names the US): THEME.regime_sizing is NOT computed per market.
+// engine/theme_scoring.py calls vol_regime.published_snapshot() with no region argument, so
+// the single global snapshot (CBOE VIX complex) is stamped onto all five basket pages —
+// us / china / hk / canada / intl carry byte-identical regime_sizing. Naming the source is a
+// precision gain here and the difference between true and false on the regional pages, so the
+// wording is shared rather than forked. Keep this text BYTE-IDENTICAL to the shared desk
+// renderer in templates/baskets_desk.js — this flagship loads no baskets_desk.js, so the two
+// cannot be collapsed into one function; the pairing is pinned by
+// tests/test_regime_sizing_disclosure_parity.py instead.
 function renderRegimeSizing(){
   const rs=THEME&&THEME.regime_sizing;
   if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm
   const pct=Math.round((rs.gross_scalar||1)*100);
   const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
   const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
-  const regLblEn={'backwardation-stress':'stress in the volatility market','warning':'warning signs building'}[rs.regime]||'';
-  const regLblZh={'backwardation-stress':'波动率市场承压','warning':'风险信号增多'}[rs.regime]||'';
   const factorsEn=[`volatility target ${mech}%`];
   if(reg<100) factorsEn.push(`risk regime ${reg}%`);
   if(sc<100) factorsEn.push(`signal mix ${sc}%`);
   const factorsZh=[`波动率目标 ${mech}%`];
   if(reg<100) factorsZh.push(`风险状态 ${reg}%`);
   if(sc<100) factorsZh.push(`信号组合 ${sc}%`);
+  const regLblEn={'backwardation-stress':'stress in the volatility market','warning':'warning signs building'}[rs.regime]||'';
+  const regLblZh={'backwardation-stress':'波动率市场承压','warning':'风险信号增多'}[rs.regime]||'';
   const cautionScored=!!(rs.caution_passport&&rs.caution_passport.verdict==='scored');
   const shadow=Math.round((rs.regime_caution_shadow||1)*100);
-  let tipSuffix='';
-  if(!cautionScored && shadow<100 && regLblEn){
-    tipSuffix=' | Note: the vol-regime is risk-off ('+regLblEn+'), which would suggest a further ×'+shadow+'% caution — but that caution has no measured drawdown edge over plain vol-targeting, so it is shown for awareness only and does NOT reduce your positions.';
-  }
-  const tipSuffixZh=(!cautionScored && shadow<100 && regLblZh)?(' | 提示：波动率状态偏离风险（'+regLblZh+'），本会再施加约 ×'+shadow+'% 的审慎——但该审慎相较单纯波动率目标没有可测的回撤优势，因此仅作提示，不会减少您的仓位。'):'';
-  const tipEn='How it\'s set: '+factorsEn.join(' · ')+' → '+pct+'%'+(demoted?' · '+demoted+' theme(s) eased to hold-only':'')+' | Volatile markets get smaller position sizes. This does not change the basket ranking.'+tipSuffix;
-  const tipZh='计算方式：'+factorsZh.join(' · ')+' → '+pct+'%'+(demoted?' · '+demoted+'个主题降为仅持有':'')+' | 市场波动加大时仓位会缩小，但不改变篮子排名。'+tipSuffixZh;
-  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+  const showNote=!cautionScored&&shadow<100&&!!regLblEn;
+  const noteEn=showNote?` | Note: that US reading is risk-off (${regLblEn}) and would suggest a further ×${shadow}% caution — but that caution has no measured edge, so it is shown for awareness only and does NOT reduce your positions.`:'';
+  const noteZh=showNote?` | 提示：该美国读数偏向避险（${regLblZh}），本会再施加约 ×${shadow}% 的审慎——但该审慎没有可测的优势，因此仅作提示，不会减少您的仓位。`:'';
+  const tipEn=`How it's set: ${factorsEn.join(' · ')} → ${pct}%`
+    +(demoted?` · ${demoted} theme(s) eased to hold-only`:'')
+    +` | Read from US volatility, applied on every market page. Volatile markets get smaller position sizes. This does not change the basket ranking.`
+    +noteEn;
+  const tipZh=`计算方式：${factorsZh.join(' · ')} → ${pct}%`
+    +(demoted?` · ${demoted}个主题降为仅持有`:'')
+    +` | 依据美国波动率读数，各市场页面同用此读数。波动加大时降低仓位；不改变篮子排序。`
+    +noteZh;
+  // Tier-2 receipt (mono line under the dashed perforation) — the sanctioned home for scope
+  // and sources, which are banned from the tip body. Only shown alongside the note it scopes.
+  const asof=(rs.caution_passport&&rs.caution_passport.validation&&rs.caution_passport.validation.asof)||'';
+  const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
+  const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
+  const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 
 // ---- Money flow: ETF style/risk tone + vol pill (Op 2) ----
