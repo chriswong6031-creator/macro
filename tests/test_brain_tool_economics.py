@@ -40,6 +40,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from engine.chronicle import earnings_calls as ec  # noqa: E402
 from engine.neuralweb import brain_gateway as gw  # noqa: E402
+from tests.test_brain_gateway import _ScriptedStreamCtx  # noqa: E402
 
 _ANSWER = ("Steady tape, nothing forcing a move. "
            "is_context_only: true — all signals are display-tier pending FDR.")
@@ -90,10 +91,15 @@ class _StreamCtx:
 
 
 class _CaptureClient:
-    """Scripted create() responses; every call's kwargs captured as a DEEP COPY.
+    """Scripted model responses; every call's kwargs captured as a DEEP COPY.
 
     The deep copy is load-bearing: the loop keeps appending to the same `messages`
     list, so a stored reference would show every round the FINAL array.
+
+    Both surfaces read the same script. `create()` serves the non-streaming loop;
+    `stream()` serves the streaming one, where (W5.1) the Phase-1 ROUNDS stream too —
+    `tools` in the kwargs is what separates a round from Phase-2 synthesis, exactly as
+    it does in the gateway.
     """
 
     def __init__(self, responses: list | None = None, answer: str = _ANSWER):
@@ -104,16 +110,21 @@ class _CaptureClient:
         self.stream_kwargs: list[dict] = []
         self.messages = self
 
-    def create(self, **kwargs):
-        self.create_kwargs.append(copy.deepcopy(kwargs))
+    def _scripted(self):
         if self._i >= len(self._responses):
             return _Resp([_Block("text", self._answer)], "end_turn")
         resp = self._responses[self._i]
         self._i += 1
         return resp
 
+    def create(self, **kwargs):
+        self.create_kwargs.append(copy.deepcopy(kwargs))
+        return self._scripted()
+
     def stream(self, **kwargs):
         self.stream_kwargs.append(copy.deepcopy(kwargs))
+        if "tools" in kwargs:          # a Phase-1 round (W5.1 streams these too)
+            return _ScriptedStreamCtx(self._scripted())
         return _StreamCtx(self._answer)
 
 
@@ -450,9 +461,10 @@ def test_stream_loop_fences_the_svg_but_keeps_the_chart_event(quiet_grounding):
     chart_events = [p for p in parsed if p.get("type") == "chart"]
     assert chart_events and chart_events[0]["svg"] == _FAKE_SVG
 
-    # Round 2's create() carries the tool_result — it must hold the stub, not the SVG.
-    assert len(client.create_kwargs) >= 2
-    sent = client.create_kwargs[1]["messages"]
+    # Round 2's model call carries the tool_result — it must hold the stub, not the SVG.
+    # (W5.1: the streaming loop's rounds go out through stream(), not create().)
+    assert len(client.stream_kwargs) >= 2
+    sent = client.stream_kwargs[1]["messages"]
     results = [b for m in sent if isinstance(m.get("content"), list)
                for b in m["content"]
                if isinstance(b, dict) and b.get("type") == "tool_result"]
@@ -523,9 +535,10 @@ def test_stream_loop_also_stamps_exactly_one_messages_breakpoint(quiet_grounding
                       side_effect=lambda name, *_a, **_kw: {"tool": name}):
         _drive_stream(_root(), client)
 
-    first = client.create_kwargs[0]["messages"]
+    # W5.1: the streaming loop's rounds go out through stream(), not create().
+    first = client.stream_kwargs[0]["messages"]
     assert first[-1]["content"][-1]["cache_control"] == {"type": "ephemeral"}
-    assert json.dumps(client.create_kwargs[-1]["messages"],
+    assert json.dumps(client.stream_kwargs[-1]["messages"],
                       default=str).count('"cache_control"') == 1
 
 

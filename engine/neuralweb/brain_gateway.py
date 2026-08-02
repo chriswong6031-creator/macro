@@ -1702,10 +1702,25 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
             quotes = json.loads(quotes_path.read_text(encoding="utf-8"))
             row = (quotes.get("quotes") or quotes.get("symbols") or {}).get(symbol) or {}
             if row:
+                # W5.1: the live plane writes per-row `ts` (epoch ms) and file-level
+                # `asof` — this reader asked for `as_of`, which the file never carries,
+                # so every quote from this source shipped DATELESS (and the instant
+                # lane's dateless-refuse gate correctly rejected all of them).
+                _row_ts = row.get("ts")
+                _as_of = None
+                if isinstance(_row_ts, (int, float)) and _row_ts > 0:
+                    try:
+                        _as_of = datetime.fromtimestamp(
+                            float(_row_ts) / 1000.0, tz=timezone.utc
+                        ).isoformat(timespec="seconds")
+                    except (OverflowError, OSError, ValueError):
+                        _as_of = None
                 return {
                     "symbol": symbol,
                     "price": row.get("price") or row.get("last"),
-                    "as_of": quotes.get("as_of"),
+                    "change_pct": row.get("changePct"),
+                    "prev_close": row.get("prevClose"),
+                    "as_of": _as_of or quotes.get("asof") or quotes.get("as_of"),
                     "source": "site_quotes",
                 }
     except Exception:  # noqa: BLE001
@@ -5932,6 +5947,25 @@ _STREAM_FLUSH_CHARS = 120
 _STREAM_FLUSH_S = 0.35
 _LEAK_HOLDBACK_CHARS = 256
 
+# ── W5.1: the ROUND-path commitment horizon (operator 2026-08-01) ────────────────────
+# W5 shipped true streaming for Phase-2 synthesis only — and the post-merge VPS bench
+# proved Phase 2 is the RARE path: it fires only when the tool budget runs out
+# mid-investigation. The dominant turn ends with the model writing its final answer
+# INSIDE a tool round, which was a blocking create() — so the live measurement was
+# `ttfv == done`, one delta, 42.7s of nothing (broad probe) and 18.5s (native).
+#
+# Every round's model call now streams through the same machinery. The one thing a round
+# has that synthesis does not is AMBIGUITY: its text might be the answer, or it might be
+# a sentence of narration before a tool_use block. So a round holds ALL of its text until
+# it has written this many characters WITHOUT starting a tool_use block; only then does
+# it start forwarding. On the fast lane DeepSeek's "let me check" reasoning rides
+# THINKING blocks, so pre-tool display text is rare and short — 200 characters of prose
+# with no tool call is a near-certain final answer. Below the horizon nothing is shown,
+# so a tool round is byte-identical to the pre-W5.1 wire; above it, a round that turns
+# out to be a tool round after all wipes what it showed with an empty `retract`.
+# Overridable as `streaming.commit_chars` (see _stream_commit_chars).
+_STREAM_COMMIT_CHARS = 200
+
 # The suggestions marker _split_suggestions() recognises: a line that is EXACTLY this
 # after stripping. Streaming must never put a fragment of it on the wire.
 _NEXT_MARKER = "[NEXT]"
@@ -5956,6 +5990,29 @@ def _stream_flush_cfg(root: Path | None = None) -> tuple[int, float, int]:
     # Floor, not a suggestion: a holdback shorter than the longest sentinel would let a
     # split prompt echo ship before the scan that catches it ever sees the whole string.
     return chars, secs, max(hold, _MAX_SENTINEL_LEN)
+
+
+def _stream_commit_chars(root: Path | None = None) -> int:
+    """The W5.1 round-path commitment horizon, in characters (see _STREAM_COMMIT_CHARS).
+
+    Read as `streaming.commit_chars` from config/brain.yml, alongside the W5 keys.  It is
+    deliberately a SEPARATE reader from _stream_flush_cfg: that function's 3-tuple is
+    patched wholesale by the Contract S suite, and widening it would have made the
+    horizon un-testable in isolation and silently re-armed in every one of those patches.
+
+    NOTE for whoever ships the knob: `streaming.commit_chars` is NOT in the shipped
+    config/brain.yml today, because tests/test_brain_streaming.py's
+    test_the_shipped_config_matches_the_module_defaults pins the streaming block's exact
+    key set.  Adding the key to the config means adding it to that assertion in the same
+    PR.  Never raises — a malformed knob loses the override, never the turn.
+    """
+    try:
+        blk = (_load_brain_config(root) or {}).get("streaming") or {}
+        if isinstance(blk, dict):
+            return max(0, int(blk.get("commit_chars", _STREAM_COMMIT_CHARS)))
+    except Exception:  # noqa: BLE001 — bad config → default, never a dead turn
+        return _STREAM_COMMIT_CHARS
+    return _STREAM_COMMIT_CHARS
 
 
 def _trim_ws_end(body: str, cut: int) -> int:
@@ -6010,6 +6067,143 @@ def _leak_hit(text: str, start: int = 0) -> bool:
         return False
     window = text[max(0, start):]
     return any(sentinel in window for sentinel in _LEAK_SENTINELS)
+
+
+def _wipe_event() -> str:
+    """An EMPTY `retract`: "wipe the bubble, something else is coming".
+
+    Three callers, one meaning — a Phase-2 candidate that died mid-body, a fresh
+    candidate about to restart a round, and (W5.1) a round whose narration turned out to
+    precede a tool call.  It is NOT a screening event: `_retracted`/`filtered` stay
+    untouched, because nothing was rejected — the text was simply never the answer.
+    The client's MdStream.reset('') empties the bubble and keeps streaming into it.
+    """
+    return f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+
+
+def _stream_tool_use_started(stream: Any) -> bool:
+    """True when the in-flight SDK stream's message snapshot ALREADY carries a tool_use
+    block — i.e. this round is a tool round and its text is narration, not an answer.
+
+    The Anthropic SDK exposes the accumulating message as `current_message_snapshot`; a
+    provider shim that does not (engine.codex_provider._Stream, the offline fakes) simply
+    never reports early and the round's final message settles it a moment later.  Best
+    effort by construction, so it never raises: a missed early signal costs at most one
+    wipe, and the snapshot must never be able to kill a turn.
+    """
+    try:
+        snapshot = getattr(stream, "current_message_snapshot", None)
+        for block in getattr(snapshot, "content", None) or []:
+            if getattr(block, "type", "") == "tool_use":
+                return True
+    except Exception:  # noqa: BLE001
+        return False
+    return False
+
+
+class _StreamGate:
+    """Contract S display machinery for ONE model call — the SINGLE implementation.
+
+    Phase-2 synthesis and (W5.1) every tool round's model call feed their SDK text chunks
+    through this object, so the leak holdback, the chunk-overlapped sentinel sweep, the
+    `[NEXT]` seal, and the flush policy cannot fork between the two paths.
+
+    The caller owns the wire and the client's state: :meth:`feed` returns the text that
+    may go out NOW (``""`` = nothing yet) and the caller yields it as a `delta` and adds
+    it to its own `_emitted`.  This object tracks only THIS call's server-side buffer,
+    which is why :meth:`restart` (a failover) does not touch the caller's bookkeeping —
+    the whole point of `_emitted` is that it SURVIVES the candidate that wrote it.
+
+    ``commit_chars`` is the W5.1 commitment horizon (see _STREAM_COMMIT_CHARS).  Phase-2
+    passes 0: its text is the answer by construction.  A tool round passes the horizon,
+    because a round that turns out to call tools has to take back whatever it showed.
+    """
+
+    def __init__(self, flush_chars: int, flush_s: float, hold: int,
+                 *, commit_chars: int = 0) -> None:
+        self._flush_chars = int(flush_chars)
+        self._flush_s = float(flush_s)
+        self._hold = int(hold)
+        self._commit = max(0, int(commit_chars))
+        self.text = ""            # everything THIS candidate has written so far
+        self.leaked = False       # a sentinel was caught → caller must stop reading
+        self.sealed = False       # a complete [NEXT] line landed → display text is over
+        self.tool_started = False # a tool_use block began → this text is narration
+        self._emit_len = 0        # cursor into `text`: how much has been forwarded
+        self._scan_len = 0        # how much the sentinel scan has already covered
+        self._chunks = 0          # SDK chunks seen — the first one never flushes
+        _now = time.monotonic()
+        self._flush_at = _now
+        self._beat_at = _now
+
+    @property
+    def shown(self) -> int:
+        """Characters of this call's text already put on the wire."""
+        return self._emit_len
+
+    def restart(self) -> None:
+        """A new candidate is about to write: the server-side buffer starts over.
+
+        `leaked` is deliberately NOT cleared — a caught prompt echo ends the turn, it
+        does not get retried against the next provider.
+        """
+        self.text = ""
+        self.sealed = False
+        self.tool_started = False
+        self._emit_len = 0
+        self._scan_len = 0
+        self._chunks = 0
+        self._flush_at = self._beat_at = time.monotonic()
+
+    def note_tool_use(self) -> None:
+        """A tool_use content block has started — no further display text for this call."""
+        self.tool_started = True
+
+    def feed(self, chunk: str, *, now: float | None = None) -> str:
+        """Absorb one SDK text chunk; return the text that may be emitted right now.
+
+        Sets `leaked` when a system-prompt sentinel is caught, in which case the caller
+        must abandon the stream without emitting anything further.
+        """
+        self.text += chunk
+        self._chunks += 1
+        # LEAK SCREEN FIRST, on every chunk, before any flush decision. The scan window is
+        # backed up by the longest sentinel so an echo split across two chunks is still
+        # seen whole; the holdback below guarantees the scan has read every character
+        # before it can ship.
+        if _leak_hit(self.text, self._scan_len - (_MAX_SENTINEL_LEN - 1)):
+            self.leaked = True
+            return ""
+        self._scan_len = len(self.text)
+        if self.sealed or self.tool_started:
+            return ""
+        cut, self.sealed = _stream_display_cut(self.text, self._hold)
+        ready = cut - self._emit_len
+        # `_chunks > 1`: a provider that hands the whole answer over in ONE piece is not
+        # streaming, and splitting it into a flush plus a tail would be churn for no gain
+        # — the codex-served pro lane yields exactly once, and keeps its single delta.
+        if self._chunks <= 1 or ready <= 0:
+            return ""
+        # The commitment horizon gates only the FIRST flush: once this call has committed
+        # to showing text, it streams the rest under the ordinary flush policy.
+        if self._emit_len == 0 and len(self.text) < self._commit:
+            return ""
+        now = time.monotonic() if now is None else now
+        if ready >= self._flush_chars or now - self._flush_at >= self._flush_s:
+            out = self.text[self._emit_len:cut]
+            self._emit_len = cut
+            self._flush_at = now
+            return out
+        return ""
+
+    def beat_due(self, now: float) -> bool:
+        """True when a `writing` beat is owed: a beat is the SILENCE between text, not a
+        progress bar, so it speaks only when nothing has flushed for _WRITING_BEAT_S."""
+        if (now - self._beat_at >= _WRITING_BEAT_S
+                and now - self._flush_at >= _WRITING_BEAT_S):
+            self._beat_at = now
+            return True
+        return False
 
 
 def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
@@ -6142,6 +6336,15 @@ def _run_brain_loop_stream(
     (ask_brain._post_filter_advice); the leak screen keeps its teeth through the holdback
     plus `retract`. Nothing changes for the non-streaming chat(), /api/ask, or a provider
     whose text_stream yields once (one chunk → one delta, exactly as before).
+
+    W5.1 — EVERY ROUND STREAMS (operator 2026-08-01, post-W5 VPS bench). Phase 2 only
+    fires when the tool budget runs out; the dominant turn writes its answer inside a
+    tool round, which is why the merged W5 measured `ttfv == done` on the live lane. The
+    round loop now streams through the SAME _StreamGate, behind a commitment horizon
+    (_STREAM_COMMIT_CHARS): a round shows nothing until it has written that much text
+    with no tool_use block open, and a round that calls tools after crossing the horizon
+    wipes its narration with an empty `retract`. Below the horizon the wire is
+    byte-identical to the pre-W5.1 tool round.
     usage_out: optional single-element list; if provided, usage_dict is placed in [0]
                after streaming completes (fix #1: lets caller access real token counts).
     answer_out: optional single-element list; if provided, the filtered assistant answer
@@ -6287,7 +6490,7 @@ def _run_brain_loop_stream(
     thinking_trace: list[dict] = []  # log-only reasoning capture (see thinking_out)
     resp = None  # initialise so post-loop guard is safe
 
-    # Phase 1: tool-calling turns (blocking, no streaming)
+    # Phase 1: tool-calling turns (streaming since W5.1 — see the round loop below)
     _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
     # High-intensity params (effort + adaptive thinking) added PER-CANDIDATE — Claude-only,
     # so a DeepSeek/Haiku candidate in the same failover chain never receives them; the
@@ -6300,23 +6503,143 @@ def _run_brain_loop_stream(
     system_param = _cache_control_system(system_prompt)
     tools_param = _cache_control_tools(tool_schemas)
 
+    # ── Contract S streaming state (survives a round failover AND Phase 2) ───────────
+    # Read once per turn: BOTH the rounds below and Phase-2 synthesis stream through the
+    # same policy, so there is exactly one config read and one set of knobs.
+    _flush_chars, _flush_s, _hold = _stream_flush_cfg(root)
+    _commit_chars = _stream_commit_chars(root)
+    # `_emitted` is what the CLIENT currently holds — the single source of truth for the
+    # reconciliation at the bottom. The server-side buffer restarts on every failover and
+    # every round; this does not, which is how a dead candidate's half-written draft (and
+    # a tool round's narration) gets taken back off the screen.
+    _emitted = ""
+    _leak_tripped = False   # a sentinel was caught mid-stream → stop reading the model
+    _retracted = False      # a `retract` REPLACED text (screen/filter), not a wipe-and-retry
+    _leaked_text = ""       # W5.1: a ROUND's leaked text, handed to the finalize screen
+
     while tool_call_count < tool_budget:
         yield _status_event("model", _t0, _model_stage_label(lane, tool_call_count + 1),
                             n=tool_call_count + 1)
         _round_t0 = time.monotonic()
         _round_tools: list[dict] = []
-        try:
-            resp, model = _create_failover(
-                _cands,
-                per_model_kwargs=_pmk,
-                max_tokens=max_tokens,
-                system=system_param,
-                tools=tools_param,
-                messages=messages,
-            )
-        except Exception as exc:  # noqa: BLE001
-            log.warning("brain_gateway: stream tool-turn failed: %s", exc)
+        # ── W5.1: the ROUND's model call STREAMS (see _STREAM_COMMIT_CHARS) ──────────
+        # This is the dominant real path — most turns never reach Phase 2, because the
+        # model writes its final answer inside a tool round. The candidate walk mirrors
+        # _create_failover's contract exactly (per-candidate _pmk, dead-credential
+        # marking, pool cooling, failover-worthy errors only, last candidate raises)
+        # while forwarding display text through the shared gate.
+        _gate = _StreamGate(_flush_chars, _flush_s, _hold, commit_chars=_commit_chars)
+        resp = None
+        _round_err: Exception | None = None
+        for _i, _p in enumerate(_cands):
+            _cl = _p.get("client")
+            if _cl is None:
+                continue
+            _gate.restart()
+            if _emitted:
+                # A previous candidate in this round wrote to the screen before it died:
+                # wipe the draft so the retry streams into a clean bubble instead of
+                # appending to a stranger's sentence.
+                yield _wipe_event()
+                _emitted = ""
+            try:
+                _stream_call = getattr(getattr(_cl, "messages", None), "stream", None)
+                if _stream_call is None:
+                    # A provider client with no streaming surface keeps the pre-W5.1
+                    # blocking call, verbatim — nothing is shown, nothing is retracted.
+                    resp = _cl.messages.create(
+                        model=_p.get("model"), max_tokens=max_tokens, system=system_param,
+                        tools=tools_param, messages=messages, **_pmk(_p.get("model")))
+                else:
+                    with _stream_call(
+                        model=_p.get("model"),
+                        max_tokens=max_tokens,
+                        system=system_param,
+                        tools=tools_param,
+                        messages=messages,
+                        **_pmk(_p.get("model")),
+                    ) as _s:
+                        for _chunk in _s.text_stream:
+                            _txt = _gate.feed(_chunk)
+                            if _gate.leaked:
+                                break
+                            if _txt:
+                                _emitted += _txt
+                                yield _delta_event(_txt)
+                            # A tool_use block already open means this text is narration:
+                            # freeze display BEFORE the horizon can release any more of it.
+                            if not _gate.tool_started and _stream_tool_use_started(_s):
+                                _gate.note_tool_use()
+                        if _gate.leaked:
+                            # Deliberately abandoned mid-body — do NOT call
+                            # get_final_message() on a stream we stopped reading.
+                            model = _p.get("model") or model
+                        else:
+                            # The SDK's own accumulated message: the tool_use blocks the
+                            # executor below receives are the SAME objects a blocking
+                            # create() would have handed it, inputs and ids included.
+                            resp = _s.get_final_message()
+                if _gate.leaked:
+                    break
+                _pool_record_success(_p, resp)  # load-balancing ledger
+                model = _p.get("model") or model
+                break
+            except Exception as exc:  # noqa: BLE001
+                resp = None
+                _round_err = exc
+                _mark_provider_dead_if_auth(_p, exc)
+                _pool_cool_for_exc(_p, exc)  # cool a rate-limited/dead key for the next turn
+                if _is_failover_error(exc) and _i < len(_cands) - 1:
+                    log.warning("brain_gateway: round provider %s failed (%s) — failover",
+                                _p.get("model"), str(exc)[:80])
+                    continue
+                break
+
+        if _gate.leaked:
+            # A prompt echo inside a ROUND. Same law as Phase 2: what is already on
+            # screen comes back NOW, and the leaked text goes to the finalize screen,
+            # which turns it into exactly the refusal the retract just installed (so the
+            # reconciliation below then sees the client already holding it, and is quiet).
+            _leak_tripped = True
+            log.warning("brain_gateway: prompt-echo sentinel caught MID-ROUND "
+                        "(lane=%s model=%s chars=%d emitted=%d)",
+                        lane, model, len(_gate.text), len(_emitted))
+            if _emitted:
+                _retracted = True
+                _emitted = _REFUSAL_DISTILL_ZH if _has_cjk(_gate.text) else _REFUSAL_DISTILL_EN
+                yield f"data: {json.dumps({'type': 'retract', 'text': _emitted})}\n\n"
             _timing_round(timing, _ms_since(_round_t0), _round_tools)
+            _leaked_text = _gate.text
+            resp = None
+            last_resp_content = []
+            break
+
+        if resp is None and not _emitted:
+            # W5.1 SAFETY NET. The round is a STREAMING request now: `stream` + `tools`
+            # is a request shape this loop never sent before, and a provider that cannot
+            # serve it would black out the whole lane on every turn (the deepseek-chat
+            # retirement did exactly that for hours on 2026-07-25). One blocking retry
+            # across the same candidates — literally the pre-W5.1 call — costs a
+            # round-trip on a turn that was already dead, and nothing was on screen, so
+            # the wire stays clean. Anything already shown skips this and degrades.
+            try:
+                resp, model = _create_failover(
+                    _cands, per_model_kwargs=_pmk, max_tokens=max_tokens,
+                    system=system_param, tools=tools_param, messages=messages)
+                log.warning("brain_gateway: round streaming failed (%s) — blocking "
+                            "retry served the round", str(_round_err)[:120])
+            except Exception as exc:  # noqa: BLE001 — the degrade below owns it
+                _round_err = exc
+                resp = None
+
+        if resp is None:
+            # Every candidate failed this round (or the error was not failover-worthy) —
+            # the same degrade _create_failover's raise used to produce.
+            log.warning("brain_gateway: stream tool-turn failed: %s", _round_err)
+            _timing_round(timing, _ms_since(_round_t0), _round_tools)
+            if _emitted:      # never leave a half-written round under the degraded notice
+                yield _wipe_event()
+                _emitted = ""
             yield _delta_event(_DEGRADED_USER_MSG)
             yield _done_event(citations=[], quota=meta_event.get("quota", {}), usage={},
                               filtered=False, degraded=True, is_context_only=True)
@@ -6329,6 +6652,16 @@ def _run_brain_loop_stream(
         thinking_trace.extend(
             _thinking_segments(resp.content, tool_call_count + 1, "tool", model))
         stop_reason = getattr(resp, "stop_reason", None)
+
+        # W5.1: the round narrated PAST the horizon and then called tools after all (or
+        # came back tool_use with no block at all, which sends the turn to Phase 2). What
+        # streamed is not the answer: wipe it, and reset the turn's bookkeeping so the
+        # narration cannot pollute the reconciliation. Not a screening event — `filtered`
+        # stays false, exactly as it does for a mid-body provider failover.
+        if _emitted and (stop_reason == "tool_use" or any(
+                getattr(b, "type", "") == "tool_use" for b in (resp.content or []))):
+            yield _wipe_event()
+            _emitted = ""
 
         if stop_reason == "end_turn":
             _timing_round(timing, _round_model_ms, _round_tools)
@@ -6423,19 +6756,12 @@ def _run_brain_loop_stream(
     last_stop = getattr(resp, "stop_reason", None) if resp is not None else None
 
     # Accumulate the full answer; Contract S streams the SAFE prefix of it as it grows
-    # (see _stream_display_cut) and reconciles whatever is left at finalize.
-    full_answer = ""
+    # (see _stream_display_cut) and reconciles whatever is left at finalize. A round that
+    # tripped the leak screen seeds it here, so the finalize pass screens that text and
+    # ships the refusal exactly as the Phase-2 leak path does.
+    full_answer = _leaked_text
     usage_dict: dict = {}
     _synth_stop: str | None = None   # synthesis stop_reason, for the degraded-stub log
-
-    # ── Contract S streaming state (survives a Phase-2 failover) ─────────────────────
-    _flush_chars, _flush_s, _hold = _stream_flush_cfg(root)
-    # `_emitted` is what the CLIENT currently holds — the single source of truth for the
-    # reconciliation below. The server-side buffer restarts on failover; this does not,
-    # which is how a dead candidate's half-written draft gets taken back off the screen.
-    _emitted = ""
-    _leak_tripped = False   # a sentinel was caught mid-stream → stop reading the model
-    _retracted = False      # a `retract` REPLACED text (screen/filter), not a wipe-and-retry
 
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
@@ -6449,19 +6775,15 @@ def _run_brain_loop_stream(
         _last_err: Exception | None = None
         _n_shown = 0  # progress floor across candidates: a failover restarts the buffer,
         #               but the visible count must never run backwards (review MINOR-3)
+        # Synthesis text IS the answer by construction, so it commits from the first
+        # eligible character — no horizon (that is the round path's problem, W5.1).
+        _gate = _StreamGate(_flush_chars, _flush_s, _hold)
         for _i, _p in enumerate(_cands):
             _cl = _p.get("client")
             if _cl is None:
                 continue
+            _gate.restart()
             full_answer = ""
-            _emit_len = 0    # cursor into THIS candidate's full_answer
-            _scan_len = 0    # how much of it the sentinel scan has already covered
-            _chunks = 0      # SDK chunks seen — the first one never flushes (see below)
-            _sealed = False  # a [NEXT] marker line has been written — display text is over
-            # Writing beats mark the THINKING gap: they speak only while no text is
-            # flowing, so the answer's own bytes replace them the moment they arrive.
-            _beat_at = time.monotonic()
-            _flush_at = _beat_at
             try:
                 with _cl.messages.stream(
                     model=_p.get("model"),
@@ -6476,38 +6798,20 @@ def _run_brain_loop_stream(
                     **_pmk(_p.get("model")),
                 ) as s:
                     for chunk in s.text_stream:
-                        full_answer += chunk
-                        _chunks += 1
-                        # LEAK SCREEN FIRST, on every chunk, before any flush decision.
-                        # The scan window is backed up by the longest sentinel so an echo
-                        # split across two chunks is still seen whole; the holdback below
-                        # guarantees the scan has read every character before it can ship.
-                        if _leak_hit(full_answer, _scan_len - (_MAX_SENTINEL_LEN - 1)):
+                        _now = time.monotonic()
+                        _txt = _gate.feed(chunk, now=_now)
+                        full_answer = _gate.text
+                        if _gate.leaked:
                             _leak_tripped = True
                             break
-                        _scan_len = len(full_answer)
-                        _now = time.monotonic()
-                        if not _sealed:
-                            _cut, _sealed = _stream_display_cut(full_answer, _hold)
-                            _ready = _cut - _emit_len
-                            # `_chunks > 1`: a provider that hands the whole answer over in
-                            # ONE piece is not streaming, and splitting it into a flush plus
-                            # a tail would be churn for no gain — the codex-served pro lane
-                            # yields exactly once, and keeps its single buffered delta.
-                            if _chunks > 1 and _ready > 0 and (_ready >= _flush_chars
-                                                               or _now - _flush_at >= _flush_s):
-                                _txt = full_answer[_emit_len:_cut]
-                                _emit_len = _cut
-                                _emitted += _txt
-                                _flush_at = _now
-                                _n_shown = max(_n_shown, len(full_answer))
-                                yield _delta_event(_txt)
+                        if _txt:
+                            _emitted += _txt
+                            _n_shown = max(_n_shown, len(full_answer))
+                            yield _delta_event(_txt)
                         # A beat is the SILENCE between text, not a progress bar: it speaks
                         # only when nothing has flushed for _WRITING_BEAT_S (the thinking
                         # gap before the first token, or a long pause mid-answer).
-                        if (_now - _beat_at >= _WRITING_BEAT_S
-                                and _now - _flush_at >= _WRITING_BEAT_S):
-                            _beat_at = _now
+                        if _gate.beat_due(_now):
                             _n_shown = max(_n_shown, len(full_answer))
                             yield _status_event("writing", _t0, _STAGE_LABELS["writing"],
                                                 n=_n_shown)
@@ -6558,7 +6862,7 @@ def _run_brain_loop_stream(
                     _last_err = RuntimeError("empty synthesis")
                     if _i < len(_cands) - 1:
                         if _emitted:      # defensive: never let a fresh candidate APPEND
-                            yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                            yield _wipe_event()
                             _emitted = ""
                         continue
                 thinking_trace.extend(_cand_thinking)  # only the candidate that SHIPPED
@@ -6577,7 +6881,7 @@ def _run_brain_loop_stream(
                         # next one restarts from scratch, so wipe the draft first — an
                         # empty retract resets the client's bubble, and the retry streams
                         # into a clean one instead of appending to a stranger's sentence.
-                        yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                        yield _wipe_event()
                         _emitted = ""
                     continue
                 log.warning("brain_gateway: stream synthesis failed (%s) — fallback", exc)

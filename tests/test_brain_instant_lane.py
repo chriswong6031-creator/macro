@@ -674,3 +674,46 @@ def test_bench_docket_prompts_are_the_three_classes_plus_the_instant_probe():
     assert gw._instant_route(prompts["instant"], None) == {"kind": "quote", "symbol": "AAPL"}
     assert gw._instant_route(prompts["broad"], None) is None
     assert gw._instant_route(prompts["native"], None) is None
+
+
+# ---------------------------------------------------------------------------
+# W5.1 — the site_quotes reader carries the plane's timestamp through
+# ---------------------------------------------------------------------------
+# Live finding (2026-08-02, W5 verification): quotes.json writes per-row `ts`
+# (epoch ms) and file-level `asof`, but the reader asked for `as_of` — a key the
+# file never carries — so EVERY quote from this source shipped dateless and the
+# instant lane's dateless-refuse gate correctly rejected all of them.
+
+def _quotes_root(tmp_path, rows, top=None):
+    live = tmp_path / "site" / "live"
+    live.mkdir(parents=True)
+    payload = {"quotes": rows}
+    payload.update(top or {})
+    (live / "quotes.json").write_text(json.dumps(payload), encoding="utf-8")
+    return tmp_path
+
+
+def test_site_quotes_reader_converts_row_ts_to_an_iso_as_of(tmp_path):
+    root = _quotes_root(tmp_path, {"SPY": {
+        "price": 739.09, "ts": 1785182400000, "prevClose": 738.93, "changePct": 0.02}})
+    q = gw._tool_get_quote({"symbol": "SPY"}, tmp_path / "absent", "", root)
+    assert q["source"] == "site_quotes" and q["price"] == 739.09
+    # 1785182400000 ms = 2026-07-27T20:00:00Z — the 16:00 ET close, as the plane wrote it.
+    assert q["as_of"] == "2026-07-27T20:00:00+00:00"
+    assert q["change_pct"] == 0.02 and q["prev_close"] == 738.93
+    # ...and the instant gate now accepts what the plane always knew the date of.
+    with patch.object(gw, "_tool_get_quote", return_value=q):
+        assert gw._instant_quote("SPY", tmp_path / "absent", "", root) is not None
+
+
+def test_site_quotes_reader_falls_back_to_file_level_asof(tmp_path):
+    root = _quotes_root(tmp_path, {"SPY": {"price": 739.09}},
+                        top={"asof": "2026-07-28T04:00:05Z"})
+    q = gw._tool_get_quote({"symbol": "SPY"}, tmp_path / "absent", "", root)
+    assert q["as_of"] == "2026-07-28T04:00:05Z"
+
+
+def test_site_quotes_reader_still_returns_dateless_when_no_timestamp_exists(tmp_path):
+    root = _quotes_root(tmp_path, {"SPY": {"price": 739.09}})
+    q = gw._tool_get_quote({"symbol": "SPY"}, tmp_path / "absent", "", root)
+    assert q.get("as_of") is None, "no timestamp may be invented"
