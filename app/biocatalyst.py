@@ -8,6 +8,10 @@ from __future__ import annotations
 
 import base64
 import binascii
+from datetime import date, datetime, timedelta, timezone
+from hashlib import sha256
+import hmac
+import json
 import logging
 import os
 import re
@@ -21,6 +25,14 @@ router = APIRouter()
 log = logging.getLogger("macro.biocatalyst")
 
 _NCT_ID = re.compile(r"^NCT[0-9]{8}$")
+_FULL_ISO_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+_PARTIAL_ISO_DATE = re.compile(r"^[0-9]{4}(?:-[0-9]{2}(?:-[0-9]{2})?)?$")
+_MILESTONE_KINDS = frozenset(("primary_completion", "completion"))
+_MILESTONE_WINDOWS = frozenset(("all", "next_30d", "next_90d", "next_180d"))
+_MILESTONE_DATE_TYPES = frozenset(("ACTUAL", "ESTIMATED", "UNKNOWN"))
+_MILESTONE_CURSOR_VERSION = "m2"
+_MILESTONE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-milestones:cursor-key:v2"
+_MILESTONE_CURSOR_PROCESS_KEY = os.urandom(32)
 _PUBLIC_ROOT = Path(
     os.environ.get("BIOCATALYST_PUBLIC_ROOT", "/var/lib/macro-biocatalyst/public")
 )
@@ -87,7 +99,34 @@ def require_site_full_user(authorization: str | None = Header(default=None)) -> 
     from app.main import require_user as _require_user  # noqa: PLC0415
     from app.paywall import enforce_site_full  # noqa: PLC0415
 
-    return enforce_site_full(_require_user(authorization), always=True)
+    try:
+        return enforce_site_full(_require_user(authorization), always=True)
+    except HTTPException as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.detail,
+            headers=_merged_private_headers(exc.headers),
+        ) from exc
+
+
+def _merged_private_headers(existing: Mapping[str, str] | None) -> dict[str, str]:
+    """Preserve auth metadata while enforcing the paid surface's cache fence."""
+
+    mandatory = {name.casefold() for name in _PRIVATE_HEADERS}
+    merged: dict[str, str] = {}
+    vary_tokens: list[str] = []
+    for name, value in (existing or {}).items():
+        if name.casefold() == "vary":
+            vary_tokens.extend(part.strip() for part in value.split(",") if part.strip())
+        elif name.casefold() not in mandatory:
+            merged[name] = value
+    merged.update(_PRIVATE_HEADERS)
+    if vary_tokens:
+        seen = {token.casefold() for token in vary_tokens}
+        if "authorization" not in seen:
+            vary_tokens.append("Authorization")
+        merged["Vary"] = ", ".join(vary_tokens)
+    return merged
 
 
 def _publisher() -> Any:
@@ -519,6 +558,290 @@ def _query_limit(value: str) -> int:
     return limit
 
 
+def _query_iso_date(value: str | None, *, name: str) -> date | None:
+    """Accept one exact civil ISO date without assigning a source timezone."""
+
+    if value is None:
+        return None
+    if not _FULL_ISO_DATE.fullmatch(value):
+        raise HTTPException(
+            status_code=400,
+            detail=f"invalid {name}",
+            headers=_PRIVATE_HEADERS,
+        )
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"invalid {name}",
+            headers=_PRIVATE_HEADERS,
+        ) from exc
+
+
+def _generation_as_of_date(projection: Any) -> date:
+    """Use the committed generation timestamp, never request-time wall clock."""
+
+    value = getattr(getattr(projection, "generation", None), "last_success_at", None)
+    if not isinstance(value, str):
+        raise _unavailable()
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise _unavailable() from None
+    if parsed.tzinfo is None:
+        raise _unavailable()
+    return parsed.astimezone(timezone.utc).date()
+
+
+def _milestone_date_interval(value: object) -> tuple[date, date, str] | None:
+    """Expand a source date of year/month/day precision into its full interval.
+
+    ClinicalTrials.gov permits partial dates.  The monitor treats a partial
+    value as the complete civil interval it denotes, rather than pretending a
+    month or year is a point estimate.  A value is consequently displayed only
+    when that whole interval is inside the requested range.
+    """
+
+    if not isinstance(value, str) or not _PARTIAL_ISO_DATE.fullmatch(value):
+        return None
+    try:
+        if len(value) == 4:
+            year = int(value)
+            return date(year, 1, 1), date(year, 12, 31), "year"
+        if len(value) == 7:
+            year, month = (int(part) for part in value.split("-"))
+            start = date(year, month, 1)
+            if month == 12:
+                end = date(year, 12, 31)
+            else:
+                end = date(year, month + 1, 1) - timedelta(days=1)
+            return start, end, "month"
+        parsed = date.fromisoformat(value)
+        return parsed, parsed, "day"
+    except ValueError:
+        return None
+
+
+def _milestone_type(value: object) -> str:
+    """Expose the registry's bounded date type, stating unknown honestly."""
+
+    rendered = _text(value, maximum=20)
+    normalized = rendered.upper() if rendered else "UNKNOWN"
+    return normalized if normalized in _MILESTONE_DATE_TYPES else "UNKNOWN"
+
+
+def _milestone_query_binding(
+    *,
+    milestone_kind: str,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+    q: str | None,
+    phase: str | None,
+    status: str | None,
+    condition: str | None,
+    limit: int,
+) -> dict[str, Any]:
+    """Return only normalized selection inputs for an endpoint-local cursor."""
+
+    return {
+        "milestone_kind": milestone_kind,
+        "window": window,
+        "from_date": from_date.isoformat() if from_date else None,
+        "to_date": to_date.isoformat() if to_date else None,
+        "q": q.casefold() if q else None,
+        "phase": phase.casefold() if phase else None,
+        "status": status.casefold() if status else None,
+        "condition": condition.casefold() if condition else None,
+        "limit": limit,
+    }
+
+
+def _opaque_digest(value: Mapping[str, Any]) -> str:
+    return sha256(
+        json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("ascii")
+    ).hexdigest()
+
+
+def _milestone_cursor_key() -> bytes:
+    """Return a private cursor key without imposing a deployment secret.
+
+    The process-random fallback deliberately invalidates cursors across process
+    restarts. Operators that need cross-process or restart-stable pagination
+    may provide a sufficiently strong secret; it is domain-separated before
+    use so the configured material is never used directly as an HMAC key.
+    """
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _MILESTONE_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _MILESTONE_CURSOR_DOMAIN, sha256).digest()
+
+
+def _milestone_cursor_payload(
+    offset: int,
+    *,
+    generation_digest: str,
+    query_digest: str,
+) -> bytes:
+    return ":".join(
+        (
+            _MILESTONE_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_milestone_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode a signed endpoint-only cursor without raw query or generation data."""
+
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _milestone_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _milestone_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    raw = payload + b":" + signature.encode("ascii")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_milestone_cursor(
+    cursor: str | None,
+    *,
+    cursor_key: bytes | None = None,
+) -> tuple[int, str | None, str | None]:
+    """Authenticate syntax before the public read; bindings are checked separately."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _MILESTONE_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _milestone_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _milestone_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
+def _milestone_window(
+    *,
+    projection: Any,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+) -> tuple[date, date, dict[str, str | None]]:
+    """Resolve a stable civil-date range against the pointer-bound generation."""
+
+    if window == "all":
+        return (
+            from_date or date.min,
+            to_date or date.max,
+            {
+                "from_date": from_date.isoformat() if from_date else None,
+                "to_date": to_date.isoformat() if to_date else None,
+                "anchor_date": None,
+            },
+        )
+    anchor = _generation_as_of_date(projection)
+    days = {"next_30d": 30, "next_90d": 90, "next_180d": 180}[window]
+    # The anchor date is day one, so this is exactly N inclusive civil days.
+    try:
+        end = anchor + timedelta(days=days - 1)
+    except OverflowError:
+        raise _unavailable() from None
+    return (
+        anchor,
+        end,
+        {
+            "from_date": anchor.isoformat(),
+            "to_date": end.isoformat(),
+            "anchor_date": anchor.isoformat(),
+        },
+    )
+
+
+def _matches_trial_filters(
+    row: Mapping[str, Any],
+    *,
+    query: str | None,
+    phase: str | None,
+    status: str | None,
+    condition: str | None,
+) -> bool:
+    """Apply the existing public trial filters without inferring omitted facts."""
+
+    if query:
+        sponsor = row.get("sponsor") or {}
+        haystack = " ".join(
+            [
+                str(row.get("nct_id") or ""),
+                str(row.get("title") or ""),
+                str(row.get("brief_title") or ""),
+                str(sponsor.get("name") or ""),
+                *row.get("conditions", []),
+            ]
+        ).casefold()
+        if query not in haystack:
+            return False
+    if phase and phase not in {str(item).casefold() for item in row["phases"]}:
+        return False
+    if status and status != str(row.get("status") or "").casefold():
+        return False
+    return not condition or any(condition in str(item).casefold() for item in row["conditions"])
+
+
+def _public_milestone_evidence(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    attribution = snapshot.get("source_attribution")
+    if not isinstance(attribution, Mapping):
+        raise _unavailable()
+    return {
+        "provider": "ClinicalTrials.gov",
+        "record_id": snapshot["nct_id"],
+        "url": _text(attribution.get("source_uri"), maximum=2000),
+        "coverage": _text(snapshot.get("coverage_class"), maximum=80),
+    }
+
+
 def _meta(projection: Any, health: Mapping[str, Any]) -> dict[str, Any]:
     generation = projection.generation
     return {
@@ -632,6 +955,181 @@ def trials(
                 "next_cursor": _encode_cursor(next_offset) if next_offset < total else None,
             },
             "trials": page,
+        }
+    )
+    return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/trials/milestones")
+def trial_milestones(
+    milestone_kind: str = "primary_completion",
+    window: str = "next_90d",
+    from_date: str | None = None,
+    to_date: str | None = None,
+    q: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List factual registry date milestones from the committed trial cut.
+
+    This monitor is deliberately not a catalyst calendar: it neither infers an
+    event timing nor treats a registry date as an approval, outcome, or market
+    signal.  The single selected source field is returned at its original
+    precision, with partial dates included only when their whole interval is
+    inside the requested civil-date window.
+    """
+
+    q = _query_text(q, name="query", maximum=100)
+    phase = _query_text(phase, name="phase", maximum=40)
+    status = _query_text(status, name="status", maximum=40)
+    condition = _query_text(condition, name="condition", maximum=100)
+    if milestone_kind not in _MILESTONE_KINDS:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid milestone_kind",
+            headers=_PRIVATE_HEADERS,
+        )
+    if window not in _MILESTONE_WINDOWS:
+        raise HTTPException(status_code=400, detail="invalid window", headers=_PRIVATE_HEADERS)
+    parsed_from = _query_iso_date(from_date, name="from_date")
+    parsed_to = _query_iso_date(to_date, name="to_date")
+    if window != "all" and (parsed_from is not None or parsed_to is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="from_date and to_date require window=all",
+            headers=_PRIVATE_HEADERS,
+        )
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(status_code=400, detail="invalid date range", headers=_PRIVATE_HEADERS)
+    page_limit = _query_limit(limit)
+
+    query = q.casefold() if q else None
+    phase_value = phase.casefold() if phase else None
+    status_value = status.casefold() if status else None
+    condition_value = condition.casefold() if condition else None
+    query_binding = _milestone_query_binding(
+        milestone_kind=milestone_kind,
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        q=query,
+        phase=phase_value,
+        status=status_value,
+        condition=condition_value,
+        limit=page_limit,
+    )
+    cursor_key = _milestone_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = _decode_milestone_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest,
+        expected_query_digest,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    projection, operational = _read_bundle()
+    generation_id = getattr(projection.generation, "generation_id", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        _opaque_digest({"generation_id": generation_id}),
+    ):
+        # Do not expose which generation changed; callers can restart from the
+        # current pointer-bound cut using the same normalized selection.
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    range_start, range_end, effective_window = _milestone_window(
+        projection=projection,
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+    )
+
+    milestones: list[dict[str, Any]] = []
+    for snapshot in projection.trials:
+        trial = _public_trial(snapshot, detail=False)
+        if not _matches_trial_filters(
+            trial,
+            query=query,
+            phase=phase_value,
+            status=status_value,
+            condition=condition_value,
+        ):
+            continue
+        date_value = (trial.get("dates") or {}).get(milestone_kind)
+        if not isinstance(date_value, Mapping):
+            continue
+        interval = _milestone_date_interval(date_value.get("date"))
+        if interval is None:
+            # A malformed source-shaped date is not a valid registry fact for
+            # calendar display.  Omit it rather than inventing a precision.
+            continue
+        interval_start, interval_end, precision = interval
+        if interval_start < range_start or interval_end > range_end:
+            continue
+        milestones.append(
+            {
+                "trial": trial,
+                "registry_milestone": {
+                    "kind": milestone_kind,
+                    "date": date_value["date"],
+                    "type": _milestone_type(date_value.get("type")),
+                    "precision": precision,
+                },
+                "evidence": _public_milestone_evidence(snapshot),
+                "_sort": (interval_start, interval_end, trial["nct_id"]),
+            }
+        )
+    milestones.sort(key=lambda item: item["_sort"])
+    total = len(milestones)
+    page = milestones[offset : offset + page_limit]
+    for item in page:
+        item.pop("_sort", None)
+    next_offset = offset + len(page)
+    payload = _meta(projection, operational)
+    payload.update(
+        {
+            "query": {
+                "milestone_kind": milestone_kind,
+                "window": window,
+                "from_date": parsed_from.isoformat() if parsed_from else None,
+                "to_date": parsed_to.isoformat() if parsed_to else None,
+                "q": q,
+                "phase": phase,
+                "status": status,
+                "condition": condition,
+            },
+            "effective_window": effective_window,
+            "pagination": {
+                "limit": page_limit,
+                "total": total,
+                "next_cursor": (
+                    _encode_milestone_cursor(
+                        next_offset,
+                        generation_id=generation_id,
+                        query_binding=query_binding,
+                        cursor_key=cursor_key,
+                    )
+                    if next_offset < total
+                    else None
+                ),
+            },
+            "milestones": page,
         }
     )
     return _response(payload)
