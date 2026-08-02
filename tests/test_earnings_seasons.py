@@ -398,6 +398,93 @@ def test_overview_fallback_prevents_silent_zero_row_surface(tmp_path):
     assert health["source_rows"] == 1
 
 
+def test_build_all_retains_recent_verified_history_during_transport_degrade(tmp_path):
+    """A transient R2 miss must not publish the one-call fallback over history."""
+    today = pd.Timestamp.now(tz="UTC").date().isoformat()
+    overview = tmp_path / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    overview.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "ticker": "FALLBACK",
+        "name_ui": "Fallback Co",
+        "gics_sector": "Information Technology",
+        "gics_industry_group": "Software & Services",
+        "gics_industry": "Software",
+        "gics_sub_industry": "Application Software",
+        "call_date": today,
+        "earnings_call_sent": 24,
+        "earnings_call_perf": 6,
+        "earnings_call_combined": 30,
+    }]).to_parquet(overview, index=False)
+
+    # Seed every Stage surface with the prior verified R2 generation.  There is
+    # deliberately no transported history parquet/manifest in this run, so each
+    # candidate would otherwise be rebuilt from the degraded overview fallback.
+    artifacts = {
+        "ec_industry.json": "ec_industry_heatmap",
+        "ec_industry_heatmap.json": "ec_industry_heatmap_grid",
+        "earnings_season.json": "earnings_season",
+        "earnings_compare.json": "earnings_comparison",
+        "earnings_table.json": "earnings_table",
+    }
+    out_dir = tmp_path / "data" / "stage_analysis"
+    for filename, surface in artifacts.items():
+        (out_dir / filename).write_text(json.dumps({
+            "surface": surface,
+            "data_status": "ready",
+            "data_source_tier": "r2_history_plus_score_overlay",
+            "source_rows": 51101,
+            "latest_call_date": today,
+            "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
+            "is_context_only": True,
+            "display_only": True,
+            "retention_marker": filename,
+        }), encoding="utf-8")
+
+    result = eq.build_all_earnings_surfaces(root=tmp_path)
+
+    for filename in artifacts:
+        written = json.loads((out_dir / filename).read_text(encoding="utf-8"))
+        assert written["retention_marker"] == filename
+    assert result["earnings_table"]["retention_marker"] == "earnings_table.json"
+    assert result["health"]["status"] == "degraded"
+    assert result["health"]["surface_publish_guard"] == {
+        "status": "retained_recent_verified_full_history",
+        "surfaces": [
+            "ec_industry", "ec_industry_grid", "earnings_season",
+            "earnings_compare", "earnings_table",
+        ],
+        "reason": "current_generation_unavailable_or_degraded",
+    }
+
+
+def test_last_good_guard_uses_artifact_generation_freshness_not_latest_call_date():
+    """An off-season call date may be old; the build receipt is the freshness clock."""
+    base = {
+        "surface": "earnings_table",
+        "data_status": "ready",
+        "data_source_tier": "r2_history",
+        "source_rows": 100,
+        "latest_call_date": "2025-01-01",
+        "is_context_only": True,
+        "display_only": True,
+    }
+    recent = {
+        **base,
+        "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
+    }
+    stale = {
+        **base,
+        "latest_call_date": pd.Timestamp.now(tz="UTC").date().isoformat(),
+        "generated_at": (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=15)).isoformat(),
+    }
+    assert eq._is_recent_verified_full_history_surface(
+        recent, expected_surface="earnings_table",
+    )
+    assert not eq._is_recent_verified_full_history_surface(
+        stale, expected_surface="earnings_table",
+    )
+
+
 def test_r2_history_wins_over_committed_fallback(tmp_path):
     """The R2-transported history is canonical when both stores exist."""
     _write_backfill(tmp_path, [
