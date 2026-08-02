@@ -4284,9 +4284,46 @@ class _FakeStreamCtx:
         return _MockResponse([_MockBlock("text", self._text)], "end_turn")
 
 
+class _ScriptedStreamCtx:
+    """A Phase-1 ROUND served as a stream (W5.1).
+
+    The round's model call streams now, so a fake that answered `create()` from a script
+    has to answer `stream()` from the SAME script or the loop stops seeing its tool_use
+    blocks entirely. Text blocks arrive as chunks; the tool_use blocks (ids and inputs
+    included) ride `get_final_message()`, which is exactly where the real SDK puts them.
+    """
+
+    def __init__(self, resp: Any, chunks: int = 3):
+        self._resp = resp
+        self._chunks = max(1, chunks)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    @property
+    def text_stream(self):
+        for block in getattr(self._resp, "content", None) or []:
+            if getattr(block, "type", "") != "text":
+                continue
+            text = getattr(block, "text", "") or ""
+            size = max(1, len(text) // self._chunks + 1)
+            for i in range(0, len(text), size):
+                yield text[i:i + size]
+
+    def get_final_message(self):
+        return self._resp
+
+
 class _CaptureClient:
-    """Stub client: scripted create() responses + a canned synthesis stream, with every
-    call's kwargs captured. Runs out of script → a plain end_turn answer."""
+    """Stub client: scripted responses for Phase-1 rounds + a canned synthesis stream,
+    with every call's kwargs captured. Runs out of script → a plain end_turn answer.
+
+    Both `create()` and `stream()` read the same script; `tools` in the kwargs is what
+    tells them apart, exactly as it does in the gateway (synthesis ships NO tools).
+    """
 
     def __init__(self, responses: list | None = None, answer: str = _CLEAN_ANSWER):
         self._responses = list(responses or [])
@@ -4296,17 +4333,27 @@ class _CaptureClient:
         self.stream_kwargs: list[dict] = []
         self.messages = self
 
-    def create(self, **kwargs):
-        self.create_kwargs.append(kwargs)
+    def _scripted(self):
         if self._i >= len(self._responses):
             return _MockResponse([_MockBlock("text", self._answer)], "end_turn")
         resp = self._responses[self._i]
         self._i += 1
         return resp
 
+    def create(self, **kwargs):
+        self.create_kwargs.append(kwargs)
+        return self._scripted()
+
+    def _synthesis_stream(self):
+        """Phase-2 only. Subclass THIS (not `stream`) to script a synthesis stream —
+        overriding `stream` outright takes the Phase-1 rounds down with it."""
+        return _FakeStreamCtx(self._answer)
+
     def stream(self, **kwargs):
         self.stream_kwargs.append(kwargs)
-        return _FakeStreamCtx(self._answer)
+        if "tools" in kwargs:          # a Phase-1 round (W5.1 streams these too)
+            return _ScriptedStreamCtx(self._scripted())
+        return self._synthesis_stream()
 
 
 class _FailingClient:
@@ -4540,18 +4587,25 @@ def _assert_cached(kwargs: dict, *, expect_tools: bool = True) -> None:
 
 
 def test_cache_control_on_system_and_last_tool_in_stream_loop(tmp_path):
-    """Both Phase-1 creates AND the Phase-2 stream carry the cache breakpoints, and the
-    cached surfaces are built ONCE per invocation (same objects every round)."""
+    """Both Phase-1 rounds AND the Phase-2 stream carry the cache breakpoints, and the
+    cached surfaces are built ONCE per invocation (same objects every round).
+
+    W5.1: every call on this path is a stream() — two tool rounds (with tools) and one
+    synthesis (without), in that order.
+    """
     root = _make_temp_root()
     client = _two_round_client()
     _stream_events(client, root, tmp_path)
 
-    assert len(client.create_kwargs) == 2 and len(client.stream_kwargs) == 1
-    for kwargs in client.create_kwargs:
+    assert not client.create_kwargs, client.create_kwargs
+    assert len(client.stream_kwargs) == 3
+    rounds = client.stream_kwargs[:2]
+    assert all("tools" in k for k in rounds)
+    for kwargs in rounds:
         _assert_cached(kwargs)
-    _assert_cached(client.stream_kwargs[0], expect_tools=False)
-    assert client.create_kwargs[0]["tools"] is client.create_kwargs[1]["tools"]
-    assert client.create_kwargs[0]["system"] is client.create_kwargs[1]["system"]
+    _assert_cached(client.stream_kwargs[2], expect_tools=False)
+    assert rounds[0]["tools"] is rounds[1]["tools"]
+    assert rounds[0]["system"] is rounds[1]["system"]
 
 
 def test_cache_control_on_system_and_last_tool_in_chat_loop(tmp_path):
@@ -4763,7 +4817,10 @@ def test_fast_v4_pro_keeps_native_thinking_in_synthesis_stream(tmp_path):
                         with patch("lib.ai_costs.record_usage", return_value=True):
                             list(gw.chat_stream("How is AAPL doing?", "user-ds-stream",
                                                 lane="fast", root=root))
-    assert "thinking" not in client.stream_kwargs[0]
+    # W5.1: rounds AND synthesis are all stream() calls now — check every one of them,
+    # or this becomes an assertion about round 1 alone (create_kwargs is empty here).
+    assert len(client.stream_kwargs) == 3, [sorted(k) for k in client.stream_kwargs]
+    assert all("thinking" not in k for k in client.stream_kwargs)
     assert all("thinking" not in k for k in client.create_kwargs)
 
 
@@ -4823,7 +4880,8 @@ def test_deepseek_param_400_reaches_next_candidate(tmp_path):
     assert types.count("delta") == 1
     delta = next(e for e in parsed if e["type"] == "delta")
     assert "temporarily unavailable" not in delta["text"].lower()
-    assert healthy.create_kwargs, "fallback candidate was never tried"
+    # W5.1: rounds stream, so the fallback's turn shows up in stream_kwargs.
+    assert healthy.stream_kwargs, "fallback candidate was never tried"
 
 
 def test_status_event_detail_sanitized_at_the_emitter():
@@ -4860,11 +4918,15 @@ def test_writing_beats_never_run_backwards_across_failover(tmp_path):
         def __init__(self, long_text):
             self._t = long_text
             self.messages = self
-        def create(self, **kwargs):
+        def _round(self):
             # force need_synthesis: a tool_use round then the loop synthesizes
             return _MockResponse([_MockBlock("tool_use", name="get_house_view",
                                              input_={}, id_="t1")], "tool_use")
+        def create(self, **kwargs):
+            return self._round()
         def stream(self, **kwargs):
+            if "tools" in kwargs:      # a Phase-1 round (W5.1 streams these too)
+                return _ScriptedStreamCtx(self._round())
             return _ExplodingStreamCtx(self._t)
     short = _CLEAN_ANSWER  # healthy fallback writes a SHORTER answer than the exploder
     exploder = _ExplodingClient(long_text=short * 8)
@@ -4982,7 +5044,8 @@ def test_language_directive_reaches_the_model_kwargs(tmp_path):
                 with patch.object(gw, "_ensure_thread", return_value=None):
                     list(gw.chat_stream("what is beta?", "u-lang-kw", lane="fast", root=root,
                                         context={"page": "dashboard", "lang": "en"}))
-    sysblocks = cap.create_kwargs[0]["system"]
+    # W5.1: the streaming loop's rounds go out through stream(), not create().
+    sysblocks = cap.stream_kwargs[0]["system"]
     text = sysblocks[0]["text"] if isinstance(sysblocks, list) else sysblocks
     assert "LANGUAGE FOR THIS TURN: English" in text
 
@@ -5002,7 +5065,9 @@ def test_tool_budget_exhausted_turn_still_answers(tmp_path):
     assert types.count("delta") == 1
     delta = next(e for e in parsed if e["type"] == "delta")
     assert "temporarily unavailable" not in delta["text"].lower(), delta
-    assert client.stream_kwargs and "tools" not in client.stream_kwargs[0]
+    # The SYNTHESIS call is the tool-less one (W5.1: the rounds ahead of it stream too).
+    synth = [k for k in client.stream_kwargs if "tools" not in k]
+    assert len(synth) == 1, [sorted(k) for k in client.stream_kwargs]
 
 
 def test_empty_synthesis_falls_over_to_the_next_candidate(tmp_path):
@@ -5012,8 +5077,7 @@ def test_empty_synthesis_falls_over_to_the_next_candidate(tmp_path):
         def text_stream(self):
             return iter(())
     class _EmptyClient(_CaptureClient):
-        def stream(self, **kwargs):
-            self.stream_kwargs.append(kwargs)
+        def _synthesis_stream(self):
             return _EmptyStreamCtx("")
     # page='terminal' raises the budget floor to _TERMINAL_TOOL_BUDGET_FLOOR, so script
     # past it to guarantee the exhausted-budget synthesis path.
@@ -5116,8 +5180,7 @@ class _ThinkingClient(_CaptureClient):
         super().__init__(responses, answer)
         self._synth_ctx = synth_ctx
 
-    def stream(self, **kwargs):
-        self.stream_kwargs.append(kwargs)
+    def _synthesis_stream(self):
         return self._synth_ctx if self._synth_ctx is not None else _FakeStreamCtx(self._answer)
 
 
@@ -5385,8 +5448,7 @@ def test_degraded_stub_log_names_the_synthesis_phase_too(tmp_path, caplog):
             return iter(())
 
     class _EmptyClient(_CaptureClient):
-        def stream(self, **kwargs):
-            self.stream_kwargs.append(kwargs)
+        def _synthesis_stream(self):
             return _EmptyStreamCtx("")
 
     client = _EmptyClient(responses=[
