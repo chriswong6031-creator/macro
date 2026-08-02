@@ -5,7 +5,7 @@
   "description": "Immutable, chained Company Facts receipt. The tiny current pointer selects one receipt; every receipt identity-binds its predecessor, exact generation files, and ordered ledger prefixes.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "retention_verification", "queue", "counts", "population", "nonclaims", "authority", "auth"],
+  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "retention_verification", "run_byte_accounting", "queue", "counts", "population", "nonclaims", "authority", "auth"],
   "properties": {
     "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
     "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
@@ -21,6 +21,7 @@
     "companyfacts_manifest_ledger": {"$ref": "#/$defs/ledger"},
     "coverage_ledger": {"$ref": "#/$defs/ledger"},
     "retention_verification": {"$ref": "#/$defs/retention_verification"},
+    "run_byte_accounting": {"$ref": "#/$defs/run_byte_accounting"},
     "queue": {
       "type": "object", "additionalProperties": false,
       "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason", "anchor_verifications"],
@@ -158,6 +159,20 @@
         "verified_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
         "all_objects_reverified": {"type": "boolean"},
         "freshness": {"type": "string", "enum": ["complete", "sampled"]}
+      }
+    },
+    "run_byte_accounting": {
+      "type": "object", "additionalProperties": false,
+      "required": ["definition", "max_bytes", "anchor_verification_bytes", "retention_verification_bytes", "sec_response_bytes", "source_store_write_reserved_bytes", "source_store_readback_reserved_bytes", "total_bytes"],
+      "properties": {
+        "definition": {"const": "anchor-read+retention-read+sec-response+source-write-reservation+source-readback-reservation/v1"},
+        "max_bytes": {"type": "integer", "minimum": 1},
+        "anchor_verification_bytes": {"type": "integer", "minimum": 0},
+        "retention_verification_bytes": {"type": "integer", "minimum": 0},
+        "sec_response_bytes": {"type": "integer", "minimum": 0},
+        "source_store_write_reserved_bytes": {"type": "integer", "minimum": 0},
+        "source_store_readback_reserved_bytes": {"type": "integer", "minimum": 0},
+        "total_bytes": {"type": "integer", "minimum": 0}
       }
     },
     "manifest_ids": {

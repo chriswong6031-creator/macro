@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json
+import os
 import threading
 import time
 
@@ -695,21 +696,47 @@ def test_r2_head_guard_uses_r2_conditional_puts_with_service_etags(monkeypatch):
     class Body:
         def __init__(self, body):
             self.body = body
+            self.offset = 0
+            self.closed = False
+            self.read_sizes = []
 
-        def read(self):
-            return self.body
+        def read(self, amount):
+            self.read_sizes.append(amount)
+            chunk = self.body[self.offset:self.offset + amount]
+            self.offset += len(chunk)
+            return chunk
+
+        def close(self):
+            self.closed = True
 
     class R2:
         def __init__(self):
             self.body = None
             self.etag = None
             self.puts = []
+            self.heads = []
+            self.gets = []
+            self.bodies = []
             self.fail_next_put = False
 
-        def get_object(self, **_kwargs):
+        def head_object(self, **kwargs):
+            self.heads.append(kwargs)
             if self.body is None:
                 raise KeyError("missing")
-            return {"Body": Body(self.body), "ETag": self.etag}
+            return {"ContentLength": len(self.body), "ETag": self.etag}
+
+        def get_object(self, **kwargs):
+            self.gets.append(kwargs)
+            if self.body is None:
+                raise KeyError("missing")
+            assert kwargs["IfMatch"] == self.etag
+            assert kwargs["Range"] == f"bytes=0-{len(self.body)}"
+            body = Body(self.body)
+            self.bodies.append(body)
+            return {
+                "Body": body, "ETag": self.etag,
+                "ContentLength": len(self.body),
+            }
 
         def put_object(self, **kwargs):
             self.puts.append(kwargs)
@@ -743,6 +770,8 @@ def test_r2_head_guard_uses_r2_conditional_puts_with_service_etags(monkeypatch):
     observed, token = guard.read()
     assert observed == first and token == '"etag-1"'
     assert client.puts[0]["IfNoneMatch"] == "*"
+    assert client.bodies and all(body.closed for body in client.bodies)
+    assert all(size <= companyfacts.MAX_HEAD_WITNESS_BYTES + 1 for body in client.bodies for size in body.read_sizes)
 
     second = {**first, "sequence": 2, "receipt_id": "receipt:cs-companyfacts:" + "4" * 64,
               "previous_receipt_id": first["receipt_id"]}
@@ -755,6 +784,190 @@ def test_r2_head_guard_uses_r2_conditional_puts_with_service_etags(monkeypatch):
     assert client.puts[2]["IfMatch"] == '"etag-1"'
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="compare-and-swap conflict"):
         guard.advance(expected=observed, expected_token=token, candidate=second)
+
+
+def _signed_test_head(signer):
+    witness = {
+        "schema": companyfacts.HEAD_WITNESS_SCHEMA,
+        "key_id": signer.key_id,
+        "sequence": 1,
+        "receipt_id": "receipt:cs-companyfacts:" + "1" * 64,
+        "receipt_sha256": "2" * 64,
+        "receipt_byte_length": 1,
+        "generation_id": "generation:cs-companyfacts:" + "3" * 64,
+        "published_at": "2026-08-02T12:00:00Z",
+        "previous_receipt_id": None,
+    }
+    witness["signature"] = signer.sign(companyfacts._head_witness_payload(witness))
+    return witness
+
+
+def test_r2_head_guard_rejects_oversize_head_before_get():
+    class Client:
+        def __init__(self):
+            self.gets = []
+
+        @staticmethod
+        def head_object(**_kwargs):
+            return {
+                "ContentLength": companyfacts.MAX_HEAD_WITNESS_BYTES + 1,
+                "ETag": '"oversized"',
+            }
+
+        def get_object(self, **kwargs):
+            self.gets.append(kwargs)
+            raise AssertionError("oversized HEAD must not perform GET")
+
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("O" * 32, key_id="oversize")
+    client = Client()
+    guard = companyfacts.R2CompanyFactsHeadGuard(client=client, bucket="test", signer=signer)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="HEAD length.*byte cap"):
+        guard.read()
+    assert client.gets == []
+
+
+def test_r2_head_guard_bounds_extra_bytes_and_closes_every_malformed_body():
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("B" * 32, key_id="bounded")
+    raw = companyfacts._canonical_bytes(_signed_test_head(signer)) + b"\n"
+
+    class Body:
+        def __init__(self, payload, *, fail=False, readable=True, close_fail=False):
+            self.payload = payload
+            self.offset = 0
+            self.fail = fail
+            self.close_fail = close_fail
+            self.closed = False
+            self.returned = 0
+            if not readable:
+                self.read = None
+
+        def read(self, amount):
+            if self.fail:
+                raise TimeoutError("body stalled")
+            chunk = self.payload[self.offset:self.offset + amount]
+            self.offset += len(chunk)
+            self.returned += len(chunk)
+            return chunk
+
+        def close(self):
+            self.closed = True
+            if self.close_fail:
+                raise OSError("close failed")
+
+    class Client:
+        def __init__(self, body, *, etag='"head"', response_length=None):
+            self.body = body
+            self.etag = etag
+            self.response_length = len(raw) if response_length is None else response_length
+            self.get_args = None
+
+        @staticmethod
+        def head_object(**_kwargs):
+            return {"ContentLength": len(raw), "ETag": '"head"'}
+
+        def get_object(self, **kwargs):
+            self.get_args = kwargs
+            return {
+                "Body": self.body,
+                "ContentLength": self.response_length,
+                "ETag": self.etag,
+            }
+
+    extra = Body(raw + b"x")
+    extra_client = Client(extra)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="body length mismatch"):
+        companyfacts.R2CompanyFactsHeadGuard(
+            client=extra_client, bucket="test", signer=signer,
+        ).read()
+    assert extra.closed and extra.returned == len(raw) + 1
+    assert extra.returned <= companyfacts.MAX_HEAD_WITNESS_BYTES + 1
+    assert extra_client.get_args["Range"] == f"bytes=0-{len(raw)}"
+    assert extra_client.get_args["IfMatch"] == '"head"'
+
+    mismatched = Body(raw)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="CAS token mismatch"):
+        companyfacts.R2CompanyFactsHeadGuard(
+            client=Client(mismatched, etag='"different"'), bucket="test", signer=signer,
+        ).read()
+    assert mismatched.closed and mismatched.returned == 0
+
+    close_only = Body(raw, readable=False)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="body is unreadable"):
+        companyfacts.R2CompanyFactsHeadGuard(
+            client=Client(close_only), bucket="test", signer=signer,
+        ).read()
+    assert close_only.closed
+
+    failing = Body(raw, fail=True)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="malformed"):
+        companyfacts.R2CompanyFactsHeadGuard(
+            client=Client(failing), bucket="test", signer=signer,
+        ).read()
+    assert failing.closed
+
+    close_failing = Body(raw, close_fail=True)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="body close failed"):
+        companyfacts.R2CompanyFactsHeadGuard(
+            client=Client(close_failing), bucket="test", signer=signer,
+        ).read()
+    assert close_failing.closed
+
+
+def test_r2_head_guard_softens_only_authoritative_head_404_and_never_get_errors():
+    from botocore.exceptions import ClientError
+
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("E" * 32, key_id="errors")
+    raw = companyfacts._canonical_bytes(_signed_test_head(signer)) + b"\n"
+
+    def client_error(code, status, operation):
+        return ClientError({
+            "Error": {"Code": code, "Message": code},
+            "ResponseMetadata": {"HTTPStatusCode": status},
+        }, operation)
+
+    class HeadFailure:
+        def __init__(self, error):
+            self.error = error
+
+        def head_object(self, **_kwargs):
+            raise self.error
+
+    absent = companyfacts.R2CompanyFactsHeadGuard(
+        client=HeadFailure(client_error("NoSuchKey", 404, "HeadObject")),
+        bucket="test", signer=signer,
+    )
+    assert absent.read() == (None, None)
+    for error in (
+        client_error("AccessDenied", 403, "HeadObject"),
+        TimeoutError("HEAD timeout"),
+        KeyError("not authoritative"),
+    ):
+        with pytest.raises(companyfacts.CompanyFactsIntakeError, match="unreadable"):
+            companyfacts.R2CompanyFactsHeadGuard(
+                client=HeadFailure(error), bucket="test", signer=signer,
+            ).read()
+
+    class GetFailure:
+        def __init__(self, error):
+            self.error = error
+
+        @staticmethod
+        def head_object(**_kwargs):
+            return {"ContentLength": len(raw), "ETag": '"head"'}
+
+        def get_object(self, **_kwargs):
+            raise self.error
+
+    for error in (
+        client_error("NoSuchKey", 404, "GetObject"),
+        client_error("AccessDenied", 403, "GetObject"),
+        client_error("PreconditionFailed", 412, "GetObject"),
+        TimeoutError("GET timeout"),
+    ):
+        with pytest.raises(companyfacts.CompanyFactsIntakeError, match="unreadable"):
+            companyfacts.R2CompanyFactsHeadGuard(
+                client=GetFailure(error), bucket="test", signer=signer,
+            ).read()
 
 
 def test_pointer_loss_with_immutable_artifacts_fails_closed_before_network(tmp_path, monkeypatch):
@@ -801,7 +1014,10 @@ def test_saved_valid_pointer_replay_and_fully_resealed_local_head_are_rejected(t
         "schema": companyfacts.CURRENT_POINTER_SCHEMA,
         "receipt_id": forged["receipt_id"],
         "receipt_path": f"receipts/{forged_path.name}",
-        "receipt_sha256": companyfacts._file_receipt(forged_path)["sha256"],
+        "receipt_sha256": companyfacts._file_receipt(
+            forged_path, max_bytes=companyfacts.MAX_RECEIPT_BYTES,
+            expected_byte_length=len(forged_body),
+        )["sha256"],
         "receipt_byte_length": len(forged_body),
         "generation_id": forged["generation"]["generation_id"],
         "published_at": forged["published_at"],
@@ -1164,6 +1380,132 @@ def test_ancestor_symlink_blocks_lock_pointer_stage_generation_receipt_and_read(
         assert not (outside / "companyfacts").exists()
 
 
+def _grow_after_first_target_fstat(monkeypatch, path, *, growth=b"x" * (1024 * 1024)):
+    target = path.stat()
+    original_fstat = os.fstat
+    original_read = os.read
+    observed = {"grown": False, "returned": 0, "requests": []}
+
+    def matching(metadata):
+        return (metadata.st_dev, metadata.st_ino) == (target.st_dev, target.st_ino)
+
+    def growing_fstat(descriptor):
+        metadata = original_fstat(descriptor)
+        if matching(metadata) and not observed["grown"]:
+            observed["grown"] = True
+            with open(path, "ab", buffering=0) as handle:
+                handle.write(growth)
+        return metadata
+
+    def counting_read(descriptor, amount):
+        chunk = original_read(descriptor, amount)
+        if matching(original_fstat(descriptor)):
+            observed["requests"].append(amount)
+            observed["returned"] += len(chunk)
+        return chunk
+
+    monkeypatch.setattr(companyfacts.os, "fstat", growing_fstat)
+    monkeypatch.setattr(companyfacts.os, "read", counting_read)
+    return observed
+
+
+@pytest.mark.parametrize("artifact", ["pointer", "receipt", "generation", "anchor"])
+def test_grow_after_fstat_is_bounded_for_every_companyfacts_artifact(
+    tmp_path, monkeypatch, artifact,
+):
+    root = tmp_path / "companyfacts"
+    (root / "generations").mkdir(parents=True)
+    (root / "receipts").mkdir()
+    signer = companyfacts.DeterministicTestCompanyFactsSigner(
+        "G" * 32, key_id="growth-test-v1",
+    )
+
+    if artifact == "pointer":
+        path = root / "coverage_receipt.json"
+        path.write_bytes(b"{}\n")
+        cap = companyfacts.MAX_POINTER_BYTES
+
+        def read_artifact():
+            companyfacts._load_committed_bundle(
+                root=root, receipt_path=path, anchor_records=[], signer=signer,
+                head_witness=None,
+            )
+
+    elif artifact == "receipt":
+        digest = "a" * 64
+        path = root / "receipts" / f"{digest}.json"
+        body = b"{}\n"
+        path.write_bytes(body)
+        cap = companyfacts.MAX_RECEIPT_BYTES
+        reference = {
+            "receipt_id": "receipt:cs-companyfacts:" + digest,
+            "path": f"receipts/{digest}.json",
+            "sha256": companyfacts.sha256(body).hexdigest(),
+            "byte_length": len(body),
+        }
+
+        def read_artifact():
+            companyfacts._read_receipt_reference(root, reference, signer=signer)
+
+    elif artifact == "generation":
+        digest = "b" * 64
+        generation = root / "generations" / digest
+        generation.mkdir()
+        path = generation / "source_manifest.parquet"
+        source_body, coverage_body = b"source", b"coverage"
+        path.write_bytes(source_body)
+        (generation / "coverage.parquet").write_bytes(coverage_body)
+        cap = companyfacts.MAX_GENERATION_FILE_BYTES
+        descriptor = {
+            "generation_id": "generation:cs-companyfacts:" + digest,
+            "source_manifest": {
+                "path": f"generations/{digest}/source_manifest.parquet",
+                **companyfacts._bytes_receipt(source_body),
+            },
+            "coverage": {
+                "path": f"generations/{digest}/coverage.parquet",
+                **companyfacts._bytes_receipt(coverage_body),
+            },
+        }
+
+        def read_artifact():
+            companyfacts._validate_generation_files(root, descriptor)
+
+    else:
+        path = root.parent / "source_manifest.parquet"
+        path.write_bytes(b"PAR1")
+        cap = companyfacts.MAX_ANCHOR_LEDGER_BYTES
+
+        def read_artifact():
+            companyfacts._read_ledger(path, [], max_bytes=cap)
+
+    observed = _grow_after_first_target_fstat(monkeypatch, path)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="changed during secure read"):
+        read_artifact()
+    assert observed["grown"]
+    assert observed["returned"] <= cap + 1
+    assert observed["requests"] and all(amount <= cap + 1 for amount in observed["requests"])
+
+
+def test_regular_artifact_oversize_preflight_performs_zero_reads(tmp_path, monkeypatch):
+    path = tmp_path / "oversized.json"
+    path.write_bytes(b"x" * 17)
+    reads = []
+    original_read = os.read
+
+    def track_read(descriptor, amount):
+        reads.append((descriptor, amount))
+        return original_read(descriptor, amount)
+
+    monkeypatch.setattr(companyfacts.os, "read", track_read)
+    with companyfacts._open_absolute_directory(tmp_path) as parent_fd:
+        with pytest.raises(companyfacts.CompanyFactsIntakeError, match="exceeds byte cap"):
+            companyfacts._read_regular_bytes_at(
+                parent_fd, path.name, label="oversized test artifact", max_bytes=16,
+            )
+    assert reads == []
+
+
 def test_held_lane_rejects_root_rename_swap_before_install_or_external_commit(
     tmp_path, monkeypatch,
 ):
@@ -1296,6 +1638,217 @@ def test_held_lane_rejects_receipts_directory_swap_before_receipt_or_external_co
     assert list((root / "receipts").iterdir()) == [installed_marker]
     assert list(trusted_displaced.iterdir()) == []
     assert not (root / "coverage_receipt.json").exists()
+
+
+def test_held_generation_descriptor_rejects_post_install_swap_before_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_write = companyfacts._write_immutable_bytes
+    outside_origin = tmp_path / "outside-origin-installed-generation"
+    outside_origin.mkdir()
+    (outside_origin / "marker.txt").write_text("outside")
+    displaced = tmp_path / "sealed-generation-displaced"
+    replacement = None
+
+    def swap_then_write(path, content, *, root=None, lane=None):
+        nonlocal replacement
+        assert root is not None and lane is not None
+        generations = [entry for entry in (root / "generations").iterdir() if entry.is_dir()]
+        assert len(generations) == 1
+        replacement = generations[0]
+        replacement.rename(displaced)
+        outside_origin.rename(replacement)
+        return original_write(path, content, root=root, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_write_immutable_bytes", swap_then_write)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="installed generation was rebound"):
+        adapter.fetch()
+    assert guard.read() == (None, None)
+    assert replacement is not None
+    assert (replacement / "marker.txt").read_text() == "outside"
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_held_generation_descriptor_rehashes_descendant_files_before_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_write = companyfacts._write_immutable_bytes
+    mutated = False
+
+    def mutate_generation_then_write(path, content, *, root=None, lane=None):
+        nonlocal mutated
+        assert root is not None and lane is not None
+        generation = next(entry for entry in (root / "generations").iterdir() if entry.is_dir())
+        source_path = generation / "source_manifest.parquet"
+        body = source_path.read_bytes()
+        source_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+        mutated = True
+        return original_write(path, content, root=root, lane=lane)
+
+    monkeypatch.setattr(companyfacts, "_write_immutable_bytes", mutate_generation_then_write)
+    with pytest.raises(
+        companyfacts.CompanyFactsIntakeError,
+        match="descriptor metadata changed|exact-byte receipt mismatch",
+    ):
+        adapter.fetch()
+    assert mutated
+    assert guard.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_generation_swap_during_external_cas_never_commits_local_pointer(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_advance = guard.advance
+    outside_origin = tmp_path / "outside-origin-during-head-cas"
+    outside_origin.mkdir()
+    (outside_origin / "marker.txt").write_text("outside")
+    displaced = tmp_path / "sealed-generation-during-head-cas"
+    replacement = None
+
+    def swap_during_advance(**kwargs):
+        nonlocal replacement
+        generations = [entry for entry in (root / "generations").iterdir() if entry.is_dir()]
+        assert len(generations) == 1
+        replacement = generations[0]
+        replacement.rename(displaced)
+        outside_origin.rename(replacement)
+        original_advance(**kwargs)
+
+    monkeypatch.setattr(guard, "advance", swap_during_advance)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="installed generation was rebound"):
+        adapter.fetch()
+    witnessed, _ = guard.read()
+    assert witnessed is not None  # Remote CAS won; recovery must remain fail closed.
+    assert replacement is not None and (replacement / "marker.txt").read_text() == "outside"
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_held_receipt_rehashes_same_length_mutation_before_external_commit(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_head_witness = companyfacts._head_witness
+    mutated = False
+
+    def mutate_after_witness(*, receipt, receipt_file, signer):
+        nonlocal mutated
+        witness = original_head_witness(
+            receipt=receipt, receipt_file=receipt_file, signer=signer,
+        )
+        receipt_path = next((root / "receipts").glob("*.json"))
+        body = receipt_path.read_bytes()
+        receipt_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+        mutated = True
+        return witness
+
+    monkeypatch.setattr(companyfacts, "_head_witness", mutate_after_witness)
+    with pytest.raises(
+        companyfacts.CompanyFactsIntakeError,
+        match="immutable receipt descriptor metadata changed|immutable receipt exact-byte receipt mismatch",
+    ):
+        adapter.fetch()
+    assert mutated
+    assert guard.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_receipt_mutation_during_external_cas_never_commits_local_pointer(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_advance = guard.advance
+    mutated = False
+
+    def mutate_during_advance(**kwargs):
+        nonlocal mutated
+        receipt_path = next((root / "receipts").glob("*.json"))
+        body = receipt_path.read_bytes()
+        receipt_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+        mutated = True
+        original_advance(**kwargs)
+
+    monkeypatch.setattr(guard, "advance", mutate_during_advance)
+    with pytest.raises(
+        companyfacts.CompanyFactsIntakeError,
+        match="immutable receipt descriptor metadata changed|immutable receipt exact-byte receipt mismatch",
+    ):
+        adapter.fetch()
+    witnessed, _ = guard.read()
+    assert mutated and witnessed is not None
+    assert not (root / "coverage_receipt.json").exists()
+
+
+@pytest.mark.parametrize(
+    "target", ["predecessor_receipt", "predecessor_generation", "grandparent_receipt"],
+)
+def test_publish_revalidates_entire_prior_receipt_and_generation_chain(
+    tmp_path, monkeypatch, target,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    if target == "grandparent_receipt":
+        adapter.fetch(full_history=True)
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    _, guard = _trust(root)
+    prior_witness, _ = guard.read()
+    assert prior_witness is not None
+    receipts = {
+        int(json.loads(path.read_text())["sequence"]): path
+        for path in (root / "receipts").glob("*.json")
+    }
+    victim_receipt_path = receipts[1]
+    original_coverage_receipt = companyfacts._coverage_receipt
+    mutated = False
+
+    def mutate_history_after_seal(**kwargs):
+        nonlocal mutated
+        sealed = original_coverage_receipt(**kwargs)
+        if target == "predecessor_generation":
+            victim = json.loads(victim_receipt_path.read_text())
+            mutation_path = root / victim["generation"]["source_manifest"]["path"]
+        else:
+            mutation_path = victim_receipt_path
+        body = mutation_path.read_bytes()
+        mutation_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+        mutated = True
+        return sealed
+
+    monkeypatch.setattr(companyfacts, "_coverage_receipt", mutate_history_after_seal)
+    with pytest.raises(
+        companyfacts.CompanyFactsIntakeError,
+        match="immutable Company Facts receipt exact-byte mismatch|exact-byte receipt mismatch",
+    ):
+        adapter.fetch(full_history=True)
+    witnessed, _ = guard.read()
+    assert mutated and witnessed == prior_witness
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
 
 
 def test_retention_audit_is_capped_rotating_and_deadline_bounded():
@@ -1431,3 +1984,114 @@ def test_generation_storage_cap_and_request_timeout_obey_remaining_budget(tmp_pa
     bounded._fetcher = lambda *args, **kwargs: (observed.append(kwargs["timeout"]) or Response(_payload()))
     assert bounded._fetch_companyfacts("0001234567") == _payload()
     assert observed and max(observed[0]) <= 0.101
+
+
+def test_source_admission_timeout_discards_late_receipt_and_leaves_only_orphan(
+    tmp_path, monkeypatch,
+):
+    anchor_store = _store(tmp_path)
+    anchor = _anchor_manifest(anchor_store)
+    late_store = _store(tmp_path / "late")
+    started = threading.Event()
+    finished = threading.Event()
+
+    class SlowAdmission:
+        store_id = late_store.store_id
+        backend = late_store.backend
+
+        @staticmethod
+        def put_verified(raw, *, media_type):
+            receipt = late_store.put_verified(raw, media_type=media_type)
+            started.set()
+            time.sleep(1.15)
+            finished.set()
+            return receipt
+
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=SlowAdmission(),
+        source_stores={anchor_store.store_id: anchor_store}, max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    began = time.monotonic()
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="source admission"):
+        adapter.fetch()
+    elapsed = time.monotonic() - began
+    assert started.is_set() and elapsed < 1.14
+    assert finished.wait(1.5)
+    orphan_key = companyfacts.object_key_for_sha256(
+        companyfacts.sha256(_payload()).hexdigest()
+    )
+    assert (tmp_path / "late" / "objects" / orphan_key).read_bytes() == _payload()
+    _, guard = _trust(root)
+    assert guard.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+    assert list((root / "receipts").iterdir()) == []
+
+
+def test_source_admission_reservation_fails_before_store_operation(tmp_path, monkeypatch):
+    anchor_store = _store(tmp_path)
+    anchor = _anchor_manifest(anchor_store)
+    calls = []
+
+    class CountingAdmission:
+        store_id = anchor_store.store_id
+        backend = anchor_store.backend
+
+        @staticmethod
+        def put_verified(raw, *, media_type):
+            calls.append((raw, media_type))
+            return None
+
+    response_bytes = _payload()
+    anchor_bytes = int(anchor["document"]["byte_length"])
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(response_bytes), source_store=CountingAdmission(),
+        source_stores={anchor_store.store_id: anchor_store},
+        max_run_bytes=anchor_bytes + len(response_bytes) + (2 * len(response_bytes)) - 1,
+    )
+    _write_anchor(root, anchor)
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="source admission"):
+        adapter.fetch()
+    assert calls == []
+    assert adapter._run_bytes == anchor_bytes + len(response_bytes)
+    assert not (root / "coverage_receipt.json").exists()
+
+
+def test_twenty_four_admissions_account_for_fetch_write_and_readback_in_receipt_and_heartbeat(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchors = [
+        _anchor_manifest(store, cik=f"{index:010d}", ticker=f"T{index}")
+        for index in range(1, 25)
+    ]
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store, max_ciks=24,
+    )
+
+    def fetch_by_cik(url, **_kwargs):
+        cik = url.rsplit("CIK", 1)[-1].removesuffix(".json")
+        return Response(_payload(cik))
+
+    adapter._fetcher = fetch_by_cik
+    _write_anchor(root, anchors)
+    heartbeat = adapter.fetch()["sec_companyfacts_intake"].iloc[0]
+    _, receipt, sources, coverage = _selected(root)
+    accounting = receipt["run_byte_accounting"]
+    expected_anchor = sum(int(anchor["document"]["byte_length"]) for anchor in anchors)
+    expected_sec = sum(len(_payload(f"{index:010d}")) for index in range(1, 25))
+    assert len(sources) == len(coverage) == 24
+    assert accounting == {
+        "definition": companyfacts.RUN_BYTE_ACCOUNTING,
+        "max_bytes": adapter.max_run_bytes,
+        "anchor_verification_bytes": expected_anchor,
+        "retention_verification_bytes": 0,
+        "sec_response_bytes": expected_sec,
+        "source_store_write_reserved_bytes": expected_sec,
+        "source_store_readback_reserved_bytes": expected_sec,
+        "total_bytes": expected_anchor + (3 * expected_sec),
+    }
+    assert heartbeat["run_byte_accounting"] == accounting
+    assert int(heartbeat["run_bytes"]) == accounting["total_bytes"]

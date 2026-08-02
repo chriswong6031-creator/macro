@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from hashlib import sha256
@@ -58,12 +58,20 @@ HARD_MAX_RUN_BYTES = 1024 * 1024 * 1024
 MAX_RUN_SECONDS = 15 * 60.0
 HARD_MAX_RUN_SECONDS = 60 * 60.0
 MAX_RECEIPT_CHAIN_LENGTH = 512
+MAX_POINTER_BYTES = 16 * 1024
+MAX_HEAD_WITNESS_BYTES = 16 * 1024
+MAX_RECEIPT_BYTES = 4 * 1024 * 1024
+MAX_ANCHOR_LEDGER_BYTES = 128 * 1024 * 1024
 MAX_GENERATION_FILE_BYTES = 128 * 1024 * 1024
 # Retention verification is deliberately bounded: source admission remains an
 # exact put/readback, while pre-existing immutable objects receive a rotating
 # audit instead of an unbounded all-history startup scan.
 MAX_RETENTION_VERIFY_OBJECTS = 24
 RETENTION_VERIFY_POLICY = "bounded-retention-verification/v1"
+RUN_BYTE_ACCOUNTING = (
+    "anchor-read+retention-read+sec-response+source-write-reservation+"
+    "source-readback-reservation/v1"
+)
 _RETENTION_VERIFY_SCHEDULE = ("current", "current", "historical")
 REFRESH_AFTER = timedelta(days=7)
 RETRY_AFTER = timedelta(hours=1)
@@ -232,28 +240,107 @@ class R2CompanyFactsHeadGuard:
 
     def read(self) -> tuple[dict[str, Any] | None, str | None]:
         try:
-            response = self._client.get_object(Bucket=self._bucket, Key=self._key)
+            head = self._client.head_object(Bucket=self._bucket, Key=self._key)
         except Exception as exc:  # noqa: BLE001
             if _is_not_found_error(exc):
                 return None, None
             raise CompanyFactsIntakeError("Company Facts external head witness is unreadable") from exc
+        if not isinstance(head, Mapping):
+            raise CompanyFactsIntakeError("Company Facts external head witness HEAD is malformed")
+        expected_length = head.get("ContentLength")
+        if (
+            isinstance(expected_length, bool)
+            or not isinstance(expected_length, int)
+            or expected_length < 1
+            or expected_length > MAX_HEAD_WITNESS_BYTES
+        ):
+            raise CompanyFactsIntakeError(
+                "Company Facts external head witness HEAD length exceeds its byte cap"
+            )
+        etag = head.get("ETag")
+        if not isinstance(etag, str) or not etag.strip():
+            raise CompanyFactsIntakeError("Company Facts external head witness HEAD has no CAS token")
         try:
-            body = response["Body"].read()
+            response = self._client.get_object(
+                Bucket=self._bucket,
+                Key=self._key,
+                Range=f"bytes=0-{expected_length}",
+                IfMatch=etag,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Once HEAD established an object, every GET failure (including a
+            # later 404 or 412) is an unreadable/rebound witness, never absence.
+            raise CompanyFactsIntakeError("Company Facts external head witness is unreadable") from exc
+        if not isinstance(response, Mapping):
+            raise CompanyFactsIntakeError("Company Facts external head witness GET is malformed")
+        body_stream = response.get("Body")
+        if body_stream is None:
+            raise CompanyFactsIntakeError("Company Facts external head witness body is unreadable")
+        try:
+            if (
+                not callable(getattr(body_stream, "read", None))
+                or not callable(getattr(body_stream, "close", None))
+            ):
+                raise CompanyFactsIntakeError(
+                    "Company Facts external head witness body is unreadable"
+                )
+            response_length = response.get("ContentLength")
+            if (
+                isinstance(response_length, bool)
+                or not isinstance(response_length, int)
+                or response_length != expected_length
+            ):
+                raise CompanyFactsIntakeError(
+                    "Company Facts external head witness GET/HEAD length mismatch"
+                )
+            if response.get("ETag") != etag:
+                raise CompanyFactsIntakeError(
+                    "Company Facts external head witness GET/HEAD CAS token mismatch"
+                )
+            chunks: list[bytes] = []
+            observed = 0
+            boundary = expected_length + 1
+            while observed < boundary:
+                requested = min(64 * 1024, boundary - observed)
+                chunk = body_stream.read(requested)
+                if not isinstance(chunk, bytes):
+                    raise CompanyFactsIntakeError(
+                        "Company Facts external head witness body returned non-bytes"
+                    )
+                if not chunk:
+                    break
+                if len(chunk) > requested:
+                    raise CompanyFactsIntakeError(
+                        "Company Facts external head witness body violated its read boundary"
+                    )
+                observed += len(chunk)
+                chunks.append(chunk)
+            body = b"".join(chunks)
+            if len(body) != expected_length:
+                raise CompanyFactsIntakeError(
+                    "Company Facts external head witness body length mismatch"
+                )
             witness = _native(json.loads(body))
             if body != _canonical_bytes(witness) + b"\n":
                 raise CompanyFactsIntakeError("Company Facts external head witness bytes are not canonical")
             _validate_head_witness(witness, signer=self._signer)
             # Preserve the service-supplied ETag syntax. The S3/R2 conditional
             # request header is an entity-tag and SDK callers conventionally pass
-            # the quoted value returned by GetObject straight back as IfMatch.
-            token = str(response.get("ETag") or "").strip()
-            if not token:
-                raise CompanyFactsIntakeError("Company Facts external head witness has no CAS token")
-            return dict(witness), token
+            # the quoted value returned by HEAD straight back as IfMatch.
+            return dict(witness), etag
         except CompanyFactsIntakeError:
             raise
         except Exception as exc:  # noqa: BLE001
             raise CompanyFactsIntakeError("Company Facts external head witness is malformed") from exc
+        finally:
+            close = getattr(body_stream, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception as exc:  # noqa: BLE001 - cleanup is part of strict read
+                    raise CompanyFactsIntakeError(
+                        "Company Facts external head witness body close failed"
+                    ) from exc
 
     def advance(
         self, *, expected: Mapping[str, Any] | None, expected_token: str | None,
@@ -264,10 +351,13 @@ class R2CompanyFactsHeadGuard:
         if observed != normalized_expected or token != expected_token:
             raise CompanyFactsIntakeError("Company Facts external head witness compare-and-swap conflict")
         _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
+        candidate_body = _canonical_bytes(dict(candidate)) + b"\n"
+        if len(candidate_body) > MAX_HEAD_WITNESS_BYTES:
+            raise CompanyFactsIntakeError("Company Facts external head witness exceeds byte cap")
         arguments: dict[str, Any] = {
             "Bucket": self._bucket,
             "Key": self._key,
-            "Body": _canonical_bytes(dict(candidate)) + b"\n",
+            "Body": candidate_body,
             "ContentType": "application/json",
         }
         if token is None:
@@ -542,17 +632,20 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
 
 
 def _read_ledger(
-    path: Path, columns: Sequence[str], *, parent_fd: int | None = None,
+    path: Path, columns: Sequence[str], *, max_bytes: int,
+    parent_fd: int | None = None,
 ) -> pd.DataFrame:
     try:
         if parent_fd is not None:
             body = _read_regular_bytes_at(
-                parent_fd, path.name, label=f"ledger {path.name}", missing_ok=True,
+                parent_fd, path.name, label=f"ledger {path.name}",
+                max_bytes=max_bytes, missing_ok=True,
             )
         else:
             with _open_absolute_directory(path.parent) as opened_parent_fd:
                 body = _read_regular_bytes_at(
-                    opened_parent_fd, path.name, label=f"ledger {path.name}", missing_ok=True,
+                    opened_parent_fd, path.name, label=f"ledger {path.name}",
+                    max_bytes=max_bytes, missing_ok=True,
                 )
     except CompanyFactsPathMissing:
         return pd.DataFrame(columns=list(columns))
@@ -791,9 +884,21 @@ def _open_companyfacts_parent(
 
 
 def _read_regular_bytes_at(
-    parent_fd: int, name: str, *, label: str, max_bytes: int | None = None,
-    missing_ok: bool = False,
+    parent_fd: int, name: str, *, label: str, max_bytes: int,
+    expected_byte_length: int | None = None, missing_ok: bool = False,
 ) -> bytes | None:
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
+        raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid byte cap")
+    if (
+        expected_byte_length is not None
+        and (
+            isinstance(expected_byte_length, bool)
+            or not isinstance(expected_byte_length, int)
+            or expected_byte_length < 0
+            or expected_byte_length > max_bytes
+        )
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid exact length")
     try:
         descriptor = os.open(name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd)
     except FileNotFoundError:
@@ -803,23 +908,180 @@ def _read_regular_bytes_at(
     except OSError as exc:
         raise CompanyFactsIntakeError(f"Company Facts {label} cannot be opened without following links") from exc
     try:
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
-            raise CompanyFactsIntakeError(f"Company Facts {label} must be a regular file")
-        if max_bytes is not None and metadata.st_size > max_bytes:
-            raise CompanyFactsIntakeError(f"Company Facts {label} exceeds byte cap")
-        chunks: list[bytes] = []
-        while True:
-            chunk = os.read(descriptor, 1024 * 1024)
-            if not chunk:
-                break
-            chunks.append(chunk)
-        body = b"".join(chunks)
-        if len(body) != metadata.st_size:
-            raise CompanyFactsIntakeError(f"Company Facts {label} changed during secure read")
+        body = _read_regular_descriptor_bytes(
+            descriptor, label=label, max_bytes=max_bytes,
+            expected_byte_length=expected_byte_length,
+        )
+        opened = os.fstat(descriptor)
+        try:
+            bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError as exc:
+            raise CompanyFactsIntakeError(
+                f"Company Facts {label} was renamed during secure read"
+            ) from exc
+        if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+            opened.st_dev, opened.st_ino,
+        ):
+            raise CompanyFactsIntakeError(f"Company Facts {label} was rebound during secure read")
         return body
     finally:
         os.close(descriptor)
+
+
+def _read_regular_descriptor_bytes(
+    descriptor: int, *, label: str, max_bytes: int,
+    expected_byte_length: int | None,
+) -> bytes:
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
+        raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid byte cap")
+    if (
+        expected_byte_length is not None
+        and (
+            isinstance(expected_byte_length, bool)
+            or not isinstance(expected_byte_length, int)
+            or expected_byte_length < 0
+            or expected_byte_length > max_bytes
+        )
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid exact length")
+    before = os.fstat(descriptor)
+    if not stat.S_ISREG(before.st_mode):
+        raise CompanyFactsIntakeError(f"Company Facts {label} must be a regular file")
+    if before.st_size > max_bytes:
+        raise CompanyFactsIntakeError(f"Company Facts {label} exceeds byte cap")
+    if expected_byte_length is not None and before.st_size != expected_byte_length:
+        raise CompanyFactsIntakeError(f"Company Facts {label} exact-byte length mismatch")
+    expected = before.st_size if expected_byte_length is None else expected_byte_length
+    # Held descriptors are reread at every publication boundary.
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    boundary = min(expected, max_bytes) + 1
+    chunks: list[bytes] = []
+    observed = 0
+    while observed < boundary:
+        chunk = os.read(descriptor, min(1024 * 1024, boundary - observed))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        observed += len(chunk)
+    body = b"".join(chunks)
+    if len(body) != expected:
+        raise CompanyFactsIntakeError(f"Company Facts {label} changed during secure read")
+    after = os.fstat(descriptor)
+    if _regular_metadata_fingerprint(before) != _regular_metadata_fingerprint(after):
+        raise CompanyFactsIntakeError(f"Company Facts {label} metadata changed during secure read")
+    return body
+
+
+def _regular_metadata_fingerprint(metadata: os.stat_result) -> tuple[Any, ...]:
+    return (
+        metadata.st_dev, metadata.st_ino, metadata.st_mode, metadata.st_size,
+        getattr(metadata, "st_mtime_ns", None), getattr(metadata, "st_ctime_ns", None),
+    )
+
+
+@dataclass
+class _HeldRegularFile:
+    """A regular file and its parent namespace retained across publication."""
+
+    parent_fd: int
+    parent_device: int
+    parent_inode: int
+    name: str
+    descriptor: int
+    fingerprint: tuple[Any, ...]
+
+
+def _hold_regular_file_at(parent_fd: int, name: str, *, label: str) -> _HeldRegularFile:
+    held_parent: int | None = None
+    descriptor: int | None = None
+    try:
+        held_parent = os.dup(parent_fd)
+        parent_metadata = os.fstat(held_parent)
+        if not stat.S_ISDIR(parent_metadata.st_mode):
+            raise CompanyFactsIntakeError(f"Company Facts {label} parent must be a directory")
+        descriptor = os.open(
+            name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=held_parent,
+        )
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise CompanyFactsIntakeError(f"Company Facts {label} must be a regular file")
+        bound = os.stat(name, dir_fd=held_parent, follow_symlinks=False)
+        if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+            metadata.st_dev, metadata.st_ino,
+        ):
+            raise CompanyFactsIntakeError(f"Company Facts {label} was rebound while retained")
+        held = _HeldRegularFile(
+            parent_fd=held_parent,
+            parent_device=parent_metadata.st_dev,
+            parent_inode=parent_metadata.st_ino,
+            name=name,
+            descriptor=descriptor,
+            fingerprint=_regular_metadata_fingerprint(metadata),
+        )
+        held_parent = None
+        descriptor = None
+        return held
+    except CompanyFactsIntakeError:
+        raise
+    except OSError as exc:
+        raise CompanyFactsIntakeError(
+            f"Company Facts {label} cannot be retained without following links"
+        ) from exc
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if held_parent is not None:
+            os.close(held_parent)
+
+
+def _release_held_regular_file(held: _HeldRegularFile) -> None:
+    os.close(held.descriptor)
+    os.close(held.parent_fd)
+
+
+def _assert_held_regular_file_binding(
+    held: _HeldRegularFile, *, current_parent_fd: int, expected_body: bytes,
+    max_bytes: int, label: str,
+) -> dict[str, Any]:
+    parent_metadata = os.fstat(held.parent_fd)
+    current_parent = os.fstat(current_parent_fd)
+    if (
+        not stat.S_ISDIR(parent_metadata.st_mode)
+        or (parent_metadata.st_dev, parent_metadata.st_ino) != (
+            held.parent_device, held.parent_inode,
+        )
+        or (current_parent.st_dev, current_parent.st_ino) != (
+            held.parent_device, held.parent_inode,
+        )
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts {label} parent namespace was rebound")
+    metadata = os.fstat(held.descriptor)
+    if _regular_metadata_fingerprint(metadata) != held.fingerprint:
+        raise CompanyFactsIntakeError(f"Company Facts {label} descriptor metadata changed")
+    try:
+        bound = os.stat(held.name, dir_fd=held.parent_fd, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise CompanyFactsIntakeError(f"Company Facts {label} was renamed") from exc
+    if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+        metadata.st_dev, metadata.st_ino,
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts {label} was rebound")
+    body = _read_regular_descriptor_bytes(
+        held.descriptor, label=label, max_bytes=max_bytes,
+        expected_byte_length=len(expected_body),
+    )
+    expected_receipt = _bytes_receipt(expected_body)
+    observed_receipt = _bytes_receipt(body)
+    if observed_receipt != expected_receipt:
+        raise CompanyFactsIntakeError(f"Company Facts {label} exact-byte receipt mismatch")
+    if _regular_metadata_fingerprint(os.fstat(held.descriptor)) != held.fingerprint:
+        raise CompanyFactsIntakeError(f"Company Facts {label} descriptor metadata changed")
+    rebound = os.stat(held.name, dir_fd=held.parent_fd, follow_symlinks=False)
+    if stat.S_ISLNK(rebound.st_mode) or (rebound.st_dev, rebound.st_ino) != (
+        metadata.st_dev, metadata.st_ino,
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts {label} was rebound")
+    return observed_receipt
 
 
 def _write_new_regular_bytes_at(parent_fd: int, name: str, content: bytes, *, label: str) -> None:
@@ -961,23 +1223,38 @@ def _atomic_write_bytes(
     ``os.replace`` is not a durability acknowledgement. The external head witness
     records the recovery target, while this call reports an indeterminate publish.
     """
+    if len(content) > MAX_POINTER_BYTES:
+        raise CompanyFactsIntakeError("Company Facts current pointer exceeds byte cap")
     safe_root = root or path.parent
     if lane is not None:
         _assert_lane_path_identity(lane)
     parts = _relative_parts(safe_root, path) if root is not None else _safe_relative_parts(path.name)
     temporary = f".{parts[-1]}.{os.getpid()}.{time.time_ns()}.tmp"
     with _open_companyfacts_parent(safe_root, parts, create=True, lane=lane) as (parent_fd, name):
-        previous = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+        previous = _read_regular_bytes_at(
+            parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+            expected_byte_length=(len(expected_previous) if isinstance(expected_previous, bytes) else None),
+            missing_ok=True,
+        )
         if expected_previous is not ... and previous != expected_previous:
             raise CompanyFactsIntakeError(f"Company Facts pointer exact-predecessor CAS conflict: {path}")
         try:
             _write_new_regular_bytes_at(parent_fd, temporary, content, label="staged pointer")
-            if _read_regular_bytes_at(parent_fd, temporary, label="staged pointer") != content:
+            if _read_regular_bytes_at(
+                parent_fd, temporary, label="staged pointer", max_bytes=MAX_POINTER_BYTES,
+                expected_byte_length=len(content),
+            ) != content:
                 raise CompanyFactsIntakeError(f"staged pointer read-back mismatch: {path}")
             try:
                 # Re-check via the same parent descriptor immediately before commit.
                 if expected_previous is not ...:
-                    observed = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+                    observed = _read_regular_bytes_at(
+                        parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+                        expected_byte_length=(
+                            len(expected_previous) if isinstance(expected_previous, bytes) else None
+                        ),
+                        missing_ok=True,
+                    )
                     if observed != expected_previous:
                         raise CompanyFactsIntakeError(
                             f"Company Facts pointer exact-predecessor CAS conflict: {path}"
@@ -986,7 +1263,11 @@ def _atomic_write_bytes(
                     _assert_lane_path_identity(lane)
                 os.replace(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
             except Exception:
-                actual = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+                actual = _read_regular_bytes_at(
+                    parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+                    expected_byte_length=(len(previous) if isinstance(previous, bytes) else None),
+                    missing_ok=True,
+                )
                 if actual != previous:
                     raise CompanyFactsIntakeError(f"Company Facts pointer state uncertain: {path}")
                 raise
@@ -1010,27 +1291,38 @@ def _write_immutable_bytes(
     lane: _CompanyFactsLane | None = None,
 ) -> None:
     """Create one immutable object without ever replacing a divergent target."""
+    if len(content) > MAX_RECEIPT_BYTES:
+        raise CompanyFactsIntakeError("Company Facts immutable receipt exceeds byte cap")
     safe_root = root or path.parent
     if lane is not None:
         _assert_lane_path_identity(lane)
     parts = _relative_parts(safe_root, path) if root is not None else _safe_relative_parts(path.name)
     temporary = f".{parts[-1]}.{os.getpid()}.{time.time_ns()}.tmp"
     with _open_companyfacts_parent(safe_root, parts, create=True, lane=lane) as (parent_fd, name):
-        existing = _read_regular_bytes_at(parent_fd, name, label="immutable object", missing_ok=True)
+        existing = _read_regular_bytes_at(
+            parent_fd, name, label="immutable object", max_bytes=MAX_RECEIPT_BYTES,
+            expected_byte_length=len(content), missing_ok=True,
+        )
         if existing is not None:
             if existing != content:
                 raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
             return
         try:
             _write_new_regular_bytes_at(parent_fd, temporary, content, label="immutable staged object")
-            if _read_regular_bytes_at(parent_fd, temporary, label="immutable staged object") != content:
+            if _read_regular_bytes_at(
+                parent_fd, temporary, label="immutable staged object",
+                max_bytes=MAX_RECEIPT_BYTES, expected_byte_length=len(content),
+            ) != content:
                 raise CompanyFactsIntakeError(f"immutable Company Facts object read-back mismatch: {path}")
             try:
                 if lane is not None:
                     _assert_lane_path_identity(lane)
                 os.link(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd, follow_symlinks=False)
             except FileExistsError:
-                existing = _read_regular_bytes_at(parent_fd, name, label="immutable object")
+                existing = _read_regular_bytes_at(
+                    parent_fd, name, label="immutable object", max_bytes=MAX_RECEIPT_BYTES,
+                    expected_byte_length=len(content),
+                )
                 if existing != content:
                     raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
             _fsync_held_directory(parent_fd, path.parent)
@@ -1051,15 +1343,23 @@ def _ledger_receipt(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def _file_receipt(
-    path: Path, *, root: Path | None = None, max_bytes: int | None = None,
-    lane: _CompanyFactsLane | None = None,
+    path: Path, *, max_bytes: int, expected_byte_length: int | None = None,
+    root: Path | None = None, lane: _CompanyFactsLane | None = None,
 ) -> dict[str, Any]:
     if root is None:
-        body = path.read_bytes()
+        with _open_absolute_directory(path.parent) as parent_fd:
+            body = _read_regular_bytes_at(
+                parent_fd, path.name, label="file receipt", max_bytes=max_bytes,
+                expected_byte_length=expected_byte_length,
+            )
+            assert body is not None
     else:
         parts = _relative_parts(root, path)
         with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
-            body = _read_regular_bytes_at(parent_fd, name, label="file receipt", max_bytes=max_bytes)
+            body = _read_regular_bytes_at(
+                parent_fd, name, label="file receipt", max_bytes=max_bytes,
+                expected_byte_length=expected_byte_length,
+            )
             assert body is not None
     return {"sha256": sha256(body).hexdigest(), "byte_length": len(body)}
 
@@ -1089,6 +1389,8 @@ class _PreparedGeneration:
     stage_fd: int | None = None
     stage_device: int | None = None
     stage_inode: int | None = None
+    installed_name: str | None = None
+    generation_files: dict[str, tuple[int, tuple[Any, ...]]] = field(default_factory=dict)
 
 
 def _assert_stage_inode_binding(
@@ -1200,10 +1502,12 @@ def _prepare_generation(
             manifest_body = _read_regular_bytes_at(
                 stage_fd, "source_manifest.parquet", label="staged source manifest",
                 max_bytes=MAX_GENERATION_FILE_BYTES,
+                expected_byte_length=len(manifest_body),
             )
             coverage_body = _read_regular_bytes_at(
                 stage_fd, "coverage.parquet", label="staged coverage",
                 max_bytes=MAX_GENERATION_FILE_BYTES,
+                expected_byte_length=len(coverage_body),
             )
             assert manifest_body is not None and coverage_body is not None
             _fsync_held_directory(stage_fd, stage)
@@ -1285,37 +1589,53 @@ def _validate_generation_files(
     source_path, coverage_path = _generation_paths(root, descriptor, lane=lane)
     digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
     with _open_companyfacts_directory(root, ("generations", digest), lane=lane) as generation_fd:
-        for key, name in (("source_manifest", "source_manifest.parquet"), ("coverage", "coverage.parquet")):
-            body = _read_regular_bytes_at(
-                generation_fd, name, label=f"committed {key} generation file",
-                max_bytes=MAX_GENERATION_FILE_BYTES,
-            )
-            assert body is not None
-            expected = descriptor[key]
-            if _bytes_receipt(body) != {
-            "sha256": expected.get("sha256"), "byte_length": expected.get("byte_length")
-            }:
-                raise CompanyFactsIntakeError(f"committed Company Facts {key} exact-byte receipt mismatch")
+        _generation_bodies_at(generation_fd, descriptor)
     return source_path, coverage_path
+
+
+def _generation_bodies_at(
+    generation_fd: int, descriptor: Mapping[str, Any],
+) -> tuple[bytes, bytes]:
+    bodies: dict[str, bytes] = {}
+    for key, name in (
+        ("source_manifest", "source_manifest.parquet"),
+        ("coverage", "coverage.parquet"),
+    ):
+        expected = descriptor.get(key)
+        expected_length = expected.get("byte_length") if isinstance(expected, Mapping) else None
+        if (
+            isinstance(expected_length, bool)
+            or not isinstance(expected_length, int)
+            or expected_length < 1
+            or expected_length > MAX_GENERATION_FILE_BYTES
+        ):
+            raise CompanyFactsIntakeError(
+                f"committed Company Facts {key} has an invalid exact length"
+            )
+        body = _read_regular_bytes_at(
+            generation_fd, name, label=f"committed {key} generation file",
+            max_bytes=MAX_GENERATION_FILE_BYTES,
+            expected_byte_length=expected_length,
+        )
+        assert body is not None
+        if _bytes_receipt(body) != {
+            "sha256": expected.get("sha256"), "byte_length": expected_length,
+        }:
+            raise CompanyFactsIntakeError(
+                f"committed Company Facts {key} exact-byte receipt mismatch"
+            )
+        bodies[key] = body
+    return bodies["source_manifest"], bodies["coverage"]
 
 
 def _generation_bodies(
     root: Path, descriptor: Mapping[str, Any], *, lane: _CompanyFactsLane | None = None,
 ) -> tuple[bytes, bytes]:
     """Return exact, receipt-validated generation bytes through a no-follow chain."""
-    _validate_generation_files(root, descriptor, lane=lane)
+    _generation_paths(root, descriptor, lane=lane)
     digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
     with _open_companyfacts_directory(root, ("generations", digest), lane=lane) as generation_fd:
-        source = _read_regular_bytes_at(
-            generation_fd, "source_manifest.parquet", label="committed source manifest",
-            max_bytes=MAX_GENERATION_FILE_BYTES,
-        )
-        coverage = _read_regular_bytes_at(
-            generation_fd, "coverage.parquet", label="committed coverage",
-            max_bytes=MAX_GENERATION_FILE_BYTES,
-        )
-        assert source is not None and coverage is not None
-        return source, coverage
+        return _generation_bodies_at(generation_fd, descriptor)
 
 
 def _install_generation(
@@ -1323,14 +1643,45 @@ def _install_generation(
 ) -> None:
     if lane is not None:
         _assert_lane_path_identity(lane)
+    digest = str(prepared.descriptor["generation_id"]).rsplit(":", 1)[-1]
     if prepared.stage_path is None:
-        _validate_generation_files(root, prepared.descriptor, lane=lane)
+        try:
+            with _open_companyfacts_directory(root, ("generations",), lane=lane) as generations_fd:
+                try:
+                    target_fd = os.open(
+                        digest,
+                        os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+                        | getattr(os, "O_NOFOLLOW", 0),
+                        dir_fd=generations_fd,
+                    )
+                except OSError as exc:
+                    raise CompanyFactsIntakeError(
+                        "Company Facts committed generation cannot be held securely"
+                    ) from exc
+                try:
+                    target_stat = os.fstat(target_fd)
+                    if not stat.S_ISDIR(target_stat.st_mode):
+                        raise CompanyFactsIntakeError(
+                            "Company Facts committed generation is not a directory"
+                        )
+                    prepared.stage_fd = target_fd
+                    target_fd = None
+                    prepared.stage_device = target_stat.st_dev
+                    prepared.stage_inode = target_stat.st_ino
+                    prepared.installed_name = digest
+                finally:
+                    if target_fd is not None:
+                        os.close(target_fd)
+            _hold_prepared_generation_files(prepared)
+            _assert_prepared_generation_binding(root, prepared, lane=lane)
+        except Exception:
+            _release_prepared_stage(prepared)
+            raise
         return
     _generation_paths(root, prepared.descriptor, lane=lane)
     stage = prepared.stage_path
     stage_moved = False
     try:
-        digest = str(prepared.descriptor["generation_id"]).rsplit(":", 1)[-1]
         with _open_companyfacts_directory(root, create=True, lane=lane) as root_fd:
             stage_name = _assert_prepared_stage_binding(root, root_fd, prepared)
             with _open_companyfacts_directory(
@@ -1345,18 +1696,36 @@ def _install_generation(
                 except FileNotFoundError:
                     target_fd = None
                 if target_fd is not None:
-                    os.close(target_fd)
-                    _validate_generation_files(root, prepared.descriptor, lane=lane)
-                    _discard_stage(
-                        root, stage, lane=lane, stage_fd=prepared.stage_fd,
-                        stage_device=prepared.stage_device, stage_inode=prepared.stage_inode,
-                    )
+                    try:
+                        target_stat = os.fstat(target_fd)
+                        if not stat.S_ISDIR(target_stat.st_mode):
+                            raise CompanyFactsIntakeError(
+                                "Company Facts committed generation is not a directory"
+                            )
+                        _generation_bodies_at(target_fd, prepared.descriptor)
+                        _discard_stage(
+                            root, stage, lane=lane, stage_fd=prepared.stage_fd,
+                            stage_device=prepared.stage_device, stage_inode=prepared.stage_inode,
+                        )
+                        if prepared.stage_fd is not None:
+                            os.close(prepared.stage_fd)
+                        prepared.stage_fd = target_fd
+                        target_fd = None
+                        prepared.stage_device = target_stat.st_dev
+                        prepared.stage_inode = target_stat.st_ino
+                        prepared.stage_path = None
+                        prepared.installed_name = digest
+                    finally:
+                        if target_fd is not None:
+                            os.close(target_fd)
                 else:
                     if lane is not None:
                         _assert_lane_path_identity(lane)
                     stage_name = _assert_prepared_stage_binding(root, root_fd, prepared)
                     os.replace(stage_name, digest, src_dir_fd=root_fd, dst_dir_fd=generations_fd)
                     stage_moved = True
+                    prepared.stage_path = None
+                    prepared.installed_name = digest
                     installed = os.stat(digest, dir_fd=generations_fd, follow_symlinks=False)
                     if stat.S_ISLNK(installed.st_mode) or (installed.st_dev, installed.st_ino) != (
                         prepared.stage_device, prepared.stage_inode,
@@ -1367,16 +1736,16 @@ def _install_generation(
                     _fsync_held_directory(generations_fd, root / "generations")
         if lane is not None:
             _assert_lane_path_identity(lane)
-        _validate_generation_files(root, prepared.descriptor, lane=lane)
+        _hold_prepared_generation_files(prepared)
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
     except Exception:
-        if not stage_moved:
+        if not stage_moved and prepared.stage_path is not None:
             _discard_stage(
                 root, stage, ignore_errors=True, lane=lane, stage_fd=prepared.stage_fd,
                 stage_device=prepared.stage_device, stage_inode=prepared.stage_inode,
             )
         _release_prepared_stage(prepared)
         raise
-    _release_prepared_stage(prepared)
 
 
 def _assert_prepared_stage_binding(
@@ -1395,29 +1764,133 @@ def _assert_prepared_stage_binding(
     return parts[0]
 
 
+def _assert_prepared_generation_binding(
+    root: Path, prepared: _PreparedGeneration, *, lane: _CompanyFactsLane | None,
+) -> None:
+    name = prepared.installed_name
+    if name is None:
+        raise CompanyFactsIntakeError("Company Facts installed generation name is unavailable")
+    with _open_companyfacts_directory(root, ("generations",), lane=lane) as generations_fd:
+        _assert_stage_inode_binding(
+            generations_fd, name, prepared.stage_fd,
+            prepared.stage_device, prepared.stage_inode,
+            label="installed generation",
+        )
+    assert prepared.stage_fd is not None
+    expected_names = {"source_manifest.parquet", "coverage.parquet"}
+    if set(prepared.generation_files) != expected_names:
+        raise CompanyFactsIntakeError(
+            "Company Facts installed generation child descriptors are unavailable"
+        )
+    for key, name in (
+        ("source_manifest", "source_manifest.parquet"),
+        ("coverage", "coverage.parquet"),
+    ):
+        descriptor, fingerprint = prepared.generation_files[name]
+        opened = os.fstat(descriptor)
+        if _regular_metadata_fingerprint(opened) != fingerprint:
+            raise CompanyFactsIntakeError(
+                f"Company Facts installed {name} descriptor metadata changed"
+            )
+        _assert_prepared_generation_file_binding(prepared, name, descriptor)
+        expected = prepared.descriptor[key]
+        body = _read_regular_descriptor_bytes(
+            descriptor, label=f"installed {key} generation file",
+            max_bytes=MAX_GENERATION_FILE_BYTES,
+            expected_byte_length=expected["byte_length"],
+        )
+        if _bytes_receipt(body) != {
+            "sha256": expected.get("sha256"), "byte_length": expected.get("byte_length"),
+        }:
+            raise CompanyFactsIntakeError(
+                f"committed Company Facts {key} exact-byte receipt mismatch"
+            )
+    # Reassert both names and immutable metadata after both reads. This catches
+    # a swap or in-place mutation of the first child while the second is read.
+    for name, (descriptor, fingerprint) in prepared.generation_files.items():
+        if _regular_metadata_fingerprint(os.fstat(descriptor)) != fingerprint:
+            raise CompanyFactsIntakeError(
+                f"Company Facts installed {name} descriptor metadata changed"
+            )
+        _assert_prepared_generation_file_binding(prepared, name, descriptor)
+
+
+def _assert_prepared_generation_file_binding(
+    prepared: _PreparedGeneration, name: str, descriptor: int,
+) -> None:
+    if prepared.stage_fd is None:
+        raise CompanyFactsIntakeError("Company Facts installed generation descriptor is unavailable")
+    opened = os.fstat(descriptor)
+    try:
+        bound = os.stat(name, dir_fd=prepared.stage_fd, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise CompanyFactsIntakeError(
+            f"Company Facts installed {name} was renamed"
+        ) from exc
+    if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+        opened.st_dev, opened.st_ino,
+    ):
+        raise CompanyFactsIntakeError(f"Company Facts installed {name} was rebound")
+
+
+def _hold_prepared_generation_files(prepared: _PreparedGeneration) -> None:
+    if prepared.stage_fd is None:
+        raise CompanyFactsIntakeError("Company Facts installed generation descriptor is unavailable")
+    if prepared.generation_files:
+        raise CompanyFactsIntakeError("Company Facts installed child descriptors already exist")
+    opened: dict[str, tuple[int, tuple[Any, ...]]] = {}
+    try:
+        for name in ("source_manifest.parquet", "coverage.parquet"):
+            descriptor: int | None = os.open(
+                name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=prepared.stage_fd,
+            )
+            try:
+                metadata = os.fstat(descriptor)
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise CompanyFactsIntakeError(
+                        f"Company Facts installed {name} is not a regular file"
+                    )
+                opened[name] = (descriptor, _regular_metadata_fingerprint(metadata))
+                descriptor = None
+            finally:
+                if descriptor is not None:
+                    os.close(descriptor)
+        prepared.generation_files = opened
+    except Exception:
+        for descriptor, _fingerprint in opened.values():
+            os.close(descriptor)
+        raise
+
+
 def _release_prepared_stage(prepared: _PreparedGeneration) -> None:
+    for descriptor, _fingerprint in prepared.generation_files.values():
+        os.close(descriptor)
+    prepared.generation_files = {}
     if prepared.stage_fd is not None:
         os.close(prepared.stage_fd)
     prepared.stage_fd = None
     prepared.stage_device = None
     prepared.stage_inode = None
     prepared.stage_path = None
+    prepared.installed_name = None
 
 
 def _discard_prepared_generation(
     prepared: _PreparedGeneration | None, *, lane: _CompanyFactsLane | None = None,
 ) -> None:
     """Remove an unpublished stage after budget/publish failure."""
-    if prepared is not None and prepared.stage_path is not None:
-        root = prepared.stage_path.parent
-        try:
+    if prepared is None:
+        return
+    try:
+        if prepared.stage_path is not None:
+            root = prepared.stage_path.parent
             _discard_stage(
                 root, prepared.stage_path, ignore_errors=True, lane=lane,
                 stage_fd=prepared.stage_fd, stage_device=prepared.stage_device,
                 stage_inode=prepared.stage_inode,
             )
-        finally:
-            _release_prepared_stage(prepared)
+    finally:
+        _release_prepared_stage(prepared)
 
 
 def _discard_stage(
@@ -1484,44 +1957,100 @@ def _publish_generation(
     if lane is not None:
         _assert_lane_path_identity(lane)
     _install_generation(root, prepared, lane=lane)
+    _assert_prepared_generation_binding(root, prepared, lane=lane)
     receipt_body = _canonical_bytes(dict(receipt)) + b"\n"
     receipt_digest = str(receipt["receipt_id"]).rsplit(":", 1)[-1]
     immutable_relative = f"receipts/{receipt_digest}.json"
     immutable_path = root / immutable_relative
     _write_immutable_bytes(immutable_path, receipt_body, root=root, lane=lane)
-    receipt_file = _file_receipt(immutable_path, root=root, lane=lane)
-    witness = _head_witness(receipt=receipt, receipt_file=receipt_file, signer=signer)
-    # This is the authoritative exact-predecessor CAS. It must precede the local
-    # pointer because a missing/old local selector then fails closed rather than
-    # presenting an unwitnessed new head after a power loss.
-    if lane is not None:
-        _assert_lane_path_identity(lane)
-    head_guard.advance(
-        expected=expected_witness,
-        expected_token=expected_witness_token,
-        candidate=witness,
-    )
-    pointer: dict[str, Any] = {
-        "schema": CURRENT_POINTER_SCHEMA,
-        "receipt_id": receipt["receipt_id"],
-        "receipt_path": immutable_relative,
-        "receipt_sha256": receipt_file["sha256"],
-        "receipt_byte_length": receipt_file["byte_length"],
-        "generation_id": receipt["generation"]["generation_id"],
-        "published_at": receipt["published_at"],
-    }
-    pointer["pointer_id"] = _pointer_id(pointer)
-    _validate_contract(
-        pointer, "capital_structure_companyfacts_current_pointer.schema.json",
-        label="Company Facts current pointer",
-    )
-    _validate_pointer_identity(pointer)
-    pointer_body = _canonical_bytes(pointer) + b"\n"
-    _atomic_write_bytes(
-        receipt_path, pointer_body, expected_previous=expected_pointer, root=root, lane=lane,
-    )
-    if _file_receipt(receipt_path, root=root, lane=lane) != _bytes_receipt(pointer_body):
-        raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
+    with _open_companyfacts_directory(root, ("receipts",), lane=lane) as receipts_fd:
+        held_receipt = _hold_regular_file_at(
+            receipts_fd, f"{receipt_digest}.json", label="immutable receipt",
+        )
+    try:
+        def assert_prior_chain() -> None:
+            previous = receipt.get("previous_receipt")
+            if previous is None:
+                return
+            if not isinstance(previous, Mapping):
+                raise CompanyFactsIntakeError(
+                    "Company Facts immutable predecessor reference is malformed"
+                )
+            chain = _walk_receipt_chain(root, previous, signer=signer, lane=lane)
+            if int(chain[0]["sequence"]) + 1 != int(receipt["sequence"]):
+                raise CompanyFactsIntakeError(
+                    "Company Facts immutable predecessor sequence changed before publish"
+                )
+
+        def assert_receipt() -> dict[str, Any]:
+            if lane is not None:
+                _assert_lane_path_identity(lane)
+            with _open_companyfacts_directory(root, ("receipts",), lane=lane) as current_receipts_fd:
+                return _assert_held_regular_file_binding(
+                    held_receipt, current_parent_fd=current_receipts_fd,
+                    expected_body=receipt_body, max_bytes=MAX_RECEIPT_BYTES,
+                    label="immutable receipt",
+                )
+
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
+        assert_prior_chain()
+        # The first retained-FD read must bind both exact length and exact SHA to
+        # the canonical signed bytes; length alone is not publication evidence.
+        receipt_file = assert_receipt()
+        witness = _head_witness(receipt=receipt, receipt_file=receipt_file, signer=signer)
+        # This is the authoritative exact-predecessor CAS. It must precede the
+        # local pointer. Recheck both immutable namespaces immediately before it.
+        if lane is not None:
+            _assert_lane_path_identity(lane)
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
+        assert_prior_chain()
+        receipt_file = assert_receipt()
+        head_guard.advance(
+            expected=expected_witness,
+            expected_token=expected_witness_token,
+            candidate=witness,
+        )
+        # The remote CAS and local namespace cannot be one atomic transaction.
+        # A mutation during CAS may leave an external-head-ahead recovery state,
+        # but must never advance the local selector.
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
+        assert_prior_chain()
+        receipt_file = assert_receipt()
+        pointer: dict[str, Any] = {
+            "schema": CURRENT_POINTER_SCHEMA,
+            "receipt_id": receipt["receipt_id"],
+            "receipt_path": immutable_relative,
+            "receipt_sha256": receipt_file["sha256"],
+            "receipt_byte_length": receipt_file["byte_length"],
+            "generation_id": receipt["generation"]["generation_id"],
+            "published_at": receipt["published_at"],
+        }
+        pointer["pointer_id"] = _pointer_id(pointer)
+        _validate_contract(
+            pointer, "capital_structure_companyfacts_current_pointer.schema.json",
+            label="Company Facts current pointer",
+        )
+        _validate_pointer_identity(pointer)
+        pointer_body = _canonical_bytes(pointer) + b"\n"
+        # Make full-history and new-receipt validation the last operations before
+        # selector publication. Every prior receipt revalidates its generation.
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
+        assert_prior_chain()
+        assert_receipt()
+        _atomic_write_bytes(
+            receipt_path, pointer_body, expected_previous=expected_pointer, root=root, lane=lane,
+        )
+        if _file_receipt(
+            receipt_path, root=root, lane=lane, max_bytes=MAX_POINTER_BYTES,
+            expected_byte_length=len(pointer_body),
+        ) != _bytes_receipt(pointer_body):
+            raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
+        _assert_prepared_generation_binding(root, prepared, lane=lane)
+        assert_prior_chain()
+        assert_receipt()
+        _release_prepared_stage(prepared)
+    finally:
+        _release_held_regular_file(held_receipt)
 
 
 def _authority() -> dict[str, bool]:
@@ -2231,6 +2760,57 @@ def _get_verified_before_deadline(
     return result.get("body")
 
 
+def _put_verified_before_deadline(
+    store: Any, raw: bytes, *, media_type: str,
+    deadline: float | None, monotonic: Callable[[], float],
+) -> Any:
+    """Isolate one immutable source admission inside the remaining run time.
+
+    Python cannot cancel the backend write/readback after timeout. A late
+    completion is therefore discarded and may leave only a content-addressed
+    orphan; no manifest, receipt, external head, or local pointer can derive
+    from that late result.
+    """
+    writer = getattr(store, "put_verified", None)
+    if not callable(writer):
+        raise CompanyFactsIntakeError("Company Facts source store cannot admit verified bytes")
+
+    def put() -> Any:
+        return writer(raw, media_type=media_type)
+
+    if deadline is None:
+        return put()
+    remaining = deadline - monotonic()
+    if remaining <= 0:
+        raise CompanyFactsRunBudgetExceeded(
+            "Company Facts source admission exceeded run deadline"
+        )
+    completed = threading.Event()
+    result: dict[str, Any] = {}
+
+    def write() -> None:
+        try:
+            result["receipt"] = put()
+        except BaseException as exc:  # noqa: BLE001 - forwarded fail closed
+            result["error"] = exc
+        finally:
+            completed.set()
+
+    threading.Thread(target=write, name="companyfacts-source-admission", daemon=True).start()
+    if not completed.wait(remaining):
+        raise CompanyFactsRunBudgetExceeded(
+            "Company Facts source admission exceeded remaining run deadline"
+        )
+    if monotonic() > deadline:
+        raise CompanyFactsRunBudgetExceeded(
+            "Company Facts source admission exceeded run deadline"
+        )
+    error = result.get("error")
+    if isinstance(error, BaseException):
+        raise error
+    return result.get("receipt")
+
+
 def _verify_selected_source_objects(
     source_records: Sequence[Mapping[str, Any]], *, source_stores: Mapping[str, Any],
     deadline: float | None = None, monotonic: Callable[[], float] = time.monotonic,
@@ -2331,9 +2911,18 @@ def _receipt_reference(
     lane: _CompanyFactsLane | None = None,
 ) -> dict[str, Any]:
     relative = path.parent.name + "/" + path.name
+    expected_body = _canonical_bytes(dict(receipt)) + b"\n"
+    file_receipt = _file_receipt(
+        path, root=root, lane=lane, max_bytes=MAX_RECEIPT_BYTES,
+        expected_byte_length=len(expected_body),
+    )
+    if file_receipt != _bytes_receipt(expected_body):
+        raise CompanyFactsIntakeError(
+            "prior Company Facts receipt changed before predecessor binding"
+        )
     return {
         "receipt_id": receipt["receipt_id"], "path": relative,
-        **_file_receipt(path, root=root, lane=lane),
+        **file_receipt,
     }
 
 
@@ -2352,11 +2941,18 @@ def _read_receipt_reference(
     expected_file = {
         "sha256": reference.get("sha256"), "byte_length": reference.get("byte_length")
     }
-    if _file_receipt(path, root=root, lane=lane) != expected_file:
+    expected_length = expected_file["byte_length"]
+    if _file_receipt(
+        path, root=root, lane=lane, max_bytes=MAX_RECEIPT_BYTES,
+        expected_byte_length=expected_length,
+    ) != expected_file:
         raise CompanyFactsIntakeError("immutable Company Facts receipt exact-byte mismatch")
     parts = _relative_parts(root, path)
     with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
-        body = _read_regular_bytes_at(parent_fd, name, label="immutable receipt")
+        body = _read_regular_bytes_at(
+            parent_fd, name, label="immutable receipt", max_bytes=MAX_RECEIPT_BYTES,
+            expected_byte_length=expected_length,
+        )
         assert body is not None
     try:
         receipt = _native(json.loads(body))
@@ -2466,7 +3062,8 @@ def _load_committed_bundle(
             pointer_parts = _relative_parts(root, receipt_path)
             with _open_companyfacts_parent(root, pointer_parts, lane=lane) as (parent_fd, pointer_name):
                 pointer_body = _read_regular_bytes_at(
-                    parent_fd, pointer_name, label="current pointer", missing_ok=True,
+                    parent_fd, pointer_name, label="current pointer",
+                    max_bytes=MAX_POINTER_BYTES, missing_ok=True,
                 )
     except CompanyFactsPathMissing:
         # A securely proven missing root is an empty bootstrap. Unsafe ancestors
@@ -2507,7 +3104,11 @@ def _load_committed_bundle(
     ):
         raise CompanyFactsIntakeError("Company Facts pointer is detached from immutable receipt")
     _validate_head_witness(head_witness, signer=signer)
-    head_file = _file_receipt(root / str(pointer["receipt_path"]), root=root, lane=lane)
+    head_file = _file_receipt(
+        root / str(pointer["receipt_path"]), root=root, lane=lane,
+        max_bytes=MAX_RECEIPT_BYTES,
+        expected_byte_length=pointer["receipt_byte_length"],
+    )
     head_previous = receipt.get("previous_receipt")
     expected_head = {
         "sequence": int(receipt["sequence"]),
@@ -2787,6 +3388,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         self._cooldown_until: float | None = None
         self._run_deadline: float | None = None
         self._run_bytes = 0
+        self._run_byte_categories: dict[str, int] = {}
         if isinstance(max_ciks_per_run, bool) or not isinstance(max_ciks_per_run, int):
             raise ValueError(f"max_ciks_per_run must be an integer from 0 to {HARD_MAX_CIKS_PER_RUN}")
         if isinstance(max_response_bytes, bool) or not isinstance(max_response_bytes, int):
@@ -2878,12 +3480,61 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         if self._run_bytes >= self.max_run_bytes:
             raise CompanyFactsRunBudgetExceeded("Company Facts run byte budget exhausted")
 
-    def _consume_run_bytes(self, count: int) -> None:
+    def _consume_run_bytes(self, count: int, *, category: str) -> None:
         if not isinstance(count, int) or count < 0:
             raise CompanyFactsIntakeError("Company Facts stream reported invalid byte count")
+        if category not in {
+            "anchor_verification_bytes",
+            "retention_verification_bytes",
+            "sec_response_bytes",
+            "source_store_write_reserved_bytes",
+            "source_store_readback_reserved_bytes",
+        }:
+            raise CompanyFactsIntakeError("Company Facts byte accounting category is invalid")
         self._run_bytes += count
+        self._run_byte_categories[category] = self._run_byte_categories.get(category, 0) + count
         if self._run_bytes > self.max_run_bytes:
             raise CompanyFactsRunBudgetExceeded("Company Facts run byte budget exhausted")
+
+    def _observe_run_bytes(self, category: str) -> Callable[[int], None]:
+        return lambda count: self._consume_run_bytes(count, category=category)
+
+    def _reserve_source_admission_bytes(self, byte_length: int) -> None:
+        if isinstance(byte_length, bool) or not isinstance(byte_length, int) or byte_length < 0:
+            raise CompanyFactsIntakeError("Company Facts source admission length is invalid")
+        reservation = byte_length * 2
+        if reservation > self.max_run_bytes - self._run_bytes:
+            raise CompanyFactsRunBudgetExceeded(
+                "Company Facts source admission exceeds remaining run byte budget"
+            )
+        self._consume_run_bytes(
+            byte_length, category="source_store_write_reserved_bytes",
+        )
+        self._consume_run_bytes(
+            byte_length, category="source_store_readback_reserved_bytes",
+        )
+
+    def _run_byte_accounting_record(self) -> dict[str, Any]:
+        record: dict[str, Any] = {
+            "definition": RUN_BYTE_ACCOUNTING,
+            "max_bytes": self.max_run_bytes,
+            "anchor_verification_bytes": self._run_byte_categories.get(
+                "anchor_verification_bytes", 0,
+            ),
+            "retention_verification_bytes": self._run_byte_categories.get(
+                "retention_verification_bytes", 0,
+            ),
+            "sec_response_bytes": self._run_byte_categories.get("sec_response_bytes", 0),
+            "source_store_write_reserved_bytes": self._run_byte_categories.get(
+                "source_store_write_reserved_bytes", 0,
+            ),
+            "source_store_readback_reserved_bytes": self._run_byte_categories.get(
+                "source_store_readback_reserved_bytes", 0,
+            ),
+            "total_bytes": self._run_bytes,
+        }
+        _validate_run_byte_accounting(record)
+        return record
 
     @staticmethod
     def _close(response: Any) -> None:
@@ -2931,7 +3582,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     response, cik=cik, url=url,
                     limit=min(self.max_response_bytes, self.max_run_bytes - self._run_bytes),
                     deadline=self._run_deadline, monotonic=self._monotonic,
-                    byte_observer=self._consume_run_bytes,
+                    byte_observer=self._observe_run_bytes("sec_response_bytes"),
                 )
             except (CompanyFactsDeferred, CompanyFactsResponseTooLarge):
                 raise
@@ -3037,6 +3688,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         receipt_path = root / "coverage_receipt.json"
         self._run_deadline = self._monotonic() + self.max_run_seconds
         self._run_bytes = 0
+        self._run_byte_categories = {}
         with _companyfacts_publish_lease(root) as lane:
             _assert_lane_path_identity(lane)
             signer, head_guard = self._trust_context()
@@ -3045,7 +3697,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             anchor_frame = _read_ledger(anchor_path, [
                 "schema", "manifest_id", "source_system", "source_id", "issuer", "filing", "document",
                 "retrieval", "storage", "rights", "privacy", "parser", "spans",
-            ], parent_fd=lane.parent_fd)
+            ], max_bytes=MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd)
             anchor_records = _records(anchor_frame)
             anchors = _complete_submission_anchor_candidates(anchor_records)
             existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
@@ -3057,7 +3709,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             _verify_selected_source_objects(
                 [record for record, _lane in retention_plan], source_stores=source_stores,
                 deadline=self._run_deadline, monotonic=self._monotonic,
-                byte_observer=self._consume_run_bytes,
+                byte_observer=self._observe_run_bytes("retention_verification_bytes"),
                 remaining_byte_budget=self.max_run_bytes - self._run_bytes,
             )
             retention = _retention_verification(existing_manifests, selection_as_of=selection_as_of)
@@ -3075,12 +3727,15 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                           anchor_verifications: Sequence[Mapping[str, Any]] = (),
                           checkpoint_blocked: bool = False) -> dict[str, pd.DataFrame]:
                 stamp = _parse_stamp(published_at, field="heartbeat published_at")
+                byte_accounting = self._run_byte_accounting_record()
                 return {"sec_companyfacts_intake": pd.DataFrame({
                     "status": [status], "eligible_ciks": [len(anchors)], "selected": [selected],
                     "retrieved": [int(counts["retrieved"])], "retry": [int(counts["retry"])],
                     "deferred": [int(counts["deferred"]) + deferred_queue_count],
                     "fresh_ciks": [population["fresh_ciks"]], "stale_ciks": [population["stale_ciks"]],
-                    "pending_ciks": [population["pending_ciks"]], "run_bytes": [self._run_bytes],
+                    "pending_ciks": [population["pending_ciks"]],
+                    "run_bytes": [byte_accounting["total_bytes"]],
+                    "run_byte_accounting": [byte_accounting],
                     "retention_eligible_objects": [int(retention_verification["eligible_objects"])],
                     "retention_checked_objects": [len(retention_verification["verified_manifest_ids"])],
                     "retention_checked_current": [len(retention_verification["checked_current_manifest_ids"])],
@@ -3139,7 +3794,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     anchor_verifications.append(_verify_anchor_source_object(
                         item["anchor"], source_stores=source_stores,
                         deadline=self._run_deadline, monotonic=self._monotonic,
-                        byte_observer=self._consume_run_bytes,
+                        byte_observer=self._observe_run_bytes("anchor_verification_bytes"),
                         remaining_byte_budget=self.max_run_bytes - self._run_bytes,
                     ))
                     self._require_run_budget()
@@ -3166,7 +3821,11 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                         raise RuntimeError("content-addressed source store unavailable")
                     raw = self._fetch_companyfacts(item["cik"])
                     self._require_run_time()
-                    receipt = source_store.put_verified(raw, media_type="application/json")
+                    self._reserve_source_admission_bytes(len(raw))
+                    receipt = _put_verified_before_deadline(
+                        source_store, raw, media_type="application/json",
+                        deadline=self._run_deadline, monotonic=self._monotonic,
+                    )
                     self._require_run_time()
                     if receipt is None:
                         raise RuntimeError("source-store write/readback verification failed")
@@ -3179,6 +3838,20 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                         item=item, attempted_at=attempted_at, state="retrieved", error=None, retry_after=None, manifest=manifest
                     ))
                     counts["retrieved"] += 1
+                except CompanyFactsRunBudgetExceeded as exc:
+                    # A server-supplied retry deadline is durable scheduling
+                    # evidence. Admission/stream budget exhaustion has no such
+                    # deadline and must abort before any publish.
+                    if exc.retry_after_at is None:
+                        raise
+                    state, retry_deadline = _response_error_class(exc, attempted_at=attempted)
+                    retry_after = _iso(retry_deadline)
+                    error = f"{type(exc).__name__}: {exc}"[:500]
+                    fresh_coverage.append(self._coverage_row(
+                        item=item, attempted_at=attempted_at, state=state, error=error,
+                        retry_after=retry_after, manifest=None,
+                    ))
+                    counts[state] += 1
                 except Exception as exc:  # noqa: BLE001
                     state, retry_deadline = _response_error_class(exc, attempted_at=attempted)
                     retry_after = _iso(retry_deadline)
@@ -3230,7 +3903,8 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     max_ciks=self.max_ciks_per_run, deferred_queue_count=deferred_queue_count,
                     skipped_fresh_count=skipped_fresh_count, counts=counts,
                     queue_diagnostics=queue_diagnostics, retention_verification=retention,
-                    anchor_verifications=anchor_verifications, signer=signer,
+                    anchor_verifications=anchor_verifications,
+                    run_byte_accounting=self._run_byte_accounting_record(), signer=signer,
                 )
                 _validate_contract(sealed_receipt, "capital_structure_companyfacts_coverage_receipt.schema.json", label="Company Facts coverage receipt")
                 _validate_receipt_identity(sealed_receipt)
@@ -3247,7 +3921,10 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     with _open_companyfacts_parent(
                         root, _relative_parts(root, receipt_path), lane=lane,
                     ) as (parent_fd, name):
-                        expected_pointer = _read_regular_bytes_at(parent_fd, name, label="current pointer")
+                        expected_pointer = _read_regular_bytes_at(
+                            parent_fd, name, label="current pointer",
+                            max_bytes=MAX_POINTER_BYTES,
+                        )
                         assert expected_pointer is not None
                 _publish_generation(
                     root=root, receipt_path=receipt_path, receipt=sealed_receipt, prepared=prepared,
@@ -3342,6 +4019,7 @@ def _validate_receipt_semantics(
     prior_source_records: Sequence[Mapping[str, Any]] = (),
     prior_coverage_records: Sequence[Mapping[str, Any]] = (),
 ) -> None:
+    _validate_run_byte_accounting(receipt.get("run_byte_accounting"))
     selection = _parse_stamp(receipt["selection_as_of"], field="receipt selection_as_of")
     published = _parse_stamp(receipt["published_at"], field="receipt published_at")
     if receipt["as_of"] != receipt["published_at"] or published < selection:
@@ -3464,12 +4142,87 @@ def _validate_receipt_semantics(
     }
     if source_ids != retrieved_source_ids or len(source_suffix) != observed_counts["retrieved"]:
         raise CompanyFactsIntakeError("receipt source suffix is detached from retrieved coverage")
+    accounting = receipt["run_byte_accounting"]
+    admitted_bytes = sum(int(row["content"]["byte_length"]) for row in source_suffix)
+    write_reserved = int(accounting["source_store_write_reserved_bytes"])
+    readback_reserved = int(accounting["source_store_readback_reserved_bytes"])
+    sec_response_bytes = int(accounting["sec_response_bytes"])
+    if (
+        write_reserved != readback_reserved
+        or write_reserved < admitted_bytes
+        or write_reserved > sec_response_bytes
+        or admitted_bytes > sec_response_bytes
+    ):
+        raise CompanyFactsIntakeError(
+            "receipt source admission byte accounting is detached from admitted evidence"
+        )
+    verified_anchor_bytes = sum(
+        int(row["byte_length"])
+        for row in anchor_verifications if row.get("status") == "verified"
+    )
+    declared_anchor_bytes = sum(int(row["byte_length"]) for row in anchor_verifications)
+    accounted_anchor_bytes = int(accounting["anchor_verification_bytes"])
+    if not verified_anchor_bytes <= accounted_anchor_bytes <= declared_anchor_bytes:
+        raise CompanyFactsIntakeError(
+            "receipt anchor verification byte accounting is detached"
+        )
     expected_retention = _retention_verification(
         prior_source_records, selection_as_of=selection.to_pydatetime(),
         admitted_source_records=source_suffix,
     )
     if dict(receipt.get("retention_verification") or {}) != expected_retention:
         raise CompanyFactsIntakeError("receipt retention verification coverage is detached from its source history")
+    prior_sources_by_id = {
+        str(row["manifest_id"]): row for row in map(_native, prior_source_records)
+    }
+    checked_retention_ids = [
+        *expected_retention["checked_current_manifest_ids"],
+        *expected_retention["checked_historical_manifest_ids"],
+    ]
+    expected_retention_bytes = sum(
+        int(prior_sources_by_id[manifest_id]["content"]["byte_length"])
+        for manifest_id in checked_retention_ids
+    )
+    if int(accounting["retention_verification_bytes"]) != expected_retention_bytes:
+        raise CompanyFactsIntakeError(
+            "receipt retention verification byte accounting is detached"
+        )
+
+
+def _validate_run_byte_accounting(record: object) -> None:
+    expected_fields = {
+        "definition",
+        "max_bytes",
+        "anchor_verification_bytes",
+        "retention_verification_bytes",
+        "sec_response_bytes",
+        "source_store_write_reserved_bytes",
+        "source_store_readback_reserved_bytes",
+        "total_bytes",
+    }
+    if not isinstance(record, Mapping) or set(record) != expected_fields:
+        raise CompanyFactsIntakeError("Company Facts run byte accounting shape is invalid")
+    if record.get("definition") != RUN_BYTE_ACCOUNTING:
+        raise CompanyFactsIntakeError("Company Facts run byte accounting definition is invalid")
+    numeric_fields = expected_fields - {"definition"}
+    if any(
+        isinstance(record.get(field), bool)
+        or not isinstance(record.get(field), int)
+        or int(record[field]) < 0
+        for field in numeric_fields
+    ):
+        raise CompanyFactsIntakeError("Company Facts run byte accounting values are invalid")
+    categories = (
+        "anchor_verification_bytes",
+        "retention_verification_bytes",
+        "sec_response_bytes",
+        "source_store_write_reserved_bytes",
+        "source_store_readback_reserved_bytes",
+    )
+    if int(record["total_bytes"]) != sum(int(record[field]) for field in categories):
+        raise CompanyFactsIntakeError("Company Facts run byte accounting total is detached")
+    if int(record["total_bytes"]) > int(record["max_bytes"]):
+        raise CompanyFactsIntakeError("Company Facts run byte accounting exceeds maximum")
 
 
 def _coverage_receipt(
@@ -3479,12 +4232,14 @@ def _coverage_receipt(
     coverage_records: Sequence[Mapping[str, Any]], eligible_ciks: int, queue: Sequence[Mapping[str, Any]], max_ciks: int,
     deferred_queue_count: int, skipped_fresh_count: int, counts: Mapping[str, int],
     queue_diagnostics: Mapping[str, Any], retention_verification: Mapping[str, Any],
-    anchor_verifications: Sequence[Mapping[str, Any]], signer: CompanyFactsSigner,
+    anchor_verifications: Sequence[Mapping[str, Any]],
+    run_byte_accounting: Mapping[str, Any], signer: CompanyFactsSigner,
 ) -> dict[str, Any]:
     published_at = _strict_utc(published_at, field="published_at")
     selection_as_of = _strict_utc(selection_as_of, field="selection_as_of")
     anchors = _complete_submission_anchor_candidates(anchor_records)
     population = _coverage_population(anchors, coverage_records, as_of=published_at)
+    _validate_run_byte_accounting(run_byte_accounting)
     record: dict[str, Any] = {
         "schema": COVERAGE_RECEIPT_SCHEMA,
         "selection_as_of": _iso(selection_as_of),
@@ -3499,6 +4254,7 @@ def _coverage_receipt(
         "companyfacts_manifest_ledger": _ledger_receipt(source_records),
         "coverage_ledger": _ledger_receipt(coverage_records),
         "retention_verification": dict(retention_verification),
+        "run_byte_accounting": dict(run_byte_accounting),
         "queue": {
             "max_ciks": max_ciks,
             "force_refresh": bool(queue_diagnostics["force_refresh"]),
