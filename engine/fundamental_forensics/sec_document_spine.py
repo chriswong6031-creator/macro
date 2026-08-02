@@ -31,7 +31,8 @@ FILING_MANIFEST_SCHEMA = "fundamental_forensics.sec_filing_manifest/v1"
 MANIFEST_ID_PREFIX = "ffsec_manifest_"
 ARCHIVE_ORIGIN = "https://www.sec.gov/Archives/edgar/data"
 
-_ACCESSION_RE = re.compile(r"^\d{10}-\d{2}-\d{6}$")
+_ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
+_CIK_RE = re.compile(r"^[0-9]{1,10}$")
 _DOCUMENT_SEGMENT_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -49,9 +50,11 @@ class FilingManifestError(ValueError):
 
 
 def canonical_cik(value: int | str) -> str:
-    """Return the SEC's ten-digit CIK spelling without accepting junk text."""
+    """Return a positive SEC CIK in its canonical ten-digit ASCII spelling."""
     text = str(value).strip()
-    if not text or not text.isdigit():
+    # ``str.isdigit`` also accepts non-ASCII numerals.  Those are not legal
+    # SEC identifiers and would otherwise be silently converted by ``int``.
+    if not _CIK_RE.fullmatch(text) or int(text) == 0:
         raise FilingManifestError(f"invalid CIK: {value!r}")
     return f"{int(text):010d}"
 

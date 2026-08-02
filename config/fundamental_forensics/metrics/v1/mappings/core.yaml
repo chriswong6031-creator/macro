@@ -1,0 +1,173 @@
+schema: fundamental_forensics.metric_mappings/v1
+mapping_pack_id: fundamental_forensics_core_gaap_mappings
+mapping_pack_version: 1.0.0
+available_at: "2026-08-02T00:00:00Z"
+default_taxonomy_version_start: 2009
+default_taxonomy_version_end: 2026
+content_sha256: 70f2974db21a2a3f5d2c76cf6d976e521a48969ea46925d4f3740287b8e3dc29
+
+mappings:
+  - metric_id: revenue
+    rule: {rule_id: mapping.revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: RevenueFromContractWithCustomerExcludingAssessedTax, priority: 10}
+      - {taxonomy: us-gaap, concept: SalesRevenueNet, priority: 20, taxonomy_version_start: 2009, taxonomy_version_end: 2017}
+      - {taxonomy: us-gaap, concept: Revenues, priority: 30}
+  - metric_id: cost_of_revenue
+    rule: {rule_id: mapping.cost_of_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: CostOfRevenue, priority: 10}
+      - {taxonomy: us-gaap, concept: CostOfGoodsAndServicesSold, priority: 20}
+  - metric_id: gross_profit
+    rule: {rule_id: mapping.gross_profit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: GrossProfit, priority: 10}
+  - metric_id: operating_expenses
+    rule: {rule_id: mapping.operating_expenses/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: OperatingExpenses, priority: 10}
+  - metric_id: operating_income_loss
+    rule: {rule_id: mapping.operating_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: OperatingIncomeLoss, priority: 10}
+  - metric_id: pretax_income_loss
+    rule: {rule_id: mapping.pretax_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest, priority: 10}
+  - metric_id: income_tax_expense_benefit
+    rule: {rule_id: mapping.income_tax_expense_benefit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: IncomeTaxExpenseBenefit, priority: 10}
+  - metric_id: net_income_loss
+    rule: {rule_id: mapping.net_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: NetIncomeLoss, priority: 10}
+  - metric_id: research_and_development_expense
+    rule: {rule_id: mapping.research_and_development_expense/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: ResearchAndDevelopmentExpense, priority: 10}
+  - metric_id: share_based_compensation_expense
+    rule: {rule_id: mapping.share_based_compensation_expense/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: ShareBasedCompensation, priority: 10}
+  - metric_id: depreciation_depletion_amortization
+    rule: {rule_id: mapping.depreciation_depletion_amortization/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: DepreciationDepletionAndAmortization, priority: 10}
+  - metric_id: net_cash_from_operating_activities
+    rule: {rule_id: mapping.net_cash_from_operating_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: NetCashProvidedByUsedInOperatingActivities, priority: 10}
+  - metric_id: net_cash_from_investing_activities
+    rule: {rule_id: mapping.net_cash_from_investing_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: NetCashProvidedByUsedInInvestingActivities, priority: 10}
+  - metric_id: net_cash_from_financing_activities
+    rule: {rule_id: mapping.net_cash_from_financing_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: NetCashProvidedByUsedInFinancingActivities, priority: 10}
+  - metric_id: capital_expenditures
+    rule: {rule_id: mapping.capital_expenditures/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: PaymentsToAcquirePropertyPlantAndEquipment, priority: 10}
+  - metric_id: cash_dividends_paid
+    rule: {rule_id: mapping.cash_dividends_paid/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: PaymentsOfDividendsCommonStock, priority: 10}
+  - metric_id: common_stock_repurchases
+    rule: {rule_id: mapping.common_stock_repurchases/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: PaymentsForRepurchaseOfCommonStock, priority: 10}
+  - metric_id: cash_and_cash_equivalents
+    rule: {rule_id: mapping.cash_and_cash_equivalents/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: CashAndCashEquivalentsAtCarryingValue, priority: 10}
+  - metric_id: short_term_investments
+    rule: {rule_id: mapping.short_term_investments/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: ShortTermInvestments, priority: 10}
+      - {taxonomy: us-gaap, concept: MarketableSecuritiesCurrent, priority: 20}
+  - metric_id: accounts_receivable_net
+    rule: {rule_id: mapping.accounts_receivable_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: AccountsReceivableNetCurrent, priority: 10}
+  - metric_id: inventory_net
+    rule: {rule_id: mapping.inventory_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: InventoryNet, priority: 10}
+  - metric_id: accounts_payable
+    rule: {rule_id: mapping.accounts_payable/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: AccountsPayableCurrent, priority: 10}
+  - metric_id: current_assets
+    rule: {rule_id: mapping.current_assets/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: AssetsCurrent, priority: 10}
+  - metric_id: current_liabilities
+    rule: {rule_id: mapping.current_liabilities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: LiabilitiesCurrent, priority: 10}
+  - metric_id: property_plant_equipment_net
+    rule: {rule_id: mapping.property_plant_equipment_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: PropertyPlantAndEquipmentNet, priority: 10}
+  - metric_id: operating_lease_right_of_use_asset
+    rule: {rule_id: mapping.operating_lease_right_of_use_asset/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: OperatingLeaseRightOfUseAsset, priority: 10}
+  - metric_id: goodwill
+    rule: {rule_id: mapping.goodwill/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: Goodwill, priority: 10}
+  - metric_id: intangible_assets_net
+    rule: {rule_id: mapping.intangible_assets_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: FiniteLivedIntangibleAssetsNet, priority: 10}
+  - metric_id: total_assets
+    rule: {rule_id: mapping.total_assets/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: Assets, priority: 10}
+  - metric_id: short_term_debt
+    rule: {rule_id: mapping.short_term_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: ShortTermBorrowings, priority: 10}
+  - metric_id: long_term_debt
+    rule: {rule_id: mapping.long_term_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: LongTermDebtNoncurrent, priority: 10}
+  - metric_id: long_term_debt_current
+    rule: {rule_id: mapping.long_term_debt_current/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: LongTermDebtCurrent, priority: 10}
+  - metric_id: total_liabilities
+    rule: {rule_id: mapping.total_liabilities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: Liabilities, priority: 10}
+  - metric_id: stockholders_equity
+    rule: {rule_id: mapping.stockholders_equity/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: StockholdersEquity, priority: 10}
+  - metric_id: retained_earnings_accumulated_deficit
+    rule: {rule_id: mapping.retained_earnings_accumulated_deficit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: RetainedEarningsAccumulatedDeficit, priority: 10}
+  - metric_id: basic_weighted_average_shares
+    rule: {rule_id: mapping.basic_weighted_average_shares/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: WeightedAverageNumberOfSharesOutstandingBasic, priority: 10}
+  - metric_id: diluted_weighted_average_shares
+    rule: {rule_id: mapping.diluted_weighted_average_shares/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: WeightedAverageNumberOfDilutedSharesOutstanding, priority: 10}
+  - metric_id: common_shares_outstanding
+    rule: {rule_id: mapping.common_shares_outstanding/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: dei, concept: EntityCommonStockSharesOutstanding, priority: 10}
+  - metric_id: basic_earnings_per_share
+    rule: {rule_id: mapping.basic_earnings_per_share/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: EarningsPerShareBasic, priority: 10}
+  - metric_id: diluted_earnings_per_share
+    rule: {rule_id: mapping.diluted_earnings_per_share/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    taxonomy_concept_aliases:
+      - {taxonomy: us-gaap, concept: EarningsPerShareDiluted, priority: 10}
