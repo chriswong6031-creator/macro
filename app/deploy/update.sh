@@ -203,6 +203,10 @@ fi
 #   fundamental_forensics/ app/forensics.py imports private_state through the
 #                          package, whose __init__ loads the pure kernel modules;
 #                          all are therefore pinned in macro-api sys.modules.
+#   capital_structure/*    app/capital_structure.py imports projection at module
+#                          load; projection and its event-spine/package closure
+#                          stay pinned until macro-api restarts. Named narrowly so
+#                          nightly-only compilers do not blip the serving plane.
 #   context_index/         brain_gateway → packet.build_packet, which top-level
 #                          imports fusion/gitinfo/lexical/structured. Named, not
 #                          globbed: ingest/chunking/health/schema/sources are
@@ -232,7 +236,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/capital_structure/(__init__|event_spine|projection)\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.

@@ -1,0 +1,176 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capital Structure — MastermindX</title>
+{% set seo_title = "Capital Structure — Observed Filing State | MastermindX" %}
+{% set seo_desc = "A source-linked desk for reviewing observed SEC filing state, lifecycle changes, and evidence receipts." %}
+{% set seo_path = "capital_structure.html" %}
+{% include "_seo_head.html.j2" %}
+<script src="capital_structure_boot.js"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="capital_structure.css">
+</head>
+<body class="cs-page">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+<div class="cs-orbit" aria-hidden="true"></div>
+<main class="cs-shell" id="cs-shell">
+  <header class="cs-hero">
+    <div class="cs-hero-copy">
+      <p class="cs-kicker">{{ t('Capital structure intelligence', '资本结构情报') }}</p>
+      <h1>{{ t('Observed Filing State', '已观察申报状态') }}</h1>
+      <p class="cs-deck">{{ t('Follow what has reached the SEC record: filing state, lifecycle changes, and the source trail behind each observation.', '追踪已进入 SEC 记录的申报状态、生命周期变化及每项观察背后的来源链路。') }}</p>
+    </div>
+    <div class="cs-hero-read" aria-label="Desk guidance">
+      <span class="cs-read-label">{{ t('Read', '阅读方式') }}</span>
+      <strong>{{ t('Investigate filings — not a trade call', '核查申报 — 不是交易指令') }}</strong>
+      <span>{{ t('State is observed, not inferred.', '呈现的是已观察状态，而非推断。') }}</span>
+    </div>
+  </header>
+
+  <section class="cs-status" id="cs-status" aria-live="polite">
+    <div class="cs-status-main">
+      <span class="cs-status-dot" aria-hidden="true"></span>
+      <div>
+        <p class="cs-status-label">{{ t('Coverage', '覆盖范围') }}</p>
+        <strong id="cs-coverage-state">{{ t('Loading observed filings', '正在加载已观察申报') }}</strong>
+      </div>
+    </div>
+    <dl class="cs-status-meta">
+      <div><dt>{{ t('As of', '截至') }}</dt><dd id="cs-as-of">—</dd></div>
+      <div><dt>{{ t('Generated', '生成时间') }}</dt><dd id="cs-generated-at">—</dd></div>
+      <div><dt>{{ t('Issuers', '发行人') }}</dt><dd id="cs-issuer-count">—</dd></div>
+    </dl>
+  </section>
+
+  <section class="cs-unavailable" aria-label="Scope note">
+    <span class="cs-unavailable-mark" aria-hidden="true">↳</span>
+    <div>
+      <strong>{{ t('What this desk does not calculate', '本工作台不计算的内容') }}</strong>
+      <span>{{ t('Instrument terms, share-count expansion detail, cash timing, and financing forecasts are not available in this release.', '本版本不提供工具条款、股数扩张细节、现金时间或融资预测。') }}</span>
+    </div>
+  </section>
+
+  <div class="cs-workspace">
+    <aside class="cs-rail" aria-labelledby="cs-rail-title">
+      <div class="cs-rail-head">
+        <div>
+          <p class="cs-kicker">{{ t('Issuer browser', '发行人浏览器') }}</p>
+          <h2 id="cs-rail-title">{{ t('Observed issuers', '已观察发行人') }}</h2>
+        </div>
+        <span class="cs-rail-count" id="cs-rail-count">—</span>
+      </div>
+      <label class="cs-search" for="cs-search-input">
+        <span class="cs-search-label">{{ t('Find a ticker or company', '查找代码或公司') }}</span>
+        <input id="cs-search-input" type="search" autocomplete="off"
+          data-placeholder-en="Ticker or company"
+          data-placeholder-zh="股票代码或公司"
+          placeholder="Ticker or company">
+        <span class="cs-search-hint">{{ t('Press Enter to resolve an exact ticker', '按 Enter 精确查找代码') }}</span>
+      </label>
+      <div class="cs-filter-row" role="group" aria-label="Issuer filters">
+        <button type="button" class="cs-filter is-active" data-filter="all" aria-pressed="true">{{ t('All', '全部') }}</button>
+        <button type="button" class="cs-filter" data-filter="review" aria-pressed="false">{{ t('Needs review', '待复核') }}</button>
+        <button type="button" class="cs-filter" data-filter="recent" aria-pressed="false">{{ t('Observed in 30 days', '截至日前 30 天') }}</button>
+      </div>
+      <div class="cs-issuer-list" id="cs-issuer-list" role="list" aria-label="Observed issuers"></div>
+      <div class="cs-rail-foot" id="cs-rail-foot">{{ t('Issuers are listed by observed SEC filing state.', '发行人按已观察到的 SEC 申报状态列出。') }}</div>
+    </aside>
+
+    <section class="cs-dossier" id="cs-dossier" aria-labelledby="cs-dossier-title" tabindex="-1">
+      <div class="cs-empty-dossier" id="cs-empty-dossier">
+        <span class="cs-empty-glyph" aria-hidden="true">⌁</span>
+        <h2 id="cs-dossier-title">{{ t('Choose an issuer', '选择一个发行人') }}</h2>
+        <p>{{ t('Open an observed filing record to inspect the timeline, latest state, and SEC source receipts.', '打开已观察的申报记录，查看时间线、最新状态及 SEC 来源凭据。') }}</p>
+      </div>
+
+      <div class="cs-dossier-body" id="cs-dossier-body" hidden>
+        <header class="cs-issuer-head">
+          <div class="cs-issuer-identity">
+            <span class="cs-issuer-symbol" id="cs-issuer-symbol">—</span>
+            <div>
+              <p class="cs-kicker" id="cs-issuer-cik">—</p>
+              <h2 id="cs-dossier-title-live">—</h2>
+              <p class="cs-issuer-alias" id="cs-issuer-alias">—</p>
+            </div>
+          </div>
+          <button class="cs-evidence-button" id="cs-open-evidence" type="button" disabled>
+            <span aria-hidden="true">↗</span> {{ t('Open evidence', '打开证据') }}
+          </button>
+        </header>
+
+        <section class="cs-latest-card" aria-labelledby="cs-latest-title">
+          <div class="cs-section-heading">
+            <div>
+              <p class="cs-kicker">{{ t('Latest observed record', '最新观察记录') }}</p>
+              <h3 id="cs-latest-title">{{ t('Current filing state', '当前申报状态') }}</h3>
+            </div>
+            <span class="cs-state-chip" id="cs-lifecycle-state">—</span>
+          </div>
+          <div class="cs-latest-grid">
+            <div><span>{{ t('Form', '表格') }}</span><strong id="cs-latest-form">—</strong></div>
+            <div><span>{{ t('SEC accepted', 'SEC 接收') }}</span><strong id="cs-sec-accepted">—</strong></div>
+            <div><span>{{ t('Observed', '观察时间') }}</span><strong id="cs-observed-at">—</strong></div>
+            <div><span>{{ t('Classification', '分类') }}</span><strong id="cs-classification">—</strong></div>
+          </div>
+        </section>
+
+        <section class="cs-changes" aria-labelledby="cs-changes-title">
+          <div class="cs-section-heading">
+            <div>
+              <p class="cs-kicker">{{ t('Change log', '变化记录') }}</p>
+              <h3 id="cs-changes-title">{{ t('What changed', '发生了什么变化') }}</h3>
+            </div>
+            <span class="cs-section-note">{{ t('Observed events only', '仅限已观察事件') }}</span>
+          </div>
+          <div id="cs-change-list" class="cs-change-list"></div>
+        </section>
+
+        <section class="cs-timeline" aria-labelledby="cs-timeline-title">
+          <div class="cs-section-heading">
+            <div>
+              <p class="cs-kicker">{{ t('Filing timeline', '申报时间线') }}</p>
+              <h3 id="cs-timeline-title">{{ t('Lifecycle record', '生命周期记录') }}</h3>
+            </div>
+            <button class="cs-more-events" id="cs-more-events" type="button" hidden>{{ t('More events', '更多事件') }}</button>
+          </div>
+          <ol class="cs-event-list" id="cs-event-list"></ol>
+        </section>
+
+        <section class="cs-scope-card" aria-labelledby="cs-scope-title">
+          <div>
+            <p class="cs-kicker">{{ t('Record scope', '记录范围') }}</p>
+            <h3 id="cs-scope-title">{{ t('Coverage for this issuer', '该发行人的覆盖范围') }}</h3>
+          </div>
+          <dl class="cs-scope-list" id="cs-scope-list"></dl>
+        </section>
+      </div>
+    </section>
+  </div>
+</main>
+
+<aside class="cs-evidence-drawer" id="cs-evidence-drawer" aria-labelledby="cs-evidence-title" aria-hidden="true" tabindex="-1" hidden inert>
+  <header class="cs-evidence-head">
+    <div>
+      <p class="cs-kicker">{{ t('Source receipt', '来源凭据') }}</p>
+      <h2 id="cs-evidence-title">{{ t('Evidence', '证据') }}</h2>
+    </div>
+    <button class="cs-drawer-close" id="cs-close-evidence" type="button" aria-label="Close evidence drawer" data-label-en="Close evidence drawer" data-label-zh="关闭证据抽屉">×</button>
+  </header>
+  <div class="cs-evidence-body" id="cs-evidence-body"></div>
+</aside>
+<div class="cs-scrim" id="cs-scrim" hidden></div>
+
+<template id="cs-loading-template"><div class="cs-loading"><span aria-hidden="true"></span>{{ t('Loading observed filing state…', '正在加载已观察申报状态…') }}</div></template>
+
+<script src="theme.js" defer></script>
+<script src="capital_structure.js" defer></script>
+</body>
+</html>

@@ -8,6 +8,10 @@ pydantic>=2.0,<3.0
 # Reviewed serving-boundary policy (config/site_access.yml). Imported at API
 # startup by app/paywall.py, so this is a hard serving-tier dependency.
 PyYAML>=6.0,<7.0
+# Capital Structure observed-filing-state API validates the canonical projection
+# contract on every artifact reload. This is a hard serving dependency: without
+# it a clean deploy would catch ImportError and degrade every desk read to 503.
+jsonschema>=4.23,<5.0
 # Private Research Vault / Filing Forensics object reads. The serving process
 # imports boto3 lazily, but it is a hard dependency once a paid R2-backed route
 # is requested; pin it here so a fresh API install cannot degrade to 503.

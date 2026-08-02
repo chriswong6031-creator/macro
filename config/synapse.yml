@@ -15952,7 +15952,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [app/capital_structure.py]
     external_consumers: []
     notes: >
       Canonical public-safe observed-filing-state projection compiled only from a

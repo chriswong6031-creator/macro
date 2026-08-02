@@ -256,3 +256,8 @@ premium:
       - /chinaspecialdata/special.json
     prefixes:
       - /premiumdata/
+      # Canonical/public projection twins may be published for controlled
+      # server-side distribution, but browser reads must stay on the private
+      # API. Lock the whole static estate so a guessed direct URL cannot bypass
+      # the Capital Structure desk entitlement boundary.
+      - /capital-structure-data/
