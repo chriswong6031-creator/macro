@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T19:18:37.225318+00:00",
-  "count": 613,
+  "generated_at": "2026-08-02T19:33:39.019790+00:00",
+  "count": 614,
   "institutions": [
     "Amova",
     "Apollo",
@@ -205,6 +205,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ozmkycijd1m-13d85a",
+      "title": "Japanese economy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:56:17Z",
+      "summary_points": [
+        "**BoJ Policy & Yield Outlook**: Policy rate to reach 1.5% by mid-2027 (Dec 2026, Jun 2027 hikes), 10-yr JGB yield near 2.7% with terminal rate pricing; fiscal risks and AI growth could push yields over 3%.",
+        "**Wage Growth vs.",
+        "Inflation Dynamics**: Japan’s 3% y/y wage growth lags US/EU, service inflation at 1% y/y—no wage-price spiral, reducing BoJ’s need for aggressive rate hikes.",
+        "**Fiscal Risks & JGB Yields**: 370T JPY budget request and defense spending intensify fiscal sustainability concerns; JGB yields near 2.7% face upside risk to 3% from fiscal events/AI-driven growth.",
+        "**USDJPY Volatility Drivers**: Intervention caps USDJPY upside but underlying yen weakness persists; US policy credibility key for forecasts (revised to 158-162)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
