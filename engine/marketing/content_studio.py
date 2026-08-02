@@ -2628,8 +2628,16 @@ def content_plan(
     from engine.marketing.accounts import effective_accounts as _eff_accounts
     eff_accounts = _eff_accounts(cfg, root)
 
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # ONE wall-clock read for the whole build. `_plan_now` is what every
+    # temporal word in this plan is resolved against (market_clock), so a build
+    # that straddles midnight cannot stamp two different days' vocabulary into
+    # one plan — and so the day word is never a literal again (defect class B,
+    # 2026-08-02: "$AMZN +15.3% today" written on a Saturday).
+    _plan_now = datetime.now(timezone.utc)
+    now_str = _plan_now.strftime("%Y-%m-%dT%H:%M:%SZ")
     today = now_str[:10]
+    from engine.marketing.movers_source import session_phrase as _session_phrase
+    _day_word = _session_phrase(_plan_now)
 
     # When publish.publish_time_read is armed, the after-close DAILY READ is
     # generated at PUBLISH time (publish_time_content.generate_read_item), so the
@@ -3488,10 +3496,11 @@ def content_plan(
                 if not _mv_ticker or _mv_ticker in _mover_tickers_used:
                     continue
                 _mover_tickers_used.add(_mv_ticker)
-                _mv_facts = _mover_facts_fn(_mv, _movers_data)
+                _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now)
                 _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
-                _mv_headline = f"${_mv_ticker} {_mv_pct_str} today"
+                _mv_headline = " ".join(
+                    p for p in (f"${_mv_ticker}", _mv_pct_str, _day_word) if p)
                 # Direction-aware stance (doctrine v3): down = flush-watch, dry;
                 # up = respect, don't chase. Same honest posture either way.
                 #
@@ -3546,7 +3555,7 @@ def content_plan(
             _theme_items_for_queue: list[dict] = []
             for _tl in _tl_result[:4]:
                 _tl_ticker = f"theme_{_tl['theme'].lower().replace(' ', '_').replace('/', '_')}"
-                _tl_facts = _theme_facts_fn(_tl)
+                _tl_facts = _theme_facts_fn(_tl, now=_plan_now)
                 _tl_members = _tl["members"]
                 _cashtags = [f"${m['ticker']}" for m in _tl_members[:10]]
                 _cashtag_list_str = " ".join(_cashtags)
@@ -3556,7 +3565,9 @@ def content_plan(
                     if m.get("pct") is not None
                 )
                 _tl_tone = _tl.get("tone") or ("selling off" if _tl["direction"] == "down" else "ripping")
-                _tl_headline = f"{_tl['theme']} {_tl_tone}, {_agg_str} avg today"
+                _tl_headline = " ".join(
+                    p for p in (f"{_tl['theme']} {_tl_tone}, {_agg_str} avg",
+                                _day_word) if p)
                 _tl_body = f"{_member_list} {_tl['question']}"
                 _tl_item_dict = {
                     "id": f"post-theme-{_mover_item_counter:03d}",
@@ -4552,10 +4563,10 @@ def content_plan(
                     event_facts as _event_facts_fn,
                     merge_facts as _merge_facts_fn,
                 )
-                _macro_facts_cache = _macro_facts_fn(_mkt_root)
+                _macro_facts_cache = _macro_facts_fn(_mkt_root, now=_plan_now)
                 _sector_facts_cache = _sector_facts_fn(_mkt_root)
                 _breadth_facts_cache = _breadth_facts_fn(_mkt_root)
-                _event_facts_cache = _event_facts_fn(_mkt_root)
+                _event_facts_cache = _event_facts_fn(_mkt_root, now=_plan_now)
             except Exception:  # noqa: BLE001
                 pass
 

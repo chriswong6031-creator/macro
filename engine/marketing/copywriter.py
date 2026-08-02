@@ -1372,6 +1372,41 @@ def validate_copy(
         include_house_bans=False,
     ))
 
+    # 6c. EVENT TENSE (operator defect report 2026-08-02). The event-language
+    # contract already refuses desk shorthand a reader cannot parse; this is the
+    # same contract applied to TENSE, which nothing checked at all. The fixture
+    # is ob-2026-08-02-7fb823aecd: "That's a steepening slope, and earnings land
+    # July 29." — a future-tense verb on a date four days past, carrying no
+    # banned word, no stale price and no duplicate, so every other gate in this
+    # function passed it. Generation rewrites to post-event framing or drops the
+    # fact; it does not get to ship the tense.
+    #
+    # THE REFERENCE DATE IS `ctx["as_of"]`, NOT THE WALL CLOCK — and that is
+    # deliberate twice over. It is the honest comparison (a date is dead relative
+    # to the day the post is FOR), and it keeps this function deterministic: a
+    # `datetime.now()` here would make every fixture in the copy suites carrying
+    # a date pass or fail by the day the suite happens to run.
+    #
+    # THE "TODAY"/"OVERNIGHT" HALF OF THE CLOCK IS NOT HERE, on purpose. Those
+    # questions need the POSTING instant, which generation does not know — the
+    # three defect classes were all written honestly and went false while they
+    # waited. They are answered where the answer exists: the deterministic
+    # stamping sites take an explicit `now` (market_facts.macro_facts,
+    # movers_source.session_phrase, content_studio's `_plan_now`), and
+    # scripts/marketing_publisher re-asks at the exit, which is the gate that
+    # cannot be bypassed. See engine/marketing/market_clock.py.
+    try:
+        from engine.marketing import market_clock as _clock  # noqa: PLC0415
+
+        _ref = _parse_date(ctx.get("as_of"))
+        if _ref is not None:
+            violations.extend(_clock.dead_date_future_tense(
+                full_text,
+                now=datetime(_ref.year, _ref.month, _ref.day, 12, 0,
+                             tzinfo=timezone.utc)))
+    except Exception as _clk_exc:  # noqa: BLE001
+        log.warning("validate_copy: event-tense check unavailable (%s)", _clk_exc)
+
     # 7. Duplicate headline within batch (case-insensitive exact + Jaccard)
     if batch_headlines:
         hl_lower = headline.lower().strip()

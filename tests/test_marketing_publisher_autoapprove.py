@@ -24,8 +24,20 @@ from pathlib import Path
 import pytest
 
 
-_FIXED_NOW = datetime(2026, 7, 19, 12, 0, 0, tzinfo=timezone.utc)
-_AS_OF = "2026-07-19"
+#: THE FIXTURE CLOCK MUST LAND ON AN NYSE SESSION DAY (moved 2026-08-02, +1d
+#: from Sunday 2026-07-19 to Monday 2026-07-20; every date in this file shifted
+#: with it so all relative gaps are unchanged).
+#:
+#: This suite's copy says "today" and "into the close" — a dozen fixtures do —
+#: and the publisher's clock gate now refuses a today-class word whose fact
+#: session is not the posting session. Pinned to a Sunday, this suite asserted
+#: that posting Friday's tape as "today" on a weekend is normal, which is the
+#: exact defect the gate exists for (ob-2026-08-01-a83c188711, "$AMZN +15.3%
+#: today", written 21:49Z on a Saturday). DO NOT move it back to a weekend to
+#: make a failure go away — a weekend clock here means the fixture is wrong,
+#: not the gate.
+_FIXED_NOW = datetime(2026, 7, 20, 12, 0, 0, tzinfo=timezone.utc)
+_AS_OF = "2026-07-20"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -203,7 +215,7 @@ def _write_fresh_quotes(tmp_path: Path, now: str,
 
 def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
                    fake_publisher: _FakePublisher | None = None,
-                   kill_switch: bool = False, now: str = "2026-07-19T13:00:00Z") -> int:
+                   kill_switch: bool = False, now: str = "2026-07-20T13:00:00Z") -> int:
     """Invoke the runner main() in-process with a controlled environment."""
     import scripts.marketing_publisher as pub
     monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if kill_switch else "0")
@@ -362,11 +374,11 @@ def test_auto_approve_respects_daily_cap(monkeypatch, tmp_path):
     _write_publish_cfg(tmp_path, auto_approve=True, cap=2)
     ids = [
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[2],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
     ]
 
     fake = _FakePublisher(ok=True)
@@ -685,9 +697,9 @@ def test_floor_posts_one_per_run(monkeypatch, tmp_path):
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     ids = [
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -706,9 +718,9 @@ def test_floor_disabled_posts_all(monkeypatch, tmp_path):
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
     ids = [
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
         _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
-                          scheduled_at="2026-07-19T12:00:00Z"),
+                          scheduled_at="2026-07-20T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -724,11 +736,11 @@ def test_floor_blocks_when_last_post_recent(monkeypatch, tmp_path):
     NOT post."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
-    # Run's now is 2026-07-19T13:00Z; seed a post 5 minutes earlier.
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 55, tzinfo=timezone.utc),
+    # Run's now is 2026-07-20T13:00Z; seed a post 5 minutes earlier.
+    _seed_posted_at(tmp_path, datetime(2026, 7, 20, 12, 55, tzinfo=timezone.utc),
                     text="Earlier post.")
     fresh = _seed_queued_item(tmp_path, text="Fresh post now.",
-                              scheduled_at="2026-07-19T12:30:00Z")
+                              scheduled_at="2026-07-20T12:30:00Z")
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
     assert rc == 0
@@ -740,12 +752,12 @@ def test_floor_allows_after_window(monkeypatch, tmp_path):
     """A prior post 15m ago (> the 10m floor) does not block — the fresh item posts."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 45, tzinfo=timezone.utc),
+    _seed_posted_at(tmp_path, datetime(2026, 7, 20, 12, 45, tzinfo=timezone.utc),
                     text="Older post.")
     # Explicit past slot → LADDER item (the immediate default would post
     # regardless of the floor and not exercise "allows after window").
     fresh = _seed_queued_item(tmp_path, text="Fresh post now.",
-                              scheduled_at="2026-07-19T12:30:00Z")
+                              scheduled_at="2026-07-20T12:30:00Z")
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
     assert rc == 0
@@ -766,7 +778,7 @@ def test_immediate_posts_now_even_inside_the_floor(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     # A post went out one minute ago — well inside the 10-min floor.
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 59, tzinfo=timezone.utc),
+    _seed_posted_at(tmp_path, datetime(2026, 7, 20, 12, 59, tzinfo=timezone.utc),
                     text="Earlier post.")
     breaking = _seed_queued_item(tmp_path, text="Breaking post now.",
                                  scheduled_at="immediate")
@@ -776,7 +788,7 @@ def test_immediate_posts_now_even_inside_the_floor(monkeypatch, tmp_path):
     assert current_statuses(tmp_path)[breaking] == "posted"
     assert len(fake.calls) == 1
     # Posts at the run's "now" (13:00Z), NOT deferred to last_post + floor.
-    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:00:00Z"
+    assert fake.calls[0]["scheduled_at"] == "2026-07-20T13:00:00Z"
     assert fake.calls[0]["immediate"] is True
 
 
@@ -796,7 +808,7 @@ def test_burst_of_immediates_all_post_now_no_stagger(monkeypatch, tmp_path):
     statuses = current_statuses(tmp_path)
     assert all(statuses[i] == "posted" for i in ids), statuses
     sent = [c["scheduled_at"] for c in fake.calls]
-    assert sent == ["2026-07-19T13:00:00Z"] * 3, sent
+    assert sent == ["2026-07-20T13:00:00Z"] * 3, sent
 
 
 def test_immediate_exempt_from_cap_while_ladder_is_capped(monkeypatch, tmp_path):
@@ -806,10 +818,10 @@ def test_immediate_exempt_from_cap_while_ladder_is_capped(monkeypatch, tmp_path)
     # cap=1, floor disabled so the floor never confounds the cap check.
     _write_publish_cfg(tmp_path, auto_approve=True, cap=1, floor_min=0)
     # One post already went out today → the account is AT the cap of 1.
-    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 30, tzinfo=timezone.utc),
+    _seed_posted_at(tmp_path, datetime(2026, 7, 20, 12, 30, tzinfo=timezone.utc),
                     text="Already posted today filling the cap.")
     ladder = _seed_queued_item(tmp_path, text="Ladder item wants the slot too.",
-                               scheduled_at="2026-07-19T12:00:00Z")
+                               scheduled_at="2026-07-20T12:00:00Z")
     breaking = _seed_queued_item(tmp_path, text="Breaking overrides the cap now.",
                                  scheduled_at="immediate")
     fake = _FakePublisher(ok=True)
@@ -833,7 +845,7 @@ def test_posted_immediate_advances_floor_and_skips_due_ladder(monkeypatch, tmp_p
     breaking = _seed_queued_item(tmp_path, text="Breaking goes first here.",
                                  scheduled_at="immediate", priority=1)
     ladder = _seed_queued_item(tmp_path, text="Ladder item due right now too.",
-                               scheduled_at="2026-07-19T12:00:00Z", priority=5)
+                               scheduled_at="2026-07-20T12:00:00Z", priority=5)
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
     assert rc == 0
@@ -856,7 +868,7 @@ def test_post_now_sends_a_future_slotted_item_without_auto_approve(monkeypatch, 
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=10)
     later = _seed_queued_item(tmp_path, text="Scheduled for tonight.",
-                              scheduled_at="2026-07-19T23:00:00Z")
+                              scheduled_at="2026-07-20T23:00:00Z")
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", later],
                         fake_publisher=fake, kill_switch=True)
@@ -864,7 +876,7 @@ def test_post_now_sends_a_future_slotted_item_without_auto_approve(monkeypatch, 
     assert current_statuses(tmp_path)[later] == "posted"
     assert len(fake.calls) == 1
     assert fake.calls[0]["immediate"] is True
-    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:00:00Z"   # now, not 23:00
+    assert fake.calls[0]["scheduled_at"] == "2026-07-20T13:00:00Z"   # now, not 23:00
 
 
 def test_post_now_does_not_touch_other_items(monkeypatch, tmp_path):
@@ -1025,7 +1037,7 @@ class TestPostNowSkipsPacingNotSafety:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(_json.dumps({"accounts": {"flagship": {
             "state": "halted", "reason": "fixture halt",
-            "at": "2026-07-19T12:00:00Z"}}}), encoding="utf-8")
+            "at": "2026-07-20T12:00:00Z"}}}), encoding="utf-8")
         assert hm.is_halted("flagship", root=tmp_path) is True
         fake = _FakePublisher(ok=True)
 
@@ -1114,10 +1126,10 @@ def test_repeat_gate_quarantines_identical_text_live(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses, read_ledger, transition
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
-    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")
 
     dup = _seed_item_bypassing_enqueue_guard(tmp_path, text=_REPEAT_TEXT,
-                                             as_of="2026-07-19")
+                                             as_of="2026-07-20")
     assert transition(dup, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1137,10 +1149,10 @@ def test_repeat_gate_dry_run_counts_but_does_not_mutate(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses, transition
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
-    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")
 
     dup = _seed_item_bypassing_enqueue_guard(tmp_path, text=_REPEAT_TEXT,
-                                             as_of="2026-07-19")
+                                             as_of="2026-07-20")
     assert transition(dup, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
@@ -1153,11 +1165,11 @@ def test_repeat_gate_lets_fresh_text_post(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses, transition
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
-    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")
 
     fresh = _seed_item_bypassing_enqueue_guard(
         tmp_path, text="Credit is the story today. Spreads are widening.",
-        as_of="2026-07-19")
+        as_of="2026-07-20")
     assert transition(fresh, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1183,11 +1195,11 @@ def test_post_time_near_dup_quarantines_with_receipt(monkeypatch, tmp_path):
     assert token_jaccard(_REPEAT_TEXT, _REPEAT_TEXT_REWORDED) >= 0.7
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
-    first = _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
+    first = _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")
 
     reworded = _seed_item_bypassing_enqueue_guard(tmp_path,
                                                   text=_REPEAT_TEXT_REWORDED,
-                                                  as_of="2026-07-19")
+                                                  as_of="2026-07-20")
     assert transition(reworded, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1210,8 +1222,8 @@ def test_post_time_deeply_reworded_passes(monkeypatch, tmp_path):
     assert token_jaccard(_REPEAT_TEXT, deep) < 0.7
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
-    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")
-    fresh = _seed_item_bypassing_enqueue_guard(tmp_path, text=deep, as_of="2026-07-19")
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")
+    fresh = _seed_item_bypassing_enqueue_guard(tmp_path, text=deep, as_of="2026-07-20")
     assert transition(fresh, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1255,9 +1267,9 @@ def test_post_time_near_dup_defers_cross_account(monkeypatch, tmp_path):
         '    flagship: "buf-chan-123"\n    second: "buf-chan-456"')
     cfg_p.write_text(txt, encoding="utf-8")
 
-    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-18")  # flagship
+    _post_first_copy(tmp_path, text=_REPEAT_TEXT, as_of="2026-07-19")  # flagship
     other = make_item(account="second", kind="event", text=_REPEAT_TEXT_REWORDED,
-                      as_of="2026-07-19", scheduled_at="immediate",
+                      as_of="2026-07-20", scheduled_at="immediate",
                       provenance="content_studio", now=_FIXED_NOW)
     append_jsonl(_items_path(tmp_path), other)
     assert transition(other["id"], "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
@@ -1289,7 +1301,7 @@ def test_language_gate_quarantines_jargon_live(monkeypatch, tmp_path):
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
     bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
-                                             as_of="2026-07-19", kind="watchlist")
+                                             as_of="2026-07-20", kind="watchlist")
     assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1309,7 +1321,7 @@ def test_language_gate_dry_run_reports_only(monkeypatch, tmp_path):
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
     bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
-                                             as_of="2026-07-19", kind="watchlist")
+                                             as_of="2026-07-20", kind="watchlist")
     assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
@@ -1325,7 +1337,7 @@ def test_language_gate_passes_plain_copy(monkeypatch, tmp_path):
         tmp_path,
         text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
               "the most shares changed hands lately. Watching, no position."),
-        as_of="2026-07-19", kind="watchlist")
+        as_of="2026-07-20", kind="watchlist")
     assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1354,7 +1366,7 @@ def test_headline_gate_quarantines_fragment_live(monkeypatch, tmp_path):
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
     bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_FRAGMENT_TEXT,
-                                             as_of="2026-07-19", kind="watchlist")
+                                             as_of="2026-07-20", kind="watchlist")
     assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1376,7 +1388,7 @@ def test_headline_gate_dry_run_reports_only(monkeypatch, tmp_path):
 
     _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
     bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_FRAGMENT_TEXT,
-                                             as_of="2026-07-19", kind="watchlist")
+                                             as_of="2026-07-20", kind="watchlist")
     assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
@@ -1396,7 +1408,7 @@ def test_headline_gate_skips_one_block_kinds(monkeypatch, tmp_path):
         tmp_path,
         text=("Markets are on\n\nedge after the Fed statement. "
               "Watching the close."),
-        as_of="2026-07-19", kind="breaking")
+        as_of="2026-07-20", kind="breaking")
     assert transition(wire, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1431,7 +1443,7 @@ def test_headline_gate_passes_clean_two_block(monkeypatch, tmp_path):
         tmp_path,
         text=("$AVGO is holding the line\n\n$AVGO held 379.32, the price where "
               "the most shares changed hands lately. Watching, no position."),
-        as_of="2026-07-19", kind="watchlist")
+        as_of="2026-07-20", kind="watchlist")
     assert transition(ok_item, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 
     fake = _FakePublisher(ok=True)
@@ -1454,7 +1466,7 @@ def test_headline_gate_passes_clean_two_block(monkeypatch, tmp_path):
 # below is the publisher half; both call the SAME predicate
 # (engine.marketing.hot_tape.orphaned_brief_status) so they cannot drift apart.
 
-_HT_ALERT_KEY = "mover:PLTR:up:2026-07-19:0"
+_HT_ALERT_KEY = "mover:PLTR:up:2026-07-20:0"
 
 
 def _seed_hot_tape_brief(tmp_path: Path, *, parent: str | None = "recalled"):
@@ -1707,7 +1719,7 @@ def test_post_now_nonpark_failure_still_exits_red(monkeypatch, tmp_path):
 
     _write_desk_network_cfg(tmp_path, wire_enabled=False)
     bad = _seed_item_bypassing_enqueue_guard(tmp_path, text=_JARGON_TEXT,
-                                             as_of="2026-07-19", kind="watchlist",
+                                             as_of="2026-07-20", kind="watchlist",
                                              account="flagship")
     assert transition(bad, "approved", actor="test", root=tmp_path, now=_FIXED_NOW)
 

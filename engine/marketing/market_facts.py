@@ -108,8 +108,11 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Union
+
+from engine.marketing import market_clock as _clock
 
 PathLike = Union[str, Path]
 
@@ -681,7 +684,8 @@ def _build(facts: list[dict]) -> dict:
 # macro_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def macro_facts(root: PathLike) -> dict:
+def macro_facts(root: PathLike, *, now: datetime | None = None,
+                kind: str = "macro") -> dict:
     """Compute macro facts from regime/latest.json, site/neuralwebdata/daily_brief.json,
     and data/neuralweb/world_state.json.
 
@@ -690,8 +694,13 @@ def macro_facts(root: PathLike) -> dict:
       "Liquidity's loosening a bit."
       "The picture's still shifting, not settled yet."
       "The AI and chip trade is unwinding today, with tech leading the selloff."
+
+    `now` (UTC, defaults to the wall clock) decides the breadth clause's temporal
+    word and whether an indecisive breadth read may anchor a post at all — see
+    the breadth block below and :mod:`engine.marketing.market_clock`.
     """
     root = Path(root)
+    now = now or datetime.now(timezone.utc)
     regime_path = root / "data" / "regime" / "latest.json"
     brief_path = root / "site" / "neuralwebdata" / "daily_brief.json"
 
@@ -736,9 +745,28 @@ def macro_facts(root: PathLike) -> dict:
     # shipped as "11 of 11 sectors closed green today." A macro read with no
     # digit is the honest degradation; the module's own denominator law already
     # says a count that cannot be stated properly does not ship.
+    # THE BREADTH READ IS CLOCK-GATED (operator defect class C, 2026-08-02).
+    # Two failures, both visible in the six-post "4 of 11 sectors green" family
+    # that shipped across four desks over the weekend of 2026-08-01:
+    #
+    #   * "closed green TODAY" was a hardcoded word. Written at 23:51 ET Friday
+    #     it is true; the same sentence written at 17:49 ET Saturday — which is
+    #     when the second weekend run produced three of those six posts — is a
+    #     lie about a day on which nothing traded. The word now comes from
+    #     market_clock, which asks the exchange calendar instead of guessing.
+    #   * AN INDECISIVE READ IS NOT A REASON FOR A POST. `_is_vacuous_count`
+    #     already refuses saturation (0 of 11, 11 of 11) as a definition rather
+    #     than a fact. It has no opinion about 4 of 11, which is the other way a
+    #     breadth number says nothing: the tape did not lean. On a day with no
+    #     session that is a stale number with nothing to add, so it does not
+    #     ship at all; on a session day it ships WITH a stance tail keyed to the
+    #     fact kind, because the operator's complaint was six interchangeable
+    #     hedges on one mushy stat — not hedging, which is a valid stance when
+    #     it is the house's and it is said once.
     _breadth_clause = ""
     _breadth_numbers: list[str] = []
     _breadth_count: dict | None = None
+    _breadth_tail = ""
     for _sf in (sector_facts(root).get("facts") or []):
         if _sf.get("id") != "sector_leader":
             continue
@@ -748,7 +776,15 @@ def macro_facts(root: PathLike) -> dict:
             break
         if _is_vacuous_count(_nm, _nt):
             break  # saturated either way: a definition, not a breadth read
-        _breadth_clause = f"{_nm} of {_nt} sectors closed green today."
+        if not _clock.breadth_may_anchor(_nm, _nt, now=now):
+            break  # indecisive read on a day with no session — nothing to say
+        # The board's green count is the last COMPLETED session's, whatever the
+        # wall clock says; the vocab turns that into the honest word.
+        _bv = _clock.temporal_vocab(now, _clock.last_completed_session(now))
+        _when = f" {_bv.phrase}" if _bv.phrase else ""
+        _breadth_clause = f"{_nm} of {_nt} sectors closed green{_when}."
+        _breadth_tail = _clock.breadth_stance_tail(
+            _clock.breadth_stance(_nm, _nt), kind)
         _breadth_numbers = [str(_nm), str(_nt)]
         _breadth_count = dict(_cb)
         break
@@ -796,7 +832,8 @@ def macro_facts(root: PathLike) -> dict:
                     _gi["salience"] = _ANCHORED_LEAD_SALIENCE
                     _anchor_folded = True
                 elif _breadth_clause:
-                    _gi["text"] = f"{text} {_breadth_clause}"
+                    _gi["text"] = " ".join(
+                        p for p in (text, _breadth_clause, _breadth_tail) if p)
                     _gi["numbers"] = list(_breadth_numbers)
                     _gi["count"] = dict(_breadth_count or {})
                     _breadth_clause = ""  # folded; do not also ship it standalone
@@ -858,9 +895,15 @@ def macro_facts(root: PathLike) -> dict:
     # growth/inflation read above (i.e. no regime data). Never both: one fact
     # list must not say the same sentence twice.
     if _breadth_clause:
+        _standalone = _breadth_clause[0].upper() + _breadth_clause[1:]
+        # STANDALONE IS EXACTLY THE SHAPE THE BRIEF NAMES, so the stance tail is
+        # not optional here: with no growth/inflation read beside it, the number
+        # IS the post, and a number with no stance is the mushy stat.
+        if _breadth_tail:
+            _standalone = f"{_standalone} {_breadth_tail}"
         facts.append({
             "id": "sector_breadth",
-            "text": _breadth_clause[0].upper() + _breadth_clause[1:],
+            "text": _standalone,
             "salience": 7,
             "numbers": list(_breadth_numbers),
             "count": dict(_breadth_count or {}),
@@ -1149,7 +1192,7 @@ def breadth_facts(root: PathLike) -> dict:
 # event_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def event_facts(root: PathLike) -> dict:
+def event_facts(root: PathLike, *, now: datetime | None = None) -> dict:
     """Best-available event/catalyst fact for the day.
 
     Tries daily_brief first (why_the_tape_moved). Falls back to macro_facts —
@@ -1196,8 +1239,10 @@ def event_facts(root: PathLike) -> dict:
 
     if not facts:
         # Fall back to macro facts as best available context. macro_facts runs
-        # the same anchor fold, so the fallback is anchored too.
-        return macro_facts(root)
+        # the same anchor fold, so the fallback is anchored too — and the
+        # breadth stance tail it may attach keys to THIS kind, not to "macro",
+        # because the post that ships is an event post (tail-keys-to-KIND).
+        return macro_facts(root, now=now, kind="event")
 
     for _i, _p in enumerate(_prints[1:1 + len(_NAMED_PRINT_SALIENCE)]):
         facts.append({

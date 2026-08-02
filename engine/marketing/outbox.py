@@ -40,6 +40,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from engine.marketing import market_clock as _clock
 from engine.marketing.ledgers import append_jsonl, read_jsonl
 
 log = logging.getLogger(__name__)
@@ -1008,17 +1009,20 @@ def _rejection_reason(
     text: str,
     ctx: dict,
     cap: int,
+    kind: str = "",
 ) -> str | None:
     """Why `enqueue` would refuse this item, or None if it would accept it.
 
     EXTRACTED SO A PREFLIGHT CANNOT DRIFT FROM THE REAL CHECK (2026-07-30).
-    Every rejection here is a function of (id, account, as_of, text) — NOT of
-    media. That is what makes `preflight_enqueue` below possible and honest: a
+    Every rejection here is a function of (id, account, as_of, text, kind) — NOT
+    of media. That is what makes `preflight_enqueue` below possible and honest: a
     caller can learn the verdict before paying for a picture, and it learns it
     from THIS function rather than from a second copy of these rules that would
     quietly diverge on the next edit. A preflight that disagrees with the gate
     is worse than no preflight — it either wastes the render it promised to
-    save, or silently drops a post the gate would have taken.
+    save, or silently drops a post the gate would have taken. (`kind` joined the
+    signature with the fact-fan-out guard below; `preflight_enqueue` already
+    took it, so both callers still answer identically.)
     """
     if item_id in ctx["ids"]:
         return "duplicate"
@@ -1055,6 +1059,29 @@ def _rejection_reason(
                     "recent %s item (cross-account jaccard >= %.2f)",
                     account, other_acct, xa_thresh)
                 return "cross_account_duplicate"
+    # ONE SOURCE FACT WEARS ONE POST PER DAY (operator defect class C,
+    # 2026-08-02). Every similarity guard above compares WORDS, and the six-post
+    # "4 of 11 sectors green" family is precisely the shape that defeats all of
+    # them: one stale Friday breadth read fanned across slots D1-S1/S5/S6/S10
+    # and four desks, each wearing a different hedge, so same-account Jaccard
+    # never fired (different accounts), cross-account Jaccard never fired (the
+    # wordings genuinely differ), and the frame gate never fired (the skeletons
+    # differ too). The posts were not near-duplicates of each other; they were
+    # six dressings of ONE fact, and only a FACT-level key can see that.
+    #
+    # SAME DAY, NOT A WINDOW. A breadth read legitimately lands on 4 of 11 again
+    # next week, and refusing that would be a guard about arithmetic rather than
+    # about repetition. The publisher's trailing-window gate is the one that
+    # judges across days, on the corpus that has actually shipped.
+    anchors = ctx.get("fact_anchors")
+    if anchors is not None:
+        for key in _clock.fact_anchor_keys(str(text or ""), kind):
+            owner = anchors.get((as_of, key))
+            if owner and owner != item_id:
+                log.warning(
+                    "outbox.enqueue: %s rejected — fact %s already anchors %s "
+                    "on %s", account, key, owner, as_of)
+                return "fact_fanout"
     # Cap: every existing same-day item consumed a slot regardless of
     # status (quarantined/failed included — refilling a bad slot the
     # same day is how retry-spam starts). A negative cap = unlimited
@@ -1079,10 +1106,21 @@ def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> di
         },
         "recent_texts_by_account": _recent_texts_by_account(existing, as_of, dead),
         "cross_account_threshold": cross_account_threshold(cfg),
+        # (as_of, anchor_key) -> the id that claimed it. Dead items release
+        # their anchors for the same reason they leave the text corpus: a
+        # quarantined post is not competing for the slot, so it must not veto
+        # the replacement written to take its place.
+        "fact_anchors": {},
     }
     for i in existing:
         key = (i.get("account"), i.get("as_of"))
         ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1
+        iid = str(i.get("id") or "")
+        if iid in dead:
+            continue
+        for ak in _clock.fact_anchor_keys(str(i.get("text") or ""),
+                                          str(i.get("kind") or "")):
+            ctx["fact_anchors"].setdefault((i.get("as_of"), ak), iid)
     return ctx
 
 
@@ -1123,7 +1161,7 @@ def preflight_enqueue(
         ctx = _enqueue_ctx(root, as_of, cfg)
         return _rejection_reason(
             item_id=item_id, account=account, as_of=as_of,
-            text=text, ctx=ctx, cap=cap,
+            text=text, ctx=ctx, cap=cap, kind=kind,
         ) or "ok"
     except Exception as exc:  # noqa: BLE001
         log.warning("outbox.preflight_enqueue: %s — assuming ok", exc)
@@ -1250,6 +1288,7 @@ def enqueue(
             rejection = _rejection_reason(
                 item_id=item_id, account=account, as_of=as_of,
                 text=str(item.get("text") or ""), ctx=ctx, cap=cap,
+                kind=str(item.get("kind") or ""),
             )
             if rejection is not None:
                 return rejection
@@ -1282,6 +1321,13 @@ def enqueue(
             # nights.
             ctx.setdefault("recent_texts", set()).add(text_key)
             ctx.setdefault("recent_texts_by_account", {}).setdefault(account, []).append(new_text)
+            # Same reason: two items in ONE batch anchored on one fact must
+            # collapse to the first, not just across nights. Three of the six
+            # posts in the 2026-08-01 family were emitted in a single run.
+            _anchors = ctx.setdefault("fact_anchors", {})
+            for _ak in _clock.fact_anchor_keys(
+                    str(item.get("text") or ""), str(item.get("kind") or "")):
+                _anchors.setdefault((as_of, _ak), item_id)
             return "queued"
 
         if _ctx is not None:
