@@ -78,7 +78,7 @@ def build(
         omissions=omissions,
         coverage={
             "selection_policy": "explicit_input",
-            "cohort_limit": max_bodies,
+            "batch_limit": max_bodies,
             "historical_completeness": len(selected) == len(refs) and not omissions,
             "index_body_count": int(metadata["body_count"]),
             "index_generated_at": index_generated_at,

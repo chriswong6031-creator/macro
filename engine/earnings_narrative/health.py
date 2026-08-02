@@ -64,7 +64,10 @@ def validate_generation(out_dir: Path, manifest: Mapping[str, Any] | None = None
         if relative.startswith("/") or ".." in Path(relative).parts:
             issues.append(f"unsafe_path:{relative}")
             continue
-        path = generation / relative
+        # Generation manifests are immutable catalog snapshots.  Their files
+        # resolve through root-level content-addressed objects, so unchanged
+        # evidence is never copied beneath every generation prefix.
+        path = root / str(block["object_key"])
         try:
             body = path.read_bytes()
         except OSError:

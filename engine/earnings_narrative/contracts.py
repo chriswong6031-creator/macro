@@ -41,7 +41,7 @@ _NUMBER = re.compile(
 _TX_KEYS = frozenset({"schema", "ticker", "id", "period", "date", "title", "segments"})
 _TX_SEGMENT_KEYS = frozenset({"speaker", "role", "text"})
 _SOURCE_KEYS = frozenset({
-    "ticker", "transcript_id", "body_sha256", "body_bytes", "index_sha256",
+    "source_kind", "ticker", "transcript_id", "body_sha256", "body_bytes", "index_sha256",
     "indexed_body_sha256", "index_generated_at", "locator",
 })
 _EVENT_KEYS = frozenset({"ticker", "transcript_id", "period", "date", "title"})
@@ -52,24 +52,25 @@ _RECEIPT_KEYS = frozenset({
 })
 _FACT_KEYS = frozenset({"fact_id", "kind", "text", "numeric_value", "numeric_unit", "receipt"})
 _PACK_KEYS = frozenset({"schema", "authority", "event", "source", "facts", "warnings", "insufficiency", "execution"})
-_CLAIM_KEYS = frozenset({
+_DIRECT_CLAIM_KEYS = frozenset({"claim_id", "claim_type", "fact_id"})
+_DERIVED_CLAIM_KEYS = frozenset({
     "claim_id", "claim_type", "text", "numeric_value", "numeric_unit",
-    "formula", "parent_claim_ids", "receipt",
+    "formula", "parent_claim_ids",
 })
 _GRAPH_KEYS = frozenset({"schema", "authority", "event", "source", "claims", "warnings", "insufficiency", "execution"})
 _MANIFEST_KEYS = frozenset({
-    "schema", "authority", "generation_id", "generated_at", "status", "warnings",
+    "schema", "authority", "generation_id", "parent_generation_id", "generated_at", "status", "warnings",
     "omissions", "coverage", "events", "files", "execution",
 })
 _EVENT_MANIFEST_KEYS = frozenset({"source_sha256", "supersedes_source_sha256", "fact_pack", "claim_graph", "source_body"})
-_FILE_KEYS = frozenset({"sha256", "bytes", "schema"})
+_FILE_KEYS = frozenset({"sha256", "bytes", "schema", "object_key"})
 _OMISSION_KEYS = frozenset({"event_key", "reason", "expected_source_sha256"})
 _COVERAGE_KEYS = frozenset({
-    "selection_policy", "cohort_limit", "historical_completeness", "event_count",
+    "selection_policy", "batch_limit", "historical_completeness", "event_count",
     "oldest_call_date", "newest_call_date", "index_body_count", "index_generated_at",
 })
 
-KNOWN_WARNINGS = frozenset({"empty_segment", "overlong_sentence", "no_numeric_statements", "selection_bounded", "no_selected_bodies"})
+KNOWN_WARNINGS = frozenset({"empty_segment", "overlong_sentence", "no_numeric_statements", "selection_bounded", "backfill_pending", "no_selected_bodies"})
 KNOWN_INSUFFICIENCY = frozenset({"no_extractable_segments", "no_numeric_statements"})
 KNOWN_OMISSIONS = frozenset({"missing_body", "body_contract_invalid", "body_revision_mismatch"})
 
@@ -215,6 +216,7 @@ def transcript_source(payload: object, *, index_payload: object, indexed_body_sh
     if iso_date(transcript["date"], field="transcript.date") > indexed_at[:10]:
         raise ContractError("transcript date is after index receipt")
     return {
+        "source_kind": "transcript",
         "ticker": safe_ticker(transcript["ticker"]),
         "transcript_id": transcript_id(transcript["id"]),
         "body_sha256": body_sha,
@@ -224,6 +226,29 @@ def transcript_source(payload: object, *, index_payload: object, indexed_body_sh
         "index_generated_at": indexed_at,
         "locator": f"/data/tx/{safe_ticker(transcript['ticker'])}/{transcript_id(transcript['id'])}.json.gz",
     }
+
+
+def transcript_source_from_receipt(payload: object, receipt: object) -> dict[str, Any]:
+    """Reuse an intake-time source receipt for an unchanged cached body.
+
+    The Terminal index is a moving commit marker.  Replacing its timestamp or
+    hash in an unchanged event would churn every fact and graph object on each
+    refresh.  This path accepts only the exact receipt previously created by
+    :func:`transcript_source`, then replays its body and identity bindings.
+    """
+    transcript = validate_terminal_transcript(payload)
+    source = _validate_source(receipt, name="source_receipt")
+    body = canonical_transcript_body_bytes(transcript)
+    if (
+        source["ticker"] != safe_ticker(transcript["ticker"])
+        or source["transcript_id"] != transcript_id(transcript["id"])
+        or source["body_sha256"] != sha256_bytes(body)
+        or source["body_bytes"] != len(body)
+    ):
+        raise ContractError("source_receipt does not bind this transcript body")
+    if iso_date(transcript["date"], field="transcript.date") > str(source["index_generated_at"])[:10]:
+        raise ContractError("transcript date is after source_receipt index receipt")
+    return dict(source)
 
 
 def event_from_transcript(payload: object) -> dict[str, str]:
@@ -284,6 +309,8 @@ def _validate_execution(value: object, *, name: str) -> None:
 def _validate_source(value: object, *, name: str) -> Mapping[str, Any]:
     row = _mapping(value, name=name)
     _keys(row, _SOURCE_KEYS, name=name)
+    if row.get("source_kind") != "transcript":
+        raise ContractError(f"{name}.source_kind must be transcript in v1")
     safe_ticker(row.get("ticker"))
     transcript_id(row.get("transcript_id"))
     _sha(row.get("body_sha256"), field=f"{name}.body_sha256")
@@ -411,32 +438,27 @@ def validate_claim_graph(payload: object) -> None:
     derived_count = 0
     for index, item in enumerate(claims):
         claim = _mapping(item, name=f"claim_graph.claims[{index}]")
-        _keys(claim, _CLAIM_KEYS, name=f"claim_graph.claims[{index}]")
         claim_id = claim.get("claim_id")
         if not isinstance(claim_id, str) or not _CLAIM_ID.fullmatch(claim_id) or claim_id in ids:
             raise ContractError("claim_graph claim_id invalid or duplicate")
         ids.add(claim_id)
         kind = claim.get("claim_type")
-        text = _text(claim.get("text"), field=f"claim_graph.claims[{index}].text", limit=4000)
-        parents = claim.get("parent_claim_ids")
-        if not isinstance(parents, list) or any(not isinstance(parent, str) or not _CLAIM_ID.fullmatch(parent) for parent in parents) or parents != sorted(set(parents)):
-            raise ContractError("claim_graph parent_claim_ids invalid")
         if kind in {"direct_quote", "direct_numeric"}:
-            if parents or claim.get("formula") is not None:
-                raise ContractError("direct claim cannot carry formula or parents")
-            _validate_receipt(claim.get("receipt"), source_sha=str(source["body_sha256"]), text=text, name=f"claim_graph.claims[{index}].receipt")
-            if kind == "direct_quote":
-                if claim.get("numeric_value") is not None or claim.get("numeric_unit") is not None:
-                    raise ContractError("direct quote cannot carry numeric fields")
-            else:
-                value, unit = normalize_numeric(text)
-                if claim.get("numeric_value") != value or claim.get("numeric_unit") != unit:
-                    raise ContractError("direct numeric value/unit must equal exact text")
+            _keys(claim, _DIRECT_CLAIM_KEYS, name=f"claim_graph.claims[{index}]")
+            fact_id = claim.get("fact_id")
+            if not isinstance(fact_id, str) or not _FACT_ID.fullmatch(fact_id) or claim_id != direct_claim_id(fact_id):
+                raise ContractError("direct claim must bind one fact_id")
+            if kind == "direct_numeric":
                 direct_numeric.append(claim_id)
         elif kind == "derived_metric":
+            _keys(claim, _DERIVED_CLAIM_KEYS, name=f"claim_graph.claims[{index}]")
             derived_count += 1
-            if claim.get("receipt") is not None or claim.get("formula") != "count(parent_claim_ids)" or claim.get("numeric_unit") != "count":
-                raise ContractError("derived metric receipt/formula/unit invalid")
+            text = _text(claim.get("text"), field=f"claim_graph.claims[{index}].text", limit=4000)
+            parents = claim.get("parent_claim_ids")
+            if not isinstance(parents, list) or any(not isinstance(parent, str) or not _CLAIM_ID.fullmatch(parent) for parent in parents) or parents != sorted(set(parents)):
+                raise ContractError("claim_graph parent_claim_ids invalid")
+            if claim.get("formula") != "count(parent_claim_ids)" or claim.get("numeric_unit") != "count":
+                raise ContractError("derived metric formula/unit invalid")
             if parents != direct_numeric or claim.get("numeric_value") != len(parents) or claim_id != derived_claim_id(parents):
                 raise ContractError("derived metric must bind ordered direct numeric parents")
             if text != f"Extracted numeric statement count: {len(parents)}.":
@@ -460,15 +482,20 @@ def validate_evidence_pair(fact_pack: object, claim_graph: object) -> None:
     direct = [claim for claim in graph["claims"] if claim["claim_type"] != "derived_metric"]
     if len(direct) != len(pack["facts"]):
         raise ContractError("every fact must yield exactly one direct claim")
-    for fact, claim in zip(pack["facts"], direct):
+    facts = {str(fact["fact_id"]): fact for fact in pack["facts"]}
+    if len(facts) != len(pack["facts"]):
+        raise ContractError("fact pack fact_id collision")
+    claimed_facts: set[str] = set()
+    for claim in direct:
+        fact_id = claim.get("fact_id")
+        if not isinstance(fact_id, str) or fact_id in claimed_facts or fact_id not in facts:
+            raise ContractError("direct claim fact_id mapping invalid")
+        claimed_facts.add(fact_id)
+        fact = facts[fact_id]
         expected_type = "direct_numeric" if fact["kind"] == "numeric" else "direct_quote"
         if (
             claim["claim_id"] != direct_claim_id(fact["fact_id"])
             or claim["claim_type"] != expected_type
-            or claim["text"] != fact["text"]
-            or claim["numeric_value"] != fact["numeric_value"]
-            or claim["numeric_unit"] != fact["numeric_unit"]
-            or claim["receipt"] != fact["receipt"]
         ):
             raise ContractError("direct claim does not exactly bind its fact")
 
@@ -509,21 +536,24 @@ def validate_manifest(payload: object) -> None:
         raise ContractError("manifest schema or authority mismatch")
     if not isinstance(row.get("generation_id"), str) or not _GENERATION.fullmatch(row["generation_id"]):
         raise ContractError("manifest generation_id invalid")
+    parent_generation = row.get("parent_generation_id")
+    if parent_generation is not None and (not isinstance(parent_generation, str) or not _GENERATION.fullmatch(parent_generation) or parent_generation == row["generation_id"]):
+        raise ContractError("manifest parent_generation_id invalid")
     iso_timestamp(row.get("generated_at"), field="manifest.generated_at")
     if row.get("status") not in {"ready", "partial"}:
         raise ContractError("manifest status invalid")
     _warnings(row.get("warnings"), allowed=KNOWN_WARNINGS, name="manifest.warnings")
     coverage = _mapping(row.get("coverage"), name="manifest.coverage")
     _keys(coverage, _COVERAGE_KEYS, name="manifest.coverage")
-    if coverage.get("selection_policy") not in {"explicit_input", "bootstrap_since_then_new_or_corrected"}:
+    if coverage.get("selection_policy") not in {"explicit_input", "append_only_full_index"}:
         raise ContractError("manifest coverage selection_policy invalid")
-    if not isinstance(coverage.get("cohort_limit"), int) or isinstance(coverage.get("cohort_limit"), bool) or not 1 <= coverage["cohort_limit"] <= 2_000:
-        raise ContractError("manifest coverage cohort_limit invalid")
+    if not isinstance(coverage.get("batch_limit"), int) or isinstance(coverage.get("batch_limit"), bool) or not 1 <= coverage["batch_limit"] <= 500:
+        raise ContractError("manifest coverage batch_limit invalid")
     if not isinstance(coverage.get("historical_completeness"), bool):
         raise ContractError("manifest coverage historical_completeness invalid")
     if not isinstance(coverage.get("event_count"), int) or isinstance(coverage.get("event_count"), bool) or coverage["event_count"] < 0:
         raise ContractError("manifest coverage event_count invalid")
-    if not isinstance(coverage.get("index_body_count"), int) or isinstance(coverage.get("index_body_count"), bool) or coverage["index_body_count"] < coverage["event_count"]:
+    if not isinstance(coverage.get("index_body_count"), int) or isinstance(coverage.get("index_body_count"), bool) or coverage["index_body_count"] < 0:
         raise ContractError("manifest coverage index_body_count invalid")
     if iso_timestamp(coverage.get("index_generated_at"), field="manifest.coverage.index_generated_at") != row["generated_at"]:
         raise ContractError("manifest coverage index_generated_at must equal generated_at")
@@ -533,8 +563,8 @@ def validate_manifest(payload: object) -> None:
             raise ContractError("empty manifest coverage dates must be null")
     elif iso_date(oldest, field="manifest.coverage.oldest_call_date") > iso_date(newest, field="manifest.coverage.newest_call_date"):
         raise ContractError("manifest coverage dates invalid")
-    if coverage["historical_completeness"] and coverage["event_count"] != coverage["index_body_count"]:
-        raise ContractError("historically complete coverage must include every indexed body")
+    if coverage["historical_completeness"] and coverage["event_count"] < coverage["index_body_count"]:
+        raise ContractError("historically complete coverage cannot have fewer events than the index")
     omissions = row.get("omissions")
     if not isinstance(omissions, list):
         raise ContractError("manifest omissions invalid")
@@ -579,7 +609,12 @@ def validate_manifest(payload: object) -> None:
             file = _mapping(files.get(path), name=f"manifest.files[{path}]")
             _keys(file, _FILE_KEYS, name=f"manifest.files[{path}]")
             _sha(file.get("sha256"), field=f"manifest.files[{path}].sha256")
-            if not isinstance(file.get("bytes"), int) or file["bytes"] <= 0 or file.get("schema") != schema:
+            if (
+                not isinstance(file.get("bytes"), int)
+                or file["bytes"] <= 0
+                or file.get("schema") != schema
+                or file.get("object_key") != f"objects/{file['sha256']}.json"
+            ):
                 raise ContractError("manifest file block invalid")
     if set(files) != {path for block in events.values() for path in (block["fact_pack"], block["claim_graph"], block["source_body"])}:
         raise ContractError("manifest files must exactly cover event artifacts")

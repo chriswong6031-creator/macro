@@ -16,6 +16,7 @@ from .contracts import (
     normalize_numeric,
     receipt_for_span,
     transcript_source,
+    transcript_source_from_receipt,
     validate_evidence_pair,
 )
 
@@ -69,21 +70,29 @@ def _fact_id(source_sha: str, segment_index: int, start: int, end: int, kind: st
 def build_fact_pack(
     transcript: object,
     *,
-    index_payload: object,
-    indexed_body_sha256: object,
-    index_generated_at: object,
+    index_payload: object | None = None,
+    indexed_body_sha256: object | None = None,
+    index_generated_at: object | None = None,
+    source_receipt: object | None = None,
 ) -> dict[str, Any]:
     """Build a v1 fact pack directly from one validated Terminal body.
 
     Existing summaries, highlights, scores, and model output are intentionally
     absent from this function's inputs and implementation.
     """
-    source = transcript_source(
-        transcript,
-        index_payload=index_payload,
-        indexed_body_sha256=indexed_body_sha256,
-        index_generated_at=index_generated_at,
-    )
+    if source_receipt is not None:
+        if any(value is not None for value in (index_payload, indexed_body_sha256, index_generated_at)):
+            raise ContractError("source receipt cannot be mixed with a current index receipt")
+        source = transcript_source_from_receipt(transcript, source_receipt)
+    else:
+        if index_payload is None or indexed_body_sha256 is None or index_generated_at is None:
+            raise ContractError("current index receipt is required for a new transcript body")
+        source = transcript_source(
+            transcript,
+            index_payload=index_payload,
+            indexed_body_sha256=indexed_body_sha256,
+            index_generated_at=index_generated_at,
+        )
     event = event_from_transcript(transcript)
     tx = transcript  # ``transcript_source`` has already closed/validated it.
     assert isinstance(tx, Mapping)
@@ -174,12 +183,7 @@ def build_claim_graph(fact_pack: object) -> dict[str, Any]:
         claims.append({
             "claim_id": claim_id,
             "claim_type": kind,
-            "text": fact["text"],
-            "numeric_value": fact["numeric_value"],
-            "numeric_unit": fact["numeric_unit"],
-            "formula": None,
-            "parent_claim_ids": [],
-            "receipt": fact["receipt"],
+            "fact_id": fact["fact_id"],
         })
     graph = {
         "schema": CLAIM_GRAPH_SCHEMA,
@@ -198,15 +202,17 @@ def build_claim_graph(fact_pack: object) -> dict[str, Any]:
 def build_evidence_pair(
     transcript: object,
     *,
-    index_payload: object,
-    indexed_body_sha256: object,
-    index_generated_at: object,
+    index_payload: object | None = None,
+    indexed_body_sha256: object | None = None,
+    index_generated_at: object | None = None,
+    source_receipt: object | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     fact_pack = build_fact_pack(
         transcript,
         index_payload=index_payload,
         indexed_body_sha256=indexed_body_sha256,
         index_generated_at=index_generated_at,
+        source_receipt=source_receipt,
     )
     graph = build_claim_graph(fact_pack)
     return fact_pack, graph

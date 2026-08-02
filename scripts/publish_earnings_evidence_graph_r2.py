@@ -13,11 +13,18 @@ import logging
 import os
 from pathlib import Path
 import sys
+import tempfile
 from typing import Any, Mapping
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.earnings_narrative.contracts import canonical_json_bytes, sha256_bytes, validate_manifest
+from engine.earnings_narrative.contracts import (
+    TERMINAL_TRANSCRIPT_SCHEMA,
+    canonical_json_bytes,
+    canonical_transcript_body_bytes,
+    sha256_bytes,
+    validate_manifest,
+)
 from engine.earnings_narrative.health import validate_generation
 
 
@@ -95,43 +102,124 @@ def load_remote_root_marker(*, s3: Any | None = None, bucket: str | None = None)
     keeps a corrected retained event linked to the actual R2 public revision.
     ``None`` means credentials are absent or the public marker does not exist.
     """
+    marker, _etag, _digest = load_remote_root_state(s3=s3, bucket=bucket)
+    return marker
+
+
+def load_remote_root_state(*, s3: Any | None = None, bucket: str | None = None) -> tuple[dict[str, Any] | None, str | None, str | None]:
+    """Return the validated public root plus its conditional-write identity."""
     client = s3 if s3 is not None else _client()
     if client is None:
-        return None
+        return None, None, None
     target_bucket = bucket or os.environ.get("R2_BUCKET", "")
     if not target_bucket:
         raise ImmutableAddressIntegrityError("R2_BUCKET not set for marker hydration")
-    marker, _etag = _remote_marker(client, target_bucket)
+    marker, etag = _remote_marker(client, target_bucket)
     if marker is not None:
         try:
             validate_manifest(marker)
         except Exception as exc:  # noqa: BLE001 - invalid public state cannot grant lineage.
             raise ImmutableAddressIntegrityError("current earnings evidence marker fails its contract") from exc
-    return marker
+    return marker, etag, sha256_bytes(canonical_json_bytes(marker)) if marker is not None else None
 
 
-def _existing_immutable(s3: Any, bucket: str, key: str) -> bytes | None:
+def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any]:
+    """Fetch and fully replay the public root marker and every CAS object.
+
+    This intentionally performs the expensive end-to-end read.  It is the
+    verification command for deployments and incident checks, not the normal
+    six-hour no-change path.
+    """
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        raise ImmutableAddressIntegrityError("R2 credentials are required for a public evidence audit")
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        raise ImmutableAddressIntegrityError("R2_BUCKET not set for public evidence audit")
+    try:
+        marker_response = client.get_object(Bucket=target_bucket, Key=f"{PREFIX}/manifest.json")
+        marker_raw = marker_response["Body"].read()
+        marker = json.loads(marker_raw.decode("utf-8"))
+        if not isinstance(marker, dict):
+            raise ValueError("marker is not an object")
+        validate_manifest(marker)
+        if marker_raw != canonical_json_bytes(marker):
+            raise ValueError("marker is not canonical")
+        generation_id = str(marker["generation_id"])
+        immutable = client.get_object(Bucket=target_bucket, Key=f"{PREFIX}/generations/{generation_id}/manifest.json")["Body"].read()
+        if immutable != marker_raw:
+            raise ValueError("immutable generation manifest differs from root marker")
+        # The root is a compact, append-only catalog chain. Validate every
+        # parent manifest before trusting the current snapshot's ancestry.
+        seen_generations = {generation_id}
+        parent_generation = marker["parent_generation_id"]
+        while parent_generation is not None:
+            if parent_generation in seen_generations:
+                raise ValueError("generation parent chain has a cycle")
+            seen_generations.add(parent_generation)
+            parent_raw = client.get_object(
+                Bucket=target_bucket,
+                Key=f"{PREFIX}/generations/{parent_generation}/manifest.json",
+            )["Body"].read()
+            parent = json.loads(parent_raw.decode("utf-8"))
+            if not isinstance(parent, dict):
+                raise ValueError("generation parent is not an object")
+            validate_manifest(parent)
+            if parent_raw != canonical_json_bytes(parent) or parent["generation_id"] != parent_generation:
+                raise ValueError("generation parent receipt mismatch")
+            parent_generation = parent["parent_generation_id"]
+        with tempfile.TemporaryDirectory(prefix="earnings-evidence-audit-") as temporary:
+            root = Path(temporary)
+            (root / "manifest.json").write_bytes(marker_raw)
+            generation = root / "generations" / generation_id
+            generation.mkdir(parents=True)
+            (generation / "manifest.json").write_bytes(immutable)
+            for receipt in marker["files"].values():
+                object_key = str(receipt["object_key"])
+                body = client.get_object(Bucket=target_bucket, Key=f"{PREFIX}/{object_key}")["Body"].read()
+                path = root / object_key
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(body)
+            health = validate_generation(root, marker)
+        if health["status"] != "ready":
+            raise ValueError("full public replay failed: " + ", ".join(health["warnings"]))
+        return health
+    except ImmutableAddressIntegrityError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise ImmutableAddressIntegrityError("public earnings evidence audit failed") from exc
+
+
+def _existing_immutable_matches(s3: Any, bucket: str, key: str, body: bytes) -> bool:
+    """Check an existing global content-addressed object without reuploading it."""
     try:
         head = s3.head_object(Bucket=bucket, Key=key)
     except Exception as exc:  # noqa: BLE001
         if _is_not_found(exc):
-            return None
+            return False
         raise ImmutableAddressIntegrityError(f"cannot determine immutable object state: {key}") from exc
+    digest = sha256_bytes(body)
+    if int(head.get("ContentLength", -1)) != len(body):
+        raise ImmutableAddressIntegrityError(f"immutable object byte receipt mismatch: {key}")
+    metadata = head.get("Metadata", {})
+    metadata_sha = metadata.get("sha256") if isinstance(metadata, Mapping) else None
+    # Objects written by this publisher have a receipt-bearing metadata hash.
+    # Read older/unreceipted objects once before accepting them as the same CAS
+    # address; normal retained evidence never downloads its 400 MB corpus.
+    if metadata_sha == digest:
+        return True
     try:
         response = s3.get_object(Bucket=bucket, Key=key)
-        body = response["Body"].read()
+        existing = response["Body"].read()
     except Exception as exc:  # noqa: BLE001
         raise ImmutableAddressIntegrityError(f"cannot read immutable object: {key}") from exc
-    if not isinstance(body, bytes) or int(head.get("ContentLength", -1)) != len(body):
+    if not isinstance(existing, bytes) or existing != body or sha256_bytes(existing) != digest:
         raise ImmutableAddressIntegrityError(f"immutable object byte receipt mismatch: {key}")
-    return body
+    return True
 
 
 def _put_immutable(s3: Any, bucket: str, key: str, body: bytes, *, dry_run: bool) -> None:
-    existing = _existing_immutable(s3, bucket, key)
-    if existing is not None:
-        if existing != body or sha256_bytes(existing) != sha256_bytes(body):
-            raise ImmutableAddressIntegrityError(f"immutable key collision: {key}")
+    if _existing_immutable_matches(s3, bucket, key, body):
         return
     if dry_run:
         return
@@ -146,8 +234,7 @@ def _put_immutable(s3: Any, bucket: str, key: str, body: bytes, *, dry_run: bool
         )
     except Exception as exc:  # noqa: BLE001
         if _is_precondition_failed(exc):
-            existing = _existing_immutable(s3, bucket, key)
-            if existing == body:
+            if _existing_immutable_matches(s3, bucket, key, body):
                 return
         raise ImmutableAddressIntegrityError(f"immutable create failed: {key}") from exc
 
@@ -156,7 +243,51 @@ def _shrink_allowed(local: Mapping[str, Any], remote: Mapping[str, Any] | None) 
     if not isinstance(remote, Mapping) or remote.get("status") != "ready":
         return True
     remote_events = remote.get("events")
-    return not isinstance(remote_events, Mapping) or len(local["events"]) >= len(remote_events)
+    local_events = local.get("events")
+    if not isinstance(remote_events, Mapping) or not isinstance(local_events, Mapping):
+        return False
+    # Corrections may change a retained event's source revision, but a later
+    # root may never drop a historical event key or replace it with another.
+    return set(remote_events).issubset(local_events)
+
+
+def _validate_staging(out_dir: Path, manifest: Mapping[str, Any]) -> None:
+    """Validate root/immutable marker bytes and every locally staged CAS object.
+
+    A runner may intentionally contain only this batch's three new objects;
+    retained objects live at their verified public content addresses.  The full
+    local health checker still validates a hydrated complete tree, while this
+    gate makes a partial staging directory safe to publish as an append.
+    """
+    root = Path(out_dir)
+    marker = canonical_json_bytes(manifest)
+    if (root / "manifest.json").read_bytes() != marker:
+        raise ImmutableAddressIntegrityError("local root marker bytes are not canonical")
+    generation = root / "generations" / str(manifest["generation_id"])
+    if (generation / "manifest.json").read_bytes() != marker:
+        raise ImmutableAddressIntegrityError("local immutable manifest does not match root marker")
+    for receipt in manifest["files"].values():
+        path = root / str(receipt["object_key"])
+        if not path.exists():
+            continue
+        body = path.read_bytes()
+        if len(body) != receipt["bytes"] or sha256_bytes(body) != receipt["sha256"]:
+            raise ImmutableAddressIntegrityError(f"local immutable object receipt mismatch: {path}")
+        payload = json.loads(body.decode("utf-8"))
+        expected = canonical_transcript_body_bytes(payload) if receipt["schema"] == TERMINAL_TRANSCRIPT_SCHEMA else canonical_json_bytes(payload)
+        if body != expected:
+            raise ImmutableAddressIntegrityError(f"local immutable object is not canonical: {path}")
+
+
+def _changed_receipts(manifest: Mapping[str, Any], remote: Mapping[str, Any] | None) -> list[Mapping[str, Any]]:
+    remote_files = remote.get("files") if isinstance(remote, Mapping) else None
+    if not isinstance(remote_files, Mapping):
+        return [receipt for _path, receipt in sorted(manifest["files"].items())]
+    return [
+        receipt
+        for path, receipt in sorted(manifest["files"].items())
+        if remote_files.get(path) != receipt
+    ]
 
 
 def publish(
@@ -164,6 +295,8 @@ def publish(
     *,
     dry_run: bool = False,
     expected_manifest_etag: str | None = None,
+    expected_base_marker_sha256: str | None = None,
+    require_absent_root: bool = False,
     s3: Any | None = None,
     bucket: str | None = None,
 ) -> int:
@@ -177,25 +310,47 @@ def publish(
         log.error("R2_BUCKET not set")
         return 1
     manifest = _read_manifest(out_dir)
-    health = validate_generation(out_dir, manifest)
-    if manifest is None or health["status"] != "ready":
-        log.error("refusing non-ready earnings evidence tree: %s", ", ".join(health["warnings"]))
+    if manifest is None:
+        log.error("refusing unreadable earnings evidence tree")
         return 1
     try:
+        validate_manifest(manifest)
+        if manifest["status"] != "ready":
+            raise ImmutableAddressIntegrityError("only ready catalogs may advance the public root")
+        _validate_staging(out_dir, manifest)
         remote, remote_etag = _remote_marker(client, target_bucket)
+        if remote is not None:
+            validate_manifest(remote)
+        remote_digest = sha256_bytes(canonical_json_bytes(remote)) if remote is not None else None
         if remote is not None and canonical_json_bytes(remote) == canonical_json_bytes(manifest):
             return 0
+        if remote is None:
+            if manifest["parent_generation_id"] is not None:
+                return PUBLISH_CONFLICT
+        elif manifest["parent_generation_id"] != remote["generation_id"]:
+            return PUBLISH_CONFLICT
+        if expected_base_marker_sha256 is not None and remote_digest != expected_base_marker_sha256:
+            return PUBLISH_CONFLICT
+        if require_absent_root and remote is not None:
+            return PUBLISH_CONFLICT
         if not _shrink_allowed(manifest, remote):
             log.error("refusing root marker shrink below last-good ready event count")
             return 1
         generation_id = str(manifest["generation_id"])
-        generation = Path(out_dir) / "generations" / generation_id
         errors: list[Exception] = []
-        def upload(item: tuple[str, Mapping[str, Any]]) -> None:
-            relative, _receipt = item
-            _put_immutable(client, target_bucket, f"{PREFIX}/generations/{generation_id}/{relative}", (generation / relative).read_bytes(), dry_run=dry_run)
+        objects: dict[str, bytes] = {}
+        for receipt in _changed_receipts(manifest, remote):
+            object_key = str(receipt["object_key"])
+            body = (Path(out_dir) / object_key).read_bytes()
+            prior = objects.get(object_key)
+            if prior is not None and prior != body:
+                raise ImmutableAddressIntegrityError(f"content-addressed object collision: {object_key}")
+            objects[object_key] = body
+        def upload(item: tuple[str, bytes]) -> None:
+            object_key, body = item
+            _put_immutable(client, target_bucket, f"{PREFIX}/{object_key}", body, dry_run=dry_run)
         with ThreadPoolExecutor(max_workers=8, thread_name_prefix="earnings-evidence-r2") as pool:
-            futures = [pool.submit(upload, item) for item in sorted(manifest["files"].items())]
+            futures = [pool.submit(upload, item) for item in sorted(objects.items())]
             for future in as_completed(futures):
                 try:
                     future.result()
@@ -203,7 +358,7 @@ def publish(
                     errors.append(exc)
         if errors:
             raise errors[0]
-        generation_manifest = (generation / "manifest.json").read_bytes()
+        generation_manifest = (Path(out_dir) / "generations" / generation_id / "manifest.json").read_bytes()
         _put_immutable(client, target_bucket, f"{PREFIX}/generations/{generation_id}/manifest.json", generation_manifest, dry_run=dry_run)
         if dry_run:
             return 0
@@ -234,9 +389,20 @@ def publish(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--out-dir", type=Path)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--audit-remote", action="store_true", help="Read and replay the complete public CAS catalog")
     args = parser.parse_args(argv)
+    if args.audit_remote:
+        try:
+            health = audit_remote_generation()
+        except ImmutableAddressIntegrityError as exc:
+            print(f"earnings evidence: public audit failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(health, sort_keys=True))
+        return 0
+    if args.out_dir is None:
+        parser.error("--out-dir is required unless --audit-remote is used")
     return publish(args.out_dir, dry_run=args.dry_run)
 
 

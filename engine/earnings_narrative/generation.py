@@ -33,20 +33,26 @@ class EvidencePair:
     transcript: Mapping[str, Any]
 
 
-def _prior_events(prior_manifest: object | None) -> dict[str, Mapping[str, Any]]:
+def _prior_catalog(prior_manifest: object | None) -> tuple[dict[str, Mapping[str, Any]], dict[str, Mapping[str, Any]]]:
     if not isinstance(prior_manifest, Mapping):
-        return {}
+        return {}, {}
     try:
         validate_manifest(prior_manifest)
     except Exception:  # noqa: BLE001 - a damaged local marker cannot grant lineage.
-        return {}
+        return {}, {}
     events = prior_manifest.get("events")
+    files = prior_manifest.get("files")
     assert isinstance(events, Mapping)
-    return {
+    assert isinstance(files, Mapping)
+    return ({
         str(key): value
         for key, value in events.items()
         if isinstance(value, Mapping)
-    }
+    }, {
+        str(key): value
+        for key, value in files.items()
+        if isinstance(value, Mapping)
+    })
 
 
 def _normalise_omissions(omissions: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -77,7 +83,7 @@ def build_generation(
     coverage: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, bytes]]:
     """Build a content-addressed generation and its complete immutable files."""
-    previous = _prior_events(prior_manifest)
+    previous, prior_files = _prior_catalog(prior_manifest)
     collected: dict[str, EvidencePair] = {}
     for pair in pairs:
         validate_evidence_pair(pair.fact_pack, pair.claim_graph)
@@ -86,8 +92,8 @@ def build_generation(
         if key in collected:
             raise ValueError(f"duplicate evidence pair: {key}")
         collected[key] = pair
-    artifacts: dict[str, bytes] = {}
-    events: dict[str, dict[str, Any]] = {}
+    artifacts_by_path: dict[str, bytes] = {}
+    events: dict[str, dict[str, Any]] = {key: dict(value) for key, value in previous.items()}
     generated_at: list[str] = []
     # Root warnings describe selection/coverage only.  Per-event warnings and
     # insufficiency stay inside their own fact pack/graph, so one weak call
@@ -100,13 +106,13 @@ def build_generation(
         fact_path = f"fact_packs/{key}.json"
         graph_path = f"claim_graphs/{key}.json"
         source_path = f"source_bodies/{source_sha}.json"
-        artifacts[fact_path] = canonical_json_bytes(pair.fact_pack)
-        artifacts[graph_path] = canonical_json_bytes(pair.claim_graph)
+        artifacts_by_path[fact_path] = canonical_json_bytes(pair.fact_pack)
+        artifacts_by_path[graph_path] = canonical_json_bytes(pair.claim_graph)
         source_body = canonical_transcript_body_bytes(pair.transcript)
-        existing_source = artifacts.get(source_path)
+        existing_source = artifacts_by_path.get(source_path)
         if existing_source is not None and existing_source != source_body:
             raise ValueError(f"source body hash collision: {source_path}")
-        artifacts[source_path] = source_body
+        artifacts_by_path[source_path] = source_body
         previous_event = previous.get(key)
         old_sha = str(previous_event["source_sha256"]) if previous_event is not None else None
         prior_supersedes = previous_event.get("supersedes_source_sha256") if previous_event is not None else None
@@ -117,29 +123,67 @@ def build_generation(
             "claim_graph": graph_path,
             "source_body": source_path,
         }
+    has_catalog_delta = any(
+        key not in previous or previous[key].get("source_sha256") != pair.fact_pack["source"]["body_sha256"]
+        for key, pair in collected.items()
+    )
+    if isinstance(prior_manifest, Mapping) and (previous or prior_files):
+        parent_generation_id = (
+            str(prior_manifest["generation_id"])
+            if has_catalog_delta
+            else prior_manifest.get("parent_generation_id")
+        )
+    else:
+        parent_generation_id = None
     normalized_omissions = _normalise_omissions(omissions)
-    # No current evidence is an explicit partial result, never a plausible
-    # empty "ready" corpus.  The publisher will refuse partial markers.
-    if not collected:
+    # No catalog evidence is an explicit partial result, never a plausible
+    # empty "ready" corpus.  A later append-only generation may validly add no
+    # new pairs only when it retains prior events.
+    if not events:
         inherited_warnings.add("no_selected_bodies")
     manifest_warnings = sorted(inherited_warnings)
-    files = {
-        path: {
-            "sha256": sha256_bytes(body),
+    referenced_paths = {
+        path
+        for event in events.values()
+        for path in (event["fact_pack"], event["claim_graph"], event["source_body"])
+    }
+    files: dict[str, dict[str, Any]] = {}
+    artifacts: dict[str, bytes] = {}
+    for path in sorted(referenced_paths):
+        body = artifacts_by_path.get(path)
+        if body is None:
+            prior = prior_files.get(path)
+            if prior is None:
+                raise ValueError(f"prior manifest lacks retained artifact receipt: {path}")
+            files[path] = dict(prior)
+            continue
+        digest = sha256_bytes(body)
+        files[path] = {
+            "sha256": digest,
             "bytes": len(body),
             "schema": (
                 FACT_PACK_SCHEMA if path.startswith("fact_packs/")
                 else CLAIM_GRAPH_SCHEMA if path.startswith("claim_graphs/")
                 else TERMINAL_TRANSCRIPT_SCHEMA
             ),
+            # Generations retain a local logical tree for complete health
+            # replay; public storage deduplicates these immutable bytes by
+            # their globally stable content address.
+            "object_key": f"objects/{digest}.json",
         }
-        for path, body in sorted(artifacts.items())
-    }
-    generated = max(generated_at) if generated_at else "1970-01-01T00:00:00Z"
-    dates = sorted(str(pair.fact_pack["event"]["date"]) for pair in collected.values())
+        artifacts[files[path]["object_key"]] = body
+    generated = str((coverage or {}).get("index_generated_at") or (max(generated_at) if generated_at else "1970-01-01T00:00:00Z"))
+    prior_coverage = prior_manifest.get("coverage") if isinstance(prior_manifest, Mapping) else None
+    dates = [str(pair.fact_pack["event"]["date"]) for pair in collected.values()]
+    if isinstance(prior_coverage, Mapping):
+        if prior_coverage.get("oldest_call_date") is not None:
+            dates.append(str(prior_coverage["oldest_call_date"]))
+        if prior_coverage.get("newest_call_date") is not None:
+            dates.append(str(prior_coverage["newest_call_date"]))
+    dates.sort()
     supplied_coverage = dict(coverage or {})
     expected_coverage_context = {
-        "selection_policy", "cohort_limit", "historical_completeness", "index_body_count", "index_generated_at",
+        "selection_policy", "batch_limit", "historical_completeness", "index_body_count", "index_generated_at",
     }
     if supplied_coverage:
         if set(supplied_coverage) != expected_coverage_context:
@@ -147,22 +191,23 @@ def build_generation(
     else:
         supplied_coverage = {
             "selection_policy": "explicit_input",
-            "cohort_limit": max(1, len(collected)),
+            "batch_limit": max(1, len(collected)),
             "historical_completeness": False,
             "index_body_count": len(collected),
             "index_generated_at": generated,
         }
     generation_coverage = {
         **supplied_coverage,
-        "event_count": len(collected),
+        "event_count": len(events),
         "oldest_call_date": dates[0] if dates else None,
         "newest_call_date": dates[-1] if dates else None,
     }
-    status = "ready" if collected else "partial"
+    status = "ready" if events else "partial"
     unsigned = {
         "schema": MANIFEST_SCHEMA,
         "authority": AUTHORITY,
         "generation_id": "0" * 32,
+        "parent_generation_id": parent_generation_id,
         "generated_at": generated,
         "status": status,
         "warnings": manifest_warnings,
@@ -198,16 +243,32 @@ def _atomic_bytes(path: Path, body: bytes) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def _verify_existing_generation(target: Path, manifest: Mapping[str, Any], artifacts: Mapping[str, bytes]) -> None:
-    expected = {**artifacts, "manifest.json": canonical_json_bytes(manifest)}
-    for relative, body in expected.items():
-        path = target / relative
+def _write_immutable_object(root: Path, object_key: str, body: bytes) -> None:
+    path = root / object_key
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        if path.read_bytes() != body:
+            raise ValueError(f"immutable object collision: {path}")
+        return
+    temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    try:
+        temporary.write_bytes(body)
         try:
-            existing = path.read_bytes()
-        except OSError as exc:
-            raise ValueError(f"existing immutable generation is incomplete: {path}") from exc
-        if existing != body:
-            raise ValueError(f"immutable generation collision: {path}")
+            os.replace(temporary, path)
+        except FileExistsError:
+            if path.read_bytes() != body:
+                raise ValueError(f"immutable object collision: {path}")
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _verify_existing_generation(target: Path, manifest: Mapping[str, Any]) -> None:
+    try:
+        existing = (target / "manifest.json").read_bytes()
+    except OSError as exc:
+        raise ValueError(f"existing immutable generation is incomplete: {target}") from exc
+    if existing != canonical_json_bytes(manifest):
+        raise ValueError(f"immutable generation collision: {target}")
 
 
 def write_generation(
@@ -224,22 +285,20 @@ def write_generation(
     prior = prior_manifest if prior_manifest is not None else _read_local_marker(root / "manifest.json")
     manifest, artifacts = build_generation(pairs, prior_manifest=prior, warnings=warnings, omissions=omissions, coverage=coverage)
     generation = root / "generations" / str(manifest["generation_id"])
+    for object_key, body in artifacts.items():
+        _write_immutable_object(root, object_key, body)
     if generation.exists():
-        _verify_existing_generation(generation, manifest, artifacts)
+        _verify_existing_generation(generation, manifest)
     else:
         temporary = generation.with_name(f".{generation.name}.tmp.{os.getpid()}")
         temporary.mkdir(parents=True, exist_ok=False)
         try:
-            for relative, body in artifacts.items():
-                path = temporary / relative
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(body)
             (temporary / "manifest.json").write_bytes(canonical_json_bytes(manifest))
             generation.parent.mkdir(parents=True, exist_ok=True)
             try:
                 os.replace(temporary, generation)
             except FileExistsError:
-                _verify_existing_generation(generation, manifest, artifacts)
+                _verify_existing_generation(generation, manifest)
         finally:
             # A failed write is intentionally not a marker promotion.  Clean
             # only the process-owned temporary files, never a prior generation.

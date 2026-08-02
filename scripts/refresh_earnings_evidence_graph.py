@@ -1,143 +1,168 @@
-"""Incrementally discover bounded Terminal transcript revisions for evidence.
+"""Append-only refresh of the verified Terminal transcript evidence catalog.
 
-The Terminal index remains the commit marker.  A durable cursor retains one
-explicit, bounded cohort (the bootstrap window plus later new/corrected
-revisions). A root marker is promoted only after that cohort is cached and
-fully rebuilt. Intermediate slices never write ``--out-dir``, so they cannot
-replace a last-good public marker. This is a data-only deterministic worker;
-it has no model/provider path.
+R2's verified root marker is the accumulated catalog of record.  The local
+cursor/cache only avoids refetching bodies: every run diffs the current
+Terminal index against that catalog, processes a bounded delta, unions it with
+the prior event refs, and never rolls historical evidence off the root.
 """
 from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
 import gzip
+import json
+import os
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, Mapping
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.earnings_narrative.contracts import canonical_transcript_body_bytes
+from engine.earnings_narrative.contracts import canonical_json_bytes, canonical_transcript_body_bytes, validate_manifest
 from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
 from engine.earnings_narrative.health import validate_generation
 from engine.earnings_transcript_intake import (
+    TranscriptRef,
     fetch_body,
     fetch_global_index,
     load_state,
     mark_completed,
     mark_failed,
     parse_global_index,
-    plan_index,
     read_local_body,
     save_state,
-    TranscriptRef,
 )
-from scripts.publish_earnings_evidence_graph_r2 import PUBLISH_CONFLICT, load_remote_root_marker, publish
+from scripts.publish_earnings_evidence_graph_r2 import PUBLISH_CONFLICT, load_remote_root_state, publish
 
 
 DEFAULT_TX_BASE_URL = "https://app.mastermind-x.com/data/tx"
 
 
 class RefreshError(RuntimeError):
-    """The last good marker must remain authoritative when refresh refuses."""
+    """The public catalog cannot be advanced safely."""
 
 
-def _cohort_refs(state: dict[str, Any]) -> dict[str, TranscriptRef]:
-    raw = state.get("evidence_cohort") or {}
-    if not isinstance(raw, dict):
-        raise RefreshError("evidence cohort state is invalid")
-    cohort: dict[str, TranscriptRef] = {}
-    for key, value in raw.items():
-        if not isinstance(key, str) or not isinstance(value, dict):
-            raise RefreshError("evidence cohort state is invalid")
-        try:
-            ref = TranscriptRef(**value)
-        except TypeError as exc:
-            raise RefreshError("evidence cohort state is invalid") from exc
-        if ref.pair != key:
-            raise RefreshError("evidence cohort key mismatch")
-        cohort[key] = ref
-    return cohort
+def _receipt_path(root: Path, ref: TranscriptRef) -> Path:
+    return root / "bodies" / ref.ticker / f"{ref.transcript_id}.receipt.json"
 
 
-def _oldest_completed_cohort_ref(cohort: dict[str, TranscriptRef], queued: dict[str, TranscriptRef]) -> TranscriptRef | None:
-    completed = [ref for pair, ref in cohort.items() if pair not in queued]
-    if not completed:
+def _write_source_receipt(root: Path, ref: TranscriptRef, receipt: Mapping[str, Any]) -> None:
+    path = _receipt_path(root, ref)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    try:
+        temporary.write_bytes(canonical_json_bytes(dict(receipt)))
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _read_source_receipt(root: Path, ref: TranscriptRef) -> object:
+    try:
+        return json.loads(_receipt_path(root, ref).read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise RefreshError(f"cannot read cached source receipt for {ref.pair}: {exc}") from exc
+
+
+def _local_healthy_marker(destination: Path) -> dict[str, Any] | None:
+    health = validate_generation(destination)
+    if health["status"] != "ready":
         return None
-    return min(completed, key=lambda ref: (ref.call_date or "0000-00-00", ref.transcript_id, ref.ticker))
+    try:
+        marker = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
+        validate_manifest(marker)
+        return marker
+    except Exception:  # noqa: BLE001 - health is authoritative at this boundary.
+        return None
 
 
-def _reconcile_cohort(
-    state: dict[str, Any],
-    pending: list[TranscriptRef],
-    *,
-    cohort_limit: int,
-) -> tuple[dict[str, Any], list[TranscriptRef], dict[str, TranscriptRef], list[TranscriptRef]]:
-    """Keep a rolling, bounded evidence cohort independent of old index rows."""
-    if not 1 <= cohort_limit <= 2_000:
-        raise RefreshError("cohort_limit must be between 1 and 2000")
-    out = dict(state)
-    evicted: list[TranscriptRef] = []
-    if not bool(out.get("evidence_cohort_initialized")):
-        cohort = {ref.pair: ref for ref in pending[:cohort_limit]}
-        # The intake adapter tracks all first-run refs above the date floor.
-        # Explicitly acknowledge the older tail as out-of-cohort; otherwise it
-        # would make a bounded promotion non-terminating.
-        for ref in pending[cohort_limit:]:
-            out = mark_completed(out, ref)
-        out["evidence_cohort_initialized"] = True
-        out["evidence_cohort_truncated"] = len(pending) > cohort_limit
-        out["evidence_cohort_scope_limited"] = len(pending) < len(out.get("known") or {})
-        out["evidence_cohort"] = {pair: asdict(ref) for pair, ref in sorted(cohort.items())}
-        return out, pending[:cohort_limit], cohort, evicted
+def _catalog_pending(refs: list[TranscriptRef], marker: Mapping[str, Any] | None) -> list[TranscriptRef]:
+    events = marker.get("events") if isinstance(marker, Mapping) else None
+    events = events if isinstance(events, Mapping) else {}
+    pending: list[TranscriptRef] = []
+    for ref in refs:
+        event = events.get(ref.pair)
+        indexed_sha = ref.body_sha256
+        if not isinstance(event, Mapping) or (indexed_sha and event.get("source_sha256") != indexed_sha):
+            pending.append(ref)
+    return pending
 
-    cohort = _cohort_refs(out)
-    queued = {ref.pair: ref for ref in pending}
-    for ref in pending:
-        existing = cohort.get(ref.pair)
-        if existing is not None:
-            # A corrected revision of a retained event stays in the cohort.
-            cohort[ref.pair] = ref
-            continue
-        if len(cohort) >= cohort_limit:
-            victim = _oldest_completed_cohort_ref(cohort, queued)
-            if victim is None:
-                # Do not drop an arriving revision. It remains queued until a
-                # completed cohort member can roll off without shrinking coverage.
+
+def _order_pending(pending: list[TranscriptRef], state: Mapping[str, Any]) -> list[TranscriptRef]:
+    """Preserve failure rotation while adding new catalog deltas deterministically."""
+    required = {ref.pair: ref for ref in pending}
+    ordered: list[TranscriptRef] = []
+    prior = state.get("pending") if isinstance(state, Mapping) else None
+    if isinstance(prior, list):
+        for item in prior:
+            if not isinstance(item, Mapping):
                 continue
-            cohort.pop(victim.pair)
-            evicted.append(victim)
-            out["evidence_cohort_rolled_over"] = True
-        cohort[ref.pair] = ref
-    active: list[TranscriptRef] = []
-    for ref in pending:
-        current = cohort.get(ref.pair)
-        if current is not None and current.revision_key == ref.revision_key:
-            active.append(ref)
-        elif current is not None:
-            # An old queued revision lost to a correction; it must not block
-            # the current cohort drain.
-            out = mark_completed(out, ref)
-    out["evidence_cohort"] = {pair: asdict(ref) for pair, ref in sorted(cohort.items())}
-    return out, active, cohort, evicted
+            try:
+                ref = TranscriptRef(**item)
+            except TypeError:
+                continue
+            current = required.pop(ref.pair, None)
+            if current is not None:
+                ordered.append(current)
+    ordered.extend(sorted(required.values(), key=lambda ref: (ref.call_date, ref.transcript_id, ref.ticker), reverse=True))
+    return ordered
+
+
+def _catalog_complete(refs: list[TranscriptRef], events: Mapping[str, Any]) -> bool:
+    for ref in refs:
+        event = events.get(ref.pair)
+        if not isinstance(event, Mapping) or (ref.body_sha256 and event.get("source_sha256") != ref.body_sha256):
+            return False
+    return True
+
+
+def _cached_or_fetched_pair(
+    root: Path,
+    ref: TranscriptRef,
+    *,
+    tx_base_url: str,
+    index: object,
+    index_generated_at: str,
+) -> EvidencePair:
+    """Return an exact cached receipt when possible, otherwise intake once."""
+    try:
+        body = read_local_body(root / "bodies", ref)
+        receipt = _read_source_receipt(root, ref)
+        pack, graph = build_evidence_pair(body, source_receipt=receipt)
+        if not ref.body_sha256 or pack["source"]["body_sha256"] != ref.body_sha256:
+            raise RefreshError(f"cached source receipt is not the current indexed revision for {ref.pair}")
+        return EvidencePair(fact_pack=pack, claim_graph=graph, transcript=body)
+    except Exception:  # noqa: BLE001 - refetch and revalidate the authoritative revision.
+        body = fetch_body(tx_base_url, ref)
+        pack, _graph = build_evidence_pair(
+            body,
+            index_payload=index,
+            indexed_body_sha256=ref.body_sha256 or None,
+            index_generated_at=index_generated_at,
+        )
+        cache_path = root / "bodies" / ref.ticker / f"{ref.transcript_id}.json.gz"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(gzip.compress(canonical_transcript_body_bytes(body), mtime=0))
+        _write_source_receipt(root, ref, pack["source"])
+        stable_pack, stable_graph = build_evidence_pair(body, source_receipt=pack["source"])
+        return EvidencePair(fact_pack=stable_pack, claim_graph=stable_graph, transcript=body)
 
 
 def refresh(
     work_dir: Path,
     *,
     tx_base_url: str = DEFAULT_TX_BASE_URL,
-    bootstrap_since: str | None = None,
     max_bodies: int = 100,
-    cohort_limit: int = 500,
     out_dir: Path | None = None,
     promote: bool = False,
 ) -> int:
+    """Append at most ``max_bodies`` index deltas; a no-change run writes nothing."""
     if not 1 <= max_bodies <= 500:
         raise RefreshError("max_bodies must be between 1 and 500")
     root = Path(work_dir)
     root.mkdir(parents=True, exist_ok=True)
+    destination = Path(out_dir) if out_dir is not None else root / "output"
     state_path = root / "intake-state.json"
     try:
         index = fetch_global_index(tx_base_url)
@@ -145,121 +170,101 @@ def refresh(
         index_generated_at = str(metadata.get("generated_at") or "")
         if not index_generated_at:
             raise RefreshError("Terminal index lacks required generated_at receipt")
+        remote_marker, _remote_etag, remote_digest = load_remote_root_state()
+        prior_marker = remote_marker or _local_healthy_marker(destination)
         state = load_state(state_path, source=tx_base_url)
-        state, pending = plan_index(
-            refs,
-            state,
-            metadata=metadata,
-            bootstrap_since=bootstrap_since,
-        )
     except RefreshError:
         raise
     except Exception as exc:  # noqa: BLE001
         raise RefreshError(f"Terminal discovery refused: {exc}") from exc
-    state, pending, cohort, evicted = _reconcile_cohort(state, pending, cohort_limit=cohort_limit)
-    for ref in evicted:
-        (root / "bodies" / ref.ticker / f"{ref.transcript_id}.json.gz").unlink(missing_ok=True)
+
+    pending = _order_pending(_catalog_pending(refs, prior_marker), state)
+    state = dict(state)
+    state["known"] = {ref.pair: ref.body_sha256 for ref in refs}
+    state["pending"] = [asdict(ref) for ref in pending]
+    state["initialized"] = True
+    state["last_index_generated_at"] = index_generated_at
+    state["last_index_body_count"] = int(metadata["body_count"])
+    state["last_index_symbol_count"] = int(metadata["symbol_count"])
+
+    if not pending:
+        save_state(state_path, state)
+        if prior_marker is None:
+            raise RefreshError("index has no pending rows but no healthy catalog marker exists")
+        print("earnings evidence: index unchanged; healthy append-only catalog is a true no-op")
+        return 0
+
     selected = pending[:max_bodies]
+    pairs: list[EvidencePair] = []
     for ref in selected:
         try:
-            body = fetch_body(tx_base_url, ref)
-            # Validate the complete closed evidence pair before acknowledging
-            # the revision in the cursor. A bad body remains pending for a
-            # later corrected Terminal index/body rather than poisoning cache.
-            build_evidence_pair(
-                body,
-                index_payload=index,
-                indexed_body_sha256=ref.body_sha256 or None,
-                index_generated_at=index_generated_at,
-            )
-            cache_path = root / "bodies" / ref.ticker / f"{ref.transcript_id}.json.gz"
-            cache_path.parent.mkdir(parents=True, exist_ok=True)
-            cache_path.write_bytes(gzip.compress(canonical_transcript_body_bytes(body), mtime=0))
+            pair = _cached_or_fetched_pair(root, ref, tx_base_url=tx_base_url, index=index, index_generated_at=index_generated_at)
+            pairs.append(pair)
             state = mark_completed(state, ref)
         except Exception as exc:  # noqa: BLE001
             state = mark_failed(state, ref, error=str(exc))
     save_state(state_path, state)
-    remaining = len(state["pending"])
-    print(
-        "earnings evidence: "
-        f"discovered={len(refs)} cohort={len(cohort)} selected={len(selected)} remaining={remaining}"
-    )
-    if not promote or remaining:
-        if not promote:
-            print("earnings evidence: discovery complete; public root marker not promoted")
-        else:
-            print("earnings evidence: public promotion deferred until bounded cohort cursor drains")
+    if not pairs:
+        raise RefreshError("no selected transcript body passed closed-contract intake")
+    if not promote:
+        print(f"earnings evidence: validated {len(pairs)} append candidates; public root not promoted")
         return 0
-    # Only the complete retained cohort touches --out-dir.  This preserves the
-    # prior public root and its correction ancestry through every work slice.
-    pairs: list[EvidencePair] = []
-    for ref in sorted(cohort.values(), key=lambda item: (item.call_date, item.transcript_id, item.ticker), reverse=True):
-        try:
-            body = read_local_body(root / "bodies", ref)
-            pack, graph = build_evidence_pair(
-                body,
-                index_payload=index,
-                indexed_body_sha256=ref.body_sha256 or None,
-                index_generated_at=index_generated_at,
-            )
-            pairs.append(EvidencePair(fact_pack=pack, claim_graph=graph, transcript=body))
-        except Exception as exc:  # noqa: BLE001
-            raise RefreshError(f"complete cached cohort unavailable for {ref.pair}: {exc}") from exc
-    destination = Path(out_dir) if out_dir is not None else root / "output"
-    warnings = ["selection_bounded"] if any(
-        bool(state.get(key))
-        for key in ("evidence_cohort_truncated", "evidence_cohort_scope_limited", "evidence_cohort_rolled_over")
-    ) else []
-    # A cache loss must not erase correction lineage. Prefer the public R2
-    # marker whenever credentials are available; otherwise the local marker is
-    # a read-only fallback for explicit/offline runs.
-    prior_manifest = load_remote_root_marker()
+
+    prior_events = prior_marker.get("events") if isinstance(prior_marker, Mapping) else {}
+    prospective_events = dict(prior_events) if isinstance(prior_events, Mapping) else {}
+    for pair in pairs:
+        prospective_events[f"{pair.fact_pack['event']['ticker']}/{pair.fact_pack['event']['transcript_id']}"] = {
+            "source_sha256": pair.fact_pack["source"]["body_sha256"],
+        }
+    complete = _catalog_complete(refs, prospective_events)
+    warnings = [] if complete else ["backfill_pending"]
     _generation, manifest = write_generation(
         destination,
         pairs,
         warnings=warnings,
         coverage={
-            "selection_policy": "bootstrap_since_then_new_or_corrected",
-            "cohort_limit": cohort_limit,
-            "historical_completeness": (
-                len(cohort) == int(metadata["body_count"])
-                and not any(bool(state.get(key)) for key in ("evidence_cohort_truncated", "evidence_cohort_scope_limited", "evidence_cohort_rolled_over"))
-            ),
+            "selection_policy": "append_only_full_index",
+            "batch_limit": max_bodies,
+            "historical_completeness": complete,
             "index_body_count": int(metadata["body_count"]),
             "index_generated_at": index_generated_at,
         },
-        prior_manifest=prior_manifest,
+        prior_manifest=prior_marker,
     )
-    health = validate_generation(destination, manifest)
-    if health["status"] == "invalid":
-        raise RefreshError("output health invalid: " + ", ".join(health["warnings"]))
-    result = publish(destination)
+    # A cache-restored catalog can receive full local health here. A fresh
+    # runner stages only the delta and the publisher verifies those objects
+    # against the authoritative root before its CAS promotion.
+    result = publish(
+        destination,
+        expected_base_marker_sha256=remote_digest,
+        require_absent_root=remote_marker is None,
+    )
     if result == PUBLISH_CONFLICT:
         print("earnings evidence: root marker promotion lost safe compare-and-swap race")
         return result
     if result != 0:
         raise RefreshError(f"R2 publication failed with exit code {result}")
-    print("earnings evidence: immutable tree published and root marker promoted")
+    print(
+        "earnings evidence: append published "
+        f"events={manifest['coverage']['event_count']} batch={len(pairs)} "
+        f"complete={manifest['coverage']['historical_completeness']}"
+    )
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--work-dir", type=Path, required=True, help="Durable worker scratch containing the intake cursor")
+    parser.add_argument("--work-dir", type=Path, required=True, help="Cache/cursor only; R2 root is the catalog of record")
     parser.add_argument("--terminal-tx-base-url", default=DEFAULT_TX_BASE_URL)
-    parser.add_argument("--bootstrap-since", default=None, help="Required only on first cursor use; YYYY-MM-DD")
-    parser.add_argument("--max-bodies", type=int, default=100)
-    parser.add_argument("--cohort-limit", type=int, default=500, help="Maximum retained current cohort (1..2000)")
+    parser.add_argument("--max-bodies", type=int, default=100, help="Append batch size (1..500; full history drains over runs)")
     parser.add_argument("--out-dir", type=Path, default=None)
-    parser.add_argument("--promote", action="store_true", help="Promote only after the bounded cursor has drained")
+    parser.add_argument("--promote", action="store_true", help="Append this verified bounded batch to the public catalog")
     args = parser.parse_args(argv)
     try:
         return refresh(
             args.work_dir,
             tx_base_url=args.terminal_tx_base_url,
-            bootstrap_since=args.bootstrap_since,
             max_bodies=args.max_bodies,
-            cohort_limit=args.cohort_limit,
             out_dir=args.out_dir,
             promote=args.promote,
         )
