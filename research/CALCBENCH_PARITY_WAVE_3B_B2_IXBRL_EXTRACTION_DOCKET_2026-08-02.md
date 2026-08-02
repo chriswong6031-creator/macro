@@ -132,8 +132,7 @@ Local release evidence on 2026-08-02:
 
 - 155 focused parser and immutable-extraction tests passed;
 - 634 Fundamental Forensics, SEC spine, and parser tests passed;
-- the exact collector-registry lane passed 175 tests, including the `lxml`
-  13F path;
+- the exact minimal-dependency collector-registry lane passed all 155 tests;
 - the 147-job CI manifest validated as four balanced packs and all 11 CI-pack
   contract tests passed; and
 - two independent adversarial re-audits reported no remaining P0/P1 parser or
