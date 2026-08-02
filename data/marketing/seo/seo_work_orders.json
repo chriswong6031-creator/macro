@@ -1,6 +1,6 @@
 {
   "schema": "seo_work_orders.v1",
-  "as_of": "2026-08-02T16:00:02Z",
+  "as_of": "2026-08-02T21:41:09Z",
   "orders": [
     {
       "id": "missing_description",
@@ -16,11 +16,11 @@
         "hk_lookup.html",
         "hk_stocks_lab.html",
         "intl_stock.html",
-        "narrative_radar.html",
         "qa_bottom_sensors.html",
-        "seasonality.html"
+        "seasonality.html",
+        "status.html"
       ],
-      "pages_count": 29,
+      "pages_count": 28,
       "suggested_fix": "Add meta description to all core pages",
       "falsifiable_check": "grep 'name=.description' in page source — should be present"
     },
@@ -37,12 +37,12 @@
         "hk_lookup.html",
         "hk_stocks_lab.html",
         "intl_stock.html",
-        "narrative_radar.html",
         "qa_bottom_sensors.html",
         "seasonality.html",
-        "status.html"
+        "status.html",
+        "stock.html"
       ],
-      "pages_count": 28,
+      "pages_count": 27,
       "suggested_fix": "Add rel=canonical to all public pages",
       "falsifiable_check": "Check page in browser: view-source should show rel=canonical in <head>"
     },
@@ -53,12 +53,14 @@
       "class": "canonical_not_self",
       "severity": "high",
       "pages": [
+        "baskets.html",
         "baskets_china_ths.html",
         "btc_strategy.html",
         "canada_stocks.html",
+        "subsector_rotation.html",
         "vector_allocation.html"
       ],
-      "pages_count": 4,
+      "pages_count": 6,
       "suggested_fix": "Ensure canonical href matches the page's own URL",
       "falsifiable_check": "Load page; canonical URL in <head> should match page URL"
     },
@@ -125,11 +127,11 @@
         "hk_lookup.html",
         "hk_stocks_lab.html",
         "intl_stock.html",
-        "narrative_radar.html",
         "qa_bottom_sensors.html",
-        "seasonality.html"
+        "seasonality.html",
+        "status.html"
       ],
-      "pages_count": 29,
+      "pages_count": 28,
       "suggested_fix": "Add og:title, og:description, og:image to all pages",
       "falsifiable_check": "Open Graph debugger or grep meta property=og: — all three present"
     },
