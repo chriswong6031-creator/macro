@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T11:17:34.717858+00:00",
-  "count": 590,
+  "generated_at": "2026-08-02T11:32:38.557859+00:00",
+  "count": 591,
   "institutions": [
     "Amova",
     "Apollo",
@@ -80,6 +80,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bnxib9q7toy-77849b",
+      "title": "Relais Group Oyj 202607300700 fullreport",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:35:21Z",
+      "summary_points": [
+        "**Q2 EPS/DPS Pressure**: Q2 2026E EPS revised -28% (0.13 vs 0.17) and DPS -13% (0.35 vs 0.40), signaling acute near-term earnings and dividend strain despite 2026-28 top-line growth upgrades.",
+        "**Valuation Discount to Peers**: Trades at 30% discount to peers with EV/Sales (2026E: 1.1x vs 1.4x), EV/EBITDA (0.6x vs 1.0x), and P/E (12.8x vs 16.3x), indicating significant undervaluation within EUR 17.6-21.5 fair value range.",
+        "**Critical Cash Flow & Debt Risk**: Negative FCF (-44.8 in 2025) and enterprise value (402.9) exceeding market cap (253.5 in 2023) highlight severe near-term liquidity stress and debt-driven valuation vulnerability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
