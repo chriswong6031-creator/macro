@@ -66,7 +66,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/bb07374d.css?v=bb07374d">
+<link rel="stylesheet" href="assets/css/291e3547.css?v=291e3547">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=8fccad75">
 </head>
@@ -504,6 +504,11 @@
       <h3 id="reader-title"></h3>
       <div class="meta" id="reader-meta"></div>
       <div class="tonegauge" id="reader-gauge"></div>
+      <div class="reader-actions">
+        <a class="reader-terminal" id="reader-terminal" href="https://app.mastermind-x.com/analysis?page=intelligence" target="_blank" rel="noopener">
+          <span class="l-en">Open full company intelligence</span><span class="l-zh">打开完整公司情报</span> <span class="arr" aria-hidden="true">↗</span>
+        </a>
+      </div>
     </div>
     <div class="reader-body" id="reader-body"></div>
   </aside>
@@ -1547,6 +1552,7 @@
     if(r.quarter)meta.push(LT(r.quarter,r.quarter));
     if(r.call_date)meta.push(LT('Call '+r.call_date,'电话会 '+r.call_date));
     qs('#reader-meta').innerHTML=meta.join('');
+    qs('#reader-terminal').href='https://app.mastermind-x.com/analysis?symbol='+encodeURIComponent(r.ticker)+'&page=intelligence';
     /* tone gauge */
     var tw=toneWord(r.ec_sent),pw=perfWord(r.ec_perf),cls=toneClass(r.ec_sent),pct=tonePct(r.ec_sent);
     qs('#reader-gauge').innerHTML='<span class="val" style="--ec:var(--'+(cls==='up'?'up':cls==='dn'?'down':cls==='amb'?'s3':'info')+')">'+
