@@ -15,6 +15,7 @@ from engine.earnings_narrative.contracts import (
     receipt_for_span,
     validate_claim_graph,
     validate_fact_pack,
+    validate_manifest,
     verify_fact_pack_against_transcript,
 )
 from engine.earnings_narrative.extract import build_evidence_pair
@@ -94,6 +95,19 @@ def test_closed_schema_and_numeric_integrity_reject_unsafe_mutations() -> None:
         validate_fact_pack(forged)
 
 
+def test_manifest_generation_id_is_content_addressed_and_dates_are_exact() -> None:
+    body = _body()
+    pack, graph = _pair(body)
+    from engine.earnings_narrative.generation import build_generation
+    manifest, _files = build_generation([EvidencePair(pack, graph, body)])
+    forged = deepcopy(manifest)
+    forged["generation_id"] = "f" * 32
+    with pytest.raises(ContractError, match="generation_id does not match"):
+        validate_manifest(forged)
+    with pytest.raises(ContractError, match="ISO date"):
+        contracts.iso_date("2026-01-30 trailing", field="date")
+
+
 def test_receipt_mismatch_and_future_chronology_fail_closed() -> None:
     body = _body()
     index = _index(body)
@@ -123,6 +137,9 @@ def test_revision_correction_supersedes_prior_source_without_second_logical_even
     assert event["source_sha256"] == corrected["source"]["body_sha256"]
     assert event["supersedes_source_sha256"] == first["source"]["body_sha256"]
     assert list(second_manifest["events"]) == ["AAPL/2026Q1"]
+    _retry_dir, retry_manifest = write_generation(tmp_path, [EvidencePair(corrected, corrected_graph, corrected_body)])
+    assert retry_manifest["generation_id"] == second_manifest["generation_id"]
+    assert retry_manifest["events"]["AAPL/2026Q1"]["supersedes_source_sha256"] == first["source"]["body_sha256"]
     old_source_path = _first_dir / first_manifest["events"]["AAPL/2026Q1"]["source_body"]
     assert json.loads(old_source_path.read_text(encoding="utf-8"))["segments"][0]["text"] == "Revenue was 100 million."
     assert first["source"]["locator"] == corrected["source"]["locator"]
@@ -206,6 +223,7 @@ def test_build_cli_contract_is_bounded_and_does_not_require_company_intelligence
     manifest, report = build(index_path, tx_root, tmp_path / "out", max_bodies=1)
     assert manifest["status"] == "ready"
     assert report["built"] == 1
+    assert manifest["coverage"]["historical_completeness"] is True
 
 
 def test_execution_receipts_prove_zero_provider_and_no_token_use() -> None:
@@ -302,3 +320,24 @@ def test_cohort_rollover_never_shrinks_healthy_public_peer_count(monkeypatch, tm
     second = json.loads((public / "manifest.json").read_text(encoding="utf-8"))
     assert len(second["events"]) >= len(first["events"])
     assert len(second["events"]) == 2
+    assert second["coverage"]["historical_completeness"] is False
+
+
+def test_cache_loss_hydrates_remote_marker_for_correction_supersession(monkeypatch, tmp_path: Path) -> None:
+    original = _body(ticker="AAPL", text="Revenue was 100 million.")
+    corrected = _body(ticker="AAPL", text="Revenue was 101 million.")
+    current = {"index": _index(original), "body": original, "remote": None}
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_global_index", lambda _url: current["index"])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_body", lambda _url, _ref: current["body"])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.publish", lambda _out: 0)
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.load_remote_root_marker", lambda: current["remote"])
+    first_public = tmp_path / "first-public"
+    assert refresh(tmp_path / "first-worker", bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, out_dir=first_public, promote=True) == 0
+    current["remote"] = json.loads((first_public / "manifest.json").read_text(encoding="utf-8"))
+    current["index"] = _index(corrected)
+    current["body"] = corrected
+    # New worker and empty output simulate an Actions cache eviction.
+    second_public = tmp_path / "second-public"
+    assert refresh(tmp_path / "second-worker", bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, out_dir=second_public, promote=True) == 0
+    final = json.loads((second_public / "manifest.json").read_text(encoding="utf-8"))
+    assert final["events"]["AAPL/2026Q1"]["supersedes_source_sha256"] == current["remote"]["events"]["AAPL/2026Q1"]["source_sha256"]

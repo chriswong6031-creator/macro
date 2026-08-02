@@ -76,6 +76,13 @@ def build(
         pairs,
         warnings=warnings,
         omissions=omissions,
+        coverage={
+            "selection_policy": "explicit_input",
+            "cohort_limit": max_bodies,
+            "historical_completeness": len(selected) == len(refs) and not omissions,
+            "index_body_count": int(metadata["body_count"]),
+            "index_generated_at": index_generated_at,
+        },
     )
     health = validate_generation(Path(out_dir), manifest)
     if health["status"] == "invalid":

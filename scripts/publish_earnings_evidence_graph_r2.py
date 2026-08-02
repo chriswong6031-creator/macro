@@ -88,6 +88,23 @@ def _remote_marker(s3: Any, bucket: str) -> tuple[dict[str, Any] | None, str | N
         raise ImmutableAddressIntegrityError("cannot read current earnings evidence marker") from exc
 
 
+def load_remote_root_marker(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any] | None:
+    """Read the last-good public marker for correction lineage hydration.
+
+    A worker cache is only an optimization.  When a runner starts empty, this
+    keeps a corrected retained event linked to the actual R2 public revision.
+    ``None`` means credentials are absent or the public marker does not exist.
+    """
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        return None
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        raise ImmutableAddressIntegrityError("R2_BUCKET not set for marker hydration")
+    marker, _etag = _remote_marker(client, target_bucket)
+    return marker
+
+
 def _existing_immutable(s3: Any, bucket: str, key: str) -> bytes | None:
     try:
         head = s3.head_object(Bucket=bucket, Key=key)

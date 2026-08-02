@@ -34,7 +34,7 @@ from engine.earnings_transcript_intake import (
     save_state,
     TranscriptRef,
 )
-from scripts.publish_earnings_evidence_graph_r2 import PUBLISH_CONFLICT, publish
+from scripts.publish_earnings_evidence_graph_r2 import PUBLISH_CONFLICT, load_remote_root_marker, publish
 
 
 DEFAULT_TX_BASE_URL = "https://app.mastermind-x.com/data/tx"
@@ -210,7 +210,26 @@ def refresh(
         bool(state.get(key))
         for key in ("evidence_cohort_truncated", "evidence_cohort_scope_limited", "evidence_cohort_rolled_over")
     ) else []
-    _generation, manifest = write_generation(destination, pairs, warnings=warnings)
+    # A cache loss must not erase correction lineage. Prefer the public R2
+    # marker whenever credentials are available; otherwise the local marker is
+    # a read-only fallback for explicit/offline runs.
+    prior_manifest = load_remote_root_marker()
+    _generation, manifest = write_generation(
+        destination,
+        pairs,
+        warnings=warnings,
+        coverage={
+            "selection_policy": "bootstrap_since_then_new_or_corrected",
+            "cohort_limit": cohort_limit,
+            "historical_completeness": (
+                len(cohort) == int(metadata["body_count"])
+                and not any(bool(state.get(key)) for key in ("evidence_cohort_truncated", "evidence_cohort_scope_limited", "evidence_cohort_rolled_over"))
+            ),
+            "index_body_count": int(metadata["body_count"]),
+            "index_generated_at": index_generated_at,
+        },
+        prior_manifest=prior_manifest,
+    )
     health = validate_generation(destination, manifest)
     if health["status"] == "invalid":
         raise RefreshError("output health invalid: " + ", ".join(health["warnings"]))

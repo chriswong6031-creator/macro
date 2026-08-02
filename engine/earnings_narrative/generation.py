@@ -33,7 +33,7 @@ class EvidencePair:
     transcript: Mapping[str, Any]
 
 
-def _prior_event_sources(prior_manifest: object | None) -> dict[str, str]:
+def _prior_events(prior_manifest: object | None) -> dict[str, Mapping[str, Any]]:
     if not isinstance(prior_manifest, Mapping):
         return {}
     try:
@@ -43,7 +43,7 @@ def _prior_event_sources(prior_manifest: object | None) -> dict[str, str]:
     events = prior_manifest.get("events")
     assert isinstance(events, Mapping)
     return {
-        str(key): str(value["source_sha256"])
+        str(key): value
         for key, value in events.items()
         if isinstance(value, Mapping)
     }
@@ -74,9 +74,10 @@ def build_generation(
     prior_manifest: object | None = None,
     warnings: Iterable[str] = (),
     omissions: Iterable[Mapping[str, Any]] = (),
+    coverage: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, bytes]]:
     """Build a content-addressed generation and its complete immutable files."""
-    previous = _prior_event_sources(prior_manifest)
+    previous = _prior_events(prior_manifest)
     collected: dict[str, EvidencePair] = {}
     for pair in pairs:
         validate_evidence_pair(pair.fact_pack, pair.claim_graph)
@@ -106,10 +107,12 @@ def build_generation(
         if existing_source is not None and existing_source != source_body:
             raise ValueError(f"source body hash collision: {source_path}")
         artifacts[source_path] = source_body
-        old_sha = previous.get(key)
+        previous_event = previous.get(key)
+        old_sha = str(previous_event["source_sha256"]) if previous_event is not None else None
+        prior_supersedes = previous_event.get("supersedes_source_sha256") if previous_event is not None else None
         events[key] = {
             "source_sha256": source_sha,
-            "supersedes_source_sha256": old_sha if old_sha and old_sha != source_sha else None,
+            "supersedes_source_sha256": old_sha if old_sha and old_sha != source_sha else prior_supersedes,
             "fact_pack": fact_path,
             "claim_graph": graph_path,
             "source_body": source_path,
@@ -133,6 +136,28 @@ def build_generation(
         for path, body in sorted(artifacts.items())
     }
     generated = max(generated_at) if generated_at else "1970-01-01T00:00:00Z"
+    dates = sorted(str(pair.fact_pack["event"]["date"]) for pair in collected.values())
+    supplied_coverage = dict(coverage or {})
+    expected_coverage_context = {
+        "selection_policy", "cohort_limit", "historical_completeness", "index_body_count", "index_generated_at",
+    }
+    if supplied_coverage:
+        if set(supplied_coverage) != expected_coverage_context:
+            raise ValueError("coverage context fields mismatch")
+    else:
+        supplied_coverage = {
+            "selection_policy": "explicit_input",
+            "cohort_limit": max(1, len(collected)),
+            "historical_completeness": False,
+            "index_body_count": len(collected),
+            "index_generated_at": generated,
+        }
+    generation_coverage = {
+        **supplied_coverage,
+        "event_count": len(collected),
+        "oldest_call_date": dates[0] if dates else None,
+        "newest_call_date": dates[-1] if dates else None,
+    }
     status = "ready" if collected else "partial"
     unsigned = {
         "schema": MANIFEST_SCHEMA,
@@ -142,6 +167,7 @@ def build_generation(
         "status": status,
         "warnings": manifest_warnings,
         "omissions": normalized_omissions,
+        "coverage": generation_coverage,
         "events": events,
         "files": files,
         "execution": dict(EXECUTION_RECEIPT),
@@ -190,11 +216,13 @@ def write_generation(
     *,
     warnings: Iterable[str] = (),
     omissions: Iterable[Mapping[str, Any]] = (),
+    coverage: Mapping[str, Any] | None = None,
+    prior_manifest: object | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     """Write all immutable files before atomically advancing the local marker."""
     root = Path(out_dir)
-    prior = _read_local_marker(root / "manifest.json")
-    manifest, artifacts = build_generation(pairs, prior_manifest=prior, warnings=warnings, omissions=omissions)
+    prior = prior_manifest if prior_manifest is not None else _read_local_marker(root / "manifest.json")
+    manifest, artifacts = build_generation(pairs, prior_manifest=prior, warnings=warnings, omissions=omissions, coverage=coverage)
     generation = root / "generations" / str(manifest["generation_id"])
     if generation.exists():
         _verify_existing_generation(generation, manifest, artifacts)
