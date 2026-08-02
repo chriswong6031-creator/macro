@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T17:33:22.908303+00:00",
-  "count": 608,
+  "generated_at": "2026-08-02T17:48:25.956082+00:00",
+  "count": 609,
   "institutions": [
     "Amova",
     "Apollo",
@@ -83,6 +83,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xrs7tgo8aei-fa2ef8",
+      "title": "Find value in the AI stack D3",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:33:14Z",
+      "summary_points": [
+        "**Geopolitical Pricing Threat**: China’s state-backed AI \"price dumping\" risks global pricing power, with tiered access models determining productivity gains; adoption structure critical for value capture.",
+        "**HBM Bottleneck Shift**: Semiconductor constraints moving from GPU scarcity to high-bandwidth memory (HBM) production, signaling supply chain evolution beyond current GPU focus.",
+        "**Economic Value Verification**: AI spending structural only if tied to measurable economic value (productivity/revenue/costs); monitor via BLS data, job postings, and enterprise surveys—not just pilot adoption.",
+        "**Infrastructure Constraints**: Data center construction/operations (lease rates, vacancy) now critical bottleneck, not GPU scarcity, dictating AI capacity conversion from hardware investment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
