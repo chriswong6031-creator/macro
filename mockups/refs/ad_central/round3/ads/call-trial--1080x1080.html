@@ -4,90 +4,98 @@
 <link rel="stylesheet" href="../_ads.css">
 
 <style>
-/* ── round-3 "call" — deck rebuild (square) ───────────────────────────
-   Sibling of call--1200x628. New rules live here, never in _ads.css;
-   every colour, radius, shadow and face resolves to an existing token.
-
-   THE MOTTO PLATE — Inter 900 uppercase, two locked lines of near-
-   identical measure stacked at .98 leading into one block of type.
-
-   THE DECK — today's call pulled out of a book of calls. FOUR CARDS OF
-   ONE PHYSICAL SIZE (580 × 449 authored, scaled .74) stacked pyramid-
-   style: each card behind sits 48px up and 38px right of the one in
-   front, so only its top identity bar peeks out and the rest of its
-   body is hidden behind the cards ahead of it. Equal size is what makes
-   it read as one deck in 3D rather than four cards of different sizes.
-   The cards are set wide here because the square gives width, not
-   height. No rotation — the orthogonal offset IS the depth cue. */
-
+/* ── round-3 "call" (square) — R3.5 fan rebuild ───────────────────────
+   Landing-hero idiom: a horizontal fanned pyramid of FULL, identical
+   Prophet cards — center card front and elevated, flanks stepping back
+   and down, heavily overlapped. Everything centered per operator order.
+   All colours/faces resolve to existing tokens. */
 .motto{font-weight:900;line-height:.98;letter-spacing:-.022em}
-
-.deck-c{width:580px;height:449px;padding:20px 32px 0;transform-origin:top left}
-.deck-row{display:flex;align-items:center;gap:18px}
-.deck-row .tk{font-weight:800;font-size:29px;letter-spacing:-.01em}
-.deck-row .pill--near{font-size:18px;padding:5px 15px;letter-spacing:.05em}
-.deck-row .edge{margin-left:auto;font-size:19px;font-weight:700;color:var(--muted);white-space:nowrap}
-.deck-row .edge b{color:var(--q-green);font-size:25px;font-weight:800;margin-left:6px}
+.fan .w-prophet{position:absolute;transform-origin:top left}
 </style>
 
 <div class="ad ad--s1080 ad--dark">
 
-  <!-- the rising tape, per-ad asset. The source is 1200x640, so it is
-       placed as a full-width band (1080x576, undistorted) high in the
-       canvas rather than cover-cropped to a square, which would throw
-       away the left-to-right rise. -->
-  <!-- the tape is a steep authored column riding the free right band (x≥800 clears
-       the headline's widest line at 792), from just under the flag down behind the
-       frosted offer plate. -->
-  <div class="candle-field" style="inset:130px 16px 90px 800px;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 92%,transparent 100%)"><img src="../assets/field_call_1080.svg" style="width:100%;height:100%"></div>
+  <!-- normal left→right uptrend tape, sitting below the text block -->
+  <div class="candle-field" style="-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 40%,#000 94%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 40%,#000 94%,transparent 100%)"><img src="../assets/field_call_1080.svg" style="width:100%;height:100%"></div>
 
   <div class="brandbar">
     <div class="brand"><span class="brand-m">M</span><span class="brand-n">MASTERMINDX</span></div>
     <span class="spacer"></span>
     <span class="offer-flag">LAUNCH — 50% OFF</span>
   </div>
-  <p class="catline" style="padding-top:8px">MARKET INTELLIGENCE DESK</p>
+  <p class="catline" style="padding-top:8px;text-align:center">MARKET INTELLIGENCE DESK</p>
 
-  <h1 class="headline motto" style="font-size:70px;padding-top:10px">KNOW WHEN TO BUY<br><span class="grad">KNOW WHAT TO BUY</span></h1>
-  <p class="sub" style="max-width:1010px;padding-top:14px;font-size:27px"><span style="white-space:nowrap">Institutional-grade</span> signals on every stock —<br><b>buy, wait or avoid</b>, updated every trading day.</p>
+  <h1 class="headline motto" style="font-size:70px;padding-top:10px;text-align:center">KNOW WHEN TO BUY<br><span class="grad">KNOW WHAT TO BUY</span></h1>
+  <p class="sub" style="padding:14px 64px 0;font-size:32px;text-align:center"><b>Know before the crowd.</b> Daily stock signals<br>powered by institutional-grade market intelligence.</p>
 
-  <div class="stage stage--side" style="width:1080px">
+  <div class="stage fan" style="--stageh:400px;margin-top:16px">
 
-    <!-- the deck behind today's call: three more graded rows.
-         Landing showcase demo data (prophet.showcase/v2, 2026-07-02).
-         Same card size as the front SBUX card; only left/top change. -->
-    <div class="card deck-c" style="left:276px;top:424px;transform:scale(.74);z-index:0;filter:brightness(.90)">
-      <div class="deck-row"><span class="tk">ARLO</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>99</b></span></div>
-    </div>
-    <div class="card deck-c" style="left:260px;top:472px;transform:scale(.74);z-index:1;filter:brightness(.94)">
-      <div class="deck-row"><span class="tk">CPAY</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>90</b></span></div>
-    </div>
-    <div class="card deck-c" style="left:274px;top:520px;transform:scale(.74);z-index:2;filter:brightness(.97)">
-      <div class="deck-row"><span class="tk">REZI</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>83</b></span></div>
-    </div>
+    <!-- fanned pyramid, 5 cards: REZI · ARLO · [SBUX] · CPAY · NWSA
+         (landing showcase data; center card front and elevated) -->
 
-    <!-- the open call: the SBUX decision card, unchanged data. -->
-    <div class="card w-prophet" style="position:absolute;width:580px;left:268px;top:568px;transform:scale(.74);transform-origin:top left;z-index:3">
-      <div class="top">
-        <span class="pill--buy pill">BUY</span>
-        <span class="demo-tag">demo</span>
-        <span class="px">$104.27</span>
-      </div>
+    <div class="card w-prophet" style="left:-74px;top:74px;transform:scale(.68);z-index:1;filter:brightness(.93)">
+      <div class="top"><span class="pill--near pill">NEAR</span><span class="px">$32.09</span></div>
       <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
-        <defs><linearGradient id="gsb" x1="0" y1="0" x2="0" y2="1">
+        <defs><linearGradient id="gfan" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#1f8b41" stop-opacity=".16"/>
           <stop offset="1" stop-color="#1f8b41" stop-opacity="0"/>
         </linearGradient></defs>
-        <path d="M4 34 L18 37 L30 33 L44 40 L56 38 L70 44 L84 41 L96 45 L110 42 L124 38 L138 30 L152 25 L166 27 L180 17 L196 12 L196 60 L4 60 Z" fill="url(#gsb)"/>
+        <path d="M4 44 L18 40 L30 36 L44 41 L56 33 L70 37 L84 29 L96 24 L110 29 L124 21 L138 24 L152 16 L166 19 L180 12 L196 14 L196 60 L4 60 Z" fill="url(#gfan)"/>
+        <path class="spark-g" d="M4 44 L18 40 L30 36 L44 41 L56 33 L70 37 L84 29 L96 24 L110 29 L124 21 L138 24 L152 16 L166 19 L180 12 L196 14"/>
+      </svg>
+      <div class="id"><span class="tk">REZI</span><span class="nm">Resideo</span><span class="edge">EDGE<b>83</b></span></div>
+      <div class="sector">Industrials</div>
+      <div class="stages"><span class="stg on">Base</span><span class="stg">Turn</span><span class="stg">Ready</span><span class="stg">Trend</span></div>
+      <div class="zone">ZONE <b>$30.76 – $32.09</b></div>
+    </div>
+
+    <div class="card w-prophet" style="left:130px;top:40px;transform:scale(.74);z-index:2;filter:brightness(.97)">
+      <div class="top"><span class="pill--near pill">NEAR</span><span class="px">$13.19</span></div>
+      <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path d="M4 40 L18 36 L30 42 L44 38 L56 30 L70 34 L84 26 L96 30 L110 22 L124 26 L138 18 L152 22 L166 14 L180 16 L196 8 L196 60 L4 60 Z" fill="url(#gfan)"/>
+        <path class="spark-g" d="M4 40 L18 36 L30 42 L44 38 L56 30 L70 34 L84 26 L96 30 L110 22 L124 26 L138 18 L152 22 L166 14 L180 16 L196 8"/>
+      </svg>
+      <div class="id"><span class="tk">ARLO</span><span class="nm">Arlo</span><span class="edge">EDGE<b>99</b></span></div>
+      <div class="sector">Information Technology</div>
+      <div class="stages"><span class="stg on">Base</span><span class="stg">Turn</span><span class="stg">Ready</span><span class="stg">Trend</span></div>
+      <div class="zone">ZONE <b>$12.73 – $13.19</b></div>
+    </div>
+
+    <div class="card w-prophet" style="left:903px;top:74px;transform:scale(.68);z-index:1;filter:brightness(.93)">
+      <div class="top"><span class="pill--near pill">NEAR</span><span class="px">$26.64</span></div>
+      <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path d="M4 44 L18 40 L30 36 L44 41 L56 33 L70 37 L84 29 L96 24 L110 29 L124 21 L138 24 L152 16 L166 19 L180 12 L196 14 L196 60 L4 60 Z" fill="url(#gfan)"/>
+        <path class="spark-g" d="M4 44 L18 40 L30 36 L44 41 L56 33 L70 37 L84 29 L96 24 L110 29 L124 21 L138 24 L152 16 L166 19 L180 12 L196 14"/>
+      </svg>
+      <div class="id"><span class="tk">NWSA</span><span class="nm">News Corp</span><span class="edge">EDGE<b>88</b></span></div>
+      <div class="sector">Communications</div>
+      <div class="stages"><span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span></div>
+      <div class="zone">ZONE <b>$25.98 – $26.64</b></div>
+    </div>
+
+    <div class="card w-prophet" style="left:640px;top:40px;transform:scale(.74);z-index:2;filter:brightness(.97)">
+      <div class="top"><span class="pill--near pill">NEAR</span><span class="px">$356.55</span></div>
+      <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path d="M4 40 L18 36 L30 42 L44 38 L56 30 L70 34 L84 26 L96 30 L110 22 L124 26 L138 18 L152 22 L166 14 L180 16 L196 8 L196 60 L4 60 Z" fill="url(#gfan)"/>
+        <path class="spark-g" d="M4 40 L18 36 L30 42 L44 38 L56 30 L70 34 L84 26 L96 30 L110 22 L124 26 L138 18 L152 22 L166 14 L180 16 L196 8"/>
+      </svg>
+      <div class="id"><span class="tk">CPAY</span><span class="nm">Corpay</span><span class="edge">EDGE<b>90</b></span></div>
+      <div class="sector">Financials</div>
+      <div class="stages"><span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span></div>
+      <div class="zone">ZONE <b>$346.30 – $356.50</b></div>
+    </div>
+
+    <!-- center, front, elevated -->
+    <div class="card w-prophet" style="left:355px;top:6px;transform:scale(.8);z-index:3">
+      <div class="top"><span class="pill--buy pill">BUY</span><span class="px">$104.27</span></div>
+      <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path d="M4 34 L18 37 L30 33 L44 40 L56 38 L70 44 L84 41 L96 45 L110 42 L124 38 L138 30 L152 25 L166 27 L180 17 L196 12 L196 60 L4 60 Z" fill="url(#gfan)"/>
         <path class="spark-g" d="M4 34 L18 37 L30 33 L44 40 L56 38 L70 44 L84 41 L96 45 L110 42 L124 38 L138 30 L152 25 L166 27 L180 17 L196 12"/>
       </svg>
-      <div class="id"><span class="tk">SBUX</span><span class="nm">Starbucks Corp</span>
-        <span class="edge">EDGE<b>89</b></span></div>
+      <div class="id"><span class="tk">SBUX</span><span class="nm">Starbucks</span><span class="edge">EDGE<b>89</b></span></div>
       <div class="sector">Consumer Discretionary</div>
-      <div class="stages">
-        <span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span>
-      </div>
-      <div class="zone">ZONE <b>$102.60 – $104.30</b><span class="dt">Jul 2</span></div>
+      <div class="stages"><span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span></div>
+      <div class="zone">ZONE <b>$102.60 – $104.30</b></div>
     </div>
 
   </div>
