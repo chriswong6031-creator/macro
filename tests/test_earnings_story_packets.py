@@ -3,10 +3,18 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 
-from engine.earnings_narrative.contracts import canonical_json_sha256
+import pytest
+
+from engine.earnings_narrative.contracts import ContractError, canonical_json_sha256
 from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
-from engine.earnings_narrative.story_packets import validate_story_packet_manifest
+from engine.earnings_narrative.promotion import load_promotion_policy
+from engine.earnings_narrative.story_packets import (
+    build_story_packet,
+    evidence_receipts_from_manifest,
+    load_evidence_event,
+    validate_story_packet_manifest,
+)
 from engine.earnings_narrative.story_store import (
     _verify_lineage_transition,
     verify_story_packet_store,
@@ -142,8 +150,6 @@ def test_source_correction_keeps_story_identity_and_records_prior_invalidation(t
 
     forged_packet = deepcopy(corrected)
     forged_packet["prior"]["packet_id"] = "storypacket_" + "0" * 32
-    import pytest
-    from engine.earnings_narrative.contracts import ContractError
     with pytest.raises(ContractError, match="direct parent packet id"):
         _verify_lineage_transition(
             corrected_manifest,
@@ -160,3 +166,32 @@ def test_source_correction_keeps_story_identity_and_records_prior_invalidation(t
     # marker could be promoted.  The store health also checks real ancestry.
     with pytest.raises(ContractError):
         validate_story_packet_manifest(forged)
+
+
+def test_build_story_packet_requires_a_policy_snapshot_for_prior_packet(tmp_path: Path) -> None:
+    evidence = tmp_path / "evidence"
+    store = tmp_path / "story-packets"
+    _write_evidence(evidence, _body(), generated_at="2026-02-01T00:00:00Z")
+    _first_path, first_manifest = write_story_packet_generation(store, evidence)
+    first_packet = _current_packet(store, first_manifest)
+
+    corrected_evidence = _write_evidence(
+        evidence,
+        _body(guidance="For the full year, we expect revenue of 510 million and an operating margin of 21%."),
+        generated_at="2026-02-02T00:00:00Z",
+    )
+    _manifest, fact_pack, claim_graph, transcript = load_evidence_event(
+        evidence,
+        key="AAPL/2026Q1",
+        manifest=corrected_evidence,
+    )
+
+    with pytest.raises(ContractError, match="immutable historical policy snapshot"):
+        build_story_packet(
+            fact_pack,
+            claim_graph,
+            transcript,
+            evidence=evidence_receipts_from_manifest(corrected_evidence, key="AAPL/2026Q1"),
+            policy=load_promotion_policy(),
+            prior_packet=first_packet,
+        )
