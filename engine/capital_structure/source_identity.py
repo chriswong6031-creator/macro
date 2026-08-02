@@ -18,14 +18,24 @@ from typing import Any
 
 MANIFEST_ID_PREFIX = "manifest:cs:"
 _SEC_LINE_FLAGS = re.IGNORECASE | re.MULTILINE
+_SEC_STRUCTURAL_LINE_FLAGS = re.MULTILINE
 _SEC_DOCUMENT_LINE_RE = re.compile(
     br"^<SEC-DOCUMENT>([0-9]{10}-[0-9]{2}-[0-9]{6})\.txt"
     br"(?:[ \t]*:[ \t]*[0-9]{8})?[ \t]*\r?$",
-    _SEC_LINE_FLAGS,
+    _SEC_STRUCTURAL_LINE_FLAGS,
 )
-_SEC_HEADER_OPEN_LINE_RE = re.compile(br"^<SEC-HEADER>[ \t]*\r?$", _SEC_LINE_FLAGS)
-_SEC_HEADER_CLOSE_LINE_RE = re.compile(br"^</SEC-HEADER>[ \t]*\r?$", _SEC_LINE_FLAGS)
-_SEC_DOCUMENT_OPEN_LINE_RE = re.compile(br"^<DOCUMENT>[ \t]*\r?$", _SEC_LINE_FLAGS)
+_SEC_HEADER_OPEN_LINE_RE = re.compile(
+    br"^<SEC-HEADER>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
+)
+_SEC_HEADER_CLOSE_LINE_RE = re.compile(
+    br"^</SEC-HEADER>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
+)
+_SEC_DOCUMENT_OPEN_LINE_RE = re.compile(
+    br"^<DOCUMENT>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
+)
+_SEC_DOCUMENT_CLOSE_LINE_RE = re.compile(
+    br"^</SEC-DOCUMENT>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
+)
 _SEC_HEADER_ACCESSION_LINE_RE = re.compile(
     br"^[ \t]*ACCESSION[ \t]+NUMBER[ \t]*:[ \t]*"
     br"([0-9]{10}-[0-9]{2}-[0-9]{6})[ \t]*\r?$",
@@ -56,6 +66,9 @@ _SEC_DOCUMENT_TOKEN_RE = re.compile(br"<[ \t]*SEC-DOCUMENT\b", re.IGNORECASE)
 _SEC_HEADER_OPEN_TOKEN_RE = re.compile(br"<[ \t]*SEC-HEADER\b", re.IGNORECASE)
 _SEC_HEADER_CLOSE_TOKEN_RE = re.compile(br"<[ \t]*/[ \t]*SEC-HEADER\b", re.IGNORECASE)
 _SEC_DOCUMENT_OPEN_TOKEN_RE = re.compile(br"<[ \t]*DOCUMENT\b", re.IGNORECASE)
+_SEC_DOCUMENT_CLOSE_TOKEN_RE = re.compile(
+    br"<[ \t]*/[ \t]*SEC-DOCUMENT\b", re.IGNORECASE,
+)
 _SEC_HEADER_ACCESSION_TOKEN_RE = re.compile(
     br"ACCESSION\s+NUMBER", re.IGNORECASE,
 )
@@ -217,7 +230,10 @@ def _exact_protected_matches(
     return matches
 
 
-def _complete_submission_header(raw: bytes) -> bytes:
+def _complete_submission_header(
+    raw: bytes, *, accession_match: re.Match[bytes], outer_close: re.Match[bytes],
+) -> bytes:
+    """Return the one ordered SEC header inside a canonical outer envelope."""
     open_match = _exact_protected_matches(
         raw,
         token_pattern=_SEC_HEADER_OPEN_TOKEN_RE,
@@ -236,11 +252,13 @@ def _complete_submission_header(raw: bytes) -> bytes:
         raise ManifestIdentityError(
             "SEC complete-submission contains a non-canonical or missing DOCUMENT opener"
         )
-    first_document = next(
-        (match for match in document_matches if match.start() >= open_match.end()), None,
-    )
-    if first_document is None:
+    first_document = document_matches[0]
+    if any(match.start() < open_match.end() for match in document_matches):
+        raise ManifestIdentityError("SEC DOCUMENT opener precedes the canonical SEC header")
+    if not accession_match.end() <= open_match.start() < first_document.start():
         raise ManifestIdentityError("SEC header is not followed by a canonical DOCUMENT opener")
+    if any(match.start() >= outer_close.start() for match in document_matches):
+        raise ManifestIdentityError("SEC DOCUMENT opener is outside the outer SEC-DOCUMENT envelope")
     if close_matches:
         close_match = close_matches[0]
         if not open_match.end() <= close_match.start() < first_document.start():
@@ -249,6 +267,39 @@ def _complete_submission_header(raw: bytes) -> bytes:
     else:
         end = first_document.start()
     return raw[open_match.end():end]
+
+
+def _complete_submission_envelope(
+    raw: bytes, accession_match: re.Match[bytes],
+) -> tuple[bytes, re.Match[bytes]]:
+    """Validate the canonical SEC-DOCUMENT -> SEC-HEADER -> DOCUMENT grammar.
+
+    The retained object is the complete submission itself, so no transport
+    preamble or trailing payload is admissible.  This is intentionally stricter
+    than searching for useful tags inside arbitrary bytes: the accession line
+    must be the first line and the single outer closer must terminate the file
+    except for ASCII whitespace.
+    """
+    if accession_match.start() != 0:
+        raise ManifestIdentityError(
+            "SEC-DOCUMENT accession must be the canonical first line"
+        )
+    close_match = _exact_protected_matches(
+        raw,
+        token_pattern=_SEC_DOCUMENT_CLOSE_TOKEN_RE,
+        line_pattern=_SEC_DOCUMENT_CLOSE_LINE_RE,
+        label="SEC-DOCUMENT closer",
+    )[0]
+    if close_match.start() <= accession_match.end():
+        raise ManifestIdentityError("SEC-DOCUMENT closer is out of order")
+    if raw[close_match.end():].strip(b" \t\r\n"):
+        raise ManifestIdentityError(
+            "SEC-DOCUMENT closer must terminate the complete submission"
+        )
+    header = _complete_submission_header(
+        raw, accession_match=accession_match, outer_close=close_match,
+    )
+    return header, close_match
 
 
 def validate_manifest_retained_bytes_binding(
@@ -281,6 +332,7 @@ def validate_manifest_retained_bytes_binding(
         line_pattern=_SEC_DOCUMENT_LINE_RE,
         label="SEC-DOCUMENT accession",
     )[0]
+    header, _outer_close = _complete_submission_envelope(raw, accession_match)
     source_accession = accession_match.group(1).decode("ascii")
     filing = record.get("filing") or {}
     if str(filing.get("accession") or "") != source_accession:
@@ -290,7 +342,6 @@ def validate_manifest_retained_bytes_binding(
     if source_id != expected_source_id:
         raise ManifestIdentityError("manifest source_id is detached from SEC submission header")
 
-    header = _complete_submission_header(raw)
     header_accession_match = _exact_protected_matches(
         header,
         token_pattern=_SEC_HEADER_ACCESSION_TOKEN_RE,

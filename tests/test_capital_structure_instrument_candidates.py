@@ -11,6 +11,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 import engine.capital_structure.document_terms as document_terms
+import engine.capital_structure.instrument_candidates as instrument_candidates
 from engine.capital_structure.document_terms import (
     compile_document_term_records,
     observation_id_for,
@@ -59,42 +60,6 @@ def _manifest(raw: bytes) -> dict:
 
 
 _FIXTURE_PRIOR_PARSER_VERSION = "test-document-terms-fixture/0.0.1"
-
-
-def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_version: str) -> list[dict]:
-    rows = document_terms._records_for_manifest_v1_1_0(manifest, raw, parser_version)
-    for row in rows:
-        row["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
-        row["reported"] = document_terms._empty_value()
-        row["normalized"] = document_terms._empty_value()
-    return rows
-
-
-def _register_fixture_prior_parser(monkeypatch) -> str:
-    entrypoints = (
-        *document_terms._parser_semantic_entrypoints(_fixture_prior_unavailable_parser),
-        document_terms.SemanticEntrypoint(
-            "fixture_base_extractor", document_terms._records_for_manifest_v1_1_0,
-        ),
-    )
-    manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
-        entrypoints
-    )
-    monkeypatch.setitem(
-        document_terms._PARSER_REGISTRY,
-        _FIXTURE_PRIOR_PARSER_VERSION,
-        document_terms.ParserRegistration(
-            version=_FIXTURE_PRIOR_PARSER_VERSION,
-            implementation_sha256=implementation_sha256,
-            extractor=_fixture_prior_unavailable_parser,
-            semantic_bundle=document_terms.ParserSemanticBundle(
-                entrypoints=entrypoints,
-                dependency_count=len(manifest),
-                dependency_manifest_sha256=manifest_sha256,
-            ),
-        ),
-    )
-    return _FIXTURE_PRIOR_PARSER_VERSION
 
 
 def _direct_rows() -> list[dict]:
@@ -255,52 +220,40 @@ def test_ambiguous_upstream_direct_term_cannot_be_promoted_to_a_candidate_family
     assert projected["supply_role"] == "unknown"
 
 
-def test_candidate_correction_is_not_visible_until_this_projection_compiles(monkeypatch):
-    prior_version = _register_fixture_prior_parser(monkeypatch)
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
-    direct_v1, manifests, reader = _direct_authority()
-    baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
-    direct_v2 = compile_document_term_records(
-        manifests,
-        source_reader=reader,
-        existing_observations=direct_v1,
-        generated_at="2026-08-05T00:00:00Z",
-    )["observations"]
-    result = _compile(
-        direct_v2,
-        manifests=manifests,
-        reader=reader,
-        existing=baseline,
-        generated_at="2026-08-06T00:00:00Z",
+def test_candidate_authority_rejects_post_import_synthetic_parser_registration(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    released = document_terms._PARSER_REGISTRY[
+        "capital-structure-document-terms/1.1.0"
+    ]
+    forged = document_terms.ParserRegistration(
+        version=_FIXTURE_PRIOR_PARSER_VERSION,
+        implementation_sha256=released.implementation_sha256,
+        extractor=released.extractor,
+        semantic_bundle=released.semantic_bundle,
     )
-    corrected = [row for row in result["observations"] if row["term"]["name"] == "registration_fee"]
-    assert len(corrected) == 2
-    prior, later = sorted(corrected, key=lambda row: row["version"]["correction_version"])
-    assert later["version"] == {"immutable_record": True, "correction_version": 2, "correction_of": prior["candidate_term_id"]}
-    assert prior["source_term_state"]["disposition"] == "unavailable"
-    assert later["source_term_state"]["disposition"] == "observed"
-    assert later["point_in_time"]["available_at"] == "2026-08-06T00:00:00Z"
-    before = current_candidate_terms_as_of(
-        result["observations"], "2026-08-05T23:59:59Z",
-        document_term_observations=direct_v2, source_manifests=manifests, source_reader=reader,
+    monkeypatch.setattr(
+        document_terms,
+        "_PARSER_REGISTRY",
+        {**dict(document_terms._PARSER_REGISTRY), forged.version: forged},
     )
-    after = current_candidate_terms_as_of(
-        result["observations"], "2026-08-06T00:00:00Z",
-        document_term_observations=direct_v2, source_manifests=manifests, source_reader=reader,
-    )
-    assert next(row for row in before if row["term"]["name"] == "registration_fee")["source_term"]["observation_id"] == prior["source_term"]["observation_id"]
-    assert next(row for row in after if row["term"]["name"] == "registration_fee")["source_term"]["observation_id"] == later["source_term"]["observation_id"]
+    tampered = deepcopy(source)
+    for row in tampered:
+        row["extraction"]["parser_version"] = forged.version
+        row["observation_id"] = document_terms.observation_id_for(row)
 
-    with pytest.raises(ValueError, match="historical source_as_of cannot write"):
-        _compile(
-            direct_v2,
-            manifests=manifests,
-            reader=reader,
-            existing=result["observations"],
-            generated_at="2026-08-07T00:00:00Z",
-            source_as_of="2026-08-04T00:00:00Z",
-        )
+    with pytest.raises(ValueError, match="parser_version is not registered"):
+        _compile(tampered, manifests=manifests, reader=reader)
+
+
+def test_candidate_compile_rejects_noop_imported_direct_authority(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    monkeypatch.setattr(
+        instrument_candidates,
+        "validate_document_term_source_authority",
+        lambda *args, **kwargs: [deepcopy(row) for row in source],
+    )
+    with pytest.raises(ValueError, match="document-term authority binding changed"):
+        _compile(source, manifests=manifests, reader=reader)
 
 
 def test_candidate_history_rejects_rehashed_issuer_evidence_and_null_value_mutations():
@@ -505,24 +458,16 @@ def test_rehashed_direct_and_manifest_envelopes_fail_closed_on_pure_disk_and_pit
             )
 
 
-def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers(tmp_path, monkeypatch):
-    prior_version = _register_fixture_prior_parser(monkeypatch)
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
-    direct_v1, manifests, reader = _direct_authority()
-    baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
-    direct_v2 = compile_document_term_records(
-        manifests, source_reader=reader, existing_observations=direct_v1,
-        generated_at="2026-08-05T00:00:00Z",
-    )["observations"]
+def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers(tmp_path):
+    direct_v2, manifests, reader = _direct_authority()
     candidates = _compile(
-        direct_v2, manifests=manifests, reader=reader, existing=baseline,
+        direct_v2, manifests=manifests, reader=reader,
         generated_at="2026-08-06T00:00:00Z",
     )["observations"]
     with pytest.raises(ValueError, match="historical source_as_of cannot write"):
         _compile(
             direct_v2, manifests=manifests, reader=reader, existing=candidates,
-            generated_at="2026-08-07T00:00:00Z", source_as_of="2026-08-04T00:00:00Z",
+            generated_at="2026-08-07T00:00:00Z", source_as_of="2026-08-02T00:00:00Z",
         )
 
     raw = FIXTURE.read_bytes()
@@ -549,5 +494,5 @@ def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers
     with pytest.raises(ValueError, match="historical source_as_of cannot write"):
         compile_from_disk(
             root=tmp_path, generated_at="2026-08-07T00:00:00Z",
-            source_as_of="2026-08-04T00:00:00Z", source_store=_FixtureStore(manifest, raw),
+            source_as_of="2026-08-02T00:00:00Z", source_store=_FixtureStore(manifest, raw),
         )

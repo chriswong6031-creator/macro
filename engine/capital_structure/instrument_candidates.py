@@ -29,6 +29,10 @@ from engine.capital_structure.document_terms import (
 )
 
 
+_RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF = current_document_terms_as_of
+_RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY = validate_document_term_source_authority
+
+
 INSTRUMENT_CANDIDATE_TERM_SCHEMA = "capital_structure.instrument_candidate_term.v1"
 MAPPING_VERSION = "capital-structure-instrument-candidate-terms/1.0.0"
 _DIRECT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "capital_structure_document_term_observation.schema.json"
@@ -441,11 +445,16 @@ def validate_document_term_authority(
     Reuse the direct-term source validator before a candidate ledger is compiled
     or read, so a self-consistent edit to either Parquet file fails closed.
     """
+    if (
+        globals().get("validate_document_term_source_authority")
+        is not _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY
+    ):
+        raise ValueError("instrument candidate document-term authority binding changed")
     schema = _load_schema(_DIRECT_SCHEMA_PATH)
     sources = [deepcopy(dict(raw)) for raw in records]
     for index, source in enumerate(sources):
         _validate_schema(source, schema, f"document-term input row {index}")
-    return validate_document_term_source_authority(
+    return _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY(
         sources,
         source_manifests=source_manifests,
         source_reader=source_reader,
@@ -556,7 +565,16 @@ def compile_candidate_term_records(
                 "historical source_as_of cannot write the canonical candidate ledger; "
                 "use a read-only isolated replay instead"
             )
-    selected = current_document_terms_as_of(direct_sources, source_cutoff) if direct_sources else []
+    if (
+        globals().get("current_document_terms_as_of")
+        is not _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF
+    ):
+        raise ValueError("instrument candidate current document-term binding changed")
+    selected = (
+        _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF(direct_sources, source_cutoff)
+        if direct_sources
+        else []
+    )
     for source in selected:
         direct_available = _parse_time((source.get("point_in_time") or {}).get("available_at"), "source.available_at")
         if _parse_time(generated, "generated_at") < direct_available:

@@ -101,32 +101,34 @@ def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_
     return rows
 
 
-def _register_fixture_prior_parser(monkeypatch) -> str:
-    """Inject a historic parser only inside this semantic-correction fixture."""
+def _fixture_prior_parser_lane() -> tuple[str, object, object]:
+    """Build an explicit private capability lane for one historic fixture."""
     entrypoints = (
         *document_terms._parser_semantic_entrypoints(_fixture_prior_unavailable_parser),
         document_terms.SemanticEntrypoint(
             "fixture_base_extractor", document_terms._records_for_manifest_v1_1_0,
         ),
     )
+    dispatch_roots = document_terms._parser_semantic_dispatch_roots()
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
-        entrypoints
+        entrypoints, dispatch_roots,
     )
-    monkeypatch.setitem(
-        document_terms._PARSER_REGISTRY,
-        _FIXTURE_PRIOR_PARSER_VERSION,
-        document_terms.ParserRegistration(
-            version=_FIXTURE_PRIOR_PARSER_VERSION,
-            implementation_sha256=implementation_sha256,
-            extractor=_fixture_prior_unavailable_parser,
-            semantic_bundle=document_terms.ParserSemanticBundle(
-                entrypoints=entrypoints,
-                dependency_count=len(manifest),
-                dependency_manifest_sha256=manifest_sha256,
-            ),
+    registration = document_terms.ParserRegistration(
+        version=_FIXTURE_PRIOR_PARSER_VERSION,
+        implementation_sha256=implementation_sha256,
+        extractor=_fixture_prior_unavailable_parser,
+        semantic_bundle=document_terms.ParserSemanticBundle(
+            entrypoints=entrypoints,
+            dispatch_roots=dispatch_roots,
+            dependency_count=len(manifest),
+            dependency_manifest_sha256=manifest_sha256,
         ),
     )
-    return _FIXTURE_PRIOR_PARSER_VERSION
+    capability = document_terms._PRIVATE_TEST_PARSER_CAPABILITY
+    lane = document_terms._make_test_parser_lane(
+        [registration], capability=capability,
+    )
+    return _FIXTURE_PRIOR_PARSER_VERSION, lane, capability
 
 
 def _contract() -> dict:
@@ -214,18 +216,19 @@ def test_multiple_direct_rows_are_row_scoped_and_never_summed_or_collapsed():
     }
 
 
-def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bound(monkeypatch):
+def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bound():
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
-    prior_version = _register_fixture_prior_parser(monkeypatch)
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
-    original = compile_document_term_records(
-        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
+    prior_version, lane, capability = _fixture_prior_parser_lane()
+    original = document_terms._compile_document_term_records_test_lane(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+        parser_lane=lane, parser_version=prior_version, capability=capability,
     )["observations"]
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
-    result = compile_document_term_records(
+    result = document_terms._compile_document_term_records_test_lane(
         [manifest], source_reader=_reader(raw), existing_observations=original,
         generated_at="2026-08-04T00:00:00Z",
+        parser_lane=lane, parser_version="capital-structure-document-terms/1.1.0",
+        capability=capability,
     )
     corrected = [row for row in result["observations"] if row["term"]["name"] == "registration_fee"]
     assert len(corrected) == 2
@@ -237,8 +240,14 @@ def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bo
     assert prior["extraction"]["parser_version"] == prior_version
     assert later["extraction"]["parser_version"] == "capital-structure-document-terms/1.1.0"
     assert later["reported"]["value"] == "1237.1"
-    before = current_document_terms_as_of(result["observations"], "2026-08-03T12:00:00Z")
-    after = current_document_terms_as_of(result["observations"], "2026-08-04T00:00:00Z")
+    before = document_terms._current_document_terms_as_of_test_lane(
+        result["observations"], "2026-08-03T12:00:00Z",
+        parser_lane=lane, capability=capability,
+    )
+    after = document_terms._current_document_terms_as_of_test_lane(
+        result["observations"], "2026-08-04T00:00:00Z",
+        parser_lane=lane, capability=capability,
+    )
     assert next(row for row in before if row["term"]["name"] == "registration_fee")["reported"]["value"] is None
     assert next(row for row in after if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
 
@@ -297,11 +306,11 @@ def test_registered_parser_closure_rejects_every_mutated_semantic_helper(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(document_terms, target, altered_semantic_helper)
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
         )
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
@@ -314,11 +323,11 @@ def test_registered_parser_closure_rejects_mutated_semantic_constant(monkeypatch
         [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
     )["observations"]
     monkeypatch.setattr(document_terms, "TERM_NAMES", (*document_terms.TERM_NAMES, "forged"))
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
         )
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
@@ -343,11 +352,11 @@ def test_registered_parser_closure_rejects_mutated_module_attribute(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(module, attribute, altered_module_attribute)
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
         )
-    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+    with pytest.raises(ValueError, match="closure mismatch"):
         validate_document_term_source_authority(
             original_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
@@ -361,14 +370,15 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         "capital-structure-document-terms/1.1.0"
     ]
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
-        registration.semantic_bundle.entrypoints
+        registration.semantic_bundle.entrypoints,
+        registration.semantic_bundle.dispatch_roots,
     )
-    assert len(manifest) == 245
+    assert len(manifest) == 309
     assert manifest_sha256 == (
-        "959b70485d38b9787e1e3b617ab228534299e44d95ba1d0cf12cce201d75ffcd"
+        "20f55c5101bdea5e746090b77ba29f5e4272837070c6b631a8b73f9db65afc8b"
     )
     assert implementation_sha256 == (
-        "33bf9280f6a4a85e86afae473e0711fcaa3a201fe1d38886d1dfacee1742b70f"
+        "c8e7e225a9bdeabdb5292204c55c07cbc7bb42d2a7dec9081acebea901cfa05b"
     )
     assert len(manifest) == registration.semantic_bundle.dependency_count
     assert manifest_sha256 == registration.semantic_bundle.dependency_manifest_sha256
@@ -377,8 +387,165 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         "._digest_id", "._parse_time", "._iso", "._unique_spans",
         ".make_stable_span", "._materialize_observation", ".observation_id_for",
         ".hashlib.attribute.sha256", ".json.attribute.dumps", "runtime:python",
+        "html.parser.HTMLParser.feed", "html.parser.HTMLParser.close",
+        "html.parser.HTMLParser.goahead", "_markupbase.ParserBase.updatepos",
     ):
         assert any(required in node for node in manifest), required
+
+
+def test_released_authority_policy_has_independent_golden_closure():
+    policy = document_terms._AUTHORITY_POLICY
+    manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
+        policy.entrypoints,
+    )
+    assert len(manifest) == 335
+    assert manifest_sha256 == (
+        "e3a0ed6c8737bb43ef608bb4a45a94a3906c871ed2a98f6fa8eebaf4fb4e67c2"
+    )
+    assert implementation_sha256 == (
+        "f874881551e7b6708be352cf09ec59c7ed2b5fe4a3be91ca94abb85c5f3ce5bf"
+    )
+    assert len(manifest) == policy.dependency_count
+    assert manifest_sha256 == policy.dependency_manifest_sha256
+    assert implementation_sha256 == policy.implementation_sha256
+    for required in (
+        "source_identity.validate_manifest_retained_bytes_binding",
+        "._validate_document_term_records_contract",
+        "._assert_zero_authority",
+        "._validate_observation_source_binding_core",
+        "._validate_document_term_history_core",
+        "._validate_document_term_source_authority_core",
+    ):
+        assert any(required in node for node in manifest), required
+
+
+@pytest.mark.parametrize(
+    ("owner", "method"),
+    [
+        (document_terms.HTMLParser, "feed"),
+        (document_terms.HTMLParser, "close"),
+        (document_terms.HTMLParser, "goahead"),
+        (document_terms.HTMLParser.__mro__[1], "updatepos"),
+        (document_terms._CellText, "handle_data"),
+    ],
+)
+def test_parser_closure_rejects_mutated_inherited_dispatch_and_callbacks(
+    monkeypatch, owner, method,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original_rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    original = getattr(owner, method)
+
+    def altered_dispatch(*args, **kwargs):
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(owner, method, altered_dispatch)
+    with pytest.raises(ValueError, match="closure mismatch"):
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw),
+            generated_at="2026-08-03T00:00:00Z",
+        )
+    with pytest.raises(ValueError, match="closure mismatch"):
+        validate_document_term_source_authority(
+            original_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_post_import_self_consistent_registry_insertion_cannot_grant_authority(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    released = document_terms._PARSER_REGISTRY[
+        "capital-structure-document-terms/1.1.0"
+    ]
+    with pytest.raises(TypeError):
+        document_terms._PARSER_REGISTRY["forged"] = released
+
+    forged_version = "forged-document-terms/99.0.0"
+    forged = document_terms.ParserRegistration(
+        version=forged_version,
+        implementation_sha256=released.implementation_sha256,
+        extractor=released.extractor,
+        semantic_bundle=released.semantic_bundle,
+    )
+    monkeypatch.setattr(
+        document_terms,
+        "_PARSER_REGISTRY",
+        {**dict(document_terms._PARSER_REGISTRY), forged_version: forged},
+    )
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    forged_rows = deepcopy(rows)
+    for row in forged_rows:
+        row["extraction"]["parser_version"] = forged_version
+        row["observation_id"] = observation_id_for(row)
+    with pytest.raises(ValueError, match="parser_version is not registered"):
+        validate_document_term_history(forged_rows)
+    with pytest.raises(ValueError, match="parser_version is not registered"):
+        validate_document_term_source_authority(
+            forged_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_noop_retained_source_validator_cannot_bypass_sealed_authority_policy(monkeypatch):
+    raw = FIXTURE.read_bytes().replace(
+        b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 2\n", 1,
+    )
+    forged_manifest = _manifest(raw)
+    forged_manifest["issuer"] = {
+        **forged_manifest["issuer"],
+        "issuer_id": "sec:cik:0000000002",
+        "cik": "2",
+    }
+    forged_manifest["manifest_id"] = manifest_id_for(forged_manifest)
+
+    monkeypatch.setattr(
+        document_terms,
+        "validate_manifest_retained_bytes_binding",
+        lambda _manifest, _raw: None,
+    )
+    with pytest.raises(ValueError, match="authority policy binding changed"):
+        compile_document_term_records(
+            [forged_manifest], source_reader=_reader(raw),
+            generated_at="2026-08-03T00:00:00Z",
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "error"),
+    [
+        (lambda row: row.update({"authority": {"trade_authority": False}}), "zero-authority"),
+        (lambda row: row["evidence"].update({"authority": {"rank": False}}), "zero-authority"),
+        (lambda row: row.update({"unexpected_top_level": "smuggled"}), "contract violation"),
+        (lambda row: row["reported"].update({"unexpected_nested": "smuggled"}), "contract violation"),
+    ],
+)
+def test_all_direct_record_trust_paths_enforce_closed_schema_and_zero_authority(
+    mutation, error,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    tampered = deepcopy(rows)
+    mutation(tampered[0])
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+
+    calls = (
+        lambda: validate_document_term_history(tampered),
+        lambda: current_document_terms_as_of(tampered, "2026-08-04T00:00:00Z"),
+        lambda: validate_observation_source_binding(tampered[0], manifest, raw),
+        lambda: validate_document_term_source_authority(
+            tampered, source_manifests=[manifest], source_reader=_reader(raw),
+        ),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match=error):
+            call()
 
 
 def test_complete_submission_header_binds_exact_source_id_and_form():
@@ -456,6 +623,56 @@ def test_complete_submission_rejects_structural_and_header_lookalikes(mutation, 
     raw = mutation(FIXTURE.read_bytes())
     with pytest.raises(ManifestIdentityError, match=error):
         validate_manifest_retained_bytes_binding(_manifest(raw), raw)
+
+
+def _move_header_before_sec_document(raw: bytes) -> bytes:
+    first_line = raw.splitlines(keepends=True)[0]
+    without_lines = raw.replace(first_line, b"", 1).replace(b"<SEC-HEADER>\n", b"", 1)
+    return b"<SEC-HEADER>\n" + first_line + without_lines
+
+
+def _move_outer_close_before_first_document(raw: bytes) -> bytes:
+    without_close = raw.rsplit(b"</SEC-DOCUMENT>", 1)[0]
+    return without_close.replace(
+        b"<DOCUMENT>\n", b"</SEC-DOCUMENT>\n<DOCUMENT>\n", 1,
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "error"),
+    [
+        (lambda raw: b"transport preamble\n" + raw, "canonical first line"),
+        (lambda raw: raw.rsplit(b"</SEC-DOCUMENT>", 1)[0], "SEC-DOCUMENT closer"),
+        (lambda raw: raw + b"\n</SEC-DOCUMENT>", "SEC-DOCUMENT closer"),
+        (lambda raw: raw + b"\ntransport trailer", "must terminate"),
+        (
+            lambda raw: raw.replace(
+                b"<SEC-HEADER>\n",
+                b"<DOCUMENT>\n</DOCUMENT>\n<SEC-HEADER>\n",
+                1,
+            ),
+            "precedes the canonical SEC header",
+        ),
+        (_move_header_before_sec_document, "canonical first line"),
+        (_move_outer_close_before_first_document, "must terminate"),
+        (lambda raw: raw.replace(b"<SEC-DOCUMENT>", b"<sec-document>", 1), "canonical SEC-DOCUMENT"),
+    ],
+)
+def test_outer_sec_envelope_exploits_fail_before_observed_rows_can_compile(
+    mutation, error,
+):
+    raw = mutation(FIXTURE.read_bytes())
+    manifest = _manifest(raw)
+    with pytest.raises(ManifestIdentityError, match=error):
+        validate_manifest_retained_bytes_binding(manifest, raw)
+    with pytest.raises(DocumentTermCompileDegraded) as exc_info:
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw),
+            generated_at="2026-08-03T00:00:00Z",
+        )
+    assert len(exc_info.value.failures) == 1
+    assert exc_info.value.failures[0]["state"] == "source_identity_detached"
+    assert error in exc_info.value.failures[0]["errors"][0]
 
 
 def test_complete_submission_form_normalization_preserves_amendment_status():
@@ -790,7 +1007,7 @@ def test_history_requires_source_before_output_and_exact_supersedes_link():
     correction["point_in_time"]["available_at"] = "2026-08-04T00:00:00Z"
     correction["extraction"]["parser_version"] = "capital-structure-document-terms/1.1.0"
     correction["observation_id"] = observation_id_for(correction)
-    with pytest.raises(ValueError, match="supersedes does not point to prior"):
+    with pytest.raises(ValueError, match="non-empty|supersedes does not point to prior"):
         validate_document_term_history([original, correction])
 
 
