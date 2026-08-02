@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-31",
-  "generated_at": "2026-08-01T21:42:33.686479+00:00",
+  "generated_at": "2026-08-02T03:55:45.980837+00:00",
   "degraded": null,
   "notes": [
     {
@@ -9,18 +9,18 @@
       "ticker": "M",
       "name": null,
       "lean": "cautious",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "Negative SUE and cycle nearing a high combine with extended entry to suggest underperformance risk relative to the S&P 500 over the near term.",
+      "thesis": "Cycle nearing a high and negative earnings surprise pressure outweigh momentum, favoring underperformance vs S&P.",
       "evidence": [
-        "SUE z=-0.11",
-        "cycle: NEARING A HIGH",
-        "entry blocked (urgency, off-high, rsi)",
-        "conviction band 'low'"
+        "Cycle: NEARING A HIGH (cycle_blocked)",
+        "SUE z -0.11 (negative surprise)",
+        "Entry axis blocked",
+        "Board dir: caution"
       ],
-      "dissent": "Strong alpha momentum (z=1.6) and improving revisions could sustain the trend despite weak earnings surprise.",
+      "dissent": "Momentum alpha (z 1.6) could persist, and insider buying suggests contrarian value; the pullback may be shallow.",
       "falsifier": {
-        "text": "Price closes above $26.00 (breaching recent high) with a positive update to the SUE signal.",
+        "text": "A close above the recent high (~$26) on above-average volume would invalidate the cycle near-high call.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "M",
@@ -39,27 +39,27 @@
       "name": null,
       "lean": "constructive",
       "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "Earnings, revisions, and momentum alignment support a base-building pattern; entry axis is unblocked despite mild caution around accounting quality.",
+      "horizon_d": 30,
+      "thesis": "Solid earnings, revisions, and insider confidence support base-building; entry favorable after pullback.",
       "evidence": [
-        "verdict 'Constructive \u2014 building a base'",
-        "SUE z=0.65, revisions z=0.78, alpha z=1.33",
-        "entry axis not blocked",
-        "score 54 in constructive band"
+        "Selection: positive SUE (0.65) and upward revisions (0.78)",
+        "Board: FRESH BUY, dir up",
+        "Entry not blocked, moderate RSI",
+        "Insider buying (event-edge context)"
       ],
-      "dissent": "Accounting watch flag could precede a negative restatement or earnings miss, undermining the base.",
+      "dissent": "Accounting flag (watch) and mixed macro regime could delay breakout; small-cap risk.",
       "falsifier": {
-        "text": "Stock closes below $44.00 on above-average volume, breaking the base support.",
+        "text": "A close below the recent base low (~$44) or a negative earnings revision would break the constructive setup.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "SHOO",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-28",
+      "check_by": "2026-09-11",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -68,24 +68,23 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Strong earnings and momentum keep upside potential alive, but extended price (+35% over 200dma) and deteriorating narrative basket neutralize directional edge.",
+      "horizon_d": 30,
+      "thesis": "Strong earnings and insider conviction are offset by extreme extension, vol-squeeze, and deteriorating sector narrative, leaving no clear directional edge.",
       "evidence": [
-        "verdict 'Extended \u2014 don't chase'",
-        "selection axes: SUE 0.78, revisions 0.78, alpha 1.28",
-        "entry blocked",
-        "narrative basket deteriorating",
-        "cycle: BOTTOMING caution"
+        "Selection: strong SUE (0.78) and momentum (1.28)",
+        "Entry blocked: +35% over 200dma, vol-squeeze",
+        "Narrative basket deteriorating",
+        "Cycle blocked, TURN SIGNALED"
       ],
-      "dissent": "If the materials basket turns positive, the extension could resolve higher and lead to outperformance.",
+      "dissent": "Cycle BOTTOMING and strong fundamentals could attract dip buyers after a pullback, making neutral miss a rally.",
       "falsifier": {
-        "text": "NUE outperforms the S&P 500 by more than 3% over the next 20 trading days, signaling the neutral call underestimated the momentum.",
+        "text": "A breakout above $270 on heavy volume with improving sector narrative would make neutral underperformance vs S&P wrong.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-28",
+      "check_by": "2026-09-11",
       "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
@@ -95,17 +94,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Fresh earnings surprise (SUE 0.27, 0 days stale) and upward revisions support a base, but proximity of earnings in 6 days and accounting watch limit conviction.",
+      "thesis": "Strong revisions and momentum support base-building, but imminent earnings introduce binary risk; constructive if earnings confirm the trend.",
       "evidence": [
-        "verdict 'Constructive \u2014 building a base'",
-        "SUE fresh_days=0",
-        "revisions z=1.1",
-        "entry not blocked",
-        "earnings in 6d caution"
+        "Selection: revision z 1.1, momentum 1.2",
+        "SUE fresh (0.27, 0d)",
+        "Entry favorable, not extended",
+        "Constructive verdict with accounting watch"
       ],
-      "dissent": "Earnings report could disappoint or accounting issues surface, causing a sharp decline.",
+      "dissent": "Accounting watch and earnings in 6 days could swing against; high volatility.",
       "falsifier": {
-        "text": "Stock gaps below $32.50 post-earnings, negating the base setup.",
+        "text": "A negative earnings surprise (reported EPS below consensus) and a gap below $32 would invalidate the constructive lean.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BEN",
@@ -124,23 +122,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Stale positive SUE (144 days old) and flat insider sentiment dilute the momentum/revision signals, producing no clear relative edge.",
+      "horizon_d": 30,
+      "thesis": "Stale SUE and mixed signals (TURN SIGNALED) produce no clear edge vs S&P; wait for fresh catalyst.",
       "evidence": [
-        "verdict 'Neutral \u2014 no clear edge'",
-        "SUE z=1.94 but fresh_days=144",
-        "insider z=0.0",
-        "entry not blocked but signals mixed"
+        "SUE z 1.94 but 144 days stale",
+        "Board: TURN SIGNALED, dir up but overbought signals present",
+        "Neutral verdict"
       ],
-      "dissent": "A fresh catalyst such as a new earnings beat could quickly revive momentum and lead to outperformance.",
+      "dissent": "Momentum (alpha 1.18) and quality could sustain leadership; neutral might underperform if trend resumes.",
       "falsifier": {
-        "text": "CASY moves more than 5% relative to S&P 500 in either direction over the next 20 trading days, indicating the neutral call missed a substantial move.",
+        "text": "A breakout above $900 with a fresh positive earnings catalyst would make the neutral lean incorrect.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-28",
+      "check_by": "2026-09-11",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -150,17 +147,16 @@
       "lean": "cautious",
       "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "Negative SUE, declining revisions, and cycle nearing a high overlay on extended price, creating a bearish setup relative to the market.",
+      "thesis": "Weak fundamentals (negative SUE, downward revisions) and cycle near high suggest continued underperformance, despite the 20% pullback.",
       "evidence": [
-        "SUE z=-0.34",
-        "revisions z=-0.3",
-        "cycle: NEARING A HIGH",
-        "entry blocked",
-        "conviction band 'low'"
+        "Selection: SUE -0.34, revisions -0.29 (deteriorating)",
+        "Cycle: NEARING A HIGH (cycle_blocked)",
+        "Score 5 (low)",
+        "Board: TOP WATCH, dir caution"
       ],
-      "dissent": "Strong alpha momentum (z=1.17) could drive a turnaround if the company surprises positively or shorts get squeezed.",
+      "dissent": "Value buyers could step in given -20% off high; quality score is high (0.89), so if cycle turns, KSS may rebound sharply.",
       "falsifier": {
-        "text": "KSS closes above $20.50 and posts a positive earnings revision, nullifying the bearish signals.",
+        "text": "A close above $21 with a positive earnings revision would challenge the cautious lean.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "KSS",
