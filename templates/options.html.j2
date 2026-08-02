@@ -1224,8 +1224,10 @@ var SKEL = {
    which time it does. The literal stays as the no-JS/helper-absent fallback:
    it reaches the Terminal, it just loses the &from=macro/&ret= stamp the
    Terminal reads to draw its "← Dashboard" button. gex.js already routes its
-   own CTA this way (site/gex.js:528). The old '?symbol=' spelling was never
-   read by the Terminal at all — its readers take `sym`. */
+   own CTA this way (site/gex.js:528). The spelling this CTA used before was a
+   parameter name the Terminal never read at all — its readers take `sym`
+   (EmbeddedTerminalBridge.tsx:42, api/intraday/route.ts:60), which is what the
+   helper emits. */
 function terminalUrl(sym){
   try{
     if(window.MDXTerminal && window.MDXTerminal.url) return window.MDXTerminal.url(sym || '');

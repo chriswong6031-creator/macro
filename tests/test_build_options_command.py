@@ -37,7 +37,9 @@ from scripts.build_options_command import (  # noqa: E402
     _pips,
 )
 
-MODES = ("brief", "scanner", "ticker", "leaders")
+# Five modes since OIP W1.6-A (the One-Door consolidation): Flow lands SECOND,
+# and the order is pinned — the five evening questions in reading order.
+MODES = ("brief", "flow", "scanner", "ticker", "leaders")
 DOCTRINE_SIX = {
     "Act", "Get ready", "Watch — don't chase", "Protect gains", "Stand aside", "Ignore",
 }
@@ -347,12 +349,26 @@ def page() -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # The workspace IS the four modes
 # ─────────────────────────────────────────────────────────────────────────────
-def test_all_four_mode_containers_render(page):
+def test_all_five_mode_containers_render(page):
     for mode in MODES:
         assert f'id="mode-{mode}"' in page, f"missing mode container: {mode}"
         assert f'data-mode="{mode}"' in page, f"missing mode tab: {mode}"
-    assert page.count('role="tabpanel"') == 4
-    assert page.count('class="oew-tab"') == 4
+    assert page.count('role="tabpanel"') == 5
+    assert page.count('class="oew-tab"') == 5
+
+
+def test_mode_order_is_the_pinned_reading_order(page):
+    """brief · flow · scanner · ticker · leaders — pinned by ONE_DOOR §2.0.1 and
+    load-bearing: the tab strip is the page's whole navigation, and the order is
+    the argument (what kind of day → where money went → what screens rich/cheap →
+    the name in front of me → who earned attention). A tab appended at the end
+    because it was built last would silently break that argument."""
+    positions = [page.index(f'data-mode="{m}"') for m in MODES]
+    assert positions == sorted(positions), f"tab order drifted: {MODES} rendered as {positions}"
+    assert page.index("id=\"mode-flow\"") < page.index("id=\"mode-scanner\"")
+    # the JS routing table must carry the same order — the hash router and the
+    # tab strip walk the SAME array
+    assert "var MODES = ['brief','flow','scanner','ticker','leaders'];" in page
 
 
 def test_brief_is_the_default_active_mode(page):
@@ -1290,29 +1306,34 @@ def test_real_stores_render_when_present():
 # ─────────────────────────────────────────────────────────────────────────────
 # Declared caps (§6) — fixed copy, baked into the JS source regardless of payload
 # ─────────────────────────────────────────────────────────────────────────────
-def test_scanner_declares_its_cap_and_links_to_the_full_screener(page):
-    assert "Top 200 by premium, sorted" in page
-    assert "按权利金排序，前200" in page
-    assert 'class="oew-ph-more" href="options_screener.html"' in page
-    assert "Open the full screener for all " in page
-    assert "打开完整筛选台，查看全部 " in page
-    # the masterplan's own "384" example is a snapshot, not a literal — the cap
-    # sentence itself must never hardcode a name count (a literal DIGIT count,
-    # not the LIVE rows.length reference — the minor fix below intentionally
-    # composes 'rows.length + \' names\'' as its honest, sub-200 fallback, so
-    # that exact source string is no longer itself a defect signal).
+def test_scanner_has_no_cap_left_to_declare(page):
+    """OIP W1.6-A retires the Scanner's cap ENTIRELY (ONE_DOOR §2.3), and with it
+    the two sentences that existed to declare the cap: the conditional "Top 200"
+    subtitle and the "open the full screener for all N" escape link.
+
+    The old pins are inverted here rather than deleted, because a cap is the kind
+    of thing that comes back by accident: a future `.slice()` reintroduced for
+    "performance" would be exactly the undeclared truncation this whole lineage
+    of tests exists to catch, and the behavioural pin below would red immediately
+    while a grep for the retired wording would not."""
+    assert "Top 200 by premium, sorted" not in page
+    assert "按权利金排序，前200" not in page
+    assert "rows.length > 200" not in page
+    assert 'href="options_screener.html"' not in page, \
+        "the declared-cap escape link retires with the cap it declared"
+    # the "All N" form, with the count LIVE (never a hardcoded digit)
+    assert "All <b class=\"mono\">' + rows.length + '</b> screened names" in page
+    assert "全部 <b class=\"mono\">' + rows.length + '</b> 个筛选标的" in page
+    assert "sort any column, filter below" in page
+    assert "可按列排序、下方筛选" in page
     assert "384" not in page
-    # §0.20 minor fix: "Top 200" is a lie when the payload never had 200 rows
-    # to truncate — the subtitle must be conditioned on the real count, never
-    # unconditional.
-    assert "rows.length > 200" in page
 
 
 @_needs_node
-def test_scanner_subtitle_only_claims_the_cap_when_it_actually_truncates(page):
-    """Behavioral regression for the §0.20 minor: at <=200 rows nothing is cut,
-    so 'Top 200' would be exactly the undeclared-cap-shaped lie this sentence
-    exists to prevent. Runs renderScanner for real, at both sides of the cap."""
+def test_scanner_renders_every_screened_row_with_no_truncation(page):
+    """The load-bearing half of the fold: renderScanner must put EVERY row of the
+    payload in the table. Driven at 250 rows — comfortably past the old 200-row
+    slice, so a reintroduced cap cannot hide behind a small fixture."""
     def _rows(n):
         return ", ".join(
             "{ ticker: 'T%d', sector: 'Tech', spot: 100, iv30: 0.2, "
@@ -1320,22 +1341,20 @@ def test_scanner_subtitle_only_claims_the_cap_when_it_actually_truncates(page):
             "asof: '2026-07-24', dist_to_flip_pct: 0.1, gamma_regime: 'long' }"
             % (i, 1000 - i) for i in range(n)
         )
-    cases = [(47, "47 names, sorted by premium", "47 个标的，按权利金排序", "Top 200"),
-             (250, "Top 200 by premium, sorted", "按权利金排序，前200", "250 names")]
-    for n, want_en, want_zh, must_not in cases:
+    for n in (47, 250):
         driver = (_DOM_STUB + _extract_workspace_script(page) + """
         var host = { innerHTML: '' };
         renderScanner(host, { rows: [ """ + _rows(n) + """ ] });
-        process.stdout.write(host.innerHTML);
+        process.stdout.write(JSON.stringify({ html: host.innerHTML, visible: scVisibleRows().length }));
         })();
         """)
         res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
         assert res.returncode == 0, f"node failed (n={n}):\nSTDERR:\n{res.stderr}"
-        out = res.stdout
-        assert want_en in out, f"n={n}: missing {want_en!r} in subtitle"
-        assert want_zh in out, f"n={n}: missing {want_zh!r} in subtitle"
-        sub = out[out.index('class="oew-ph-sub"'): out.index("oew-ph-more")]
-        assert must_not not in sub, f"n={n}: {must_not!r} must not appear in the subtitle — got {sub!r}"
+        out = _json.loads(res.stdout.strip().splitlines()[-1])
+        assert out["visible"] == n, f"n={n}: scVisibleRows() truncated to {out['visible']}"
+        assert out["html"].count("oew-sc-tk") == n, f"n={n}: table rendered fewer rows than the payload"
+        assert f'All <b class="mono">{n}</b> screened names' in out["html"]
+        assert f'全部 <b class="mono">{n}</b> 个筛选标的' in out["html"]
 
 
 def test_leaders_declares_both_board_caps_derived_not_hardcoded(page):
@@ -1354,6 +1373,12 @@ def test_leaders_declares_both_board_caps_derived_not_hardcoded(page):
     assert "top 12 of ' + bTotal + ', most recent first'" in page
     assert page.count('class="oew-ph-more" href="flow_leaders.html"') == 2
     assert page.count("Open the full boards") >= 2
+    # W1.6-A: the same derived total is now ALSO the expander's label, so the
+    # subtitle's "of N" and the button's "show all N" can never disagree.
+    assert "ldExpander('oew-ld-a', aTotal)" in page
+    assert "ldExpander('oew-ld-b', bTotal)" in page
+    assert "Show all ' + total" in page
+    assert "显示全部 ' + total" in page
 
 
 def _leaders_row_a(ticker: str) -> dict:
@@ -1404,8 +1429,16 @@ def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page
         "as_of": "2026-07-30T00:00:00+00:00", "stale": False,
         "coverage": {"n_universe": 30, "n_flow_sessions": 134, "flow_z_live": True,
                      "tape_names": 30, "n_etfs": 0},
-        "board_a": board_a, "board_a_total": 999,   # deliberately WRONG pre-cap
-        "board_b": board_b, "board_b_total": 999,   # decoy — must never be read
+        # W1.6-A removed build_flow_leaders' `_BOARD_CAP`, so the builder's own
+        # totals now equal its own array lengths — board_a_total is therefore no
+        # longer a decoy, and is set to the truthful 15 here. board_b_total stays
+        # the UNFILTERED length (15): it counts every board-B row, while this
+        # panel and flow_leaders.html both admit only the 9 that pass
+        # B5_flow_inflect. That asymmetry is why the denominator is still DERIVED
+        # rather than read off the payload — the field is right for board A and
+        # would still be wrong for board B.
+        "board_a": board_a, "board_a_total": 15,
+        "board_b": board_b, "board_b_total": 15,
         "etf_strip": [],
         "cold_start_detail": {"n_sessions": 134, "required_for_recurrence": 20, "message": None},
     }
@@ -1437,7 +1470,12 @@ def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page
     # 3) Cross-surface parity — the whole point of this regression.
     assert int(a_sub.group(1)) == a_rendered == 15
     assert int(b_sub.group(1)) == b_rendered == 9
-    assert "999" not in out, "the decoy pre-cap board_a_total/board_b_total leaked into the sentence"
+    # Board A's derived denominator now AGREES with the payload's own total (the
+    # uncapped builder's invariant); board B's deliberately does NOT, because the
+    # payload total is unfiltered. Both are asserted so a future "simplification"
+    # that reads L.board_b_total reds here instead of shipping a wrong "of 15".
+    assert int(a_sub.group(1)) == payload["board_a_total"]
+    assert int(b_sub.group(1)) != payload["board_b_total"]
 
 
 @_needs_node
@@ -2182,6 +2220,441 @@ def test_new_ticker_panels_keep_bilingual_span_parity_in_every_state(page):
         out = re.sub(r'aria-label\s*=\s*"[^"]*"', " ", out)
         en, zh = out.count('class="l-en"'), out.count('class="l-zh"')
         assert en == zh and en > 0, f"{name} state: {en} l-en spans vs {zh} l-zh spans"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OIP W1.6-A — the One-Door consolidation: Flow mode, the raw-structure shelf,
+# the Scanner's filter/sort/export controls, the Leaders expander, and the
+# Terminal handoff fix (research/options_estate/ONE_DOOR_RULING_AND_SPEC.md §2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_FLOW_DESK = """{
+  asof: '2026-07-31',
+  sector_heatmap: [
+    { sector: 'Technology', gross_premium_mn: 10583.6, net_premium_mn: 36.2, tone: 'neutral',
+      premium_z: 0.32, n_names: 51, asof: '2026-07-31' },
+    { sector: 'Energy', gross_premium_mn: 402.0, net_premium_mn: -80.0, tone: 'neg~',
+      premium_z: 2.4, n_names: 12, asof: '2026-07-31' },
+    { sector: 'Utilities', gross_premium_mn: 100.0, net_premium_mn: 5.0, tone: 'pos~',
+      premium_z: null, n_names: 4, asof: '2026-07-31' }
+  ],
+  etf_tile: { asof: '2026-07-31', funds: [
+    { ticker: 'XLK', flow_1d: 120.0, flow_5d: -33.0, flow_21d: 900.0 },
+    { ticker: 'XLE', flow_1d: -9.7, flow_5d: -243.0, flow_21d: 152.0 }
+  ] },
+  market_tide: { asof: '2026-07-31', spark: [
+    { date: '2026-07-29', premium_mn: 5000.0, net_premium_mn: 100.0 },
+    { date: '2026-07-30', premium_mn: 4000.0, net_premium_mn: -50.0 },
+    { date: '2026-07-31', premium_mn: 4838.9, net_premium_mn: 393.2 }
+  ] }
+}"""
+_FLOW_COHORTS = """{ asof: '2026-07-31', cohorts: [
+  { key: 'mag7', name_en: 'Mag 7', name_zh: '七巨头', gross_premium_mn: 7981.9,
+    net_premium_mn: 1353.8, pc_ratio: 0.576, pc_tone: 'call-tilted', net_tone: 'pos~',
+    n_members: 7, n_members_covered: 7 },
+  { key: 'memory_storage', name_en: 'Memory', name_zh: '存储', gross_premium_mn: 4587.0,
+    net_premium_mn: -238.6, pc_ratio: 0.891, pc_tone: 'balanced', net_tone: 'neg~',
+    n_members: 4, n_members_covered: 4 }
+] }"""
+# A payload carrying every block the shelf draws — and _GX_MINIMAL above carries
+# none of them, which is what proves each sub-chart owns its own empty slot.
+_GX_STRUCTURE = """{
+  meta: { en: 'SPY', asof: '2026-07-31' },
+  summary: { spot: 747.03, regime: 'long', gamma_flip: 747.06, call_wall: 800, put_wall: 700,
+             max_pain: 740, iv30: 15.2, put_call_oi_ratio: 1.4, put_call_vol_ratio: 0.9,
+             net_delta_bn: 1.2, net_vex: 1234567, charm_net_sign: 1, largest_oi: 800,
+             n_strikes: 40, tier: 'full', net_gex_bn: 2.2 },
+  expected_move: { daily_pct: 0.8 },
+  walls: { by_strike: [
+    { K: 700, net_mn: -120, call_oi: 10, put_oi: 900, call_vol: 3, put_vol: 40 },
+    { K: 747, net_mn: 20, call_oi: 100, put_oi: 90, call_vol: 30, put_vol: 40 },
+    { K: 800, net_mn: 546.8, call_oi: 244207, put_oi: 2648, call_vol: 17709, put_vol: 123 }
+  ] },
+  profile: { spots: [700, 720, 747, 780, 800], gamma_bn: [-2, -0.5, 0, 1.5, 3],
+             flip: 747.06, spot: 747.03 },
+  surface: { strikes: [700, 747, 800], expiries: ['Aug 03', 'Aug 10'], days: [2, 9],
+             z_gex: [[-50, -20], [5, null], [300, 120]], gex_max: 300 },
+  smile: { expiry: 'Aug 03', days: 2, strikes: [700, 747, 800],
+           call_iv: [22, 15, 18], put_iv: [30, 16, 14] },
+  term: [{ expiry: 'Aug 03', days: 2, atm_iv: 7.67, move_pct: 0.57, straddle_pct: 0.56, max_pain: 740 },
+         { expiry: 'Aug 10', days: 9, atm_iv: 11.2, move_pct: 1.2, straddle_pct: 1.1, max_pain: 745 }]
+}"""
+
+
+def _sc_rows_js(n: int) -> str:
+    """n screener rows with every field the range filters read."""
+    return ", ".join(
+        "{ ticker: 'T%03d', sector: '%s', spot: %d, iv30: %.1f, iv_rank: %d, "
+        "implied_move_30d: %.1f, pc_oi: %.2f, volume: %d, gross_premium_mn: %d, "
+        "net_prem_mn: %.1f, zerodte_share: %d, dist_to_flip_pct: %.1f, wall_up: %d, "
+        "wall_down: %d, gamma_regime: '%s', net_prem_tone: '%s', rel_volume: %.1f, "
+        "skew_pp: %.1f, ivspread_pp: %.1f, asof: '2026-07-31' }"
+        % (i, "Tech" if i % 2 else "Energy", 100 + i, 20.0 + i, (i * 7) % 100,
+           5.0 + i % 4, 0.5 + (i % 5) * 0.4, 1000 * (i + 1), 1000 - i,
+           (i % 3 - 1) * 10.0, (i * 3) % 100, ((i % 7) - 3) * 0.4, 120 + i,
+           80 + i, "long" if i % 2 else "short",
+           ["call-leaning", "neutral", "put-leaning"][i % 3],
+           0.5 + (i % 6) * 0.5, (i % 9) - 2.0, (i % 5) - 1.0)
+        for i in range(n)
+    )
+
+
+def _node(page: str, tail: str) -> str:
+    driver = _DOM_STUB + _extract_workspace_script(page) + tail + "\n})();\n"
+    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
+    return res.stdout
+
+
+# ── Flow mode ────────────────────────────────────────────────────────────────
+def test_flow_mode_ships_an_empty_shell_and_fetches_lazily(page):
+    """Payload law: Flow is a lazy mode like Scanner and Leaders. Its section is
+    EMPTY in the baked HTML and its two stores are fetched on first activation —
+    no new embed (the manifest-weight regression class, options.html.j2's own
+    standing veto on inlining row data)."""
+    assert ('<section class="oew-mode" id="mode-flow" role="tabpanel" '
+            'aria-labelledby="tab-flow"></section>') in page
+    assert "getJSON('flow_desk.json')" in page
+    assert "getJSON('flowdata/cohorts.json')" in page
+    # the skeleton copy is pinned, and the loader routes through it
+    assert "Loading the flow desk for this close…" in page
+    assert "正在加载本次收盘的资金流台…" in page
+    # exactly one fetch per store, and NOTHING inlined: an object literal for
+    # either payload in the page would be the manifest-weight regression again
+    assert page.count("getJSON('flow_desk.json')") == 1
+    assert page.count("getJSON('flowdata/cohorts.json')") == 1
+    assert "sector_heatmap:" not in page, "the sector rows must not be baked into the page"
+    assert "market_tide:" not in page, "the tide series must not be baked into the page"
+
+
+@_needs_node
+def test_flow_mode_renders_four_panels_and_casts_no_verdict(page):
+    """The verdict law, machine-checked on the mode that most tempted a second
+    one: Flow imports four strongly-opinionated panels from a page that shipped
+    its own stance chips, and must land here with ZERO. Ticker's name header
+    stays the page's only decision element."""
+    out = _node(page, """
+    var host = { innerHTML: '' };
+    renderFlow(host, """ + _FLOW_DESK + """, """ + _FLOW_COHORTS + """);
+    process.stdout.write(host.innerHTML);
+    """)
+    assert out.count('class="oew-panel"') == 4, "Flow must render exactly its four panels"
+    assert "oew-stance" not in out, "Flow mode must carry no stance chip (ONE_DOOR §2.0.2)"
+    assert "data-verdict-surface" not in out
+    for word in DOCTRINE_SIX:
+        assert word not in out, f"stance vocabulary leaked into Flow mode: {word}"
+    # every panel closes with a caveat SENTENCE instead
+    assert "not a forecast of where it goes next" in out
+    assert "not reported fund flows" in out
+    assert out.count('class="oew-pfoot"') == 4
+    # the four ported blocks are actually there
+    assert "oew-fl-flag" in out and "Technology" in out          # sector desk + ⚑
+    assert "oew-fl-tiles" in out and "Mag 7" in out              # theme groups
+    assert "oew-etfc" in out and "XLK" in out                    # sector-ETF grid
+    assert 'id="oew-fl-spark"' in out                            # the tide
+    en, zh = out.count('class="l-en"'), out.count('class="l-zh"')
+    assert en == zh and en > 0, f"Flow bilingual parity: {en} l-en vs {zh} l-zh"
+
+
+@_needs_node
+def test_flow_mode_degrades_honestly_at_every_absence(page):
+    """Three absences, three honest states: no desk at all, a desk with no
+    sectors, and no intraday tape. None of them may render a blank host."""
+    out = _node(page, """
+    var a = { innerHTML: '' }; renderFlow(a, null, null);
+    var b = { innerHTML: '' }; renderFlow(b, { sector_heatmap: [] }, null);
+    var c = { innerHTML: '' }; renderFlow(c, """ + _FLOW_DESK + """, null);
+    process.stdout.write(JSON.stringify({ noDesk: a.innerHTML, noRows: b.innerHTML, noCohorts: c.innerHTML }));
+    """)
+    res = _json.loads(out.strip().splitlines()[-1])
+    assert "oew-empty" in res["noDesk"], "an absent flow desk must say so"
+    assert "oew-empty" in res["noRows"], "a desk with no sectors must say so"
+    # the intraday overlay is never fetched under the stub, so the tide panel
+    # must already be showing its labelled absence rather than a blank canvas
+    assert "oew-fl-null" in res["noCohorts"]
+    assert "No intraday record for this session." in res["noCohorts"]
+    assert "本场次暂无盘中记录。" in res["noCohorts"]
+    # cohorts.json missing costs the theme panel and nothing else
+    assert res["noCohorts"].count('class="oew-panel"') == 4
+    for key, html_ in res.items():
+        en, zh = html_.count('class="l-en"'), html_.count('class="l-zh"')
+        assert en == zh, f"{key}: bilingual parity broke in an empty state ({en}/{zh})"
+
+
+def test_tide_canvas_colour_is_read_from_tokens_at_draw_time(page):
+    """Canvas cannot resolve var(--up), and --up/--down SWAP under zh. So the two
+    tide curves must read the tokens at draw time and repaint on 'langchange' —
+    a colour resolved once at render would leave the curve encoding the opposite
+    direction for every Chinese reader. Every hex in these functions must be a
+    cssVar() FALLBACK argument, never a drawing colour."""
+    start = page.index("function flDrawSpark()")
+    end = page.index("function flApplyTide(")
+    draw = page[start:end]
+    for token in ("--up", "--down", "--line"):
+        assert f"cssVar('{token}'" in draw, f"{token} is not read from the stylesheet at draw time"
+    for hexlit in re.findall(r"#[0-9a-fA-F]{6}", draw):
+        assert re.search(r"cssVar\('--[a-z-]+',\s*'" + hexlit + r"'\)", draw), \
+            f"{hexlit} is used as a drawing colour, not as a cssVar fallback"
+    assert "document.addEventListener('langchange'" in page
+    assert "flDrawSpark(); flDrawUnfold();" in page
+
+
+# ── the raw-structure shelf ──────────────────────────────────────────────────
+def test_raw_shelf_is_lazy_and_reuses_the_fetched_payload(page):
+    """Zero extra network and zero work until the reader opens it: the slot is
+    empty at render, filled from the ALREADY-fetched gx payload on first toggle,
+    and never re-filled."""
+    assert '<div id="oew-raw-slot"></div>' in page
+    assert "shelf.addEventListener('toggle'" in page
+    assert "slot.innerHTML = rawShelfBody(gx);" in page
+    # guarded against a second fill AND against firing while closed
+    assert "if(!shelf.open || !slot || slot.innerHTML) return;" in page
+    # the shelf body must not reach for the network
+    body_start = page.index("function rawShelfBody(gx)")
+    body_end = page.index("function renderTicker(")
+    assert "getJSON(" not in page[body_start:body_end]
+    assert "fetch(" not in page[body_start:body_end]
+    # the pinned shelf subtitle
+    assert "charts and the full strike record — for readers who want the plumbing" in page
+    assert "图表与完整行权价记录 — 供想看底层结构的读者" in page
+
+
+@_needs_node
+def test_raw_shelf_draws_every_chart_and_owns_its_empty_slots(page):
+    """A full payload draws all seven blocks; a minimal one (no walls, no
+    profile, no surface, no smile, no term) must show a per-chart honest empty
+    slot for each missing block — not one blanket message, and not a blank."""
+    out = _node(page, """
+    process.stdout.write(JSON.stringify({
+      full: rawShelfBody(""" + _GX_STRUCTURE + """),
+      minimal: rawShelfBody(""" + _GX_MINIMAL + """),
+      absent: rawShelfBody(null)
+    }));
+    """)
+    res = _json.loads(out.strip().splitlines()[-1])
+    assert res["full"].count("oew-raw-item") == 7, "the shelf must draw all seven blocks"
+    assert "oew-raw-empty" not in res["full"], "a complete payload must leave no empty slot"
+    for marker in ("<svg", "oew-raw-heat", "oew-raw-tbl", "oew-raw-greeks"):
+        assert marker in res["full"], f"missing shelf block: {marker}"
+    # Six slots go empty on the minimal payload, not five: `term` feeds BOTH the
+    # term-structure chart and the expiry-ladder table, so its absence is stated
+    # twice — once in each place a reader might look for it. The greeks row draws
+    # from `summary`, which the minimal payload does have.
+    assert res["minimal"].count("oew-raw-empty") == 6, \
+        "each missing block owns its own empty slot"
+    assert "oew-raw-greeks" in res["minimal"]
+    assert res["minimal"].count("oew-raw-item") == 7, "the slots stay, the charts do not"
+    assert "oew-raw-empty" in res["absent"]
+    for key, html_ in res.items():
+        en, zh = html_.count('class="l-en"'), html_.count('class="l-zh"')
+        assert en == zh and en > 0, f"{key}: shelf bilingual parity ({en}/{zh})"
+
+
+@_needs_node
+def test_raw_shelf_svg_colour_is_a_variable_never_a_baked_hex(page):
+    """SVG resolves CSS variables live, so the shelf flips with the language for
+    free — but only if nothing baked a colour. One hex here and that chart keeps
+    green-for-up in a Chinese session where every other surface has flipped."""
+    out = _node(page, """
+    process.stdout.write(rawShelfBody(""" + _GX_STRUCTURE + """));
+    """)
+    assert "#" not in out, "the shelf must contain no colour literal at all"
+    for token in ("var(--up)", "var(--down)", "var(--line)", "var(--muted)"):
+        assert token in out, f"{token} is not used by the shelf"
+
+
+def test_options_primer_ports_verbatim_and_stays_collapsed(page):
+    """gex.html's primer is Ticker mode's footer. Static markup — it must survive
+    a name whose chain 404s — and closed by default."""
+    open_tag = '<details class="oew-panel oew-shelf oew-primer">'
+    assert open_tag in page, "the primer must be a closed <details>, not an open panel"
+    assert "New to options? Read this first." in page
+    assert "不熟悉期权？先读这里。" in page
+    # a couple of load-bearing verbatim lines from gex.html.j2:403-409
+    assert "This page maps where big options dealers are likely to push or cushion the price." in page
+    assert "本页标示大型期权做市商可能推动或缓冲价格之处。" in page
+    # it is a sibling of the render target, so renderTicker can never wipe it
+    assert page.index('<div id="oew-tk-body"></div>') < page.index(open_tag)
+    assert page.index(open_tag) < page.index('id="mode-leaders"'), \
+        "the primer belongs to Ticker mode, not to the page"
+
+
+# ── Scanner: sort · filters · export ─────────────────────────────────────────
+@_needs_node
+def test_scanner_sorts_by_the_clicked_column_in_both_directions(page):
+    """Per-column sort, with aria-sort as the single source of truth for the
+    arrow (the CSS draws the arrow FROM aria-sort, so a screen reader and a
+    sighted reader cannot be told different things)."""
+    out = _node(page, """
+    var host = { innerHTML: '' };
+    renderScanner(host, { rows: [ """ + _sc_rows_js(20) + """ ] });
+    var first = function(){ return scVisibleRows()[0].ticker; };
+    var res = { defaultTop: first() };
+    scSort = { key: 'iv30', dir: 'desc', idx: 2 }; res.ivDesc = first();
+    scSort = { key: 'iv30', dir: 'asc', idx: 2 };  res.ivAsc = first();
+    scSort = { key: 'ticker', dir: 'asc', idx: 0 }; res.tkAsc = first();
+    res.head = scHead();
+    process.stdout.write(JSON.stringify(res));
+    """)
+    res = _json.loads(out.strip().splitlines()[-1])
+    assert res["defaultTop"] == "T000", "default sort is premium desc, and T000 carries the most"
+    assert res["ivDesc"] == "T019" and res["ivAsc"] == "T000", "iv30 sort did not reverse"
+    assert res["tkAsc"] == "T000"
+    assert res["head"].count('aria-sort="ascending"') == 1
+    assert res["head"].count('aria-sort="none"') == 18, "exactly one header may claim the sort"
+    assert 'data-sort="gross_premium_mn"' in res["head"]
+    assert 'data-sort="ticker"' in res["head"]
+
+
+@_needs_node
+def test_scanner_range_filters_compose_with_the_preset(page):
+    """Preset FIRST, then the ranges (ONE_DOOR §2.3). Driven with real inputs:
+    the preset narrows the population, the range narrows it again, and a row
+    missing the filtered field is EXCLUDED by an active bound — a null is not a
+    zero and must not slip through a filter the reader set."""
+    out = _node(page, """
+    var VALUES = {};
+    document.getElementById = function(id){
+      return (id in VALUES) ? { value: VALUES[id] } : null;
+    };
+    var host = { innerHTML: '' };
+    renderScanner(host, { rows: [ """ + _sc_rows_js(40) + """,
+      { ticker: 'NULLY', sector: 'Tech', gross_premium_mn: 999, pc_oi: null, asof: '2026-07-31' } ] });
+    var res = { all: scVisibleRows().length };
+    scPreset = 'putheavy';               res.preset = scVisibleRows().length;
+    VALUES['oew-f-prem-min'] = '990';    res.presetPlusRange = scVisibleRows().length;
+    scPreset = 'premium';                res.rangeOnly = scVisibleRows().length;
+    VALUES['oew-f-q'] = 'ENERGY';        res.rangePlusText = scVisibleRows().length;
+    delete VALUES['oew-f-prem-min']; delete VALUES['oew-f-q'];
+    VALUES['oew-f-pc-min'] = '0';        res.nullExcluded = scVisibleRows().filter(
+      function(r){ return r.ticker === 'NULLY'; }).length;
+    process.stdout.write(JSON.stringify(res));
+    """)
+    res = _json.loads(out.strip().splitlines()[-1])
+    assert res["all"] == 41, "no filter set — every row shows"
+    assert 0 < res["preset"] < res["all"], "the put-heavy preset must narrow the list"
+    assert res["presetPlusRange"] < res["preset"], "the range must narrow the preset's result"
+    assert res["rangeOnly"] > res["presetPlusRange"], "dropping the preset must widen it again"
+    assert res["rangePlusText"] < res["rangeOnly"], "the text filter must compose too"
+    assert res["nullExcluded"] == 0, "a row with a null in the filtered field must be excluded"
+
+
+def test_scanner_exports_what_is_on_screen(page):
+    """CSV of the filtered, sorted rows — the same list the reader is looking at,
+    never the unfiltered payload — under a dated filename."""
+    assert 'id="oew-sc-csv"' in page
+    assert "Export CSV" in page and "导出CSV" in page
+    export = page[page.index("function scExportCSV()"):page.index("function scApplyLang()")]
+    assert "scVisibleRows()" in export, "the export must take the ON-SCREEN rows"
+    assert "'options_scanner_'" in export
+    assert "new Blob(" in export and "URL.createObjectURL" in export
+    assert "URL.revokeObjectURL" in export
+
+
+def test_scanner_more_filters_disclosure_is_collapsed_and_complete(page):
+    """The 11 numeric ranges the screener ships, plus its text filter and sector
+    dropdown, in a collapsed disclosure — Tier-2 machinery, not glance-tier
+    furniture."""
+    assert "More filters — ranges, sector, text" in page
+    assert "更多筛选 — 数值区间、板块、文本" in page
+    assert 'class="oew-sc-more" id="oew-sc-more"' in page
+    assert " open" not in page[page.index('id="oew-sc-more"'):page.index('id="oew-sc-more"') + 60]
+    for key in ("iv30", "iv_rank", "implied_move_30d", "pc_oi", "volume", "gross_premium_mn",
+                "zerodte_share", "rel_volume", "skew_pp", "ivspread_pp"):
+        assert f"'{key}'" in page, f"range filter missing for {key}"
+    assert "oew-f-flip-max" in page, "the absolute distance-to-flip bound is max-only"
+    assert 'id="oew-f-q"' in page and 'id="oew-f-sector"' in page
+    # the banned acronym the screener uses for this field never comes across
+    assert "0DTE" not in page
+
+
+def test_seventh_preset_is_put_heavy_open_interest(page):
+    assert "['putheavy', 'Put-heavy OI','认沽持仓偏重']" in page
+    assert "num(r.pc_oi) >= 1.5" in page, "the screener's own shipped predicate, reused"
+    assert page.count("data-preset=") >= 1
+    assert len(re.findall(r"\['(?:premium|volsurge|highrank|zerodte|putskew|nearflip|putheavy)',", page)) == 7
+
+
+# ── Leaders expander ─────────────────────────────────────────────────────────
+@_needs_node
+def test_leaders_expander_shows_every_row_without_a_second_fetch(page):
+    """The builder no longer caps the boards, so the rows are ALREADY client-side:
+    the expander is a class toggle over hidden rows, and its label carries the
+    same derived N the subtitle states."""
+    board_a = _json.dumps([_leaders_row_a(f"AT{i:02d}") for i in range(30)])
+    board_b = _json.dumps([_leaders_row_b(f"BT{i:02d}", True) for i in range(20)])
+    out = _node(page, """
+    var host = { innerHTML: '' };
+    renderLeaders(host, { as_of: '2026-07-31T00:00:00+00:00', stale: false,
+      board_a: """ + board_a + """, board_b: """ + board_b + """, etf_strip: [] });
+    process.stdout.write(host.innerHTML);
+    """)
+    assert out.count('class="oew-ldrow') == 50, "every row must be in the DOM"
+    assert out.count("oew-ld-more") == (30 - 12) + (20 - 12), "rows past 12 ship hidden"
+    assert 'data-expand="oew-ld-a" data-total="30"' in out
+    assert 'data-expand="oew-ld-b" data-total="20"' in out
+    assert "Show all 30" in out and "显示全部 30 项" in out
+    assert "Show all 20" in out and "显示全部 20 项" in out
+    assert "top 12 of 30, by recurrence" in out
+    assert "top 12 of 20, most recent first" in out
+    en, zh = out.count('class="l-en"'), out.count('class="l-zh"')
+    assert en == zh, f"Leaders bilingual parity with the expander: {en}/{zh}"
+
+
+@_needs_node
+def test_leaders_expander_is_withheld_when_there_is_nothing_to_expand(page):
+    """A button that opens nothing is a worse lie than no button."""
+    board_a = _json.dumps([_leaders_row_a(f"AT{i:02d}") for i in range(9)])
+    out = _node(page, """
+    var host = { innerHTML: '' };
+    renderLeaders(host, { as_of: '2026-07-31T00:00:00+00:00', board_a: """ + board_a + """,
+      board_b: [], etf_strip: [] });
+    process.stdout.write(host.innerHTML);
+    """)
+    assert "data-expand" not in out
+    assert "oew-ld-more" not in out
+    assert out.count('class="oew-ldrow') == 9
+
+
+# ── the Terminal handoff ─────────────────────────────────────────────────────
+def test_terminal_ctas_route_through_the_house_helper(page):
+    """The Terminal reads `sym`; the old CTA sent `?symbol=` against the bare
+    origin, which the Terminal's own readers never look at. Both CTAs now build
+    their href through MDXTerminal.url() (theme.js), with the literal kept only
+    as the helper-absent fallback."""
+    assert "?symbol=" not in page, "the parameter the Terminal never reads must be gone"
+    assert "window.MDXTerminal && window.MDXTerminal.url" in page
+    assert "return window.MDXTerminal.url(sym || '');" in page
+    assert "esc(terminalUrl(tk))" in page, "the Ticker CTA must build its href through the helper"
+    assert 'id="oew-brief-cta"' in page
+    assert "a.href = terminalUrl('');" in page
+    # theme.js defines the helper and is the LAST body script, so the Brief's
+    # static CTA can only be re-pointed once the document is parsed
+    assert "document.addEventListener('DOMContentLoaded', wireBriefCta)" in page
+    # the positioning sentence rides both handoffs
+    assert page.count("Same subscription, two clocks") == 2
+    assert page.count("同一订阅，两种时钟") == 2
+
+
+@_needs_node
+def test_ticker_cta_uses_the_helper_when_theme_js_has_loaded(page):
+    """Behavioural: with the helper present, the href is whatever the helper
+    returns — including the &from=macro/&ret= stamp the Terminal reads. With it
+    absent, the fallback still reaches the Terminal with a `sym` param."""
+    out = _node(page, """
+    var host = { innerHTML: '' };
+    window.MDXTerminal = { url: function(t){ return 'https://app.example/x?sym=' + t + '&from=macro'; } };
+    renderTicker(host, 'NVDA', """ + _GX_MINIMAL + """, null, null);
+    var withHelper = host.innerHTML;
+    delete window.MDXTerminal;
+    var host2 = { innerHTML: '' };
+    renderTicker(host2, 'NVDA', """ + _GX_MINIMAL + """, null, null);
+    process.stdout.write(JSON.stringify({ helper: withHelper, fallback: host2.innerHTML }));
+    """)
+    res = _json.loads(out.strip().splitlines()[-1])
+    assert "https://app.example/x?sym=NVDA&amp;from=macro" in res["helper"]
+    assert "?symbol=" not in res["fallback"]
+    assert "sym=NVDA" in res["fallback"], "the fallback must still carry the param the Terminal reads"
 
 
 if __name__ == "__main__":
