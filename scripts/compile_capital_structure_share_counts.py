@@ -1,0 +1,125 @@
+"""Compile a supplied immutable SEC Company Facts snapshot into share-count facts.
+
+This command is intentionally not a collector.  It never fetches SEC endpoints
+and never consults the legacy fetch-time ``edgar_facts`` cache as a historical
+point-in-time source.  An upstream intake lane must first retain exact Company
+Facts bytes and pass a closed, hash-bound receipt with durable raw-object and
+manifest locators.  Without both inputs the command
+prints an explicit unavailable result rather than inventing coverage.
+
+Usage:
+  python -m scripts.compile_capital_structure_share_counts \
+      --source-json retained-companyfacts.json --receipt-json receipt.json \
+      --existing-ledger-json prior-ledger.json \
+      --expected-existing-ledger-head-receipt-id share-count-ledger-receipt:cs:<pinned-head> \
+      --output ledger.json
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Sequence
+
+from engine.capital_structure.share_count_truth import (
+    ShareCountTruthError,
+    compile_share_count_observations,
+    source_acquisition_unavailable_result,
+    validate_share_count_ledger,
+)
+
+
+def _load_object(path: Path, *, label: str) -> dict[str, Any]:
+    try:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ShareCountTruthError(f"cannot load {label}: {path}") from exc
+    if not isinstance(decoded, dict):
+        raise ShareCountTruthError(f"{label} must be a JSON object")
+    return decoded
+
+
+def _load_ledger(
+    path: Path | None, *, expected_head_receipt_id: str | None = None,
+) -> dict[str, Any] | None:
+    if path is None:
+        if expected_head_receipt_id is not None:
+            raise ShareCountTruthError(
+                "expected existing ledger head receipt ID requires --existing-ledger-json",
+            )
+        return None
+    if expected_head_receipt_id is None:
+        raise ShareCountTruthError(
+            "--expected-existing-ledger-head-receipt-id is required with --existing-ledger-json",
+        )
+    try:
+        decoded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ShareCountTruthError(f"cannot load existing share-count ledger: {path}") from exc
+    if not isinstance(decoded, dict):
+        raise ShareCountTruthError("existing share-count ledger must be a JSON object")
+    validate_share_count_ledger(
+        decoded,
+        expected_ledger_head_receipt_id=expected_head_receipt_id,
+    )
+    return decoded
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-json", type=Path, help="retained raw Company Facts JSON bytes")
+    parser.add_argument("--receipt-json", type=Path, help="hash-bound source receipt JSON")
+    parser.add_argument("--existing-ledger-json", type=Path, help="prior self-contained immutable share-count ledger JSON")
+    parser.add_argument(
+        "--expected-existing-ledger-head-receipt-id",
+        help="externally pinned head receipt for --existing-ledger-json; required for updates",
+    )
+    parser.add_argument("--output", type=Path, help="optional result JSON path; stdout when omitted")
+    args = parser.parse_args(argv)
+    if (args.source_json is None) != (args.receipt_json is None):
+        parser.error("--source-json and --receipt-json must be supplied together")
+    if args.source_json is None and args.existing_ledger_json is not None:
+        parser.error("--existing-ledger-json requires --source-json and --receipt-json")
+    if (
+        args.existing_ledger_json is None
+        and args.expected_existing_ledger_head_receipt_id is not None
+    ):
+        parser.error(
+            "--expected-existing-ledger-head-receipt-id requires --existing-ledger-json",
+        )
+    try:
+        if args.source_json is None:
+            result = source_acquisition_unavailable_result()
+        else:
+            receipt = _load_object(args.receipt_json, label="source receipt")
+            source_bytes = args.source_json.read_bytes()
+            existing = _load_ledger(
+                args.existing_ledger_json,
+                expected_head_receipt_id=args.expected_existing_ledger_head_receipt_id,
+            )
+            result = compile_share_count_observations(
+                source_bytes,
+                receipt,
+                existing_ledger=existing,
+                expected_existing_ledger_head_receipt_id=(
+                    args.expected_existing_ledger_head_receipt_id
+                ),
+            )
+    except (OSError, ShareCountTruthError) as exc:
+        print(_canonical_json({"status": "error", "error": str(exc)}))
+        return 2
+    rendered = _canonical_json(result)
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered + "\n", encoding="utf-8")
+    else:
+        print(rendered)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

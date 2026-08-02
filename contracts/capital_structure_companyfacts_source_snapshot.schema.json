@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_source_snapshot.schema.json",
+  "title": "SEC Company Facts source snapshot ledger record",
+  "description": "One immutable retained Company Facts source snapshot. Its links point to receipt-bound snapshot-fact observations, never directly to a canonical fact state. It is separate from fact correction lineage and makes no coverage, selection, risk, or trading claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "source_snapshot_id", "source_receipt_id", "source_receipt",
+    "snapshot_fact_observations", "fact_links"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_source_snapshot.v1"},
+    "source_snapshot_id": {"type": "string", "pattern": "^companyfacts-snapshot:cs:[a-f0-9]{24}$"},
+    "source_receipt_id": {"type": "string", "pattern": "^companyfacts-receipt:cs:[a-f0-9]{24}$"},
+    "source_receipt": {"type": "object"},
+    "snapshot_fact_observations": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "fact_links": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/factLink"}
+    }
+  },
+  "$defs": {
+    "factLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_observation_id", "snapshot_fact_observation_id"],
+      "properties": {
+        "logical_observation_id": {"type": "string", "pattern": "^share-count-slot:cs:[a-f0-9]{24}$"},
+        "snapshot_fact_observation_id": {"type": "string", "pattern": "^share-count-snapshot-fact:cs:[a-f0-9]{24}$"}
+      }
+    }
+  }
+}

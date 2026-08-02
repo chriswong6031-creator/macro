@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_observation.schema.json",
+  "title": "Capital Structure SEC share-count fact observation",
+  "description": "An immutable, point-in-time observation of an SEC Company Facts common-shares-outstanding or public-float fact. It is not a fully-diluted-share calculation, financing capacity, cash/runway, dilution-risk, forecast, ranking, sizing, trading, or Prophet record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "observation_id", "logical_observation_id", "fact_revision_id", "issuer_id", "metric",
+    "fact", "security_class", "period", "filing", "state", "reported",
+    "normalized", "evidence", "source_acquisition", "point_in_time",
+    "relationships", "version", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_observation.v1"},
+    "observation_id": {"type": "string", "pattern": "^share-count:cs:[a-f0-9]{24}$"},
+    "logical_observation_id": {"type": "string", "pattern": "^share-count-slot:cs:[a-f0-9]{24}$"},
+    "fact_revision_id": {"type": "string", "pattern": "^share-count-revision:cs:[a-f0-9]{24}$", "description": "Hash of direct fact-slot semantics and raw in-scope fact-entry hashes only; it deliberately excludes whole-snapshot metadata, source payload hash, retained-object locator, and receipt clocks."},
+    "issuer_id": {"type": "string", "pattern": "^issuer:[0-9]{10}$"},
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "scope"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["common_shares_outstanding", "public_float"]},
+        "scope": {"const": "direct_sec_companyfacts_fact"}
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "name", "unit", "scale", "source_value_encoding"],
+      "properties": {
+        "namespace": {"type": "string", "enum": ["us-gaap", "dei"]},
+        "name": {"type": "string", "enum": ["CommonStockSharesOutstanding", "EntityCommonStockSharesOutstanding", "EntityPublicFloat"]},
+        "unit": {"type": "string", "minLength": 1},
+        "scale": {"const": "1"},
+        "source_value_encoding": {"const": "companyfacts_actual_units"}
+      }
+    },
+    "security_class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "classification", "raw_label", "basis"],
+      "properties": {
+        "state": {"type": "string", "enum": ["concept_semantic", "not_security_specific", "ambiguous"]},
+        "classification": {"type": ["string", "null"], "enum": ["common_stock", "not_security_specific", null]},
+        "raw_label": {"type": ["string", "null"], "maxLength": 500},
+        "basis": {"type": "string", "enum": ["xbrl_concept_semantics", "companyfacts_fact_has_no_security_class", "ambiguous_source_fact"]}
+      }
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_end", "fiscal_year", "fiscal_period", "frame"],
+      "properties": {
+        "period_end": {"type": ["string", "null"], "format": "date"},
+        "fiscal_year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 3000},
+        "fiscal_period": {"type": ["string", "null"], "maxLength": 32},
+        "frame": {"type": ["string", "null"], "maxLength": 64}
+      }
+    },
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "form", "filed", "accepted_at"],
+      "properties": {
+        "accession": {"type": ["string", "null"], "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"},
+        "form": {"type": ["string", "null"], "minLength": 1, "maxLength": 32},
+        "filed": {"type": ["string", "null"], "format": "date"},
+        "accepted_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason"],
+      "properties": {
+        "disposition": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "direct_sec_companyfacts_fact", "unexpected_unit", "missing_value",
+            "negative_value", "missing_period_end", "missing_filing_provenance",
+            "missing_system_availability", "system_availability_precedes_filed_date",
+            "multiple_distinct_values_for_fact_slot", "multiple_distinct_contexts_for_fact_slot",
+            "malformed_fact_entry"
+          ]
+        }
+      }
+    },
+    "reported": {"$ref": "#/$defs/reported"},
+    "normalized": {"$ref": "#/$defs/normalized"},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_receipt_id", "source_receipt_schema", "source_system", "source_url", "source_payload_sha256", "raw_object_locator", "manifest_locator", "fact_entries"],
+      "properties": {
+        "source_receipt_id": {"type": "string", "pattern": "^companyfacts-receipt:cs:[a-f0-9]{24}$"},
+        "source_receipt_schema": {"const": "capital_structure.companyfacts_source_receipt.v1"},
+        "source_system": {"const": "sec_companyfacts"},
+        "source_url": {"type": "string", "format": "uri"},
+        "source_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "raw_object_locator": {"type": "string", "pattern": "^capital_structure/sec/companyfacts/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "manifest_locator": {"type": "string", "pattern": "^companyfacts-manifest:cs:[a-f0-9]{64}$"},
+        "fact_entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/factEntry"}
+        }
+      }
+    },
+    "source_acquisition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "collector_state"],
+      "properties": {
+        "state": {"const": "provided_snapshot"},
+        "collector_state": {"const": "not_implemented_in_share_count_truth_wave"}
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_available_at", "source_retrieved_at", "available_at"],
+      "properties": {
+        "system_available_at": {"type": ["string", "null"], "format": "date-time"},
+        "source_retrieved_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supersedes", "contradiction_ids"],
+      "properties": {
+        "supersedes": {"type": "array", "items": {"type": "string", "pattern": "^share-count:cs:[a-f0-9]{24}$"}, "uniqueItems": true},
+        "contradiction_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutable_record", "correction_version", "correction_of"],
+      "properties": {
+        "immutable_record": {"const": true},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "correction_of": {"type": ["string", "null"], "pattern": "^share-count:cs:[a-f0-9]{24}$"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "decimal": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+    "reported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "scale"],
+      "properties": {
+        "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+        "unit": {"type": ["string", "null"], "minLength": 1},
+        "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"}
+      }
+    },
+    "normalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "scale", "state"],
+      "properties": {
+        "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+        "unit": {"type": ["string", "null"], "enum": ["shares", "USD", null]},
+        "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"},
+        "state": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]}
+      }
+    },
+    "factEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["json_pointer", "entry_sha256", "source_issue", "value", "unit", "period_end", "fiscal_year", "fiscal_period", "frame", "filed", "accession", "form"],
+      "properties": {
+        "json_pointer": {"type": "string", "pattern": "^/facts/(?:us-gaap|dei)/[^/]+/units/[^/]+/[0-9]+$"},
+        "entry_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_issue": {
+          "type": ["string", "null"],
+          "enum": [
+            "unexpected_unit", "missing_value", "negative_value", "missing_period_end",
+            "missing_filing_provenance", "malformed_fact_entry", null
+          ],
+          "description": "Receipt-independent issue derived from the retained fact entry. PIT-only temporal deferral is recomputed from the receipt clock and is never stored here."
+        },
+        "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+        "unit": {"type": "string", "minLength": 1},
+        "period_end": {"type": ["string", "null"], "format": "date"},
+        "fiscal_year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 3000},
+        "fiscal_period": {"type": ["string", "null"], "maxLength": 32},
+        "frame": {"type": ["string", "null"], "maxLength": 64},
+        "filed": {"type": ["string", "null"], "format": "date"},
+        "accession": {"type": ["string", "null"], "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"},
+        "form": {"type": ["string", "null"], "maxLength": 32}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "reported": {"properties": {"value": {"type": "string"}, "unit": {"type": "string"}, "scale": {"const": "1"}}},
+          "normalized": {"properties": {"value": {"type": "string"}, "unit": {"type": "string"}, "scale": {"const": "1"}, "state": {"const": "observed"}}},
+          "period": {"properties": {"period_end": {"type": "string"}}},
+          "filing": {"properties": {"accession": {"type": "string"}, "form": {"type": "string"}, "filed": {"type": "string"}}},
+          "point_in_time": {"properties": {"system_available_at": {"type": "string"}, "available_at": {"type": "string"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "deferred"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"normalized": {"properties": {"value": {"type": "null"}, "unit": {"type": "null"}, "scale": {"type": "null"}, "state": {"const": "deferred"}}}}}
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "ambiguous"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"reported": {"properties": {"value": {"type": "null"}}}, "normalized": {"properties": {"value": {"type": "null"}, "unit": {"type": "null"}, "scale": {"type": "null"}, "state": {"const": "ambiguous"}}}}}
+    },
+    {
+      "if": {"properties": {"metric": {"properties": {"kind": {"const": "common_shares_outstanding"}}, "required": ["kind"]}}, "required": ["metric"]},
+      "then": {"properties": {"security_class": {"properties": {"state": {"const": "concept_semantic"}, "classification": {"const": "common_stock"}, "basis": {"const": "xbrl_concept_semantics"}}}}}
+    },
+    {
+      "if": {"properties": {"metric": {"properties": {"kind": {"const": "public_float"}}, "required": ["kind"]}}, "required": ["metric"]},
+      "then": {"properties": {"security_class": {"properties": {"state": {"const": "not_security_specific"}, "classification": {"const": "not_security_specific"}, "basis": {"const": "companyfacts_fact_has_no_security_class"}}}}}
+    },
+    {
+      "if": {"properties": {"metric": {"properties": {"kind": {"const": "common_shares_outstanding"}}, "required": ["kind"]}, "state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["metric", "state"]},
+      "then": {"properties": {"fact": {"properties": {"unit": {"const": "shares"}}}, "reported": {"properties": {"unit": {"const": "shares"}}}, "normalized": {"properties": {"unit": {"const": "shares"}}}}}
+    },
+    {
+      "if": {"properties": {"metric": {"properties": {"kind": {"const": "public_float"}}, "required": ["kind"]}, "state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["metric", "state"]},
+      "then": {"properties": {"fact": {"properties": {"unit": {"const": "USD"}}}, "reported": {"properties": {"unit": {"const": "USD"}}}, "normalized": {"properties": {"unit": {"const": "USD"}}}}}
+    },
+    {
+      "if": {"properties": {"version": {"properties": {"correction_version": {"const": 1}}, "required": ["correction_version"]}}, "required": ["version"]},
+      "then": {"properties": {"version": {"properties": {"correction_of": {"type": "null"}}}, "relationships": {"properties": {"supersedes": {"maxItems": 0}}}}},
+      "else": {"properties": {"version": {"properties": {"correction_version": {"minimum": 2}, "correction_of": {"type": "string"}}}, "relationships": {"properties": {"supersedes": {"minItems": 1, "maxItems": 1}}}}}
+    }
+  ]
+}
