@@ -15838,7 +15838,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [scripts/compile_capital_structure_events.py]
+    consumers:
+      - scripts/compile_capital_structure_events.py
+      - scripts/build_capital_structure_projection.py
     external_consumers: []
     notes: >
       Strict manifest for SEC documents whose raw bytes passed content-addressed
@@ -15862,7 +15864,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [scripts/build_capital_structure_projection.py]
     external_consumers: []
     notes: >
       Immutable event-version adapter compiled offline from verified manifests.
@@ -15885,7 +15887,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [scripts/build_capital_structure_projection.py]
     external_consumers: []
     notes: >
       Immutable amendment/effect/withdrawal/supersession edges. Reverse links are
@@ -15907,7 +15909,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [scripts/build_capital_structure_projection.py]
     external_consumers: []
     notes: >
       Rebuildable queue for ambiguous content, missing documents, conflicts, and
@@ -15928,12 +15930,61 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [scripts/build_capital_structure_projection.py]
     external_consumers: []
     notes: >
       Coverage/exclusion disclosure, compile failures, authority zeros, form-policy
       version, and temporary-adapter migration receipt. It explicitly states that W1
       covers registration/issuance forms rather than claiming all-SEC completeness.
+
+  capital-structure-projection:
+    path: data/capital_structure/projection.json
+    format: json
+    producer: scripts/build_capital_structure_projection.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: capital_structure.projection_bundle.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Canonical public-safe observed-filing-state projection compiled only from a
+      verified telemetry-last event generation. It preserves SEC, Mastermind, and
+      projection clocks and keeps terms, capacity, runway, overhang, probability,
+      rank, entry, sizing, and Prophet authority explicitly unavailable.
+
+  site-capital-structure-projection:
+    path: site/capital-structure-data/latest.json
+    format: json
+    producer: scripts/build_capital_structure_projection.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: capital_structure.projection_bundle.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Byte-identical public twin of capital-structure-projection after each successful
+      build or startup recovery. Each target replace is atomic, while the writer explicitly
+      self-heals a process-stop gap between the two replaces; it does not claim a cross-file
+      atomic transaction. The static read path exposes only public SEC links and bounded
+      manifest/span/hash references; it never exposes raw retained objects, private storage
+      keys, or a dilution-risk score.
+
   chronicle-earnings-call-events:
     path: data/chronicle/earnings_call_events.jsonl
     format: jsonl

@@ -1,6 +1,6 @@
-# Capital Structure Intelligence — Wave 0–1 operating contract
+# Capital Structure Intelligence — Wave 0–2A operating contract
 
-Status: implemented foundation, context-only
+Status: implemented evidence spine plus observed-filing-state projection, context-only
 Owner: `capital-structure-intelligence`
 Canonical build docket: `research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md`
 
@@ -9,8 +9,8 @@ Canonical build docket: `research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEA
 Capital Structure Intelligence is a shared SEC evidence and issuer-context plane, not a
 screen-scraped clone and not a second dilution score. Wave 0–1 establishes source truth,
 immutable event history, point-in-time replay, and a compatibility boundary around the
-existing `data/edgar/dilution_events.parquet` feed. It grants no rank, entry, sizing, veto,
-or Prophet authority.
+existing `data/edgar/dilution_events.parquet` feed. Wave 2A adds a public-safe projection
+of observed filing state. It grants no rank, entry, sizing, veto, or Prophet authority.
 
 The temporary canonical event adapter is `capital_structure.event.v1`. The repository does
 not yet contain the proposed generic `company_event.v1`; silently claiming that namespace
@@ -30,6 +30,10 @@ flowchart LR
   F --> G["Immutable event versions"]
   F --> H["Immutable relationship edges"]
   F --> I["Explicit defer and review queue"]
+  G --> L["Observed filing-state projection"]
+  H --> L
+  I --> L
+  L --> M["Self-healing byte-identical public JSON twin"]
   J["Legacy edgar_dilution writer"] --> K["Existing six-column dilution feed"]
   G -. "shadow parity only; no cutover in Wave 1" .-> K
 ```
@@ -45,11 +49,21 @@ flowchart LR
 | `data/capital_structure/event_edges.parquet` | same | Immutable amends/effectuates/withdraws/supersedes edges |
 | `data/capital_structure/review_queue.parquet` | same | Rebuildable ambiguity/linkage work queue |
 | `data/capital_structure/telemetry.json` | same | Coverage, exclusions, failures, migration, and authority receipt |
+| `data/capital_structure/projection.json` | `scripts/build_capital_structure_projection.py` | Canonical public-safe observed-filing-state bundle |
+| `site/capital-structure-data/latest.json` | same | Byte-identical static read twin after each successful build or startup recovery |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
 The collector runs inside the serial SEC host group. The compiler runs immediately after
 collection and before the nightly data checkpoint. Render workflows never fetch SEC or
 compile the spine.
+
+The projection writer replaces each output atomically and ordinarily rolls both files back
+if either replace fails. The two paths are not one cross-file filesystem transaction: a hard
+process stop can land between replaces. Every subsequent invocation therefore validates both
+copies before reading the current source generation and deterministically heals a missing,
+invalid, or older public copy from the valid canonical copy (or restores a missing canonical
+copy from the valid public twin). If neither copy is valid, it fails closed. Successful and
+recovered steady state is byte-identical; the contract does not claim crash-atomic twins.
 
 ## Source-truth law
 
@@ -217,6 +231,29 @@ LLM-originated truth. Wave 0–1 cannot:
 The front-end product and Mastermind/Neural Web projection consume a later issuer-context
 artifact. They do not read raw evidence or invent a second calculation path.
 
+## Wave 2A observed-filing-state projection
+
+`scripts/build_capital_structure_projection.py` runs immediately after the offline event
+compiler. It verifies the compiler's telemetry-last artifact hashes and append-only source
+receipt before reading any event, edge, or review row. A corrupt, partial, or mismatched
+generation fails closed and cannot replace the last published projection. With an explicit
+`no_source_manifest` or degraded no-artifact receipt, the pure projection contract renders
+`unavailable`; it never renders an empty green state.
+
+The projection groups records by canonical SEC issuer ID / CIK rather than ticker, filters
+event versions on canonical Mastermind system availability, and admits relationship edges
+only after each edge's own observation clock. Each event preserves three clocks separately:
+SEC acceptance, Mastermind first observation, and projection generation. It exposes public
+SEC URLs plus bounded manifest/span/hash references, never raw retained documents, R2 object
+keys, bucket names, or filing text.
+
+This is deliberately titled **Observed filing state**. Registration, amendment, EFFECT,
+withdrawal, and deferred prospectus observations are document-state facts. They are not
+claims about issuance, offering ability, remaining capacity, instruments, fully diluted
+shares, cash runway, overhang, risk severity, or financing probability. Those capabilities
+remain explicit `unavailable` values until their separately versioned term, instrument,
+calculation-receipt, and issuer-state ledgers pass reconciliation gates.
+
 ## Promotion gates
 
 Implemented and CI-pinned in Wave 0–1:
@@ -231,14 +268,15 @@ Implemented and CI-pinned in Wave 0–1:
 - Synapse registry ownership for the canonical artifacts.
 
 Still blocking normalized terms, issuer state, probability engines, Prophet integration,
-and public UI:
+and the full public dossier UI:
 
 - the adjudicated 200-event real-filing golden corpus is not yet complete;
 - term extraction and reconciliation need precision/recall and contradiction gates;
 - legacy shadow parity needs seven real nightly observations;
 - risk models need pre-registered labels, calibrated probabilities, OOS evaluation, and
   promotion through the existing house gauntlet;
-- UI requires the issuer-context compiler and its freshness/coverage disclosures.
+- numerical UI lanes require the issuer-context compiler and their own
+  freshness/reconciliation disclosures; Wave 2A permits only observed filing state.
 
 No later wave may describe these blocked capabilities as live merely because the schemas or
 dashboard placeholders exist.

@@ -411,9 +411,11 @@ on:
       # paths cover contract-, compiler-, fixture-, and test-only changes too.
       - "engine/capital_structure/**"
       - "scripts/compile_capital_structure_events.py"
+      - "scripts/build_capital_structure_projection.py"
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "tests/test_capital_structure_*.py"
+      - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"
       - "tests/test_nwqs_c_dilution.py"
       - "tests/fixtures/capital_structure/**"

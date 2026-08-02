@@ -245,6 +245,11 @@ jobs:
         # Any source-bundle, ledger, or generation-receipt integrity failure blocks
         # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
+      - name: build capital-structure projection (offline, context-only)
+        # Reads only the verified telemetry-last event generation. It publishes an
+        # observed-filing-state artifact and byte-identical public twin; terms,
+        # capacity, runway, scores, probabilities, and Prophet authority stay absent.
+        run: python -m scripts.build_capital_structure_projection
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -294,7 +299,7 @@ jobs:
           # reports/*.md graders), not just the qledger paths we happen to stage here.
           # (site/basketdata moved with the TIL steps to collect_tail's commit —
           # 2026-07-14 split; nothing left in this job writes site/basketdata.)
-          git add data/ site/qledger/
+          git add data/ site/qledger/ site/capital-structure-data/
           # W0b (2026-07-08 stale-HK incident): US collect job must NOT commit asia-owned
           # data that it never produced. The GHA cache restore steps above may lay stale
           # data/hk_stocks (restore-keys: hk-stocks-ohlc-) and breadth caches on top of
