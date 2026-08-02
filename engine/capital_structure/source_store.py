@@ -15,7 +15,7 @@ import logging
 import os
 from pathlib import Path
 
-from engine.research_vault.r2_store import LocalStore, R2Store, Store
+from engine.research_vault.r2_store import BoundedStrictReadStore, LocalStore, R2Store, Store
 
 
 log = logging.getLogger("capital_structure.source_store")
@@ -43,6 +43,30 @@ class SourceReceipt:
     media_type: str
     backend: str
     store_id: str
+
+
+class SourceStoreVerificationError(RuntimeError):
+    """An immutable source object could not be verified exactly."""
+
+
+class SourceStoreIdentityError(SourceStoreVerificationError, ValueError):
+    """The requested content address and digest disagree."""
+
+
+class SourceStoreBoundsError(SourceStoreVerificationError, ValueError):
+    """The requested strict-read length boundary is invalid."""
+
+
+class SourceStoreCapabilityError(SourceStoreVerificationError):
+    """The backend does not implement bounded fail-closed reads."""
+
+
+class SourceStoreLengthError(SourceStoreVerificationError):
+    """The backend returned a non-exact byte count."""
+
+
+class SourceStoreDigestError(SourceStoreVerificationError):
+    """The backend returned bytes with the wrong SHA-256 digest."""
 
 
 class ContentAddressedSourceStore:
@@ -89,7 +113,18 @@ class ContentAddressedSourceStore:
         if not self.store.put_bytes(key, raw_bytes, content_type=media_type):
             log.warning("capital_structure source-store defer key=%s reason=put-failed", key)
             return None
-        readback = self.store.get_bytes(key)
+        try:
+            if not isinstance(self.store, BoundedStrictReadStore):
+                raise RuntimeError("source store lacks bounded strict-read capability")
+            readback = self.store.get_bytes_strict_bounded(
+                key, expected_byte_length=len(raw_bytes), max_byte_length=len(raw_bytes),
+            )
+        except Exception as exc:  # noqa: BLE001 - no legacy fail-open readback fallback
+            log.warning(
+                "capital_structure source-store defer key=%s reason=bounded-readback-failed: %s",
+                key, exc,
+            )
+            return None
         if readback != raw_bytes or sha256(readback or b"").hexdigest() != digest:
             log.warning("capital_structure source-store defer key=%s reason=readback-mismatch", key)
             return None
@@ -109,6 +144,44 @@ class ContentAddressedSourceStore:
         raw = self.store.get_bytes(object_key)
         if raw is None or sha256(raw).hexdigest() != expected_sha256:
             return None
+        return raw
+
+    def get_verified_strict_bounded(
+        self, object_key: str, expected_sha256: str, *,
+        expected_byte_length: int, max_byte_length: int,
+    ) -> bytes | None:
+        """Verify one exact object without permitting an unbounded legacy read."""
+        try:
+            expected_key = object_key_for_sha256(expected_sha256)
+        except (TypeError, ValueError) as exc:
+            raise SourceStoreIdentityError("expected digest is not lowercase SHA-256") from exc
+        if object_key != expected_key:
+            raise SourceStoreIdentityError("source object key does not bind expected digest")
+        if (
+            isinstance(expected_byte_length, bool)
+            or not isinstance(expected_byte_length, int)
+            or expected_byte_length < 0
+            or isinstance(max_byte_length, bool)
+            or not isinstance(max_byte_length, int)
+            or max_byte_length < 0
+            or expected_byte_length > max_byte_length
+        ):
+            raise SourceStoreBoundsError(
+                "source strict-read bounds must satisfy 0 <= expected <= maximum"
+            )
+        if not isinstance(self.store, BoundedStrictReadStore):
+            raise SourceStoreCapabilityError("source store lacks bounded strict-read capability")
+        raw = self.store.get_bytes_strict_bounded(
+            object_key,
+            expected_byte_length=expected_byte_length,
+            max_byte_length=max_byte_length,
+        )
+        if raw is None:
+            return None
+        if not isinstance(raw, bytes) or len(raw) != expected_byte_length:
+            raise SourceStoreLengthError("source store returned a non-exact byte count")
+        if sha256(raw).hexdigest() != expected_sha256:
+            raise SourceStoreDigestError("source store returned bytes with the wrong digest")
         return raw
 
 

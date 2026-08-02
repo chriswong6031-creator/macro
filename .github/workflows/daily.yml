@@ -218,6 +218,12 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          # Activation gate for the authenticated Company Facts head. This has no
+          # fallback: provision the repository secret before merging this lane.
+          CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY }}
+          # Optional dedicated guard bucket; absent uses R2_CAPITAL_STRUCTURE_BUCKET,
+          # then the existing shared R2_BUCKET with the same R2 credentials.
+          COMPANYFACTS_HEAD_GUARD_BUCKET: ${{ secrets.COMPANYFACTS_HEAD_GUARD_BUCKET }}
           # Optional dedicated account/bucket. Each credential falls back to the
           # shared R2_* value in source_store.py, so same-account deployments need
           # only the dedicated bucket secret while isolated accounts can set all four.
@@ -238,6 +244,13 @@ jobs:
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           # --skip-shadow-importance: the ~13-14m shadow passes run standalone in
           # collect_tail (2026-07-14 split) — off the engine job's critical path.
+          # sec_capital_structure_companyfacts is serially registered immediately
+          # after sec_capital_structure in scripts.collect's shared SEC host group.
+          # It can therefore consume only same-run verified complete-submission
+          # anchors, while retaining raw Company Facts JSON separately and without
+          # invoking any share-count consumer. Immutable Parquet generations and
+          # chained receipts are installed/read back before its tiny current pointer
+          # advances; any failure leaves the prior authenticated generation selected.
           # sam_gov_opportunities is excluded because government-revenue-live.yml
           # is its sole serialized ledger owner. Two workflows must never merge and
           # overwrite the same revision/document Parquets concurrently.

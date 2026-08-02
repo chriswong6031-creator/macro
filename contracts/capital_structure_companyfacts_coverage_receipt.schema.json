@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_coverage_receipt.schema.json",
+  "title": "Capital Structure Company Facts coverage receipt",
+  "description": "Immutable, chained Company Facts receipt. The tiny current pointer selects one receipt; every receipt identity-binds its predecessor, exact generation files, and ordered ledger prefixes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "retention_verification", "run_byte_accounting", "queue", "counts", "population", "nonclaims", "authority", "auth"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+    "selection_as_of": {"type": "string", "format": "date-time"},
+    "published_at": {"type": "string", "format": "date-time"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "previous_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/receipt_reference"}]},
+    "policy_version": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["ok", "partial", "degraded", "blocked", "no_eligible_anchors"]},
+    "generation": {"$ref": "#/$defs/generation"},
+    "anchor_manifest_ledger": {"$ref": "#/$defs/ledger"},
+    "companyfacts_manifest_ledger": {"$ref": "#/$defs/ledger"},
+    "coverage_ledger": {"$ref": "#/$defs/ledger"},
+    "retention_verification": {"$ref": "#/$defs/retention_verification"},
+    "run_byte_accounting": {"$ref": "#/$defs/run_byte_accounting"},
+    "queue": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason", "anchor_verifications"],
+      "properties": {
+        "max_ciks": {"type": "integer", "minimum": 0},
+        "force_refresh": {"type": "boolean"},
+        "cursor_sequence": {"type": "integer", "minimum": 0},
+        "eligible_ciks": {"type": "integer", "minimum": 0},
+        "selected_ciks": {"type": "integer", "minimum": 0},
+        "deferred_ciks": {"type": "integer", "minimum": 0},
+        "priority_order": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]{10}$"}, "uniqueItems": true},
+        "due_by_reason": {"$ref": "#/$defs/reason_counts"},
+        "selected_by_reason": {"$ref": "#/$defs/reason_counts"},
+        "anchor_verifications": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/anchor_verification"}
+        }
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retrieved", "retry", "deferred", "skipped_fresh"],
+      "properties": {
+        "retrieved": {"type": "integer", "minimum": 0},
+        "retry": {"type": "integer", "minimum": 0},
+        "deferred": {"type": "integer", "minimum": 0},
+        "skipped_fresh": {"type": "integer", "minimum": 0}
+      }
+    },
+    "population": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fresh_ciks", "stale_ciks", "pending_ciks", "retry_ciks", "deferred_ciks"],
+      "properties": {
+        "fresh_ciks": {"type": "integer", "minimum": 0},
+        "stale_ciks": {"type": "integer", "minimum": 0},
+        "pending_ciks": {"type": "integer", "minimum": 0},
+        "retry_ciks": {"type": "integer", "minimum": 0},
+        "deferred_ciks": {"type": "integer", "minimum": 0}
+      }
+    },
+    "nonclaims": {"type": "array", "minItems": 6, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "authority": {"$ref": "#/$defs/authority"},
+    "auth": {"$ref": "#/$defs/auth"}
+  },
+  "$defs": {
+    "ledger": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_count", "prefix_sha256", "immutable_prefix"],
+      "properties": {
+        "record_count": {"type": "integer", "minimum": 0},
+        "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "immutable_prefix": {"const": true}
+      }
+    },
+    "file_receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "byte_length"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "generation_file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "byte_length"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^generations/[a-f0-9]{64}/(source_manifest|coverage)\\.parquet$"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "generation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["generation_id", "source_manifest", "coverage"],
+      "properties": {
+        "generation_id": {"type": "string", "pattern": "^generation:cs-companyfacts:[a-f0-9]{64}$"},
+        "source_manifest": {"$ref": "#/$defs/generation_file"},
+        "coverage": {"$ref": "#/$defs/generation_file"}
+      }
+    },
+    "receipt_reference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["receipt_id", "path", "sha256", "byte_length"],
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+        "path": {"type": "string", "pattern": "^receipts/[a-f0-9]{64}\\.json$"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "reason_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retry_due", "new_anchor", "refresh_due"],
+      "properties": {
+        "retry_due": {"type": "integer", "minimum": 0},
+        "new_anchor": {"type": "integer", "minimum": 0},
+        "refresh_due": {"type": "integer", "minimum": 0}
+      }
+    },
+    "anchor_verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cik", "anchor_manifest_id", "backend", "store_id", "object_key", "content_sha256", "byte_length", "status", "error"],
+      "properties": {
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "anchor_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "backend": {"type": "string", "enum": ["r2", "local"]},
+        "store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "status": {"type": "string", "enum": ["verified", "failed"]},
+        "error": {"type": ["string", "null"], "maxLength": 500}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "verified"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "null"}}}},
+        {"if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]}, "then": {"properties": {"error": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"store_id": {"const": "capital_structure_local"}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "local"}}}},
+        {"if": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "r2"}}}},
+        {"if": {"properties": {"backend": {"const": "local"}}, "required": ["backend"]}, "then": {"properties": {"store_id": {"const": "capital_structure_local"}}}},
+        {"if": {"properties": {"backend": {"const": "r2"}}, "required": ["backend"]}, "then": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}}}
+      ]
+    },
+    "retention_verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy", "selection_day", "eligible_objects", "latest_objects", "historical_objects", "checked_current_manifest_ids", "checked_historical_manifest_ids", "admission_verified_manifest_ids", "verified_manifest_ids", "all_objects_reverified", "freshness"],
+      "properties": {
+        "policy": {"const": "bounded-retention-verification/v1"},
+        "selection_day": {"type": "string", "format": "date"},
+        "eligible_objects": {"type": "integer", "minimum": 0},
+        "latest_objects": {"type": "integer", "minimum": 0},
+        "historical_objects": {"type": "integer", "minimum": 0},
+        "checked_current_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "checked_historical_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "admission_verified_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "verified_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "all_objects_reverified": {"type": "boolean"},
+        "freshness": {"type": "string", "enum": ["complete", "sampled"]}
+      }
+    },
+    "run_byte_accounting": {
+      "type": "object", "additionalProperties": false,
+      "required": ["definition", "max_bytes", "anchor_verification_bytes", "retention_verification_bytes", "sec_response_bytes", "source_store_write_reserved_bytes", "source_store_readback_reserved_bytes", "total_bytes"],
+      "properties": {
+        "definition": {"const": "anchor-read+retention-read+sec-response+source-write-reservation+source-readback-reservation/v1"},
+        "max_bytes": {"type": "integer", "minimum": 1},
+        "anchor_verification_bytes": {"type": "integer", "minimum": 0},
+        "retention_verification_bytes": {"type": "integer", "minimum": 0},
+        "sec_response_bytes": {"type": "integer", "minimum": 0},
+        "source_store_write_reserved_bytes": {"type": "integer", "minimum": 0},
+        "source_store_readback_reserved_bytes": {"type": "integer", "minimum": 0},
+        "total_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "manifest_ids": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"}
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "prophet_authority": {"const": false}
+      }
+    },
+    "auth": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scheme", "key_id", "signature"],
+      "properties": {
+        "scheme": {"const": "hmac-sha256/v1"},
+        "key_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}
