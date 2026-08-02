@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-29"
+updated: "2026-08-02"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -155,6 +155,48 @@ checks:
       guard shipped with each got their own emitter fix, and
       tests/test_check_site_asset_refs.py ratchets the empty state so a re-pin has
       to be argued in review rather than riding in with a fresh 404.
+
+  - law_id: ui.government_revenue_projection_integrity
+    summary: >
+      The public Government Revenue surface must be one governed projection of
+      committed canonical evidence: canonical and public JSON twins are
+      byte-identical, schemas and the content-derived workspace bundle are valid,
+      the compact HTML shell is semantically equal to the canonical display
+      payload, required workbench markers remain present, and first-paint HTML
+      stays inside its raw-byte budget. This prevents a long-running generic
+      renderer from rebasing an older full payload over newer procurement truth.
+    source_ref:
+      - scripts/check_government_revenue_projection.py
+      - tests/test_check_government_revenue_projection.py
+      - "PR #4223"
+    severity: hard
+    check_script: scripts/check_government_revenue_projection.py
+    ci_wiring:
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+    selftest: false
+    selftest_exempt_reason: >
+      Pure read-only projection checker with focused tamper fixtures covering
+      stale twins, malformed matching schemas, oversized or missing shells,
+      bundle mismatch, semantic company-shell drift, workflow commit/push
+      placement, and metadata-replay invalidation.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Proves committed serialization and first-paint integrity, not browser
+        interactivity after hydration or authorization middleware behavior.
+      - Exact issuer attribution and award-event truth are governed separately;
+        this fence prevents projection drift but does not create source evidence.
+    owner_program: government-revenue-foresight
+    notes: >
+      Both render lanes repeat the checker after their final heals and immediately
+      before each commit or push. The render metadata shortcut is disabled when
+      canonical procurement data or any projection-writing helper changed since
+      the render parent.
 
   - law_id: ui.site_js_parses
     summary: >
