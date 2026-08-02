@@ -1163,6 +1163,7 @@ table.oew-tbl thead th[aria-sort="descending"]::after{content:'▼';opacity:1;co
    them regardless of whether the IIFE ships inline or as an external file. */
 window.OEW_TICKER_MANIFEST = {{ ticker_manifest_json|safe }};
 window.OEW_DEFAULT_TICKER = {{ (counts.ticker or 'SPY') | tojson }};
+window.OEW_SECTOR_ZH = {{ sector_zh_json|safe }};
 </script>
 <script data-externalize>
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1239,7 +1240,10 @@ function terminalUrl(sym){
   try{
     if(window.MDXTerminal && window.MDXTerminal.url) return window.MDXTerminal.url(sym || '');
   }catch(e){}
-  return 'https://app.mastermind-x.com/' + (sym ? '?sym=' + encodeURIComponent(sym) : '');
+  /* Fallback mirrors the helper's own shape (MM_TERMINAL_BASE is /terminal —
+     theme.js:243) so a helper-absent visitor still lands on the workspace app,
+     not the bare marketing origin. */
+  return 'https://app.mastermind-x.com/terminal' + (sym ? '?sym=' + encodeURIComponent(sym) + '&from=macro' : '');
 }
 
 function getJSON(url){
@@ -1326,7 +1330,12 @@ function flSectorPanel(desk){
     var tipZh = '权利金 ' + flMoney(g) + (n !== null ? '，覆盖 ' + n.toFixed(0) + ' 个标的' : '')
       + '。净额 ' + flSoft(r.net_premium_mn) + ' — 规模数据可靠，方向为近似值。';
     return '<div class="oew-sr" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">'
-      + '<span class="oew-sr-name">' + flag + esc(r.sector || '—') + '</span>'
+      /* MA-2: the baked Brief translates the SAME rows through td(); a lazy
+         mode must not flip the estate back to EN one tab away. Same-degrade
+         contract: an unglossed name shows its English form in both languages.
+         bi() escapes both halves itself. */
+      + '<span class="oew-sr-name">' + flag
+        + bi(r.sector || '—', (window.OEW_SECTOR_ZH || {})[r.sector] || r.sector || '—') + '</span>'
       + '<span class="oew-sr-track"><i class="oew-sr-fill ' + cls + '" style="width:' + w.toFixed(1) + '%"></i></span>'
       + '<span class="oew-sr-val mono">' + flMoney(g) + '</span>'
       + '<span class="tone ' + (cls === 'mix' ? '' : cls) + '">' + bi(toneEn, toneZh) + '</span>'
@@ -1437,7 +1446,11 @@ function flTidePanel(desk){
       + ' data-tip-en="Left: each session’s net options premium — call premium bought minus put premium bought — against a zero line. Right: the same measure minute by minute through the completed session, from the live tape store. Read the shape, not the level; direction is approximate."'
       + ' data-tip-zh="左：各交易日的净期权权利金（买入看涨减买入看跌），以零轴为基准。右：同一指标在已收盘交易时段内的逐分钟走势，数据来自实时盘面存储。请看形态而非绝对水平；方向为近似值。">?</span></div>'
   + '</div>';
-  if(!spark.length){
+  /* MI-1: fewer than two REAL observations cannot draw a curve — the canvas
+     guard would leave a blank rectangle under an aria-label promising thirty
+     sessions. Nulls are no-observation slots, so they don't count. */
+  var realN = spark.filter(function(d){ return num(d.net_premium_mn) !== null; }).length;
+  if(realN < 2){
     return '<div class="oew-panel">' + head + '<div class="oew-pbody"><p class="oew-empty">'
       + bi('No session history on file yet for the tide. It fills in as closes accrue.',
            '资金潮汐暂无历史场次记录。随着收盘场次积累会逐步填充。') + '</p></div></div>';
@@ -1668,7 +1681,8 @@ var SC_TONE_ORDER = { 'call-leaning':1, 'neutral':0, 'put-leaning':-1 };
 var scRows = [], scPreset = 'premium', scSkew75 = null, scAsof = null;
 /* idx is the header POSITION, not the key: three fields appear in two views
    each, and aria-sort must mark exactly one header, never both copies. */
-var scSort = { key:'gross_premium_mn', dir:'desc', idx:7 };
+function scSortDefault(){ return { key:'gross_premium_mn', dir:'desc', idx:7 }; }
+var scSort = scSortDefault();
 
 function ageCell(rowAsof, freshest){
   var d = 0;
@@ -1694,7 +1708,9 @@ function scPresetFilter(rows){
   if(scPreset === 'putskew'){
     if(scSkew75 === null){
       var vals = rows.map(function(r){ return num(r.skew_pp); }).filter(function(v){ return v !== null; }).sort(function(a,b){ return a-b; });
-      scSkew75 = vals.length ? vals[Math.floor(vals.length * 0.75)] : 0;
+      /* the screener writes skew75.toFixed(1) into its input and compares
+         against THAT — round the same way so both pages admit identical rows */
+      scSkew75 = vals.length ? Math.round(vals[Math.floor(vals.length * 0.75)] * 10) / 10 : 0;
     }
     return rows.filter(function(r){ return num(r.skew_pp) !== null && num(r.skew_pp) >= scSkew75; });
   }
@@ -1767,8 +1783,8 @@ function scBody(){
      existed to work around. */
   var rows = scVisibleRows();
   if(!rows.length) return '<tr><td colspan="19" class="left"><span class="oew-empty">'
-    + bi('No name in this close matched that view. Pick another chip to widen the list.',
-         '本次收盘没有符合该视图的标的。选择其他标签可扩大范围。')
+    + bi('No name in this close matched that view. Pick another chip, or clear the filters below.',
+         '本次收盘没有符合该视图的标的。可选择其他标签，或清除下方筛选。')
     + '</span></td></tr>';
   return rows.map(function(r){
     var toneCall = String(r.net_prem_tone || '').indexOf('call') === 0;
@@ -1803,14 +1819,18 @@ function scBody(){
       + '</tr>';
   }).join('');
 }
-function scAria(i){
-  return ' aria-sort="' + (scSort.idx === i ? (scSort.dir === 'asc' ? 'ascending' : 'descending') : 'none') + '"';
+/* MI-5: sort identity is the KEY, not the header position — three fields
+   render a header in two views each, and position-keyed aria lost the arrow
+   (and announced "none") the moment the reader switched views while sorted.
+   Key-marking lights both copies, of which exactly one is visible per view. */
+function scAria(key){
+  return ' aria-sort="' + (scSort.key === key ? (scSort.dir === 'asc' ? 'ascending' : 'descending') : 'none') + '"';
 }
 function scHead(){
-  var h = '<th class="left" data-sort="ticker" data-i="0" tabindex="0"' + scAria(0) + '>' + bi('Name','标的') + '</th>';
+  var h = '<th class="left" data-sort="ticker" data-i="0" tabindex="0"' + scAria('ticker') + '>' + bi('Name','标的') + '</th>';
   SC_COLS.forEach(function(c, i){
     h += '<th class="' + c[0] + (c[1] ? ' ' + c[1] : '') + '" data-sort="' + c[4] + '" data-i="' + (i + 1) + '"'
-      + ' tabindex="0"' + scAria(i + 1) + '>' + bi(c[2], c[3]) + '</th>';
+      + ' tabindex="0"' + scAria(c[4]) + '>' + bi(c[2], c[3]) + '</th>';
   });
   return h;
 }
@@ -1850,11 +1870,23 @@ function scFiltersHTML(rows){
 }
 /* Repaint after a preset, a filter or a sort. The thead is re-rendered too: the
    sort arrow is drawn from aria-sort, so the two can never disagree. */
+/* The subtitle in both of its honest states: untouched board → the population;
+   any preset/range narrowing → shown-of-total plus the way back. */
+function scSubHTML(shown, total){
+  if(shown >= total){
+    return '<span class="l-en">All <b class="mono">' + total + '</b> screened names — sort any column, filter below.</span>'
+         + '<span class="l-zh">全部 <b class="mono">' + total + '</b> 个筛选标的 — 可按列排序、下方筛选。</span>';
+  }
+  return '<span class="l-en"><b class="mono">' + shown + '</b> of <b class="mono">' + total + '</b> shown — clear filters to see all.</span>'
+       + '<span class="l-zh">显示 <b class="mono">' + shown + '</b> / <b class="mono">' + total + '</b> — 清除筛选可查看全部。</span>';
+}
 function scRepaint(){
   var body = document.getElementById('oew-sc-body');
   if(body) body.innerHTML = scBody();
   var head = document.getElementById('oew-sc-head');
   if(head) head.innerHTML = scHead();
+  var sub = document.getElementById('oew-sc-sub');
+  if(sub) sub.innerHTML = scSubHTML(scVisibleRows().length, scRows.length);
 }
 /* CSV of what is on screen — the filtered, sorted rows, every field the payload
    carries. Same Blob pattern the screener page ships. */
@@ -1914,10 +1946,10 @@ function renderScanner(host, payload){
         // that work on it. The old conditional "Top 200" wording, and the
         // "open the full screener" link that existed to escape that cap, retire
         // with the truncation itself: nothing is withheld here any more.
-        + '<span class="oew-ph-sub">'
-          + '<span class="l-en">All <b class="mono">' + rows.length + '</b> screened names — sort any column, filter below.</span>'
-          + '<span class="l-zh">全部 <b class="mono">' + rows.length + '</b> 个筛选标的 — 可按列排序、下方筛选。</span>'
-        + '</span>'
+        // BL-2: the count is LIVE (scRepaint rewrites it) — a preset or range
+        // narrows the table, and a static "All 403" over 27 visible rows would
+        // misdescribe both the board and the CSV the button exports.
+        + '<span class="oew-ph-sub" id="oew-sc-sub">' + scSubHTML(rows.length, rows.length) + '</span>'
         + '<span class="oew-help" tabindex="0" role="button"'
           + ' data-tip-en="Chains are snapshots taken after the close. Implied volatility, walls and max-pain come from those snapshots; volume and premium come from the day’s tape. IV rank compares today with the history we hold for that name, so a name we have tracked only briefly has a short history behind its number. Direction is approximate; size is reliable."'
           + ' data-tip-zh="期权链为收盘后的快照。隐含波动率、墙位与最大痛点来自这些快照；成交量与权利金来自当日逐笔。隐波分位将今日与我们持有的该标的历史比较，因此跟踪时间较短的标的，其数字背后的历史也较短。方向为近似值，规模数据可靠。">?</span>'
@@ -3065,6 +3097,12 @@ function activate(mode, opts){
   });
   var need = (mode === 'ticker') ? (loaded.ticker !== curTicker) : !loaded[mode];
   if(need) loadMode(mode);
+  /* BL-1: a langchange/themechange that fired while Flow was display:none hit
+     the canvases' zero-size guard and drew nothing — returning to the tab then
+     showed the OLD palette (a rising tide stayed green under zh). Canvas draws
+     are one-shot and cheap, so re-entering an already-loaded Flow always
+     repaints; the draw functions no-op when the canvases are absent. */
+  if(mode === 'flow' && !need) { flDrawSpark(); flDrawUnfold(); }
   if(!opts || !opts.silent){
     try{ history.replaceState(null, '', '#' + mode + (mode === 'ticker' ? '?t=' + curTicker : '')); }catch(e){}
   }
@@ -3094,6 +3132,11 @@ document.addEventListener('click', function(e){
   if(p){
     p.parentNode.querySelectorAll('.oew-preset').forEach(function(x){ x.setAttribute('aria-pressed', String(x === p)); });
     scPreset = p.getAttribute('data-preset');
+    /* "Premium leaders" IS an ordering (the screener's own applyPreset sets
+       sortCol=gross_premium_mn desc for it) — without this reset the chip
+       lights up over whatever column the reader last sorted, a no-op that
+       mislabels the board. The other presets are filters and keep the sort. */
+    if(scPreset === 'premium') scSort = scSortDefault();
     scRepaint();
     return;
   }
@@ -3102,7 +3145,9 @@ document.addEventListener('click', function(e){
   var th = e.target.closest && e.target.closest('.oew-tbl thead th[data-sort]');
   if(th){
     var key = th.getAttribute('data-sort'), idx = parseInt(th.getAttribute('data-i'), 10);
-    if(scSort.idx === idx) scSort.dir = (scSort.dir === 'desc') ? 'asc' : 'desc';
+    /* toggle on the KEY: the same field's header in another view is the same
+       sort, and treating it as fresh reset the direction instead of flipping */
+    if(scSort.key === key) scSort.dir = (scSort.dir === 'desc') ? 'asc' : 'desc';
     else { scSort.key = key; scSort.idx = idx; scSort.dir = 'desc'; }
     scRepaint();
     return;
@@ -3114,6 +3159,13 @@ document.addEventListener('click', function(e){
       more.querySelectorAll('input').forEach(function(el){ el.value = ''; });
       more.querySelectorAll('select').forEach(function(el){ el.value = ''; });
     }
+    /* MI-4: "Clear all" means the full board — a preset left armed kept
+       silently filtering after the inputs blanked, with no lit control
+       explaining why. Reset to the default ordering preset and relight it. */
+    scPreset = 'premium'; scSort = scSortDefault();
+    document.querySelectorAll('.oew-preset').forEach(function(x){
+      x.setAttribute('aria-pressed', String(x.getAttribute('data-preset') === 'premium'));
+    });
     scRepaint();
     return;
   }
@@ -3239,6 +3291,11 @@ window.addEventListener('resize', function(){
 });
 document.addEventListener('langchange', function(){
   setTimeout(function(){ flDrawSpark(); flDrawUnfold(); scApplyLang(); }, 0);
+});
+/* Dark↔light re-tunes --up/--down/--line, and canvases hold resolved pixels —
+   same repaint contract as langchange (theme.js dispatches both). */
+document.addEventListener('themechange', function(){
+  setTimeout(function(){ flDrawSpark(); flDrawUnfold(); }, 0);
 });
 
 /* Terminal handoff clock — computed at READ time, never baked. A countdown

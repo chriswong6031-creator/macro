@@ -25,7 +25,7 @@ has today is deleted, it moves):
 | Page | Folds in (W1.6-A) | Then becomes (W1.6-B) |
 |---|---|---|
 | `gex.html` "Options Desk" | raw-structure shelf (6 hand-SVG charts: gamma-by-strike, net-gamma profile, strike×expiry heatmap, vol smile, IV term, expiry ladder + greeks) → Ticker mode's "Under the hood" shelf; options primer → Ticker mode footer | redirect stub → `options.html#ticker` (hash `#SYM` → `?t=SYM#ticker`) |
-| `options_screener.html` | Scanner uncapped (all rows, declared); 12 numeric range filters + sector dropdown + text filter in a collapsed "More filters" disclosure; per-column sort; CSV export; 7th preset "Put-heavy OI" | redirect stub → `options.html#scanner` |
+| `options_screener.html` | Scanner uncapped (all rows, declared); 11 numeric range filters + sector dropdown + text filter in a collapsed "More filters" disclosure; per-column sort; CSV export; 7th preset "Put-heavy OI" | redirect stub → `options.html#scanner` |
 | `flow_desk.html` "US Options Flow" | new **Flow mode**: full sector list with ⚑ deviation flags · theme-group tiles · sector-ETF money grid · the tide (30-session arc + today's unfolded curve) | redirect stub → `options.html#flow` |
 | `flow_leaders.html` | Leaders payload uncapped at the builder (`_BOARD_CAP`); mode keeps top-12 + "Show all N" expander per board; caution tags + ladders already ported by OEU/W1 | redirect stub → `options.html#leaders` |
 
@@ -142,7 +142,7 @@ Panel order (each `.oew-panel`, eyebrow question-framed):
 - Remove `.slice(0, 200)`; subtitle becomes the "All N screened names" form (§5) — the
   conditional-cap wording and its two tests retire.
 - **"More filters" disclosure** (collapsed by default, `.oew-sc-more`): text filter
-  (ticker/sector), sector dropdown, and the 12 numeric ranges ported from
+  (ticker/sector), sector dropdown, and the 11 numeric ranges ported from
   `options_screener.html.j2:222-397`, operating on the already-fetched rows. Preset chips
   and filters compose (preset first, then ranges).
 - **Per-column sort** on the table headers (port the screener's comparator, `aria-sort`).

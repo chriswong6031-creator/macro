@@ -906,7 +906,26 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
             ],
             default=float,
         ),
+        # Flow mode renders sector names CLIENT-side from the lazy-fetched
+        # flow_desk.json, so it cannot reach the Jinja td()/tr() globals the
+        # baked Brief uses one tab away. This tiny map (≤ a dozen sectors)
+        # carries the same LEX translations to the client; a name the LEX
+        # doesn't know degrades to its English form, exactly like td().
+        "sector_zh_json": _sector_zh_json(stores),
     }
+
+
+def _sector_zh_json(stores: dict) -> str:
+    try:
+        from engine.i18n import tr  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return "{}"
+    names = {
+        str(r.get("sector"))
+        for r in ((stores.get("flow_desk") or {}).get("sector_heatmap") or [])
+        if r.get("sector")
+    }
+    return json.dumps({n: tr(n) for n in sorted(names)}, ensure_ascii=False)
 
 
 def render(root: Path, stores: dict | None = None) -> str:

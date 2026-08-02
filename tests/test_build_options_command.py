@@ -50,15 +50,6 @@ EMPTY_STORES: dict = {
 # Shared with test_no_banned_vocabulary_in_js_rendered_states (Addition-1 fix,
 # adversarial review round 2): one list, so the static-copy sweep and the
 # JS-execution sweep can never silently diverge on what counts as banned.
-BANNED_VOCABULARY = [
-    "IGNITION", "UPTURN_CONFIRMED", "slow reco", "expected-null", "forward meter",
-    "display-tier", "K-of-N", "gauntlet", "prereg", "Oracle P", "FlowZ", "TSBrd",
-    "NotTrap", "PriceOK", "NearHigh", "VolOK", "TurnOrg", "Inflect", "n=", "FDR",
-    "z-score", "t-stat", "rank-IC", "cross-sectional", "multi-timeframe",
-    "validated", "us_sector", "yCaution", "BothSides", "EarnWin",
-    "pain_dist", "median_depth", "wilson_", "0DTE",
-]
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Banned vocabulary — ONE list, three streams
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1321,9 +1312,13 @@ def test_scanner_has_no_cap_left_to_declare(page):
     assert "rows.length > 200" not in page
     assert 'href="options_screener.html"' not in page, \
         "the declared-cap escape link retires with the cap it declared"
-    # the "All N" form, with the count LIVE (never a hardcoded digit)
-    assert "All <b class=\"mono\">' + rows.length + '</b> screened names" in page
-    assert "全部 <b class=\"mono\">' + rows.length + '</b> 个筛选标的" in page
+    # the "All N" form, with the count LIVE (never a hardcoded digit). BL-2
+    # moved the construction into scSubHTML so filtering can rewrite it —
+    # test_scanner_subtitle_tells_the_truth_in_both_states executes both
+    # states; here we pin that the panel renders THROUGH that function.
+    assert "All <b class=\"mono\">' + total + '</b> screened names" in page
+    assert "全部 <b class=\"mono\">' + total + '</b> 个筛选标的" in page
+    assert "scSubHTML(rows.length, rows.length)" in page
     assert "sort any column, filter below" in page
     assert "可按列排序、下方筛选" in page
     assert "384" not in page
@@ -2722,3 +2717,126 @@ def test_spark_null_sessions_draw_as_gaps_not_zeros(page):
     assert not res["nullHit"], "a null (no-observation) slot received a drawn vertex — fabricated zero regression"
     assert res["zeroDrawn"], "the REAL measured 0.0 was not drawn — nulls and zeros conflated in the other direction"
     assert res["lastDotOk"], "the last-value dot is not on the last real observation"
+
+
+@_needs_node
+def test_direction_tokens_bind_to_the_sign_not_just_appear(page):
+    """MA-3 (adversarial review): the earlier guards assert --up/--down are
+    PRESENT, so inverting a sign→token ternary (painting positive gamma red)
+    stayed green. This executes the three sign-encoding charts with fixtures of
+    known sign and asserts each individual mark carries the token its own sign
+    demands — an inversion now reddens instead of surviving."""
+    driver = _DOM_STUB + _extract_workspace_script(page) + """
+    /* 1 · gamma-by-strike bars: rows emit in order, so tokens must follow signs */
+    var bars = rawGammaBarsSVG({ summary: { spot: 105 }, walls: { by_strike: [
+      { K: 100, net_mn: 50 }, { K: 110, net_mn: -30 } ] } });
+    var barToks = (bars.match(/<rect[^>]*fill:var\\((--up|--down)\\)/g) || [])
+      .map(function(s){ return s.indexOf('--up') > -1 ? 'up' : 'down'; });
+    /* 2 · strike-by-expiry heat cells, same order contract */
+    var heat = rawHeatHTML({ summary: { spot: 105 }, surface: {
+      strikes: [100, 110], expiries: ['SEP'], days: [30], gex_max: 5,
+      z_gex: [[5], [-5]] } });
+    var heatToks = (heat.match(/var\\((--up|--down)\\)\\s*\\d+%/g) || [])
+      .map(function(s){ return s.indexOf('--up') > -1 ? 'up' : 'down'; });
+    /* 3 · tide spark: the segment stroke + last dot must take the sign's colour.
+       getComputedStyle stub returns '' so cssVar falls back to its literals. */
+    function mkRecorder(){
+      var ops = [], state = { strokeStyle: '', fillStyle: '' };
+      var ctx = {};
+      ['beginPath','moveTo','lineTo','closePath','clip','save','restore','rect',
+       'setTransform','clearRect','setLineDash'].forEach(function(m){ ctx[m] = function(){}; });
+      ctx.stroke = function(){ ops.push(['stroke', state.strokeStyle]); };
+      ctx.fill = function(){ ops.push(['fill', state.fillStyle]); };
+      ctx.arc = function(){ ops.push(['arc']); };
+      ctx.createLinearGradient = function(){ return { addColorStop: function(){} }; };
+      Object.defineProperty(ctx, 'strokeStyle', { set: function(v){ state.strokeStyle = v; }, get: function(){ return state.strokeStyle; } });
+      Object.defineProperty(ctx, 'fillStyle',   { set: function(v){ state.fillStyle = v; },   get: function(){ return state.fillStyle; } });
+      return { ctx: ctx, ops: ops };
+    }
+    var getComputedStyle = function(){ return { getPropertyValue: function(){ return ''; } }; };
+    function sparkColours(valsArr){
+      var rec = mkRecorder();
+      var canvas = { offsetWidth: 250, offsetHeight: 40, getContext: function(){ return rec.ctx; } };
+      document.getElementById = function(id){ return id === 'oew-fl-spark' ? canvas : null; };
+      flDesk = null; /* not reachable — call through renderFlow to set state */
+      var host = { innerHTML: '' };
+      renderFlow(host, { sector_heatmap: [ { sector: 'Technology', gross_premium_mn: 10 } ],
+        market_tide: { spark: valsArr.map(function(v, i){ return { date: 'd' + i, net_premium_mn: v }; }) } }, null);
+      var strokes = rec.ops.filter(function(o){ return o[0] === 'stroke'; });
+      var fills = rec.ops.filter(function(o){ return o[0] === 'fill'; });
+      return { lastStroke: strokes.length ? strokes[strokes.length - 1][1] : null,
+               lastFill: fills.length ? fills[fills.length - 1][1] : null };
+    }
+    var pos = sparkColours([3, 4, 5]);
+    var neg = sparkColours([-3, -4, -5]);
+    console.log(JSON.stringify({ barToks: barToks, heatToks: heatToks,
+      posStroke: pos.lastStroke, posFill: pos.lastFill,
+      negStroke: neg.lastStroke, negFill: neg.lastFill }));
+    })();
+    """
+    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr[-2000:]
+    res = _json.loads(out.stdout.strip().splitlines()[-1])
+    assert res["barToks"] == ["up", "down"], f"gamma bars bind wrong tokens to signs: {res['barToks']}"
+    assert res["heatToks"] == ["up", "down"], f"heat cells bind wrong tokens to signs: {res['heatToks']}"
+    assert res["posStroke"] == "#45b873" and res["posFill"] == "#45b873", \
+        f"positive tide drew {res['posStroke']}/{res['posFill']} — must be the --up fallback"
+    assert res["negStroke"] == "#e06464" and res["negFill"] == "#e06464", \
+        f"negative tide drew {res['negStroke']}/{res['negFill']} — must be the --down fallback"
+
+
+def test_every_literal_bi_call_carries_a_real_zh_half():
+    """MA-4 (adversarial review): bi(en, zh) falls back to `zh || en`, so a
+    missing ZH half still emits both spans and every COUNT-based parity check
+    stays green — the guard was structurally unable to see the defect it
+    existed for. This lint reads the source instead: every bi() call whose
+    arguments are string literals must pass a second literal containing CJK.
+    (Dynamic second arguments — payload fields, td()-sourced maps — are out of
+    scope here and covered by their own payload contracts.) Allowlist is empty
+    because the current 109 calls are all compliant; keep it that way."""
+    import re as _re
+    src = (REPO / "templates" / "options.html.j2").read_text()
+    calls = _re.findall(
+        r"bi\(\s*('(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\")\s*(?:,\s*('(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"))?\s*[,)]",
+        src,
+    )
+    assert calls, "no literal bi() calls found — extraction regex rotted"
+    offenders = []
+    for en, zh in calls:
+        if not zh or not _re.search(r"[一-鿿]", zh):
+            offenders.append((en[:60], (zh or "<missing>")[:60]))
+    assert not offenders, f"bi() calls without a real ZH literal: {offenders}"
+
+
+@_needs_node
+def test_scanner_subtitle_tells_the_truth_in_both_states(page):
+    """BL-2 (adversarial review): the headline claimed "All 403 screened names"
+    over a preset-narrowed 27-row table (and its CSV). The subtitle is now a
+    live function — both of its states are executed here."""
+    driver = _DOM_STUB + _extract_workspace_script(page) + """
+    console.log(JSON.stringify({ full: scSubHTML(403, 403), cut: scSubHTML(27, 403) }));
+    })();
+    """
+    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr[-2000:]
+    res = _json.loads(out.stdout.strip().splitlines()[-1])
+    assert "All <b class=\"mono\">403</b> screened names" in res["full"]
+    assert "全部 <b class=\"mono\">403</b> 个筛选标的" in res["full"]
+    assert "<b class=\"mono\">27</b> of <b class=\"mono\">403</b> shown" in res["cut"]
+    assert "显示 <b class=\"mono\">27</b> / <b class=\"mono\">403</b>" in res["cut"]
+    assert "clear filters" in res["cut"] and "清除筛选" in res["cut"]
+    # and scRepaint actually rewrites it (wiring, not just the function)
+    assert "sub.innerHTML = scSubHTML(scVisibleRows().length, scRows.length);" in page
+
+
+def test_flow_canvases_repaint_on_reactivation_and_themechange(page):
+    """BL-1 (adversarial review): a langchange while Flow was display:none hit
+    the zero-size canvas guard, and returning to the tab showed the old
+    palette (rising tide still green under zh). Pins the two triggers the fix
+    added: re-entering a loaded Flow repaints, and themechange repaints —
+    execution of the draw path itself is covered by
+    test_direction_tokens_bind_to_the_sign_not_just_appear."""
+    assert "if(mode === 'flow' && !need) { flDrawSpark(); flDrawUnfold(); }" in page
+    assert "document.addEventListener('themechange'" in page
+    # premium preset re-arms its ordering (MA-1) — the chip is a sort, not a filter
+    assert "if(scPreset === 'premium') scSort = scSortDefault();" in page
