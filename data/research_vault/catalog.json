@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T13:47:53.839553+00:00",
-  "count": 597,
+  "generated_at": "2026-08-02T14:17:59.675152+00:00",
+  "count": 599,
   "institutions": [
     "Amova",
     "Apollo",
@@ -223,6 +223,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kia74tizv1u-7bd5cb",
+      "title": "Atria 202607310825 flash",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:34:17Z",
+      "summary_points": [
+        "**ASF outbreak in Finland**: First case threatens China export opportunities, reducing non-European parts sales (e.g., pigtails/ears) by ~25m EUR.",
+        "**Elevated risk profile**: Initial EBIT impact low single million, but export constraints introduce material risk to growth trajectory beyond immediate financials.",
+        "**Revised EBIT guidance**: Atria raised 2026 EBIT guidance to EUR 74.3m (vs.",
+        "2025’s EUR 69.9m), though ASF-related export risks now challenge this outlook.",
+        "**Critical conflict**: Positive guidance revision directly contradicted by new, quantifiable export risk (25m EUR sales impact), creating portfolio volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -470,6 +491,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1grch4cidnk-d6ceca",
+      "title": "GS Early Morning Research Recap Ratings and Target Price Changes July 31, 2026 as of 5 30 AM ET",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:15Z",
+      "summary_points": [
+        "**China Fiscal Policy Shift**: July Politburo easing rhetoric and faster implementation reverse 2026Q2 fiscal tightening, critical for China equity/credit flows (fundamentals/policy).",
+        "**China Smartphone Demand Risk**: Shipments -17% YoY/-36% MoM signals weakening demand, triggering FX volatility reset (data release/risk factor).",
+        "**US Fed & Geopolitics**: Dovish Fed hold amid AI volatility and US trade policy concerns pose key geopolitical/policy risk for global markets.",
+        "**Amazon AWS vs Apple Guidance**: AWS revenue/margins support AI RoIC (fundamentals) vs.",
+        "Apple’s F3Q26 miss on supply constraints/forex (risk factor)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
