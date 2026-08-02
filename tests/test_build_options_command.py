@@ -1055,9 +1055,38 @@ def test_main_writes_the_page_on_the_happy_path(tmp_path):
 import json as _json  # noqa: E402
 import shutil as _shutil  # noqa: E402
 import subprocess as _subprocess  # noqa: E402
+import os as _os  # noqa: E402
+import tempfile as _tempfile  # noqa: E402
 
 _HAS_NODE = _shutil.which("node") is not None
 _needs_node = pytest.mark.skipif(not _HAS_NODE, reason="node not on PATH")
+
+
+def _run_node_driver(driver: str, timeout: int = 30):
+    """Run a driver script through node, via a FILE rather than `node -e`.
+
+    `node -e <driver>` puts the whole script in one argv entry, and Linux caps a
+    single argument at MAX_ARG_STRLEN = 128 KB regardless of how generous the
+    total ARG_MAX is. These drivers embed the extracted workspace IIFE plus a DOM
+    stub plus a payload, so they sail past that as soon as the workspace grows —
+    which is exactly what happened: every one of these tests passed locally on
+    macOS (far larger per-argument limit) and failed in CI with
+    `OSError: [Errno 7] Argument list too long: 'node'`, on four consecutive
+    rebases, while the failure looked like a content regression rather than an
+    environment limit.
+
+    A temp file has no such ceiling, so this cannot regress again as the
+    workspace script keeps growing.
+    """
+    with _tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as handle:
+        handle.write(driver)
+        path = handle.name
+    try:
+        return _subprocess.run(
+            ["node", path], capture_output=True, text=True, timeout=timeout
+        )
+    finally:
+        _os.unlink(path)
 
 
 _IIFE_OPEN_TAG = "<script data-externalize>"
@@ -1240,7 +1269,7 @@ def test_lazy_mode_renderers_produce_non_empty_markup_from_their_payload(page):
     }));
     })();
     """
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = _json.loads(res.stdout.strip().splitlines()[-1])
     assert "AAPL" in out["scanner"], "renderScanner produced no visible content from its payload"
@@ -1266,7 +1295,7 @@ def test_lazy_mode_renderers_show_empty_state_for_an_empty_payload(page):
     }));
     })();
     """
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = _json.loads(res.stdout.strip().splitlines()[-1])
     for key, val in out.items():
@@ -1343,7 +1372,7 @@ def test_scanner_renders_every_screened_row_with_no_truncation(page):
         process.stdout.write(JSON.stringify({ html: host.innerHTML, visible: scVisibleRows().length }));
         })();
         """)
-        res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+        res = _run_node_driver(driver)
         assert res.returncode == 0, f"node failed (n={n}):\nSTDERR:\n{res.stderr}"
         out = _json.loads(res.stdout.strip().splitlines()[-1])
         assert out["visible"] == n, f"n={n}: scVisibleRows() truncated to {out['visible']}"
@@ -1459,7 +1488,7 @@ def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = res.stdout
     a_sub = re.search(r"top 12 of (\d+), by recurrence", out)
@@ -1501,7 +1530,7 @@ def test_where_positions_built_bars_share_one_scale_across_both_columns(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = res.stdout
     i = out.index("Where positions built")
@@ -1741,7 +1770,7 @@ def test_search_behavior_end_to_end():
     process.stdout.write(JSON.stringify(results));
     })();
     """
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = _json.loads(res.stdout.strip().splitlines()[-1])
     assert set(out["matchedSP"]) == {"SPY", "SPX", "SPWR"}, out["matchedSP"]
@@ -1810,7 +1839,7 @@ def test_ticker_five_new_reads_present_state(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = res.stdout
 
@@ -1893,7 +1922,7 @@ def test_ticker_five_new_reads_absent_or_degraded_state(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = res.stdout
 
@@ -1934,7 +1963,7 @@ def test_rich_or_cheap_low_confidence_shows_history_building_chip(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     out = res.stdout
     assert "history building — 12d" in out
@@ -2004,7 +2033,7 @@ def test_no_banned_vocabulary_in_js_rendered_states(page):
     process.stdout.write(JSON.stringify(out));
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     states = _json.loads(res.stdout.strip().splitlines()[-1])
     for key, val in states.items():
@@ -2034,7 +2063,7 @@ def test_filmstrip_sentence_flip_clause_across_crossing_counts(page):
         process.stdout.write(host.innerHTML);
         })();
         """)
-        res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+        res = _run_node_driver(driver)
         assert res.returncode == 0, f"node failed (crosses={crosses}):\nSTDERR:\n{res.stderr}"
         out = res.stdout
         assert want_en in out, f"crosses={crosses}: missing {want_en!r}"
@@ -2066,7 +2095,7 @@ def test_filmstrip_shape_words_compose_without_doubling_the_subject(page):
         process.stdout.write(host.innerHTML);
         })();
         """)
-        res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+        res = _run_node_driver(driver)
         assert res.returncode == 0, f"node failed (tag={tag}):\nSTDERR:\n{res.stderr}"
         out = res.stdout
         film = out[out.index("How the day traded"): out.index("The map")]
@@ -2091,7 +2120,7 @@ def test_filmstrip_null_disclosure_prints_once_not_twice(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res_a = _subprocess.run(["node", "-e", driver_a], capture_output=True, text=True, timeout=30)
+    res_a = _run_node_driver(driver_a, timeout=30)
     assert res_a.returncode == 0, f"node failed:\nSTDERR:\n{res_a.stderr}"
     film_a = res_a.stdout[res_a.stdout.index("How the day traded"): res_a.stdout.index("The map")]
     # strip the figure's own aria-label (the accessible-name twin every ilx
@@ -2117,7 +2146,7 @@ def test_filmstrip_null_disclosure_prints_once_not_twice(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res_b = _subprocess.run(["node", "-e", driver_b], capture_output=True, text=True, timeout=30)
+    res_b = _run_node_driver(driver_b, timeout=30)
     assert res_b.returncode == 0, f"node failed:\nSTDERR:\n{res_b.stderr}"
     film_b = res_b.stdout[res_b.stdout.index("How the day traded"): res_b.stdout.index("The map")]
     visible_b = re.sub(r'aria-label\s*=\s*"[^"]*"', " ", film_b)
@@ -2158,7 +2187,7 @@ def test_rich_or_cheap_band_color_is_never_directional_at_runtime(page):
         process.stdout.write(host.innerHTML);
         })();
         """)
-        res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+        res = _run_node_driver(driver)
         assert res.returncode == 0, f"node failed (band={band}):\nSTDERR:\n{res.stderr}"
         out = res.stdout
         i = out.index("Rich or cheap?")
@@ -2187,7 +2216,7 @@ def test_low_confidence_suppresses_the_percentile_sentence(page):
     process.stdout.write(host.innerHTML);
     })();
     """)
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}"
     out = res.stdout
     assert "history building — 3d" in out and "历史积累中 — 3天" in out
@@ -2213,7 +2242,7 @@ def test_new_ticker_panels_keep_bilingual_span_parity_in_every_state(page):
         process.stdout.write(host.innerHTML);
         })();
         """)
-        res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+        res = _run_node_driver(driver)
         assert res.returncode == 0, f"node failed ({name}):\nSTDERR:\n{res.stderr}"
         out = re.sub(r'data-tip-(?:rc-)?(?:en|zh)\s*=\s*"[^"]*"', " ", res.stdout)
         out = re.sub(r'aria-label\s*=\s*"[^"]*"', " ", out)
@@ -2300,7 +2329,7 @@ def _sc_rows_js(n: int) -> str:
 
 def _node(page: str, tail: str) -> str:
     driver = _DOM_STUB + _extract_workspace_script(page) + tail + "\n})();\n"
-    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    res = _run_node_driver(driver)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
     return res.stdout
 
@@ -2710,7 +2739,7 @@ def test_spark_null_sessions_draw_as_gaps_not_zeros(page):
       lastDotOk: lastDotOk, drew: calls.length > 0 }));
     })();
     """
-    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    out = _run_node_driver(driver, timeout=60)
     assert out.returncode == 0, out.stderr[-2000:]
     res = _json.loads(out.stdout.strip().splitlines()[-1])
     assert res["drew"], "flDrawSpark drew nothing at all"
@@ -2774,7 +2803,7 @@ def test_direction_tokens_bind_to_the_sign_not_just_appear(page):
       negStroke: neg.lastStroke, negFill: neg.lastFill }));
     })();
     """
-    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    out = _run_node_driver(driver, timeout=60)
     assert out.returncode == 0, out.stderr[-2000:]
     res = _json.loads(out.stdout.strip().splitlines()[-1])
     assert res["barToks"] == ["up", "down"], f"gamma bars bind wrong tokens to signs: {res['barToks']}"
@@ -2817,7 +2846,7 @@ def test_scanner_subtitle_tells_the_truth_in_both_states(page):
     console.log(JSON.stringify({ full: scSubHTML(403, 403), cut: scSubHTML(27, 403) }));
     })();
     """
-    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    out = _run_node_driver(driver, timeout=60)
     assert out.returncode == 0, out.stderr[-2000:]
     res = _json.loads(out.stdout.strip().splitlines()[-1])
     assert "All <b class=\"mono\">403</b> screened names" in res["full"]
