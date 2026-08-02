@@ -122,7 +122,7 @@ chart is the first proof under it.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Signature — the strand field and its gate
+### Signature — the year field and the window fan
 
 **Every other seasonality product draws one smooth average curve. We draw all the
 threads it was made from, and put the average on top.**
@@ -133,11 +133,13 @@ disclaimer under the chart — it is *drawing the fifteen*. The user does not re
 "n=15"; they see fifteen threads, few enough to count, fanning apart wherever the
 "pattern" is weak.
 
-The **gate** is the interaction that makes it pay off. When a window is selected,
-the strands outside it fall away to near-nothing, and inside it each strand
-re-lights by *its own* outcome — warm if that year ended the window up, cool if
-down. "9 of 15 years were up" stops being a statistic and becomes nine lit
-threads you can count against six dark ones.
+The **gate** is the interaction that makes it pay off — but the payoff renders in
+the **window fan** (§5), not in the year field. Selecting a window re-anchors
+every year to zero at the window's first day and draws them at the window's own
+scale, coloured by that year's outcome. "9 of 15 years were up" stops being a
+statistic and becomes nine green threads ending above a line and six red below,
+in a column you can count. §13 records why this had to be a second picture rather
+than lighting inside the first.
 
 **The risk I am taking, and why it is right:** our chart will look noisier than
 every competitor's. That noise is the honest magnitude of the uncertainty. A
@@ -268,20 +270,23 @@ Plot box: `x ∈ [44, 940]` (896px over 366 day slots → `2.4481 px/day`),
 Y scale: linear over `[min(p05_all_years) − pad, max(p95_all_years) + pad]` of the
 rebased cumulative paths, `pad = 4%` of range, clamped so `100` is always inside.
 
+**Two pictures, two scales — see §13 for why.** The year field below shows *when
+in the year* and the year's shape. It does **not** try to show the window's own
+outcomes: the window's signal is roughly an order of magnitude smaller than the
+year's range, so at this y-scale it can only ever be a smudge. The countable
+per-year outcome lives in the **window fan** (§5), at its own scale.
+
 | Layer (paint order) | Spec |
 |---|---|
 | 1 · month rules | `x` at each month start; `stroke:var(--line); stroke-opacity:.55; stroke-width:1` |
-| 2 · 100 baseline | dashed `4 4`, `stroke:var(--line); stroke-opacity:.9` |
-| 3 · 20–80 band | `fill:var(--sx-ink); fill-opacity:.08`, no stroke |
-| 4 · year strands | one `<path>` per complete year; `fill:none; stroke:currentColor; stroke-opacity:.13; stroke-width:1` |
+| 2 · zero baseline | dashed `4 4`, `stroke:var(--line); stroke-opacity:.9` |
+| 3 · 20–80 band | `fill:var(--sx-ink); fill-opacity:.12`, no stroke |
+| 4 · year strands | one `<path>` per complete year; `fill:none; stroke:currentColor; stroke-opacity:.14; stroke-width:1`. **No dim/undim state** — strands do not change when the gate moves |
 | 5 · gate fill | `fill:var(--sx-ink); fill-opacity:.07` between the two rules |
-| 6 · lit strand segments | per year, the in-window sub-path only; `stroke:var(--up)` if that year's window return > 0 else `var(--down)`; `stroke-opacity:.55; stroke-width:1.4` |
-| 7 · median ink | `fill:none; stroke:var(--sx-ink); stroke-width:2.6; stroke-linejoin:round; stroke-linecap:round` |
-| 8 · current-year thread | `stroke:var(--sx-now); stroke-opacity:.9; stroke-width:1.75`, drawn only to today |
-| 9 · gate rules | `stroke:var(--sx-ink); stroke-width:1; stroke-dasharray:3 3; stroke-opacity:.75` |
-| 10 · today rule | `stroke:var(--sx-now); stroke-width:1; stroke-opacity:.55` |
-
-When the gate is active, layer-4 strands drop to `stroke-opacity:.055`.
+| 6 · median ink | `fill:none; stroke:var(--sx-ink); stroke-width:2.6; stroke-linejoin:round; stroke-linecap:round` |
+| 7 · current-year thread | `stroke:var(--sx-now); stroke-opacity:.62; stroke-width:1.3`, drawn only to today |
+| 8 · gate rules | `stroke:var(--sx-ink); stroke-width:1; stroke-dasharray:3 3; stroke-opacity:.75` |
+| 9 · today rule | `stroke:var(--sx-now); stroke-width:1; stroke-opacity:.55` |
 
 **Strands are capped at 25** and each is downsampled to ≤183 points (every second
 calendar day) before serialization. If a lookback would exceed 25 complete years,
@@ -333,11 +338,30 @@ theme/ZH-aware via CSS vars, no client chart library.
 
 **This window** (left column, `--panel`, `border-radius:12px`, `padding:18px 20px`):
 median return as the display figure (mono, 30px, `--up`/`--down` tinted, sign
-always shown), plain label `typical year` / `典型年份` under it. Then the **dot
-row**: one dot per year in chronological order, 9px, filled `--up`/`--down`,
-current year hollow with a `--sx-now` ring; the row is the same fact as the lit
-strands, restated where the eye lands after reading the figure. Then the
-after-search sentence + `?` tip from §3.
+always shown), plain label `typical year` / `典型年份` under it.
+
+Then **the window fan — this is the signature**, verified against real data in
+`mockups/refs/stock_seasonality/window_fan.html` (committed; open it before
+building). Its own `<svg>`, `viewBox="0 0 460 190"`, `max-width:480px`, 10px pad:
+
+- every complete year re-anchored to **zero at the window's first day**, so all
+  threads start from one point and the picture's y-scale is the *window's* range
+  (`min/max × 1.08`), not the year's;
+- one path per year, `fill:none; stroke-width:1.25; stroke-opacity:.5`,
+  `--up` if that year's window return > 0 else `--down`;
+- the median of the re-anchored threads over the top in `--sx-ink`, 2.2px;
+- a dashed `--line` zero rule;
+- an **end-dot column** at the right edge, one 2.1px circle per year at its final
+  value — this stacks into a countable column of greens above and reds below and
+  **replaces the dot row**; do not build both;
+- each path carries a `<title>` with `year: ±x.xx%` (plain, no bilingual markup —
+  it is inside SVG).
+
+Caption under it, plain: `Each thread is one year, starting from zero on {date}.
+{k} of {n} finished above the line.` / `每条线是一年，从 {date} 起算为零。{n} 年中
+{k} 年收在零线之上。`
+
+Then the after-search sentence, the chance track, and the `?` tip from §3.
 
 **The years** (right column): a ruled table, `year | return | bar`. Chronological
 order only — sorting by return is the flattering-presentation trap and is not
@@ -678,3 +702,49 @@ the program-level fire rate against the 5% chance expectation and let the
 per-symbol page make the per-symbol claim. **Compute those rates over the real
 universe at B=2,000 and ship them — never hardcode the probe numbers above,
 which came from a 59-symbol sample at B=400 and are indicative only.**
+
+---
+
+## §13 What building the mockup changed (main loop, 2026-08-01)
+
+The design was rendered from real SPY data before any builder shipped it, because
+a geometry spec is not evidence that a picture works. Three renders are committed
+under `mockups/refs/stock_seasonality/` — **open them before building**:
+
+| File | What it shows |
+|---|---|
+| `strand_field.html` | the first full-page render (superseded, kept as the record) |
+| `variants.html` | four strand treatments compared side by side |
+| `window_fan.html` | **the resolution — build this** |
+
+**What failed.** The original §4 lit the in-window strand segments inside the year
+field, on the assumption that a user could count them. Rendered, they could not:
+cumulative-from-Jan-1 paths converge to a single point in January and tangle by
+December, so the field reads as a haze rather than fifteen threads. Re-anchoring
+the lit segments to a common origin *inside* the gate (the "lens" variant) fixed
+the origin but not the scale — a window's returns span a few percent while the
+year spans tens of percent, so the fan collapsed into a coloured smudge roughly a
+tenth of the plot's height.
+
+**The diagnosis.** One y-scale cannot serve both jobs. The year's shape and the
+window's outcomes differ by about an order of magnitude, and any single chart that
+tries to carry both will render one of them illegibly.
+
+**The resolution — two pictures, each at its own scale.**
+
+- **The year field** (§4) answers *when in the year, and what shape*. It keeps
+  every strand in place at full-year scale, marks the window with the gate, and
+  drops the in-gate lighting entirely.
+- **The window fan** (§5) answers *how much, how consistently, and how many*. Its
+  y-scale is the window's own range, so fifteen threads diverge visibly from one
+  origin and their end dots stack into a countable column.
+
+This is a net *removal*: the year field loses the lit-segment layer and its
+dim/undim state machine, and the separate dot row disappears into the fan's end
+dots. Two elements out, one in — and the one that remains is the one that actually
+delivers the thesis.
+
+**Also corrected by looking:** strand opacity `.13` was too faint at full page
+width (raised to `.14` with no dim state), the 20–80 band was invisible under the
+strands (`.08` → `.12`), and the current-year thread at `1.75px / .9` dominated
+the median ink it is supposed to sit beneath (now `1.3px / .62`).
