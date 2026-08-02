@@ -54,7 +54,10 @@ US surfaces untouched. HK/Canada/Intl mirrors are a later program.
    (中国行业智慧)** · **Subsector Confluence (子行业汇聚)** · **Market Heatmap
    (市场热力图)** (kept — unlike the US, china_heatmap has no other nav home).
    `_navlinks.html.j2` only; China/HK/Canada other menus untouched; no third header
-   family.
+   family. (As built: the in-menu row label is the short **Sector Intelligence /
+   行业智慧** — the row already sits inside the China menu, so the "China" prefix is
+   redundant there; the page's own kicker/title carry the full China Sector
+   Intelligence / 中国行业智慧.)
 7. **Nothing silently lost.** PR body carries the full disposition table (§6).
    Detail families stay live: `site/basket_china/` (22), `site/rotation_china/`
    (233), Confluence's `site/subsector_china/` (untouched).

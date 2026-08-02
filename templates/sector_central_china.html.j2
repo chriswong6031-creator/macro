@@ -5,9 +5,10 @@
 {% set basket_base = basket_base|default('basket_china/') %}
 <!DOCTYPE html>
 <html lang="en" class="scc-page">
-{# China Sector Intelligence — the merged hub (baskets + subsector rotation absorbed, 2026-08). Renders engine.china_sector_central:
-   a regime-gated confluence read per sector/basket with a reasoning trace + the honest forward
-   odds + a self-grader. Data is emitted by scripts/build_china_sector_central.py as
+{# China Sector Intelligence — the merged hub (baskets + subsector rotation absorbed, 2026-08).
+   Gated conviction board + cycle map (engine.china_sector_central → window.SECTOR_CENTRAL via
+   sector_central_china_data.js) + theme-context hero + whole-market rotation + basket explorer
+   (fetched chinabasketdata/baskets.json). Rendered by scripts/build_china_sector_central.py. #}
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1829,6 +1830,14 @@ function boot(){
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderTblCatFilter(); renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
 }
+/* Cross-script exports — baskets_desk.js reads these seven helpers (plus BASKETS/CHART/THEME,
+   which are top-level vars and hence window-attached already) from the shared global scope.
+   On the old page they were top-level consts; inside this wrapper they are function-scoped,
+   so without the exports the desk's renderers die silently in deskBoot's try/catch
+   (measured: .tcard count 0, 'sparkTail is not defined'). Full set = computed intersection
+   of the donor script's top-level declarations × identifiers baskets_desk.js reads. */
+window.cls = cls; window.cssv = cssv; window.esc = esc; window.fmtPct = fmtPct;
+window.ratio = ratio; window.sparkSvg = sparkSvg; window.sparkTail = sparkTail;
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 }
 (function(){
