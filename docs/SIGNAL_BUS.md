@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 2 |
-| government-revenue-foresight | 19 |
+| government-revenue-foresight | 21 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -106,7 +106,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 354 |
+| display | 356 |
 | infrastructure | 120 |
 | scored | 4 |
 | shadow | 79 |
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 530 |
+| git | 532 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -392,6 +392,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-award-action-versions | `data/government_revenue/award_action_versions.parquet` | parquet | collect | infrastructure | 3 | 0 |
 | government-revenue-award-event-snapshots | `data/government_revenue/award_event_snapshots.parquet` | parquet | collect | infrastructure | 3 | 0 |
 | government-revenue-award-event-projection-state | `data/government_revenue/award_event_projection_state.json` | json | collect | infrastructure | 2 | 0 |
+| government-revenue-dossiers | `data/government_revenue/dossiers.json` | json | intraday | display | 2 | 0 |
 | government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
@@ -405,6 +406,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-sam-opportunity-heartbeat | `data/government_revenue/sam_opportunity_heartbeat.parquet` | parquet | intraday | infrastructure | 1 | 0 |
 | government-revenue-sam-opportunity-revisions | `data/government_revenue/opportunity_revisions.parquet` | parquet | intraday | infrastructure | 1 | 0 |
 | government-revenue-workspace | `data/government_revenue/workspace.json` | json | intraday | display | 1 | 0 |
+| site-government-revenue-dossiers | `site/government-revenue-data/dossiers.json` | json | intraday | display | 1 | 0 |
 | site-government-revenue-workspace | `site/government-revenue-data/workspace.json` | json | intraday | display | 1 | 0 |
 
 ### hk-canada
