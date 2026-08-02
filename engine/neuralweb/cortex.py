@@ -141,6 +141,8 @@ _READ_TOOLS = frozenset({
     "read_special_situations",
     # SGA-W2: read-only Weinstein stage-analysis context (display/context only)
     "read_stage_analysis",
+    # Verified public R2 earnings/event context (no local fallback)
+    "read_company_intelligence",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -994,6 +996,17 @@ def _tool_read_stage_analysis_cx(root: Path, params: dict) -> dict:
     return _f(root, params)
 
 
+def _tool_read_company_intelligence_cx(root: Path, params: dict) -> dict:
+    """Read verified per-ticker company context from the immutable public R2 plane.
+
+    ``root`` is deliberately unused: there is no local-generation fallback.
+    This reader is context-only and cannot create signal, ranking, sizing, gate,
+    or escalation authority.
+    """
+    from engine.neuralweb.company_intelligence_reader import read_company_intelligence  # noqa: PLC0415
+    return read_company_intelligence(params)
+
+
 def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
     """Read the China decision packet summary (delegates to ask_brain)."""
     from engine.neuralweb.ask_brain import _tool_read_china_decision_packet as _f  # noqa: PLC0415
@@ -1599,6 +1612,9 @@ def dispatch_tool(
     elif tool_name == "read_stage_analysis":
         # SGA-W2: Weinstein stage-analysis context (display/context only)
         return _tool_read_stage_analysis_cx(root, tool_params)
+    elif tool_name == "read_company_intelligence":
+        # Immutable public earnings/event reader (context-only, no local fallback)
+        return _tool_read_company_intelligence_cx(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -2154,6 +2170,42 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
+            "name": "read_company_intelligence",
+            "description": (
+                "Read one company's verified earnings/event context from the public "
+                "Company Intelligence plane. The reader validates the mutable marker "
+                "against its immutable generation manifest and verifies the selected "
+                "company object's byte hash before returning it. Required: ticker. "
+                "Optional: limit (newest-first 1..12 events) or event_id. Returns dated "
+                "earnings summaries, highlights, topic changes, numeric fields, source "
+                "completeness, transcript/document presence, and immutable receipts. "
+                "DOCUMENT PRESENCE IS NOT A LINE-LEVEL CITATION. CONTEXT-ONLY ceiling: "
+                "never a signal, rank, sizing, gate, or escalation input. LLMs may only "
+                "explain or de-escalate; they may not originate a score or action. "
+                "Fails soft with available=False on absence or any integrity failure."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {
+                        "type": "string",
+                        "description": "Ticker symbol, for example NVDA or AAPL",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12,
+                        "description": "Optional number of newest earnings events (default 4)",
+                    },
+                    "event_id": {
+                        "type": "string",
+                        "description": "Optional immutable event id returned by an earlier call",
+                    },
+                },
+                "required": ["ticker"],
+            },
+        },
+        {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
             "input_schema": {
@@ -2273,7 +2325,7 @@ READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_grap
            read_theme_asymmetry, read_theme_options_witness,
            read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief,
-           read_special_situations, read_stage_analysis
+           read_special_situations, read_stage_analysis, read_company_intelligence
 WRITE ({len(_WRITE_TOOLS)}, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards

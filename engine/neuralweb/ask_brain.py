@@ -239,6 +239,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_special_situations",
     # SGA-W2: Weinstein stage-analysis context read tool (display/context only)
     "read_stage_analysis",
+    # Verified public R2 earnings/event context reader (no local fallback)
+    "read_company_intelligence",
 })
 
 # Thematic Intelligence trigger terms (TIL W5 NW citizenship).
@@ -2026,6 +2028,17 @@ def _tool_read_stage_analysis(root: Path, params: dict) -> dict:
         return {**_null, "note": f"read error: {exc}"}
 
 
+def _tool_read_company_intelligence(root: Path, params: dict) -> dict:
+    """Read verified immutable per-ticker earnings/event context.
+
+    The local ``root`` is intentionally not consulted.  This is the public
+    marker -> immutable-generation -> hash-verified company object reader, so
+    a checkout or partial local build cannot change Brain grounding.
+    """
+    from engine.neuralweb.company_intelligence_reader import read_company_intelligence  # noqa: PLC0415
+    return read_company_intelligence(params)
+
+
 def _read_tool_schemas() -> list[dict]:
     """Return read-tool schemas (write tools excluded structurally).
 
@@ -2306,6 +2319,8 @@ def _dispatch_read_tool_raw(tool_name: str, tool_params: dict, root: Path) -> di
     elif tool_name == "read_stage_analysis":
         # SGA-W2: Weinstein stage-analysis context (display/context only)
         return _tool_read_stage_analysis(root, tool_params)
+    elif tool_name == "read_company_intelligence":
+        return _tool_read_company_intelligence(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 
