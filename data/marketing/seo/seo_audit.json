@@ -1,6 +1,6 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-08-02T10:02:05Z",
+  "as_of": "2026-08-02T11:08:24Z",
   "health_score": 86,
   "census": {
     "total_pages": 1955,
@@ -66,8 +66,8 @@
     }
   },
   "sitemap": {
-    "total_urls": 2223,
-    "core": 637,
+    "total_urls": 2233,
+    "core": 647,
     "products": 5,
     "stocks": 1581,
     "host_ok": true,
