@@ -7,9 +7,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(navigator.language||'').slice(0,2);if(l==='zh')document.documentElement.setAttribute('data-lang','zh');}catch(e){}</script>
-<title>Registry Milestone Monitor — MastermindX</title>
-{% set seo_title = "Registry Milestone Monitor — MastermindX" %}
-{% set seo_desc = "A focused workspace for reading registry-recorded primary-completion and completion dates alongside the current ClinicalTrials.gov record." %}
+<title>BioCatalyst Intelligence — Trial Intelligence Workspace — MastermindX</title>
+{% set seo_title = "BioCatalyst Intelligence — Trial Intelligence Workspace — MastermindX" %}
+{% set seo_desc = "A focused trial-intelligence workspace for registry-recorded milestones and exact registry field updates alongside the current ClinicalTrials.gov record." %}
 {% set seo_path = "biocatalyst.html" %}
 {% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
@@ -24,8 +24,8 @@
   <header class="bci-hero">
     <div class="bci-hero-copy">
       <p class="bci-eyebrow"><span class="bci-pulse" aria-hidden="true"></span>{{ t('BioCatalyst Intelligence', 'BioCatalyst Intelligence') }}</p>
-      <h1>{{ t('Registry Milestone Monitor', '登记里程碑监测') }}</h1>
-      <p class="bci-deck">{{ t('Read registry-recorded completion dates, then open the source record.', '先阅读登记记录中的完成日期，再打开来源记录。') }}</p>
+      <h1>{{ t('Trial Intelligence Workspace', '试验智能工作台') }}</h1>
+      <p class="bci-deck">{{ t('Read registry milestones and exact registry field updates, then open the source record.', '阅读登记里程碑与精确字段更新，再打开来源记录。') }}</p>
     </div>
     <div class="bci-run-status" aria-live="polite">
       <span class="bci-status-dot" aria-hidden="true"></span>
@@ -33,7 +33,7 @@
         <span class="bci-status-label" id="bci-status-label">{{ t('Connecting to the registry', '正在连接登记库') }}</span>
         <span class="bci-status-detail" id="bci-status-detail">{{ t('No records are in this page shell', '此页面外壳不含记录') }}</span>
       </div>
-      <button class="bci-refresh" id="bci-refresh" type="button" aria-label="Refresh registry milestones" data-label-en="Refresh registry milestones" data-label-zh="刷新登记里程碑">
+      <button class="bci-refresh" id="bci-refresh" type="button" aria-label="Refresh trial intelligence" data-label-en="Refresh trial intelligence" data-label-zh="刷新试验智能">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 8.6A6.9 6.9 0 1 0 17 12"/><path d="M16.7 3.8v4.8h-4.8"/></svg>
         <span class="l-en">Refresh</span><span class="l-zh">刷新</span>
       </button>
@@ -46,8 +46,16 @@
         <p class="bci-kicker">{{ t('Browse the register', '浏览登记库') }}</p>
         <h2 id="bci-filter-title">{{ t('Monitor controls', '监测控制') }}</h2>
       </div>
+      <div class="bci-mode-control" id="bci-mode-control" role="tablist" aria-label="Trial intelligence view" data-label-en="Trial intelligence view" data-label-zh="试验智能视图">
+        <button id="bci-mode-milestones" class="bci-mode is-active" type="button" role="tab" aria-selected="true" aria-controls="bci-queue-pane" tabindex="0" data-mode="milestones" data-label-en="Milestones" data-label-zh="里程碑">
+          <span class="l-en">Milestones</span><span class="l-zh">里程碑</span>
+        </button>
+        <button id="bci-mode-changes" class="bci-mode" type="button" role="tab" aria-selected="false" aria-controls="bci-queue-pane" tabindex="-1" data-mode="changes" data-label-en="Change Tape" data-label-zh="变更记录">
+          <span class="l-en">Change Tape</span><span class="l-zh">变更记录</span>
+        </button>
+      </div>
       <fieldset class="bci-window-control" id="bci-window-control">
-        <legend class="bci-control-label">{{ t('Record window', '记录窗口') }}</legend>
+        <legend class="bci-control-label" id="bci-window-label">{{ t('Record window', '记录窗口') }}</legend>
         <div class="bci-window-options" role="radiogroup" aria-label="Registry date window" data-label-en="Registry date window" data-label-zh="登记日期窗口">
           <button type="button" class="bci-window" role="radio" aria-checked="false" data-window="30" data-label-en="30 days" data-label-zh="30天">30</button>
           <button type="button" class="bci-window is-active" role="radio" aria-checked="true" data-window="90" data-label-en="90 days" data-label-zh="90天">90</button>
@@ -55,11 +63,35 @@
           <button type="button" class="bci-window" role="radio" aria-checked="false" data-window="all" data-label-en="All recorded" data-label-zh="全部记录">{{ t('All', '全部') }}</button>
         </div>
       </fieldset>
-      <label class="bci-control" for="bci-field-filter">
+      <label class="bci-control" id="bci-field-control" for="bci-field-filter">
         <span class="bci-control-label">{{ t('Registry date', '登记日期') }}</span>
         <select id="bci-field-filter">
           <option value="primary_completion" data-label-en="Primary completion" data-label-zh="主要完成" selected>Primary completion</option>
           <option value="completion" data-label-en="Completion" data-label-zh="完成">Completion</option>
+        </select>
+      </label>
+      <label class="bci-control" id="bci-change-kind-control" for="bci-change-kind-filter" hidden>
+        <span class="bci-control-label">{{ t('Updated field', '更新字段') }}</span>
+        <select id="bci-change-kind-filter">
+          <option value="" data-label-en="All display-safe fields" data-label-zh="所有可展示字段">All display-safe fields</option>
+          <optgroup label="Endpoints" data-label-en="Endpoints" data-label-zh="终点">
+            <option value="endpoint_added" data-label-en="Endpoint added" data-label-zh="新增终点">Endpoint added</option>
+            <option value="endpoint_removed" data-label-en="Endpoint removed" data-label-zh="移除终点">Endpoint removed</option>
+            <option value="endpoint_role_changed" data-label-en="Endpoint role updated" data-label-zh="终点角色更新">Endpoint role updated</option>
+            <option value="endpoint_measure_changed" data-label-en="Endpoint measure updated" data-label-zh="终点指标更新">Endpoint measure updated</option>
+            <option value="endpoint_time_frame_changed" data-label-en="Endpoint timeframe updated" data-label-zh="终点时间范围更新">Endpoint timeframe updated</option>
+            <option value="endpoint_description_changed" data-label-en="Endpoint description updated" data-label-zh="终点说明更新">Endpoint description updated</option>
+          </optgroup>
+          <optgroup label="Study record" data-label-en="Study record" data-label-zh="研究记录">
+            <option value="enrollment_changed" data-label-en="Enrollment record updated" data-label-zh="入组记录更新">Enrollment record updated</option>
+            <option value="registry_status_changed" data-label-en="Registry status updated" data-label-zh="登记状态更新">Registry status updated</option>
+            <option value="study_date_changed" data-label-en="Study date record updated" data-label-zh="研究日期记录更新">Study date record updated</option>
+            <option value="site_listing_changed" data-label-en="Site listing updated" data-label-zh="研究中心列表更新">Site listing updated</option>
+            <option value="lead_sponsor_text_changed" data-label-en="Lead sponsor text updated" data-label-zh="牵头申办方文字更新">Lead sponsor text updated</option>
+            <option value="intervention_added" data-label-en="Intervention added" data-label-zh="新增干预措施">Intervention added</option>
+            <option value="intervention_removed" data-label-en="Intervention removed" data-label-zh="移除干预措施">Intervention removed</option>
+            <option value="intervention_changed" data-label-en="Intervention record updated" data-label-zh="干预措施记录更新">Intervention record updated</option>
+          </optgroup>
         </select>
       </label>
       <label class="bci-search" for="bci-search">
@@ -105,14 +137,14 @@
       </div>
       <div class="bci-source-note">
         <span class="bci-source-mark" aria-hidden="true">⌁</span>
-        <p>{{ t('Dates are recorded by ClinicalTrials.gov from study-sponsor and investigator submissions. A registry listing is not government validation, and this view does not make a trade call.', '日期来自 ClinicalTrials.gov 所记录的研究申办方与研究者提交内容。登记收录不代表政府验证，本视图不作交易判断。') }}</p>
+        <p id="bci-source-note-copy">{{ t('Dates and field updates are recorded by ClinicalTrials.gov from study-sponsor and investigator submissions. A registry listing is not government validation. Review the source record—no trade call.', '日期和字段更新来自 ClinicalTrials.gov 所记录的研究申办方与研究者提交内容。登记收录不代表政府验证。请查看来源记录，不作交易判断。') }}</p>
       </div>
     </aside>
 
-    <section class="bci-queue-pane" aria-labelledby="bci-queue-title">
+    <section class="bci-queue-pane" id="bci-queue-pane" role="tabpanel" aria-labelledby="bci-mode-milestones">
       <header class="bci-queue-head">
         <div>
-          <p class="bci-kicker">{{ t('Registry-recorded dates', '登记记录日期') }}</p>
+          <p class="bci-kicker" id="bci-queue-kicker">{{ t('Registry-recorded dates', '登记记录日期') }}</p>
           <h2 id="bci-queue-title">{{ t('Milestone monitor', '里程碑监测') }}</h2>
           <p class="bci-queue-subtitle" id="bci-queue-subtitle">{{ t('Connecting to the verified registry page…', '正在连接已核验的登记页…') }}</p>
         </div>

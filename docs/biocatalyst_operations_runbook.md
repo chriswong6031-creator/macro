@@ -521,7 +521,66 @@ values are a parser regression witness for that exact archive, not a promise
 that future releases must have the same source-quality gaps.
 
 B4A writes no product API or user-facing regulatory lens while public
-projection remains blocked. A later B4B promotion must construct a separately
-allowlisted, entitled, no-store public DTO from the private, replay-bound
-generation and must omit raw object keys, local paths, receipt bodies, physical
-line hashes, credentials, and internal storage coordinates.
+projection remains blocked. A future reviewed FDA public-projection tranche
+must construct a separately allowlisted, entitled, no-store public DTO from the
+private, replay-bound generation and must omit raw object keys, local paths,
+receipt bodies, physical line hashes, credentials, and internal storage
+coordinates.
+
+## 12. B4B registry milestones and B4C Registry Change Tape
+
+B4B and B4C are entitled ClinicalTrials.gov read surfaces over the one
+validated, pointer-bound public trial generation. They do not read B4A, private
+receipts, raw source bodies, private derived facts, object-store coordinates,
+or a second database. The API process remains read-only and every response is
+`private, no-store`.
+
+B4B exposes current-record primary-completion and completion fields through
+`GET /api/biocatalyst/v1/trials/milestones`. Dates retain the source's day,
+month, or year precision and its bounded `ACTUAL`, `ESTIMATED`, or `UNKNOWN`
+type. A partial date appears only when its complete civil-date interval is
+inside the selected window. The route does not call the date a catalyst,
+readout, result, approval, or market signal.
+
+B4C exposes display-safe Record History differences through
+`GET /api/biocatalyst/v1/trials/changes`. It aggregates only complete,
+validated `trial_history_read_model.v1` artifacts from the same committed
+generation. Each row binds exact before/after values to consecutive display
+versions, the after-version source-submission date and ClinicalTrials.gov
+version URL, and the time the complete history was retrieved. Filtering by
+trial title, NCT ID, sponsor label, phase, status, or condition uses the
+current trial record and is identified as current-record selection; it does
+not rewrite historical identity or facts.
+
+The Record History adapter remains operator-review-gated in the source
+registry. Where it is disabled or no complete previously verified chain is
+pointer-bound, the route reports unavailable coverage and no change rows. The
+existence of the product route does not advance source rights or authorize the
+undocumented adapter. A later official-API prospective change ledger must use
+the separate B1 observation interval and must not backfill that first-seen
+clock from Record History submission dates.
+
+The Change Tape interpretation ceiling is `registry_record_changed`.
+`protocol_change_asserted` and `materiality_assessed` remain false. A changed
+registry status, date, endpoint field, enrollment field, site listing, sponsor
+label, or intervention field is not evidence that the real-world trial event,
+clinical protocol, asset economics, company exposure, expected payoff, or
+security outlook changed. Missing or incomplete history is counted as
+unavailable and omitted rather than synthesized.
+
+Both list endpoints paginate with endpoint-domain-separated HMAC cursors bound
+to the normalized query and committed generation. A changed query is rejected;
+a changed generation returns a restart response. `BIOCATALYST_CURSOR_SECRET`
+may provide restart-stable cursor signing and must contain at least 32 UTF-8
+bytes. Without it, a process-random key deliberately invalidates outstanding
+cursors when the serving process restarts. Cursor syntax and signature are
+authenticated before the public projection is read.
+
+B4B and B4C remain source-fact display, context, and explanation surfaces with
+no decision authority. They cannot originate, select, rank, size, gate, or
+execute a trade and cannot raise their own authority. Saved cohorts, alerts,
+and user watchlists belong to the Terminal user-state owner; BioCatalyst must
+consume that seam when it is available rather than create a parallel store.
+Issuer/security, asset, economic-rights, FDA-application, and ticker joins stay
+absent until the Corporate Intelligence-owned, point-in-time identity bridge
+has cleared its separate abstention and evidence gates.
