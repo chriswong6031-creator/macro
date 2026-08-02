@@ -3826,9 +3826,11 @@
        pointers only; touch keeps the JS click toggle (where the close x still shows). */
     '@media (hover:hover) and (pointer:fine){',
     '.nav-settings::after{content:"";position:absolute;top:100%;right:0;width:100%;height:11px}',
-    '.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
-    '.nav-settings:hover .nav-settings-btn,.nav-settings:focus-within .nav-settings-btn{border-color:var(--link,var(--blue));color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 13%,var(--panel2,var(--card)))}',
-    '.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:rotate(70deg)}',
+    // Focus alone must not overrule an explicit close: closing returns focus to the
+    // gear, so the focus-within path is conditional on its expanded state.
+    '.nav-settings:not(.settings-dismissed):hover .settings-pop,.nav-settings:focus-within .nav-settings-btn[aria-expanded="true"] + .settings-pop{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
+    '.nav-settings:not(.settings-dismissed):hover .nav-settings-btn,.nav-settings:focus-within .nav-settings-btn[aria-expanded="true"]{border-color:var(--link,var(--blue));color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 13%,var(--panel2,var(--card)))}',
+    '.nav-settings:not(.settings-dismissed):hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn[aria-expanded="true"] svg{transform:rotate(70deg)}',
     '.nav-settings .settings-close{display:none}',
     '}',
     '.settings-head{display:flex;align-items:center;gap:8px;margin:0;padding:0 2px 2px}',
@@ -3887,7 +3889,7 @@
     '.settings-acct-in .sr-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:1px}',
     '.settings-acct-in .sa-signout{flex:none;padding:7px 11px;border-radius:9px;border:1px solid var(--line,var(--grid));background:transparent;color:var(--text,var(--ink));font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:border-color .18s,color .18s}',
     '.settings-acct-in .sa-signout:hover{border-color:var(--down,#ff5c6c);color:var(--down,#ff5c6c)}',
-    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:none}}',
+    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:not(.settings-dismissed):hover .settings-pop,.nav-settings:focus-within .nav-settings-btn[aria-expanded="true"] + .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:not(.settings-dismissed):hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn[aria-expanded="true"] svg{transform:none}}',
     /* ---- three-way theme segment + on/off toggle (shared by fx and live-prices) */
     '.set-theme-seg{display:inline-flex;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));border-radius:999px;padding:3px;gap:2px;flex:none}',
     '.set-seg-btn{padding:3px 10px;border:none;border-radius:999px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted,var(--ink-3));transition:background .2s,color .2s;white-space:nowrap}',
@@ -4032,6 +4034,7 @@
     function isOpen() { return pop.classList.contains('open'); }
     function open() {
       if (isOpen()) return;
+      wrap.classList.remove('settings-dismissed');
       pop.classList.add('open');
       gear.setAttribute('aria-expanded', 'true');
       pop.focus();
@@ -4040,8 +4043,22 @@
       if (!isOpen()) return;
       pop.classList.remove('open');
       gear.setAttribute('aria-expanded', 'false');
+      // A click or Escape is an explicit close, so do not let the desktop hover
+      // rule redraw the pane until the pointer leaves and deliberately returns.
+      wrap.classList.add('settings-dismissed');
     }
-    gear.addEventListener('click', function () { isOpen() ? close() : open(); });
+    // Pointer focus fires before click. Suppress the focus-open path for that
+    // gesture so the click remains the single toggle; keyboard/programmatic
+    // focus still opens the accessible pane immediately.
+    var _gearPointerDown = false;
+    gear.addEventListener('pointerdown', function () {
+      _gearPointerDown = true;
+      setTimeout(function () { _gearPointerDown = false; }, 0);
+    });
+    gear.addEventListener('click', function () {
+      _gearPointerDown = false;
+      isOpen() ? close() : open();
+    });
     pop.querySelector('.settings-close').addEventListener('click', function () { close(); gear.focus(); });
     // expand → open the full settings dashboard (Account when signed in, else Preferences)
     var expandBtn = pop.querySelector('.settings-expand');
@@ -4061,12 +4078,18 @@
     // pinned under the cursor; touch (no hover) keeps the click / outside / Esc path.
     if (window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
       wrap.addEventListener('mouseleave', close);
+      wrap.addEventListener('mouseenter', function () { wrap.classList.remove('settings-dismissed'); });
     }
     // Pane ARIA/keyboard: on focusin inside .nav-settings open the panel + sync aria-expanded
     // (CSS :focus-within also reveals on desktop, but JS .open keeps close/Esc/focus-restore
     // correct). On focusout leaving the entire wrap, close.
-    wrap.addEventListener('focusin', function () {
-      if (!isOpen()) { open(); }
+    wrap.addEventListener('focusin', function (e) {
+      // Pointer activation is owned by the gear's click handler. External Tab or
+      // programmatic focus opens here; internal close-button focus restoration
+      // does not reopen the pane.
+      if (isOpen() || wrap.contains(e.relatedTarget)) return;
+      if (e.target === gear && _gearPointerDown) return;
+      open();
     });
     wrap.addEventListener('focusout', function () {
       // relatedTarget may be null on blur-to-outside; defer one tick so activeElement settles

@@ -25,6 +25,11 @@ from engine.sector_intelligence import (
     ctgov_query_manifest_sha256,
     receipt_payloads_sha256,
 )
+from engine.biocatalyst.history import build_history_exact_diff
+from collectors.biocatalyst.clinicaltrials_history import (
+    ClinicalTrialsHistoryCollector,
+    ClinicalTrialsHistoryConfig,
+)
 from collectors.biocatalyst.clinicaltrials_v2 import current_b1_code_version
 import scripts.biocatalyst_worker as worker
 
@@ -34,6 +39,7 @@ FIXTURE_RUN = ROOT / "data" / "biocatalyst" / "fixtures" / "clinicaltrials" / "c
 FIXTURE_RECEIPT = ROOT / "data" / "biocatalyst" / "fixtures" / "clinicaltrials" / "source_page_receipt.v1.valid.json"
 FIXTURE_RAW = ROOT / "data" / "biocatalyst" / "fixtures" / "clinicaltrials" / "source_page_response.after.raw.json"
 FIXTURE_SNAPSHOT = ROOT / "data" / "biocatalyst" / "fixtures" / "clinicaltrials" / "trial_source_snapshot.after.v1.valid.json"
+HISTORY_FIXTURE_ROOT = ROOT / "data" / "biocatalyst" / "fixtures" / "clinicaltrials_history"
 NOW = datetime(2026, 8, 1, 16, 0, tzinfo=timezone.utc)
 
 
@@ -293,6 +299,154 @@ class FakeCollectorFactory:
         return FakeCollector()
 
 
+@dataclass
+class FakeHistoryCollectorFactory:
+    """Drive the real B2 collector with static, non-live source bytes.
+
+    The worker must replay the persisted artifacts from this collector rather
+    than trust the result object it returns.  The modes deliberately corrupt
+    either the post-index or the archived snapshot after collection to exercise
+    that boundary without relying on a production ClinicalTrials.gov request.
+    """
+
+    mode: str = "complete"
+    calls: list[dict] | None = None
+
+    def __post_init__(self) -> None:
+        self.calls = [] if self.calls is None else self.calls
+
+    @staticmethod
+    def _fixture_bytes(name: str) -> bytes:
+        return (HISTORY_FIXTURE_ROOT / name).read_bytes().replace(b"NCT03456024", b"NCT00000001")
+
+    def __call__(self, **kwargs):
+        self.calls.append(kwargs)
+        outer = self
+
+        class Response:
+            def __init__(self, payload: bytes) -> None:
+                self.status_code = 200
+                self.headers = {
+                    "Content-Type": "application/json",
+                    "Content-Length": str(len(payload)),
+                }
+                self.content = payload
+
+            def iter_content(self, *, chunk_size: int):
+                del chunk_size
+                yield self.content
+
+        class Session:
+            def __init__(self, responses: list[bytes]) -> None:
+                self.responses = responses
+                self.requested: list[str] = []
+
+            def get(self, source_uri: str, **_kwargs):
+                self.requested.append(source_uri)
+                if not self.responses:
+                    raise AssertionError("unexpected history source request")
+                return Response(self.responses.pop(0))
+
+        class FailingCollector:
+            def collect_nct(self, _nct_id: str):
+                raise RuntimeError("synthetic B2 availability incident")
+
+        if outer.mode == "raise":
+            return FailingCollector()
+
+        index = outer._fixture_bytes("NCT03456024.history.index.synthetic.json")
+        version_zero = outer._fixture_bytes("NCT03456024.history.version-0.synthetic.json")
+        version_one = outer._fixture_bytes("NCT03456024.history.version-1.synthetic.json")
+        post_index = index
+        if outer.mode == "race":
+            changed = json.loads(index)
+            changed["history"]["changes"][1]["date"] = "2018-03-08"
+            post_index = canonical_json_bytes(changed)
+        session = Session([index, version_zero, version_one, post_index])
+        real = ClinicalTrialsHistoryCollector(
+            private_root=kwargs["private_root"],
+            config=ClinicalTrialsHistoryConfig(
+                nct_ids=kwargs["nct_ids"],
+                user_agent=kwargs["user_agent"],
+                min_request_interval_seconds=0,
+            ),
+            session=session,
+            now_fn=kwargs["now_fn"],
+            sleep_fn=lambda _: None,
+        )
+
+        class WrappedCollector:
+            def collect_nct(self, nct_id: str):
+                result = real.collect_nct(nct_id)
+                if outer.mode == "fabricated_snapshot":
+                    result.source_snapshot_paths[0].write_bytes(b'{"fabricated":true}\n')
+                elif outer.mode in {"missing_post_ref", "mismatched_post_ref"}:
+                    run = json.loads(result.run_path.read_text(encoding="utf-8"))
+                    if outer.mode == "missing_post_ref":
+                        del run["history_index_post_receipt_ref"]
+                    else:
+                        run["history_index_post_receipt_ref"] = run["history_index_receipt_ref"]
+                    run["run_payload_sha256"] = canonical_json_sha256(
+                        {key: value for key, value in run.items() if key != "run_payload_sha256"}
+                    )
+                    result.run_path.write_bytes(canonical_json_bytes(run) + b"\n")
+                elif outer.mode == "forged_rehashed_raw":
+                    original = result.history_version_receipts[0]
+                    receipt_path = kwargs["private_root"] / Path(
+                        *PurePosixPath(
+                            "biocatalyst/receipts/clinicaltrials/history/"
+                            f"2026/08/{result.run_id}/{original['receipt_id']}.json"
+                        ).parts
+                    )
+                    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+                    raw_path = kwargs["private_root"] / Path(
+                        *PurePosixPath(receipt["response"]["raw_response_object_key"]).parts
+                    )
+                    fabricated = json.loads(raw_path.read_text(encoding="utf-8"))
+                    fabricated["study"]["protocolSection"]["identificationModule"]["briefTitle"] = "fabricated history value"
+                    raw = canonical_json_bytes(fabricated)
+                    digest = sha256(raw).hexdigest()
+                    new_key = (
+                        "biocatalyst/raw/clinicaltrials/history/NCT00000001/"
+                        f"version-0/{digest}.json"
+                    )
+                    new_raw_path = kwargs["private_root"] / Path(*PurePosixPath(new_key).parts)
+                    new_raw_path.parent.mkdir(parents=True, exist_ok=True)
+                    new_raw_path.write_bytes(raw)
+                    receipt["response"].update(
+                        {
+                            "exact_response_sha256": digest,
+                            "raw_response_object_key": new_key,
+                            "byte_count": len(raw),
+                        }
+                    )
+                    receipt["receipt_payload_sha256"] = canonical_json_sha256(
+                        {key: value for key, value in receipt.items() if key != "receipt_payload_sha256"}
+                    )
+                    receipt_path.write_bytes(canonical_json_bytes(receipt) + b"\n")
+                elif outer.mode == "derived_collision":
+                    snapshots = [
+                        json.loads(path.read_text(encoding="utf-8"))
+                        for path in result.source_snapshot_paths
+                    ]
+                    diff = build_history_exact_diff(
+                        snapshots[0],
+                        snapshots[1],
+                        transaction_from=snapshots[1]["transaction_from"],
+                    )
+                    collision_path = kwargs["private_root"] / Path(
+                        *PurePosixPath(
+                            "biocatalyst/derived/clinicaltrials/history/NCT00000001/"
+                            f"diffs/{diff['diff_payload_sha256']}.json"
+                        ).parts
+                    )
+                    collision_path.parent.mkdir(parents=True, exist_ok=True)
+                    collision_path.write_bytes(b'{"divergent":true}\n')
+                return result
+
+        return WrappedCollector()
+
+
 def wrap_collector_factory(
     base: Callable[..., object],
     mutate: Callable[[SimpleNamespace, dict], None],
@@ -313,7 +467,7 @@ def wrap_collector_factory(
     return factory
 
 
-def config(tmp_path: Path) -> worker.WorkerConfig:
+def config(tmp_path: Path, *, history_enabled: bool = False) -> worker.WorkerConfig:
     return worker.WorkerConfig(
         state_root=tmp_path / "state",
         public_root=tmp_path / "public",
@@ -325,6 +479,7 @@ def config(tmp_path: Path) -> worker.WorkerConfig:
             access_key_id="test-access",
             secret_access_key="test-secret",
         ),
+        history_enabled=history_enabled,
     )
 
 
@@ -356,12 +511,15 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
         "health.json",
         "trials/NCT00000001.json",
         "trial_snapshots/NCT00000001.json",
+        "history/NCT00000001.json",
     }
     projection = publisher.read_trial_projection()
     assert projection is not None
     assert projection.generation == committed
     assert projection.trials[0]["facts"]["brief_title"]["value"] == "Synthetic Phase 2 Study"
     assert projection.trials[0]["authority"]["decision_authority"] is False
+    assert projection.history_models_by_nct["NCT00000001"]["available"] is False
+    assert projection.history_models_by_nct["NCT00000001"]["unavailable_reason"] == "disabled"
     assert any(key.startswith("biocatalyst/runs/") for key in store.objects)
     assert any(key.startswith("biocatalyst/raw/") for key in store.objects)
     assert f"biocatalyst/mirror_receipts/{committed.generation_id}.json" in store.objects
@@ -370,6 +528,188 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
     assert "test-secret" not in public_text
     assert '"canonical_study"' not in public_text
     assert '"raw_object_key"' not in public_text
+
+
+def test_history_success_replays_private_chain_before_exposing_a_complete_model(tmp_path):
+    cfg = config(tmp_path, history_enabled=True)
+    store = MemoryStore()
+    history = FakeHistoryCollectorFactory()
+
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        history_collector_factory=history,
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    assert history.calls == [
+        {
+            "private_root": history.calls[0]["private_root"],
+            "nct_ids": ("NCT00000001",),
+            "user_agent": cfg.user_agent,
+            "now_fn": history.calls[0]["now_fn"],
+        }
+    ]
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.history_models_by_nct["NCT00000001"]
+    assert model["available"] is True
+    assert model["coverage_class"] == "record_history_complete"
+    assert [version["display_version"] for version in model["versions"]] == [1, 2]
+    assert model["changes"]
+    assert all(not key.startswith("canonical_") for key in model)
+    assert any(key.startswith("biocatalyst/runs/clinicaltrials/history/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/receipts/clinicaltrials/history/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/source_snapshots/clinicaltrials/history/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/derived/clinicaltrials/history/NCT00000001/diffs/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/derived/clinicaltrials/history/NCT00000001/facts/") for key in store.objects)
+    public_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (cfg.public_root / "generations" / result.generation_id).rglob("*.json")
+    )
+    assert "biocatalyst/derived/" not in public_text
+
+
+@pytest.mark.parametrize(
+    "mode",
+    (
+        "race",
+        "fabricated_snapshot",
+        "missing_post_ref",
+        "mismatched_post_ref",
+        "forged_rehashed_raw",
+        "derived_collision",
+    ),
+)
+def test_history_partial_or_fabricated_evidence_never_replaces_b1_with_a_claim(tmp_path, mode):
+    cfg = config(tmp_path, history_enabled=True)
+    store = MemoryStore()
+    b1 = FakeCollectorFactory()
+
+    result = worker.run_once(
+        cfg,
+        collector_factory=b1,
+        history_collector_factory=FakeHistoryCollectorFactory(mode=mode),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    assert projection.trials[0]["facts"]["brief_title"]["value"] == "Synthetic Phase 2 Study"
+    model = projection.history_models_by_nct["NCT00000001"]
+    assert model["available"] is False
+    assert model["coverage_class"] == "unavailable"
+    assert model["unavailable_reason"] in {"incomplete_chain", "source_shape_drift"}
+
+
+def test_history_failure_carries_only_the_complete_pointer_bound_prior_while_b1_advances(tmp_path):
+    cfg = config(tmp_path, history_enabled=True)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        history_collector_factory=FakeHistoryCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert first_projection is not None
+    prior_model = first_projection.history_models_by_nct["NCT00000001"]
+    assert prior_model["available"] is True
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(watermark_after="2026-08-02T15:00:05Z"),
+        history_collector_factory=FakeHistoryCollectorFactory(mode="raise"),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert second.status == "success"
+    assert second.generation_id != first.generation_id
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    assert projection.generation.generation_id == second.generation_id
+    assert projection.history_models_by_nct["NCT00000001"] == prior_model
+
+
+def test_disabling_history_refresh_preserves_the_complete_pointer_bound_prior(tmp_path):
+    enabled = config(tmp_path, history_enabled=True)
+    store = MemoryStore()
+    first = worker.run_once(
+        enabled,
+        collector_factory=FakeCollectorFactory(),
+        history_collector_factory=FakeHistoryCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_generation = enabled.public_root / "generations" / first.generation_id
+    previous_bytes = (first_generation / "history" / "NCT00000001.json").read_bytes()
+
+    disabled = config(tmp_path, history_enabled=False)
+    second = worker.run_once(
+        disabled,
+        collector_factory=FakeCollectorFactory(watermark_after="2026-08-02T15:00:05Z"),
+        history_collector_factory=lambda **_: pytest.fail("disabled B2 collector must not start"),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert second.status == "success"
+    next_generation = disabled.public_root / "generations" / second.generation_id
+    assert (next_generation / "history" / "NCT00000001.json").read_bytes() == previous_bytes
+
+
+def test_history_without_a_complete_prior_is_explicitly_unavailable(tmp_path):
+    cfg = config(tmp_path, history_enabled=True)
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        history_collector_factory=FakeHistoryCollectorFactory(mode="raise"),
+        store_factory=lambda _: MemoryStore(),
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.history_models_by_nct["NCT00000001"]
+    assert model["available"] is False
+    assert model["current_only"] is False
+    assert model["coverage_class"] == "unavailable"
+    assert model["unavailable_reason"] == "incomplete_chain"
+    assert model["retrieved_at"] is None
+    assert model["versions"] == []
+    assert model["changes"] == []
+
+
+def test_history_private_archive_r2_failure_never_advances_the_public_pointer(tmp_path):
+    class FailHistoryRunStore(MemoryStore):
+        def put_if_absent(self, key: str, data: bytes, *, content_type: str = "application/octet-stream") -> bool:
+            if key.startswith("biocatalyst/runs/clinicaltrials/history/"):
+                self.put_attempts.append(key)
+                return False
+            return super().put_if_absent(key, data, content_type=content_type)
+
+    cfg = config(tmp_path, history_enabled=True)
+    store = FailHistoryRunStore()
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        history_collector_factory=FakeHistoryCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.error_code == "BIOCATALYST_R2_CONDITIONAL_CREATE_FAILED"
+    assert any(key.startswith("biocatalyst/derived/clinicaltrials/history/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/receipts/clinicaltrials/history/") for key in store.objects)
+    assert any(key.startswith("biocatalyst/runs/clinicaltrials/history/") for key in store.put_attempts)
+    assert not (cfg.public_root / "current.json").exists()
 
 
 def test_disabled_and_misconfigured_environment_never_calls_collector_or_store(tmp_path, monkeypatch):
@@ -405,6 +745,48 @@ def test_disabled_and_misconfigured_environment_never_calls_collector_or_store(t
     health = json.loads((public_root / "health.json").read_text(encoding="utf-8"))
     assert health["state"] == "disabled"
     assert health["last_error_code"] == "BIOCATALYST_RUNTIME_PATH_INVALID" or health["last_error_code"] == "BIOCATALYST_CANARY_NCTS_INVALID"
+
+
+def test_history_environment_flag_is_default_off_and_rejects_nonbinary_input(tmp_path, monkeypatch):
+    state_root = tmp_path / "macro-biocatalyst" / "state"
+    public_root = tmp_path / "macro-biocatalyst" / "public"
+    monkeypatch.setattr(worker, "_SERVICE_STATE_ROOT", state_root)
+    monkeypatch.setattr(worker, "_SERVICE_PUBLIC_ROOT", public_root)
+    base = {
+        "BIOCATALYST_ENABLED": "1",
+        "BIOCATALYST_STATE_ROOT": str(state_root),
+        "BIOCATALYST_PUBLIC_ROOT": str(public_root),
+        "BIOCATALYST_CANARY_NCTS": "NCT00000001",
+        "BIOCATALYST_USER_AGENT": "MastermindX test contact@example.com",
+        "BIOCATALYST_R2_ENDPOINT": "https://r2.example.test",
+        "BIOCATALYST_R2_BUCKET": "biocatalyst-private",
+        "BIOCATALYST_R2_ACCESS_KEY_ID": "test-access",
+        "BIOCATALYST_R2_SECRET_ACCESS_KEY": "test-secret",
+    }
+
+    defaulted = worker.load_environment(base)
+    assert defaulted.state == "enabled"
+    assert defaulted.config is not None and defaulted.config.history_enabled is False
+    blocked = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "1"})
+    assert blocked.state == "invalid"
+    assert blocked.error_code == "BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED"
+
+    approved_registry = tmp_path / "biocatalyst_sources.yml"
+    approved_registry.write_text(
+        "sources:\n"
+        "  clinicaltrials_gov_record_history:\n"
+        "    source_id: clinicaltrials_gov_record_history\n"
+        "    production_ingest_allowed: true\n"
+        "    source_shape_canary_required: true\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(worker, "_SOURCE_REGISTRY_PATH", approved_registry)
+    enabled = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "1"})
+    assert enabled.state == "enabled"
+    assert enabled.config is not None and enabled.config.history_enabled is True
+    invalid = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "true"})
+    assert invalid.state == "invalid"
+    assert invalid.error_code == "BIOCATALYST_HISTORY_ENABLED_INVALID"
 
 
 def test_nonblocking_lock_coalesces_a_second_timer_tick(tmp_path):
