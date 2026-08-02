@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T11:02:32.691651+00:00",
-  "count": 589,
+  "generated_at": "2026-08-02T11:17:34.717858+00:00",
+  "count": 590,
   "institutions": [
     "Amova",
     "Apollo",
@@ -59,6 +59,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jsbbbq5ngwc-8d0619",
+      "title": "mfse fly",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T10:41:19Z",
+      "summary_points": [
+        "**Global Equity Resilience**: Developed international equities outperform US large-cap (10%+ ytd vs.",
+        "5% 10-yr return), driven by AI semiconductor demand; value/SMID-cap gains traction as earnings broaden beyond mega-caps amid US margin compression.",
+        "**Fixed Income Yield-Driven Returns**: Global bonds subdued (0.5% ytd), with returns tied to starting yields (not rate changes); tight credit spreads (IG 78bps, HY 280bps) persist despite inflation concerns, making higher starting yields critical for long-term returns.",
+        "**30-Year Allocation Anchor**: Global equity expected at 7.0% annualized return vs.",
+        "fixed income at 5.0%, supporting 60/40 portfolio return of 6.4% over 30 years—key for long-term risk-return analysis and allocation strategy."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
