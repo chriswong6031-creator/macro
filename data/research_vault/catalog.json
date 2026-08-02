@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T09:17:23.018758+00:00",
-  "count": 584,
+  "generated_at": "2026-08-02T10:02:27.656460+00:00",
+  "count": 586,
   "institutions": [
     "Amova",
     "Apollo",
@@ -342,7 +342,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:03Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Mega-Cap Tech Earnings Sustainability Risk**: Q2 S&P 500 EPS growth (45% y/y) heavily reliant on mega-cap tech \"other income\" (Alphabet/Amazon: $151B), now 61% of GAAP net income (vs.",
+        "9% Q1 2026), signaling unsustainable earnings from unrealized gains and posing critical valuation risk.",
+        "**Hyperscaler Capex Cash Flow Mismatch**: Hyperscaler capex ($182B Q2) exceeds cash flow ($5B FCF), with 2027 capex estimates at $1T+ (vs.",
+        "prior $100B+), projected to surpass cash flow from 2026-2028; $101B debt/equity issuance fuels this, pressuring free cash flow.",
+        "**TMT Sector Underperformance Post-Earnings Beat**: TMT stocks underperform S&P 500 by 192bp post-earnings beat (vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -357,7 +363,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:01Z",
-      "summary_points": [],
+      "summary_points": [
+        "**JPY Intervention Effectiveness**: Japan’s maximal BoJ intervention shows diminishing returns (market response at lower historical average), signaling need for further action if Yen unwinds despite US \"rate checks\" supporting Yen.",
+        "**BoE Policy & GBP Underperformance**: BoE’s on-hold stance amid fiscal volatility (Burnham budget) and G10 market pressure drives sustained GBP underperformance, with no-hike baseline reinforcing weakness.",
+        "**BRL Election & Fiscal Risks**: BRL strength driven by trade terms but faces heightened volatility (election Aug 15), deteriorating fiscal deficits, and BCB rate cuts, making it sensitive to election outcomes.",
+        "**EM Carry Resilience**: EM currencies show relative resilience vs USD (smaller terms-of-trade shock, dovish FOMC/JPY interventions); BRL and COP strongest carry plays despite energy price benefits and yield vulnerability.",
+        "**EUR/USD Bearish Trend**: 12-month forecast at 1.12 (vs current 1.15) signals sustained EUR weakness due to ECB-Fed policy divergence, confirming fundamental deterioration."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -372,7 +384,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:59Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Mexico Credit Growth**: Real (3.2% yoy) and nominal (6.7% yoy) credit growth rose in June amid moderating inflation (3.94%→3.37% yoy).",
+        "**Private Credit Slowdown**: Consumer credit fell from 13.7%→7.6% yoy and corporate credit from 11.2%→1.3% yoy, signaling sharp private sector lending deceleration.",
+        "**Headwinds vs Support**: Weak business confidence and US trade uncertainty weigh on growth, though accelerated public investment may offset credit cycle weakness.",
+        "**Market Vulnerability**: Declining consumer/corporate credit growth indicates weakening economic activity, heightening risk of equity/bond market downturns."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -387,7 +404,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:58Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Fed Reaction Function Uncertainty**: Ambiguous Fed stance post-July FOMC creates 25s SOFR steepeners vs OIS flatteners in Europe; US 10y yields moved 30bp in July due to oil prices/Fed reassessment.",
+        "**Long-End Yield Durability**: Sticky 5y5y/10y20y steepening persists due to dampened convexity and higher global yields, supporting multi-decade US nominal yields despite Fed communication shifts.",
+        "**Front-End Inflation Re-rating**: 1y traded inflation revised +30bps in July (Q2 oil peak/CPI surprise), signaling growing inflation risks from conflict despite base effects.",
+        "**Europe Energy-Driven ECB Policy**: ECB limited hike appetite due to energy volatility; ZG7 slope positively correlated with oil prices, delaying policy rate reversion to 2%.",
+        "**Foreign Treasury Outflows**: Net negative flows from Rest of Europe, Euro Area, Japan, and China, indicating declining foreign demand amid geopolitical tensions (e.g., US-China)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -402,7 +425,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:55Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Trade Surplus Narrowing**: Goods trade surplus to narrow to 4.9% of GDP in 2026 (vs.",
+        "4% in 2025), driven by export volume growth decelerating to 7.9% (from 8.7%) while import prices surge sharply, pressuring margins.",
+        "**Geopolitical Trade Disruption**: Strait closure (-21.5% yoy) and Middle East conflict directly pressured flows; Middle East exports fell most in Q2 amid regional tensions, highlighting supply chain vulnerabilities.",
+        "**Import Price Volatility Risk**: Mechanical machinery import prices surged 50% yoy (highest increase), signaling supply constraints or strong demand, while transportation equipment prices fell 20% yoy—critical for manufacturing cost and margin analysis.",
+        "**Structural Trade Realignment**: China gained market share in Euro Area/large EMs (Exhibit 7), with new export orders PMIs converging in Q2 (Exhibit 8), indicating stabilized demand and geopolitical-driven trade shifts."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -417,7 +446,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:54Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Iran War Policy Tightening**: Central banks shifted hawkish due to Iran conflict; Korea +85bp, Indonesia +57bp, China +47bp tightening; EM equity pullback (GS FCI -9bp), with Ukraine/Russia forecasts showing +250bps/+150bps hikes by 2026–2027.",
+        "**Global Rate Cut Consensus Gap**: 90% of DMs and 71% of EMs have forecasts below market pricing; 58% globally underpriced, signaling potential for sharper rate cuts than anticipated, increasing portfolio risk.",
+        "**EM Policy Mispricing Risk**: GS forecasts exceed market pricing by 1–3pp for EMs (e.g., South Africa, Poland, Mexico), indicating underpriced hawkishness, higher currency volatility, and elevated debt servicing costs.",
+        "**Geopolitical Rate Divergence**: Ukraine/Russia policy revisions (+250bps/+150bps) and Turkey’s market pricing (39.4% vs.",
+        "GS 37.0%) reflect aggressive rate hike expectations amid Russia-Ukraine tensions, driving bond/currency volatility."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -432,7 +467,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:50Z",
-      "summary_points": [],
+      "summary_points": [
+        "**QFI TSMC Buying vs Net Outflows**: QFIs net bought $1.225B in TSMC (Jul-26) while selling $60B in Taiwan cash equities/futures, signaling concentrated institutional confidence in semiconductor leader amid broader market outflows.",
+        "**Taiwan Q2 Earnings Beat Dominance**: 51% of reported companies beat earnings (vs 30% misses), with Tech Hardware driving +184% YoY net income growth (46 companies, 38% reported).",
+        "**Leveraged ETF Hedging Risk**: Taiwan’s $13bn leveraged ETF AUM (vs Korea’s $24bn) could trigger $1.8bn dealer hedging flows on 5% daily move (~6% of daily turnover), amplifying volatility.",
+        "**Cross-Strait Tension Indicator**: GSSRCSRI down to 83 (#), signaling heightened cross-strait risk, coinciding with retail margins down 13% ($13bn peak) and stable short interest.",
+        "**TSMC Ownership & Trading Dominance**: Foreign ownership in TSMC ~50% of market cap; QFIs account for ~30% of trading volume, underscoring semiconductor sector’s systemic market influence."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -447,7 +488,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:46Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Capital Flow Divergence**: Korea/Taiwan recorded $146bn YTD foreign outflows vs.",
+        "South Asia’s $53bn net equity inflows, signaling geopolitical-driven capital reallocation and regional valuation divergence.",
+        "**MXAPJ Undervaluation**: Index at 863 vs.",
+        "12M target of 1,080, indicating significant undervaluation and potential upside for tactical positioning.",
+        "**Earnings Gap Risk**: 231 companies (51% of MSCI cap) reported CY2Q26 earnings with 233% YoY growth but tracking at 48% of full-year estimates—lagging historical seasonality and signaling near-term underperformance risk."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -462,7 +509,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:40Z",
-      "summary_points": [],
+      "summary_points": [
+        "**US Equity Inflows Re-Accelerate**: Net equity flows +$64bn (vs +$30bn prior week), driven by US funds; tech funds largest inflows, energy largest outflows.",
+        "**China’s Persistent Outflows**: Negative cumulative flows (near $0) signal ongoing capital flight, contrasting with Euro area’s modest positive flows.",
+        "**Tech Sector Flow Leadership**: Technology funds exhibit sustained inflows with highest YTD flows, while cyclical ex-tech flows peaked then declined.",
+        "**CNY Negative Flows**: CNY shows negative flows (-$862M 4wk sum) and Z-score of -0.13, signaling specific risk in Asian markets."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -477,7 +529,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:38Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Mega-cap tech earnings dependency**: Q2 2026 GAAP net income from \"other income\" (investment gains) surged to 61% (vs.",
+        "9% Q1 2026), signaling unsustainable earnings reliance on unrealized gains, a critical valuation risk.",
+        "**Hyperscaler capex vs.",
+        "cash flow**: Hyperscaler capex to exceed cash flow from operations (2026–2028), with 2027 estimates at $1T+ (up 33% from $929B), pressuring free cash flow and necessitating $400B in IG debt funding.",
+        "**Earnings beat rate vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -492,11 +550,38 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:34Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Fed Policy Signals**: FOMC held rates with 3 dissenters; Warsh downplayed AI inflation, bond markets price 60% chance of Sept hike, core inflation softening keeps Fed on hold (policies, risk factors).",
+        "**China Trade Inflation Drag**: Shifts in China’s trade patterns (export surge to non-US DMs, import decline) lowered non-US DM goods prices by 0.6% and added 0.1-0.2pp annual headline inflation drag (fundamentals, data releases).",
+        "**EM Growth Outperformance**: Goldman Sachs forecasts EM growth exceeding consensus (India 2026: 6.9% vs 6.5%; China 2026: 4.6% vs 4.6%), signaling EMs as potential outperformers vs DMs (fundamentals, critical allocation).",
+        "**Euro Area Core Inflation Surprise**: Q2 core HICP at 2.48% yoy (surprised consensus), services inflation at 3.28% yoy, signaling persistent pricing pressures (data releases, policy risk).",
+        "**BoE Hawkish Split**: Bank Rate held at 3.75% with dissenting votes for 25bp hike; minutes cite \"weaker inflation\" but hawkish risks persist (policies, risk factors)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ingfsu2s2l0-982a9b",
+      "title": "China Weekly Kickstart Offshore China rallied 4 while A shares lost 1",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:33Z",
+      "summary_points": [
+        "**Policy-Data Divergence**: July Politburo easing rhetoric contradicted by declining PMIs (industrial & non-manufacturing), while MXCN (+3.9%) outperformed A-shares (CS300 -1.3%) amid policy-driven market fragmentation.",
+        "**Allocation Decline**: Net China (China + HK) allocation at 7.0% (lowest in 1 year, 14% below 5-year avg), signaling structural underweighting despite institutional demand.",
+        "**Real Estate Earnings Risk**: CSI300/MSCI China 4-week earnings revisions show negative trends (-0.4%/-0.6%) for Real Estate, driven by low/negative base, posing critical sector risk.",
+        "**MXCN Outperformance**: MXCN (12m P/E 10.5x) outperformed CS300 (14.8x) with stronger EPS growth (17% vs 15%), highlighting relative value in offshore Chinese equities.",
+        "**Passive Flow Surge**: MSCI China A index saw $5.8-8.6B in 3M passive flows (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
       "language": "en",
       "needs_metadata": false
     },
@@ -507,7 +592,12 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:28Z",
-      "summary_points": [],
+      "summary_points": [
+        "**GSAI Growth Confirms Expansion**: GSAI rose to 64.6 (July), well above 50 threshold, driven by strong new orders (+6.7pt) and shipments (+4.5pt), signaling sustained economic momentum despite declining employment (-3.7pt).",
+        "**Commodity-Driven Inflation Risk**: 76% of analysts expect higher oil/commodity prices to raise input costs, with 92% anticipating full cost pass-through to consumers, intensifying persistent inflationary pressures.",
+        "**Demand Pressure from Energy Costs**: 59% foresee higher energy prices weighing on demand (down from March’s 69%), reflecting tempered but still significant demand concerns amid rising input costs.",
+        "**Profit Margin Strain Amid Demand Uncertainty**: Manufacturing firms report sharper profit margin declines than services; half of service firms expect higher demand, yet margin pressures persist due to input cost hikes."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -557,6 +647,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 21,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yqhflhd3kti-4a54fe",
+      "title": "Pulp & Paper The Good and the Bad",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:12Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
