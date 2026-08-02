@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T23:03:51.512464+00:00",
-  "count": 624,
+  "generated_at": "2026-08-02T23:18:54.172677+00:00",
+  "count": 625,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1522,6 +1522,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 43,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lvoxa46ccvs-f70495",
+      "title": "The US Fixed Income Weekly",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:52Z",
+      "summary_points": [
+        "**July FOMC & Geopolitical Inflation Risk**: Fed holds rates but faces 3 hikes by September (BofA forecast); Brent oil near $100 signals Iran escalation risk, driving persistent inflation concerns and front-end yield vulnerability.",
+        "**Credit Market Rotation**: HY outperforms IG/loans due to AI supply dynamics; credit risk shifts favor high-yield, lower AI exposure, and defensive carry (AAA CLOs, ABS, floaters).",
+        "**Geopolitical-Driven Flows**: $14.9bn into bonds, $2.0bn gold, $33.9bn cash outflow; Iran conflict spurs reallocation to fixed income (govt bonds, short-duration credit) amid widening IG spreads.",
+        "**Fixed Income Defensive Allocation**: Prioritize carry, structure, and security selection; AAA CLOs, ABS, SASB/CMO floaters favored as oil volatility and rate uncertainty intensify.",
+        "**European Credit Dynamics**: Hyperscaler debt growth ($210bn→$460bn) outpaces demand; ECB hikes expected Sept, BBB scarcity, spreads rich, with IG funds seeing duration outflows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 41,
       "language": "en",
       "needs_metadata": false
     },
