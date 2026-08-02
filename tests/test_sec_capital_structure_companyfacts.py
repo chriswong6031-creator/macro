@@ -576,6 +576,62 @@ def test_last_good_selection_survives_each_publish_stage_fault(tmp_path, monkeyp
     assert loaded_receipt["sequence"] == 1
 
 
+def test_atomic_replace_precommit_recheck_preserves_original_exception(
+    tmp_path, monkeypatch,
+):
+    root = tmp_path / "companyfacts"
+    with companyfacts._companyfacts_publish_lease(root) as lane:
+        pointer = root / "coverage_receipt.json"
+        pointer.write_bytes(b"old")
+        original_read = companyfacts._read_regular_bytes_at
+        target_reads = 0
+
+        def fail_second_target_read(*args, **kwargs):
+            nonlocal target_reads
+            if kwargs.get("label") == "unit selector":
+                target_reads += 1
+                if target_reads == 2:
+                    raise OSError("injected CAS recheck failure")
+            return original_read(*args, **kwargs)
+
+        monkeypatch.setattr(companyfacts, "_read_regular_bytes_at", fail_second_target_read)
+        with pytest.raises(OSError, match="injected CAS recheck failure"):
+            companyfacts._atomic_replace_bounded_bytes(
+                pointer, b"new", expected_previous=b"old", root=root, lane=lane,
+                max_bytes=16, label="unit selector",
+            )
+        assert target_reads == 2
+        assert pointer.read_bytes() == b"old"
+        assert not any(path.name.endswith(".tmp") for path in root.iterdir())
+
+
+def test_atomic_replace_post_finally_deadline_is_publish_indeterminate(
+    tmp_path, monkeypatch,
+):
+    root = tmp_path / "companyfacts"
+    clock = [0.0]
+    original_unlink = companyfacts.os.unlink
+
+    def cross_deadline_during_temporary_cleanup(path, *args, **kwargs):
+        if isinstance(path, str) and path.endswith(".tmp"):
+            clock[0] = 2.0
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(companyfacts.os, "unlink", cross_deadline_during_temporary_cleanup)
+    with companyfacts._companyfacts_publish_lease(root) as lane:
+        pointer = root / "coverage_receipt.json"
+        with pytest.raises(
+            companyfacts.CompanyFactsPublishIndeterminate,
+            match="atomic replacement",
+        ):
+            companyfacts._atomic_replace_bounded_bytes(
+                pointer, b"new", expected_previous=None, root=root, lane=lane,
+                max_bytes=16, label="unit selector", deadline=1.0,
+                monotonic=lambda: clock[0],
+            )
+        assert pointer.read_bytes() == b"new"
+
+
 def test_baseexception_after_generation_prepare_closes_stage_and_removes_orphan(
     tmp_path, monkeypatch,
 ):
@@ -2153,6 +2209,298 @@ def test_initial_external_head_read_is_deadline_isolated(tmp_path, monkeypatch):
     assert delegate.read() == (None, None)
     assert not (root / "coverage_receipt.json").exists()
     assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+
+
+def test_delayed_expected_pointer_read_cannot_reach_external_cas(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    seed, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    seed.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    _, guard = _trust(root)
+    prior_head, _ = guard.read()
+    adapter = seed
+    adapter.max_run_seconds = 1.0
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    original_receipt = companyfacts._coverage_receipt
+    original_read = companyfacts._read_regular_descriptor_bytes
+    sealed = False
+    delayed = False
+
+    def mark_sealed(**kwargs):
+        nonlocal sealed
+        result = original_receipt(**kwargs)
+        sealed = True
+        return result
+
+    def delay_expected_pointer(descriptor, **kwargs):
+        nonlocal delayed
+        if sealed and not delayed and kwargs.get("label") == "current pointer":
+            delayed = True
+            time.sleep(1.15)
+        return original_read(descriptor, **kwargs)
+
+    monkeypatch.setattr(companyfacts, "_coverage_receipt", mark_sealed)
+    monkeypatch.setattr(companyfacts, "_read_regular_descriptor_bytes", delay_expected_pointer)
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="deadline"):
+        adapter.fetch(full_history=True)
+    assert delayed
+    assert guard.read()[0] == prior_head
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert not (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+
+
+@pytest.mark.parametrize("delay_target", ["unlink", "fsync"])
+def test_late_marker_cleanup_never_returns_success_and_capsule_survives(
+    tmp_path, monkeypatch, delay_target,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    signer, guard = _trust(root)
+    original_unlink = companyfacts.os.unlink
+    original_fsync = companyfacts._fsync_held_directory
+    delayed = False
+
+    def delay_unlink(path, *args, **kwargs):
+        nonlocal delayed
+        if path == companyfacts.PUBLISH_MARKER_NAME and not delayed:
+            delayed = True
+            time.sleep(1.15)
+        return original_unlink(path, *args, **kwargs)
+
+    def delay_fsync(descriptor, path):
+        nonlocal delayed
+        marker = root / companyfacts.PUBLISH_MARKER_NAME
+        capsule = root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME
+        if (
+            path == root and not marker.exists() and capsule.exists()
+            and (root / "coverage_receipt.json").exists() and not delayed
+        ):
+            delayed = True
+            time.sleep(1.15)
+        return original_fsync(descriptor, path)
+
+    if delay_target == "unlink":
+        monkeypatch.setattr(companyfacts.os, "unlink", delay_unlink)
+    else:
+        monkeypatch.setattr(companyfacts, "_fsync_held_directory", delay_fsync)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="cleanup"):
+        adapter.fetch()
+    assert delayed
+    witnessed, _ = guard.read()
+    assert witnessed is not None and witnessed["sequence"] == 1
+    assert (root / "coverage_receipt.json").exists()
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+
+    monkeypatch.setattr(companyfacts.os, "unlink", original_unlink)
+    monkeypatch.setattr(companyfacts, "_fsync_held_directory", original_fsync)
+    recovered, _ = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=guard, max_run_seconds=5.0,
+    )
+    recovered.fetch()
+    assert not (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+    _, receipt, _, _ = _selected(root)
+    assert receipt["sequence"] == 1
+
+
+def test_final_publication_deadline_recheck_cannot_return_late_heartbeat(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    original_publish = companyfacts._publish_generation
+
+    def publish_then_delay(**kwargs):
+        original_publish(**kwargs)
+        time.sleep(1.15)
+
+    monkeypatch.setattr(companyfacts, "_publish_generation", publish_then_delay)
+    with pytest.raises(
+        companyfacts.CompanyFactsPublishIndeterminate,
+        match="final publication acknowledgement",
+    ):
+        adapter.fetch()
+    _, guard = _trust(root)
+    witnessed, _ = guard.read()
+    assert witnessed is not None and witnessed["sequence"] == 1
+    assert (root / "coverage_receipt.json").exists()
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert not (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+
+
+@pytest.mark.parametrize("delay_target", ["restore", "rollback"])
+def test_late_post_pointer_recovery_stays_indeterminate_then_capsule_recovers(
+    tmp_path, monkeypatch, delay_target,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    seed, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    seed.fetch()
+    seq1_path = next((root / "receipts").glob("*.json"))
+    original_seq1 = seq1_path.read_bytes()
+    signer, guard = _trust(root)
+    adapter = seed
+    adapter.max_run_seconds = 1.0
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    original_atomic_write = companyfacts._atomic_write_bytes
+    original_restore = companyfacts._restore_authenticated_chain_snapshot
+    original_rollback = companyfacts._rollback_local_pointer
+    delayed = False
+
+    def mutate_after_pointer(path, content, **kwargs):
+        original_atomic_write(path, content, **kwargs)
+        if path == root / "coverage_receipt.json" and content != original_seq1:
+            body = seq1_path.read_bytes()
+            seq1_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+
+    def delay_restore(*args, **kwargs):
+        nonlocal delayed
+        if not delayed:
+            delayed = True
+            time.sleep(1.15)
+        return original_restore(*args, **kwargs)
+
+    def delay_rollback(*args, **kwargs):
+        nonlocal delayed
+        if not delayed:
+            delayed = True
+            time.sleep(1.15)
+        return original_rollback(*args, **kwargs)
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", mutate_after_pointer)
+    monkeypatch.setattr(
+        companyfacts,
+        "_restore_authenticated_chain_snapshot" if delay_target == "restore" else "_rollback_local_pointer",
+        delay_restore if delay_target == "restore" else delay_rollback,
+    )
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
+        adapter.fetch(full_history=True)
+    assert delayed
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", original_atomic_write)
+    monkeypatch.setattr(companyfacts, "_restore_authenticated_chain_snapshot", original_restore)
+    monkeypatch.setattr(companyfacts, "_rollback_local_pointer", original_rollback)
+    recovered, _ = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=guard, max_run_seconds=5.0,
+    )
+    recovered.fetch()
+    assert seq1_path.read_bytes() == original_seq1
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert not (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+    _, receipt, _, coverage = _selected(root)
+    assert receipt["sequence"] == 2 and len(coverage) == 2
+
+
+@pytest.mark.parametrize("corruption_target", ["receipt", "generation_directory"])
+def test_restart_capsule_restores_corrupted_predecessor_before_candidate_auth(
+    tmp_path, monkeypatch, corruption_target,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    seq1_path = next((root / "receipts").glob("*.json"))
+    original_seq1 = seq1_path.read_bytes()
+    seq1_receipt = json.loads(original_seq1)
+    generation_dir = (root / seq1_receipt["generation"]["source_manifest"]["path"]).parent
+    original_generation = {
+        path.name: path.read_bytes() for path in generation_dir.iterdir()
+    }
+    signer, guard = _trust(root)
+    original_delete = companyfacts._delete_publish_marker
+
+    def preserve_crash_state(*args, **kwargs):
+        raise OSError("simulated crash before marker cleanup")
+
+    monkeypatch.setattr(companyfacts, "_delete_publish_marker", preserve_crash_state)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="marker cleanup"):
+        adapter.fetch(full_history=True)
+    monkeypatch.setattr(companyfacts, "_delete_publish_marker", original_delete)
+    pointer_before_restart = (root / "coverage_receipt.json").read_bytes()
+    assert json.loads(pointer_before_restart)["receipt_id"] == guard.read()[0]["receipt_id"]
+    if corruption_target == "receipt":
+        corrupted = bytes([original_seq1[0] ^ 1]) + original_seq1[1:]
+        seq1_path.write_bytes(corrupted)
+    else:
+        generation_dir.rename(tmp_path / "deleted-predecessor-generation")
+        assert not generation_dir.exists()
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+
+    restarted, _ = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=guard,
+    )
+    restarted.fetch()
+    assert seq1_path.read_bytes() == original_seq1
+    assert {
+        path.name: path.read_bytes() for path in generation_dir.iterdir()
+    } == original_generation
+    assert (root / "coverage_receipt.json").read_bytes() == pointer_before_restart
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert not (root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME).exists()
+    _, receipt, _, coverage = _selected(root)
+    assert receipt["sequence"] == 2 and len(coverage) == 2
+
+
+@pytest.mark.parametrize("capsule_fault", ["missing", "tampered"])
+def test_missing_or_invalid_restart_capsule_quarantines_signed_pointer(
+    tmp_path, monkeypatch, capsule_fault,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    signer, guard = _trust(root)
+    original_delete = companyfacts._delete_publish_marker
+    monkeypatch.setattr(
+        companyfacts, "_delete_publish_marker",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("preserve pending state")),
+    )
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="marker cleanup"):
+        adapter.fetch(full_history=True)
+    monkeypatch.setattr(companyfacts, "_delete_publish_marker", original_delete)
+    capsule_path = root / companyfacts.PUBLISH_RECOVERY_CAPSULE_NAME
+    if capsule_fault == "missing":
+        capsule_path.unlink()
+    else:
+        body = capsule_path.read_bytes()
+        capsule_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+
+    restarted, _ = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=guard,
+    )
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="capsule"):
+        restarted.fetch()
+    assert not (root / "coverage_receipt.json").exists()
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
 
 
 def test_predecessor_snapshot_aggregate_cap_fails_before_external_cas(
