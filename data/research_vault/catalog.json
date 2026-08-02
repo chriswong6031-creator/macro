@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T08:32:16.656823+00:00",
-  "count": 582,
+  "generated_at": "2026-08-02T09:02:19.487002+00:00",
+  "count": 583,
   "institutions": [
     "Amova",
     "Apollo",
@@ -377,6 +377,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6ctukntfpjw-e9ae80",
+      "title": "Central Bank Policy Tracker July 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:54Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
