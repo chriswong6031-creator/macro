@@ -43,6 +43,7 @@ EnvironmentFile=-/etc/macro-live.env
 # shipped dark for months in a sibling lane (2026-07-26). macro-api.service owns
 # the StateDirectory= that creates /var/lib/macro-codex; this unit only reads it.
 Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
 Environment=CODEX_PROVIDER_ENABLED=1
 # NO --interval: the reply lane reads reply_desk.producer.tick_interval_s from
 # config/marketing.yml (300 s). Deliberate — retuning the cadence must be a

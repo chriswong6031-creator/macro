@@ -27,6 +27,7 @@ EnvironmentFile=-/etc/macro-live.env
 # the StateDirectory= that creates /var/lib/macro-codex (mode 0700); this unit
 # only reads it, so it deliberately does not re-declare ownership of the path.
 Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
 Environment=CODEX_PROVIDER_ENABLED=1
 # --interval 75 keeps the mirror hot-poll inside its 60-90 s window; per-source
 # politeness floors + the twitterapi.io per-tier intervals throttle each provider.
