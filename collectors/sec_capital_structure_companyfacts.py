@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from hashlib import sha256
+import base64
 import fcntl
 import hmac
 import io
@@ -63,6 +64,9 @@ MAX_HEAD_WITNESS_BYTES = 16 * 1024
 MAX_RECEIPT_BYTES = 4 * 1024 * 1024
 MAX_ANCHOR_LEDGER_BYTES = 128 * 1024 * 1024
 MAX_GENERATION_FILE_BYTES = 128 * 1024 * 1024
+MAX_PUBLISH_CHAIN_SNAPSHOT_BYTES = 256 * 1024 * 1024
+MAX_COMMITTED_CHAIN_READ_BYTES = 512 * 1024 * 1024
+MAX_PUBLISH_MARKER_BYTES = 64 * 1024
 # Retention verification is deliberately bounded: source admission remains an
 # exact put/readback, while pre-existing immutable objects receive a rotating
 # audit instead of an unbounded all-history startup scan.
@@ -86,8 +90,10 @@ COVERAGE_ROW_SCHEMA = "capital_structure.companyfacts_coverage_row/v1"
 COVERAGE_RECEIPT_SCHEMA = "capital_structure.companyfacts_coverage_receipt/v1"
 CURRENT_POINTER_SCHEMA = "capital_structure.companyfacts_current_pointer/v1"
 HEAD_WITNESS_SCHEMA = "capital_structure.companyfacts_head_witness/v1"
+PUBLISH_MARKER_SCHEMA = "capital_structure.companyfacts_publish_pending/v1"
 RECEIPT_AUTH_SCHEME = "hmac-sha256/v1"
 HEAD_GUARD_KEY = "capital_structure/companyfacts/current_head.v1.json"
+PUBLISH_MARKER_NAME = ".companyfacts_publish_pending.json"
 
 _SOURCE_MANIFEST_COLUMNS = [
     "schema", "manifest_id", "source_system", "source_id", "issuer", "anchor",
@@ -573,6 +579,126 @@ def _validate_head_transition(
         raise CompanyFactsIntakeError("Company Facts external head transition is not exact-predecessor")
 
 
+def _publish_marker_auth_payload(record: Mapping[str, Any]) -> bytes:
+    material = _native(dict(record))
+    material.pop("signature", None)
+    return _canonical_bytes({
+        "domain": "capital_structure.companyfacts_publish_pending/v1",
+        "marker": material,
+    })
+
+
+def _pointer_from_body(body: bytes | None, *, label: str) -> dict[str, Any] | None:
+    if body is None:
+        return None
+    if not isinstance(body, bytes) or not 1 <= len(body) <= MAX_POINTER_BYTES:
+        raise CompanyFactsIntakeError(f"Company Facts {label} pointer bytes are invalid")
+    try:
+        pointer = _native(json.loads(body))
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsIntakeError(f"Company Facts {label} pointer is unreadable") from exc
+    if not isinstance(pointer, Mapping) or body != _canonical_bytes(pointer) + b"\n":
+        raise CompanyFactsIntakeError(f"Company Facts {label} pointer is not canonical")
+    _validate_contract(
+        pointer, "capital_structure_companyfacts_current_pointer.schema.json",
+        label=f"Company Facts {label} pointer",
+    )
+    _validate_pointer_identity(pointer)
+    return dict(pointer)
+
+
+def _pointer_matches_head(pointer: Mapping[str, Any], witness: Mapping[str, Any]) -> bool:
+    return all((
+        pointer.get("receipt_id") == witness.get("receipt_id"),
+        pointer.get("receipt_sha256") == witness.get("receipt_sha256"),
+        pointer.get("receipt_byte_length") == witness.get("receipt_byte_length"),
+        pointer.get("generation_id") == witness.get("generation_id"),
+        pointer.get("published_at") == witness.get("published_at"),
+    ))
+
+
+def _build_publish_marker(
+    *, expected_witness: Mapping[str, Any] | None,
+    candidate_witness: Mapping[str, Any], expected_pointer: bytes | None,
+    candidate_pointer: bytes, signer: CompanyFactsSigner,
+) -> dict[str, Any]:
+    # The HMAC makes accidental or concurrent local rewrites detectable and
+    # binds the only permitted one-step recovery transition. It cannot protect
+    # availability from an actor running as the same OS user who can delete the
+    # marker or replace the process/signing secret; that remains out of scope.
+    record: dict[str, Any] = {
+        "schema": PUBLISH_MARKER_SCHEMA,
+        "key_id": signer.key_id,
+        "expected_witness": dict(expected_witness) if expected_witness is not None else None,
+        "candidate_witness": dict(candidate_witness),
+        "expected_pointer_b64": (
+            base64.b64encode(expected_pointer).decode("ascii")
+            if expected_pointer is not None else None
+        ),
+        "candidate_pointer_b64": base64.b64encode(candidate_pointer).decode("ascii"),
+    }
+    record["signature"] = signer.sign(_publish_marker_auth_payload(record))
+    _validate_publish_marker(record, signer=signer)
+    return record
+
+
+def _decode_marker_pointer(value: object, *, label: str) -> bytes | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise CompanyFactsIntakeError(f"Company Facts pending {label} pointer encoding is invalid")
+    try:
+        body = base64.b64decode(value, validate=True)
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsIntakeError(
+            f"Company Facts pending {label} pointer encoding is invalid"
+        ) from exc
+    _pointer_from_body(body, label=f"pending {label}")
+    return body
+
+
+def _validate_publish_marker(
+    record: Mapping[str, Any], *, signer: CompanyFactsSigner,
+) -> tuple[bytes | None, bytes]:
+    if set(record) != {
+        "schema", "key_id", "expected_witness", "candidate_witness",
+        "expected_pointer_b64", "candidate_pointer_b64", "signature",
+    } or record.get("schema") != PUBLISH_MARKER_SCHEMA:
+        raise CompanyFactsIntakeError("Company Facts pending publication marker shape is invalid")
+    signature = record.get("signature")
+    key_id = record.get("key_id")
+    if not isinstance(key_id, str) or not isinstance(signature, str) or not signer.verify(
+        _publish_marker_auth_payload(record), signature, key_id=key_id,
+    ):
+        raise CompanyFactsIntakeError("Company Facts pending publication marker authentication mismatch")
+    expected_witness = record.get("expected_witness")
+    candidate_witness = record.get("candidate_witness")
+    if expected_witness is not None and not isinstance(expected_witness, Mapping):
+        raise CompanyFactsIntakeError("Company Facts pending expected witness is malformed")
+    if not isinstance(candidate_witness, Mapping):
+        raise CompanyFactsIntakeError("Company Facts pending candidate witness is malformed")
+    _validate_head_transition(
+        previous=expected_witness, candidate=candidate_witness, signer=signer,
+    )
+    expected_body = _decode_marker_pointer(
+        record.get("expected_pointer_b64"), label="expected",
+    )
+    candidate_body = _decode_marker_pointer(
+        record.get("candidate_pointer_b64"), label="candidate",
+    )
+    assert candidate_body is not None
+    expected_pointer = _pointer_from_body(expected_body, label="pending expected")
+    candidate_pointer = _pointer_from_body(candidate_body, label="pending candidate")
+    assert candidate_pointer is not None
+    if (expected_witness is None) != (expected_pointer is None):
+        raise CompanyFactsIntakeError("Company Facts pending predecessor pointer/head mismatch")
+    if expected_pointer is not None and not _pointer_matches_head(expected_pointer, expected_witness):
+        raise CompanyFactsIntakeError("Company Facts pending predecessor pointer is detached from head")
+    if not _pointer_matches_head(candidate_pointer, candidate_witness):
+        raise CompanyFactsIntakeError("Company Facts pending candidate pointer is detached from head")
+    return expected_body, candidate_body
+
+
 def _build_production_trust_context() -> tuple[CompanyFactsSigner, CompanyFactsHeadGuard]:
     """Return the only production trust path; absent secret/witness is a hard stop."""
     secret = os.environ.get("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY", "")
@@ -634,18 +760,22 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
 def _read_ledger(
     path: Path, columns: Sequence[str], *, max_bytes: int,
     parent_fd: int | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> pd.DataFrame:
     try:
         if parent_fd is not None:
             body = _read_regular_bytes_at(
                 parent_fd, path.name, label=f"ledger {path.name}",
                 max_bytes=max_bytes, missing_ok=True,
+                deadline=deadline, monotonic=monotonic,
             )
         else:
             with _open_absolute_directory(path.parent) as opened_parent_fd:
                 body = _read_regular_bytes_at(
                     opened_parent_fd, path.name, label=f"ledger {path.name}",
                     max_bytes=max_bytes, missing_ok=True,
+                    deadline=deadline, monotonic=monotonic,
                 )
     except CompanyFactsPathMissing:
         return pd.DataFrame(columns=list(columns))
@@ -886,7 +1016,23 @@ def _open_companyfacts_parent(
 def _read_regular_bytes_at(
     parent_fd: int, name: str, *, label: str, max_bytes: int,
     expected_byte_length: int | None = None, missing_ok: bool = False,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> bytes | None:
+    snapshot = _read_regular_snapshot_at(
+        parent_fd, name, label=label, max_bytes=max_bytes,
+        expected_byte_length=expected_byte_length, missing_ok=missing_ok,
+        deadline=deadline, monotonic=monotonic,
+    )
+    return None if snapshot is None else snapshot[0]
+
+
+def _read_regular_snapshot_at(
+    parent_fd: int, name: str, *, label: str, max_bytes: int,
+    expected_byte_length: int | None = None, missing_ok: bool = False,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> tuple[bytes, tuple[Any, ...]] | None:
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
         raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid byte cap")
     if (
@@ -911,6 +1057,7 @@ def _read_regular_bytes_at(
         body = _read_regular_descriptor_bytes(
             descriptor, label=label, max_bytes=max_bytes,
             expected_byte_length=expected_byte_length,
+            deadline=deadline, monotonic=monotonic,
         )
         opened = os.fstat(descriptor)
         try:
@@ -923,7 +1070,7 @@ def _read_regular_bytes_at(
             opened.st_dev, opened.st_ino,
         ):
             raise CompanyFactsIntakeError(f"Company Facts {label} was rebound during secure read")
-        return body
+        return body, _regular_metadata_fingerprint(opened)
     finally:
         os.close(descriptor)
 
@@ -931,6 +1078,8 @@ def _read_regular_bytes_at(
 def _read_regular_descriptor_bytes(
     descriptor: int, *, label: str, max_bytes: int,
     expected_byte_length: int | None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> bytes:
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
         raise CompanyFactsIntakeError(f"Company Facts {label} has an invalid byte cap")
@@ -958,6 +1107,7 @@ def _read_regular_descriptor_bytes(
     chunks: list[bytes] = []
     observed = 0
     while observed < boundary:
+        _require_deadline(deadline, monotonic, label=f"{label} secure read")
         chunk = os.read(descriptor, min(1024 * 1024, boundary - observed))
         if not chunk:
             break
@@ -989,6 +1139,46 @@ class _HeldRegularFile:
     name: str
     descriptor: int
     fingerprint: tuple[Any, ...]
+
+
+@dataclass
+class _ChainArtifactSnapshot:
+    relative_path: str
+    body: bytes
+    fingerprint: tuple[Any, ...]
+    max_bytes: int
+
+
+@dataclass
+class _AuthenticatedChainSnapshot:
+    receipts: list[dict[str, Any]]
+    artifacts: dict[str, _ChainArtifactSnapshot]
+    total_bytes: int
+
+
+@dataclass
+class _AggregateReadBudget:
+    max_bytes: int
+    deadline: float | None
+    monotonic: Callable[[], float]
+    consumed: int = 0
+
+    def reserve(self, byte_length: int, *, label: str) -> None:
+        if (
+            isinstance(byte_length, bool)
+            or not isinstance(byte_length, int)
+            or byte_length < 0
+        ):
+            raise CompanyFactsIntakeError(
+                f"Company Facts {label} has an invalid aggregate length"
+            )
+        _require_deadline(self.deadline, self.monotonic, label=label)
+        if byte_length > self.max_bytes - self.consumed:
+            raise CompanyFactsIntakeError(
+                "Company Facts authenticated predecessor snapshot exceeds "
+                f"{self.max_bytes} byte aggregate cap"
+            )
+        self.consumed += byte_length
 
 
 def _hold_regular_file_at(parent_fd: int, name: str, *, label: str) -> _HeldRegularFile:
@@ -1041,7 +1231,8 @@ def _release_held_regular_file(held: _HeldRegularFile) -> None:
 
 def _assert_held_regular_file_binding(
     held: _HeldRegularFile, *, current_parent_fd: int, expected_body: bytes,
-    max_bytes: int, label: str,
+    max_bytes: int, label: str, deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> dict[str, Any]:
     parent_metadata = os.fstat(held.parent_fd)
     current_parent = os.fstat(current_parent_fd)
@@ -1069,6 +1260,7 @@ def _assert_held_regular_file_binding(
     body = _read_regular_descriptor_bytes(
         held.descriptor, label=label, max_bytes=max_bytes,
         expected_byte_length=len(expected_body),
+        deadline=deadline, monotonic=monotonic,
     )
     expected_receipt = _bytes_receipt(expected_body)
     observed_receipt = _bytes_receipt(body)
@@ -1084,7 +1276,11 @@ def _assert_held_regular_file_binding(
     return observed_receipt
 
 
-def _write_new_regular_bytes_at(parent_fd: int, name: str, content: bytes, *, label: str) -> None:
+def _write_new_regular_bytes_at(
+    parent_fd: int, name: str, content: bytes, *, label: str,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> None:
     try:
         descriptor = os.open(
             name,
@@ -1097,7 +1293,9 @@ def _write_new_regular_bytes_at(parent_fd: int, name: str, content: bytes, *, la
     try:
         offset = 0
         while offset < len(content):
-            offset += os.write(descriptor, content[offset:])
+            _require_deadline(deadline, monotonic, label=f"{label} write")
+            offset += os.write(descriptor, content[offset:offset + 1024 * 1024])
+        _require_deadline(deadline, monotonic, label=f"{label} fsync")
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
@@ -1213,18 +1411,21 @@ def _companyfacts_publish_lease(root: Path) -> Iterator[_CompanyFactsLane]:
             os.close(root_fd)
 
 
-def _atomic_write_bytes(
+def _atomic_replace_bounded_bytes(
     path: Path, content: bytes, *, expected_previous: bytes | None | object = ...,
     root: Path | None = None, lane: _CompanyFactsLane | None = None,
+    max_bytes: int, label: str,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
-    """Atomically replace a pointer under an exact-predecessor publication lease.
+    """Atomically replace one bounded file under an exact-predecessor lease.
 
     A directory-fsync failure is intentionally *not* softened: visibility after
     ``os.replace`` is not a durability acknowledgement. The external head witness
     records the recovery target, while this call reports an indeterminate publish.
     """
-    if len(content) > MAX_POINTER_BYTES:
-        raise CompanyFactsIntakeError("Company Facts current pointer exceeds byte cap")
+    if len(content) > max_bytes:
+        raise CompanyFactsIntakeError(f"Company Facts {label} exceeds byte cap")
     safe_root = root or path.parent
     if lane is not None:
         _assert_lane_path_identity(lane)
@@ -1232,52 +1433,60 @@ def _atomic_write_bytes(
     temporary = f".{parts[-1]}.{os.getpid()}.{time.time_ns()}.tmp"
     with _open_companyfacts_parent(safe_root, parts, create=True, lane=lane) as (parent_fd, name):
         previous = _read_regular_bytes_at(
-            parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+            parent_fd, name, label=label, max_bytes=max_bytes,
             expected_byte_length=(len(expected_previous) if isinstance(expected_previous, bytes) else None),
             missing_ok=True,
+            deadline=deadline, monotonic=monotonic,
         )
         if expected_previous is not ... and previous != expected_previous:
             raise CompanyFactsIntakeError(f"Company Facts pointer exact-predecessor CAS conflict: {path}")
         try:
-            _write_new_regular_bytes_at(parent_fd, temporary, content, label="staged pointer")
+            _write_new_regular_bytes_at(
+                parent_fd, temporary, content, label=f"staged {label}",
+                deadline=deadline, monotonic=monotonic,
+            )
             if _read_regular_bytes_at(
-                parent_fd, temporary, label="staged pointer", max_bytes=MAX_POINTER_BYTES,
+                parent_fd, temporary, label=f"staged {label}", max_bytes=max_bytes,
                 expected_byte_length=len(content),
+                deadline=deadline, monotonic=monotonic,
             ) != content:
-                raise CompanyFactsIntakeError(f"staged pointer read-back mismatch: {path}")
+                raise CompanyFactsIntakeError(f"staged {label} read-back mismatch: {path}")
             try:
                 # Re-check via the same parent descriptor immediately before commit.
                 if expected_previous is not ...:
                     observed = _read_regular_bytes_at(
-                        parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+                        parent_fd, name, label=label, max_bytes=max_bytes,
                         expected_byte_length=(
                             len(expected_previous) if isinstance(expected_previous, bytes) else None
                         ),
                         missing_ok=True,
+                        deadline=deadline, monotonic=monotonic,
                     )
                     if observed != expected_previous:
                         raise CompanyFactsIntakeError(
-                            f"Company Facts pointer exact-predecessor CAS conflict: {path}"
+                            f"Company Facts {label} exact-predecessor CAS conflict: {path}"
                         )
                 if lane is not None:
                     _assert_lane_path_identity(lane)
+                _require_deadline(deadline, monotonic, label=f"{label} replace")
                 os.replace(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
             except Exception:
                 actual = _read_regular_bytes_at(
-                    parent_fd, name, label="current pointer", max_bytes=MAX_POINTER_BYTES,
+                    parent_fd, name, label=label, max_bytes=max_bytes,
                     expected_byte_length=(len(previous) if isinstance(previous, bytes) else None),
                     missing_ok=True,
                 )
                 if actual != previous:
-                    raise CompanyFactsIntakeError(f"Company Facts pointer state uncertain: {path}")
+                    raise CompanyFactsIntakeError(f"Company Facts {label} state uncertain: {path}")
                 raise
             try:
+                _require_deadline(deadline, monotonic, label=f"{label} directory fsync")
                 _fsync_held_directory(parent_fd, path.parent)
                 if lane is not None:
                     _assert_lane_path_identity(lane)
             except Exception as exc:
                 raise CompanyFactsPublishIndeterminate(
-                    f"Company Facts pointer durability is indeterminate after replace: {path}"
+                    f"Company Facts {label} durability is indeterminate after replace: {path}"
                 ) from exc
         finally:
             try:
@@ -1286,9 +1495,95 @@ def _atomic_write_bytes(
                 pass
 
 
+def _atomic_write_bytes(
+    path: Path, content: bytes, *, expected_previous: bytes | None | object = ...,
+    root: Path | None = None, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> None:
+    """Atomically replace the local selector with an exact predecessor CAS."""
+    _atomic_replace_bounded_bytes(
+        path, content, expected_previous=expected_previous, root=root, lane=lane,
+        max_bytes=MAX_POINTER_BYTES, label="current pointer",
+        deadline=deadline, monotonic=monotonic,
+    )
+
+
+def _publish_marker_body(record: Mapping[str, Any]) -> bytes:
+    body = _canonical_bytes(dict(record)) + b"\n"
+    if len(body) > MAX_PUBLISH_MARKER_BYTES:
+        raise CompanyFactsIntakeError("Company Facts pending publication marker exceeds byte cap")
+    return body
+
+
+def _write_publish_marker(
+    root: Path, record: Mapping[str, Any], *, lane: _CompanyFactsLane,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> bytes:
+    body = _publish_marker_body(record)
+    _atomic_replace_bounded_bytes(
+        root / PUBLISH_MARKER_NAME, body, expected_previous=None,
+        root=root, lane=lane, max_bytes=MAX_PUBLISH_MARKER_BYTES,
+        label="pending publication marker",
+        deadline=deadline, monotonic=monotonic,
+    )
+    return body
+
+
+def _read_publish_marker(
+    root: Path, *, lane: _CompanyFactsLane, signer: CompanyFactsSigner,
+    deadline: float | None, monotonic: Callable[[], float],
+) -> tuple[dict[str, Any], bytes] | None:
+    with _open_companyfacts_directory(root, lane=lane) as root_fd:
+        body = _read_regular_bytes_at(
+            root_fd, PUBLISH_MARKER_NAME, label="pending publication marker",
+            max_bytes=MAX_PUBLISH_MARKER_BYTES, missing_ok=True,
+            deadline=deadline, monotonic=monotonic,
+        )
+    if body is None:
+        return None
+    try:
+        marker = _native(json.loads(body))
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending publication marker is unreadable"
+        ) from exc
+    if not isinstance(marker, Mapping) or body != _canonical_bytes(marker) + b"\n":
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending publication marker is not canonical"
+        )
+    try:
+        _validate_publish_marker(marker, signer=signer)
+    except CompanyFactsIntakeError as exc:
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending publication marker is unauthenticated"
+        ) from exc
+    return dict(marker), body
+
+
+def _delete_publish_marker(
+    root: Path, expected_body: bytes, *, lane: _CompanyFactsLane,
+) -> None:
+    with _open_companyfacts_directory(root, lane=lane) as root_fd:
+        observed = _read_regular_bytes_at(
+            root_fd, PUBLISH_MARKER_NAME, label="pending publication marker",
+            max_bytes=MAX_PUBLISH_MARKER_BYTES,
+            expected_byte_length=len(expected_body), missing_ok=True,
+        )
+        if observed != expected_body:
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts pending publication marker changed before cleanup"
+            )
+        os.unlink(PUBLISH_MARKER_NAME, dir_fd=root_fd)
+        _fsync_held_directory(root_fd, root)
+
+
 def _write_immutable_bytes(
     path: Path, content: bytes, *, root: Path | None = None,
     lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
     """Create one immutable object without ever replacing a divergent target."""
     if len(content) > MAX_RECEIPT_BYTES:
@@ -1302,29 +1597,37 @@ def _write_immutable_bytes(
         existing = _read_regular_bytes_at(
             parent_fd, name, label="immutable object", max_bytes=MAX_RECEIPT_BYTES,
             expected_byte_length=len(content), missing_ok=True,
+            deadline=deadline, monotonic=monotonic,
         )
         if existing is not None:
             if existing != content:
                 raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
             return
         try:
-            _write_new_regular_bytes_at(parent_fd, temporary, content, label="immutable staged object")
+            _write_new_regular_bytes_at(
+                parent_fd, temporary, content, label="immutable staged object",
+                deadline=deadline, monotonic=monotonic,
+            )
             if _read_regular_bytes_at(
                 parent_fd, temporary, label="immutable staged object",
                 max_bytes=MAX_RECEIPT_BYTES, expected_byte_length=len(content),
+                deadline=deadline, monotonic=monotonic,
             ) != content:
                 raise CompanyFactsIntakeError(f"immutable Company Facts object read-back mismatch: {path}")
             try:
                 if lane is not None:
                     _assert_lane_path_identity(lane)
+                _require_deadline(deadline, monotonic, label="immutable receipt link")
                 os.link(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd, follow_symlinks=False)
             except FileExistsError:
                 existing = _read_regular_bytes_at(
                     parent_fd, name, label="immutable object", max_bytes=MAX_RECEIPT_BYTES,
                     expected_byte_length=len(content),
+                    deadline=deadline, monotonic=monotonic,
                 )
                 if existing != content:
                     raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
+            _require_deadline(deadline, monotonic, label="immutable receipt directory fsync")
             _fsync_held_directory(parent_fd, path.parent)
             if lane is not None:
                 _assert_lane_path_identity(lane)
@@ -1345,12 +1648,15 @@ def _ledger_receipt(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 def _file_receipt(
     path: Path, *, max_bytes: int, expected_byte_length: int | None = None,
     root: Path | None = None, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> dict[str, Any]:
     if root is None:
         with _open_absolute_directory(path.parent) as parent_fd:
             body = _read_regular_bytes_at(
                 parent_fd, path.name, label="file receipt", max_bytes=max_bytes,
                 expected_byte_length=expected_byte_length,
+                deadline=deadline, monotonic=monotonic,
             )
             assert body is not None
     else:
@@ -1359,6 +1665,7 @@ def _file_receipt(
             body = _read_regular_bytes_at(
                 parent_fd, name, label="file receipt", max_bytes=max_bytes,
                 expected_byte_length=expected_byte_length,
+                deadline=deadline, monotonic=monotonic,
             )
             assert body is not None
     return {"sha256": sha256(body).hexdigest(), "byte_length": len(body)}
@@ -1533,7 +1840,7 @@ def _prepare_generation(
             descriptor=descriptor, stage_path=stage, stage_fd=stage_fd,
             stage_device=stage_device, stage_inode=stage_inode,
         )
-    except Exception:
+    except BaseException:  # noqa: BLE001 - staging resources must close on cancellation
         _discard_stage(
             root, stage, ignore_errors=True, lane=lane, stage_fd=stage_fd,
             stage_device=stage_device, stage_inode=stage_inode,
@@ -1585,16 +1892,27 @@ def _generation_paths(
 
 def _validate_generation_files(
     root: Path, descriptor: Mapping[str, Any], *, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
+    artifact_observer: Callable[[str, bytes, tuple[Any, ...], int], None] | None = None,
 ) -> tuple[Path, Path]:
     source_path, coverage_path = _generation_paths(root, descriptor, lane=lane)
     digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
     with _open_companyfacts_directory(root, ("generations", digest), lane=lane) as generation_fd:
-        _generation_bodies_at(generation_fd, descriptor)
+        _generation_bodies_at(
+            generation_fd, descriptor, deadline=deadline, monotonic=monotonic,
+            read_budget=read_budget, artifact_observer=artifact_observer,
+        )
     return source_path, coverage_path
 
 
 def _generation_bodies_at(
-    generation_fd: int, descriptor: Mapping[str, Any],
+    generation_fd: int, descriptor: Mapping[str, Any], *,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
+    artifact_observer: Callable[[str, bytes, tuple[Any, ...], int], None] | None = None,
 ) -> tuple[bytes, bytes]:
     bodies: dict[str, bytes] = {}
     for key, name in (
@@ -1612,17 +1930,25 @@ def _generation_bodies_at(
             raise CompanyFactsIntakeError(
                 f"committed Company Facts {key} has an invalid exact length"
             )
-        body = _read_regular_bytes_at(
+        if read_budget is not None:
+            read_budget.reserve(expected_length, label=f"committed {key} generation file")
+        snapshot = _read_regular_snapshot_at(
             generation_fd, name, label=f"committed {key} generation file",
             max_bytes=MAX_GENERATION_FILE_BYTES,
             expected_byte_length=expected_length,
+            deadline=deadline, monotonic=monotonic,
         )
-        assert body is not None
+        assert snapshot is not None
+        body, fingerprint = snapshot
         if _bytes_receipt(body) != {
             "sha256": expected.get("sha256"), "byte_length": expected_length,
         }:
             raise CompanyFactsIntakeError(
                 f"committed Company Facts {key} exact-byte receipt mismatch"
+            )
+        if artifact_observer is not None:
+            artifact_observer(
+                str(expected["path"]), body, fingerprint, MAX_GENERATION_FILE_BYTES,
             )
         bodies[key] = body
     return bodies["source_manifest"], bodies["coverage"]
@@ -1630,16 +1956,25 @@ def _generation_bodies_at(
 
 def _generation_bodies(
     root: Path, descriptor: Mapping[str, Any], *, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
+    artifact_observer: Callable[[str, bytes, tuple[Any, ...], int], None] | None = None,
 ) -> tuple[bytes, bytes]:
     """Return exact, receipt-validated generation bytes through a no-follow chain."""
     _generation_paths(root, descriptor, lane=lane)
     digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
     with _open_companyfacts_directory(root, ("generations", digest), lane=lane) as generation_fd:
-        return _generation_bodies_at(generation_fd, descriptor)
+        return _generation_bodies_at(
+            generation_fd, descriptor, deadline=deadline, monotonic=monotonic,
+            read_budget=read_budget, artifact_observer=artifact_observer,
+        )
 
 
 def _install_generation(
     root: Path, prepared: _PreparedGeneration, *, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
     if lane is not None:
         _assert_lane_path_identity(lane)
@@ -1673,8 +2008,10 @@ def _install_generation(
                     if target_fd is not None:
                         os.close(target_fd)
             _hold_prepared_generation_files(prepared)
-            _assert_prepared_generation_binding(root, prepared, lane=lane)
-        except Exception:
+            _assert_prepared_generation_binding(
+                root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+        except BaseException:  # noqa: BLE001 - held descriptors must close on cancellation
             _release_prepared_stage(prepared)
             raise
         return
@@ -1702,7 +2039,10 @@ def _install_generation(
                             raise CompanyFactsIntakeError(
                                 "Company Facts committed generation is not a directory"
                             )
-                        _generation_bodies_at(target_fd, prepared.descriptor)
+                        _generation_bodies_at(
+                            target_fd, prepared.descriptor, deadline=deadline,
+                            monotonic=monotonic,
+                        )
                         _discard_stage(
                             root, stage, lane=lane, stage_fd=prepared.stage_fd,
                             stage_device=prepared.stage_device, stage_inode=prepared.stage_inode,
@@ -1721,6 +2061,7 @@ def _install_generation(
                 else:
                     if lane is not None:
                         _assert_lane_path_identity(lane)
+                    _require_deadline(deadline, monotonic, label="generation install replace")
                     stage_name = _assert_prepared_stage_binding(root, root_fd, prepared)
                     os.replace(stage_name, digest, src_dir_fd=root_fd, dst_dir_fd=generations_fd)
                     stage_moved = True
@@ -1737,8 +2078,10 @@ def _install_generation(
         if lane is not None:
             _assert_lane_path_identity(lane)
         _hold_prepared_generation_files(prepared)
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-    except Exception:
+        _assert_prepared_generation_binding(
+            root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+        )
+    except BaseException:  # noqa: BLE001 - held descriptors must close on cancellation
         if not stage_moved and prepared.stage_path is not None:
             _discard_stage(
                 root, stage, ignore_errors=True, lane=lane, stage_fd=prepared.stage_fd,
@@ -1766,6 +2109,8 @@ def _assert_prepared_stage_binding(
 
 def _assert_prepared_generation_binding(
     root: Path, prepared: _PreparedGeneration, *, lane: _CompanyFactsLane | None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
     name = prepared.installed_name
     if name is None:
@@ -1798,6 +2143,7 @@ def _assert_prepared_generation_binding(
             descriptor, label=f"installed {key} generation file",
             max_bytes=MAX_GENERATION_FILE_BYTES,
             expected_byte_length=expected["byte_length"],
+            deadline=deadline, monotonic=monotonic,
         )
         if _bytes_receipt(body) != {
             "sha256": expected.get("sha256"), "byte_length": expected.get("byte_length"),
@@ -1856,7 +2202,7 @@ def _hold_prepared_generation_files(prepared: _PreparedGeneration) -> None:
                 if descriptor is not None:
                     os.close(descriptor)
         prepared.generation_files = opened
-    except Exception:
+    except BaseException:  # noqa: BLE001 - partially opened descriptors must close
         for descriptor, _fingerprint in opened.values():
             os.close(descriptor)
         raise
@@ -1952,70 +2298,69 @@ def _publish_generation(
     signer: CompanyFactsSigner, head_guard: CompanyFactsHeadGuard,
     expected_witness: Mapping[str, Any] | None, expected_witness_token: str | None,
     expected_pointer: bytes | None, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
     """Seal artifacts, CAS the external head, then advance the local selector."""
-    if lane is not None:
-        _assert_lane_path_identity(lane)
-    _install_generation(root, prepared, lane=lane)
-    _assert_prepared_generation_binding(root, prepared, lane=lane)
+    if lane is None:
+        raise CompanyFactsIntakeError("Company Facts publication requires a held lane lease")
+    previous = receipt.get("previous_receipt")
+    if previous is not None and not isinstance(previous, Mapping):
+        raise CompanyFactsIntakeError(
+            "Company Facts immutable predecessor reference is malformed"
+        )
+    # Authenticate and retain the existing selected chain before creating any
+    # new immutable orphan. This also enforces the aggregate cap before the
+    # first irreversible publication-side filesystem boundary.
+    chain_snapshot = _capture_authenticated_chain_snapshot(
+        root, previous, signer=signer, lane=lane,
+        deadline=deadline, monotonic=monotonic,
+    )
+    if chain_snapshot.receipts and (
+        int(chain_snapshot.receipts[0]["sequence"]) + 1 != int(receipt["sequence"])
+    ):
+        raise CompanyFactsIntakeError(
+            "Company Facts immutable predecessor sequence changed before publish"
+        )
+    _require_deadline(deadline, monotonic, label="generation installation")
+    _assert_lane_path_identity(lane)
+    _install_generation(
+        root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+    )
+    _require_deadline(deadline, monotonic, label="generation installation")
+    _assert_prepared_generation_binding(
+        root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+    )
     receipt_body = _canonical_bytes(dict(receipt)) + b"\n"
     receipt_digest = str(receipt["receipt_id"]).rsplit(":", 1)[-1]
     immutable_relative = f"receipts/{receipt_digest}.json"
     immutable_path = root / immutable_relative
-    _write_immutable_bytes(immutable_path, receipt_body, root=root, lane=lane)
+    _require_deadline(deadline, monotonic, label="immutable receipt seal")
+    _write_immutable_bytes(
+        immutable_path, receipt_body, root=root, lane=lane,
+        deadline=deadline, monotonic=monotonic,
+    )
+    _require_deadline(deadline, monotonic, label="immutable receipt seal")
     with _open_companyfacts_directory(root, ("receipts",), lane=lane) as receipts_fd:
         held_receipt = _hold_regular_file_at(
             receipts_fd, f"{receipt_digest}.json", label="immutable receipt",
         )
     try:
-        def assert_prior_chain() -> None:
-            previous = receipt.get("previous_receipt")
-            if previous is None:
-                return
-            if not isinstance(previous, Mapping):
-                raise CompanyFactsIntakeError(
-                    "Company Facts immutable predecessor reference is malformed"
-                )
-            chain = _walk_receipt_chain(root, previous, signer=signer, lane=lane)
-            if int(chain[0]["sequence"]) + 1 != int(receipt["sequence"]):
-                raise CompanyFactsIntakeError(
-                    "Company Facts immutable predecessor sequence changed before publish"
-                )
-
         def assert_receipt() -> dict[str, Any]:
-            if lane is not None:
-                _assert_lane_path_identity(lane)
+            _assert_lane_path_identity(lane)
             with _open_companyfacts_directory(root, ("receipts",), lane=lane) as current_receipts_fd:
                 return _assert_held_regular_file_binding(
                     held_receipt, current_parent_fd=current_receipts_fd,
                     expected_body=receipt_body, max_bytes=MAX_RECEIPT_BYTES,
-                    label="immutable receipt",
+                    label="immutable receipt", deadline=deadline,
+                    monotonic=monotonic,
                 )
 
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-        assert_prior_chain()
-        # The first retained-FD read must bind both exact length and exact SHA to
-        # the canonical signed bytes; length alone is not publication evidence.
+        _assert_prepared_generation_binding(
+            root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+        )
         receipt_file = assert_receipt()
         witness = _head_witness(receipt=receipt, receipt_file=receipt_file, signer=signer)
-        # This is the authoritative exact-predecessor CAS. It must precede the
-        # local pointer. Recheck both immutable namespaces immediately before it.
-        if lane is not None:
-            _assert_lane_path_identity(lane)
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-        assert_prior_chain()
-        receipt_file = assert_receipt()
-        head_guard.advance(
-            expected=expected_witness,
-            expected_token=expected_witness_token,
-            candidate=witness,
-        )
-        # The remote CAS and local namespace cannot be one atomic transaction.
-        # A mutation during CAS may leave an external-head-ahead recovery state,
-        # but must never advance the local selector.
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-        assert_prior_chain()
-        receipt_file = assert_receipt()
         pointer: dict[str, Any] = {
             "schema": CURRENT_POINTER_SCHEMA,
             "receipt_id": receipt["receipt_id"],
@@ -2032,22 +2377,109 @@ def _publish_generation(
         )
         _validate_pointer_identity(pointer)
         pointer_body = _canonical_bytes(pointer) + b"\n"
-        # Make full-history and new-receipt validation the last operations before
-        # selector publication. Every prior receipt revalidates its generation.
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-        assert_prior_chain()
-        assert_receipt()
-        _atomic_write_bytes(
-            receipt_path, pointer_body, expected_previous=expected_pointer, root=root, lane=lane,
+        # Publication boundaries use cheap inode/ctime continuity checks and
+        # rehash only changed artifacts, avoiding full-history rewalks.
+        _assert_prepared_generation_binding(
+            root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
         )
-        if _file_receipt(
-            receipt_path, root=root, lane=lane, max_bytes=MAX_POINTER_BYTES,
-            expected_byte_length=len(pointer_body),
-        ) != _bytes_receipt(pointer_body):
-            raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
-        _assert_prepared_generation_binding(root, prepared, lane=lane)
-        assert_prior_chain()
+        _assert_authenticated_chain_snapshot(
+            root, chain_snapshot, lane=lane, deadline=deadline, monotonic=monotonic,
+        )
         assert_receipt()
+        _require_deadline(deadline, monotonic, label="external head commit")
+        marker = _build_publish_marker(
+            expected_witness=expected_witness, candidate_witness=witness,
+            expected_pointer=expected_pointer, candidate_pointer=pointer_body,
+            signer=signer,
+        )
+        marker_body = _write_publish_marker(
+            root, marker, lane=lane, deadline=deadline, monotonic=monotonic,
+        )
+        try:
+            _advance_head_before_deadline(
+                head_guard, expected=expected_witness,
+                expected_token=expected_witness_token, candidate=witness,
+                deadline=deadline, monotonic=monotonic,
+            )
+        except BaseException:
+            # The signed marker is intentionally retained. A daemon worker may
+            # still land the CAS after this frame returns, so local publication
+            # must stop and the next run must reconcile or fail closed.
+            raise
+
+        def recover_after_pointer_failure(error: BaseException) -> None:
+            restoration_error: BaseException | None = None
+            try:
+                _restore_authenticated_chain_snapshot(root, chain_snapshot, lane=lane)
+            except BaseException as exc:  # noqa: BLE001 - quarantine selector below
+                restoration_error = exc
+            pointer_error: BaseException | None = None
+            try:
+                if restoration_error is None:
+                    _rollback_local_pointer(
+                        root, receipt_path, candidate_pointer=pointer_body,
+                        expected_pointer=expected_pointer, lane=lane,
+                    )
+                else:
+                    _quarantine_candidate_pointer(
+                        root, receipt_path, candidate_pointer=pointer_body,
+                        expected_pointer=expected_pointer, lane=lane,
+                        include_expected=True,
+                    )
+            except BaseException as exc:  # noqa: BLE001 - retain recovery state
+                pointer_error = exc
+            message = (
+                "Company Facts publication failed after external head commit; "
+                "signed recovery marker retained"
+            )
+            if pointer_error is not None:
+                raise CompanyFactsPublishIndeterminate(message) from pointer_error
+            if restoration_error is not None:
+                raise CompanyFactsPublishIndeterminate(message) from restoration_error
+            raise CompanyFactsPublishIndeterminate(message) from error
+
+        try:
+            # External CAS is now authoritative. Any later failure is recovery-
+            # required and must never return a normal heartbeat.
+            _require_deadline(deadline, monotonic, label="post-CAS validation")
+            _assert_prepared_generation_binding(
+                root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+            _assert_authenticated_chain_snapshot(
+                root, chain_snapshot, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+            assert_receipt()
+            _require_deadline(deadline, monotonic, label="local pointer commit")
+            _atomic_write_bytes(
+                receipt_path, pointer_body, expected_previous=expected_pointer,
+                root=root, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+            _require_deadline(deadline, monotonic, label="local pointer commit")
+            if _file_receipt(
+                receipt_path, root=root, lane=lane, max_bytes=MAX_POINTER_BYTES,
+                expected_byte_length=len(pointer_body), deadline=deadline,
+                monotonic=monotonic,
+            ) != _bytes_receipt(pointer_body):
+                raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
+            _assert_prepared_generation_binding(
+                root, prepared, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+            _assert_authenticated_chain_snapshot(
+                root, chain_snapshot, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+            assert_receipt()
+        except BaseException as exc:  # noqa: BLE001 - selector rollback is mandatory
+            recover_after_pointer_failure(exc)
+        try:
+            _require_deadline(deadline, monotonic, label="publication marker cleanup")
+            _delete_publish_marker(root, marker_body, lane=lane)
+        except BaseException as exc:  # noqa: BLE001 - selected chain is already valid
+            # Do not roll back a fully revalidated selector merely because marker
+            # cleanup is uncertain. If the marker remains, the next run repeats
+            # exact candidate validation; if unlink landed, head and pointer agree.
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts publication marker cleanup is indeterminate"
+            ) from exc
         _release_prepared_stage(prepared)
     finally:
         _release_held_regular_file(held_receipt)
@@ -2706,6 +3138,87 @@ def _retention_verification(
     }
 
 
+def _require_deadline(
+    deadline: float | None, monotonic: Callable[[], float], *, label: str,
+) -> None:
+    if deadline is not None and monotonic() >= deadline:
+        raise CompanyFactsRunBudgetExceeded(f"Company Facts {label} exceeded run deadline")
+
+
+def _call_external_before_deadline(
+    operation: Callable[[], Any], *, deadline: float | None,
+    monotonic: Callable[[], float], label: str,
+    timeout_error: type[CompanyFactsIntakeError],
+) -> Any:
+    """Isolate an uncooperative external call inside the remaining wall clock."""
+    if deadline is None:
+        return operation()
+    remaining = deadline - monotonic()
+    if remaining <= 0:
+        raise timeout_error(f"Company Facts {label} exceeded run deadline")
+    completed = threading.Event()
+    result: dict[str, Any] = {}
+
+    def invoke() -> None:
+        try:
+            result["value"] = operation()
+        except BaseException as exc:  # noqa: BLE001 - forwarded fail closed
+            result["error"] = exc
+        finally:
+            completed.set()
+
+    threading.Thread(
+        target=invoke, name=f"companyfacts-{label.replace(' ', '-')}", daemon=True,
+    ).start()
+    if not completed.wait(remaining) or monotonic() >= deadline:
+        raise timeout_error(
+            f"Company Facts {label} exceeded remaining run deadline"
+        )
+    error = result.get("error")
+    if isinstance(error, BaseException):
+        raise error
+    return result.get("value")
+
+
+def _read_head_before_deadline(
+    head_guard: CompanyFactsHeadGuard, *, deadline: float | None,
+    monotonic: Callable[[], float],
+) -> tuple[dict[str, Any] | None, str | None]:
+    observed = _call_external_before_deadline(
+        head_guard.read, deadline=deadline, monotonic=monotonic,
+        label="external head read", timeout_error=CompanyFactsRunBudgetExceeded,
+    )
+    if (
+        not isinstance(observed, tuple)
+        or len(observed) != 2
+        or (observed[0] is not None and not isinstance(observed[0], Mapping))
+        or (observed[1] is not None and not isinstance(observed[1], str))
+    ):
+        raise CompanyFactsIntakeError("Company Facts external head read returned malformed state")
+    return (dict(observed[0]) if observed[0] is not None else None), observed[1]
+
+
+def _advance_head_before_deadline(
+    head_guard: CompanyFactsHeadGuard, *, expected: Mapping[str, Any] | None,
+    expected_token: str | None, candidate: Mapping[str, Any],
+    deadline: float | None, monotonic: Callable[[], float],
+) -> None:
+    try:
+        _call_external_before_deadline(
+            lambda: head_guard.advance(
+                expected=expected, expected_token=expected_token, candidate=candidate,
+            ),
+            deadline=deadline, monotonic=monotonic,
+            label="external head advance", timeout_error=CompanyFactsPublishIndeterminate,
+        )
+    except CompanyFactsPublishIndeterminate:
+        raise
+    except BaseException as exc:  # noqa: BLE001 - external CAS outcome may be ambiguous
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts external head advance failed with an indeterminate outcome"
+        ) from exc
+
+
 def _get_verified_before_deadline(
     store: Any, object_key: object, content_sha256: object, *,
     expected_byte_length: int, max_byte_length: int,
@@ -2929,6 +3442,10 @@ def _receipt_reference(
 def _read_receipt_reference(
     root: Path, reference: Mapping[str, Any], *, signer: CompanyFactsSigner,
     lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
+    artifact_observer: Callable[[str, bytes, tuple[Any, ...], int], None] | None = None,
 ) -> dict[str, Any]:
     receipt_id = str(reference.get("receipt_id") or "")
     digest = receipt_id.removeprefix("receipt:cs-companyfacts:")
@@ -2942,18 +3459,21 @@ def _read_receipt_reference(
         "sha256": reference.get("sha256"), "byte_length": reference.get("byte_length")
     }
     expected_length = expected_file["byte_length"]
-    if _file_receipt(
-        path, root=root, lane=lane, max_bytes=MAX_RECEIPT_BYTES,
-        expected_byte_length=expected_length,
-    ) != expected_file:
-        raise CompanyFactsIntakeError("immutable Company Facts receipt exact-byte mismatch")
+    if read_budget is not None:
+        read_budget.reserve(expected_length, label="immutable receipt")
     parts = _relative_parts(root, path)
     with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
-        body = _read_regular_bytes_at(
+        snapshot = _read_regular_snapshot_at(
             parent_fd, name, label="immutable receipt", max_bytes=MAX_RECEIPT_BYTES,
             expected_byte_length=expected_length,
+            deadline=deadline, monotonic=monotonic,
         )
-        assert body is not None
+        assert snapshot is not None
+        body, fingerprint = snapshot
+    if _bytes_receipt(body) != expected_file:
+        raise CompanyFactsIntakeError("immutable Company Facts receipt exact-byte mismatch")
+    if artifact_observer is not None:
+        artifact_observer(expected_relative, body, fingerprint, MAX_RECEIPT_BYTES)
     try:
         receipt = _native(json.loads(body))
     except Exception as exc:  # noqa: BLE001
@@ -2969,15 +3489,25 @@ def _read_receipt_reference(
     _validate_generation_identity(receipt)
     if receipt["receipt_id"] != receipt_id:
         raise CompanyFactsIntakeError("immutable receipt reference/receipt_id mismatch")
-    _validate_generation_files(root, receipt["generation"], lane=lane)
+    _validate_generation_files(
+        root, receipt["generation"], lane=lane, deadline=deadline,
+        monotonic=monotonic, read_budget=read_budget,
+        artifact_observer=artifact_observer,
+    )
     return dict(receipt)
 
 
 def _load_receipt_generation(
     root: Path, receipt: Mapping[str, Any], *, lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Authenticate one receipt's exact immutable generation and commitments."""
-    source_body, coverage_body = _generation_bodies(root, receipt["generation"], lane=lane)
+    source_body, coverage_body = _generation_bodies(
+        root, receipt["generation"], lane=lane, deadline=deadline,
+        monotonic=monotonic, read_budget=read_budget,
+    )
     source_records = _records(_read_ledger_bytes(source_body, _SOURCE_MANIFEST_COLUMNS, label="committed source manifest"))
     coverage_records = _records(_read_ledger_bytes(coverage_body, _COVERAGE_COLUMNS, label="committed coverage"))
     if _ledger_receipt(source_records) != receipt["companyfacts_manifest_ledger"]:
@@ -2990,16 +3520,25 @@ def _load_receipt_generation(
 def _walk_receipt_chain(
     root: Path, current_reference: Mapping[str, Any], *, signer: CompanyFactsSigner,
     lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+    read_budget: _AggregateReadBudget | None = None,
+    artifact_observer: Callable[[str, bytes, tuple[Any, ...], int], None] | None = None,
 ) -> list[dict[str, Any]]:
     chain: list[dict[str, Any]] = []
     seen: set[str] = set()
     reference: Mapping[str, Any] | None = current_reference
     while reference is not None:
+        _require_deadline(deadline, monotonic, label="receipt-chain validation")
         if len(chain) >= MAX_RECEIPT_CHAIN_LENGTH:
             raise CompanyFactsIntakeError(
                 "Company Facts receipt chain reached its hard checkpoint/compaction boundary"
             )
-        receipt = _read_receipt_reference(root, reference, signer=signer, lane=lane)
+        receipt = _read_receipt_reference(
+            root, reference, signer=signer, lane=lane, deadline=deadline,
+            monotonic=monotonic, read_budget=read_budget,
+            artifact_observer=artifact_observer,
+        )
         receipt_id = str(receipt["receipt_id"])
         if receipt_id in seen:
             raise CompanyFactsIntakeError("Company Facts receipt chain contains a cycle")
@@ -3018,6 +3557,321 @@ def _walk_receipt_chain(
     if not chain or int(chain[-1]["sequence"]) != 1 or chain[-1].get("previous_receipt") is not None:
         raise CompanyFactsIntakeError("Company Facts receipt chain has no valid genesis")
     return chain
+
+
+def _capture_authenticated_chain_snapshot(
+    root: Path, current_reference: Mapping[str, Any] | None, *,
+    signer: CompanyFactsSigner, lane: _CompanyFactsLane | None,
+    deadline: float | None, monotonic: Callable[[], float],
+) -> _AuthenticatedChainSnapshot:
+    """Read the predecessor chain once and retain exact recovery bytes.
+
+    The aggregate cap turns the former five unbounded-history rewalks into one
+    bounded authentication pass. Later publication boundaries use inode/ctime
+    fingerprints and only rehash an artifact whose metadata changed. Under the
+    explicit same-OS-user threat boundary, ctime cannot be restored by an
+    unprivileged writer; exact bytes are still rechecked before accepting any
+    changed fingerprint.
+    """
+    if current_reference is None:
+        return _AuthenticatedChainSnapshot(receipts=[], artifacts={}, total_bytes=0)
+    budget = _AggregateReadBudget(
+        max_bytes=MAX_PUBLISH_CHAIN_SNAPSHOT_BYTES,
+        deadline=deadline,
+        monotonic=monotonic,
+    )
+    artifacts: dict[str, _ChainArtifactSnapshot] = {}
+
+    def observe(
+        relative_path: str, body: bytes, fingerprint: tuple[Any, ...], max_bytes: int,
+    ) -> None:
+        existing = artifacts.get(relative_path)
+        if existing is not None:
+            if existing.body != body:
+                raise CompanyFactsIntakeError(
+                    "Company Facts predecessor snapshot path has divergent bytes"
+                )
+            existing.fingerprint = fingerprint
+            return
+        artifacts[relative_path] = _ChainArtifactSnapshot(
+            relative_path=relative_path, body=body,
+            fingerprint=fingerprint, max_bytes=max_bytes,
+        )
+
+    chain = _walk_receipt_chain(
+        root, current_reference, signer=signer, lane=lane,
+        deadline=deadline, monotonic=monotonic, read_budget=budget,
+        artifact_observer=observe,
+    )
+    return _AuthenticatedChainSnapshot(
+        receipts=chain, artifacts=artifacts, total_bytes=budget.consumed,
+    )
+
+
+def _assert_authenticated_chain_snapshot(
+    root: Path, snapshot: _AuthenticatedChainSnapshot, *,
+    lane: _CompanyFactsLane | None, deadline: float | None,
+    monotonic: Callable[[], float],
+) -> None:
+    for artifact in snapshot.artifacts.values():
+        _require_deadline(deadline, monotonic, label="predecessor snapshot validation")
+        parts = _safe_relative_parts(artifact.relative_path)
+        with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
+            descriptor: int | None = None
+            try:
+                descriptor = os.open(
+                    name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd,
+                )
+                metadata = os.fstat(descriptor)
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise CompanyFactsIntakeError(
+                        "Company Facts predecessor snapshot target is not a regular file"
+                    )
+                bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+                if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+                    metadata.st_dev, metadata.st_ino,
+                ):
+                    raise CompanyFactsIntakeError(
+                        "Company Facts predecessor snapshot target was rebound"
+                    )
+                fingerprint = _regular_metadata_fingerprint(metadata)
+                after = metadata
+                if fingerprint != artifact.fingerprint:
+                    body = _read_regular_descriptor_bytes(
+                        descriptor, label="changed predecessor snapshot artifact",
+                        max_bytes=artifact.max_bytes,
+                        expected_byte_length=len(artifact.body),
+                        deadline=deadline, monotonic=monotonic,
+                    )
+                    if not hmac.compare_digest(
+                        sha256(body).digest(), sha256(artifact.body).digest(),
+                    ):
+                        raise CompanyFactsIntakeError(
+                            "Company Facts authenticated predecessor chain changed during publish"
+                        )
+                    after = os.fstat(descriptor)
+                    rebound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+                    if stat.S_ISLNK(rebound.st_mode) or (rebound.st_dev, rebound.st_ino) != (
+                        after.st_dev, after.st_ino,
+                    ):
+                        raise CompanyFactsIntakeError(
+                            "Company Facts predecessor snapshot target was rebound during rehash"
+                        )
+                held_parent = os.fstat(parent_fd)
+                with _open_companyfacts_parent(root, parts, lane=lane) as (
+                    current_parent_fd, current_name,
+                ):
+                    current_parent = os.fstat(current_parent_fd)
+                    current_bound = os.stat(
+                        current_name, dir_fd=current_parent_fd, follow_symlinks=False,
+                    )
+                if (
+                    (current_parent.st_dev, current_parent.st_ino) != (
+                        held_parent.st_dev, held_parent.st_ino,
+                    )
+                    or stat.S_ISLNK(current_bound.st_mode)
+                    or (current_bound.st_dev, current_bound.st_ino) != (
+                        after.st_dev, after.st_ino,
+                    )
+                ):
+                    raise CompanyFactsIntakeError(
+                        "Company Facts predecessor snapshot parent path was rebound"
+                    )
+                if lane is not None:
+                    _assert_lane_path_identity(lane)
+                if fingerprint != artifact.fingerprint:
+                    artifact.fingerprint = _regular_metadata_fingerprint(after)
+            except FileNotFoundError as exc:
+                raise CompanyFactsIntakeError(
+                    "Company Facts authenticated predecessor artifact disappeared during publish"
+                ) from exc
+            finally:
+                if descriptor is not None:
+                    os.close(descriptor)
+
+
+def _restore_authenticated_chain_snapshot(
+    root: Path, snapshot: _AuthenticatedChainSnapshot, *,
+    lane: _CompanyFactsLane,
+) -> None:
+    """Restore only exact bytes authenticated before the external CAS.
+
+    This is a same-process recovery guarantee, not protection from an actor who
+    can both mutate the lane and replace this process or its signing secret.
+    """
+    for artifact in snapshot.artifacts.values():
+        parts = _safe_relative_parts(artifact.relative_path)
+        with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
+            current = _read_regular_bytes_at(
+                parent_fd, name, label="predecessor recovery artifact",
+                max_bytes=artifact.max_bytes, missing_ok=True,
+            )
+        if current != artifact.body:
+            _atomic_replace_bounded_bytes(
+                root / artifact.relative_path, artifact.body,
+                expected_previous=current, root=root, lane=lane,
+                max_bytes=artifact.max_bytes, label="predecessor recovery artifact",
+            )
+        with _open_companyfacts_parent(root, parts, lane=lane) as (parent_fd, name):
+            restored = _read_regular_snapshot_at(
+                parent_fd, name, label="restored predecessor artifact",
+                max_bytes=artifact.max_bytes,
+                expected_byte_length=len(artifact.body),
+            )
+        assert restored is not None
+        restored_body, fingerprint = restored
+        if not hmac.compare_digest(
+            sha256(restored_body).digest(), sha256(artifact.body).digest(),
+        ):
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts predecessor artifact restoration failed"
+            )
+        artifact.fingerprint = fingerprint
+
+
+def _read_current_pointer_body(
+    root: Path, *, lane: _CompanyFactsLane,
+) -> bytes | None:
+    with _open_companyfacts_directory(root, lane=lane) as root_fd:
+        return _read_regular_bytes_at(
+            root_fd, "coverage_receipt.json", label="current pointer",
+            max_bytes=MAX_POINTER_BYTES, missing_ok=True,
+        )
+
+
+def _rollback_local_pointer(
+    root: Path, receipt_path: Path, *, candidate_pointer: bytes,
+    expected_pointer: bytes | None, lane: _CompanyFactsLane,
+) -> None:
+    observed = _read_current_pointer_body(root, lane=lane)
+    if observed == expected_pointer:
+        return
+    if observed != candidate_pointer:
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts local pointer cannot be safely rolled back"
+        )
+    if expected_pointer is not None:
+        _atomic_replace_bounded_bytes(
+            receipt_path, expected_pointer, expected_previous=candidate_pointer,
+            root=root, lane=lane, max_bytes=MAX_POINTER_BYTES,
+            label="recovery pointer",
+        )
+        return
+    with _open_companyfacts_directory(root, lane=lane) as root_fd:
+        current = _read_regular_bytes_at(
+            root_fd, receipt_path.name, label="current pointer",
+            max_bytes=MAX_POINTER_BYTES,
+            expected_byte_length=len(candidate_pointer),
+        )
+        if current != candidate_pointer:
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts bootstrap pointer changed before rollback"
+            )
+        os.unlink(receipt_path.name, dir_fd=root_fd)
+        _fsync_held_directory(root_fd, root)
+
+
+def _quarantine_candidate_pointer(
+    root: Path, receipt_path: Path, *, candidate_pointer: bytes,
+    expected_pointer: bytes | None, lane: _CompanyFactsLane,
+    include_expected: bool = False,
+) -> None:
+    observed = _read_current_pointer_body(root, lane=lane)
+    if observed is None or (observed == expected_pointer and not include_expected):
+        return
+    if observed not in {candidate_pointer, expected_pointer}:
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts unsafe candidate pointer cannot be quarantined"
+        )
+    with _open_companyfacts_directory(root, lane=lane) as root_fd:
+        rebound = _read_regular_bytes_at(
+            root_fd, receipt_path.name, label="unsafe candidate pointer",
+            max_bytes=MAX_POINTER_BYTES,
+            expected_byte_length=len(observed),
+        )
+        if rebound != observed:
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts unsafe candidate pointer changed before quarantine"
+            )
+        os.unlink(receipt_path.name, dir_fd=root_fd)
+        _fsync_held_directory(root_fd, root)
+
+
+def _recover_pending_publish(
+    *, root: Path, receipt_path: Path, lane: _CompanyFactsLane,
+    signer: CompanyFactsSigner, witnessed_head: Mapping[str, Any] | None,
+    deadline: float | None, monotonic: Callable[[], float],
+) -> bool:
+    pending = _read_publish_marker(
+        root, lane=lane, signer=signer, deadline=deadline, monotonic=monotonic,
+    )
+    if pending is None:
+        return False
+    marker, marker_body = pending
+    expected_pointer, candidate_pointer = _validate_publish_marker(marker, signer=signer)
+    expected_witness = marker["expected_witness"]
+    candidate_witness = marker["candidate_witness"]
+    normalized_head = dict(witnessed_head) if witnessed_head is not None else None
+    if normalized_head == (dict(expected_witness) if expected_witness is not None else None):
+        # An isolated CAS worker may still complete later. Never clear its marker
+        # merely because one read observed the old head.
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts external head advance remains unresolved; recovery required"
+        )
+    if normalized_head != dict(candidate_witness):
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending publication has an unexpected external head"
+        )
+    local_pointer = _read_current_pointer_body(root, lane=lane)
+    if local_pointer not in {expected_pointer, candidate_pointer}:
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending publication has an unexpected local pointer"
+        )
+    candidate = _pointer_from_body(candidate_pointer, label="recovery candidate")
+    assert candidate is not None
+    reference = {
+        "receipt_id": candidate["receipt_id"], "path": candidate["receipt_path"],
+        "sha256": candidate["receipt_sha256"],
+        "byte_length": candidate["receipt_byte_length"],
+    }
+    snapshot = _capture_authenticated_chain_snapshot(
+        root, reference, signer=signer, lane=lane,
+        deadline=deadline, monotonic=monotonic,
+    )
+    if not snapshot.receipts or not _pointer_matches_head(candidate, candidate_witness):
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending candidate cannot be authenticated for recovery"
+        )
+    try:
+        _require_deadline(deadline, monotonic, label="pending pointer recovery")
+        if local_pointer == expected_pointer:
+            _atomic_write_bytes(
+                receipt_path, candidate_pointer, expected_previous=expected_pointer,
+                root=root, lane=lane, deadline=deadline, monotonic=monotonic,
+            )
+        if _read_current_pointer_body(root, lane=lane) != candidate_pointer:
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts pending candidate pointer recovery failed"
+            )
+        _assert_authenticated_chain_snapshot(
+            root, snapshot, lane=lane, deadline=deadline, monotonic=monotonic,
+        )
+    except BaseException as exc:  # noqa: BLE001 - rollback keeps recovery fail closed
+        try:
+            _restore_authenticated_chain_snapshot(root, snapshot, lane=lane)
+            _rollback_local_pointer(
+                root, receipt_path, candidate_pointer=candidate_pointer,
+                expected_pointer=expected_pointer, lane=lane,
+            )
+        except BaseException as recovery_exc:  # noqa: BLE001
+            raise CompanyFactsPublishIndeterminate(
+                "Company Facts pending candidate recovery rollback failed"
+            ) from recovery_exc
+        raise CompanyFactsPublishIndeterminate(
+            "Company Facts pending candidate recovery remains incomplete"
+        ) from exc
+    _delete_publish_marker(root, marker_body, lane=lane)
+    return True
 
 
 def _assert_receipt_chain_prefixes(
@@ -3041,6 +3895,8 @@ def _load_committed_bundle(
     *, root: Path, receipt_path: Path, anchor_records: Sequence[Mapping[str, Any]],
     signer: CompanyFactsSigner | None = None, head_witness: Mapping[str, Any] | None = None,
     lane: _CompanyFactsLane | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
     """Load only the generation selected by an authenticated immutable receipt chain."""
     if lane is not None:
@@ -3064,6 +3920,7 @@ def _load_committed_bundle(
                 pointer_body = _read_regular_bytes_at(
                     parent_fd, pointer_name, label="current pointer",
                     max_bytes=MAX_POINTER_BYTES, missing_ok=True,
+                    deadline=deadline, monotonic=monotonic,
                 )
     except CompanyFactsPathMissing:
         # A securely proven missing root is an empty bootstrap. Unsafe ancestors
@@ -3096,7 +3953,15 @@ def _load_committed_bundle(
         "receipt_id": pointer["receipt_id"], "path": pointer["receipt_path"],
         "sha256": pointer["receipt_sha256"], "byte_length": pointer["receipt_byte_length"],
     }
-    chain = _walk_receipt_chain(root, current_reference, signer=signer, lane=lane)
+    read_budget = _AggregateReadBudget(
+        max_bytes=MAX_COMMITTED_CHAIN_READ_BYTES,
+        deadline=deadline,
+        monotonic=monotonic,
+    )
+    chain = _walk_receipt_chain(
+        root, current_reference, signer=signer, lane=lane,
+        deadline=deadline, monotonic=monotonic, read_budget=read_budget,
+    )
     receipt = chain[0]
     if (
         pointer["generation_id"] != receipt["generation"]["generation_id"]
@@ -3108,6 +3973,7 @@ def _load_committed_bundle(
         root / str(pointer["receipt_path"]), root=root, lane=lane,
         max_bytes=MAX_RECEIPT_BYTES,
         expected_byte_length=pointer["receipt_byte_length"],
+        deadline=deadline, monotonic=monotonic,
     )
     head_previous = receipt.get("previous_receipt")
     expected_head = {
@@ -3125,8 +3991,10 @@ def _load_committed_bundle(
     prior_sources: list[dict[str, Any]] = []
     prior_coverage: list[dict[str, Any]] = []
     for chained_receipt in reversed(chain):
+        _require_deadline(deadline, monotonic, label="committed chain semantic validation")
         chained_sources, chained_coverage = _load_receipt_generation(
-            root, chained_receipt, lane=lane,
+            root, chained_receipt, lane=lane, deadline=deadline,
+            monotonic=monotonic, read_budget=read_budget,
         )
         anchor_count = int(chained_receipt["anchor_manifest_ledger"]["record_count"])
         if anchor_count > len(anchor_records):
@@ -3692,17 +4560,26 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         with _companyfacts_publish_lease(root) as lane:
             _assert_lane_path_identity(lane)
             signer, head_guard = self._trust_context()
-            witnessed_head, witnessed_token = head_guard.read()
+            witnessed_head, witnessed_token = _read_head_before_deadline(
+                head_guard, deadline=self._run_deadline, monotonic=self._monotonic,
+            )
+            _recover_pending_publish(
+                root=root, receipt_path=receipt_path, lane=lane, signer=signer,
+                witnessed_head=witnessed_head, deadline=self._run_deadline,
+                monotonic=self._monotonic,
+            )
             source_stores = self._source_stores()
             anchor_frame = _read_ledger(anchor_path, [
                 "schema", "manifest_id", "source_system", "source_id", "issuer", "filing", "document",
                 "retrieval", "storage", "rights", "privacy", "parser", "spans",
-            ], max_bytes=MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd)
+            ], max_bytes=MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd,
+                deadline=self._run_deadline, monotonic=self._monotonic)
             anchor_records = _records(anchor_frame)
             anchors = _complete_submission_anchor_candidates(anchor_records)
             existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
                 root=root, receipt_path=receipt_path, anchor_records=anchor_records,
                 signer=signer, head_witness=witnessed_head, lane=lane,
+                deadline=self._run_deadline, monotonic=self._monotonic,
             )
             selection_as_of = _strict_utc(self._now_fn(), field="selection_as_of")
             retention_plan = _retention_audit_plan(existing_manifests, selection_as_of=selection_as_of)
@@ -3930,9 +4807,9 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     root=root, receipt_path=receipt_path, receipt=sealed_receipt, prepared=prepared,
                     signer=signer, head_guard=head_guard, expected_witness=witnessed_head,
                     expected_witness_token=witnessed_token, expected_pointer=expected_pointer,
-                    lane=lane,
+                    lane=lane, deadline=self._run_deadline, monotonic=self._monotonic,
                 )
-            except Exception:
+            except BaseException:  # noqa: BLE001 - release retained stage on cancellation
                 _discard_prepared_generation(prepared, lane=lane)
                 raise
             return heartbeat(

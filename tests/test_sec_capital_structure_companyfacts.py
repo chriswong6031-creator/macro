@@ -109,12 +109,14 @@ def _payload(cik: str = "0001234567") -> bytes:
 
 def _adapter(
     tmp_path, monkeypatch, response: Response, *, source_store=None, source_stores=None,
-    max_ciks=24, clock=None, **limits,
+    max_ciks=24, clock=None, signer=None, head_guard=None, **limits,
 ):
     root = tmp_path / "data" / "capital_structure" / "companyfacts"
     monkeypatch.setattr(companyfacts, "_data_root", lambda: root)
-    signer = companyfacts.DeterministicTestCompanyFactsSigner("T" * 32, key_id="companyfacts-test-v1")
-    guard = companyfacts.InMemoryCompanyFactsHeadGuard(signer)
+    signer = signer or companyfacts.DeterministicTestCompanyFactsSigner(
+        "T" * 32, key_id="companyfacts-test-v1",
+    )
+    guard = head_guard or companyfacts.InMemoryCompanyFactsHeadGuard(signer)
     _TEST_TRUST[str(root)] = (signer, guard)
     ticks = [1.0]
     def monotonic():
@@ -556,7 +558,11 @@ def test_last_good_selection_survives_each_publish_stage_fault(tmp_path, monkeyp
         raise OSError(f"injected {target} fault")
 
     monkeypatch.setattr(companyfacts, target, explode)
-    with pytest.raises(OSError, match="injected"):
+    expected_error = (
+        companyfacts.CompanyFactsPublishIndeterminate
+        if target == "_atomic_write_bytes" else OSError
+    )
+    with pytest.raises(expected_error, match="signed recovery marker|injected"):
         adapter.fetch(full_history=True)
     assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
     if target == "_atomic_write_bytes":
@@ -568,6 +574,44 @@ def test_last_good_selection_survives_each_publish_stage_fault(tmp_path, monkeyp
     loaded_sources, loaded_coverage, loaded_receipt = _load_selected(root, anchor)
     assert len(loaded_sources) == len(loaded_coverage) == 1
     assert loaded_receipt["sequence"] == 1
+
+
+def test_baseexception_after_generation_prepare_closes_stage_and_removes_orphan(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    _, guard = _trust(root)
+    original_prepare = companyfacts._prepare_generation
+    captured = {}
+
+    def capture_prepare(*args, **kwargs):
+        prepared = original_prepare(*args, **kwargs)
+        captured["prepared"] = prepared
+        captured["stage_fd"] = prepared.stage_fd
+        return prepared
+
+    def cancel_after_prepare(*args, **kwargs):
+        raise KeyboardInterrupt("injected cancellation after generation prepare")
+
+    monkeypatch.setattr(companyfacts, "_prepare_generation", capture_prepare)
+    monkeypatch.setattr(companyfacts, "_coverage_receipt", cancel_after_prepare)
+    with pytest.raises(KeyboardInterrupt, match="injected cancellation"):
+        adapter.fetch()
+
+    prepared = captured["prepared"]
+    assert prepared.stage_fd is None
+    assert prepared.stage_path is None
+    assert prepared.generation_files == {}
+    with pytest.raises(OSError):
+        os.fstat(captured["stage_fd"])
+    assert not any(path.name.startswith(".generation-stage-") for path in root.iterdir())
+    assert guard.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+    assert list((root / "generations").iterdir()) == []
+    assert list((root / "receipts").iterdir()) == []
 
 
 def test_startup_refuses_tampered_pointer_or_selected_generation_before_network(tmp_path, monkeypatch):
@@ -1519,13 +1563,13 @@ def test_held_lane_rejects_root_rename_swap_before_install_or_external_commit(
     original_install = companyfacts._install_generation
     swapped = False
 
-    def swap_then_install(root_arg, prepared, *, lane=None):
+    def swap_then_install(root_arg, prepared, *, lane=None, **kwargs):
         nonlocal swapped
         assert root_arg == root and lane is not None and not swapped
         swapped = True
         root.rename(displaced)
         root.mkdir(mode=0o700)
-        return original_install(root_arg, prepared, lane=lane)
+        return original_install(root_arg, prepared, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="lane root was rebound"):
@@ -1554,11 +1598,11 @@ def test_held_lane_rejects_generations_directory_swap_before_install_or_external
     marker = outside_origin / "marker.txt"
     marker.write_text("outside")
 
-    def swap_then_install(root_arg, prepared, *, lane=None):
+    def swap_then_install(root_arg, prepared, *, lane=None, **kwargs):
         assert lane is not None
         (root / "generations").rename(trusted_displaced)
         outside_origin.rename(root / "generations")
-        return original_install(root_arg, prepared, lane=lane)
+        return original_install(root_arg, prepared, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generations namespace was rebound"):
@@ -1589,13 +1633,13 @@ def test_held_stage_inode_rejects_stage_directory_swap_before_install(
     displaced_stage = tmp_path / "sealed-stage-displaced"
     replacement_stage = None
 
-    def swap_then_install(root_arg, prepared, *, lane=None):
+    def swap_then_install(root_arg, prepared, *, lane=None, **kwargs):
         nonlocal replacement_stage
         assert prepared.stage_path is not None and prepared.stage_fd is not None
         replacement_stage = prepared.stage_path
         prepared.stage_path.rename(displaced_stage)
         outside_origin.rename(prepared.stage_path)
-        return original_install(root_arg, prepared, lane=lane)
+        return original_install(root_arg, prepared, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_install_generation", swap_then_install)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generation stage was rebound"):
@@ -1623,11 +1667,11 @@ def test_held_lane_rejects_receipts_directory_swap_before_receipt_or_external_co
     marker = outside_origin / "marker.txt"
     marker.write_text("outside")
 
-    def swap_then_write(path, content, *, root=None, lane=None):
+    def swap_then_write(path, content, *, root=None, lane=None, **kwargs):
         assert lane is not None and root is not None
         (root / "receipts").rename(trusted_displaced)
         outside_origin.rename(root / "receipts")
-        return original_write(path, content, root=root, lane=lane)
+        return original_write(path, content, root=root, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_write_immutable_bytes", swap_then_write)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="receipts namespace was rebound"):
@@ -1655,7 +1699,7 @@ def test_held_generation_descriptor_rejects_post_install_swap_before_external_co
     displaced = tmp_path / "sealed-generation-displaced"
     replacement = None
 
-    def swap_then_write(path, content, *, root=None, lane=None):
+    def swap_then_write(path, content, *, root=None, lane=None, **kwargs):
         nonlocal replacement
         assert root is not None and lane is not None
         generations = [entry for entry in (root / "generations").iterdir() if entry.is_dir()]
@@ -1663,7 +1707,7 @@ def test_held_generation_descriptor_rejects_post_install_swap_before_external_co
         replacement = generations[0]
         replacement.rename(displaced)
         outside_origin.rename(replacement)
-        return original_write(path, content, root=root, lane=lane)
+        return original_write(path, content, root=root, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_write_immutable_bytes", swap_then_write)
     with pytest.raises(companyfacts.CompanyFactsIntakeError, match="installed generation was rebound"):
@@ -1685,7 +1729,7 @@ def test_held_generation_descriptor_rehashes_descendant_files_before_external_co
     original_write = companyfacts._write_immutable_bytes
     mutated = False
 
-    def mutate_generation_then_write(path, content, *, root=None, lane=None):
+    def mutate_generation_then_write(path, content, *, root=None, lane=None, **kwargs):
         nonlocal mutated
         assert root is not None and lane is not None
         generation = next(entry for entry in (root / "generations").iterdir() if entry.is_dir())
@@ -1693,7 +1737,7 @@ def test_held_generation_descriptor_rehashes_descendant_files_before_external_co
         body = source_path.read_bytes()
         source_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
         mutated = True
-        return original_write(path, content, root=root, lane=lane)
+        return original_write(path, content, root=root, lane=lane, **kwargs)
 
     monkeypatch.setattr(companyfacts, "_write_immutable_bytes", mutate_generation_then_write)
     with pytest.raises(
@@ -1731,7 +1775,7 @@ def test_generation_swap_during_external_cas_never_commits_local_pointer(
         original_advance(**kwargs)
 
     monkeypatch.setattr(guard, "advance", swap_during_advance)
-    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="installed generation was rebound"):
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
         adapter.fetch()
     witnessed, _ = guard.read()
     assert witnessed is not None  # Remote CAS won; recovery must remain fail closed.
@@ -1792,10 +1836,7 @@ def test_receipt_mutation_during_external_cas_never_commits_local_pointer(
         original_advance(**kwargs)
 
     monkeypatch.setattr(guard, "advance", mutate_during_advance)
-    with pytest.raises(
-        companyfacts.CompanyFactsIntakeError,
-        match="immutable receipt descriptor metadata changed|immutable receipt exact-byte receipt mismatch",
-    ):
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
         adapter.fetch()
     witnessed, _ = guard.read()
     assert mutated and witnessed is not None
@@ -1849,6 +1890,323 @@ def test_publish_revalidates_entire_prior_receipt_and_generation_chain(
     witnessed, _ = guard.read()
     assert mutated and witnessed == prior_witness
     assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+
+
+@pytest.mark.parametrize("mutation_target", ["receipt", "generation"])
+def test_post_pointer_history_mutation_rolls_back_and_restart_recovers_candidate(
+    tmp_path, monkeypatch, mutation_target,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    seq1_path = next((root / "receipts").glob("*.json"))
+    seq1_receipt = json.loads(seq1_path.read_text())
+    mutation_path = (
+        seq1_path if mutation_target == "receipt"
+        else root / seq1_receipt["generation"]["source_manifest"]["path"]
+    )
+    original_body = mutation_path.read_bytes()
+    original_atomic_write = companyfacts._atomic_write_bytes
+    mutated = False
+
+    def mutate_history_after_pointer(path, content, **kwargs):
+        nonlocal mutated
+        original_atomic_write(path, content, **kwargs)
+        if path == root / "coverage_receipt.json" and content != prior_pointer:
+            body = mutation_path.read_bytes()
+            mutation_path.write_bytes(bytes([body[0] ^ 1]) + body[1:])
+            mutated = True
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", mutate_history_after_pointer)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
+        adapter.fetch(full_history=True)
+    assert mutated
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    assert mutation_path.read_bytes() == original_body
+    _, guard = _trust(root)
+    witnessed, _ = guard.read()
+    assert witnessed is not None and witnessed["sequence"] == 2
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", original_atomic_write)
+    adapter.fetch()
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    _, recovered_receipt, _, recovered_coverage = _selected(root)
+    assert recovered_receipt["sequence"] == 2
+    assert len(recovered_coverage) == 2
+
+
+def test_post_pointer_rehash_rejects_path_swap_after_held_fd_read(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    victim = next((root / "receipts").glob("*.json"))
+    original_body = victim.read_bytes()
+    displaced = tmp_path / "post-read-displaced-receipt.json"
+    original_atomic_write = companyfacts._atomic_write_bytes
+    original_descriptor_read = companyfacts._read_regular_descriptor_bytes
+    pointer_committed = False
+    swapped = False
+
+    def touch_history_after_pointer(path, content, **kwargs):
+        nonlocal pointer_committed
+        original_atomic_write(path, content, **kwargs)
+        if path == root / "coverage_receipt.json" and content != prior_pointer:
+            os.utime(victim, None)
+            pointer_committed = True
+
+    def swap_path_after_held_read(descriptor, **kwargs):
+        nonlocal swapped
+        body = original_descriptor_read(descriptor, **kwargs)
+        if (
+            pointer_committed
+            and not swapped
+            and kwargs.get("label") == "changed predecessor snapshot artifact"
+        ):
+            victim.rename(displaced)
+            victim.write_bytes(bytes([original_body[0] ^ 1]) + original_body[1:])
+            swapped = True
+        return body
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", touch_history_after_pointer)
+    monkeypatch.setattr(companyfacts, "_read_regular_descriptor_bytes", swap_path_after_held_read)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
+        adapter.fetch(full_history=True)
+    assert pointer_committed and swapped
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    assert victim.read_bytes() == original_body
+
+
+def test_post_pointer_rehash_rejects_generation_parent_swap_after_read(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    seq1_path = next((root / "receipts").glob("*.json"))
+    seq1 = json.loads(seq1_path.read_text())
+    victim = root / seq1["generation"]["source_manifest"]["path"]
+    generation_dir = victim.parent
+    original_body = victim.read_bytes()
+    displaced = tmp_path / "post-read-displaced-generation"
+    original_atomic_write = companyfacts._atomic_write_bytes
+    original_descriptor_read = companyfacts._read_regular_descriptor_bytes
+    pointer_committed = False
+    swapped = False
+
+    def touch_generation_after_pointer(path, content, **kwargs):
+        nonlocal pointer_committed
+        original_atomic_write(path, content, **kwargs)
+        if path == root / "coverage_receipt.json" and content != prior_pointer:
+            os.utime(victim, None)
+            pointer_committed = True
+
+    def swap_parent_after_held_read(descriptor, **kwargs):
+        nonlocal swapped
+        body = original_descriptor_read(descriptor, **kwargs)
+        if (
+            pointer_committed
+            and not swapped
+            and kwargs.get("label") == "changed predecessor snapshot artifact"
+        ):
+            generation_dir.rename(displaced)
+            generation_dir.mkdir()
+            victim.write_bytes(bytes([original_body[0] ^ 1]) + original_body[1:])
+            swapped = True
+        return body
+
+    monkeypatch.setattr(companyfacts, "_atomic_write_bytes", touch_generation_after_pointer)
+    monkeypatch.setattr(companyfacts, "_read_regular_descriptor_bytes", swap_parent_after_held_read)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="recovery marker"):
+        adapter.fetch(full_history=True)
+    assert pointer_committed and swapped
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    assert victim.read_bytes() == original_body
+
+
+def test_delayed_external_head_success_times_out_without_pointer_then_recovers(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    signer = companyfacts.DeterministicTestCompanyFactsSigner(
+        b"deadline-head-success-secret-32-bytes!!", key_id="deadline-head-success",
+    )
+    delegate = companyfacts.InMemoryCompanyFactsHeadGuard(signer)
+    finished = threading.Event()
+
+    class SlowSuccessGuard:
+        def read(self):
+            return delegate.read()
+
+        @staticmethod
+        def advance(**kwargs):
+            time.sleep(1.15)
+            delegate.advance(**kwargs)
+            finished.set()
+
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=SlowSuccessGuard(), max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    began = time.monotonic()
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="head advance"):
+        adapter.fetch()
+    assert time.monotonic() - began < 1.14
+    assert not (root / "coverage_receipt.json").exists()
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert finished.wait(1.5)
+    witnessed, _ = delegate.read()
+    assert witnessed is not None and witnessed["sequence"] == 1
+
+    recovered, _ = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=SlowSuccessGuard(), max_run_seconds=5.0,
+    )
+    recovered.fetch()
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    _, receipt, _, _ = _selected(root)
+    assert receipt["sequence"] == 1
+
+
+def test_delayed_external_head_failure_stays_recovery_required(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    signer = companyfacts.DeterministicTestCompanyFactsSigner(
+        b"deadline-head-failure-secret-32-bytes!!", key_id="deadline-head-failure",
+    )
+    delegate = companyfacts.InMemoryCompanyFactsHeadGuard(signer)
+    finished = threading.Event()
+
+    class SlowFailureGuard:
+        def read(self):
+            return delegate.read()
+
+        @staticmethod
+        def advance(**_kwargs):
+            time.sleep(1.15)
+            finished.set()
+            raise OSError("late CAS failure")
+
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=SlowFailureGuard(), max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="head advance"):
+        adapter.fetch()
+    assert finished.wait(1.5)
+    assert delegate.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="unresolved"):
+        adapter.fetch()
+    assert (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+
+
+def test_initial_external_head_read_is_deadline_isolated(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    signer = companyfacts.DeterministicTestCompanyFactsSigner(
+        b"deadline-head-read-secret-32-bytes!!!!!", key_id="deadline-head-read",
+    )
+    delegate = companyfacts.InMemoryCompanyFactsHeadGuard(signer)
+
+    class SlowReadGuard:
+        @staticmethod
+        def read():
+            time.sleep(1.15)
+            return delegate.read()
+
+        @staticmethod
+        def advance(**kwargs):
+            delegate.advance(**kwargs)
+
+    adapter, root = _adapter(
+        tmp_path, monkeypatch, Response(_payload()), source_store=store,
+        signer=signer, head_guard=SlowReadGuard(), max_run_seconds=1.0,
+    )
+    adapter._monotonic = time.monotonic
+    adapter._sleep = time.sleep
+    _write_anchor(root, anchor)
+    began = time.monotonic()
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="head read"):
+        adapter.fetch()
+    assert time.monotonic() - began < 1.14
+    assert delegate.read() == (None, None)
+    assert not (root / "coverage_receipt.json").exists()
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+
+
+def test_predecessor_snapshot_aggregate_cap_fails_before_external_cas(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    prior_receipts = sorted((root / "receipts").iterdir())
+    prior_generations = sorted((root / "generations").iterdir())
+    _, guard = _trust(root)
+    prior_witness, _ = guard.read()
+    monkeypatch.setattr(companyfacts, "MAX_PUBLISH_CHAIN_SNAPSHOT_BYTES", 1)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="aggregate cap"):
+        adapter.fetch(full_history=True)
+    assert guard.read()[0] == prior_witness
+    assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    assert not (root / companyfacts.PUBLISH_MARKER_NAME).exists()
+    assert sorted((root / "receipts").iterdir()) == prior_receipts
+    assert sorted((root / "generations").iterdir()) == prior_generations
+
+
+def test_predecessor_snapshot_checks_deadline_inside_exact_file_read(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    pointer = json.loads((root / "coverage_receipt.json").read_text())
+    reference = {
+        "receipt_id": pointer["receipt_id"], "path": pointer["receipt_path"],
+        "sha256": pointer["receipt_sha256"],
+        "byte_length": pointer["receipt_byte_length"],
+    }
+    signer, _ = _trust(root)
+    calls = 0
+
+    def crossing_clock():
+        nonlocal calls
+        calls += 1
+        return 0.0 if calls < 3 else 2.0
+
+    with companyfacts._companyfacts_publish_lease(root) as lane:
+        with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="deadline"):
+            companyfacts._capture_authenticated_chain_snapshot(
+                root, reference, signer=signer, lane=lane,
+                deadline=1.0, monotonic=crossing_clock,
+            )
+    assert calls >= 3
 
 
 def test_retention_audit_is_capped_rotating_and_deadline_bounded():
