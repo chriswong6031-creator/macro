@@ -1,53 +1,56 @@
-# Round 3 — locked specs (2 concepts × 2 sizes)
+# Round 3 — locked specs (2 concepts × 2 sizes) · state R3.3
 
-Governed by `research/AD_MASTER_PAPER.md` (§0 gates) + `research/AD_ROUND3_FLAGSHIP_BRIEF.md`
-(strategy, §3 operator rulings 2026-08-02). Copy below is LOCKED — pixel changes may not
-reword anything without re-opening the brief.
+Governed by `research/AD_MASTER_PAPER.md` (§0 gates + §9 R3/R3.1/R3.2 rulings) and
+`research/AD_ROUND3_FLAGSHIP_BRIEF.md`. Copy is LOCKED — pixel changes may not reword
+anything without re-opening the brief.
 
-## call — the flagship (dark plate + candle field)
+## Shared (all four ads)
 
-| | |
-|---|---|
-| class | category × cadence |
-| canvases | 1200×628 (X website card, primary) · 1080×1080 |
-| kicker | MARKET INTELLIGENCE DESK (pill on 628 · catline on 1080) |
-| launch flag | `LAUNCH — 50% OFF` (violet, brandbar right — ruling 2) |
-| headline | `Daily stock signals.` / `Institutional grade.` (gradient on line 2) |
-| subline | `Buy, wait or avoid — every stock graded 0–100, with an exact entry zone. Updated every trading day.` |
-| chips | Sector rotation · Macro dashboards · Advanced charting · AI analyst (2×2) |
-| hero | SBUX Prophet card — BUY · $104.27 · EDGE 89 · stage Ready · ZONE $102.60–$104.30 · Jul 2 · `demo` (landing showcase prophet.showcase/v2, 2026-07-02 board — a real graded call) |
-| support | gauge card 57 · Mixed tape · "Watch, don't chase." (1080 only; dropped on 628 — it collided with the flag) |
-| offer | 7-DAY FREE TRIAL / ~~$149~~ $75/mo · 50% OFF · ANNUAL / Try Pro free |
-| micro | `Research tools — not investment advice · 2,000 founding memberships · mastermind-x.com` (AG-8 ON: hero quotes an entry zone) |
+- **Headline sub (campaign line, the only approved description):**
+  `Institutional-grade signals on every stock — buy, wait or avoid, updated every
+  trading day.`
+- **Launch flag:** violet `LAUNCH — 50% OFF`, brandbar right.
+- **Offer bar:** struck `$149` → `$75/mo` · d-line exactly `LAUNCH SALE` · single CTA
+  `Start 7-day free trial`. Nothing else — no 7-DAY cell, no ANNUAL, no THEN FOUNDING
+  RATE, no micro-footer, no chips, no on-canvas domain (operator orders, §9 R3.1/R3.2).
+- **Rising-tape background** (R3.2c + R3.3): per-ad SVG in `assets/field_*.svg` —
+  distinct patterns, all net-up, ~1/3 red candles (all-green ruled unrealistic).
+  **Never under text**: fields are confined to illustration zones + empty margins
+  (628s read subtler by necessity; the 1080s carry the prominence).
+- 628s: brand + flag only. 1080s: small catline (`MARKET INTELLIGENCE DESK` /
+  `SECTOR ROTATION DESK`).
 
-## desk-rotation — the support (paper mode)
+## call — flagship (dark plate)
 
-| | |
-|---|---|
-| class | pain flip / breadth |
-| canvases | 1200×628 · 1080×1080 |
-| kicker | SECTOR ROTATION DESK |
-| launch flag | `LAUNCH — 50% OFF` |
-| headline | `See the rotation` / `before your` / `watchlist does.` (gradient on "rotation") |
-| subline 628 | `Every theme sorted into four plain-word lanes — updated daily.` |
-| subline 1080 | `Buy now, Almost ready, Take profits, Stand aside — every theme, sorted daily.` |
-| chips 628 | 34 themes · Macro dashboards · Institutional flow · Daily signals (2×2) |
-| chips 1080 | Macro dashboards · Institutional flow · Daily signals (one row; "13F" banned — ruling 5) |
-| hero | four-lane board (round-2 vetted demo rows: Big Pharma 69 · US Energy 71 · Industrials 58 · Payments 64 · Defensives 57 · Cybersecurity 72) |
-| signature (1080) | the Payments row changing lanes — ghost trail, flight arrow, lifted chip (salvaged from R2 rotation, reviewer-vetted) |
-| support (1080) | VCTR Prophet sliver (zone in a background sliver ⇒ AG-8 not triggered) |
-| offer | same standard block |
-| micro | `2,000 founding memberships · allotment shrinks daily · mastermind-x.com` |
+- **Headline (the operator's motto):** `KNOW WHEN TO BUY` / `KNOW WHAT TO BUY` —
+  Inter 900 caps, equal measures, gradient on line 2.
+- **Illustration — the deck (R3.2a):** four SAME-SIZE Prophet cards in a pyramid 3D
+  stack, constant offset, front card highest z. Behind cards expose complete identity
+  bars only: `ARLO · NEAR · EDGE 99`, `CPAY · NEAR · EDGE 90`, `REZI · NEAR · EDGE 83`.
+  Front card = SBUX: BUY · demo · $104.27 · spark · EDGE 89 · Consumer Discretionary ·
+  stages (Ready on) · ZONE $102.60 – $104.30 · Jul 2. Story: "a fresh book of graded
+  calls every day — this is today's."
+- 628: text column left, deck right, stacked offer (price over full-width CTA).
+  1080: motto plate top, deck center band, horizontal offer.
 
-## Build notes / defect log (all four PNGs eyeballed at full + thumbnail size)
+## desk-rotation — support (paper)
 
-- Round-2's four recurring defect classes all appeared in draft renders and were fixed
-  by looking, not by the renderer: bottom clip (all three new layouts), auto-wrap
-  breaks ("0–/100", "plain-/word" — now `white-space:nowrap`), chip widow rows
-  (max-width must include the 2×`--pad` side padding — content = max-width − 96/128),
-  non-atomic occlusion (offer bar top edge cutting the SBUX ZONE row on 1080 — hero
-  scale reduced .74→.70).
-- 628 headlines sit at 48–52px vs round-2's 58px precedent — a deliberate trade for a
-  complete offer block + launch flag + 4 chips; verified readable at thumbnail scale.
-- The launch flag owns the brandbar's right edge; on 628 the category line rides as a
-  brandbar pill, on 1080 as a catline under the brand (widths don't fit three-up).
+- **Headline:** `See the rotation` / `before your` / `watchlist does.` (gradient on
+  "rotation").
+- **Illustration — two beats (R3.1 §6 + R3.2d):** lane board (BUY NOW: Big Pharma 69,
+  US Energy 71 · ALMOST READY: Industrials 58, **Semiconductors 64** · TAKE PROFITS:
+  Defensives 57 · STAND ASIDE: Cybersecurity 72) with ONE lifted `Semiconductors 64`
+  chip riding the blue arrows into BUY NOW (ghost trail deleted), flowing on into the
+  **NVDA card**: NEAR · demo · spark · NVDA / NVIDIA · Information Technology · stages
+  (Ready on) · ZONE $199 – $203 · Jul 14. **No EDGE column on NVDA** — only passported
+  atoms ship (paper §6 Mastermind-exchange row); we never invent signal data.
+  Story: "the sector turns → the stocks inside get graded."
+- **Lane de-emphasis (R3.3):** TAKE PROFITS and STAND ASIDE at 65% opacity so the eye
+  lands on BUY NOW first.
+
+## Verification state
+
+- 4/4 renders exit-0 via `render.py` (exact sizes, Inter loaded), every PNG eyeballed
+  at full + thumbnail; four recurring defect classes clear; banned-string greps clean
+  (incl. LAUNCH RATE / LOCKED IN / VCTR / Payments / catchphrase labels).
+- Nothing enrolled or published — operator verdicts via `ad_review.record(...)` (H-1).

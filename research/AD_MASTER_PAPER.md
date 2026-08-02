@@ -294,6 +294,43 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
   ad copy; (5) **never "13F" on a retail surface** — say "institutional flow" / "what
   institutions are buying." Meta-rule: customers are retail — reduce complexity,
   plain words everywhere.
+- **R3.1 operator critique (2026-08-02, on the round-3 first-draft renders)** — scores:
+  design taste 8/10, style 6/10, content 5/10, **structure + positioning + illustration
+  usage 2/10**. Standing law from the specifics: (a) **the illustration is the
+  centerpiece and must DO something** — product cards scattered as decoration
+  ("littered around, sitting there with no particular use") are the named failure mode;
+  compose cards into a story the stranger reads in one glance (a stacked deck of graded
+  calls = "many signals, daily"; lane board → Prophet card = "the sector turns → the
+  stock gets graded"); (b) **never say the offer twice** — a "7-DAY FREE TRIAL" cell
+  beside a "Try Pro free" CTA is illogical crowding; ONE CTA carries the trial
+  ("Start 7-day free trial"), the price cell carries the rate; (c) **feature chip rows
+  add no value on canvas** — breadth lives in post copy; (d) offer-bar qualifiers die
+  ("THEN FOUNDING RATE", "ANNUAL"); (e) **the micro-footer is dead** ("useless data
+  taking up space") — no advice line, no founding count, no on-canvas domain (operator
+  override of the AG-8 micro-line placement and AG-6 scarcity line); (f) kicker pills
+  off the 628s — brand + launch flag only; (g) ghost-trail chips unnecessary — one
+  lifted chip + arrow; prefer widely-known theme names (Payments → Semiconductors);
+  (h) **the motto**: "KNOW WHEN TO BUY / KNOW WHAT TO BUY" — instantly answers the two
+  retail pain points; promise-of-value headlines of this shape are the flagship default.
+- **R3.2 operator feedback (2026-08-02, on the deck rebuild — "getting much better")** —
+  (a) **stacked cards are physical objects**: cards in a stack are the SAME size; a
+  deck reads 3D through same-height cards offset pyramid-style, never through
+  different-height cards sharing a baseline; (b) offer d-line is just **"LAUNCH SALE"**
+  — "LAUNCH RATE" and "LOCKED IN WHILE YOU STAY" die; (c) **the rising chart background
+  is part of the brand**: every ad carries one, each a different pattern, all going UP,
+  prominent — with the R3.3 refinements: a **realistic mix** (~1/3 red candles;
+  all-green is unrealistic) and **never under text** ("or it becomes hard to read —
+  behind the illustrations is fine"): confine the visible field to illustration zones
+  and empty margins, fading to nothing under headline/subline/offer; de-emphasize
+  non-actionable lanes (TAKE PROFITS / STAND ASIDE ~65% opacity) so the eye lands on
+  BUY NOW first;
+  (d) **story coherence is load-bearing**: the theme that moves lanes and the stock the
+  card grades must belong together (Semiconductors → NVDA, never Semiconductors → VCTR);
+  (e) **catchphrase bar**: description lines must carry value, not rhythm — "Money
+  changes lanes daily…" rejected as cheesy; the approved campaign subline is
+  "Institutional-grade signals on every stock — buy, wait or avoid, updated every
+  trading day."; caption labels on illustrations rejected too — the composition alone
+  must carry the story.
 - **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
   defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
   budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap

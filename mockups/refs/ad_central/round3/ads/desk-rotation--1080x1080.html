@@ -5,21 +5,28 @@
 
 <div class="ad ad--s1080 ad--paper">
 
+  <!-- rising candle field — whisper opacity, band lifted so the climb reads
+       behind the headline and the board zone, never against the offer bar. -->
+  <div class="candle-field" style="inset:498px 0 140px 0;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 88%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 88%,transparent 100%)"><img src="../assets/field_rot_1080.svg" style="width:100%;height:100%;object-fit:cover"></div>
+
   <div class="brandbar">
     <div class="brand"><span class="brand-m">M</span><span class="brand-n">MASTERMINDX</span></div>
     <span class="spacer"></span>
     <span class="offer-flag">LAUNCH — 50% OFF</span>
   </div>
-  <p class="catline">SECTOR ROTATION DESK</p>
+  <p class="catline" style="padding-top:10px">SECTOR ROTATION DESK</p>
 
-  <h1 class="headline" style="font-size:76px;padding-top:12px">See the <span class="grad">rotation</span><br>before your<br>watchlist does.</h1>
-  <p class="sub" style="padding-top:8px;font-size:38px"><b>Buy now, Almost ready, Take profits, Stand aside</b> — every theme, sorted daily.</p>
+  <h1 class="headline" style="font-size:76px;padding-top:6px">See the <span class="grad">rotation</span><br>before your<br>watchlist does.</h1>
+  <p class="sub" style="padding-top:8px;font-size:36px">Institutional-grade signals on every stock —<br><b>buy, wait or avoid</b>, updated every trading day.</p>
 
-  <div class="stage" style="--stageh:274px;margin-top:8px">
+  <!-- ILLUSTRATION — one sentence in two beats, read along the blue thread:
+       Semiconductors leaves ALMOST READY, lands in BUY NOW, and the thread
+       runs straight on out of the board into a name inside that sector. -->
+  <div class="stage" style="--stageh:360px;margin-top:14px">
 
-    <!-- behind-left: prophet sliver (round-2 vetted crop: chg pill and EDGE
-         column dropped so nothing is half-covered — atomic occlusion). -->
-    <div class="card w-prophet behind" style="left:208px;top:4px;transform:rotate(-2deg) scale(.58);transform-origin:top left">
+    <!-- BEAT 2 (the WHAT) — the name inside that sector, staged and zoned.
+         Left edge on the page's own 64px margin; bottom shared with the board. -->
+    <div class="card w-prophet front" style="width:420px;left:64px;top:10px;transform:scale(.78);transform-origin:top left">
       <div class="top">
         <span class="pill--near pill">NEAR</span>
         <span class="demo-tag">demo</span>
@@ -32,62 +39,51 @@
         <path d="M4 46 L18 41 L30 47 L44 35 L56 39 L70 29 L84 34 L96 23 L110 28 L124 17 L138 23 L152 13 L166 18 L180 9 L196 13 L196 60 L4 60 Z" fill="url(#gv)"/>
         <path class="spark-g" d="M4 46 L18 41 L30 47 L44 35 L56 39 L70 29 L84 34 L96 23 L110 28 L124 17 L138 23 L152 13 L166 18 L180 9 L196 13"/>
       </svg>
-      <div class="id"><span class="tk">VCTR</span><span class="nm">Victory Capital</span></div>
-      <div class="sector">Financials</div>
+      <div class="id"><span class="tk">NVDA</span><span class="nm">NVIDIA</span></div>
+      <div class="sector">Information Technology</div>
       <div class="stages">
         <span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span>
       </div>
-      <div class="zone">ZONE <b>$87.24 – $89.41</b><span class="dt">Jul 8</span></div>
+      <div class="zone">ZONE <b>$199 – $203</b><span class="dt">Jul 14</span></div>
     </div>
 
-    <!-- front: wide four-lane board -->
-    <div class="card w-lanes front" style="width:640px;left:408px;top:22px;transform:scale(.70);transform-origin:top left">
+    <!-- BEAT 1 (the WHERE) — four plain-word lanes, right edge on the page's
+         64px margin. BUY NOW carries a third, open slot: the arriving row. -->
+    <div class="card w-lanes front" data-x="board" style="width:604px;left:545px;top:0;transform:scale(.78);transform-origin:top left">
       <p class="kick">WHAT TO ACT ON NOW <span class="asof">demo</span></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 22px">
-        <div class="lane buy"><h4><i></i>BUY NOW</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px">
+        <div class="lane buy" style="margin-bottom:22px"><h4><i></i>BUY NOW</h4>
           <div class="row">Big Pharma<span class="sc">69</span></div>
-          <div class="row">US Energy<span class="sc">71</span></div></div>
+          <div class="row">US Energy<span class="sc">71</span></div>
+          <div class="row" data-x="landed" style="margin-top:14px;margin-left:-14px;margin-right:-10px;border:2px solid var(--blue);background:var(--panel);box-shadow:var(--sh-lift);transform:rotate(-1.7deg)">Semiconductors<span class="sc" style="color:var(--blue-ink)">64</span></div></div>
         <div class="lane soon"><h4><i></i>ALMOST READY</h4>
           <div class="row">Industrials<span class="sc">58</span></div>
-          <div class="row">Payments<span class="sc">64</span></div></div>
-        <div class="lane take"><h4><i></i>TAKE PROFITS</h4>
+          <div class="row" data-x="semi">Semiconductors<span class="sc">64</span></div></div>
+        <div class="lane take" style="opacity:.65"><h4><i></i>TAKE PROFITS</h4>
           <div class="row">Defensives<span class="sc">57</span></div></div>
-        <div class="lane aside"><h4><i></i>STAND ASIDE</h4>
+        <div class="lane aside" style="opacity:.65"><h4><i></i>STAND ASIDE</h4>
           <div class="row">Cybersecurity<span class="sc">72</span></div></div>
       </div>
     </div>
 
-    <!-- signature: the row changing lanes — ghosts, flight arrow, lifted chip -->
-    <div style="position:absolute;z-index:3;left:995px;top:0;width:220px;display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--blue);border-radius:12px;padding:6px 12px;font-size:20px;font-weight:700;color:var(--ink);opacity:.12;transform:rotate(-2deg);transform-origin:top left">Payments<span style="margin-left:auto;font-weight:800;color:var(--ink-soft)">64</span></div>
-    <div style="position:absolute;z-index:3;left:762px;top:0;width:220px;display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--blue);border-radius:12px;padding:6px 12px;font-size:20px;font-weight:700;color:var(--ink);opacity:.25;transform:rotate(-2deg);transform-origin:top left">Payments<span style="margin-left:auto;font-weight:800;color:var(--ink-soft)">64</span></div>
-
-    <svg style="position:absolute;left:0;top:0;width:1080px;height:274px;z-index:3;overflow:visible" viewBox="0 0 1080 274" fill="none">
+    <!-- the blue thread -->
+    <svg style="position:absolute;left:0;top:0;width:1080px;height:360px;z-index:4;overflow:visible" viewBox="0 0 1080 360" fill="none">
       <defs>
-        <marker id="rot-ah-sq" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="6" markerHeight="6" orient="auto">
+        <marker id="rot1080-ah" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto">
           <path d="M 1 1 L 11 6 L 1 11 z" fill="#285fff"/>
         </marker>
       </defs>
-      <path d="M 758 148 C 698 148 643 141 636 120 C 630 98 606 84 572 84"
-            stroke="#285fff" stroke-width="5" stroke-linecap="round" fill="none" marker-end="url(#rot-ah-sq)"/>
+      <path data-x="arrowA" d="M 940 187 C 890 199 856 211 783 215"
+            stroke="#285fff" stroke-width="5" stroke-linecap="round" fill="none" marker-end="url(#rot1080-ah)"/>
+      <path data-x="arrowB" d="M 551 218 C 490 226 460 210 396 205"
+            stroke="#285fff" stroke-width="5" stroke-linecap="round" fill="none" marker-end="url(#rot1080-ah)"/>
     </svg>
 
-    <div style="position:absolute;z-index:3;left:512px;top:0;width:240px;display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--blue);border-radius:12px;padding:6px 12px;font-size:20px;font-weight:700;color:var(--ink);box-shadow:var(--sh-lift);transform:rotate(-2deg);transform-origin:top left">Payments<span style="margin-left:auto;font-weight:800;color:var(--ink-soft)">64</span></div>
-
   </div>
 
-  <div class="chips" style="padding-top:12px">
-    <span class="chip"><i></i>Macro dashboards</span>
-    <span class="chip v"><i></i>Institutional flow</span>
-    <span class="chip g"><i></i>Daily signals</span>
+  <div class="offer" style="margin-top:14px">
+    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">LAUNCH SALE</span></div>
+    <span class="cta" style="font-size:28px;padding:20px 28px">Start 7-day free trial</span>
   </div>
-
-  <div class="offer" style="margin-top:12px">
-    <div class="cell"><span class="t">7-DAY FREE TRIAL</span><span class="d">THEN FOUNDING RATE</span></div>
-    <div class="div"></div>
-    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">50% OFF · ANNUAL</span></div>
-    <span class="cta">Try Pro free</span>
-  </div>
-
-  <p class="micro" style="padding-top:10px;padding-bottom:16px">2,000 founding memberships · allotment shrinks daily · <b>mastermind-x.com</b></p>
 
 </div>
