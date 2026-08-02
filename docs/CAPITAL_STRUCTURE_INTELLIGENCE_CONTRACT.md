@@ -40,11 +40,12 @@ flowchart LR
 
 | Artifact | Sole producer | Role |
 |---|---|---|
-| `data/capital_structure/discovery.parquet` | `collectors/sec_capital_structure.py` | Keep-first daily-index discovery |
+| `data/capital_structure/discovery.parquet` | `collectors/sec_capital_structure.py` | Keep-first registration discovery plus issuer-scoped reconciliation rows |
 | `data/capital_structure/index_coverage.parquet` | same | Per-index-day complete/retry/not-published ledger; only a structurally valid index can close a zero-target day |
 | `data/capital_structure/retrieval_attempts.parquet` | same | Retryable operational attempts; failures never become source manifests |
+| `data/capital_structure/retrieval_queue_receipt.json` | same | Strict per-lane selection/defer and oldest-backlog-age receipt |
 | `data/capital_structure/source_manifest.parquet` | same | Strict pointers to hash-verified source bytes |
-| R2 `capital_structure/sec/sha256/<prefix>/<sha256>` | same | Unlinked raw complete submissions and selected primary/EX-3/EX-4/EX-10/EX-99 public SEC evidence |
+| R2 `capital_structure/sec/sha256/<prefix>/<sha256>` | same | Unlinked raw complete submissions and selected primary, EX-1, EX-FILING FEES, EX-3/EX-4/EX-10/EX-99 public SEC evidence |
 | `data/capital_structure/event_versions.parquet` | `scripts/compile_capital_structure_events.py` | Immutable `capital_structure.event.v1` versions |
 | `data/capital_structure/event_edges.parquet` | same | Immutable amends/effectuates/withdraws/supersedes edges |
 | `data/capital_structure/review_queue.parquet` | same | Rebuildable ambiguity/linkage work queue |
@@ -78,7 +79,8 @@ has completed verified readback, never at request start.
 The raw-object key is derived only from the content hash. The same URL returning different
 bytes therefore creates another immutable object instead of overwriting history. Complete
 submission bytes are retained alongside the primary document and capital-term-bearing
-exhibits. SEC evidence is public, but manifests still mark `contains_personal_data=true`
+exhibits, including `EX-1*` underwriting and `EX-FILING FEES` fee-table exhibits when
+present. SEC evidence is public, but manifests still mark `contains_personal_data=true`
 because filings routinely contain named officers, directors, and signatures. Every
 downstream observation must carry a manifest ID and exact span hash. Instrument-term
 evidence also propagates source rights, privacy, and a strict publication disposition; raw
@@ -105,6 +107,13 @@ bucket name, endpoint, access key, or secret. Consumers resolve the namespace th
 deployment configuration; `storage.object_key` alone is not treated as globally resolvable.
 Changing the physical bucket behind an existing `store_id` requires a verified copy and
 migration receipt first; an existing namespace must never be silently rebound.
+
+File numbers are observed provenance, not an inferred issuer attribute. The collector
+accepts a legacy SGML `<FILE-NUMBER>`, a modern submission-header `SEC FILE NUMBER:`, or
+the explicit `fileNumber` field in an EFFECT XML payload. It canonicalizes whitespace only,
+records the source encoding(s), and binds the value to the source-manifest identity. If two
+authoritative encodings disagree, the manifest stores `file_number=null` with
+`state=ambiguous`; graph linkage must defer rather than selecting a first match.
 
 ## Event and graph law
 
@@ -178,9 +187,12 @@ Collected now:
 - 424B1/B3/B4/B5/B7/B8 prospectuses;
 - Reg-A 1-A, 1-A/A, 1-A POS, 1-K, 1-K/A, 1-U, and 253G1–G4 documents.
 
-Declared but not claimed as collected in this wave: broad 8-K/8-K-A, 6-K/6-K-A, proxy,
-10-Q/10-K, 20-F, and 40-F reconciliation; plus known capital-relevant families including
-S-8, S-11, S-4/F-4, F-6, N-2, S-3D/F-3D, legacy 424B6, 424H/I, and blanket 424B2.
+Issuer-scoped reconciliation is collected only for a CIK with an in-policy registration or
+issuance anchor (including a registration in the same daily index): 8-K/8-K-A, 6-K/6-K-A,
+proxy, 10-Q/10-K, 20-F, and 40-F. This is not an all-company 8-K/periodic crawl, and these
+documents remain deferred until later content/reconciliation gates. Known capital-relevant
+families still outside this bounded policy include S-8, S-11, S-4/F-4, F-6, N-2, S-3D/F-3D,
+legacy 424B6, 424H/I, and blanket 424B2.
 The 424B2 structured-note population is too large for defensible blanket collection and
 remains a targeted-later family pending an explicit relevant-issuer universe; W1 does not
 invent that universe. Existing ownership and 13F collectors remain the authority for their
@@ -198,6 +210,17 @@ holiday closures or after they are at least seven days old and return HTTP 404 o
 consecutive runs. HTTP 403 is never missing-index evidence because SEC also uses it for
 rate limiting and IP blocks. Recent or first-observed 404s, malformed 200 responses, HTML
 error bodies, generic 403s, and transient failures stay retryable.
+
+The filing fetch budget is no longer a single form-priority cap. Its daily date-rotated,
+deterministic weighted lanes cover registrations, state notices (including EFFECT),
+prospectuses, Reg-A, issuer-scoped current reports, issuer-scoped periodic reports, and
+issuer-scoped proxies. Aging is a deterministic within-lane tie-break, so an old,
+saturated prospectus lane cannot consume turns reserved for a fresh state or
+reconciliation lane; absent lanes donate their turns rather than wasting capacity.
+`retrieval_queue_receipt.json` records quota slots,
+selected/deferred counts, oldest observable backlog age, and unknown-age counts per lane.
+This is operational evidence that an overloaded prospectus stream did not silently erase a
+current-report or periodic reconciliation lane; it makes no claim about a filing's content.
 
 ## Legacy compatibility and cutover
 
