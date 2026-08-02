@@ -40,6 +40,7 @@ from scripts.build_ticker_pages import (  # noqa: E402
     _build_ownership,
     _build_financials,
     _build_ladder,
+    _build_meta,
     _day_change,
     _range52,
 )
@@ -643,6 +644,22 @@ class TestBuildSitemap:
         result = build_sitemap(existing, [{"loc": "https://mastermind-x.com/stocks/AAPL.html"}])
         assert "AAPL" in result
 
+    def test_removes_nested_stock_sitemap_entries_owned_elsewhere(self):
+        existing = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            '  <url><loc>https://www.mastermind-x.com/stocks/OLD.html</loc></url>\n'
+            '  <url><loc>https://www.mastermind-x.com/stocks/earnings/index.html</loc></url>\n'
+            '  <url><loc>https://www.mastermind-x.com/stocks/earnings/aapl-2026-q3.html</loc></url>\n'
+            '</urlset>\n'
+        )
+        result = build_sitemap(existing, [{"loc": "https://www.mastermind-x.com/stocks/AAPL.html"}])
+
+        assert "/stocks/OLD.html" not in result
+        assert "/stocks/earnings/index.html" not in result
+        assert "/stocks/earnings/aapl-2026-q3.html" not in result
+        assert "/stocks/AAPL.html" in result
+
 
 class TestTrailingReturns:
     def test_basic_returns_math(self):
@@ -1231,6 +1248,60 @@ class TestTemplateRender:
         html = tmpl.render(**ctx)
         assert "mastermind-x.com/stocks/AAPL.html" in html
 
+    def test_ticker_template_has_company_intelligence_product_layer(self):
+        """Every company dossier exposes a bounded, bilingual live context shell."""
+        env = _jinja_env()
+        html = env.get_template("ticker.html.j2").render(**_rich_ctx())
+
+        assert 'id="company-update"' in html
+        assert 'data-company-intelligence' in html
+        assert 'data-ticker="AAPL"' in html
+        assert '<script defer src="../theme.js"></script>' in html
+        assert "company-intelligence-dossier.js?v=20260802d" in html
+        assert "The latest call, in context" in html
+        assert "把最新财报放回历史脉络" in html
+        assert "Coverage incomplete" not in html  # runtime state, never preclaimed
+        assert "Context only" in html
+        assert "仅作背景参考" in html
+        assert "Recorded metrics" in html
+        assert "reported metrics" not in html.lower()
+        assert 'role="toolbar"' in html
+        assert 'id="ci-history" hidden' in html
+        assert 'id="ci-empty"' in html and 'id="ci-empty" hidden' not in html
+        assert 'id="ci-loading" aria-hidden="true" hidden' in html
+        assert html.index('id="company-update"') < html.index('id="chart"')
+
+    def test_ticker_company_intelligence_has_terminal_and_public_record_handoffs(self):
+        env = _jinja_env()
+        html = env.get_template("ticker.html.j2").render(**_rich_ctx())
+
+        assert "pane=transcripts" in html
+        assert 'id="ci-earnings-record" href="earnings/"' in html
+        assert "Browse earnings records" in html
+        assert "earnings/?ticker=AAPL" not in html
+        assert "Open transcript" in html
+        assert "打开电话会原文" in html
+        assert 'id="ci-terminal-upgrade"' in html
+        assert "Continue with full transcript history" in html
+        assert "pane=transcripts" in html
+        assert "utm_source=company_dossier" in html
+        assert "utm_campaign=company_intelligence_upgrade" in html
+
+    def test_company_intelligence_script_uses_event_exact_wire_routes_and_public_teaser(self):
+        """The client must keep article navigation exact even when only one public event is exposed."""
+        js = (_REPO / "site" / "assets" / "js" / "company-intelligence-dossier.js").read_text(encoding="utf-8")
+
+        assert "earnings.public_wire_routes/v1" in js
+        assert "routes.events" in js
+        assert "event_id" in js and "transcript_id" in js
+        assert "history.hidden = events.length <= 1" in js
+        assert "new URLSearchParams(window.location.search).get('tx')" in js
+        assert "?from=company-intelligence&tx=" in js
+        assert "fetch('/api/company-intelligence/' + encodeURIComponent(ticker)," in js
+        assert "?limit=8" not in js
+        assert "source.kind === 'transcript' && source.status === 'present'" in js
+        assert "typeof source.url" not in js
+
     def test_ticker_template_no_validated_word(self):
         """The word 'validated' must not appear in rendered output."""
         env = _jinja_env()
@@ -1336,6 +1407,30 @@ class TestTemplateRender:
         ctx["stale"] = True
         html = tmpl.render(**ctx)
         assert "noindex" in html
+
+    def test_ticker_jsonld_is_profile_page_with_corporation_main_entity(self):
+        meta = _build_meta(
+            "AAPL",
+            "Apple Inc.",
+            {
+                "tech": {"price": 215.0},
+                "profile": {
+                    "sector": "Information Technology",
+                    "description": "Apple designs and sells consumer technology.",
+                },
+            },
+            "Uptrend",
+            FRESH_DATE,
+            False,
+            FRESH_DATE + " 00:00 UTC",
+        )
+        payload = json.loads(meta["jsonld_str"])
+
+        assert payload["@type"] == "ProfilePage"
+        assert payload["mainEntity"]["@type"] == "Corporation"
+        assert payload["mainEntity"]["tickerSymbol"] == "AAPL"
+        assert payload["mainEntity"]["@id"].endswith("/stocks/AAPL.html#company")
+        assert "Article" not in meta["jsonld_str"]
 
     def test_index_template_renders(self):
         """ticker_index.html.j2 renders without error for a list of rows."""

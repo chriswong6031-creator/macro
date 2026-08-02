@@ -1,0 +1,76 @@
+{% extends "seo_base.html.j2" %}
+{% block body_class %}earnings-wire earnings-wire-article{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="assets/earnings-wire.css">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
+{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ jsonld|safe }}</script>{% endblock %}
+
+{% block main %}
+<article class="ewa">
+  <header class="ewa-head">
+    <div class="ew-wrap">
+      <div class="ewa-crumb"><a href="index.html">{{ t('Earnings wire', '财报情报线') }}</a><span>/</span><span class="mono">{{ article.event.ticker }}</span><span>/</span><span>{{ article.company_label }}</span></div>
+      <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span>{{ t('Verified call record', '已核验电话会记录') }} <span>·</span> <time class="mono" datetime="{{ article.event.date }}">{{ article.event.date }}</time></div>
+      <div class="ewa-title-row">
+        <div><h1><span class="mono">{{ article.event.ticker }}</span> · {{ article.company_label }} {{ article.event.period }} {{ t('earnings call record', '财报电话会记录') }}</h1>
+          <p>{{ t('Verbatim, receipt-bound excerpts from the earnings-call transcript. This is a source record, not a synthesized analysis or recommendation.', '来自财报电话会文字记录的原文、可追溯摘录。这是来源记录，不是综合分析或推荐。') }}</p>
+        </div>
+        {% if article.dossier_available %}<a class="ewa-dossier" href="../{{ article.event.ticker }}.html?from=earnings-wire&amp;tx={{ article.event.transcript_id }}"><span>{{ t('Open ticker dossier', '打开个股档案') }}</span><b>{{ article.event.ticker }}</b><i aria-hidden="true">↗</i></a>
+        {% else %}<a class="ewa-dossier" href="https://app.mastermind-x.com/terminal?sym={{ article.event.ticker }}&amp;pane=transcripts&amp;tx={{ article.event.transcript_id }}&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer"><span>{{ t('Continue in Terminal', '在终端继续研究') }}</span><b>{{ article.event.ticker }}</b><i aria-hidden="true">↗</i></a>{% endif %}
+      </div>
+      <div class="ewa-stats">
+        <span><b class="mono">{{ article.fact_count }}</b>{{ t(' exact excerpts', ' 条原文摘录') }}</span>
+        <span><b class="mono">{{ article.numeric_count }}</b>{{ t(' numeric receipts', ' 个数值回执') }}</span>
+        <span><b class="mono">{{ article.admission.tier }}</b>{{ t(' governed source tier', ' 治理来源层级') }}</span>
+        <span class="ewa-stat-ok">{{ t('Transcript present', '电话会文本已具备') }}</span>
+      </div>
+    </div>
+  </header>
+
+  {% if article.admission.correction_status == 'corrected' %}
+  <aside class="ewa-correction"><div class="ew-wrap"><b>{{ t('Corrected source revision', '已更正来源版本') }}</b><span>{{ t('This current record supersedes an earlier source revision. The visible excerpts and receipts are bound to the current source body.', '此当前记录替代了较早的来源版本。可见摘录和回执均绑定到当前来源正文。') }}</span></div></aside>
+  {% endif %}
+
+  <div class="ew-wrap ewa-layout">
+    <aside class="ewa-rail" aria-label="Record details">
+      <div class="ewa-rail-block"><span>{{ t('Scope', '范围') }}</span><strong>{{ t('Transcript only', '仅电话会文本') }}</strong><p>{{ t('No release, filing, slides, consensus, or price-reaction join is implied here.', '此处不包含新闻稿、申报文件、演示材料、一致预期或股价反应的合并信息。') }}</p></div>
+      <div class="ewa-rail-block"><span>{{ t('Source body', '来源正文') }}</span><strong class="mono">sha256:{{ article.source.body_sha256[:12] }}…</strong><p class="mono">{{ article.source.body_bytes }} bytes</p></div>
+      <div class="ewa-rail-block"><span>{{ t('Verification boundary', '核验边界') }}</span><strong>{{ t('Receipt verified; raw body not publicly linked', '回执已核验；原始正文未公开链接') }}</strong><p>{{ t('The hash and byte coordinates bind this page to the captured source snapshot; they are an audit receipt, not a public transcript URL.', '哈希与字节坐标将本页绑定到已捕获的来源快照；它们是审计回执，并非公开电话会链接。') }}</p></div>
+      <a class="ewa-terminal" href="https://app.mastermind-x.com/terminal?sym={{ article.event.ticker }}&amp;pane=transcripts&amp;tx={{ article.event.transcript_id }}&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer">{{ t('Continue in Terminal', '在终端继续研究') }} <span aria-hidden="true">↗</span></a>
+    </aside>
+
+    <div class="ewa-main">
+      <section class="ewa-intro" aria-labelledby="record-reading-heading">
+        <span>{{ t('The record', '记录内容') }}</span>
+        <h2 id="record-reading-heading">{{ t('Call language, kept intact.', '电话会表述，保持原貌。') }}</h2>
+        <p>{{ t('The excerpts below are selected from the source record under the bounded evidence policy. Wording is not paraphrased; numbers remain the exact spans captured from the call.', '以下摘录按受限证据策略从来源记录中选出。文字未被改写；数字保持电话会中捕获的精确片段。') }}</p>
+      </section>
+
+      <section class="ewa-facts" aria-label="Verified excerpts">
+        {% for fact in article.facts %}
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags">{% for category in fact.categories %}<span>{{ category }}</span>{% endfor %}</div><span class="mono">{{ fact.quote.receipt.segment_index }}</span></div>
+          <blockquote>“{{ fact.quote.text }}”</blockquote>
+          <div class="ewa-attribution"><span>{{ fact.speaker or t('Management', '管理层') }}{% if fact.role %} · {{ fact.role }}{% endif %}</span><code>{{ fact.claim_id }}</code></div>
+          {% if fact.numeric %}
+          <div class="ewa-numerics"><span>{{ t('Exact numeric spans', '精确数值片段') }}</span>{% for numeric in fact.numeric %}<code title="{{ numeric.claim_id }}">{{ numeric.text }}</code>{% endfor %}</div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+
+      <details class="ewa-receipts">
+        <summary><span>{{ t('Inspect the source receipts', '检查来源回执') }}</span><b>{{ article.fact_count + article.numeric_count }} {{ t('bound spans', '个已绑定片段') }}</b></summary>
+        <div class="ewa-receipt-note">{{ t('Each row identifies the source body, transcript segment and byte span used to verify the visible text.', '每行标识用于核验可见文本的来源正文、电话会片段和字节范围。') }}</div>
+        <div class="ewa-table-wrap"><table><thead><tr><th>{{ t('Claim', '主张') }}</th><th>{{ t('Kind', '类型') }}</th><th>{{ t('Segment', '片段') }}</th><th>{{ t('Byte span', '字节范围') }}</th><th>{{ t('Text hash', '文本哈希') }}</th></tr></thead><tbody>
+          {% for span in article.spans %}<tr><td><code>{{ span.claim_id }}</code></td><td>{{ span.kind }}</td><td class="mono">{{ span.receipt.segment_index }}</td><td class="mono">{{ span.receipt.span_start_byte }}–{{ span.receipt.span_end_byte }}</td><td><code>{{ span.receipt.text_sha256[:14] }}…</code></td></tr>{% endfor %}
+        </tbody></table></div>
+      </details>
+
+      <aside class="ewa-disclosure"><span>{{ t('Source completeness', '来源完整性') }}</span><p>{{ t('Transcript: present. Release, filing and slides: not ingested. Consensus: unlicensed/absent. Market reaction: not joined. This page does not fill those gaps with inference.', '电话会文本：已具备。新闻稿、申报文件和演示材料：未接入。一致预期：未授权/缺失。市场反应：未合并。本页不会用推断填补这些空白。') }}</p></aside>
+    </div>
+  </div>
+</article>
+{% endblock %}

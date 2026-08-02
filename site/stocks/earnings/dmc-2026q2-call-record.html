@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMC — DMC Q2 FY2026 earnings call record — MastermindX</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Receipt-bound excerpts from DMC&#39;s Q2 FY2026 earnings call transcript.">
+<link rel="canonical" href="https://www.mastermind-x.com/stocks/earnings/dmc-2026q2-call-record.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="DMC — DMC Q2 FY2026 earnings call record">
+<meta property="og:description" content="Receipt-bound excerpts from DMC&#39;s Q2 FY2026 earnings call transcript.">
+<meta property="og:url" content="https://www.mastermind-x.com/stocks/earnings/dmc-2026q2-call-record.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DMC — DMC Q2 FY2026 earnings call record">
+<meta name="twitter:description" content="Receipt-bound excerpts from DMC&#39;s Q2 FY2026 earnings call transcript.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/index.html"},{"@type":"ListItem","position":2,"name":"Earnings call records","item":"https://www.mastermind-x.com/stocks/earnings/index.html"},{"@type":"ListItem","position":3,"name":"DMC"}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DMC — DMC Q2 FY2026 earnings call record","description":"Receipt-bound excerpts from DMC's earnings-call transcript. Transcript-only source record; not investment advice.","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.mastermind-x.com/stocks/earnings/dmc-2026q2-call-record.html"},"dateCreated":"2026-08-02T00:08:49Z","dateModified":"2026-08-02T00:08:49Z","temporalCoverage":"2026-07-29","author":{"@type":"Organization","name":"MastermindX"},"publisher":{"@type":"Organization","name":"MastermindX"},"isBasedOn":"https://app.mastermind-x.com/terminal?sym=DMC&pane=transcripts&tx=2026Q2&from=macro"}</script>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* --font-ui local definition (#2647 tripwire pattern, commodities.html.j2
+   precedent): theme.css defines the same token, and this local definition keeps
+   the estate off Times even if that stylesheet ever fails to load. The actual
+   Inter faces come only from theme.css, whose font URLs resolve relative to the
+   root stylesheet at every estate depth. */
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+}
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── Signal-Ink teaching diagram (.sig-fig) — the lesson-body figure idiom ─────
+   One hand-authored SVG per lesson explains a mechanic. Same terminal line-art
+   language as .egl: hairline furniture in --ink-3, the signed options duality in
+   --up (stabilising / calls / long-gamma / dealer-buys) vs --down (accelerating /
+   puts / short-gamma / dealer-sells), and the single --link accent for the pivot
+   the lesson turns on (the flip / zero / break-even). SVG carries paths + shapes
+   ONLY; every label is a positioned HTML <span> (inherits Inter/mono + theme/ZH
+   swap, never an svg <text>). The shared dashed zero-line is the motif that
+   threads all seven diagrams — in options, the zero-line is where meaning inverts.
+   Static by design (reduced-motion-safe, deterministic render). */
+.est-prose figure.sig-fig{margin:22px 0; max-width:var(--measure);}
+.sig-stage{position:relative; width:100%; border:1px solid var(--hair-strong);
+  border-left:3px solid var(--rail); border-radius:var(--r-md); background:
+    linear-gradient(180deg, color-mix(in srgb,var(--link) 4%,transparent), transparent 60%),
+    var(--tile); box-shadow:var(--ms); padding:16px 18px; overflow:hidden;}
+.sig-stage svg{display:block; width:100%; height:auto; color:var(--ink-3);
+  overflow:visible;}
+/* stroke roles — mirror the .egl vocabulary so both line-art families read as one */
+.sig-stage svg [class^="sg-"], .sig-stage svg [class*=" sg-"]{
+  fill:none; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.sig-stage .sg-axis{stroke:var(--ink-3); stroke-width:1.3; opacity:.62;}
+.sig-stage .sg-grid{stroke:var(--ink-3); stroke-width:1; opacity:.24;}
+.sig-stage .sg-zero{stroke:var(--ink-3); stroke-width:1.3; opacity:.7; stroke-dasharray:4 4;}
+.sig-stage .sg-line{stroke:var(--ink-2); stroke-width:1.6;}
+.sig-stage .sg-up{stroke:var(--up); stroke-width:1.9;}
+.sig-stage .sg-down{stroke:var(--down); stroke-width:1.9;}
+.sig-stage .sg-pivot{stroke:var(--link); stroke-width:1.7;}
+.sig-stage .sg-pivot-dash{stroke:var(--link); stroke-width:1.5; stroke-dasharray:5 4;}
+.sig-stage .fill-up{fill:color-mix(in srgb,var(--up) 17%,transparent); stroke:none;}
+.sig-stage .fill-down{fill:color-mix(in srgb,var(--down) 17%,transparent); stroke:none;}
+.sig-stage .fill-mut{fill:color-mix(in srgb,var(--ink-3) 20%,transparent); stroke:none;}
+.sig-stage .fill-pivot{fill:color-mix(in srgb,var(--link) 16%,transparent); stroke:none;}
+.sig-stage .dot-up{fill:var(--up); stroke:none;}
+.sig-stage .dot-down{fill:var(--down); stroke:none;}
+.sig-stage .dot-pivot{fill:var(--link); stroke:none;}
+.sig-stage .dot-mut{fill:var(--ink-3); stroke:none;}
+/* HTML labels positioned over the stage (percent coords set inline per diagram) */
+.sig-stage .sig-lbl{position:absolute; transform:translate(-50%,-50%);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:10.5px;
+  line-height:1.15; letter-spacing:.02em; color:var(--ink-2); text-align:center;
+  white-space:nowrap; pointer-events:none;
+  /* faint theme-aware halo so labels stay legible where they sit over strokes */
+  text-shadow:0 0 3px var(--tile), 0 0 3px var(--tile), 0 0 5px var(--tile);}
+.sig-stage .sig-lbl.up{color:var(--up);} .sig-stage .sig-lbl.down{color:var(--down);}
+.sig-stage .sig-lbl.pivot{color:var(--link);}
+.sig-stage .sig-lbl.big{font-size:12.5px; font-weight:700; letter-spacing:0;}
+.sig-stage .sig-lbl.axis{color:var(--ink-3); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;}
+.sig-stage .sig-lbl.lead{text-align:left; transform:translate(0,-50%);}
+.sig-fig figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3);
+  margin-top:9px; line-height:1.5;}
+/* two-up split stage (e.g. long-gamma vs short-gamma) shares one zero-line motif */
+.sig-stage .sg-split{stroke:var(--hair-strong); stroke-width:1;}
+@media (max-width:600px){
+  .sig-stage{padding:12px 12px;}
+  .sig-stage .sig-lbl{font-size:9.5px;}
+  .sig-stage .sig-lbl.big{font-size:11px;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+</style>
+<style data-public-chrome>
+body.public-page{padding-top:0}
+
+/* ── public header — landing-page chrome ───────────────────────────────── */
+.public-nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid #e2e6ec;transition:box-shadow .25s ease,background .25s ease;
+  color:#1c2430;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif}
+.public-nav.sc{background:rgba(247,248,250,.95);box-shadow:0 10px 30px -18px rgba(18,26,45,.25)}
+.public-nav-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px);height:64px;
+  display:flex;align-items:center;gap:24px}
+.public-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;
+  color:#1c2430;text-decoration:none;white-space:nowrap}
+.public-brand:hover{color:#1c2430;text-decoration:none}
+.public-brand .m{width:27px;height:27px;border-radius:7px;background:#1c2430;display:grid;
+  place-items:center;color:#fff;font-weight:800;font-size:14px}
+.public-nav-links{display:flex;align-items:center;gap:4px;margin:0;padding:0;list-style:none;
+  font-size:14px;font-weight:500}
+.public-nav-group{position:relative}
+.public-nav-trigger,.public-nav-direct>a{display:flex;align-items:center;gap:6px;min-height:40px;
+  padding:8px 12px;border:0;border-radius:10px;background:transparent;color:#5d6b7e;
+  font:inherit;text-decoration:none;white-space:nowrap;cursor:pointer}
+.public-nav-trigger:hover,.public-nav-trigger[aria-expanded="true"],.public-nav-direct>a:hover{
+  color:#1c2430;background:rgba(40,95,255,.07);text-decoration:none}
+.public-nav-trigger svg{width:10px;height:7px;fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .18s}
+.public-nav-trigger[aria-expanded="true"] svg{transform:rotate(180deg)}
+.public-nav-panel{position:absolute;top:calc(100% + 12px);left:-12px;width:min(650px,calc(100vw - 40px));
+  padding:20px;background:#fff;border:1px solid #d2d8e1;border-radius:16px;
+  box-shadow:0 24px 70px -30px rgba(18,26,45,.45),0 14px 34px -14px rgba(18,26,45,.28);z-index:97}
+.public-nav-panel[hidden]{display:none}
+.public-nav-panel-research{width:min(650px,calc(100vw - 40px))}
+.public-nav-panel-resources{left:auto;right:-80px;width:min(610px,calc(100vw - 40px))}
+.public-nav-panel-head{display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:2px 2px 16px;border-bottom:1px solid #e2e6ec}
+.public-nav-panel-head>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.public-nav-panel-head>div>span{font-size:9px;font-weight:700;letter-spacing:.13em;color:#285fff}
+.public-nav-panel-head strong{font-size:15px;line-height:1.35;color:#1c2430}
+.public-nav-panel-head>a{flex:none;color:#285fff;font-size:12.5px;font-weight:600;text-decoration:none}
+.public-nav-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:12px}
+.public-nav-card-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.public-nav-card{display:flex;gap:12px;min-width:0;border:1px solid transparent;border-radius:12px;
+  padding:12px;color:#34404f;text-decoration:none;transition:background .16s,border-color .16s,transform .16s}
+.public-nav-card:hover{color:#1c2430;background:#f1f3f7;border-color:#e2e6ec;
+  transform:translateY(-1px);text-decoration:none}
+.public-nav-card>i{flex:none;width:27px;height:27px;border-radius:8px;background:#eef2ff;color:#285fff;
+  display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:800}
+.public-nav-card>span{min-width:0}.public-nav-card strong{display:block;font-size:13px;line-height:1.3;color:#1c2430}
+.public-nav-card small{display:block;margin-top:4px;color:#5d6b7e;font-size:11.5px;font-weight:400;line-height:1.45}
+.public-nav-toggle{display:none;width:40px;height:40px;border:1px solid #d2d8e1;border-radius:10px;
+  background:#fff;padding:10px;flex-direction:column;justify-content:center;gap:4px;cursor:pointer}
+.public-nav-toggle span{display:block;width:100%;height:1.5px;border-radius:2px;background:#1c2430;
+  transition:transform .18s,opacity .18s}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+.public-nav-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:14px}
+.public-nav-login{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-login:hover{color:#1c2430;text-decoration:none}
+.public-nav-cta{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
+  padding:8px 15px;font-weight:600;font-size:13.5px;border:1px solid #285fff;
+  background:#285fff;color:#fff;text-decoration:none;box-shadow:0 2px 8px rgba(18,26,45,.08);
+  transition:transform .16s,box-shadow .16s,background .16s;white-space:nowrap}
+.public-nav-cta:hover{transform:translateY(-1px);box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  background:#1c47cc;color:#fff;text-decoration:none}
+
+/* settings popover — same controls and account affordance as index.html */
+.public-nav .gear-wrap{position:relative;display:inline-flex}
+.public-nav .gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid #d2d8e1;
+  background:#fff;box-shadow:0 2px 8px rgba(18,26,45,.08);display:grid;place-items:center;
+  color:#5d6b7e;transition:transform .16s,box-shadow .16s,color .16s;cursor:pointer;padding:0}
+.public-nav .gearbtn:hover{color:#1c2430;transform:translateY(-1px);
+  box-shadow:0 14px 34px -14px rgba(18,26,45,.28)}
+.public-nav .gearbtn[aria-expanded="true"]{color:#1c2430;border-color:#8a95a4}
+.public-nav .gearbtn svg{width:17px;height:17px}
+.public-nav .gear-pop{position:absolute;right:0;top:calc(100% + 10px);width:236px;background:#fff;
+  border:1px solid #d2d8e1;border-radius:14px;box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  padding:8px;z-index:95;opacity:0;visibility:hidden;transform:translateY(6px);
+  transition:opacity .18s ease,transform .18s ease,visibility 0s .18s;color:#1c2430}
+.public-nav .gear-pop.open{opacity:1;visibility:visible;transform:none;
+  transition:opacity .18s ease,transform .18s ease}
+.public-nav .gear-pop p{padding:0;border:0}
+.public-nav .gp-kicker,.public-nav .gp-acct-t{font-weight:700;font-size:9px;letter-spacing:.16em;
+  color:#8a95a4;margin:4px 8px 8px;text-transform:uppercase}
+.public-nav .gp-acct-t{margin:2px 8px 8px}
+.public-nav .gp-lang{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:4px 8px 8px;min-width:0}
+.public-nav .gp-lbl{font-size:13px;color:#34404f;font-weight:500;min-width:0}
+.public-nav .gp-seg{display:inline-flex;border:1px solid #d2d8e1;border-radius:8px;padding:2px;
+  background:#f1f3f7;flex:none}
+.public-nav .gp-seg-b{border:0;background:transparent;font-family:inherit;font-weight:700;
+  font-size:11px;line-height:1;color:#5d6b7e;
+  border-radius:6px;padding:4px 9px;transition:color .14s,background .14s;cursor:pointer}
+.public-nav .gp-seg-b.on{background:#285fff;color:#fff}
+.public-nav .gp-div{height:1px;background:#e2e6ec;margin:4px 4px 6px}
+.public-nav .gp-link{display:block;font-size:13px;color:#34404f;border-radius:8px;padding:8px;
+  font-weight:500;text-decoration:none;transition:background .14s,color .14s}
+.public-nav .gp-link:hover{background:#f1f3f7;color:#1c2430;text-decoration:none}
+.public-nav .gp-acct-d{font-size:12px;line-height:1.5;color:#5d6b7e;margin:0 8px 10px}
+.public-nav .gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.public-nav .gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;
+  transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-abtn.ghost{border:1px solid #d2d8e1;background:#fff;color:#34404f}
+.public-nav .gp-abtn.ghost:hover{background:#eef2ff;color:#1c47cc;border-color:#285fff}
+.public-nav .gp-abtn.solid{background:#285fff;border:1px solid #285fff;color:#fff;
+  box-shadow:0 2px 8px rgba(18,26,45,.08)}
+.public-nav .gp-abtn.solid:hover{background:#1c47cc;border-color:#1c47cc}
+.public-nav .gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+  cursor:pointer;min-width:0;transition:background .14s}
+.public-nav .gp-acct-card:hover{background:#f1f3f7}
+.public-nav .gp-acct-card:focus-visible{outline:2px solid #285fff;outline-offset:2px}
+.public-nav .gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;background:#285fff}
+.public-nav .gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.public-nav .gp-acct-email{font-size:12.5px;font-weight:600;color:#1c2430;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.public-nav .gp-acct-sub{font-size:11px;color:#5d6b7e}
+.public-nav .gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;
+  border:1px solid #d2d8e1;border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;
+  color:#34404f;background:#fff;transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-signout:hover{background:#f1f3f7;color:#1c2430}
+
+/* ── public footer — exact landing-page information architecture ───────── */
+.public-footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;
+  color:#7a8496;font:13px/1.5 -apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-footer a{text-decoration:none}
+.public-footer .f-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px)}
+.public-footer .f-grid{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:30px;flex-wrap:wrap}
+.public-footer .f-brand .fb-row{display:flex;align-items:center;gap:9px}
+.public-footer .f-brand .fm{width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;
+  font-weight:800;font-size:14px;color:#fff}
+.public-footer .f-brand .fn{font-weight:800;font-size:13px;letter-spacing:.08em;color:#dfe6f2}
+.public-footer .f-brand .ft{margin:10px 0 0;color:#5f6b7e;font-size:12.5px}
+.public-footer .f-cols{display:flex;gap:clamp(30px,6vw,84px)}
+.public-footer .f-col p{margin:0 0 8px;font-weight:700;font-size:9px;letter-spacing:.14em;
+  color:#46536a;text-transform:uppercase}
+.public-footer .f-col a{display:block;color:#8e99ad;padding:4.5px 0;font-size:13px}
+.public-footer .f-col a:hover{color:#dfe6f2;text-decoration:none}
+.public-footer .f-bot{display:flex;justify-content:space-between;align-items:center;gap:12px 18px;
+  flex-wrap:wrap;border-top:1px solid #10161f;margin-top:36px;padding-top:20px;
+  font-size:12px;color:#8e99ad}
+.public-footer .f-bot a{color:#8e99ad}
+.public-footer .f-bot a:hover{color:#dfe6f2}
+
+@media(max-width:900px){
+  .public-nav-in{position:relative;gap:12px}
+  .public-nav-toggle{display:flex}
+  .public-nav-links{display:none;position:absolute;top:calc(100% + 1px);left:20px;right:20px;
+    max-height:calc(100dvh - 76px);overflow-y:auto;align-items:stretch;flex-direction:column;gap:3px;
+    padding:10px;background:rgba(255,255,255,.98);border:1px solid #d2d8e1;border-radius:0 0 16px 16px;
+    box-shadow:0 24px 60px -30px rgba(18,26,45,.5);z-index:96}
+  .public-nav-links.open{display:flex}
+  .public-nav-group,.public-nav-direct{width:100%}
+  .public-nav-trigger,.public-nav-direct>a{width:100%;min-height:44px;justify-content:space-between;padding:10px 12px}
+  .public-nav-panel,.public-nav-panel-research,.public-nav-panel-resources{position:static;width:auto;
+    margin:2px 0 7px;padding:10px;box-shadow:none;border-radius:12px;background:#f1f3f7}
+  .public-nav-panel-head{align-items:flex-start;padding:2px 3px 11px}
+  .public-nav-panel-head>a{padding-top:2px}
+  .public-nav-card-grid,.public-nav-card-grid.two{grid-template-columns:1fr;gap:3px}
+  .public-nav-card{min-height:58px;padding:10px;background:#fff;border-color:#e2e6ec}
+  .public-nav-login{display:none}
+  .public-nav-right{gap:10px}
+  .public-footer .f-cols{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:28px 36px}
+}
+@media(max-width:420px){
+  .public-nav-in{gap:12px}
+  .public-brand{font-size:13px;gap:8px}
+  .public-nav-cta{padding:8px 11px}
+}
+</style><link rel="stylesheet" href="assets/earnings-wire.css">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
+</head>
+<body class="estate public-page earnings-wire earnings-wire-article">
+
+<nav class="public-nav" aria-label="Main">
+  <div class="public-nav-in">
+    <a class="public-brand" href="../../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="public-nav-toggle" id="public-nav-toggle" type="button" aria-expanded="false"
+            aria-controls="public-primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="public-nav-links" id="public-primary-navigation">
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-platform-trigger" type="button" aria-expanded="false" aria-controls="public-platform-panel">
+          <span class="l-en">Platform</span><span class="l-zh">平台</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel" id="public-platform-panel" aria-labelledby="public-platform-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">CONNECTED RESEARCH DESK</span><span class="l-zh">互联研究工作台</span></span><strong><span class="l-en">Move from market state to the underlying evidence</span><span class="l-zh">从市场状态一路深入到底层证据</span></strong></div>
+            <a href="../../products/index.html"><span class="l-en">Platform overview →</span><span class="l-zh">平台概览 →</span></a>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="../../products/market-terminal.html"><i>01</i><span><strong><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></strong><small><span class="l-en">Browser charting, watchlists and stock research context.</span><span class="l-zh">浏览器图表、观察列表与股票研究背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../products/mastermind-ai.html"><i>02</i><span><strong>Mastermind AI</strong><small><span class="l-en">A market research assistant grounded in the page and its sources.</span><span class="l-zh">结合当前页面与来源的市场研究助手。</span></small></span></a>
+            <a class="public-nav-card" href="../../products/market-dashboards.html"><i>03</i><span><strong><span class="l-en">Market Dashboards</span><span class="l-zh">市场仪表盘</span></strong><small><span class="l-en">Macro, cycle, sector rotation and cross-asset context.</span><span class="l-zh">宏观、周期、行业轮动与跨资产背景。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-research-trigger" type="button" aria-expanded="false" aria-controls="public-research-panel">
+          <span class="l-en">Research</span><span class="l-zh">研究</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-research" id="public-research-panel" aria-labelledby="public-research-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">PUBLIC RESEARCH SURFACES</span><span class="l-zh">公开研究界面</span></span><strong><span class="l-en">From report excerpts to ticker-level dossiers</span><span class="l-zh">从报告节选到逐股档案</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="https://www.mastermind-x.com/research_vault.html"><i>R</i><span><strong><span class="l-en">Institutional Research</span><span class="l-zh">机构研报</span></strong><small><span class="l-en">Preview the latest three report summaries; full research and PDFs are available with Pro.</span><span class="l-zh">预览最新三篇研报摘要；完整研报与 PDF 为 Pro 专享。</span></small></span></a>
+            <a class="public-nav-card" href="../../stocks/index.html"><i>S</i><span><strong><span class="l-en">Stock Dossiers</span><span class="l-zh">股票档案</span></strong><small><span class="l-en">Ticker pages for technical, fundamental, ownership and options context.</span><span class="l-zh">按股票整理的技术面、基本面、持仓与期权背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../stocks/earnings/index.html"><i>E</i><span><strong><span class="l-en">Earnings Intelligence</span><span class="l-zh">财报情报</span></strong><small><span class="l-en">Receipt-bound call records that lead directly into the ticker dossier.</span><span class="l-zh">可追溯的电话会记录，并可直接进入个股档案。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-resources-trigger" type="button" aria-expanded="false" aria-controls="public-resources-panel">
+          <span class="l-en">Resources</span><span class="l-zh">资源</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-resources" id="public-resources-panel" aria-labelledby="public-resources-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">USEFUL BEFORE SIGNUP</span><span class="l-zh">无需账户即可使用</span></span><strong><span class="l-en">Start by solving one real problem</span><span class="l-zh">先解决一个真实问题</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid two">
+            <a class="public-nav-card" href="../../tools/index.html"><i>T</i><span><strong><span class="l-en">Free Tools</span><span class="l-zh">免费工具</span></strong><small><span class="l-en">Calculators for sizing, risk, returns and portfolios.</span><span class="l-zh">仓位、风险、回报与投资组合计算器。</span></small></span></a>
+            <a class="public-nav-card" href="../../learn/index.html"><i>L</i><span><strong><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></strong><small><span class="l-en">Lessons on technicals, risk, options and filings.</span><span class="l-zh">技术分析、风险、期权与申报文件课程。</span></small></span></a>
+            <a class="public-nav-card" href="../../blog/index.html"><i>B</i><span><strong><span class="l-en">Blog</span><span class="l-zh">博客</span></strong><small><span class="l-en">Plain-English articles on trading math and market mechanics.</span><span class="l-zh">关于交易数学与市场机制的朴素文章。</span></small></span></a>
+            <a class="public-nav-card" href="../../support.html"><i>?</i><span><strong><span class="l-en">Support</span><span class="l-zh">支持</span></strong><small><span class="l-en">Help with account, product and access questions.</span><span class="l-zh">账户、产品与访问问题的帮助入口。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-direct"><a href="../../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a></li>
+    </ul>
+    <div class="public-nav-right">
+      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
+      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <div class="gp-lang">
+            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="../../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    <li>
+<a href="../../index.html">Home</a>    </li>
+<li class="sep" aria-hidden="true">/</li>    <li>
+<a href="../../stocks/earnings/index.html">Earnings call records</a>    </li>
+<li class="sep" aria-hidden="true">/</li>    <li aria-current="page">
+DMC    </li>
+  </ol>
+</nav>
+
+<main id="main">
+<article class="ewa">
+  <header class="ewa-head">
+    <div class="ew-wrap">
+      <div class="ewa-crumb"><a href="index.html"><span class="l-en">Earnings wire</span><span class="l-zh">财报情报线</span></a><span>/</span><span class="mono">DMC</span><span>/</span><span>DMC</span></div>
+      <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span><span class="l-en">Verified call record</span><span class="l-zh">已核验电话会记录</span> <span>·</span> <time class="mono" datetime="2026-07-29">2026-07-29</time></div>
+      <div class="ewa-title-row">
+        <div><h1><span class="mono">DMC</span> · DMC Q2 FY2026 <span class="l-en">earnings call record</span><span class="l-zh">财报电话会记录</span></h1>
+          <p><span class="l-en">Verbatim, receipt-bound excerpts from the earnings-call transcript. This is a source record, not a synthesized analysis or recommendation.</span><span class="l-zh">来自财报电话会文字记录的原文、可追溯摘录。这是来源记录，不是综合分析或推荐。</span></p>
+        </div>
+<a class="ewa-dossier" href="https://app.mastermind-x.com/terminal?sym=DMC&amp;pane=transcripts&amp;tx=2026Q2&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer"><span><span class="l-en">Continue in Terminal</span><span class="l-zh">在终端继续研究</span></span><b>DMC</b><i aria-hidden="true">↗</i></a>      </div>
+      <div class="ewa-stats">
+        <span><b class="mono">12</b><span class="l-en"> exact excerpts</span><span class="l-zh"> 条原文摘录</span></span>
+        <span><b class="mono">21</b><span class="l-en"> numeric receipts</span><span class="l-zh"> 个数值回执</span></span>
+        <span><b class="mono">B</b><span class="l-en"> governed source tier</span><span class="l-zh"> 治理来源层级</span></span>
+        <span class="ewa-stat-ok"><span class="l-en">Transcript present</span><span class="l-zh">电话会文本已具备</span></span>
+      </div>
+    </div>
+  </header>
+
+
+  <div class="ew-wrap ewa-layout">
+    <aside class="ewa-rail" aria-label="Record details">
+      <div class="ewa-rail-block"><span><span class="l-en">Scope</span><span class="l-zh">范围</span></span><strong><span class="l-en">Transcript only</span><span class="l-zh">仅电话会文本</span></strong><p><span class="l-en">No release, filing, slides, consensus, or price-reaction join is implied here.</span><span class="l-zh">此处不包含新闻稿、申报文件、演示材料、一致预期或股价反应的合并信息。</span></p></div>
+      <div class="ewa-rail-block"><span><span class="l-en">Source body</span><span class="l-zh">来源正文</span></span><strong class="mono">sha256:a7ac0b95e6a2…</strong><p class="mono">31471 bytes</p></div>
+      <div class="ewa-rail-block"><span><span class="l-en">Verification boundary</span><span class="l-zh">核验边界</span></span><strong><span class="l-en">Receipt verified; raw body not publicly linked</span><span class="l-zh">回执已核验；原始正文未公开链接</span></strong><p><span class="l-en">The hash and byte coordinates bind this page to the captured source snapshot; they are an audit receipt, not a public transcript URL.</span><span class="l-zh">哈希与字节坐标将本页绑定到已捕获的来源快照；它们是审计回执，并非公开电话会链接。</span></p></div>
+      <a class="ewa-terminal" href="https://app.mastermind-x.com/terminal?sym=DMC&amp;pane=transcripts&amp;tx=2026Q2&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer"><span class="l-en">Continue in Terminal</span><span class="l-zh">在终端继续研究</span> <span aria-hidden="true">↗</span></a>
+    </aside>
+
+    <div class="ewa-main">
+      <section class="ewa-intro" aria-labelledby="record-reading-heading">
+        <span><span class="l-en">The record</span><span class="l-zh">记录内容</span></span>
+        <h2 id="record-reading-heading"><span class="l-en">Call language, kept intact.</span><span class="l-zh">电话会表述，保持原貌。</span></h2>
+        <p><span class="l-en">The excerpts below are selected from the source record under the bounded evidence policy. Wording is not paraphrased; numbers remain the exact spans captured from the call.</span><span class="l-zh">以下摘录按受限证据策略从来源记录中选出。文字未被改写；数字保持电话会中捕获的精确片段。</span></p>
+      </section>
+
+      <section class="ewa-facts" aria-label="Verified excerpts">
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>margins</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">5</span></div>
+          <blockquote>“Our shelf-stable prepared foods category brings structurally higher margins, extended shelf life, and predictable revenue streams backed by incredible consumer loyalty to the Del Monte brand.”</blockquote>
+          <div class="ewa-attribution"><span>Mohammad Abu-Ghazaleh · CEO</span><code>claim_1637dbc37a9962375b7556cfeb9a440e</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>management_commitments</span><span>q_and_a</span></div><span class="mono">6</span></div>
+          <blockquote>“First, we will drive operational rigor across our Foods division by maintaining outstanding service levels, deepening customer partnerships, and executing a high-performing pack season.”</blockquote>
+          <div class="ewa-attribution"><span>Mohammad Abu-Ghazaleh · CEO</span><code>claim_21d46e00b08fbbe9509205c84ee96570</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>margins</span><span>q_and_a</span></div><span class="mono">9</span></div>
+          <blockquote>“Together, these high-return focus areas are expected to generate approximately $9 million in annual margin expansion as they phase in across 2026 and 2027.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_f0dbf4e7506f1ba4fc10c41cb345aa50</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_d92ad7f483f97fa489c16ddfaaf87b4b">9 million</code><code title="claim_bf375c5fdbff8e60f25beaada7172c5c">2026</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>margins</span><span>risks</span><span>q_and_a</span></div><span class="mono">11</span></div>
+          <blockquote>“Gross profit reached $121 million, yielding a solid 9.9% gross margin despite inflationary headwinds.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_1c3371cbf06b3b14c659b839035d27e4</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_9b5a15db2bc570cbc68e361c2140cacd">121 million</code><code title="claim_e202d5ab419d70d9946342129f0f59e0">9.9%</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>q_and_a</span></div><span class="mono">11</span></div>
+          <blockquote>“Adjusted operating income was $49 million, adjusted net income reached $34 million, and adjusted diluted EPS was $0.72.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_fd15586e9e53429836fdd052ffbf811d</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_8f442dc5b490cdb82c986e4459e0dad3">49 million</code><code title="claim_81e3887684e82ca1242e47a4e3e6ed3c">34 million</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>margins</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">11</span></div>
+          <blockquote>“Adjusted EBITDA was a strong $72 million with a 6% margin, underscoring the resilience and earnings quality of our diversified enterprise model.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_2ca67b8d8ce673b9eff0128c19b78693</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_acbc34bbb4a126725b8f86e0eec35ac9">72 million</code><code title="claim_d485130c4370892b77cbb7c56409a4a0">6%</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>performance</span><span>capital_allocation</span><span>q_and_a</span></div><span class="mono">12</span></div>
+          <blockquote>“Our full-year capital expenditure expectations are set between $85 million and $95 million, focused directly on expansion projects in Central America, fresh-cut growth in Europe, investments in the Del Monte Foods business, and technology investments.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_9133e23427ed9a7591c627f914b644b4</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_a458fffcd2a75197e30b2ee7f9af08f9">85 million</code><code title="claim_244f1c5eae440a5c90879ba196febc89">95 million</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>performance</span><span>q_and_a</span></div><span class="mono">13</span></div>
+          <blockquote>“Looking at our full-year 2026 outlook, we expect adjusted net sales growth of 13%-15%.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_6061b92660763899956d35325f31584f</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_24742a2727f2bfa24ebb9c3efe27f8a9">2026</code><code title="claim_3a7d5c46b629ec7d11798c391aeef91b">13%</code><code title="claim_dd22e9089f77642fe2975523ae7e7143">-15</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>risks</span><span>q_and_a</span></div><span class="mono">13</span></div>
+          <blockquote>“We now anticipate external cost pressures to moderate significantly to $45 million-$55 million, down from prior estimates of $60 million-$70 million, benefiting our production, ocean freight, logistics, and distribution cost profiles.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_ffb49d46ce667c4eefa195f9a48c75d4</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_81f0928f2f307fdf2f934a77e2c5421d">45 million</code><code title="claim_256255a3a94a31ad1e7d184c42a1410c">55 million</code><code title="claim_d04b92eabcf0497f658467d6e88ab37f">60 million</code><code title="claim_30e3fff088486d90177c8e12756f65f1">70 million</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>margins</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">15</span></div>
+          <blockquote>“For the prepared product segment, the target margins are 14%-15%, and for other products and services, our target margins are 10%-11%.”</blockquote>
+          <div class="ewa-attribution"><span>Monica Vicente · CFO</span><code>claim_18cb5d89bcd471cb8ab37da2f6bbfaf1</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_c04b94173437d7fedce3f5c708e099f2">14%</code><code title="claim_18fadd12c32eb5b6b3c27ec630e1d478">-15%</code><code title="claim_880683f8627c192219f97b5e6171504b">10%</code><code title="claim_bb3898492904e795aba7977e44429241">-11</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>q_and_a</span></div><span class="mono">22</span></div>
+          <blockquote>“One of them was service levels; other was shortage of volumes to customers.”</blockquote>
+          <div class="ewa-attribution"><span>Mohammad Abu-Ghazaleh · CEO</span><code>claim_fc4a7d6ec760d18ccea63e48065ee1ee</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">36</span></div>
+          <blockquote>“On the banana side, lower volumes, or I guess weak demand in North America, is that weak demand, is that where you&#39;ve maybe walked away from some unprofitable or less profitable business?”</blockquote>
+          <div class="ewa-attribution"><span>Mitch Pinheiro</span><code>claim_1001b85e73eaf1deafcdaa221b8c5003</code></div>
+        </article>
+      </section>
+
+      <details class="ewa-receipts">
+        <summary><span><span class="l-en">Inspect the source receipts</span><span class="l-zh">检查来源回执</span></span><b>33 <span class="l-en">bound spans</span><span class="l-zh">个已绑定片段</span></b></summary>
+        <div class="ewa-receipt-note"><span class="l-en">Each row identifies the source body, transcript segment and byte span used to verify the visible text.</span><span class="l-zh">每行标识用于核验可见文本的来源正文、电话会片段和字节范围。</span></div>
+        <div class="ewa-table-wrap"><table><thead><tr><th><span class="l-en">Claim</span><span class="l-zh">主张</span></th><th><span class="l-en">Kind</span><span class="l-zh">类型</span></th><th><span class="l-en">Segment</span><span class="l-zh">片段</span></th><th><span class="l-en">Byte span</span><span class="l-zh">字节范围</span></th><th><span class="l-en">Text hash</span><span class="l-zh">文本哈希</span></th></tr></thead><tbody>
+<tr><td><code>claim_1637dbc37a9962375b7556cfeb9a440e</code></td><td>quote</td><td class="mono">5</td><td class="mono">0–191</td><td><code>5f38991a807385…</code></td></tr><tr><td><code>claim_21d46e00b08fbbe9509205c84ee96570</code></td><td>quote</td><td class="mono">6</td><td class="mono">441–626</td><td><code>59c12cd919fbf2…</code></td></tr><tr><td><code>claim_f0dbf4e7506f1ba4fc10c41cb345aa50</code></td><td>quote</td><td class="mono">9</td><td class="mono">430–585</td><td><code>c315461db794bb…</code></td></tr><tr><td><code>claim_d92ad7f483f97fa489c16ddfaaf87b4b</code></td><td>numeric</td><td class="mono">9</td><td class="mono">510–519</td><td><code>de81274b4b3b0b…</code></td></tr><tr><td><code>claim_bf375c5fdbff8e60f25beaada7172c5c</code></td><td>numeric</td><td class="mono">9</td><td class="mono">571–575</td><td><code>158a323a7ba448…</code></td></tr><tr><td><code>claim_1c3371cbf06b3b14c659b839035d27e4</code></td><td>quote</td><td class="mono">11</td><td class="mono">156–257</td><td><code>72439e99f7be0c…</code></td></tr><tr><td><code>claim_9b5a15db2bc570cbc68e361c2140cacd</code></td><td>numeric</td><td class="mono">11</td><td class="mono">178–189</td><td><code>687627196eeb79…</code></td></tr><tr><td><code>claim_e202d5ab419d70d9946342129f0f59e0</code></td><td>numeric</td><td class="mono">11</td><td class="mono">208–212</td><td><code>a5360c4839dc3b…</code></td></tr><tr><td><code>claim_fd15586e9e53429836fdd052ffbf811d</code></td><td>quote</td><td class="mono">11</td><td class="mono">258–377</td><td><code>ae6490f782ac68…</code></td></tr><tr><td><code>claim_8f442dc5b490cdb82c986e4459e0dad3</code></td><td>numeric</td><td class="mono">11</td><td class="mono">289–299</td><td><code>51612b5e080d1e…</code></td></tr><tr><td><code>claim_81e3887684e82ca1242e47a4e3e6ed3c</code></td><td>numeric</td><td class="mono">11</td><td class="mono">330–340</td><td><code>dced1e25868563…</code></td></tr><tr><td><code>claim_2ca67b8d8ce673b9eff0128c19b78693</code></td><td>quote</td><td class="mono">11</td><td class="mono">378–522</td><td><code>3af1a57e12e700…</code></td></tr><tr><td><code>claim_acbc34bbb4a126725b8f86e0eec35ac9</code></td><td>numeric</td><td class="mono">11</td><td class="mono">408–418</td><td><code>b881298f73bac6…</code></td></tr><tr><td><code>claim_d485130c4370892b77cbb7c56409a4a0</code></td><td>numeric</td><td class="mono">11</td><td class="mono">426–428</td><td><code>d9d689c786a2ae…</code></td></tr><tr><td><code>claim_9133e23427ed9a7591c627f914b644b4</code></td><td>quote</td><td class="mono">12</td><td class="mono">781–1032</td><td><code>49f53224d730dd…</code></td></tr><tr><td><code>claim_a458fffcd2a75197e30b2ee7f9af08f9</code></td><td>numeric</td><td class="mono">12</td><td class="mono">845–855</td><td><code>43219d121ffbb5…</code></td></tr><tr><td><code>claim_244f1c5eae440a5c90879ba196febc89</code></td><td>numeric</td><td class="mono">12</td><td class="mono">861–871</td><td><code>5b7ce50f5faf8f…</code></td></tr><tr><td><code>claim_6061b92660763899956d35325f31584f</code></td><td>quote</td><td class="mono">13</td><td class="mono">230–316</td><td><code>35416f38d510c1…</code></td></tr><tr><td><code>claim_24742a2727f2bfa24ebb9c3efe27f8a9</code></td><td>numeric</td><td class="mono">13</td><td class="mono">255–259</td><td><code>158a323a7ba448…</code></td></tr><tr><td><code>claim_3a7d5c46b629ec7d11798c391aeef91b</code></td><td>numeric</td><td class="mono">13</td><td class="mono">308–311</td><td><code>1137d6133e74fa…</code></td></tr><tr><td><code>claim_dd22e9089f77642fe2975523ae7e7143</code></td><td>numeric</td><td class="mono">13</td><td class="mono">311–314</td><td><code>5e37b37c842d8d…</code></td></tr><tr><td><code>claim_ffb49d46ce667c4eefa195f9a48c75d4</code></td><td>quote</td><td class="mono">13</td><td class="mono">416–650</td><td><code>edb7c019b53445…</code></td></tr><tr><td><code>claim_81f0928f2f307fdf2f934a77e2c5421d</code></td><td>numeric</td><td class="mono">13</td><td class="mono">488–498</td><td><code>85c18dda2a91dc…</code></td></tr><tr><td><code>claim_256255a3a94a31ad1e7d184c42a1410c</code></td><td>numeric</td><td class="mono">13</td><td class="mono">500–510</td><td><code>de860ddf025aa4…</code></td></tr><tr><td><code>claim_d04b92eabcf0497f658467d6e88ab37f</code></td><td>numeric</td><td class="mono">13</td><td class="mono">542–552</td><td><code>ae6d24b46a582c…</code></td></tr><tr><td><code>claim_30e3fff088486d90177c8e12756f65f1</code></td><td>numeric</td><td class="mono">13</td><td class="mono">554–564</td><td><code>716bbcea034502…</code></td></tr><tr><td><code>claim_18cb5d89bcd471cb8ab37da2f6bbfaf1</code></td><td>quote</td><td class="mono">15</td><td class="mono">317–451</td><td><code>2e1dbfdebb6ee5…</code></td></tr><tr><td><code>claim_c04b94173437d7fedce3f5c708e099f2</code></td><td>numeric</td><td class="mono">15</td><td class="mono">374–377</td><td><code>21788f57e84dd2…</code></td></tr><tr><td><code>claim_18fadd12c32eb5b6b3c27ec630e1d478</code></td><td>numeric</td><td class="mono">15</td><td class="mono">377–381</td><td><code>5ad020533b0e54…</code></td></tr><tr><td><code>claim_880683f8627c192219f97b5e6171504b</code></td><td>numeric</td><td class="mono">15</td><td class="mono">443–446</td><td><code>3ccce1f4da9480…</code></td></tr><tr><td><code>claim_bb3898492904e795aba7977e44429241</code></td><td>numeric</td><td class="mono">15</td><td class="mono">446–449</td><td><code>2e42a91d2375f9…</code></td></tr><tr><td><code>claim_fc4a7d6ec760d18ccea63e48065ee1ee</code></td><td>quote</td><td class="mono">22</td><td class="mono">106–181</td><td><code>b41bd06a1024c6…</code></td></tr><tr><td><code>claim_1001b85e73eaf1deafcdaa221b8c5003</code></td><td>quote</td><td class="mono">36</td><td class="mono">14–201</td><td><code>1c8ef4fb3a7213…</code></td></tr>        </tbody></table></div>
+      </details>
+
+      <aside class="ewa-disclosure"><span><span class="l-en">Source completeness</span><span class="l-zh">来源完整性</span></span><p><span class="l-en">Transcript: present. Release, filing and slides: not ingested. Consensus: unlicensed/absent. Market reaction: not joined. This page does not fill those gaps with inference.</span><span class="l-zh">电话会文本：已具备。新闻稿、申报文件和演示材料：未接入。一致预期：未授权/缺失。市场反应：未合并。本页不会用推断填补这些空白。</span></p></aside>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="public-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
+          <a href="../../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
+          <a href="../../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <a href="../../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
+          <a href="../../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
+          <a href="../../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
+          <a href="../../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
+          <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
+          <a href="../../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+          <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+          <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+          <a href="../../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
+          <a href="../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
+          <a href="../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
+          <a href="../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+    </div>
+  </div>
+</footer>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
+<script src="../../supabase.js"></script>
+<script src="../../account.js"></script>
+<script src="../../mm_brain.js"></script>
+<script src="../../theme.js"></script>
+<script>
+(function(){
+  var nav=document.querySelector('.public-nav');
+  if(nav){
+    var raf=false;
+    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
+    window.addEventListener('scroll',function(){
+      if(!raf){raf=true;window.requestAnimationFrame(update);}
+    },{passive:true});
+    update();
+  }
+
+  var drawer=document.getElementById('public-primary-navigation');
+  var drawerBtn=document.getElementById('public-nav-toggle');
+  var triggers=Array.prototype.slice.call(document.querySelectorAll('.public-nav-trigger'));
+  var mq=window.matchMedia('(max-width:900px)');
+  var panelFor=function(trigger){return document.getElementById(trigger.getAttribute('aria-controls'));};
+  var closePanels=function(focus){
+    var focused=null;
+    triggers.forEach(function(trigger){
+      if(trigger.getAttribute('aria-expanded')==='true')focused=trigger;
+      trigger.setAttribute('aria-expanded','false');
+      var panel=panelFor(trigger);if(panel)panel.hidden=true;
+    });
+    if(focus&&focused)focused.focus();
+  };
+  var closeDrawer=function(focus){
+    if(!drawer||!drawerBtn)return;
+    drawer.classList.remove('open');
+    drawerBtn.setAttribute('aria-expanded','false');
+    drawerBtn.setAttribute('aria-label','Open navigation');
+    if(focus)drawerBtn.focus();
+  };
+  triggers.forEach(function(trigger){
+    trigger.addEventListener('click',function(e){
+      e.stopPropagation();
+      var wasOpen=trigger.getAttribute('aria-expanded')==='true';
+      closePanels(false);
+      if(!wasOpen){
+        trigger.setAttribute('aria-expanded','true');
+        var panel=panelFor(trigger);if(panel)panel.hidden=false;
+      }
+    });
+    trigger.addEventListener('keydown',function(e){
+      if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+      e.preventDefault();
+      closePanels(false);
+      trigger.setAttribute('aria-expanded','true');
+      var panel=panelFor(trigger);
+      if(!panel)return;
+      panel.hidden=false;
+      var links=panel.querySelectorAll('a[href]');
+      var target=e.key==='ArrowUp'?links[links.length-1]:links[0];
+      if(target)target.focus();
+    });
+    var group=trigger.closest('.public-nav-group');
+    if(group)group.addEventListener('focusout',function(e){
+      if(mq.matches||group.contains(e.relatedTarget))return;
+      closePanels(false);
+    });
+  });
+  if(drawer&&drawerBtn){
+    drawerBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var opening=drawerBtn.getAttribute('aria-expanded')!=='true';
+      if(opening){
+        drawer.classList.add('open');
+        drawerBtn.setAttribute('aria-expanded','true');
+        drawerBtn.setAttribute('aria-label','Close navigation');
+      }else{
+        closePanels(false);closeDrawer(false);
+      }
+    });
+    drawer.querySelectorAll('a[href]').forEach(function(link){
+      link.addEventListener('click',function(){closePanels(false);closeDrawer(false);});
+    });
+    var reset=function(){closePanels(false);closeDrawer(false);};
+    if(mq.addEventListener)mq.addEventListener('change',reset);else mq.addListener(reset);
+  }
+
+  var btn=document.getElementById('gear-btn');
+  var pop=document.getElementById('gear-pop');
+  document.addEventListener('pointerdown',function(e){
+    if(nav&&!nav.contains(e.target)){closePanels(false);closeDrawer(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    var open=triggers.some(function(trigger){return trigger.getAttribute('aria-expanded')==='true';});
+    if(open){e.preventDefault();closePanels(true);return;}
+    if(drawerBtn&&drawerBtn.getAttribute('aria-expanded')==='true'){e.preventDefault();closeDrawer(true);}
+  });
+  if(!btn||!pop)return;
+  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
+  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
+  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
+  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closePanels(false);
+    var opening=!pop.classList.contains('open');
+    pop.classList.toggle('open',opening);
+    btn.setAttribute('aria-expanded',opening?'true':'false');
+  });
+  segs.forEach(function(s){
+    s.addEventListener('click',function(e){
+      e.stopPropagation();
+      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
+      document.documentElement.setAttribute('data-lang',lang);
+      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+      try{localStorage.setItem('lang',lang);}catch(ignore){}
+      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
+      sync();
+    });
+  });
+  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  });
+  sync();
+})();
+</script><script src="../../onboard.js" defer></script>
+</body>
+</html>
