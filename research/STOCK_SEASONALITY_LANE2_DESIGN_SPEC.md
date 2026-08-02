@@ -522,7 +522,13 @@ The word `validated` must not appear (CI-guarded,
     "start_doy": 215, "end_doy": 254, "source": "symbol_best",
     "abs_t": 5.9, "null_max_exceedance_pct": 9.0,
     "state": "market",
-    "raw_clears": true, "neutral_clears": false
+    "raw_clears": true, "neutral_clears": false,
+    "stability": {
+      "shifts_days": [-5, -2, 2, 5],
+      "abs_t": [4.1, 5.4, 5.6, 3.9],
+      "sign_stable": true,
+      "survives": true
+    }
   },
   "neutral": {
     "market": {
@@ -830,3 +836,52 @@ default-deny public allowlist needs only `index.json` and that one default entit
 beside the existing methodology entry. No broad prefix, and the existing
 `test_methodology_manifest_is_in_reviewed_public_boundary` assertion stands
 untouched.
+
+---
+
+## §15 The short-window artifact, and the one check that catches it
+
+A plausibility probe over the winning windows found two things.
+
+**The statistic finds real seasons.** The best window for SPY, QQQ and XLK is all
+three times `Oct 12 → Dec 11` (60 days, 88% / 80% / 84% of years up) — the
+canonical Q4 rally. XLV and LLY land on the same late-year stretch, XLE on the
+spring energy window. These are recognised seasonal periods, arrived at from
+price alone. The scanner is not producing noise.
+
+**But short windows dominate the winners.** Across 60 sampled symbols, the
+horizon of the best window was:
+
+| horizon | 5d | 10d | 15d | 20d | 30d | 45d | 60d | 90d |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| winners | **23** | 8 | 5 | 7 | 3 | 4 | 9 | 1 |
+
+and some of those are transparently not seasons: `MU May 23 → May 28` at +4.7%
+mean over five calendar days, `IBB Nov 21 → Nov 26` (Thanksgiving week). A five-
+day calendar window that recurs is usually pinned to a **recurring corporate
+event** — an earnings date, an expiry, an index rebalance — not to the season.
+That is real structure, but it is a different claim, and the docket's own kill
+list forbids an effect that "depends on one issuer/year/cluster".
+
+### The discriminator: neighbouring-window stability
+
+A genuine seasonal survives being nudged; a date artifact does not. The docket
+already requires this in Lanes 2 and 4 ("start/end perturbation ±2 and ±5 trading
+days", "survives neighbouring windows") — this spec omitted it, which was a gap.
+
+**Backend:** for the default window and every registered panel window, recompute
+`|t|` with the whole window shifted by −5, −2, +2, +5 days and ship the
+`stability` block in §9. `survives` is true when the sign is unchanged at all four
+shifts **and** the median shifted `|t|` is at least 60% of the unshifted `|t|`.
+
+**Frontend:** one plain sentence in the **This window** panel, right after the
+after-search line:
+
+| | EN | ZH |
+|---|---|---|
+| `survives` | `Nudging the window a few days either way keeps this.` | `把窗口前后挪几天，这个规律仍然成立。` |
+| not | `Nudging the window a few days either way loses it — this looks like a recurring date, not a season.` | `把窗口前后挪几天就消失了——这更像是一个固定日期，而不是季节性规律。` |
+
+No new chip, no new furniture, no jargon — one sentence that changes what a reader
+does. It is the cheapest honest defence against the largest remaining failure mode
+on this page, and the incumbent ships nothing like it.
