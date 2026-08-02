@@ -16,26 +16,32 @@ It retains current SEC Company Facts JSON only after all of these gates pass:
 2. streamed response under the declared and actual byte caps;
 3. UTF-8 JSON with a CIK exactly equal to the requested CIK;
 4. SHA-256 content-addressed source-store write and exact read-back; and
-5. closed-contract manifest and append-only coverage-row validation.
+5. closed-contract manifest and append-only coverage-row validation; and
+6. an immutable generation, chained receipt, and atomic selector publish.
 
-The queue is deterministic, hard capped at 24 CIKs/run (64 maximum), prioritizes
-due retry/defer rows, then new anchors, then stale seven-day refreshes. It is
-serial inside `scripts.collect`'s shared `sec` host group and preserves a local
-100ms request floor. Delayed retry/defer work and fresh captures are separately
-counted; a deferred request never becomes a negative issuer fact.
+The queue is deterministic and hard capped at 24 CIKs/run (64 maximum). A
+2:1:1 rotating retry/new/refresh schedule, ordered by due clock then CIK within
+each lane, prevents any continually non-empty lane from starving while retaining
+retry weight. It is serial inside `scripts.collect`'s shared `sec` host group and
+preserves a local 100ms request floor. Delayed retry/defer work and fresh captures
+are separately counted; a deferred request never becomes a negative issuer fact.
 
 ## Contracts and artifacts
 
 | Artifact | Contract | Purpose |
 | --- | --- | --- |
-| `data/capital_structure/companyfacts/source_manifest.parquet` | `capital_structure.companyfacts_source_manifest/v1` | Immutable, byte-verified Company Facts source evidence. |
-| `data/capital_structure/companyfacts/coverage.parquet` | `capital_structure.companyfacts_coverage_row/v1` | Append-only queue/retrieval outcome ledger. |
-| `data/capital_structure/companyfacts/coverage_receipt.json` | `capital_structure.companyfacts_coverage_receipt/v1` | Telemetry-last receipt that hash-binds anchor, source, and coverage prefixes. |
+| `data/capital_structure/companyfacts/generations/<sha256>/source_manifest.parquet` | `capital_structure.companyfacts_source_manifest/v1` | Immutable, byte-verified Company Facts source evidence. |
+| `data/capital_structure/companyfacts/generations/<sha256>/coverage.parquet` | `capital_structure.companyfacts_coverage_row/v1` | Immutable generation containing the append-only queue/retrieval history. |
+| `data/capital_structure/companyfacts/receipts/<sha256>.json` | `capital_structure.companyfacts_coverage_receipt/v1` | Immutable sequence/predecessor receipt that commits both ordered prefixes and exact generation files. |
+| `data/capital_structure/companyfacts/coverage_receipt.json` | `capital_structure.companyfacts_current_pointer/v1` | Tiny atomically replaced pointer to the selected immutable receipt/generation. |
 
-The collector stages and read-backs both Parquet ledgers, removes any prior
-receipt before the pair is published, and writes the receipt only after their
-hashes match. Consumers must require that receipt; raw objects written before a
-failed ledger publish are unreachable evidence, not source claims.
+The collector stages and read-backs both Parquet ledgers under an identity-named
+generation directory, seals an immutable receipt under `receipts/`, then advances
+only the tiny pointer. It never overwrites a ledger or receipt. On startup it
+authenticates the complete predecessor chain, every required generation, and the
+selected generation's exact bytes and ordered prefixes. A fault before pointer
+advance leaves the prior authenticated generation selected; an orphaned staged
+generation or receipt is unreachable evidence, not a source claim.
 
 All three artifacts are registered in `config/synapse.yml`. The daily collection
 step runs the adapter immediately after `sec_capital_structure`; this dependency
@@ -72,6 +78,8 @@ not grant any authority beyond the existing share-count truth-plane boundary.
 `python3 -m pytest -q tests/test_sec_capital_structure_companyfacts.py`
 
 The focused suite covers canonical request/CIK validation, declared and streamed
-byte caps, unique verified-anchor selection, deterministic retry-first bounded
-queueing, source-store failure, no-anchor no-network behavior, append-only ledger
-receipts, and telemetry-last failure behavior.
+byte caps, unique verified-anchor selection, deterministic starvation-free queue
+progress, source-store failure, honest `ok`/`partial`/`degraded`/`blocked` status,
+force-refresh history preservation, body/semantic/cross-ledger identity checks,
+full-chain startup authentication, retry-after global cooldown, total run budgets,
+and last-good survival across generation/receipt/pointer publish faults.

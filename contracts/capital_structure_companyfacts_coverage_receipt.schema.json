@@ -2,28 +2,35 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_coverage_receipt.schema.json",
   "title": "Capital Structure Company Facts coverage receipt",
-  "description": "Telemetry-last receipt. Consumers may trust the paired Company Facts source-manifest and coverage ledgers only when this receipt hash-binds both immutable prefixes.",
+  "description": "Immutable, chained Company Facts receipt. The tiny current pointer selects one receipt; every receipt identity-binds its predecessor, exact generation files, and ordered ledger prefixes.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "receipt_id", "as_of", "policy_version", "status", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "nonclaims", "authority"],
+  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "population", "nonclaims", "authority"],
   "properties": {
     "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
     "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+    "selection_as_of": {"type": "string", "format": "date-time"},
+    "published_at": {"type": "string", "format": "date-time"},
     "as_of": {"type": "string", "format": "date-time"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "previous_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/receipt_reference"}]},
     "policy_version": {"type": "string", "minLength": 1},
-    "status": {"type": "string", "enum": ["ok", "no_eligible_anchors"]},
+    "status": {"type": "string", "enum": ["ok", "partial", "degraded", "blocked", "no_eligible_anchors"]},
+    "generation": {"$ref": "#/$defs/generation"},
     "anchor_manifest_ledger": {"$ref": "#/$defs/ledger"},
     "companyfacts_manifest_ledger": {"$ref": "#/$defs/ledger"},
     "coverage_ledger": {"$ref": "#/$defs/ledger"},
     "queue": {
       "type": "object", "additionalProperties": false,
-      "required": ["max_ciks", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order"],
+      "required": ["max_ciks", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason"],
       "properties": {
         "max_ciks": {"type": "integer", "minimum": 0},
         "eligible_ciks": {"type": "integer", "minimum": 0},
         "selected_ciks": {"type": "integer", "minimum": 0},
         "deferred_ciks": {"type": "integer", "minimum": 0},
-        "priority_order": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]{10}$"}, "uniqueItems": true}
+        "priority_order": {"type": "array", "items": {"type": "string", "pattern": "^[0-9]{10}$"}, "uniqueItems": true},
+        "due_by_reason": {"$ref": "#/$defs/reason_counts"},
+        "selected_by_reason": {"$ref": "#/$defs/reason_counts"}
       }
     },
     "counts": {
@@ -34,6 +41,17 @@
         "retry": {"type": "integer", "minimum": 0},
         "deferred": {"type": "integer", "minimum": 0},
         "skipped_fresh": {"type": "integer", "minimum": 0}
+      }
+    },
+    "population": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fresh_ciks", "stale_ciks", "pending_ciks", "retry_ciks", "deferred_ciks"],
+      "properties": {
+        "fresh_ciks": {"type": "integer", "minimum": 0},
+        "stale_ciks": {"type": "integer", "minimum": 0},
+        "pending_ciks": {"type": "integer", "minimum": 0},
+        "retry_ciks": {"type": "integer", "minimum": 0},
+        "deferred_ciks": {"type": "integer", "minimum": 0}
       }
     },
     "nonclaims": {"type": "array", "minItems": 6, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
@@ -47,6 +65,51 @@
         "record_count": {"type": "integer", "minimum": 0},
         "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
         "immutable_prefix": {"const": true}
+      }
+    },
+    "file_receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "byte_length"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "generation_file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "byte_length"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^generations/[a-f0-9]{64}/(source_manifest|coverage)\\.parquet$"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "generation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["generation_id", "source_manifest", "coverage"],
+      "properties": {
+        "generation_id": {"type": "string", "pattern": "^generation:cs-companyfacts:[a-f0-9]{64}$"},
+        "source_manifest": {"$ref": "#/$defs/generation_file"},
+        "coverage": {"$ref": "#/$defs/generation_file"}
+      }
+    },
+    "receipt_reference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["receipt_id", "path", "sha256", "byte_length"],
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+        "path": {"type": "string", "pattern": "^receipts/[a-f0-9]{64}\\.json$"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "reason_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["retry_due", "new_anchor", "refresh_due"],
+      "properties": {
+        "retry_due": {"type": "integer", "minimum": 0},
+        "new_anchor": {"type": "integer", "minimum": 0},
+        "refresh_due": {"type": "integer", "minimum": 0}
       }
     },
     "authority": {

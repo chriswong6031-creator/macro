@@ -4,10 +4,11 @@
   "title": "Capital Structure Company Facts coverage row",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "coverage_id", "cik", "anchor_manifest_id", "anchor_first_seen_at", "attempted_at", "attempt_count", "queue_reason", "state", "retry_after", "error", "result"],
+  "required": ["schema", "coverage_id", "attempt_id", "cik", "anchor_manifest_id", "anchor_first_seen_at", "attempted_at", "attempt_count", "queue_reason", "state", "retry_after", "error", "result"],
   "properties": {
     "schema": {"const": "capital_structure.companyfacts_coverage_row/v1"},
     "coverage_id": {"type": "string", "pattern": "^coverage:cs-companyfacts:[a-f0-9]{64}$"},
+    "attempt_id": {"type": "string", "pattern": "^attempt:cs-companyfacts:[a-f0-9]{64}$"},
     "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
     "anchor_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
     "anchor_first_seen_at": {"type": "string", "format": "date-time"},
