@@ -5,7 +5,7 @@
   "description": "Immutable, chained Company Facts receipt. The tiny current pointer selects one receipt; every receipt identity-binds its predecessor, exact generation files, and ordered ledger prefixes.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "population", "nonclaims", "authority", "auth"],
+  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "retention_verification", "queue", "counts", "population", "nonclaims", "authority", "auth"],
   "properties": {
     "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
     "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
@@ -20,6 +20,7 @@
     "anchor_manifest_ledger": {"$ref": "#/$defs/ledger"},
     "companyfacts_manifest_ledger": {"$ref": "#/$defs/ledger"},
     "coverage_ledger": {"$ref": "#/$defs/ledger"},
+    "retention_verification": {"$ref": "#/$defs/retention_verification"},
     "queue": {
       "type": "object", "additionalProperties": false,
       "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason"],
@@ -114,6 +115,27 @@
         "new_anchor": {"type": "integer", "minimum": 0},
         "refresh_due": {"type": "integer", "minimum": 0}
       }
+    },
+    "retention_verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy", "selection_day", "eligible_objects", "latest_objects", "historical_objects", "checked_current_manifest_ids", "checked_historical_manifest_ids", "admission_verified_manifest_ids", "verified_manifest_ids", "all_objects_reverified", "freshness"],
+      "properties": {
+        "policy": {"const": "bounded-retention-verification/v1"},
+        "selection_day": {"type": "string", "format": "date"},
+        "eligible_objects": {"type": "integer", "minimum": 0},
+        "latest_objects": {"type": "integer", "minimum": 0},
+        "historical_objects": {"type": "integer", "minimum": 0},
+        "checked_current_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "checked_historical_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "admission_verified_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "verified_manifest_ids": {"$ref": "#/$defs/manifest_ids"},
+        "all_objects_reverified": {"type": "boolean"},
+        "freshness": {"type": "string", "enum": ["complete", "sampled"]}
+      }
+    },
+    "manifest_ids": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"}
     },
     "authority": {
       "type": "object", "additionalProperties": false,

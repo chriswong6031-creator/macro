@@ -39,10 +39,23 @@ are separately counted; a deferred request never becomes a negative issuer fact.
 The collector stages and read-backs both Parquet ledgers under an identity-named
 generation directory, seals an immutable receipt under `receipts/`, performs the
 external exact-predecessor head CAS, then advances only the tiny local pointer.
-It never overwrites a ledger or receipt. On startup it authenticates the complete
-predecessor chain, every required generation, each selected raw object, and the
-selected generation's exact bytes and ordered prefixes. An orphaned stage or
-receipt is unreachable evidence, not a source claim.
+It never overwrites a ledger or receipt. Root-relative receipt, generation,
+pointer, lock, and stage operations use no-follow directory descriptors, so a
+parent symlink cannot redirect a read, create, link, or rename outside the lane.
+On startup it authenticates the complete predecessor chain, every required
+generation, and the selected generation's exact bytes and ordered prefixes. An
+orphaned stage or receipt is unreachable evidence, not a source claim.
+
+Raw-object retention has two distinct verification promises. Every *newly
+admitted* JSON object is exact-verified by source-store `put_verified` (write and
+read-back). Existing objects receive a deadline-accounted, rotating retention
+audit capped at 24 objects: two latest-per-CIK slots for every one historical
+slot while both lanes are available, with a deterministic UTC-day cursor. The
+signed receipt's `retention_verification` names the exact manifest IDs checked,
+the admission-verified suffix, and whether coverage is `complete` or `sampled`.
+Thus an `ok` coverage status means the CIK coverage population is healthy; it
+never claims every historical object was reread that run. On-demand consumers
+must still call `get_verified` for the exact object they intend to consume.
 
 The four local artifacts are registered in `config/synapse.yml`; the R2 witness
 is a guard, not a data-plane Synapse artifact. The daily collection step runs the
@@ -92,12 +105,17 @@ indeterminate publication, not a successful write.
 
 The receipt chain is hard-capped at 512 receipts and each committed Parquet file
 at 128 MiB. Empty/no-op runs do not create a new receipt or advance either head.
-Reaching the cap is a deliberate signed checkpoint/compaction boundary: an
-operator must introduce a versioned, signed checkpoint migration before more
-history can be published. Time checks bracket request setup, streamed response,
-source-store retention, and generation sealing (an already-entered external call
-cannot be forcibly cancelled by the available interfaces). Server `Retry-After`
-is persisted as its full UTC deadline rather than being shortened locally.
+At the cap the adapter publishes no 513th receipt, prints a line-start
+`companyfacts-checkpoint-blocked` operational annotation, and returns a
+`checkpoint_blocked` heartbeat. The generic collector maps that heartbeat to
+non-failure `blocked`, so it cannot demote the lane to `failed`/`dead`; a
+versioned signed checkpoint/compaction migration is the explicit dependency
+before publishing resumes. Time checks bracket request setup, streamed response,
+source-store retention, and generation sealing. Where a content store lacks a
+per-call read timeout, the sampled read runs in read-only daemon isolation and
+the caller returns at the remaining hard wall-clock deadline. Server
+`Retry-After` is persisted as its full UTC deadline rather than being shortened
+locally.
 
 ## Scope and hard nonclaims
 

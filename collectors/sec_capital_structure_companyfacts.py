@@ -20,12 +20,14 @@ from email.utils import parsedate_to_datetime
 from hashlib import sha256
 import fcntl
 import hmac
+import io
 import json
 import logging
 import math
 import os
 from pathlib import Path
-import shutil
+import stat
+import threading
 import time
 from typing import Any, Iterator, Protocol
 
@@ -55,6 +57,12 @@ MAX_RUN_SECONDS = 15 * 60.0
 HARD_MAX_RUN_SECONDS = 60 * 60.0
 MAX_RECEIPT_CHAIN_LENGTH = 512
 MAX_GENERATION_FILE_BYTES = 128 * 1024 * 1024
+# Retention verification is deliberately bounded: source admission remains an
+# exact put/readback, while pre-existing immutable objects receive a rotating
+# audit instead of an unbounded all-history startup scan.
+MAX_RETENTION_VERIFY_OBJECTS = 24
+RETENTION_VERIFY_POLICY = "bounded-retention-verification/v1"
+_RETENTION_VERIFY_SCHEDULE = ("current", "current", "historical")
 REFRESH_AFTER = timedelta(days=7)
 RETRY_AFTER = timedelta(hours=1)
 DEFER_AFTER = timedelta(hours=24)
@@ -536,8 +544,154 @@ def _read_ledger(path: Path, columns: Sequence[str]) -> pd.DataFrame:
     return frame[list(columns)]
 
 
+def _read_ledger_bytes(body: bytes, columns: Sequence[str], *, label: str) -> pd.DataFrame:
+    """Parse a parquet ledger already read through the no-follow boundary."""
+    try:
+        frame = pd.read_parquet(io.BytesIO(body))
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsIntakeError(f"unreadable Company Facts ledger {label}: {exc}") from exc
+    missing = [column for column in columns if column not in frame.columns]
+    if missing:
+        raise CompanyFactsIntakeError(f"Company Facts ledger {label} lacks columns: {', '.join(missing)}")
+    return frame[list(columns)]
+
+
+def _safe_relative_parts(relative: str | Path) -> tuple[str, ...]:
+    candidate = Path(relative)
+    if candidate.is_absolute() or not candidate.parts:
+        raise CompanyFactsIntakeError("Company Facts path must be root-relative")
+    parts = tuple(candidate.parts)
+    if any(part in {"", ".", ".."} or "/" in part or "\\" in part for part in parts):
+        raise CompanyFactsIntakeError("Company Facts path traversal is forbidden")
+    return parts
+
+
+def _relative_parts(root: Path, path: Path) -> tuple[str, ...]:
+    try:
+        relative = path.relative_to(root)
+    except ValueError as exc:
+        raise CompanyFactsIntakeError("Company Facts path escapes configured root") from exc
+    return _safe_relative_parts(relative)
+
+
+@contextmanager
+def _open_companyfacts_directory(
+    root: Path, parts: Sequence[str] = (), *, create: bool = False,
+) -> Iterator[int]:
+    """Open a root-relative directory chain without following any component link.
+
+    Holding these directory descriptors turns every later read, create, link, and
+    rename into an ``openat`` operation.  This closes the lstat/open and
+    parent-replacement windows that a path-only check cannot close.
+    """
+    if create:
+        root.mkdir(parents=True, exist_ok=True)
+    try:
+        root_stat = os.lstat(root)
+    except FileNotFoundError as exc:
+        raise CompanyFactsIntakeError("Company Facts root is missing") from exc
+    if stat.S_ISLNK(root_stat.st_mode) or not stat.S_ISDIR(root_stat.st_mode):
+        raise CompanyFactsIntakeError("Company Facts root must be a real directory, not a symlink")
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        root_fd = os.open(root, flags)
+        descriptors.append(root_fd)
+        opened_stat = os.fstat(root_fd)
+        if (opened_stat.st_dev, opened_stat.st_ino) != (root_stat.st_dev, root_stat.st_ino):
+            raise CompanyFactsIntakeError("Company Facts root changed during secure open")
+        current = root_fd
+        for part in parts:
+            if part in {"", ".", ".."} or "/" in part or "\\" in part:
+                raise CompanyFactsIntakeError("Company Facts path traversal is forbidden")
+            try:
+                next_fd = os.open(part, flags, dir_fd=current)
+            except FileNotFoundError:
+                if not create:
+                    raise CompanyFactsIntakeError(f"Company Facts directory is missing: {part}") from None
+                os.mkdir(part, mode=0o700, dir_fd=current)
+                next_fd = os.open(part, flags, dir_fd=current)
+            except OSError as exc:
+                raise CompanyFactsIntakeError(
+                    f"Company Facts directory cannot be opened without following links: {part}"
+                ) from exc
+            opened = os.fstat(next_fd)
+            if not stat.S_ISDIR(opened.st_mode):
+                os.close(next_fd)
+                raise CompanyFactsIntakeError(f"Company Facts path component is not a directory: {part}")
+            descriptors.append(next_fd)
+            current = next_fd
+        yield current
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+@contextmanager
+def _open_companyfacts_parent(
+    root: Path, parts: Sequence[str], *, create: bool = False,
+) -> Iterator[tuple[int, str]]:
+    if not parts:
+        raise CompanyFactsIntakeError("Company Facts file path is required")
+    if any(part in {"", ".", ".."} or "/" in part or "\\" in part for part in parts):
+        raise CompanyFactsIntakeError("Company Facts path traversal is forbidden")
+    with _open_companyfacts_directory(root, parts[:-1], create=create) as parent_fd:
+        yield parent_fd, parts[-1]
+
+
+def _read_regular_bytes_at(
+    parent_fd: int, name: str, *, label: str, max_bytes: int | None = None,
+    missing_ok: bool = False,
+) -> bytes | None:
+    try:
+        descriptor = os.open(name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd)
+    except FileNotFoundError:
+        if missing_ok:
+            return None
+        raise CompanyFactsIntakeError(f"Company Facts {label} is missing") from None
+    except OSError as exc:
+        raise CompanyFactsIntakeError(f"Company Facts {label} cannot be opened without following links") from exc
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise CompanyFactsIntakeError(f"Company Facts {label} must be a regular file")
+        if max_bytes is not None and metadata.st_size > max_bytes:
+            raise CompanyFactsIntakeError(f"Company Facts {label} exceeds byte cap")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        body = b"".join(chunks)
+        if len(body) != metadata.st_size:
+            raise CompanyFactsIntakeError(f"Company Facts {label} changed during secure read")
+        return body
+    finally:
+        os.close(descriptor)
+
+
+def _write_new_regular_bytes_at(parent_fd: int, name: str, content: bytes, *, label: str) -> None:
+    try:
+        descriptor = os.open(
+            name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=parent_fd,
+        )
+    except OSError as exc:
+        raise CompanyFactsIntakeError(f"cannot securely create Company Facts {label}") from exc
+    try:
+        offset = 0
+        while offset < len(content):
+            offset += os.write(descriptor, content[offset:])
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0))
     try:
         os.fsync(descriptor)
     finally:
@@ -552,18 +706,31 @@ def _companyfacts_publish_lease(root: Path) -> Iterator[None]:
     prevents two local processes from doing duplicate network work or forking
     the on-disk receipt chain before that CAS point.
     """
-    root.mkdir(parents=True, exist_ok=True)
-    lock_path = root / ".companyfacts_publish.lock"
-    with lock_path.open("a+b") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    with _open_companyfacts_directory(root, create=True) as root_fd:
         try:
-            yield
+            lock_fd = os.open(
+                ".companyfacts_publish.lock",
+                os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0),
+                0o600,
+                dir_fd=root_fd,
+            )
+        except OSError as exc:
+            raise CompanyFactsIntakeError("Company Facts publish lease cannot follow a symlink") from exc
+        try:
+            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                raise CompanyFactsIntakeError("Company Facts publish lease must be a regular file")
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
         finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            os.close(lock_fd)
 
 
 def _atomic_write_bytes(
     path: Path, content: bytes, *, expected_previous: bytes | None | object = ...,
+    root: Path | None = None,
 ) -> None:
     """Atomically replace a pointer under an exact-predecessor publication lease.
 
@@ -571,70 +738,75 @@ def _atomic_write_bytes(
     ``os.replace`` is not a durability acknowledgement. The external head witness
     records the recovery target, while this call reports an indeterminate publish.
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
-    previous = path.read_bytes() if path.exists() else None
-    if expected_previous is not ... and previous != expected_previous:
-        raise CompanyFactsIntakeError(f"Company Facts pointer exact-predecessor CAS conflict: {path}")
-    try:
-        with temporary.open("xb") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        if temporary.read_bytes() != content:
-            raise CompanyFactsIntakeError(f"staged pointer read-back mismatch: {path}")
+    safe_root = root or path.parent
+    parts = _relative_parts(safe_root, path) if root is not None else _safe_relative_parts(path.name)
+    temporary = f".{parts[-1]}.{os.getpid()}.{time.time_ns()}.tmp"
+    with _open_companyfacts_parent(safe_root, parts, create=True) as (parent_fd, name):
+        previous = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+        if expected_previous is not ... and previous != expected_previous:
+            raise CompanyFactsIntakeError(f"Company Facts pointer exact-predecessor CAS conflict: {path}")
         try:
-            # The caller holds the cross-process publication lease and supplies the
-            # exact predecessor it authenticated. Re-check immediately before the
-            # commit so an uncooperative local writer cannot be silently overwritten.
-            if expected_previous is not ...:
-                observed = path.read_bytes() if path.exists() else None
-                if observed != expected_previous:
-                    raise CompanyFactsIntakeError(
-                        f"Company Facts pointer exact-predecessor CAS conflict: {path}"
-                    )
-            os.replace(temporary, path)
-        except Exception:
-            actual = path.read_bytes() if path.exists() else None
-            if actual != previous:
-                raise CompanyFactsIntakeError(f"Company Facts pointer state uncertain: {path}")
-            raise
-        try:
-            _fsync_directory(path.parent)
-        except Exception as exc:
-            # The rename may be visible but has not crossed a durable directory
-            # boundary. Do not report success; the external witness makes recovery
-            # deterministic and the next startup refuses a mismatched local head.
-            raise CompanyFactsPublishIndeterminate(
-                f"Company Facts pointer durability is indeterminate after replace: {path}"
-            ) from exc
-    finally:
-        temporary.unlink(missing_ok=True)
+            _write_new_regular_bytes_at(parent_fd, temporary, content, label="staged pointer")
+            if _read_regular_bytes_at(parent_fd, temporary, label="staged pointer") != content:
+                raise CompanyFactsIntakeError(f"staged pointer read-back mismatch: {path}")
+            try:
+                # Re-check via the same parent descriptor immediately before commit.
+                if expected_previous is not ...:
+                    observed = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+                    if observed != expected_previous:
+                        raise CompanyFactsIntakeError(
+                            f"Company Facts pointer exact-predecessor CAS conflict: {path}"
+                        )
+                os.replace(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
+            except Exception:
+                actual = _read_regular_bytes_at(parent_fd, name, label="current pointer", missing_ok=True)
+                if actual != previous:
+                    raise CompanyFactsIntakeError(f"Company Facts pointer state uncertain: {path}")
+                raise
+            try:
+                os.fsync(parent_fd)
+                # Preserve the explicit path-level fsync seam for operator fault
+                # injection, but the descriptor fsync above is the safety boundary.
+                _fsync_directory(path.parent)
+            except Exception as exc:
+                raise CompanyFactsPublishIndeterminate(
+                    f"Company Facts pointer durability is indeterminate after replace: {path}"
+                ) from exc
+        finally:
+            try:
+                os.unlink(temporary, dir_fd=parent_fd)
+            except FileNotFoundError:
+                pass
 
 
-def _write_immutable_bytes(path: Path, content: bytes) -> None:
+def _write_immutable_bytes(path: Path, content: bytes, *, root: Path | None = None) -> None:
     """Create one immutable object without ever replacing a divergent target."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():
-        if path.is_symlink() or path.read_bytes() != content:
-            raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
-        return
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
-    try:
-        with temporary.open("xb") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        if temporary.read_bytes() != content:
-            raise CompanyFactsIntakeError(f"immutable Company Facts object read-back mismatch: {path}")
-        try:
-            os.link(temporary, path)
-        except FileExistsError:
-            if path.is_symlink() or path.read_bytes() != content:
+    safe_root = root or path.parent
+    parts = _relative_parts(safe_root, path) if root is not None else _safe_relative_parts(path.name)
+    temporary = f".{parts[-1]}.{os.getpid()}.{time.time_ns()}.tmp"
+    with _open_companyfacts_parent(safe_root, parts, create=True) as (parent_fd, name):
+        existing = _read_regular_bytes_at(parent_fd, name, label="immutable object", missing_ok=True)
+        if existing is not None:
+            if existing != content:
                 raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
-        _fsync_directory(path.parent)
-    finally:
-        temporary.unlink(missing_ok=True)
+            return
+        try:
+            _write_new_regular_bytes_at(parent_fd, temporary, content, label="immutable staged object")
+            if _read_regular_bytes_at(parent_fd, temporary, label="immutable staged object") != content:
+                raise CompanyFactsIntakeError(f"immutable Company Facts object read-back mismatch: {path}")
+            try:
+                os.link(temporary, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd, follow_symlinks=False)
+            except FileExistsError:
+                existing = _read_regular_bytes_at(parent_fd, name, label="immutable object")
+                if existing != content:
+                    raise CompanyFactsIntakeError(f"immutable Company Facts object collision: {path}")
+            os.fsync(parent_fd)
+            _fsync_directory(path.parent)
+        finally:
+            try:
+                os.unlink(temporary, dir_fd=parent_fd)
+            except FileNotFoundError:
+                pass
 
 
 def _ledger_receipt(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -644,8 +816,18 @@ def _ledger_receipt(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return {"record_count": len(canonical), "prefix_sha256": digest, "immutable_prefix": True}
 
 
-def _file_receipt(path: Path) -> dict[str, Any]:
-    body = path.read_bytes()
+def _file_receipt(path: Path, *, root: Path | None = None, max_bytes: int | None = None) -> dict[str, Any]:
+    if root is None:
+        body = path.read_bytes()
+    else:
+        parts = _relative_parts(root, path)
+        with _open_companyfacts_parent(root, parts) as (parent_fd, name):
+            body = _read_regular_bytes_at(parent_fd, name, label="file receipt", max_bytes=max_bytes)
+            assert body is not None
+    return {"sha256": sha256(body).hexdigest(), "byte_length": len(body)}
+
+
+def _bytes_receipt(body: bytes) -> dict[str, Any]:
     return {"sha256": sha256(body).hexdigest(), "byte_length": len(body)}
 
 
@@ -710,39 +892,54 @@ def _prepare_generation(
                 raise CompanyFactsIntakeError("prior receipt has no immutable generation descriptor")
             return _PreparedGeneration(descriptor=dict(descriptor), stage_path=None)
 
-    root.mkdir(parents=True, exist_ok=True)
-    stage = root / f".generation-stage-{os.getpid()}-{time.time_ns()}"
-    stage.mkdir()
+    stage_name = f".generation-stage-{os.getpid()}-{time.time_ns()}"
+    stage = root / stage_name
+    with _open_companyfacts_directory(root, create=True) as root_fd:
+        try:
+            os.mkdir(stage_name, mode=0o700, dir_fd=root_fd)
+        except FileExistsError as exc:
+            raise CompanyFactsIntakeError("Company Facts generation stage collision") from exc
     try:
         if deadline is not None and monotonic() >= deadline:
             raise CompanyFactsRunBudgetExceeded("Company Facts generation seal exceeded run deadline")
-        manifest_path = stage / "source_manifest.parquet"
-        coverage_path = stage / "coverage.parquet"
-        source_manifests.to_parquet(manifest_path, index=False)
-        coverage.to_parquet(coverage_path, index=False)
-        for path in (manifest_path, coverage_path):
-            if path.stat().st_size > MAX_GENERATION_FILE_BYTES:
+        manifest_body = source_manifests.to_parquet(index=False)
+        coverage_body = coverage.to_parquet(index=False)
+        if not isinstance(manifest_body, bytes) or not isinstance(coverage_body, bytes):
+            raise CompanyFactsIntakeError("Company Facts parquet encoder did not return immutable bytes")
+        for label, body in (("source_manifest.parquet", manifest_body), ("coverage.parquet", coverage_body)):
+            if len(body) > MAX_GENERATION_FILE_BYTES:
                 raise CompanyFactsIntakeError(
-                    f"Company Facts generation file exceeds {MAX_GENERATION_FILE_BYTES} byte cap: {path.name}"
+                    f"Company Facts generation file exceeds {MAX_GENERATION_FILE_BYTES} byte cap: {label}"
                 )
-            with path.open("rb") as handle:
-                os.fsync(handle.fileno())
-            if deadline is not None and monotonic() >= deadline:
-                raise CompanyFactsRunBudgetExceeded("Company Facts generation seal exceeded run deadline")
-        published_manifests = _read_ledger(manifest_path, _SOURCE_MANIFEST_COLUMNS)
-        published_coverage = _read_ledger(coverage_path, _COVERAGE_COLUMNS)
+        with _open_companyfacts_directory(root, (stage_name,)) as stage_fd:
+            _write_new_regular_bytes_at(stage_fd, "source_manifest.parquet", manifest_body, label="staged source manifest")
+            _write_new_regular_bytes_at(stage_fd, "coverage.parquet", coverage_body, label="staged coverage")
+            manifest_body = _read_regular_bytes_at(
+                stage_fd, "source_manifest.parquet", label="staged source manifest",
+                max_bytes=MAX_GENERATION_FILE_BYTES,
+            )
+            coverage_body = _read_regular_bytes_at(
+                stage_fd, "coverage.parquet", label="staged coverage",
+                max_bytes=MAX_GENERATION_FILE_BYTES,
+            )
+            assert manifest_body is not None and coverage_body is not None
+            os.fsync(stage_fd)
+        if deadline is not None and monotonic() >= deadline:
+            raise CompanyFactsRunBudgetExceeded("Company Facts generation seal exceeded run deadline")
+        published_manifests = _read_ledger_bytes(manifest_body, _SOURCE_MANIFEST_COLUMNS, label="staged source manifest")
+        published_coverage = _read_ledger_bytes(coverage_body, _COVERAGE_COLUMNS, label="staged coverage")
         if _ledger_receipt(_records(published_manifests)) != source_ledger:
             raise CompanyFactsIntakeError("staged Company Facts manifest ledger read-back mismatch")
         if _ledger_receipt(_records(published_coverage)) != coverage_ledger:
             raise CompanyFactsIntakeError("staged Company Facts coverage ledger read-back mismatch")
         descriptor = _generation_descriptor(
-            source_file=_file_receipt(manifest_path), coverage_file=_file_receipt(coverage_path),
+            source_file=_bytes_receipt(manifest_body), coverage_file=_bytes_receipt(coverage_body),
             source_ledger=source_ledger, coverage_ledger=coverage_ledger,
         )
         _fsync_directory(stage)
         return _PreparedGeneration(descriptor=descriptor, stage_path=stage)
     except Exception:
-        shutil.rmtree(stage, ignore_errors=True)
+        _discard_stage(root, stage, ignore_errors=True)
         raise
 
 
@@ -760,24 +957,68 @@ def _generation_paths(root: Path, descriptor: Mapping[str, Any]) -> tuple[Path, 
     if not isinstance(coverage, Mapping) or coverage.get("path") != expected_coverage:
         raise CompanyFactsIntakeError("generation coverage path is not identity-bound")
     generation_root = root / "generations" / digest
-    if generation_root.is_symlink():
-        raise CompanyFactsIntakeError("Company Facts generation directory cannot be a symlink")
+    try:
+        parent = os.lstat(root / "generations")
+    except FileNotFoundError:
+        parent = None
+    if parent is not None:
+        if stat.S_ISLNK(parent.st_mode) or not stat.S_ISDIR(parent.st_mode):
+            raise CompanyFactsIntakeError("Company Facts generations directory cannot be a symlink")
+        # A no-follow open is intentionally repeated by every actual reader/writer;
+        # this check catches malformed descriptors before a pending stage is installed.
+        with _open_companyfacts_directory(root, ("generations",)) as generations_fd:
+            try:
+                generation_fd = os.open(
+                    digest,
+                    os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+                    dir_fd=generations_fd,
+                )
+            except FileNotFoundError:
+                generation_fd = None
+            except OSError as exc:
+                raise CompanyFactsIntakeError("Company Facts generation directory cannot follow a symlink") from exc
+            if generation_fd is not None:
+                try:
+                    if not stat.S_ISDIR(os.fstat(generation_fd).st_mode):
+                        raise CompanyFactsIntakeError("Company Facts generation path is not a directory")
+                finally:
+                    os.close(generation_fd)
     return generation_root / "source_manifest.parquet", generation_root / "coverage.parquet"
 
 
 def _validate_generation_files(root: Path, descriptor: Mapping[str, Any]) -> tuple[Path, Path]:
     source_path, coverage_path = _generation_paths(root, descriptor)
-    for key, path in (("source_manifest", source_path), ("coverage", coverage_path)):
-        if not path.is_file() or path.is_symlink():
-            raise CompanyFactsIntakeError(f"committed Company Facts {key} generation file is missing")
-        if path.stat().st_size > MAX_GENERATION_FILE_BYTES:
-            raise CompanyFactsIntakeError("committed Company Facts generation file exceeds byte cap")
-        expected = descriptor[key]
-        if _file_receipt(path) != {
+    digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
+    with _open_companyfacts_directory(root, ("generations", digest)) as generation_fd:
+        for key, name in (("source_manifest", "source_manifest.parquet"), ("coverage", "coverage.parquet")):
+            body = _read_regular_bytes_at(
+                generation_fd, name, label=f"committed {key} generation file",
+                max_bytes=MAX_GENERATION_FILE_BYTES,
+            )
+            assert body is not None
+            expected = descriptor[key]
+            if _bytes_receipt(body) != {
             "sha256": expected.get("sha256"), "byte_length": expected.get("byte_length")
-        }:
-            raise CompanyFactsIntakeError(f"committed Company Facts {key} exact-byte receipt mismatch")
+            }:
+                raise CompanyFactsIntakeError(f"committed Company Facts {key} exact-byte receipt mismatch")
     return source_path, coverage_path
+
+
+def _generation_bodies(root: Path, descriptor: Mapping[str, Any]) -> tuple[bytes, bytes]:
+    """Return exact, receipt-validated generation bytes through a no-follow chain."""
+    _validate_generation_files(root, descriptor)
+    digest = str(descriptor["generation_id"]).rsplit(":", 1)[-1]
+    with _open_companyfacts_directory(root, ("generations", digest)) as generation_fd:
+        source = _read_regular_bytes_at(
+            generation_fd, "source_manifest.parquet", label="committed source manifest",
+            max_bytes=MAX_GENERATION_FILE_BYTES,
+        )
+        coverage = _read_regular_bytes_at(
+            generation_fd, "coverage.parquet", label="committed coverage",
+            max_bytes=MAX_GENERATION_FILE_BYTES,
+        )
+        assert source is not None and coverage is not None
+        return source, coverage
 
 
 def _install_generation(root: Path, prepared: _PreparedGeneration) -> None:
@@ -786,26 +1027,70 @@ def _install_generation(root: Path, prepared: _PreparedGeneration) -> None:
         return
     source_path, _ = _generation_paths(root, prepared.descriptor)
     target = source_path.parent
-    target.parent.mkdir(parents=True, exist_ok=True)
     stage = prepared.stage_path
     try:
-        if target.exists():
-            _validate_generation_files(root, prepared.descriptor)
-            shutil.rmtree(stage)
-        else:
-            os.replace(stage, target)
-            _fsync_directory(target.parent)
+        digest = str(prepared.descriptor["generation_id"]).rsplit(":", 1)[-1]
+        stage_parts = _relative_parts(root, stage)
+        if len(stage_parts) != 1 or not stage_parts[0].startswith(".generation-stage-"):
+            raise CompanyFactsIntakeError("Company Facts generation stage path is not root-bound")
+        with _open_companyfacts_directory(root, create=True) as root_fd:
+            with _open_companyfacts_directory(root, ("generations",), create=True) as generations_fd:
+                try:
+                    target_fd = os.open(
+                        digest,
+                        os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+                        dir_fd=generations_fd,
+                    )
+                except FileNotFoundError:
+                    target_fd = None
+                if target_fd is not None:
+                    os.close(target_fd)
+                    _validate_generation_files(root, prepared.descriptor)
+                    _discard_stage(root, stage)
+                else:
+                    os.replace(stage_parts[0], digest, src_dir_fd=root_fd, dst_dir_fd=generations_fd)
+                    os.fsync(generations_fd)
+                    _fsync_directory(target.parent)
         _validate_generation_files(root, prepared.descriptor)
     except Exception:
-        if stage.exists():
-            shutil.rmtree(stage, ignore_errors=True)
+        _discard_stage(root, stage, ignore_errors=True)
         raise
 
 
 def _discard_prepared_generation(prepared: _PreparedGeneration | None) -> None:
     """Remove an unpublished stage after budget/publish failure."""
-    if prepared is not None and prepared.stage_path is not None and prepared.stage_path.exists():
-        shutil.rmtree(prepared.stage_path, ignore_errors=True)
+    if prepared is not None and prepared.stage_path is not None:
+        root = prepared.stage_path.parent
+        _discard_stage(root, prepared.stage_path, ignore_errors=True)
+
+
+def _discard_stage(root: Path, stage: Path, *, ignore_errors: bool = False) -> None:
+    """Delete only a no-follow, root-owned staging directory and its regular files."""
+    try:
+        parts = _relative_parts(root, stage)
+        if len(parts) != 1 or not parts[0].startswith(".generation-stage-"):
+            raise CompanyFactsIntakeError("Company Facts stage path is not root-bound")
+        with _open_companyfacts_directory(root) as root_fd:
+            try:
+                stage_fd = os.open(
+                    parts[0],
+                    os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+                    dir_fd=root_fd,
+                )
+            except FileNotFoundError:
+                return
+            try:
+                for name in os.listdir(stage_fd):
+                    metadata = os.stat(name, dir_fd=stage_fd, follow_symlinks=False)
+                    if not stat.S_ISREG(metadata.st_mode):
+                        raise CompanyFactsIntakeError("Company Facts stage contains unsafe non-file entry")
+                    os.unlink(name, dir_fd=stage_fd)
+            finally:
+                os.close(stage_fd)
+            os.rmdir(parts[0], dir_fd=root_fd)
+    except Exception:
+        if not ignore_errors:
+            raise
 
 
 def _publish_generation(
@@ -820,8 +1105,8 @@ def _publish_generation(
     receipt_digest = str(receipt["receipt_id"]).rsplit(":", 1)[-1]
     immutable_relative = f"receipts/{receipt_digest}.json"
     immutable_path = root / immutable_relative
-    _write_immutable_bytes(immutable_path, receipt_body)
-    receipt_file = _file_receipt(immutable_path)
+    _write_immutable_bytes(immutable_path, receipt_body, root=root)
+    receipt_file = _file_receipt(immutable_path, root=root)
     witness = _head_witness(receipt=receipt, receipt_file=receipt_file, signer=signer)
     # This is the authoritative exact-predecessor CAS. It must precede the local
     # pointer because a missing/old local selector then fails closed rather than
@@ -847,8 +1132,8 @@ def _publish_generation(
     )
     _validate_pointer_identity(pointer)
     pointer_body = _canonical_bytes(pointer) + b"\n"
-    _atomic_write_bytes(receipt_path, pointer_body, expected_previous=expected_pointer)
-    if receipt_path.read_bytes() != pointer_body:
+    _atomic_write_bytes(receipt_path, pointer_body, expected_previous=expected_pointer, root=root)
+    if _file_receipt(receipt_path, root=root) != _bytes_receipt(pointer_body):
         raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
 
 
@@ -1176,10 +1461,143 @@ def _validate_companyfacts_bundle(
         raise CompanyFactsIntakeError("unreferenced Company Facts source manifests are not admissible")
 
 
+def _retention_audit_plan(
+    source_records: Sequence[Mapping[str, Any]], *, selection_as_of: datetime,
+    max_objects: int = MAX_RETENTION_VERIFY_OBJECTS,
+) -> list[tuple[dict[str, Any], str]]:
+    """Pick a deterministic, bounded 2:1 latest-to-history retention sample.
+
+    The date-keyed cursor means no-op days advance the historical audit without
+    inflating the immutable receipt chain.  A newer admission is not included
+    here: its source-store ``put_verified`` performs the stronger exact check.
+    """
+    if isinstance(max_objects, bool) or not isinstance(max_objects, int) or max_objects < 0:
+        raise ValueError("retention audit max_objects must be a non-negative integer")
+    normalized = [_native(raw) for raw in source_records]
+    by_cik: dict[str, list[dict[str, Any]]] = {}
+    for record in normalized:
+        issuer = record.get("issuer") if isinstance(record.get("issuer"), Mapping) else {}
+        cik = canonical_cik(issuer.get("cik"))
+        if cik is None:
+            raise CompanyFactsIntakeError("Company Facts retention audit source has no canonical CIK")
+        by_cik.setdefault(cik, []).append(record)
+    latest: list[dict[str, Any]] = []
+    historical: list[dict[str, Any]] = []
+    for cik in sorted(by_cik):
+        records = sorted(
+            by_cik[cik],
+            key=lambda row: (
+                _parse_stamp(row["retrieval"]["first_seen_at"], field="source first_seen_at"),
+                str(row["manifest_id"]),
+            ),
+        )
+        latest.append(records[-1])
+        historical.extend(records[:-1])
+    historical.sort(key=lambda row: (
+        _parse_stamp(row["retrieval"]["first_seen_at"], field="source first_seen_at"),
+        str(row["manifest_id"]),
+    ))
+    lanes = {"current": latest, "historical": historical}
+    positions = {
+        name: selection_as_of.date().toordinal() % len(rows) if rows else 0
+        for name, rows in lanes.items()
+    }
+    cursor = selection_as_of.date().toordinal() % len(_RETENTION_VERIFY_SCHEDULE)
+    selected: list[tuple[dict[str, Any], str]] = []
+    ceiling = min(max_objects, len(normalized))
+    while len(selected) < ceiling and any(lanes.values()):
+        chosen: str | None = None
+        for offset in range(len(_RETENTION_VERIFY_SCHEDULE)):
+            candidate = _RETENTION_VERIFY_SCHEDULE[(cursor + offset) % len(_RETENTION_VERIFY_SCHEDULE)]
+            if lanes[candidate]:
+                chosen = candidate
+                cursor = (cursor + offset + 1) % len(_RETENTION_VERIFY_SCHEDULE)
+                break
+        if chosen is None:
+            break
+        rows = lanes[chosen]
+        position = positions[chosen] % len(rows)
+        selected.append((rows.pop(position), chosen))
+        if rows:
+            positions[chosen] = position % len(rows)
+    return selected
+
+
+def _retention_verification(
+    prior_source_records: Sequence[Mapping[str, Any]], *, selection_as_of: datetime,
+    admitted_source_records: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Honest coverage metadata: ``sampled`` never means all history was reread."""
+    plan = _retention_audit_plan(prior_source_records, selection_as_of=selection_as_of)
+    current_ids = [str(record["manifest_id"]) for record, lane in plan if lane == "current"]
+    historical_ids = [str(record["manifest_id"]) for record, lane in plan if lane == "historical"]
+    admitted_ids = [str(_native(record)["manifest_id"]) for record in admitted_source_records]
+    verified_ids = [*current_ids, *historical_ids, *admitted_ids]
+    if len(set(verified_ids)) != len(verified_ids):
+        raise CompanyFactsIntakeError("Company Facts retention verification has duplicate manifest identities")
+    eligible = len(prior_source_records) + len(admitted_source_records)
+    all_objects_reverified = len(verified_ids) == eligible
+    return {
+        "policy": RETENTION_VERIFY_POLICY,
+        "selection_day": selection_as_of.date().isoformat(),
+        "eligible_objects": eligible,
+        "latest_objects": len({
+            canonical_cik((_native(row).get("issuer") or {}).get("cik")) for row in [*prior_source_records, *admitted_source_records]
+        }),
+        "historical_objects": max(0, eligible - len({
+            canonical_cik((_native(row).get("issuer") or {}).get("cik")) for row in [*prior_source_records, *admitted_source_records]
+        })),
+        "checked_current_manifest_ids": current_ids,
+        "checked_historical_manifest_ids": historical_ids,
+        "admission_verified_manifest_ids": admitted_ids,
+        "verified_manifest_ids": verified_ids,
+        "all_objects_reverified": all_objects_reverified,
+        "freshness": "complete" if all_objects_reverified else "sampled",
+    }
+
+
+def _get_verified_before_deadline(
+    store: Any, object_key: object, content_sha256: object, *, deadline: float | None,
+    monotonic: Callable[[], float],
+) -> Any:
+    """Bound one uncooperative store read without allowing it to consume the run.
+
+    Content stores expose no universal per-call timeout.  The read is therefore
+    isolated in a daemon thread; it has no write authority and its late result is
+    discarded.  The caller returns at the hard remaining-wallclock boundary.
+    """
+    if deadline is None:
+        return store.get_verified(object_key, content_sha256)
+    remaining = deadline - monotonic()
+    if remaining <= 0:
+        raise CompanyFactsRunBudgetExceeded("Company Facts retention verification exceeded run deadline")
+    completed = threading.Event()
+    result: dict[str, Any] = {}
+
+    def read() -> None:
+        try:
+            result["body"] = store.get_verified(object_key, content_sha256)
+        except BaseException as exc:  # noqa: BLE001 - forwarded into fail-closed caller
+            result["error"] = exc
+        finally:
+            completed.set()
+
+    threading.Thread(target=read, name="companyfacts-retention-read", daemon=True).start()
+    if not completed.wait(remaining):
+        raise CompanyFactsRunBudgetExceeded("Company Facts retention verification read exceeded remaining run deadline")
+    if monotonic() > deadline:
+        raise CompanyFactsRunBudgetExceeded("Company Facts retention verification exceeded run deadline")
+    error = result.get("error")
+    if isinstance(error, BaseException):
+        raise error
+    return result.get("body")
+
+
 def _verify_selected_source_objects(
     source_records: Sequence[Mapping[str, Any]], *, source_stores: Mapping[str, Any],
+    deadline: float | None = None, monotonic: Callable[[], float] = time.monotonic,
 ) -> None:
-    """Require every selected retained source object to remain readable by its declared store."""
+    """Require each *selected* retained source object to remain exact and readable."""
     for raw in source_records:
         source = _native(raw)
         storage = source.get("storage") if isinstance(source.get("storage"), Mapping) else {}
@@ -1193,7 +1611,12 @@ def _verify_selected_source_objects(
         if getattr(store, "backend", None) != storage.get("backend"):
             raise CompanyFactsIntakeError("Company Facts selected source store backend is detached")
         try:
-            body = store.get_verified(storage.get("object_key"), content.get("content_sha256"))
+            body = _get_verified_before_deadline(
+                store, storage.get("object_key"), content.get("content_sha256"),
+                deadline=deadline, monotonic=monotonic,
+            )
+        except CompanyFactsRunBudgetExceeded:
+            raise
         except Exception as exc:  # noqa: BLE001
             raise CompanyFactsIntakeError("Company Facts selected source object verification failed") from exc
         if body is None or len(body) != int(content.get("byte_length") or -1):
@@ -1219,9 +1642,9 @@ def _validate_generation_identity(receipt: Mapping[str, Any]) -> None:
         raise CompanyFactsIntakeError("Company Facts generation identity does not bind files and ledgers")
 
 
-def _receipt_reference(receipt: Mapping[str, Any], path: Path) -> dict[str, Any]:
+def _receipt_reference(receipt: Mapping[str, Any], path: Path, *, root: Path) -> dict[str, Any]:
     relative = path.parent.name + "/" + path.name
-    return {"receipt_id": receipt["receipt_id"], "path": relative, **_file_receipt(path)}
+    return {"receipt_id": receipt["receipt_id"], "path": relative, **_file_receipt(path, root=root)}
 
 
 def _read_receipt_reference(
@@ -1235,14 +1658,15 @@ def _read_receipt_reference(
     if reference.get("path") != expected_relative:
         raise CompanyFactsIntakeError("immutable Company Facts receipt path is not identity-bound")
     path = root / expected_relative
-    if not path.is_file() or path.is_symlink():
-        raise CompanyFactsIntakeError("immutable Company Facts receipt is missing")
     expected_file = {
         "sha256": reference.get("sha256"), "byte_length": reference.get("byte_length")
     }
-    if _file_receipt(path) != expected_file:
+    if _file_receipt(path, root=root) != expected_file:
         raise CompanyFactsIntakeError("immutable Company Facts receipt exact-byte mismatch")
-    body = path.read_bytes()
+    parts = _relative_parts(root, path)
+    with _open_companyfacts_parent(root, parts) as (parent_fd, name):
+        body = _read_regular_bytes_at(parent_fd, name, label="immutable receipt")
+        assert body is not None
     try:
         receipt = _native(json.loads(body))
     except Exception as exc:  # noqa: BLE001
@@ -1266,9 +1690,9 @@ def _load_receipt_generation(
     root: Path, receipt: Mapping[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Authenticate one receipt's exact immutable generation and commitments."""
-    source_path, coverage_path = _validate_generation_files(root, receipt["generation"])
-    source_records = _records(_read_ledger(source_path, _SOURCE_MANIFEST_COLUMNS))
-    coverage_records = _records(_read_ledger(coverage_path, _COVERAGE_COLUMNS))
+    source_body, coverage_body = _generation_bodies(root, receipt["generation"])
+    source_records = _records(_read_ledger_bytes(source_body, _SOURCE_MANIFEST_COLUMNS, label="committed source manifest"))
+    coverage_records = _records(_read_ledger_bytes(coverage_body, _COVERAGE_COLUMNS, label="committed coverage"))
     if _ledger_receipt(source_records) != receipt["companyfacts_manifest_ledger"]:
         raise CompanyFactsIntakeError("receipt/source manifest ordered-prefix mismatch")
     if _ledger_receipt(coverage_records) != receipt["coverage_ledger"]:
@@ -1330,12 +1754,27 @@ def _load_committed_bundle(
     signer: CompanyFactsSigner | None = None, head_witness: Mapping[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
     """Load only the generation selected by an authenticated immutable receipt chain."""
-    legacy_paths = (root / "source_manifest.parquet", root / "coverage.parquet")
-    immutable_history = any((root / name).exists() for name in ("receipts", "generations")) or any(
-        root.glob(".generation-stage-*")
-    )
-    if not receipt_path.exists():
-        if any(path.exists() for path in legacy_paths) or immutable_history or head_witness is not None:
+    try:
+        with _open_companyfacts_directory(root) as root_fd:
+            names = set(os.listdir(root_fd))
+            immutable_history = any(name in names for name in ("receipts", "generations")) or any(
+                name.startswith(".generation-stage-") for name in names
+            )
+            pointer_parts = _relative_parts(root, receipt_path)
+            with _open_companyfacts_parent(root, pointer_parts) as (parent_fd, pointer_name):
+                pointer_body = _read_regular_bytes_at(
+                    parent_fd, pointer_name, label="current pointer", missing_ok=True,
+                )
+    except CompanyFactsIntakeError:
+        # A missing root is an empty bootstrap only; every other unsafe component is fatal.
+        if not root.exists():
+            immutable_history = False
+            pointer_body = None
+            names = set()
+        else:
+            raise
+    if pointer_body is None:
+        if {"source_manifest.parquet", "coverage.parquet"} & names or immutable_history or head_witness is not None:
             raise CompanyFactsIntakeError(
                 "missing Company Facts current pointer with immutable history requires explicit recovery"
             )
@@ -1344,10 +1783,7 @@ def _load_committed_bundle(
         raise CompanyFactsIntakeError("Company Facts startup requires an authenticated receipt signer")
     if head_witness is None:
         raise CompanyFactsIntakeError("Company Facts startup requires an external authenticated head witness")
-    if receipt_path.is_symlink():
-        raise CompanyFactsIntakeError("Company Facts current pointer cannot be a symlink")
     try:
-        pointer_body = receipt_path.read_bytes()
         pointer = _native(json.loads(pointer_body))
     except Exception as exc:  # noqa: BLE001
         raise CompanyFactsIntakeError("unreadable Company Facts current pointer") from exc
@@ -1370,7 +1806,7 @@ def _load_committed_bundle(
     ):
         raise CompanyFactsIntakeError("Company Facts pointer is detached from immutable receipt")
     _validate_head_witness(head_witness, signer=signer)
-    head_file = _file_receipt(root / str(pointer["receipt_path"]))
+    head_file = _file_receipt(root / str(pointer["receipt_path"]), root=root)
     head_previous = receipt.get("previous_receipt")
     expected_head = {
         "sequence": int(receipt["sequence"]),
@@ -1693,6 +2129,14 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             return self._injected_signer, self._injected_head_guard
         return _build_production_trust_context()
 
+    def fetch_result_status(self, frames: dict[str, pd.DataFrame]) -> str | None:
+        heartbeat = frames.get("sec_companyfacts_intake")
+        if heartbeat is not None and not heartbeat.empty and str(heartbeat.iloc[-1].get("status")) == "checkpoint_blocked":
+            # A checkpoint migration is an explicit operator dependency, not an
+            # upstream failure.  Tell the generic breaker to remain healthy.
+            return "blocked"
+        return None
+
     def _pace(self) -> None:
         while True:
             now = self._monotonic()
@@ -1900,9 +2344,14 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 root=root, receipt_path=receipt_path, anchor_records=anchor_records,
                 signer=signer, head_witness=witnessed_head,
             )
-            _verify_selected_source_objects(existing_manifests, source_stores=source_stores)
-            self._require_run_time()
             selection_as_of = _strict_utc(self._now_fn(), field="selection_as_of")
+            retention_plan = _retention_audit_plan(existing_manifests, selection_as_of=selection_as_of)
+            _verify_selected_source_objects(
+                [record for record, _lane in retention_plan], source_stores=source_stores,
+                deadline=self._run_deadline, monotonic=self._monotonic,
+            )
+            retention = _retention_verification(existing_manifests, selection_as_of=selection_as_of)
+            self._require_run_time()
             queue_diagnostics: dict[str, Any] = {}
             queue, deferred_queue_count, skipped_fresh_count = select_companyfacts_queue(
                 anchors, coverage_records, now=selection_as_of,
@@ -1912,7 +2361,8 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             )
 
             def heartbeat(*, status: str, population: Mapping[str, int], published_at: datetime | pd.Timestamp,
-                          selected: int, counts: Mapping[str, int]) -> dict[str, pd.DataFrame]:
+                          selected: int, counts: Mapping[str, int], retention_verification: Mapping[str, Any],
+                          checkpoint_blocked: bool = False) -> dict[str, pd.DataFrame]:
                 stamp = _parse_stamp(published_at, field="heartbeat published_at")
                 return {"sec_companyfacts_intake": pd.DataFrame({
                     "status": [status], "eligible_ciks": [len(anchors)], "selected": [selected],
@@ -1920,17 +2370,39 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     "deferred": [int(counts["deferred"]) + deferred_queue_count],
                     "fresh_ciks": [population["fresh_ciks"]], "stale_ciks": [population["stale_ciks"]],
                     "pending_ciks": [population["pending_ciks"]], "run_bytes": [self._run_bytes],
+                    "retention_eligible_objects": [int(retention_verification["eligible_objects"])],
+                    "retention_checked_objects": [len(retention_verification["verified_manifest_ids"])],
+                    "retention_checked_current": [len(retention_verification["checked_current_manifest_ids"])],
+                    "retention_checked_historical": [len(retention_verification["checked_historical_manifest_ids"])],
+                    "retention_admission_verified": [len(retention_verification["admission_verified_manifest_ids"])],
+                    "retention_freshness": [retention_verification["freshness"]],
+                    "retention_all_objects_reverified": [bool(retention_verification["all_objects_reverified"])],
+                    "checkpoint_blocked": [checkpoint_blocked],
                     "published_at": [_iso(stamp.to_pydatetime())],
                 }, index=[pd.Timestamp(stamp.date())])}
+
+            population = _coverage_population(anchors, coverage_records, as_of=selection_as_of)
+            if prior_receipt is not None and int(prior_receipt["sequence"]) >= MAX_RECEIPT_CHAIN_LENGTH:
+                message = (
+                    "Company Facts receipt chain reached checkpoint/compaction boundary; "
+                    "publish a compacted signed checkpoint before admitting another receipt"
+                )
+                print(f"::error title=companyfacts-checkpoint-blocked::{message}")
+                return heartbeat(
+                    status="checkpoint_blocked", population=population,
+                    published_at=_parse_stamp(prior_receipt["published_at"], field="published_at"),
+                    selected=0, counts={"retrieved": 0, "retry": 0, "deferred": 0},
+                    retention_verification=retention, checkpoint_blocked=True,
+                )
 
             # No selected work cannot change sealed evidence. Avoid perpetual empty
             # receipts and the O(n) startup-chain growth they cause.
             if prior_receipt is not None and not queue:
-                population = _coverage_population(anchors, coverage_records, as_of=selection_as_of)
                 return heartbeat(
                     status=_coverage_status(eligible_ciks=len(anchors), population=population),
                     population=population, published_at=_parse_stamp(prior_receipt["published_at"], field="published_at"),
                     selected=0, counts={"retrieved": 0, "retry": 0, "deferred": 0},
+                    retention_verification=retention,
                 )
 
             try:
@@ -1990,11 +2462,9 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 anchor_records=anchor_records, source_records=combined_manifests,
                 coverage_records=combined_coverage,
             )
-            _verify_selected_source_objects(combined_manifests, source_stores=source_stores)
-            if prior_receipt is not None and int(prior_receipt["sequence"]) >= MAX_RECEIPT_CHAIN_LENGTH:
-                raise CompanyFactsIntakeError(
-                    "Company Facts receipt chain reached its hard checkpoint/compaction boundary"
-                )
+            retention = _retention_verification(
+                existing_manifests, selection_as_of=selection_as_of, admitted_source_records=fresh_manifests,
+            )
             manifest_frame = pd.DataFrame(combined_manifests, columns=_SOURCE_MANIFEST_COLUMNS)
             coverage_frame = pd.DataFrame(combined_coverage, columns=_COVERAGE_COLUMNS)
             prepared: _PreparedGeneration | None = None
@@ -2009,7 +2479,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 if prior_receipt is not None:
                     prior_digest = str(prior_receipt["receipt_id"]).rsplit(":", 1)[-1]
                     previous_reference = _receipt_reference(
-                        prior_receipt, root / "receipts" / f"{prior_digest}.json"
+                        prior_receipt, root / "receipts" / f"{prior_digest}.json", root=root,
                     )
                 sealed_receipt = _coverage_receipt(
                     selection_as_of=selection_as_of, published_at=published_at,
@@ -2019,7 +2489,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     coverage_records=combined_coverage, eligible_ciks=len(anchors), queue=queue,
                     max_ciks=self.max_ciks_per_run, deferred_queue_count=deferred_queue_count,
                     skipped_fresh_count=skipped_fresh_count, counts=counts,
-                    queue_diagnostics=queue_diagnostics, signer=signer,
+                    queue_diagnostics=queue_diagnostics, retention_verification=retention, signer=signer,
                 )
                 _validate_contract(sealed_receipt, "capital_structure_companyfacts_coverage_receipt.schema.json", label="Company Facts coverage receipt")
                 _validate_receipt_identity(sealed_receipt)
@@ -2030,7 +2500,12 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     coverage_records=combined_coverage, prior_source_records=existing_manifests,
                     prior_coverage_records=coverage_records,
                 )
-                expected_pointer = receipt_path.read_bytes() if prior_receipt is not None else None
+                if prior_receipt is None:
+                    expected_pointer = None
+                else:
+                    with _open_companyfacts_parent(root, _relative_parts(root, receipt_path)) as (parent_fd, name):
+                        expected_pointer = _read_regular_bytes_at(parent_fd, name, label="current pointer")
+                        assert expected_pointer is not None
                 _publish_generation(
                     root=root, receipt_path=receipt_path, receipt=sealed_receipt, prepared=prepared,
                     signer=signer, head_guard=head_guard, expected_witness=witnessed_head,
@@ -2042,6 +2517,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             return heartbeat(
                 status=sealed_receipt["status"], population=sealed_receipt["population"],
                 published_at=published_at, selected=len(queue), counts=counts,
+                retention_verification=retention,
             )
 
 
@@ -2219,6 +2695,12 @@ def _validate_receipt_semantics(
     }
     if source_ids != retrieved_source_ids or len(source_suffix) != observed_counts["retrieved"]:
         raise CompanyFactsIntakeError("receipt source suffix is detached from retrieved coverage")
+    expected_retention = _retention_verification(
+        prior_source_records, selection_as_of=selection.to_pydatetime(),
+        admitted_source_records=source_suffix,
+    )
+    if dict(receipt.get("retention_verification") or {}) != expected_retention:
+        raise CompanyFactsIntakeError("receipt retention verification coverage is detached from its source history")
 
 
 def _coverage_receipt(
@@ -2227,7 +2709,7 @@ def _coverage_receipt(
     anchor_records: Sequence[Mapping[str, Any]], source_records: Sequence[Mapping[str, Any]],
     coverage_records: Sequence[Mapping[str, Any]], eligible_ciks: int, queue: Sequence[Mapping[str, Any]], max_ciks: int,
     deferred_queue_count: int, skipped_fresh_count: int, counts: Mapping[str, int],
-    queue_diagnostics: Mapping[str, Any], signer: CompanyFactsSigner,
+    queue_diagnostics: Mapping[str, Any], retention_verification: Mapping[str, Any], signer: CompanyFactsSigner,
 ) -> dict[str, Any]:
     published_at = _strict_utc(published_at, field="published_at")
     selection_as_of = _strict_utc(selection_as_of, field="selection_as_of")
@@ -2246,6 +2728,7 @@ def _coverage_receipt(
         "anchor_manifest_ledger": _ledger_receipt(anchor_records),
         "companyfacts_manifest_ledger": _ledger_receipt(source_records),
         "coverage_ledger": _ledger_receipt(coverage_records),
+        "retention_verification": dict(retention_verification),
         "queue": {
             "max_ciks": max_ciks,
             "force_refresh": bool(queue_diagnostics["force_refresh"]),

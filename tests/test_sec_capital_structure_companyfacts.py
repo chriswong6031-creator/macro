@@ -4,11 +4,13 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json
 import threading
+import time
 
 import pandas as pd
 import pytest
 import requests
 
+import collectors.base as collector_base
 import collectors.sec_capital_structure as filings
 import collectors.sec_capital_structure_companyfacts as companyfacts
 from engine.capital_structure.source_store import ContentAddressedSourceStore, LocalStore
@@ -714,8 +716,115 @@ def test_noop_runs_do_not_inflate_receipt_chain_and_caps_are_fail_closed(tmp_pat
     assert (root / "coverage_receipt.json").read_bytes() == pointer
     assert guard.read() == (witnessed, witness_token)
     monkeypatch.setattr(companyfacts, "MAX_RECEIPT_CHAIN_LENGTH", 1)
-    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="checkpoint/compaction boundary"):
-        adapter.fetch(full_history=True)
+    blocked = adapter.fetch(full_history=True)
+    heartbeat = blocked["sec_companyfacts_intake"].iloc[0]
+    assert heartbeat["status"] == "checkpoint_blocked"
+    assert bool(heartbeat["checkpoint_blocked"])
+    assert adapter.fetch_result_status(blocked) == "blocked"
+    assert (root / "coverage_receipt.json").read_bytes() == pointer
+    assert guard.read() == (witnessed, witness_token)
+    monkeypatch.setattr(collector_base.store, "upsert", lambda group, name, df, **kwargs: df)
+    monkeypatch.setattr(collector_base, "detect_stale_series", lambda *args, **kwargs: [])
+    result = collector_base.run_adapter(adapter, full_history=True)
+    assert result.status == "blocked"
+    breaker, _ = collector_base.update_breaker([result], probe_state={})
+    assert breaker.get(adapter.name, 0) == 0
+
+
+def test_root_relative_paths_refuse_parent_symlink_escapes_and_traversal(tmp_path, monkeypatch):
+    root = tmp_path / "companyfacts"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (root / "receipts").symlink_to(outside, target_is_directory=True)
+    receipt_path = root / "receipts" / ("a" * 64 + ".json")
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
+        companyfacts._write_immutable_bytes(receipt_path, b"escaped", root=root)
+    assert not list(outside.iterdir())
+
+    other_root = tmp_path / "other-companyfacts"
+    other_root.mkdir()
+    (other_root / "generations").symlink_to(outside, target_is_directory=True)
+    descriptor = {
+        "generation_id": "generation:cs-companyfacts:" + "b" * 64,
+        "source_manifest": {"path": "generations/" + "b" * 64 + "/source_manifest.parquet"},
+        "coverage": {"path": "generations/" + "b" * 64 + "/coverage.parquet"},
+    }
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generations directory cannot be a symlink"):
+        companyfacts._generation_paths(other_root, descriptor)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="path traversal"):
+        with companyfacts._open_companyfacts_parent(root, ("receipts", "..", "escaped"), create=True):
+            pass
+
+    # Swap a checked directory for a symlink exactly at open time.  The secure
+    # descriptor walk refuses it rather than continuing into ``outside``.
+    race_root = tmp_path / "race-companyfacts"
+    race_root.mkdir()
+    (race_root / "receipts").mkdir()
+    original_open = companyfacts.os.open
+    switched = False
+
+    def swap_before_open(path, flags, *args, **kwargs):
+        nonlocal switched
+        if path == "receipts" and kwargs.get("dir_fd") is not None and not switched:
+            switched = True
+            (race_root / "receipts").rmdir()
+            (race_root / "receipts").symlink_to(outside, target_is_directory=True)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(companyfacts.os, "open", swap_before_open)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="without following links"):
+        with companyfacts._open_companyfacts_directory(race_root, ("receipts",)):
+            pass
+
+
+def test_retention_audit_is_capped_rotating_and_deadline_bounded():
+    records = []
+    for issuer in range(10):
+        cik = f"{issuer + 1:010d}"
+        for revision in range(3):
+            records.append({
+                "manifest_id": "manifest:cs-companyfacts:" + f"{issuer * 3 + revision:064x}",
+                "issuer": {"cik": cik},
+                "retrieval": {"first_seen_at": f"2026-07-{revision + 1:02d}T00:00:00Z"},
+            })
+    first = companyfacts._retention_audit_plan(
+        records, selection_as_of=datetime(2026, 8, 2, tzinfo=timezone.utc), max_objects=12,
+    )
+    second = companyfacts._retention_audit_plan(
+        records, selection_as_of=datetime(2026, 8, 3, tzinfo=timezone.utc), max_objects=12,
+    )
+    assert len(first) == len(second) == 12
+    assert sum(lane == "current" for _, lane in first) == 8
+    assert sum(lane == "historical" for _, lane in first) == 4
+    assert [row["manifest_id"] for row, _ in first] != [row["manifest_id"] for row, _ in second]
+    retention = companyfacts._retention_verification(
+        records, selection_as_of=datetime(2026, 8, 2, tzinfo=timezone.utc),
+    )
+    assert retention["eligible_objects"] == 30
+    assert retention["freshness"] == "sampled"
+    assert not retention["all_objects_reverified"]
+
+    class SlowStore:
+        store_id = "slow"
+        backend = "local"
+
+        @staticmethod
+        def get_verified(object_key, content_sha256):
+            time.sleep(0.15)
+            return b"x"
+
+    source = {
+        "storage": {"store_id": "slow", "backend": "local", "object_key": "sha256/x"},
+        "content": {"content_sha256": "x", "byte_length": 1},
+    }
+    started = time.monotonic()
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="remaining run deadline"):
+        companyfacts._verify_selected_source_objects(
+            [source], source_stores={"slow": SlowStore()}, deadline=started + 0.02,
+            monotonic=time.monotonic,
+        )
+    assert time.monotonic() - started < 0.12
 
 
 def test_generation_storage_cap_and_request_timeout_obey_remaining_budget(tmp_path, monkeypatch):
