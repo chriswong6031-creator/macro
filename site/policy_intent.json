@@ -191,8 +191,8 @@
   },
   "confidence": "low",
   "degraded_reason": null,
-  "disclaimer": "Policy intent desk \u2014 realpolitik, context only, never scored or sized. Each lean is a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade or a position size. Intent is inferred from interests; treat it as a hypothesis with a track record, not an oracle.",
-  "disclaimer_zh": "\u610f\u56fe\u53f0 \u2014\u2014 \u73b0\u5b9e\u653f\u6cbb\u3001\u4ec5\u4f9b\u53c2\u8003\uff0c\u4ece\u4e0d\u8bc4\u5206\u6216\u5b9a\u4ed3\u3002\u6bcf\u6761\u5224\u65ad\u90fd\u662f\u53ef\u8bc1\u4f2a\u3001\u4f1a\u51fa\u9519\u7684\u5224\u65ad\uff08\u4ee3\u7406\u6807\u7684 vs SPY\uff0c\u9644\u6838\u67e5\u65e5\u671f\uff09\uff0c\u5e76\u975e\u4ea4\u6613\u6216\u4ed3\u4f4d\u5927\u5c0f\u3002\u610f\u56fe\u7531\u5229\u76ca\u63a8\u65ad\u800c\u6765\uff1b\u8bf7\u5c06\u5176\u89c6\u4e3a\u6709\u6218\u7ee9\u8bb0\u5f55\u7684\u5047\u8bbe\uff0c\u800c\u975e\u795e\u8c15\u3002",
+  "disclaimer": "Policy intent desk \u2014 realpolitik, context only, never scored or sized. Each lean is a fallible, CHECKABLE judgement (proxy vs SPY, with a check-by date), not a trade or a position size. Intent is inferred from interests; treat it as a hypothesis with a track record, not an oracle.",
+  "disclaimer_zh": "\u610f\u56fe\u53f0 \u2014\u2014 \u73b0\u5b9e\u653f\u6cbb\u3001\u4ec5\u4f9b\u53c2\u8003\uff0c\u4ece\u4e0d\u8bc4\u5206\u6216\u5b9a\u4ed3\u3002\u6bcf\u6761\u5224\u65ad\u90fd\u662f\u53ef\u68c0\u9a8c\u3001\u4f1a\u51fa\u9519\u7684\u5224\u65ad\uff08\u4ee3\u7406\u6807\u7684 vs SPY\uff0c\u9644\u6838\u67e5\u65e5\u671f\uff09\uff0c\u5e76\u975e\u4ea4\u6613\u6216\u4ed3\u4f4d\u5927\u5c0f\u3002\u610f\u56fe\u7531\u5229\u76ca\u63a8\u65ad\u800c\u6765\uff1b\u8bf7\u5c06\u5176\u89c6\u4e3a\u6709\u6218\u7ee9\u8bb0\u5f55\u7684\u5047\u8bbe\uff0c\u800c\u975e\u795e\u8c15\u3002",
   "passport": {
     "state": "accruing",
     "earned": false,

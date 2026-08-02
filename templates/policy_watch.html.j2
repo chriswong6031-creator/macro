@@ -343,7 +343,7 @@
   {% if desk %}
   {{ sec_head('desk', 'var(--pwa)', 'Intent desk', '意图台', 'Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}
   <p class="pw-lede">{{ t('An LLM reads the sourced intel + live market state and emits dated, checkable leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
-      '由LLM读取来源情报+实时市场状态，给出有日期、可核查的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
+      '由LLM读取来源情报+实时市场状态，给出有日期、可检验的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
   {% if desk.regime_context %}<div class="pw-quote">{{ bl(desk.regime_context, desk.regime_context_zh) }}</div>{% endif %}
   {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
   <div class="led-stat">
@@ -397,7 +397,7 @@
   </div>
   {% endif %}
 
-  <h3 class="sub">{{ t('Reform task forces — dated, checkable', '改革工作组 — 有日期、可核查') }}</h3>
+  <h3 class="sub">{{ t('Reform task forces — dated, checkable', '改革工作组 — 有日期、可检验') }}</h3>
   <div class="cards">
     {% for tf in intel.fed.task_forces %}
     <div class="card">
