@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T00:46:25.170500+00:00",
-  "count": 561,
+  "generated_at": "2026-08-02T01:01:28.680460+00:00",
+  "count": 562,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-mc1inxw9hbr-575573",
+      "title": "Amazon July 31",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:33:07Z",
+      "summary_points": [
+        "**AWS Growth & AI Revenue**: AWS revenue accelerated to 37% y/y ($42.2bn), AI revenue surpassed $25bn annualized (+66% q/q), backlog at $496bn (triple-digit y/y growth), with Graviton5 adoption driving chip business >$25bn run rate.",
+        "**Institutional Confidence & Price Target**: Price target raised to $325 (80% increase since Aug 2023), 15 consecutive \"Buy\" ratings, and stock trading below targets signaling strong conviction in AWS AI leadership and SOTP multiple expansion.",
+        "**Capex & Margin Resilience**: Capex increased to $220bn (2026) for AI infrastructure, offset by AWS margin strength (38% excluding energy benefit), despite Prime Day shift causing 400bps 3Q headwind.",
+        "**Critical Risk Factor**: MiFID-linked services show 94% Sell vs.",
+        "2% Covered, indicating extreme sell pressure; banking relationships (e.g., 0% Sell at DBSI) mitigate this flow risk for portfolio managers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-pscwurjjfel-6c44da",
       "title": "Asset Allocation July 31",
