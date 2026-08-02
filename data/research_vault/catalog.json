@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T16:33:15.724073+00:00",
-  "count": 605,
+  "generated_at": "2026-08-02T16:44:18.935636+00:00",
+  "count": 606,
   "institutions": [
     "Amova",
     "Apollo",
@@ -102,6 +102,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hrlgdoau9ph-15b216",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:00:03Z",
+      "summary_points": [
+        "**Constructive Fundamentals & Market Sentiment**: Hyperscalers' cloud revenue acceleration (Amazon 5th straight qtr, Microsoft fastest growth in 4 years) and $900bn AI spending this year drive US equity upside; Philadelphia Semiconductor Index +8.2% (biggest 15-month gain) confirms technical strength.",
+        "**Critical Data Release**: US ISM Manufacturing PMI (July, released 3 August) is pivotal for near-term market direction and risk positioning.",
+        "**Fed's Rate Stability amid Disinflation**: Core PCE +0.1% (smallest rise since March 2025) signals tariff-driven disinflation; no aggressive rate hikes expected, supporting USD strength.",
+        "**BoJ Rate Hold & FX Policy Outlook**: BoJ maintains 1% rates post-JPY appreciation; US Treasury deems yen \"undervalued\" amid intervention, raising December rate hike risk due to yen weakness and medium-term USD/JPY decline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
