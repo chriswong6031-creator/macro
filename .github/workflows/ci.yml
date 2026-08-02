@@ -1378,6 +1378,15 @@ on:
       - "config/reply_targets.yml"
       - "config/press_sources.yml"
       - "tests/test_marketing_reply_desk.py"
+      # The reply REGISTER suites — the warmth openers (2026-08-01) and the
+      # doorway tails (same day). Both drive engine/marketing/reply_drafter.py,
+      # which the engine/marketing/** glob already reaches, so these two entries
+      # exist for the suite-only edit: without them a PR that changes ONLY the
+      # register assertions never reaches the marketing-engine lane that runs
+      # them (test-whitelist-rot). test_marketing_reply_warmth.py shipped
+      # unwhitelisted and unrun in CI on 2026-08-01 and is named here now.
+      - "tests/test_marketing_reply_warmth.py"
+      - "tests/test_marketing_reply_tails.py"
       # X Growth W6 (XG-W6): the ONE feedback loop (labels store + weekly
       # scorecard), parent-adjusted reply labels, the per-account health monitor
       # + network tripwire + halt registry, the pre-registered blind-identity

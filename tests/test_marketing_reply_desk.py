@@ -765,11 +765,22 @@ class TestReplyDrafter:
         assert rdr.rotate_family(fams[:-1], allowed=[fams[0], fams[1]]) == fams[0]
 
     def test_gift_grip_doorway_present(self, cfg):
+        """One gift, one grip, one doorway (constitution §9.3).
+
+        REWRITTEN 2026-08-01 (the tail build). This used to assert the literal
+        words "reaction" and "test", which were the two halves of the ONE welded
+        doorway sentence `missing_variable` closed on for every desk and every
+        thread. Asserting a specific sentence is asserting the defect: the law is
+        that a doorway is present and comes from THIS desk's pool for THIS
+        family, not that it is any particular line.
+        """
         out = rdr.draft_reply(account="kelly", target={"subject": "capex", "mechanism": "credit"},
                               facts=FACTS, family="missing_variable", cfg=cfg)
         assert "12.5%" in out["draft"]            # gift, from own-feed facts
-        assert "reaction" in out["draft"]          # grip
-        assert "test" in out["draft"]              # doorway
+        assert out["tail"] in rdr.tails_for("kelly", "missing_variable")
+        doorway = rdr.render_tail(out["tail"], {"subject": "capex",
+                                                "mechanism": "credit"})
+        assert doorway and doorway in out["draft"]
 
     def test_abstains_with_no_own_feed_fact(self, cfg):
         out = rdr.draft_reply(account="kelly", target={}, facts={"facts": []}, cfg=cfg)
