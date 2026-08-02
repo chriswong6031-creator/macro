@@ -2266,6 +2266,10 @@ on:
       # scripts/*.py is already path-covered; this entry is the OTHER half so a
       # suite-only edit still starts ci.yml (two-halves law).
       - "tests/test_level_grades_summary.py"
+      # MSC R3.2/R3.3 gex_state index aggregator (2026-08-02), wired into
+      # unrun-market-plumbing. lib/*.py + scripts/*.py are path-covered; this is the
+      # OTHER half so a suite-only edit still starts ci.yml (two-halves law).
+      - "tests/test_gex_state_index.py"
       # The launchd lane that produces data/index_gex_history off the render path. A
       # plist/runner-only edit changes the artifact's cadence and its push tail, so it
       # must reach the suite that pins the resolver routing and the R2 registration.
