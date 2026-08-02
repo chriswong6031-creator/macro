@@ -862,6 +862,12 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
             "scanner": session.get("universe"),
             "ticker": "SPY" if "SPY" in (stores.get("gex") or {}) else (INDEX_KEYS[0]),
             "leaders": n_boards or None,
+            # Flow mode's tab figure is the COVERED-SECTOR count (ONE_DOOR spec
+            # §2.0.1) — counted with build_sectors' own filter, so the tab and the
+            # panel it opens can never disagree about how many sectors reported.
+            # The mode's rows themselves are lazy-fetched client-side; this is the
+            # only thing about Flow the chrome needs to know.
+            "flow": (len(sectors["rows"]) if sectors and sectors.get("rows") else None),
         },
         "missing": missing,
         # Direction honesty, straight from the flow desk's own fields (#F2-01/
@@ -900,7 +906,26 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
             ],
             default=float,
         ),
+        # Flow mode renders sector names CLIENT-side from the lazy-fetched
+        # flow_desk.json, so it cannot reach the Jinja td()/tr() globals the
+        # baked Brief uses one tab away. This tiny map (≤ a dozen sectors)
+        # carries the same LEX translations to the client; a name the LEX
+        # doesn't know degrades to its English form, exactly like td().
+        "sector_zh_json": _sector_zh_json(stores),
     }
+
+
+def _sector_zh_json(stores: dict) -> str:
+    try:
+        from engine.i18n import tr  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return "{}"
+    names = {
+        str(r.get("sector"))
+        for r in ((stores.get("flow_desk") or {}).get("sector_heatmap") or [])
+        if r.get("sector")
+    }
+    return json.dumps({n: tr(n) for n in sorted(names)}, ensure_ascii=False)
 
 
 def render(root: Path, stores: dict | None = None) -> str:
