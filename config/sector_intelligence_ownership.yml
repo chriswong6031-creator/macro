@@ -1,5 +1,5 @@
 schema: sector_intelligence_ownership.v1
-effective_at: "2026-08-01T00:00:00Z"
+effective_at: "2026-08-02T00:00:00Z"
 status: partial_freeze
 
 policy:
@@ -10,9 +10,10 @@ policy:
   user_state_owner: terminal_supabase
   authority_owner: neural_web_a5_governor
 
-# B0a freezes the source-fact lanes needed by the NCT Trial Capsule. It does not
-# pretend the broader B0 program is closed: company identity, a complete security
-# master, Corporate documents, and Capital Structure remain explicit dependencies.
+# B0a froze the source-fact lanes needed by the NCT Trial Capsule; B4D advances
+# only their official-API prospective observation and public read-model seams.
+# Company identity, a complete security master, Corporate documents, and Capital
+# Structure remain explicit dependencies rather than BioCatalyst fallbacks.
 registrations:
   clinicaltrials_source_record:
     canonical_owner: biocatalyst
@@ -32,15 +33,17 @@ registrations:
 
   trial_snapshot_and_exact_diff:
     canonical_owner: biocatalyst
-    implementation_state: frozen_for_b0a
+    implementation_state: implemented_b4d_retention_gated
     writer:
       service: macro_biocatalyst_worker
-      module: engine.biocatalyst.trials
+      module: engine.biocatalyst.prospective
       storage_class: private_append_only_ledger
       artifact: "/var/lib/macro-biocatalyst/state/"
       schemas:
         - trial_snapshot.v1
+        - trial_snapshot_observation.v1
         - trial_version_diff.v1
+        - trial_coverage_epoch.v1
     cadence: after_complete_source_run
     retry_replay_policy: content_addressed_idempotent_replay
     consumers:
@@ -49,15 +52,17 @@ registrations:
 
   biocatalyst_read_projection:
     canonical_owner: biocatalyst
-    implementation_state: frozen_for_b0a
+    implementation_state: implemented_b4d_retention_gated
     writer:
       service: macro_biocatalyst_worker
-      module: services.biocatalyst.storage
+      module: engine.biocatalyst.publication
       storage_class: vps_atomic_public_projection
       artifact: "/var/lib/macro-biocatalyst/public/"
       schemas:
         - trial_snapshot.v1
         - trial_version_diff.v1
+        - trial_history_read_model.v1
+        - trial_prospective_change_read_model.v1
     cadence: after_complete_source_run
     retry_replay_policy: temp_write_fsync_rename
     consumers:
@@ -254,6 +259,19 @@ b0_closure:
   unblocked_scope:
     - source_canonical_nct_identity
     - clinicaltrials_raw_receipts
-    - prospective_trial_observations
-    - exact_registry_record_diffs
     - bounded_trial_read_api
+  conditional_schema_scope:
+    prospective_trial_observations:
+      canonical_registration: trial_snapshot_and_exact_diff
+      schema: trial_snapshot_observation.v1
+      availability: dark_until_runtime_retention_gate
+      required_environment:
+        BIOCATALYST_PROSPECTIVE_ENABLED: "1"
+        BIOCATALYST_R2_RETENTION_CONFIRMED: "1"
+    exact_registry_record_diffs:
+      canonical_registration: trial_snapshot_and_exact_diff
+      schema: trial_version_diff.v1
+      availability: dark_until_runtime_retention_gate
+      required_environment:
+        BIOCATALYST_PROSPECTIVE_ENABLED: "1"
+        BIOCATALYST_R2_RETENTION_CONFIRMED: "1"

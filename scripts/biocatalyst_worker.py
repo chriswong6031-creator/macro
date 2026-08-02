@@ -29,6 +29,7 @@ import yaml
 from engine.biocatalyst.publication import (
     CommittedGeneration,
     HistoryPublicationEvidence,
+    ProspectivePublicationEvidence,
     PublicationError,
     PublicGenerationPublisher,
     archive_failed_attempt,
@@ -41,6 +42,16 @@ from engine.biocatalyst.publication import (
     success_health,
     validate_candidate_run,
     write_private_incident,
+)
+from engine.biocatalyst.prospective import (
+    ProspectiveError,
+    SourceEvidence as ProspectiveSourceEvidence,
+    build_coverage_epoch,
+    build_exact_diff as build_prospective_exact_diff,
+    build_observation as build_prospective_observation,
+    build_public_model as build_prospective_public_model,
+    build_public_event as build_prospective_public_event,
+    validate_public_model as validate_prospective_public_model,
 )
 from engine.biocatalyst.history import (
     build_history_exact_diff,
@@ -66,6 +77,7 @@ from engine.sector_intelligence import (
     validate_trial_history_diff_against_snapshots,
     validate_trial_registry_change_fact_against_diff,
     validate_trial_history_snapshot_against_evidence,
+    validate_trial_observation_against_source_evidence,
 )
 
 
@@ -96,7 +108,11 @@ _SAFE_ERROR_CODES = frozenset(
         "BIOCATALYST_R2_READBACK_FAILED",
         "BIOCATALYST_R2_READBACK_MISMATCH",
         "BIOCATALYST_R2_READ_FAILED",
+        "BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID",
+        "BIOCATALYST_R2_RETENTION_NOT_CONFIRMED",
         "BIOCATALYST_RUNTIME_PATH_INVALID",
+        "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN",
+        "BIOCATALYST_PROSPECTIVE_ENABLED_INVALID",
         "COLLECTION_FAILED",
         "COLLECTOR_INCIDENT_PRESENT",
         "COLLECTOR_BINDING_MISMATCH",
@@ -138,6 +154,26 @@ _SAFE_ERROR_CODES = frozenset(
         "PUBLIC_SNAPSHOT_BINDING_MISMATCH",
         "PUBLIC_STAGE_COLLISION",
         "PUBLIC_STAGE_MISSING",
+        "PROSPECTIVE_BASELINE_INVALID",
+        "PROSPECTIVE_DIFF_INVALID",
+        "PROSPECTIVE_DIFF_STATE_INVALID",
+        "PROSPECTIVE_EPOCH_INVALID",
+        "PROSPECTIVE_EVENT_COLLISION",
+        "PROSPECTIVE_IDENTITY_INVALID",
+        "PROSPECTIVE_INTERVAL_INVALID",
+        "PROSPECTIVE_MODEL_BINDING_INVALID",
+        "PROSPECTIVE_MODEL_HASH_MISMATCH",
+        "PROSPECTIVE_MODEL_INVALID",
+        "PROSPECTIVE_MODEL_LIMIT_EXCEEDED",
+        "PROSPECTIVE_OBSERVATION_INVALID",
+        "PROSPECTIVE_PRIOR_EVIDENCE_MISSING",
+        "PROSPECTIVE_PRIOR_MIRROR_INVALID",
+        "PROSPECTIVE_PRIVATE_ARCHIVE_INVALID",
+        "PROSPECTIVE_PUBLICATION_EVIDENCE_INVALID",
+        "PROSPECTIVE_SCOPE_INVALID",
+        "PROSPECTIVE_SOURCE_EVIDENCE_INVALID",
+        "PROSPECTIVE_TIME_INVALID",
+        "PROSPECTIVE_VALUE_INVALID",
         "RUN_CONTRACT_INVALID",
         "RUN_ID_INVALID",
         "RUN_NOT_COMPLETE",
@@ -153,6 +189,10 @@ _SAFE_ERROR_CODES = frozenset(
         "SOURCE_TIMESTAMP_REGRESSION",
         "TRIAL_PROJECTION_BINDING_MISMATCH",
         "TRIAL_PROJECTION_INVALID",
+        "TRIAL_PROSPECTIVE_EVIDENCE_BINDING_MISMATCH",
+        "TRIAL_PROSPECTIVE_EVIDENCE_INVALID",
+        "TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH",
+        "TRIAL_PROSPECTIVE_PROJECTION_INVALID",
         "UNEXPECTED_HTTP_STATUS",
         "UNSAFE_OBJECT_KEY",
         "UNSAFE_PRIVATE_ARTIFACT",
@@ -277,6 +317,8 @@ class WorkerConfig:
     user_agent: str
     r2: DedicatedR2Config
     history_enabled: bool = False
+    prospective_enabled: bool = False
+    r2_retention_confirmed: bool = False
 
     def __post_init__(self) -> None:
         state_root, public_root = _validated_root_pair(self.state_root, self.public_root)
@@ -291,6 +333,12 @@ class WorkerConfig:
             raise WorkerConfigError("BIOCATALYST_USER_AGENT_INVALID")
         if not isinstance(self.history_enabled, bool):
             raise WorkerConfigError("BIOCATALYST_HISTORY_ENABLED_INVALID")
+        if not isinstance(self.prospective_enabled, bool):
+            raise WorkerConfigError("BIOCATALYST_PROSPECTIVE_ENABLED_INVALID")
+        if not isinstance(self.r2_retention_confirmed, bool):
+            raise WorkerConfigError("BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID")
+        if self.prospective_enabled and not self.r2_retention_confirmed:
+            raise WorkerConfigError("BIOCATALYST_R2_RETENTION_NOT_CONFIRMED")
         object.__setattr__(self, "state_root", state_root)
         object.__setattr__(self, "public_root", public_root)
 
@@ -320,6 +368,16 @@ class ValidatedPrivateEvidence:
     snapshots_by_nct: dict[str, dict[str, Any]]
     receipts: tuple[dict[str, Any], ...]
     raw_page_bodies_by_receipt: dict[str, bytes]
+
+
+@dataclass(frozen=True)
+class PriorProspectiveState:
+    """Pointer-bound prior public state joined to replayed private evidence."""
+
+    epoch: dict[str, Any]
+    source_by_nct: Mapping[str, ProspectiveSourceEvidence]
+    observations_by_nct: Mapping[str, dict[str, Any]]
+    public_models_by_nct: Mapping[str, dict[str, Any]]
 
 
 class CollectorResult(Protocol):
@@ -392,6 +450,24 @@ def _parse_history_enabled(raw: str | None) -> bool:
     raise WorkerConfigError("BIOCATALYST_HISTORY_ENABLED_INVALID")
 
 
+def _parse_prospective_enabled(raw: str | None) -> bool:
+    value = (raw or "").strip()
+    if value in {"", "0"}:
+        return False
+    if value == "1":
+        return True
+    raise WorkerConfigError("BIOCATALYST_PROSPECTIVE_ENABLED_INVALID")
+
+
+def _parse_r2_retention_confirmed(raw: str | None) -> bool:
+    value = (raw or "").strip()
+    if value in {"", "0"}:
+        return False
+    if value == "1":
+        return True
+    raise WorkerConfigError("BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID")
+
+
 def _history_source_production_allowed(
     registry_path: Path | None = None,
 ) -> bool:
@@ -425,6 +501,14 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
     configured_nct_count = len({item.strip() for item in raw_ncts.split(",") if item.strip()})
     try:
         history_enabled = _parse_history_enabled(values.get("BIOCATALYST_HISTORY_ENABLED"))
+        prospective_enabled = _parse_prospective_enabled(
+            values.get("BIOCATALYST_PROSPECTIVE_ENABLED")
+        )
+        r2_retention_confirmed = _parse_r2_retention_confirmed(
+            values.get("BIOCATALYST_R2_RETENTION_CONFIRMED")
+        )
+        if prospective_enabled and not r2_retention_confirmed:
+            raise WorkerConfigError("BIOCATALYST_R2_RETENTION_NOT_CONFIRMED")
         if history_enabled and not _history_source_production_allowed():
             raise WorkerConfigError("BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED")
     except WorkerConfigError as exc:
@@ -464,6 +548,8 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             user_agent=values.get("BIOCATALYST_USER_AGENT", "").strip(),
             r2=DedicatedR2Config.from_environment(values),
             history_enabled=history_enabled,
+            prospective_enabled=prospective_enabled,
+            r2_retention_confirmed=r2_retention_confirmed,
         )
     except (StorageError, WorkerConfigError) as exc:
         return EnvironmentPlan(
@@ -722,6 +808,7 @@ def _validate_private_raw_evidence(
     *,
     run_path: Path,
     config: WorkerConfig,
+    allowed_extra_roots: tuple[str, ...] = (),
 ) -> ValidatedPrivateEvidence:
     """Independently prove B1 run -> exact probes/pages -> canonical snapshots.
 
@@ -732,6 +819,15 @@ def _validate_private_raw_evidence(
     """
 
     try:
+        normalized_extra_roots = tuple(
+            PurePosixPath(root).as_posix().rstrip("/") for root in allowed_extra_roots
+        )
+        if any(
+            not root.startswith("biocatalyst/")
+            or ".." in PurePosixPath(root).parts
+            for root in normalized_extra_roots
+        ):
+            raise PublicationError("RAW_EVIDENCE_INVALID")
         private_stage = Path(private_stage).resolve(strict=True)
         year, month, run_id = _canonical_run_identity(run)
         expected_run_key = f"biocatalyst/runs/clinicaltrials/{year}/{month}/{run_id}.json"
@@ -807,6 +903,12 @@ def _validate_private_raw_evidence(
         for snapshot_path in sorted(snapshot_root.rglob("*")):
             if snapshot_path.is_symlink():
                 raise PublicationError("RAW_EVIDENCE_INVALID")
+            private_relative = snapshot_path.relative_to(private_stage).as_posix()
+            if any(
+                private_relative == root or private_relative.startswith(root + "/")
+                for root in normalized_extra_roots
+            ):
+                continue
             relative = snapshot_path.relative_to(snapshot_root)
             if snapshot_path.is_dir():
                 if len(relative.parts) != 1 or not _NCT_RE.fullmatch(snapshot_path.name):
@@ -878,7 +980,23 @@ def _validate_private_raw_evidence(
             for parent in PurePosixPath(relative_file).parents:
                 if parent.as_posix() != ".":
                     expected_directories.add(parent.as_posix())
-        if actual_files != expected_files or actual_directories != expected_directories:
+        def permitted_extra(relative: str) -> bool:
+            return any(
+                relative == root
+                or relative.startswith(root + "/")
+                or root.startswith(relative + "/")
+                for root in normalized_extra_roots
+            )
+
+        if (
+            any(path not in expected_files and not permitted_extra(path) for path in actual_files)
+            or any(
+                path not in expected_directories and not permitted_extra(path)
+                for path in actual_directories
+            )
+            or not expected_files.issubset(actual_files)
+            or not expected_directories.issubset(actual_directories)
+        ):
             raise PublicationError("RAW_EVIDENCE_INVALID")
         return ValidatedPrivateEvidence(
             snapshots_by_nct=snapshots_by_nct,
@@ -891,6 +1009,517 @@ def _validate_private_raw_evidence(
         raise PublicationError("RAW_EVIDENCE_INVALID") from exc
     except Exception as exc:
         raise PublicationError("RAW_EVIDENCE_INVALID") from exc
+
+
+_PRIOR_PRIVATE_EXTRA_ROOTS = (
+    "biocatalyst/raw/clinicaltrials/history",
+    "biocatalyst/receipts/clinicaltrials/history",
+    "biocatalyst/runs/clinicaltrials/history",
+    "biocatalyst/source_snapshots/clinicaltrials/history",
+    "biocatalyst/derived/clinicaltrials/history",
+    "biocatalyst/derived/clinicaltrials/prospective",
+)
+
+
+def _write_private_prospective_immutable(
+    private_stage: Path,
+    *,
+    relative: str,
+    document: Mapping[str, Any],
+) -> Path:
+    """Write one canonical prospective artifact without overwrite semantics."""
+
+    key = PurePosixPath(relative)
+    if (
+        key.is_absolute()
+        or ".." in key.parts
+        or key.as_posix() != relative
+        or not relative.startswith("biocatalyst/derived/clinicaltrials/prospective/")
+    ):
+        raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+    root = Path(private_stage).resolve(strict=True)
+    path = root.joinpath(*key.parts)
+    payload = canonical_json_bytes(dict(document)) + b"\n"
+    current = root
+    for component in path.relative_to(root).parts[:-1]:
+        current = current / component
+        try:
+            metadata = current.lstat()
+        except FileNotFoundError:
+            try:
+                current.mkdir(mode=0o700)
+                metadata = current.lstat()
+            except (FileExistsError, OSError) as exc:
+                raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+        except OSError as exc:
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+        if current.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+
+    def verify_existing() -> Path:
+        existing = _path_within(
+            path, root, code="PROSPECTIVE_PRIVATE_ARCHIVE_INVALID"
+        )
+        try:
+            actual = existing.read_bytes()
+        except OSError as exc:
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+        if actual != payload:
+            raise PublicationError("IMMUTABLE_OBJECT_COLLISION")
+        return existing
+
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            descriptor = os.open(path, flags, 0o600)
+        except FileExistsError:
+            return verify_existing()
+        except OSError as exc:
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        except OSError as exc:
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+    except OSError as exc:
+        raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+    else:
+        if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+        return verify_existing()
+    return verify_existing()
+
+
+def _prior_private_root(config: WorkerConfig, generation_id: str) -> tuple[Path, Path]:
+    match = re.fullmatch(r"ctgov_run_([0-9]{4})([0-9]{2})[A-Za-z0-9_]+", generation_id)
+    if match is None:
+        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+    private_root = config.state_root / "committed" / generation_id / "private"
+    if private_root.is_symlink() or not private_root.is_dir():
+        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+    try:
+        private_root = private_root.resolve(strict=True)
+        private_root.relative_to(config.state_root.resolve(strict=True))
+    except (OSError, ValueError) as exc:
+        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING") from exc
+    year, month = match.groups()
+    run_path = private_root / "biocatalyst" / "runs" / "clinicaltrials" / year / month / f"{generation_id}.json"
+    return private_root, run_path
+
+
+def _verify_prior_private_mirror(
+    *,
+    private_root: Path,
+    generation_id: str,
+    store: BinaryObjectStore,
+) -> None:
+    """Anchor every prior local private byte to its immutable R2 receipt."""
+
+    receipt_path = private_root.parent / "mirror_receipt.json"
+    if receipt_path.is_symlink() or not receipt_path.is_file():
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+    try:
+        receipt = _strict_json_object(receipt_path)
+    except Exception as exc:
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID") from exc
+    expected_keys = {
+        "contract_id",
+        "schema_version",
+        "run_id",
+        "verified_at",
+        "objects",
+        "manifest_sha256",
+    }
+    objects = receipt.get("objects")
+    if (
+        set(receipt) != expected_keys
+        or receipt.get("contract_id") != "biocatalyst_private_mirror_receipt.v1"
+        or receipt.get("schema_version") != "1.0.0"
+        or receipt.get("run_id") != generation_id
+        or not isinstance(objects, list)
+        or not objects
+        or canonical_json_sha256(
+            {key: value for key, value in receipt.items() if key != "manifest_sha256"}
+        )
+        != receipt.get("manifest_sha256")
+    ):
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+    canonical_receipt = canonical_json_bytes(receipt) + b"\n"
+    try:
+        remote_receipt = store.get_bytes(
+            f"biocatalyst/mirror_receipts/{generation_id}.json"
+        )
+    except Exception as exc:
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID") from exc
+    try:
+        local_receipt = receipt_path.read_bytes()
+    except OSError as exc:
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID") from exc
+    if remote_receipt != canonical_receipt or local_receipt != canonical_receipt:
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+
+    listed_keys: list[str] = []
+    for item in objects:
+        if not isinstance(item, Mapping) or set(item) != {
+            "object_key",
+            "sha256",
+            "byte_count",
+        }:
+            raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+        object_key = item.get("object_key")
+        digest = item.get("sha256")
+        byte_count = item.get("byte_count")
+        if (
+            not isinstance(object_key, str)
+            or not object_key.startswith("biocatalyst/")
+            or PurePosixPath(object_key).as_posix() != object_key
+            or ".." in PurePosixPath(object_key).parts
+            or not isinstance(digest, str)
+            or _SHA256_RE.fullmatch(digest) is None
+            or not isinstance(byte_count, int)
+            or isinstance(byte_count, bool)
+            or byte_count < 1
+        ):
+            raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+        path = private_root.joinpath(*PurePosixPath(object_key).parts)
+        try:
+            path = _path_within(
+                path, private_root, code="PROSPECTIVE_PRIOR_MIRROR_INVALID"
+            )
+            local = path.read_bytes()
+            remote = store.get_bytes(object_key)
+        except Exception as exc:
+            raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID") from exc
+        if (
+            len(local) != byte_count
+            or hashlib.sha256(local).hexdigest() != digest
+            or remote != local
+        ):
+            raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+        listed_keys.append(object_key)
+    if listed_keys != sorted(set(listed_keys)):
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+    actual_keys: set[str] = set()
+    for path in private_root.rglob("*"):
+        if path.is_symlink() or (not path.is_dir() and not path.is_file()):
+            raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+        if path.is_file():
+            actual_keys.add(path.relative_to(private_root).as_posix())
+    if actual_keys != set(listed_keys):
+        raise PublicationError("PROSPECTIVE_PRIOR_MIRROR_INVALID")
+
+
+def _load_prior_prospective_state(
+    *,
+    config: WorkerConfig,
+    prior: CommittedGeneration,
+    publisher: PublicGenerationPublisher,
+    store: BinaryObjectStore,
+) -> PriorProspectiveState:
+    """Replay the prior run and bind its private observation to public v1.3."""
+
+    if prior.schema_version != "1.3.0":
+        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+    projection = publisher.read_trial_projection()
+    if projection is None or projection.generation != prior:
+        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+    models = {
+        key: dict(value) for key, value in projection.prospective_models_by_nct.items()
+    }
+    if set(models) != set(config.nct_ids):
+        raise PublicationError("PROSPECTIVE_SCOPE_INVALID")
+    for model in models.values():
+        try:
+            validate_prospective_public_model(model)
+        except ProspectiveError as exc:
+            raise PublicationError("PROSPECTIVE_MODEL_INVALID") from exc
+
+    private_root, run_path = _prior_private_root(config, prior.generation_id)
+    _verify_prior_private_mirror(
+        private_root=private_root,
+        generation_id=prior.generation_id,
+        store=store,
+    )
+    run = _strict_json_object(run_path)
+    run = validate_candidate_run(run, expected_watermark=run.get("watermark_before"))
+    _validate_supported_code_version(run)
+    _validate_worker_authority(run, config)
+    evidence = _validate_private_raw_evidence(
+        private_root,
+        run,
+        run_path=run_path,
+        config=config,
+        allowed_extra_roots=_PRIOR_PRIVATE_EXTRA_ROOTS,
+    )
+    epoch_ids = {model.get("coverage_epoch_id") for model in models.values()}
+    if len(epoch_ids) != 1:
+        raise PublicationError("PROSPECTIVE_EPOCH_INVALID")
+    epoch_id = next(iter(epoch_ids))
+    if not isinstance(epoch_id, str) or re.fullmatch(r"ctgov_coverage_[A-Za-z0-9_-]+", epoch_id) is None:
+        raise PublicationError("PROSPECTIVE_EPOCH_INVALID")
+    epoch_path = (
+        private_root
+        / "biocatalyst"
+        / "derived"
+        / "clinicaltrials"
+        / "prospective"
+        / "epochs"
+        / epoch_id
+        / f"{prior.generation_id}.json"
+    )
+    epoch = _strict_json_object(epoch_path)
+    try:
+        validate_contract("trial_coverage_epoch.v1", epoch)
+    except Exception as exc:
+        raise PublicationError("PROSPECTIVE_EPOCH_INVALID") from exc
+    if (
+        epoch.get("coverage_epoch_id") != epoch_id
+        or epoch.get("scope")
+        != {"kind": "explicit_nct_allowlist", "nct_ids": list(config.nct_ids)}
+        or epoch.get("last_complete_run_ref") != prior.generation_id
+    ):
+        raise PublicationError("PROSPECTIVE_EPOCH_INVALID")
+
+    observations: dict[str, dict[str, Any]] = {}
+    sources: dict[str, ProspectiveSourceEvidence] = {}
+    expected_files = {epoch_path.relative_to(private_root).as_posix()}
+    base = private_root / "biocatalyst" / "derived" / "clinicaltrials" / "prospective"
+    for nct_id in config.nct_ids:
+        model = models[nct_id]
+        model_root = base / epoch_id / nct_id / "models"
+        if model_root.is_symlink() or not model_root.is_dir():
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+        model_paths = sorted(model_root.glob("*.json"))
+        if len(model_paths) != 1 or any(path.is_symlink() or not path.is_file() for path in model_paths):
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+        private_model_path = model_paths[0]
+        private_model = _strict_json_object(private_model_path)
+        if (
+            private_model_path.name != f"{model.get('model_payload_sha256')}.json"
+            or private_model != model
+            or private_model_path.read_bytes() != canonical_json_bytes(model) + b"\n"
+        ):
+            raise PublicationError("PROSPECTIVE_MODEL_BINDING_INVALID")
+        expected_files.add(private_model_path.relative_to(private_root).as_posix())
+        observation_root = base / epoch_id / nct_id / "observations"
+        if observation_root.is_symlink() or not observation_root.is_dir():
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+        observation_paths = sorted(observation_root.glob("*.json"))
+        if len(observation_paths) != 1 or any(path.is_symlink() or not path.is_file() for path in observation_paths):
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+        observation_path = observation_paths[0]
+        observation = _strict_json_object(observation_path)
+        if observation_path.name != f"{observation.get('observation_id')}.json":
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+        source = ProspectiveSourceEvidence(
+            run=run,
+            snapshot=evidence.snapshots_by_nct[nct_id],
+            receipts=evidence.receipts,
+            raw_page_bodies_by_receipt=evidence.raw_page_bodies_by_receipt,
+        )
+        try:
+            validate_trial_observation_against_source_evidence(
+                observation,
+                source.snapshot,
+                source.run,
+                source.receipts,
+                raw_page_bodies_by_receipt=source.raw_page_bodies_by_receipt,
+            )
+        except Exception as exc:
+            raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING") from exc
+        if (
+            model.get("nct_id") != nct_id
+            or model.get("last_observed_at") != observation.get("retrieved_at")
+            or model.get("coverage_epoch_id") != epoch_id
+        ):
+            raise PublicationError("PROSPECTIVE_MODEL_BINDING_INVALID")
+        expected_files.add(observation_path.relative_to(private_root).as_posix())
+        diff_root = base / epoch_id / nct_id / "diffs"
+        diff_paths = sorted(diff_root.glob("*.json")) if diff_root.is_dir() else []
+        if diff_root.is_symlink() or any(path.is_symlink() or not path.is_file() for path in diff_paths):
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+        expected_diff_count = 1 if observation.get("source_state_changed") is True else 0
+        if len(diff_paths) != expected_diff_count:
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+        for diff_path in diff_paths:
+            diff = _strict_json_object(diff_path)
+            try:
+                validate_contract("trial_version_diff.v1", diff)
+            except Exception as exc:
+                raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID") from exc
+            if (
+                diff_path.name != f"{diff.get('diff_payload_sha256')}.json"
+                or diff.get("after_observation_ref") != observation.get("observation_id")
+                or diff.get("nct_id") != nct_id
+            ):
+                raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+            if not model.get("events") or build_prospective_public_event(diff) != model["events"][-1]:
+                raise PublicationError("PROSPECTIVE_MODEL_BINDING_INVALID")
+            expected_files.add(diff_path.relative_to(private_root).as_posix())
+        if (
+            model.get("coverage_started_at") != epoch.get("coverage_started_at")
+            or model.get("generated_at") != run.get("finished_at")
+            or datetime.fromisoformat(
+                str(model.get("baseline_established_at")).replace("Z", "+00:00")
+            )
+            < datetime.fromisoformat(
+                str(epoch.get("coverage_started_at")).replace("Z", "+00:00")
+            )
+            or (
+                model.get("accrual_state") == "baseline_established"
+                and (
+                    epoch.get("first_complete_run_ref") != run.get("run_id")
+                    or model.get("baseline_established_at")
+                    != observation.get("retrieved_at")
+                )
+            )
+        ):
+            raise PublicationError("PROSPECTIVE_MODEL_BINDING_INVALID")
+        observations[nct_id] = observation
+        sources[nct_id] = source
+
+    observed_upper = max(
+        (item["retrieved_at"] for item in observations.values()),
+        key=lambda value: datetime.fromisoformat(value.replace("Z", "+00:00")),
+    )
+    if epoch.get("last_observed_at") != observed_upper:
+        raise PublicationError("PROSPECTIVE_EPOCH_INVALID")
+    actual_files: set[str] = set()
+    for path in base.rglob("*"):
+        if path.is_symlink() or (not path.is_dir() and not path.is_file()):
+            raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+        if path.is_file():
+            actual_files.add(path.relative_to(private_root).as_posix())
+    if actual_files != expected_files:
+        raise PublicationError("PROSPECTIVE_PRIVATE_ARCHIVE_INVALID")
+    return PriorProspectiveState(
+        epoch=epoch,
+        source_by_nct=sources,
+        observations_by_nct=observations,
+        public_models_by_nct=models,
+    )
+
+
+def _build_prospective_generation(
+    *,
+    private_stage: Path,
+    run: Mapping[str, Any],
+    validated_evidence: ValidatedPrivateEvidence,
+    config: WorkerConfig,
+    prior_state: PriorProspectiveState | None,
+) -> tuple[
+    dict[str, dict[str, Any]],
+    dict[str, ProspectivePublicationEvidence],
+]:
+    """Build, persist, and bind one complete prospective generation."""
+
+    retrieved_times = [
+        validated_evidence.snapshots_by_nct[nct_id]["retrieved_at"]
+        for nct_id in config.nct_ids
+    ]
+    earliest = min(retrieved_times, key=lambda value: datetime.fromisoformat(value.replace("Z", "+00:00")))
+    latest = max(retrieved_times, key=lambda value: datetime.fromisoformat(value.replace("Z", "+00:00")))
+    epoch = build_coverage_epoch(
+        nct_ids=config.nct_ids,
+        current_run_ref=run["run_id"],
+        last_observed_at=latest,
+        coverage_started_at=earliest if prior_state is None else None,
+        transaction_from=run["finished_at"],
+        prior_epoch=prior_state.epoch if prior_state is not None else None,
+    )
+    epoch_id = epoch["coverage_epoch_id"]
+    _write_private_prospective_immutable(
+        private_stage,
+        relative=(
+            "biocatalyst/derived/clinicaltrials/prospective/epochs/"
+            f"{epoch_id}/{run['run_id']}.json"
+        ),
+        document=epoch,
+    )
+    models: dict[str, dict[str, Any]] = {}
+    evidence_by_nct: dict[str, ProspectivePublicationEvidence] = {}
+    for nct_id in config.nct_ids:
+        current = ProspectiveSourceEvidence(
+            run=run,
+            snapshot=validated_evidence.snapshots_by_nct[nct_id],
+            receipts=validated_evidence.receipts,
+            raw_page_bodies_by_receipt=validated_evidence.raw_page_bodies_by_receipt,
+        )
+        prior_source = prior_state.source_by_nct[nct_id] if prior_state is not None else None
+        prior_observation = (
+            prior_state.observations_by_nct[nct_id] if prior_state is not None else None
+        )
+        prior_model = prior_state.public_models_by_nct[nct_id] if prior_state is not None else None
+        observation = build_prospective_observation(
+            current,
+            prior=(prior_source, prior_observation) if prior_source is not None else None,
+        )
+        exact_diff = (
+            build_prospective_exact_diff(
+                prior_source,
+                current,
+                before_observation=prior_observation,
+                after_observation=observation,
+            )
+            if prior_source is not None and prior_observation is not None
+            else None
+        )
+        model = build_prospective_public_model(
+            nct_id=nct_id,
+            epoch=epoch,
+            observation=observation,
+            exact_diff=exact_diff,
+            generated_at=run["finished_at"],
+            prior_model=prior_model,
+        )
+        _write_private_prospective_immutable(
+            private_stage,
+            relative=(
+                "biocatalyst/derived/clinicaltrials/prospective/"
+                f"{epoch_id}/{nct_id}/models/{model['model_payload_sha256']}.json"
+            ),
+            document=model,
+        )
+        _write_private_prospective_immutable(
+            private_stage,
+            relative=(
+                "biocatalyst/derived/clinicaltrials/prospective/"
+                f"{epoch_id}/{nct_id}/observations/{observation['observation_id']}.json"
+            ),
+            document=observation,
+        )
+        if exact_diff is not None:
+            _write_private_prospective_immutable(
+                private_stage,
+                relative=(
+                    "biocatalyst/derived/clinicaltrials/prospective/"
+                    f"{epoch_id}/{nct_id}/diffs/{exact_diff['diff_payload_sha256']}.json"
+                ),
+                document=exact_diff,
+            )
+        models[nct_id] = model
+        evidence_by_nct[nct_id] = ProspectivePublicationEvidence(
+            epoch=epoch,
+            current=current,
+            current_observation=observation,
+            exact_diff=exact_diff,
+            generated_at=run["finished_at"],
+            prior=prior_source,
+            prior_observation=prior_observation,
+            prior_model=prior_model,
+        )
+    return models, evidence_by_nct
 
 
 def _validate_worker_authority(run: Mapping[str, Any], config: WorkerConfig) -> None:
@@ -1642,10 +2271,17 @@ def run_once(
         attempt_root: Path | None = None
         private_archive_root: Path | None = None
         r2_mirror_state = "not_started"
+        store: BinaryObjectStore | None = None
         candidate_run_id: str | None = None
         attempt_id = _attempt_id(now_fn())
         try:
             prior = publisher.read_committed()
+            if (
+                prior is not None
+                and prior.schema_version == "1.3.0"
+                and not config.prospective_enabled
+            ):
+                raise PublicationError("BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN")
             expected_watermark = prior.watermark_after if prior else None
 
             attempt_root = config.state_root / "staging" / attempt_id
@@ -1703,6 +2339,49 @@ def run_once(
                 now_fn=now_fn,
             )
 
+            prospective_models_by_nct: dict[str, dict[str, Any]] | None = None
+            prospective_evidence_by_nct: (
+                dict[str, ProspectivePublicationEvidence] | None
+            ) = None
+            if config.prospective_enabled:
+                # B4D accrues only across successive successful official-API
+                # observations in the same explicit NCT scope.  A legacy
+                # generation or a scope change deliberately starts a fresh
+                # epoch; a same-scope v1.3 generation must have its exact
+                # prior private source evidence present and replayable or the
+                # run quarantines.
+                prior_prospective_state: PriorProspectiveState | None = None
+                if prior is not None and prior.schema_version == "1.3.0":
+                    prior_projection = publisher.read_trial_projection()
+                    if prior_projection is None:
+                        raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
+                    prior_scope = tuple(
+                        sorted(
+                            trial.get("nct_id")
+                            for trial in prior_projection.trials
+                            if isinstance(trial.get("nct_id"), str)
+                        )
+                    )
+                    if prior_scope == config.nct_ids:
+                        store = store_factory(config.r2)
+                        if not isinstance(store, BinaryObjectStore):
+                            raise StorageError("BIOCATALYST_R2_CLIENT_UNAVAILABLE")
+                        prior_prospective_state = _load_prior_prospective_state(
+                            config=config,
+                            prior=prior,
+                            publisher=publisher,
+                            store=store,
+                        )
+                prospective_models_by_nct, prospective_evidence_by_nct = (
+                    _build_prospective_generation(
+                        private_stage=private_stage,
+                        run=run,
+                        validated_evidence=validated_evidence,
+                        config=config,
+                        prior_state=prior_prospective_state,
+                    )
+                )
+
             # Validate the collector's public projection against independently
             # validated private snapshots while it is still a disposable stage.
             # No R2 object or actual public generation exists at this point.
@@ -1721,14 +2400,17 @@ def run_once(
                 ),
                 history_models_by_nct=history_models_by_nct,
                 history_evidence_by_nct=history_evidence_by_nct,
+                prospective_models_by_nct=prospective_models_by_nct,
+                prospective_evidence_by_nct=prospective_evidence_by_nct,
             )
 
             # Construct the dedicated client only after every local source,
             # snapshot, and collector-projection check has passed.  This keeps
             # failed source collection entirely outside the R2 plane.
-            store = store_factory(config.r2)
-            if not isinstance(store, BinaryObjectStore):
-                raise StorageError("BIOCATALYST_R2_CLIENT_UNAVAILABLE")
+            if store is None:
+                store = store_factory(config.r2)
+                if not isinstance(store, BinaryObjectStore):
+                    raise StorageError("BIOCATALYST_R2_CLIENT_UNAVAILABLE")
             receipts = mirror_tree_verified(store, root=private_stage)
             r2_mirror_state = "objects_verified"
             private_archive_root = archive_private_stage(

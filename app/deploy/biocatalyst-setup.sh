@@ -37,6 +37,8 @@ Installs the BioCatalyst systemd service and timer without enabling either one.
 The root-owned /etc/macro-biocatalyst.env file must contain:
   BIOCATALYST_ENABLED=1
   BIOCATALYST_HISTORY_ENABLED=0  # optional B2 adapter; keep 0 until separately reviewed
+  BIOCATALYST_PROSPECTIVE_ENABLED=0  # B4D; enable only after the retention gate below
+  BIOCATALYST_R2_RETENTION_CONFIRMED=0  # set 1 only after no-delete/no-overwrite policy review
   BIOCATALYST_CANARY_NCTS=<comma-separated NCT ids>
   BIOCATALYST_USER_AGENT=<descriptive contact string>
   BIOCATALYST_R2_ENDPOINT=<BioCatalyst-scoped endpoint>
@@ -74,6 +76,19 @@ verify_prereqs() {
 
 	if ! grep -Eq '^BIOCATALYST_ENABLED=1([[:space:]]*)$' "$ENV_FILE"; then
 		missing+=("BIOCATALYST_ENABLED must equal 1")
+	fi
+	if grep -Eq '^BIOCATALYST_PROSPECTIVE_ENABLED=' "$ENV_FILE" && \
+		! grep -Eq '^BIOCATALYST_PROSPECTIVE_ENABLED=[01]([[:space:]]*)$' "$ENV_FILE"; then
+		missing+=("BIOCATALYST_PROSPECTIVE_ENABLED must equal 0 or 1")
+	fi
+	if grep -Eq '^BIOCATALYST_R2_RETENTION_CONFIRMED=' "$ENV_FILE" && \
+		! grep -Eq '^BIOCATALYST_R2_RETENTION_CONFIRMED=[01]([[:space:]]*)$' "$ENV_FILE"; then
+		missing+=("BIOCATALYST_R2_RETENTION_CONFIRMED must equal 0 or 1")
+	fi
+
+	if grep -Eq '^BIOCATALYST_PROSPECTIVE_ENABLED=1([[:space:]]*)$' "$ENV_FILE" && \
+		! grep -Eq '^BIOCATALYST_R2_RETENTION_CONFIRMED=1([[:space:]]*)$' "$ENV_FILE"; then
+		missing+=("BIOCATALYST_R2_RETENTION_CONFIRMED must equal 1 when prospective collection is enabled")
 	fi
 
 	if [ "${#missing[@]}" -gt 0 ]; then

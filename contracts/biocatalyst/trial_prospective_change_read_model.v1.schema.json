@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_prospective_change_read_model.v1.schema.json",
+  "title": "BioCatalyst Prospective Trial Change Read Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "nct_id", "available", "unavailable_reason",
+    "accrual_state", "coverage_class", "coverage_method", "coverage_epoch_id",
+    "coverage_started_at", "baseline_established_at", "last_observed_at",
+    "observation_count", "events", "generated_at", "interpretation",
+    "protocol_change_asserted", "materiality_assessed", "authority", "hash_scope",
+    "model_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_prospective_change_read_model.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "available": {"const": true},
+    "unavailable_reason": {"type": "null"},
+    "accrual_state": {"type": "string", "enum": ["baseline_established", "accruing"]},
+    "coverage_class": {"const": "current_only"},
+    "coverage_method": {"const": "prospective_api_polling"},
+    "coverage_epoch_id": {"type": "string", "pattern": "^ctgov_coverage_[a-zA-Z0-9_-]+$"},
+    "coverage_started_at": {"type": "string", "format": "date-time"},
+    "baseline_established_at": {"type": "string", "format": "date-time"},
+    "last_observed_at": {"type": "string", "format": "date-time"},
+    "observation_count": {"type": "integer", "minimum": 1},
+    "events": {
+      "type": "array", "maxItems": 2048,
+      "items": {"$ref": "#/$defs/changeEvent"}
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "interpretation": {"const": "registry_record_changed"},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_model_payload_sha256"},
+    "model_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "source_fact"},
+        "decision_authority": {"const": false},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}
+      }
+    },
+    "jsonValue": {
+      "oneOf": [
+        {"type": "null"}, {"type": "boolean"}, {"type": "number"},
+        {"type": "string", "maxLength": 2000},
+        {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/jsonValue"}},
+        {"type": "object", "maxProperties": 32, "propertyNames": {"maxLength": 128}, "additionalProperties": {"$ref": "#/$defs/jsonValue"}}
+      ]
+    },
+    "displayChange": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "op", "before_state", "before_value", "after_state", "after_value"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["registry_status", "enrollment_target", "enrollment_actual", "enrollment_count", "enrollment_type", "primary_completion_date", "completion_date", "site_set", "endpoint_record"]},
+        "op": {"type": "string", "enum": ["add", "remove", "replace"]},
+        "before_state": {"type": "string", "enum": ["missing", "present"]},
+        "before_value": {"$ref": "#/$defs/jsonValue"},
+        "after_state": {"type": "string", "enum": ["missing", "present"]},
+        "after_value": {"$ref": "#/$defs/jsonValue"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_name", "source_uri", "retrieved_at"],
+      "properties": {
+        "source_name": {"const": "ClinicalTrials.gov"},
+        "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}$"},
+        "retrieved_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "observedInterval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["after", "at_or_before"],
+      "properties": {
+        "after": {"type": "string", "format": "date-time"},
+        "at_or_before": {"type": "string", "format": "date-time"}
+      }
+    },
+    "changeEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "change_id", "first_observed_at", "observed_interval",
+        "total_exact_operation_count", "display_change_count", "omitted_operation_count",
+        "changes", "evidence", "interpretation", "protocol_change_asserted",
+        "materiality_assessed", "authority"
+      ],
+      "properties": {
+        "change_id": {"type": "string", "pattern": "^prospective_change_NCT[0-9]{8}_[a-f0-9]{24}$"},
+        "first_observed_at": {"type": "string", "format": "date-time"},
+        "observed_interval": {"$ref": "#/$defs/observedInterval"},
+        "total_exact_operation_count": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "display_change_count": {"type": "integer", "minimum": 0, "maximum": 128},
+        "omitted_operation_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "changes": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/displayChange"}},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "interpretation": {"const": "registry_record_changed"},
+        "protocol_change_asserted": {"const": false},
+        "materiality_assessed": {"const": false},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}

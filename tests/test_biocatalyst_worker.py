@@ -26,6 +26,11 @@ from engine.sector_intelligence import (
     receipt_payloads_sha256,
 )
 from engine.biocatalyst.history import build_history_exact_diff
+from engine.biocatalyst.prospective import (
+    build_coverage_epoch,
+    build_public_event,
+    build_public_model,
+)
 from collectors.biocatalyst.clinicaltrials_history import (
     ClinicalTrialsHistoryCollector,
     ClinicalTrialsHistoryConfig,
@@ -72,6 +77,7 @@ class FakeCollectorFactory:
     watermark_after: str = "2026-08-01T15:00:05Z"
     run_id_override: str | None = None
     run_mutator: Callable[[dict], None] | None = None
+    study_mutator: Callable[[dict], None] | None = None
     calls: list[dict] | None = None
 
     def __post_init__(self) -> None:
@@ -87,10 +93,17 @@ class FakeCollectorFactory:
                 receipt = json.loads(FIXTURE_RECEIPT.read_text(encoding="utf-8"))
                 snapshot = json.loads(FIXTURE_SNAPSHOT.read_text(encoding="utf-8"))
                 raw_payload = json.loads(FIXTURE_RAW.read_text(encoding="utf-8"))
+                if len(kwargs["nct_ids"]) != 1:
+                    raise AssertionError("worker fake supports one explicit NCT per run")
+                nct_id = kwargs["nct_ids"][0]
+                source_study = raw_payload["studies"][0]
+                source_study["protocolSection"]["identificationModule"]["nctId"] = nct_id
+                snapshot["nct_id"] = nct_id
+                if outer.study_mutator is not None:
+                    outer.study_mutator(source_study)
                 raw_payload["totalCount"] = len(raw_payload["studies"])
                 raw_page = canonical_json_bytes(raw_payload)
                 raw_digest = sha256(raw_page).hexdigest()
-                source_study = raw_payload["studies"][0]
                 watermark = datetime.fromisoformat(outer.watermark_after.replace("Z", "+00:00"))
                 started = watermark - timedelta(seconds=5)
                 finished = watermark - timedelta(seconds=1)
@@ -108,10 +121,11 @@ class FakeCollectorFactory:
                 run["source_api_version"] = "2.0.5"
                 run["source_api_version_after"] = "2.0.5"
                 manifest = run["query_manifest"]
+                manifest["configured_nct_ids"] = [nct_id]
                 manifest["api_root"] = "https://clinicaltrials.gov/api/v2"
                 manifest["request_path"] = "/studies"
                 manifest["base_query_params"] = {
-                    "query.id": "NCT00000001",
+                    "query.id": nct_id,
                     "format": "json",
                     "pageSize": str(manifest["page_size"]),
                     "countTotal": "true",
@@ -123,7 +137,7 @@ class FakeCollectorFactory:
                 run["run_id"] = run_id
                 receipt_id = f"ctgov_receipt_{run_id.removeprefix('ctgov_run_')}_0"
                 source_hash = canonical_json_sha256(source_study)
-                source_ref = f"src:ctgov:NCT00000001:sha256:{source_hash}"
+                source_ref = f"src:ctgov:{nct_id}:sha256:{source_hash}"
                 run["published_source_record_refs"] = [source_ref]
                 receipt["receipt_id"] = receipt_id
                 receipt["run_id"] = run_id
@@ -154,17 +168,18 @@ class FakeCollectorFactory:
                 run["receipt_payloads_sha256"] = receipt_payloads_sha256([receipt])
                 run["code_version"] = current_b1_code_version()
                 snapshot_id = (
-                    f"ctgov_snapshot_NCT00000001_"
+                    f"ctgov_snapshot_{nct_id}_"
                     f"{run_id.removeprefix('ctgov_run_')}_{source_hash}"
                 )
                 snapshot.update(
                     {
                         "source_snapshot_id": snapshot_id,
                         "source_record_ref": source_ref,
+                        "source_uri": f"https://clinicaltrials.gov/study/{nct_id}",
                         "run_ref": run_id,
                         "page_receipt_ref": receipt_id,
                         "raw_object_key": (
-                            f"biocatalyst/raw/clinicaltrials/v2/NCT00000001/{source_hash}.json"
+                            f"biocatalyst/raw/clinicaltrials/v2/{nct_id}/{source_hash}.json"
                         ),
                         "exact_response_sha256": raw_digest,
                         "canonical_content_sha256": source_hash,
@@ -181,11 +196,11 @@ class FakeCollectorFactory:
                 state = {
                     "contract_id": "biocatalyst_trial_source_state.v1",
                     "schema_version": "1.0.0",
-                    "nct_id": "NCT00000001",
+                    "nct_id": nct_id,
                     "source_snapshot_id": snapshot["source_snapshot_id"],
                     "source_record_ref": source_ref,
                     "canonical_content_sha256": source_hash,
-                    "source_uri": "https://clinicaltrials.gov/study/NCT00000001",
+                    "source_uri": f"https://clinicaltrials.gov/study/{nct_id}",
                     "source_dataset_timestamp_raw": outer.source_timestamp,
                     "source_last_update_posted_at": snapshot["source_last_update_posted_at"],
                     "source_published_at": snapshot["source_published_at"],
@@ -196,7 +211,7 @@ class FakeCollectorFactory:
                     "modification_disclosure": "BioCatalyst parsed and normalized this source-state reference.",
                 }
                 public_entry = {
-                    "nct_id": "NCT00000001",
+                    "nct_id": nct_id,
                     "source_snapshot_id": state["source_snapshot_id"],
                     "source_record_ref": source_ref,
                     "public_state_sha256": canonical_json_sha256(state),
@@ -287,12 +302,12 @@ class FakeCollectorFactory:
                 canonical_path = private_root / Path(*PurePosixPath(snapshot["raw_object_key"]).parts)
                 canonical_path.parent.mkdir(parents=True, exist_ok=True)
                 canonical_path.write_bytes(canonical_json_bytes(source_study))
-                snapshot_path = private_root / "biocatalyst" / "source_snapshots" / "clinicaltrials" / "NCT00000001" / f"{snapshot_id}.json"
+                snapshot_path = private_root / "biocatalyst" / "source_snapshots" / "clinicaltrials" / nct_id / f"{snapshot_id}.json"
                 snapshot_path.parent.mkdir(parents=True, exist_ok=True)
                 snapshot_path.write_bytes(canonical_json_bytes(snapshot) + b"\n")
                 generation = public_root / "generations" / run_id
                 generation.mkdir(parents=True)
-                (generation / "NCT00000001.json").write_bytes(canonical_json_bytes(state) + b"\n")
+                (generation / f"{nct_id}.json").write_bytes(canonical_json_bytes(state) + b"\n")
                 (generation / "publication_manifest.json").write_bytes(canonical_json_bytes(public_manifest) + b"\n")
                 return SimpleNamespace(run_id=run_id, run_path=run_path, generation_path=generation)
 
@@ -467,7 +482,12 @@ def wrap_collector_factory(
     return factory
 
 
-def config(tmp_path: Path, *, history_enabled: bool = False) -> worker.WorkerConfig:
+def config(
+    tmp_path: Path,
+    *,
+    history_enabled: bool = False,
+    prospective_enabled: bool = True,
+) -> worker.WorkerConfig:
     return worker.WorkerConfig(
         state_root=tmp_path / "state",
         public_root=tmp_path / "public",
@@ -480,6 +500,8 @@ def config(tmp_path: Path, *, history_enabled: bool = False) -> worker.WorkerCon
             secret_access_key="test-secret",
         ),
         history_enabled=history_enabled,
+        prospective_enabled=prospective_enabled,
+        r2_retention_confirmed=prospective_enabled,
     )
 
 
@@ -512,6 +534,7 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
         "trials/NCT00000001.json",
         "trial_snapshots/NCT00000001.json",
         "history/NCT00000001.json",
+        "prospective/NCT00000001.json",
     }
     projection = publisher.read_trial_projection()
     assert projection is not None
@@ -520,6 +543,11 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
     assert projection.trials[0]["authority"]["decision_authority"] is False
     assert projection.history_models_by_nct["NCT00000001"]["available"] is False
     assert projection.history_models_by_nct["NCT00000001"]["unavailable_reason"] == "disabled"
+    prospective = projection.prospective_models_by_nct["NCT00000001"]
+    assert prospective["available"] is True
+    assert prospective["accrual_state"] == "baseline_established"
+    assert prospective["observation_count"] == 1
+    assert prospective["events"] == []
     assert any(key.startswith("biocatalyst/runs/") for key in store.objects)
     assert any(key.startswith("biocatalyst/raw/") for key in store.objects)
     assert f"biocatalyst/mirror_receipts/{committed.generation_id}.json" in store.objects
@@ -528,6 +556,901 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
     assert "test-secret" not in public_text
     assert '"canonical_study"' not in public_text
     assert '"raw_object_key"' not in public_text
+
+
+def test_prospective_first_success_is_a_private_baseline_with_zero_public_changes(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.prospective_models_by_nct["NCT00000001"]
+    assert model["accrual_state"] == "baseline_established"
+    assert model["observation_count"] == 1
+    assert model["events"] == []
+    private_root = cfg.state_root / "committed" / result.generation_id / "private"
+    prospective_files = {
+        path.relative_to(private_root).as_posix()
+        for path in private_root.rglob("*")
+        if path.is_file() and "/prospective/" in path.as_posix()
+    }
+    assert len([path for path in prospective_files if "/observations/" in path]) == 1
+    assert len([path for path in prospective_files if "/epochs/" in path]) == 1
+    assert not [path for path in prospective_files if "/diffs/" in path]
+    assert any("/prospective/" in key and "/observations/" in key for key in store.objects)
+    public_text = canonical_json_bytes(model).decode("utf-8")
+    for forbidden in (
+        "current_observation_ref",
+        "diff_ref",
+        "source_snapshot_ref",
+        "content_sha256",
+        "canonical_study",
+        "raw_object_key",
+    ):
+        assert forbidden not in public_text
+
+
+def test_prospective_default_off_publishes_v12_without_private_or_public_ledger(tmp_path):
+    cfg = config(tmp_path, prospective_enabled=False)
+    store = MemoryStore()
+
+    result = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "success"
+    publisher = PublicGenerationPublisher(cfg.public_root)
+    committed = publisher.read_committed()
+    assert committed is not None
+    assert committed.schema_version == "1.2.0"
+    generation = cfg.public_root / "generations" / committed.generation_id
+    assert not (generation / "prospective").exists()
+    projection = publisher.read_trial_projection()
+    assert projection is not None
+    assert projection.prospective_models_by_nct["NCT00000001"] == {
+        "available": False,
+        "unavailable_reason": "baseline_not_established",
+    }
+    private_root = cfg.state_root / "committed" / result.generation_id / "private"
+    assert not list(private_root.glob("**/prospective/**"))
+    assert not any("/prospective/" in key for key in store.objects)
+
+
+def test_disabling_prospective_after_v13_fails_before_collection_or_downgrade(tmp_path):
+    enabled_cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        enabled_cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    pointer_before = (enabled_cfg.public_root / "current.json").read_bytes()
+    disabled_cfg = config(tmp_path, prospective_enabled=False)
+    calls = {"collector": 0, "store": 0}
+
+    result = worker.run_once(
+        disabled_cfg,
+        collector_factory=lambda **_: calls.__setitem__(
+            "collector", calls["collector"] + 1
+        ),
+        store_factory=lambda _: calls.__setitem__("store", calls["store"] + 1),
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert result.status == "failed"
+    assert result.error_code == "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN"
+    assert calls == {"collector": 0, "store": 0}
+    assert (enabled_cfg.public_root / "current.json").read_bytes() == pointer_before
+    health = json.loads(
+        (enabled_cfg.public_root / "health.json").read_text(encoding="utf-8")
+    )
+    assert health["state"] == "quarantined"
+    assert health["last_error_code"] == "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN"
+
+
+def test_prospective_second_changed_poll_emits_bounded_event_and_private_exact_diff(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert first_projection is not None
+    first_model = first_projection.prospective_models_by_nct["NCT00000001"]
+
+    def mutate(study: dict) -> None:
+        study["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+        study["protocolSection"]["identificationModule"]["briefTitle"] = "Changed title"
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+            study_mutator=mutate,
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "success", second
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.prospective_models_by_nct["NCT00000001"]
+    assert model["coverage_epoch_id"] == first_model["coverage_epoch_id"]
+    assert model["accrual_state"] == "accruing"
+    assert model["observation_count"] == 2
+    assert len(model["events"]) == 1
+    event = model["events"][0]
+    assert event["observed_interval"]["after"] == first_model["last_observed_at"]
+    assert event["first_observed_at"] == event["observed_interval"]["at_or_before"]
+    assert event["total_exact_operation_count"] >= 2
+    assert event["display_change_count"] == 1
+    assert event["omitted_operation_count"] == event["total_exact_operation_count"] - 1
+    assert event["changes"] == [
+        {
+            "kind": "registry_status",
+            "op": "replace",
+            "before_state": "present",
+            "before_value": "RECRUITING",
+            "after_state": "present",
+            "after_value": "COMPLETED",
+        }
+    ]
+    assert event["evidence"] == {
+        "source_name": "ClinicalTrials.gov",
+        "source_uri": "https://clinicaltrials.gov/study/NCT00000001",
+        "retrieved_at": event["first_observed_at"],
+    }
+    private_root = cfg.state_root / "committed" / second.generation_id / "private"
+    diff_paths = list(private_root.glob("**/prospective/**/diffs/*.json"))
+    assert len(diff_paths) == 1
+    private_diff = json.loads(diff_paths[0].read_text(encoding="utf-8"))
+    assert private_diff["after_observation_ref"]
+    assert private_diff["after_content_sha256"]
+    assert {operation["change_family"] for operation in private_diff["operations"]} >= {
+        "registry_status",
+        "other",
+    }
+    assert diff_paths[0].relative_to(private_root).as_posix() in store.objects
+    public_text = canonical_json_bytes(model).decode("utf-8")
+    assert "diff_ref" not in public_text
+    assert "source_snapshot_ref" not in public_text
+    assert "content_sha256" not in public_text
+
+
+def test_prospective_unchanged_same_scope_poll_counts_observation_without_event_or_diff(
+    tmp_path,
+):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert first_projection is not None
+    first_model = first_projection.prospective_models_by_nct["NCT00000001"]
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "success", second
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.prospective_models_by_nct["NCT00000001"]
+    assert model["coverage_epoch_id"] == first_model["coverage_epoch_id"]
+    assert model["baseline_established_at"] == first_model["baseline_established_at"]
+    assert model["observation_count"] == 2
+    assert model["events"] == []
+    assert model["last_observed_at"] > first_model["last_observed_at"]
+    private_root = cfg.state_root / "committed" / second.generation_id / "private"
+    observation_paths = list(private_root.glob("**/prospective/**/observations/*.json"))
+    assert len(observation_paths) == 1
+    observation = json.loads(observation_paths[0].read_text(encoding="utf-8"))
+    assert observation["same_content_as_prior"] is True
+    assert observation["source_state_changed"] is False
+    assert observation["observed_interval"] == {
+        "after": first_model["last_observed_at"],
+        "at_or_before": model["last_observed_at"],
+    }
+    assert not list(private_root.glob("**/prospective/**/diffs/*.json"))
+
+
+def test_prospective_changed_then_reverted_poll_emits_second_legitimate_event(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+
+    def complete(study: dict) -> None:
+        study["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+            study_mutator=complete,
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+    assert second.status == "success", second
+    second_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert second_projection is not None
+    second_model = second_projection.prospective_models_by_nct["NCT00000001"]
+    assert len(second_model["events"]) == 1
+
+    third = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T11:00:00",
+            watermark_after="2026-08-01T19:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=4),
+    )
+
+    assert third.status == "success", third
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.prospective_models_by_nct["NCT00000001"]
+    assert model["observation_count"] == 3
+    assert len(model["events"]) == 2
+    assert model["events"][0]["change_id"] != model["events"][1]["change_id"]
+    assert model["events"][1]["observed_interval"]["after"] == second_model["last_observed_at"]
+    status_change = next(
+        change
+        for change in model["events"][1]["changes"]
+        if change["kind"] == "registry_status"
+    )
+    assert status_change == {
+        "kind": "registry_status",
+        "op": "replace",
+        "before_state": "present",
+        "before_value": "COMPLETED",
+        "after_state": "present",
+        "after_value": "RECRUITING",
+    }
+    private_root = cfg.state_root / "committed" / third.generation_id / "private"
+    diff_paths = list(private_root.glob("**/prospective/**/diffs/*.json"))
+    assert len(diff_paths) == 1
+
+
+def test_prospective_baseline_time_is_per_nct_when_one_run_observations_are_staggered():
+    epoch = build_coverage_epoch(
+        nct_ids=("NCT00000001", "NCT00000002"),
+        current_run_ref="ctgov_run_20260801T150000000000Z_aaaaaaaaaaaa",
+        prior_epoch=None,
+        coverage_started_at="2026-08-01T15:00:01Z",
+        last_observed_at="2026-08-01T15:00:09Z",
+        transaction_from="2026-08-01T15:00:10Z",
+    )
+    generated_at = "2026-08-01T15:00:10Z"
+
+    def baseline(nct_id: str, retrieved_at: str) -> dict:
+        return build_public_model(
+            nct_id=nct_id,
+            epoch=epoch,
+            observation={
+                "nct_id": nct_id,
+                "retrieved_at": retrieved_at,
+                "source_state_changed": False,
+                "prior_source_snapshot_ref": None,
+            },
+            exact_diff=None,
+            generated_at=generated_at,
+            prior_model=None,
+        )
+
+    first = baseline("NCT00000001", "2026-08-01T15:00:01Z")
+    second = baseline("NCT00000002", "2026-08-01T15:00:09Z")
+
+    assert first["coverage_started_at"] == second["coverage_started_at"]
+    assert first["baseline_established_at"] == "2026-08-01T15:00:01Z"
+    assert second["baseline_established_at"] == "2026-08-01T15:00:09Z"
+    assert first["baseline_established_at"] != second["baseline_established_at"]
+
+
+def test_prospective_same_scope_missing_prior_private_evidence_fails_closed(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+    prior_private = cfg.state_root / "committed" / first.generation_id / "private"
+    observation_path = next(prior_private.glob("**/prospective/**/observations/*.json"))
+    observation_path.unlink()
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "failed"
+    assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+def test_prospective_same_scope_corrupt_prior_source_evidence_fails_closed(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+    prior_private = cfg.state_root / "committed" / first.generation_id / "private"
+    snapshot_path = next(
+        path
+        for path in prior_private.glob("**/source_snapshots/clinicaltrials/NCT*/*.json")
+        if "/history/" not in path.as_posix()
+    )
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    snapshot["canonical_study"]["protocolSection"]["identificationModule"][
+        "briefTitle"
+    ] = "forged prior value"
+    snapshot_path.write_bytes(canonical_json_bytes(snapshot) + b"\n")
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "failed"
+    assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+def test_prospective_malformed_local_mirror_receipt_has_bounded_failure_code(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+    receipt_path = (
+        cfg.state_root
+        / "committed"
+        / first.generation_id
+        / "mirror_receipt.json"
+    )
+    receipt_path.write_bytes(b"{")
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "failed"
+    assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+def test_prospective_scope_change_starts_new_inactive_superseding_epoch_without_diff(tmp_path):
+    first_cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        first_cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_projection = PublicGenerationPublisher(first_cfg.public_root).read_trial_projection()
+    assert first_projection is not None
+    first_epoch = first_projection.prospective_models_by_nct["NCT00000001"]["coverage_epoch_id"]
+
+    second_cfg = worker.WorkerConfig(
+        state_root=first_cfg.state_root,
+        public_root=first_cfg.public_root,
+        nct_ids=("NCT00000002",),
+        user_agent=first_cfg.user_agent,
+        r2=first_cfg.r2,
+        history_enabled=False,
+        prospective_enabled=True,
+        r2_retention_confirmed=True,
+    )
+    second = worker.run_once(
+        second_cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.status == "success", second
+    projection = PublicGenerationPublisher(second_cfg.public_root).read_trial_projection()
+    assert projection is not None
+    model = projection.prospective_models_by_nct["NCT00000002"]
+    assert model["coverage_epoch_id"] != first_epoch
+    assert model["accrual_state"] == "baseline_established"
+    assert model["observation_count"] == 1
+    assert model["events"] == []
+    private_root = second_cfg.state_root / "committed" / second.generation_id / "private"
+    assert not list(private_root.glob("**/prospective/**/diffs/*.json"))
+    old_private = first_cfg.state_root / "committed" / first.generation_id / "private"
+    old_epoch_documents = list(old_private.glob("**/prospective/epochs/**/*.json"))
+    assert len(old_epoch_documents) == 1
+    assert json.loads(old_epoch_documents[0].read_text())["coverage_epoch_id"] == first_epoch
+
+
+def test_prospective_private_writer_rejects_symlinked_ancestor_before_external_creation(tmp_path):
+    private_root = tmp_path / "private"
+    external = tmp_path / "external"
+    (private_root / "biocatalyst").mkdir(parents=True)
+    external.mkdir()
+    (private_root / "biocatalyst" / "derived").symlink_to(external, target_is_directory=True)
+
+    with pytest.raises(PublicationError, match="PROSPECTIVE_PRIVATE_ARCHIVE_INVALID"):
+        worker._write_private_prospective_immutable(
+            private_root,
+            relative=(
+                "biocatalyst/derived/clinicaltrials/prospective/epochs/"
+                "ctgov_coverage_test/ctgov_run_test.json"
+            ),
+            document={"one": 1},
+        )
+
+    assert list(external.iterdir()) == []
+
+
+def test_prospective_private_writer_rejects_divergent_immutable_collision(tmp_path):
+    private_root = tmp_path / "private"
+    private_root.mkdir()
+    relative = (
+        "biocatalyst/derived/clinicaltrials/prospective/epochs/"
+        "ctgov_coverage_test/ctgov_run_test.json"
+    )
+    path = worker._write_private_prospective_immutable(
+        private_root,
+        relative=relative,
+        document={"one": 1},
+    )
+
+    with pytest.raises(PublicationError, match="IMMUTABLE_OBJECT_COLLISION"):
+        worker._write_private_prospective_immutable(
+            private_root,
+            relative=relative,
+            document={"one": 2},
+        )
+
+    assert path.read_bytes() == canonical_json_bytes({"one": 1}) + b"\n"
+
+
+def test_prospective_public_event_omits_other_and_oversized_values_without_truncation():
+    event = build_public_event(
+        {
+            "nct_id": "NCT00000001",
+            "observed_interval": {
+                "after": "2026-08-01T15:00:02Z",
+                "at_or_before": "2026-08-01T17:00:02Z",
+            },
+            "operations": [
+                {
+                    "op": "replace",
+                    "change_family": "registry_status",
+                    "before_state": "present",
+                    "before_value": "RECRUITING",
+                    "after_state": "present",
+                    "after_value": "COMPLETED",
+                },
+                {
+                    "op": "replace",
+                    "change_family": "other",
+                    "before_state": "present",
+                    "before_value": "private exact value",
+                    "after_state": "present",
+                    "after_value": "another exact value",
+                },
+                {
+                    "op": "replace",
+                    "change_family": "endpoint_record",
+                    "before_state": "present",
+                    "before_value": "x" * 2001,
+                    "after_state": "present",
+                    "after_value": "safe",
+                },
+                {
+                    "op": "replace",
+                    "change_family": "endpoint_record",
+                    "before_state": "present",
+                    "before_value": {"nested": {"ref": "private"}},
+                    "after_state": "present",
+                    "after_value": {"reference": "allowed clinical reference"},
+                },
+                {
+                    "op": "replace",
+                    "change_family": "endpoint_record",
+                    "before_state": "present",
+                    "before_value": {"reference": "Clinical reference A"},
+                    "after_state": "present",
+                    "after_value": {"references": ["Clinical reference B"]},
+                },
+            ],
+        }
+    )
+
+    assert event["total_exact_operation_count"] == 5
+    assert event["display_change_count"] == 2
+    assert event["omitted_operation_count"] == 3
+    assert event["changes"][0]["kind"] == "registry_status"
+    rendered = canonical_json_bytes(event).decode("utf-8")
+    assert "private exact value" not in rendered
+    assert "x" * 2001 not in rendered
+    assert '"ref"' not in rendered
+    assert "Clinical reference A" in rendered
+    assert "Clinical reference B" in rendered
+
+
+@pytest.mark.parametrize(
+    "private_key",
+    (
+        "payloadHash",
+        "contentHash",
+        "sourceHash",
+        "payloadhash",
+        "content_hash",
+        "source-hash",
+    ),
+)
+def test_prospective_public_event_omits_normalized_and_compact_hash_keys(
+    private_key,
+):
+    event = build_public_event(
+        {
+            "nct_id": "NCT00000001",
+            "observed_interval": {
+                "after": "2026-08-01T15:00:02Z",
+                "at_or_before": "2026-08-01T17:00:02Z",
+            },
+            "operations": [
+                {
+                    "op": "replace",
+                    "change_family": "endpoint_record",
+                    "before_state": "present",
+                    "before_value": {"diagnosis": {"hashimotoDisease": "present"}},
+                    "after_state": "present",
+                    "after_value": {"diagnosis": {"hashimotoDisease": "stable"}},
+                },
+                {
+                    "op": "replace",
+                    "change_family": "endpoint_record",
+                    "before_state": "present",
+                    "before_value": {"summary": {"reference": "clinical text"}},
+                    "after_state": "present",
+                    "after_value": {"summary": {private_key: "internal-only"}},
+                },
+            ],
+        }
+    )
+
+    assert event["total_exact_operation_count"] == 2
+    assert event["display_change_count"] == 1
+    assert event["omitted_operation_count"] == 1
+    assert event["changes"][0]["after_value"] == {
+        "diagnosis": {"hashimotoDisease": "stable"}
+    }
+    assert private_key not in canonical_json_bytes(event).decode("utf-8")
+
+
+def test_prospective_site_set_projects_counts_and_countries_without_contacts():
+    event = build_public_event(
+        {
+            "nct_id": "NCT00000001",
+            "observed_interval": {
+                "after": "2026-08-01T15:00:02Z",
+                "at_or_before": "2026-08-01T17:00:02Z",
+            },
+            "operations": [
+                {
+                    "op": "replace",
+                    "change_family": "site_set",
+                    "before_state": "present",
+                    "before_value": [
+                        {
+                            "facility": "Hospital A",
+                            "country": "Canada",
+                            "contacts": [{"name": "Private Contact"}],
+                        }
+                    ],
+                    "after_state": "present",
+                    "after_value": [
+                        {"facility": "Hospital A", "country": "Canada"},
+                        {"facility": "Hospital B", "country": "United States"},
+                    ],
+                }
+            ],
+        }
+    )
+
+    change = event["changes"][0]
+    assert change["before_value"] == {
+        "site_count": 1,
+        "country_count": 1,
+        "countries": ["Canada"],
+        "countries_truncated": False,
+    }
+    assert change["after_value"] == {
+        "site_count": 2,
+        "country_count": 2,
+        "countries": ["Canada", "United States"],
+        "countries_truncated": False,
+    }
+    rendered = canonical_json_bytes(event).decode("utf-8")
+    assert "Private Contact" not in rendered
+    assert "Hospital A" not in rendered
+
+
+def test_prospective_site_summary_caps_country_labels_without_omitting_counts():
+    sites = [{"country": f"Country {index:02d}"} for index in range(40)]
+    event = build_public_event(
+        {
+            "nct_id": "NCT00000001",
+            "observed_interval": {
+                "after": "2026-08-01T15:00:02Z",
+                "at_or_before": "2026-08-01T17:00:02Z",
+            },
+            "operations": [
+                {
+                    "op": "add",
+                    "change_family": "site_set",
+                    "before_state": "missing",
+                    "before_value": None,
+                    "after_state": "present",
+                    "after_value": sites,
+                }
+            ],
+        }
+    )
+
+    assert event["display_change_count"] == 1
+    summary = event["changes"][0]["after_value"]
+    assert summary["site_count"] == 40
+    assert summary["country_count"] == 40
+    assert len(summary["countries"]) == 32
+    assert summary["countries_truncated"] is True
+
+
+@pytest.mark.parametrize("artifact_kind", ("epoch", "model"))
+def test_prospective_rehashed_local_derived_tamper_cannot_cross_remote_mirror(
+    tmp_path, artifact_kind
+):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    private_root = cfg.state_root / "committed" / first.generation_id / "private"
+    pattern = (
+        "**/prospective/epochs/**/*.json"
+        if artifact_kind == "epoch"
+        else "**/prospective/**/models/*.json"
+    )
+    artifact_path = next(private_root.glob(pattern))
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if artifact_kind == "epoch":
+        payload["coverage_started_at"] = "2026-07-01T00:00:00Z"
+    else:
+        payload["generated_at"] = "2026-08-01T16:30:00Z"
+        payload["model_payload_sha256"] = canonical_json_sha256(
+            {key: value for key, value in payload.items() if key != "model_payload_sha256"}
+        )
+    artifact_path.write_bytes(canonical_json_bytes(payload) + b"\n")
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+@pytest.mark.parametrize("target", ("receipt", "object"))
+def test_prospective_missing_or_tampered_remote_mirror_fails_closed(tmp_path, target):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    if target == "receipt":
+        del store.objects[f"biocatalyst/mirror_receipts/{first.generation_id}.json"]
+    else:
+        object_key = next(
+            key for key in store.objects if "/prospective/" in key and "/models/" in key
+        )
+        store.objects[object_key] = b'{"self_consistent":false}\n'
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+def test_prospective_rehashed_public_model_must_equal_private_mirrored_model(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    pointer_path = cfg.public_root / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = cfg.public_root / "generations" / first.generation_id
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    model_path = generation / "prospective" / "NCT00000001.json"
+    model = json.loads(model_path.read_text(encoding="utf-8"))
+    model["generated_at"] = "2026-08-01T16:30:00Z"
+    model["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in model.items() if key != "model_payload_sha256"}
+    )
+    model_bytes = canonical_json_bytes(model) + b"\n"
+    model_path.write_bytes(model_bytes)
+    for artifact in manifest["artifacts"]:
+        if artifact["name"] == "prospective/NCT00000001.json":
+            artifact["sha256"] = sha256(model_bytes).hexdigest()
+            artifact["byte_count"] = len(model_bytes)
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+    assert PublicGenerationPublisher(cfg.public_root).read_trial_projection() is not None
+    pointer_before = pointer_path.read_bytes()
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+
+    assert second.error_code == "PROSPECTIVE_MODEL_BINDING_INVALID"
+    assert pointer_path.read_bytes() == pointer_before
+
+
+def test_prospective_rehashed_prior_diff_cannot_cross_remote_mirror(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+
+    def mutate(study: dict) -> None:
+        study["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+            study_mutator=mutate,
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=2),
+    )
+    assert second.status == "success"
+    private_root = cfg.state_root / "committed" / second.generation_id / "private"
+    diff_path = next(private_root.glob("**/prospective/**/diffs/*.json"))
+    diff = json.loads(diff_path.read_text(encoding="utf-8"))
+    diff["operations"][0]["after_value"] = "WITHDRAWN"
+    diff["diff_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in diff.items() if key != "diff_payload_sha256"}
+    )
+    diff_path.write_bytes(canonical_json_bytes(diff) + b"\n")
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+
+    third = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T11:00:00",
+            watermark_after="2026-08-01T19:00:05Z",
+            study_mutator=mutate,
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=4),
+    )
+
+    assert third.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
 
 
 def test_history_success_replays_private_chain_before_exposing_a_complete_model(tmp_path):
@@ -787,6 +1710,79 @@ def test_history_environment_flag_is_default_off_and_rejects_nonbinary_input(tmp
     invalid = worker.load_environment({**base, "BIOCATALYST_HISTORY_ENABLED": "true"})
     assert invalid.state == "invalid"
     assert invalid.error_code == "BIOCATALYST_HISTORY_ENABLED_INVALID"
+
+
+def test_prospective_environment_requires_binary_opt_in_and_retention_attestation(
+    tmp_path, monkeypatch
+):
+    state_root = tmp_path / "macro-biocatalyst" / "state"
+    public_root = tmp_path / "macro-biocatalyst" / "public"
+    monkeypatch.setattr(worker, "_SERVICE_STATE_ROOT", state_root)
+    monkeypatch.setattr(worker, "_SERVICE_PUBLIC_ROOT", public_root)
+    base = {
+        "BIOCATALYST_ENABLED": "1",
+        "BIOCATALYST_STATE_ROOT": str(state_root),
+        "BIOCATALYST_PUBLIC_ROOT": str(public_root),
+        "BIOCATALYST_CANARY_NCTS": "NCT00000001",
+        "BIOCATALYST_USER_AGENT": "MastermindX test contact@example.com",
+        "BIOCATALYST_R2_ENDPOINT": "https://r2.example.test",
+        "BIOCATALYST_R2_BUCKET": "biocatalyst-private",
+        "BIOCATALYST_R2_ACCESS_KEY_ID": "test-access",
+        "BIOCATALYST_R2_SECRET_ACCESS_KEY": "test-secret",
+    }
+
+    defaulted = worker.load_environment(base)
+    assert defaulted.state == "enabled"
+    assert defaulted.config is not None
+    assert defaulted.config.prospective_enabled is False
+    assert defaulted.config.r2_retention_confirmed is False
+
+    unattested = worker.load_environment(
+        {**base, "BIOCATALYST_PROSPECTIVE_ENABLED": "1"}
+    )
+    assert unattested.state == "invalid"
+    assert unattested.error_code == "BIOCATALYST_R2_RETENTION_NOT_CONFIRMED"
+
+    enabled = worker.load_environment(
+        {
+            **base,
+            "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
+            "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
+        }
+    )
+    assert enabled.state == "enabled"
+    assert enabled.config is not None
+    assert enabled.config.prospective_enabled is True
+    assert enabled.config.r2_retention_confirmed is True
+
+    with pytest.raises(
+        worker.WorkerConfigError,
+        match="BIOCATALYST_R2_RETENTION_NOT_CONFIRMED",
+    ):
+        worker.WorkerConfig(
+            state_root=state_root,
+            public_root=public_root,
+            nct_ids=("NCT00000001",),
+            user_agent="MastermindX test contact@example.com",
+            r2=enabled.config.r2,
+            prospective_enabled=True,
+            r2_retention_confirmed=False,
+        )
+
+    invalid_enabled = worker.load_environment(
+        {**base, "BIOCATALYST_PROSPECTIVE_ENABLED": "true"}
+    )
+    assert invalid_enabled.state == "invalid"
+    assert invalid_enabled.error_code == "BIOCATALYST_PROSPECTIVE_ENABLED_INVALID"
+
+    invalid_attestation = worker.load_environment(
+        {**base, "BIOCATALYST_R2_RETENTION_CONFIRMED": "true"}
+    )
+    assert invalid_attestation.state == "invalid"
+    assert (
+        invalid_attestation.error_code
+        == "BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID"
+    )
 
 
 def test_nonblocking_lock_coalesces_a_second_timer_tick(tmp_path):

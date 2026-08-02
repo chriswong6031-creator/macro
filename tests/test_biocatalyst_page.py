@@ -67,6 +67,7 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_work
             "bci-mode-control",
             "bci-mode-milestones",
             "bci-mode-changes",
+            "bci-mode-prospective",
             "bci-field-filter",
             "bci-change-kind-filter",
             "bci-search",
@@ -88,11 +89,12 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_work
     assert 'role="tablist"' in html
     assert 'role="tab"' in html
     assert 'id="bci-queue-pane" role="tabpanel" aria-labelledby="bci-mode-milestones"' in html
-    assert html.count('aria-controls="bci-queue-pane"') == 2
+    assert html.count('aria-controls="bci-queue-pane"') == 3
     assert "Dates and field updates are recorded by ClinicalTrials.gov" in html
     assert "A registry listing is not government validation" in html
     assert "Review the source record—no trade call." in html
     assert "请查看来源记录，不作交易判断。" in html
+    js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
     for kind in (
         "endpoint_added",
         "endpoint_removed",
@@ -109,7 +111,8 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_work
         "intervention_removed",
         "intervention_changed",
     ):
-        assert f'value="{kind}"' in html
+        assert f"'{kind}'" in js
+    assert 'id="bci-change-kind-filter" aria-label="Updated field"' in html
     assert "<option" in html
     assert re.search(r"<option[^>]*>\s*<span", html) is None
 
@@ -249,9 +252,9 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     assert re.search(r'class="bci-window is-active"[^>]*aria-checked="true"[^>]*data-window="90"', html)
     assert re.search(r'class="bci-window"[^>]*aria-checked="false"[^>]*data-window="30"', html)
     assert "mode: 'milestones'" in js
-    assert "filters: { field: 'primary_completion', change_kind: '', window: '90'" in js
+    assert "filters: { field: 'primary_completion', change_kind: '', prospective_change_kind: '', window: '90'" in js
     assert "WINDOW_VALUES[windowName] ? windowName : '90'" in js
-    assert "change_kind: '', window: '90', q: '', phase: '', status: '', condition: ''" in js
+    assert "change_kind: '', prospective_change_kind: '', window: '90', q: '', phase: '', status: '', condition: ''" in js
     assert "MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d'" in js
     assert "CHANGE_WINDOWS = { '30': 'last_30d', '90': 'last_90d'" in js
 
@@ -361,8 +364,8 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
         "protocol_change_asserted') === false",
         "materiality_assessed') === false",
         "isChangeMode() ? validateChangePage",
-        "if (isChangeMode()) validateChangeEnvelope(payload); else validateMilestoneEnvelope(payload);",
-        "if (isChangeMode()) validateChangePagination(payload, existingRows, cursor, append ? state.payload : null);",
+            "if (isProspectiveMode()) validateProspectiveEnvelope(payload); else if (isChangeMode()) validateChangeEnvelope(payload); else validateMilestoneEnvelope(payload);",
+            "if (isProspectiveMode()) validateProspectivePagination(payload, existingRows, cursor, append ? state.payload : null); else if (isChangeMode()) validateChangePagination(payload, existingRows, cursor, append ? state.payload : null);",
     ):
         assert token in js
     assert js.count("function validateChangeEnvelope(payload)") == 1
@@ -405,8 +408,8 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
         "!fullTimestamp(payloadAsOf)",
         "var activeRow = selectedRow();",
         "state.selectedKey && rowIdentity(item) === state.selectedKey",
-        "isChangeMode() ? 'registry field update' : 'registry milestone'",
-        "isChangeMode() ? '登记字段更新' : '登记里程碑'",
+            "function activeSingularNoun()",
+            "if (isProspectiveMode()) return tr('first-seen observation', '首次观测记录');",
     ):
         assert token in js
     assert "Choose a registry milestone to read the current trial record" not in js
@@ -415,6 +418,151 @@ def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed()
     assert "changes.length <= 40" not in js
     assert "changes.forEach(function (change) { line.appendChild" not in js
     assert "var selectedRow = state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0];" not in js
+
+
+def test_biocatalyst_first_seen_tape_is_prospective_current_only_and_never_recasts_its_clock():
+    """First-seen Tape is an observation ledger, not a third history presentation.
+
+    The browser must reject payloads that blur a collector-observation interval
+    into a source event time, reveal non-display-safe operations, or carry a
+    row identity that collapses multiple observations for the same NCT.
+    """
+
+    html = _render()
+    js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
+    css = (TEMPLATES / "biocatalyst.css").read_text(encoding="utf-8")
+
+    assert 'id="bci-mode-prospective"' in html
+    assert 'data-mode="prospective"' in html
+    assert 'data-label-en="First-seen Tape"' in html
+    assert 'data-label-zh="首次观测记录"' in html
+    assert html.count('aria-controls="bci-queue-pane"') == 3
+
+    for token in (
+        "/api/biocatalyst/v1/trials/prospective-changes",
+        "PROSPECTIVE_WINDOWS",
+        "function isProspectiveMode()",
+        "function validProspectiveEvidence(evidence, id, observedAt)",
+        "function validObservedInterval(interval, observedAt)",
+        "function validProspectiveChange(change)",
+        "function validProspectiveChangeItem(item)",
+        "function observationTimestampLabel(value)",
+        "function prospectiveQueryMatchesCurrentFilters(query)",
+        "function effectiveProspectiveWindowIsSane(window, apiWindow)",
+        "function validateProspectiveEnvelope(payload)",
+        "function prospectiveIdentity(item)",
+        "function validateProspectivePage(items, existingRows)",
+        "function validateProspectivePagination(payload, existingRows, requestedCursor, previousPayload)",
+        "Duplicate prospective observation identity",
+        "Repeated prospective cursor",
+        "Incomplete prospective pagination",
+        "prospective_changes",
+        "prospective_change",
+        "change_id",
+        "first_observed_at",
+        "observed_interval",
+        "at_or_before",
+        "observation_at_or_before_utc",
+        "prospective_current_only",
+        "current_trial_record",
+        "coverage_state",
+        "pre_baseline_trials",
+        "total_exact_operation_count",
+        "display_change_count",
+        "omitted_operation_count",
+        "changes.length <= 128",
+        "['present', 'missing']",
+        "PROSPECTIVE_CHANGE_KIND_VALUES",
+        "makeProspectiveRow",
+        "bci-prospective-card",
+        "bci-observation-preview",
+        "First observed",
+        "Observed at / before",
+        "no display-safe detail",
+        "function prospectiveObservationSection(prospectiveChange)",
+        "showDetail(detail, queueEvidence, queueItem)",
+        "if (isProspectiveMode()) ui.inspectorBody.appendChild(prospectiveObservationSection",
+    ):
+        assert token in js
+
+    prospective_row = js[js.index("function makeProspectiveRow") : js.index("function syncQueueSelection")]
+    prospective_detail = js[js.index("function prospectiveObservationSection") : js.index("function historySection")]
+    assert "Submitted " not in prospective_row
+    assert "version" not in prospective_row.lower()
+    assert "history" not in prospective_row.lower()
+    assert "Submitted " not in prospective_detail
+    assert "version" not in prospective_detail.lower()
+    assert "history" not in prospective_detail.lower()
+    assert "observationTimestampLabel(" in prospective_row
+    assert "observationTimestampLabel(" in prospective_detail
+
+    # A prospective response binds to the same request and current-record scope.
+    # It accepts only the prospective vocabulary, retains that selection across
+    # ordinary tab switches, and never carries a retrospective kind into the
+    # prospective request or control surface.
+    query_body = js[js.index("function prospectiveQueryMatchesCurrentFilters") : js.index("function effectiveProspectiveWindowIsSane")]
+    assert "change_kind: activeChangeKind() || 'all'" in query_body
+    assert "state.filters.prospective_change_kind" in js
+    assert "state.mode === 'prospective' && PROSPECTIVE_CHANGE_KIND_VALUES[changeKind] ? changeKind : ''" in js
+    assert "assign('change_kind', (isChangeMode() || isProspectiveMode()) ? activeChangeKind() : '', true);" in js
+    assert "if (isChangeMode() || isProspectiveMode())" in js
+    assert "if (activeChangeKind()) params.set('change_kind', activeChangeKind());" in js
+    assert "ui.changeKindControl.hidden = !(isChangeMode() || isProspectiveMode());" in js
+    assert "function paintChangeKindOptions()" in js
+    assert "All observed fields" in js
+    assert "All display-safe fields" in js
+    assert "Observed field" in js
+    assert "Updated field" in js
+    prospective_catalog = js[js.index("var PROSPECTIVE_CHANGE_KIND_CATALOG") : js.index("var CHANGE_WINDOWS")]
+    for kind in (
+        "registry_status",
+        "enrollment_target",
+        "enrollment_actual",
+        "enrollment_count",
+        "enrollment_type",
+        "primary_completion_date",
+        "completion_date",
+        "site_set",
+        "endpoint_record",
+    ):
+        assert f"'{kind}'" in prospective_catalog
+    for historical_kind in (
+        "endpoint_added",
+        "endpoint_removed",
+        "endpoint_role_changed",
+        "enrollment_changed",
+        "registry_status_changed",
+        "study_date_changed",
+        "intervention_added",
+    ):
+        assert historical_kind not in prospective_catalog
+    set_mode_body = js[js.index("function setMode(value, trigger)") : js.index("function openBrain")]
+    assert "state.filters.change_kind = '';" not in set_mode_body
+    assert "else if (!isProspectiveMode()) params.set('milestone_kind', state.filters.field);" in js
+
+    for forbidden in (
+        "probability",
+        "forecast",
+        "pdufa",
+        "approval",
+        "localStorage",
+        "sessionStorage",
+        "innerHTML",
+    ):
+        assert forbidden not in js.lower()
+
+    for token in (
+        ".bci-mode-control { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));",
+        ".bci-mode-prospective.is-active",
+        ".bci-prospective-card",
+        ".bci-observation-receipt",
+        ".bci-observation-preview.is-omitted",
+        ".bci-observation-section",
+        ".bci-observation-delta",
+        "@media (max-width: 760px)",
+        "@media (max-width: 450px)",
+    ):
+        assert token in css
 
 
 def test_biocatalyst_mobile_uses_an_inline_mastermind_entry_not_a_fixed_filter_overlay():

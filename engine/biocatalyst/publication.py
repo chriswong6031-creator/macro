@@ -29,6 +29,12 @@ from engine.sector_intelligence import (
 
 from .storage import MirrorReceipt, StorageError, mirror_bytes_verified
 from .trials import build_trial_snapshot, validate_trial_snapshot
+from .prospective import (
+    ProspectiveError,
+    SourceEvidence as ProspectiveSourceEvidence,
+    validate_public_model as validate_prospective_public_model,
+    validate_publication_evidence as validate_prospective_publication_evidence,
+)
 
 
 _RUN_ID_RE = re.compile(r"^ctgov_run_[A-Za-z0-9_]+$")
@@ -109,9 +115,10 @@ _POINTER_KEYS = frozenset(
     }
 )
 _ARTIFACT_KEYS = frozenset(("name", "sha256", "byte_count"))
-_PUBLIC_GENERATION_SCHEMAS = frozenset(("1.0.0", "1.1.0", "1.2.0"))
+_PUBLIC_GENERATION_SCHEMAS = frozenset(("1.0.0", "1.1.0", "1.2.0", "1.3.0"))
 _TRIAL_SNAPSHOT_DIRECTORY = "trial_snapshots"
 _TRIAL_HISTORY_DIRECTORY = "history"
+_TRIAL_PROSPECTIVE_DIRECTORY = "prospective"
 _HEALTH_KEYS = frozenset(
     {
         "schema_version",
@@ -193,6 +200,7 @@ class CommittedGeneration:
     observed_nct_count: int
     last_attempt_at: str
     last_success_at: str
+    schema_version: str
 
 
 @dataclass(frozen=True)
@@ -212,6 +220,7 @@ class CommittedTrialProjection:
     generation: CommittedGeneration
     trials: tuple[dict[str, Any], ...]
     history_models_by_nct: Mapping[str, dict[str, Any]]
+    prospective_models_by_nct: Mapping[str, dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -228,6 +237,20 @@ class HistoryPublicationEvidence:
     snapshots: tuple[Mapping[str, Any], ...] = ()
     facts: tuple[Mapping[str, Any], ...] = ()
     carried_forward: bool = False
+
+
+@dataclass(frozen=True)
+class ProspectivePublicationEvidence:
+    """Private evidence seam for one bounded prospective public model."""
+
+    epoch: Mapping[str, Any]
+    current: ProspectiveSourceEvidence
+    current_observation: Mapping[str, Any]
+    exact_diff: Mapping[str, Any] | None
+    generated_at: str
+    prior: ProspectiveSourceEvidence | None = None
+    prior_observation: Mapping[str, Any] | None = None
+    prior_model: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -1178,10 +1201,12 @@ class PublicGenerationPublisher:
             if item.is_dir()
         }
         expected_directories = {"trials"}
-        if generation_schema in {"1.1.0", "1.2.0"}:
+        if generation_schema in {"1.1.0", "1.2.0", "1.3.0"}:
             expected_directories.add(_TRIAL_SNAPSHOT_DIRECTORY)
-        if generation_schema == "1.2.0":
+        if generation_schema in {"1.2.0", "1.3.0"}:
             expected_directories.add(_TRIAL_HISTORY_DIRECTORY)
+        if generation_schema == "1.3.0":
+            expected_directories.add(_TRIAL_PROSPECTIVE_DIRECTORY)
         if directories != expected_directories:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if (
@@ -1232,17 +1257,21 @@ class PublicGenerationPublisher:
             if not isinstance(artifact.get("byte_count"), int) or artifact["byte_count"] < 1:
                 raise PublicationError("PUBLIC_GENERATION_INVALID")
             source_state_artifact = bool(re.fullmatch(r"trials/NCT[0-9]{8}\.json", str(name)))
-            trial_snapshot_artifact = generation_schema in {"1.1.0", "1.2.0"} and bool(
+            trial_snapshot_artifact = generation_schema in {"1.1.0", "1.2.0", "1.3.0"} and bool(
                 re.fullmatch(r"trial_snapshots/NCT[0-9]{8}\.json", str(name))
             )
-            trial_history_artifact = generation_schema == "1.2.0" and bool(
+            trial_history_artifact = generation_schema in {"1.2.0", "1.3.0"} and bool(
                 re.fullmatch(r"history/NCT[0-9]{8}\.json", str(name))
+            )
+            trial_prospective_artifact = generation_schema == "1.3.0" and bool(
+                re.fullmatch(r"prospective/NCT[0-9]{8}\.json", str(name))
             )
             if (
                 name not in {"source_manifest.json", "health.json"}
                 and not source_state_artifact
                 and not trial_snapshot_artifact
                 and not trial_history_artifact
+                and not trial_prospective_artifact
             ):
                 raise PublicationError("PUBLIC_GENERATION_INVALID")
             path = _safe_child(generation, name)
@@ -1253,12 +1282,16 @@ class PublicGenerationPublisher:
         required = {"source_manifest.json", "health.json"}
         if not required.issubset(seen) or not any(name.startswith("trials/NCT") for name in seen):
             raise PublicationError("PUBLIC_GENERATION_INVALID")
-        if generation_schema in {"1.1.0", "1.2.0"} and not any(
+        if generation_schema in {"1.1.0", "1.2.0", "1.3.0"} and not any(
             name.startswith(f"{_TRIAL_SNAPSHOT_DIRECTORY}/NCT") for name in seen
         ):
             raise PublicationError("PUBLIC_GENERATION_INVALID")
-        if generation_schema == "1.2.0" and not any(
+        if generation_schema in {"1.2.0", "1.3.0"} and not any(
             name.startswith(f"{_TRIAL_HISTORY_DIRECTORY}/NCT") for name in seen
+        ):
+            raise PublicationError("PUBLIC_GENERATION_INVALID")
+        if generation_schema == "1.3.0" and not any(
+            name.startswith(f"{_TRIAL_PROSPECTIVE_DIRECTORY}/NCT") for name in seen
         ):
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         all_files = {
@@ -1282,6 +1315,13 @@ class PublicGenerationPublisher:
                 if name.startswith(f"{_TRIAL_HISTORY_DIRECTORY}/")
             )
         )
+        trial_prospective_names = tuple(
+            sorted(
+                name
+                for name in seen
+                if name.startswith(f"{_TRIAL_PROSPECTIVE_DIRECTORY}/")
+            )
+        )
         source_manifest, states = _validate_projection_payload(
             generation,
             run_id=generation_id,
@@ -1299,11 +1339,19 @@ class PublicGenerationPublisher:
                 "health.json",
                 *trial_snapshot_names,
                 *trial_history_names,
+                *trial_prospective_names,
             ),
             allowed_extra_directories=(
-                (_TRIAL_SNAPSHOT_DIRECTORY, _TRIAL_HISTORY_DIRECTORY)
+                (
+                    _TRIAL_SNAPSHOT_DIRECTORY,
+                    _TRIAL_HISTORY_DIRECTORY,
+                    _TRIAL_PROSPECTIVE_DIRECTORY,
+                )
+                if generation_schema == "1.3.0"
+                else ((_TRIAL_SNAPSHOT_DIRECTORY, _TRIAL_HISTORY_DIRECTORY)
                 if generation_schema == "1.2.0"
                 else ((_TRIAL_SNAPSHOT_DIRECTORY,) if generation_schema == "1.1.0" else ())
+                )
             ),
         )
         if source_manifest["manifest_sha256"] != manifest["source_manifest_sha256"]:
@@ -1314,7 +1362,7 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if generation_schema == "1.0.0" and trial_snapshot_names:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
-        if generation_schema in {"1.1.0", "1.2.0"}:
+        if generation_schema in {"1.1.0", "1.2.0", "1.3.0"}:
             states_by_nct = dict(states)
             expected_trial_names = {
                 f"{_TRIAL_SNAPSHOT_DIRECTORY}/{nct_id}.json"
@@ -1332,7 +1380,7 @@ class PublicGenerationPublisher:
                     source_state=states_by_nct[nct_id],
                     nct_id=nct_id,
                 )
-            if generation_schema == "1.2.0":
+            if generation_schema in {"1.2.0", "1.3.0"}:
                 expected_history_names = {
                     f"{_TRIAL_HISTORY_DIRECTORY}/{nct_id}.json"
                     for nct_id in states_by_nct
@@ -1345,6 +1393,24 @@ class PublicGenerationPublisher:
                         code="TRIAL_HISTORY_PROJECTION_INVALID",
                     )
                     _validate_trial_history_model_binding(history_model, nct_id=nct_id)
+            if generation_schema == "1.3.0":
+                expected_prospective_names = {
+                    f"{_TRIAL_PROSPECTIVE_DIRECTORY}/{nct_id}.json"
+                    for nct_id in states_by_nct
+                }
+                if set(trial_prospective_names) != expected_prospective_names:
+                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
+                for nct_id in sorted(states_by_nct):
+                    prospective_model = _load_json_object(
+                        generation / _TRIAL_PROSPECTIVE_DIRECTORY / f"{nct_id}.json",
+                        code="TRIAL_PROSPECTIVE_PROJECTION_INVALID",
+                    )
+                    try:
+                        validate_prospective_public_model(prospective_model)
+                    except ProspectiveError as exc:
+                        raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
+                    if prospective_model.get("nct_id") != nct_id:
+                        raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
         if (
             manifest["configured_nct_count"] != len(manifest["configured_nct_ids"])
             or manifest["observed_nct_count"] != len(states)
@@ -1404,6 +1470,7 @@ class PublicGenerationPublisher:
             observed_nct_count=manifest["observed_nct_count"],
             last_attempt_at=manifest["last_attempt_at"],
             last_success_at=manifest["last_success_at"],
+            schema_version=manifest["schema_version"],
         )
 
     def read_trial_projection(self) -> CommittedTrialProjection | None:
@@ -1419,11 +1486,12 @@ class PublicGenerationPublisher:
             return None
         manifest = self._load_generation_manifest(committed.generation_id)
         generation_schema = manifest.get("schema_version")
-        if generation_schema not in {"1.1.0", "1.2.0"}:
+        if generation_schema not in {"1.1.0", "1.2.0", "1.3.0"}:
             raise PublicationError("TRIAL_PROJECTION_UNAVAILABLE")
         generation = self._generation_dir(committed.generation_id)
         trials: list[dict[str, Any]] = []
         history_models_by_nct: dict[str, dict[str, Any]] = {}
+        prospective_models_by_nct: dict[str, dict[str, Any]] = {}
         for nct_id in manifest["configured_nct_ids"]:
             source_state = _load_json_object(
                 generation / "trials" / f"{nct_id}.json",
@@ -1440,7 +1508,7 @@ class PublicGenerationPublisher:
                     nct_id=nct_id,
                 )
             )
-            if generation_schema == "1.2.0":
+            if generation_schema in {"1.2.0", "1.3.0"}:
                 history_model = _load_json_object(
                     generation / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
                     code="TRIAL_HISTORY_PROJECTION_INVALID",
@@ -1457,14 +1525,34 @@ class PublicGenerationPublisher:
                     "available": False,
                     "unavailable_reason": "not_collected",
                 }
+            if generation_schema == "1.3.0":
+                prospective_model = _load_json_object(
+                    generation / _TRIAL_PROSPECTIVE_DIRECTORY / f"{nct_id}.json",
+                    code="TRIAL_PROSPECTIVE_PROJECTION_INVALID",
+                )
+                try:
+                    validate_prospective_public_model(prospective_model)
+                except ProspectiveError as exc:
+                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
+                if prospective_model.get("nct_id") != nct_id:
+                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
+                prospective_models_by_nct[nct_id] = prospective_model
+            else:
+                prospective_models_by_nct[nct_id] = {
+                    "available": False,
+                    "unavailable_reason": "baseline_not_established",
+                }
         if len(trials) != committed.observed_nct_count:
             raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
         if len(history_models_by_nct) != len(trials):
             raise PublicationError("TRIAL_HISTORY_PROJECTION_BINDING_MISMATCH")
+        if len(prospective_models_by_nct) != len(trials):
+            raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH")
         return CommittedTrialProjection(
             generation=committed,
             trials=tuple(trials),
             history_models_by_nct=history_models_by_nct,
+            prospective_models_by_nct=prospective_models_by_nct,
         )
 
     def _prior_history_model_bytes(self, nct_id: str) -> bytes | None:
@@ -1478,7 +1566,7 @@ class PublicGenerationPublisher:
         if committed is None:
             return None
         manifest = self._load_generation_manifest(committed.generation_id)
-        if manifest.get("schema_version") != "1.2.0":
+        if manifest.get("schema_version") not in {"1.2.0", "1.3.0"}:
             return None
         if nct_id not in manifest.get("configured_nct_ids", ()):
             return None
@@ -1509,6 +1597,8 @@ class PublicGenerationPublisher:
         raw_page_bodies_by_receipt: Mapping[str, bytes],
         history_models_by_nct: Mapping[str, Mapping[str, Any]] | None = None,
         history_evidence_by_nct: Mapping[str, HistoryPublicationEvidence] | None = None,
+        prospective_models_by_nct: Mapping[str, Mapping[str, Any]] | None = None,
+        prospective_evidence_by_nct: Mapping[str, ProspectivePublicationEvidence] | None = None,
     ) -> PreparedGeneration:
         """Make a complete sanitized generation outside the actual public root."""
 
@@ -1557,6 +1647,41 @@ class PublicGenerationPublisher:
                         else None
                     ),
                 )
+        if prospective_models_by_nct is None:
+            if prospective_evidence_by_nct is not None:
+                raise PublicationError("TRIAL_PROSPECTIVE_EVIDENCE_BINDING_MISMATCH")
+            normalized_prospective_models: dict[str, dict[str, Any]] | None = None
+        else:
+            if normalized_history_models is None:
+                raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH")
+            if set(prospective_models_by_nct) != set(states_by_nct):
+                raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH")
+            if prospective_evidence_by_nct is None or set(prospective_evidence_by_nct) != set(
+                states_by_nct
+            ):
+                raise PublicationError("TRIAL_PROSPECTIVE_EVIDENCE_BINDING_MISMATCH")
+            normalized_prospective_models = {
+                nct_id: dict(prospective_models_by_nct[nct_id])
+                for nct_id in sorted(states_by_nct)
+            }
+            for nct_id, model in normalized_prospective_models.items():
+                evidence = prospective_evidence_by_nct.get(nct_id)
+                if not isinstance(evidence, ProspectivePublicationEvidence):
+                    raise PublicationError("TRIAL_PROSPECTIVE_EVIDENCE_INVALID")
+                try:
+                    validate_prospective_publication_evidence(
+                        model,
+                        epoch=evidence.epoch,
+                        current=evidence.current,
+                        current_observation=evidence.current_observation,
+                        exact_diff=evidence.exact_diff,
+                        generated_at=evidence.generated_at,
+                        prior=evidence.prior,
+                        prior_observation=evidence.prior_observation,
+                        prior_model=evidence.prior_model,
+                    )
+                except ProspectiveError as exc:
+                    raise PublicationError("TRIAL_PROSPECTIVE_EVIDENCE_INVALID") from exc
         self._validate_generation_health_binding(
             health,
             generation_id=run["run_id"],
@@ -1607,6 +1732,12 @@ class PublicGenerationPublisher:
                         final_stage / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
                         _json_bytes(normalized_history_models[nct_id]),
                     )
+            if normalized_prospective_models is not None:
+                for nct_id in sorted(normalized_prospective_models):
+                    atomic_write(
+                        final_stage / _TRIAL_PROSPECTIVE_DIRECTORY / f"{nct_id}.json",
+                        _json_bytes(normalized_prospective_models[nct_id]),
+                    )
             atomic_write(final_stage / "health.json", _json_bytes(dict(health)))
             artifact_paths = sorted(
                 path for path in final_stage.rglob("*") if path.is_file()
@@ -1621,7 +1752,11 @@ class PublicGenerationPublisher:
             ]
             payload: dict[str, Any] = {
                 "contract_id": "biocatalyst_public_generation.v1",
-                "schema_version": "1.2.0" if normalized_history_models is not None else "1.1.0",
+                "schema_version": (
+                    "1.3.0"
+                    if normalized_prospective_models is not None
+                    else ("1.2.0" if normalized_history_models is not None else "1.1.0")
+                ),
                 "generation_id": run["run_id"],
                 "run_id": run["run_id"],
                 "source_dataset_timestamp_raw": run["source_dataset_timestamp_before_raw"],
@@ -2024,6 +2159,7 @@ __all__ = [
     "CommittedGeneration",
     "PreparedGeneration",
     "PrivateMirrorManifest",
+    "ProspectivePublicationEvidence",
     "PublicationError",
     "PublicGenerationPublisher",
     "archive_failed_attempt",

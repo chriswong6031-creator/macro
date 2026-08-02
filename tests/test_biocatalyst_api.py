@@ -145,11 +145,17 @@ def _replace_v12_history_model(config: Any, model: dict[str, Any]) -> None:
     history_path.parent.mkdir(exist_ok=True)
     history_bytes = canonical_json_bytes(model) + b"\n"
     history_path.write_bytes(history_bytes)
+    prospective_root = generation / "prospective"
+    if prospective_root.exists():
+        for artifact_path in prospective_root.iterdir():
+            artifact_path.unlink()
+        prospective_root.rmdir()
     manifest["schema_version"] = "1.2.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if artifact["name"] != "history/NCT00000001.json"
+        and not artifact["name"].startswith("prospective/")
     ]
     manifest["artifacts"].append(
         {
@@ -347,6 +353,142 @@ def _change_projection(
         trials=base.trials,
         history_models_by_nct=history_models,
     )
+
+
+def _prospective_event(
+    nct_id: str,
+    *,
+    suffix: str | None = None,
+    after: str = "2026-08-01T12:00:00.000000Z",
+    at_or_before: str = "2026-08-02T12:00:00.000000Z",
+    changes: list[dict[str, Any]] | None = None,
+    total_exact_operation_count: int | None = None,
+) -> dict[str, Any]:
+    rendered_changes = changes if changes is not None else [
+        {
+            "kind": "registry_status",
+            "op": "replace",
+            "before_state": "present",
+            "before_value": "NOT_YET_RECRUITING",
+            "after_state": "present",
+            "after_value": "RECRUITING",
+        }
+    ]
+    total = total_exact_operation_count if total_exact_operation_count is not None else len(rendered_changes)
+    public_seed = {
+        "nct_id": nct_id,
+        "observed_interval": {"after": after, "at_or_before": at_or_before},
+        "total_exact_operation_count": total,
+        "changes": rendered_changes,
+    }
+    return {
+        "change_id": f"prospective_change_{nct_id}_{suffix or canonical_json_sha256(public_seed)[:24]}",
+        "first_observed_at": at_or_before,
+        "observed_interval": {"after": after, "at_or_before": at_or_before},
+        "total_exact_operation_count": total,
+        "display_change_count": len(rendered_changes),
+        "omitted_operation_count": total - len(rendered_changes),
+        "changes": rendered_changes,
+        "evidence": {
+            "source_name": "ClinicalTrials.gov",
+            "source_uri": f"https://clinicaltrials.gov/study/{nct_id}",
+            "retrieved_at": at_or_before,
+        },
+        "interpretation": "registry_record_changed",
+        "protocol_change_asserted": False,
+        "materiality_assessed": False,
+        "authority": _history_authority(),
+    }
+
+
+def _prospective_model(
+    nct_id: str,
+    *,
+    events: list[dict[str, Any]] | None = None,
+    accrual_state: str = "accruing",
+    coverage_started_at: str = "2026-08-01T12:00:00.000000Z",
+    last_observed_at: str = "2026-08-02T12:00:00.000000Z",
+) -> dict[str, Any]:
+    rendered_events = events if events is not None else [_prospective_event(nct_id)]
+    model: dict[str, Any] = {
+        "contract_id": "trial_prospective_change_read_model.v1",
+        "schema_version": "1.0.0",
+        "nct_id": nct_id,
+        "available": True,
+        "unavailable_reason": None,
+        "accrual_state": accrual_state,
+        "coverage_class": "current_only",
+        "coverage_method": "prospective_api_polling",
+        "coverage_epoch_id": f"ctgov_coverage_{nct_id}_fixture",
+        "coverage_started_at": coverage_started_at,
+        "baseline_established_at": coverage_started_at,
+        "last_observed_at": last_observed_at,
+        "observation_count": 1 if accrual_state == "baseline_established" else 2,
+        "events": rendered_events,
+        "generated_at": last_observed_at,
+        "interpretation": "registry_record_changed",
+        "protocol_change_asserted": False,
+        "materiality_assessed": False,
+        "authority": _history_authority(),
+        "hash_scope": "canonical_payload_excluding_model_payload_sha256",
+    }
+    model["model_payload_sha256"] = canonical_json_sha256(model)
+    return model
+
+
+def _prospective_projection(
+    snapshots: list[dict[str, Any]],
+    models: dict[str, dict[str, Any]],
+    *,
+    as_of: str = "2026-08-02T23:30:00Z",
+    generation_id: str = "ctgov_run_20260802_prospective_fixture",
+):
+    base = _milestone_projection(
+        snapshots,
+        as_of=as_of,
+        generation_id=generation_id,
+    )
+    return SimpleNamespace(
+        generation=base.generation,
+        trials=base.trials,
+        history_models_by_nct={},
+        prospective_models_by_nct=models,
+    )
+
+
+def _replace_v13_prospective_model(config: Any, model: dict[str, Any]) -> None:
+    """Add one pointer-bound prospective artifact to the real B2 fixture."""
+
+    _replace_v12_history_model(config, _history_model())
+    pointer_path = config.public_root / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = config.public_root / "generations" / pointer["generation_id"]
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    prospective_path = generation / "prospective" / "NCT00000001.json"
+    prospective_path.parent.mkdir(exist_ok=True)
+    prospective_bytes = canonical_json_bytes(model) + b"\n"
+    prospective_path.write_bytes(prospective_bytes)
+    manifest["schema_version"] = "1.3.0"
+    manifest["artifacts"] = [
+        artifact
+        for artifact in manifest["artifacts"]
+        if artifact["name"] != "prospective/NCT00000001.json"
+    ]
+    manifest["artifacts"].append(
+        {
+            "name": "prospective/NCT00000001.json",
+            "sha256": sha256(prospective_bytes).hexdigest(),
+            "byte_count": len(prospective_bytes),
+        }
+    )
+    manifest["artifacts"].sort(key=lambda row: row["name"])
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
 
 
 def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_client) -> None:
@@ -1478,6 +1620,528 @@ def test_registry_change_tape_fails_closed_for_future_or_mismatched_history_vers
     _assert_private_headers(mismatch_response)
 
 
+def test_prospective_change_tape_reads_one_real_pointer_bound_v13_artifact(
+    entitled_client, promoted_config
+) -> None:
+    _replace_v13_prospective_model(promoted_config, _prospective_model("NCT00000001"))
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["pagination"]["total"] == 1
+    assert payload["prospective_coverage"] == {
+        "class": "prospective_current_only",
+        "selection_basis": "current_trial_record",
+        "coverage_state": "active",
+        "coverage_started_at": "2026-08-01T12:00:00.000000Z",
+        "last_observed_at": "2026-08-02T12:00:00.000000Z",
+        "active_trials": 1,
+        "pre_baseline_trials": 0,
+        "unavailable_trials": 0,
+    }
+    change = payload["prospective_changes"][0]
+    assert change["prospective_change"]["observed_interval"] == {
+        "after": "2026-08-01T12:00:00.000000Z",
+        "at_or_before": "2026-08-02T12:00:00.000000Z",
+    }
+    assert change["evidence"] == {
+        "provider": "ClinicalTrials.gov",
+        "record_id": "NCT00000001",
+        "url": "https://clinicaltrials.gov/study/NCT00000001",
+        "retrieved_at": "2026-08-02T12:00:00.000000Z",
+        "coverage": "current_only",
+    }
+
+
+def test_prospective_change_tape_uses_current_filters_and_keeps_all_omitted_events(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot(
+            "NCT00000001",
+            title="Alpha current registry study",
+            phases=["PHASE2"],
+            conditions=["Oncology"],
+        ),
+        _milestone_snapshot(
+            "NCT00000002",
+            title="Baseline current registry study",
+            phases=["PHASE3"],
+            conditions=["Neurology"],
+        ),
+        _milestone_snapshot(
+            "NCT00000003",
+            title="Gamma current registry study",
+            phases=["PHASE2"],
+            conditions=["Oncology"],
+        ),
+    ]
+    alpha_change = _prospective_event(
+        "NCT00000001",
+        changes=[
+            {
+                "kind": "registry_status",
+                "op": "replace",
+                "before_state": "present",
+                "before_value": "NOT_YET_RECRUITING",
+                "after_state": "present",
+                "after_value": "RECRUITING",
+            },
+            {
+                "kind": "endpoint_record",
+                "op": "replace",
+                "before_state": "present",
+                "before_value": {"reference": "  existing clinical text  "},
+                "after_state": "present",
+                "after_value": {"reference": "  revised clinical text  "},
+            }
+        ],
+    )
+    gamma_change = _prospective_event(
+        "NCT00000003",
+        suffix="b" * 24,
+        changes=[],
+        total_exact_operation_count=2,
+    )
+    projection = _prospective_projection(
+        snapshots,
+        {
+            "NCT00000001": _prospective_model("NCT00000001", events=[alpha_change]),
+            "NCT00000002": _prospective_model(
+                "NCT00000002",
+                events=[],
+                accrual_state="baseline_established",
+                coverage_started_at="2026-08-02T12:00:00.000000Z",
+                last_observed_at="2026-08-02T12:00:00.000000Z",
+            ),
+            "NCT00000003": _prospective_model("NCT00000003", events=[gamma_change]),
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=last_30d&phase=phase2&condition=onco"
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["query"] == {
+        "change_kind": "all",
+        "window": "last_30d",
+        "from_date": None,
+        "to_date": None,
+        "q": None,
+        "phase": "phase2",
+        "status": None,
+        "condition": "onco",
+    }
+    assert payload["effective_window"] == {
+        "from_date": "2026-07-04",
+        "to_date": "2026-08-02",
+        "anchor_at": "2026-08-02T12:00:00.000000Z",
+        "anchor_date": "2026-08-02",
+        "date_basis": "observation_at_or_before_utc",
+    }
+    assert payload["prospective_coverage"] == {
+        "class": "prospective_current_only",
+        "selection_basis": "current_trial_record",
+        "coverage_state": "active",
+        "coverage_started_at": "2026-08-01T12:00:00.000000Z",
+        "last_observed_at": "2026-08-02T12:00:00.000000Z",
+        "active_trials": 2,
+        "pre_baseline_trials": 0,
+        "unavailable_trials": 0,
+    }
+    assert [row["trial"]["nct_id"] for row in payload["prospective_changes"]] == [
+        "NCT00000001",
+        "NCT00000003",
+    ]
+    assert payload["prospective_changes"][0]["prospective_change"]["changes"][1][
+        "after_value"
+    ] == {"reference": "  revised clinical text  "}
+    omitted = payload["prospective_changes"][1]["prospective_change"]
+    assert omitted["total_exact_operation_count"] == 2
+    assert omitted["display_change_count"] == 0
+    assert omitted["omitted_operation_count"] == 2
+    assert omitted["changes"] == []
+
+    # Current-record filters never search an old or changed value.
+    assert entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all&q=NOT_YET_RECRUITING"
+    ).json()["pagination"]["total"] == 0
+    kind_filtered = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all&change_kind=endpoint_record"
+    ).json()
+    assert kind_filtered["pagination"]["total"] == 1
+    # A category filter selects the event, not a subset of an event's bounded
+    # display record: display_change_count must remain the array's length.
+    filtered_change = kind_filtered["prospective_changes"][0]["prospective_change"]
+    assert filtered_change["display_change_count"] == len(filtered_change["changes"]) == 2
+    assert [change["kind"] for change in filtered_change["changes"]] == [
+        "registry_status",
+        "endpoint_record",
+    ]
+
+
+def test_prospective_coverage_clock_is_selection_scoped_while_window_anchor_is_global(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot("NCT00000001", title="Alpha selected current study"),
+        _milestone_snapshot("NCT00000002", title="Beta excluded current study"),
+    ]
+    alpha_event = _prospective_event(
+        "NCT00000001",
+        after="2026-08-01T12:00:00.000000Z",
+        at_or_before="2026-08-02T12:00:00.000000Z",
+    )
+    beta_event = _prospective_event(
+        "NCT00000002",
+        after="2026-08-04T12:00:00.000000Z",
+        at_or_before="2026-08-05T12:00:00.000000Z",
+    )
+    projection = _prospective_projection(
+        snapshots,
+        {
+            "NCT00000001": _prospective_model(
+                "NCT00000001",
+                events=[alpha_event],
+                last_observed_at="2026-08-02T12:00:00.000000Z",
+            ),
+            "NCT00000002": _prospective_model(
+                "NCT00000002",
+                events=[beta_event],
+                coverage_started_at="2026-08-04T12:00:00.000000Z",
+                last_observed_at="2026-08-05T12:00:00.000000Z",
+            ),
+        },
+        as_of="2026-08-05T23:30:00Z",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-05T23:30:00Z")),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=last_30d&q=alpha"
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    # The global newest committed observation keeps the effective date window
+    # invariant when a current-record filter is added or removed.
+    assert payload["effective_window"] == {
+        "from_date": "2026-07-07",
+        "to_date": "2026-08-05",
+        "anchor_at": "2026-08-05T12:00:00.000000Z",
+        "anchor_date": "2026-08-05",
+        "date_basis": "observation_at_or_before_utc",
+    }
+    # Coverage, however, describes only Alpha; Beta's later observation cannot
+    # make the selected population look fresher than it is.
+    assert payload["prospective_coverage"]["last_observed_at"] == (
+        "2026-08-02T12:00:00.000000Z"
+    )
+    assert payload["prospective_coverage"]["active_trials"] == 1
+    assert [row["trial"]["nct_id"] for row in payload["prospective_changes"]] == [
+        "NCT00000001"
+    ]
+
+
+def test_prospective_change_tape_baseline_and_legacy_generations_stay_empty(
+    entitled_client, monkeypatch
+) -> None:
+    snapshot = _milestone_snapshot("NCT00000001")
+    baseline_model = _prospective_model(
+        "NCT00000001",
+        events=[],
+        accrual_state="baseline_established",
+        coverage_started_at="2026-08-01T12:00:00.000000Z",
+        last_observed_at="2026-08-02T12:00:00.000000Z",
+    )
+    # A scope's coverage epoch may begin before a particular NCT first enters
+    # its baseline.  The API must preserve that honest ordering rather than
+    # incorrectly demanding equal timestamps.
+    baseline_model["baseline_established_at"] = "2026-08-02T12:00:00.000000Z"
+    baseline = _prospective_projection(
+        [snapshot],
+        {"NCT00000001": baseline_model},
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (baseline, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert response.status_code == 200
+    assert response.json()["prospective_changes"] == []
+    assert response.json()["prospective_coverage"] == {
+        "class": "prospective_current_only",
+        "selection_basis": "current_trial_record",
+        "coverage_state": "pre_baseline",
+        "coverage_started_at": "2026-08-01T12:00:00.000000Z",
+        "last_observed_at": "2026-08-02T12:00:00.000000Z",
+        "active_trials": 0,
+        "pre_baseline_trials": 1,
+        "unavailable_trials": 0,
+    }
+
+    legacy = _milestone_projection([snapshot], as_of="2026-08-02T23:30:00Z")
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (legacy, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    older_generation = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert older_generation.status_code == 200
+    assert older_generation.json()["prospective_changes"] == []
+    assert older_generation.json()["prospective_coverage"] == {
+        "class": "prospective_current_only",
+        "selection_basis": "current_trial_record",
+        "coverage_state": "unavailable",
+        "coverage_started_at": None,
+        "last_observed_at": None,
+        "active_trials": 0,
+        "pre_baseline_trials": 0,
+        "unavailable_trials": 1,
+    }
+
+
+def test_prospective_change_tape_reports_real_b2_pointer_as_unavailable_not_history(
+    entitled_client, promoted_config
+) -> None:
+    _replace_v12_history_model(promoted_config, _history_model())
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["prospective_changes"] == []
+    assert payload["prospective_coverage"] == {
+        "class": "prospective_current_only",
+        "selection_basis": "current_trial_record",
+        "coverage_state": "unavailable",
+        "coverage_started_at": None,
+        "last_observed_at": None,
+        "active_trials": 0,
+        "pre_baseline_trials": 0,
+        "unavailable_trials": 1,
+    }
+    assert "history" not in json.dumps(payload).casefold()
+    assert "submission" not in json.dumps(payload).casefold()
+
+
+def test_prospective_change_cursor_is_p1_signed_and_binds_query_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot("NCT00000010"),
+        _milestone_snapshot("NCT00000011"),
+        _milestone_snapshot("NCT00000012"),
+    ]
+    projection = _prospective_projection(
+        snapshots,
+        {
+            nct_id: _prospective_model(
+                nct_id,
+                events=[_prospective_event(nct_id, suffix=f"{index:024x}")],
+            )
+            for index, nct_id in enumerate(("NCT00000010", "NCT00000011", "NCT00000012"), 1)
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    first = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all&limit=2"
+    )
+    assert first.status_code == 200
+    cursor = first.json()["pagination"]["next_cursor"]
+    assert isinstance(cursor, str)
+    raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+    assert raw.decode("ascii").startswith("p1:")
+    assert "NCT00000010" not in cursor
+    assert entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all&limit=2&cursor=" + cursor
+    ).json()["pagination"]["total"] == 3
+
+    change_cursor = biocatalyst_api._encode_change_cursor(
+        2,
+        generation_id="ctgov_run_20260802_prospective_fixture",
+        query_binding=biocatalyst_api._change_query_binding(
+            change_kind="all",
+            window="all",
+            from_date=None,
+            to_date=None,
+            q=None,
+            phase=None,
+            status=None,
+            condition=None,
+            limit=2,
+        ),
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("foreign or query-mismatched p1 cursor read public state")
+        ),
+    )
+    for candidate in (
+        change_cursor,
+        cursor,
+    ):
+        suffix = (
+            "window=all&limit=2&cursor=" + candidate
+            if candidate == change_cursor
+            else "window=all&limit=2&q=alpha&cursor=" + candidate
+        )
+        rejected = entitled_client.get("/api/biocatalyst/v1/trials/prospective-changes?" + suffix)
+        assert rejected.status_code == 400
+        _assert_private_headers(rejected)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    (
+        "change_kind=endpoint_added",
+        "window=LAST_90D",
+        "window=last_90d&from_date=2026-08-01",
+        "window=all&from_date=2026-08",
+        "window=all&from_date=2026-08-03&to_date=2026-08-02",
+        "window=all&limit=251",
+        "window=all&cursor=not-a-valid-cursor",
+    ),
+)
+def test_prospective_change_invalid_queries_fail_before_any_public_read(
+    entitled_client, monkeypatch, suffix: str
+) -> None:
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid prospective queries must be rejected before disk access")
+        ),
+    )
+    response = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/prospective-changes?{suffix}"
+    )
+    assert response.status_code == 400
+    _assert_private_headers(response)
+
+
+def test_prospective_change_tape_rejects_private_envelopes_and_never_leaks_model_hashes(
+    entitled_client, monkeypatch
+) -> None:
+    snapshot = _milestone_snapshot("NCT00000001")
+    model = _prospective_model("NCT00000001")
+    projection = _prospective_projection([snapshot], {"NCT00000001": model})
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert response.status_code == 200
+    assert not any(
+        any(fragment in key.casefold() for fragment in _FORBIDDEN_KEY_FRAGMENTS)
+        for key in _walk_keys(response.json())
+    )
+
+    model["events"][0]["source_receipt_ref"] = "ctgov_receipt_private"
+    rejected = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert rejected.status_code == 503
+    assert rejected.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(rejected)
+
+
+def test_prospective_change_tape_rejects_nested_internal_provenance_but_allows_reference(
+    entitled_client, monkeypatch
+) -> None:
+    snapshot = _milestone_snapshot("NCT00000001")
+    event = _prospective_event(
+        "NCT00000001",
+        changes=[
+            {
+                "kind": "site_set",
+                "op": "replace",
+                "before_state": "present",
+                "before_value": {
+                    "summary": {"reference": "ordinary clinical source text"}
+                },
+                "after_state": "present",
+                "after_value": {
+                    "summary": {"reference": "ordinary revised clinical text"},
+                    "diagnosis": {"hashimotoDisease": "stable"},
+                },
+            }
+        ],
+    )
+    model = _prospective_model("NCT00000001", events=[event])
+    projection = _prospective_projection([snapshot], {"NCT00000001": model})
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+
+    allowed = entitled_client.get(
+        "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+    )
+    assert allowed.status_code == 200
+    assert allowed.json()["prospective_changes"][0]["prospective_change"]["changes"][0][
+        "after_value"
+    ] == {
+        "summary": {"reference": "ordinary revised clinical text"},
+        "diagnosis": {"hashimotoDisease": "stable"},
+    }
+
+    for private_key in (
+        "source_record_ref",
+        "sourceRecordRef",
+        "sha256",
+        "payloadHash",
+        "contentHash",
+        "sourceHash",
+        "payloadhash",
+        "content_hash",
+        "source-hash",
+        "objectkey",
+        "jsonpath",
+        "hashscope",
+        "receiptId",
+        "rawObject",
+        "transactionFrom",
+    ):
+        model["events"][0]["changes"][0]["after_value"] = {
+            "summary": {private_key: "internal-only"}
+        }
+        injected = entitled_client.get(
+            "/api/biocatalyst/v1/trials/prospective-changes?window=all"
+        )
+        assert injected.status_code == 503, private_key
+        assert injected.json() == {"detail": "trial intelligence temporarily unavailable"}
+        _assert_private_headers(injected)
+
+
 def test_v12_detail_serves_only_the_pointer_bound_public_history_model(
     entitled_client, promoted_config
 ) -> None:
@@ -1574,11 +2238,17 @@ def test_v11_generation_remains_readable_with_an_explicit_history_unavailable_st
     history = generation / "history" / "NCT00000001.json"
     history.unlink()
     history.parent.rmdir()
+    prospective = generation / "prospective"
+    if prospective.exists():
+        for artifact_path in prospective.iterdir():
+            artifact_path.unlink()
+        prospective.rmdir()
     manifest["schema_version"] = "1.1.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if not artifact["name"].startswith("history/")
+        and not artifact["name"].startswith("prospective/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
@@ -1691,12 +2361,18 @@ def test_legacy_projection_is_not_silently_served(entitled_client, promoted_conf
     history = generation / "history" / "NCT00000001.json"
     history.unlink()
     (generation / "history").rmdir()
+    prospective = generation / "prospective"
+    if prospective.exists():
+        for artifact_path in prospective.iterdir():
+            artifact_path.unlink()
+        prospective.rmdir()
     manifest["schema_version"] = "1.0.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if not artifact["name"].startswith("trial_snapshots/")
         and not artifact["name"].startswith("history/")
+        and not artifact["name"].startswith("prospective/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
@@ -1721,6 +2397,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
+        "/api/biocatalyst/v1/trials/prospective-changes",
         "/api/biocatalyst/v1/trials/{nct_id}",
     ):
         assert biocatalyst_api.require_site_full_user in route_dependencies[path]
@@ -1733,6 +2410,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
+        "/api/biocatalyst/v1/trials/prospective-changes",
         "/api/biocatalyst/v1/trials/{nct_id}",
     }.issubset(public_paths)
 
