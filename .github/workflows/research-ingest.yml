@@ -121,14 +121,18 @@ jobs:
           utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
           as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
           recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
-          restore_args=(--restore)
+          # Assemble positional arguments without an optional empty array. The
+          # self-hosted Macs run Bash 3.2, where expanding an empty array under
+          # `set -u` raises "unbound variable" before the operator can start.
+          set -- "${targets[@]}"
           if [ "${{ inputs.bootstrap_forensics_sources }}" = "true" ]; then
-            restore_args=()
             echo "::warning title=fundamental_forensics_wave2::creating the initial private SEC-source snapshot (restore deliberately omitted)"
+          else
+            set -- "$@" --restore
           fi
 
           python -m scripts.run_fundamental_forensics_wave2 \
-            "${targets[@]}" "${restore_args[@]}" --acquire --require-complete-acquisition \
+            "$@" --acquire --require-complete-acquisition \
             --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
 
           computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
