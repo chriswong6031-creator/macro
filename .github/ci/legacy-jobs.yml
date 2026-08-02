@@ -760,7 +760,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install capital-structure test deps
-        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml
+        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml jinja2 fastapi httpx
       - name: capital-structure contracts, compiler, projection, graph, source store, and legacy boundary
         run: >
           python -m pytest
@@ -772,6 +772,8 @@ jobs:
           tests/test_capital_structure_pit.py
           tests/test_capital_structure_projection.py
           tests/test_build_capital_structure_projection.py
+          tests/test_capital_structure_page.py
+          tests/test_capital_structure_api.py
           tests/test_capital_structure_source_identity.py
           tests/test_capital_structure_source_manifest.py
           tests/test_sec_capital_structure.py

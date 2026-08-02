@@ -169,10 +169,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-index-coverage | `data/capital_structure/index_coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-projection | `data/capital_structure/projection.json` | json | collect | display | 1 | 0 |
 | capital-structure-retrieval-attempts | `data/capital_structure/retrieval_attempts.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 1 | 0 |
-| capital-structure-projection | `data/capital_structure/projection.json` | json | collect | display | 0 | 0 |
 | site-capital-structure-projection | `site/capital-structure-data/latest.json` | json | collect | display | 0 | 0 |
 
 ### causal-hypothesis-factory
