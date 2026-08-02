@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T18:18:29.398940+00:00",
-  "count": 610,
+  "generated_at": "2026-08-02T18:33:31.594910+00:00",
+  "count": 611,
   "institutions": [
     "Amova",
     "Apollo",
@@ -103,6 +103,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rakrpzmwr2x-a607ec",
+      "title": "US markets",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:18:50Z",
+      "summary_points": [
+        "**Policy-Driven Data Center Geography Shifts**: Regulations prioritize power-abundant, low-density jurisdictions with clear permitting, reshaping infrastructure cost allocation (developers vs households) and redirecting investment flows toward compliant regions.",
+        "**US Data Center Opposition Intensifies**: 71% of Americans oppose local construction (Gallup, May 2026), with 77% fearing AI-driven electricity cost hikes; bipartisan environmental/economic concerns threaten project timelines and AI infrastructure demand.",
+        "**Hyperscaler Debt Issuance Surge**: Debt issuance to exceed $250bn in 2026 (vs.",
+        "$120bn in 2024), critical for funding AI infrastructure, with multi-sector financing absorbing supply via incremental yield spreads.",
+        "**AI Data Center Power Demand Surge**: EPRI projects 56-132 GW demand by 2030 (UBS CIO: 90 GW conservative), creating supply constraints from regulatory approvals and equipment backlogs despite server shipment needs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
