@@ -1,14 +1,14 @@
 {
-  "schema": "gsc_state.v1",
+  "schema": "gsc_index_status.v1",
   "as_of": "2026-08-02",
   "available": false,
   "reason": "GSC_SA_JSON is multiply-encoded and the inner layer is not valid JSON: Expecting value: line 1 column 1 (char 0)",
   "property": "sc-domain:mastermind-x.com",
   "service_account": {},
-  "window": {
-    "start": "2026-07-06",
-    "end": "2026-08-02"
+  "sitemaps": {
+    "sitemaps": [],
+    "never_downloaded": [],
+    "count": 0
   },
-  "rows_fetched": 0,
-  "rows_may_be_incomplete": true
+  "urls": []
 }
