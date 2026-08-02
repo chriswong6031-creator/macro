@@ -14,11 +14,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
 SERVICE_PATH = DEPLOY / "macro-biocatalyst.service"
+MACRO_API_SERVICE_PATH = DEPLOY / "macro-api.service"
 TIMER_PATH = DEPLOY / "macro-biocatalyst.timer"
 SETUP_PATH = DEPLOY / "biocatalyst-setup.sh"
 RUNTIME_PATH = DEPLOY / "biocatalyst-runtime.sh"
 SECURE_PATHS_PATH = DEPLOY / "biocatalyst-secure-paths.py"
 REQUIREMENTS_PATH = DEPLOY / "biocatalyst-requirements.txt"
+API_REQUIREMENTS_PATH = ROOT / "app" / "requirements.txt"
 UPDATE_PATH = DEPLOY / "update.sh"
 
 
@@ -92,6 +94,32 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "worker owns its non-blocking lock" in service
     assert "flock" not in service
     assert "Restart=always" not in service
+
+
+def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_state():
+    service = _text(MACRO_API_SERVICE_PATH)
+
+    assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
+    assert "ReadOnlyPaths=-/var/lib/macro-biocatalyst/public" in service
+    assert "InaccessiblePaths=-/var/lib/macro-biocatalyst/state" in service
+    assert "InaccessiblePaths=-/etc/macro-biocatalyst.env" in service
+    assert "BIOCATALYST_R2_" not in service
+    assert "ReadWritePaths=/var/lib/macro-biocatalyst" not in service
+
+
+def test_macro_api_declares_projection_validation_dependencies():
+    requirements = _text(API_REQUIREMENTS_PATH)
+
+    assert re.search(r"^jsonschema>=4\.20,<5\.0$", requirements, re.MULTILINE)
+    assert re.search(r"^referencing>=0\.30,<1\.0$", requirements, re.MULTILINE)
+
+
+def test_biocatalyst_router_mount_is_not_silently_optional():
+    main_source = _text(ROOT / "app" / "main.py")
+
+    mount = "from app.biocatalyst import router as biocatalyst_router"
+    assert main_source.count(mount) == 1
+    assert 'log.warning("BioCatalyst router not mounted:' not in main_source
 
 
 def test_timer_is_hourly_jittered_and_operator_armable():

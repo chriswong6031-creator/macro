@@ -1825,6 +1825,14 @@ try:
 except ImportError:
     pass  # additive route remains unavailable if its module is absent
 
+# BioCatalyst Intelligence serves only the worker's pointer-bound normalized
+# product projection. Its router performs early site_full enforcement before
+# touching the isolated read-only public generation root. This route is a paid
+# product contract, so import/configuration errors must fail startup loudly;
+# silently degrading to three 404s would make a healthy process look deployed.
+from app.biocatalyst import router as biocatalyst_router  # noqa: E402
+app.include_router(biocatalyst_router)
+
 # Warm the SHARED corpus cache off the request path (Analyst OS W4). The chat
 # tool's mode="report" and the vault routes now read one process-wide copy
 # (engine/research_vault/corpus.py); without this, the first report call in a

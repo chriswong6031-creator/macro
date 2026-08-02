@@ -19,9 +19,15 @@ import stat
 import tempfile
 from typing import Any, Callable, Mapping, Sequence
 
-from engine.sector_intelligence import canonical_json_bytes, canonical_json_sha256, validate_contract
+from engine.sector_intelligence import (
+    canonical_json_bytes,
+    canonical_json_sha256,
+    validate_contract,
+    validate_trial_projection_against_source,
+)
 
 from .storage import MirrorReceipt, StorageError, mirror_bytes_verified
+from .trials import build_trial_snapshot, validate_trial_snapshot
 
 
 _RUN_ID_RE = re.compile(r"^ctgov_run_[A-Za-z0-9_]+$")
@@ -102,6 +108,8 @@ _POINTER_KEYS = frozenset(
     }
 )
 _ARTIFACT_KEYS = frozenset(("name", "sha256", "byte_count"))
+_PUBLIC_GENERATION_SCHEMAS = frozenset(("1.0.0", "1.1.0"))
+_TRIAL_SNAPSHOT_DIRECTORY = "trial_snapshots"
 _HEALTH_KEYS = frozenset(
     {
         "schema_version",
@@ -193,6 +201,14 @@ class PreparedGeneration:
     watermark_after: str
     published_at: str
     source_dataset_timestamp_raw: str
+
+
+@dataclass(frozen=True)
+class CommittedTrialProjection:
+    """Pointer-bound product projection returned without exposing disk paths."""
+
+    generation: CommittedGeneration
+    trials: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -566,6 +582,44 @@ def _validate_public_state(
                 raise PublicationError("PUBLIC_SNAPSHOT_BINDING_MISMATCH")
 
 
+def _validate_trial_snapshot_binding(
+    snapshot: Mapping[str, Any],
+    *,
+    source_state: Mapping[str, Any],
+    nct_id: str,
+) -> dict[str, Any]:
+    """Validate the normalized product DTO and bind it to the proven source state."""
+
+    try:
+        normalized = validate_trial_snapshot(snapshot)
+    except Exception as exc:  # the product parser exposes no storage details
+        raise PublicationError("TRIAL_PROJECTION_INVALID") from exc
+    attribution = normalized.get("source_attribution")
+    if not isinstance(attribution, Mapping):
+        raise PublicationError("TRIAL_PROJECTION_INVALID")
+    if (
+        normalized.get("nct_id") != nct_id
+        or normalized.get("source_version_ordinal") != 1
+        or normalized.get("source_snapshot_ref") != source_state.get("source_snapshot_id")
+        or normalized.get("source_record_ref") != source_state.get("source_record_ref")
+        or normalized.get("canonical_content_sha256")
+        != source_state.get("canonical_content_sha256")
+        or normalized.get("coverage_class") != source_state.get("coverage_class")
+        or normalized.get("source_published_at") != source_state.get("source_published_at")
+        or normalized.get("retrieved_at") != source_state.get("retrieved_at")
+        or normalized.get("first_seen_at") != source_state.get("retrieved_at")
+        or normalized.get("knowledge_cutoff") != source_state.get("retrieved_at")
+        or normalized.get("transaction_from") is None
+        or attribution.get("source_uri") != source_state.get("source_uri")
+        or attribution.get("source_processed_at_raw")
+        != source_state.get("source_dataset_timestamp_raw")
+        or attribution.get("source_last_update_posted_at")
+        != source_state.get("source_last_update_posted_at")
+    ):
+        raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+    return normalized
+
+
 def _validate_projection_payload(
     source_generation: Path,
     *,
@@ -578,6 +632,7 @@ def _validate_projection_payload(
     manifest_filename: str = "publication_manifest.json",
     trial_directory: str = "",
     allowed_extra_files: Sequence[str] = (),
+    allowed_extra_directories: Sequence[str] = (),
     validated_snapshots_by_nct: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], tuple[tuple[str, dict[str, Any]], ...]]:
     """Validate every file, DTO field, and cross-reference in a stage generation."""
@@ -615,7 +670,9 @@ def _validate_projection_payload(
     if not source_generation.is_dir() or source_generation.is_symlink():
         raise PublicationError("COLLECTOR_GENERATION_MISSING")
     entries = list(source_generation.iterdir())
-    allowed_directories = {trial_directory} if trial_directory else set()
+    allowed_directories = ({trial_directory} if trial_directory else set()) | set(
+        allowed_extra_directories
+    )
     if any(
         item.is_symlink()
         or (item.is_dir() and item.name not in allowed_directories)
@@ -991,19 +1048,26 @@ class PublicGenerationPublisher:
         tree = list(generation.rglob("*"))
         if any(item.is_symlink() or (not item.is_dir() and not item.is_file()) for item in tree):
             raise PublicationError("PUBLIC_GENERATION_INVALID")
-        directories = {
-            item.relative_to(generation).as_posix()
-            for item in tree
-            if item.is_dir()
-        }
-        if directories != {"trials"}:
-            raise PublicationError("PUBLIC_GENERATION_INVALID")
         manifest = _load_json_object(generation / "manifest.json", code="PUBLIC_GENERATION_INVALID")
         if set(manifest) != _PUBLIC_GENERATION_MANIFEST_KEYS:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if manifest.get("generation_id") != generation_id or manifest.get("run_id") != generation_id:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
-        if manifest.get("contract_id") != "biocatalyst_public_generation.v1" or manifest.get("schema_version") != "1.0.0":
+        generation_schema = manifest.get("schema_version")
+        if (
+            manifest.get("contract_id") != "biocatalyst_public_generation.v1"
+            or generation_schema not in _PUBLIC_GENERATION_SCHEMAS
+        ):
+            raise PublicationError("PUBLIC_GENERATION_INVALID")
+        directories = {
+            item.relative_to(generation).as_posix()
+            for item in tree
+            if item.is_dir()
+        }
+        expected_directories = {"trials"}
+        if generation_schema == "1.1.0":
+            expected_directories.add(_TRIAL_SNAPSHOT_DIRECTORY)
+        if directories != expected_directories:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if (
             manifest.get("coverage_class") != "current_only"
@@ -1052,8 +1116,14 @@ class PublicGenerationPublisher:
                 raise PublicationError("PUBLIC_GENERATION_INVALID")
             if not isinstance(artifact.get("byte_count"), int) or artifact["byte_count"] < 1:
                 raise PublicationError("PUBLIC_GENERATION_INVALID")
-            if name not in {"source_manifest.json", "health.json"} and not re.fullmatch(
-                r"trials/NCT[0-9]{8}\.json", name
+            source_state_artifact = bool(re.fullmatch(r"trials/NCT[0-9]{8}\.json", str(name)))
+            trial_snapshot_artifact = generation_schema == "1.1.0" and bool(
+                re.fullmatch(r"trial_snapshots/NCT[0-9]{8}\.json", str(name))
+            )
+            if (
+                name not in {"source_manifest.json", "health.json"}
+                and not source_state_artifact
+                and not trial_snapshot_artifact
             ):
                 raise PublicationError("PUBLIC_GENERATION_INVALID")
             path = _safe_child(generation, name)
@@ -1064,6 +1134,10 @@ class PublicGenerationPublisher:
         required = {"source_manifest.json", "health.json"}
         if not required.issubset(seen) or not any(name.startswith("trials/NCT") for name in seen):
             raise PublicationError("PUBLIC_GENERATION_INVALID")
+        if generation_schema == "1.1.0" and not any(
+            name.startswith(f"{_TRIAL_SNAPSHOT_DIRECTORY}/NCT") for name in seen
+        ):
+            raise PublicationError("PUBLIC_GENERATION_INVALID")
         all_files = {
             item.relative_to(generation).as_posix()
             for item in tree
@@ -1071,6 +1145,13 @@ class PublicGenerationPublisher:
         }
         if all_files != {"manifest.json", *seen}:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
+        trial_snapshot_names = tuple(
+            sorted(
+                name
+                for name in seen
+                if name.startswith(f"{_TRIAL_SNAPSHOT_DIRECTORY}/")
+            )
+        )
         source_manifest, states = _validate_projection_payload(
             generation,
             run_id=generation_id,
@@ -1083,7 +1164,10 @@ class PublicGenerationPublisher:
             ),
             manifest_filename="source_manifest.json",
             trial_directory="trials",
-            allowed_extra_files=("manifest.json", "health.json"),
+            allowed_extra_files=("manifest.json", "health.json", *trial_snapshot_names),
+            allowed_extra_directories=(
+                (_TRIAL_SNAPSHOT_DIRECTORY,) if generation_schema == "1.1.0" else ()
+            ),
         )
         if source_manifest["manifest_sha256"] != manifest["source_manifest_sha256"]:
             raise PublicationError("PUBLIC_GENERATION_ARTIFACT_MISMATCH")
@@ -1091,6 +1175,26 @@ class PublicGenerationPublisher:
             name for name in seen if name.startswith("trials/")
         }:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
+        if generation_schema == "1.0.0" and trial_snapshot_names:
+            raise PublicationError("PUBLIC_GENERATION_INVALID")
+        if generation_schema == "1.1.0":
+            states_by_nct = dict(states)
+            expected_trial_names = {
+                f"{_TRIAL_SNAPSHOT_DIRECTORY}/{nct_id}.json"
+                for nct_id in states_by_nct
+            }
+            if set(trial_snapshot_names) != expected_trial_names:
+                raise PublicationError("TRIAL_PROJECTION_INVALID")
+            for nct_id in sorted(states_by_nct):
+                product = _load_json_object(
+                    generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
+                    code="TRIAL_PROJECTION_INVALID",
+                )
+                _validate_trial_snapshot_binding(
+                    product,
+                    source_state=states_by_nct[nct_id],
+                    nct_id=nct_id,
+                )
         if (
             manifest["configured_nct_count"] != len(manifest["configured_nct_ids"])
             or manifest["observed_nct_count"] != len(states)
@@ -1152,6 +1256,45 @@ class PublicGenerationPublisher:
             last_success_at=manifest["last_success_at"],
         )
 
+    def read_trial_projection(self) -> CommittedTrialProjection | None:
+        """Return only current pointer-bound normalized trial facts.
+
+        Legacy B1 generations remain valid evidence generations, but they do not
+        silently masquerade as a product projection.  Callers receive a bounded
+        unavailable code until the worker publishes the first v1.1 generation.
+        """
+
+        committed = self.read_committed()
+        if committed is None:
+            return None
+        manifest = self._load_generation_manifest(committed.generation_id)
+        if manifest.get("schema_version") != "1.1.0":
+            raise PublicationError("TRIAL_PROJECTION_UNAVAILABLE")
+        generation = self._generation_dir(committed.generation_id)
+        trials: list[dict[str, Any]] = []
+        for nct_id in manifest["configured_nct_ids"]:
+            source_state = _load_json_object(
+                generation / "trials" / f"{nct_id}.json",
+                code="COLLECTOR_PROJECTION_INVALID",
+            )
+            product = _load_json_object(
+                generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
+                code="TRIAL_PROJECTION_INVALID",
+            )
+            trials.append(
+                _validate_trial_snapshot_binding(
+                    product,
+                    source_state=source_state,
+                    nct_id=nct_id,
+                )
+            )
+        if len(trials) != committed.observed_nct_count:
+            raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+        return CommittedTrialProjection(
+            generation=committed,
+            trials=tuple(trials),
+        )
+
     def prepare_generation(
         self,
         *,
@@ -1162,6 +1305,8 @@ class PublicGenerationPublisher:
         expected_watermark: str | None,
         health: Mapping[str, Any],
         validated_snapshots_by_nct: Mapping[str, Mapping[str, Any]],
+        source_receipts: Sequence[Mapping[str, Any]],
+        raw_page_bodies_by_receipt: Mapping[str, bytes],
     ) -> PreparedGeneration:
         """Make a complete sanitized generation outside the actual public root."""
 
@@ -1190,9 +1335,37 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_STAGE_COLLISION")
         final_stage.mkdir(parents=True)
         try:
+            states_by_nct = dict(states)
             atomic_write(final_stage / "source_manifest.json", _json_bytes(source_manifest))
             for nct_id, state in states:
                 atomic_write(final_stage / "trials" / f"{nct_id}.json", _json_bytes(state))
+            for nct_id, _state in states:
+                try:
+                    product = build_trial_snapshot(
+                        validated_snapshots_by_nct[nct_id],
+                        source_version_ordinal=1,
+                    )
+                except Exception as exc:
+                    raise PublicationError("TRIAL_PROJECTION_INVALID") from exc
+                _validate_trial_snapshot_binding(
+                    product,
+                    source_state=states_by_nct[nct_id],
+                    nct_id=nct_id,
+                )
+                try:
+                    validate_trial_projection_against_source(
+                        product,
+                        validated_snapshots_by_nct[nct_id],
+                        run=run,
+                        receipts=source_receipts,
+                        raw_page_bodies_by_receipt=raw_page_bodies_by_receipt,
+                    )
+                except Exception as exc:
+                    raise PublicationError("TRIAL_PROJECTION_INVALID") from exc
+                atomic_write(
+                    final_stage / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
+                    _json_bytes(product),
+                )
             atomic_write(final_stage / "health.json", _json_bytes(dict(health)))
             artifact_paths = sorted(
                 path for path in final_stage.rglob("*") if path.is_file()
@@ -1207,7 +1380,7 @@ class PublicGenerationPublisher:
             ]
             payload: dict[str, Any] = {
                 "contract_id": "biocatalyst_public_generation.v1",
-                "schema_version": "1.0.0",
+                "schema_version": "1.1.0",
                 "generation_id": run["run_id"],
                 "run_id": run["run_id"],
                 "source_dataset_timestamp_raw": run["source_dataset_timestamp_before_raw"],

@@ -5943,6 +5943,16 @@ def main() -> int:
     except Exception as _ff_e:  # noqa: BLE001 — additive; never break main build
         log.warning("fundamental_forensics.html render failed (%s); page skipped", _ff_e)
 
+    # BioCatalyst Intelligence — render only the registered preview shell. Trial
+    # facts stay in the authenticated, site-full BioCatalyst API; the static
+    # renderer must never read or copy a current trial generation into site/.
+    try:
+        from scripts.build_biocatalyst import render_from_state as _render_biocatalyst
+        _bci_page = _render_biocatalyst(config.ROOT)
+        log.info("wrote %s", _bci_page)
+    except Exception as _bci_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("biocatalyst.html render failed (%s); page skipped", _bci_e)
+
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four
     # site/neuralwebdata theme artifacts already written by build_thematic_state.

@@ -210,6 +210,15 @@ free_registered:
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
     - /china_special_situations.html
+    # BioCatalyst's registered preview shell contains no study facts. The
+    # same-origin ClinicalTrials.gov API remains code-enforced at site_full, so
+    # this page can explain and load the workspace without leaking its records.
+    - /biocatalyst.html
+    # Presentation and authenticated API client paired with the registered
+    # preview shell. Neither asset embeds study facts; keeping them at the same
+    # tier prevents an entitled-but-free user receiving a bare inert document.
+    - /biocatalyst.css
+    - /biocatalyst.js
   prefixes:
     - /news/
     - /chinanews/

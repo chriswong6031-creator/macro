@@ -13,6 +13,7 @@ EnvironmentFile=-/etc/macro-api.env
 # root-only state directory so ProtectHome never blocks it.
 Environment=CODEX_HOME=/var/lib/macro-codex
 Environment=CODEX_PROVIDER_ENABLED=1
+Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
 StateDirectory=macro-codex
 StateDirectoryMode=0700
 # ── Site Access Gate env (all optional; safe defaults apply when absent) ─────
@@ -66,6 +67,14 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
 UMask=0077
+# BioCatalyst's serving boundary is one-way: macro-api may read the immutable
+# public projection, but the worker state tree and credential file do not exist
+# inside this service's mount namespace.
+# A leading '-' preserves a healthy API while the operator-armed lane is not
+# provisioned. Once these paths exist, the same mounts are enforced at restart.
+ReadOnlyPaths=-/var/lib/macro-biocatalyst/public
+InaccessiblePaths=-/var/lib/macro-biocatalyst/state
+InaccessiblePaths=-/etc/macro-biocatalyst.env
 
 [Install]
 WantedBy=multi-user.target

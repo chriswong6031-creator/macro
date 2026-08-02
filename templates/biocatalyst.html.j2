@@ -1,0 +1,124 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(navigator.language||'').slice(0,2);if(l==='zh')document.documentElement.setAttribute('data-lang','zh');}catch(e){}</script>
+<title>Clinical Trial Watch — MastermindX</title>
+{% set seo_title = "Clinical Trial Watch — MastermindX" %}
+{% set seo_desc = "A focused workspace for reading the current, verified ClinicalTrials.gov record: status, phase, enrollment, milestones and official evidence." %}
+{% set seo_path = "biocatalyst.html" %}
+{% include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="biocatalyst.css">
+</head>
+<body class="bci-page">
+{% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
+{% set nav_search_placeholder_zh = "搜索任意股票 — 美股、A 股、港股、加股等…" %}
+{% include "_site_nav.html.j2" %}
+
+<main class="bci-workspace" id="bci-workspace" data-state="loading">
+  <header class="bci-hero">
+    <div class="bci-hero-copy">
+      <p class="bci-eyebrow"><span class="bci-pulse" aria-hidden="true"></span>{{ t('BioCatalyst Intelligence', 'BioCatalyst Intelligence') }}</p>
+      <h1>{{ t('Clinical Trial Watch', '临床试验观察') }}</h1>
+      <p class="bci-deck">{{ t('Read the current trial record before you form a view.', '先读当前试验记录，再形成判断。') }}</p>
+    </div>
+    <div class="bci-run-status" aria-live="polite">
+      <span class="bci-status-dot" aria-hidden="true"></span>
+      <div>
+        <span class="bci-status-label" id="bci-status-label">{{ t('Retrieving verified record', '正在获取已核验记录') }}</span>
+        <span class="bci-status-detail" id="bci-status-detail">{{ t('Official registry source', '官方登记来源') }}</span>
+      </div>
+      <button class="bci-refresh" id="bci-refresh" type="button" aria-label="Refresh trial record" data-label-en="Refresh trial record" data-label-zh="刷新试验记录">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 8.6A6.9 6.9 0 1 0 17 12"/><path d="M16.7 3.8v4.8h-4.8"/></svg>
+        <span class="l-en">Refresh</span><span class="l-zh">刷新</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="bci-information" aria-label="Clinical trial workspace">
+    <aside class="bci-filter-pane" aria-labelledby="bci-filter-title">
+      <div class="bci-pane-head">
+        <p class="bci-kicker">{{ t('Narrow the record', '缩小记录范围') }}</p>
+        <h2 id="bci-filter-title">{{ t('Filters', '筛选') }}</h2>
+      </div>
+      <label class="bci-search" for="bci-search">
+        <span class="bci-control-label">{{ t('Find a trial', '查找试验') }}</span>
+        <span class="bci-search-field">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.25"/><path d="m12.5 12.5 4 4"/></svg>
+          <input id="bci-search" type="search" autocomplete="off" spellcheck="false" placeholder="Sponsor, condition or study title" data-placeholder-en="Sponsor, condition or study title" data-placeholder-zh="申办方、适应症或研究名称">
+        </span>
+      </label>
+      <label class="bci-control" for="bci-phase-filter">
+        <span class="bci-control-label">{{ t('Phase', '阶段') }}</span>
+        <select id="bci-phase-filter">
+          <option value="" data-label-en="All phases" data-label-zh="全部阶段">All phases</option>
+        </select>
+      </label>
+      <label class="bci-control" for="bci-status-filter">
+        <span class="bci-control-label">{{ t('Recruitment', '招募状态') }}</span>
+        <select id="bci-status-filter">
+          <option value="" data-label-en="All statuses" data-label-zh="全部状态">All statuses</option>
+        </select>
+      </label>
+      <label class="bci-control" for="bci-condition-filter">
+        <span class="bci-control-label">{{ t('Condition', '适应症') }}</span>
+        <select id="bci-condition-filter">
+          <option value="" data-label-en="All conditions" data-label-zh="全部适应症">All conditions</option>
+        </select>
+      </label>
+      <div class="bci-filter-actions">
+        <button class="bci-clear" id="bci-clear" type="button">{{ t('Clear filters', '清除筛选') }}</button>
+      </div>
+      <div class="bci-source-note">
+        <span class="bci-source-mark" aria-hidden="true">⌁</span>
+        <p>{{ t('Facts come from the official trial registry. This view does not make a forecast or a trade call.', '事实来自官方试验登记库。本视图不作预测或交易建议。') }}</p>
+      </div>
+    </aside>
+
+    <section class="bci-queue-pane" aria-labelledby="bci-queue-title">
+      <header class="bci-queue-head">
+        <div>
+          <p class="bci-kicker">{{ t('Current official record', '当前官方记录') }}</p>
+          <h2 id="bci-queue-title">{{ t('Trial queue', '试验队列') }}</h2>
+          <p class="bci-queue-subtitle" id="bci-queue-subtitle">{{ t('Preparing the verified queue…', '正在准备已核验队列…') }}</p>
+        </div>
+        <div class="bci-asof" id="bci-asof" aria-live="polite"></div>
+      </header>
+      <div class="bci-state-notice" id="bci-state-notice" role="status" aria-live="polite" hidden></div>
+      <div class="bci-queue" id="bci-queue" role="listbox" aria-label="Clinical trials" aria-busy="true">
+        <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="bci-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+    </section>
+
+    <aside class="bci-inspector-pane" id="bci-inspector-pane" aria-labelledby="bci-inspector-title" tabindex="-1">
+      <header class="bci-inspector-head">
+        <div>
+          <p class="bci-kicker">{{ t('Official detail', '官方详情') }}</p>
+          <h2 id="bci-inspector-title">{{ t('Select a trial', '选择一项试验') }}</h2>
+        </div>
+        <button class="bci-inspector-close" id="bci-inspector-close" type="button" aria-label="Close trial detail" data-label-en="Close trial detail" data-label-zh="关闭试验详情">
+          <span aria-hidden="true">×</span>
+        </button>
+      </header>
+      <div class="bci-inspector-body" id="bci-inspector-body">
+        <div class="bci-inspector-empty">
+          <span class="bci-empty-orbit" aria-hidden="true"></span>
+          <p>{{ t('Choose a trial to read its current status, milestones and official evidence.', '选择试验，查看其当前状态、里程碑与官方证据。') }}</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div class="bci-scrim" id="bci-scrim" hidden></div>
+<script src="theme.js" defer></script>
+<script src="biocatalyst.js" defer></script>
+</body>
+</html>
