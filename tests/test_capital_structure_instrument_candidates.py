@@ -373,3 +373,114 @@ def test_offline_compiler_rejects_a_self_consistent_direct_issuer_mutation(tmp_p
             generated_at="2026-08-04T00:00:00Z",
             source_store=_FixtureStore(manifest, raw),
         )
+
+
+def test_rehashed_direct_and_manifest_envelopes_fail_closed_on_pure_disk_and_pit_surfaces(tmp_path):
+    """A valid digest cannot promote a rewritten source-derived direct fact."""
+    direct, manifests, reader = _direct_authority()
+    raw = FIXTURE.read_bytes()
+    baseline = _compile(direct, manifests=manifests, reader=reader)["observations"]
+
+    null_value = deepcopy(direct)
+    amount = next(row for row in null_value if row["term"]["name"] == "amount_to_be_registered")
+    amount["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
+    amount["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
+    amount["normalized"] = deepcopy(amount["reported"])
+    amount["observation_id"] = observation_id_for(amount)
+
+    span_id = deepcopy(direct)
+    span_id[0]["evidence"]["spans"][0]["span_id"] = "span:cs:" + ("0" * 24)
+    span_id[0]["observation_id"] = observation_id_for(span_id[0])
+
+    duplicate_slot = deepcopy(direct)
+    duplicate = deepcopy(duplicate_slot[0])
+    duplicate["logical_observation_id"] = "document-term-slot:cs:" + ("0" * 24)
+    duplicate["observation_id"] = observation_id_for(duplicate)
+    duplicate_slot.append(duplicate)
+
+    forged_manifest = deepcopy(manifests[0])
+    forged_manifest["issuer"] = {
+        "issuer_id": "sec:cik:9999999999", "cik": "9999999999", "ticker": "EVIL",
+        "aliases": ["Evil Corp"],
+    }
+    forged_manifest["manifest_id"] = manifest_id_for(forged_manifest)
+    forged_issuer = deepcopy(direct)
+    for row in forged_issuer:
+        row["issuer_id"] = "sec:cik:9999999999"
+        row["document"]["source_manifest_id"] = forged_manifest["manifest_id"]
+        row["evidence"]["source_manifest_id"] = forged_manifest["manifest_id"]
+        for span in row["evidence"]["spans"]:
+            span["manifest_id"] = forged_manifest["manifest_id"]
+        row["observation_id"] = observation_id_for(row)
+
+    attacks = [
+        ("null_value", null_value, manifests, "state is detached", _FixtureStore(manifests[0], raw)),
+        ("span_id", span_id, manifests, "evidence is detached", _FixtureStore(manifests[0], raw)),
+        ("logical_slot", duplicate_slot, manifests, "logical_observation_id is detached", _FixtureStore(manifests[0], raw)),
+        ("manifest_issuer", forged_issuer, [forged_manifest], "issuer.cik is detached", _FixtureStore(forged_manifest, raw)),
+    ]
+    for label, tampered, authority_manifests, error, store in attacks:
+        with pytest.raises(ValueError, match=error):
+            _compile(tampered, manifests=authority_manifests, reader=lambda _: raw)
+        with pytest.raises(ValueError, match=error):
+            current_candidate_terms_as_of(
+                baseline, "2026-08-04T00:00:00Z",
+                document_term_observations=tampered,
+                source_manifests=authority_manifests,
+                source_reader=lambda _: raw,
+            )
+
+        root = tmp_path / label
+        root.mkdir()
+        pd.DataFrame(authority_manifests).to_parquet(root / "source_manifest.parquet", index=False)
+        _direct_frame(tampered).to_parquet(root / "document_term_observations.parquet", index=False)
+        with pytest.raises(ValueError, match=error):
+            compile_from_disk(
+                root=root, generated_at="2026-08-04T00:00:00Z", source_store=store,
+            )
+
+
+def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers(tmp_path, monkeypatch):
+    direct_v1, manifests, reader = _direct_authority()
+    baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.1")
+    direct_v2 = compile_document_term_records(
+        manifests, source_reader=reader, existing_observations=direct_v1,
+        generated_at="2026-08-05T00:00:00Z",
+    )["observations"]
+    candidates = _compile(
+        direct_v2, manifests=manifests, reader=reader, existing=baseline,
+        generated_at="2026-08-06T00:00:00Z",
+    )["observations"]
+    with pytest.raises(ValueError, match="historical source_as_of cannot write"):
+        _compile(
+            direct_v2, manifests=manifests, reader=reader, existing=candidates,
+            generated_at="2026-08-07T00:00:00Z", source_as_of="2026-08-04T00:00:00Z",
+        )
+
+    raw = FIXTURE.read_bytes()
+    manifest = manifests[0]
+    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _direct_frame(direct_v2).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
+    candidate_frame = pd.DataFrame([
+        {
+            "candidate_term_id": row["candidate_term_id"],
+            "logical_candidate_term_id": row["logical_candidate_term_id"],
+            "issuer_id": row["issuer_id"],
+            "accession": row["filing"]["accession"], "form": row["filing"]["form"],
+            "source_manifest_id": row["document"]["source_manifest_id"],
+            "direct_observation_id": row["source_term"]["observation_id"],
+            "candidate_family": row["candidate"]["family"], "supply_role": row["candidate"]["supply_role"],
+            "state": row["candidate"]["state"]["disposition"],
+            "available_at": row["point_in_time"]["available_at"],
+            "correction_version": row["version"]["correction_version"],
+            "candidate_term_json": json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False),
+        }
+        for row in candidates
+    ], columns=CANDIDATE_TERM_COLUMNS)
+    candidate_frame.to_parquet(tmp_path / "instrument_candidate_terms.parquet", index=False)
+    with pytest.raises(ValueError, match="historical source_as_of cannot write"):
+        compile_from_disk(
+            root=tmp_path, generated_at="2026-08-07T00:00:00Z",
+            source_as_of="2026-08-04T00:00:00Z", source_store=_FixtureStore(manifest, raw),
+        )

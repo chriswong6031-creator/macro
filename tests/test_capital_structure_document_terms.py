@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
+import engine.capital_structure.document_terms as document_terms
 from engine.capital_structure.document_terms import (
     DocumentTermCompileDegraded,
     compile_document_term_records,
@@ -167,21 +168,16 @@ def test_multiple_direct_rows_are_row_scoped_and_never_summed_or_collapsed():
     }
 
 
-def test_parser_correction_is_append_only_and_becomes_visible_only_when_produced():
+def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bound(monkeypatch):
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/0.9.0")
     original = compile_document_term_records(
         [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
     )["observations"]
-    old = deepcopy(original)
-    target = next(row for row in old if row["term"]["name"] == "registration_fee")
-    target["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
-    target["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
-    target["normalized"] = deepcopy(target["reported"])
-    target["extraction"]["parser_version"] = "capital-structure-document-terms/0.9.0"
-    target["observation_id"] = observation_id_for(target)
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
     result = compile_document_term_records(
-        [manifest], source_reader=_reader(raw), existing_observations=old,
+        [manifest], source_reader=_reader(raw), existing_observations=original,
         generated_at="2026-08-04T00:00:00Z",
     )
     corrected = [row for row in result["observations"] if row["term"]["name"] == "registration_fee"]
@@ -191,10 +187,12 @@ def test_parser_correction_is_append_only_and_becomes_visible_only_when_produced
         "immutable_record": True, "correction_version": 2, "correction_of": prior["observation_id"],
     }
     assert later["relationships"]["supersedes"] == [prior["observation_id"]]
+    assert prior["extraction"]["parser_version"] == "capital-structure-document-terms/0.9.0"
+    assert later["extraction"]["parser_version"] == "capital-structure-document-terms/1.1.0"
     assert later["reported"]["value"] == "1237.1"
     before = current_document_terms_as_of(result["observations"], "2026-08-03T12:00:00Z")
     after = current_document_terms_as_of(result["observations"], "2026-08-04T00:00:00Z")
-    assert next(row for row in before if row["term"]["name"] == "registration_fee")["reported"]["value"] is None
+    assert next(row for row in before if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
     assert next(row for row in after if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
 
 
@@ -257,7 +255,8 @@ def test_disk_compiler_requires_matching_store_namespace_and_writes_canonical_le
 def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path):
     raw = FIXTURE.read_bytes()
     shared = _manifest(raw)
-    research = deepcopy(shared)
+    research_raw = raw.replace(b"0000000001-26-000001", b"0000000002-26-000002")
+    research = _manifest(research_raw)
     research["source_id"] = "0000000002-26-000002:0:complete-submission.txt"
     research["issuer"] = {
         "issuer_id": "sec:cik:0000000002", "cik": "2", "ticker": "XYZ",
@@ -277,9 +276,16 @@ def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path
             self.store_id = store_id
 
         def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
-            assert object_key == shared["storage"]["object_key"]
-            assert expected_sha256 == shared["document"]["content_sha256"]
-            return raw
+            objects = {
+                shared["storage"]["object_key"]: raw,
+                research["storage"]["object_key"]: research_raw,
+            }
+            expected = {
+                shared["storage"]["object_key"]: shared["document"]["content_sha256"],
+                research["storage"]["object_key"]: research["document"]["content_sha256"],
+            }
+            assert expected_sha256 == expected[object_key]
+            return objects[object_key]
 
     result = compile_from_disk(
         root=tmp_path, generated_at="2026-08-03T00:00:00Z",
@@ -378,7 +384,7 @@ def test_ex_filing_fees_child_is_selected_with_exact_child_provenance():
         b"<TEXT><html><body>No fee table in the primary document.</body></html></TEXT>"
     )
     raw = (
-        b"<SEC-DOCUMENT>test.txt\n<SEC-HEADER>test\n<DOCUMENT>" + primary
+        b"<SEC-DOCUMENT>0000000001-26-000001.txt\n<SEC-HEADER>test\n<DOCUMENT>" + primary
         + b"</DOCUMENT>\n<DOCUMENT>" + fee_child + b"</DOCUMENT>\n</SEC-DOCUMENT>"
     )
     manifest = _manifest(raw)

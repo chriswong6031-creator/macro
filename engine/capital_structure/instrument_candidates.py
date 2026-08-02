@@ -25,12 +25,7 @@ from typing import Any
 from engine.capital_structure.document_terms import (
     DOCUMENT_TERM_SCHEMA,
     current_document_terms_as_of,
-    validate_document_term_history,
-    validate_observation_source_binding,
-)
-from engine.capital_structure.source_identity import (
-    validate_manifest_content_binding,
-    validate_manifest_ledger,
+    validate_document_term_source_authority,
 )
 
 
@@ -448,30 +443,13 @@ def validate_document_term_authority(
     """
     schema = _load_schema(_DIRECT_SCHEMA_PATH)
     sources = [deepcopy(dict(raw)) for raw in records]
-    manifests = [deepcopy(dict(raw)) for raw in source_manifests]
-    validate_manifest_ledger(manifests)
-    for index, manifest in enumerate(manifests):
-        validate_manifest_content_binding(manifest)
     for index, source in enumerate(sources):
         _validate_schema(source, schema, f"document-term input row {index}")
-    validate_document_term_history(sources)
-
-    manifests_by_id = {str(manifest["manifest_id"]): manifest for manifest in manifests}
-    source_cache: dict[str, bytes] = {}
-    for index, source in enumerate(sources):
-        manifest_id = str((source.get("document") or {}).get("source_manifest_id") or "")
-        manifest = manifests_by_id.get(manifest_id)
-        if manifest is None:
-            raise ValueError(f"document-term input row {index} source manifest is absent")
-        raw = source_cache.get(manifest_id)
-        if raw is None:
-            loaded = source_reader(manifest)
-            if not isinstance(loaded, bytes):
-                raise ValueError(f"document-term input row {index} retained source bytes are unavailable")
-            source_cache[manifest_id] = loaded
-            raw = loaded
-        validate_observation_source_binding(source, manifest, raw)
-    return sources
+    return validate_document_term_source_authority(
+        sources,
+        source_manifests=source_manifests,
+        source_reader=source_reader,
+    )
 
 
 def _project_record(

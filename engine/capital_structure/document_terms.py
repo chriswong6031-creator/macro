@@ -29,6 +29,7 @@ from engine.capital_structure.event_spine import make_stable_span
 from engine.capital_structure.source_identity import (
     validate_manifest_content_binding,
     validate_manifest_ledger,
+    validate_manifest_retained_bytes_binding,
 )
 
 
@@ -832,6 +833,7 @@ def validate_observation_source_binding(
 ) -> None:
     """Bind every mirrored field and byte span back to one immutable manifest."""
     validate_manifest_content_binding(manifest)
+    validate_manifest_retained_bytes_binding(manifest, raw)
     manifest_id = str(manifest.get("manifest_id") or "")
     filing = record.get("filing") or {}
     manifest_filing = manifest.get("filing") or {}
@@ -1003,6 +1005,77 @@ def validate_observation_source_binding(
         ):
             raise ValueError("document term security identity is detached from its title cell")
 
+    # Hash-valid byte ranges alone do not prove that a row has retained the
+    # correct role, state, value, or span identity. Rebuild every expected
+    # observation from the exact retained complete submission and compare the
+    # immutable source-derived body. Version/correction and parser-version
+    # fields intentionally remain outside this comparison so historic parser
+    # corrections retain their point-in-time chain while their declared facts
+    # stay bound to the source bytes.
+    expected_by_logical = {
+        str(candidate["logical_observation_id"]): candidate
+        for candidate in _records_for_manifest(manifest, raw)
+    }
+    logical = str(record.get("logical_observation_id") or "")
+    expected_record = expected_by_logical.get(logical)
+    if expected_record is None:
+        raise ValueError("document term logical_observation_id is detached from source bytes")
+    for field in (
+        "schema", "issuer_id", "filing", "document", "security", "term",
+        "state", "reported", "normalized", "evidence",
+    ):
+        if record.get(field) != expected_record.get(field):
+            raise ValueError(f"document term {field} is detached from retained source semantics")
+    actual_extraction = record.get("extraction") or {}
+    expected_extraction = expected_record.get("extraction") or {}
+    if {
+        "method": actual_extraction.get("method"),
+        "review_status": actual_extraction.get("review_status"),
+    } != {
+        "method": expected_extraction.get("method"),
+        "review_status": expected_extraction.get("review_status"),
+    }:
+        raise ValueError("document term extraction state is detached from retained source semantics")
+
+
+def validate_document_term_source_authority(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    source_manifests: Sequence[Mapping[str, Any]],
+    source_reader: Callable[[Mapping[str, Any]], bytes | None],
+) -> list[dict[str, Any]]:
+    """Validate an entire direct ledger against manifests and exact retained bytes.
+
+    The append-only history is necessary but not sufficient: every version must
+    independently re-derive the same source fact.  This makes a historical
+    parser correction auditable without allowing a rehashed null, issuer, span,
+    or logical-slot rewrite to become a valid point-in-time observation.
+    """
+    sources = [deepcopy(dict(raw)) for raw in records]
+    manifests = [deepcopy(dict(raw)) for raw in source_manifests]
+    validate_manifest_ledger(manifests)
+    for manifest in manifests:
+        validate_manifest_content_binding(manifest)
+    validate_document_term_history(sources)
+
+    manifests_by_id = {str(manifest["manifest_id"]): manifest for manifest in manifests}
+    source_cache: dict[str, bytes] = {}
+    for index, source in enumerate(sources):
+        manifest_id = str((source.get("document") or {}).get("source_manifest_id") or "")
+        manifest = manifests_by_id.get(manifest_id)
+        if manifest is None:
+            raise ValueError(f"document term row {index} source manifest is absent")
+        raw = source_cache.get(manifest_id)
+        if raw is None:
+            loaded = source_reader(manifest)
+            if not isinstance(loaded, bytes):
+                raise ValueError(f"document term row {index} retained source bytes are unavailable")
+            validate_manifest_retained_bytes_binding(manifest, loaded)
+            source_cache[manifest_id] = loaded
+            raw = loaded
+        validate_observation_source_binding(source, manifest, raw)
+    return sources
+
 
 def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None:
     """Validate immutable IDs, version chains, and non-retroactive corrections."""
@@ -1118,13 +1191,9 @@ def compile_document_term_records(
         )
     ]
     failures: list[dict[str, Any]] = []
-    source_bytes: dict[str, bytes | None] = {}
+    source_bytes: dict[str, bytes] = {}
     for manifest in materialize:
         manifest_id = str(manifest["manifest_id"])
-        parser = manifest.get("parser") or {}
-        if str(parser.get("eligibility") or "") != "eligible" or str(parser.get("corruption_state") or "") != "clean":
-            source_bytes[manifest_id] = None
-            continue
         raw = source_reader(manifest)
         expected = str((manifest.get("document") or {}).get("content_sha256") or "").lower()
         if raw is None:
@@ -1132,6 +1201,11 @@ def compile_document_term_records(
             continue
         if not isinstance(raw, bytes) or hashlib.sha256(raw).hexdigest() != expected:
             failures.append({"accession": (manifest.get("filing") or {}).get("accession"), "state": "source_bytes_digest_mismatch", "errors": [manifest_id]})
+            continue
+        try:
+            validate_manifest_retained_bytes_binding(manifest, raw)
+        except ValueError as exc:
+            failures.append({"accession": (manifest.get("filing") or {}).get("accession"), "state": "source_identity_detached", "errors": [str(exc)]})
             continue
         source_bytes[manifest_id] = raw
     if failures:
@@ -1174,7 +1248,11 @@ def compile_document_term_records(
             current_by_logical[logical] = candidate
 
     output = [*existing, *incoming]
-    validate_document_term_history(output)
+    validate_document_term_source_authority(
+        output,
+        source_manifests=manifest_rows,
+        source_reader=source_reader,
+    )
     return {
         "observations": output,
         "new_observations": incoming,
