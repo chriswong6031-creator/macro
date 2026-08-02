@@ -483,9 +483,113 @@ def reconcile_earnings_call_revisions(root: Path, cfg: dict) -> dict:
     }
 
 
+def _stage_preplanned_slots(
+    root: Path,
+    cfg: dict,
+    *,
+    slots: list[dict],
+    staging_dir: Path,
+    run_date: str,
+    state: writer.RunState,
+    max_regenerations: int,
+    taken_slugs: set[str],
+    revision_reconciliation: dict | None = None,
+    admission_receipt: dict | None = None,
+    single_provider_attempt: bool = False,
+) -> dict:
+    """Write already-selected slots through the normal writer/validator rail.
+
+    Selection and source-revision reconciliation deliberately live outside this
+    helper.  The ordinary Press run supplies both; a future immutable ingress
+    can supply one already-verified candidate without calling either mutable
+    discovery surface.  ``admission_receipt`` is copied into the stage record
+    solely as provenance — it never changes validation, status, retry, or emit
+    behaviour.
+    """
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    if max_regenerations < 0:
+        raise ValueError("max_regenerations must be non-negative")
+    summary = {"run_at": _now(), "as_of": run_date, "planned": len(slots),
+               "passed": 0, "quarantined": 0, "items": []}
+    if revision_reconciliation is not None:
+        summary["revision_reconciliation"] = revision_reconciliation
+
+    for slot in slots:
+        attempts: list[dict] = []
+        prior: list[str] = []
+        passed_payload = None
+        writer_kwargs = {"single_provider_attempt": True} if single_provider_attempt else {}
+
+        for attempt in range(max_regenerations + 1):
+            res = writer.write(slot, cfg, state=state, attempt=attempt,
+                               prior_failures=prior or None, **writer_kwargs)
+            if not res.get("ok"):
+                attempts.append({"attempt": attempt, "ok": False,
+                                 "reason": res.get("reason")})
+                if res.get("reason") in ("circuit_open", "token_budget_exhausted",
+                                         "no_provider", "llm_disabled"):
+                    break                       # a run-level stop, not a draft problem
+                prior = [f"writer: {res.get('reason')}"]
+                continue
+
+            draft = dict(res["draft"])
+            draft["slug"] = _unique_slug(draft.get("slug") or slot.get("slug_hint") or "",
+                                         slot, taken_slugs)
+            report = validators.validate(draft, slot, cfg, root=root)
+            attempts.append({"attempt": attempt, "ok": bool(report["ok"]),
+                             "failed": report["failed"],
+                             "our_value_share": report.get("our_value_share"),
+                             "max_block_jaccard": report.get("max_block_jaccard"),
+                             "provider": res.get("provider")})
+            if report["ok"]:
+                taken_slugs.add(draft["slug"])
+                passed_payload = (draft, report, res)
+                break
+            prior = [f"{c['name']}: {c['detail']}" for c in report["checks"] if not c["ok"]]
+
+        item = _stage_item(
+            slot,
+            passed_payload,
+            attempts,
+            run_date,
+            admission_receipt=admission_receipt,
+        )
+        out = staging_dir / f"{slot['id']}.json"
+        out.write_text(json.dumps(item, ensure_ascii=False, indent=2, default=str) + "\n",
+                       encoding="utf-8")
+        summary["items"].append({"id": slot["id"], "desk": slot["desk"],
+                                 "status": item["status"],
+                                 "reason": item.get("quarantine_reason", "")})
+        if item["status"] == "passed":
+            summary["passed"] += 1
+        else:
+            summary["quarantined"] += 1
+            log.warning("press: slot %s quarantined — %s", slot["id"],
+                        item.get("quarantine_reason"))
+
+    summary["writer_state"] = state.snapshot()
+    (staging_dir / "_run_summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, default=str) + "\n",
+        encoding="utf-8")
+
+    _annotate("notice", "press_staging",
+              f"press staging: {summary['passed']} passed, "
+              f"{summary['quarantined']} quarantined of {summary['planned']} planned "
+              f"(tokens {state.tokens_used}/{state.token_budget})")
+    if summary["planned"] and not summary["passed"]:
+        _annotate("warning", "press_staging_empty",
+                  "press staging produced NO passing draft — every planned slot was "
+                  "quarantined or dropped. A thin day is legal; a permanently thin "
+                  "lane is a defect. Check data/press/staging/ for reasons.")
+    return summary
+
+
 def run_staging(root: Path, cfg: dict, *, desks=None, as_of=None,
                 max_slots: int | None = None) -> dict:
+    """Plan, reconcile, then stage the ordinary multi-slot Press run."""
     paths = _paths(cfg, root)
+    # Preserve the generic lane's original timing: its staging directory
+    # existed before either mutable discovery step ran.
     paths["staging"].mkdir(parents=True, exist_ok=True)
 
     run_date = as_of or date.today().isoformat()
@@ -503,78 +607,94 @@ def run_staging(root: Path, cfg: dict, *, desks=None, as_of=None,
     )
     max_regen = int(((cfg.get("quarantine") or {}).get("max_regenerations")) or 2)
 
-    pub_refs, pub_slugs = desk_planner.published_refs(root, cfg)
-    stg_refs, stg_slugs = desk_planner.staged_refs(root, cfg)
+    _pub_refs, pub_slugs = desk_planner.published_refs(root, cfg)
+    _stg_refs, stg_slugs = desk_planner.staged_refs(root, cfg)
     taken = desk_planner.taken_slugs(root) | pub_slugs | stg_slugs
-
-    summary = {"run_at": _now(), "as_of": run_date, "planned": len(slots),
-               "passed": 0, "quarantined": 0, "items": [],
-               "revision_reconciliation": revision_reconciliation}
-
-    for slot in slots:
-        attempts: list[dict] = []
-        prior: list[str] = []
-        passed_payload = None
-
-        for attempt in range(max_regen + 1):
-            res = writer.write(slot, cfg, state=state, attempt=attempt,
-                               prior_failures=prior or None)
-            if not res.get("ok"):
-                attempts.append({"attempt": attempt, "ok": False,
-                                 "reason": res.get("reason")})
-                if res.get("reason") in ("circuit_open", "token_budget_exhausted",
-                                         "no_provider", "llm_disabled"):
-                    break                       # a run-level stop, not a draft problem
-                prior = [f"writer: {res.get('reason')}"]
-                continue
-
-            draft = dict(res["draft"])
-            draft["slug"] = _unique_slug(draft.get("slug") or slot.get("slug_hint") or "",
-                                         slot, taken)
-            report = validators.validate(draft, slot, cfg, root=root)
-            attempts.append({"attempt": attempt, "ok": bool(report["ok"]),
-                             "failed": report["failed"],
-                             "our_value_share": report.get("our_value_share"),
-                             "max_block_jaccard": report.get("max_block_jaccard"),
-                             "provider": res.get("provider")})
-            if report["ok"]:
-                taken.add(draft["slug"])
-                passed_payload = (draft, report, res)
-                break
-            prior = [f"{c['name']}: {c['detail']}" for c in report["checks"] if not c["ok"]]
-
-        item = _stage_item(slot, passed_payload, attempts, run_date)
-        out = paths["staging"] / f"{slot['id']}.json"
-        out.write_text(json.dumps(item, ensure_ascii=False, indent=2, default=str) + "\n",
-                       encoding="utf-8")
-        summary["items"].append({"id": slot["id"], "desk": slot["desk"],
-                                 "status": item["status"],
-                                 "reason": item.get("quarantine_reason", "")})
-        if item["status"] == "passed":
-            summary["passed"] += 1
-        else:
-            summary["quarantined"] += 1
-            log.warning("press: slot %s quarantined — %s", slot["id"],
-                        item.get("quarantine_reason"))
-
-    summary["writer_state"] = state.snapshot()
-    (paths["staging"] / "_run_summary.json").write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2, default=str) + "\n",
-        encoding="utf-8")
-
-    _annotate("notice", "press_staging",
-              f"press staging: {summary['passed']} passed, "
-              f"{summary['quarantined']} quarantined of {summary['planned']} planned "
-              f"(tokens {state.tokens_used}/{state.token_budget})")
-    if summary["planned"] and not summary["passed"]:
-        _annotate("warning", "press_staging_empty",
-                  "press staging produced NO passing draft — every planned slot was "
-                  "quarantined or dropped. A thin day is legal; a permanently thin "
-                  "lane is a defect. Check data/press/staging/ for reasons.")
-    return summary
+    return _stage_preplanned_slots(
+        root,
+        cfg,
+        slots=slots,
+        staging_dir=paths["staging"],
+        run_date=run_date,
+        state=state,
+        max_regenerations=max_regen,
+        taken_slugs=taken,
+        revision_reconciliation=revision_reconciliation,
+    )
 
 
-def _stage_item(slot: dict, passed_payload, attempts: list[dict], run_date: str) -> dict:
+def run_admitted_earnings_staging(
+    root: Path,
+    cfg: dict,
+    *,
+    slot: dict,
+    admission_receipt: dict,
+    staging_dir: str | Path,
+) -> dict:
+    """Stage one preverified earnings candidate in an isolated directory.
+
+    This is intentionally not an approval verifier or an emit path.  The
+    caller must already have verified the immutable admission receipt.  We
+    retain it verbatim for provenance, make exactly one writer attempt, and
+    leave the existing generic staging tree untouched for ``run_emit``.
+    """
+    if not isinstance(slot, dict) or not slot:
+        raise ValueError("admitted earnings staging requires one preverified slot object")
+    if not isinstance(admission_receipt, dict) or not admission_receipt:
+        raise ValueError("admitted earnings staging requires one immutable admission receipt object")
+    slot_id = slot.get("id")
+    if (
+        not isinstance(slot_id, str)
+        or not slot_id
+        or Path(slot_id).name != slot_id
+    ):
+        raise ValueError("admitted earnings slot id must be a safe filename")
+
+    destination = Path(staging_dir)
+    generic_staging = _paths(cfg, root)["staging"]
+    resolved_destination = destination.resolve()
+    resolved_generic = generic_staging.resolve()
+    if (
+        resolved_destination == resolved_generic
+        or resolved_generic in resolved_destination.parents
+    ):
+        raise ValueError("admitted earnings staging must use a dedicated non-generic directory")
+
+    llm_cfg = (cfg.get("llm") or {})
+    configured_budget = _env_int(
+        "PRESS_RUN_TOKEN_BUDGET",
+        int(llm_cfg.get("run_token_budget") or 240_000),
+    )
+    state = writer.RunState(
+        token_budget=min(configured_budget, 12_000),
+        breaker_threshold=_env_int(
+            "PRESS_CIRCUIT_BREAKER_FAILURES",
+            int(llm_cfg.get("circuit_breaker_consecutive_failures") or 3),
+        ),
+    )
+    run_date = str(slot.get("as_of") or date.today().isoformat())
+    return _stage_preplanned_slots(
+        root,
+        cfg,
+        slots=[slot],
+        staging_dir=destination,
+        run_date=run_date,
+        state=state,
+        max_regenerations=0,
+        taken_slugs=set(),
+        admission_receipt=dict(admission_receipt),
+        single_provider_attempt=True,
+    )
+
+
+def _stage_item(
+    slot: dict,
+    passed_payload,
+    attempts: list[dict],
+    run_date: str,
+    *,
+    admission_receipt: dict | None = None,
+) -> dict:
     """One staging record — the whole audit trail for a slot, pass or fail."""
     base = {
         "id": slot["id"],
@@ -588,6 +708,8 @@ def _stage_item(slot: dict, passed_payload, attempts: list[dict], run_date: str)
         "slot": slot,
         "attempts": attempts,
     }
+    if admission_receipt is not None:
+        base["provenance"] = {"admission_receipt": dict(admission_receipt)}
     if passed_payload is None:
         # Explicit branches, not an `or` chain: `"validators: " + ""` is a
         # TRUTHY empty-list join, so the chained form could never reach its own

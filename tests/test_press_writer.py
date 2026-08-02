@@ -294,6 +294,50 @@ def test_a_successful_call_returns_a_draft_and_charges_the_budget(monkeypatch):
     assert st.tokens_used > 0 and st.consecutive_failures == 0
 
 
+def test_default_writer_keeps_the_provider_waterfall(monkeypatch):
+    """The admission cap must not silently degrade the ordinary Press lane."""
+    import engine.llm_auth as llm_auth
+
+    calls = {"first": 0, "second": 0}
+    provider_cfg = {}
+
+    class _Client:
+        def __init__(self, name):
+            self.name = name
+            self.messages = self
+
+        def create(self, **_kwargs):
+            calls[self.name] += 1
+            if self.name == "first":
+                raise ConnectionError("first provider unavailable")
+            from types import SimpleNamespace
+            return SimpleNamespace(
+                stop_reason=None,
+                content=[SimpleNamespace(type="text", text=_envelope())],
+            )
+
+    providers = [
+        {"name": "generic-first", "env_var": "GENERIC_FIRST", "cred": "one",
+         "client": _Client("first"), "model": "fake-model"},
+        {"name": "generic-second", "env_var": "GENERIC_SECOND", "cred": "two",
+         "client": _Client("second"), "model": "fake-model"},
+    ]
+
+    def _build(cfg, *, opus_model=None, **_kwargs):
+        provider_cfg.update(cfg)
+        assert opus_model == "fake-model"
+        return providers
+
+    monkeypatch.setattr(llm_auth, "build_providers", _build)
+    monkeypatch.setattr(W, "_model_id", lambda _key: "fake-model")
+
+    result = W.write(F.slot(), F.config(), state=W.RunState(token_budget=10**6))
+
+    assert result["ok"] is True
+    assert calls == {"first": 1, "second": 1}
+    assert "client_max_retries" not in provider_cfg
+
+
 def test_an_unparsable_response_is_a_failure_that_feeds_the_breaker(monkeypatch):
     import engine.llm_auth as llm_auth
 

@@ -398,11 +398,15 @@ def _model_id(model_key: str) -> str:
 
 
 def write(slot: dict, cfg: dict, *, state: RunState | None = None,
-          attempt: int = 0, prior_failures: list[str] | None = None) -> dict:
+          attempt: int = 0, prior_failures: list[str] | None = None,
+          single_provider_attempt: bool = False) -> dict:
     """Write one draft.  Returns {"ok", "draft"|None, "reason", "provider", ...}.
 
     Never raises.  Every failure path records against the RunState so the
-    circuit breaker and the budget see it.
+    circuit breaker and the budget see it.  The default preserves Press's
+    existing provider waterfall.  ``single_provider_attempt`` is reserved for
+    immutable one-candidate ingress: it disables SDK retries at construction
+    time and passes only the first currently usable provider to ``make_call``.
     """
     state = state or RunState(
         token_budget=int(((cfg.get("llm") or {}).get("run_token_budget")) or 240_000),
@@ -430,11 +434,23 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
         return _fail(state, f"no model id for llm_models.{model_key}")
 
     try:
+        provider_cfg = {"usage_lane": f"press-{slot.get('desk')}"}
+        if single_provider_attempt:
+            # A one-candidate admission must not hide repeat HTTP requests in
+            # an SDK retry loop before the explicit no-fallback filter below.
+            provider_cfg["client_max_retries"] = 0
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
-            {"usage_lane": f"press-{slot.get('desk')}"}, opus_model=model_id)
+            provider_cfg, opus_model=model_id)
     except Exception as exc:  # noqa: BLE001
         return _fail(state, f"provider construction failed: {exc}")
+
+    if single_provider_attempt:
+        # ``make_call`` normally walks the complete waterfall after auth,
+        # rate-limit, and transport failures.  Admission permits one real model
+        # attempt only, so give it the first descriptor it would actually call.
+        first = llm_auth.first_usable(providers)
+        providers = [first] if first is not None else []
 
     if not providers:
         # ARMED BUT MUTE — the writer is enabled and no credential is visible.
