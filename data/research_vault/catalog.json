@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T10:47:30.411899+00:00",
-  "count": 588,
+  "generated_at": "2026-08-02T11:02:32.691651+00:00",
+  "count": 589,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-3ejxooqfoi1-5a732f",
+      "title": "How fixed income investors can strengthen their core with flexible bond strategies 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:43:42Z",
+      "summary_points": [
+        "**Confluence of cycles & AI-driven volatility**: Monetary, credit, and fiscal cycles converge amid geopolitical uncertainty, with AI structurally increasing rate volatility and curve dispersion, forcing Fed \"fresh thinking\" (Kevin Warsh) without forward guidance.",
+        "**Fiscal/credit dispersion & strategic flexibility**: Widening government deficits and AI capex supercycle (S&P 500 capex to exceed 6% of GDP by 2027) disrupt credit cycles, rendering traditional benchmarks obsolete and demanding flexible fixed income strategies.",
+        "**China's AI threat to US tech dominance**: Moonshot AI's Kimi K3 narrowing the US model performance gap erodes US tech leadership, pressuring AI monetization post-heavy capex investment and altering competitive dynamics.",
+        "**Geopolitical & fiscal catalysts**: Iran conflict-driven oil spikes (Brent to $126) and rising defense spending (NATO/ROW) intensify fiscal competition, driving higher yields as central banks cease acting as reliable bond buyers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-fqhuk3cmaxu-e18cea",
       "title": "Euro Weekly Digest",
@@ -796,7 +816,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:07:48Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Institutional inflows surge**: $8.2bn single stock inflows (4th straight week) and record Industrials sector flows driven by Tech/Financials, with geopolitical uncertainty as key factor; institutional clients led total equity inflows of $9.27bn (Exhibits 12-13).",
+        "**Tech dominance & ETF preference**: Tech stocks/ETFs drove largest net inflows (1,372mn single stock inflow vs.",
+        "4wk avg -57mn), while Growth ETFs sustained inflows (2nd week) and Value ETFs outperformed Growth since 2017 (Exhibit 71).",
+        "**Sector rotation signals**: Sustained inflows in Financials (4th week), Tech (2nd), Utilities (6th in 7 weeks) vs.",
+        "persistent outflows in Staples (9th week), Energy (4th straight), and Materials (since June) (Exhibits 17, 63-66)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -811,7 +837,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:07:37Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Fed Credibility Test via July Jobs**: July jobs (Aug 7) and CPI (Aug 12) pivotal; soft data validates dovish stance but steepening yield curve on strong jobs/inflation risks credibility.",
+        "Markets question Fed’s hawkish stance despite expected 25bp hikes at Aug/Sept/Oct meetings.",
+        "**Core Inflation Persistence**: Core PCE inflation at 3.3% y/y (2026) remains above Fed’s 2% target, falling only to 2.2% by 2028.",
+        "Sticky core-services inflation (>2%) drives persistent rate risk for rate-sensitive assets.",
+        "**Labor Market Strength vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
