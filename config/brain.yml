@@ -81,6 +81,25 @@ lanes:
     # MASTERMIND_WEEKLY_CEILING_PCT.
     weekly_ceiling_pct: 95
 
+# ── Phase-2 token streaming (Contract S, W5 latency wave 2026-08-01) ──────────
+# The synthesis answer is forwarded to the widget AS IT IS WRITTEN instead of being
+# held back for one buffered delta.  Absent block, or any absent key, = the module
+# defaults in brain_gateway.py (_STREAM_FLUSH_CHARS / _STREAM_FLUSH_S /
+# _LEAK_HOLDBACK_CHARS); a malformed value falls back the same way.
+streaming:
+  # Flush once this many eligible characters have piled up.  Lower = smoother text and
+  # more SSE events per answer (an 8k answer runs ~70 deltas at 120; the run registry's
+  # RUN_EVENT_CAP is 4000 events, so this has ~50× of headroom).
+  flush_chars: 120
+  # …or this long since the last flush, whichever comes first.  This is what makes a
+  # slow token stream feel continuous rather than arriving in 120-char blocks.
+  flush_seconds: 0.35
+  # Trailing characters NEVER put on the wire mid-stream.  This is the leak screen's
+  # runway: a system-prompt echo lands inside this window and is caught there, before
+  # any of it can ship.  The loader floors this at the longest leak sentinel — lowering
+  # it below that would let a split echo out ahead of the scan that catches it.
+  leak_holdback_chars: 256
+
 # ── Per-tier request allowances (MNZ-R12: config-not-literals) ────────────────
 # Periods: week = ISO week (UTC), month = calendar month (UTC),
 #          trial = within current_period_end window when status='trialing'

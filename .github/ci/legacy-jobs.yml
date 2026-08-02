@@ -4107,7 +4107,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.

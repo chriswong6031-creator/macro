@@ -37,9 +37,10 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Generator, Iterable
+from typing import Any, Callable, Generator, Iterable
 
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
@@ -3864,7 +3865,13 @@ _SEED_ANALOGUE_TERMS: tuple[str, ...] = (
 
 _SEED_PLAN_LINE = (
     "\n\nTOOL PLAN for this question shape: start with {tools}; spend any remaining calls "
-    "only on what discriminates between your candidate explanations."
+    "only on what discriminates between your candidate explanations. "
+    # W5-T one-batch nudge: reads that do not depend on each other now run at the same
+    # time server-side, so asking for them together costs one round instead of three.
+    # Advisory, like the rest of this line — nothing caps or reorders what the model asks for.
+    "When several of those reads do not depend on each other, ask for them together in "
+    "one first response — they run side by side, so a batch costs no more wall-clock "
+    "than a single read."
 )
 
 
@@ -5231,6 +5238,273 @@ def _extract_citations_brain(
 
 
 # ---------------------------------------------------------------------------
+# Tool-loop economics (Analyst OS W5, contract T)
+# ---------------------------------------------------------------------------
+# Three levers, all shared by BOTH loops (_run_brain_loop and _run_brain_loop_stream)
+# so neither surface can drift from the other:
+#   1. one round's tool_use blocks execute CONCURRENTLY (the round used to be a
+#      sequential for-loop, so a get_watchlist + get_portfolio_brief + get_quote round
+#      paid three round-trips end to end);
+#   2. render_inline_chart's model-visible tool_result is a compact stub (the SVG rides
+#      the client `chart` event, not the model's context window);
+#   3. the per-turn messages array carries one cache breakpoint so rounds 2+ read the
+#      prefix from cache.
+
+_TOOL_PARALLEL_MAX_WORKERS = 6
+
+# INLINE-ONLY denylist — these run on the calling thread, in block order, never on a
+# worker. The audit behind it (every handler _dispatch_brain_tool can reach):
+#   * set_chat_preference is the only tool that WRITES anywhere (Supabase user_metadata
+#     via lib.user_prefs). A remote read-modify-write has no lock to hold, and two
+#     concurrent patches of the same record can lose one silently — the one outcome
+#     worse than a slow save.
+#   * the chart command/state tools (_CHART_COMMAND_TOOLS + read_chart_state) are the
+#     Terminal's command channel: a drawing scene is an ORDERED sequence
+#     (scene.begin → draw.* → scene.end) and read_chart_state does a read-modify-write
+#     on _chart_state_store (expiry prune). That store IS _chart_state_lock-guarded, so
+#     this is belt-and-braces, not a correctness fix — and these handlers are pure
+#     sub-millisecond validators, so inlining them costs nothing measurable.
+# Everything else was audited as parallel-safe: the shared structures they touch are
+# either lock-guarded (_TIER_CACHE, brain_user_memory._CACHE, brain_curve/_analogues
+# caches, _chart_state_store) or idempotent check-then-set memoisation whose worst case
+# is duplicate compute (_BRAIN_CONFIG_CACHE, _GUEST_CFG_CACHE,
+# brain_user_memory._STANCE_MATCHERS, functools.lru_cache — itself thread-safe). The
+# cortex/ask_brain read tools are pure filesystem reads with no module-level mutation.
+# The remaining hazard is first-time LAZY IMPORTS racing inside worker threads; CPython
+# serialises those per module, and _run_tool_block's catch-all turns any residual
+# import hiccup into ONE tool's error result instead of a dead turn.
+_INLINE_ONLY_TOOLS = frozenset(
+    {"set_chat_preference", "read_chart_state"} | set(_CHART_COMMAND_TOOLS)
+)
+
+
+def _run_tool_blocks(
+    blocks: list, run_one: Callable[[Any], dict],
+) -> list[dict]:
+    """Execute one round's tool_use *blocks*, returning results in BLOCK order.
+
+    Concurrency is an optimisation with two hard invariants:
+
+    * **Order.** The returned list is indexed by the block's position in
+      ``resp.content``, never by completion order — the Anthropic contract pairs
+      tool_result to tool_use by id, but the model reads the results in the order they
+      arrive and the chart/command SSE emitters key off the same sequence.
+    * **Isolation.** ``run_one`` never raises (see :func:`_run_tool_block`), so one
+      exploding tool yields its own error payload and its siblings still land.
+
+    A single-block round (the common case) is called INLINE — an executor for one
+    sub-100ms local read is pure overhead. Denylisted tools (:data:`_INLINE_ONLY_TOOLS`)
+    always run on the calling thread, interleaved in block order with the workers.
+    """
+    n = len(blocks)
+    if n == 0:
+        return []
+    parallel = [
+        i for i, b in enumerate(blocks)
+        if str(getattr(b, "name", "") or "") not in _INLINE_ONLY_TOOLS
+    ]
+    if len(parallel) < 2:
+        # Nothing to overlap — one worker would only add thread setup to the round.
+        return [run_one(b) for b in blocks]
+
+    results: list[Any] = [None] * n
+    parallel_set = set(parallel)
+    with ThreadPoolExecutor(
+        max_workers=min(_TOOL_PARALLEL_MAX_WORKERS, len(parallel)),
+        thread_name_prefix="brain-tool",
+    ) as pool:
+        futures = {i: pool.submit(run_one, blocks[i]) for i in parallel}
+        # Denylisted tools run HERE, on this thread, while the workers are in flight.
+        for i, block in enumerate(blocks):
+            if i not in parallel_set:
+                results[i] = run_one(block)
+        for i, fut in futures.items():
+            try:
+                results[i] = fut.result()
+            except Exception as exc:  # noqa: BLE001 — a worker must never kill the turn
+                results[i] = _tool_failure_result(
+                    str(getattr(blocks[i], "name", "") or ""), exc)
+    return results
+
+
+def _tool_failure_result(tool_name: str, exc: BaseException) -> dict:
+    """The error payload a tool that RAISED hands to the model.
+
+    Before parallel rounds existed an uncaught handler exception killed the whole turn
+    (it propagated out of the round's for-loop). Naming the failure as this tool's
+    result keeps the sibling reads — and the answer — alive, and the model can route
+    around one dead tool exactly as it already routes around ``{"error": …}``.
+    """
+    log.warning("brain_gateway: tool %r raised (%s: %s)",
+                tool_name, type(exc).__name__, exc)
+    return {"error": f"tool {tool_name or 'unknown'} failed: {type(exc).__name__}: {exc}"}
+
+
+def _run_tool_block(block: Any, dispatch: Callable[[str, dict], dict]) -> dict:
+    """Run ONE tool_use block through *dispatch*, never raising.
+
+    The catch-all is deliberately the same on the inline and the threaded path: a
+    1-tool round and a 3-tool round must fail identically, or the batch size silently
+    decides whether a broken tool costs one result or the whole turn.
+
+    Scoped to ``Exception`` on purpose — an interpreter-level ``BaseException``
+    (KeyboardInterrupt, SystemExit) is not a tool failure and must still unwind.
+    """
+    tool_name = str(getattr(block, "name", "") or "")
+    try:
+        return dispatch(tool_name, getattr(block, "input", None) or {})
+    except Exception as exc:  # noqa: BLE001
+        return _tool_failure_result(tool_name, exc)
+
+
+# The SVG a render_inline_chart round produces is up to 60KB (~15k tokens) of markup the
+# model cannot act on — and json.dumps put it in the tool_result VERBATIM, so every
+# later round re-read it. The picture already reaches the user by its own channel (the
+# `chart` SSE event on the stream path, the `charts` list on chat()), so the model gets
+# a receipt instead. Model-visible ONLY: the collectors/emitters keep reading the full
+# result dict.
+_CHART_STUB_NOTE = "chart drawn for the user; do not describe the SVG"
+
+# Keys the stub owns or deliberately drops (loop-internal plumbing the model never used).
+_CHART_STUB_DROP = frozenset(
+    {"svg", "ok", "rendered", "ticker", "timeframe", "note", "client_executed", "type"}
+)
+
+
+def _model_visible_tool_result(tool_name: str, result: Any) -> Any:
+    """The tool result as the MODEL sees it — identical to *result* except for the
+    render_inline_chart SVG fence.
+
+    An error result (no ``svg`` key — e.g. ``{"error": "symbol required"}``) passes
+    through untouched: the model must still see why the draw failed.
+    """
+    if tool_name != "render_inline_chart" or not isinstance(result, dict):
+        return result
+    if "svg" not in result:
+        return result
+    svg = result.get("svg") or ""
+    rendered = bool(svg)
+    stub: dict = {
+        "ok": True,                      # the TOOL ran; `rendered` says whether it drew
+        "rendered": rendered,
+        "ticker": result.get("ticker", ""),
+        "timeframe": result.get("timeframe", "DAILY"),
+        "note": (_CHART_STUB_NOTE if rendered
+                 else (result.get("note")
+                       or f"chart unavailable for {result.get('ticker', '')}")),
+    }
+    # Carry through any small scalar summary the handler computes alongside the picture
+    # (it has none today; this keeps a future one from silently vanishing behind the
+    # fence). Anything large or nested stays out — that is what the fence is for.
+    for key, val in result.items():
+        if key in _CHART_STUB_DROP:
+            continue
+        if val is None or isinstance(val, (bool, int, float)):
+            stub[key] = val
+        elif isinstance(val, str) and len(val) <= 200:
+            stub[key] = val
+    return stub
+
+
+def _cache_control_last_message(messages: list[dict]) -> None:
+    """Stamp ONE ephemeral cache breakpoint on the last content block of the LAST
+    message, in place — call it once, after history + grounding + question are
+    assembled and BEFORE round 1.
+
+    System and tools already carry their own breakpoints (:func:`_cache_control_system`,
+    :func:`_cache_control_tools`); this third one closes the last uncached prefix, the
+    messages array, whose grounding digest + question are byte-identical for every round
+    of the turn and were being re-sent whole each time. Three breakpoints total, inside
+    the provider's limit of four.
+
+    A str content becomes a one-element text block list — the same wire shape the vision
+    path already sends. Later rounds append their own messages (assistant turns,
+    tool_result batches) AFTER this one, so they inherit the cached prefix and must NOT
+    be stamped themselves; nothing here touches them.
+    """
+    if not messages:
+        return
+    last = messages[-1]
+    if not isinstance(last, dict):
+        return
+    content = last.get("content")
+    if isinstance(content, str):
+        if not content:
+            return
+        last["content"] = [
+            {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
+        ]
+        return
+    if isinstance(content, list) and content and isinstance(content[-1], dict):
+        # Copy the block rather than mutate it: image blocks are caller-owned.
+        content[-1] = {**content[-1], "cache_control": {"type": "ephemeral"}}
+
+
+# ---------------------------------------------------------------------------
+# Turn latency instrumentation (W5 Contract M)
+# ---------------------------------------------------------------------------
+# One dict per turn, filled in place by whichever loop serves it and shipped on the
+# `done` event as usage.latency (plus the response-log row's `latency` key). It exists
+# because "Mastermind feels slow" was an argument until the teardown measured it: 0.8s
+# to headers, then 48-73s of blocking tool rounds before a single answer byte
+# (research/DEEPVUE_COMPETITIVE_TEARDOWN_AND_MASTERMIND_BUILD_DOCKET_2026-08-01.md §6.7).
+# Every number here is a time.monotonic() diff measured from the loop's own t0 — no new
+# dependency, no I/O, and nothing on this path may ever raise into the turn.
+#
+#   route        'instant' | 'deep'  — which lane served the turn
+#   ttfv_ms      time to FIRST visible answer byte (the first `delta` yield); None on
+#                the non-streaming entrypoint, which has no wire to be first on
+#   rounds       [{"model_ms": int, "tools": [{"name": str, "ms": int}]}] — one per
+#                Phase-1 model round, in order
+#   synthesis_ms the Phase-2 synthesis pass (None when the turn needed none)
+#   total_ms     loop start → `done`
+
+def _new_turn_timing(route: str) -> dict:
+    """A fresh per-turn latency record. See the section note for the key contract."""
+    return {"route": str(route or "deep"), "ttfv_ms": None, "rounds": [],
+            "synthesis_ms": None, "total_ms": None}
+
+
+def _ms_since(t0: float) -> int:
+    """Whole milliseconds since a time.monotonic() mark."""
+    return int((time.monotonic() - t0) * 1000)
+
+
+def _timing_stamp(timing: dict | None, key: str, t0: float) -> None:
+    """Set `key` to the ms elapsed since t0. No-op on a non-dict."""
+    if isinstance(timing, dict):
+        timing[key] = _ms_since(t0)
+
+
+def _timing_stamp_once(timing: dict | None, key: str, t0: float) -> None:
+    """Stamp `key` only the FIRST time it is asked for.
+
+    This is what makes ttfv_ms survive a change in how many `delta` events a turn
+    emits: every delta yield site calls it, and only the first one lands."""
+    if isinstance(timing, dict) and timing.get(key) is None:
+        timing[key] = _ms_since(t0)
+
+
+def _timing_round(timing: dict | None, model_ms: int, tools: list[dict] | None = None) -> None:
+    """Append one Phase-1 round record."""
+    if isinstance(timing, dict) and isinstance(timing.get("rounds"), list):
+        timing["rounds"].append({"model_ms": int(model_ms),
+                                 "tools": list(tools or [])})
+
+
+def _delta_sse(text: str, timing: dict | None = None, t0: float | None = None) -> str:
+    """Build ONE `delta` SSE line, stamping ttfv_ms the first time one is built.
+
+    Every instrumented delta in this module is built here, so a change in how many
+    deltas a turn emits cannot silently break time-to-first-visible-byte: the stamp is
+    a once-only guard attached to the construction of a delta, not to today's single
+    emit site."""
+    if timing is not None and t0 is not None:
+        _timing_stamp_once(timing, "ttfv_ms", t0)
+    return f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+
+
+# ---------------------------------------------------------------------------
 # Core chat loop (non-streaming)
 # ---------------------------------------------------------------------------
 
@@ -5261,9 +5535,14 @@ def _run_brain_loop(
     annotations: list of annotate_chart payloads accumulated during the loop.
     commands: list of chart-command payloads accumulated during the loop (W6b).
     charts: list of render_inline_chart payloads (type, ticker, timeframe, svg) (W6c).
-    usage_dict: {input_tokens, output_tokens} from the final response.
+    usage_dict: {input_tokens, output_tokens} from the final response, PLUS a `latency`
+                key carrying this turn's `_new_turn_timing` record (W5 Contract M). It
+                rides the usage dict rather than a new return slot so the 7-tuple arity
+                every caller and test mock already depends on is untouched.
     user_email: Supabase-verified email for CXI-R23a internals gating (never from body).
     """
+    _lt0 = time.monotonic()               # loop-local latency clock (W5 Contract M)
+    timing = _new_turn_timing("deep")
     annotations: list[dict] = []
     commands: list[dict] = []
     charts: list[dict] = []
@@ -5360,6 +5639,8 @@ def _run_brain_loop(
     # History (up to 12 prior turns) + current message
     messages: list[dict] = _filter_history(history[-24:])   # cap 12 turns = 24 messages
     messages.append({"role": "user", "content": turn_content})
+    # W5-T: rounds 2+ reuse this whole prefix from cache (see the helper's note).
+    _cache_control_last_message(messages)
 
     answer_text = ""
     tool_call_count = 0
@@ -5374,6 +5655,8 @@ def _run_brain_loop(
     tools_param = _cache_control_tools(tool_schemas)
 
     while tool_call_count < tool_budget:
+        _round_t0 = time.monotonic()
+        _round_tools: list[dict] = []
         try:
             resp, model = _create_failover(
                 _cands,
@@ -5385,9 +5668,11 @@ def _run_brain_loop(
             )
         except Exception as exc:  # noqa: BLE001
             log.warning("brain_gateway: model call failed at turn %d: %s", tool_call_count, exc)
+            _timing_round(timing, _ms_since(_round_t0), _round_tools)
             if not answer_text:
                 raise
             break
+        _round_model_ms = _ms_since(_round_t0)
 
         last_resp = resp
         messages.append({"role": "assistant", "content": resp.content})
@@ -5398,19 +5683,41 @@ def _run_brain_loop(
 
         stop_reason = getattr(resp, "stop_reason", None)
         if stop_reason == "end_turn":
+            _timing_round(timing, _round_model_ms, _round_tools)
             break
         if stop_reason != "tool_use":
+            _timing_round(timing, _round_model_ms, _round_tools)
             break
 
         tool_results = []
-        for block in resp.content:
-            if getattr(block, "type", "") != "tool_use":
-                continue
-            tool_name = block.name
-            tool_params = block.input or {}
-            tool_id = block.id
+        tool_blocks = [b for b in resp.content if getattr(b, "type", "") == "tool_use"]
+        # W5-T: one round's independent reads overlap; results come back in BLOCK order.
+        # W5-M: per-tool wall clock is measured INSIDE each worker (keyed by block id so
+        # concurrent completion order cannot scramble the block-ordered record).
+        _tools_ms_by_id: dict[str, dict] = {}
 
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
+        def _timed_block(b):
+            _t = time.monotonic()
+            _res = _run_tool_block(
+                b,
+                lambda name, params: _dispatch_brain_tool(
+                    name, params, root, terminal_data_dir, terminal_hub_url,
+                    user_id=user_id, internals_ok=internals_ok,
+                    chart_client=("terminal" if safe_page == "terminal" else ""),
+                ),
+            )
+            _tools_ms_by_id[str(getattr(b, "id", ""))] = {
+                "name": str(getattr(b, "name", "")), "ms": _ms_since(_t)}
+            return _res
+
+        round_results = _run_tool_blocks(tool_blocks, _timed_block)
+        _round_tools.extend(
+            _tools_ms_by_id.get(str(getattr(b, "id", "")),
+                                {"name": str(getattr(b, "name", "")), "ms": 0})
+            for b in tool_blocks)
+        for block, result in zip(tool_blocks, round_results):
+            tool_name = block.name
+            tool_id = block.id
 
             # Collect annotate_chart payloads for the response
             if tool_name == "annotate_chart" and result.get("client_executed"):
@@ -5420,7 +5727,8 @@ def _run_brain_loop(
             if tool_name in _CHART_COMMAND_TOOLS and result.get("client_executed"):
                 commands.append(result)
 
-            # Collect inline chart payloads (W6c)
+            # Collect inline chart payloads (W6c) — the CLIENT keeps the whole picture;
+            # only the model-visible tool_result below is fenced down to a stub.
             if tool_name == "render_inline_chart" and result.get("client_executed"):
                 charts.append({
                     "type": "chart",
@@ -5432,9 +5740,12 @@ def _run_brain_loop(
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(_json_safe(result), default=str),
+                "content": json.dumps(
+                    _json_safe(_model_visible_tool_result(tool_name, result)),
+                    default=str),
             })
 
+        _timing_round(timing, _round_model_ms, _round_tools)
         tool_call_count += 1
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
@@ -5444,6 +5755,7 @@ def _run_brain_loop(
     # text block is narration ("Let me also check…"), not an answer. Nudge ONE final
     # no-more-tools synthesis turn so chat() returns a real answer.
     if last_resp is not None and getattr(last_resp, "stop_reason", None) == "tool_use":
+        _synth_t0 = time.monotonic()
         messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
         try:
             resp, model = _create_failover(
@@ -5461,6 +5773,7 @@ def _run_brain_loop(
                     answer_text = block.text
         except Exception as exc:  # noqa: BLE001
             log.warning("brain_gateway: synthesis pass failed (%s) — keeping last text", exc)
+        _timing_stamp(timing, "synthesis_ms", _synth_t0)
 
     # Extract usage from the final response (fix #1: never zeros)
     usage_dict: dict = {}
@@ -5476,6 +5789,10 @@ def _run_brain_loop(
                 val = getattr(u, field, None)
                 if val is not None:
                     usage_dict[field] = val
+
+    # W5 Contract M: the turn's latency record rides the usage dict (see the docstring).
+    _timing_stamp(timing, "total_ms", _lt0)
+    usage_dict["latency"] = timing
 
     return (
         answer_text,
@@ -5595,6 +5912,105 @@ _TERMINAL_TOOL_BUDGET_FLOOR = 12
 # Minimum gap between `writing` beats during Phase-2 accumulation.
 _WRITING_BEAT_S = 1.5
 
+# ── Contract S: true token streaming (W5 latency wave, operator 2026-08-01) ──────────
+# Phase-2 synthesis forwards display text AS IT IS WRITTEN instead of holding the whole
+# answer back for one buffered delta (SPEC §D's buffered-delta law is superseded — see
+# the 2026-08-01 amendment in research/mastermind_transparency_latency/SPEC.md).  The
+# advice filter that law protected is a documented no-op; the leak screen that still
+# matters keeps its authority through the holdback below plus the `retract` event.
+#
+#   _STREAM_FLUSH_CHARS  flush once this much eligible text has piled up …
+#   _STREAM_FLUSH_S      … or once this long has passed since the last flush.
+#   _LEAK_HOLDBACK_CHARS trailing characters that are NEVER emitted mid-stream.  This is
+#                        the runway the sentinel scan needs: a system-prompt echo lands in
+#                        the holdback zone and is caught there, so no part of it can reach
+#                        the wire.  It must stay comfortably above the longest sentinel
+#                        (_MAX_SENTINEL_LEN, currently 50) — _stream_flush_cfg enforces
+#                        that floor even if the operator configures a smaller value.
+# All three are overridable from the `streaming:` block of config/brain.yml (absent → these).
+_STREAM_FLUSH_CHARS = 120
+_STREAM_FLUSH_S = 0.35
+_LEAK_HOLDBACK_CHARS = 256
+
+# The suggestions marker _split_suggestions() recognises: a line that is EXACTLY this
+# after stripping. Streaming must never put a fragment of it on the wire.
+_NEXT_MARKER = "[NEXT]"
+
+
+def _stream_flush_cfg(root: Path | None = None) -> tuple[int, float, int]:
+    """(flush_chars, flush_seconds, leak_holdback_chars) for Phase-2 streaming.
+
+    Reads the optional `streaming:` block of config/brain.yml (MNZ-R12 config-not-literals)
+    and falls back to the module constants for any absent or unparseable key.  Never
+    raises — a malformed config must never break a turn, only lose the override.
+    """
+    chars, secs, hold = _STREAM_FLUSH_CHARS, _STREAM_FLUSH_S, _LEAK_HOLDBACK_CHARS
+    try:
+        blk = (_load_brain_config(root) or {}).get("streaming") or {}
+        if isinstance(blk, dict):
+            chars = max(1, int(blk.get("flush_chars", chars)))
+            secs = max(0.0, float(blk.get("flush_seconds", secs)))
+            hold = max(0, int(blk.get("leak_holdback_chars", hold)))
+    except Exception:  # noqa: BLE001 — bad config → defaults, never a dead turn
+        return _STREAM_FLUSH_CHARS, _STREAM_FLUSH_S, _LEAK_HOLDBACK_CHARS
+    # Floor, not a suggestion: a holdback shorter than the longest sentinel would let a
+    # split prompt echo ship before the scan that catches it ever sees the whole string.
+    return chars, secs, max(hold, _MAX_SENTINEL_LEN)
+
+
+def _trim_ws_end(body: str, cut: int) -> int:
+    """Walk `cut` back off trailing whitespace.  _split_suggestions rstrips its clean
+    text, so a streamed prefix that ends in a newline would stop being a prefix of the
+    final answer — and the finalize reconciliation would retract a perfectly good reply."""
+    while cut > 0 and body[cut - 1].isspace():
+        cut -= 1
+    return cut
+
+
+def _stream_display_cut(body: str, hold: int) -> tuple[int, bool]:
+    """How much of a partially-written answer is safe to put on the wire.
+
+    Returns `(cut, sealed)`: `body[:cut]` may be emitted as display text, and `sealed` is
+    True once a COMPLETE line equal to the `[NEXT]` marker has been written — after that
+    no further display text may stream, because everything from there on is suggestions
+    material that `_split_suggestions` owns at finalize.
+
+    Three holdbacks, applied in order:
+      1. the marker line itself — cut at its start and seal;
+      2. the last `hold` characters are never eligible (the leak screen's runway);
+      3. a trailing PARTIAL line that could still GROW into the marker (`" [NE"`) is held
+         whole.  That is what stops a `[NEXT]` split across two SDK chunks from putting a
+         `[NE` on the wire: any prefix of `<ws>[NEXT]<ws>` strips to a prefix of `[NEXT]`.
+    """
+    if not body:
+        return 0, False
+    pos = 0                                   # start of the trailing (incomplete) line
+    nl = body.find("\n")
+    while nl >= 0:                            # COMPLETE lines only — the tail has no \n
+        if body[pos:nl].strip() == _NEXT_MARKER:
+            return _trim_ws_end(body, pos), True
+        pos = nl + 1
+        nl = body.find("\n", pos)
+    limit = len(body) - hold
+    if _NEXT_MARKER.startswith(body[pos:].strip()):
+        limit = min(limit, pos)               # the partial line may still become a marker
+    return _trim_ws_end(body, max(0, min(limit, len(body)))), False
+
+
+def _leak_hit(text: str, start: int = 0) -> bool:
+    """True when a system-prompt sentinel appears in `text[start:]`.
+
+    `start` lets a streaming caller re-scan only the new tail.  Callers MUST back it up by
+    `_MAX_SENTINEL_LEN - 1` so a sentinel split across two SDK chunks is still seen whole;
+    with that overlap the windowed scan is exactly equivalent to re-scanning the full
+    answer on every chunk, at O(n) instead of O(n²) (a 60k-char answer would otherwise
+    cost hundreds of millions of character comparisons).
+    """
+    if not text:
+        return False
+    window = text[max(0, start):]
+    return any(sentinel in window for sentinel in _LEAK_SENTINELS)
+
 
 def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
                   detail: str = "", n: int | None = None) -> str:
@@ -5705,13 +6121,27 @@ def _run_brain_loop_stream(
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) → delta →
-    suggest (0/1, W6d) → done (last).
-    `status` events are ADDITIVE reasoning transparency (the answer is buffered, so they
-    are the only progress the user sees); their copy comes from _STAGE_LABELS/_TOOL_LABELS
-    and costs no network or file I/O — see the leak note above those tables.
-    Filter must run on full answer before any delta bytes are emitted (same constraint
-    as ask_brain: advice cannot be un-sent once on the wire).
+    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) →
+    delta+ (1 or more, W5) → retract (0/1) → suggest (0/1, W6d) → done (last).
+    `status` events are ADDITIVE reasoning transparency; their copy comes from
+    _STAGE_LABELS/_TOOL_LABELS and costs no network or file I/O — see the leak note above
+    those tables.
+
+    W5 / Contract S — TRUE TOKEN STREAMING (operator 2026-08-01, Deepvue docket §6.6/§6.8;
+    SPEC §D's buffered-single-delta law is superseded by the amendment dated there).
+    Phase-2 synthesis emits display text as it is written, under three guards:
+      * a `_LEAK_HOLDBACK_CHARS` tail is never emitted, and every chunk is swept for
+        system-prompt sentinels BEFORE the flush decision, so an echo is caught while it
+        is still server-side (_leak_hit / _stream_display_cut);
+      * a trailing line that could still become the `[NEXT]` marker is held whole, and
+        once the marker lands display text stops for good;
+      * the FULL pipeline (citations → advice filter → _leak_screen → _split_suggestions)
+        still runs on the complete answer at the end and remains the authority. When it
+        disagrees with what streamed, a `retract` event replaces the text wholesale.
+    The advice filter this used to buffer for is a documented no-op
+    (ask_brain._post_filter_advice); the leak screen keeps its teeth through the holdback
+    plus `retract`. Nothing changes for the non-streaming chat(), /api/ask, or a provider
+    whose text_stream yields once (one chunk → one delta, exactly as before).
     usage_out: optional single-element list; if provided, usage_dict is placed in [0]
                after streaming completes (fix #1: lets caller access real token counts).
     answer_out: optional single-element list; if provided, the filtered assistant answer
@@ -5731,6 +6161,28 @@ def _run_brain_loop_stream(
     from engine.neuralweb.ask_brain import _post_filter_advice  # noqa: PLC0415
 
     _t0 = time.monotonic()  # loop-local clock for status elapsed_ms
+
+    # W5 Contract M: per-turn latency record, shipped on `done` as usage.latency.
+    timing = _new_turn_timing("deep")
+
+    def _delta_event(text: str) -> str:
+        """One `delta` SSE line for this turn — see _delta_sse. EVERY delta yield in
+        this generator goes through here, so splitting the buffered answer into many
+        deltas keeps a correct ttfv_ms for free."""
+        return _delta_sse(text, timing, _t0)
+
+    def _done_event(**fields) -> str:
+        """One `done` SSE line with the turn's route + latency already attached.
+
+        The usage dict is mutated in place (not copied) so the caller's `usage_out`
+        side-channel carries the same latency record into the response log."""
+        _timing_stamp(timing, "total_ms", _t0)
+        usage = fields.pop("usage", None)
+        if not isinstance(usage, dict):
+            usage = {}
+        usage["latency"] = timing
+        return "data: " + json.dumps({"type": "done", "route": timing["route"],
+                                      "usage": usage, **fields}) + "\n\n"
 
     # Emit meta first (always)
     yield f"data: {json.dumps(meta_event)}\n\n"
@@ -5827,6 +6279,8 @@ def _run_brain_loop_stream(
 
     messages: list[dict] = _filter_history_stream(history[-24:])
     messages.append({"role": "user", "content": turn_content})
+    # W5-T: rounds 2+ reuse this whole prefix from cache (see the helper's note).
+    _cache_control_last_message(messages)
 
     tool_call_count = 0
     last_resp_content: list = []
@@ -5849,6 +6303,8 @@ def _run_brain_loop_stream(
     while tool_call_count < tool_budget:
         yield _status_event("model", _t0, _model_stage_label(lane, tool_call_count + 1),
                             n=tool_call_count + 1)
+        _round_t0 = time.monotonic()
+        _round_tools: list[dict] = []
         try:
             resp, model = _create_failover(
                 _cands,
@@ -5860,9 +6316,12 @@ def _run_brain_loop_stream(
             )
         except Exception as exc:  # noqa: BLE001
             log.warning("brain_gateway: stream tool-turn failed: %s", exc)
-            yield f"data: {json.dumps({'type': 'delta', 'text': _DEGRADED_USER_MSG})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': meta_event.get('quota', {}), 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
+            _timing_round(timing, _ms_since(_round_t0), _round_tools)
+            yield _delta_event(_DEGRADED_USER_MSG)
+            yield _done_event(citations=[], quota=meta_event.get("quota", {}), usage={},
+                              filtered=False, degraded=True, is_context_only=True)
             return
+        _round_model_ms = _ms_since(_round_t0)
 
         messages.append({"role": "assistant", "content": resp.content})
         last_resp_content = resp.content
@@ -5872,22 +6331,50 @@ def _run_brain_loop_stream(
         stop_reason = getattr(resp, "stop_reason", None)
 
         if stop_reason == "end_turn":
+            _timing_round(timing, _round_model_ms, _round_tools)
             break
         if stop_reason != "tool_use":
+            _timing_round(timing, _round_model_ms, _round_tools)
             break
 
         tool_results = []
-        for block in resp.content:
-            if getattr(block, "type", "") != "tool_use":
-                continue
+        tool_blocks = [b for b in resp.content if getattr(b, "type", "") == "tool_use"]
+
+        # Emit tool progress events for the WHOLE round up front (name kept for the
+        # deployed widget; labels added). They used to interleave with execution; now
+        # the round's reads genuinely start together, so announcing them together is the
+        # honest narration — and it keeps every event of the round in block order.
+        for block in tool_blocks:
+            yield _tool_event(block.name, block.input or {})
+
+        # W5-T: one round's independent reads overlap; results come back in BLOCK order.
+        # W5-M: per-tool wall clock measured INSIDE each worker (keyed by block id so
+        # concurrent completion order cannot scramble the block-ordered record).
+        _tools_ms_by_id: dict[str, dict] = {}
+
+        def _timed_block(b):
+            _t = time.monotonic()
+            _res = _run_tool_block(
+                b,
+                lambda name, params: _dispatch_brain_tool(
+                    name, params, root, terminal_data_dir, terminal_hub_url,
+                    user_id=user_id, internals_ok=internals_ok,
+                    chart_client=("terminal" if safe_page == "terminal" else ""),
+                ),
+            )
+            _tools_ms_by_id[str(getattr(b, "id", ""))] = {
+                "name": str(getattr(b, "name", "")), "ms": _ms_since(_t)}
+            return _res
+
+        round_results = _run_tool_blocks(tool_blocks, _timed_block)
+        _round_tools.extend(
+            _tools_ms_by_id.get(str(getattr(b, "id", "")),
+                                {"name": str(getattr(b, "name", "")), "ms": 0})
+            for b in tool_blocks)
+
+        for block, result in zip(tool_blocks, round_results):
             tool_name = block.name
-            tool_params = block.input or {}
             tool_id = block.id
-
-            # Emit tool progress event (name kept for the deployed widget; labels added)
-            yield _tool_event(tool_name, tool_params)
-
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
             if tool_name == "annotate_chart" and result.get("client_executed"):
                 annotations.append(result)
@@ -5916,12 +6403,16 @@ def _run_brain_loop_stream(
                 # ignores an svg-less chart event (it tests `j.svg`), so this is additive.
                 yield f"data: {json.dumps(chart_payload)}\n\n"
 
+            # The CLIENT event above keeps the whole picture; the model gets a receipt.
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(_json_safe(result), default=str),
+                "content": json.dumps(
+                    _json_safe(_model_visible_tool_result(tool_name, result)),
+                    default=str),
             })
 
+        _timing_round(timing, _round_model_ms, _round_tools)
         tool_call_count += 1
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
@@ -5931,18 +6422,30 @@ def _run_brain_loop_stream(
     # Phase 2: synthesize final answer
     last_stop = getattr(resp, "stop_reason", None) if resp is not None else None
 
-    # Buffer the full answer before emitting (post-filter must run on complete text)
+    # Accumulate the full answer; Contract S streams the SAFE prefix of it as it grows
+    # (see _stream_display_cut) and reconciles whatever is left at finalize.
     full_answer = ""
     usage_dict: dict = {}
     _synth_stop: str | None = None   # synthesis stop_reason, for the degraded-stub log
 
+    # ── Contract S streaming state (survives a Phase-2 failover) ─────────────────────
+    _flush_chars, _flush_s, _hold = _stream_flush_cfg(root)
+    # `_emitted` is what the CLIENT currently holds — the single source of truth for the
+    # reconciliation below. The server-side buffer restarts on failover; this does not,
+    # which is how a dead candidate's half-written draft gets taken back off the screen.
+    _emitted = ""
+    _leak_tripped = False   # a sentinel was caught mid-stream → stop reading the model
+    _retracted = False      # a `retract` REPLACED text (screen/filter), not a wipe-and-retry
+
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
+        _synth_t0 = time.monotonic()
         messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
         yield _status_event("synthesis", _t0, _STAGE_LABELS["synthesis"])
-        # Stream with OAuth-token failover: the answer is buffered server-side (emitted
-        # as one delta below), so a candidate that 429s on open is retried from scratch
-        # with a fresh buffer — no partial/duplicated text reaches the client.
+        # Stream with OAuth-token failover. Text now goes out as it is written, so a
+        # candidate that dies MID-BODY cannot simply restart with a fresh buffer the way
+        # it used to — anything it already put on screen is taken back with an explicit
+        # `retract` before the next candidate writes a character (see the except branch).
         _last_err: Exception | None = None
         _n_shown = 0  # progress floor across candidates: a failover restarts the buffer,
         #               but the visible count must never run backwards (review MINOR-3)
@@ -5951,9 +6454,14 @@ def _run_brain_loop_stream(
             if _cl is None:
                 continue
             full_answer = ""
-            # Writing beats are throttled and carry only a character count — the text
-            # stays buffered until the advice filter has run on ALL of it.
+            _emit_len = 0    # cursor into THIS candidate's full_answer
+            _scan_len = 0    # how much of it the sentinel scan has already covered
+            _chunks = 0      # SDK chunks seen — the first one never flushes (see below)
+            _sealed = False  # a [NEXT] marker line has been written — display text is over
+            # Writing beats mark the THINKING gap: they speak only while no text is
+            # flowing, so the answer's own bytes replace them the moment they arrive.
             _beat_at = time.monotonic()
+            _flush_at = _beat_at
             try:
                 with _cl.messages.stream(
                     model=_p.get("model"),
@@ -5969,11 +6477,63 @@ def _run_brain_loop_stream(
                 ) as s:
                     for chunk in s.text_stream:
                         full_answer += chunk
-                        if time.monotonic() - _beat_at >= _WRITING_BEAT_S:
-                            _beat_at = time.monotonic()
+                        _chunks += 1
+                        # LEAK SCREEN FIRST, on every chunk, before any flush decision.
+                        # The scan window is backed up by the longest sentinel so an echo
+                        # split across two chunks is still seen whole; the holdback below
+                        # guarantees the scan has read every character before it can ship.
+                        if _leak_hit(full_answer, _scan_len - (_MAX_SENTINEL_LEN - 1)):
+                            _leak_tripped = True
+                            break
+                        _scan_len = len(full_answer)
+                        _now = time.monotonic()
+                        if not _sealed:
+                            _cut, _sealed = _stream_display_cut(full_answer, _hold)
+                            _ready = _cut - _emit_len
+                            # `_chunks > 1`: a provider that hands the whole answer over in
+                            # ONE piece is not streaming, and splitting it into a flush plus
+                            # a tail would be churn for no gain — the codex-served pro lane
+                            # yields exactly once, and keeps its single buffered delta.
+                            if _chunks > 1 and _ready > 0 and (_ready >= _flush_chars
+                                                               or _now - _flush_at >= _flush_s):
+                                _txt = full_answer[_emit_len:_cut]
+                                _emit_len = _cut
+                                _emitted += _txt
+                                _flush_at = _now
+                                _n_shown = max(_n_shown, len(full_answer))
+                                yield _delta_event(_txt)
+                        # A beat is the SILENCE between text, not a progress bar: it speaks
+                        # only when nothing has flushed for _WRITING_BEAT_S (the thinking
+                        # gap before the first token, or a long pause mid-answer).
+                        if (_now - _beat_at >= _WRITING_BEAT_S
+                                and _now - _flush_at >= _WRITING_BEAT_S):
+                            _beat_at = _now
                             _n_shown = max(_n_shown, len(full_answer))
                             yield _status_event("writing", _t0, _STAGE_LABELS["writing"],
                                                 n=_n_shown)
+                    if _leak_tripped:
+                        # Deliberately abandoned mid-body — do NOT call get_final_message()
+                        # on a stream we stopped reading. The aborted call's usage is lost;
+                        # a prompt echo on a paying user's screen costs more than a token
+                        # count. Exiting the `with` closes the stream.
+                        model = _p.get("model") or model
+                if _leak_tripped:
+                    log.warning("brain_gateway: prompt-echo sentinel caught MID-STREAM "
+                                "(lane=%s model=%s chars=%d emitted=%d)",
+                                lane, _p.get("model"), len(full_answer), len(_emitted))
+                    if _emitted:
+                        # Text is already on screen: take it back NOW rather than after the
+                        # citation pass. The refusal is exactly what _leak_screen returns at
+                        # finalize from this same text, so the reconciliation below then
+                        # sees the client already holding it and stays silent.
+                        _retracted = True
+                        _emitted = _REFUSAL_DISTILL_ZH if _has_cjk(full_answer) else _REFUSAL_DISTILL_EN
+                        yield f"data: {json.dumps({'type': 'retract', 'text': _emitted})}\n\n"
+                    # Nothing shipped (the usual case — the holdback is five sentinels
+                    # deep): no retract at all. The finalize pass ships the refusal as an
+                    # ordinary single delta, which is byte-for-byte the old behavior and
+                    # is also what a widget too old to know `retract` needs.
+                    break
                 final_resp = s.get_final_message()
                 # Synthesis reasoning — held per-candidate and only merged into the trace
                 # at the success point below, so a failed-over candidate's partial
@@ -5997,6 +6557,9 @@ def _run_brain_loop_stream(
                                 _p.get("model"))
                     _last_err = RuntimeError("empty synthesis")
                     if _i < len(_cands) - 1:
+                        if _emitted:      # defensive: never let a fresh candidate APPEND
+                            yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                            _emitted = ""
                         continue
                 thinking_trace.extend(_cand_thinking)  # only the candidate that SHIPPED
                 _pool_record_success(_p, final_resp)  # load-balancing ledger
@@ -6009,6 +6572,13 @@ def _run_brain_loop_stream(
                 if _is_failover_error(exc) and _i < len(_cands) - 1:
                     log.warning("brain_gateway: stream provider %s failed (%s) — failover",
                                 _p.get("model"), str(exc)[:80])
+                    if _emitted:
+                        # This candidate died MID-BODY after putting text on screen. The
+                        # next one restarts from scratch, so wipe the draft first — an
+                        # empty retract resets the client's bubble, and the retry streams
+                        # into a clean one instead of appending to a stranger's sentence.
+                        yield f"data: {json.dumps({'type': 'retract', 'text': ''})}\n\n"
+                        _emitted = ""
                     continue
                 log.warning("brain_gateway: stream synthesis failed (%s) — fallback", exc)
                 full_answer = ""
@@ -6016,6 +6586,7 @@ def _run_brain_loop_stream(
                     if getattr(block, "type", "") == "text":
                         full_answer += block.text
                 break
+        _timing_stamp(timing, "synthesis_ms", _synth_t0)
     else:
         for block in last_resp_content:
             if getattr(block, "type", "") == "text":
@@ -6040,6 +6611,10 @@ def _run_brain_loop_stream(
 
     yield _status_event("review", _t0, _STAGE_LABELS["review"])
 
+    # FINAL AUTHORITY. Everything below runs on the WHOLE answer, exactly as it did when
+    # the delta was buffered — the streaming holdback above is an early net, never a
+    # replacement for this pass. Whatever this produces is what the user ends up holding:
+    # the reconciliation at the bottom either tops up the streamed prefix or retracts it.
     citations = _extract_citations_brain(messages, extra=ambient_citations)
     filtered_answer, was_filtered = _post_filter_advice(full_answer, citations)
     filtered_answer = _leak_screen(filtered_answer)  # PART B: prompt-echo → distill refusal
@@ -6074,7 +6649,34 @@ def _run_brain_loop_stream(
             lane, model, "synthesis" if need_synthesis else "tool-round",
             _synth_stop or last_stop,
             usage_dict.get("input_tokens"), usage_dict.get("output_tokens"), max_tokens)
-    yield f"data: {json.dumps({'type': 'delta', 'text': display_answer})}\n\n"
+
+    # ── Contract S reconciliation ────────────────────────────────────────────────────
+    # `_emitted` is exactly what the client holds. It is EMPTY on every non-streaming
+    # path (a tool-round answer, the degraded stub, a prescreen refusal) and on any
+    # synthesis short enough to stay inside the holdback — those all take the first
+    # branch with an empty prefix and ship ONE delta carrying the whole answer, which is
+    # byte-for-byte the pre-Contract-S behavior.
+    if display_answer.startswith(_emitted):
+        _tail = display_answer[len(_emitted):]
+        # An empty final delta is still emitted when nothing streamed (an advice-filtered
+        # -to-empty answer has always shipped one, and the widget expects it); after a
+        # stream it would be noise, so it is dropped.
+        if _tail or not _emitted:
+            yield _delta_event(_tail)
+    else:
+        # The final screen disagrees with what streamed: the leak screen fired on the
+        # held-back tail, or the advice filter rewrote the answer. Belt and suspenders —
+        # take the whole thing back and replace it. (A candidate that merely died
+        # mid-body was already wiped with an empty retract at the failover, so reaching
+        # here means the TEXT was rejected, not the provider.)
+        _retracted = True
+        yield f"data: {json.dumps({'type': 'retract', 'text': display_answer})}\n\n"
+    # A retract that REPLACED text is a screened turn: the eval corpus reads `filtered`
+    # to separate a clean answer from one the guards rewrote (response_eval flags it),
+    # and a turn whose text was withdrawn on the wire is not a clean answer. A wipe
+    # -and-retry retract (empty text, provider failover) never sets this.
+    if _retracted:
+        was_filtered = True
 
     # Emit suggestions (W6d) — between delta and done, only when non-empty
     if suggestions:
@@ -6086,7 +6688,9 @@ def _run_brain_loop_stream(
     # consumer contradicts this: mm_brain.js's finalizeDone reads only `citations` and
     # `quota`, and the response log never sees this turn (_log_brain_response drops
     # empty answers, and answer_out below still carries the REAL empty answer).
-    yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': stub_shipped, 'is_context_only': True})}\n\n"
+    yield _done_event(citations=citations, quota=meta_event.get("quota", {}),
+                      usage=usage_dict, filtered=was_filtered, degraded=stub_shipped,
+                      is_context_only=True)
 
     # Side-channel: hand real usage back to the caller (fix #1)
     if usage_out is not None:
@@ -6596,6 +7200,12 @@ try:
 except Exception:  # noqa: BLE001
     pass
 
+# Longest sentinel, in characters. Contract S reads this twice: as the overlap the
+# streaming scan must keep between chunks (_leak_hit) and as the hard floor under the
+# streaming holdback (_stream_flush_cfg). Computed from the assembled tuple so a longer
+# sentinel shipped by a future doctrine module widens both automatically.
+_MAX_SENTINEL_LEN = max((len(s) for s in _LEAK_SENTINELS), default=0)
+
 
 def _screen_client_history(items: list[dict]) -> list[dict]:
     """Sanitize CLIENT-SUPPLIED history (the stateless fallback) before it reaches the
@@ -6628,6 +7238,446 @@ def _leak_screen(text: str) -> str:
         if sentinel in text:
             return _REFUSAL_DISTILL_ZH if _has_cjk(text) else _REFUSAL_DISTILL_EN
     return text
+
+
+# ---------------------------------------------------------------------------
+# Instant-fact lane (W5 Contract I)
+# ---------------------------------------------------------------------------
+# "What's AAPL trading at?" does not need 52 tool schemas, a ~4k-token doctrine stack,
+# a market packet and three blocking model rounds — but until now it got all of them,
+# because every turn entered the same loop (measured: ~13.7k input tokens, 52-77s live;
+# research/DEEPVUE_COMPETITIVE_TEARDOWN_AND_MASTERMIND_BUILD_DOCKET_2026-08-01.md §6.7).
+# This lane serves exactly one shape — a pure quote/level ask that resolves to ONE
+# symbol — with ONE model call over a minimal prompt and the quote as data.
+#
+# THE FAILURE MODE IS THE FALSE POSITIVE. A question that deserved the deep loop and
+# got a one-line price instead is a bad answer the user cannot see is bad. A question
+# that deserved the instant lane and fell through is merely slow, which is today's
+# behaviour. Every judgement call below therefore biases towards None, and every
+# failure inside the serve path (no quote, no as-of, model error, empty text) falls
+# through to the normal loop with nothing user-visible having happened.
+
+#: Words that must never be read as a ticker when they land in a symbol slot. Length
+#: alone already rejects most English ("everything", "bitcoin"); this catches the short
+#: ones — pronouns, articles, asset nouns, macro acronyms and the question words.
+#: A real ticker that collides with one of these (GOLD = Barrick) is a deliberate false
+#: negative: it falls through to the deep loop, which handles it correctly.
+_INSTANT_NON_TICKER_WORDS: frozenset[str] = frozenset("""
+    a an the this that these those it its is are was were be been am
+    i me my we us our you your he she they them their there here
+    what whats when where who whom which why how much many
+    and or but if so not no yes ok okay please thanks hi hey hello
+    do does did can could may might will would should shall
+    now today tonight tomorrow yesterday soon later then
+    market markets stock stocks share shares equity index indices tape
+    price prices quote quotes level levels close open high low last cost value
+    cash money gold oil crude gas silver copper wheat corn sugar coffee
+    euro yen yuan pound franc usd eur jpy cny gbp chf cad aud nzd krw inr
+    btc eth xrp doge coin crypto
+    fed ecb boj boe pboc cpi ppi gdp pce ism nfp pmi jolts fomc
+    ai etf etfs ipo ceo cfo ir pe eps roe roi
+    all any one two few some most more less best worst top new old good bad
+    up down in on at of for to from with by as
+    thing things stuff bit lot
+""".split())
+
+#: Any of these in the turn sends it straight to the deep loop. They are the words that
+#: turn a lookup into an analysis, a comparison, a forecast or a recommendation.
+_INSTANT_REJECT_EN: tuple[str, ...] = (
+    "why", "should", "shouldnt", "think", "thoughts", "thought", "opinion", "view",
+    "views", "outlook", "forecast", "forecasts", "predict", "prediction", "projection",
+    "target", "buy", "sell", "short", "long", "hold", "own", "entry", "enter", "exit",
+    "stop", "vs", "versus", "against", "compare", "compared", "comparison", "better",
+    "worse", "analyse", "analyze", "analysis", "explain", "recommend", "recommendation",
+    "worth", "bullish", "bearish", "risk", "risky", "thesis", "setup", "trade",
+    "invest", "expect", "will", "would", "could", "going", "headed", "next",
+    "catalyst", "earnings", "valuation", "undervalued", "overvalued", "dip", "rally",
+    "crash", "safe", "like", "chart", "level", "levels", "support", "resistance",
+    "volume", "news", "yesterday", "last", "week", "month", "year", "ago", "history",
+    "since", "average", "and", "also", "plus", "then", "regime", "breadth", "theme",
+    "sector", "portfolio", "watchlist", "screen", "screener",
+)
+
+#: The zh half of the same screen.
+_INSTANT_REJECT_ZH: tuple[str, ...] = (
+    "怎么看", "怎么样", "为什么", "为何", "该不该", "能不能", "可不可以", "对比",
+    "比较", "预测", "分析", "建议", "看法", "观点", "评价", "走势", "展望", "目标",
+    "前景", "影响", "推荐", "风险", "机会", "如何", "历史", "去年", "上周", "昨天",
+    "明天", "未来", "还有", "值得", "该买", "可以买", "适合", "布局", "仓位",
+)
+
+#: The zh triggers that mark a pure price ask.
+_INSTANT_TRIGGER_ZH: tuple[str, ...] = (
+    "现价", "报价", "股价", "价格", "多少钱", "多少点",
+)
+
+#: Characters allowed to remain in a zh turn after the symbol and the trigger are
+#: struck. Anything else means the user asked for more than a price.
+_INSTANT_ZH_FILLER: frozenset[str] = frozenset(
+    "的了吗呢啊是在现今天当前目前请问帮我查看一下这它该股票价格报多少钱点"
+    "，。、？?！!·:：；;“”\"'（）()《》 \t\r\n　"
+)
+
+#: Anchored EN intent patterns. The turn is lowercased, whitespace-collapsed and
+#: stripped of trailing punctuation before matching, so these must match the WHOLE
+#: message — an anchored match is the precision guarantee.
+_INSTANT_SYM_G = (r"(?P<sym>[A-Za-z0-9]{1,6}(?:\.[A-Za-z]{1,2})?"
+                  r"|(?:sse|shse|szse|hkex|tsx|tsxv):[a-z0-9.\-]{1,18})")
+_INSTANT_WHATS = r"(?:what(?:'|’)?s|what is|whats)"
+_INSTANT_NOWISH = r"(?:\s+(?:now|today|right now|currently|at the moment))?"
+
+_INSTANT_PATTERNS_EN: tuple[re.Pattern, ...] = tuple(re.compile(p) for p in (
+    # explicit symbol
+    rf"^{_INSTANT_WHATS}\s+{_INSTANT_SYM_G}\s+trading\s+(?:at|for){_INSTANT_NOWISH}$",
+    rf"^{_INSTANT_WHATS}\s+(?:the\s+)?(?:current\s+)?{_INSTANT_SYM_G}\s+(?:price|quote){_INSTANT_NOWISH}$",
+    rf"^{_INSTANT_WHATS}\s+(?:the\s+)?(?:current\s+)?(?:price|quote)\s+(?:of|for|on)\s+{_INSTANT_SYM_G}{_INSTANT_NOWISH}$",
+    rf"^{_INSTANT_WHATS}\s+{_INSTANT_SYM_G}\s+at{_INSTANT_NOWISH}$",
+    rf"^{_INSTANT_SYM_G}\s+(?:current\s+)?(?:price|quote){_INSTANT_NOWISH}$",
+    rf"^(?:price|quote)\s+(?:of|for|on)\s+{_INSTANT_SYM_G}{_INSTANT_NOWISH}$",
+    rf"^quote\s+{_INSTANT_SYM_G}{_INSTANT_NOWISH}$",
+    rf"^how\s+much\s+is\s+{_INSTANT_SYM_G}\s+trading\s+(?:at|for){_INSTANT_NOWISH}$",
+    rf"^how\s+much\s+is\s+{_INSTANT_SYM_G}{_INSTANT_NOWISH}$",
+    rf"^where\s+is\s+{_INSTANT_SYM_G}\s+trading{_INSTANT_NOWISH}$",
+    # implicit symbol — resolved from the page/chart context chip
+    rf"^{_INSTANT_WHATS}\s+(?:the\s+)?(?:current\s+)?(?:price|quote){_INSTANT_NOWISH}$",
+    rf"^(?:current\s+)?(?:price|quote){_INSTANT_NOWISH}$",
+    rf"^{_INSTANT_WHATS}\s+it\s+trading\s+(?:at|for){_INSTANT_NOWISH}$",
+    rf"^where\s+is\s+it\s+trading{_INSTANT_NOWISH}$",
+    rf"^how\s+much\s+is\s+it{_INSTANT_NOWISH}$",
+))
+
+#: All-caps latin ticker tokens, the only bare-word symbols the scanner trusts.
+_INSTANT_UPPER_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9.])([A-Z]{1,5}(?:\.[A-Z]{1,2})?)(?![A-Za-z0-9])")
+_INSTANT_ASHARE_RE = re.compile(r"(?<!\d)([036]\d{5})(?!\d)")
+
+_INSTANT_MAX_CHARS_EN = 72
+_INSTANT_MAX_CHARS_ZH = 28
+_INSTANT_MAX_TOKENS = 320
+
+
+_INSTANT_REJECT_EN_RE = re.compile(
+    r"(?<![A-Za-z])(?:" + "|".join(re.escape(w) for w in _INSTANT_REJECT_EN) + r")(?![A-Za-z])")
+
+
+def _instant_reject(text: str) -> bool:
+    """True when ANY analytical qualifier appears — EN word-boundary, zh substring."""
+    if _INSTANT_REJECT_EN_RE.search((text or "").lower()):
+        return True
+    return any(w in text for w in _INSTANT_REJECT_ZH)
+
+
+def _instant_symbol_token(token: str) -> str:
+    """Canonicalize one symbol-slot token, or '' when it is not ticker-shaped."""
+    raw = str(token or "").strip()
+    if not raw or raw.lower() in _INSTANT_NON_TICKER_WORDS:
+        return ""
+    sym = _safe_symbol(raw)
+    if not sym or not re.fullmatch(r"[A-Z0-9]{1,6}(?:\.[A-Z]{1,2})?", sym):
+        return ""
+    # An UNQUALIFIED number is a level, not a ticker — "what is 500 trading at" and
+    # "what is 0700 trading at" are both a number, and the one shape worth trusting is
+    # the six-digit A-share code every mainland user types bare. Exchange-qualified
+    # numbers (0700.HK, 600036.SS) carry their own proof and are kept.
+    stem, _dot, suffix = sym.partition(".")
+    if stem.isdigit() and not suffix and len(stem) != 6:
+        return ""
+    return sym
+
+
+def _instant_symbols_in(message: str) -> list[str]:
+    """Every symbol EXPLICITLY named in the turn, canonicalized and de-duplicated.
+
+    Deliberately conservative in both directions: it trusts exchange-qualified forms
+    (``0700.HK``, ``SSE:600036``), bare six-digit A-share codes, and ALL-CAPS latin
+    tokens — never a lowercase word, which is why the router's own pattern capture
+    (below) is what reads "whats aapl price". Its job here is the MULTI-symbol veto."""
+    scan = str(message or "")
+    found: list[str] = []
+    # Each scanner STRIKES what it consumed before the next one runs, so "SSE:600036"
+    # is one symbol and not also a bare "SSE" from the all-caps pass.
+    for m in _PREFIXED_SYMBOL_RE.finditer(scan):
+        sym = _safe_symbol(f"{m.group(1)}:{m.group(2)}")
+        if sym:
+            found.append(sym)
+    scan = _PREFIXED_SYMBOL_RE.sub(" ", scan)
+    for m in _QUALIFIED_SYMBOL_RE.finditer(scan):
+        sym = _safe_symbol(m.group(1))
+        if sym:
+            found.append(sym)
+    scan = _QUALIFIED_SYMBOL_RE.sub(" ", scan)
+    for m in _INSTANT_ASHARE_RE.finditer(scan):
+        code = m.group(1)
+        found.append(f"{code}.SS" if code[0] in {"5", "6", "9"} else f"{code}.SZ")
+    scan = _INSTANT_ASHARE_RE.sub(" ", scan)
+    for m in _INSTANT_UPPER_TOKEN_RE.finditer(scan):
+        sym = _instant_symbol_token(m.group(1))
+        if sym:
+            found.append(sym)
+    return list(dict.fromkeys(found))
+
+
+def _instant_route(clean_msg: str, context: dict | None = None) -> dict | None:
+    """Deterministic router: ``{"kind": "quote", "symbol": SYM}`` for a pure price
+    ask, else None (→ the normal loop). Pure — no I/O, never raises.
+
+    Matched: "what's AAPL trading at", "AAPL price", "price of 0700.HK", "quote MSFT",
+    "how much is NVDA", "where is TSLA trading", the same forms with the symbol coming
+    from the page context chip, and the zh equivalents (报价 / 现价 / 价格 / 多少钱 /
+    多少点).
+
+    Rejected — every one of these goes to the deep loop: any analytical qualifier,
+    more than one symbol named, a symbol slot that is not ticker-shaped, a stray
+    number left over in the sentence, no symbol resolvable at all, or a turn longer
+    than a lookup could plausibly be."""
+    msg = str(clean_msg or "").strip()
+    if not msg:
+        return None
+    if _instant_reject(msg):
+        return None
+
+    explicit = _instant_symbols_in(msg)
+    if len(explicit) > 1:
+        return None
+    ctx_sym = _safe_symbol(str((context or {}).get("symbol") or "")) if isinstance(context, dict) else ""
+
+    if _has_cjk(msg):
+        if len(msg) > _INSTANT_MAX_CHARS_ZH:
+            return None
+        if not any(t in msg for t in _INSTANT_TRIGGER_ZH):
+            return None
+        # Strike the symbol (any latin/number run) and the trigger, then require that
+        # nothing but filler remains — the zh equivalent of an anchored pattern.
+        residue = re.sub(r"[A-Za-z0-9.:\-]+", "", msg)
+        for trigger in _INSTANT_TRIGGER_ZH:
+            residue = residue.replace(trigger, "")
+        if any(ch not in _INSTANT_ZH_FILLER for ch in residue):
+            return None
+        symbol = explicit[0] if explicit else ctx_sym
+        return {"kind": "quote", "symbol": symbol} if symbol else None
+
+    if len(msg) > _INSTANT_MAX_CHARS_EN:
+        return None
+    norm = " ".join(msg.lower().split()).strip(" ?!.,;:")
+    if not norm:
+        return None
+    for pat in _INSTANT_PATTERNS_EN:
+        m = pat.match(norm)
+        if not m:
+            continue
+        token = m.groupdict().get("sym") if "sym" in (m.groupdict() or {}) else None
+        if token is not None:
+            # A pattern that captured a non-ticker word ("gold price", "how much is
+            # it") is not a rejection of the TURN — a later, implicit-symbol pattern
+            # may still own it. Keep looking.
+            if not _instant_symbol_token(token):
+                continue
+            # Prefer the scanner's canonical form when it found one: it is the half
+            # that maps 600036 → 600036.SS and SSE:600036 → 600036.SS.
+            symbol = explicit[0] if explicit else _instant_symbol_token(token)
+            consumed = token
+        else:
+            symbol = explicit[0] if explicit else ctx_sym
+            consumed = ""
+        if not symbol:
+            continue
+        # A stray number the symbol did not account for means the turn carried
+        # something else — a date, a size, a horizon. Not a lookup.
+        residue = norm.replace(consumed, " ", 1) if consumed else norm
+        if re.search(r"\d", residue):
+            continue
+        return {"kind": "quote", "symbol": symbol}
+    return None
+
+
+#: The instant lane's ENTIRE system prompt. No doctrine block, no analyst protocol, no
+#: answer-shape block, no [NEXT] directive — which is also why a leaked sentinel is
+#: structurally impossible here (the sentinels live in text this prompt never contains).
+_INSTANT_SYSTEM_PROMPT = (
+    "You are the Mastermind Brain, a markets analyst inside this dashboard and Terminal.\n"
+    "This turn is a single factual price lookup. Answer in 1-3 sentences.\n"
+    "- Use ONLY the numbers in the QUOTE DATA below. Never invent, extrapolate or "
+    "adjust a number, and never state a number that is not in the data.\n"
+    "- State the as-of timestamp of the quote so the reader knows how fresh it is.\n"
+    "- No analysis, no view, no recommendation, no follow-up block, no headings.\n"
+    "- If the user asked for something the data does not carry, say so in one line."
+)
+
+
+def _instant_language_line(lang: str) -> str:
+    """The instant lane's own LANGUAGE line.
+
+    Deliberately NOT :func:`_language_directive`: that one instructs a STANCE line and
+    three [NEXT] follow-ups, which is the opposite of a 1-3 sentence fact."""
+    name = _LANG_NAMES.get(lang) or _LANG_NAMES["en"]
+    return f"\n\nLANGUAGE FOR THIS TURN: {name}. Write the entire reply in {name}."
+
+
+#: Quote payload keys that count as "a price came back".
+_INSTANT_PRICE_KEYS = ("price", "last", "close", "c", "regularMarketPrice")
+
+
+def _instant_quote(symbol: str, terminal_data_dir: Path, terminal_hub_url: str,
+                   root: Path) -> dict | None:
+    """Resolve one quote through the SAME machinery the deep loop's get_quote tool uses.
+
+    None (→ fall through to the deep loop) when no price came back, or when the quote
+    carries no as-of: house law is that every displayed market number carries its
+    as-of, and a lane whose whole contract is "state the timestamp" must not serve a
+    number it cannot date."""
+    try:
+        quote = _tool_get_quote({"symbol": symbol}, terminal_data_dir, terminal_hub_url, root)
+    except Exception:  # noqa: BLE001
+        return None
+    if not isinstance(quote, dict) or quote.get("error") or quote.get("available") is False:
+        return None
+    if all(quote.get(k) is None for k in _INSTANT_PRICE_KEYS):
+        return None
+    if not str(quote.get("as_of") or "").strip():
+        return None
+    return quote
+
+
+def _instant_tape_line(root: Path) -> str:
+    """The market packet's one-line TAPE row, or ''. Reads the 60s-cached digest the
+    deep loop already builds every turn, so on a warm server this is a dict lookup."""
+    try:
+        from engine.neuralweb import market_packet as _mp  # noqa: PLC0415
+        for line in (_mp.digest(root) or "").splitlines():
+            if "TAPE (" in line:
+                return line[:400]
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
+
+def _instant_user_content(message: str, quote: dict, tape_line: str) -> str:
+    """The instant turn's user content: the quote as DATA, then the question."""
+    parts = ["[QUOTE DATA — the only numbers you may use]\n"
+             + json.dumps(_json_safe(quote), default=str)[:2000]]
+    if tape_line:
+        parts.append("[TAPE — background only, do not analyse it]\n" + tape_line)
+    parts.append("[USER QUESTION]\n" + message)
+    return "\n\n".join(parts)
+
+
+def _instant_pmk(model: str) -> dict:
+    """Per-candidate create kwargs for the instant lane: DeepSeek's default thinking
+    OFF (it more than doubles TTFT on a one-liner), and no effort/adaptive-thinking —
+    a price restatement has nothing to think about."""
+    return _deepseek_extra_params(model, "disabled")
+
+
+def _instant_answer(
+    route: dict,
+    message: str,
+    context: dict | None,
+    root: Path,
+    terminal_data_dir: Path,
+    terminal_hub_url: str,
+    cands: list[dict],
+    *,
+    stream: bool,
+    timing: dict,
+    account_lang: str | None = None,
+) -> dict | None:
+    """Serve one instant turn: resolve the quote, make ONE minimal model call, screen
+    the text. Returns ``{"text","usage","model"}`` or None — and None ALWAYS means
+    "fall through to the normal loop", never "show the user an error".
+
+    The answer is buffered before it is handed back even on the streaming path: the
+    leak screen has to run on the complete text, and a screened byte cannot be
+    un-sent. `stream=True` still uses the provider's streaming client, so the moment
+    the answer is allowed to go out incrementally this is a two-line change."""
+    symbol = str(route.get("symbol") or "")
+    if not symbol:
+        return None
+
+    tool_t0 = time.monotonic()
+    quote = _instant_quote(symbol, terminal_data_dir, terminal_hub_url, root)
+    tool_ms = _ms_since(tool_t0)
+    if quote is None:
+        return None
+
+    lang = _turn_lang(message, context, account_lang)
+    system = _INSTANT_SYSTEM_PROMPT + _instant_language_line(lang)
+    user_content = _instant_user_content(message, quote, _instant_tape_line(root))
+    messages = [{"role": "user", "content": user_content}]
+
+    model_t0 = time.monotonic()
+    text = ""
+    usage: dict = {}
+    used_model = ""
+    if stream:
+        for cand in cands:
+            client = cand.get("client")
+            if client is None:
+                continue
+            buf = ""
+            try:
+                with client.messages.stream(
+                    model=cand.get("model"),
+                    max_tokens=_INSTANT_MAX_TOKENS,
+                    system=system,
+                    messages=messages,
+                    **_instant_pmk(cand.get("model")),
+                ) as s:
+                    for chunk in s.text_stream:
+                        buf += chunk
+                    final = s.get_final_message()
+            except Exception as exc:  # noqa: BLE001
+                log.warning("brain_gateway: instant stream candidate %s failed (%s)",
+                            cand.get("model"), str(exc)[:80])
+                _mark_provider_dead_if_auth(cand, exc)
+                _pool_cool_for_exc(cand, exc)
+                continue
+            if not buf.strip():
+                continue
+            _pool_record_success(cand, final)
+            text = buf
+            used_model = cand.get("model") or ""
+            u = getattr(final, "usage", None)
+            if u is not None:
+                usage = {"input_tokens": getattr(u, "input_tokens", 0),
+                         "output_tokens": getattr(u, "output_tokens", 0)}
+            break
+    else:
+        try:
+            resp, used_model = _create_failover(
+                cands,
+                per_model_kwargs=_instant_pmk,
+                max_tokens=_INSTANT_MAX_TOKENS,
+                system=system,
+                messages=messages,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("brain_gateway: instant model call failed (%s)", str(exc)[:120])
+            return None
+        for block in getattr(resp, "content", None) or []:
+            if getattr(block, "type", "") == "text":
+                text += getattr(block, "text", "") or ""
+        u = getattr(resp, "usage", None)
+        if u is not None:
+            usage = {"input_tokens": getattr(u, "input_tokens", 0),
+                     "output_tokens": getattr(u, "output_tokens", 0)}
+
+    if not (text or "").strip():
+        return None
+
+    # Defence in depth: this prompt carries no doctrine, so nothing CAN leak — but the
+    # screen is a string scan, and the day someone enriches this prompt it is already
+    # here. A stray [NEXT] block is stripped and discarded (no suggest event ships on
+    # this lane); a leaked sentinel becomes the distill refusal, and a refusal is not
+    # an instant answer — fall through so the deep loop owns the turn.
+    screened = _leak_screen(text)
+    if screened != text:
+        return None
+    screened, _ = _split_suggestions(screened)
+    if not screened.strip():
+        return None
+
+    _timing_round(timing, _ms_since(model_t0),
+                  [{"name": "get_quote", "ms": tool_ms}])
+    return {"text": screened, "usage": usage, "model": used_model or "", "symbol": symbol}
 
 
 # ---------------------------------------------------------------------------
@@ -6802,6 +7852,14 @@ def chat(
             "screened": True,
         }
 
+    # 3c. Instant-fact routing decision (W5 Contract I). Pure + no I/O, taken HERE —
+    #     after quota/prescreen, before a provider exists — so the two lanes see
+    #     byte-identical inputs and the instant lane can never skip a gate. The turn is
+    #     SERVED further down, once a client has been resolved; an image turn is never
+    #     a price lookup, so attachments opt out.
+    _instant_t0 = time.monotonic()
+    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+
     # 4. Build providers
     providers = _build_lane_providers(lane, root)
     if not providers:
@@ -6874,6 +7932,67 @@ def chat(
     # (drop forged assistant turns + probe-carrying replays) — see _screen_client_history.
     raw_history = thread_history if thread_history else _screen_client_history(history or [])
     active_history = _filter_client_history(raw_history[-24:])  # cap 12 turns + filter
+
+    # 5b. Instant-fact serve (W5 Contract I). One minimal model call over the resolved
+    #     quote. ANY failure inside — quote unresolved, no as-of, provider error, empty
+    #     text — returns None and the normal loop below runs exactly as it always did;
+    #     nothing user-visible has happened, and quota was already debited above the
+    #     same way it is for any other turn.
+    if _instant_route_hit is not None:
+        _i_timing = _new_turn_timing("instant")
+        _i_res = _instant_answer(
+            _instant_route_hit, clean_msg, context, root,
+            terminal_data_dir, terminal_hub_url, _turn_providers(client, model, turn_providers),
+            stream=False, timing=_i_timing,
+            account_lang=_account_pref(context, "lang"),
+        )
+        if _i_res is not None:
+            _timing_stamp(_i_timing, "total_ms", _instant_t0)
+            _i_model = _i_res.get("model") or model
+            if effective_thread_id:
+                # Same persistence contract as the deep path: an instant turn is a
+                # real turn, and the next question's history must contain it.
+                try:
+                    from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                    _append_message(effective_thread_id, "user", clean_msg)
+                    _append_message(effective_thread_id, "assistant", _i_res["text"],
+                                    meta=_bum.assistant_meta(None, _i_res["text"]))
+                except Exception:  # noqa: BLE001
+                    pass
+            _i_usage = _i_res.get("usage") or {}
+            _i_in = int(_i_usage.get("input_tokens") or 0)
+            _i_out = int(_i_usage.get("output_tokens") or 0)
+            try:
+                _ac.record_usage(
+                    lane=usage_lane,
+                    provider=(
+                        "codex" if str(_i_model).startswith("gpt-")
+                        else "claude_api" if str(_i_model).startswith("claude")
+                        else "deepseek"
+                    ),
+                    model=_i_model, stage="brain-instant",
+                    input_tokens=_i_in, output_tokens=_i_out,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+            _record_token_usage(user_id, lane, _i_in, _i_out)
+            _i_result: dict = {
+                "ok": True,
+                "reply": _i_res["text"],
+                "citations": [],
+                "lane": lane,
+                "model": _i_model,
+                "thread_id": effective_thread_id,
+                "quota": quota_info,
+                "filtered": False,
+                "degraded": False,
+                "is_context_only": True,
+                "route": "instant",
+                "latency": _i_timing,
+            }
+            if _i_res.get("symbol"):
+                _i_result["symbol"] = _i_res["symbol"]
+            return _i_result
 
     # 6. Run the tool loop
     try:
@@ -6962,6 +8081,10 @@ def chat(
         "filtered": was_filtered,
         "degraded": False,
         "is_context_only": True,
+        # W5 Contract M: which lane served the turn + its latency record (the loop
+        # hands the record back on the usage dict; see _run_brain_loop's docstring).
+        "route": "deep",
+        "latency": usage_dict.get("latency") or _new_turn_timing("deep"),
     }
     if all_annotations:
         result["annotations"] = all_annotations
@@ -7115,6 +8238,11 @@ def chat_stream(
             flags={"screened": True})
         return
 
+    # 2c. Instant-fact routing decision (W5 Contract I) — see chat()'s 3c. Pure, no I/O,
+    #     taken after quota/prescreen and before any provider exists; served at 5b below.
+    _instant_t0 = time.monotonic()
+    _instant_route_hit = None if images else _instant_route(clean_msg, context)
+
     # 3. Providers
     providers = _build_lane_providers(lane, root)
     if not providers:
@@ -7192,6 +8320,66 @@ def chat_stream(
         "thread_id": effective_thread_id,
         "quota": quota_info,
     }
+
+    # 5b. Instant-fact serve (W5 Contract I). Event shape is the contract's own minimum:
+    #     meta → delta → done, exactly like the pre-screen path the widget already
+    #     handles. ANY failure inside _instant_answer returns None and the deep loop
+    #     below runs untouched — not one byte has reached the wire at this point, which
+    #     is what makes "instant is an optimization, never a new failure mode" true.
+    if _instant_route_hit is not None:
+        _i_timing = _new_turn_timing("instant")
+        _i_res = _instant_answer(
+            _instant_route_hit, clean_msg, context, root,
+            terminal_data_dir, terminal_hub_url, _turn_providers(client, model, turn_providers),
+            stream=True, timing=_i_timing,
+            account_lang=_account_pref(context, "lang"),
+        )
+        if _i_res is not None:
+            _i_model = _i_res.get("model") or model
+            _i_usage = dict(_i_res.get("usage") or {})
+            yield f"data: {json.dumps({**meta_event, 'model': _i_model})}\n\n"
+            yield _delta_sse(_i_res["text"], _i_timing, _instant_t0)
+            _timing_stamp(_i_timing, "total_ms", _instant_t0)
+            _i_usage["latency"] = _i_timing
+            yield "data: " + json.dumps({
+                "type": "done", "route": "instant", "citations": [],
+                "quota": quota_info, "usage": _i_usage, "filtered": False,
+                "degraded": False, "is_context_only": True}) + "\n\n"
+
+            # Post-wire bookkeeping — same order and same best-effort contract as the
+            # deep path below (the user turn was already persisted at step 4).
+            if effective_thread_id:
+                try:
+                    from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+                    _append_message(effective_thread_id, "assistant", _i_res["text"],
+                                    meta=_bum.assistant_meta(None, _i_res["text"]))
+                except Exception:  # noqa: BLE001
+                    pass
+            _i_in = int(_i_usage.get("input_tokens") or 0)
+            _i_out = int(_i_usage.get("output_tokens") or 0)
+            try:
+                _ac.record_usage(
+                    lane=usage_lane,
+                    provider=(
+                        "codex" if str(_i_model).startswith("gpt-")
+                        else "claude_api" if str(_i_model).startswith("claude")
+                        else "deepseek"
+                    ),
+                    model=_i_model, stage="brain-instant",
+                    input_tokens=_i_in, output_tokens=_i_out,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+            _record_token_usage(user_id, lane, _i_in, _i_out)
+            _log_brain_response(
+                question=clean_msg, answer=_i_res["text"], model=_i_model, lane=lane,
+                mode=mode, thread_id=effective_thread_id, user_id=user_id,
+                user_email=user_email, is_guest=is_guest,
+                latency_ms=int((time.time() - _t0) * 1000),
+                input_tokens=_i_in, output_tokens=_i_out, context=context,
+                latency=_i_timing,
+            )
+            return
 
     # 6. Run streaming loop (usage_out collects real token counts, fix #1;
     #    answer_out collects the filtered answer so the assistant turn can persist;
@@ -7271,6 +8459,8 @@ def chat_stream(
         is_guest=is_guest, latency_ms=int((time.time() - _t0) * 1000),
         input_tokens=in_tok, output_tokens=out_tok, context=context,
         thinking=(thinking_out[0] if thinking_out else []),
+        # W5 Contract M: the per-round breakdown behind that one latency_ms number.
+        latency=usage_dict.get("latency"),
     )
 
 
