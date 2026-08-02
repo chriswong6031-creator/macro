@@ -64,6 +64,20 @@ least-recently-used over ``recent_tails``. The lanes are disjoint by
 construction, which is what makes "two desks on one parent never close on the
 same line" a guarantee rather than a probability.
 
+**The SHAPE is drawn, not fixed (XG-W4b §A/§B).** Families, warmth moves and
+doorways all differentiate the CONTENT of a two-sentence gift+grip+doorway
+reply — and until 2026-08-02 that was the only shape the composer had. Every
+employee reply was 30-45 words against a corpus whose median winner is 11 and
+whose 1-5 word replies are 26.1% of the winners; short reactions were 0% of
+output. ``reply_shape`` is the fourth axis: five shapes (``one_line``,
+``fragment_exchange``, ``addition``, ``compact_chain``, ``full``), a per-persona
+response-type mix, and a deficit-weighted stable draw that lands the measured
+distribution near the operator's 30/25/15/15/10/5 WITHOUT being a rotation —
+because four accounts cycling shapes in lockstep is the same bot-farm signature
+the tail build closed one axis over. ``compose(..., shape="full")`` is
+byte-identical to what this module shipped before, and a parity test over the
+whole family x warmth grid says so.
+
 Public API:
     FAMILIES: dict[str, dict]
     WARMTH_MOVES: dict[str, dict]
@@ -183,7 +197,57 @@ FAMILIES: dict[str, dict[str, Any]] = {
         "dial_floor": 1,
         "needs_callback": True,
     },
+    # ── XG-W4b (§B.2): the fifteenth family, and the first one added since the
+    # register was written ────────────────────────────────────────────────────
+    #
+    # HUMOR HAD NO HOME. The operator's response mix puts 5% on humor; the
+    # doctrine's top-60 corpus puts dry wit at 28.3%, the single largest WINNING
+    # category (§2); §5 grants a humor budget to every employee desk. And there
+    # was no family whose MOVE produces it — a humor quota routed to
+    # `human_reaction` produces a plain reaction with a comedy label on it, which
+    # is a distribution that reads right in a report and wrong in a timeline.
+    #
+    # `dial_floor: 2` is what keeps it off the flagship and the founder, and it
+    # is the reason `dial_floor` on FAMILIES stops being decorative in this
+    # build: `draft_reply`'s `allowed` comprehension now reads it (see the WHY
+    # there). No second availability table to maintain.
+    #
+    # PER-DESK LAWFULNESS, from each pinned codex, so a later "cici should not
+    # joke" edit argues with the derivation rather than with taste:
+    #   kelly   "internet-native dry wit" is her verbatim §5 register. Her home.
+    #   meagan  WARM variant only. Her codex bans "finance-bro irony" and her
+    #           restraint line is "the playful line is always followed by the
+    #           useful one, never instead of it" — affectionate about a crowd,
+    #           never ironic about a person.
+    #   sophia  permitted and rare. "Calm confidence" tolerates understatement,
+    #           and her craft-metaphor cap (1/7d) is untouched because
+    #           understatement spends no metaphor.
+    #   cici    permitted, NARROWED. Her banned list (`exotic`, `mysterious
+    #           east`, `China up/down`) names exactly the failure mode of humor
+    #           on her beat: a joke about a market she covers is one step from a
+    #           joke about a country. Her lawful surface is the CLOCK and the
+    #           FORECASTERS only, never a market, a people or a policy — enforced
+    #           the way `wry_solidarity`'s target rule is, by the copy pool plus
+    #           `_targets_a_person`.
+    #   flagship / founder — none, by dial_floor.
+    "dry_understatement": {
+        "label": "dry understatement",
+        "move": "state the absurd consequence flatly, no setup and no explanation",
+        "trigger": "gives the room a line worth quoting",
+        "dial_floor": 2,
+    },
 }
+
+#: A family that draws ANOTHER family's doorway pool in the ``full`` shape.
+#:
+#: `dry_understatement`'s lawful shapes are `one_line`, `fragment_exchange` and
+#: `full`; only the last needs a doorway, and the register it needs there is the
+#: plain-reaction register `human_reaction` already owns. Writing a fifth
+#: near-identical pool would have added twenty lines of copy expressing one
+#: mapping. The alias lives in `tails_for` rather than in `compose` so
+#: `select_tail`, `compose` and `draft_reply`'s reported tail cannot disagree —
+#: a history that records a doorway which never shipped is worse than no history.
+_TAIL_FAMILY_ALIAS: dict[str, str] = {"dry_understatement": "human_reaction"}
 
 
 def family_ids() -> list[str]:
@@ -1546,6 +1610,7 @@ def tails_for(account: str, family: str,
     print: a logger prefix would push "::" off column zero and Actions would
     silently drop the annotation — house law).
     """
+    family = _TAIL_FAMILY_ALIAS.get(str(family), str(family))
     lanes = FAMILY_TAILS.get(str(family)) or {}
     if not lanes:
         return []
@@ -1584,34 +1649,36 @@ def _stable_index(*parts: str) -> int:
     return int.from_bytes(hashlib.blake2b(raw, digest_size=8).digest(), "big")
 
 
-def select_tail(account: str, family: str, *, thread_id: str = "",
-                recent_tails: list[str] | tuple[str, ...] | None = None,
-                root: Path | str | None = None) -> str:
-    """One doorway template for this (account, family, thread). "" when none.
+def pick_from_pool(pool: list[str] | tuple[str, ...], *,
+                   key_parts: tuple[str, ...] | list[str],
+                   recent: list[str] | tuple[str, ...] | None = None) -> str:
+    """One entry from *pool* by stable hash plus least-recently-used rotation.
 
-    TWO AXES, and both are needed. The HASH of (account, family, thread) makes
-    the pick deterministic — the same desk on the same parent draws the same
-    doorway, so a draft can be reproduced and an operator edit is not fighting a
-    coin flip — and it diverges across parents, which is what stops one desk
-    wearing one sentence all week. The ROTATION over ``recent_tails`` is what the
-    hash cannot promise: two parents can land on the same lane entry, and a desk
-    that closes three nights running on the same line has welded its own tail
-    without any help from its siblings. Least-recently-used, exactly like
-    ``rotate_family`` and ``rotate_warmth``.
+    EXTRACTED FROM :func:`select_tail` SO THE SHAPE LAYER CANNOT FORK IT
+    (XG-W4b §A.2.2). ``reply_shape`` draws its fragment closers and addition
+    heads with exactly these semantics; a second selector beside this one would
+    be a second set of rotation rules to keep in step, and the tail build already
+    paid for that class of mistake once with two caches in front of one guard
+    sweep.
 
-    Cross-DESK divergence is not enforced here at all: it is a property of the
-    lanes being disjoint (see the WHY above), which is why it holds for every
-    thread rather than for most of them.
+    TWO AXES, and both are needed. The HASH of *key_parts* makes the pick
+    deterministic — the same desk on the same parent draws the same entry, so a
+    draft can be reproduced and an operator edit is not fighting a coin flip —
+    and it diverges across parents, which is what stops one desk wearing one
+    sentence all week. The ROTATION over *recent* is what the hash cannot
+    promise: two parents can land on the same lane entry, and a desk that closes
+    three nights running on the same line has welded its own tail without any
+    help from its siblings.
     """
-    pool = tails_for(account, family, root)
+    pool = list(pool or [])
     if not pool:
         return ""
-    start = _stable_index(str(account), str(family), str(thread_id)) % len(pool)
+    start = _stable_index(*[str(p) for p in key_parts]) % len(pool)
     order = [pool[(start + i) % len(pool)] for i in range(len(pool))]
-    recent = [str(t) for t in (recent_tails or [])]
-    for tail in order:
-        if tail not in recent:
-            return tail
+    window = [str(t) for t in (recent or [])]
+    for entry in order:
+        if entry not in window:
+            return entry
     # Window wider than the lane: degrade to least-recently-used rather than
     # raising or blanking the doorway. A saturated window is a rotation input
     # problem, never a reason to ship a reply with no close.
@@ -1623,8 +1690,25 @@ def select_tail(account: str, family: str, *, thread_id: str = "",
     # ago. Those two are left alone here (their windows are read straight off the
     # queue and rarely repeat inside one), but the difference is real and a test
     # pins this side of it.
-    last_use = {tail: i for i, tail in enumerate(recent)}
-    return min(order, key=lambda tail: last_use.get(tail, -1))
+    last_use = {entry: i for i, entry in enumerate(window)}
+    return min(order, key=lambda entry: last_use.get(entry, -1))
+
+
+def select_tail(account: str, family: str, *, thread_id: str = "",
+                recent_tails: list[str] | tuple[str, ...] | None = None,
+                root: Path | str | None = None) -> str:
+    """One doorway template for this (account, family, thread). "" when none.
+
+    Cross-DESK divergence is not enforced here at all: it is a property of the
+    lanes being disjoint (see the WHY above), which is why it holds for every
+    thread rather than for most of them. The hash-plus-rotation mechanics live in
+    :func:`pick_from_pool`, which the shape layer shares.
+    """
+    return pick_from_pool(
+        tails_for(account, family, root),
+        key_parts=(str(account), str(family), str(thread_id)),
+        recent=recent_tails,
+    )
 
 
 #: Tokens that keep their capital when a conjunction-fused opener runs into the
@@ -1751,8 +1835,21 @@ def fuse_warmth(opener: str, body: str, *, fuse: str = "standalone") -> str:
 
 
 def compose(family: str, gift: str, ctx: dict | None = None, *,
-            warmth: str | None = None) -> str:
+            warmth: str | None = None, shape: str = "full",
+            components: dict | None = None) -> str:
     """Build one draft from a family + a gift sentence, optionally warmed.
+
+    ``shape`` is the THIRD rotation axis (XG-W4b §A). ``shape="full"`` — the
+    default, and what every pre-existing caller gets — is BYTE-FOR-BYTE the
+    composer that shipped: a parity test asserts ``compose(f, g, c, warmth=w)``
+    equals ``compose(f, g, c, warmth=w, shape="full")`` over the whole family x
+    warmth grid, so the shape build cannot regress the shipped path. Every other
+    shape is rendered by ``reply_shape.render``, which builds from the GIFT and
+    never runs the family frame below — that is how the canned preamble is
+    stripped for the short forms, by construction rather than by a startswith()
+    a new frame could slip past. ``reply_shape.render`` returns "" when the shape
+    cannot be built inside budget, and so does this function: the caller falls to
+    the next legal shape.
 
     The gift is used VERBATIM: it came from an own-feed fact builder, so its
     numbers are already whitelisted. Grip and doorway introduce no figures,
@@ -1771,6 +1868,12 @@ def compose(family: str, gift: str, ctx: dict | None = None, *,
     away the cross-thread half of the divergence.
     """
     ctx = dict(ctx or {})
+    if str(shape or "full") != "full":
+        from engine.marketing import reply_shape as _rs  # noqa: PLC0415
+
+        return _rs.render(str(shape), gift=gift, ctx=ctx, family=str(family),
+                          warmth=warmth, account=str(ctx.get("account") or ""),
+                          root=ctx.get("root"), components=components)
     gift = _clean(gift)
     subject = _subject_of(ctx)
     lead = _lead_of(ctx)
@@ -1818,6 +1921,11 @@ def compose(family: str, gift: str, ctx: dict | None = None, *,
         # The one tail whose GRAMMAR changes with its input; `{prior_clause}` in
         # the template carries the ": <prior>" / "." fork so the lane needs one
         # pool rather than two.
+        body = f"{gift}{tail}"
+    elif family == "dry_understatement":
+        # No frame, by design: the move is "state the absurd consequence flatly,
+        # no setup and no explanation", and a setup is exactly what a frame is.
+        # The doorway comes from `human_reaction`'s pool via `_TAIL_FAMILY_ALIAS`.
         body = f"{gift}{tail}"
     else:
         body = gift
@@ -2036,6 +2144,199 @@ _COMMON_WORD_NAMES: frozenset[str] = frozenset({
 })
 
 
+# ---------------------------------------------------------------------------
+# The SHAPE axis seam (XG-W4b §A/§B)
+# ---------------------------------------------------------------------------
+#
+# EVERY ONE OF THESE HELPERS IMPORTS `reply_shape` LAZILY AND DEGRADES TO TODAY'S
+# BEHAVIOUR. `reply_shape` and `persona_model` are separate modules landing in
+# separate lanes; a drafter that raises because an overlay is missing has turned
+# a distribution upgrade into an outage on the one path that must never have one.
+# Absent module, absent overlay, unreadable YAML — all of them resolve to
+# `shape="full"`, `response_type=""` and `familiarity="stranger"`, which is byte
+# for byte what the composer did before this build.
+
+#: shape id -> does this shape carry a doorway sentence. Read by `draft_reply` to
+#: decide whether the tail it drew is actually IN the copy. Mirrors
+#: `reply_shape.REPLY_SHAPES[*]["doorway"]` and is resolved through it when the
+#: module is importable; the literal is the degraded answer.
+REPLY_SHAPE_DOORWAY: dict[str, bool] = {
+    "one_line": False, "fragment_exchange": False, "addition": False,
+    "compact_chain": False, "full": True,
+}
+
+
+def _familiarity_of(account: str, target: dict | None, relations_row: dict | None,
+                    root: Path | str | None) -> str:
+    """The §E relationship tier for this parent's author. "stranger" on anything.
+
+    SHIPS INERT TODAY and that is the honest state, not a bug:
+    ``data/marketing/personas/<id>/relations.jsonl`` is written only by the M1
+    approval path and the desk is at M0 on every account, so every handle is a
+    stranger until approvals accumulate. Built now because building it after the
+    store fills means a month of replies written at the wrong register.
+    """
+    try:
+        from engine.marketing import persona_model as _pm  # noqa: PLC0415
+
+        handle = str((target or {}).get("author") or "")
+        return str(_pm.familiarity(str(account or ""), handle,
+                                   relations={handle: relations_row}
+                                   if relations_row else None,
+                                   root=root) or "stranger")
+    except Exception as exc:  # noqa: BLE001
+        log.debug("reply_drafter: familiarity unavailable for %r (%s)", account, exc)
+        return "stranger"
+
+
+def _day_slice(day_counts: dict | None, axis: str) -> dict[str, int]:
+    """One axis's counts-so-far-today out of the caller's ``day_counts``.
+
+    TWO AXES SHARE ONE PARAMETER because the frozen signature (§F.3) carries one
+    ``day_counts``, and two draws reading one another's counts would make the
+    deficit term meaningless — a desk that had drafted six ``analytical_addition``
+    replies would look to the SHAPE draw like it had drafted six of a shape that
+    does not exist, and the realised share would be computed off a denominator
+    from the wrong universe.
+
+    The nested form ``{"shape": {...}, "response_type": {...}}`` is canonical. A
+    FLAT dict is accepted and read as the axis whose vocabulary its keys belong
+    to, because that is what a caller written against the one-line contract will
+    pass; a flat dict with keys from neither vocabulary is ignored rather than
+    guessed at.
+    """
+    counts = dict(day_counts or {})
+    sub = counts.get(axis)
+    if isinstance(sub, dict):
+        return {str(k): int(v or 0) for k, v in sub.items()}
+    if any(isinstance(v, dict) for v in counts.values()):
+        return {}                      # nested form, other axis only
+    try:
+        from engine.marketing import reply_shape as _rs  # noqa: PLC0415
+
+        vocab = set(_rs.RESPONSE_TYPES if axis == "response_type" else _rs.SHAPE_IDS)
+    except Exception:  # noqa: BLE001
+        return {}
+    flat = {str(k): int(v or 0) for k, v in counts.items() if not isinstance(v, dict)}
+    return flat if flat and set(flat) <= vocab else {}
+
+
+def _narrow_to_type(pool: list[str], response_type: str) -> list[str]:
+    """*pool* restricted to the families this response type is made of."""
+    try:
+        from engine.marketing import reply_shape as _rs  # noqa: PLC0415
+
+        fams = _rs.TYPE_FAMILIES.get(str(response_type))
+    except Exception:  # noqa: BLE001
+        return list(pool)
+    if not fams:
+        return list(pool)
+    return [f for f in pool if f in fams]
+
+
+def _choose_type(account: str, *, requested: str | None, allowed: list[str],
+                 day_counts: dict[str, int] | None, thread_id: str, as_of: str,
+                 cfg: dict | None, root: Path | str | None) -> dict[str, Any]:
+    """The response-type draw, with its whole derivation, or an inert record."""
+    try:
+        from engine.marketing import reply_shape as _rs  # noqa: PLC0415
+
+        if requested and requested in _rs.RESPONSE_TYPES:
+            return {"value": requested, "roll": 0.0, "source": "requested",
+                    "weights": {}, "deficits": {}, "legal": [requested],
+                    "day_counts": dict(day_counts or {})}
+        return _rs.choose_response_type(
+            account, day_counts=_day_slice(day_counts, "response_type"),
+            thread_id=thread_id,
+            as_of=as_of, cfg=cfg, root=root, allowed=list(allowed))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_drafter: response-type draw unavailable for %r: %s",
+                    account, exc)
+        return {"value": "", "roll": 0.0, "source": "unavailable",
+                "weights": {}, "deficits": {}, "legal": [],
+                "day_counts": dict(day_counts or {})}
+
+
+def _compose_shaped(family: str, gift: str, ctx: dict, *, warmth: str | None,
+                    account: str, requested: str | None, response_type: str,
+                    parent_shape: str | None, day_counts: dict[str, int] | None,
+                    familiarity: str, has_chain: bool, as_of: str,
+                    root: Path | str | None,
+                    avoid: set[str] | None = None) -> tuple[str, str, float, str, str]:
+    """(text, shape, roll, warmth_dropped, shape_copy) for one family.
+
+    THE FALLBACK WALK IS THE POINT. ``reply_shape.render`` returns "" whenever a
+    shape cannot be built inside its budget — an over-long gift, a lane whose
+    copy the persona's own guards rejected, a head that would leave the reply
+    with no register marker for W1 to see. That is a REFUSAL, never a truncation,
+    so the caller tries the next legal shape and ends on ``full``, which is
+    always legal (``shapes_for`` gate 5) and always renders. A legal set that
+    could come back empty would be a lane abstaining for a FORMATTING reason,
+    which is worse than a mini-essay.
+
+    ``avoid`` IS NOT AN OPTIMISATION, IT IS THE ALTERNATE GUARANTEE. The short
+    shapes render the GIFT and drop the family frame entirely — that is what
+    makes them short — so `compression` under `one_line` and `missing_variable`
+    under `one_line` are the same sentence. §9.4's whole point is that a second
+    draft is worth having only when it reasons differently, and two byte-identical
+    alternates are three copies of one thought wearing three family labels. A
+    candidate already drafted is therefore skipped, and the family falls to the
+    next legal shape (ending at `full`, which always carries its frame and its
+    doorway and so always differs). Caught by
+    `test_alternates_are_different_families_not_paraphrases`, which went red the
+    moment the shape layer landed.
+    """
+    try:
+        from engine.marketing import reply_shape as _rs  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_drafter: reply_shape unavailable (%s); full only", exc)
+        try:
+            return compose(family, gift, ctx, warmth=warmth), "full", 0.0, "", ""
+        except ValueError:
+            return "", "full", 0.0, "", ""
+
+    try:
+        from engine.marketing import reply_critics as _rc  # noqa: PLC0415
+
+        gift_units = _rc._content_units(gift)
+    except Exception:  # noqa: BLE001
+        gift_units = len(str(gift or "").split())
+
+    pick = _rs.choose_shape(
+        account, response_type=response_type, family=family,
+        parent_shape=parent_shape, thread_id=str(ctx.get("thread_id") or ""),
+        day_counts=_day_slice(day_counts, "shape"), has_chain=has_chain,
+        gift_units=gift_units, as_of=as_of, tier=familiarity)
+    roll = float(pick.get("roll") or 0.0)
+    legal = list(pick.get("legal") or ["full"])
+    drawn = str(pick.get("value") or "full")
+    if requested and requested in _rs.REPLY_SHAPES:
+        drawn, legal = requested, [requested] + [s for s in legal if s != requested]
+
+    # Drawn first, then the rest of the legal set by descending pick weight, then
+    # `full` as the residual. Ordering the fallbacks by weight rather than by
+    # SHAPE_IDS position keeps a refused short form falling to the OTHER short
+    # form before it falls to a mini-essay.
+    weights = pick.get("deficits") or {}
+    rest = sorted((s for s in legal if s != drawn),
+                  key=lambda s: -float(weights.get(s, 0.0)))
+    for shape in [drawn, *rest, "full"]:
+        parts: dict[str, Any] = {}
+        try:
+            text = compose(family, gift, ctx, warmth=warmth, shape=shape,
+                           components=parts)
+        except ValueError as exc:
+            # An over-budget opener is a BUILD defect, not a runtime condition:
+            # report it loudly and let the caller retry without the warmth.
+            log.warning("reply_drafter: warmth %r rejected at compose for %r: %s",
+                        warmth, account, exc)
+            return "", shape, roll, "", ""
+        if text.strip() and text not in (avoid or set()):
+            return (text, shape, roll, str(parts.get("warmth_dropped") or ""),
+                    str(parts.get("shape_copy") or ""))
+    return "", "full", roll, "", ""
+
+
 def draft_reply(
     *,
     account: str,
@@ -2046,6 +2347,12 @@ def draft_reply(
     warmth: str | None = None,
     recent_warmth: list[str] | None = None,
     recent_tails: list[str] | None = None,
+    shape: str | None = None,
+    response_type: str | None = None,
+    recent_shapes: list[str] | None = None,
+    day_counts: dict[str, int] | None = None,
+    relations_row: dict | None = None,
+    as_of: str = "",
     has_thesis: bool = False,
     tier: str | None = None,
     chart: dict | None = None,
@@ -2072,6 +2379,25 @@ def draft_reply(
     ``recent_warmth`` is the account's last enqueued warmth values, oldest
     first; the caller (``reply_producer``) reads them off the queue exactly as
     it already reads ``recent_families``.
+
+    ``shape`` / ``response_type`` / ``recent_shapes`` / ``day_counts`` drive the
+    FOURTH axis (XG-W4b §A/§B). The response type is drawn first and NARROWS the
+    family pool (``reply_shape.TYPE_FAMILIES``); the family LRU then picks inside
+    that narrowing, so §13.7 anti-sameness is untouched. The shape is drawn
+    second and decides what the copy LOOKS like — one committed sentence, two
+    short clauses, an agreement plus the thing they missed, an arrow chain, or
+    today's gift + grip + doorway. Both draws are deficit-weighted against
+    ``day_counts`` (the day is the control loop) and rolled off a blake2b hash of
+    (account, as_of, thread, family), so the pick is reproducible from the queue
+    record and is not a cycle. ``as_of`` is what gives the roll a day dimension;
+    omitting it is legal and only collapses every day into one hash bucket.
+
+    ``tier`` HERE IS THE QUEUE TIER (growth / relationship / defensive), which is
+    what ``warmth_moves_for`` gates ``quiet_sympathy`` on. It is NOT the §E
+    relationship FAMILIARITY tier — that one is derived from ``relations_row``
+    and is passed to ``reply_shape.choose_shape`` under its own name. The two are
+    different words for different closed sets and mixing them would silently
+    hand `stranger` to a gate expecting `relationship`.
 
     ``recent_tails`` is the THIRD rotation axis, threaded the same way and
     carrying the same kind of value: the doorway TEMPLATES this desk recently
@@ -2115,6 +2441,16 @@ def draft_reply(
                     # absent: a caller that reads the field on every return path
                     # must not KeyError on the one abstention-shaped answer.
                     "tail": "", "alt_tails": [],
+                    # `shapes_for` returns ["one_line"] for a relationship_only
+                    # draft: the opener IS the reply, there is no gift to close
+                    # on and no head to add to. Reported rather than blank so a
+                    # caller reading `shape` on every return path gets a member
+                    # of SHAPE_IDS and not "".
+                    "shape": "one_line", "alt_shapes": [], "shape_copy": "",
+                    "alt_shape_copy": [],
+                    "response_type": "short_reaction",
+                    "familiarity": _familiarity_of(account, target, relations_row, root),
+                    "shape_roll": 0.0, "type_roll": 0.0,
                     "parent_shape": parent_shape,
                     "numbers_whitelist": whitelist,
                     "components": {
@@ -2122,6 +2458,8 @@ def draft_reply(
                         "trigger": FAMILIES["human_reaction"]["trigger"],
                         "warmth_move": WARMTH_MOVES[move]["does"],
                         "relationship_only": True, "chart": False,
+                        "shape": "one_line", "response_type": "short_reaction",
+                        "warmth_dropped": "",
                         "voice_mode": "off",
                     },
                     "dial_violations": [],
@@ -2131,14 +2469,29 @@ def draft_reply(
         return {
             "draft": "", "alt_drafts": [], "family": None, "alt_families": [],
             "warmth": None, "alt_warmth": [], "tail": "", "alt_tails": [],
+            "shape": "", "alt_shapes": [], "shape_copy": "",
+            "alt_shape_copy": [], "response_type": "",
+            "familiarity": "", "shape_roll": 0.0, "type_roll": 0.0,
             "parent_shape": parent_shape,
             "numbers_whitelist": whitelist, "components": {"abstained": "no own-feed fact"},
             "dial_violations": [],
         }
 
+    # THE DIAL GATE, and the moment `FAMILIES.dial_floor` stops being decorative.
+    # Every FAMILIES entry has declared `dial_floor` since the register was
+    # written and NOTHING read it (the module's own WHY beside WARMTH_MOVES says
+    # so, and `tests/test_marketing_reply_warmth.py::TestDialFloorIsWired` pins
+    # the asymmetry and asks whoever wires it to come here and say so — this is
+    # that edit). It becomes load-bearing with `dry_understatement`: humor is
+    # granted to the four employee desks and to neither evidence desk, and a
+    # dial floor read HERE expresses that with no second availability table to
+    # keep in step. `_reply_dial` reaches the codex through `expression_dial`,
+    # which is the one adjudicated seam — the fence is untouched.
+    dial = _reply_dial(account, root)
     allowed = [f for f, spec in FAMILIES.items()
                if not (spec.get("needs_chart") and not chart)
-               and not (spec.get("needs_callback") and not callback)]
+               and not (spec.get("needs_callback") and not callback)
+               and dial >= int(spec.get("dial_floor") or 1)]
 
     # WARMTH-SUPPLY-AWARE ROTATION. The anti-cold critic rejects a long reply
     # from an employee desk that carries no human register, so a family for
@@ -2154,7 +2507,22 @@ def draft_reply(
                                     root=root, has_thesis=has_thesis,
                                     has_detail=bool(detail), tier=tier)]
     pool = warmable or allowed
-    primary = family if family in FAMILIES else rotate_family(recent_families, allowed=pool)
+
+    # ── The response type: a NARROWING of the family pool, not a replacement for
+    # the family LRU ─────────────────────────────────────────────────────────
+    chain = list((facts or {}).get("chain") or (target or {}).get("chain") or [])
+    familiarity = _familiarity_of(account, target, relations_row, root)
+    rtype_pick = _choose_type(account, requested=response_type, allowed=allowed,
+                              day_counts=day_counts, thread_id=str(
+                                  target.get("thread_root_id")
+                                  or target.get("status_id")
+                                  or target.get("url")
+                                  or target.get("author") or ""),
+                              as_of=as_of, cfg=cfg, root=root)
+    rtype = str(rtype_pick.get("value") or "")
+    type_pool = _narrow_to_type(pool, rtype) or _narrow_to_type(allowed, rtype) or pool
+    primary = (family if family in FAMILIES
+               else rotate_family(recent_families, allowed=type_pool))
 
     ctx = {
         "subject": target.get("subject") or target.get("ticker"),
@@ -2165,6 +2533,13 @@ def draft_reply(
         "account": account,
         "root": root,
         "detail": detail,
+        # The parent's own words, for the BUILD-TIME element floor
+        # (`reply_shape._elements_ok`): "a specific reference to the post" can
+        # only be checked against the post. Absent, the floor simply finds no
+        # reference and the short shapes lean harder on their opinion/marker
+        # halves — degraded, never wrong.
+        "parent_text": str((target or {}).get("text") or ""),
+        "cfg": cfg,
         # THE PARENT IDENTITY IS THE DIVERGENCE INPUT. First the thread root,
         # then this post's own id, then the URL, then the author: the first
         # stable thing available. Falling through to "" is legal and only
@@ -2177,11 +2552,16 @@ def draft_reply(
                          or target.get("author") or ""),
     }
 
-    order = [primary] + [f for f in rotate_order(pool, primary) if f != primary]
+    order = [primary] + [f for f in rotate_order(type_pool, primary) if f != primary]
+    order += [f for f in rotate_order(pool, primary) if f not in order]
     order += [f for f in rotate_order(allowed, primary) if f not in order]
     drafts: list[tuple[str, str]] = []
     warmths: list[str | None] = []
     tails: list[str] = []
+    shapes: list[str] = []
+    rolls: list[float] = []
+    dropped: list[str] = []
+    shape_copies: list[str] = []
     # ONE WINDOW, NOT AN ACCUMULATING ONE. The first version of this loop also
     # fed each drawn tail back in, so the primary and its alternates could not
     # collide — DEAD CODE, and a mutation test proved it: the alternates come
@@ -2206,19 +2586,39 @@ def draft_reply(
         # shipped is worse than no history.
         drawn = select_tail(account, fam, thread_id=str(ctx["thread_id"]),
                             recent_tails=window, root=root)
-        fam_ctx = {**ctx, "recent_tails": list(window)}
-        try:
-            text = compose(fam, gift, fam_ctx, warmth=move)
-        except ValueError as exc:
-            # An over-budget opener is a BUILD defect, not a runtime condition:
-            # report it loudly and ship the plain draft rather than the shape
-            # the anti-cold critic would kill a moment later.
-            log.warning("reply_drafter: warmth %r rejected at compose for %r: %s",
-                        move, account, exc)
-            move, text = None, compose(fam, gift, fam_ctx)
+        fam_ctx = {**ctx, "recent_tails": list(window), "chain": list(chain),
+                   "recent_shape_copy": list(recent_shapes or [])}
+        text, used_shape, roll, drop, copy_used = _compose_shaped(
+            fam, gift, fam_ctx, warmth=move, account=account,
+            requested=shape if fam == primary else None,
+            response_type=rtype, parent_shape=parent_shape,
+            day_counts=day_counts, familiarity=familiarity,
+            has_chain=bool(chain), as_of=as_of, root=root,
+            avoid={t for _, t in drafts},
+        )
+        if not text:
+            # `full` is always legal and always renders, so an empty answer here
+            # means the warmth opener itself was refused at compose time. Ship
+            # the plain draft rather than the shape the anti-cold critic would
+            # kill a moment later.
+            move = None
+            text, used_shape, roll, drop, copy_used = _compose_shaped(
+                fam, gift, fam_ctx, warmth=None, account=account,
+                requested="full", response_type=rtype, parent_shape=parent_shape,
+                day_counts=day_counts, familiarity=familiarity,
+                has_chain=bool(chain), as_of=as_of, root=root,
+                avoid={t for _, t in drafts},
+            )
         drafts.append((fam, text))
         warmths.append(move)
-        tails.append(drawn)
+        # A shape that suppresses the doorway did not USE the doorway it drew,
+        # and reporting one it never shipped is exactly the defect the tail
+        # build's "selected twice, and the two must agree" comment names.
+        tails.append(drawn if REPLY_SHAPE_DOORWAY.get(used_shape, True) else "")
+        shapes.append(used_shape)
+        rolls.append(roll)
+        dropped.append(drop)
+        shape_copies.append(copy_used)
 
     # Voice pass: the SHARED dial, kind="reply". apply_pass is deterministic
     # clean-up only (off-signature emoji, exclamation downgrade); everything
@@ -2272,6 +2672,23 @@ def draft_reply(
         # producer cannot read back is an axis that resets every night.
         "tail": tails[0],
         "alt_tails": tails[1:],
+        # The SHAPE axis, reported for the same reason `family` and `tail` are:
+        # an axis the producer cannot read back is an axis that resets every
+        # night, which is precisely what happened to the warmth and tail LRUs
+        # between the last two builds and this one (see reply_producer §F.5).
+        "shape": shapes[0],
+        "alt_shapes": shapes[1:],
+        # The head or closer TEMPLATE the shape drew, for the caller's rotation
+        # history — the same field `tail` is and for the same reason. Templates,
+        # never rendered copy: the rendering changes with the gift, so a history
+        # of finished sentences could never match what the selector is choosing
+        # between.
+        "shape_copy": shape_copies[0],
+        "alt_shape_copy": shape_copies[1:],
+        "response_type": rtype,
+        "familiarity": familiarity,
+        "shape_roll": rolls[0],
+        "type_roll": float(rtype_pick.get("roll") or 0.0),
         "parent_shape": parent_shape,
         "numbers_whitelist": whitelist,
         "components": {
@@ -2280,6 +2697,14 @@ def draft_reply(
             "trigger": FAMILIES[polished[0][0]]["trigger"],
             "warmth_move": (WARMTH_MOVES[warmths[0]]["does"] if warmths[0] else None),
             "parent_shape": parent_shape,
+            "shape": shapes[0],
+            "response_type": rtype,
+            # "" or "shape": a warmth move the SHAPE could not carry (a colon
+            # join inside a one-sentence budget, or an addition head that is
+            # already the acknowledgement). Reported rather than silent, because
+            # a rotation history that records a move which never reached the copy
+            # is a history that lies to the next draw.
+            "warmth_dropped": dropped[0],
             "chart": bool(chart),
             "voice_mode": voice["mode"],
         },
@@ -2398,5 +2823,6 @@ __all__ = [
     "rotate_warmth", "classify_parent", "warmth_moves_for", "openers_for",
     "extract_detail", "fuse_warmth", "author_name_hits", "clear_warmth_cache",
     "FAMILY_TAILS", "TAIL_DEFAULT_LANE", "tail_lane", "tails_for",
-    "select_tail", "render_tail", "clear_tail_cache",
+    "select_tail", "render_tail", "clear_tail_cache", "pick_from_pool",
+    "REPLY_SHAPE_DOORWAY",
 ]

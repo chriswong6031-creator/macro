@@ -742,7 +742,15 @@ FACTS = {
 
 class TestReplyDrafter:
     def test_register_matches_the_constitution_family_count(self):
-        assert len(rdr.FAMILIES) == 14, "constitution §9.4 lists 14 reply families"
+        # 14 at XG-W4 (constitution §9.4). XG-W4b adds the FIFTEENTH,
+        # `dry_understatement`, and it is a doctrine amendment plus a test rather
+        # than a dictionary edit (doctrine §13.4, the standard §11.9 sets for a
+        # ninth warmth move): the operator's response mix puts 5% on humor, dry
+        # wit is the single largest WINNING category in the top-60 corpus at
+        # 28.3%, and no existing family's MOVE produces it — a humor quota routed
+        # to `human_reaction` is a plain reaction with a comedy label on it.
+        assert len(rdr.FAMILIES) == 15, "constitution §9.4 + XG-W4b §B.2"
+        assert "dry_understatement" in rdr.FAMILIES
         for spec in rdr.FAMILIES.values():
             assert spec["move"] and spec["trigger"]
 
@@ -773,9 +781,20 @@ class TestReplyDrafter:
         thread. Asserting a specific sentence is asserting the defect: the law is
         that a doorway is present and comes from THIS desk's pool for THIS
         family, not that it is any particular line.
+
+        SCOPED TO `shape="full"` 2026-08-02 (the shape build). The gift-grip-
+        doorway formula is the law for the FULL shape and for nothing else: the
+        four short shapes suppress the doorway on purpose (a one-line reaction
+        that ends on an invitation is not a one-line reaction), and
+        `reply_shape.REPLY_SHAPES[*]["doorway"]` is where that is declared. Left
+        unpinned this test asserted §9.3 against whichever shape the sampler
+        happened to draw, which is a test of a coin flip. The short shapes'
+        no-doorway law is pinned in `tests/test_marketing_reply_shape.py`.
         """
         out = rdr.draft_reply(account="kelly", target={"subject": "capex", "mechanism": "credit"},
-                              facts=FACTS, family="missing_variable", cfg=cfg)
+                              facts=FACTS, family="missing_variable", shape="full",
+                              cfg=cfg)
+        assert out["shape"] == "full"
         assert "12.5%" in out["draft"]            # gift, from own-feed facts
         assert out["tail"] in rdr.tails_for("kelly", "missing_variable")
         doorway = rdr.render_tail(out["tail"], {"subject": "capex",
@@ -1072,7 +1091,8 @@ class TestCriticMutations:
         # from the register would keep the test green.
         "informational_surplus", "corpus_near_dup", "blocklist",
         "position_consistency", "persona_label", "reply_value",
-        "fact_discipline", "vocab", "warmth_register", "fabrication", "dignity",
+        "fact_discipline", "vocab", "warmth_register", "reply_elements",
+        "register_discipline", "fabrication", "dignity",
     ])
     def test_every_critic_is_wired_into_the_pass(self, critic, critic_ctx):
         verdict = rc.run_critics(CLEAN_DRAFT, critic_ctx)
@@ -1081,8 +1101,11 @@ class TestCriticMutations:
 
     def test_the_critic_register_has_not_silently_shrunk(self):
         # 8 at XG-W4; `reply_value` (E4 reply doctrine) is the ninth; the
-        # warmth build (2026-08-01) added `warmth_register` and `fabrication`.
-        assert len(rc.CRITICS) == 11
+        # warmth build (2026-08-01) added `warmth_register` and `fabrication`;
+        # XG-W4b (2026-08-02) added `reply_elements` (the positive two-of-five
+        # floor) and `register_discipline` (the hedging / I-think / anti-polish
+        # laws).
+        assert len(rc.CRITICS) == 13
         assert set(rc.CRITICS) == set(rc._CRITIC_FUNCS)
 
     def test_a_crashing_critic_rejects_rather_than_passes(self, monkeypatch, critic_ctx):

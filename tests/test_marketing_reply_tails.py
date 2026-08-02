@@ -605,13 +605,13 @@ class TestPoolShape:
 # 5. GATE (e) — the real critics, not a copy of their rules
 # ===========================================================================
 class TestEveryTailClearsTheCriticRoster:
-    def test_every_drawable_tail_clears_all_eleven_critics(self, cfg):
+    def test_every_drawable_tail_clears_the_whole_roster(self, cfg):
         """GATE (e), driven through ``reply_critics.run_critics`` itself.
 
         Not a re-implementation of the rules: the roster is imported and run, so
         a critic added or tightened upstream binds this copy the same night.
         """
-        assert len(rc.CRITICS) == 11, rc.CRITICS
+        assert len(rc.CRITICS) == 13, rc.CRITICS
         checked = 0
         for family, lanes in sorted(rd.FAMILY_TAILS.items()):
             for account in LIVE_DESKS:
@@ -624,7 +624,7 @@ class TestEveryTailClearsTheCriticRoster:
                     checked += 1
         assert checked >= 100, checked
 
-    def test_every_composed_draft_clears_all_eleven_critics(self, cfg):
+    def test_every_composed_draft_clears_the_whole_roster(self, cfg):
         """The tail in situ, with the warmth opener in front of it — where a
         register collision (two framing devices, an over-budget dial) would
         actually fire."""

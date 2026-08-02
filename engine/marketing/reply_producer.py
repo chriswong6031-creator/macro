@@ -200,17 +200,112 @@ def _default_facts_for(root: Path | str | None) -> Callable[[str, dict], dict]:
     return _facts
 
 
-def _recent_families(store: Path | str | None, account: str, limit: int) -> list[str]:
-    """Families this desk used recently, oldest first (LRU rotation input)."""
+def _recent_values(store: Path | str | None, account: str, limit: int,
+                   key: str) -> list[str]:
+    """This desk's recent values of one rotation axis, oldest first.
+
+    THE ANTI-SAMENESS AXES WERE DECORATIVE IN PRODUCTION UNTIL THIS EXISTED
+    (XG-W4b §F.5). ``reply_drafter.draft_reply`` has carried ``recent_warmth``
+    and ``recent_tails`` since the warmth and tail builds, and ``_produce_once``
+    passed neither — so both LRUs saw an empty window on every single call and
+    only the stable hash actually ran live. Measured on HEAD with the shipped
+    tables: ``_select_warmth`` collapsed kelly's whole fourteen-family register
+    onto exactly TWO warmth moves (``concede_and_hold`` on eight families,
+    ``verdict_first`` on six) out of the five-to-six admissible per family,
+    because ``rotate_warmth(None, allowed=pool)`` always returns the first
+    unseen entry and every entry is unseen when the window is empty. Feeding a
+    one-item window back in opens the same register to six distinct moves.
+
+    A rotation axis the producer cannot read back is an axis that resets every
+    night, which is exactly the shape the tail build's own docstring warns
+    about — so the queue item has to CARRY the value (see the stamp beside
+    ``score_features`` in ``_produce_once``) and this has to read it back.
+
+    Falsy values are skipped on purpose: ``warmth=None`` ("no warmth move was
+    admissible") and ``tail=""`` ("closed on nothing") are legal outcomes, not
+    uses, and counting them as recent would push a real move out of the window
+    to make room for an absence.
+    """
     try:
         from engine.marketing import reply_queue as _rq  # noqa: PLC0415
 
         rows = [it for it in _rq.read_items(store)
-                if str(it.get("account") or "") == account and it.get("family")]
+                if str(it.get("account") or "") == account and it.get(key)]
     except Exception as exc:  # noqa: BLE001
-        log.warning("reply_producer._recent_families: %s", exc)
+        log.warning("reply_producer._recent_values(%r): %s", key, exc)
         return []
-    return [str(it["family"]) for it in rows[-limit:]]
+    return [str(it[key]) for it in rows[-limit:]]
+
+
+def _recent_families(store: Path | str | None, account: str, limit: int) -> list[str]:
+    """Families this desk used recently, oldest first (LRU rotation input)."""
+    return _recent_values(store, account, limit, "family")
+
+
+def _recent_warmth(store: Path | str | None, account: str, limit: int) -> list[str]:
+    """Warmth moves this desk used recently, oldest first (SECOND rotation axis)."""
+    return _recent_values(store, account, limit, "warmth")
+
+
+def _recent_tails(store: Path | str | None, account: str, limit: int) -> list[str]:
+    """Doorway TEMPLATES this desk closed on recently (THIRD rotation axis).
+
+    Templates rather than rendered sentences, because the rendering changes with
+    the subject and the mechanism — a history of finished copy could never match
+    what ``select_tail`` is choosing between.
+    """
+    return _recent_values(store, account, limit, "tail")
+
+
+def _recent_shape_copy(store: Path | str | None, account: str,
+                       limit: int) -> list[str]:
+    """Head/closer TEMPLATES this desk used recently (FOURTH axis, XG-W4b).
+
+    THE SHAPE ITSELF IS NOT ROTATED least-recently-used and this window is not
+    shape ids — a rotation over shapes is a CYCLE, and four accounts sharing an
+    audience stepping through five shapes in lockstep is the exact signature the
+    deficit-weighted draw exists to avoid. What rotates is the shape's COPY: the
+    ``addition`` heads and the ``fragment_exchange`` closers, drawn by the same
+    hash-plus-LRU selector (``reply_drafter.pick_from_pool``) the doorway tails
+    use, off the same kind of window.
+
+    Templates rather than rendered sentences, for the same reason ``_recent_tails``
+    stores templates: the rendering changes with the gift.
+    """
+    return _recent_values(store, account, limit, "shape_copy")
+
+
+def _day_counts(store: Path | str | None, account: str, as_of: str,
+                key: str) -> dict[str, int]:
+    """This desk's counts of one drawn axis SO FAR TODAY. The sampler's control loop.
+
+    WITHOUT THIS THE SAMPLER IS INERT, not merely unbalanced: every draw would
+    see an empty realised share, so the deficit term collapses to the target
+    weight plus a constant floor and the day never corrects itself. The measured
+    mix would then be the raw prior with no control loop at all, and a desk that
+    drew six mini-essays in a row would keep drawing them at the same odds.
+
+    Scoped to (account, as_of): the day is the loop, and yesterday's counts
+    correcting today's draw is a control system integrating over the wrong
+    window.
+    """
+    try:
+        from engine.marketing import reply_queue as _rq  # noqa: PLC0415
+
+        rows = [it for it in _rq.read_items(store)
+                if str(it.get("account") or "") == account
+                and str(it.get("as_of") or "") == str(as_of)
+                and it.get(key)]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("reply_producer._day_counts(%r): %s", key, exc)
+        return {}
+    counts: dict[str, int] = {}
+    for row in rows:
+        value = str(row[key])
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
 
 
 def _allowed_families(account: str, *, root: Path | str | None, cfg: dict | None) -> list[str] | None:
@@ -591,6 +686,7 @@ def _produce_once(
     Returns a counts dict; nothing is ever sent.
     """
     from engine.marketing import health_monitor as _health  # noqa: PLC0415
+    from engine.marketing import persona_model as _persona_model  # noqa: PLC0415
     from engine.marketing import reply_critics as _critics  # noqa: PLC0415
     from engine.marketing import reply_discovery as _discovery  # noqa: PLC0415
     from engine.marketing import reply_drafter as _drafter  # noqa: PLC0415
@@ -684,16 +780,40 @@ def _produce_once(
         pool = by_account.get(account) or []
         if not pool:
             continue
+        # ONE relation read per account per tick, used TWICE. The scorer has
+        # always read it for its `relationship_stage` feature; XG-W4b adds the
+        # tone half — `persona_model.familiarity` derives the register tier from
+        # the same rows. Two reads of an append-only ledger inside one tick
+        # could disagree with each other, and a desk whose scorer and whose
+        # register disagree about who it is talking to is worse than either.
+        relations = _score.load_relations(account, root)
         ranked = _score.rank(
             pool,
             persona_beats=persona_beats(cfg, register, account),
             cfg=cfg, now=ts,
-            relations=_score.load_relations(account, root),
+            relations=relations,
         )
         eligible = [t for t in ranked if t.get("eligible")]
         result["eligible"] += len(eligible)
 
         recent = _recent_families(store, account, history_n)
+        # The two rotation windows XG-W4b arms. Read exactly the way `recent` is
+        # — off the queue, per account, oldest first — because a window built
+        # any other way is a window the enqueued record cannot reproduce.
+        recent_warmth = _recent_warmth(store, account, history_n)
+        recent_tails = _recent_tails(store, account, history_n)
+        # The FOURTH axis (XG-W4b). `recent_shapes` rotates the shape's own copy
+        # pools; `day_shapes` / `day_types` are the sampler's control loop and
+        # are scoped to TODAY, which is why they are read separately rather than
+        # counted off the rotation window.
+        recent_shape_copy = _recent_shape_copy(store, account, history_n)
+        day_shapes = _day_counts(store, account, as_of, "shape")
+        day_types = _day_counts(store, account, as_of, "response_type")
+        # `flat_confession` ("I was wrong about this one") is gated on a REAL
+        # prior position and fails closed without one, so a producer that never
+        # reported whether this desk has an opinion ledger denied itself the
+        # move outright. `position_consistency` reads the same file.
+        has_thesis = bool(_critics.load_theses(account, root))
         # A learned restriction, when learning is ARMED (default: None). The
         # family is still chosen by the drafter's own LRU rotation — the rule
         # narrows the pool, it never pins one family, because pinning is how one
@@ -705,9 +825,58 @@ def _produce_once(
                 break
             facts = facts_builder(account, target)
             chart = target.get("chart")
+            handle = str(target.get("author") or "").strip().lower().lstrip("@")
+            rel_row = relations.get(handle)
+            # THE REGISTER TIER, derived from our own ledger and nothing else.
+            # At M0 relations.jsonl does not exist on any desk, so this is
+            # `stranger` for every handle and the layer is INERT — which is the
+            # correct shipping state, printed here rather than discovered later.
+            # It warms as M1 approvals accumulate.
+            fam_tier = _persona_model.familiarity(
+                account, handle, relations=relations, now=ts, root=root)
+            # The familiar-register openers this author has EARNED, or []. Every
+            # AM-R1 precondition is evaluated here — recent contact inside 14
+            # days, a stored topic that overlaps this parent, and the persona's
+            # own guard sweep — so the gate runs in production rather than only
+            # in a test, and a bug in it surfaces as an empty pool on a desk
+            # that should have one. Composition belongs to the drafter (§F.3),
+            # which reads this off the item and the ctx; at M0 it is always []
+            # because no desk has a relation ledger yet.
+            tone = _persona_model.tone_prefixes(
+                account, fam_tier, parent_text=str(target.get("text") or ""),
+                relations_row=rel_row, now=ts, root=root)
+            # The QUEUE tier (relationship / conversion / breakout / inbound) is
+            # a different axis and is what gates `relationship_only` — the
+            # sympathy move on a curated relationship-tier author. The producer
+            # has always computed it for `make_item` and never passed it to the
+            # drafter, so `quiet_sympathy` was unreachable from this lane.
+            queue_tier = _tier_of(target)
+            # `recent_warmth`, `recent_tails`, `has_thesis` and `tier` are
+            # keywords `draft_reply` HAS ALWAYS ACCEPTED AND THIS LANE NEVER
+            # PASSED — that is the XG-W4b §F.5 defect, and it is why the two
+            # anti-sameness axes shipped in the last two builds ran on an empty
+            # history in production. Passed plainly, with no signature probe and
+            # no defensive filter: if a later edit removes one of these the tick
+            # must fail loudly on the first draft, because the silent version of
+            # that failure is exactly what is being closed here.
+            #
+            # `relations_row` carries the register tier's evidence into the
+            # composer; `fam_tier` itself is stamped on the critic ctx and the
+            # queue item below, which is what an operator reads it back from.
             drafted = _drafter.draft_reply(
                 account=account, target=target, facts=facts,
                 recent_families=recent,
+                recent_warmth=recent_warmth,
+                recent_tails=recent_tails,
+                recent_shapes=recent_shape_copy,
+                # BOTH axes, nested, because one flat dict would have the shape
+                # draw computing its realised share off a response-type
+                # denominator (see `reply_drafter._day_slice`).
+                day_counts={"shape": day_shapes, "response_type": day_types},
+                relations_row=rel_row,
+                as_of=as_of,
+                has_thesis=has_thesis,
+                tier=queue_tier,
                 chart=chart, cfg=cfg, root=root, n_alts=n_alts,
                 family=(_drafter.rotate_family(recent, allowed=allowed) if allowed else None),
             )
@@ -734,6 +903,34 @@ def _produce_once(
                 "our_handles": our_handles,
                 "satire_blocklist": satire,
                 "cfg": cfg,
+                # THE WARMTH CONTEXT THE CRITICS ALREADY EXPECT. `persona_label`
+                # and the two-of-five element critic both carry a
+                # `quiet_sympathy` exemption that is DOUBLE-gated on
+                # `relationship_only` AND `warmth == "quiet_sympathy"` — either
+                # alone is a hole wide enough to smuggle an elementless growth
+                # reply through. A ctx that supplied neither made the exemption
+                # unreachable and the sympathy reply un-shippable; a ctx that
+                # supplied only one would make it a hole. Both, or nothing.
+                "warmth": drafted.get("warmth"),
+                "relationship_only": bool(
+                    (drafted.get("components") or {}).get("relationship_only")),
+                # THE SHAPE, and it is load-bearing rather than informational.
+                # `reply_critics.short_form_engaged` FAILS CLOSED without it, so
+                # a producer that omitted it would leave every `one_line` and
+                # `fragment_exchange` draft to be rejected by `persona_label`
+                # (`_referents("Yeah, but that is the problem.")` is empty) —
+                # i.e. the whole short-form half of this build would draft and
+                # then silently abstain, which is the hardest failure mode to
+                # see from a counts dict.
+                "shape": drafted.get("shape"),
+                "response_type": drafted.get("response_type"),
+                # Register context. Not a gate here — the critics may read it,
+                # and an operator reading a rejection can see which register the
+                # draft was written in.
+                "familiarity": fam_tier,
+                "tier": queue_tier,
+                "relations_row": rel_row,
+                "tone_prefixes": list(tone),
             }
             verdict, stamp = _critics.screen(draft, ctx)
             if verdict.get("verdict") != "pass":
@@ -751,7 +948,7 @@ def _produce_once(
                     parent_excerpt=str(target.get("text") or ""),
                     draft=draft,
                     alt_drafts=list(drafted.get("alt_drafts") or []),
-                    tier=_tier_of(target),
+                    tier=queue_tier,
                     score=float(target.get("score") or 0.0),
                     score_components=dict(target.get("score_components") or {}),
                     family=drafted.get("family"),
@@ -771,12 +968,62 @@ def _produce_once(
             # The item carries the draft-time score features so the covariates
             # the parent adjustment needs survive the thread moving on.
             item["score_features"] = dict(target.get("score_features") or {})
+            # …and the ROTATION AXES, for the same reason and with the same
+            # mechanism. `family` has always been a first-class item field, so
+            # its LRU worked; `warmth` and `tail` were not persisted anywhere,
+            # so the two axes shipped in the last two builds drew from an empty
+            # window on every producer run (see `_recent_values`). Stamped here
+            # rather than passed into `make_item` because the shape lane owns
+            # that signature this wave and two lanes editing one keyword list is
+            # how a merge silently drops a field; `validate_item` checks NAMED
+            # fields and admits unknown keys, so an item carrying these is valid
+            # under the unchanged `marketing.reply/v1` schema and every already
+            # queued item stays valid without them.
+            item["warmth"] = drafted.get("warmth")
+            item["tail"] = drafted.get("tail") or ""
+            item["familiarity"] = fam_tier
+            item["tone_prefixes"] = list(tone)
+            # THE SHAPE AXIS, and its whole audit trail. `shape_roll` and
+            # `type_roll` are the [0,1) draws; with them plus the day's counts an
+            # operator re-derives the pick exactly instead of arguing with a coin
+            # flip — which is the entire justification for a random draw sitting
+            # in a deterministic pipeline. `shape` is also what `_day_counts` and
+            # `reply_shape.shape_mix` read back, so an item that omitted it would
+            # disarm both the control loop and the drift alarm.
+            item["shape"] = drafted.get("shape") or ""
+            item["shape_copy"] = drafted.get("shape_copy") or ""
+            item["response_type"] = drafted.get("response_type") or ""
+            item["shape_roll"] = float(drafted.get("shape_roll") or 0.0)
+            item["type_roll"] = float(drafted.get("type_roll") or 0.0)
 
             outcome = _rq.enqueue(item, store, cfg=cfg)
             if outcome.get("ok"):
                 result["enqueued"] += 1
                 made += 1
                 recent.append(str(drafted.get("family") or ""))
+                # ALL THREE WINDOWS ADVANCE INSIDE THE TICK, not just the
+                # family one. Without this, two targets drafted in the same tick
+                # read the same pre-tick history and can draw the same warmth
+                # move and the same doorway — the enqueued item is only visible
+                # to `_recent_values` on the NEXT tick, so an in-tick collision
+                # is exactly the case the queue read-back cannot cover.
+                if drafted.get("warmth"):
+                    recent_warmth.append(str(drafted["warmth"]))
+                if drafted.get("tail"):
+                    recent_tails.append(str(drafted["tail"]))
+                # The shape's copy window and BOTH day counters advance in-tick
+                # for the same reason: the enqueued item is only visible to the
+                # queue readers on the NEXT tick, so without this two targets in
+                # one tick see identical counts, get identical deficits, and the
+                # day's control loop does not start working until tomorrow.
+                if drafted.get("shape_copy"):
+                    recent_shape_copy.append(str(drafted["shape_copy"]))
+                if drafted.get("shape"):
+                    day_shapes[str(drafted["shape"])] = day_shapes.get(
+                        str(drafted["shape"]), 0) + 1
+                if drafted.get("response_type"):
+                    day_types[str(drafted["response_type"])] = day_types.get(
+                        str(drafted["response_type"]), 0) + 1
                 # Keep the near-dup critic honest WITHIN the tick: without this
                 # the corpus is a snapshot from before the tick started, so two
                 # targets on the same theme could both clear it and enqueue the

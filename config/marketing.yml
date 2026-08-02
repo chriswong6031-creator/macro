@@ -2307,6 +2307,46 @@ reply_desk:
     parent_jaccard: 0.55
     corpus_jaccard: 0.50
 
+  # ── Response-type mixture (XG-W4b §B.3) ───────────────────────────────────
+  # The operator's brief: "do NOT make every reply an analytical mini-essay",
+  # with an approximate target of 30% short reactions / 25% analytical additions
+  # / 15% agreement-with-nuance / 15% disagreement / 10% genuine questions / 5%
+  # humor — and "percentages SHOULD VARY BY PERSONA", because an INTJ-shaped
+  # account challenges assumptions more and an ENFP-shaped one reacts more.
+  #
+  # THESE ARE OVERRIDES, NOT THE SOURCE OF TRUTH. The rows live in code
+  # (engine/marketing/persona_model.DEFAULT_RESPONSE_MIX) so that a missing or
+  # truncated config can never silently disarm the mix — the same posture as
+  # reply_queue.PACING_DEFAULTS. What is written here is the committed copy of
+  # those rows, so an operator can see and retune them in one place; a partial
+  # override (e.g. `cici: {humor: 0.08}`) LAYERS onto the code row rather than
+  # replacing it, so tuning one bucket never silently zeroes the other five.
+  #
+  # EVERY WEIGHT IS A DESIGNED PRIOR WITH NO OUTCOME EVIDENCE BEHIND IT
+  # (charter §8). Each row is derived from that desk's own pinned codex —
+  # kelly's terse fragments and "what would prove this wrong" give her the
+  # highest short and disagreement shares; sophia's is the only codex that
+  # licenses length, so she carries the highest analytical share and the lowest
+  # short one; cici's "polite corrections" express disagreement AS agreement, so
+  # her agreement share is highest and her raw disagreement lowest; meagan opens
+  # on a human reaction, so hers is the highest short and humor share. The
+  # four-employee MEAN lands on the operator's distribution to within a point
+  # and a half on every bucket while no two desks share a row. Nothing here has
+  # been graded against engagement yet, and the reply label loop is what will
+  # grade it.
+  #
+  # flagship/founder carry humor 0.00 because the `dry_understatement` family
+  # sits above their reply dial. That is a real zero, not a placeholder, and the
+  # normaliser is built to survive a zero-weight bucket.
+  response_mix:
+    accounts:
+      kelly:    {short_reaction: 0.34, analytical_addition: 0.24, agreement_nuance: 0.10, disagreement: 0.18, question: 0.08, humor: 0.06}
+      sophia:   {short_reaction: 0.22, analytical_addition: 0.34, agreement_nuance: 0.18, disagreement: 0.14, question: 0.06, humor: 0.06}
+      cici:     {short_reaction: 0.28, analytical_addition: 0.28, agreement_nuance: 0.20, disagreement: 0.12, question: 0.08, humor: 0.04}
+      meagan:   {short_reaction: 0.36, analytical_addition: 0.20, agreement_nuance: 0.16, disagreement: 0.10, question: 0.10, humor: 0.08}
+      flagship: {short_reaction: 0.30, analytical_addition: 0.45, agreement_nuance: 0.05, disagreement: 0.12, question: 0.08, humor: 0.00}
+      founder:  {short_reaction: 0.34, analytical_addition: 0.34, agreement_nuance: 0.10, disagreement: 0.12, question: 0.10, humor: 0.00}
+
   # ── Reply voice (E4) — the LLM PHRASING pass, not a drafter ───────────────
   # research/MARKETING_REPLY_DOCTRINE_BY_FABLE.md, distilled from the
   # 2026-07-29 corpus of 180 top replies under 12 large finance posts

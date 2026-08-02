@@ -566,3 +566,248 @@ error — an unreadable history must not license an uncapped week.
 | no fabricated biography, on ANY account | `reply_critics.fabrication` — `am_r1_hits` called directly, plus the circumstance class and the author's name, with the sentence quoted |
 | a model that fabricates or goes cold cannot ship | `reply_voice.validate_reply_copy` runs both critics before the copy is accepted; ONE repair turn, then the warm deterministic draft |
 | the question caps | `reply_producer` at selection time (§11.8) |
+
+---
+
+## §13. AMENDMENT — the shape axis and the response mix (2026-08-02)
+
+*Written from the XG-W4b build (§A/§B). Same standard as §11: evidence attached,
+thin numbers labelled thin, and §13.9 says what this does not claim.*
+
+### §13.1 The law this adds
+
+> A reply's SHAPE is a third rotation axis beside family and warmth, it is
+> chosen by a deficit-weighted stable draw rather than a cycle, and the
+> deterministic path must be able to emit a fourteen-word committed sentence —
+> because a desk whose every reply is gift + grip + doorway is a template with
+> four names on it.
+
+### §13.2 Why the doctrine needed amending again
+
+§3 already carries the length law and its evidence: the corpus median winner is
+11 words, 26.1% of the winners are 1–5 words, and 66.7% are under 16. The
+composer could not obey it. `reply_drafter.compose()` had exactly one output
+shape — nine of the fourteen families rendered `{gift}\n\n{drawn tail}` and the
+other five `{frame}{gift}` — so every employee reply was two sentences minimum
+and typically 30–45 words. `reply_value.MAX_REPLY_WORDS = 60` is a CEILING, not
+a shape: it could stop a reply being long and could not make one short.
+
+**Measured share of short-form output before this amendment: 0.00.** The
+operator's brief asks for roughly 0.30 and names the reason — "the biggest
+difference between human and AI replies is that humans have a SPECIFIC REACTION,
+not a competent summary." §3 was a law with no mechanism behind it for eight
+months.
+
+### §13.3 The five shapes
+
+| id | what it is | units | chars | sentences | doorway |
+|---|---|---|---|---|---|
+| `one_line` | one committed sentence | ≤14 | ≤100 | 1 | never |
+| `fragment_exchange` | two short clauses, texting rhythm | ≤18 | ≤130 | 2 | never |
+| `addition` | agreement plus the thing they missed | ≤26 | ≤180 | 2 | replaces s2 |
+| `compact_chain` | the arrow form (`a -> b -> c`) | ≤22 | ≤160 | 1 | never |
+| `full` | today's gift + grip + doorway | ≤60 words | ≤240 | — | yes |
+
+Budgets are enforced at BUILD time, in content units and characters, and an
+over-budget render **refuses** — it returns nothing and the caller falls to the
+next legal shape, ending at `full`, which is always legal. **Nothing truncates.**
+A reply clipped to fit a budget has lost its verb, and a half sentence under a
+real woman's byline is worse than a mini-essay.
+
+Three build-time gates sit beside the budget, and all three exist because a
+shape the critics will kill a moment later is an abstention the reader never
+sees and the operator cannot diagnose:
+
+* **W1** — a dial-2 draft at or over 12 content units with no register marker.
+  The draw is narrowed to the marker-carrying entries of the desk's own pool
+  rather than the copy being rewritten.
+* **the two-of-five element floor** (§13.6) — a `one_line` carrying nothing but
+  the gift is a competent summary, which is the named failure mode.
+* **W3**, already there since the warmth build, on any opener that stands alone.
+
+`compact_chain`'s connector is ASCII `->` and that is load-bearing, not a style
+choice: U+2192 `→` sits inside `expression_dial._EMOJI_RE`'s `←-⇿` class, so
+`apply_pass` STRIPS it and `violations` reports an off-signature emoji. The chain
+would ship as "higher oil stickier inflation fewer cuts" — the causality silently
+deleted — and the dial would blame the desk for an emoji it never chose. Pinned
+in both directions by test.
+
+### §13.4 The fifteenth family — `dry_understatement`
+
+Humor is 28.3% of the top-60 corpus and the single largest winning category
+(§2, "Dry wit"); §5 grants a humor budget to every employee desk; the operator's
+mix puts 5% on it. **No family's MOVE produced it.** A humor quota routed to
+`human_reaction` is a plain reaction with a comedy label on it, which is a
+distribution that reads right in a report and wrong in a timeline.
+
+§11.9 sets the standard — "a ninth is a doctrine amendment plus a test, not a
+dictionary edit" — and this is a FAMILY rather than a warmth move, so the same
+ceremony applies to the table it did not land in. Per-desk lawfulness comes from
+each pinned codex: kelly ("internet-native dry wit") owns it; meagan's is the
+warm variant only, because her codex bans finance-bro irony and her restraint
+line puts the useful sentence after the playful one; sophia's is rare, and her
+craft-metaphor cap is untouched because understatement spends no metaphor; cici's
+is **narrowed to the clock and the forecasters** — never a market, a people or a
+policy — a narrowing derived from her own banned list (`exotic`, `mysterious
+east`), which names exactly the failure mode of humor on her beat.
+
+It carries `dial_floor: 2`, and that is **the moment `FAMILIES.dial_floor` stops
+being decorative.** Every entry has declared the field since the register was
+written and nothing read it; `draft_reply`'s `allowed` comprehension now does.
+Humor is therefore unavailable to the flagship and the founder with no second
+availability table to keep in step — which is what §5's "Never: anything warm"
+means, mechanically, for families as §11.4 already made it mean for warmth moves.
+The same gate withdraws `human_reaction` (also `dial_floor: 2`) from the two
+evidence desks, which is a behaviour change and is correct: "okay, this one is
+actually interesting." was never the flagship's register.
+
+### §13.5 The mix, and why it is a draw and not a rotation
+
+The requirement is contradictory on purpose and both halves are real. The
+measured mix must land near the operator's 30/25/15/15/10/5, and a deterministic
+30/25/15/15/10/5 **cycle is itself a tell** — four accounts sharing one fintwit
+audience, stepping through shapes in lockstep, is the same bot-farm signature the
+tail build closed one axis over.
+
+The resolution: **the day is the control loop, the draw is the randomiser, and
+the hash is what makes both auditable.** A response type is drawn per reply
+against the desk's own weights, bent toward whatever bucket is running cold
+today; the shape is drawn against a prior belonging to that type. Both rolls come
+from blake2b over (account, as_of, thread, family, salt) — never `hash()`, whose
+per-interpreter randomisation would make a queue record unable to explain its own
+pick — and both functions return their weights, deficits, roll and legal set, so
+an operator re-derives any pick exactly instead of arguing with a coin flip.
+
+Per-persona weights, each row derived from that desk's own codex:
+
+| account | short | analytical | agreement | disagree | question | humor |
+|---|---|---|---|---|---|---|
+| kelly | 0.34 | 0.24 | 0.10 | 0.18 | 0.08 | 0.06 |
+| sophia | 0.22 | 0.34 | 0.18 | 0.14 | 0.06 | 0.06 |
+| cici | 0.28 | 0.28 | 0.20 | 0.12 | 0.08 | 0.04 |
+| meagan | 0.36 | 0.20 | 0.16 | 0.10 | 0.10 | 0.08 |
+| flagship | 0.30 | 0.45 | 0.05 | 0.12 | 0.08 | 0.00 |
+| founder | 0.34 | 0.34 | 0.10 | 0.12 | 0.10 | 0.00 |
+
+The four-employee mean is **0.30 / 0.265 / 0.16 / 0.135 / 0.08 / 0.06** and no
+two desks share a row — "percentages should vary by persona" satisfied without
+drifting the fleet mix. **One bucket misses by two points, not one and a half:**
+`question` means 0.08 against the operator's 0.10, because sophia ("sparing
+questions") and kelly ("pointed questions only when answerable") both sit below
+the fleet number and nothing above it compensates. Recorded rather than rounded.
+
+**The deficit formula deviates from the XG-W4b spec's literal step 4, and the
+arithmetic is why.** The spec writes `d = max(0, w - r) + 0.05` with a raw
+`r = counts/seen`, and separately requires every per-account share to land within
+±0.05 of target. Those cannot both hold on an 18-reply day: solving the spec's
+own recursion at equilibrium for meagan's 0.36 short-reaction weight gives a
+CEILING of 0.275 — a fixed point, not variance — and a raw `counts/seen` puts one
+bucket at r = 1.00 after the first draw of the morning, suppressing the desk's
+highest-weight register hardest. The shipped form is
+`d = w + 3.0 · max(0, w − r_smooth) + 0.01` with `r_smooth` anchored on the
+target by 18 pseudo-counts: the base is the target weight, so with no information
+the draw IS the target; the floor keeps its stated job of making a bucket at
+quota unlikely and never impossible.
+
+Measured over 5,000 draws across the four employee desks with the real tables:
+
+| shape | realised | nominal prior |
+|---|---|---|
+| `one_line` | 0.313 | — |
+| `fragment_exchange` | 0.141 | — |
+| `addition` | 0.213 | — |
+| `compact_chain` | 0.046 | — |
+| `full` | **0.287** | 0.244 |
+
+Worst per-account response-type error: **0.047**. Longest consecutive run of one
+shape: 6 over 1,250 draws, against 9 with the deficit correction disarmed — which
+is what makes the control loop load-bearing rather than decorative.
+
+The mix is JUDGED per account over a rolling 7 days at a minimum of 40 items;
+below that the shares are reported with their `n` and not graded, because a share
+off six items is the vacuous-N trap. The alarm is a bare line-start
+`::warning title=reply_shape_mix_drift::` at a 7-day `full` share above 0.45.
+
+### §13.6 The engagement floor, and the two gates it opened
+
+The operator's generation rule — every substantive reply carries at least two of
+{a specific reference to the post, a clear opinion, a reason, a conversational
+marker, a question or opening} — is enforced by `reply_critics.reply_elements`
+and is checked again at BUILD time by the shape layer, so a shape that cannot
+clear it falls to one that can rather than drafting and silently abstaining.
+
+Two structural blockers had to fall with it, and both were measured on HEAD:
+
+1. `_referents("Yeah, but that is the problem.")` is EMPTY, so `persona_label`
+   rejected every short reaction. Closed by a narrow, double-gated, fail-closed
+   exemption keyed on `ctx["shape"]` — which the producer must stamp, and now
+   does.
+2. Quoting the parent's own figure — the canonical "the 18% inventory increase is
+   the part that worries me" — was rejected by `fact_discipline`, because that
+   number is not on OUR whitelist. Closed by licensing a figure that appears
+   verbatim in the parent: we are quoting them, not asserting it, and verbatim
+   presence is checkable by anyone reading the thread.
+
+### §13.7 The rotation axes were resetting every night
+
+Not a new law — a defect this amendment closes, and it is worth writing down
+because it made the last two builds partly decorative in production.
+`draft_reply` has accepted `recent_warmth` and `recent_tails` since the warmth
+and tail builds; `reply_producer._produce_once` passed neither, and `make_item`
+persisted neither. **Both LRUs saw an empty window on every producer run.** With
+an empty window `rotate_warmth` always returns the first unseen entry, which
+collapsed kelly's entire fourteen-family register onto two warmth moves. The
+queue item now carries `warmth`, `tail`, `shape`, `shape_copy`, `response_type`
+and both rolls; the producer reads them back and advances all four windows
+inside the tick, because an item enqueued this tick is invisible to the queue
+reader until the next one.
+
+### §13.8 Where the shape axis is enforced
+
+| Law | Enforced by |
+|---|---|
+| the shape exists before the model runs | `reply_drafter.compose(..., shape=)` — deterministic, so a muted provider still ships short replies |
+| `full` is unchanged | a parity test over the whole family × warmth grid: `compose(f, g, c, warmth=w)` is byte-identical to `compose(..., shape="full")` |
+| a shape wrong for the family is unavailable | `reply_shape.shapes_for` (the §A.3 matrix), plus gates for a sensitive parent, a sympathy draft, an over-long gift and an absent chain |
+| the mix is a draw, not a cycle | `reply_shape.choose_response_type` / `choose_shape` — blake2b rolls, per-thread and per-day |
+| the day corrects itself | `reply_producer._day_counts`, threaded into both draws and advanced in-tick |
+| no head or closer hardens into a tell | `reply_drafter.pick_from_pool` — the SAME selector the doorway tails use, over disjoint per-desk lanes |
+| copy out of character is unavailable | `reply_shape.heads_for` / `closers_for` — the same single guard sweep the openers and tails run |
+| a short shape never ships a doorway | `REPLY_SHAPES[*]["doorway"]`, read by `draft_reply` before it reports a tail |
+| humor stays off the evidence desks | `FAMILIES["dry_understatement"]["dial_floor"]`, read by `draft_reply`'s `allowed` comprehension |
+| alternates still differ in reasoning move | `_compose_shaped`'s `avoid` set — the short shapes drop the family frame, so two families would otherwise collapse to one sentence |
+| the mix does not drift back | `reply_shape.shape_mix` + the `reply_shape_mix_drift` annotation |
+
+### §13.9 What this amendment does NOT claim
+
+* **The response-mix weights are a designed prior with no outcome evidence
+  behind them.** Every row is derived from a pinned codex line, which makes it
+  arguable — it does not make it measured. Nothing in the labels loop has yet
+  graded a short reaction against a mini-essay from the same desk on the same
+  kind of parent. The 30/25/15/15/10/5 is the operator's judgment, and the
+  per-persona skew is ours.
+* **The relationship layer ships INERT.** `data/marketing/personas/<id>/relations.jsonl`
+  is written only by the M1 approval path and every desk is at M0, so every
+  handle resolves to `stranger` and the familiarity tier changes nothing today.
+  It warms as approvals accumulate. Built now because building it after the store
+  fills means a month of replies written at the wrong register.
+* **`compact_chain` ships inert too.** No fact builder supplies `ctx["chain"]`,
+  and the drafter may NOT synthesise a causal chain from a single gift — that is
+  inventing a mechanism, the same class of defect as inventing a figure. Its
+  0.046 measured share is a simulation with chains supplied; live it is 0.00
+  until a builder emits one.
+* **`compact_chain` cannot reach the spec's 0.08 floor even then**, and the
+  reason is the family matrix rather than the weights: the 0.30 prior applies to
+  `analytical_addition` (fleet weight 0.265) but the shape admits only 3 of that
+  type's 7 families, so the reachable ceiling is ≈0.034 before the deficit
+  correction lifts it. Raising it is a §A.3 matrix ruling, not a re-weighting.
+* **The producer-side question caps remain UNBUILT.** §11.8 places three caps at
+  selection time; the rolling ≤20%-ending-in-a-question half moved to a critic
+  (which can read `ctx["corpus"]`, as W2 already proves), but **≤2
+  author-directed per account per 7 days** and **never two to the same author
+  inside 30 days** genuinely need the queue and nothing implements them. Named
+  here as a gap rather than left to look built. This is a recorded disagreement
+  with §11.8's "belongs at selection time, not in a critic", not a quiet override.
+* **It measures none of the objective function.** Charter §3's objective is the
+  author replying back and a follow. Every number in §13.5 is a simulation of our
+  own sampler, not an outcome.

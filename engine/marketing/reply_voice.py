@@ -61,11 +61,13 @@ COLLECTION, before a single test runs.
 Public API
 ----------
     voice_or_fallback(draft, *, family, account, parent_text, numbers_whitelist,
-                      parent_author, ctx, cfg, root) -> dict
+                      parent_author, warmth, shape, shape_spec, corpus, cfg,
+                      root) -> dict
     validate_reply_copy(text, *, draft, numbers_whitelist, parent_text,
-                        account, family, root) -> list[str]
+                        account, family, warmth, shape, corpus, root) -> list[str]
     build_user_message(...) -> str
     persona_card(account, cfg) -> str
+    REGISTER_LAWS: tuple[tuple[str, str], ...]   # rule id -> the prompt sentence
     fallback_stats() -> dict
     reset_stats() -> None
 """
@@ -191,6 +193,93 @@ ANTI_EXEMPLARS: tuple[tuple[str, str], ...] = (
 )
 
 
+#: THE PROMPT-VS-CRITIC CONTRACT (XG-W4b §C/§D/§F.7).
+#:
+#: Every entry is ``(rule_id, the sentence the prompt states)``. The ids are the
+#: SAME ids ``reply_critics.REGISTER_RULE_IDS`` publishes and the same ids every
+#: reject reason from `reply_elements` / `register_discipline` starts with, and
+#: `tests/test_marketing_reply_register.py` asserts the two sets are equal AND
+#: that each id has a live code site that can actually reject.
+#:
+#: WHY A CONSTANT RATHER THAN PROSE IN THE PROMPT. A prompt that asks for what
+#: the validator bans is the defect this repo has now fixed three times: the
+#: model obeys the instruction, the gate rejects the obedience, the fallback
+#: rate climbs, and the counters read as "the model is bad at this". Enumerating
+#: the laws in one place, keyed to the gate's own ids, makes the two impossible
+#: to ship out of step — a critic rule with no prompt line turns the test red,
+#: and so does a prompt line naming a rule no critic enforces.
+#:
+#: The ids are NOT shown to the model. Only the sentences are.
+REGISTER_LAWS: tuple[tuple[str, str], ...] = (
+    ("uncertainty_stacking",
+     "At most ONE uncertainty marker in a reply. \"I could be wrong\", \"feels "
+     "like\", \"I'm not convinced\", \"hard to say\", \"I'd lean\" — one of "
+     "those is conversation. Two in the same reply is a model hedging, and it "
+     "reads as one."),
+    ("hedge_share",
+     "Hedge OCCASIONALLY. Most replies should carry no uncertainty marker at "
+     "all; a desk that qualifies every read has no read. Hedge on the things "
+     "that are genuinely unsettled and commit to the rest."),
+    ("hedge_on_confession",
+     "Never hedge an admission. \"I had this wrong, though I could be wrong\" "
+     "is neither an admission nor a hedge. If the draft owns a changed mind, "
+     "own it flat."),
+    ("i_feel_like_scope",
+     "\"I feel like\" is for an IMPRESSION about what the room believes — "
+     "\"I feel like everyone is treating this as a demand story\". In front of "
+     "an analytical claim about a mechanism it is wrong: that takes \"I think\" "
+     "or, better, a precise alternative."),
+    ("i_think_share",
+     "\"I think\" is seasoning, not the meal. Prefer the precise alternatives, "
+     "which sound personal without pretending to feelings: \"My read is that "
+     "this move is mostly short covering.\" / \"This looks more like multiple "
+     "compression than deteriorating fundamentals.\" / \"That reads like "
+     "credit, not semis.\""),
+    ("i_think_openings",
+     "Never open on \"I think\" out of habit. If every reply starts that way "
+     "the account sounds like a model wearing a human mustache."),
+    ("artificial_typos",
+     "Never misspell anything on purpose, never stretch a word for effect "
+     "(\"sooo\", \"yesss\"), and never trail off in four dots. A manufactured "
+     "typo is the loudest tell there is; it is worse than a dull reply."),
+    ("metronome_prose",
+     "Vary sentence length. Three long sentences of near-identical length is a "
+     "paragraph, not a comment."),
+    ("memo_prose",
+     "Fragments and contractions are LAWFUL and wanted. Three complete, "
+     "uncontracted, paragraph-length sentences with nothing conversational in "
+     "them is a memo."),
+    ("balanced_clause_tell",
+     "At most one \"not just X but Y\" / \"it's not X, it's Y\" construction. "
+     "Two in one short reply is a generator's rhythm."),
+    ("two_of_five",
+     "A substantive reply carries at least TWO of: a specific reference to "
+     "something in the post (a figure, a ticker, a borrowed word, a quoted "
+     "phrase); a clear opinion that commits; a reason for that opinion; a "
+     "natural conversational or emotional marker; a question or something left "
+     "open. A competent summary carries none of them, and that is the single "
+     "biggest difference between a human reply and a generated one."),
+    ("generic_praise",
+     "Never praise without substance. \"Good point.\" on its own is worth "
+     "nothing; \"Good point, and the 18% inventory build is the part that "
+     "decides it\" is worth something because it names what."),
+    ("parroted_span",
+     "Never repeat the post back at it. Lifting a run of the poster's own words "
+     "into the reply adds nothing, whatever follows it."),
+    ("repeated_opening",
+     "Never reuse an opening. If the last few replies from this desk started "
+     "the same way, start this one differently."),
+    ("question_end_share",
+     "Do not end on a question every time. An occasional one is fine and a "
+     "rhetorical one aimed at the room is fine; a reply desk that closes on a "
+     "question mark by default is doing the reader's thinking out loud."),
+)
+
+
+def _register_block() -> str:
+    return "\n".join(f"- {law}" for _id, law in REGISTER_LAWS)
+
+
 def _exemplar_block() -> str:
     return "\n".join(
         f"{i}. [{likes} likes, {pattern}] {text}"
@@ -218,6 +307,10 @@ HARD LAWS
 7. No em dashes. No hashtags. No links. No @-mentions. Emoji only if the persona card grants a budget, and at most one.
 8. Plain language. No study names, no internal jargon, no "our model", no "the engine", no "validated".
 9. Output the reply text only. No JSON, no quotes around it, no preamble, no sign-off.
+10. Never misspell anything on purpose and never stretch a word for effect. A manufactured typo is the loudest tell there is; it is worse than a dull reply.
+
+REGISTER. X is social media and people write like they are texting. Every line below is enforced by a deterministic gate after you answer, so a reply that breaks one is not a reply that ships — it is a repair turn and then our template goes out instead of your line.
+{_register_block()}
 
 WHAT EARNS A REPLY (the five things a reply may carry)
 - DATA DROP: a concrete, checkable number or level the post did not have.
@@ -470,6 +563,8 @@ def build_user_message(
     family_spec: dict | None = None,
     warmth: str = "",
     warmth_spec: dict | None = None,
+    shape: str = "",
+    shape_spec: dict | None = None,
     violations: Sequence[str] | None = None,
 ) -> str:
     """The user turn: the parent post, our draft, the two intents, the card.
@@ -484,6 +579,13 @@ def build_user_message(
     is the SENTENCE-LEVEL MECHANIC ("grant the other side in five words, no full
     stop, then run straight into the mechanism") so a rewrite keeps the shape
     instead of politely deleting it and handing back the cold version.
+
+    ``shape_spec`` is the ``reply_shape.REPLY_SHAPES`` entry, passed IN for the
+    same reason ``family_spec`` is — this module imports neither the drafter nor
+    the shape layer. THE BUDGET IS PRINTED AS A HARD INSTRUCTION because a
+    fourteen-unit one-liner is the single easiest thing for a model to inflate
+    back into a paragraph, and an inflated `one_line` is not a worse phrasing of
+    the same reply, it is a different reply.
 
     ``violations`` turns this into a REPAIR turn: it names the failures and
     nothing else, never restates the laws (they are in the system prompt) and
@@ -507,6 +609,26 @@ def build_user_message(
               "if you give it its own sentence you have written the losing "
               "shape.\n"
         )
+    shape_block = ""
+    if shape:
+        spec = shape_spec or {}
+        label = str(spec.get("label") or shape)
+        bits: list[str] = []
+        for key, word in (("max_units", "content units"),
+                          ("max_chars", "characters"),
+                          ("max_sentences", "sentences")):
+            value = spec.get(key)
+            if value:
+                bits.append(f"{int(value)} {word} maximum")
+        shape_block = (
+            f"SHAPE: {shape} ({label}).\n"
+            + (f"Budget: {'; '.join(bits)}. This is a HARD limit, not a target: "
+               "a rewrite that spends more than the budget is rejected and the "
+               "deterministic draft ships instead.\n" if bits else "")
+            + ("Do NOT add a closing line, a doorway or a question — this shape "
+               "ends where the thought ends.\n"
+               if spec.get("doorway") is False else "")
+        )
     out = (
         f"THE POST WE ARE REPLYING TO{who}:\n{str(parent_text or '').strip() or '(not available)'}\n\n"
         f"OUR DETERMINISTIC DRAFT (true, legal, and what ships unchanged if you do "
@@ -514,6 +636,7 @@ def build_user_message(
         f"REPLY FAMILY: {family}"
         + (f": {intent}\n" if intent else "\n")
         + warm_block
+        + shape_block
         + (
             "This family may run long: its structure IS the payload. Still one "
             "thought.\n" if long_ok else
@@ -561,16 +684,40 @@ def _draft_numbers(draft: str) -> list[str]:
         return []
 
 
-def _packet(draft: str, numbers_whitelist: Sequence[str]) -> dict:
-    """The FactPacket handed to ``hot_tape_llm.numeric_violations``.
+def _parent_numbers(parent_text: str) -> list[str]:
+    """Number tokens the PARENT carries (SHARED tokenizer, never raises).
 
-    Deliberately does NOT carry the parent post. A number in the parent is a
-    number OUR engine did not compute — admitting it here would license copy
-    that ``fact_discipline`` kills a moment later, which costs the whole item
-    instead of costing one phrasing attempt.
+    THE RATIONALE HERE INVERTED WITH XG-W4b §D.1 AND THE COMMENT IS THE RECORD.
+    This module used to exclude the parent's figures on the grounds that
+    ``fact_discipline`` would kill them a moment later, so admitting them would
+    cost the whole item rather than one phrasing attempt. That critic now
+    LICENSES a figure present verbatim in the parent — quoting the poster's own
+    number is the operator's canonical specific reaction ("The 18% inventory
+    increase is the part that worries me") and it is checkable by anyone reading
+    the thread. Leaving the exclusion in place would make this gate STRICTER
+    than the critic it exists to anticipate, and strictly on the one move the
+    prompt now asks the model to make: the model obeys, the gate rejects the
+    obedience, and the fallback rate reads as "the model is bad at this".
+
+    It is still narrow. Only tokens the parent actually carries are added, so a
+    figure in neither the parent nor the own-feed whitelist is a violation here
+    exactly as before.
     """
+    try:
+        from engine.marketing.reply_critics import number_tokens  # noqa: PLC0415
+
+        return list(number_tokens(str(parent_text or "")))
+    except Exception as exc:  # noqa: BLE001 — a tokenizer miss must not raise
+        log.warning("reply_voice: parent tokenizer unavailable (%s)", exc)
+        return []
+
+
+def _packet(draft: str, numbers_whitelist: Sequence[str],
+            parent_text: str = "") -> dict:
+    """The FactPacket handed to ``hot_tape_llm.numeric_violations``."""
     return {
-        "numbers_whitelist": [str(n) for n in (numbers_whitelist or [])],
+        "numbers_whitelist": ([str(n) for n in (numbers_whitelist or [])]
+                              + _parent_numbers(parent_text)),
         "draft_numbers": _draft_numbers(draft),
     }
 
@@ -589,7 +736,9 @@ def validate_reply_copy(
     account: str = "",
     family: str = "",
     warmth: str = "",
+    shape: str = "",
     relationship_only: bool = False,
+    corpus: Sequence[dict] | None = None,
     root: Path | str | None = None,
 ) -> list[str]:
     """Every gate a voiced reply must clear, ALL hits reported.
@@ -598,6 +747,7 @@ def validate_reply_copy(
     (b) house banned language + call language     (hard; imported)
     (c) the reply-value doctrine bar              (hard; imported critic)
     (c2) fabrication (AM-R1) + the warmth register (hard; imported critics)
+    (c3) the two-of-five floor + the register laws (hard; imported critics)
     (d) length, links, hashtags, mentions, dashes (hard; doctrine §3/§6)
     (e) smuggled cashtags                         (hard)
     (f) the per-persona expression dial           (hard; imported)
@@ -616,7 +766,8 @@ def validate_reply_copy(
     from engine.marketing.hot_tape_llm import numeric_violations  # noqa: PLC0415
     from engine.marketing import reply_critics as _rc  # noqa: PLC0415
 
-    violations.extend(numeric_violations(body, _packet(draft, numbers_whitelist)))
+    violations.extend(numeric_violations(
+        body, _packet(draft, numbers_whitelist, parent_text)))
     # THE GATE MUST JUDGE THE LIST THE PROMPT HANDED OUT. `allowed_numbers` is
     # what the model is shown (own-feed whitelist UNION the deterministic draft's
     # own figures — the draft is about to ship verbatim, so its numbers are
@@ -630,7 +781,11 @@ def validate_reply_copy(
     fact = _rc.fact_discipline(
         body,
         {"numbers_whitelist": [str(n) for n in (numbers_whitelist or [])]
-                              + _draft_numbers(draft)},
+                              + _draft_numbers(draft),
+         # The parent clause (XG-W4b §D.1): the critic licenses a figure the
+         # parent carries verbatim, and this gate must not be stricter than the
+         # critic it anticipates. See `_parent_numbers`.
+         "parent_text": parent_text},
     )
     violations.extend(f"fact_discipline: {r}" for r in fact.get("reasons") or [])
 
@@ -656,11 +811,31 @@ def validate_reply_copy(
     # lose the fallback.
     warm_ctx = {"account": account, "root": root, "parent_author": parent_author,
                 "warmth": warmth, "relationship_only": bool(relationship_only),
-                "corpus": []}
+                "corpus": list(corpus or [])}
     fab = _rc.fabrication(body, warm_ctx)
     violations.extend(f"fabrication: {r}" for r in fab.get("reasons") or [])
     warm = _rc.warmth_register(body, warm_ctx)
     violations.extend(f"warmth_register: {r}" for r in warm.get("reasons") or [])
+
+    # (c3) THE REGISTER LAWS AND THE ENGAGEMENT FLOOR, run here as well as
+    # downstream, and again the ORDER is the point. A model handed a `one_line`
+    # budget pads it back into a paragraph; a model told to sound human reaches
+    # for "I could be wrong" twice and for a manufactured typo. Both are
+    # exactly the shapes `register_discipline` and `reply_elements` reject, and
+    # catching them HERE costs one phrasing attempt and ships the deterministic
+    # draft — which already satisfies both laws by construction, because the
+    # whole point of this wave is that the deterministic path is the product.
+    #
+    # `shape` is threaded through so `short_form_engaged` can fire: without it
+    # a model rewrite of a `one_line` reaction is judged by the gift-led proxy
+    # and rejected for the thing that makes it a one-liner.
+    register_ctx = {**warm_ctx, "parent_text": parent_text, "family": family,
+                    "shape": str(shape or ""),
+                    "numbers_whitelist": [str(n) for n in (numbers_whitelist or [])]}
+    elements = _rc.reply_elements(body, register_ctx)
+    violations.extend(f"reply_elements: {r}" for r in elements.get("reasons") or [])
+    register = _rc.register_discipline(body, register_ctx)
+    violations.extend(f"register_discipline: {r}" for r in register.get("reasons") or [])
 
     # (d) Shape.
     if len(body) > MAX_REPLY_CHARS:
@@ -780,7 +955,10 @@ def voice_or_fallback(
     family_spec: dict | None = None,
     warmth: str | None = None,
     warmth_spec: dict | None = None,
+    shape: str = "",
+    shape_spec: dict | None = None,
     relationship_only: bool = False,
+    corpus: Sequence[dict] | None = None,
     cfg: dict | None = None,
     root: Path | str | None = None,
 ) -> dict[str, Any]:
@@ -897,6 +1075,7 @@ def voice_or_fallback(
             parent_text=parent_text, parent_author=parent_author,
             numbers_whitelist=numbers_whitelist, cfg=cfg, family_spec=family_spec,
             warmth=str(warmth or ""), warmth_spec=warmth_spec,
+            shape=str(shape or ""), shape_spec=shape_spec,
         )
 
         # §10 E3: SYSTEM_PROMPT plus whatever the config pins, which is nothing
@@ -936,7 +1115,8 @@ def voice_or_fallback(
             candidate, draft=fallback_text, numbers_whitelist=numbers_whitelist,
             parent_text=parent_text, parent_author=parent_author,
             account=account, family=family, warmth=str(warmth or ""),
-            relationship_only=bool(relationship_only), root=root,
+            shape=str(shape or ""), relationship_only=bool(relationship_only),
+            corpus=corpus, root=root,
         )
 
     try:
@@ -961,7 +1141,8 @@ def voice_or_fallback(
                     parent_text=parent_text, parent_author=parent_author,
                     numbers_whitelist=numbers_whitelist, cfg=cfg,
                     family_spec=family_spec, warmth=str(warmth or ""),
-                    warmth_spec=warmth_spec, violations=violations,
+                    warmth_spec=warmth_spec, shape=str(shape or ""),
+                    shape_spec=shape_spec, violations=violations,
                 )
 
                 def _do_repair(client, model):
@@ -1015,6 +1196,7 @@ def voice_or_fallback(
 
 __all__ = [
     "SYSTEM_PROMPT", "PLAYBOOK_EXEMPLARS", "ANTI_EXEMPLARS", "MAX_REPLY_CHARS",
+    "REGISTER_LAWS",
     "system_prompt", "voice_or_fallback", "validate_reply_copy",
     "build_user_message", "persona_card", "allowed_numbers", "fallback_stats",
     "reset_stats",
