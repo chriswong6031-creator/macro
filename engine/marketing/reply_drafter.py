@@ -53,15 +53,31 @@ gift: an empty gift is still an abstention, because "pure reaction warmth, zero
 information" is the one bucket the corpus is confident does not work (median
 eng/view 0.0032 against 0.0122 for pure-analytical).
 
+**The doorway is drawn, never welded (XG-W4 tail build).** ``FAMILIES`` gives the
+reasoning move and ``WARMTH_MOVES`` the delivery register, but until 2026-08-01
+the sentence that CLOSED the reply was one fixed string per family — nine
+distinct tails across four personas, every warmth move and every thread, which
+is the most legible bot-farm signature four accounts sharing an audience can
+emit. ``FAMILY_TAILS`` is the third axis: a per-family, PER-DESK pool of doorway
+sentences, picked by a stable hash of (account, family, thread) and rotated
+least-recently-used over ``recent_tails``. The lanes are disjoint by
+construction, which is what makes "two desks on one parent never close on the
+same line" a guarantee rather than a probability.
+
 Public API:
     FAMILIES: dict[str, dict]
     WARMTH_MOVES: dict[str, dict]
+    FAMILY_TAILS: dict[str, dict[str, tuple[str, ...]]]
     family_ids() -> list[str]
     warmth_ids() -> list[str]
     rotate_family(recent, *, allowed=None) -> str
     rotate_warmth(recent, *, allowed=None) -> str
     classify_parent(target) -> str | None
     warmth_moves_for(account, *, parent_shape=None, family=None, root=None) -> list[str]
+    tail_lane(account) -> str
+    tails_for(account, family, root=None) -> list[str]
+    select_tail(account, family, *, thread_id, recent_tails=None, root=None) -> str
+    render_tail(template, ctx) -> str
     compose(family, gift, ctx, *, warmth=None) -> str
     draft_reply(*, account, target, facts, ...) -> dict
     attach_chart(as_of, chart_id, *, root=None) -> dict | None
@@ -69,6 +85,7 @@ Public API:
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from pathlib import Path
@@ -782,38 +799,52 @@ def _reply_dial(account: str, root: Path | str | None = None) -> int:
 # it here instead would put a fifth reader behind the fence for a copy law.
 
 
-#: (account, move, opener, root-key) → clean?  The guard sweep below runs
-#: `banned_language` + `expression_dial.violations` + `am_r1_hits` per opener,
+#: (account, fragment-key, "", root-key) → clean?  The guard sweep below runs
+#: `banned_language` + `expression_dial.violations` + `am_r1_hits` per fragment,
 #: which is cheap but not free, and the answer only changes when a persona spec
 #: changes. `expression_dial.clear_cache()` is the documented way to invalidate
 #: a codex; this cache is cleared alongside it by `clear_warmth_cache`.
-_OPENER_OK_CACHE: dict[tuple[str, str, str, str], bool] = {}
+#:
+#: ONE CACHE FOR BOTH REGISTERS (openers and doorway tails), because there is one
+#: guard sweep. A second cache in front of the same function is how a spec edit
+#: comes to look like it landed on one register and not the other: the tail layer
+#: shipped with exactly that bug for one revision — `clear_tail_cache()` dropped
+#: the tail map while the sweep's own map still answered True, so a codex `banned`
+#: word withdrew nothing.
+_GUARD_OK_CACHE: dict[tuple[str, str, str, str], bool] = {}
 
 
 def clear_warmth_cache() -> None:
-    """Drop the per-opener guard cache (tests that write specs into a tmp root)."""
-    _OPENER_OK_CACHE.clear()
+    """Drop the per-opener guard cache (tests that write specs into a tmp root).
+
+    Clears the TAIL cache too. Both caches key on a persona spec that
+    ``expression_dial.clear_cache()`` invalidates in one call, and a caller that
+    dropped only half of them would get a half-refreshed register — the shape
+    that makes a spec edit look like it landed on the openers and not on the
+    doorways.
+    """
+    _GUARD_OK_CACHE.clear()
+    clear_tail_cache()
 
 
-def _opener_clears_persona_guards(account: str, opener: str,
-                                  root: Path | str | None = None) -> bool:
-    """Does this opener survive the persona's OWN guards?
+def _copy_clears_persona_guards(account: str, probe: str, cache_key: str,
+                                root: Path | str | None = None) -> bool:
+    """Does this fragment survive the persona's OWN three guards?
 
     This is the mechanism that makes the persona specs canonical rather than
     decorative: a word added to a codex ``banned`` list, a quirk marker switched
-    dark, or a new AM-R1 detector removes the offending opener from the register
+    dark, or a new AM-R1 detector removes the offending copy from the register
     the same night, with no code change here. The three guards are the same
-    three the shipped copy has to clear downstream, so an opener that trips one
+    three the shipped copy has to clear downstream, so a fragment that trips one
     is not a style choice, it is a defect that would have cost a whole item at
     critic time.
 
-    The ``{detail}`` slot is filled with a neutral placeholder before the sweep:
-    a bare "{detail}" is not English and the register guards would judge the
-    punctuation rather than the copy.
+    Shared by the warmth openers and the doorway tails so there is ONE guard
+    sweep, not two that can drift: the tails were added later and a forked copy
+    of this function is how the second register quietly stops being checked.
     """
-    probe = str(opener or "").replace("{detail}", "breadth")
-    key = (str(account), str(opener), "", str(root or ""))
-    cached = _OPENER_OK_CACHE.get(key)
+    key = (str(account), str(cache_key), "", str(root or ""))
+    cached = _GUARD_OK_CACHE.get(key)
     if cached is not None:
         return cached
     ok = True
@@ -830,13 +861,25 @@ def _opener_clears_persona_guards(account: str, opener: str,
             ok = False
     except Exception as exc:  # noqa: BLE001
         # A guard we cannot run is not a guard that passed. Withhold the
-        # opener: losing one warmth move costs a plainer reply, shipping
+        # fragment: losing one warmth move costs a plainer reply, shipping
         # unchecked persona copy costs the account.
-        log.warning("reply_drafter: opener guard sweep unavailable for %r (%s)",
+        log.warning("reply_drafter: guard sweep unavailable for %r (%s)",
                     account, exc)
         ok = False
-    _OPENER_OK_CACHE[key] = ok
+    _GUARD_OK_CACHE[key] = ok
     return ok
+
+
+def _opener_clears_persona_guards(account: str, opener: str,
+                                  root: Path | str | None = None) -> bool:
+    """Does this warmth opener survive the persona's OWN guards?
+
+    The ``{detail}`` slot is filled with a neutral placeholder before the sweep:
+    a bare "{detail}" is not English and the register guards would judge the
+    punctuation rather than the copy.
+    """
+    probe = str(opener or "").replace("{detail}", "breadth")
+    return _copy_clears_persona_guards(account, probe, str(opener or ""), root)
 
 
 def openers_for(account: str, move: str, root: Path | str | None = None) -> list[str]:
@@ -1017,6 +1060,573 @@ _FAMILY_CANNED_PREAMBLE: dict[str, str] = {
     "compression": "Short version: ",
 }
 
+# ===========================================================================
+# The doorway register — a POOL per family PER DESK, never one welded line
+# ===========================================================================
+#
+# THE DEFECT THIS CLOSES, measured on the composer that shipped 2026-08-01.
+# `compose` builds [warmth opener] + [gift] + [body/doorway]. The warmth register
+# differentiated only the OPENER; the closing sentence was ONE FIXED STRING PER
+# FAMILY, byte-identical across every persona, every warmth move and every
+# thread. Four personas x every family x every lawful warmth move produced NINE
+# distinct tails in total:
+#
+#   missing_variable        "The price move is the reaction. Credit is the test."   x33
+#   second_order            "If that holds, the pressure shows up in credit ..."    x33
+#   respectful_disagreement "That reads like credit, not semis."                    x33
+#   human_reaction          "That is the part I'd watch."                           x33
+#
+# sophia, kelly, cici and meagan reply into OVERLAPPING fintwit audiences from
+# accounts presented as different real women. A byte-identical second sentence
+# across those accounts is the single most legible bot-farm signature available,
+# and the drafter's own docstring says the deterministic path IS the product
+# whenever `reply_voice` is muted. It is also the same welded-tail defect
+# `copywriter.repeated_closer_violations` exists for one lane over (autopsy
+# defect 6: 27% of one week's posts closing on one of nine sentences); the reply
+# desk simply had no equivalent gate.
+#
+# WHY THE LANES ARE PER-ACCOUNT AND DISJOINT rather than one shared pool with a
+# hashed pick. The requirement is that two desks replying to the SAME parent
+# never draw the same tail. A shared pool cannot promise that: with five entries
+# and four desks, a hash-mod pick collides on roughly one thread in five, and
+# there is no fleet roster in this module to permute against (the drafter is
+# handed one account at a time and `expression_dial` is the only spec seam it may
+# use). Disjoint per-account lanes make the collision UNREACHABLE instead of
+# unlikely, and they are also how the warmth `openers` table already works — the
+# register copy lives beside the persona it belongs to, and a test pins the
+# disjointness so a later edit cannot quietly merge two lanes.
+#
+# WHY THE COPY IS HERE AND NOT IN THE PERSONA SPECS. Same fence as the warmth
+# openers, for the same reason: the specs are §5-FROZEN ("assemble, never
+# invent") and `tests/test_marketing_personas.py::
+# test_no_generation_module_reads_a_persona_spec` pins the spec layer's four
+# adjudicated readers, which do not include this module. AVAILABILITY still comes
+# from the live spec through `expression_dial` — `tails_for` runs every candidate
+# through the persona's own `banned_language` + dial + AM-R1 sweep, so a word
+# added to a codex `banned` list or a quirk marker switched dark withdraws the
+# offending doorway the same night with NO code change here.
+#
+# WHY EVERY EMPLOYEE TAIL CARRIES A WARMTH MARKER and no flagship tail does.
+# `reply_critics.warmth_register` W1 rejects a >=12-content-unit reply from a
+# dial-2 desk that carries no human-register marker at all, and the common case
+# is `warmth=None` (an unclassifiable parent, or a family the register cannot
+# warm) — which is exactly when the tail is the ONLY differentiated copy in the
+# draft. The pre-fix constants failed that test by construction: the very string
+# `test_w1_kills_a_twelve_unit_cold_printout` uses as its cold-printout fixture
+# is what `compose("missing_variable", ...)` returned. Putting a
+# `warmth_markers`-visible phrase in every employee lane is the SUPPLY-SIDE
+# mitigation this module's docstring already names, and it is register work
+# rather than decoration: "the part that" is Sophia's measured register, "fair."
+# and "actually" are Kelly's flat one, "worth saying / plainly / same read" is
+# Cici's polite-correction register, "honestly / genuinely" is Meagan's. The
+# `_default` lane is deliberately COLD: it serves the flagship and the founder,
+# whose reply dial is 1, where W1 is inert and the doctrine's §5 register map
+# lists "anything warm" in the Never column.
+#
+# WHY NOT EVERY TAIL IS A QUESTION. Doctrine §11.8 ranks the doorway forms and
+# the question is the WEAKEST of the six (16% of the landing corpus; the highest
+# per-view replies carry none). Only `author_question` — the family whose entire
+# move is one precise question — closes on a question mark; a test pins that, so
+# a later pool edit cannot turn the desk into an interrogation.
+#
+# SCOPE. This closes the welded TAIL. Families whose frame is a PREFIX
+# (`compression`'s "Short version:", `correction`'s "One thing worth fixing in
+# the thread:", `original_chart`'s "Charted it.") carry the same defect in the
+# other position and are deliberately NOT touched here; they are absent from
+# FAMILY_TAILS and a test pins that absence so the next build knows the gap is
+# known rather than covered.
+
+#: The lane a desk with no per-account copy falls to. One shared lane, so two
+#: UNATTRIBUTED desks could collide on it — the live fleet is five named
+#: accounts, four of which have their own lane and the fifth (founder) is the
+#: only occupant of this one, and a test pins the five-way divergence.
+TAIL_DEFAULT_LANE = "_default"
+
+#: Neutral slot fillers for the guard sweep. Same compromise the openers make
+#: with ``{detail}`` -> "breadth": a bare "{lead}" is not English and the
+#: register guards would judge the braces rather than the copy.
+_TAIL_PROBE_CTX: dict[str, str] = {"subject": "the tape", "mechanism": "breadth"}
+
+#: family -> lane -> the doorway sentences that lane may close on.
+#:
+#: Slots: ``{lead}`` / ``{lead_cap}`` (the mechanism, from ``_lead_of``),
+#: ``{subject}`` / ``{subject_cap}`` (from ``_subject_of``), and — for
+#: ``callback`` only — ``{prior_clause}``, which renders to ": <the prior
+#: position>" when the caller supplied one and to "." when it did not. That slot
+#: exists because the callback tail is the one whose grammar CHANGES with its
+#: input; writing two pools would have doubled the copy to express one comma.
+#:
+#: NO TAIL MAY CARRY A FIGURE. Grip and doorway introducing no numbers is what
+#: keeps ``fact_discipline`` satisfiable by construction, and a test pins it.
+FAMILY_TAILS: dict[str, dict[str, tuple[str, ...]]] = {
+    # -- name the variable the thread has not priced -------------------------
+    "missing_variable": {
+        TAIL_DEFAULT_LANE: (
+            "The price move is the reaction. {lead_cap} is the test.",
+            "{lead_cap} is the variable this thread has not priced.",
+            "The tape has a view on {subject}. It has not taken one on {lead}.",
+        ),
+        # sophia: story-led and measured, so the variable arrives as the half of
+        # the story the thread has not told yet.
+        "sophia": (
+            "The move is the visible half. The part that decides it is {lead}.",
+            "The harder part is that every version of this runs through {lead} first.",
+            "{subject_cap} is what the thread is arguing about. {lead_cap} is what I keep watching.",
+        ),
+        # kelly: lowercase and clipped. Her codex bans every hedging softener, so
+        # these state the gap flat rather than proposing it.
+        "kelly": (
+            "the move is the symptom. {lead} is the thing that decides it.",
+            "nobody has priced {lead} yet. that is the part that matters.",
+            "{subject} is downstream. {lead} is where i keep landing.",
+        ),
+        # cici: polite correction plus the session handoff, written WITHOUT the
+        # `session_handoff` marker phrases so the tail spends no frame budget the
+        # warmth opener may already need.
+        "cici": (
+            "Worth saying plainly: {lead} has not been priced here.",
+            "The US session traded {subject}. The overnight tape trades {lead}, and that is the part that decides it.",
+            "{lead_cap} is the piece this thread leaves out, and people skip it every time.",
+        ),
+        # meagan: conversational, human first.
+        "meagan": (
+            "Honestly the reaction is the easy part. {lead_cap} is what decides it.",
+            "Nobody has put a price on {lead} yet and that is the thing that matters.",
+            "The bit I keep coming back to is {lead}, not {subject}.",
+        ),
+    },
+    # -- grant the claim, derive what it forces next -------------------------
+    "second_order": {
+        TAIL_DEFAULT_LANE: (
+            "If that holds, the pressure shows up in {lead} before it shows up in {subject}.",
+            "Grant it, and the next thing that has to move is {lead}.",
+            "Take that as given and {lead} carries the consequence, not {subject}.",
+        ),
+        "sophia": (
+            "Agreed on the premise, and it lands on {lead} before it lands on {subject}.",
+            "The harder part is what it forces next, which is {lead}.",
+            "Accept that and {subject} stops being the interesting bit. The part that moves is {lead}.",
+        ),
+        "kelly": (
+            "fair. then {lead} has to give, not {subject}.",
+            "if that is right, {lead} moves next. that is the part that is testable.",
+            "the consequence lands in {lead} first. {subject} is where i keep looking second.",
+        ),
+        "cici": (
+            "Agreed, and the follow-on sits in {lead} rather than in {subject}.",
+            "Granting that, {lead} tends to move before the US open. That is the part that gets skipped.",
+            "If the claim holds, {lead} is the thing that has to move next.",
+        ),
+        "meagan": (
+            "If that is right, the thing that moves next is {lead}, not {subject}.",
+            "Run it forward one step and it genuinely lands on {lead}.",
+            "Grant the point and honestly {lead} is what has to move next.",
+        ),
+    },
+    # -- grant the observation, dispute the mechanism ------------------------
+    "respectful_disagreement": {
+        TAIL_DEFAULT_LANE: (
+            "That reads like {lead}, not {subject}.",
+            "The observation stands. The mechanism looks like {lead}.",
+            "Same facts, different driver: {lead} rather than {subject}.",
+        ),
+        "sophia": (
+            "The observation is right. The part that reads differently is the step to {subject}.",
+            "Fair, and the cause looks more like {lead} than {subject}.",
+            "I keep landing on {lead} as the driver rather than {subject}.",
+        ),
+        "kelly": (
+            "no argument on the facts. the mechanism actually looks like {lead}.",
+            "same tape, different cause. the part that i would push on is {lead}, not {subject}.",
+            "agreed on what happened. the why looks like {lead}, not {subject}.",
+        ),
+        "cici": (
+            "Agreed on what happened. Less sure that {subject} is what caused it.",
+            "Small correction on the mechanism: from this side it looks different, closer to {lead}.",
+            "The observation holds. The part that I would move is the cause, to {lead}.",
+        ),
+        "meagan": (
+            "The facts are fine. Honestly it is the step from {lead} to {subject} I would push on.",
+            "Right on what happened, less right on why. This actually looks like {lead}.",
+            "The thing that does not follow for me is {lead} to {subject}.",
+        ),
+    },
+    # -- state a falsifiable if/then with a level ----------------------------
+    # D2 in the doorway ranking, and X-LEGAL in plain terms (charter §2
+    # amendment 4). The #3821 operator ruling that banned falsifier language is
+    # SITE surfaces only; §11.8 says in as many words that a builder pattern
+    # matching on it must not scrub D2 off the reply desk. What is avoided here
+    # is the JARGON ("falsifier", "refuted"), never the form.
+    "conditional_prediction": {
+        TAIL_DEFAULT_LANE: (
+            "If {lead} keeps going the same direction while {subject} stays put, "
+            "the two are arguing and one of them is wrong.",
+            "If {lead} turns and {subject} does not follow, this read does not hold.",
+            "The pair is the test: {lead} and {subject} cannot both be right for long.",
+        ),
+        "sophia": (
+            "The condition is simple. {lead_cap} and {subject} cannot hold this "
+            "together, and the harder part is which one gives.",
+            "If {lead} keeps drifting while {subject} holds, I read one of the two as wrong.",
+            "Either {lead} comes back toward {subject}, or the link between them is "
+            "the part that was never there.",
+        ),
+        "kelly": (
+            "the test: {lead} keeps going and {subject} does not follow. then plainly "
+            "the link is not there.",
+            "one of these two is wrong. i keep watching {lead} for the answer.",
+            "the clean test is {lead} moving while {subject} sits still. that is the "
+            "part that settles it.",
+        ),
+        "cici": (
+            "The condition to watch: {lead} moving while {subject} stays where it is. "
+            "That is the part that decides it.",
+            "If the overnight session takes {lead} further and {subject} holds, this "
+            "read looks different by the open.",
+            "Either {lead} comes back toward {subject}, or the link is not real. "
+            "Worth saying that plainly.",
+        ),
+        "meagan": (
+            "The clean test is {lead} moving again while {subject} sits still. "
+            "Honestly that settles it.",
+            "If {lead} keeps going and {subject} never reacts, I had this wrong.",
+            "These two cannot both be right. The thing that breaks first says which.",
+        ),
+    },
+    # -- a plain reaction, then one useful sentence --------------------------
+    "human_reaction": {
+        TAIL_DEFAULT_LANE: (
+            "That is the part I'd watch.",
+            "The useful part here is {lead}.",
+            "Worth watching {lead} and {subject} together rather than separately.",
+        ),
+        "sophia": (
+            "That is the detail I keep coming back to.",
+            "The interesting part is not the move. Honestly it is what {lead} does next.",
+            "I keep turning over the {lead} side of this.",
+        ),
+        "kelly": (
+            "that is the bit i would watch.",
+            "the useful part of this is {lead}. actually the only useful part.",
+            "noted. {lead} is what i am watching.",
+        ),
+        "cici": (
+            "That is the line I keep for the next session.",
+            "Genuinely useful, and {lead} is the piece I carry forward.",
+            "The part that stays with me is {lead}.",
+        ),
+        "meagan": (
+            "Honestly the useful part here is {lead}.",
+            "That is the thing that keeps nagging at me: {lead}.",
+            "The part that I would actually act on is {lead}.",
+        ),
+    },
+    # -- change what the move is about ---------------------------------------
+    "reframe": {
+        TAIL_DEFAULT_LANE: (
+            "Worth reading this as a {lead} story rather than a {subject} story.",
+            "This is less about {subject} than it is about {lead}.",
+            "Change the label from {subject} to {lead} and it makes more sense.",
+        ),
+        "sophia": (
+            "The harder part is that this is a {lead} story showing up in {subject}.",
+            "The headline says {subject}. The story I read underneath is {lead}.",
+            "Same event, different title. The part that carries it is {lead}.",
+        ),
+        "kelly": (
+            "file this under {lead}, not {subject}. that is the part that changes.",
+            "it looks like a {subject} move. it is actually a {lead} move.",
+            "swap the label. plainly {lead} is doing the work here.",
+        ),
+        "cici": (
+            "From this side it looks different: a {lead} story wearing a {subject} headline.",
+            "Reframed for the next session, this belongs to {lead}. Worth saying that plainly.",
+            "The cleaner label is {lead}, with {subject} as the part that shows.",
+        ),
+        "meagan": (
+            "This honestly reads more like {lead} than {subject}.",
+            "Relabel it. The thing that is actually moving is {lead}.",
+            "It is a {lead} story. {subject_cap} is genuinely just where it showed up.",
+        ),
+    },
+    # -- point at the market that moved first --------------------------------
+    "cross_market_lead": {
+        TAIL_DEFAULT_LANE: (
+            "{lead_cap} moved first. {subject_cap} is catching up.",
+            "The lead came from {lead}. {subject_cap} followed.",
+            "{subject_cap} is the echo here. {lead_cap} is the source.",
+        ),
+        "sophia": (
+            "{lead_cap} wrote this first and {subject} is reading it back, which is "
+            "the part that matters.",
+            "The move started in {lead} and reached {subject} late. That is the harder part to price.",
+            "Order of events matters here, and I keep it as {lead} then {subject}.",
+        ),
+        "kelly": (
+            "{lead} went first. {subject} is late. that is the whole story.",
+            "the lead came out of {lead}, not {subject}. that is the part that is testable.",
+            "check {lead} before {subject}. plainly that is the order.",
+        ),
+        "cici": (
+            "{lead_cap} had already moved before the US open. {subject_cap} caught up "
+            "after, and that is the part that repeats.",
+            "From this side {lead} led and {subject} followed by a session. Same read overnight.",
+            "The overnight tape had this in {lead} first. Genuinely worth checking that order.",
+        ),
+        "meagan": (
+            "{lead_cap} got there first and {subject} is honestly only now catching on.",
+            "The move was in {lead} before it was in {subject}. That is the thing that keeps repeating.",
+            "{subject_cap} is following {lead} here. The part that surprises me is how long it takes.",
+        ),
+    },
+    # -- one precise question inside their expertise -------------------------
+    # THE ONE FAMILY THAT MAY CLOSE ON A QUESTION MARK (§11.8, D6: "weak,
+    # capped"). The rolling caps (<=20% of an account's replies ending in a
+    # question, <=2 author-directed per account per 7 days) live at SELECTION
+    # time in `reply_producer`, because a critic sees one draft and cannot
+    # express a rolling week.
+    "author_question": {
+        TAIL_DEFAULT_LANE: (
+            "Does your read on {subject} survive if {lead} keeps moving against it?",
+            "Where does {lead} sit in your version of this?",
+            "What would {lead} have to do for you to drop the {subject} read?",
+        ),
+        "sophia": (
+            "The part that I cannot settle is {lead}. Does it change your read on {subject}?",
+            "I keep coming back to {lead} here. How much of the {subject} view rests on it?",
+            "Genuinely asking: what is the {lead} print that would move you off this?",
+        ),
+        "kelly": (
+            "actually curious: what does {lead} have to do before you drop the {subject} read?",
+            "the part that i cannot settle is {lead}. where does it fit in your version?",
+            "i keep looking for this one: what would prove this wrong on the {lead} side?",
+        ),
+        "cici": (
+            "Genuinely curious about the {lead} side. Does your {subject} read hold if "
+            "it moves overnight?",
+            "The part that I keep re-checking is {lead}. What would you want to see from it first?",
+            "Same read from this side on {subject}. Where does {lead} fit in your version?",
+        ),
+        "meagan": (
+            "Honestly the {lead} side is what I cannot place. What would it have to do "
+            "to change your mind on {subject}?",
+            "The thing that I keep re-reading is {lead}. Where does it land in your read?",
+            "Actually curious: is {lead} in your version of this, or is it all {subject}?",
+        ),
+    },
+    # -- connect to a prior public position of ours --------------------------
+    "callback": {
+        TAIL_DEFAULT_LANE: (
+            "Same condition we flagged before{prior_clause}",
+            "This is the same setup we wrote up earlier{prior_clause}",
+            "We have had this one on the list for a while{prior_clause}",
+        ),
+        "sophia": (
+            "The condition we described has not changed, and I keep it on the list{prior_clause}",
+            "Same shape as the read we ran before. That is the part that interests me{prior_clause}",
+            "This is the same thread we picked up earlier. Genuinely the same condition{prior_clause}",
+        ),
+        "kelly": (
+            "we had this one flagged already. actually the same condition{prior_clause}",
+            "same setup, same condition as before. that is the part that repeats{prior_clause}",
+            "this is the one i keep coming back to{prior_clause}",
+        ),
+        "cici": (
+            "We flagged this same condition in an earlier session. Same read{prior_clause}",
+            "The read from before still applies. Worth saying that plainly{prior_clause}",
+            "Same condition carried over from earlier, and I keep it open{prior_clause}",
+        ),
+        "meagan": (
+            "This is honestly the one we kept talking about{prior_clause}",
+            "Same condition we flagged, and it is genuinely still doing the same thing{prior_clause}",
+            "The thing that keeps coming back is this exact setup{prior_clause}",
+        ),
+    },
+}
+
+def clear_tail_cache() -> None:
+    """Drop the guard-sweep cache (tests that write specs into a tmp root).
+
+    The SAME map ``clear_warmth_cache`` drops, because the openers and the tails
+    run one sweep: see the WHY on :data:`_GUARD_OK_CACHE` for the one-revision
+    bug that a second, tail-only cache produced.
+    """
+    _GUARD_OK_CACHE.clear()
+
+
+def tail_lane(account: str) -> str:
+    """The lane *account* draws its doorways from.
+
+    A desk with no lane of its own falls to :data:`TAIL_DEFAULT_LANE`, which is
+    a REAL answer rather than a fallback: the flagship and the founder are
+    evidence desks whose register map lists "anything warm" in the Never column,
+    and the nine pseudonymous D13 specs carry no codex to fit copy to at all.
+    """
+    account = str(account or "")
+    for lanes in FAMILY_TAILS.values():
+        if account in lanes:
+            return account
+    return TAIL_DEFAULT_LANE
+
+
+#: "a the tape story", "the the curve side". A slot value MAY carry its own
+#: determiner ("the tape", "the curve", "the move" — the subject fallback itself
+#: is one), and a template that reads naturally before a bare noun ("a credit
+#: story rather than a capex story") then doubles the article.
+#:
+#: THIS IS NOT A DEFECT THE TAIL BUILD INTRODUCED — it fires on the two lines the
+#: shipped composer already used, `reframe`'s "Worth reading this as a {lead}
+#: story rather than a {subject} story" and `author_question`'s "...drop the
+#: {subject} read?" — which is why the fix belongs at the RENDER layer and not in
+#: thirteen hand-edited templates: the next template author gets it for free, and
+#: the live lines are healed in the same change.
+#:
+#: DELIBERATELY CASE-SENSITIVE ON THE SECOND ARTICLE. Under IGNORECASE this eats
+#: "the A-share market" (`\bA\b` matches), which is live China-desk vocabulary. A
+#: slot value is lowercase, so requiring a lowercase second article costs nothing
+#: and closes that hole; a test pins the A-share case.
+_ARTICLE_COLLISION_RE = re.compile(r"\b([Aa]n?|[Tt]he)\s+(an?|the)\b")
+
+
+def _fix_article_collision(text: str) -> str:
+    """Drop a template's article when the slot brought its own.
+
+    The SLOT wins: it carries the fact ("the tape"), the template's article is
+    scaffolding. Sentence-initial capitalisation is carried across so "The the
+    tape" becomes "The tape" and not "the tape".
+    """
+    def _sub(match: re.Match[str]) -> str:
+        kept = match.group(2)
+        if match.group(1)[:1].isupper():
+            kept = kept[:1].upper() + kept[1:]
+        return kept
+    return _ARTICLE_COLLISION_RE.sub(_sub, str(text or ""))
+
+
+def render_tail(template: str, ctx: dict | None = None) -> str:
+    """Fill a tail template's slots from *ctx*.
+
+    ``{prior_clause}`` is the one grammar-changing slot: ": <prior>" when the
+    caller carries a prior position, "." when it does not. It exists so the
+    ``callback`` lane needs one pool instead of two.
+    """
+    ctx = dict(ctx or {})
+    subject = _subject_of(ctx)
+    lead = _lead_of(ctx)
+    prior = str(ctx.get("callback") or "").strip()
+    return _fix_article_collision(str(template or "").format(
+        lead=lead, lead_cap=lead.capitalize(),
+        subject=subject, subject_cap=subject.capitalize(),
+        prior_clause=(f": {prior}" if prior else "."),
+    ))
+
+
+def tails_for(account: str, family: str,
+              root: Path | str | None = None) -> list[str]:
+    """Every doorway *account* may close *family* on, after the live guard sweep.
+
+    The sweep is the same one ``openers_for`` runs, so the persona specs stay
+    canonical for the doorways exactly as they are for the warmth openers: a word
+    added to a codex ``banned`` list, or a quirk marker switched dark, withdraws
+    the offending tail the same night with no code change here.
+
+    AN EMPTY LIST IS A REAL ANSWER and the composer treats it as "close on
+    nothing". The tempting alternative — ship the unswept lane so the reply keeps
+    its doorway — was written first and is WRONG: it puts copy the persona's own
+    guard just rejected in front of a hostile audience under a real woman's name,
+    which is strictly worse than the welded constant this build replaced. A
+    missing doorway costs a plainer reply and the downstream critics still judge
+    what ships; a banned doorway costs the account.
+
+    The two-step fallback is deliberate. A ban that wipes ONE desk's lane (a word
+    on that codex's ``banned`` list) still leaves the neutral ``_default`` lane,
+    which is swept against THIS account before it is offered — so the usual
+    outcome is a plainer close, not none. Only a ban that wipes both is a build
+    defect in the copy, and it says so as a GitHub annotation (bare line-start
+    print: a logger prefix would push "::" off column zero and Actions would
+    silently drop the annotation — house law).
+    """
+    lanes = FAMILY_TAILS.get(str(family)) or {}
+    if not lanes:
+        return []
+
+    def _swept(pool: tuple[str, ...] | list[str]) -> list[str]:
+        return [tail for tail in pool
+                if _copy_clears_persona_guards(
+                    account, render_tail(tail, _TAIL_PROBE_CTX),
+                    f"tail::{family}::{tail}", root)]
+
+    lane = tail_lane(account)
+    clean = _swept(lanes.get(lane) or ())
+    if clean:
+        return clean
+    if lane != TAIL_DEFAULT_LANE:
+        clean = _swept(lanes.get(TAIL_DEFAULT_LANE) or ())
+        if clean:
+            return clean
+    print(f"::warning title=reply_tail_pool_empty::every doorway in the "
+          f"{family!r} pool was rejected by {account!r}'s own guards, including "
+          f"the {TAIL_DEFAULT_LANE!r} lane — replies from this desk will close "
+          f"on nothing until the copy in reply_drafter.FAMILY_TAILS is fixed",
+          flush=True)
+    return []
+
+
+def _stable_index(*parts: str) -> int:
+    """A process-stable integer from *parts*.
+
+    NOT ``hash()``: PYTHONHASHSEED randomises string hashing per interpreter, so
+    a selector built on it would draw a different doorway on every nightly run
+    and no rotation history could ever match what was actually enqueued. A test
+    runs the selection in a separate interpreter under a hostile seed.
+    """
+    raw = "\x1f".join(str(p) for p in parts).encode("utf-8")
+    return int.from_bytes(hashlib.blake2b(raw, digest_size=8).digest(), "big")
+
+
+def select_tail(account: str, family: str, *, thread_id: str = "",
+                recent_tails: list[str] | tuple[str, ...] | None = None,
+                root: Path | str | None = None) -> str:
+    """One doorway template for this (account, family, thread). "" when none.
+
+    TWO AXES, and both are needed. The HASH of (account, family, thread) makes
+    the pick deterministic — the same desk on the same parent draws the same
+    doorway, so a draft can be reproduced and an operator edit is not fighting a
+    coin flip — and it diverges across parents, which is what stops one desk
+    wearing one sentence all week. The ROTATION over ``recent_tails`` is what the
+    hash cannot promise: two parents can land on the same lane entry, and a desk
+    that closes three nights running on the same line has welded its own tail
+    without any help from its siblings. Least-recently-used, exactly like
+    ``rotate_family`` and ``rotate_warmth``.
+
+    Cross-DESK divergence is not enforced here at all: it is a property of the
+    lanes being disjoint (see the WHY above), which is why it holds for every
+    thread rather than for most of them.
+    """
+    pool = tails_for(account, family, root)
+    if not pool:
+        return ""
+    start = _stable_index(str(account), str(family), str(thread_id)) % len(pool)
+    order = [pool[(start + i) % len(pool)] for i in range(len(pool))]
+    recent = [str(t) for t in (recent_tails or [])]
+    for tail in order:
+        if tail not in recent:
+            return tail
+    # Window wider than the lane: degrade to least-recently-used rather than
+    # raising or blanking the doorway. A saturated window is a rotation input
+    # problem, never a reason to ship a reply with no close.
+    #
+    # LAST occurrence, not first. `recent` is oldest-first and may repeat, so the
+    # least-recently-used entry is the one whose MOST RECENT use is furthest
+    # back: on [t1, t0, t1] the answer is t0, while `recent.index` — the idiom
+    # `rotate_family` and `rotate_warmth` use — returns t1, the one used a moment
+    # ago. Those two are left alone here (their windows are read straight off the
+    # queue and rarely repeat inside one), but the difference is real and a test
+    # pins this side of it.
+    last_use = {tail: i for i, tail in enumerate(recent)}
+    return min(order, key=lambda tail: last_use.get(tail, -1))
+
+
 #: Tokens that keep their capital when a conjunction-fused opener runs into the
 #: gift. Everything with an internal capital, a leading ``$`` or a leading digit
 #: is detected structurally; this list is for ordinary Capitalised proper nouns
@@ -1151,48 +1761,64 @@ def compose(family: str, gift: str, ctx: dict | None = None, *,
     ``warmth`` names a :data:`WARMTH_MOVES` entry. With ``warmth=None`` this
     function is byte-for-byte what it was before the warmth build, which is why
     every pre-existing compose test still passes unchanged.
+
+    THE DOORWAY IS DRAWN, NOT HARDCODED. ``ctx["thread_id"]`` (the parent/thread
+    id) and ``ctx["recent_tails"]`` (this desk's recent doorways, oldest first)
+    feed :func:`select_tail`; see the WHY beside :data:`FAMILY_TAILS` for what
+    the welded per-family constant cost. An absent ``thread_id`` is legal and
+    only means every parent shares one hash bucket, which the rotation still
+    breaks up — but a caller that HAS a parent id and does not pass it has thrown
+    away the cross-thread half of the divergence.
     """
     ctx = dict(ctx or {})
     gift = _clean(gift)
     subject = _subject_of(ctx)
     lead = _lead_of(ctx)
     stamp = str(ctx.get("as_of_stamp") or "").strip()
+    drawn = render_tail(
+        select_tail(str(ctx.get("account") or ""), str(family),
+                    thread_id=str(ctx.get("thread_id") or ""),
+                    recent_tails=list(ctx.get("recent_tails") or []),
+                    root=ctx.get("root")),
+        ctx,
+    )
+    # An empty draw is legal (``tails_for`` withheld the whole pool from this
+    # desk) and means "close on nothing" — never a dangling blank paragraph.
+    tail = f"\n\n{drawn}" if drawn else ""
 
     if family == "missing_variable":
-        body = f"{gift}\n\nThe price move is the reaction. {lead.capitalize()} is the test."
+        body = f"{gift}{tail}"
     elif family == "second_order":
-        body = (f"{gift}\n\nIf that holds, the pressure shows up in {lead} before it "
-                f"shows up in {subject}.")
+        body = f"{gift}{tail}"
     elif family == "respectful_disagreement":
-        body = (f"Observation holds. The mechanism is where I'd push back.\n\n{gift}\n\n"
-                f"That reads like {lead}, not {subject}.")
+        body = (f"Observation holds. The mechanism is where I'd push back.\n\n"
+                f"{gift}{tail}")
     elif family == "compression":
         body = f"Short version: {gift}"
     elif family == "conditional_prediction":
-        body = (f"{gift}\n\nIf {lead} keeps going the same direction while {subject} "
-                f"stays put, the two are arguing and one of them is wrong.")
+        body = f"{gift}{tail}"
     elif family == "human_reaction":
-        body = f"okay, this one is actually interesting.\n\n{gift}\n\nThat is the part I'd watch."
+        body = f"okay, this one is actually interesting.\n\n{gift}{tail}"
     elif family == "reframe":
-        body = f"{gift}\n\nWorth reading this as a {lead} story rather than a {subject} story."
+        body = f"{gift}{tail}"
     elif family == "cross_market_lead":
-        body = f"{gift}\n\n{lead.capitalize()} moved first. {subject.capitalize()} is catching up."
+        body = f"{gift}{tail}"
     elif family == "correction":
         body = f"One thing worth fixing in the thread: {gift}"
     elif family == "micro_framework":
         body = (f"Two questions settle this.\n\n1. What is {lead} doing.\n"
                 f"2. Whether {subject} agrees.\n\n{gift}")
     elif family == "author_question":
-        body = (f"{gift}\n\nDoes your read on {subject} survive if {lead} keeps "
-                f"moving against it?")
+        body = f"{gift}{tail}"
     elif family == "original_chart":
         body = f"Charted it.\n\n{gift}"
     elif family == "acknowledgment_plus_one":
         body = f"Agreed, with one addition.\n\n{gift}"
     elif family == "callback":
-        prior = str(ctx.get("callback") or "").strip()
-        body = (f"{gift}\n\nSame condition we flagged before: {prior}" if prior
-                else f"{gift}\n\nSame condition we flagged before.")
+        # The one tail whose GRAMMAR changes with its input; `{prior_clause}` in
+        # the template carries the ": <prior>" / "." fork so the lane needs one
+        # pool rather than two.
+        body = f"{gift}{tail}"
     else:
         body = gift
 
@@ -1419,6 +2045,7 @@ def draft_reply(
     recent_families: list[str] | None = None,
     warmth: str | None = None,
     recent_warmth: list[str] | None = None,
+    recent_tails: list[str] | None = None,
     has_thesis: bool = False,
     tier: str | None = None,
     chart: dict | None = None,
@@ -1430,7 +2057,8 @@ def draft_reply(
     """Draft one reply plus genuinely different alternates.
 
     Returns {draft, alt_drafts, family, alt_families, warmth, alt_warmth,
-             parent_shape, numbers_whitelist, components, dial_violations}.
+             tail, alt_tails, parent_shape, numbers_whitelist, components,
+             dial_violations}.
 
     The alternates come from DIFFERENT families, not from re-wording the
     primary: §9.4's whole point is that a second draft is worth having only when
@@ -1444,6 +2072,15 @@ def draft_reply(
     ``recent_warmth`` is the account's last enqueued warmth values, oldest
     first; the caller (``reply_producer``) reads them off the queue exactly as
     it already reads ``recent_families``.
+
+    ``recent_tails`` is the THIRD rotation axis, threaded the same way and
+    carrying the same kind of value: the doorway TEMPLATES this desk recently
+    closed on, oldest first, as returned in ``tail`` / ``alt_tails``. Templates
+    rather than rendered sentences because the rendering changes with the
+    subject and the mechanism, so a history of finished copy could never match
+    what the selector is choosing between. The primary and every alternate draw
+    against the SAME window; they cannot collide with each other because the
+    alternates are different FAMILIES and no template appears under two.
     """
     gift, whitelist = _pick_gift(facts)
     parent_shape = classify_parent(target)
@@ -1472,6 +2109,12 @@ def draft_reply(
                     "draft": _clean(text), "alt_drafts": [],
                     "family": "human_reaction", "alt_families": [],
                     "warmth": move, "alt_warmth": [],
+                    # The sympathy reply is the one draft with NO gift and no
+                    # doorway (the opener is the whole reply), so it closes on
+                    # nothing and reports nothing. Present-and-empty rather than
+                    # absent: a caller that reads the field on every return path
+                    # must not KeyError on the one abstention-shaped answer.
+                    "tail": "", "alt_tails": [],
                     "parent_shape": parent_shape,
                     "numbers_whitelist": whitelist,
                     "components": {
@@ -1487,7 +2130,8 @@ def draft_reply(
                 }
         return {
             "draft": "", "alt_drafts": [], "family": None, "alt_families": [],
-            "warmth": None, "alt_warmth": [], "parent_shape": parent_shape,
+            "warmth": None, "alt_warmth": [], "tail": "", "alt_tails": [],
+            "parent_shape": parent_shape,
             "numbers_whitelist": whitelist, "components": {"abstained": "no own-feed fact"},
             "dial_violations": [],
         }
@@ -1521,12 +2165,33 @@ def draft_reply(
         "account": account,
         "root": root,
         "detail": detail,
+        # THE PARENT IDENTITY IS THE DIVERGENCE INPUT. First the thread root,
+        # then this post's own id, then the URL, then the author: the first
+        # stable thing available. Falling through to "" is legal and only
+        # collapses every parent into one hash bucket, which the rotation still
+        # breaks up — but a target that carries an id and does not pass it here
+        # has thrown away the cross-thread half of the anti-sameness guarantee.
+        "thread_id": str(target.get("thread_root_id")
+                         or target.get("status_id")
+                         or target.get("url")
+                         or target.get("author") or ""),
     }
 
     order = [primary] + [f for f in rotate_order(pool, primary) if f != primary]
     order += [f for f in rotate_order(allowed, primary) if f not in order]
     drafts: list[tuple[str, str]] = []
     warmths: list[str | None] = []
+    tails: list[str] = []
+    # ONE WINDOW, NOT AN ACCUMULATING ONE. The first version of this loop also
+    # fed each drawn tail back in, so the primary and its alternates could not
+    # collide — DEAD CODE, and a mutation test proved it: the alternates come
+    # from `rotate_order`, which yields DISTINCT families, and the pools are
+    # family-scoped and share no template across families, so a tail drawn for
+    # one family is never a candidate for the next. The distinctness is a
+    # property of the pool table (a test pins that no template appears under two
+    # families) and pretending a rotation was enforcing it would hide which
+    # invariant is really load-bearing.
+    window = [str(t) for t in (recent_tails or [])]
     for fam in order[: 1 + max(0, int(n_alts))]:
         move = _select_warmth(
             account, family=fam, parent_shape=parent_shape, root=root,
@@ -1534,17 +2199,26 @@ def draft_reply(
             has_thesis=has_thesis, has_detail=bool(detail), tier=tier,
             parent_author=parent_author,
         )
+        # Selected TWICE on purpose, and the two must agree: once here for the
+        # record the caller rotates on, once inside `compose` for the copy. Same
+        # inputs, same pure function; a test asserts the reported tail is the one
+        # in the draft, because a history that records a doorway which never
+        # shipped is worse than no history.
+        drawn = select_tail(account, fam, thread_id=str(ctx["thread_id"]),
+                            recent_tails=window, root=root)
+        fam_ctx = {**ctx, "recent_tails": list(window)}
         try:
-            text = compose(fam, gift, ctx, warmth=move)
+            text = compose(fam, gift, fam_ctx, warmth=move)
         except ValueError as exc:
             # An over-budget opener is a BUILD defect, not a runtime condition:
             # report it loudly and ship the plain draft rather than the shape
             # the anti-cold critic would kill a moment later.
             log.warning("reply_drafter: warmth %r rejected at compose for %r: %s",
                         move, account, exc)
-            move, text = None, compose(fam, gift, ctx)
+            move, text = None, compose(fam, gift, fam_ctx)
         drafts.append((fam, text))
         warmths.append(move)
+        tails.append(drawn)
 
     # Voice pass: the SHARED dial, kind="reply". apply_pass is deterministic
     # clean-up only (off-signature emoji, exclamation downgrade); everything
@@ -1593,6 +2267,11 @@ def draft_reply(
         "alt_families": [f for f, _ in polished[1:]],
         "warmth": warmths[0],
         "alt_warmth": warmths[1:],
+        # The doorway TEMPLATE this draft closed on, for the caller's rotation
+        # history. Reported for the same reason `family` is: a rotation axis the
+        # producer cannot read back is an axis that resets every night.
+        "tail": tails[0],
+        "alt_tails": tails[1:],
         "parent_shape": parent_shape,
         "numbers_whitelist": whitelist,
         "components": {
@@ -1718,4 +2397,6 @@ __all__ = [
     "WARMTH_MOVES", "PARENT_SHAPES", "MAX_WARMTH_OPENER_UNITS", "warmth_ids",
     "rotate_warmth", "classify_parent", "warmth_moves_for", "openers_for",
     "extract_detail", "fuse_warmth", "author_name_hits", "clear_warmth_cache",
+    "FAMILY_TAILS", "TAIL_DEFAULT_LANE", "tail_lane", "tails_for",
+    "select_tail", "render_tail", "clear_tail_cache",
 ]

@@ -92,6 +92,14 @@ TARGET = {"subject": "capex", "mechanism": "credit",
 #: draft is the one the warmth build replaced". Composing it here keeps the
 #: assertion about the FALLBACK CONTRACT and lets the register evolve; the
 #: warmth register itself is pinned by tests/test_marketing_reply_warmth.py.
+#:
+#: THE ``thread_id`` IS LOAD-BEARING (added 2026-08-01, the tail build). The
+#: doorway is now drawn from a per-desk pool by a stable hash of (account,
+#: family, thread), so a fixture that reconstructs the drafter's ctx WITHOUT the
+#: parent id composes a different closing sentence from the one `draft_reply`
+#: ships and every fallback-contract test below fails on a sentence neither the
+#: drafter nor the model got wrong. The chain mirrors `draft_reply`'s exactly:
+#: thread root, then this post's id, then the URL, then the author.
 def _warmed(family: str = "missing_variable") -> str:
     move = rdr._select_warmth(
         "kelly", family=family, parent_shape=rdr.classify_parent(TARGET),
@@ -101,6 +109,10 @@ def _warmed(family: str = "missing_variable") -> str:
     return rdr.compose(family, GIFT, {
         "subject": TARGET["subject"], "mechanism": TARGET["mechanism"],
         "account": "kelly", "detail": rdr.extract_detail(PARENT),
+        "thread_id": str(TARGET.get("thread_root_id")
+                         or TARGET.get("status_id")
+                         or TARGET.get("url")
+                         or TARGET.get("author") or ""),
     }, warmth=move)
 
 
