@@ -813,27 +813,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 </head>
 <body class="macro-desk page-baskets">
 <div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
-<nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
-  <div class="nav-search">
-    <span class="mag">🔎</span>
-    <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
-    <div class="nav-sugg"></div>
-  </div>
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span>{{ t('Mastermind', '操盘大脑') }}</a>
-    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span>{{ t('Terminal', '终端') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode">
-      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-    </button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 
   <!-- ── Shock de-escalation banner (FTR W1 / PS-R3, de-escalation only) ── -->
   <!-- Fetched live from site/live/shock_state.json. Absent file = no banner (graceful). -->
