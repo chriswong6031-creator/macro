@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T04:01:50.833995+00:00",
-  "count": 570,
+  "generated_at": "2026-08-02T04:31:58.123713+00:00",
+  "count": 571,
   "institutions": [
     "Amova",
     "Apollo",
@@ -302,6 +302,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-twvaftdjbgr-e21f1f",
+      "title": "Asia Pacific Weekly Kickstart MXAPJ gained 2 , led by China HK and India",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:46Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
       "language": "en",
       "needs_metadata": false
     },
