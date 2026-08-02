@@ -263,8 +263,8 @@ track is read faster than a percentage.
 
 Tier 2 (`?` help tip on the line, ≤80 words, label: value form):
 
-> `Family: 366 start days × 8 lengths = 2,928 windows on this symbol.`
-> `Your window: |t| 2.41. Chance-alone 95th percentile of the best window in the family: |t| 3.06 (2,000 synchronized year-shift resamples).`
+> `Family: 8 lengths across 365 start days, restricted so a window never wraps the year = 2,645 windows on this symbol.`
+> `Your window: |t| 2.41. Chance-alone 95th percentile of the best window in the family: |t| 3.06 (2,000 independent year-shift resamples).`
 > `Method: joint maxT, Westfall–Young style, dependence preserved by shifting whole years.`
 > `Unit of evidence: one complete year, not one day.`
 
@@ -318,9 +318,15 @@ per-year outcome lives in the **window fan** (§5), at its own scale.
 | 8 · gate rules | `stroke:var(--sx-ink); stroke-width:1; stroke-dasharray:3 3; stroke-opacity:.75` |
 | 9 · today rule | `stroke:var(--sx-now); stroke-width:1; stroke-opacity:.55` |
 
-**Strands are capped at 25** and each is downsampled to ≤183 points (every second
-calendar day) before serialization. If a lookback would exceed 25 complete years,
-keep the 25 most recent and say so in the freshness chip's Tier-2 tip.
+**Strands are capped at 25** complete years; if a lookback would exceed that, keep
+the 25 most recent and say so in the freshness chip's Tier-2 tip.
+
+The **payload** ships all 365 slots per year — §9's client contract is exact
+`cum[b] − cum[a]` at day resolution, and a downsampled array cannot honour it.
+Downsampling is a **drawing-time** decision only: the SVG path for a strand may
+plot every second slot (≤183 points) since a 1px stroke cannot resolve more,
+while every statistic is computed from the full array. Never downsample before
+serialization.
 
 ### Handles, keyboard, touch
 
@@ -498,7 +504,7 @@ The word `validated` must not appear (CI-guarded,
   },
   "calendar": { "basis": "calendar_day", "n_slots": 365, "labels": ["01-01", "…", "12-31"] },
   "years": [
-    { "year": 2011, "cum": [0.0, 0.0031, "…366 values, log-cum, 5dp"] }
+    { "year": 2011, "cum": ["…365 integers, cumulative log return in 1e-5 units"] }
   ],
   "current_year": { "year": 2026, "last_index": 211, "cum": ["…"] },
   "aggregate": { "median": ["…366"], "p20": ["…"], "p80": ["…"], "mean_log": ["…"] },
@@ -885,3 +891,50 @@ after-search line:
 No new chip, no new furniture, no jargon — one sentence that changes what a reader
 does. It is the cheapest honest defence against the largest remaining failure mode
 on this page, and the incumbent ships nothing like it.
+
+---
+
+## §16 Rulings on questions the build raised
+
+**The symbol picker shows `n_years_panel`, not `n_years`.** The index ships both:
+`n_years` is the history available, `n_years_panel` is the number of years
+actually drawn (capped at 25). §6 exists so a user "never opens a name expecting
+depth it does not have", so advertising 32 for a page that draws 25 defeats the
+control's whole purpose. Render `n_years_panel`, and let the freshness chip's
+Tier-2 tip mention the fuller history where they differ.
+
+**The benchmark needs its own copy.** For the market benchmark itself the
+market-neutral residual is identically zero, so the engine sets
+`neutral_basis: "self_benchmark"`, `neutral_clears: false`, and `state: "market"`.
+That is correct engineering and wrong copy: on the default page a reader is told
+"this is really the market's calendar" about the symbol that *is* the market,
+which reads as either a tautology or a bug.
+
+When `neutral_basis == "self_benchmark"`, the frontend overrides the copy:
+
+| Element | EN | ZH |
+|---|---|---|
+| Chip 4 | `Its own pattern` | `自身的规律` |
+| Verdict | `Late-year strength here holds up after counting every window tried. Get ready.` | `年末走强，在计入所有测试窗口后依然成立。做好准备。` |
+| Tier-2 tip on chip 4 | `This symbol is the market benchmark, so there is no separate market leg to remove — its calendar is the market's by definition.` | `该标的就是市场基准，没有可剥离的大盘部分——它的日历规律即为大盘的规律。` |
+
+This is a copy override, not a state change: the artifact keeps saying `market`,
+and the page stops saying something circular. Do not invent a fifth `state` value.
+
+**The stability rule stands as specified.** A measured check over 33 symbols: the
+median shifted-to-unshifted `|t|` ratio is 0.49 overall, so the selected window
+being an argmax does bias every shift downward — but the rule still separates
+cleanly, and separates the right way:
+
+| best-window horizon | median ratio | survives at 60% |
+|---|---:|---:|
+| ≤ 10 days | 0.312 | **0%** |
+| > 10 days | 0.634 | **67%** |
+
+Exactly zero short windows survive and two-thirds of long ones do, which is what
+§15 built the check to do. The 60% threshold is neither vacuous nor a rubber
+stamp (40% → 55% survive, 70% → 18%). Its one mild perversity — a very strong
+peak has further to fall, so `SPY`'s genuine Q4 window fails at ratio 0.50 — is
+accepted: an absolute alternative (requiring shifted `|t|` to clear the null 90th
+percentile) returns the same verdict for SPY, so there is no measured gain to be
+had from changing it.
