@@ -391,7 +391,7 @@
             
           </div>
           <div class="oew-read-v"><span class="l-en">50% of premium</span><span class="l-zh">占权利金 50%</span></div>
-          <div class="oew-pips" role="img" data-tip-en="50% of today&#39;s options premium went to contracts expiring the same day. Mostly same-day (0DTE) options — usually day-trading, not positioning for a move." data-tip-zh="今日 50% 的期权权利金流向当日到期的合约。以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。">
+          <div class="oew-pips" role="img" data-tip-en="50% of today&#39;s options premium went to contracts expiring the same day. Same-day contracts are usually day-trading, not positioning for a move." data-tip-zh="今日 50% 的期权权利金流向当日到期的合约。当日到期合约通常用于日内交易，而非布局趋势。">
             <i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip"></i><i class="oew-pip"></i>
           </div>
           <div class="oew-read-n"><span class="l-en">expiring the same day</span><span class="l-zh">当日到期</span></div>
@@ -817,14 +817,14 @@
           <div class="oew-rg-h"><span class="l-en">Money keeps showing up</span><span class="l-zh">资金反复出现</span></div>
           <div class="oew-rg-s"><span class="l-en">Heavy options buying on most of the last ten days.</span><span class="l-zh">近十个交易日中多数出现大量期权买入。</span></div>
           <div class="oew-tkchips">
-            <button class="oew-tkchip" type="button" data-goto="MP">MP</button><button class="oew-tkchip" type="button" data-goto="SNDK">SNDK</button><button class="oew-tkchip" type="button" data-goto="MARA">MARA</button><button class="oew-tkchip" type="button" data-goto="ALB">ALB</button><button class="oew-tkchip" type="button" data-goto="LITE">LITE</button><button class="oew-tkchip" type="button" data-goto="UCTT">UCTT</button>
+            <button class="oew-tkchip" type="button" data-goto="MP">MP</button><button class="oew-tkchip" type="button" data-goto="SNDK">SNDK</button><button class="oew-tkchip" type="button" data-goto="MARA">MARA</button><button class="oew-tkchip" type="button" data-goto="ALB">ALB</button><button class="oew-tkchip" type="button" data-goto="UCTT">UCTT</button><button class="oew-tkchip" type="button" data-goto="WDC">WDC</button>
           </div>
         </div>
         <div class="oew-rg">
           <div class="oew-rg-h"><span class="l-en">Turned back up after a washout</span><span class="l-zh">洗盘后重新转强</span></div>
           <div class="oew-rg-s"><span class="l-en">Money flipped positive right after a run of selling.</span><span class="l-zh">在连续卖出之后，资金刚刚转为流入。</span></div>
           <div class="oew-tkchips">
-            <button class="oew-tkchip" type="button" data-goto="CAMT">CAMT</button><button class="oew-tkchip" type="button" data-goto="LNG">LNG</button><button class="oew-tkchip" type="button" data-goto="LRCX">LRCX</button><button class="oew-tkchip" type="button" data-goto="MARA">MARA</button><button class="oew-tkchip" type="button" data-goto="OKTA">OKTA</button><button class="oew-tkchip" type="button" data-goto="PNC">PNC</button>
+            <button class="oew-tkchip" type="button" data-goto="CIFR">CIFR</button><button class="oew-tkchip" type="button" data-goto="CRWV">CRWV</button><button class="oew-tkchip" type="button" data-goto="IBIT">IBIT</button><button class="oew-tkchip" type="button" data-goto="LEN">LEN</button><button class="oew-tkchip" type="button" data-goto="QBTS">QBTS</button><button class="oew-tkchip" type="button" data-goto="STX">STX</button>
           </div>
         </div>
         <div class="oew-rg">
@@ -839,7 +839,7 @@
     <div class="oew-pfoot">
       <span class="oew-stance st-ready"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
       <span><span class="l-en">Tap a name to open its workbench. These are starting points for your own work.</span><span class="l-zh">点击标的可打开其工作台。这些只是你自行研究的起点。</span></span>
-      <span class="oew-asof mono">2026-08-01</span>
+      <span class="oew-asof mono">2026-08-02</span>
     </div>
   </div>
 
@@ -1326,9 +1326,13 @@ var CAU = {
     'Short-gamma regime around this name — price can whip around, so the flow read is less stable.',
     '该标的处于负Gamma环境 — 价格易剧烈波动，资金解读稳定性较低。']
 };
+/* Client-side twin of build_options_command.py's _ZERODTE_TIP_EN/_ZERODTE_TIP_ZH
+   — same wording verbatim.  Plain words only: the acronym this tip used to
+   carry is banned on the glance tier AND the hover tier of this workspace.
+   These bytes ship to the browser, so the comment does not name it either. */
 var ZDTE = ['Same-day heavy','当日到期为主', false,
-  'Mostly same-day (0DTE) options — usually day-trading, not positioning for a move.',
-  '以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。'];
+  'Same-day contracts are usually day-trading, not positioning for a move.',
+  '当日到期合约通常用于日内交易，而非布局趋势。'];
 function cauChip(c){
   return '<span class="cau' + (c[2] ? ' cau-warn' : '') + '" data-tip-en="' + esc(c[3]) + '" data-tip-zh="' + esc(c[4]) + '">'
     + bi(c[0], c[1]) + '</span>';
@@ -1542,6 +1546,5 @@ document.addEventListener('click', function(e){
 })();
 </script>
 <script src="theme.js?v=ba799a17" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>
