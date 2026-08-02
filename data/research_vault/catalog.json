@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T13:02:48.621338+00:00",
-  "count": 595,
+  "generated_at": "2026-08-02T13:17:52.059655+00:00",
+  "count": 596,
   "institutions": [
     "Amova",
     "Apollo",
@@ -30,6 +30,7 @@
     "Raymond James",
     "Royal London on Private Credit",
     "S&T",
+    "SG Prime",
     "Safra",
     "Scotiabank",
     "Societe Generale",
@@ -164,6 +165,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-u3hiqtuj4oh-3e67ff",
+      "title": "CORRELATION SIX SEVEN",
+      "institution": "SG Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:38:13Z",
+      "summary_points": [
+        "**Correlation Stability**: Rolling 52-week correlation (2000-2025) remains robust (mean 0.78, 95% range 0.61-0.91), with 89% of values exceeding original 0.67 benchmark; Fisher z-test confirms no significant long-term shift (p=0.7566).",
+        "**Structural Underperformance**: DTI’s cumulative returns diverged sharply from CTAT post-2013 (CTAT +71% vs DTI -15%), with DTI’s negative info ratio (-0.064) vs CTAT’s positive (0.345) confirming inferior risk-adjusted returns.",
+        "**Proxy Validity Endurance**: Despite DTI’s static model (20-day/120-day MA) versus CTAT’s evolved strategies, DTI remains a reliable trend-following proxy, with consistent correlation across two 12-year periods (0.775 vs 0.768)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
