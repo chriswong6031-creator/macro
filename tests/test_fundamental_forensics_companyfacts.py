@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 import gzip
 from hashlib import sha256
 import json
@@ -17,14 +18,19 @@ from collectors.fundamental_forensics_companyfacts import (
     CompanyFactsAcquisitionError,
     CompanyFactsResponseTooLarge,
     acquire_companyfacts,
+    companyfacts_capture_from_json_bytes,
+    companyfacts_capture_storage_key,
+    companyfacts_manifest_storage_key,
     companyfacts_url,
     iter_companyfacts_occurrences,
     manifest_id_for,
+    parse_companyfacts_response_exact_numbers,
     persist_companyfacts_manifest,
     publish_verified_manifest_pointer,
     read_companyfacts_manifest,
     read_latest_companyfacts_manifest,
     read_verified_companyfacts,
+    validate_companyfacts_response_bytes,
 )
 from engine.fundamental_forensics.models import canonical_json
 
@@ -180,6 +186,77 @@ def _run_receipt(result: dict) -> dict:
 def _capture_for(tmp_path: Path, manifest: dict) -> dict:
     key = manifest["source"]["capture_receipt_key"]
     return json.loads((tmp_path / "raw" / key).read_text(encoding="utf-8"))
+
+
+def test_public_capture_and_response_validators_bind_canonical_source_paths(tmp_path: Path):
+    payload = _payload()
+    response = _body(payload)
+    run = _run_receipt(_run(tmp_path, _Fetcher(response)))
+    manifest = read_companyfacts_manifest(
+        tmp_path / "archive", run["ticker_receipts"][0]["manifest_key"]
+    )
+    capture_record = _capture_for(tmp_path, manifest)
+    capture_bytes = canonical_json(capture_record).encode("utf-8")
+
+    capture = companyfacts_capture_from_json_bytes(capture_bytes)
+    decoded, logical, occurrence_count, occurrence_sha = validate_companyfacts_response_bytes(
+        response, expected_cik="1"
+    )
+
+    assert capture.to_dict() == capture_record
+    assert companyfacts_capture_storage_key("1", capture.capture_id) == manifest["source"][
+        "capture_receipt_key"
+    ]
+    assert companyfacts_manifest_storage_key(manifest) == run["ticker_receipts"][0][
+        "manifest_key"
+    ]
+    assert decoded == payload
+    assert sha256(logical).hexdigest() == manifest["source"]["logical_sha256"]
+    assert occurrence_count == manifest["source"]["fact_occurrence_count"]
+    assert occurrence_sha == manifest["source"]["fact_occurrence_sha256"]
+
+    with pytest.raises(CompanyFactsAcquisitionError, match="duplicate JSON key"):
+        validate_companyfacts_response_bytes(
+            b'{"cik":1,"cik":1,"facts":{}}', expected_cik="1"
+        )
+
+    noncanonical_capture = json.dumps(capture_record, indent=2).encode("utf-8")
+    with pytest.raises(CompanyFactsAcquisitionError, match="canonically encoded"):
+        companyfacts_capture_from_json_bytes(noncanonical_capture)
+
+
+def test_exact_number_projection_parse_never_collapses_distinct_sec_decimals():
+    response = (
+        b'{"cik":1,"entityName":"Fixture","facts":{"us-gaap":{"Metric":{"units":'
+        b'{"USD":[{"accn":"0000000001-25-000001","end":"2024-12-31",'
+        b'"val":1.0000000000000000000000000001}]}}}}}'
+    )
+    legacy, _, _, _ = validate_companyfacts_response_bytes(response, expected_cik="1")
+    exact = parse_companyfacts_response_exact_numbers(response, expected_cik="1")
+
+    legacy_value = legacy["facts"]["us-gaap"]["Metric"]["units"]["USD"][0]["val"]
+    exact_value = exact["facts"]["us-gaap"]["Metric"]["units"]["USD"][0]["val"]
+    assert legacy_value == 1.0
+    assert exact_value == Decimal("1.0000000000000000000000000001")
+    assert exact_value != Decimal("1")
+
+    exponent_bomb = response.replace(
+        b"1.0000000000000000000000000001", b"1e999999999"
+    )
+    with pytest.raises(CompanyFactsAcquisitionError, match="exponent"):
+        parse_companyfacts_response_exact_numbers(exponent_bomb, expected_cik="1")
+
+    too_deep = b'{"cik":1,"facts":' + b"[" * 70 + b"0" + b"]" * 70 + b"}"
+    with pytest.raises(CompanyFactsAcquisitionError, match="depth safety limit"):
+        validate_companyfacts_response_bytes(too_deep, expected_cik="1")
+    with pytest.raises(CompanyFactsAcquisitionError, match="depth safety limit"):
+        parse_companyfacts_response_exact_numbers(too_deep, expected_cik="1")
+
+    huge_integer = response.replace(
+        b"1.0000000000000000000000000001", b"9" * 257
+    )
+    with pytest.raises(CompanyFactsAcquisitionError, match="integer token"):
+        parse_companyfacts_response_exact_numbers(huge_integer, expected_cik="1")
 
 
 def test_acquires_current_byte_faithful_snapshot_with_verified_pointer(tmp_path: Path):

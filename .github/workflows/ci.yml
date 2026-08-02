@@ -133,6 +133,7 @@ on:
       - "scripts/ingest_research.py"
       - "scripts/build_research_vault.py"
       - "tests/test_research_vault.py"
+      - "tests/test_research_vault_strict_store.py"
       # Research Vault (RV W2) serving API + download gate: quota ledger, view
       # rate-limit, watermark, the app/research.py router + its security tests.
       - "app/research.py"

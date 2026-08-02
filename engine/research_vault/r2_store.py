@@ -1,7 +1,8 @@
 """research_vault.r2_store — object store for the PRIVATE research bucket.
 
 Two interchangeable backends behind one small interface
-(``get_bytes / get_bytes_strict / put_bytes / list_prefix / exists / upload_time``):
+(``get_bytes / get_bytes_strict / get_bytes_strict_bounded / put_bytes /
+list_prefix / exists / upload_time``):
 
   - :class:`R2Store` — boto3 wrapper on the private bucket ``R2_RESEARCH_BUCKET``.
     Reuses the account access key (env ``R2_ENDPOINT / R2_ACCESS_KEY_ID /
@@ -26,6 +27,7 @@ absent object: it returns ``None`` only for an authoritative not-found result.
 """
 from __future__ import annotations
 
+import errno
 import logging
 import os
 from datetime import datetime, timezone
@@ -33,6 +35,8 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 log = logging.getLogger("research_vault.r2_store")
+
+_MAX_STRICT_STREAM_READ_CALLS = 8_192
 
 
 @runtime_checkable
@@ -56,6 +60,31 @@ class StrictReadStore(Store, Protocol):
     """
 
     def get_bytes_strict(self, key: str) -> bytes | None: ...
+
+
+@runtime_checkable
+class StrictBoundedReadStore(StrictReadStore, Protocol):
+    """A strict store which can cap an immutable-object read before buffering it.
+
+    ``None`` retains the narrow meaning from :class:`StrictReadStore`: the
+    backing service authoritatively reported that the object does not exist.
+    A response that is too large, malformed, unavailable, unauthorized, or
+    fails while closing its body must raise.  Snapshot consumers use this
+    protocol for untrusted remote manifest and source-object bytes; the older
+    strict method remains available for compatible callers that do not yet
+    have a defensible byte ceiling.
+    """
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None: ...
+
+
+def _validate_bounded_read_limit(maximum_bytes: int) -> int:
+    """Validate a byte cap without silently coercing surprising caller input."""
+    if isinstance(maximum_bytes, bool) or not isinstance(maximum_bytes, int):
+        raise ValueError("maximum_bytes must be a non-negative integer")
+    if maximum_bytes < 0:
+        raise ValueError("maximum_bytes must be a non-negative integer")
+    return maximum_bytes
 
 
 # ---------------------------------------------------------------------------
@@ -148,11 +177,91 @@ class R2Store:
             raise RuntimeError("R2 store unavailable: missing bucket or credentials")
         try:
             response = self._s3.get_object(Bucket=self.bucket, Key=key)
-            return response["Body"].read()
         except Exception as error:
             if _is_authoritative_r2_not_found(error):
                 return None
             raise
+        if not isinstance(response, dict):
+            raise RuntimeError("R2 get_object returned a malformed response")
+        body = response.get("Body")
+        if body is None or not callable(getattr(body, "read", None)):
+            raise RuntimeError("R2 get_object response is missing a readable body")
+        close = getattr(body, "close", None)
+        if not callable(close):
+            raise RuntimeError("R2 get_object response body is not closeable")
+        try:
+            content = body.read()
+        finally:
+            close()
+        if not isinstance(content, bytes):
+            raise RuntimeError("R2 object body returned non-bytes")
+        return content
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+        """Strictly read at most ``maximum_bytes`` without unbounded buffering.
+
+        ``ContentLength`` is used only as an early rejection optimization: the
+        body is still read with ``maximum + 1`` so a lying or absent header
+        cannot evade the cap.  The stream is closed on every path, including
+        a rejected header or a read error.  This deliberately does *not* turn
+        permission/network/body errors into a missing object.
+        """
+        limit = _validate_bounded_read_limit(maximum_bytes)
+        if not self.available:
+            raise RuntimeError("R2 store unavailable: missing bucket or credentials")
+        try:
+            response = self._s3.get_object(Bucket=self.bucket, Key=key)
+        except Exception as error:
+            if _is_authoritative_r2_not_found(error):
+                return None
+            raise
+
+        if not isinstance(response, dict):
+            raise RuntimeError("R2 get_object returned a malformed response")
+        body = response.get("Body")
+        if body is None or not callable(getattr(body, "read", None)):
+            raise RuntimeError("R2 get_object response is missing a readable body")
+        close = getattr(body, "close", None)
+        if not callable(close):
+            raise RuntimeError("R2 get_object response body is not closeable")
+        try:
+            announced_length = response.get("ContentLength")
+            if announced_length is not None:
+                if (
+                    isinstance(announced_length, bool)
+                    or not isinstance(announced_length, int)
+                    or announced_length < 0
+                ):
+                    raise RuntimeError("R2 get_object returned an invalid ContentLength")
+                if announced_length > limit:
+                    raise ValueError(
+                        f"R2 object exceeds bounded read limit ({announced_length} > {limit})"
+                    )
+            chunks: list[bytes] = []
+            observed = 0
+            read_calls = 0
+            while observed <= limit:
+                read_calls += 1
+                if read_calls > _MAX_STRICT_STREAM_READ_CALLS:
+                    raise RuntimeError("R2 object body exceeded strict read iteration limit")
+                requested = limit + 1 - observed
+                chunk = body.read(requested)
+                if not isinstance(chunk, bytes):
+                    raise RuntimeError("R2 object body returned non-bytes")
+                if not chunk:
+                    break
+                if len(chunk) > requested:
+                    raise RuntimeError("R2 object body returned more bytes than requested")
+                chunks.append(chunk)
+                observed += len(chunk)
+            content = b"".join(chunks)
+        finally:
+            close()
+        if len(content) > limit:
+            raise ValueError(
+                f"R2 object exceeds bounded read limit ({len(content)} > {limit})"
+            )
+        return content
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
@@ -232,6 +341,34 @@ class LocalStore:
             raise ValueError(f"unsafe key: {key!r}")
         return self.root / rel
 
+    def _open_strict_read(self, key: str):
+        """Open a key descriptor-relative without following swappable symlinks."""
+        candidate = self._p(key)
+        relative = candidate.relative_to(self.root)
+        parts = relative.parts
+        if not parts:
+            raise ValueError(f"unsafe empty key: {key!r}")
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        nofollow = getattr(os, "O_NOFOLLOW", 0)
+        directory_fd = os.open(self.root, directory_flags)
+        try:
+            for part in parts[:-1]:
+                next_fd = os.open(
+                    part,
+                    directory_flags | nofollow,
+                    dir_fd=directory_fd,
+                )
+                os.close(directory_fd)
+                directory_fd = next_fd
+            file_fd = os.open(parts[-1], os.O_RDONLY | nofollow, dir_fd=directory_fd)
+        except OSError as exc:
+            if exc.errno in {errno.ELOOP, errno.ENOTDIR}:
+                raise ValueError(f"unsafe key traverses symlink: {key!r}") from exc
+            raise
+        finally:
+            os.close(directory_fd)
+        return os.fdopen(file_fd, "rb", closefd=True)
+
     def get_bytes(self, key: str) -> bytes | None:
         try:
             p = self._p(key)
@@ -248,11 +385,30 @@ class LocalStore:
         :meth:`_p` and lets immutable snapshot callers fail closed when a local
         backing volume becomes unreadable.
         """
-        p = self._p(key)
         try:
-            return p.read_bytes()
+            with self._open_strict_read(key) as handle:
+                return handle.read()
         except FileNotFoundError:
             return None
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+        """Strict local read with a hard ``maximum + 1`` streaming cap.
+
+        This mirrors the remote bounded method exactly: a missing path alone
+        maps to ``None``; traversal, permissions, and oversize content remain
+        hard failures for immutable-source consumers.
+        """
+        limit = _validate_bounded_read_limit(maximum_bytes)
+        try:
+            with self._open_strict_read(key) as handle:
+                content = handle.read(limit + 1)
+        except FileNotFoundError:
+            return None
+        if len(content) > limit:
+            raise ValueError(
+                f"local object exceeds bounded read limit ({len(content)} > {limit})"
+            )
+        return content
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:

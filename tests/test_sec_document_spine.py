@@ -15,9 +15,11 @@ from collectors.sec_document_spine import (
     HARD_MAX_DOCUMENT_BYTES,
     HARD_MAX_HTTP_METADATA_BYTES,
     SecFilingArchiveCollector,
+    archive_receipt_from_json_bytes,
     persist_archive_document,
     persist_filing_manifest,
     read_archive_document,
+    read_archive_object_bytes,
     read_filing_manifest,
     read_primary_document,
     receipt_storage_key,
@@ -316,6 +318,29 @@ def test_archive_store_is_idempotent_then_atomically_repairs_a_corrupt_object(tm
     assert repaired == first
     assert read_archive_document(tmp_path, repaired) == content
     assert not list(tmp_path.rglob("*.tmp"))
+
+
+def test_source_readback_helpers_validate_receipt_sidecar_before_bounded_inflate(tmp_path):
+    document = _by_accession()["0000000001-26-000001"]["documents"][0]
+    content = b"<html>receipt-bound source</html>"
+    receipt = persist_archive_document(
+        tmp_path, document, content, retrieved_at=RECORDED_AT
+    )
+    receipt_bytes = (tmp_path / receipt_storage_key(receipt.receipt_id)).read_bytes()
+    compressed = (tmp_path / receipt.storage_key).read_bytes()
+
+    restored = archive_receipt_from_json_bytes(receipt_bytes)
+    assert restored == receipt
+    assert read_archive_object_bytes(compressed, restored) == content
+    with pytest.raises(ArchiveStoreError, match="canonical sidecar"):
+        read_archive_object_bytes(compressed, restored.to_dict())
+
+    with pytest.raises(ArchiveStoreError, match="identity mismatch"):
+        archive_receipt_from_json_bytes(
+            receipt_bytes.replace(receipt.receipt_id.encode(), b"sec_archive_receipt_" + b"0" * 64)
+        )
+    with pytest.raises(ArchiveStoreError, match="byte length"):
+        read_archive_object_bytes(gzip.compress(content + b"x", mtime=0), restored)
 
 
 def test_bad_checksum_and_checksum_corruption_fail_closed(tmp_path):
