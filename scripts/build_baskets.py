@@ -149,7 +149,9 @@ def main() -> int:
 
     fdir = site / "basketdata"
     fdir.mkdir(parents=True, exist_ok=True)
-    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # baskets.json is written AFTER the sector_pulse merge below — the page now FETCHES this
+    # artifact instead of an inline embed, so it must carry the pulse keys (velocity/heat)
+    # the rotation map and lanes read. Writing here would freeze a pre-merge snapshot.
     if emergence:
         (fdir / "narrative_emergence.json").write_text(
             json.dumps(emergence, separators=(",", ":"), default=str))
@@ -179,6 +181,11 @@ def main() -> int:
             _sp.merge_pulse_into_theme_intel(data["theme_intel"], "us")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_pulse hook failed: %s", e)
+
+    # The Sector Intelligence page (sector_central.html) fetches this artifact client-side
+    # (the old inline `var BASKETS = …` embed is gone) — written post-pulse-merge and
+    # pre-chart-pop so it carries BOTH the velocity/heat keys and the chart matrix.
+    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
 
     # THEME ROTATION DESK ADD-ONS (display-only context): ETF Pulse (style/risk/sector
     # rotation), vol-regime + CBOE put/call chip, and per-theme ATR extension. Each writes
@@ -349,17 +356,25 @@ def main() -> int:
     except Exception as _tc_exc:  # noqa: BLE001 — additive, never fatal
         log.warning("theme_context hook failed: %s", _tc_exc)
 
-    # Render baskets.html — deferred to here so theme_context (above) is PIT-correct.
-    html = env.get_template("baskets.html.j2").render(
-        baskets_json=json.dumps(data, separators=(",", ":")),
-        chart_json=json.dumps(chart, separators=(",", ":")),
-        flow=flow,
-        risk_state=risk_state,
-        risk_radar=risk_radar,
-        factor_season=factor_season,
-        generated_utc=built,
-        basket_member_syms=_member_syms,
-        theme_context=_theme_context)
+    # SECTOR INTELLIGENCE HANDOFF — the merged page (rendered by build_sector_central, which
+    # runs after this in the DAG band) needs the server-side hero/lane context this builder
+    # computes. Written as one small artifact; build_sector_central reads it fail-soft.
+    try:
+        (fdir / "theme_context.json").write_text(json.dumps({
+            "theme_context": _theme_context,
+            "factor_season": factor_season,
+            "flow": ({"cluster": {"regime": ((flow or {}).get("cluster") or {}).get("regime")}}
+                     if (flow or {}).get("cluster") else None),
+            "basket_member_syms": _member_syms,
+            "generated_utc": built,
+        }, separators=(",", ":"), default=str))
+    except Exception as _si_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector-intelligence handoff write failed: %s", _si_exc)
+
+    # Render baskets.html — now a redirect stub (Thematic Baskets merged into Sector
+    # Intelligence at sector_central.html; operator consolidation 2026-08-01). The stub
+    # template ignores context; detail pages below still consume the full `data`.
+    html = env.get_template("baskets.html.j2").render()
     write_page(site / "baskets.html", html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
     # theme_intel + members) and the env; chart already split off above. Additive.

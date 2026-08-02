@@ -312,11 +312,19 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("turn artifacts failed: %s", e)
 
+    # Sector Intelligence consolidation (2026-08): on the US SURFACE "Themes" means the 47
+    # curated baskets (rendered by the merged page's own map), so the Finviz-taxonomy themes
+    # UNIT is hidden in the UI — flag-driven, because the themes ARRAY itself stays a data
+    # product (engine/neuralweb/thematic_state.py reads it for quadrant rollups). The shared
+    # renderer hides the toggle when themes_unit is false; China's feed (no flag) keeps its
+    # THS-concept themes unit. Turn ledgers/turn_themes artifacts unaffected.
+    payload["themes_unit"] = False
+
     outdir = site / "marketdata"
     outdir.mkdir(parents=True, exist_ok=True)
     out = outdir / "subsector_rotation.json"
     out.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False))
-    log.info("wrote %s — %d subsectors, %d themes (emerging: %s)",
+    log.info("wrote %s — %d subsectors, %d themes (themes unit hidden; emerging: %s)",
              out, payload["n_subsectors"], payload["n_themes"],
              ", ".join(payload["highlights"]["emerging"][:4]))
 

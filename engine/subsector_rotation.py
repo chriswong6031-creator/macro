@@ -4,7 +4,7 @@ Turns Finviz's broad-universe **theme → subsector** performance snapshot
 (``data/themes_heatmap/perf_snapshot.json``, 268 subsectors across 40 themes,
 eight horizons) into a rotation read: which subsectors lead, which are turning,
 and — the point — which are *accelerating* (an emerging-theme early-entry
-signal). It is a separate lens from the 34 hand-curated thematic baskets: those
+signal). It is a separate lens from the 47 curated thematic baskets: those
 are our own equal-weight indices; this rides Finviz's own broad numbers (which
 include names we hold no prices for), so it stays a display/context layer.
 
