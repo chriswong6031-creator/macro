@@ -2775,7 +2775,10 @@ def _is_recent_verified_full_history_surface(
         return False
     if artifact.get("surface") != expected_surface:
         return False
-    if artifact.get("data_status") != "ready":
+    # ``stale`` here means the latest *call date* is older than 14 days.  That
+    # is normal between earnings seasons and is independent of whether this
+    # full-history artifact was rebuilt recently enough to be a safe fallback.
+    if artifact.get("data_status") not in {"ready", "stale"}:
         return False
     if artifact.get("data_source_tier") not in _FULL_HISTORY_SOURCE_TIERS:
         return False

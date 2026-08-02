@@ -7,8 +7,34 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/earnings-story-packets.yml"
+CI_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml"
+CI_MANIFEST = Path(__file__).resolve().parents[1] / ".github/ci/legacy-jobs.yml"
+
+
+STORY_CI_PATHS = {
+    "config/earnings_story_promotion.yml",
+    "scripts/build_earnings_evidence_graph.py",
+    "scripts/publish_earnings_evidence_graph_r2.py",
+    "scripts/refresh_earnings_story_packets.py",
+    "scripts/publish_earnings_story_packets_r2.py",
+    "tests/test_earnings_story_promotion.py",
+    "tests/test_earnings_story_packets.py",
+    "tests/test_earnings_story_press_workflow.py",
+    "tests/test_publish_earnings_story_packets_r2.py",
+    "tests/test_refresh_earnings_story_packets.py",
+}
+
+STORY_CI_SUITES = {
+    "tests/test_earnings_story_promotion.py",
+    "tests/test_earnings_story_packets.py",
+    "tests/test_earnings_story_press_workflow.py",
+    "tests/test_publish_earnings_story_packets_r2.py",
+    "tests/test_refresh_earnings_story_packets.py",
+}
 
 
 def test_story_packet_projection_workflow_is_scheduled_and_serialized() -> None:
@@ -21,6 +47,7 @@ def test_story_packet_projection_workflow_is_scheduled_and_serialized() -> None:
     assert "cancel-in-progress: false" in body
     assert 'cron: "37 6 * * *"' in body
     assert "--audit-remote" in body
+    assert body.count("github.ref == 'refs/heads/main'") == 2
 
 
 def test_story_packet_projection_accepts_no_tier_and_uses_only_deterministic_transport() -> None:
@@ -47,3 +74,15 @@ def test_story_packet_projection_never_receives_model_credentials() -> None:
     assert "R2_BUCKET" in body
     for forbidden in ("OPENAI", "ANTHROPIC", "CLAUDE", "DEEPSEEK", "KIMI", "GEMINI", "MODEL_API"):
         assert forbidden not in body
+
+
+def test_story_packet_projection_paths_and_suites_are_ci_reachable() -> None:
+    ci = yaml.load(CI_WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    paths = set(ci["on"]["pull_request"]["paths"])
+    assert STORY_CI_PATHS <= paths
+
+    manifest = yaml.safe_load(CI_MANIFEST.read_text(encoding="utf-8"))
+    job = manifest["jobs"]["publish-r2-client"]
+    commands = "\n".join(str(step.get("run", "")) for step in job["steps"])
+    for suite in STORY_CI_SUITES:
+        assert suite in commands

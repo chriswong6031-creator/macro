@@ -3540,7 +3540,12 @@ jobs:
           tests/test_publish_company_intelligence_r2.py
           tests/test_company_intelligence_refresh.py
           tests/test_company_theme_exposure.py
-          tests/test_publish_company_theme_exposure_r2.py -q -rs
+          tests/test_publish_company_theme_exposure_r2.py
+          tests/test_earnings_story_promotion.py
+          tests/test_earnings_story_packets.py
+          tests/test_earnings_story_press_workflow.py
+          tests/test_publish_earnings_story_packets_r2.py
+          tests/test_refresh_earnings_story_packets.py -q -rs
 
   chart-render:
     if: ${{ false }}

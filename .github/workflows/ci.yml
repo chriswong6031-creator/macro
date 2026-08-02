@@ -2151,6 +2151,20 @@ on:
       - "tests/test_company_intelligence_refresh.py"
       - "tests/test_company_theme_exposure.py"
       - "tests/test_publish_company_theme_exposure_r2.py"
+      # Governed earnings story packets are an immutable R2 projection over the
+      # exact earnings-evidence root.  Keep every policy, refresh, publisher and
+      # focused-test path on the publish-r2-client lane so a test-only or
+      # transport-only edit cannot silently bypass its provenance replay.
+      - "config/earnings_story_promotion.yml"
+      - "scripts/build_earnings_evidence_graph.py"
+      - "scripts/publish_earnings_evidence_graph_r2.py"
+      - "scripts/refresh_earnings_story_packets.py"
+      - "scripts/publish_earnings_story_packets_r2.py"
+      - "tests/test_earnings_story_promotion.py"
+      - "tests/test_earnings_story_packets.py"
+      - "tests/test_earnings_story_press_workflow.py"
+      - "tests/test_publish_earnings_story_packets_r2.py"
+      - "tests/test_refresh_earnings_story_packets.py"
       # unrun-russell-breadth
       - "tests/test_russell_breadth.py"
       # unrun-brain-gateway

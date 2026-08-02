@@ -461,7 +461,7 @@ def test_last_good_guard_uses_artifact_generation_freshness_not_latest_call_date
     """An off-season call date may be old; the build receipt is the freshness clock."""
     base = {
         "surface": "earnings_table",
-        "data_status": "ready",
+        "data_status": "stale",
         "data_source_tier": "r2_history",
         "source_rows": 100,
         "latest_call_date": "2025-01-01",
