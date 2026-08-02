@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T16:03:11.015813+00:00",
-  "count": 604,
+  "generated_at": "2026-08-02T16:33:15.724073+00:00",
+  "count": 605,
   "institutions": [
     "Amova",
     "Apollo",
@@ -77,6 +77,26 @@
         "**AI Capex Risk & Strategic Shift**: Hyperscalers' cash flow strain risks semiconductor price weakness; recommend barbell positioning: semi-cap equipment, foundries, compute names, and defensive tech (smartphones, payment networks, data center REITs).",
         "**South Korea Downgrade**: Downgraded to Neutral; focus on semicap equipment, foundries, compute names, and defensive markets (India, Singapore, Malaysia, China) amid memory chip catalysts.",
         "**Policy & Fixed Income Outlook**: BoE likely holds rates amid energy shock; favor GBP-denominated bonds (2-6yr) and A/BBB corporates for carry/declining yields targeting 2% inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xxtmvxpd6h7-8b5a08",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:00:56Z",
+      "summary_points": [
+        "**Near-term AI Capex Momentum**: Amazon raised 2026 capex to $220bn, Meta forecasted $130bn-$145bn, Microsoft signaled cloud acceleration, Alphabet reported revenue-eligible cloud orders—indicating robust near-term AI investment and monetization.",
+        "**FCF Constraints Beyond 2027**: Hyperscalers’ AI capex outpacing cash flows pressures free cash flow, risking AI spending slowdown post-2027 despite cloud revenue growth offsetting capex.",
+        "**Semiconductor Risk-Adjusted Positioning**: Recommend barbell strategy (semiconductors + defensive tech: smartphone makers, payment networks, data center REITs, consumer electronics) to manage AI concentration risk amid semiconductor pricing pressure.",
+        "**Central Bank Policy Divergence**: BoE hawkish (6-3 vote for 25bps hike), BoJ holds at 1% post-yen appreciation; prioritize GBP 2-6y bonds and A/BBB corporate bonds for carry/yield."
       ],
       "tags": [],
       "tickers": [],
