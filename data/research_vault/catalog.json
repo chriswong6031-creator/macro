@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T23:18:54.172677+00:00",
-  "count": 625,
+  "generated_at": "2026-08-02T23:33:57.215840+00:00",
+  "count": 626,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1564,6 +1564,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kgxzoik8cex-a3124e",
+      "title": "Put up or bond up",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:44Z",
+      "summary_points": [
+        "**Fed's rate hike credibility & global steepening**: Dovish FOMC raised credibility concerns, but strong data supports Fed hikes; monitor BoJ/CB for global long-end steepening risks.",
+        "**US bill demand & geopolitical risks**: $700bn FY '27 bill demand from SOMA/MMFs; UST underperformance driven by heightened geopolitical risks.",
+        "**OAT-EU trade positioning**: Short OATs vs EU bonds (current 38bp spread, target 40bp, stop 25bp) fueled by Le Pen candidacy, US-Iran tensions, and supply dynamics.",
+        "**BoE holds rates at 3.75% with 2026 hike risk**: MPC keeps door open for hikes if energy shock persists, no immediate action due to soft labor market; risks tilted to 2026 if energy prices endure.",
+        "**Debt limit & bill shortfall**: Debt limit binds March '27 (X-date Aug-Nov '27); $400b bill shortfall justifies higher FY '27 coupon auction sizes amid debt limit resolution timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
       "language": "en",
       "needs_metadata": false
     },
