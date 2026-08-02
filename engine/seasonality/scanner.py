@@ -42,6 +42,12 @@ STATISTIC = "abs_t_of_mean_window_log_return_across_years"
 START_DAYS_RULE = "1..365, restricted so start + horizon <= 365 (windows never wrap the year)"
 QUANTILE_KEYS = ("0.90", "0.95", "0.99")
 LADDER_STEPS = 101  # q = 0.00, 0.01, ... 1.00
+# The lookback pills the page offers (research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC
+# §5: `10y | 15y | 25y | Max`). Each one changes the panel, so each one needs its
+# OWN null: a 10-year |t| judged against a 25-year null is compared to a threshold
+# built from a different sample size AND a different autocorrelation structure,
+# and it is wrong in the flattering direction for short lookbacks.
+LOOKBACKS_YEARS = (10, 15, 25)
 STABILITY_SHIFTS_DAYS = (-5, -2, 2, 5)
 STABILITY_MEDIAN_FLOOR = 0.6
 
@@ -66,6 +72,33 @@ def seed_for_symbol(symbol: str) -> int:
     """A stable 32-bit seed so a symbol's null is reproducible forever."""
     digest = hashlib.sha256(f"seasonality:{symbol}".encode("utf-8")).digest()
     return int.from_bytes(digest[:4], "big")
+
+
+def family_fingerprint() -> str:
+    """Hash the search definition itself.
+
+    ``panel_fingerprint`` answers "is this the same data"; this answers "is this
+    the same search". Both have to key the selection cache, because the null
+    quantiles are only meaningful for the family they were maximised over. Widen
+    ``HORIZONS_DAYS`` without this and the panel hash is unchanged, so every
+    symbol keeps its stored null and the artifact publishes a 3075-window search
+    priced by a 2645-window null — with no visible symptom anywhere.
+    """
+    definition = (
+        N_SLOTS,
+        HORIZONS_DAYS,
+        N_CANDIDATES,
+        STATISTIC,
+        NULL_METHOD,
+        TOP_K_DISCOVERED,
+        MAX_OVERLAP_SHARE,
+        LOOKBACKS_YEARS,
+        STABILITY_SHIFTS_DAYS,
+        STABILITY_MEDIAN_FLOOR,
+        QUANTILE_KEYS,
+        LADDER_STEPS,
+    )
+    return "sha256:" + hashlib.sha256(repr(definition).encode("utf-8")).hexdigest()
 
 
 def panel_fingerprint(panel: YearPanel) -> str:
@@ -274,8 +307,17 @@ def null_max_abs_t(
 
 
 def exceedance_pct(null_max: np.ndarray, observed: float) -> float:
-    """Share of resamples in which chance produced a window at least this strong."""
-    return 100.0 * float((np.asarray(null_max) >= observed).sum()) / float(np.asarray(null_max).size)
+    """Share of resamples in which chance produced a window at least this strong.
+
+    Carries the same ``(1 + count) / (B + 1)`` floor as every other p-value in this
+    module, for the same reason: with B resamples the finest thing the Monte Carlo
+    can resolve is 1/(B+1), so a bare ``count/B`` would publish "0.000%" for a
+    window that simply beat every draw. It also makes this number and
+    ``p_adj_maxt_family`` two renderings of ONE quantity rather than two numbers a
+    reader has to reconcile.
+    """
+    values = np.asarray(null_max)
+    return 100.0 * float(1 + int((values >= observed).sum())) / float(values.size + 1)
 
 
 def quantile_ladder(null_max: np.ndarray, steps: int = LADDER_STEPS) -> list[float]:
@@ -288,9 +330,16 @@ def quantile_ladder(null_max: np.ndarray, steps: int = LADDER_STEPS) -> list[flo
 
 
 def _overlap_share(a: tuple[int, int], b: tuple[int, int]) -> float:
-    """Shared days as a share of the SHORTER window (the conservative reading)."""
-    shared = max(0, min(a[1], b[1]) - max(a[0], b[0]) + 1)
-    shortest = min(a[1] - a[0] + 1, b[1] - b[0] + 1)
+    """Shared days as a share of the SHORTER window (the conservative reading).
+
+    A window ``(s, e)`` covers the days ``s+1 .. e`` — ``e - s`` of them, not
+    ``e - s + 1``. Treating the endpoints as an inclusive day range made two
+    genuinely disjoint windows like ``(100, 105)`` and ``(105, 110)`` report 17%
+    shared, because they touch at a single boundary that belongs to neither's
+    return.
+    """
+    shared = max(0, min(a[1], b[1]) - max(a[0], b[0]))
+    shortest = min(a[1] - a[0], b[1] - b[0])
     return shared / shortest if shortest else 0.0
 
 
@@ -352,6 +401,54 @@ def registered_panel_windows(cum: np.ndarray, k: int = TOP_K_DISCOVERED) -> list
     return panel
 
 
+def null_summary(
+    daily: np.ndarray,
+    *,
+    n_resamples: int,
+    seed: int,
+) -> dict:
+    """The null a client needs to judge ANY window on this panel, and nothing more.
+
+    Deliberately no registered panel and no best window: a lookback view only has
+    to answer "is this |t| large for a panel of this shape", which is the quantiles
+    plus the ladder the chance track reads. Roughly 1 KB per lookback.
+    """
+    null_max, _ = null_max_abs_t(daily, n_resamples=n_resamples, seed=seed)
+    return {
+        "method": NULL_METHOD,
+        "B": n_resamples,
+        "seed": seed,
+        "n_years": int(daily.shape[0]),
+        "max_abs_t_quantiles": {
+            key: round(float(np.quantile(null_max, float(key))), 4) for key in QUANTILE_KEYS
+        },
+        "max_abs_t_quantile_ladder": quantile_ladder(null_max),
+    }
+
+
+def lookback_nulls(
+    panel: YearPanel,
+    *,
+    n_resamples: int,
+    seed: int,
+) -> dict[str, dict]:
+    """One null per offered lookback SHORTER than the panel.
+
+    A lookback at least as long as the panel is the panel, so it is omitted and
+    the client falls back to ``family.null`` — which is exactly the "Max" pill.
+    """
+    out: dict[str, dict] = {}
+    for lookback in LOOKBACKS_YEARS:
+        if lookback >= panel.n_years or lookback < _MIN_YEARS_FOR_T:
+            continue
+        out[str(lookback)] = null_summary(
+            panel.daily[-lookback:],
+            n_resamples=n_resamples,
+            seed=(seed + lookback) % (2**32),
+        )
+    return out
+
+
 @dataclass(frozen=True)
 class ScanResult:
     """Everything the artifact needs from the family, plus the null it was priced against."""
@@ -362,9 +459,11 @@ class ScanResult:
     n_years: int
     max_abs_t_quantiles: dict[str, float]
     max_abs_t_ladder: list[float]
+    null_by_lookback: dict[str, dict]
     registered_panel: list[dict]
     best: dict | None
     panel_hash: str
+    family_hash: str
     null_max: np.ndarray = field(repr=False, default_factory=lambda: np.zeros(0))
 
 
@@ -402,12 +501,31 @@ def scan(
     width = len(windows)
     adjusted = max_t_adjusted_p_values(statistics, [[value] * width for value in null_max])
 
+    # Marginal p-values, and then a decision about which of them mean anything.
+    #
+    # The 12 calendar months are PRE-REGISTERED: nobody chose them after seeing
+    # the data, so their marginal p is honest and a BY step-up over them is the
+    # sensitivity result the docket asks for. The top-k windows are the opposite:
+    # they are the family's largest |t| values, selected on this very panel. Their
+    # marginal p is contaminated by construction — on pure-noise panels 96% of
+    # them come out below 0.05 — so publishing one, or letting it into a BY panel,
+    # would hand the page a "significant discovery" for every symbol on earth.
+    # They already carry the number that IS valid for them: p_adj_maxt_family,
+    # which prices exactly the search that found them.
     denominator = float(n_resamples + 1)
-    raw = [
-        float((1 + int((null_panel[:, column] >= statistics[column]).sum())) / denominator)
-        for column in range(len(windows))
-    ]
-    q_values = benjamini_yekutieli(raw)
+    raw: list[float | None] = []
+    for column, entry in enumerate(windows):
+        if entry["kind"] != "calendar_month":
+            raw.append(None)
+            continue
+        raw.append(float((1 + int((null_panel[:, column] >= statistics[column]).sum())) / denominator))
+
+    registered_p = [value for value in raw if value is not None]
+    registered_q = benjamini_yekutieli(registered_p) if registered_p else []
+    q_values: list[float | None] = []
+    q_iter = iter(registered_q)
+    for value in raw:
+        q_values.append(next(q_iter) if value is not None else None)
 
     registered: list[dict] = []
     for column, (entry, stats) in enumerate(zip(windows, observed)):
@@ -422,9 +540,9 @@ def scan(
                 "null_max_exceedance_pct": (
                     None if stats["abs_t"] is None else round(exceedance_pct(null_max, stats["abs_t"]), 3)
                 ),
-                "p_raw": round(raw[column], 6),
+                "p_raw": None if raw[column] is None else round(raw[column], 6),
                 "p_adj_maxt_family": round(adjusted[column], 6),
-                "q_by": round(q_values[column], 6),
+                "q_by": None if q_values[column] is None else round(q_values[column], 6),
                 "stability": window_stability(panel.cum, entry["start_doy"], entry["end_doy"]),
             }
         )
@@ -452,8 +570,10 @@ def scan(
         n_years=panel.n_years,
         max_abs_t_quantiles=quantiles,
         max_abs_t_ladder=quantile_ladder(null_max),
+        null_by_lookback=lookback_nulls(panel, n_resamples=n_resamples, seed=resolved_seed),
         registered_panel=registered,
         best=best,
         panel_hash=panel_fingerprint(panel),
+        family_hash=family_fingerprint(),
         null_max=null_max,
     )

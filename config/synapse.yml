@@ -8975,8 +8975,10 @@ artifacts:
       years of rebased cumulative log-return paths (quantised to integers in 1e-5
       units), the median/p20/p80/mean canonical paths, month/weekday/trading-day
       views, the 2645-window family with its independent circular year-shift null
-      (B=2000) and Westfall-Young adjusted p-values over a registered panel, and
-      the same block again for the point-in-time market-neutral residual panel.
+      (B=2000, plus one null per offered lookback so a 10-year window is never
+      judged against a 25-year threshold) and Westfall-Young adjusted p-values over
+      a registered panel, and the same block again for the point-in-time
+      market-neutral residual panel.
       RUL-P10 storage is git+r2 on purpose: ~28 MB across the covered universe
       rewritten every trading night, so the tree is gitignored and published to
       Cloudflare R2 (publish_r2 --dirs seasonalitydata/entities) exactly like

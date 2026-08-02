@@ -196,8 +196,20 @@ def build_year_panel(
     """
     index = pd.DatetimeIndex(returns.index)
     available = complete_years(index)
-    kept = available[-cap:] if cap else list(available)
     years_in_index = np.asarray(index.year, dtype=np.int64)
+
+    # The completeness rule was written for VENDOR COVERAGE of a year that is over.
+    # Applied unchanged to the year in progress it admits it from Dec 20, so for the
+    # last ~10 sessions of every December a truncated year would join the historical
+    # evidence base (its Dec 21-31 slots reading as flat zero returns) AND the
+    # "you are here" overlay would vanish, because the year is no longer partial.
+    # A year is only evidence once it has actually finished.
+    if available and len(index):
+        last_year = int(years_in_index.max())
+        if available[-1] == last_year and index.max() < pd.Timestamp(last_year, 12, 31):
+            available = available[:-1]
+
+    kept = available[-cap:] if cap else list(available)
 
     rows = [_fold_year(returns[years_in_index == year]) for year in kept]
     daily = np.asarray(rows, dtype=np.float64).reshape(len(kept), N_SLOTS)
@@ -283,12 +295,20 @@ def build_neutral_panel(
 ) -> YearPanel | None:
     """Build the market-neutral panel, restricted to the raw panel's years.
 
-    Returns ``None`` when the benchmark leg cannot be formed at all — which is
-    the case for the benchmark itself, whose residual against itself is
-    identically zero and would be a fake flat curve rather than a neutral one.
+    Returns ``None`` when the benchmark leg cannot be formed — too little history
+    for the beta warm-up, or a residual that is numerically indistinguishable from
+    zero, which is what the benchmark regressed on itself produces.
     """
     residual = market_residual_returns(symbol_returns, benchmark_returns, window=window)
     if residual.empty:
+        return None
+    # A series regressed on itself leaves floating-point dust, not zero: pandas
+    # computes rolling cov and rolling var down separate code paths, so beta comes
+    # out 1 +/- 1e-16 and the residual is ~1e-16 of noise. Scanned, that dust
+    # produces a confident "surviving 20-day season" fitted entirely to rounding
+    # error. Refuse it here rather than relying on the caller's symbol check.
+    scale = float(symbol_returns.std())
+    if not np.isfinite(scale) or float(residual.std()) < 1e-9 * max(scale, 1e-12):
         return None
     panel = build_year_panel(residual, symbol=symbol, cap=cap)
     keep = tuple(year for year in panel.years if year in set(keep_years))

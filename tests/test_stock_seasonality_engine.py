@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -54,7 +55,7 @@ SPEC_COVERAGE_KEYS = {
 SPEC_CALENDAR_KEYS = {"basis", "n_slots", "labels"}
 ADDED_CALENDAR_KEYS = {"cum_encoding", "cum_scale", "window_convention"}
 SPEC_FAMILY_KEYS = {"n_candidates", "start_days", "horizons_days", "statistic", "null"}
-ADDED_FAMILY_KEYS = {"registered_panel", "best"}
+ADDED_FAMILY_KEYS = {"registered_panel", "best", "registered_panel_pricing", "null_by_lookback"}
 SPEC_NULL_KEYS = {"method", "B", "max_abs_t_quantiles"}
 ADDED_NULL_KEYS = {"seed", "n_years", "max_abs_t_quantile_ladder"}
 SPEC_DEFAULT_WINDOW_KEYS = {
@@ -82,8 +83,17 @@ def _calendar_series(start: str, end: str, *, seed: int = 0, drift: float = 0.0)
 
 
 def _session_series(start: str, end: str, *, seed: int = 0) -> pd.Series:
-    """A synthetic instrument that prints on business days only."""
+    """A synthetic instrument on a realistic US equity calendar.
+
+    Business days MINUS the fixed-date market holidays, which matters more than it
+    looks: ``bdate_range`` happily trades on Jan 1 whenever it falls on a weekday,
+    and no US equity ever does. Slot 0 is the cumulative path's rebase anchor, so a
+    fixture that trades on Jan 1 is testing a shape the production universe cannot
+    have — and it hid a real guard until the builder started refusing it.
+    """
     index = pd.bdate_range(start, end)
+    holidays = {(1, 1), (7, 4), (12, 25)}
+    index = index[[(ts.month, ts.day) not in holidays for ts in index]]
     rng = np.random.default_rng(seed)
     returns = rng.normal(0.0, 0.01, size=len(index))
     return pd.Series(100.0 * np.exp(np.cumsum(returns)), index=index, name="close")
@@ -356,33 +366,86 @@ def test_real_seasonal_window_clears_the_null_and_noise_does_not():
     assert noise_observed[2] < np.quantile(noise_null, 0.95)
 
 
+def _fire_rate(panel_factory, *, trials: int, n_resamples: int) -> int:
+    fires = 0
+    for seed in range(trials):
+        panel = panel_factory(seed)
+        observed = season_scanner.best_window(panel.cum)
+        null_max, _ = season_scanner.null_max_abs_t(panel.daily, n_resamples=n_resamples, seed=seed)
+        if observed is not None and observed[2] >= np.quantile(null_max, 0.95):
+            fires += 1
+    return fires
+
+
 def test_null_is_calibrated_on_pure_noise():
     """The whole correction rests on this: ~5% of noise panels should fire.
 
-    A test that only proves "the implanted signal fires" would pass on a null
-    that never fires at all. This is the other half, and it is what separates a
-    real familywise correction from a decorative one.
+    Both bounds are load-bearing and the LOWER one is the easy thing to forget.
+    A test that only caps the rate passes on a null inflated 60% — verified: with
+    the family maximum scaled by 1.2, 1.4 or 1.6 this fires 0/24 while every other
+    test in this file stays green. A correction that can never fire is not
+    conservative, it is broken, and it would read on the page as "nothing in this
+    market has ever had a season".
     """
-    fires = 0
     trials = 24
-    for seed in range(trials):
-        panel = _noise_panel(15, seed=1000 + seed)
-        observed = season_scanner.best_window(panel.cum)
-        null_max, _ = season_scanner.null_max_abs_t(panel.daily, n_resamples=250, seed=seed)
-        if observed is not None and observed[2] >= np.quantile(null_max, 0.95):
-            fires += 1
+    fires = _fire_rate(lambda s: _noise_panel(15, seed=1000 + s), trials=trials, n_resamples=250)
     rate = fires / trials
-    # Nominal is 5%. The bound is deliberately loose for a 24-panel sample, but
-    # it still fails a null that fires constantly (a broken statistic) or one
-    # whose threshold is so high nothing can ever clear it.
     assert rate <= 0.30, f"pure-noise fire rate {rate:.0%} is far above the 5% nominal"
-    assert fires <= 6
+    assert fires >= 1, (
+        "nothing fired in 24 pure-noise panels — at a 5% nominal rate that is the "
+        "signature of an inflated null threshold, not of a clean sample"
+    )
 
 
-def test_exceedance_is_the_share_of_resamples_at_least_this_strong():
+def test_null_is_calibrated_on_a_PRODUCTION_SHAPED_panel():
+    """Calibration on iid Gaussian says nothing about the data this actually sees.
+
+    A real panel has ~115 zero slots per year (weekends and holidays), fat tails,
+    and volatility clustering. `_noise_panel` has none of those. This repeats the
+    calibration on a panel carrying the real calendar's zero structure and a
+    heavy-tailed innovation, so the suite's evidence is about the input shape the
+    builder is given.
+    """
+
+    def shaped(seed: int) -> season_panel.YearPanel:
+        rng = np.random.default_rng(4000 + seed)
+        base = _noise_panel(15, seed=4000 + seed)
+        daily = rng.standard_t(3.0, size=base.daily.shape) * 0.006  # fat tails
+        trading = np.ones(season_panel.N_SLOTS, dtype=bool)
+        closed = rng.choice(season_panel.N_SLOTS, size=115, replace=False)
+        trading[closed] = False
+        daily[:, ~trading] = 0.0  # weekends + holidays carry zero, as in production
+        cumulative = np.cumsum(daily, axis=1)
+        return season_panel.YearPanel(
+            symbol=f"SHAPED{seed}",
+            years=base.years,
+            daily=daily,
+            cum=cumulative - cumulative[:, :1],
+            n_years_available=15,
+            first_available_year=base.first_available_year,
+            last_available_year=base.last_available_year,
+            current_year=None,
+            current_cum=None,
+            current_last_index=None,
+            last_session=base.last_session,
+        )
+
+    trials = 20
+    fires = _fire_rate(shaped, trials=trials, n_resamples=250)
+    assert fires / trials <= 0.35, (
+        f"{fires}/{trials} production-shaped noise panels fired — the null does not "
+        "survive the zero slots and fat tails of a real trading calendar"
+    )
+
+
+def test_exceedance_carries_the_monte_carlo_floor_and_never_reads_zero():
     null_max = np.array([1.0, 2.0, 3.0, 4.0])
-    assert season_scanner.exceedance_pct(null_max, 3.0) == pytest.approx(50.0)
-    assert season_scanner.exceedance_pct(null_max, 5.0) == pytest.approx(0.0)
+    # (1 + #{>= observed}) / (B + 1), the same floor as every other p here.
+    assert season_scanner.exceedance_pct(null_max, 3.0) == pytest.approx(60.0)
+    assert season_scanner.exceedance_pct(null_max, 5.0) == pytest.approx(20.0)
+    assert season_scanner.exceedance_pct(null_max, 5.0) > 0.0, (
+        "a window that beat every draw must not publish 0% — the resolution floor is 1/(B+1)"
+    )
     ladder = season_scanner.quantile_ladder(null_max)
     assert len(ladder) == season_scanner.LADDER_STEPS
     assert ladder[0] == pytest.approx(1.0) and ladder[-1] == pytest.approx(4.0)
@@ -435,6 +498,86 @@ def test_month_windows_return_exactly_the_month_the_views_report():
     for month in range(1, 13):
         start_doy, end_doy = season_scanner.month_window(month)
         assert start_doy >= 1 and end_doy <= season_panel.N_SLOTS
+
+
+def test_null_maximum_equals_the_row_max_of_the_real_family_matrix():
+    """What the Westfall-Young collapse actually depends on, pinned.
+
+    `test_max_t_primitive_and_the_null_max_derivation_agree` proves collapse-to-max
+    is lossless for the PRIMITIVE — true by construction. The claim that matters is
+    that the scanner's `null_max` really is the row maximum of the [B][2645] matrix
+    it never materialises. Dropping a horizon from `_grid_max_abs_t` alone leaves
+    every other test in this file green; this one goes red.
+    """
+    panel = _noise_panel(12, seed=131)
+    offsets = season_scanner.draw_year_offsets(np.random.default_rng(3), 6, panel.n_years)
+    rolled = season_scanner.circular_year_shift(panel.daily, offsets)
+    cum = np.cumsum(rolled, axis=-1)
+    cum = cum - cum[..., :1]
+
+    collapsed = season_scanner._grid_max_abs_t(cum)
+    columns = [values for values in season_scanner.grid_abs_t(cum).values()]
+    full = np.concatenate(columns, axis=-1)
+    assert full.shape[-1] == season_scanner.N_CANDIDATES
+    assert collapsed == pytest.approx(np.nanmax(full, axis=-1))
+
+
+def test_window_statistics_uses_the_sample_standard_deviation():
+    """The second, independent copy of the t formula — `ddof` pinned numerically.
+
+    `window_statistics` is what prices every registered-panel row, every stability
+    shift, and `neutral_clears`. Switching it to `ddof=0` moves all of those and
+    leaves `best.abs_t` (computed by `_abs_t`) untouched, so the client-formula
+    test still passes.
+    """
+    panel = _noise_panel(9, seed=133)
+    stats = season_scanner.window_statistics(panel.cum, 40, 70)
+    values = panel.cum[:, 69] - panel.cum[:, 39]
+    assert stats["n_years"] == 9
+    assert stats["mean"] == pytest.approx(float(values.mean()))
+    assert stats["sd"] == pytest.approx(float(values.std(ddof=1)))
+    assert stats["sd"] != pytest.approx(float(values.std(ddof=0)))
+    assert stats["abs_t"] == pytest.approx(
+        abs(float(values.mean())) / (float(values.std(ddof=1)) / np.sqrt(9))
+    )
+
+
+def test_stability_median_floor_decides_when_the_sign_is_stable():
+    """`STABILITY_MEDIAN_FLOOR` tested in BOTH directions.
+
+    The spike fixture is rejected by `sign_stable`, so it never exercises the
+    magnitude branch — the constant the whole rule rests on was free at any value
+    from 0.0 to 0.99. This panel keeps the sign at every shift and only collapses
+    in magnitude, which is the case the floor exists to judge.
+    """
+    base = _noise_panel(20, seed=137)
+    daily = base.daily.copy()
+    daily[:, 150:170] += 0.0035  # the window itself: strong and one-signed
+    daily[:, 145:150] += 0.0004  # shoulders: same sign, far weaker
+    daily[:, 170:176] += 0.0004
+    cumulative = np.cumsum(daily, axis=1)
+    cum = cumulative - cumulative[:, :1]
+
+    result = season_scanner.window_stability(cum, 151, 170)
+    assert result["sign_stable"] is True, "fixture must exercise the MAGNITUDE branch"
+    base_t = season_scanner.window_statistics(cum, 151, 170)["abs_t"]
+    ratio = float(np.median([v for v in result["abs_t"] if v is not None])) / base_t
+    assert result["survives"] is (ratio >= season_scanner.STABILITY_MEDIAN_FLOOR)
+    assert 0.0 < ratio < 1.0, "a fixture whose shifts do not degrade cannot test the floor"
+
+
+def test_overlap_share_counts_the_days_a_window_actually_covers():
+    """A window `(s, e)` covers `e - s` days, not `e - s + 1`.
+
+    Treating the endpoints as an inclusive day range made two windows that share
+    nothing but a boundary — which belongs to neither one's return — report 17%
+    overlap.
+    """
+    assert season_scanner._overlap_share((100, 105), (105, 110)) == 0.0
+    assert season_scanner._overlap_share((1, 31), (31, 59)) == 0.0
+    assert season_scanner._overlap_share((100, 110), (100, 110)) == 1.0
+    assert season_scanner._overlap_share((100, 110), (105, 115)) == pytest.approx(0.5)
+    assert season_scanner._overlap_share((100, 110), (106, 116)) < 0.5
 
 
 def test_registered_panel_is_twelve_months_plus_non_overlapping_discoveries():
@@ -504,12 +647,41 @@ def test_scan_publishes_the_correction_and_its_sensitivity():
     for entry in result.registered_panel:
         assert set(entry["stability"]) == SPEC_STABILITY_KEYS
         assert 0.0 < entry["p_adj_maxt_family"] <= 1.0
-        assert 0.0 < entry["p_raw"] <= 1.0
-        assert 0.0 < entry["q_by"] <= 1.0
-        assert entry["p_adj_maxt_family"] >= entry["p_raw"] - 1e-12, (
-            "the familywise-adjusted p can never be smaller than the raw marginal p"
-        )
+        if entry["kind"] == "calendar_month":
+            assert 0.0 < entry["p_raw"] <= 1.0
+            assert 0.0 < entry["q_by"] <= 1.0
+            assert entry["p_adj_maxt_family"] >= entry["p_raw"] - 1e-12, (
+                "the familywise-adjusted p can never be smaller than the raw marginal p"
+            )
+        else:
+            assert entry["p_raw"] is None and entry["q_by"] is None
     assert result.best is not None and result.best["clears_95"] is True
+
+
+def test_discovered_rows_publish_no_marginal_p_or_q():
+    """A window chosen for being the largest cannot then be tested as if it were not.
+
+    On a pure-noise panel the top-k discovered rows have marginal p below 0.05
+    essentially always — they were selected for exactly that. Publishing one, or
+    letting it into a BY panel, would hand every symbol on earth a "discovery".
+    Only `p_adj_maxt_family`, which prices the search that found them, is valid.
+    """
+    result = season_scanner.scan(_noise_panel(18, seed=97), n_resamples=200)
+    assert result is not None
+    months = [e for e in result.registered_panel if e["kind"] == "calendar_month"]
+    discovered = [e for e in result.registered_panel if e["kind"] == "discovered"]
+    assert len(months) == 12 and discovered
+
+    assert all(e["p_raw"] is None and e["q_by"] is None for e in discovered)
+    assert all(e["p_raw"] is not None and e["q_by"] is not None for e in months)
+    # BY is a step-up over the 12 PRE-REGISTERED rows only.
+    from engine.seasonality.multiplicity import benjamini_yekutieli
+
+    assert [e["q_by"] for e in months] == pytest.approx(
+        [round(v, 6) for v in benjamini_yekutieli([e["p_raw"] for e in months])]
+    )
+    # And the discovered rows still carry the correction that IS theirs.
+    assert all(0.0 < e["p_adj_maxt_family"] <= 1.0 for e in discovered)
 
 
 def test_panel_hash_changes_when_the_vendor_re_adjusts_old_prices():
@@ -812,3 +984,252 @@ def test_artifact_carries_no_score_rank_or_ordering(built):
             assert f'"{word}"' not in text, f"{word} appeared as a key in a display-tier artifact"
     symbols = [row["symbol"] for row in index_payload["entities"]]
     assert symbols == sorted(symbols), "the index is sorted by ticker, never by any statistic"
+
+
+def test_a_lookback_gets_its_own_null_never_the_full_panel_s():
+    """The `10y | 15y | 25y | Max` pills each change the panel, so each needs its own null.
+
+    Judging a 10-year window against a 25-year null compares it to a threshold
+    built from a different sample size and a different autocorrelation structure,
+    and it errs in the flattering direction for short lookbacks.
+    """
+    panel = _noise_panel(25, seed=141)
+    nulls = season_scanner.lookback_nulls(panel, n_resamples=150, seed=7)
+    assert set(nulls) == {"10", "15"}, "a lookback >= the panel IS the panel — omit it"
+    for key, block in nulls.items():
+        assert block["n_years"] == int(key)
+        assert set(block) == {
+            "method", "B", "seed", "n_years", "max_abs_t_quantiles", "max_abs_t_quantile_ladder",
+        }
+        assert block["method"] == season_scanner.NULL_METHOD
+        q = block["max_abs_t_quantiles"]
+        assert q["0.90"] <= q["0.95"] <= q["0.99"]
+
+    full = season_scanner.null_summary(panel.daily, n_resamples=150, seed=7)
+    assert nulls["10"]["max_abs_t_quantiles"]["0.95"] != full["max_abs_t_quantiles"]["0.95"], (
+        "a 10-year null identical to the 25-year null means the sub-panel never took effect"
+    )
+
+    short = _noise_panel(12, seed=141)
+    assert set(season_scanner.lookback_nulls(short, n_resamples=80, seed=7)) == {"10"}
+
+
+def test_lookback_null_uses_the_most_recent_years():
+    panel = _noise_panel(25, seed=143)
+    direct = season_scanner.null_summary(panel.daily[-10:], n_resamples=120, seed=(7 + 10) % (2**32))
+    via = season_scanner.lookback_nulls(panel, n_resamples=120, seed=7)["10"]
+    assert via == direct
+
+
+def test_partial_run_never_prunes_or_republishes_the_index(tmp_path):
+    """`--symbols AAPL` must not delete the other ~219 entity files.
+
+    The failure mode is total and silent: `covered` came from the FILTERED run, so
+    prune removed everything else and `index.json` was rewritten to a single row.
+    """
+    root = tmp_path / "partial"
+    _write_store(
+        root,
+        {
+            "SPY": _session_series("1999-12-01", "2026-07-08", seed=701),
+            "AAA": _session_series("1999-12-01", "2026-07-08", seed=702),
+            "BBB": _session_series("1999-12-01", "2026-07-08", seed=703),
+        },
+    )
+    build(root=root, as_of=date(2026, 7, 8), generated_at="2026-07-09T04:00:00Z", resamples=40)
+    entities = root / "site" / "seasonalitydata" / "entities"
+    index_path = root / "site" / "seasonalitydata" / "index.json"
+    assert sorted(p.stem for p in entities.glob("*.json")) == ["AAA", "BBB", "SPY"]
+    before = index_path.read_bytes()
+
+    summary = build(
+        root=root,
+        as_of=date(2026, 7, 8),
+        generated_at="2026-07-09T05:00:00Z",
+        resamples=40,
+        symbols=["AAA"],
+    )
+    assert summary["partial"] is True
+    assert sorted(p.stem for p in entities.glob("*.json")) == ["AAA", "BBB", "SPY"]
+    assert index_path.read_bytes() == before, "a partial run must not speak for the universe"
+
+
+def test_cache_is_busted_when_the_window_family_changes(tmp_path, monkeypatch):
+    """Same data is not the same question.
+
+    The panel hash cannot see a change to the SEARCH. Widen the horizons without
+    this and every symbol keeps its stored null, so the artifact publishes a
+    3075-window search priced by a 2645-window null — with no visible symptom.
+    """
+    root = tmp_path / "family"
+    _write_store(
+        root,
+        {
+            "SPY": _session_series("1999-12-01", "2026-07-08", seed=801),
+            "AAA": _session_series("1999-12-01", "2026-07-08", seed=802),
+        },
+    )
+    build(root=root, as_of=date(2026, 7, 8), generated_at="2026-07-09T04:00:00Z", resamples=40)
+    assert build(root=root, as_of=date(2026, 7, 9), generated_at="2026-07-10T04:00:00Z", resamples=40)[
+        "null_recomputed"
+    ] == 0
+
+    monkeypatch.setattr(season_scanner, "TOP_K_DISCOVERED", 4)
+    assert season_scanner.family_fingerprint() != json.loads(
+        (root / "data" / "seasonality" / "selection" / "AAA.json").read_text()
+    )["raw"]["family_hash"]
+    assert build(root=root, as_of=date(2026, 7, 10), generated_at="2026-07-11T04:00:00Z", resamples=40)[
+        "null_recomputed"
+    ] == 2
+
+
+def test_a_year_still_in_progress_is_not_evidence(tmp_path):
+    """From Dec 20 the completeness rule would admit the year you are standing in.
+
+    The rule was written for vendor coverage of years that are OVER. Applied to the
+    live year it does two bad things at once for the last ~10 sessions of every
+    December: a truncated year joins the historical evidence base with its
+    remaining slots reading as flat zero returns, AND the "you are here" overlay
+    disappears because the year is no longer partial.
+    """
+    closes = _session_series("2004-12-01", "2026-12-22", seed=901)
+    panel = season_panel.build_year_panel(season_panel.daily_log_returns(closes), symbol="DEC")
+    assert 2026 not in panel.years, "a year that has not finished is not a complete year"
+    assert panel.years[-1] == 2025
+    assert panel.current_year == 2026, "and it must still be carried as the partial year"
+    assert panel.current_last_index is not None
+
+    finished = _session_series("2004-12-01", "2026-12-31", seed=901)
+    done = season_panel.build_year_panel(season_panel.daily_log_returns(finished), symbol="DEC")
+    assert done.years[-1] == 2026 and done.current_year is None
+
+
+def test_benchmark_regressed_on_itself_yields_no_neutral_panel(tmp_path):
+    """Residual dust is not a market-neutral panel.
+
+    pandas computes rolling cov and rolling var down separate code paths, so beta
+    against oneself is 1 +/- 1e-16 rather than exactly 1. Scanned, that dust
+    produces a confident "surviving" 20-day season fitted entirely to rounding
+    error. Only the builder's symbol check stood between that and the artifact.
+    """
+    market = season_panel.daily_log_returns(_session_series("2000-01-01", "2026-07-08", seed=911))
+    assert season_panel.build_neutral_panel(
+        market, market, symbol="SPY", keep_years=tuple(range(2001, 2026))
+    ) is None
+
+    other = season_panel.daily_log_returns(_session_series("2000-01-01", "2026-07-08", seed=912))
+    real = season_panel.build_neutral_panel(
+        other, market, symbol="AAA", keep_years=tuple(range(2001, 2026))
+    )
+    assert real is not None and real.n_years > 0
+
+
+def test_an_unreadable_benchmark_does_not_destroy_cached_neutral_blocks(tmp_path):
+    """One bad night must not cost every symbol a full resample the night after."""
+    root = tmp_path / "outage"
+    _write_store(
+        root,
+        {
+            "SPY": _session_series("1999-12-01", "2026-07-08", seed=921),
+            "AAA": _session_series("1999-12-01", "2026-07-08", seed=922),
+        },
+    )
+    build(root=root, as_of=date(2026, 7, 8), generated_at="2026-07-09T04:00:00Z", resamples=40)
+    cache_path = root / "data" / "seasonality" / "selection" / "AAA.json"
+    good = json.loads(cache_path.read_text())
+    assert good["neutral"] is not None
+
+    (root / "data" / "yahoo" / "SPY.parquet").write_bytes(b"corrupt")
+    build(root=root, as_of=date(2026, 7, 9), generated_at="2026-07-10T04:00:00Z", resamples=40)
+    after = json.loads(cache_path.read_text())
+    assert after["neutral"] == good["neutral"], (
+        "a stale-but-good neutral block was overwritten with null on a benchmark outage"
+    )
+
+
+def test_program_rates_count_only_symbols_whose_null_was_computed(tmp_path):
+    """The denominator the honesty strip compares against 5% must be symbols TESTED."""
+    root = tmp_path / "budget"
+    _write_store(
+        root,
+        {
+            "SPY": _session_series("1999-12-01", "2026-07-08", seed=931),
+            "AAA": _session_series("1999-12-01", "2026-07-08", seed=932),
+            "BBB": _session_series("1999-12-01", "2026-07-08", seed=933),
+        },
+    )
+    build(
+        root=root,
+        as_of=date(2026, 7, 8),
+        generated_at="2026-07-09T04:00:00Z",
+        resamples=40,
+        null_budget=1,
+    )
+    index_payload = json.loads((root / "site" / "seasonalitydata" / "index.json").read_text())
+    untested = [e["symbol"] for e in index_payload["entities"]]
+    entities = {
+        s: json.loads((root / "site" / "seasonalitydata" / "entities" / f"{s}.json").read_text())
+        for s in untested
+    }
+    with_family = sum(1 for e in entities.values() if e["family"] is not None)
+    assert with_family < len(entities), "fixture must actually exhaust the budget"
+    assert index_payload["program_rates"]["raw"]["n_symbols"] == with_family
+
+
+def test_display_labels_resolve_for_the_covered_set(tmp_path):
+    """68% of symbols shipped as `AMGN AMGN` with no sector, and nothing said so.
+
+    The §6 picker renders `TICKER · Name · N years`, so an unresolved symbol shows
+    its ticker twice. The old chain relied on a SEC file that does not exist in
+    this repo and degraded silently to the ticker.
+    """
+    root = tmp_path / "labels"
+    _write_store(
+        root,
+        {
+            "SPY": _session_series("1999-12-01", "2026-07-08", seed=941),
+            "ABT": _session_series("1999-12-01", "2026-07-08", seed=942),
+            "MMM": _session_series("1999-12-01", "2026-07-08", seed=943),
+            "ZZZZ": _session_series("1999-12-01", "2026-07-08", seed=944),
+        },
+    )
+    membership = root / "data" / "universe" / "membership.parquet"
+    membership.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {
+            "ticker": ["ABT", "MMM"],
+            "name": ["Abbott Laboratories", "3M"],
+            "sector": ["Health Care", "Industrials"],
+        }
+    ).to_parquet(membership)
+
+    build(root=root, as_of=date(2026, 7, 8), generated_at="2026-07-09T04:00:00Z", resamples=40)
+    rows = {
+        e["symbol"]: e
+        for e in json.loads((root / "site" / "seasonalitydata" / "index.json").read_text())["entities"]
+    }
+    assert rows["ABT"]["name"] == "Abbott Laboratories" and rows["ABT"]["sector"] == "Health Care"
+    assert rows["MMM"]["name"] == "3M" and rows["MMM"]["sector"] == "Industrials"
+    assert rows["SPY"]["name"] == "Benchmark", "config labels must outrank the registry"
+    assert rows["ZZZZ"]["name"] == "ZZZZ", "an unknown ticker still degrades — legibly"
+
+    resolved = sum(1 for e in rows.values() if e["name"] != e["symbol"])
+    assert resolved / len(rows) >= 0.75
+
+
+def test_the_real_universe_resolves_most_of_its_display_names():
+    """A floor on the SHIPPED artifact, so the silent degrade cannot come back."""
+    root = Path(__file__).resolve().parents[1]
+    index_path = root / "site" / "seasonalitydata" / "index.json"
+    if not index_path.exists():  # pragma: no cover — artifact-less checkout
+        pytest.skip("seasonality index not built in this checkout")
+    rows = json.loads(index_path.read_text())["entities"]
+    assert rows
+    resolved = [e for e in rows if e["name"] != e["symbol"]]
+    share = len(resolved) / len(rows)
+    assert share >= 0.80, (
+        f"only {len(resolved)}/{len(rows)} ({share:.0%}) covered symbols have a display "
+        "name — the picker would render the ticker twice for the rest"
+    )
+    sectored = [e for e in rows if e["sector"]]
+    assert len(sectored) / len(rows) >= 0.60

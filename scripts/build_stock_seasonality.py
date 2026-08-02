@@ -138,9 +138,48 @@ def measure_universe(root: Path, policy: dict) -> list[dict]:
 
 
 def load_labels(root: Path, policy: dict) -> dict[str, dict]:
-    """Config labels first, then SEC company titles, then the ticker itself."""
+    """Resolve display names and sectors: config → membership → SEC → the ticker.
+
+    The chain is ordered by how much it knows. Config labels cover the ETFs and
+    indices, which no company registry contains. ``data/universe/membership.parquet``
+    covers the operating companies with a real name AND a sector. The SEC titles
+    are a last resort with no sector at all.
+
+    A missing source degrades to the ticker, which is legible but useless: the §6
+    picker renders ``TICKER · Name · N years``, so an unresolved symbol shows its
+    ticker twice. That degrade used to be SILENT — the SEC file this originally
+    relied on does not exist in this repo, so 149 of 220 covered symbols shipped
+    with ``name == symbol`` and ``sector: null`` and nothing said so. Sources that
+    are absent or that leave a large share unresolved now announce themselves.
+    """
     labels = {str(k): dict(v or {}) for k, v in (policy.get("labels") or {}).items()}
+    from_config = len(labels)
+
+    membership_path = Path(root) / "data" / "universe" / "membership.parquet"
+    from_membership = 0
+    if membership_path.exists():
+        try:
+            frame = pd.read_parquet(membership_path, columns=["ticker", "name", "sector"])
+            for ticker, name, sector in frame.itertuples(index=False, name=None):
+                key = str(ticker or "").strip()
+                title = str(name or "").strip()
+                if key and title and key not in labels:
+                    labels[key] = {
+                        "name": title,
+                        "group": "equity",
+                        "sector": str(sector).strip() or None if sector else None,
+                    }
+                    from_membership += 1
+        except Exception as exc:  # noqa: BLE001 — labels are cosmetic, never fatal
+            _annotate("seasonality-labels", f"universe membership unreadable ({exc})")
+    else:
+        _annotate(
+            "seasonality-labels",
+            f"{membership_path.relative_to(root)} absent — company names and sectors unresolved",
+        )
+
     sec_path = Path(root) / "data" / "edgar" / "company_tickers.json"
+    from_sec = 0
     if sec_path.exists():
         try:
             raw = json.loads(sec_path.read_text(encoding="utf-8"))
@@ -149,8 +188,16 @@ def load_labels(root: Path, policy: dict) -> dict[str, dict]:
                 title = str(row.get("title") or "").strip()
                 if ticker and title and ticker not in labels:
                     labels[ticker] = {"name": title, "group": "equity", "sector": None}
-        except Exception as exc:  # noqa: BLE001 — labels are cosmetic, never fatal
-            log.warning("SEC company titles unavailable: %s", exc)
+                    from_sec += 1
+        except Exception as exc:  # noqa: BLE001
+            _annotate("seasonality-labels", f"SEC company titles unreadable ({exc})")
+
+    log.info(
+        "seasonality labels: %d from config, %d from universe membership, %d from SEC titles",
+        from_config,
+        from_membership,
+        from_sec,
+    )
     return labels
 
 
@@ -188,11 +235,11 @@ def load_cache(root: Path, symbol: str) -> dict | None:
 # keep serving a block built by the previous version of the code, forever. The
 # key check below is belt-and-braces: it also refuses a block whose key set does
 # not match what this build writes, so forgetting to bump cannot ship silently.
-SELECTION_FORMAT = 1
+SELECTION_FORMAT = 3
 _SCAN_BLOCK_KEYS = frozenset(
     {
-        "format", "panel_hash", "n_years", "seed", "B",
-        "max_abs_t_quantiles", "max_abs_t_ladder", "registered_panel", "best",
+        "format", "panel_hash", "family_hash", "n_years", "seed", "B",
+        "max_abs_t_quantiles", "max_abs_t_ladder", "null_by_lookback", "registered_panel", "best",
     }
 )
 
@@ -204,6 +251,9 @@ def _cache_hit(block: dict | None, panel: season_panel.YearPanel | None, resampl
         block.get("format") == SELECTION_FORMAT
         and set(block) == _SCAN_BLOCK_KEYS
         and block.get("panel_hash") == season_scanner.panel_fingerprint(panel)
+        # Same data is not the same question: a cached null is only valid for the
+        # family it was maximised over.
+        and block.get("family_hash") == season_scanner.family_fingerprint()
         and int(block.get("B", -1)) == resamples
     )
 
@@ -212,11 +262,13 @@ def _scan_block(result: season_scanner.ScanResult) -> dict:
     return {
         "format": SELECTION_FORMAT,
         "panel_hash": result.panel_hash,
+        "family_hash": result.family_hash,
         "n_years": result.n_years,
         "seed": result.seed,
         "B": result.n_resamples,
         "max_abs_t_quantiles": result.max_abs_t_quantiles,
         "max_abs_t_ladder": result.max_abs_t_ladder,
+        "null_by_lookback": result.null_by_lookback,
         "registered_panel": result.registered_panel,
         "best": result.best,
     }
@@ -246,8 +298,27 @@ def _family_block(block: dict) -> dict:
             "n_years": block["n_years"],
             "max_abs_t_quantile_ladder": block["max_abs_t_ladder"],
         },
+        # --- additive. The page's `10y | 15y | 25y | Max` pills each change the
+        # panel, and a 10-year |t| judged against the 25-year null above is
+        # compared against a threshold built from a different sample size and a
+        # different autocorrelation structure — wrong, and flatteringly so. One
+        # null per offered lookback shorter than the panel; a lookback at least as
+        # long as the panel IS the panel, so it is absent and the client falls
+        # back to `null` above (that is the "Max" pill).
+        "null_by_lookback": block["null_by_lookback"],
         "registered_panel": block["registered_panel"],
         "best": block["best"],
+        # --- additive disclosure. The null maximum is taken over the 2645-window
+        # grid above. Seven of the twelve calendar-month rows are 28 or 31 days
+        # long and are therefore NOT grid members, so their p_adj_maxt_family is
+        # priced against a family that does not literally contain them. Measured
+        # effect over 8000 (resample, row) cells: zero — the 2645-window maximum
+        # dominates a single month window in every draw — but an approximation a
+        # reader cannot see is exactly what this program exists not to ship.
+        "registered_panel_pricing": (
+            "every registered row is priced against the maximum over the 2645-window grid; "
+            "month rows whose length is not in horizons_days are not themselves grid members"
+        ),
     }
 
 
@@ -480,6 +551,7 @@ def build(
     recomputed = 0
     failures: list[str] = []
     raw_clearing = 0
+    raw_tested = 0
     neutral_clearing = 0
     neutral_symbols = 0
     max_entity_bytes = 0
@@ -495,6 +567,20 @@ def build(
             if panel.n_years == 0:
                 failures.append(symbol)
                 continue
+            # Slot 0 IS the rebase anchor, so a Jan-1 session's return enters no
+            # window and no aggregate path while `views.month[k=1]` still counts
+            # it — the two would report January differently and both look fine.
+            # No US equity or ETF can trip this; an around-the-clock instrument
+            # that slipped past the scope fence would, so refuse it loudly rather
+            # than publish two Januaries.
+            if float(np.abs(panel.daily[:, 0]).max()) > 0.0:
+                _annotate(
+                    "stock_seasonality",
+                    f"{symbol} has a Jan-1 session: slot 0 is the rebase anchor, so its return "
+                    "would enter no window — symbol skipped (see config/seasonality_universe.yml)",
+                )
+                failures.append(symbol)
+                continue
 
             neutral_panel = None
             if symbol != benchmark and benchmark_returns is not None:
@@ -506,7 +592,15 @@ def build(
             raw_block = cached.get("raw")
             neutral_block = cached.get("neutral")
             needs_raw = not _cache_hit(raw_block, panel, resamples)
-            needs_neutral = not _cache_hit(neutral_block, neutral_panel, resamples)
+            # When the benchmark itself is unreadable there IS no neutral panel to
+            # judge, so a stored block is stale-but-good rather than wrong. Marking
+            # it "needs recompute" would overwrite it with null on one bad night
+            # and force a full B x 2645 resample on the night after the heal.
+            needs_neutral = (
+                False
+                if (benchmark_returns is None and symbol != benchmark)
+                else not _cache_hit(neutral_block, neutral_panel, resamples)
+            )
 
             if (needs_raw or needs_neutral) and null_budget is not None and recomputed >= null_budget:
                 # Budget exhausted: keep any valid cached block, publish the rest
@@ -563,6 +657,7 @@ def build(
             if panel.last_session is not None:
                 last_sessions.append(panel.last_session)
             if raw_block and raw_block.get("best"):
+                raw_tested += 1
                 raw_clearing += int(bool(raw_block["best"]["clears_95"]))
             if neutral_block and neutral_block.get("best"):
                 neutral_symbols += 1
@@ -586,9 +681,45 @@ def build(
             log.warning("seasonality entity failed for %s: %s", symbol, exc)
             failures.append(symbol)
 
+    unresolved = sorted(row["symbol"] for row in index_entries if row["name"] == row["symbol"])
+    if index_entries and len(unresolved) > len(index_entries) // 5:
+        _annotate(
+            "seasonality-labels",
+            f"{len(unresolved)} of {len(index_entries)} covered symbols have no display name "
+            f"(the picker would show the ticker twice): {', '.join(unresolved[:12])}",
+        )
+
     covered = {row["symbol"] for row in index_entries}
-    if prune:
+    partial = bool(symbols)
+    # A partial run knows nothing about the symbols it did not look at. Pruning
+    # or republishing the index from one would delete the other ~219 entity files
+    # and rewrite the catalog to a single row — a `--symbols AAPL` debug run would
+    # take the whole page down. Only a full sweep may speak for the universe.
+    healthy = bool(covered) and len(failures) <= len(universe) // 2
+    if prune and not partial and healthy:
         _prune_entities(entities_dir, covered)
+    elif prune:
+        log.info(
+            "prune skipped (partial=%s, covered=%d, failures=%d) — the committed tree "
+            "is more trustworthy than this run",
+            partial,
+            len(covered),
+            len(failures),
+        )
+
+    if partial:
+        log.info("partial run (%d symbol(s)) — index.json left untouched", len(covered))
+        return {
+            "n_entities": len(index_entries),
+            "wrote": wrote,
+            "null_recomputed": recomputed,
+            "failures": len(failures),
+            "partial": True,
+            "total_bytes": total_bytes,
+            "max_entity_bytes": max_entity_bytes,
+            "largest_symbol": largest_symbol,
+            "elapsed_s": round(time.time() - started, 2),
+        }
 
     # Same freshness law as the per-entity `asof`: the newest session the covered
     # set actually contains, not the night the builder happened to run.
@@ -608,9 +739,14 @@ def build(
         "program_rates": {
             "resamples": resamples,
             "raw": {
-                "n_symbols": len(index_entries),
+                # Denominator is symbols whose null was actually COMPUTED, not
+                # symbols published. A budget-limited night ships some entities
+                # with no family block at all; counting those as non-clearing
+                # would understate the rate against the 5% chance expectation the
+                # note below tells the reader to compare it with.
+                "n_symbols": raw_tested,
                 "n_clearing": raw_clearing,
-                "share": round(raw_clearing / len(index_entries), 4) if index_entries else None,
+                "share": round(raw_clearing / raw_tested, 4) if raw_tested else None,
             },
             "market_neutral": {
                 "n_symbols": neutral_symbols,
@@ -640,10 +776,12 @@ def build(
         "wrote": wrote,
         "null_recomputed": recomputed,
         "failures": len(failures),
+        "unresolved_labels": len(unresolved),
         "total_bytes": total_bytes,
         "max_entity_bytes": max_entity_bytes,
         "largest_symbol": largest_symbol,
         "raw_clearing": raw_clearing,
+        "raw_tested": raw_tested,
         "neutral_clearing": neutral_clearing,
         "neutral_symbols": neutral_symbols,
         "elapsed_s": round(time.time() - started, 2),

@@ -33,11 +33,24 @@ selection:
   # adjustment at all, so its curve is not comparable to an ETF's). Widening
   # the fence is a one-line change here, not a code change.
   exclude_prefixes: ["_"]
-  exclude_suffixes: ["_X", "_F"]
+  # "-USD" is the crypto fence, and it is a SUFFIX rule rather than a name list so
+  # a fourth coin arriving in the store cannot slip in behind a stale comment.
+  exclude_suffixes: ["_X", "_F", "-USD"]
   exclude:
     - SPX     # index quote, price-return only; SPY is the tradable, adjusted read
     - SPXW    # weekly variant of the same index quote
     - "DX-Y.NYB"
+    # The three coins in data/yahoo/ today (BTC-USD, ETH-USD, SOL-USD) are already
+    # caught by the "-USD" suffix fence above. Named here too so the reason is
+    # findable: crypto is out of scope for a stock/ETF explorer, and it is also
+    # structurally incompatible with this clock. Every path is rebased so slot 0
+    # (Jan 1) is the anchor, which means Jan 1's own return enters no window and no
+    # aggregate — harmless for an instrument that never trades on Jan 1, wrong for
+    # one that trades every day of the year. None clears the 15-complete-year floor
+    # today; BTC-USD would around 2029.
+    - BTC-USD
+    - ETH-USD
+    - SOL-USD
 
 # The benchmark leg for the market-neutral panel. Its own residual against
 # itself is identically zero, so the benchmark ships with no `neutral.market`.
@@ -121,3 +134,36 @@ labels:
   EWZ:  {name: "iShares MSCI Brazil ETF",            group: country_etf,  sector: International}
   EZA:  {name: "iShares MSCI South Africa ETF",      group: country_etf,  sector: International}
   TUR:  {name: "iShares MSCI Turkey ETF",            group: country_etf,  sector: International}
+  # Commodity and sovereign-debt trackers. Not companies, so no equity registry
+  # carries them.
+  GLD:  {name: "SPDR Gold Shares",                   group: commodity_etf, sector: Commodities}
+  DBA:  {name: "Invesco DB Agriculture Fund",        group: commodity_etf, sector: Commodities}
+  DBC:  {name: "Invesco DB Commodity Index Tracking Fund", group: commodity_etf, sector: Commodities}
+  GSG:  {name: "iShares S&P GSCI Commodity-Indexed Trust", group: commodity_etf, sector: Commodities}
+  PCY:  {name: "Invesco Emerging Markets Sovereign Debt ETF", group: bond_etf, sector: "Fixed Income"}
+  # Foreign issuers and ADRs. data/universe/membership.parquet is S&P membership,
+  # so it does not carry them; these names are the only reason the picker does not
+  # render the ticker twice for a fifth of the covered set.
+  ASML: {name: "ASML Holding",                       group: equity, sector: "Information Technology"}
+  AZN:  {name: "AstraZeneca",                        group: equity, sector: "Health Care"}
+  BHP:  {name: "BHP Group",                          group: equity, sector: Materials}
+  BIDU: {name: "Baidu",                              group: equity, sector: "Communication Services"}
+  EDU:  {name: "New Oriental Education & Technology Group", group: equity, sector: "Consumer Discretionary"}
+  HSBC: {name: "HSBC Holdings",                      group: equity, sector: Financials}
+  LVMUY: {name: "LVMH Moët Hennessy Louis Vuitton",  group: equity, sector: "Consumer Discretionary"}
+  NTES: {name: "NetEase",                            group: equity, sector: "Communication Services"}
+  NVO:  {name: "Novo Nordisk",                       group: equity, sector: "Health Care"}
+  RHHBY: {name: "Roche Holding",                     group: equity, sector: "Health Care"}
+  RIO:  {name: "Rio Tinto",                          group: equity, sector: Materials}
+  SONY: {name: "Sony Group",                         group: equity, sector: "Consumer Discretionary"}
+  TAL:  {name: "TAL Education Group",                group: equity, sector: "Consumer Discretionary"}
+  TCOM: {name: "Trip.com Group",                     group: equity, sector: "Consumer Discretionary"}
+  TSM:  {name: "Taiwan Semiconductor Manufacturing", group: equity, sector: "Information Technology"}
+  VALE: {name: "Vale",                               group: equity, sector: Materials}
+  SQM:  {name: "Sociedad Química y Minera de Chile", group: equity, sector: Materials}
+  CCJ:  {name: "Cameco",                             group: equity, sector: Energy}
+  # US names the S&P membership file happens not to carry.
+  MSTR: {name: "MicroStrategy",                      group: equity, sector: "Information Technology"}
+  HEI:  {name: "HEICO",                              group: equity, sector: Industrials}
+  LNG:  {name: "Cheniere Energy",                    group: equity, sector: Energy}
+  AGCO: {name: "AGCO Corporation",                   group: equity, sector: Industrials}

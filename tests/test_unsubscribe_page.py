@@ -677,6 +677,21 @@ PUBLIC_EXACT = frozenset({
     "/live/release_publications.json",
     "/prophet/showcase.json",
     "/seasonalitydata/methodology.json",
+    # Stock seasonality calendar clock — public BY DECISION (design-spec §10), not
+    # as a side effect. The payload carries no forecast, no score and no
+    # cross-symbol ordering: it is computed calendar statistics over public
+    # split/dividend-adjusted price history, shipped with the selection accounting
+    # that prices them, alongside the methodology manifest above that has described
+    # exactly this since the foundation landed.
+    #
+    # TWO exact entries and no prefix, deliberately: the ~220 per-symbol entity
+    # files are gitignored and served from Cloudflare R2, so they never pass
+    # through Caddy at all. index.json is the covered-symbol catalog; the SPY
+    # entity is the one committed panel, kept so the page has an honest first paint
+    # without R2. If a THIRD /seasonalitydata/ path ever shows up in this diff, the
+    # gitignore/R2 split has broken — that is the finding, not the frozen set.
+    "/seasonalitydata/index.json",
+    "/seasonalitydata/entities/SPY.json",
     "/factordata/tech_lab.json",
 })
 
