@@ -2933,10 +2933,13 @@ jobs:
     # deliberately bounded to the repository's top-level BioCatalyst test family.
     # app/requirements.txt is an owned trigger above, while the deploy regression
     # suite pins the serving-tier jsonschema/referencing closure used at import.
-    # The wildcard suite reached 531 tests after the B4A expansion. Measured
-    # 2026-08-02: 9m24s locally, while the hosted pack was killed at the old
-    # 8m cap with otherwise-green sibling packs. Twenty minutes preserves a
-    # real hang fence while covering dependency/bootstrap and runner variance.
+    # The wildcard suite reached 531 tests after the B4A expansion. A serial
+    # hosted run advanced only 27% in 18m06s and hit even the corrected 20m
+    # fence; the same suite took 9m24s locally. The tests are process-isolated,
+    # and a measured four-worker loadscope run completed all 531 in 2m57s, so
+    # use bounded xdist parallelism instead of turning this required gate into
+    # an hour-long serial check. Twenty minutes remains a real hang fence while
+    # covering hosted-runner variance and dependency/bootstrap time.
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -2945,10 +2948,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install BioCatalyst test deps
-        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+        run: pip install pytest pytest-xdist fastapi httpx requests pyyaml jsonschema jinja2 boto3
       - name: BioCatalyst evidence, projection, API, UI, and isolation contracts
         run: >
-          python -m pytest
+          python -m pytest -n 4 --dist loadscope
           tests/test_biocatalyst_*.py
           tests/test_clinicaltrials_biocatalyst.py
           tests/test_clinicaltrials_history.py
