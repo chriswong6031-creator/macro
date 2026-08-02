@@ -140,7 +140,7 @@ Local release evidence on 2026-08-02:
 
 ## Exact next lane
 
-Wave 3B-B3 introduces sealed `ffatt_` attestations.  Each attestation must bind
+Wave 3B-B3 now implements sealed `ffatt_` attestations. Each attestation binds
 one immutable `ffpkg_` package and one source-verified `ffxbrl_` extraction to
 explicit fact evidence, coverage clocks, and controlled object-store authority.
 Only that layer may assert narrowly scoped semantic or Company Facts matches.

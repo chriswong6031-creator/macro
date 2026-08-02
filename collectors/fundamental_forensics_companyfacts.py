@@ -27,6 +27,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 import fcntl
 import gzip
 from hashlib import sha256
@@ -72,6 +73,10 @@ HARD_MAX_TICKERS = 32
 HARD_MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 HARD_MAX_TICKER_BYTES = 64 * 1024 * 1024
 HARD_MAX_TOTAL_BYTES = 512 * 1024 * 1024
+HARD_MAX_EXACT_NUMBER_TOKEN_BYTES = 256
+HARD_MAX_EXACT_NUMBER_EXPONENT = 10_000
+HARD_MAX_COMPANYFACTS_JSON_DEPTH = 64
+HARD_MAX_COMPANYFACTS_JSON_NODES = 1_500_000
 
 DEFAULT_MAX_TICKERS = 12
 DEFAULT_MAX_RESPONSE_BYTES = 32 * 1024 * 1024
@@ -606,17 +611,63 @@ def _occurrence_summary(payload: Mapping[str, Any]) -> tuple[int, str]:
     return count, digest.hexdigest()
 
 
+def _validate_companyfacts_json_tree(value: Any) -> None:
+    """Bound a decoded response tree before recursive canonicalization work."""
+    stack: list[tuple[Any, int]] = [(value, 0)]
+    nodes = 0
+    while stack:
+        item, depth = stack.pop()
+        nodes += 1
+        if nodes > HARD_MAX_COMPANYFACTS_JSON_NODES:
+            raise CompanyFactsAcquisitionError("SEC Company Facts JSON exceeds node safety limit")
+        if depth > HARD_MAX_COMPANYFACTS_JSON_DEPTH:
+            raise CompanyFactsAcquisitionError("SEC Company Facts JSON exceeds depth safety limit")
+        if isinstance(item, Mapping):
+            for key, child in item.items():
+                if not isinstance(key, str):
+                    raise CompanyFactsAcquisitionError("SEC Company Facts JSON key must be text")
+                stack.append((child, depth + 1))
+        elif isinstance(item, list):
+            stack.extend((child, depth + 1) for child in item)
+        elif item is None or isinstance(item, (bool, str, int, float, Decimal)):
+            continue
+        else:
+            raise CompanyFactsAcquisitionError("SEC Company Facts JSON contains unsupported value")
+
+
 def _validated_payload(
     response_content: bytes, *, expected_cik: str
 ) -> tuple[dict[str, Any], bytes, int, str]:
+    def reject_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in output:
+                raise CompanyFactsAcquisitionError(
+                    f"SEC Company Facts response contains duplicate JSON key: {key}"
+                )
+            output[key] = item
+        return output
+
+    def reject_constant(value: str) -> None:
+        raise CompanyFactsAcquisitionError(
+            f"SEC Company Facts response contains non-finite JSON constant: {value}"
+        )
+
     try:
-        payload = json.loads(response_content.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        payload = json.loads(
+            response_content.decode("utf-8"),
+            object_pairs_hook=reject_pairs,
+            parse_constant=reject_constant,
+        )
+    except CompanyFactsAcquisitionError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
         raise CompanyFactsAcquisitionError(
             "SEC Company Facts response is not UTF-8 JSON"
         ) from exc
     if not isinstance(payload, dict):
         raise CompanyFactsAcquisitionError("SEC Company Facts response must be a JSON object")
+    _validate_companyfacts_json_tree(payload)
     if _normalized_cik(payload.get("cik")) != expected_cik:
         raise CompanyFactsAcquisitionError("SEC Company Facts payload CIK does not match target")
     occurrence_count, occurrence_sha256 = _occurrence_summary(payload)
@@ -647,6 +698,11 @@ def _capture_key(cik: str, capture_id: str) -> str:
     return (
         Path(cik) / COMPANYFACTS_RAW_NAMESPACE / "captures" / f"{capture_id}.json"
     ).as_posix()
+
+
+def companyfacts_capture_storage_key(cik: int | str, capture_id: str) -> str:
+    """Return the immutable raw-tree key for one validated capture identity."""
+    return _capture_key(_normalized_cik(cik), capture_id)
 
 
 def _capture_id(record: Mapping[str, Any]) -> str:
@@ -691,6 +747,12 @@ def _manifest_key(manifest: Mapping[str, Any]) -> str:
         raise CompanyFactsAcquisitionError("invalid Company Facts manifest identity")
     cik = _normalized_cik(issuer.get("cik"))
     return (COMPANYFACTS_MANIFEST_ROOT / cik / f"{manifest_id}.json").as_posix()
+
+
+def companyfacts_manifest_storage_key(manifest: Mapping[str, Any]) -> str:
+    """Return the immutable archive-tree key for one validated issuer manifest."""
+    validate_companyfacts_manifest(manifest)
+    return _manifest_key(manifest)
 
 
 def _manifest_pointer_key(cik: str) -> str:
@@ -829,6 +891,145 @@ def _validate_capture(record: Mapping[str, Any]) -> CompanyFactsCapture:
         http=dict(http),
         object_repaired=bool(record["object_repaired"]),
     )
+
+
+def validate_companyfacts_capture(record: Mapping[str, Any]) -> CompanyFactsCapture:
+    """Validate and defensively copy one immutable Company Facts capture receipt."""
+    if not isinstance(record, Mapping):
+        raise CompanyFactsAcquisitionError("Company Facts capture must be an object")
+    try:
+        copied = dict(record)
+    except Exception as exc:
+        raise CompanyFactsAcquisitionError("Company Facts capture must be a readable object") from exc
+    return _validate_capture(copied)
+
+
+def companyfacts_capture_from_json_bytes(content: bytes) -> CompanyFactsCapture:
+    """Restore only canonical UTF-8 JSON for one immutable capture receipt."""
+    if not isinstance(content, bytes):
+        raise CompanyFactsAcquisitionError("Company Facts capture JSON must be bytes")
+    if len(content) > HARD_MAX_TICKER_BYTES:
+        raise CompanyFactsAcquisitionError("Company Facts capture JSON exceeds byte safety limit")
+
+    def reject_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in output:
+                raise CompanyFactsAcquisitionError(
+                    f"Company Facts capture contains duplicate JSON key: {key}"
+                )
+            output[key] = item
+        return output
+
+    def reject_constant(value: str) -> None:
+        raise CompanyFactsAcquisitionError(
+            f"Company Facts capture contains non-finite JSON constant: {value}"
+        )
+
+    try:
+        record = json.loads(
+            content.decode("utf-8"),
+            object_pairs_hook=reject_pairs,
+            parse_constant=reject_constant,
+        )
+    except CompanyFactsAcquisitionError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        raise CompanyFactsAcquisitionError("Company Facts capture is not UTF-8 JSON") from exc
+    if not isinstance(record, dict):
+        raise CompanyFactsAcquisitionError("Company Facts capture JSON must be an object")
+    capture = _validate_capture(record)
+    if canonical_json(capture.to_dict()).encode("utf-8") != content:
+        raise CompanyFactsAcquisitionError("Company Facts capture JSON is not canonically encoded")
+    return capture
+
+
+def validate_companyfacts_response_bytes(
+    response_content: bytes, *, expected_cik: int | str
+) -> tuple[dict[str, Any], bytes, int, str]:
+    """Validate raw SEC response bytes and return their canonical logical projection."""
+    if not isinstance(response_content, bytes):
+        raise CompanyFactsAcquisitionError("SEC Company Facts response must be bytes")
+    if len(response_content) > HARD_MAX_RESPONSE_BYTES:
+        raise CompanyFactsAcquisitionError("SEC Company Facts response exceeds byte safety limit")
+    return _validated_payload(response_content, expected_cik=_normalized_cik(expected_cik))
+
+
+def parse_companyfacts_response_exact_numbers(
+    response_content: bytes, *, expected_cik: int | str
+) -> dict[str, Any]:
+    """Decode source rows without binary-float rounding for exact fact matching.
+
+    The collector's historical logical digest intentionally retains its
+    established JSON-number behavior. Attestation must not use that decoded
+    float tree for equality, however: two distinct SEC decimal lexemes can map
+    to the same IEEE-754 float. This second bounded parse keeps integer tokens
+    as exact integers and fractional/exponent tokens as bounded ``Decimal``
+    instances. It is for semantic comparison only and is never substituted for
+    the manifest's legacy logical digest.
+    """
+    if not isinstance(response_content, bytes):
+        raise CompanyFactsAcquisitionError("SEC Company Facts response must be bytes")
+    if len(response_content) > HARD_MAX_RESPONSE_BYTES:
+        raise CompanyFactsAcquisitionError("SEC Company Facts response exceeds byte safety limit")
+
+    def reject_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in output:
+                raise CompanyFactsAcquisitionError(
+                    f"SEC Company Facts response contains duplicate JSON key: {key}"
+                )
+            output[key] = item
+        return output
+
+    def reject_constant(value: str) -> None:
+        raise CompanyFactsAcquisitionError(
+            f"SEC Company Facts response contains non-finite JSON constant: {value}"
+        )
+
+    def exact_int(token: str) -> int:
+        if len(token.encode("ascii")) > HARD_MAX_EXACT_NUMBER_TOKEN_BYTES:
+            raise CompanyFactsAcquisitionError("SEC Company Facts integer token is too large")
+        return int(token)
+
+    def exact_decimal(token: str) -> Decimal:
+        if len(token.encode("ascii")) > HARD_MAX_EXACT_NUMBER_TOKEN_BYTES:
+            raise CompanyFactsAcquisitionError("SEC Company Facts decimal token is too large")
+        try:
+            value = Decimal(token)
+        except InvalidOperation as exc:
+            raise CompanyFactsAcquisitionError("SEC Company Facts decimal token is invalid") from exc
+        if (
+            not value.is_finite()
+            or abs(value.as_tuple().exponent) > HARD_MAX_EXACT_NUMBER_EXPONENT
+            or (value != 0 and abs(value.adjusted()) > HARD_MAX_EXACT_NUMBER_EXPONENT)
+        ):
+            raise CompanyFactsAcquisitionError("SEC Company Facts decimal exponent is outside safety limit")
+        return value
+
+    try:
+        payload = json.loads(
+            response_content.decode("utf-8"),
+            object_pairs_hook=reject_pairs,
+            parse_constant=reject_constant,
+            parse_int=exact_int,
+            parse_float=exact_decimal,
+        )
+    except CompanyFactsAcquisitionError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        raise CompanyFactsAcquisitionError("SEC Company Facts response is not strict UTF-8 JSON") from exc
+    if not isinstance(payload, dict):
+        raise CompanyFactsAcquisitionError("SEC Company Facts response must be a JSON object")
+    _validate_companyfacts_json_tree(payload)
+    if _normalized_cik(payload.get("cik")) != _normalized_cik(expected_cik):
+        raise CompanyFactsAcquisitionError("SEC Company Facts payload CIK does not match target")
+    # Force the complete occurrence shape walk now so malformed nested arrays
+    # cannot hide until a later matching loop.
+    for _ in iter_companyfacts_occurrences(payload):
+        pass
+    return payload
 
 
 def _persist_response_object(
@@ -2117,18 +2318,28 @@ __all__ = [
     "DEFAULT_MAX_TICKERS",
     "DEFAULT_MAX_TOTAL_BYTES",
     "HARD_MAX_RESPONSE_BYTES",
+    "HARD_MAX_EXACT_NUMBER_EXPONENT",
+    "HARD_MAX_EXACT_NUMBER_TOKEN_BYTES",
+    "HARD_MAX_COMPANYFACTS_JSON_DEPTH",
+    "HARD_MAX_COMPANYFACTS_JSON_NODES",
     "OPERATOR_CONSTRAINTS",
     "SNAPSHOT_CLOCK_TOLERANCE_SECONDS",
     "SecCompanyFactsCollector",
     "acquire_bounded_companyfacts",
     "acquire_companyfacts",
+    "companyfacts_capture_from_json_bytes",
+    "companyfacts_capture_storage_key",
+    "companyfacts_manifest_storage_key",
     "companyfacts_url",
     "iter_companyfacts_occurrences",
     "manifest_id_for",
+    "parse_companyfacts_response_exact_numbers",
     "persist_companyfacts_manifest",
     "publish_verified_manifest_pointer",
     "read_companyfacts_manifest",
     "read_latest_companyfacts_manifest",
     "read_verified_companyfacts",
+    "validate_companyfacts_capture",
     "validate_companyfacts_manifest",
+    "validate_companyfacts_response_bytes",
 ]

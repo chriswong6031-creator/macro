@@ -19,16 +19,17 @@ migration, not an implementation detail.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from hashlib import sha256
 import os
 from pathlib import Path, PurePosixPath
 import re
 import time
+from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
-from engine.research_vault.r2_store import Store, build_store
+from engine.research_vault.r2_store import StrictBoundedReadStore, Store, build_store
 
 from .models import canonical_json, parse_utc, utc_text
 
@@ -48,9 +49,16 @@ DEFAULT_MAX_FILES = 10_000
 DEFAULT_MAX_FILE_BYTES = 32 * 1024 * 1024
 DEFAULT_MAX_TOTAL_BYTES = 512 * 1024 * 1024
 
+# A manifest has at most 50,000 entries but it remains an untrusted remote
+# input.  This cap makes its parsing/readback bounded independently from the
+# source-data budget; it is intentionally larger than a normal manifest while
+# still preventing a poisoned object from becoming an allocation primitive.
+HARD_MAX_SNAPSHOT_MANIFEST_BYTES = 128 * 1024 * 1024
+
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _PATH_PART_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _SNAPSHOT_RE = re.compile(r"^ffsecsrc_[a-f0-9]{64}$")
+_VERIFIED_SNAPSHOT_SEAL = object()
 
 
 class SourceSyncError(RuntimeError):
@@ -75,6 +83,80 @@ class SourceSnapshot:
             "file_count": self.file_count,
             "total_bytes": self.total_bytes,
         }
+
+
+@dataclass(frozen=True)
+class SourceObjectWitness:
+    """Pinned immutable mapping from a source-tree path to its outer R2 object.
+
+    The sync layer content-addresses the *stored bytes* (often a gzip archive
+    member) by a different key from the original local relative path.  This
+    witness is deliberately explicit so an attestation cannot accidentally
+    treat a local archive key as an R2 key.
+    """
+
+    snapshot_id: str
+    kind: str
+    relative_path: str
+    object_key: str
+    sha256: str
+    byte_length: int
+    content_type: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "snapshot_id": self.snapshot_id,
+            "kind": self.kind,
+            "relative_path": self.relative_path,
+            "object_key": self.object_key,
+            "sha256": self.sha256,
+            "byte_length": self.byte_length,
+            "content_type": self.content_type,
+        }
+
+
+@dataclass(frozen=True)
+class VerifiedSourceSnapshot:
+    """An explicitly pinned, canonical source manifest read through a strict store.
+
+    This object is intentionally unavailable from the mutable ``latest``
+    pointer.  It carries only a compact lookup table and manifest witness, not
+    the raw manifest bytes, and is safe to hand to the sealed attestation
+    layer for further exact source reads.
+    """
+
+    snapshot: SourceSnapshot
+    manifest_sha256: str
+    manifest_byte_length: int
+    entries_by_path: Mapping[tuple[str, str], SourceObjectWitness]
+    _seal: object = field(repr=False, compare=False, default=None)
+
+    @property
+    def snapshot_id(self) -> str:
+        return self.snapshot.snapshot_id
+
+    @property
+    def manifest_key(self) -> str:
+        return self.snapshot.manifest_key
+
+    def entry_for(self, *, kind: str, relative_path: str) -> SourceObjectWitness:
+        if kind not in SOURCE_KINDS:
+            raise SourceSyncError(f"unsupported source tree: {kind!r}")
+        relative = _relative_path(relative_path)
+        try:
+            return self.entries_by_path[(kind, relative)]
+        except KeyError as exc:
+            raise SourceSyncError(
+                f"pinned source snapshot does not contain {kind}/{relative}"
+            ) from exc
+
+
+@dataclass(frozen=True)
+class StrictSourceRead:
+    """Bytes read from one pinned source-snapshot entry plus its outer witness."""
+
+    content: bytes
+    witness: SourceObjectWitness
 
 
 @dataclass(frozen=True)
@@ -128,7 +210,12 @@ def _relative_path(value: str | PurePosixPath) -> str:
     components.  The SEC cache layout only requires simple content-addressed
     names, JSON sidecars, and CIK/accession directories.
     """
-    text = str(value)
+    if type(value) is str:
+        text = value
+    elif type(value) is PurePosixPath:
+        text = value.as_posix()
+    else:
+        raise SourceSyncError(f"unsafe relative path: {value!r}")
     if not text or "\\" in text or "\x00" in text or text.startswith("/"):
         raise SourceSyncError(f"unsafe relative path: {value!r}")
     path = PurePosixPath(text)
@@ -138,15 +225,28 @@ def _relative_path(value: str | PurePosixPath) -> str:
     ):
         raise SourceSyncError(f"unsafe relative path: {value!r}")
     normalized = path.as_posix()
+    if normalized != text:
+        raise SourceSyncError(f"relative path is not canonical: {value!r}")
     if len(normalized) > 700:
         raise SourceSyncError("relative path exceeds object-key safety limit")
     return normalized
 
 
-def _object_key_for_sha256(digest: str) -> str:
+def canonical_source_relative_path(value: str | PurePosixPath) -> str:
+    """Return one path accepted by the immutable source-snapshot schema."""
+    return _relative_path(value)
+
+
+def source_object_key_for_sha256(digest: str) -> str:
+    """Derive the only valid outer object key for source bytes of ``digest``."""
     if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
         raise SourceSyncError("content digest must be lowercase SHA-256 hex")
     return f"{SOURCE_SYNC_PREFIX}/objects/sha256/{digest[:2]}/{digest}.bin"
+
+
+def source_content_type_for_path(value: str | PurePosixPath) -> str:
+    """Return the canonical source-manifest content type for one safe path."""
+    return _content_type(_relative_path(value))
 
 
 def _manifest_key(snapshot_id: str) -> str:
@@ -274,7 +374,7 @@ def _walk_tree(
         entries.append(
             {
                 "relative_path": relative,
-                "object_key": _object_key_for_sha256(digest),
+                "object_key": source_object_key_for_sha256(digest),
                 "sha256": digest,
                 "byte_length": size,
                 "content_type": _content_type(relative),
@@ -341,6 +441,8 @@ def _manifest_entries(manifest: Mapping[str, Any]) -> list[tuple[str, dict[str, 
         if not isinstance(tree, Mapping):
             raise SourceSyncError("source snapshot tree must be an object")
         kind = tree.get("kind")
+        if type(kind) is not str:
+            raise SourceSyncError("source snapshot tree kind must be a string")
         if kind not in SOURCE_KINDS:
             raise SourceSyncError("source snapshot contains unknown tree kind")
         names.append(str(kind))
@@ -356,16 +458,24 @@ def _manifest_entries(manifest: Mapping[str, Any]) -> list[tuple[str, dict[str, 
                 "relative_path", "object_key", "sha256", "byte_length", "content_type"
             }:
                 raise SourceSyncError("source snapshot entry shape is invalid")
-            relative = _relative_path(str(entry["relative_path"]))
-            key = _validate_key(str(entry["object_key"]))
-            digest = str(entry["sha256"])
-            if not _SHA256_RE.fullmatch(digest) or key != _object_key_for_sha256(digest):
+            if type(entry["relative_path"]) is not str:
+                raise SourceSyncError("source snapshot relative path must be a string")
+            if type(entry["object_key"]) is not str:
+                raise SourceSyncError("source snapshot object key must be a string")
+            if type(entry["sha256"]) is not str:
+                raise SourceSyncError("source snapshot digest must be a string")
+            relative = _relative_path(entry["relative_path"])
+            key = _validate_key(entry["object_key"])
+            digest = entry["sha256"]
+            if not _SHA256_RE.fullmatch(digest) or key != source_object_key_for_sha256(digest):
                 raise SourceSyncError("source snapshot object key does not bind digest")
             length = entry["byte_length"]
             if isinstance(length, bool) or not isinstance(length, int) or length < 0:
                 raise SourceSyncError("source snapshot entry has invalid byte length")
-            if not isinstance(entry["content_type"], str) or not entry["content_type"]:
+            if type(entry["content_type"]) is not str or not entry["content_type"]:
                 raise SourceSyncError("source snapshot entry has invalid content type")
+            if entry["content_type"] != _content_type(relative):
+                raise SourceSyncError("source snapshot entry content type does not match path")
             marker = (str(kind), relative)
             if marker in seen:
                 raise SourceSyncError("source snapshot contains duplicate path")
@@ -412,15 +522,36 @@ def _manifest_bytes(manifest: Mapping[str, Any]) -> bytes:
     return canonical_json(dict(manifest)).encode("utf-8")
 
 
-def _decode_manifest(content: bytes) -> tuple[dict[str, Any], SourceSnapshot]:
+def _strict_json_object(content: bytes, *, label: str) -> dict[str, Any]:
+    """Decode canonical snapshot JSON without duplicate-key or nonfinite ambiguity."""
+    def reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in output:
+                raise ValueError(f"duplicate JSON key: {key!r}")
+            output[key] = value
+        return output
+
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"non-finite JSON constant: {value}")
+
     try:
         import json
 
-        value = json.loads(content.decode("utf-8"))
+        value = json.loads(
+            content.decode("utf-8"),
+            object_pairs_hook=reject_duplicates,
+            parse_constant=reject_constant,
+        )
     except (UnicodeDecodeError, ValueError) as exc:
-        raise SourceSyncError("source snapshot manifest is not UTF-8 JSON") from exc
+        raise SourceSyncError(f"{label} is not strict UTF-8 JSON") from exc
     if not isinstance(value, dict):
-        raise SourceSyncError("source snapshot manifest must be an object")
+        raise SourceSyncError(f"{label} must be an object")
+    return value
+
+
+def _decode_manifest(content: bytes) -> tuple[dict[str, Any], SourceSnapshot]:
+    value = _strict_json_object(content, label="source snapshot manifest")
     _validate_manifest(value)
     if _manifest_bytes(value) != content:
         raise SourceSyncError("source snapshot manifest is not canonically encoded")
@@ -433,6 +564,153 @@ def _decode_manifest(content: bytes) -> tuple[dict[str, Any], SourceSnapshot]:
         file_count=len(entries),
         total_bytes=sum(int(item["byte_length"]) for _, item in entries),
     )
+
+
+def _strict_bounded_read_required(
+    store: StrictBoundedReadStore,
+    key: str,
+    *,
+    maximum_bytes: int,
+) -> bytes:
+    """Read one owned immutable object, keeping absence distinct from outage."""
+    key = _validate_key(key)
+    if isinstance(maximum_bytes, bool) or not isinstance(maximum_bytes, int) or maximum_bytes < 0:
+        raise SourceSyncError("strict read maximum_bytes must be a non-negative integer")
+    result = store.get_bytes_strict_bounded(key, maximum_bytes)
+    if result is None:
+        # Only this narrow case means the backing store authoritatively reported
+        # absence.  Network/auth/body errors deliberately propagate unchanged.
+        raise SourceSyncError(f"private source-store object not found: {key}")
+    if not isinstance(result, bytes):
+        raise SourceSyncError(f"private source-store returned non-bytes for {key}")
+    if len(result) > maximum_bytes:  # custom adapters must not bypass the cap
+        raise SourceSyncError(
+            f"private source-store ignored bounded read limit for {key}"
+        )
+    return result
+
+
+def load_pinned_source_snapshot_strict(
+    *,
+    store: StrictBoundedReadStore,
+    snapshot_id: str,
+    max_manifest_bytes: int = HARD_MAX_SNAPSHOT_MANIFEST_BYTES,
+) -> VerifiedSourceSnapshot:
+    """Strictly load one named ``ffsecsrc_`` manifest, never the ``latest`` pointer.
+
+    The snapshot identity is recomputed from the canonical body by
+    :func:`_decode_manifest`.  Every entry is converted into a one-to-one
+    ``(kind, relative_path)`` mapping while enforcing the source snapshot's
+    hard file and byte ceilings.  It is the required opening step for sealed
+    source attestation, and rejects a legacy/fail-open store adapter outright.
+    """
+    if not isinstance(store, StrictBoundedReadStore):
+        raise SourceSyncError(
+            "strict pinned source reads require a StrictBoundedReadStore adapter"
+        )
+    if not isinstance(snapshot_id, str) or not _SNAPSHOT_RE.fullmatch(snapshot_id):
+        raise SourceSyncError("invalid requested source snapshot id")
+    if (
+        isinstance(max_manifest_bytes, bool)
+        or not isinstance(max_manifest_bytes, int)
+        or max_manifest_bytes < 1
+        or max_manifest_bytes > HARD_MAX_SNAPSHOT_MANIFEST_BYTES
+    ):
+        raise SourceSyncError(
+            "max_manifest_bytes must be a positive integer within the hard manifest ceiling"
+        )
+    manifest_key = _manifest_key(snapshot_id)
+    content = _strict_bounded_read_required(
+        store, manifest_key, maximum_bytes=max_manifest_bytes
+    )
+    manifest, snapshot = _decode_manifest(content)
+    if snapshot.snapshot_id != snapshot_id or snapshot.manifest_key != manifest_key:
+        raise SourceSyncError("source snapshot does not match requested manifest identity")
+    if snapshot.file_count > HARD_MAX_FILES or snapshot.total_bytes > HARD_MAX_TOTAL_BYTES:
+        raise SourceSyncError("source snapshot exceeds hard source data ceilings")
+
+    by_path: dict[tuple[str, str], SourceObjectWitness] = {}
+    for kind, entry in _manifest_entries(manifest):
+        length = int(entry["byte_length"])
+        if length > HARD_MAX_FILE_BYTES:
+            raise SourceSyncError("source snapshot entry exceeds hard file ceiling")
+        relative_path = str(entry["relative_path"])
+        marker = (kind, relative_path)
+        if marker in by_path:  # defensive in case a validator evolves later
+            raise SourceSyncError("source snapshot contains duplicate path mapping")
+        by_path[marker] = SourceObjectWitness(
+            snapshot_id=snapshot.snapshot_id,
+            kind=kind,
+            relative_path=relative_path,
+            object_key=str(entry["object_key"]),
+            sha256=str(entry["sha256"]),
+            byte_length=length,
+            content_type=str(entry["content_type"]),
+        )
+    return VerifiedSourceSnapshot(
+        snapshot=snapshot,
+        manifest_sha256=sha256(content).hexdigest(),
+        manifest_byte_length=len(content),
+        entries_by_path=MappingProxyType(by_path),
+        _seal=_VERIFIED_SNAPSHOT_SEAL,
+    )
+
+
+def read_pinned_source_snapshot_file_strict(
+    *,
+    store: StrictBoundedReadStore,
+    snapshot: VerifiedSourceSnapshot,
+    kind: str,
+    relative_path: str,
+    max_bytes: int = HARD_MAX_FILE_BYTES,
+) -> StrictSourceRead:
+    """Read exactly one source path through its pinned manifest mapping.
+
+    ``relative_path`` is a path beneath the logical ``raw`` or ``archive``
+    tree, *not* an R2 key.  The manifest selects the outer content-addressed
+    key.  Both byte length and SHA-256 must match before bytes are returned.
+    This supports independent reads of receipt JSON and gzip source members;
+    archive decoding is intentionally left to the attestation layer.
+    """
+    if not isinstance(store, StrictBoundedReadStore):
+        raise SourceSyncError(
+            "strict pinned source reads require a StrictBoundedReadStore adapter"
+        )
+    if type(snapshot) is not VerifiedSourceSnapshot or snapshot._seal is not _VERIFIED_SNAPSHOT_SEAL:
+        raise SourceSyncError("strict source reader requires a verified pinned snapshot")
+    if (
+        isinstance(max_bytes, bool)
+        or not isinstance(max_bytes, int)
+        or max_bytes < 0
+        or max_bytes > HARD_MAX_FILE_BYTES
+    ):
+        raise SourceSyncError("max_bytes must be within the hard source-file ceiling")
+    # The Python object is only a compact session handle, never the authority.
+    # Reload the named immutable manifest before every positive object-presence
+    # claim so a caller-constructed dataclass/sentinel cannot redirect a read.
+    authoritative = load_pinned_source_snapshot_strict(
+        store=store,
+        snapshot_id=snapshot.snapshot_id,
+    )
+    witness = authoritative.entry_for(kind=kind, relative_path=relative_path)
+    if witness.byte_length > max_bytes:
+        raise SourceSyncError(
+            f"pinned source object exceeds requested read limit ({witness.byte_length} > {max_bytes})"
+        )
+    content = _strict_bounded_read_required(
+        store, witness.object_key, maximum_bytes=witness.byte_length
+    )
+    if len(content) != witness.byte_length or sha256(content).hexdigest() != witness.sha256:
+        raise SourceSyncError(
+            f"pinned source object failed exact checksum: {witness.object_key}"
+        )
+    return StrictSourceRead(content=content, witness=witness)
+
+
+# Short aliases keep the public sealed-attestation call-site legible while the
+# longer names make the critical "pinned source snapshot" property unmissable.
+load_verified_source_snapshot = load_pinned_source_snapshot_strict
+read_verified_source_snapshot_file = read_pinned_source_snapshot_file_strict
 
 
 def _put_readback(store: Store, key: str, content: bytes, *, content_type: str) -> None:
@@ -669,14 +947,25 @@ __all__ = [
     "DEFAULT_MAX_TOTAL_BYTES",
     "HARD_MAX_FILE_BYTES",
     "HARD_MAX_FILES",
+    "HARD_MAX_SNAPSHOT_MANIFEST_BYTES",
     "HARD_MAX_TOTAL_BYTES",
     "RestoreResult",
     "SOURCE_SYNC_LATEST_SCHEMA",
     "SOURCE_SYNC_PREFIX",
     "SOURCE_SYNC_SCHEMA",
+    "SourceObjectWitness",
     "SourceSnapshot",
     "SourceSyncError",
+    "StrictSourceRead",
+    "VerifiedSourceSnapshot",
     "build_private_source_store",
+    "canonical_source_relative_path",
+    "load_pinned_source_snapshot_strict",
+    "load_verified_source_snapshot",
+    "read_pinned_source_snapshot_file_strict",
+    "read_verified_source_snapshot_file",
     "restore_source_roots",
+    "source_content_type_for_path",
+    "source_object_key_for_sha256",
     "sync_source_roots",
 ]

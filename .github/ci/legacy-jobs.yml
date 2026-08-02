@@ -656,6 +656,7 @@ jobs:
           tests/test_fundamental_forensics_disclosure_diff.py
           tests/test_fundamental_forensics_disclosure_projection.py
           tests/test_fundamental_forensics_source_sync.py
+          tests/test_fundamental_forensics_attestation.py
           tests/test_fundamental_forensics_wave2_operator.py
           tests/test_fundamental_forensics_companyfacts.py
           tests/test_fundamental_forensics_companyfacts_ledger.py
@@ -751,11 +752,12 @@ jobs:
         run: pip install pytest pandas numpy pyyaml requests
       - name: china_news collector tests (incl. adapter-registered-without-akshare)
         run: python -m pytest tests/test_china_news.py -q
-      - name: strict SEC filing parser and receipt-bound extraction contracts
+      - name: strict SEC filing parser, extraction, and sealed attestation contracts
         run: |
           python -m pytest \
             tests/test_sec_filing_parser.py \
-            tests/test_fundamental_forensics_ixbrl_extraction.py -q
+            tests/test_fundamental_forensics_ixbrl_extraction.py \
+            tests/test_fundamental_forensics_attestation.py -q
       - name: adapter registry must stay populated
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
@@ -2899,7 +2901,7 @@ jobs:
         # one member, so extending it costs no extra ci-pack venv.
         run: pip install pytest jinja2 pyyaml pypdf boto3
       - name: research vault ingestion-spine + page unit tests
-        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
+        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_strict_store.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 
   research-vault-api:
     if: ${{ false }}

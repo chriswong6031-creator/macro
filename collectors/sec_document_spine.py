@@ -363,6 +363,47 @@ def _decode_receipt(content: bytes) -> ArchiveReceipt:
     return receipt
 
 
+def archive_receipt_from_json_bytes(content: bytes) -> ArchiveReceipt:
+    """Restore one canonical retrieved receipt from exact source bytes."""
+    return _decode_receipt(content)
+
+
+def read_archive_object_bytes(
+    compressed_content: bytes,
+    receipt: ArchiveReceipt,
+) -> bytes:
+    """Bounded-decompress an in-memory archive object against its exact receipt.
+
+    Source-snapshot attestation reads the receipt sidecar and gzip object as two
+    independent outer objects. This helper validates the inner receipt again,
+    inflates no more than its trusted raw length plus one byte, and verifies the
+    uncompressed checksum/length without requiring a temporary filesystem path.
+    """
+    if not isinstance(compressed_content, bytes):
+        raise ArchiveStoreError("compressed SEC archive object must be bytes")
+    if len(compressed_content) > HARD_MAX_DOCUMENT_BYTES * 2:
+        raise ArchiveStoreError("compressed SEC archive object exceeds byte safety limit")
+    if type(receipt) is not ArchiveReceipt:
+        if isinstance(receipt, ArchiveReceipt):
+            raise ArchiveStoreError("invalid archive receipt subclass")
+        raise ArchiveStoreError(
+            "archive receipt must come from canonical sidecar decoding"
+        )
+    verified_receipt = _decode_receipt(_receipt_bytes(receipt))
+    try:
+        with gzip.GzipFile(fileobj=io.BytesIO(compressed_content), mode="rb") as handle:
+            content = handle.read(verified_receipt.byte_length + 1)
+    except (OSError, EOFError, OverflowError, ValueError) as exc:
+        raise ArchiveStoreError("corrupt compressed SEC archive object") from exc
+    if len(content) > verified_receipt.byte_length:
+        raise ArchiveStoreError("SEC archive byte length exceeds trusted receipt")
+    if len(content) != verified_receipt.byte_length:
+        raise ArchiveStoreError("SEC archive byte length mismatch")
+    if hashlib.sha256(content).hexdigest() != verified_receipt.content_sha256:
+        raise ArchiveStoreError("SEC archive checksum mismatch")
+    return content
+
+
 def persist_archive_document(
     cache_root: Path,
     document: Mapping[str, Any],
@@ -728,6 +769,7 @@ __all__ = [
     "HARD_MAX_DOCUMENT_BYTES",
     "HARD_MAX_HTTP_METADATA_BYTES",
     "SecFilingArchiveCollector",
+    "archive_receipt_from_json_bytes",
     "content_storage_key",
     "document_with_retrieval",
     "manifest_storage_key",
@@ -735,6 +777,7 @@ __all__ = [
     "persist_archive_document",
     "persist_filing_manifest",
     "read_archive_document",
+    "read_archive_object_bytes",
     "read_primary_document",
     "read_filing_manifest",
     "receipt_storage_key",
