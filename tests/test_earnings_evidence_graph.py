@@ -262,6 +262,8 @@ def test_workflow_cache_is_limited_to_intake_not_append_only_cas_output() -> Non
         assert "earnings-evidence/output" not in section
         assert "earnings-evidence/objects" not in section
         assert "earnings-evidence/generations" not in section
+    assert "earnings-evidence-v1-" not in workflow
+    assert workflow.count("earnings-evidence-v2-") == 3
 
 
 def test_direct_graph_is_structural_and_resolves_each_fact_once() -> None:

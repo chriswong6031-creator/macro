@@ -58,9 +58,9 @@ jobs:
           path: |
             ${{ runner.temp }}/earnings-evidence/intake-state.json
             ${{ runner.temp }}/earnings-evidence/bodies
-          key: earnings-evidence-v1-${{ github.run_id }}
+          key: earnings-evidence-v2-${{ github.run_id }}
           restore-keys: |
-            earnings-evidence-v1-
+            earnings-evidence-v2-
 
       - name: append a bounded full-history Terminal delta
         env:
@@ -97,4 +97,4 @@ jobs:
           path: |
             ${{ runner.temp }}/earnings-evidence/intake-state.json
             ${{ runner.temp }}/earnings-evidence/bodies
-          key: earnings-evidence-v1-${{ github.run_id }}
+          key: earnings-evidence-v2-${{ github.run_id }}
