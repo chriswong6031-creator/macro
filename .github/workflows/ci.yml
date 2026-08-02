@@ -566,6 +566,7 @@ on:
       - "app/main.py"
       - "app/requirements.txt"
       - "scripts/biocatalyst_worker.py"
+      - "scripts/biocatalyst_regulatory_worker.py"
       - "scripts/build_biocatalyst.py"
       - "scripts/build_site.py"
       - "config/biocatalyst_sources.yml"

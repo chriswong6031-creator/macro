@@ -1,0 +1,18 @@
+{
+  "fixture_version": "1.0.0",
+  "notes": "Synthetic/reduced rows only. It is not an FDA archive or a real application.",
+  "tables": {
+    "ActionTypes_Lookup.txt": [["1", "Synthetic action", "", ""]],
+    "ApplicationDocs.txt": [["1", "1", "123456", "ORIG      ", "1", "Synthetic document", "https://example.invalid/fda-document.pdf", "2026-01-01 00:00:00"]],
+    "Applications.txt": [["123456", "NDA", "", "Synthetic Sponsor"]],
+    "ApplicationsDocsType_Lookup.txt": [["1", "Letter"]],
+    "Join_Submission_ActionTypes_Lookup.txt": [["ORIG      ", "1", "123456", "1", "1"]],
+    "MarketingStatus.txt": [["1", "123456", "001"]],
+    "MarketingStatus_Lookup.txt": [["1", "Prescription"]],
+    "Products.txt": [["123456", "001", "TABLET;ORAL", "N/A", "0", "SYNTHETIC", "SYNTHETIC INGREDIENT", "0"]],
+    "SubmissionClass_Lookup.txt": [["1", "SYN", "Synthetic class"]],
+    "SubmissionPropertyType.txt": [["123456", "ORIG      ", "1", "Null", "0"]],
+    "Submissions.txt": [["123456", "1", "ORIG      ", "1", "AP", "2026-01-01 00:00:00", "", "UNKNOWN"]],
+    "TE.txt": [["123456", "001", "1", ""]]
+  }
+}

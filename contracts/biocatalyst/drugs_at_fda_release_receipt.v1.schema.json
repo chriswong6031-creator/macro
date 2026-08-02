@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/drugs_at_fda_release_receipt.v1.schema.json",
+  "title": "BioCatalyst Drugs at FDA exact release receipt v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "release_id", "source_id", "source_url", "archive_sha256", "archive_byte_count", "source_release_date", "source_release_time", "observed_at", "http_receipts", "parser_version", "license_class", "receipt_payload_sha256", "hash_scope"],
+  "properties": {
+    "contract_id": {"const": "drugs_at_fda_release_receipt.v1"}, "schema_version": {"const": "1.0.0"},
+    "release_id": {"type": "string", "pattern": "^drugs_at_fda_release_[a-f0-9]{24}$"}, "source_id": {"const": "drugs_at_fda"},
+    "source_url": {"type": "string", "format": "uri", "pattern": "^https://www\\.fda\\.gov/"}, "archive_sha256": {"$ref": "#/$defs/sha256"}, "archive_byte_count": {"type": "integer", "minimum": 1},
+    "source_release_date": {"type": ["string", "null"], "format": "date"}, "source_release_time": {"const": null}, "observed_at": {"type": "string", "format": "date-time"},
+    "http_receipts": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/httpReceipt"}}, "parser_version": {"const": "drugs_at_fda_zip_parser.v1"}, "license_class": {"const": "us_government_source_facts"},
+    "receipt_payload_sha256": {"$ref": "#/$defs/sha256"}, "hash_scope": {"const": "canonical_payload_excluding_receipt_payload_sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "httpReceipt": {"type": "object", "additionalProperties": false, "required": ["kind", "source_uri", "final_url", "status_code", "response_headers", "exact_response_sha256", "byte_count", "raw_object_key", "received_at"], "properties": {"kind": {"enum": ["landing_before", "archive", "landing_after"]}, "source_uri": {"type": "string", "format": "uri", "pattern": "^https://www\\.(fda\\.gov|accessdata\\.fda\\.gov)/"}, "final_url": {"type": "string", "format": "uri", "pattern": "^https://www\\.(fda\\.gov|accessdata\\.fda\\.gov)/"}, "status_code": {"const": 200}, "response_headers": {"type": "object", "propertyNames": {"enum": ["content-type", "content-length", "content-encoding", "content-disposition", "date", "etag", "last-modified"]}, "additionalProperties": {"type": "string"}}, "exact_response_sha256": {"$ref": "#/$defs/sha256"}, "byte_count": {"type": "integer", "minimum": 1}, "raw_object_key": {"type": "string", "pattern": "^biocatalyst/raw/drugs_at_fda/"}, "received_at": {"type": "string", "format": "date-time"}}}
+  }
+}

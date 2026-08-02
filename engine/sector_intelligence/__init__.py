@@ -33,6 +33,8 @@ from .contracts import (
     validate_trial_registry_change_fact_against_diff,
     validate_trial_history_read_model,
     validate_trial_projection_against_source,
+    validate_drugs_at_fda_release_receipt,
+    validate_drugs_at_fda_table_manifest,
 )
 
 __all__ = [
@@ -68,4 +70,6 @@ __all__ = [
     "validate_trial_registry_change_fact_against_diff",
     "validate_trial_history_read_model",
     "validate_trial_projection_against_source",
+    "validate_drugs_at_fda_release_receipt",
+    "validate_drugs_at_fda_table_manifest",
 ]

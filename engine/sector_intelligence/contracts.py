@@ -9,12 +9,14 @@ entire registry build.
 from __future__ import annotations
 
 from collections import Counter
+import binascii
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
 from decimal import Decimal, InvalidOperation
 from difflib import SequenceMatcher
 import copy
 import hashlib
+from html import unescape
 import json
 import math
 from pathlib import Path
@@ -1639,6 +1641,286 @@ def _authority_manifest_issues(document: Mapping[str, Any]) -> list[ValidationIs
     return issues
 
 
+_FDA_DATA_PAGE_URL = "https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files"
+_FDA_ARCHIVE_URL = "https://www.fda.gov/media/89850/download?attachment="
+_FDA_APPLICATION_TABLES = ("Applications.txt",)
+_FDA_SUBMISSION_TABLES = (
+    "Submissions.txt",
+    "SubmissionClass_Lookup.txt",
+    "SubmissionPropertyType.txt",
+)
+_FDA_EVENT_TABLES = (
+    "Join_Submission_ActionTypes_Lookup.txt",
+    "ActionTypes_Lookup.txt",
+)
+_FDA_DOSSIER_TABLES = (
+    "Applications.txt",
+    "Products.txt",
+    "Submissions.txt",
+    "Join_Submission_ActionTypes_Lookup.txt",
+    "ActionTypes_Lookup.txt",
+    "ApplicationDocs.txt",
+    "MarketingStatus.txt",
+    "MarketingStatus_Lookup.txt",
+    "TE.txt",
+    "SubmissionClass_Lookup.txt",
+    "SubmissionPropertyType.txt",
+    "ApplicationsDocsType_Lookup.txt",
+)
+_FDA_EVIDENCE_RELEASE_FIELDS = (
+    "source_id",
+    "release_id",
+    "archive_sha256",
+    "source_release_date",
+    "source_release_time",
+    "source_url",
+    "observed_at",
+    "parser_version",
+    "source_schema_version",
+    "license_class",
+)
+
+
+def _reviewed_fda_https_url(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and hostname in {"www.fda.gov", "www.accessdata.fda.gov"}
+        and parsed.username is None
+        and parsed.password is None
+        and port in {None, 443}
+        and not parsed.fragment
+    )
+
+
+def _fda_evidence_issues(
+    evidence: Any, *, path: str, expected_tables: Sequence[str]
+) -> list[ValidationIssue]:
+    if not isinstance(evidence, Mapping):
+        return []
+    issues: list[ValidationIssue] = []
+    archive = evidence.get("archive_sha256")
+    expected_release = f"drugs_at_fda_release_{str(archive)[:24]}"
+    if evidence.get("release_id") != expected_release:
+        issues.append(ValidationIssue(path + ".release_id", "drugs_fda.evidence_release", "source evidence release ID must be derived from its archive SHA-256"))
+    if evidence.get("source_url") != _FDA_DATA_PAGE_URL:
+        issues.append(ValidationIssue(path + ".source_url", "drugs_fda.evidence_source", "source evidence must identify the reviewed official FDA data page"))
+    manifest_ids = evidence.get("table_manifest_ids")
+    expected_manifest_ids = [
+        f"drugs_at_fda_table_{canonical_json_sha256({'archive': archive, 'table': table})[:24]}"
+        for table in expected_tables
+    ]
+    if manifest_ids != expected_manifest_ids:
+        issues.append(ValidationIssue(path + ".table_manifest_ids", "drugs_fda.evidence_manifests", "source evidence manifest IDs must exactly bind the required ordered table set"))
+    return issues
+
+
+def _fda_hash_and_id_issues(
+    document: Mapping[str, Any], *, hash_field: str, id_field: str, prefix: str,
+    identity: Mapping[str, Any], expected_tables: Sequence[str],
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    expected_hash = canonical_json_sha256({key: value for key, value in document.items() if key != hash_field})
+    if document.get(hash_field) != expected_hash:
+        issues.append(ValidationIssue(f"$.{hash_field}", "drugs_fda.payload_hash", "payload hash does not bind canonical payload"))
+    expected_id = f"{prefix}_{canonical_json_sha256(identity)[:24]}"
+    if document.get(id_field) != expected_id:
+        issues.append(ValidationIssue(f"$.{id_field}", "drugs_fda.derived_id", "ID must be derived from source-native identity and archive SHA-256"))
+    issues.extend(_fda_evidence_issues(
+        document.get("source_evidence"),
+        path="$.source_evidence",
+        expected_tables=expected_tables,
+    ))
+    return issues
+
+
+def _fda_application_snapshot_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    evidence = document.get("source_evidence")
+    archive = evidence.get("archive_sha256") if isinstance(evidence, Mapping) else None
+    return _fda_hash_and_id_issues(
+        document,
+        hash_field="snapshot_payload_sha256", id_field="application_snapshot_id", prefix="fda_application",
+        identity={"release": archive, "appl_no": document.get("application_number")},
+        expected_tables=_FDA_APPLICATION_TABLES,
+    )
+
+
+def _fda_submission_observation_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    evidence = document.get("source_evidence")
+    archive = evidence.get("archive_sha256") if isinstance(evidence, Mapping) else None
+    issues = _fda_hash_and_id_issues(
+        document,
+        hash_field="observation_payload_sha256", id_field="submission_observation_id", prefix="fda_submission",
+        identity={
+            "release": archive, "appl_no": document.get("application_number"),
+            "submission_type": str(document.get("submission_type_source_text", "")).rstrip(" "),
+            "submission_no": document.get("submission_number"),
+        },
+        expected_tables=_FDA_SUBMISSION_TABLES,
+    )
+    expected_application_id = f"fda_application_{canonical_json_sha256({'release': archive, 'appl_no': document.get('application_number')})[:24]}"
+    application_id = document.get("application_snapshot_id")
+    orphan = document.get("source_native_orphan")
+    if application_id is None:
+        if orphan is not True:
+            issues.append(ValidationIssue("$.source_native_orphan", "drugs_fda.submission_parent", "submission without an application snapshot must be source-native orphan"))
+    elif application_id != expected_application_id or orphan is not False:
+        issues.append(ValidationIssue("$.application_snapshot_id", "drugs_fda.submission_parent", "non-orphan submission must bind the deterministic application snapshot for this release"))
+    return issues
+
+
+def _fda_regulatory_event_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    evidence = document.get("source_evidence")
+    archive = evidence.get("archive_sha256") if isinstance(evidence, Mapping) else None
+    issues = _fda_hash_and_id_issues(
+        document,
+        hash_field="event_payload_sha256", id_field="regulatory_event_id", prefix="fda_submission_action",
+        identity={"release": archive, "join_id": document.get("submission_action_join_id")},
+        expected_tables=_FDA_EVENT_TABLES,
+    )
+    action_id = document.get("action_type_lookup_id")
+    action_description = document.get("action_type_description_source_text")
+    if action_id is None and action_description is not None:
+        issues.append(ValidationIssue("$.action_type_description_source_text", "drugs_fda.event_action_parent", "event without an action lookup ID cannot carry an action description"))
+    expected_orphan = (
+        document.get("submission_observation_id") is None
+        or action_description is None
+    )
+    if document.get("source_native_orphan") is not expected_orphan:
+        issues.append(ValidationIssue("$.source_native_orphan", "drugs_fda.event_parent", "event orphan status must reflect missing submission or action-lookup evidence"))
+    return issues
+
+
+def _fda_nested_release_binding_issues(
+    parent_evidence: Any, child_evidence: Any, *, path: str
+) -> list[ValidationIssue]:
+    if not isinstance(parent_evidence, Mapping) or not isinstance(child_evidence, Mapping):
+        return []
+    return [
+        ValidationIssue(
+            f"{path}.{field}",
+            "drugs_fda.dossier_release_binding",
+            "nested evidence must exactly bind the dossier release observation",
+        )
+        for field in _FDA_EVIDENCE_RELEASE_FIELDS
+        if child_evidence.get(field) != parent_evidence.get(field)
+    ]
+
+
+def _fda_application_dossier_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    evidence = document.get("source_evidence")
+    archive = evidence.get("archive_sha256") if isinstance(evidence, Mapping) else None
+    application = document.get("application_snapshot")
+    application_number = application.get("application_number") if isinstance(application, Mapping) else None
+    issues = _fda_hash_and_id_issues(
+        document,
+        hash_field="dossier_payload_sha256", id_field="dossier_id", prefix="fda_dossier",
+        identity={"release": archive, "appl_no": application_number},
+        expected_tables=_FDA_DOSSIER_TABLES,
+    )
+    if isinstance(application, Mapping):
+        issues.extend(_fda_application_snapshot_issues(application))
+        issues.extend(_fda_nested_release_binding_issues(
+            evidence,
+            application.get("source_evidence"),
+            path="$.application_snapshot.source_evidence",
+        ))
+    application_snapshot_id = application.get("application_snapshot_id") if isinstance(application, Mapping) else None
+    submission_ids: set[str] = set()
+    submission_keys: set[tuple[str, str]] = set()
+    event_ids: set[str] = set()
+    for index, submission in enumerate(document.get("submissions", [])):
+        if isinstance(submission, Mapping):
+            issues.extend(_fda_submission_observation_issues(submission))
+            if submission.get("application_number") != application_number:
+                issues.append(ValidationIssue(f"$.submissions[{index}].application_number", "drugs_fda.dossier_application", "nested submission must match dossier application"))
+            issues.extend(_fda_nested_release_binding_issues(
+                evidence,
+                submission.get("source_evidence"),
+                path=f"$.submissions[{index}].source_evidence",
+            ))
+            submission_id = submission.get("submission_observation_id")
+            if isinstance(submission_id, str):
+                if submission_id in submission_ids:
+                    issues.append(ValidationIssue(f"$.submissions[{index}].submission_observation_id", "drugs_fda.dossier_duplicate", "dossier submission IDs must be unique"))
+                submission_ids.add(submission_id)
+            submission_keys.add((
+                str(submission.get("submission_type_source_text", "")).rstrip(" "),
+                str(submission.get("submission_number", "")),
+            ))
+            property_ids: set[str] = set()
+            for property_index, property_fact in enumerate(submission.get("submission_properties", [])):
+                if isinstance(property_fact, Mapping):
+                    property_id = str(property_fact.get("property_type_id", ""))
+                    if property_id in property_ids:
+                        issues.append(ValidationIssue(f"$.submissions[{index}].submission_properties[{property_index}].property_type_id", "drugs_fda.dossier_duplicate", "submission property IDs must be unique within a submission"))
+                    property_ids.add(property_id)
+            if submission.get("application_snapshot_id") != application_snapshot_id or submission.get("source_native_orphan") is True:
+                issues.append(ValidationIssue(f"$.submissions[{index}].application_snapshot_id", "drugs_fda.dossier_submission_parent", "dossier submission must bind its application snapshot and cannot be an application orphan"))
+    for index, event in enumerate(document.get("submission_action_events", [])):
+        if isinstance(event, Mapping):
+            issues.extend(_fda_regulatory_event_issues(event))
+            event_id = event.get("regulatory_event_id")
+            if isinstance(event_id, str):
+                if event_id in event_ids:
+                    issues.append(ValidationIssue(f"$.submission_action_events[{index}].regulatory_event_id", "drugs_fda.dossier_duplicate", "dossier regulatory event IDs must be unique"))
+                event_ids.add(event_id)
+            if event.get("application_number") != application_number:
+                issues.append(ValidationIssue(f"$.submission_action_events[{index}].application_number", "drugs_fda.dossier_application", "nested event must match dossier application"))
+            issues.extend(_fda_nested_release_binding_issues(
+                evidence,
+                event.get("source_evidence"),
+                path=f"$.submission_action_events[{index}].source_evidence",
+            ))
+            submission_id = event.get("submission_observation_id")
+            if submission_id is None and event.get("source_native_orphan") is not True:
+                issues.append(ValidationIssue(f"$.submission_action_events[{index}].source_native_orphan", "drugs_fda.event_parent", "event without a submission parent must be source-native orphan"))
+            if submission_id is not None and submission_id not in submission_ids:
+                issues.append(ValidationIssue(f"$.submission_action_events[{index}].submission_observation_id", "drugs_fda.event_parent", "event submission parent must be included in the dossier"))
+    product_numbers: set[str] = set()
+    for product_index, product in enumerate(document.get("products", [])):
+        if not isinstance(product, Mapping):
+            continue
+        product_number = str(product.get("product_number", ""))
+        if product_number in product_numbers:
+            issues.append(ValidationIssue(f"$.products[{product_index}].product_number", "drugs_fda.dossier_duplicate", "product numbers must be unique within an application dossier"))
+        product_numbers.add(product_number)
+        marketing_ids: set[str] = set()
+        for status_index, status in enumerate(product.get("marketing_statuses", [])):
+            if not isinstance(status, Mapping):
+                continue
+            status_id = str(status.get("marketing_status_id", ""))
+            if status_id in marketing_ids:
+                issues.append(ValidationIssue(f"$.products[{product_index}].marketing_statuses[{status_index}].marketing_status_id", "drugs_fda.dossier_duplicate", "marketing status IDs must be unique within a product"))
+            marketing_ids.add(status_id)
+            expected_orphan = status.get("marketing_status_description_source_text") is None
+            if status.get("source_native_orphan") is not expected_orphan:
+                issues.append(ValidationIssue(f"$.products[{product_index}].marketing_statuses[{status_index}].source_native_orphan", "drugs_fda.marketing_parent", "marketing status orphan state must reflect missing lookup evidence"))
+    document_ids: set[str] = set()
+    for document_index, document_fact in enumerate(document.get("documents", [])):
+        if not isinstance(document_fact, Mapping):
+            continue
+        document_id = str(document_fact.get("application_document_id", ""))
+        if document_id in document_ids:
+            issues.append(ValidationIssue(f"$.documents[{document_index}].application_document_id", "drugs_fda.dossier_duplicate", "application document IDs must be unique within a dossier"))
+        document_ids.add(document_id)
+        document_key = (
+            str(document_fact.get("submission_type_source_text", "")).rstrip(" "),
+            str(document_fact.get("submission_number", "")),
+        )
+        expected_orphan = document_key not in submission_keys
+        if document_fact.get("source_native_orphan") is not expected_orphan:
+            issues.append(ValidationIssue(f"$.documents[{document_index}].source_native_orphan", "drugs_fda.document_parent", "document orphan state must reflect a missing dossier submission parent"))
+    return issues
+
+
 def _contract_semantic_issues(
     contract_id: str, document: Mapping[str, Any]
 ) -> list[ValidationIssue]:
@@ -1743,6 +2025,18 @@ def _contract_semantic_issues(
         return _outcome_label_issues(document)
     if contract_id == _AUTHORITY_MANIFEST_CONTRACT_ID:
         return _authority_manifest_issues(document)
+    if contract_id == "drugs_at_fda_release_receipt.v1":
+        return _drugs_at_fda_release_receipt_issues(document)
+    if contract_id == "drugs_at_fda_table_manifest.v1":
+        return _drugs_at_fda_table_manifest_issues(document)
+    if contract_id == "fda_application_snapshot.v1":
+        return _fda_application_snapshot_issues(document)
+    if contract_id == "fda_submission_observation.v1":
+        return _fda_submission_observation_issues(document)
+    if contract_id == "fda_regulatory_event.v1":
+        return _fda_regulatory_event_issues(document)
+    if contract_id == "fda_application_dossier.v1":
+        return _fda_application_dossier_issues(document)
     return []
 
 
@@ -1841,6 +2135,299 @@ def validate_contract(
         payload = document
     registry = ContractRegistry(repo_root)
     registry.validate(_validate_requested_id(requested), payload)
+
+
+def validate_drugs_at_fda_release_receipt(
+    receipt: Mapping[str, Any],
+    *,
+    raw_bodies_by_kind: Mapping[str, bytes | bytearray | memoryview] | None = None,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate a B4A release receipt beyond its JSON Schema shape.
+
+    A release is content-addressed by its raw archive only.  The landing page,
+    transport headers, and observed timestamps are descriptive evidence and
+    must never become an alternate identity or a mutable re-fetch overwrite.
+    """
+    registry = ContractRegistry(repo_root)
+    registry.validate("drugs_at_fda_release_receipt.v1", receipt)
+    # ``registry.validate`` above invokes the same non-recursive semantic
+    # helper used by generic ``validate_contract``.  Only byte binding is
+    # intentionally left here because it requires external raw evidence.
+    issues: list[ValidationIssue] = []
+    _append_drugs_at_fda_receipt_raw_body_issues(
+        issues,
+        receipt,
+        raw_bodies_by_kind=raw_bodies_by_kind,
+    )
+    if issues:
+        raise ContractValidationError("drugs_at_fda_release_receipt.v1", issues)
+
+
+def _drugs_at_fda_release_receipt_issues(
+    receipt: Mapping[str, Any],
+) -> list[ValidationIssue]:
+    """Semantic receipt checks which are safe to call from the registry.
+
+    This helper must not construct a ``ContractRegistry`` or call a public
+    validator: ``ContractRegistry.issues`` dispatches to it directly.
+    """
+    issues: list[ValidationIssue] = []
+    if receipt.get("source_url") != _FDA_DATA_PAGE_URL:
+        issues.append(ValidationIssue("$.source_url", "drugs_fda.receipt_source", "receipt must identify the exact reviewed Drugs@FDA data page"))
+    expected_hash = canonical_json_sha256(
+        {key: value for key, value in receipt.items() if key != "receipt_payload_sha256"}
+    )
+    if receipt.get("receipt_payload_sha256") != expected_hash:
+        issues.append(ValidationIssue("$.receipt_payload_sha256", "drugs_fda.receipt_hash", "receipt hash does not bind its canonical payload"))
+    archive_hash = receipt.get("archive_sha256")
+    if receipt.get("release_id") != f"drugs_at_fda_release_{str(archive_hash)[:24]}":
+        issues.append(ValidationIssue("$.release_id", "drugs_fda.release_identity", "release ID must be derived only from archive SHA-256"))
+    rows = receipt.get("http_receipts")
+    by_kind: dict[str, Mapping[str, Any]] = {}
+    if isinstance(rows, list):
+        for index, row in enumerate(rows):
+            if not isinstance(row, Mapping):
+                continue
+            kind = row.get("kind")
+            if not isinstance(kind, str) or kind in by_kind:
+                issues.append(ValidationIssue(_json_path(("http_receipts", index, "kind")), "drugs_fda.receipt_kinds", "receipt kinds must be unique"))
+            else:
+                by_kind[kind] = row
+    if set(by_kind) != {"landing_before", "archive", "landing_after"}:
+        issues.append(ValidationIssue("$.http_receipts", "drugs_fda.receipt_kinds", "receipt must carry exactly landing_before, archive, landing_after"))
+    archive = by_kind.get("archive")
+    if isinstance(archive, Mapping):
+        if archive.get("exact_response_sha256") != archive_hash:
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.archive_hash", "archive receipt hash must equal outer archive_sha256"))
+        if archive.get("byte_count") != receipt.get("archive_byte_count"):
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.archive_length", "archive receipt byte count must equal outer archive_byte_count"))
+    received_values: list[datetime] = []
+    for kind in ("landing_before", "archive", "landing_after"):
+        row = by_kind.get(kind)
+        if isinstance(row, Mapping):
+            expected_source_uri = _FDA_ARCHIVE_URL if kind == "archive" else _FDA_DATA_PAGE_URL
+            if row.get("source_uri") != expected_source_uri:
+                issues.append(ValidationIssue("$.http_receipts", "drugs_fda.source_uri", f"{kind} source URI must equal the reviewed endpoint"))
+            if not _reviewed_fda_https_url(row.get("final_url")):
+                issues.append(ValidationIssue("$.http_receipts", "drugs_fda.final_url", f"{kind} final URL must remain on an approved FDA HTTPS host"))
+            raw_key = row.get("raw_object_key")
+            response_hash = row.get("exact_response_sha256")
+            suffix = ".zip" if kind == "archive" else ".html"
+            expected_key = (
+                f"biocatalyst/raw/drugs_at_fda/archive/{response_hash}.zip"
+                if kind == "archive" and isinstance(response_hash, str)
+                else f"biocatalyst/raw/drugs_at_fda/landing/{response_hash}.html"
+                if kind in {"landing_before", "landing_after"} and isinstance(response_hash, str)
+                else None
+            )
+            if raw_key != expected_key:
+                issues.append(ValidationIssue("$.http_receipts", "drugs_fda.raw_key_binding", f"raw key must bind the {kind} directory, response SHA, and type"))
+            parsed = _parse_temporal(row.get("received_at"))
+            if parsed is not None:
+                received_values.append(parsed)
+    if len(received_values) == 3:
+        before_time, archive_time, after_time = received_values
+        observed_time = _parse_temporal(receipt.get("observed_at"))
+        if not (before_time <= archive_time <= after_time and (observed_time is None or after_time <= observed_time)):
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.receipt_order", "landing-before, archive, landing-after, and observed times must be nondecreasing"))
+    return issues
+
+
+def _append_drugs_at_fda_receipt_raw_body_issues(
+    issues: list[ValidationIssue],
+    receipt: Mapping[str, Any],
+    *,
+    raw_bodies_by_kind: Mapping[str, bytes | bytearray | memoryview] | None,
+) -> None:
+    if raw_bodies_by_kind is None:
+        return
+    rows = receipt.get("http_receipts")
+    if not isinstance(rows, list):
+        return
+    bodies: dict[str, bytes] = {}
+    by_kind: dict[str, Mapping[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, Mapping) or not isinstance(row.get("kind"), str):
+            continue
+        kind = row["kind"]
+        by_kind[kind] = row
+        body = raw_bodies_by_kind.get(kind)
+        if not isinstance(body, (bytes, bytearray, memoryview)):
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.raw_body", f"missing exact body for {kind}"))
+            continue
+        raw = bytes(body)
+        bodies[kind] = raw
+        if row.get("exact_response_sha256") != hashlib.sha256(raw).hexdigest() or row.get("byte_count") != len(raw):
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.raw_binding", f"receipt does not bind exact body for {kind}"))
+    if set(bodies) != {"landing_before", "archive", "landing_after"}:
+        return
+    landing_dates: list[str] = []
+    for kind in ("landing_before", "landing_after"):
+        try:
+            text = bodies[kind].decode("utf-8")
+        except UnicodeDecodeError:
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.landing_release_date", f"{kind} must be UTF-8 FDA landing evidence"))
+            continue
+        visible = unescape(text)
+        match = re.search(
+            r"Data\s+Last\s+Updated:\s*([A-Za-z]+\s+[0-9]{1,2}(?:st|nd|rd|th)?\s*,?\s*[0-9]{4})",
+            visible,
+            flags=re.IGNORECASE,
+        )
+        if "<html" not in text.casefold() or _FDA_ARCHIVE_URL not in visible or match is None:
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.landing_release_date", f"{kind} must carry the reviewed archive link and source-reported release date"))
+            continue
+        raw_date = re.sub(r"(st|nd|rd|th)\b", "", match.group(1).strip(), flags=re.IGNORECASE)
+        try:
+            landing_dates.append(datetime.strptime(raw_date, "%B %d, %Y").date().isoformat())
+        except ValueError:
+            issues.append(ValidationIssue("$.http_receipts", "drugs_fda.landing_release_date", f"{kind} carries an invalid source-reported release date"))
+    archive_headers = by_kind.get("archive", {}).get("response_headers", {})
+    disposition = archive_headers.get("content-disposition", "") if isinstance(archive_headers, Mapping) else ""
+    token = re.search(r"filename=(?:\"?)(?:dafdata)([0-9]{8})\.zip", str(disposition), flags=re.IGNORECASE)
+    archive_date: str | None = None
+    if token is not None:
+        try:
+            archive_date = datetime.strptime(token.group(1), "%Y%m%d").date().isoformat()
+        except ValueError:
+            archive_date = None
+    if archive_date is None:
+        issues.append(ValidationIssue("$.http_receipts", "drugs_fda.archive_release_date", "archive content-disposition must carry a valid dafdataYYYYMMDD.zip release token"))
+    expected_date = receipt.get("source_release_date")
+    if len(landing_dates) == 2 and (
+        landing_dates[0] != landing_dates[1]
+        or landing_dates[0] != expected_date
+        or archive_date != expected_date
+    ):
+        issues.append(ValidationIssue("$.source_release_date", "drugs_fda.release_date_binding", "outer, landing-before, archive filename, and landing-after release dates must agree exactly"))
+
+
+def validate_drugs_at_fda_table_manifest(
+    manifest: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+    *,
+    exact_member_bytes: bytes | bytearray | memoryview | None = None,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Bind one table manifest to one exact release/member without inference."""
+    # Validate the parent receipt first.  A table can only have meaning inside
+    # the exact archive transaction it claims to describe.
+    validate_drugs_at_fda_release_receipt(receipt, repo_root=repo_root)
+    registry = ContractRegistry(repo_root)
+    registry.validate("drugs_at_fda_table_manifest.v1", manifest)
+    issues: list[ValidationIssue] = []
+    if manifest.get("release_id") != receipt.get("release_id") or manifest.get("archive_sha256") != receipt.get("archive_sha256"):
+        issues.append(ValidationIssue("$.release_id", "drugs_fda.release_binding", "manifest release identity must equal validated receipt"))
+    if exact_member_bytes is not None:
+        payload = bytes(exact_member_bytes)
+        expected_crc32 = f"{binascii.crc32(payload) & 0xffffffff:08x}"
+        if (
+            manifest.get("member_sha256") != hashlib.sha256(payload).hexdigest()
+            or manifest.get("uncompressed_byte_count") != len(payload)
+            or manifest.get("zip_crc32") != expected_crc32
+        ):
+            issues.append(ValidationIssue("$.member_sha256", "drugs_fda.member_binding", "manifest must bind exact uncompressed member bytes"))
+        try:
+            from collectors.biocatalyst.drugs_at_fda import _parse_tsv
+
+            _rows, recomputed = _parse_tsv(
+                table_name=str(manifest.get("table_name")),
+                payload=payload,
+                archive_sha256=str(manifest.get("archive_sha256")),
+                compressed_byte_count=int(manifest.get("compressed_byte_count", 0)),
+                uncompressed_byte_count=len(payload),
+                crc32=binascii.crc32(payload) & 0xffffffff,
+                retain_rows=False,
+            )
+            semantic_fields = (
+                "member_sha256",
+                "uncompressed_byte_count",
+                "zip_crc32",
+                "row_count",
+                "header",
+                "primary_key_fields",
+                "encoding",
+                "field_count_profile",
+                "ordered_row_digest_sha256",
+                "typed_row_semantic_digest_sha256",
+                "row_shape_repairs",
+            )
+            if any(manifest.get(field) != recomputed.get(field) for field in semantic_fields):
+                issues.append(ValidationIssue("$", "drugs_fda.member_semantics", "manifest row semantics must be recomputed from exact member bytes"))
+        except (ImportError, RuntimeError, TypeError, ValueError) as exc:
+            # Exact-member validation is an acceptance boundary.  Parser or
+            # import failures become a validation issue, never an untyped
+            # exception or a reason to trust the manifest's self-description.
+            issues.append(ValidationIssue("$", "drugs_fda.member_semantics", f"exact member semantics could not be verified: {type(exc).__name__}"))
+    if issues:
+        raise ContractValidationError("drugs_at_fda_table_manifest.v1", issues)
+
+
+def _drugs_at_fda_table_manifest_issues(
+    manifest: Mapping[str, Any],
+) -> list[ValidationIssue]:
+    """Validate deterministic table semantics without a parent receipt.
+
+    Imported parser constants are intentionally lazy so the contract registry
+    stays dependency-light at process start; no collector import happens while
+    this module itself is imported.
+    """
+    from collectors.biocatalyst.drugs_at_fda import (
+        EXPECTED_HEADERS,
+        PRIMARY_KEY_FIELDS,
+        _APPDOCS_EMPTY_FIELD_EXCEPTION,
+    )
+
+    issues: list[ValidationIssue] = []
+    expected_hash = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_payload_sha256"}
+    )
+    if manifest.get("manifest_payload_sha256") != expected_hash:
+        issues.append(ValidationIssue("$.manifest_payload_sha256", "drugs_fda.manifest_hash", "manifest hash does not bind canonical payload"))
+    table_name = manifest.get("table_name")
+    archive_sha = manifest.get("archive_sha256")
+    expected_id = f"drugs_at_fda_table_{canonical_json_sha256({'archive': archive_sha, 'table': table_name})[:24]}"
+    if manifest.get("table_manifest_id") != expected_id:
+        issues.append(ValidationIssue("$.table_manifest_id", "drugs_fda.manifest_identity", "manifest ID must bind archive SHA and table name"))
+    if manifest.get("release_id") != f"drugs_at_fda_release_{str(archive_sha)[:24]}":
+        issues.append(ValidationIssue("$.release_id", "drugs_fda.release_identity", "manifest release ID must be derived only from archive SHA-256"))
+    if table_name not in EXPECTED_HEADERS:
+        issues.append(ValidationIssue("$.table_name", "drugs_fda.table_set", "table must be one of the exact 12 Drugs@FDA members"))
+        return issues
+    if manifest.get("header") != list(EXPECTED_HEADERS[table_name]):
+        issues.append(ValidationIssue("$.header", "drugs_fda.header", "table header must equal the exact source-native header"))
+    if manifest.get("primary_key_fields") != list(PRIMARY_KEY_FIELDS[table_name]):
+        issues.append(ValidationIssue("$.primary_key_fields", "drugs_fda.primary_key", "table primary-key fields must equal the parser contract"))
+    profile = manifest.get("field_count_profile")
+    row_count = manifest.get("row_count")
+    if isinstance(profile, Mapping) and isinstance(row_count, int):
+        try:
+            profile_count = sum(value for value in profile.values() if isinstance(value, int))
+        except TypeError:
+            profile_count = -1
+        if profile_count != row_count:
+            issues.append(ValidationIssue("$.field_count_profile", "drugs_fda.field_profile", "field-count profile must reconcile exactly to row_count"))
+    repairs = manifest.get("row_shape_repairs")
+    if not isinstance(repairs, list):
+        return issues
+    expected_exception = _APPDOCS_EMPTY_FIELD_EXCEPTION
+    expected_repair = {
+        "rule": "application_docs_empty_field_before_date",
+        "row_number": expected_exception["row_number"],
+        "raw_row_sha256": expected_exception["raw_row_sha256"],
+        "expected_field_count": len(EXPECTED_HEADERS[expected_exception["table"]]),
+        "observed_field_count": len(EXPECTED_HEADERS[expected_exception["table"]]) + 1,
+    }
+    expected_repairs = (
+        [expected_repair]
+        if archive_sha == expected_exception["archive_sha256"]
+        and table_name == expected_exception["table"]
+        else []
+    )
+    if repairs != expected_repairs:
+        issues.append(ValidationIssue("$.row_shape_repairs", "drugs_fda.pinned_repair", "row-shape repairs must equal the single reviewed archive/table/physical-row exception and otherwise be empty"))
+    return issues
 
 
 def canonical_json_bytes(value: Any) -> bytes:
