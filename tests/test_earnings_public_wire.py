@@ -445,6 +445,14 @@ def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None
     assert 'push_on_main_ok' in workflow
     assert 'push_retry_init "earnings public wire"' in workflow
     assert "while push_attempt" in workflow
+    assert "push_fetch_main_for_rebase" in workflow
+    assert "git reset --hard origin/main" in workflow
+    assert "git clean -fd -- site/stocks/earnings" in workflow
+    assert "push_staged_clean site/stocks/earnings" in workflow
+    assert workflow.index("while push_attempt") < workflow.index("python -m scripts.build_earnings_public_wire")
+    assert workflow.index("git reset --hard origin/main") < workflow.index("python -m scripts.build_earnings_public_wire")
+    assert "git pull --rebase" not in workflow
+    assert "push_abort_rebase" not in workflow
     assert "push_do origin HEAD:main" in workflow
     assert "push_backoff" in workflow
     assert "Sitemap: https://www.mastermind-x.com/stocks/earnings/sitemap.xml" in robots
