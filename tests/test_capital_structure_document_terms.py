@@ -576,6 +576,7 @@ def test_public_authority_rejects_rebound_released_parser_resolver(monkeypatch):
 
 def test_public_document_trust_surfaces_expose_no_injectable_trust_parameters():
     surfaces = (
+        document_terms.validate_document_term_contract,
         document_terms.validate_observation_source_binding,
         document_terms.validate_document_term_source_authority,
         document_terms.validate_document_term_history,
@@ -687,6 +688,7 @@ def test_all_direct_record_trust_paths_enforce_closed_schema_and_zero_authority(
     tampered[0]["observation_id"] = observation_id_for(tampered[0])
 
     calls = (
+        lambda: document_terms.validate_document_term_contract(tampered[0]),
         lambda: validate_document_term_history(tampered),
         lambda: current_document_terms_as_of(tampered, "2026-08-04T00:00:00Z"),
         lambda: validate_observation_source_binding(tampered[0], manifest, raw),

@@ -534,6 +534,28 @@ def _validate_document_term_records_contract(
             )
 
 
+def _make_validate_document_term_contract(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    records_contract_validator: Callable[..., None],
+) -> Callable[[Mapping[str, Any]], None]:
+    """Build a sealed single-record contract gate for downstream projections."""
+    def validate_document_term_contract(record: Mapping[str, Any]) -> None:
+        """Admit one direct row through the closed schema and zero-authority law."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if (
+            globals().get("_validate_document_term_records_contract")
+            is not records_contract_validator
+        ):
+            raise ValueError("document-term closed-contract binding changed")
+        policy_validator()
+        records_contract_validator(
+            [record], label="document-term single-record contract",
+        )
+
+    return validate_document_term_contract
+
+
 def _decode(raw: bytes) -> str:
     """Decode only for structural parsing; all evidence hashes retain source bytes."""
     try:
@@ -3078,6 +3100,10 @@ _validated_authority_policy = _make_validated_authority_policy(
     _AUTHORITY_POLICY, _semantic_closure, hmac.compare_digest,
 )
 
+validate_document_term_contract = _make_validate_document_term_contract(
+    _validated_authority_policy,
+    _validate_document_term_records_contract,
+)
 validate_observation_source_binding = _make_validate_observation_source_binding(
     _validated_authority_policy,
     _registered_parser,

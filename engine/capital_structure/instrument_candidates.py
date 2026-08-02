@@ -32,11 +32,13 @@ from engine.capital_structure.document_terms import (
     SemanticEntrypoint,
     _semantic_closure,
     current_document_terms_as_of,
+    validate_document_term_contract,
     validate_document_term_source_authority,
 )
 
 
 _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF = current_document_terms_as_of
+_RELEASED_DOCUMENT_TERM_CONTRACT = validate_document_term_contract
 _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY = validate_document_term_source_authority
 
 
@@ -559,6 +561,8 @@ def _validate_candidate_source_binding_core(
 def _make_validate_candidate_source_binding(
     policy_validator: Callable[[], None],
     source_binding_core: Callable[[Mapping[str, Any], Mapping[str, Any]], None],
+    candidate_contract_validator: Callable[[Sequence[Mapping[str, Any]]], None],
+    document_contract_validator: Callable[[Mapping[str, Any]], None],
 ) -> Callable[[Mapping[str, Any], Mapping[str, Any]], None]:
     def validate_candidate_source_binding(
         record: Mapping[str, Any], source: Mapping[str, Any],
@@ -571,25 +575,32 @@ def _make_validate_candidate_source_binding(
             is not source_binding_core
         ):
             raise ValueError("instrument candidate source-binding core changed")
+        if (
+            globals().get("_validate_candidate_term_records_contract")
+            is not candidate_contract_validator
+        ):
+            raise ValueError("instrument candidate closed-contract binding changed")
+        if (
+            globals().get("validate_document_term_contract")
+            is not document_contract_validator
+        ):
+            raise ValueError("instrument candidate document-term contract binding changed")
         policy_validator()
+        candidate_contract_validator([record])
+        document_contract_validator(source)
         source_binding_core(record, source)
 
     return validate_candidate_source_binding
 
 
-def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
-    """Validate candidate-local shape, IDs, and correction chains only.
-
-    This is intentionally private: a candidate record duplicates direct-term
-    fields, and a recomputed candidate ID can make an altered duplicate look
-    structurally self-consistent.  It is therefore not proof of issuer,
-    evidence, direct-value, or source-receipt authority.  Public validation and
-    all PIT reads bind these rows to verified direct observations below.
-    """
+def _validate_candidate_term_records_contract(
+    records: Sequence[Mapping[str, Any]],
+) -> None:
+    """Apply the closed candidate schema to every admitted row."""
     iter_errors = _candidate_term_contract_validator()
-    by_id: set[str] = set()
-    by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for index, raw in enumerate(records):
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"instrument candidate-term row {index} must be an object")
         record = dict(raw)
         errors = sorted(
             iter_errors(record),
@@ -604,6 +615,22 @@ def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> 
             raise ValueError(
                 f"instrument candidate-term row {index} contract violation: {joined}"
             )
+
+
+def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
+    """Validate candidate-local shape, IDs, and correction chains only.
+
+    This is intentionally private: a candidate record duplicates direct-term
+    fields, and a recomputed candidate ID can make an altered duplicate look
+    structurally self-consistent.  It is therefore not proof of issuer,
+    evidence, direct-value, or source-receipt authority.  Public validation and
+    all PIT reads bind these rows to verified direct observations below.
+    """
+    _validate_candidate_term_records_contract(records)
+    by_id: set[str] = set()
+    by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for index, raw in enumerate(records):
+        record = dict(raw)
         candidate_id = str(record.get("candidate_term_id") or "")
         if candidate_id != candidate_term_id_for(record):
             raise ValueError(f"instrument candidate-term row {index} candidate_term_id digest mismatch")
@@ -1071,6 +1098,9 @@ def _make_compile_candidate_term_records(
 
 def _candidate_authority_entrypoints() -> tuple[SemanticEntrypoint, ...]:
     return (
+        SemanticEntrypoint(
+            "closed_candidate_contract", _validate_candidate_term_records_contract,
+        ),
         SemanticEntrypoint("source_binding", _validate_candidate_source_binding_core),
         SemanticEntrypoint("structure", _validate_candidate_term_structure),
         SemanticEntrypoint("history", _validate_candidate_term_history_core),
@@ -1084,15 +1114,19 @@ def _candidate_authority_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 
 # Release goldens are filled only when an intentional candidate authority
 # implementation or closed-schema change is reviewed.
-_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 181
+_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 192
 _CANDIDATE_AUTHORITY_DEPENDENCY_MANIFEST_SHA256 = (
-    "65294bb1d775764cb62f91dd1a8bd32049cb7f2195e0a7484b2ea12e8c3b74a4"
+    "0d83f59ab85e2ab1b4ae40756384557fe42b90e2e7c572f75f884801442496cb"
 )
 _CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256 = (
-    "bdb1f39c21373eddc860995066d34d62415e83909d8266043c71c72208f395b1"
+    "a6338671c6459dfd9420efb360aacd4cdd949afa163b22708c50e12098fc3c37"
 )
 _CANDIDATE_AUTHORITY_ENTRYPOINTS = _candidate_authority_entrypoints()
 _CANDIDATE_AUTHORITY_ALIAS_BINDINGS = (
+    (
+        "_validate_candidate_term_records_contract",
+        _validate_candidate_term_records_contract,
+    ),
     ("_validate_candidate_source_binding_core", _validate_candidate_source_binding_core),
     ("_validate_candidate_term_structure", _validate_candidate_term_structure),
     ("_validate_candidate_term_history_core", _validate_candidate_term_history_core),
@@ -1149,6 +1183,8 @@ _validated_candidate_authority_policy = _make_validated_candidate_authority_poli
 validate_candidate_source_binding = _make_validate_candidate_source_binding(
     _validated_candidate_authority_policy,
     _validate_candidate_source_binding_core,
+    _validate_candidate_term_records_contract,
+    _RELEASED_DOCUMENT_TERM_CONTRACT,
 )
 validate_candidate_term_structure = _make_validate_candidate_term_structure(
     _validated_candidate_authority_policy,

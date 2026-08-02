@@ -253,14 +253,15 @@ def test_candidate_authority_policy_has_release_golden_closure():
             instrument_candidates._CANDIDATE_AUTHORITY_ENTRYPOINTS,
         )
     )
-    assert len(manifest) == 181
+    assert len(manifest) == 192
     assert manifest_sha256 == (
-        "65294bb1d775764cb62f91dd1a8bd32049cb7f2195e0a7484b2ea12e8c3b74a4"
+        "0d83f59ab85e2ab1b4ae40756384557fe42b90e2e7c572f75f884801442496cb"
     )
     assert implementation_sha256 == (
-        "bdb1f39c21373eddc860995066d34d62415e83909d8266043c71c72208f395b1"
+        "a6338671c6459dfd9420efb360aacd4cdd949afa163b22708c50e12098fc3c37"
     )
     for required in (
+        "._validate_candidate_term_records_contract",
         "._validate_candidate_term_structure",
         "._validate_candidate_source_binding_core",
         "._validate_candidate_term_history_core",
@@ -318,6 +319,61 @@ def test_candidate_schema_provider_monkeypatch_cannot_admit_unknown_fields(monke
     monkeypatch.setattr(jsonschema, "Draft202012Validator", NoopValidator)
     with pytest.raises(ValueError, match="contract violation"):
         instrument_candidates.validate_candidate_term_structure(tampered)
+
+
+def test_candidate_source_binding_admits_both_rows_through_closed_contracts():
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    candidate = rows[0]
+    direct = next(
+        row
+        for row in source
+        if row["observation_id"] == candidate["source_term"]["observation_id"]
+    )
+    instrument_candidates.validate_candidate_source_binding(candidate, direct)
+
+    tampered_candidate = deepcopy(candidate)
+    tampered_candidate["unexpected_top_level"] = "smuggled"
+    tampered_candidate["candidate_term_id"] = candidate_term_id_for(
+        tampered_candidate,
+    )
+    with pytest.raises(ValueError, match="contract violation"):
+        instrument_candidates.validate_candidate_source_binding(
+            tampered_candidate, direct,
+        )
+
+    tampered_direct = deepcopy(direct)
+    tampered_direct["unexpected_top_level"] = "smuggled"
+    tampered_direct["observation_id"] = observation_id_for(tampered_direct)
+    rebound_candidate = instrument_candidates._project_record(
+        tampered_direct,
+        generated_at="2026-08-04T00:00:00Z",
+        correction_version=1,
+        correction_of=None,
+    )
+    with pytest.raises(ValueError, match="document-term contract violation"):
+        instrument_candidates.validate_candidate_source_binding(
+            rebound_candidate, tampered_direct,
+        )
+
+
+def test_candidate_source_binding_rejects_rebound_document_contract(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    candidate = _compile(
+        source, manifests=manifests, reader=reader,
+    )["observations"][0]
+    direct = next(
+        row
+        for row in source
+        if row["observation_id"] == candidate["source_term"]["observation_id"]
+    )
+    monkeypatch.setattr(
+        instrument_candidates,
+        "validate_document_term_contract",
+        lambda _record: None,
+    )
+    with pytest.raises(ValueError, match="document-term contract binding changed"):
+        instrument_candidates.validate_candidate_source_binding(candidate, direct)
 
 
 @pytest.mark.parametrize("method_name", ["iter_errors", "descend"])
