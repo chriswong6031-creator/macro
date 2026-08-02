@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_dossiers.v1.schema.json",
+  "title": "Government Revenue Read-only Dossiers v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "content_id", "as_of", "known_at", "generated_at",
+    "authority", "source_coverage", "freshness", "companies", "awards", "actions",
+    "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue_dossiers.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^grd1-[a-f0-9]{24}$"},
+    "as_of": {"type": "string", "format": "date"},
+    "known_at": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "source_coverage": {"$ref": "#/$defs/sourceCoverage"},
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "companies": {
+      "type": "array", "maxItems": 1000,
+      "items": {"$ref": "#/$defs/company"}
+    },
+    "awards": {
+      "type": "array", "maxItems": 5000,
+      "items": {"$ref": "#/$defs/award"}
+    },
+    "actions": {
+      "type": "array", "maxItems": 50000,
+      "items": {"$ref": "#/$defs/action"}
+    },
+    "limitations": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+    }
+  },
+  "$defs": {
+    "nullableText": {"type": ["string", "null"], "maxLength": 4000},
+    "nullableDate": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
+    "nullableInstant": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true},
+        "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false},
+        "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    },
+    "collectionScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["association_type", "issuer_attribution", "statement"],
+      "properties": {
+        "association_type": {"const": "discovery_collection_scope"},
+        "issuer_attribution": {"const": "not_asserted"},
+        "statement": {"const": "Curated discovery-query membership is collection scope only and is not recipient-to-issuer attribution."}
+      }
+    },
+    "sourceCoverageRail": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "records_loaded", "records_published", "records_dropped", "configured_cap", "truncated_by_artifact_cap", "bounded_collection", "reason"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "records_loaded": {"type": "integer", "minimum": 0},
+        "records_published": {"type": "integer", "minimum": 0},
+        "records_dropped": {"type": "integer", "minimum": 0},
+        "configured_cap": {"type": "integer", "minimum": 1},
+        "truncated_by_artifact_cap": {"type": "boolean"},
+        "bounded_collection": {"type": ["boolean", "null"]},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "sourceCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["awards", "actions", "issuer_attribution"],
+      "properties": {
+        "awards": {"$ref": "#/$defs/sourceCoverageRail"},
+        "actions": {"$ref": "#/$defs/sourceCoverageRail"},
+        "issuer_attribution": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "records_attributed", "reason"],
+          "properties": {
+            "status": {"const": "not_asserted"},
+            "records_attributed": {"const": 0},
+            "reason": {"const": "No discovery ticker, company name, or fuzzy recipient name is used as issuer proof in this artifact."}
+          }
+        }
+      }
+    },
+    "freshnessRail": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "observed_at", "known_at", "reason"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "freshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "awards", "actions"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "awards": {"$ref": "#/$defs/freshnessRail"},
+        "actions": {"$ref": "#/$defs/freshnessRail"}
+      }
+    },
+    "company": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticker", "name", "collection_scope", "award_keys", "award_count", "action_count", "known_at"],
+      "properties": {
+        "ticker": {"$ref": "#/$defs/ticker"},
+        "name": {"type": "string", "minLength": 1, "maxLength": 300},
+        "collection_scope": {"$ref": "#/$defs/collectionScope"},
+        "award_keys": {"type": "array", "maxItems": 5000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 600}},
+        "award_count": {"type": "integer", "minimum": 0},
+        "action_count": {"type": "integer", "minimum": 0},
+        "known_at": {"$ref": "#/$defs/nullableInstant"}
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "generated_award_id", "source_award_key", "piid"],
+      "properties": {
+        "kind": {"enum": ["generated_award_id", "source_award_key", "piid_scoped_official_fields"]},
+        "generated_award_id": {"$ref": "#/$defs/nullableText"}, "source_award_key": {"$ref": "#/$defs/nullableText"},
+        "piid": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "recipient": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "uei"],
+      "properties": {"name": {"$ref": "#/$defs/nullableText"}, "uei": {"$ref": "#/$defs/nullableText"}}
+    },
+    "agency": {
+      "type": "object", "additionalProperties": false,
+      "required": ["awarding", "awarding_subagency", "funding", "funding_subagency"],
+      "properties": {
+        "awarding": {"$ref": "#/$defs/nullableText"}, "awarding_subagency": {"$ref": "#/$defs/nullableText"},
+        "funding": {"$ref": "#/$defs/nullableText"}, "funding_subagency": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "classifications": {
+      "type": "object", "additionalProperties": false,
+      "required": ["award_type", "naics", "psc", "program"],
+      "properties": {
+        "award_type": {"$ref": "#/$defs/nullableText"}, "naics": {"$ref": "#/$defs/nullableText"},
+        "psc": {"$ref": "#/$defs/nullableText"}, "program": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "dates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["base_obligation_date", "start_date", "end_date", "last_modified_date", "effective_at", "known_at", "first_seen_at", "last_seen_at"],
+      "properties": {
+        "base_obligation_date": {"$ref": "#/$defs/nullableDate"}, "start_date": {"$ref": "#/$defs/nullableDate"},
+        "end_date": {"$ref": "#/$defs/nullableDate"}, "last_modified_date": {"$ref": "#/$defs/nullableDate"},
+        "effective_at": {"$ref": "#/$defs/nullableDate"}, "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "first_seen_at": {"$ref": "#/$defs/nullableInstant"}, "last_seen_at": {"$ref": "#/$defs/nullableInstant"}
+      }
+    },
+    "values": {
+      "type": "object", "additionalProperties": false,
+      "required": ["obligated", "current_award_value", "ceiling", "total_outlays", "currency"],
+      "properties": {
+        "obligated": {"type": ["number", "null"]}, "current_award_value": {"type": ["number", "null"]},
+        "ceiling": {"type": ["number", "null"]}, "total_outlays": {"type": ["number", "null"]}, "currency": {"const": "USD"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publisher", "award_search_url", "award_detail_url", "award_page_url", "action_history_url"],
+      "properties": {
+        "publisher": {"const": "USAspending.gov"},
+        "award_search_url": {"type": "string", "format": "uri", "maxLength": 1000},
+        "award_detail_url": {"type": ["string", "null"], "format": "uri", "maxLength": 1000},
+        "award_page_url": {"type": ["string", "null"], "format": "uri", "maxLength": 1000},
+        "action_history_url": {"type": "string", "format": "uri", "maxLength": 1000}
+      }
+    },
+    "award": {
+      "type": "object", "additionalProperties": false,
+      "required": ["award_key", "identity", "record_origin", "collection_scope_tickers", "recipient", "description", "agency", "classifications", "dates", "values", "source", "provenance", "action_keys", "action_count"],
+      "properties": {
+        "award_key": {"type": "string", "minLength": 1, "maxLength": 600},
+        "identity": {"$ref": "#/$defs/identity"},
+        "record_origin": {"enum": ["award_record", "action_seeded_stub"]},
+        "collection_scope_tickers": {"type": "array", "maxItems": 100, "uniqueItems": true, "items": {"$ref": "#/$defs/ticker"}},
+        "recipient": {"$ref": "#/$defs/recipient"},
+        "description": {"$ref": "#/$defs/nullableText"},
+        "agency": {"$ref": "#/$defs/agency"},
+        "classifications": {"$ref": "#/$defs/classifications"},
+        "dates": {"$ref": "#/$defs/dates"},
+        "values": {"$ref": "#/$defs/values"},
+        "source": {"$ref": "#/$defs/source"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "action_keys": {"type": "array", "maxItems": 50000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 800}},
+        "action_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_record_count", "effective_at", "known_at", "limitations"],
+      "properties": {
+        "source_record_count": {"type": "integer", "minimum": 1},
+        "effective_at": {"$ref": "#/$defs/nullableDate"}, "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "limitations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}
+      }
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action_key", "action_id", "award_key", "modification_number", "action_type", "action_type_description", "description", "action_date", "effective_at", "known_at", "first_seen_at", "obligation", "source"],
+      "properties": {
+        "action_key": {"type": "string", "minLength": 1, "maxLength": 800},
+        "action_id": {"type": "string", "minLength": 1, "maxLength": 400},
+        "award_key": {"type": "string", "minLength": 1, "maxLength": 600},
+        "modification_number": {"$ref": "#/$defs/nullableText"},
+        "action_type": {"$ref": "#/$defs/nullableText"},
+        "action_type_description": {"$ref": "#/$defs/nullableText"},
+        "description": {"$ref": "#/$defs/nullableText"},
+        "action_date": {"$ref": "#/$defs/nullableDate"},
+        "effective_at": {"$ref": "#/$defs/nullableDate"},
+        "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "first_seen_at": {"$ref": "#/$defs/nullableInstant"},
+        "obligation": {"type": ["number", "null"]},
+        "source": {
+          "type": "object", "additionalProperties": false,
+          "required": ["publisher", "transaction_url", "award_page_url", "native_action_id"],
+          "properties": {
+            "publisher": {"const": "USAspending.gov"}, "transaction_url": {"type": "string", "format": "uri", "maxLength": 1000},
+            "award_page_url": {"type": ["string", "null"], "format": "uri", "maxLength": 1000}, "native_action_id": {"const": true}
+          }
+        }
+      }
+    }
+  }
+}

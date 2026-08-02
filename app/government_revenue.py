@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import json
 import os
 import re
@@ -19,6 +20,11 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import APIRouter, HTTPException, Query
 
+from engine.government_revenue.dossiers import (
+    DOSSIER_CONTRACT,
+    dossier_content_id,
+    is_valid_dossier_payload,
+)
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
 router = APIRouter()
@@ -28,10 +34,16 @@ _PATHS = (
     _REPO / "data" / "government_revenue" / "latest.json",
     _REPO / "site" / "government-revenue-data" / "latest.json",
 )
+_DOSSIER_PATHS = (
+    _REPO / "data" / "government_revenue" / "dossiers.json",
+    _REPO / "site" / "government-revenue-data" / "dossiers.json",
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 _NOTICE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_AWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
 _LOCK = threading.Lock()
 _CACHE: dict = {"path": None, "mtime_ns": None, "payload": None}
+_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SENSITIVE_KEY = re.compile(
     r"(?:^private|api[_-]?key|authorization|(?:^|_)(?:secret|token|password|credential)s?(?:$|_)|"
     r"raw_(?:body|payload|receipt|request|response)|(?:request|response)_headers)",
@@ -40,6 +52,10 @@ _SENSITIVE_KEY = re.compile(
 _SENSITIVE_QUERY_KEY = re.compile(
     r"(?:api[_-]?key|authorization|secret|token|password|credential)", re.IGNORECASE
 )
+_SENSITIVE_INLINE_VALUE = re.compile(
+    r"(?i)\b(api[_-]?key|authorization|secret|token|password|credential)\s*[:=]\s*[^\s,;&]+"
+)
+_DOSSIER_SOURCE_HOSTS = {"api.usaspending.gov", "usaspending.gov", "www.usaspending.gov"}
 
 
 def _public_url(value: object) -> str | None:
@@ -76,11 +92,67 @@ def _scrub_public(value: object) -> object:
         return [_scrub_public(item) for item in value]
     if isinstance(value, str) and value.lower().startswith(("http://", "https://")):
         return _public_url(value)
+    if isinstance(value, str):
+        return _SENSITIVE_INLINE_VALUE.sub(r"\1=[redacted]", value)
     return value
 
 
 def _artifact_path() -> Path | None:
     return next((path for path in _PATHS if path.exists()), None)
+
+
+def _dossier_source_url(value: object) -> str | None:
+    """The dossier rail admits only scrubbed official USAspending HTTPS URLs."""
+    safe = _public_url(value)
+    if safe is None:
+        return None
+    try:
+        host = urlsplit(safe).hostname
+    except ValueError:
+        return None
+    return safe if host and host.lower() in _DOSSIER_SOURCE_HOSTS else None
+
+
+def _load_dossiers() -> dict:
+    """Load one byte-identical, schema-validated dossier generation or fail closed.
+
+    Both canonical and site twins are required.  Serving one after a partial
+    publication could silently detach a cursor's content identity from the
+    static artifact, so a transient mismatch is intentionally a 503 rather
+    than a stale best-effort response.
+    """
+    canonical, site = _DOSSIER_PATHS
+    try:
+        canonical_state = canonical.stat()
+        site_state = site.stat()
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="government revenue dossier artifact unavailable") from exc
+    state = (
+        canonical_state.st_mtime_ns,
+        canonical_state.st_size,
+        site_state.st_mtime_ns,
+        site_state.st_size,
+    )
+    with _LOCK:
+        if _DOSSIER_CACHE["payload"] is not None and _DOSSIER_CACHE["state"] == state:
+            return _DOSSIER_CACHE["payload"]
+        try:
+            canonical_bytes = canonical.read_bytes()
+            site_bytes = site.read_bytes()
+            payload = json.loads(canonical_bytes)
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="government revenue dossier artifact unreadable") from exc
+        if canonical_bytes != site_bytes:
+            raise HTTPException(status_code=503, detail="government revenue dossier artifact twin mismatch")
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != DOSSIER_CONTRACT
+            or not is_valid_dossier_payload(payload)
+            or dossier_content_id(payload) != payload.get("content_id")
+        ):
+            raise HTTPException(status_code=503, detail="government revenue dossier artifact schema mismatch")
+        _DOSSIER_CACHE.update(state=state, payload=payload)
+        return payload
 
 
 def _load() -> dict:
@@ -218,6 +290,151 @@ def _validated_ticker(value: str | None) -> str | None:
     return ticker
 
 
+def _validated_award_key(value: str) -> str:
+    if not _AWARD_KEY.fullmatch(value):
+        raise HTTPException(status_code=400, detail="invalid award key")
+    return value
+
+
+def _dossier_cursor_binding(scope: dict) -> str:
+    """Bind opaque cursors to the exact artifact, route, and stored-field filters."""
+    raw = json.dumps(scope, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def _encode_dossier_cursor(offset: int, *, content_id: str, binding: str) -> str:
+    if offset < 0 or offset > 50_000:
+        raise ValueError("invalid dossier cursor offset")
+    raw = f"d1:{content_id}:{binding}:{offset}"
+    return base64.urlsafe_b64encode(raw.encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_dossier_cursor(cursor: str | None, *, content_id: str, binding: str) -> int:
+    if not cursor:
+        return 0
+    if len(cursor) > 180 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid dossier cursor")
+    try:
+        padded = cursor + "=" * (-len(cursor) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("ascii")
+        version, cursor_content, cursor_binding, offset = raw.split(":", 3)
+        value = int(offset)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid dossier cursor") from exc
+    if (
+        version != "d1"
+        or cursor_content != content_id
+        or cursor_binding != binding
+        or value < 0
+        or value > 50_000
+    ):
+        raise HTTPException(status_code=400, detail="invalid dossier cursor")
+    return value
+
+
+def _dossier_company_map(payload: dict) -> dict[str, dict]:
+    return {
+        row["ticker"]: row
+        for row in payload.get("companies") or []
+        if isinstance(row, dict) and isinstance(row.get("ticker"), str)
+    }
+
+
+def _dossier_award_map(payload: dict) -> dict[str, dict]:
+    return {
+        row["award_key"]: row
+        for row in payload.get("awards") or []
+        if isinstance(row, dict) and isinstance(row.get("award_key"), str)
+    }
+
+
+def _dossier_action_map(payload: dict) -> dict[str, dict]:
+    return {
+        row["action_key"]: row
+        for row in payload.get("actions") or []
+        if isinstance(row, dict) and isinstance(row.get("action_key"), str)
+    }
+
+
+def _public_dossier_company(row: dict) -> dict:
+    allowed = {
+        "ticker", "name", "collection_scope", "award_count", "action_count", "known_at",
+    }
+    return _scrub_public({key: row[key] for key in allowed if key in row})
+
+
+def _public_dossier_award(row: dict) -> dict:
+    """Strict projection: only schema-listed public fields, never raw receipts."""
+    allowed = {
+        "award_key", "identity", "record_origin", "collection_scope_tickers", "recipient",
+        "description", "agency", "classifications", "dates", "values", "provenance", "action_count",
+    }
+    out = {key: row[key] for key in allowed if key in row}
+    source = row.get("source")
+    if isinstance(source, dict):
+        out["source"] = {
+            "publisher": "USAspending.gov",
+            "award_search_url": _dossier_source_url(source.get("award_search_url")),
+            "award_detail_url": _dossier_source_url(source.get("award_detail_url")),
+            "award_page_url": _dossier_source_url(source.get("award_page_url")),
+            "action_history_url": _dossier_source_url(source.get("action_history_url")),
+        }
+    return _scrub_public(out)
+
+
+def _public_dossier_action(row: dict) -> dict:
+    allowed = {
+        "action_key", "action_id", "award_key", "modification_number", "action_type",
+        "action_type_description", "description", "action_date", "effective_at", "known_at",
+        "first_seen_at", "obligation",
+    }
+    out = {key: row[key] for key in allowed if key in row}
+    source = row.get("source")
+    if isinstance(source, dict):
+        out["source"] = {
+            "publisher": "USAspending.gov",
+            "transaction_url": _dossier_source_url(source.get("transaction_url")),
+            "award_page_url": _dossier_source_url(source.get("award_page_url")),
+            "native_action_id": bool(source.get("native_action_id") is True),
+        }
+    return _scrub_public(out)
+
+
+def _dossier_envelope(payload: dict, *, results: list[dict], next_cursor: str | None, total: int) -> dict:
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "results": results,
+        "next_cursor": next_cursor,
+        "total": total,
+    })
+
+
+def _official_award_text(row: dict) -> str:
+    """The query corpus intentionally excludes discovery tickers and company names."""
+    identity = row.get("identity") if isinstance(row.get("identity"), dict) else {}
+    recipient = row.get("recipient") if isinstance(row.get("recipient"), dict) else {}
+    agency = row.get("agency") if isinstance(row.get("agency"), dict) else {}
+    classifications = row.get("classifications") if isinstance(row.get("classifications"), dict) else {}
+    return " ".join(str(value or "") for value in (
+        identity.get("generated_award_id"), identity.get("piid"), recipient.get("name"),
+        row.get("description"), agency.get("awarding"), agency.get("awarding_subagency"),
+        agency.get("funding"), agency.get("funding_subagency"), classifications.get("award_type"),
+        classifications.get("naics"), classifications.get("psc"), classifications.get("program"),
+    )).casefold()
+
+
+def _official_action_text(row: dict) -> str:
+    return " ".join(str(value or "") for value in (
+        row.get("action_id"), row.get("modification_number"), row.get("action_type"),
+        row.get("action_type_description"), row.get("description"),
+    )).casefold()
+
+
 @router.get("/api/government-revenue/latest")
 def latest(limit: int = Query(default=100, ge=1, le=250)) -> dict:
     payload = _load()
@@ -266,6 +483,177 @@ def company(ticker: str) -> dict:
         "authority": payload.get("authority"),
         "company": _public_company(row),
     }
+
+
+@router.get("/api/government-revenue/dossier/company/{ticker}")
+def dossier_company(ticker: str) -> dict:
+    """Return precomputed collection-scope metadata, not issuer attribution."""
+    ticker = _validated_ticker(ticker)
+    payload = _load_dossiers()
+    row = _dossier_company_map(payload).get(ticker)
+    if row is None:
+        raise HTTPException(status_code=404, detail="company collection scope not covered")
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "company": _public_dossier_company(row),
+    })
+
+
+def _award_sort_key(row: dict, sort: str) -> tuple:
+    values = row.get("values") if isinstance(row.get("values"), dict) else {}
+    dates = row.get("dates") if isinstance(row.get("dates"), dict) else {}
+    if sort == "obligation_desc":
+        return (float(values.get("obligated") or float("-inf")), str(row.get("award_key") or ""))
+    if sort == "current_value_desc":
+        return (float(values.get("current_award_value") or float("-inf")), str(row.get("award_key") or ""))
+    if sort == "ceiling_desc":
+        return (float(values.get("ceiling") or float("-inf")), str(row.get("award_key") or ""))
+    return (str(dates.get("effective_at") or ""), str(dates.get("known_at") or ""), str(row.get("award_key") or ""))
+
+
+@router.get("/api/government-revenue/company/{ticker}/awards")
+def company_awards(
+    ticker: str,
+    q: str | None = Query(default=None, min_length=1, max_length=160),
+    agency: str | None = Query(default=None, min_length=1, max_length=200),
+    naics: str | None = Query(default=None, min_length=1, max_length=32),
+    psc: str | None = Query(default=None, min_length=1, max_length=32),
+    award_type: str | None = Query(default=None, min_length=1, max_length=160),
+    sort: str = Query(default="effective_desc", pattern=r"^(effective_desc|obligation_desc|current_value_desc|ceiling_desc)$"),
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> dict:
+    """Cursor through precomputed award history using official stored fields only."""
+    ticker = _validated_ticker(ticker)
+    payload = _load_dossiers()
+    company_row = _dossier_company_map(payload).get(ticker)
+    if company_row is None:
+        raise HTTPException(status_code=404, detail="company collection scope not covered")
+    normalized = {
+        "q": q.casefold().strip() if q else None,
+        "agency": agency.casefold().strip() if agency else None,
+        "naics": naics.casefold().strip() if naics else None,
+        "psc": psc.casefold().strip() if psc else None,
+        "award_type": award_type.casefold().strip() if award_type else None,
+        "sort": sort,
+    }
+    if any(value == "" for value in normalized.values() if isinstance(value, str)):
+        raise HTTPException(status_code=400, detail="invalid award filter")
+    awards = _dossier_award_map(payload)
+    rows = [awards[key] for key in company_row.get("award_keys", []) if key in awards]
+    filtered: list[dict] = []
+    for row in rows:
+        agency_data = row.get("agency") if isinstance(row.get("agency"), dict) else {}
+        classes = row.get("classifications") if isinstance(row.get("classifications"), dict) else {}
+        if normalized["q"] and normalized["q"] not in _official_award_text(row):
+            continue
+        if normalized["agency"] and normalized["agency"] not in " ".join(
+            str(agency_data.get(key) or "") for key in ("awarding", "awarding_subagency", "funding", "funding_subagency")
+        ).casefold():
+            continue
+        if normalized["naics"] and normalized["naics"] != str(classes.get("naics") or "").casefold():
+            continue
+        if normalized["psc"] and normalized["psc"] != str(classes.get("psc") or "").casefold():
+            continue
+        if normalized["award_type"] and normalized["award_type"] != str(classes.get("award_type") or "").casefold():
+            continue
+        filtered.append(row)
+    filtered.sort(key=lambda row: _award_sort_key(row, sort), reverse=True)
+    binding = _dossier_cursor_binding({"route": "company_awards", "ticker": ticker, **normalized})
+    offset = _decode_dossier_cursor(
+        cursor, content_id=payload["content_id"], binding=binding,
+    )
+    page = filtered[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _dossier_envelope(
+        payload,
+        results=[_public_dossier_award(row) for row in page],
+        next_cursor=(
+            _encode_dossier_cursor(next_offset, content_id=payload["content_id"], binding=binding)
+            if next_offset < len(filtered) else None
+        ),
+        total=len(filtered),
+    )
+
+
+@router.get("/api/government-revenue/award/{award_key}/actions")
+def award_actions(
+    award_key: str,
+    q: str | None = Query(default=None, min_length=1, max_length=160),
+    action_type: str | None = Query(default=None, min_length=1, max_length=160),
+    sort: str = Query(default="effective_desc", pattern=r"^(effective_desc|obligation_desc)$"),
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> dict:
+    """Cursor through precomputed native-ID transaction observations for an award."""
+    award_key = _validated_award_key(award_key)
+    payload = _load_dossiers()
+    award_row = _dossier_award_map(payload).get(award_key)
+    if award_row is None:
+        raise HTTPException(status_code=404, detail="award not covered")
+    normalized_q = q.casefold().strip() if q else None
+    normalized_type = action_type.casefold().strip() if action_type else None
+    if normalized_q == "" or normalized_type == "":
+        raise HTTPException(status_code=400, detail="invalid action filter")
+    actions = _dossier_action_map(payload)
+    rows = [actions[key] for key in award_row.get("action_keys", []) if key in actions]
+    filtered = [
+        row for row in rows
+        if (not normalized_q or normalized_q in _official_action_text(row))
+        and (not normalized_type or normalized_type == str(row.get("action_type") or "").casefold())
+    ]
+    if sort == "obligation_desc":
+        filtered.sort(
+            key=lambda row: (float(row.get("obligation") or float("-inf")), str(row.get("action_key") or "")),
+            reverse=True,
+        )
+    else:
+        filtered.sort(
+            key=lambda row: (str(row.get("effective_at") or ""), str(row.get("known_at") or ""), str(row.get("action_key") or "")),
+            reverse=True,
+        )
+    binding = _dossier_cursor_binding({
+        "route": "award_actions", "award_key": award_key, "q": normalized_q,
+        "action_type": normalized_type, "sort": sort,
+    })
+    offset = _decode_dossier_cursor(
+        cursor, content_id=payload["content_id"], binding=binding,
+    )
+    page = filtered[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _dossier_envelope(
+        payload,
+        results=[_public_dossier_action(row) for row in page],
+        next_cursor=(
+            _encode_dossier_cursor(next_offset, content_id=payload["content_id"], binding=binding)
+            if next_offset < len(filtered) else None
+        ),
+        total=len(filtered),
+    )
+
+
+@router.get("/api/government-revenue/award/{award_key}")
+def award(award_key: str) -> dict:
+    """Return one precomputed award dossier; no request-time enrichment occurs."""
+    award_key = _validated_award_key(award_key)
+    payload = _load_dossiers()
+    row = _dossier_award_map(payload).get(award_key)
+    if row is None:
+        raise HTTPException(status_code=404, detail="award not covered")
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "award": _public_dossier_award(row),
+    })
 
 
 @router.get("/api/government-revenue/search")

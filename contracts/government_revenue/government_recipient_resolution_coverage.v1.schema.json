@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_recipient_resolution_coverage.v1.schema.json",
+  "title": "Government Recipient Resolution Coverage v1",
+  "description": "Independent snapshot and action attribution coverage. Each sub-report reuses the existing returned-scope entity coverage contract so unresolved and conflicted absolute dollars remain in its own denominator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "as_of", "known_at", "resolution_graph",
+    "snapshot", "action", "invariants", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_recipient_resolution_coverage.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "as_of": {"$ref": "#/$defs/nullableTemporal"},
+    "known_at": {"$ref": "#/$defs/nullableTemporal"},
+    "resolution_graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["load_status", "graph_id", "graph_known_at", "graph_effective_at", "graph_digest", "error_codes"],
+      "properties": {
+        "load_status": {"enum": ["ready", "absent", "invalid"]},
+        "graph_id": {"type": ["string", "null"]},
+        "graph_known_at": {"$ref": "#/$defs/nullableTemporal"},
+        "graph_effective_at": {"$ref": "#/$defs/nullableTemporal"},
+        "graph_digest": {"type": ["string", "null"]},
+        "error_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "snapshot": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_entity_coverage.v1.schema.json"},
+    "action": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_entity_coverage.v1.schema.json"},
+    "invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_independent", "action_independent", "absolute_denominators", "graph_withheld_when_not_ready"],
+      "properties": {
+        "snapshot_independent": {"type": "boolean"},
+        "action_independent": {"type": "boolean"},
+        "absolute_denominators": {"const": true},
+        "graph_withheld_when_not_ready": {"type": "boolean"}
+      }
+    },
+    "limitations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "nullableTemporal": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    }
+  }
+}
