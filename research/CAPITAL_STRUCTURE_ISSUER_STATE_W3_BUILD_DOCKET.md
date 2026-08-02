@@ -171,6 +171,16 @@ on their own authorize copied issuer, value, or evidence fields. A historical
 `source_as_of` is rejected for the canonical ledger so it cannot append a
 newer candidate correction sourced from an older direct-term version.
 
+**External-manifest-ledger residual (explicit):** this verifier proves that a
+selected manifest, direct row, and candidate row agree with retained bytes. It
+does not itself authenticate an independently rewritten upstream manifest
+ledger or object-store namespace. The source-manifest ID is a commitment, not a
+signature; the upstream generation/receipt anchor remains required before this
+lane can claim externally anchored ledger history. Until that receipt is wired
+into this compiler, this slice remains cited, context-only evidence and cannot
+be promoted into instrument, capacity, risk, probability, rank, sizing, entry,
+trade, or Prophet authority.
+
 ## Immediate next build order
 
 1. Ship W3A candidate-term contract/compiler/tests (this slice).

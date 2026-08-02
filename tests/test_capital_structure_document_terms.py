@@ -16,10 +16,15 @@ from engine.capital_structure.document_terms import (
     compile_document_term_records,
     current_document_terms_as_of,
     observation_id_for,
+    validate_document_term_source_authority,
     validate_document_term_history,
     validate_observation_source_binding,
 )
-from engine.capital_structure.source_identity import manifest_id_for
+from engine.capital_structure.source_identity import (
+    ManifestIdentityError,
+    manifest_id_for,
+    validate_manifest_retained_bytes_binding,
+)
 from scripts.compile_capital_structure_document_terms import (
     DOCUMENT_TERM_COLUMNS,
     compile_from_disk,
@@ -81,6 +86,36 @@ def _manifest(raw: bytes, *, form: str = "S-3", parser_eligibility: str = "eligi
 
 def _reader(raw: bytes):
     return lambda manifest: raw
+
+
+_FIXTURE_PRIOR_PARSER_VERSION = "test-document-terms-fixture/0.0.1"
+
+
+def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_version: str) -> list[dict]:
+    """Test-only retained v1 fixture: same slots, conservative unavailable facts."""
+    rows = document_terms._records_for_manifest_v1_1_0(manifest, raw, parser_version)
+    for row in rows:
+        row["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
+        row["reported"] = document_terms._empty_value()
+        row["normalized"] = document_terms._empty_value()
+    return rows
+
+
+def _register_fixture_prior_parser(monkeypatch) -> str:
+    """Inject a historic parser only inside this semantic-correction fixture."""
+    monkeypatch.setitem(
+        document_terms._PARSER_REGISTRY,
+        _FIXTURE_PRIOR_PARSER_VERSION,
+        document_terms.ParserRegistration(
+            version=_FIXTURE_PRIOR_PARSER_VERSION,
+            implementation_sha256=document_terms._implementation_sha256(
+                _fixture_prior_unavailable_parser, (),
+            ),
+            extractor=_fixture_prior_unavailable_parser,
+            semantic_symbols=(),
+        ),
+    )
+    return _FIXTURE_PRIOR_PARSER_VERSION
 
 
 def _contract() -> dict:
@@ -171,7 +206,8 @@ def test_multiple_direct_rows_are_row_scoped_and_never_summed_or_collapsed():
 def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bound(monkeypatch):
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/0.9.0")
+    prior_version = _register_fixture_prior_parser(monkeypatch)
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
     original = compile_document_term_records(
         [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z"
     )["observations"]
@@ -187,13 +223,108 @@ def test_parser_correction_is_append_only_and_keeps_each_historic_fact_source_bo
         "immutable_record": True, "correction_version": 2, "correction_of": prior["observation_id"],
     }
     assert later["relationships"]["supersedes"] == [prior["observation_id"]]
-    assert prior["extraction"]["parser_version"] == "capital-structure-document-terms/0.9.0"
+    assert prior["extraction"]["parser_version"] == prior_version
     assert later["extraction"]["parser_version"] == "capital-structure-document-terms/1.1.0"
     assert later["reported"]["value"] == "1237.1"
     before = current_document_terms_as_of(result["observations"], "2026-08-03T12:00:00Z")
     after = current_document_terms_as_of(result["observations"], "2026-08-04T00:00:00Z")
-    assert next(row for row in before if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
+    assert next(row for row in before if row["term"]["name"] == "registration_fee")["reported"]["value"] is None
     assert next(row for row in after if row["term"]["name"] == "registration_fee")["reported"]["value"] == "1237.1"
+
+
+def test_unknown_or_phantom_parser_correction_fails_closed_against_retained_bytes():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+
+    unknown = deepcopy(original)
+    unknown[0]["extraction"]["parser_version"] = "forged-document-terms/99.0.0"
+    unknown[0]["observation_id"] = observation_id_for(unknown[0])
+    with pytest.raises(ValueError, match="parser_version is not registered"):
+        validate_document_term_source_authority(
+            unknown, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+    phantom = deepcopy(original)
+    prior = phantom[0]
+    duplicate = deepcopy(prior)
+    duplicate["version"] = {
+        "immutable_record": True, "correction_version": 2,
+        "correction_of": prior["observation_id"],
+    }
+    duplicate["relationships"]["supersedes"] = [prior["observation_id"]]
+    duplicate["point_in_time"]["available_at"] = "2026-08-04T00:00:00Z"
+    duplicate["observation_id"] = observation_id_for(duplicate)
+    phantom.append(duplicate)
+    with pytest.raises(ValueError, match="duplicates prior source semantics"):
+        validate_document_term_source_authority(
+            phantom, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_registered_parser_digest_covers_mutated_semantic_helper(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original_base_record = document_terms._base_record
+
+    def altered_base_record(*args, **kwargs):
+        return original_base_record(*args, **kwargs)
+
+    monkeypatch.setattr(document_terms, "_base_record", altered_base_record)
+    with pytest.raises(ValueError, match="parser implementation digest mismatch"):
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+        )
+
+
+def test_complete_submission_header_binds_exact_source_id_and_form():
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    suffixed = deepcopy(manifest)
+    suffixed["source_id"] = "0000000001-26-000001:99:evil.txt"
+    suffixed["manifest_id"] = manifest_id_for(suffixed)
+    with pytest.raises(ManifestIdentityError, match="source_id is detached"):
+        validate_manifest_retained_bytes_binding(suffixed, raw)
+
+    rewritten_form = deepcopy(manifest)
+    rewritten_form["filing"]["form"] = "S-1"
+    rewritten_form["manifest_id"] = manifest_id_for(rewritten_form)
+    with pytest.raises(ManifestIdentityError, match="filing.form is detached"):
+        validate_manifest_retained_bytes_binding(rewritten_form, raw)
+
+    absent_header = raw.replace(b"<SEC-HEADER>\n", b"")
+    with pytest.raises(ManifestIdentityError, match="exactly one SEC header"):
+        validate_manifest_retained_bytes_binding(_manifest(absent_header), absent_header)
+
+    multiple_headers = raw.replace(
+        b"<SEC-HEADER>\n", b"<SEC-HEADER>\n<SEC-HEADER>\n",
+    )
+    with pytest.raises(ManifestIdentityError, match="exactly one SEC header"):
+        validate_manifest_retained_bytes_binding(_manifest(multiple_headers), multiple_headers)
+
+    absent = raw.replace(b"CONFORMED SUBMISSION TYPE: S-3\n", b"")
+    with pytest.raises(ManifestIdentityError, match="exactly one CONFORMED"):
+        validate_manifest_retained_bytes_binding(_manifest(absent), absent)
+
+    multiple = raw.replace(
+        b"CONFORMED SUBMISSION TYPE: S-3\n",
+        b"CONFORMED SUBMISSION TYPE: S-3\nCONFORMED SUBMISSION TYPE: S-3\n",
+    )
+    with pytest.raises(ManifestIdentityError, match="exactly one CONFORMED"):
+        validate_manifest_retained_bytes_binding(_manifest(multiple), multiple)
+
+
+def test_complete_submission_form_normalization_preserves_amendment_status():
+    raw = FIXTURE.read_bytes().replace(
+        b"CONFORMED SUBMISSION TYPE: S-3", b"CONFORMED SUBMISSION TYPE: s-3/a",
+    )
+    amended = _manifest(raw, form="S-3/A")
+    validate_manifest_retained_bytes_binding(amended, raw)
+    base_form = _manifest(raw, form="S-3")
+    with pytest.raises(ManifestIdentityError, match="filing.form is detached"):
+        validate_manifest_retained_bytes_binding(base_form, raw)
 
 
 def test_missing_or_wrong_source_bytes_abort_the_whole_generation():
@@ -255,7 +386,10 @@ def test_disk_compiler_requires_matching_store_namespace_and_writes_canonical_le
 def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path):
     raw = FIXTURE.read_bytes()
     shared = _manifest(raw)
-    research_raw = raw.replace(b"0000000001-26-000001", b"0000000002-26-000002")
+    research_raw = (
+        raw.replace(b"0000000001-26-000001", b"0000000002-26-000002")
+        .replace(b"CENTRAL INDEX KEY: 1", b"CENTRAL INDEX KEY: 2")
+    )
     research = _manifest(research_raw)
     research["source_id"] = "0000000002-26-000002:0:complete-submission.txt"
     research["issuer"] = {
@@ -384,7 +518,8 @@ def test_ex_filing_fees_child_is_selected_with_exact_child_provenance():
         b"<TEXT><html><body>No fee table in the primary document.</body></html></TEXT>"
     )
     raw = (
-        b"<SEC-DOCUMENT>0000000001-26-000001.txt\n<SEC-HEADER>test\n<DOCUMENT>" + primary
+        b"<SEC-DOCUMENT>0000000001-26-000001.txt\n<SEC-HEADER>\n"
+        b"CONFORMED SUBMISSION TYPE: S-3\nCENTRAL INDEX KEY: 1\n<DOCUMENT>" + primary
         + b"</DOCUMENT>\n<DOCUMENT>" + fee_child + b"</DOCUMENT>\n</SEC-DOCUMENT>"
     )
     manifest = _manifest(raw)
@@ -485,7 +620,7 @@ def test_history_requires_source_before_output_and_exact_supersedes_link():
     }
     correction["relationships"]["supersedes"] = []
     correction["point_in_time"]["available_at"] = "2026-08-04T00:00:00Z"
-    correction["extraction"]["parser_version"] = "capital-structure-document-terms/1.2.0"
+    correction["extraction"]["parser_version"] = "capital-structure-document-terms/1.1.0"
     correction["observation_id"] = observation_id_for(correction)
     with pytest.raises(ValueError, match="supersedes does not point to prior"):
         validate_document_term_history([original, correction])

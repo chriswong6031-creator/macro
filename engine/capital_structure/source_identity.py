@@ -21,10 +21,19 @@ _SEC_DOCUMENT_ACCESSION_RE = re.compile(
     br"<SEC-DOCUMENT>\s*([0-9]{10}-[0-9]{2}-[0-9]{6})(?:\.txt)?",
     re.IGNORECASE,
 )
+_SEC_HEADER_BLOCK_RE = re.compile(
+    br"<SEC-HEADER>\s*(.*?)(?:</SEC-HEADER>|<DOCUMENT>)",
+    re.IGNORECASE | re.DOTALL,
+)
 _SEC_HEADER_CIK_RE = re.compile(
     br"CENTRAL\s+INDEX\s+KEY:\s*([0-9]{1,10})",
     re.IGNORECASE,
 )
+_SEC_HEADER_FORM_RE = re.compile(
+    br"CONFORMED\s+SUBMISSION\s+TYPE:\s*([^\r\n<]+)",
+    re.IGNORECASE,
+)
+_SEC_FORM_RE = re.compile(r"^[A-Z0-9]+(?:-[A-Z0-9]+)*(?: [A-Z0-9]+)*(?:/[A-Z0-9]+)?$")
 
 
 class ManifestIdentityError(ValueError):
@@ -145,6 +154,23 @@ def _canonical_cik(value: Any) -> str:
     return raw.zfill(10)
 
 
+def _canonical_sec_form(value: Any) -> str:
+    """Normalize only case and whitespace; never collapse amendment status."""
+    raw = " ".join(str(value or "").strip().upper().split())
+    if not raw or _SEC_FORM_RE.fullmatch(raw) is None:
+        raise ManifestIdentityError("SEC submission form is malformed")
+    return raw
+
+
+def _complete_submission_header(raw: bytes) -> bytes:
+    if len(re.findall(br"<SEC-HEADER>", raw, re.IGNORECASE)) != 1:
+        raise ManifestIdentityError("SEC complete-submission must contain exactly one SEC header")
+    headers = _SEC_HEADER_BLOCK_RE.findall(raw)
+    if len(headers) != 1:
+        raise ManifestIdentityError("SEC complete-submission must contain exactly one SEC header")
+    return headers[0]
+
+
 def validate_manifest_retained_bytes_binding(
     record: Mapping[str, Any], raw: bytes | None,
 ) -> None:
@@ -177,11 +203,25 @@ def validate_manifest_retained_bytes_binding(
     if str(filing.get("accession") or "") != source_accession:
         raise ManifestIdentityError("manifest filing.accession is detached from SEC submission header")
     source_id = str(record.get("source_id") or "")
-    if not source_id.startswith(source_accession + ":"):
+    expected_source_id = f"{source_accession}:0:complete-submission.txt"
+    if source_id != expected_source_id:
         raise ManifestIdentityError("manifest source_id is detached from SEC submission header")
 
+    header = _complete_submission_header(raw)
+    header_forms = _SEC_HEADER_FORM_RE.findall(header)
+    if len(header_forms) != 1:
+        raise ManifestIdentityError(
+            "SEC complete-submission header must contain exactly one CONFORMED SUBMISSION TYPE"
+        )
+    header_form = _canonical_sec_form(header_forms[0].decode("ascii", errors="strict"))
+    if _canonical_sec_form(filing.get("form")) != header_form:
+        raise ManifestIdentityError("manifest filing.form is detached from SEC submission header")
+
     accession_cik = _canonical_cik(source_accession.split("-", 1)[0])
-    header_ciks = {_canonical_cik(match.group(1).decode("ascii")) for match in _SEC_HEADER_CIK_RE.finditer(raw)}
+    header_ciks = {
+        _canonical_cik(match.group(1).decode("ascii"))
+        for match in _SEC_HEADER_CIK_RE.finditer(header)
+    }
     if header_ciks and header_ciks != {accession_cik}:
         raise ManifestIdentityError("SEC header CIK conflicts with SEC submission accession")
     issuer = record.get("issuer") or {}

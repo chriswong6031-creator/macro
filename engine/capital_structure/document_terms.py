@@ -20,7 +20,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 import hashlib
+import hmac
 from html.parser import HTMLParser
+import inspect
 import json
 import re
 from typing import Any
@@ -35,6 +37,25 @@ from engine.capital_structure.source_identity import (
 
 DOCUMENT_TERM_SCHEMA = "capital_structure.document_term_observation.v1"
 PARSER_VERSION = "capital-structure-document-terms/1.1.0"
+
+
+@dataclass(frozen=True)
+class ParserRegistration:
+    """One retained deterministic extractor implementation.
+
+    Parser versions are evidence provenance, not free-form release labels. A
+    historic direct row is trusted only when its declared version remains in
+    this closed registry and the retained implementation matches its pinned
+    source digest.
+    """
+
+    version: str
+    implementation_sha256: str
+    extractor: Callable[[Mapping[str, Any], bytes | None, str], list[dict[str, Any]]]
+    semantic_symbols: tuple[str, ...]
+
+
+_PARSER_REGISTRY: dict[str, ParserRegistration] = {}
 
 # The names mirror direct SEC table headers.  Their economic type/unit is row
 # dependent: an "amount to be registered" can be shares, units, securities, or
@@ -626,6 +647,7 @@ def _base_record(
     term_type: str,
     security: Mapping[str, Any] | None = None,
     child_document: SubmissionDocument | None = None,
+    parser_version: str,
 ) -> dict[str, Any]:
     filing = manifest.get("filing") or {}
     document = manifest.get("document") or {}
@@ -661,7 +683,7 @@ def _base_record(
         "evidence": dict(evidence),
         "extraction": {
             "method": "deferred" if parser_deferred else "deterministic",
-            "parser_version": PARSER_VERSION,
+            "parser_version": parser_version,
             "review_status": "deferred" if needs_review else "unreviewed",
         },
         "relationships": {"amends": [], "supersedes": [], "contradiction_ids": []},
@@ -669,8 +691,8 @@ def _base_record(
     }
 
 
-def _records_for_manifest(
-    manifest: Mapping[str, Any], raw: bytes | None,
+def _records_for_manifest_v1_1_0(
+    manifest: Mapping[str, Any], raw: bytes | None, parser_version: str,
 ) -> list[dict[str, Any]]:
     """Build row/security-scoped direct observations for one complete submission."""
     source_available_at = _iso((manifest.get("retrieval") or {}).get("first_seen_at"), "retrieval.first_seen_at")
@@ -681,7 +703,8 @@ def _records_for_manifest(
         return [
             _base_record(manifest, name, disposition="unavailable", reason=reason,
                          reported=_empty_value(), term_type=_document_term_type(name),
-                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at)
+                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at,
+                         parser_version=parser_version)
             for name in TERM_NAMES
         ]
     if str(parser.get("eligibility") or "") != "eligible":
@@ -689,7 +712,8 @@ def _records_for_manifest(
         return [
             _base_record(manifest, name, disposition="unavailable", reason=reason,
                          reported=_empty_value(), term_type=_document_term_type(name),
-                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at)
+                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at,
+                         parser_version=parser_version)
             for name in TERM_NAMES
         ]
     assert raw is not None
@@ -699,7 +723,8 @@ def _records_for_manifest(
         return [
             _base_record(manifest, name, disposition="unavailable", reason=reason,
                          reported=_empty_value(), term_type=_document_term_type(name),
-                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at)
+                         evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at,
+                         parser_version=parser_version)
             for name in TERM_NAMES
         ]
     tables: list[FeeTable] = []
@@ -714,7 +739,7 @@ def _records_for_manifest(
             _base_record(manifest, name, disposition="unavailable", reason=reason,
                          reported=_empty_value(), term_type=_document_term_type(name),
                          evidence=_document_evidence(manifest, [root]), source_available_at=source_available_at,
-                         child_document=child)
+                         child_document=child, parser_version=parser_version)
             for name in TERM_NAMES
         ]
     spans = [_table_span(str(manifest["manifest_id"]), table) for table in tables]
@@ -722,7 +747,8 @@ def _records_for_manifest(
         return [
             _base_record(manifest, name, disposition="ambiguous", reason="multiple_fee_tables_detected",
                          reported=_empty_value(), term_type=_document_term_type(name),
-                         evidence=_document_evidence(manifest, spans), source_available_at=source_available_at)
+                         evidence=_document_evidence(manifest, spans), source_available_at=source_available_at,
+                         parser_version=parser_version)
             for name in TERM_NAMES
         ]
 
@@ -733,7 +759,7 @@ def _records_for_manifest(
                 manifest, name, disposition="ambiguous", reason="duplicate_header_mapping",
                 reported=_empty_value(), term_type=_document_term_type(name),
                 evidence=_document_evidence(manifest, spans), source_available_at=source_available_at,
-                child_document=table.document,
+                child_document=table.document, parser_version=parser_version,
             )
             for name in TERM_NAMES
         ]
@@ -743,7 +769,7 @@ def _records_for_manifest(
                 manifest, name, disposition="ambiguous", reason="unit_semantics_ambiguous",
                 reported=_empty_value(), term_type=_document_term_type(name),
                 evidence=_document_evidence(manifest, spans), source_available_at=source_available_at,
-                child_document=table.document,
+                child_document=table.document, parser_version=parser_version,
             )
             for name in TERM_NAMES
         ]
@@ -762,7 +788,7 @@ def _records_for_manifest(
                 manifest, name, disposition="unavailable", reason="header_without_direct_value",
                 reported=_empty_value(), term_type=_document_term_type(name),
                 evidence=_document_evidence(manifest, spans), source_available_at=source_available_at,
-                child_document=table.document,
+                child_document=table.document, parser_version=parser_version,
             )
             for name in TERM_NAMES
         ]
@@ -806,12 +832,92 @@ def _records_for_manifest(
                 reported=reported, term_type=term_type,
                 evidence=_document_evidence(manifest, term_spans),
                 source_available_at=source_available_at, security=security,
-                child_document=table.document,
+                child_document=table.document, parser_version=parser_version,
             ))
     return records
 
 
+# This digest pins the source text of the released implementation *and* its
+# closed helper bundle. Updating any semantic helper therefore requires a
+# deliberate new parser version rather than silently changing replay history.
+_PARSER_IMPLEMENTATION_DIGESTS = {
+    "capital-structure-document-terms/1.1.0": "497918cd42ccdb02a6efa2c7c814ecfc3c5967ac88747dd99a56ddf40dc696ab",
+}
+
+_PARSER_V1_1_0_SEMANTIC_SYMBOLS = (
+    "DOCUMENT_TERM_SCHEMA", "TERM_NAMES", "_DOCUMENT_RE", "_TEXT_RE", "_TABLE_RE",
+    "_ROW_RE", "_CELL_RE", "_COLSPAN_RE", "_TYPE_RE", "_SEQUENCE_RE", "_FILENAME_RE",
+    "_NUMBER_TOKEN_RE", "_SIMPLE_NUMBER_RE", "_DENOMINATED_RATE_RE", "_BYTE_LOCATOR_RE",
+    "SubmissionDocument", "TableCell", "TableRow", "FeeTable", "ParsedNumber", "_decode", "_tag_value",
+    "_normalized_form", "_eligible_documents", "_CellText", "_clean_text", "_label",
+    "_term_for_header", "_cell_text", "_table_rows", "_security_header", "_parse_fee_tables",
+    "_decimal_string", "_strip_footnote_markers", "_parse_number",
+    "_root_span", "_document_evidence", "_empty_value", "_direct_value", "_row_id",
+    "_logical_observation_id", "_classify_security", "_term_semantics", "_document_term_type",
+    "_empty_security", "_security_for_row", "_table_span", "_row_span", "_cell_span",
+    "_base_record", "make_stable_span",
+)
+
+
+def _implementation_sha256(
+    extractor: Callable[..., Any], semantic_symbols: Sequence[str],
+) -> str:
+    parts = ["extractor:\n" + inspect.getsource(extractor)]
+    for name in semantic_symbols:
+        value = globals().get(name)
+        if value is None:
+            raise ValueError(f"document-term parser semantic symbol is absent: {name}")
+        try:
+            encoded = inspect.getsource(value)
+        except (OSError, TypeError):
+            encoded = repr(value)
+        parts.append(f"{name}:\n{encoded}")
+    return hashlib.sha256("\n---\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def _registered_parser(version: Any) -> ParserRegistration:
+    raw = str(version or "")
+    registration = _PARSER_REGISTRY.get(raw)
+    if registration is None:
+        raise ValueError(f"document-term parser_version is not registered: {raw!r}")
+    actual = _implementation_sha256(
+        registration.extractor, registration.semantic_symbols,
+    )
+    if not hmac.compare_digest(actual, registration.implementation_sha256):
+        raise ValueError(
+            f"document-term parser implementation digest mismatch for {registration.version}"
+        )
+    return registration
+
+
+def _records_for_manifest(
+    manifest: Mapping[str, Any], raw: bytes | None, *, parser_version: str | None = None,
+) -> list[dict[str, Any]]:
+    """Re-derive one source with a closed, version-pinned parser implementation."""
+    version = PARSER_VERSION if parser_version is None else parser_version
+    registration = _registered_parser(version)
+    return registration.extractor(manifest, raw, registration.version)
+
+
+_PARSER_REGISTRY.update({
+    "capital-structure-document-terms/1.1.0": ParserRegistration(
+        version="capital-structure-document-terms/1.1.0",
+        implementation_sha256=_PARSER_IMPLEMENTATION_DIGESTS[
+            "capital-structure-document-terms/1.1.0"
+        ],
+        extractor=_records_for_manifest_v1_1_0,
+        semantic_symbols=_PARSER_V1_1_0_SEMANTIC_SYMBOLS,
+    ),
+})
+
+
 def _semantic_body(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Source-derived correction body, excluding only versioning metadata.
+
+    A parser release label alone is never a fact correction. Requiring a change
+    in this body prevents a rehashed phantom v2 from manufacturing a second
+    point-in-time version of the same extraction.
+    """
     body = deepcopy(dict(record))
     body.pop("observation_id", None)
     body.pop("version", None)
@@ -819,6 +925,9 @@ def _semantic_body(record: Mapping[str, Any]) -> dict[str, Any]:
     relationships = dict(body.get("relationships") or {})
     relationships["supersedes"] = []
     body["relationships"] = relationships
+    extraction = dict(body.get("extraction") or {})
+    extraction.pop("parser_version", None)
+    body["extraction"] = extraction
     return body
 
 
@@ -1006,35 +1115,32 @@ def validate_observation_source_binding(
             raise ValueError("document term security identity is detached from its title cell")
 
     # Hash-valid byte ranges alone do not prove that a row has retained the
-    # correct role, state, value, or span identity. Rebuild every expected
-    # observation from the exact retained complete submission and compare the
-    # immutable source-derived body. Version/correction and parser-version
-    # fields intentionally remain outside this comparison so historic parser
-    # corrections retain their point-in-time chain while their declared facts
-    # stay bound to the source bytes.
-    expected_by_logical = {
-        str(candidate["logical_observation_id"]): candidate
-        for candidate in _records_for_manifest(manifest, raw)
-    }
+    # correct role, state, value, or span identity. Rebuild it using the exact
+    # *declared registered parser*, not today's active parser. This preserves a
+    # legitimate old semantic result while rejecting an unknown/fake parser
+    # version and a fabricated additional version of the same extraction.
+    actual_extraction = record.get("extraction") or {}
+    declared_version = actual_extraction.get("parser_version")
+    expected_by_logical: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for candidate in _records_for_manifest(
+        manifest, raw, parser_version=str(declared_version or ""),
+    ):
+        expected_by_logical[str(candidate["logical_observation_id"])].append(candidate)
     logical = str(record.get("logical_observation_id") or "")
-    expected_record = expected_by_logical.get(logical)
-    if expected_record is None:
+    expected_records = expected_by_logical.get(logical, [])
+    if not expected_records:
         raise ValueError("document term logical_observation_id is detached from source bytes")
+    if len(expected_records) != 1:
+        raise ValueError("document term parser re-extraction has non-unique logical_observation_id")
+    expected_record = expected_records[0]
     for field in (
         "schema", "issuer_id", "filing", "document", "security", "term",
         "state", "reported", "normalized", "evidence",
     ):
         if record.get(field) != expected_record.get(field):
             raise ValueError(f"document term {field} is detached from retained source semantics")
-    actual_extraction = record.get("extraction") or {}
     expected_extraction = expected_record.get("extraction") or {}
-    if {
-        "method": actual_extraction.get("method"),
-        "review_status": actual_extraction.get("review_status"),
-    } != {
-        "method": expected_extraction.get("method"),
-        "review_status": expected_extraction.get("review_status"),
-    }:
+    if actual_extraction != expected_extraction:
         raise ValueError("document term extraction state is detached from retained source semantics")
 
 
@@ -1092,6 +1198,7 @@ def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None
         logical = str(record.get("logical_observation_id") or "")
         if not logical:
             raise ValueError(f"document term row {index} lacks logical_observation_id")
+        _registered_parser((record.get("extraction") or {}).get("parser_version"))
         point_in_time = record.get("point_in_time") or {}
         if _parse_time(point_in_time.get("available_at"), "available_at") < _parse_time(
             point_in_time.get("source_available_at"), "source_available_at",
@@ -1121,6 +1228,10 @@ def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None
                 current_time = _parse_time((record.get("point_in_time") or {}).get("available_at"), "available_at")
                 if current_time <= prior_time:
                     raise ValueError(f"document term {logical} correction is retroactive")
+                if _semantic_body(record) == _semantic_body(prior):
+                    raise ValueError(
+                        f"document term {logical} correction duplicates prior source semantics"
+                    )
 
 
 def current_document_terms_as_of(
@@ -1161,6 +1272,7 @@ def compile_document_term_records(
     for manifest in manifest_rows:
         validate_manifest_content_binding(manifest)
     generated = _iso(generated_at, "generated_at")
+    active_parser_version = _registered_parser(PARSER_VERSION).version
     existing = [dict(item) for item in existing_observations]
     validate_document_term_history(existing)
 
@@ -1186,7 +1298,7 @@ def compile_document_term_records(
         if rebuild
         or not current_by_manifest.get(str(manifest["manifest_id"]))
         or any(
-            str((prior.get("extraction") or {}).get("parser_version") or "") != PARSER_VERSION
+            str((prior.get("extraction") or {}).get("parser_version") or "") != active_parser_version
             for prior in current_by_manifest[str(manifest["manifest_id"])]
         )
     ]
@@ -1214,7 +1326,11 @@ def compile_document_term_records(
     incoming: list[dict[str, Any]] = []
     unchanged = 0
     for manifest in materialize:
-        for candidate in _records_for_manifest(manifest, source_bytes[str(manifest["manifest_id"])]):
+        for candidate in _records_for_manifest(
+            manifest,
+            source_bytes[str(manifest["manifest_id"])],
+            parser_version=active_parser_version,
+        ):
             if _parse_time(generated, "generated_at") < _parse_time(
                 (candidate.get("point_in_time") or {}).get("source_available_at"),
                 "source_available_at",

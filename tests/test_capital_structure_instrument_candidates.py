@@ -58,6 +58,34 @@ def _manifest(raw: bytes) -> dict:
     return record
 
 
+_FIXTURE_PRIOR_PARSER_VERSION = "test-document-terms-fixture/0.0.1"
+
+
+def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_version: str) -> list[dict]:
+    rows = document_terms._records_for_manifest_v1_1_0(manifest, raw, parser_version)
+    for row in rows:
+        row["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
+        row["reported"] = document_terms._empty_value()
+        row["normalized"] = document_terms._empty_value()
+    return rows
+
+
+def _register_fixture_prior_parser(monkeypatch) -> str:
+    monkeypatch.setitem(
+        document_terms._PARSER_REGISTRY,
+        _FIXTURE_PRIOR_PARSER_VERSION,
+        document_terms.ParserRegistration(
+            version=_FIXTURE_PRIOR_PARSER_VERSION,
+            implementation_sha256=document_terms._implementation_sha256(
+                _fixture_prior_unavailable_parser, (),
+            ),
+            extractor=_fixture_prior_unavailable_parser,
+            semantic_symbols=(),
+        ),
+    )
+    return _FIXTURE_PRIOR_PARSER_VERSION
+
+
 def _direct_rows() -> list[dict]:
     return _direct_authority()[0]
 
@@ -217,11 +245,11 @@ def test_ambiguous_upstream_direct_term_cannot_be_promoted_to_a_candidate_family
 
 
 def test_candidate_correction_is_not_visible_until_this_projection_compiles(monkeypatch):
+    prior_version = _register_fixture_prior_parser(monkeypatch)
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
     direct_v1, manifests, reader = _direct_authority()
     baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
-    # A parser-version correction retains the exact same source bytes and remains
-    # fully source-valid.  It is enough to prove the candidate correction clock.
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.1")
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
     direct_v2 = compile_document_term_records(
         manifests,
         source_reader=reader,
@@ -239,6 +267,8 @@ def test_candidate_correction_is_not_visible_until_this_projection_compiles(monk
     assert len(corrected) == 2
     prior, later = sorted(corrected, key=lambda row: row["version"]["correction_version"])
     assert later["version"] == {"immutable_record": True, "correction_version": 2, "correction_of": prior["candidate_term_id"]}
+    assert prior["source_term_state"]["disposition"] == "unavailable"
+    assert later["source_term_state"]["disposition"] == "observed"
     assert later["point_in_time"]["available_at"] == "2026-08-06T00:00:00Z"
     before = current_candidate_terms_as_of(
         result["observations"], "2026-08-05T23:59:59Z",
@@ -413,11 +443,35 @@ def test_rehashed_direct_and_manifest_envelopes_fail_closed_on_pure_disk_and_pit
             span["manifest_id"] = forged_manifest["manifest_id"]
         row["observation_id"] = observation_id_for(row)
 
+    def rebind_direct_rows(forged: dict) -> list[dict]:
+        rebound = deepcopy(direct)
+        for row in rebound:
+            row["issuer_id"] = forged["issuer"]["issuer_id"]
+            row["filing"]["accession"] = forged["filing"]["accession"]
+            row["filing"]["form"] = forged["filing"]["form"]
+            row["document"]["source_manifest_id"] = forged["manifest_id"]
+            row["document"]["source_id"] = forged["source_id"]
+            row["evidence"]["source_manifest_id"] = forged["manifest_id"]
+            for span in row["evidence"]["spans"]:
+                span["manifest_id"] = forged["manifest_id"]
+            row["observation_id"] = observation_id_for(row)
+        return rebound
+
+    forged_source_id = deepcopy(manifests[0])
+    forged_source_id["source_id"] = "0000000001-26-000001:99:evil.txt"
+    forged_source_id["manifest_id"] = manifest_id_for(forged_source_id)
+
+    forged_form = deepcopy(manifests[0])
+    forged_form["filing"]["form"] = "S-1"
+    forged_form["manifest_id"] = manifest_id_for(forged_form)
+
     attacks = [
         ("null_value", null_value, manifests, "state is detached", _FixtureStore(manifests[0], raw)),
         ("span_id", span_id, manifests, "evidence is detached", _FixtureStore(manifests[0], raw)),
         ("logical_slot", duplicate_slot, manifests, "logical_observation_id is detached", _FixtureStore(manifests[0], raw)),
         ("manifest_issuer", forged_issuer, [forged_manifest], "issuer.cik is detached", _FixtureStore(forged_manifest, raw)),
+        ("manifest_source_id", rebind_direct_rows(forged_source_id), [forged_source_id], "source_id is detached", _FixtureStore(forged_source_id, raw)),
+        ("manifest_form", rebind_direct_rows(forged_form), [forged_form], "filing.form is detached", _FixtureStore(forged_form, raw)),
     ]
     for label, tampered, authority_manifests, error, store in attacks:
         with pytest.raises(ValueError, match=error):
@@ -441,9 +495,11 @@ def test_rehashed_direct_and_manifest_envelopes_fail_closed_on_pure_disk_and_pit
 
 
 def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers(tmp_path, monkeypatch):
+    prior_version = _register_fixture_prior_parser(monkeypatch)
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", prior_version)
     direct_v1, manifests, reader = _direct_authority()
     baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
-    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.1")
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.0")
     direct_v2 = compile_document_term_records(
         manifests, source_reader=reader, existing_observations=direct_v1,
         generated_at="2026-08-05T00:00:00Z",
