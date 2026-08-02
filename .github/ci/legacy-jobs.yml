@@ -665,6 +665,7 @@ jobs:
           tests/test_fundamental_forensics_query.py
           tests/test_fundamental_forensics_query_snapshots.py
           tests/test_sec_document_spine.py
+          tests/test_fundamental_forensics_filing_package.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_context_api.py

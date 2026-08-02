@@ -28,8 +28,13 @@ from .models import canonical_json, parse_utc, stable_id, utc_text
 
 
 FILING_MANIFEST_SCHEMA = "fundamental_forensics.sec_filing_manifest/v1"
+ARCHIVE_RECEIPT_SCHEMA = "fundamental_forensics.sec_archive_receipt/v1"
 MANIFEST_ID_PREFIX = "ffsec_manifest_"
 ARCHIVE_ORIGIN = "https://www.sec.gov/Archives/edgar/data"
+HARD_MAX_FILING_MANIFEST_BYTES = 8 * 1024 * 1024
+HARD_MAX_ARCHIVE_DOCUMENT_BYTES = 32 * 1024 * 1024
+HARD_MAX_ARCHIVE_INDEX_MEMBERS = 20_000
+HARD_MAX_HTTP_METADATA_BYTES = 8 * 1024
 
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _CIK_RE = re.compile(r"^[0-9]{1,10}$")
@@ -43,10 +48,54 @@ _RELATIONSHIP = {
     "inferred_same_form_report_period",
     "unresolved",
 }
+_RETRIEVED_RECEIPT_FIELDS = {
+    "schema",
+    "receipt_id",
+    "status",
+    "document_id",
+    "archive_url",
+    "retrieved_at",
+    "content_sha256",
+    "byte_length",
+    "storage_key",
+    "http_etag",
+    "http_last_modified",
+}
+_MISSING_RECEIPT_FIELDS = {
+    "schema",
+    "status",
+    "document_id",
+    "archive_url",
+    "retrieved_at",
+    "http_status",
+    "reason",
+}
 
 
 class FilingManifestError(ValueError):
     """A filing manifest is malformed or its identity was changed."""
+
+
+def parse_json_int64(value: str) -> int:
+    """Parse one JSON integer without relying on Python's mutable digit limit."""
+    digits = value[1:] if value.startswith("-") else value
+    if not digits or len(digits) > 19:
+        raise ValueError("JSON integer is outside signed-64-bit range")
+    parsed = int(value)
+    if parsed < -(1 << 63) or parsed > (1 << 63) - 1:
+        raise ValueError("JSON integer is outside signed-64-bit range")
+    return parsed
+
+
+def _valid_http_metadata(value: Any) -> bool:
+    if value is None:
+        return True
+    if not isinstance(value, str) or any(char in value for char in ("\x00", "\r", "\n")):
+        return False
+    try:
+        return len(value.encode("utf-8")) <= HARD_MAX_HTTP_METADATA_BYTES
+    except UnicodeError:
+        return False
 
 
 def canonical_cik(value: int | str) -> str:
@@ -222,8 +271,13 @@ def _source_span(document: Mapping[str, Any]) -> dict[str, str]:
     length = document.get("byte_length")
     if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
         raise FilingManifestError("stored document must have a SHA-256 digest")
-    if isinstance(length, bool) or not isinstance(length, int) or length < 0:
-        raise FilingManifestError("stored document must have a non-negative byte_length")
+    if (
+        isinstance(length, bool)
+        or not isinstance(length, int)
+        or length < 0
+        or length > HARD_MAX_ARCHIVE_DOCUMENT_BYTES
+    ):
+        raise FilingManifestError("stored document byte_length is outside the archive safety limit")
     locator = f"bytes:0-{length}"
     text_digest = digest
     span_id = stable_id("sec_span", document["document_id"], locator, text_digest)
@@ -249,8 +303,11 @@ def _validate_document(document: Mapping[str, Any], *, cik: str, accession: str)
     availability = document["availability"]
     if availability not in _AVAILABILITY:
         raise FilingManifestError(f"invalid document availability: {availability!r}")
+    role = document["role"]
+    if not isinstance(role, str) or role not in {"primary", "exhibit", "archive"}:
+        raise FilingManifestError(f"invalid document role: {role!r}")
     expected_document_id = stable_id(
-        "sec_document", cik, accession, document["role"], name
+        "sec_document", cik, accession, role, name
     )
     if document["document_id"] != expected_document_id:
         raise FilingManifestError("document_id does not bind its filing identity")
@@ -262,10 +319,37 @@ def _validate_document(document: Mapping[str, Any], *, cik: str, accession: str)
         retrieval = document["retrieval"]
         if not isinstance(retrieval, Mapping) or retrieval.get("status") != "retrieved":
             raise FilingManifestError("stored document must retain a retrieved receipt")
+        if set(retrieval) != _RETRIEVED_RECEIPT_FIELDS:
+            raise FilingManifestError("retrieved receipt shape is invalid")
+        if retrieval.get("schema") != ARCHIVE_RECEIPT_SCHEMA:
+            raise FilingManifestError("retrieved receipt schema is invalid")
         if retrieval.get("content_sha256") != document["content_sha256"]:
             raise FilingManifestError("document and receipt checksums differ")
+        if retrieval.get("byte_length") != document["byte_length"]:
+            raise FilingManifestError("document and receipt byte lengths differ")
         if retrieval.get("storage_key") != document["storage_key"]:
             raise FilingManifestError("document and receipt storage keys differ")
+        if retrieval.get("document_id") != document["document_id"]:
+            raise FilingManifestError("document and receipt identities differ")
+        if retrieval.get("archive_url") != document["archive_url"]:
+            raise FilingManifestError("document and receipt archive URLs differ")
+        if document["storage_key"] != (
+            f"objects/sha256/{document['content_sha256'][:2]}/"
+            f"{document['content_sha256']}.bin.gz"
+        ):
+            raise FilingManifestError("stored document storage key does not bind its checksum")
+        retrieved_at = _optional_clock(retrieval.get("retrieved_at"), field="retrieved_at")
+        if retrieved_at is None or retrieval.get("retrieved_at") != retrieved_at:
+            raise FilingManifestError("retrieved receipt clock is not canonical UTC")
+        if not all(
+            _valid_http_metadata(value)
+            for value in (retrieval.get("http_etag"), retrieval.get("http_last_modified"))
+        ):
+            raise FilingManifestError("retrieved receipt HTTP metadata is invalid")
+        receipt_body = dict(retrieval)
+        receipt_id = receipt_body.pop("receipt_id")
+        if receipt_id != stable_id("sec_archive_receipt", receipt_body):
+            raise FilingManifestError("retrieved receipt identity mismatch")
     else:
         if any(
             document[field] is not None
@@ -280,6 +364,19 @@ def _validate_document(document: Mapping[str, Any], *, cik: str, accession: str)
         if availability == "missing":
             if not isinstance(retrieval, Mapping) or retrieval.get("status") != "missing":
                 raise FilingManifestError("missing document must retain its missing receipt")
+            if set(retrieval) != _MISSING_RECEIPT_FIELDS:
+                raise FilingManifestError("missing receipt shape is invalid")
+            if (
+                retrieval.get("schema") != ARCHIVE_RECEIPT_SCHEMA
+                or retrieval.get("document_id") != document["document_id"]
+                or retrieval.get("archive_url") != document["archive_url"]
+                or retrieval.get("http_status") != 404
+                or retrieval.get("reason") != "sec_archive_document_missing"
+            ):
+                raise FilingManifestError("missing receipt does not bind the observed SEC 404")
+            retrieved_at = _optional_clock(retrieval.get("retrieved_at"), field="retrieved_at")
+            if retrieved_at is None or retrieval.get("retrieved_at") != retrieved_at:
+                raise FilingManifestError("missing receipt clock is not canonical UTC")
 
 
 def validate_manifest(record: Mapping[str, Any]) -> None:
@@ -287,9 +384,8 @@ def validate_manifest(record: Mapping[str, Any]) -> None:
     required = {
         "schema", "manifest_id", "filing_id", "issuer", "filing", "clocks", "lineage", "documents",
     }
-    missing = required.difference(record)
-    if missing:
-        raise FilingManifestError(f"filing manifest missing fields: {sorted(missing)}")
+    if set(record) != required:
+        raise FilingManifestError("filing manifest shape is invalid")
     if record["schema"] != FILING_MANIFEST_SCHEMA:
         raise FilingManifestError(f"unsupported filing manifest schema: {record['schema']!r}")
     issuer = record["issuer"]
@@ -298,6 +394,23 @@ def validate_manifest(record: Mapping[str, Any]) -> None:
     lineage = record["lineage"]
     if not all(isinstance(item, Mapping) for item in (issuer, filing, clocks, lineage)):
         raise FilingManifestError("manifest issuer, filing, clocks and lineage must be objects")
+    if set(issuer) != {"cik", "name", "ticker"}:
+        raise FilingManifestError("manifest issuer shape is invalid")
+    if set(filing) != {
+        "accession",
+        "form",
+        "base_form",
+        "report_date",
+        "is_xbrl",
+        "is_inline_xbrl",
+        "items",
+        "archive_index_url",
+    }:
+        raise FilingManifestError("manifest filing shape is invalid")
+    if set(clocks) != {"accepted_at", "filed_on", "recorded_at"}:
+        raise FilingManifestError("manifest clocks shape is invalid")
+    if set(lineage) != {"is_amendment", "amends_accession", "relationship"}:
+        raise FilingManifestError("manifest lineage shape is invalid")
     cik = canonical_cik(issuer.get("cik"))
     if issuer.get("ticker") != _ticker(issuer.get("ticker")):
         raise FilingManifestError("issuer ticker must be normalized or null")
@@ -535,6 +648,8 @@ def documents_from_archive_index(
     items = directory.get("item") if isinstance(directory, Mapping) else None
     if not isinstance(items, list):
         raise FilingManifestError("archive index directory.item must be an array")
+    if len(items) > HARD_MAX_ARCHIVE_INDEX_MEMBERS:
+        raise FilingManifestError("archive index exceeds member safety limit")
     cik = str(manifest["issuer"]["cik"])
     accession = str(manifest["filing"]["accession"])
     existing = {str(item["document_name"]): dict(item) for item in manifest["documents"]}
@@ -560,6 +675,27 @@ def documents_from_archive_index(
             document_type=None,
         )
     return sorted(existing.values(), key=_document_sort_key)
+
+
+def archive_index_document(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the canonical ``index.json`` document declared by one manifest.
+
+    The index is an archive document in its own right.  Building it from the
+    already-validated manifest prevents a caller from pairing an index URL from
+    one filing with the CIK/accession identity of another.
+    """
+    validate_manifest(manifest)
+    cik = str(manifest["issuer"]["cik"])
+    accession = str(manifest["filing"]["accession"])
+    document = _document_metadata(
+        cik,
+        accession,
+        name="index.json",
+        role="archive",
+    )
+    if document["archive_url"] != manifest["filing"]["archive_index_url"]:  # pragma: no cover
+        raise FilingManifestError("manifest archive_index_url is not canonical")
+    return document
 
 
 def with_archive_documents(
@@ -602,8 +738,13 @@ def document_with_retrieval(
     storage_key = receipt.get("storage_key")
     if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
         raise FilingManifestError("retrieval receipt missing valid content_sha256")
-    if isinstance(length, bool) or not isinstance(length, int) or length < 0:
-        raise FilingManifestError("retrieval receipt missing valid byte_length")
+    if (
+        isinstance(length, bool)
+        or not isinstance(length, int)
+        or length < 0
+        or length > HARD_MAX_ARCHIVE_DOCUMENT_BYTES
+    ):
+        raise FilingManifestError("retrieval receipt byte_length is outside the archive safety limit")
     if not isinstance(storage_key, str) or not storage_key:
         raise FilingManifestError("retrieval receipt missing storage_key")
     out.update(
@@ -691,13 +832,20 @@ def select_periodic_comparables(
 def manifest_json_bytes(manifest: Mapping[str, Any]) -> bytes:
     """Validate and encode a manifest in its deterministic on-disk form."""
     validate_manifest(manifest)
-    return canonical_json(dict(manifest)).encode("utf-8")
+    content = canonical_json(dict(manifest)).encode("utf-8")
+    if len(content) > HARD_MAX_FILING_MANIFEST_BYTES:
+        raise FilingManifestError("manifest exceeds byte safety limit")
+    return content
 
 
 def manifest_from_json_bytes(content: bytes) -> dict[str, Any]:
+    if not isinstance(content, bytes):
+        raise FilingManifestError("manifest bytes must be bytes")
+    if len(content) > HARD_MAX_FILING_MANIFEST_BYTES:
+        raise FilingManifestError("manifest exceeds byte safety limit")
     try:
-        record = json.loads(content.decode("utf-8"))
-    except (UnicodeError, json.JSONDecodeError) as exc:
+        record = json.loads(content.decode("utf-8"), parse_int=parse_json_int64)
+    except (UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
         raise FilingManifestError("manifest bytes are not UTF-8 JSON") from exc
     if not isinstance(record, dict):
         raise FilingManifestError("manifest JSON must be an object")
@@ -705,3 +853,34 @@ def manifest_from_json_bytes(content: bytes) -> dict[str, Any]:
     if manifest_json_bytes(record) != content:
         raise FilingManifestError("manifest JSON is not canonically encoded")
     return record
+
+
+__all__ = [
+    "ARCHIVE_ORIGIN",
+    "ARCHIVE_RECEIPT_SCHEMA",
+    "FILING_MANIFEST_SCHEMA",
+    "HARD_MAX_ARCHIVE_DOCUMENT_BYTES",
+    "HARD_MAX_ARCHIVE_INDEX_MEMBERS",
+    "HARD_MAX_FILING_MANIFEST_BYTES",
+    "HARD_MAX_HTTP_METADATA_BYTES",
+    "MANIFEST_ID_PREFIX",
+    "FilingManifestError",
+    "archive_directory_url",
+    "archive_document_url",
+    "archive_index_document",
+    "archive_index_url",
+    "base_form",
+    "build_filing_manifests",
+    "canonical_cik",
+    "document_with_retrieval",
+    "documents_from_archive_index",
+    "manifest_from_json_bytes",
+    "manifest_id_for",
+    "manifest_json_bytes",
+    "parse_json_int64",
+    "select_periodic_comparables",
+    "validate_manifest",
+    "validate_manifest_identity",
+    "with_archive_documents",
+    "with_document_retrievals",
+]

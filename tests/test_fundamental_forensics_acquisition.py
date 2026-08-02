@@ -241,6 +241,8 @@ class _NetworkSession:
 
     def get(self, *args, **kwargs):
         self.calls += 1
+        if args:
+            self.response.url = args[0]
         return self.response
 
 
