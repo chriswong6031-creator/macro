@@ -172,6 +172,17 @@ glue, wayfinding, and copy.
 - **W2 template merge** (main loop assembles mechanically with marker asserts if the
   builder stalls — US Wave-A lesson): transplant organs into
   `sector_central_china.html.j2` per §2; ZH synonym sweep (gate 3).
+  **W2 TRAP — THS template survival (caught 2026-08-02, absent from the census
+  dispositions):** `baskets_china.html.j2` is rendered by TWO builders — 
+  `build_baskets_china.py` (the curated page this program stubs) AND
+  `build_baskets_china_ths.py` (`lite=True`, the out-of-scope 3.5MB THS browser).
+  Stubbing the template in place would silently destroy the THS page. Order of
+  operations: (1) extract the full FactorWatch template byte-identically to
+  `baskets_china_factorwatch.html.j2`; (2) re-point `build_baskets_china_ths.py`
+  at it; (3) only then replace `baskets_china.html.j2` with the redirect stub.
+  Tests pin: THS page still renders from the extracted template with `lite=True`;
+  the stub template contains no `BASKETS`/`CHART` references; the extracted
+  template is reachable from exactly one builder (no dual-render ambiguity left).
 - **W3 tests** (builder): port the `test_sector_intelligence_page.py` pattern to a
   China sibling (stub assertions, section skeleton, payload-externalized, nav
   collapsed, US-untouched inverse guards); retarget moved-markup pins; #2886
