@@ -286,6 +286,69 @@ def _milestone_operational(as_of: str = "2026-02-28T23:30:00Z") -> dict[str, Any
     }
 
 
+def _change_history_model(
+    nct_id: str,
+    *,
+    versions: list[tuple[int, str]] | None = None,
+    changes: list[dict[str, Any]] | None = None,
+    retrieved_at: str = "2026-08-02T12:00:00.000000Z",
+    available: bool = True,
+    authority: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Public-shaped B2 model for request-only Change Tape tests."""
+
+    model = _history_model(changes=changes or [])
+    model.update(
+        {
+            "history_model_id": f"trial_history_model_{nct_id}_change_fixture",
+            "nct_id": nct_id,
+            "available": available,
+            "source_history_url": f"https://clinicaltrials.gov/study/{nct_id}?tab=history",
+            "coverage_class": "record_history_complete" if available else "unavailable",
+            "unavailable_reason": None if available else "incomplete_chain",
+            "retrieved_at": retrieved_at if available else None,
+            "versions": [
+                {
+                    "display_version": display_version,
+                    "source_submitted_at": submitted_at,
+                    "url": f"https://clinicaltrials.gov/study/{nct_id}?a={display_version}&tab=history",
+                }
+                for display_version, submitted_at in (
+                    versions
+                    or [
+                        (1, "2026-06-01"),
+                        (2, "2026-07-01"),
+                    ]
+                )
+            ]
+            if available
+            else [],
+            "changes": changes or [] if available else [],
+            "authority": authority or _history_authority(),
+        }
+    )
+    return model
+
+
+def _change_projection(
+    snapshots: list[dict[str, Any]],
+    history_models: dict[str, dict[str, Any]],
+    *,
+    as_of: str = "2026-08-02T23:30:00Z",
+    generation_id: str = "ctgov_run_20260802_change_fixture",
+):
+    base = _milestone_projection(
+        snapshots,
+        as_of=as_of,
+        generation_id=generation_id,
+    )
+    return SimpleNamespace(
+        generation=base.generation,
+        trials=base.trials,
+        history_models_by_nct=history_models,
+    )
+
+
 def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_client) -> None:
     health = entitled_client.get("/api/biocatalyst/v1/health")
     assert health.status_code == 200
@@ -781,6 +844,640 @@ def test_registry_milestone_invalid_queries_fail_before_any_public_read(
     _assert_private_headers(response)
 
 
+def test_registry_change_tape_reads_available_history_from_real_public_generation(
+    entitled_client, promoted_config
+) -> None:
+    """Exercise the route through the pointer/manifest/artifact reader, not a stub."""
+
+    _replace_v12_history_model(promoted_config, _history_model())
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["pagination"]["total"] == 1
+    assert payload["history_coverage"]["available_trials"] == 1
+    assert payload["changes"][0]["registry_change"]["changes"] == [
+        {
+            "kind": "registry_status_changed",
+            "before_value": "NOT_YET_RECRUITING",
+            "after_value": "RECRUITING",
+        }
+    ]
+
+
+def test_registry_change_tape_groups_exact_history_values_with_current_record_filters(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot(
+            "NCT00000001",
+            title="Alpha current registry study",
+            phases=["PHASE2"],
+            conditions=["Oncology"],
+        ),
+        _milestone_snapshot(
+            "NCT00000002",
+            title="Beta current registry study",
+            phases=["PHASE3"],
+            conditions=["Neurology"],
+        ),
+        _milestone_snapshot("NCT00000003", title="Unavailable history study"),
+    ]
+    projection = _change_projection(
+        snapshots,
+        {
+            "NCT00000001": _change_history_model(
+                "NCT00000001",
+                versions=[(1, "2026-06-01"), (2, "2026-06-15"), (3, "2026-07-05")],
+                changes=[
+                    {
+                        "kind": "registry_status_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": "NOT_YET_RECRUITING",
+                        "after_value": "RECRUITING",
+                    },
+                    {
+                        "kind": "enrollment_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": {"count": 80, "type": "ESTIMATED"},
+                        "after_value": {"count": 120, "type": "ESTIMATED"},
+                    },
+                    {
+                        "kind": "endpoint_added",
+                        "before_display_version": 2,
+                        "after_display_version": 3,
+                        "before_value": None,
+                        "after_value": {"measure": "Registry measure"},
+                    },
+                ],
+            ),
+            "NCT00000002": _change_history_model(
+                "NCT00000002",
+                versions=[(1, "2026-06-01"), (2, "2026-07-05")],
+                changes=[
+                    {
+                        "kind": "study_date_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": "2026-10",
+                        "after_value": "2026-11",
+                    }
+                ],
+            ),
+            "NCT00000003": _change_history_model("NCT00000003", available=False),
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all&from_date=2026-06-15&"
+        "to_date=2026-07-05&q=alpha%20current&phase=phase2&status=recruiting&condition=onco"
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["query"] == {
+        "change_kind": "all",
+        "window": "all",
+        "from_date": "2026-06-15",
+        "to_date": "2026-07-05",
+        "q": "alpha current",
+        "phase": "phase2",
+        "status": "recruiting",
+        "condition": "onco",
+    }
+    assert payload["effective_window"] == {
+        "from_date": "2026-06-15",
+        "to_date": "2026-07-05",
+        "anchor_date": "2026-08-02",
+        "date_basis": "source_submitted_at",
+    }
+    assert payload["history_coverage"] == {
+        "class": "record_history_complete",
+        "selection_basis": "current_trial_record",
+        "available_trials": 1,
+        "unavailable_trials": 0,
+        "knowledge_cutoff": "2026-08-02T12:00:00.000000Z",
+    }
+    assert [item["registry_change"]["after_display_version"] for item in payload["changes"]] == [
+        3,
+        2,
+    ]
+    first = payload["changes"][0]
+    assert first["trial"]["nct_id"] == "NCT00000001"
+    assert first["registry_change"] == {
+        "before_display_version": 2,
+        "after_display_version": 3,
+        "source_submitted_at": "2026-07-05",
+        "interpretation": "registry_record_changed",
+        "protocol_change_asserted": False,
+        "materiality_assessed": False,
+        "total_display_safe_changes": 1,
+        "shown_change_count": 1,
+        "changes": [
+            {
+                "kind": "endpoint_added",
+                "before_value": None,
+                "after_value": {"measure": "Registry measure"},
+            }
+        ],
+    }
+    assert first["evidence"] == {
+        "provider": "ClinicalTrials.gov",
+        "record_id": "NCT00000001",
+        "version_url": "https://clinicaltrials.gov/study/NCT00000001?a=3&tab=history",
+        "history_url": "https://clinicaltrials.gov/study/NCT00000001?tab=history",
+        "retrieved_at": "2026-08-02T12:00:00.000000Z",
+        "coverage": "record_history_complete",
+    }
+    assert first["authority"] == _history_authority()
+
+    exact_kind = entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?change_kind=registry_status_changed&"
+        "window=all&q=alpha%20current"
+    )
+    assert exact_kind.status_code == 200
+    selected = exact_kind.json()["changes"]
+    assert len(selected) == 1
+    assert selected[0]["registry_change"]["total_display_safe_changes"] == 2
+    assert selected[0]["registry_change"]["shown_change_count"] == 1
+    assert selected[0]["registry_change"]["changes"] == [
+        {
+            "kind": "registry_status_changed",
+            "before_value": "NOT_YET_RECRUITING",
+            "after_value": "RECRUITING",
+        }
+    ]
+
+
+def test_registry_change_tape_preserves_exact_bounded_json_strings(
+    entitled_client, monkeypatch
+) -> None:
+    long_before = "x" * 12_000
+    long_after = "y" * 12_000
+    exact_whitespace = "  line one\n\tline two  "
+    longest_key = "k" * 256
+    model = _change_history_model(
+        "NCT00000001",
+        changes=[
+            {
+                "kind": "endpoint_description_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "",
+                "after_value": exact_whitespace,
+            },
+            {
+                "kind": "endpoint_measure_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": long_before,
+                "after_value": long_after,
+            },
+            {
+                "kind": "site_listing_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": {longest_key: ""},
+                "after_value": {longest_key: "  "},
+            },
+        ],
+    )
+    projection = _change_projection(
+        [_milestone_snapshot("NCT00000001")],
+        {"NCT00000001": model},
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert response.status_code == 200
+    rendered = response.json()["changes"][0]["registry_change"]["changes"]
+    assert rendered[0]["before_value"] == ""
+    assert rendered[0]["after_value"] == exact_whitespace
+    assert rendered[1]["before_value"] == long_before
+    assert rendered[1]["after_value"] == long_after
+    assert rendered[2]["before_value"] == {longest_key: ""}
+    assert rendered[2]["after_value"] == {longest_key: "  "}
+
+    model["changes"][1]["after_value"] += "z"
+    oversized = _change_projection(
+        [_milestone_snapshot("NCT00000001")],
+        {"NCT00000001": model},
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (oversized, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    rejected = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert rejected.status_code == 503
+    _assert_private_headers(rejected)
+
+    model["changes"][1]["after_value"] = long_after
+    model["changes"][2]["after_value"] = {"k" * 257: "value"}
+    mismatched_key_bound = entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all"
+    )
+    assert mismatched_key_bound.status_code == 503
+    _assert_private_headers(mismatched_key_bound)
+
+    model["changes"][2]["after_value"] = {longest_key: "  "}
+    model["changes"][1]["after_value"] = float("nan")
+    nonfinite_number = entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all"
+    )
+    assert nonfinite_number.status_code == 503
+    _assert_private_headers(nonfinite_number)
+
+
+def test_registry_change_tape_as_of_covers_later_history_knowledge_time(
+    entitled_client, monkeypatch
+) -> None:
+    retrieved_at = "2026-08-02T12:00:00.000000Z"
+    model = _change_history_model(
+        "NCT00000001",
+        versions=[(1, "2026-07-01"), (2, "2026-08-02")],
+        changes=[
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "A",
+                "after_value": "B",
+            }
+        ],
+        retrieved_at=retrieved_at,
+    )
+    projection = _change_projection(
+        [_milestone_snapshot("NCT00000001")],
+        {"NCT00000001": model},
+        as_of="2026-08-01T23:30:00Z",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-01T23:30:00Z")),
+    )
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=last_30d")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["as_of"] == retrieved_at
+    assert payload["history_coverage"]["knowledge_cutoff"] == retrieved_at
+    assert payload["effective_window"] == {
+        "from_date": "2026-07-04",
+        "to_date": "2026-08-02",
+        "anchor_date": "2026-08-02",
+        "date_basis": "source_submitted_at",
+    }
+    assert payload["pagination"]["total"] == 1
+
+
+def test_registry_change_tape_uses_after_version_dates_inclusive_windows_and_current_summary(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot("NCT00000001", title="Current Alpha record"),
+        _milestone_snapshot("NCT00000002", title="Current Beta record"),
+        _milestone_snapshot("NCT00000003", title="Current Gamma record"),
+    ]
+    projection = _change_projection(
+        snapshots,
+        {
+            "NCT00000001": _change_history_model(
+                "NCT00000001",
+                versions=[(1, "2026-06-01"), (2, "2026-07-04")],
+                changes=[
+                    {
+                        "kind": "registry_status_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": "A",
+                        "after_value": "B",
+                    }
+                ],
+            ),
+            "NCT00000002": _change_history_model(
+                "NCT00000002",
+                versions=[(1, "2026-06-01"), (2, "2026-07-03")],
+                changes=[
+                    {
+                        "kind": "registry_status_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": "A",
+                        "after_value": "B",
+                    }
+                ],
+            ),
+            "NCT00000003": _change_history_model(
+                "NCT00000003",
+                versions=[(1, "2026-06-01"), (2, "2026-08-02")],
+                changes=[
+                    {
+                        "kind": "registry_status_changed",
+                        "before_display_version": 1,
+                        "after_display_version": 2,
+                        "before_value": "A",
+                        "after_value": "B",
+                    }
+                ],
+            ),
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+
+    last_30 = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=last_30d")
+    assert last_30.status_code == 200
+    assert last_30.json()["effective_window"] == {
+        "from_date": "2026-07-04",
+        "to_date": "2026-08-02",
+        "anchor_date": "2026-08-02",
+        "date_basis": "source_submitted_at",
+    }
+    assert [item["trial"]["nct_id"] for item in last_30.json()["changes"]] == [
+        "NCT00000003",
+        "NCT00000001",
+    ]
+    assert entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all&from_date=2026-07-03&to_date=2026-07-03"
+    ).json()["changes"][0]["trial"]["nct_id"] == "NCT00000002"
+    # Selection never searches stale history values; it is intentionally a
+    # filter over the current trial summary at the committed projection cut.
+    assert entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all&q=current%20alpha"
+    ).json()["pagination"]["total"] == 1
+    assert entitled_client.get(
+        "/api/biocatalyst/v1/trials/changes?window=all&q=not_yet_recruiting"
+    ).json()["pagination"]["total"] == 0
+
+
+def test_registry_change_tape_pagination_binds_query_and_generation_before_returning_rows(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot("NCT00000011"),
+        _milestone_snapshot("NCT00000010"),
+        _milestone_snapshot("NCT00000012"),
+    ]
+    def model(nct_id: str, submitted_at: str) -> dict[str, Any]:
+        return _change_history_model(
+            nct_id,
+            versions=[(1, "2026-06-01"), (2, submitted_at)],
+            changes=[
+                {
+                    "kind": "registry_status_changed",
+                    "before_display_version": 1,
+                    "after_display_version": 2,
+                    "before_value": "A",
+                    "after_value": "B",
+                }
+            ],
+        )
+
+    projection = _change_projection(
+        snapshots,
+        {
+            "NCT00000010": model("NCT00000010", "2026-07-01"),
+            "NCT00000011": model("NCT00000011", "2026-07-01"),
+            "NCT00000012": model("NCT00000012", "2026-06-30"),
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    first = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all&limit=2")
+    assert first.status_code == 200
+    first_payload = first.json()
+    assert [item["trial"]["nct_id"] for item in first_payload["changes"]] == [
+        "NCT00000010",
+        "NCT00000011",
+    ]
+    cursor = first_payload["pagination"]["next_cursor"]
+    assert isinstance(cursor, str)
+    assert "NCT00000010" not in cursor
+    assert "ctgov_run_20260802_change_fixture" not in cursor
+    second = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/changes?window=all&limit=2&cursor={cursor}"
+    )
+    assert [item["trial"]["nct_id"] for item in second.json()["changes"]] == ["NCT00000012"]
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("signed change cursor query mismatch must fail before disk access")
+        ),
+    )
+    changed_query = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/changes?window=all&limit=2&q=current&cursor={cursor}"
+    )
+    assert changed_query.status_code == 400
+    assert changed_query.json() == {"detail": "cursor query mismatch"}
+    _assert_private_headers(changed_query)
+
+    changed_generation = _change_projection(
+        snapshots,
+        {
+            "NCT00000010": model("NCT00000010", "2026-07-01"),
+            "NCT00000011": model("NCT00000011", "2026-07-01"),
+            "NCT00000012": model("NCT00000012", "2026-06-30"),
+        },
+        generation_id="ctgov_run_20260803_change_fixture",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (changed_generation, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    restarted = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/changes?window=all&limit=2&cursor={cursor}"
+    )
+    assert restarted.status_code == 409
+    assert restarted.json() == {"detail": "trial data changed; restart pagination"}
+    _assert_private_headers(restarted)
+
+
+def test_registry_change_cursor_rejects_forgery_before_read_and_is_endpoint_separated(
+    entitled_client, monkeypatch
+) -> None:
+    binding = biocatalyst_api._change_query_binding(
+        change_kind="all",
+        window="all",
+        from_date=None,
+        to_date=None,
+        q=None,
+        phase=None,
+        status=None,
+        condition=None,
+        limit=2,
+    )
+    cursor = biocatalyst_api._encode_change_cursor(
+        2,
+        generation_id="ctgov_run_20260802_change_fixture",
+        query_binding=binding,
+    )
+    raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+    parts = raw.decode("ascii").split(":")
+    assert parts[0] == "c1"
+    parts[1] = "100001"
+    forged = base64.urlsafe_b64encode(":".join(parts).encode("ascii")).decode("ascii").rstrip("=")
+    milestone_cursor = biocatalyst_api._encode_milestone_cursor(
+        2,
+        generation_id="ctgov_run_20260802_change_fixture",
+        query_binding=biocatalyst_api._milestone_query_binding(
+            milestone_kind="primary_completion",
+            window="all",
+            from_date=None,
+            to_date=None,
+            q=None,
+            phase=None,
+            status=None,
+            condition=None,
+            limit=2,
+        ),
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("unauthenticated or cross-route cursor must fail before disk access")
+        ),
+    )
+    for candidate in (forged, milestone_cursor):
+        response = entitled_client.get(
+            "/api/biocatalyst/v1/trials/changes?window=all&limit=2&cursor=" + candidate
+        )
+        assert response.status_code == 400
+        assert response.json() == {"detail": "invalid cursor"}
+        _assert_private_headers(response)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    (
+        "change_kind=protocol_delayed",
+        "window=LAST_90D",
+        "window=last_90d&from_date=2026-08-01",
+        "window=all&from_date=2026-08",
+        "window=all&from_date=2026-08-03&to_date=2026-08-02",
+        "window=all&limit=251",
+        "window=all&cursor=not-a-valid-cursor",
+    ),
+)
+def test_registry_change_invalid_queries_fail_before_any_public_read(
+    entitled_client, monkeypatch, suffix: str
+) -> None:
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid Change Tape queries must be rejected before disk access")
+        ),
+    )
+    response = entitled_client.get(f"/api/biocatalyst/v1/trials/changes?{suffix}")
+    assert response.status_code == 400
+    _assert_private_headers(response)
+
+
+def test_registry_change_tape_fails_closed_for_future_or_mismatched_history_versions(
+    entitled_client, monkeypatch
+) -> None:
+    snapshot = _milestone_snapshot("NCT00000001")
+    future = _change_history_model(
+        "NCT00000001",
+        versions=[(1, "2026-07-01"), (2, "2026-08-03")],
+        changes=[
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "A",
+                "after_value": "B",
+            }
+        ],
+    )
+    projection = _change_projection([snapshot], {"NCT00000001": future})
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    future_response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert future_response.status_code == 503
+    assert future_response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(future_response)
+
+    after_retrieval = _change_history_model(
+        "NCT00000001",
+        versions=[(1, "2026-07-01"), (2, "2026-08-02")],
+        changes=[
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "A",
+                "after_value": "B",
+            }
+        ],
+        retrieved_at="2026-08-01T23:59:59.000000Z",
+    )
+    after_retrieval_projection = _change_projection(
+        [snapshot], {"NCT00000001": after_retrieval}
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (after_retrieval_projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    retrieval_response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert retrieval_response.status_code == 503
+    assert retrieval_response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(retrieval_response)
+
+    mismatch = _change_history_model(
+        "NCT00000001",
+        versions=[(1, "2026-07-01"), (2, "2026-08-02")],
+        changes=[
+            {
+                "kind": "registry_status_changed",
+                "before_display_version": 1,
+                "after_display_version": 2,
+                "before_value": "A",
+                "after_value": "B",
+            }
+        ],
+    )
+    mismatch["versions"][1]["url"] = "https://clinicaltrials.gov/study/NCT00000001?a=1&tab=history"
+    mismatched_projection = _change_projection([snapshot], {"NCT00000001": mismatch})
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (mismatched_projection, _milestone_operational("2026-08-02T23:30:00Z")),
+    )
+    mismatch_response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
+    assert mismatch_response.status_code == 503
+    assert mismatch_response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(mismatch_response)
+
+
 def test_v12_detail_serves_only_the_pointer_bound_public_history_model(
     entitled_client, promoted_config
 ) -> None:
@@ -925,6 +1622,7 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
         entitled_client.get("/api/biocatalyst/v1/health").json(),
         entitled_client.get("/api/biocatalyst/v1/trials").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/milestones").json(),
+        entitled_client.get("/api/biocatalyst/v1/trials/changes").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001").json(),
     ]
     for payload in payloads:
@@ -1022,6 +1720,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials/milestones",
+        "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/{nct_id}",
     ):
         assert biocatalyst_api.require_site_full_user in route_dependencies[path]
@@ -1033,6 +1732,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials/milestones",
+        "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/{nct_id}",
     }.issubset(public_paths)
 
@@ -1115,6 +1815,10 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
             "/api/biocatalyst/v1/trials/milestones",
             headers={"Authorization": "Bearer free-token"},
         )
+        changes_denied = client.get(
+            "/api/biocatalyst/v1/trials/changes",
+            headers={"Authorization": "Bearer free-token"},
+        )
     assert denied.status_code == 402
     assert denied.json() == {"detail": "site_full required"}
     _assert_private_headers(denied)
@@ -1123,3 +1827,7 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
     assert milestone_denied.json() == {"detail": "site_full required"}
     _assert_private_headers(milestone_denied)
     assert milestone_denied.headers["retry-after"] == "60"
+    assert changes_denied.status_code == 402
+    assert changes_denied.json() == {"detail": "site_full required"}
+    _assert_private_headers(changes_denied)
+    assert changes_denied.headers["retry-after"] == "60"

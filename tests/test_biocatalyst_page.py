@@ -38,8 +38,9 @@ def test_biocatalyst_shell_is_bilingual_shared_navigation_only_and_data_free():
     assert html.count('class="site-nav"') == 1
     assert html.count('class="l-en"') >= 20
     assert html.count('class="l-zh"') >= 20
-    assert "Registry Milestone Monitor" in html
-    assert "登记里程碑监测" in html
+    assert "BioCatalyst Intelligence" in html
+    assert "Trial Intelligence Workspace" in html
+    assert "试验智能工作台" in html
 
     # The static shell explains the product but cannot disclose a study, a
     # generated list, or an opaque internal record reference before site_full
@@ -56,14 +57,18 @@ def test_biocatalyst_shell_is_bilingual_shared_navigation_only_and_data_free():
         assert forbidden not in html
 
 
-def test_biocatalyst_shell_has_one_accessible_three_pane_milestone_workbench():
+def test_biocatalyst_shell_has_one_accessible_three_pane_trial_intelligence_workbench():
     html = _render()
     for identifier in (
             "bci-filter-pane",
             "bci-queue-pane",
             "bci-inspector-pane",
             "bci-window-control",
+            "bci-mode-control",
+            "bci-mode-milestones",
+            "bci-mode-changes",
             "bci-field-filter",
+            "bci-change-kind-filter",
             "bci-search",
         "bci-phase-filter",
         "bci-status-filter",
@@ -80,18 +85,41 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_milestone_workbench():
     assert len(ids) == len(set(ids))
     assert 'role="radiogroup"' in html
     assert 'role="radio"' in html
-    assert "Dates are recorded by ClinicalTrials.gov" in html
+    assert 'role="tablist"' in html
+    assert 'role="tab"' in html
+    assert 'id="bci-queue-pane" role="tabpanel" aria-labelledby="bci-mode-milestones"' in html
+    assert html.count('aria-controls="bci-queue-pane"') == 2
+    assert "Dates and field updates are recorded by ClinicalTrials.gov" in html
     assert "A registry listing is not government validation" in html
-    assert "this view does not make a trade call" in html
+    assert "Review the source record—no trade call." in html
+    assert "请查看来源记录，不作交易判断。" in html
+    for kind in (
+        "endpoint_added",
+        "endpoint_removed",
+        "endpoint_role_changed",
+        "endpoint_measure_changed",
+        "endpoint_time_frame_changed",
+        "endpoint_description_changed",
+        "enrollment_changed",
+        "registry_status_changed",
+        "study_date_changed",
+        "site_listing_changed",
+        "lead_sponsor_text_changed",
+        "intervention_added",
+        "intervention_removed",
+        "intervention_changed",
+    ):
+        assert f'value="{kind}"' in html
     assert "<option" in html
     assert re.search(r"<option[^>]*>\s*<span", html) is None
 
 
-def test_biocatalyst_client_uses_authenticated_milestone_pages_and_current_dossiers_only():
+def test_biocatalyst_client_uses_authenticated_source_fact_pages_and_current_dossiers_only():
     js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
     for token in (
             "/api/biocatalyst/v1/trials",
             "/api/biocatalyst/v1/trials/milestones",
+            "/api/biocatalyst/v1/trials/changes",
             "headers.Authorization = 'Bearer ' + token",
         "window.MDXAuth.client",
         "credentials: 'same-origin'",
@@ -120,6 +148,25 @@ def test_biocatalyst_client_uses_authenticated_milestone_pages_and_current_dossi
             "next_cursor",
             "milestone_kind",
             "next_30d",
+            "last_30d",
+            "CHANGE_WINDOWS",
+            "change_kind",
+            "registry_change",
+            "before_display_version",
+            "after_display_version",
+            "source_submitted_at",
+            "version_url",
+            "history_url",
+            "history_coverage",
+            "protocol_change_asserted",
+            "materiality_assessed",
+            "validateChangeEnvelope(payload)",
+            "validateChangePage(payload.changes, existingRows)",
+            "validateChangePagination(payload, existingRows, cursor",
+            "makeChangeRow",
+            "bci-change-preview",
+            "bci-change-version",
+            "Change Tape",
             "AbortController",
             "generation-restarted",
             "first-load",
@@ -151,7 +198,6 @@ def test_biocatalyst_client_uses_authenticated_milestone_pages_and_current_dossi
         "closed",
         "delay",
         "velocity",
-        "materiality",
         "forecast",
         "pdufa",
         "approval",
@@ -171,6 +217,9 @@ def test_biocatalyst_assets_have_responsive_motion_and_focus_guards():
         ".bci-scrim",
         ".bci-inspector-close,.bci-scrim { display: none !important; }",
         ".bci-window-options",
+        ".bci-mode-control",
+        ".bci-change-card",
+        ".bci-change-preview",
         ".bci-load-more",
         ".bci-evidence-strip",
         ".bci-date-type.is-actual",
@@ -184,7 +233,7 @@ def test_biocatalyst_assets_have_responsive_motion_and_focus_guards():
     assert "animation-duration: 2s" not in css
 
 
-def test_biocatalyst_milestone_runtime_defaults_to_ninety_days_and_preserves_verified_pages():
+def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     """Audit the UI contract around the non-inferential milestone endpoint.
 
     These assertions intentionally inspect the public runtime source so a future
@@ -199,10 +248,12 @@ def test_biocatalyst_milestone_runtime_defaults_to_ninety_days_and_preserves_ver
     assert 'data-window="90"' in html
     assert re.search(r'class="bci-window is-active"[^>]*aria-checked="true"[^>]*data-window="90"', html)
     assert re.search(r'class="bci-window"[^>]*aria-checked="false"[^>]*data-window="30"', html)
-    assert "filters: { field: 'primary_completion', window: '90'" in js
+    assert "mode: 'milestones'" in js
+    assert "filters: { field: 'primary_completion', change_kind: '', window: '90'" in js
     assert "WINDOW_VALUES[windowName] ? windowName : '90'" in js
-    assert "window: '90', q: '', phase: '', status: '', condition: ''" in js
+    assert "change_kind: '', window: '90', q: '', phase: '', status: '', condition: ''" in js
     assert "MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d'" in js
+    assert "CHANGE_WINDOWS = { '30': 'last_30d', '90': 'last_90d'" in js
 
     for token in (
         "function isAccessError(error)",
@@ -232,7 +283,7 @@ def test_biocatalyst_milestone_runtime_defaults_to_ninety_days_and_preserves_ver
         "returnTrialId",
         "data-date-type",
         "Registry date type:",
-        "Retry loading more registry milestones",
+        "Retry loading more ' + noun",
         "window.addEventListener('resize', syncInspectorDialog)",
         "closeInspector({ restoreFocus: false, writeUrl: false, render: false })",
         "abort('detailController'); state.detailToken += 1",
@@ -261,8 +312,109 @@ def test_biocatalyst_milestone_runtime_defaults_to_ninety_days_and_preserves_ver
     # Runtime language changes must repaint exceptional states directly instead
     # of routing an append failure through updateMetadata(), which clears it.
     language_body = js[js.index("document.addEventListener('langchange'") : js.index("window.addEventListener('popstate'")]
+    assert "syncControls(); localizeControls();" in language_body
     assert language_body.index("state.accessLocked") < language_body.index("state.appendFailed")
     assert language_body.index("state.appendFailed") < language_body.index("updateMetadata(state.payload)")
+    assert "announce(state.rows.length ? tr('Loaded '" in language_body
+    assert "announce(tr('Retrieving ' + activeNoun()" in language_body
+
+
+def test_biocatalyst_change_tape_client_contract_is_mode_bound_and_fail_closed():
+    """Change Tape may show only exact, display-safe registry facts.
+
+    This is deliberately source-level: it keeps a future visual refactor from
+    accepting an unsigned/mismatched cursor page, treating a source update as
+    a protocol or materiality conclusion, or allowing an old list/detail
+    response to repaint after the operator changes mode or loses entitlement.
+    """
+
+    js = (TEMPLATES / "biocatalyst.js").read_text(encoding="utf-8")
+    html = _render()
+
+    for token in (
+        "function validChangeEvidence(evidence, id, afterVersion)",
+        "function validRegistryChange(change)",
+        "function validChange(item)",
+        "function validateChangeEnvelope(payload)",
+        "function changeQueryMatchesCurrentFilters(query)",
+        "function effectiveChangeWindowIsSane(window, apiWindow)",
+        "function changeIdentity(item)",
+        "function validateChangePage(items, existingRows)",
+        "function validateChangePagination(payload, existingRows, requestedCursor, previousPayload)",
+        "Duplicate registry change identity",
+        "Repeated registry change cursor",
+        "Incomplete registry change pagination",
+        "function setMode(value, trigger)",
+        "abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1",
+        "function isChangeMode()",
+        "activeApi()",
+        "activeWindow()",
+        "setMode(button.getAttribute('data-mode'), button)",
+        "ArrowRight",
+        "exactHistoryUrl",
+        "exactHistoryRootUrl",
+        "safeJson",
+        "fullTimestamp",
+        "source_submitted_at",
+        "record_history_complete",
+        "registry_record_changed",
+        "protocol_change_asserted') === false",
+        "materiality_assessed') === false",
+        "isChangeMode() ? validateChangePage",
+        "if (isChangeMode()) validateChangeEnvelope(payload); else validateMilestoneEnvelope(payload);",
+        "if (isChangeMode()) validateChangePagination(payload, existingRows, cursor, append ? state.payload : null);",
+    ):
+        assert token in js
+    assert js.count("function validateChangeEnvelope(payload)") == 1
+    assert "function validChangeEnvelope(payload)" not in js
+
+    assert "localStorage" not in js
+    assert "sessionStorage" not in js
+    assert "innerHTML" not in js
+    assert "No trade call" not in js  # claim stays in the bilingual shell, not data handling
+    assert 'data-mode="milestones"' in html
+    assert 'data-mode="changes"' in html
+    assert 'aria-selected="true"' in html
+
+    # The browser accepts the same bounded JSON value domain as the API and
+    # renders exact JSON literals in the dossier. Queue cards are explicitly a
+    # compact preview, so blank, whitespace-only, and long values are never
+    # silently recast as absent facts.
+    for token in (
+        "Array.from(value).length <= 12000",
+        "value.length <= 200",
+        "Object.keys(value).length > 100",
+        "Array.from(key).length <= 256",
+        "depth > 12",
+        "JSON.stringify(value)",
+        "Registry value preview; open the dossier for the full exact value",
+        "History coverage: ",
+        "knowledge_cutoff",
+        "History retrieved through ",
+        "clean(valueAt(window, 'date_basis')) !== 'source_submitted_at'",
+        "data-row-key",
+        "state.selectedKey",
+        "rowKey === state.selectedKey",
+        "kindNames.slice(0, 3)",
+        "ui.queuePane.setAttribute('aria-labelledby', button.id)",
+        "AUTHORITY_ALLOWED_USES = ['display', 'context', 'explain']",
+        "AUTHORITY_FORBIDDEN_USES = ['originate_signal', 'rank_security', 'select_security', 'size_position', 'gate_decision', 'execute_trade', 'raise_authority']",
+        "Object.keys(authority).sort().join('|') === 'allowed_uses|classification|decision_authority|forbidden_uses'",
+        "validAuthority(payload.authority)",
+        "changes.length <= 2000",
+        "!fullTimestamp(payloadAsOf)",
+        "var activeRow = selectedRow();",
+        "state.selectedKey && rowIdentity(item) === state.selectedKey",
+        "isChangeMode() ? 'registry field update' : 'registry milestone'",
+        "isChangeMode() ? '登记字段更新' : '登记里程碑'",
+    ):
+        assert token in js
+    assert "Choose a registry milestone to read the current trial record" not in js
+    assert "Choose a registry milestone when full access is confirmed" not in js
+    assert "clean(String(value))" not in js
+    assert "changes.length <= 40" not in js
+    assert "changes.forEach(function (change) { line.appendChild" not in js
+    assert "var selectedRow = state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0];" not in js
 
 
 def test_biocatalyst_mobile_uses_an_inline_mastermind_entry_not_a_fixed_filter_overlay():

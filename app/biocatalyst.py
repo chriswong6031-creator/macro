@@ -13,6 +13,7 @@ from hashlib import sha256
 import hmac
 import json
 import logging
+from math import isfinite
 import os
 import re
 from pathlib import Path
@@ -33,6 +34,28 @@ _MILESTONE_DATE_TYPES = frozenset(("ACTUAL", "ESTIMATED", "UNKNOWN"))
 _MILESTONE_CURSOR_VERSION = "m2"
 _MILESTONE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-milestones:cursor-key:v2"
 _MILESTONE_CURSOR_PROCESS_KEY = os.urandom(32)
+_CHANGE_KINDS = frozenset(
+    (
+        "endpoint_added",
+        "endpoint_removed",
+        "endpoint_role_changed",
+        "endpoint_measure_changed",
+        "endpoint_time_frame_changed",
+        "endpoint_description_changed",
+        "enrollment_changed",
+        "registry_status_changed",
+        "study_date_changed",
+        "site_listing_changed",
+        "lead_sponsor_text_changed",
+        "intervention_added",
+        "intervention_removed",
+        "intervention_changed",
+    )
+)
+_CHANGE_WINDOWS = frozenset(("last_30d", "last_90d", "last_180d", "all"))
+_CHANGE_CURSOR_VERSION = "c1"
+_CHANGE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-registry-changes:cursor-key:v1"
+_CHANGE_CURSOR_PROCESS_KEY = os.urandom(32)
 _PUBLIC_ROOT = Path(
     os.environ.get("BIOCATALYST_PUBLIC_ROOT", "/var/lib/macro-biocatalyst/public")
 )
@@ -296,16 +319,27 @@ def _history_json_value(value: object, *, depth: int = 0) -> Any:
 
     if depth > 12:
         raise _unavailable()
-    if value is None or isinstance(value, (bool, int, float)):
+    if value is None or isinstance(value, (bool, int)):
+        return value
+    if isinstance(value, float):
+        if not isfinite(value):
+            raise _unavailable()
         return value
     if isinstance(value, str):
-        return _text(value, maximum=12_000)
+        # These are source-derived before/after values, not prose labels.  Do
+        # not collapse whitespace, turn an empty string into null, or silently
+        # truncate a value while presenting the result as an exact registry
+        # difference.  Oversized values make the projection unavailable until
+        # a separately typed truncation contract exists.
+        if len(value) > 12_000:
+            raise _unavailable()
+        return value
     if isinstance(value, Mapping):
         if len(value) > 100:
             raise _unavailable()
         copied: dict[str, Any] = {}
         for key, nested in value.items():
-            if not isinstance(key, str) or any(
+            if not isinstance(key, str) or len(key) > 256 or any(
                 fragment in key.casefold()
                 for fragment in _HISTORY_PRIVATE_KEY_FRAGMENTS
             ):
@@ -579,8 +613,8 @@ def _query_iso_date(value: str | None, *, name: str) -> date | None:
         ) from exc
 
 
-def _generation_as_of_date(projection: Any) -> date:
-    """Use the committed generation timestamp, never request-time wall clock."""
+def _generation_as_of_time(projection: Any) -> datetime:
+    """Return the committed generation clock, never request-time wall clock."""
 
     value = getattr(getattr(projection, "generation", None), "last_success_at", None)
     if not isinstance(value, str):
@@ -591,7 +625,13 @@ def _generation_as_of_date(projection: Any) -> date:
         raise _unavailable() from None
     if parsed.tzinfo is None:
         raise _unavailable()
-    return parsed.astimezone(timezone.utc).date()
+    return parsed.astimezone(timezone.utc)
+
+
+def _generation_as_of_date(projection: Any) -> date:
+    """Return the committed generation's UTC civil date."""
+
+    return _generation_as_of_time(projection).date()
 
 
 def _milestone_date_interval(value: object) -> tuple[date, date, str] | None:
@@ -761,6 +801,337 @@ def _decode_milestone_cursor(
     if not hmac.compare_digest(signature, expected_signature):
         raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
     return offset, generation_digest, query_digest
+
+
+def _change_query_binding(
+    *,
+    change_kind: str,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+    q: str | None,
+    phase: str | None,
+    status: str | None,
+    condition: str | None,
+    limit: int,
+) -> dict[str, Any]:
+    """Return the normalized, endpoint-local selection behind a tape cursor."""
+
+    return {
+        "change_kind": change_kind,
+        "window": window,
+        "from_date": from_date.isoformat() if from_date else None,
+        "to_date": to_date.isoformat() if to_date else None,
+        "q": q.casefold() if q else None,
+        "phase": phase.casefold() if phase else None,
+        "status": status.casefold() if status else None,
+        "condition": condition.casefold() if condition else None,
+        "limit": limit,
+    }
+
+
+def _change_cursor_key() -> bytes:
+    """Return the separate HMAC key for registry-change pagination.
+
+    This mirrors the milestone route's deployment-secret contract exactly, but
+    domain separation prevents a valid cursor on either route from being used
+    on the other.  The process fallback intentionally expires across restarts.
+    """
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _CHANGE_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _CHANGE_CURSOR_DOMAIN, sha256).digest()
+
+
+def _change_cursor_payload(
+    offset: int,
+    *,
+    generation_digest: str,
+    query_digest: str,
+) -> bytes:
+    return ":".join(
+        (
+            _CHANGE_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_change_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode a signed, opaque cursor without query or generation disclosure."""
+
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _change_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _change_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    raw = payload + b":" + signature.encode("ascii")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_change_cursor(
+    cursor: str | None,
+    *,
+    cursor_key: bytes | None = None,
+) -> tuple[int, str | None, str | None]:
+    """Authenticate a registry-change cursor before the projection is opened."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _CHANGE_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _change_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _change_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
+def _change_window(
+    *,
+    anchor: date,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+) -> tuple[date, date, dict[str, str | None]]:
+    """Resolve a retrospective, source-submission window from the committed cut."""
+
+    if window == "all":
+        return (
+            from_date or date.min,
+            to_date or date.max,
+            {
+                "from_date": from_date.isoformat() if from_date else None,
+                "to_date": to_date.isoformat() if to_date else None,
+                "anchor_date": anchor.isoformat(),
+                "date_basis": "source_submitted_at",
+            },
+        )
+    days = {"last_30d": 30, "last_90d": 90, "last_180d": 180}[window]
+    try:
+        start = anchor - timedelta(days=days - 1)
+    except OverflowError:
+        raise _unavailable() from None
+    return (
+        start,
+        anchor,
+        {
+            "from_date": start.isoformat(),
+            "to_date": anchor.isoformat(),
+            "anchor_date": anchor.isoformat(),
+            "date_basis": "source_submitted_at",
+        },
+    )
+
+
+def _history_authority_for_tape(model: Mapping[str, Any]) -> dict[str, Any]:
+    """Copy only the closed facts-only authority envelope from a history model."""
+
+    authority = model.get("authority")
+    if not isinstance(authority, Mapping) or set(authority) != set(_AUTHORITY):
+        raise _unavailable()
+    if (
+        authority.get("classification") != _AUTHORITY["classification"]
+        or authority.get("decision_authority") is not False
+        or authority.get("allowed_uses") != _AUTHORITY["allowed_uses"]
+        or authority.get("forbidden_uses") != _AUTHORITY["forbidden_uses"]
+    ):
+        raise _unavailable()
+    return {
+        "classification": _AUTHORITY["classification"],
+        "decision_authority": False,
+        "allowed_uses": list(_AUTHORITY["allowed_uses"]),
+        "forbidden_uses": list(_AUTHORITY["forbidden_uses"]),
+    }
+
+
+def _history_change_groups(
+    model: Mapping[str, Any],
+    *,
+    nct_id: str,
+    change_kind: str,
+) -> tuple[list[dict[str, Any]], datetime, str] | None:
+    """Turn one complete, validated history model into bounded tape groups.
+
+    ``_history_for_api`` is deliberately reused before grouping: its recursive
+    public-value and URL sanitization ceiling applies equally to the detail view
+    and this new feed.  The tape adds only temporal and relational validation
+    needed to bind a change to its after-version's source submission date.
+    """
+
+    if model.get("nct_id") != nct_id or model.get("source_name") != "ClinicalTrials.gov":
+        raise _unavailable()
+    available = model.get("available")
+    if available is False:
+        if model.get("coverage_class") != "unavailable":
+            raise _unavailable()
+        return None
+    if available is not True:
+        raise _unavailable()
+
+    history = _history_for_api(model, nct_id=nct_id)
+    if (
+        history.get("available") is not True
+        or history.get("coverage") != "record_history_complete"
+        or not isinstance(history.get("source"), Mapping)
+    ):
+        raise _unavailable()
+    retrieved_at = _text(history.get("retrieved_at"), maximum=64)
+    history_url = history["source"].get("url")
+    if retrieved_at is None or not isinstance(history_url, str):
+        raise _unavailable()
+    try:
+        retrieved_time = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise _unavailable() from None
+    if retrieved_time.tzinfo is None:
+        raise _unavailable()
+    retrieved_date = retrieved_time.astimezone(timezone.utc).date()
+    authority = _history_authority_for_tape(model)
+
+    versions_by_display: dict[int, tuple[date, str, str]] = {}
+    versions = history.get("versions")
+    if not isinstance(versions, Sequence) or isinstance(versions, (str, bytes)):
+        raise _unavailable()
+    for version in versions:
+        if not isinstance(version, Mapping):
+            raise _unavailable()
+        display_version = version.get("display_version")
+        submitted_at = version.get("submitted_at")
+        url = version.get("url")
+        if (
+            not isinstance(display_version, int)
+            or isinstance(display_version, bool)
+            or display_version < 1
+            or not isinstance(submitted_at, str)
+            or not isinstance(url, str)
+            or display_version in versions_by_display
+        ):
+            raise _unavailable()
+        try:
+            submitted_date = date.fromisoformat(submitted_at)
+        except ValueError:
+            raise _unavailable() from None
+        # A source submission cannot be known before the complete history was
+        # retrieved.  The endpoint-wide knowledge cutoff is resolved only
+        # after every pointer-bound history artifact has been inspected because
+        # B2 collection may finish after the current-record B1 cut.
+        if submitted_date > retrieved_date:
+            raise _unavailable()
+        if url != f"https://clinicaltrials.gov/study/{nct_id}?a={display_version}&tab=history":
+            raise _unavailable()
+        versions_by_display[display_version] = (submitted_date, submitted_at, url)
+
+    grouped: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    changes = history.get("changes")
+    if not isinstance(changes, Sequence) or isinstance(changes, (str, bytes)):
+        raise _unavailable()
+    for change in changes:
+        if not isinstance(change, Mapping):
+            raise _unavailable()
+        kind = change.get("kind")
+        before_version = change.get("before_display_version")
+        after_version = change.get("after_display_version")
+        if (
+            not isinstance(kind, str)
+            or kind not in _CHANGE_KINDS
+            or not isinstance(before_version, int)
+            or isinstance(before_version, bool)
+            or not isinstance(after_version, int)
+            or isinstance(after_version, bool)
+            or before_version < 1
+            or after_version <= before_version
+            or before_version not in versions_by_display
+            or after_version not in versions_by_display
+        ):
+            raise _unavailable()
+        grouped.setdefault((before_version, after_version), []).append(
+            {
+                "kind": kind,
+                "before_value": _history_json_value(change.get("before_value")),
+                "after_value": _history_json_value(change.get("after_value")),
+            }
+        )
+
+    rendered: list[dict[str, Any]] = []
+    for (before_version, after_version), group_changes in grouped.items():
+        submitted_date, submitted_at, version_url = versions_by_display[after_version]
+        ordered_changes = sorted(group_changes, key=lambda item: item["kind"])
+        selected = (
+            ordered_changes
+            if change_kind == "all"
+            else [item for item in ordered_changes if item["kind"] == change_kind]
+        )
+        if not selected:
+            continue
+        rendered.append(
+            {
+                "registry_change": {
+                    "before_display_version": before_version,
+                    "after_display_version": after_version,
+                    "source_submitted_at": submitted_at,
+                    "interpretation": "registry_record_changed",
+                    "protocol_change_asserted": False,
+                    "materiality_assessed": False,
+                    "total_display_safe_changes": len(ordered_changes),
+                    "shown_change_count": len(selected),
+                    "changes": selected,
+                },
+                "evidence": {
+                    "provider": "ClinicalTrials.gov",
+                    "record_id": nct_id,
+                    "version_url": version_url,
+                    "history_url": history_url,
+                    "retrieved_at": retrieved_at,
+                    "coverage": "record_history_complete",
+                },
+                "authority": authority,
+                "_submitted_date": submitted_date,
+                "_kind_tie": tuple(item["kind"] for item in selected),
+            }
+        )
+    return rendered, retrieved_time.astimezone(timezone.utc), retrieved_at
 
 
 def _milestone_window(
@@ -1130,6 +1501,236 @@ def trial_milestones(
                 ),
             },
             "milestones": page,
+        }
+    )
+    return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/trials/changes")
+def trial_registry_changes(
+    change_kind: str = "all",
+    window: str = "last_90d",
+    from_date: str | None = None,
+    to_date: str | None = None,
+    q: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List exact ClinicalTrials.gov record-history updates from the committed cut.
+
+    A tape row says only that a registry record field changed between two
+    displayed history versions.  It does not establish a protocol amendment,
+    clinical significance, outcome, catalyst, issuer attribution, or trade
+    conclusion.  Current-trial filters intentionally select against the
+    pointer-bound current public record, never a historical version.
+    """
+
+    q = _query_text(q, name="query", maximum=100)
+    phase = _query_text(phase, name="phase", maximum=40)
+    status = _query_text(status, name="status", maximum=40)
+    condition = _query_text(condition, name="condition", maximum=100)
+    if change_kind != "all" and change_kind not in _CHANGE_KINDS:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid change_kind",
+            headers=_PRIVATE_HEADERS,
+        )
+    if window not in _CHANGE_WINDOWS:
+        raise HTTPException(status_code=400, detail="invalid window", headers=_PRIVATE_HEADERS)
+    parsed_from = _query_iso_date(from_date, name="from_date")
+    parsed_to = _query_iso_date(to_date, name="to_date")
+    if window != "all" and (parsed_from is not None or parsed_to is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="from_date and to_date require window=all",
+            headers=_PRIVATE_HEADERS,
+        )
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(status_code=400, detail="invalid date range", headers=_PRIVATE_HEADERS)
+    page_limit = _query_limit(limit)
+
+    query = q.casefold() if q else None
+    phase_value = phase.casefold() if phase else None
+    status_value = status.casefold() if status else None
+    condition_value = condition.casefold() if condition else None
+    query_binding = _change_query_binding(
+        change_kind=change_kind,
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        q=query,
+        phase=phase_value,
+        status=status_value,
+        condition=condition_value,
+        limit=page_limit,
+    )
+    # Authenticate syntax and signature, then bind the normalized query before
+    # reading a pointer-bound projection.  A forged or reused cursor must not
+    # become a disk-read oracle.
+    cursor_key = _change_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = _decode_change_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest,
+        expected_query_digest,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    projection, operational = _read_bundle()
+    generation_id = getattr(projection.generation, "generation_id", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        _opaque_digest({"generation_id": generation_id}),
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    history_models = getattr(projection, "history_models_by_nct", None)
+    trials = getattr(projection, "trials", None)
+    if not isinstance(history_models, Mapping) or not isinstance(trials, Sequence):
+        raise _unavailable()
+
+    changes: list[dict[str, Any]] = []
+    available_trials = 0
+    unavailable_trials = 0
+    seen_nct_ids: set[str] = set()
+    generation_as_of = _generation_as_of_time(projection)
+    history_knowledge_cutoff: tuple[datetime, str] | None = None
+    for snapshot in trials:
+        if not isinstance(snapshot, Mapping):
+            raise _unavailable()
+        nct_id = snapshot.get("nct_id")
+        if not isinstance(nct_id, str) or not _NCT_ID.fullmatch(nct_id) or nct_id in seen_nct_ids:
+            raise _unavailable()
+        seen_nct_ids.add(nct_id)
+        model = history_models.get(nct_id)
+        if not isinstance(model, Mapping):
+            raise _unavailable()
+        trial = _public_trial(snapshot, detail=False)
+        selected = _matches_trial_filters(
+            trial,
+            query=query,
+            phase=phase_value,
+            status=status_value,
+            condition=condition_value,
+        )
+        grouped = _history_change_groups(
+            model,
+            nct_id=nct_id,
+            change_kind=change_kind,
+        )
+        if grouped is None:
+            if selected:
+                unavailable_trials += 1
+            continue
+        groups, retrieved_time, retrieved_at = grouped
+        if history_knowledge_cutoff is None or retrieved_time > history_knowledge_cutoff[0]:
+            history_knowledge_cutoff = (retrieved_time, retrieved_at)
+        if not selected:
+            continue
+        available_trials += 1
+        if not groups:
+            continue
+        for group in groups:
+            submitted_date = group.get("_submitted_date")
+            kind_tie = group.get("_kind_tie")
+            if not isinstance(submitted_date, date) or not isinstance(kind_tie, tuple):
+                raise _unavailable()
+            group["trial"] = trial
+            group["_sort"] = (
+                -submitted_date.toordinal(),
+                nct_id,
+                group["registry_change"]["after_display_version"],
+                group["registry_change"]["before_display_version"],
+                kind_tie,
+            )
+            changes.append(group)
+    if set(history_models) != seen_nct_ids:
+        # Publication binding guarantees this, but the serving adapter must not
+        # silently turn a mismatched current/history projection into coverage.
+        raise _unavailable()
+
+    response_as_of = generation_as_of
+    response_as_of_literal = getattr(projection.generation, "last_success_at", None)
+    if not isinstance(response_as_of_literal, str):
+        raise _unavailable()
+    if history_knowledge_cutoff is not None and history_knowledge_cutoff[0] > response_as_of:
+        response_as_of, response_as_of_literal = history_knowledge_cutoff
+    range_start, range_end, effective_window = _change_window(
+        anchor=response_as_of.date(),
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+    )
+    changes = [
+        item
+        for item in changes
+        if range_start <= item["_submitted_date"] <= range_end
+    ]
+    changes.sort(key=lambda item: item["_sort"])
+    total = len(changes)
+    page = changes[offset : offset + page_limit]
+    for item in page:
+        item.pop("_sort", None)
+        item.pop("_submitted_date", None)
+        item.pop("_kind_tie", None)
+    next_offset = offset + len(page)
+    payload = _meta(projection, operational)
+    payload["as_of"] = response_as_of_literal
+    payload.update(
+        {
+            "query": {
+                "change_kind": change_kind,
+                "window": window,
+                "from_date": parsed_from.isoformat() if parsed_from else None,
+                "to_date": parsed_to.isoformat() if parsed_to else None,
+                "q": q,
+                "phase": phase,
+                "status": status,
+                "condition": condition,
+            },
+            "effective_window": effective_window,
+            "history_coverage": {
+                "class": "record_history_complete",
+                "selection_basis": "current_trial_record",
+                "available_trials": available_trials,
+                "unavailable_trials": unavailable_trials,
+                "knowledge_cutoff": (
+                    history_knowledge_cutoff[1]
+                    if history_knowledge_cutoff is not None
+                    else None
+                ),
+            },
+            "pagination": {
+                "limit": page_limit,
+                "total": total,
+                "next_cursor": (
+                    _encode_change_cursor(
+                        next_offset,
+                        generation_id=generation_id,
+                        query_binding=query_binding,
+                        cursor_key=cursor_key,
+                    )
+                    if next_offset < total
+                    else None
+                ),
+            },
+            "changes": page,
         }
     )
     return _response(payload)

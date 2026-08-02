@@ -2,18 +2,32 @@
   'use strict';
 
   var MILESTONE_API = '/api/biocatalyst/v1/trials/milestones';
+  var CHANGE_API = '/api/biocatalyst/v1/trials/changes';
   var TRIAL_API = '/api/biocatalyst/v1/trials';
   var TRIAL_ID = /^NCT\d{8}$/;
   var DATE_PARTS = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/;
   var WINDOW_VALUES = { '30': true, '90': true, '180': true, all: true };
   var MILESTONE_WINDOWS = { '30': 'next_30d', '90': 'next_90d', '180': 'next_180d', all: 'all' };
   var FIELD_VALUES = { primary_completion: true, completion: true };
+  var CHANGE_KIND_VALUES = {
+    endpoint_added: true, endpoint_removed: true, endpoint_role_changed: true,
+    endpoint_measure_changed: true, endpoint_time_frame_changed: true,
+    endpoint_description_changed: true, enrollment_changed: true,
+    registry_status_changed: true, study_date_changed: true,
+    site_listing_changed: true, lead_sponsor_text_changed: true,
+    intervention_added: true, intervention_removed: true, intervention_changed: true
+  };
+  var CHANGE_WINDOWS = { '30': 'last_30d', '90': 'last_90d', '180': 'last_180d', all: 'all' };
+  var MODE_VALUES = { milestones: true, changes: true };
+  var AUTHORITY_ALLOWED_USES = ['display', 'context', 'explain'];
+  var AUTHORITY_FORBIDDEN_USES = ['originate_signal', 'rank_security', 'select_security', 'size_position', 'gate_decision', 'execute_trade', 'raise_authority'];
   var PAGE_LIMIT = 50;
   var state = {
     payload: null,
     rows: [],
     nextCursor: '',
     selectedId: '',
+    selectedKey: '',
     selected: null,
     detail: null,
     listToken: 0,
@@ -28,7 +42,8 @@
     appendFailed: false,
     accessLocked: false,
     returnFocus: null,
-    filters: { field: 'primary_completion', window: '90', q: '', phase: '', status: '', condition: '' }
+    mode: 'milestones',
+    filters: { field: 'primary_completion', change_kind: '', window: '90', q: '', phase: '', status: '', condition: '' }
   };
   var ui = {};
 
@@ -52,8 +67,15 @@
     ui.runStatus = document.querySelector('.bci-run-status');
     ui.refresh = byId('bci-refresh');
     ui.windowControl = byId('bci-window-control');
+    ui.windowLabel = byId('bci-window-label');
     ui.windowButtons = Array.prototype.slice.call(document.querySelectorAll('.bci-window'));
     ui.field = byId('bci-field-filter');
+    ui.fieldControl = byId('bci-field-control');
+    ui.changeKind = byId('bci-change-kind-filter');
+    ui.changeKindControl = byId('bci-change-kind-control');
+    ui.modeControl = byId('bci-mode-control');
+    ui.modeButtons = Array.prototype.slice.call(document.querySelectorAll('.bci-mode'));
+    ui.queuePane = byId('bci-queue-pane');
     ui.search = byId('bci-search');
     ui.phase = byId('bci-phase-filter');
     ui.statusFilter = byId('bci-status-filter');
@@ -61,6 +83,9 @@
     ui.clear = byId('bci-clear');
     ui.brainLaunch = byId('bci-brain-launch');
     ui.subtitle = byId('bci-queue-subtitle');
+    ui.queueKicker = byId('bci-queue-kicker');
+    ui.queueTitle = byId('bci-queue-title');
+    ui.sourceNote = byId('bci-source-note-copy');
     ui.asOf = byId('bci-asof');
     ui.notice = byId('bci-state-notice');
     ui.pageStatus = byId('bci-page-status');
@@ -159,12 +184,39 @@
     if (state[name]) state[name].abort();
     state[name] = null;
   }
+  function isChangeMode() { return state.mode === 'changes'; }
+  function activeApi() { return isChangeMode() ? CHANGE_API : MILESTONE_API; }
+  function activeWindow() { return isChangeMode() ? CHANGE_WINDOWS[state.filters.window] : MILESTONE_WINDOWS[state.filters.window]; }
+  function activeNoun() { return isChangeMode() ? tr('registry field updates', '登记字段更新') : tr('registry milestones', '登记里程碑'); }
+  function modeTitle() { return isChangeMode() ? tr('Change Tape', '变更记录') : tr('Milestone monitor', '里程碑监测'); }
+  function modeKicker() { return isChangeMode() ? tr('Exact registry updates', '精确登记更新') : tr('Registry-recorded dates', '登记记录日期'); }
+  function defaultFilters() { return { field: 'primary_completion', change_kind: '', window: '90', q: '', phase: '', status: '', condition: '' }; }
+  function validAuthority(authority) {
+    return !!authority && typeof authority === 'object' && authority.classification === 'source_fact' && authority.decision_authority === false &&
+      Object.keys(authority).sort().join('|') === 'allowed_uses|classification|decision_authority|forbidden_uses' &&
+      JSON.stringify(authority.allowed_uses) === JSON.stringify(AUTHORITY_ALLOWED_USES) &&
+      JSON.stringify(authority.forbidden_uses) === JSON.stringify(AUTHORITY_FORBIDDEN_USES);
+  }
+  function safeJson(value, depth) {
+    depth = depth || 0;
+    if (depth > 12 || value === null || typeof value === 'boolean') return depth <= 12;
+    if (typeof value === 'number') return Number.isFinite(value);
+    if (typeof value === 'string') return Array.from(value).length <= 12000;
+    if (Array.isArray(value)) return value.length <= 200 && value.every(function (item) { return safeJson(item, depth + 1); });
+    if (!value || typeof value !== 'object' || Object.keys(value).length > 100) return false;
+    return Object.keys(value).every(function (key) { return Array.from(key).length <= 256 && safeJson(value[key], depth + 1); });
+  }
+  function fullTimestamp(value) { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value)); }
+  function exactHistoryUrl(value, id, version) {
+    var expected = 'https://clinicaltrials.gov/study/' + encodeURIComponent(id) + '?a=' + String(version) + '&tab=history';
+    return clean(value) === expected;
+  }
+  function exactHistoryRootUrl(value, id) { return clean(value) === 'https://clinicaltrials.gov/study/' + encodeURIComponent(id) + '?tab=history'; }
 
   function validMeta(payload) {
     return !!payload && typeof payload === 'object' && payload.schema_version === 'biocatalyst_api.v1' &&
       payload.source && typeof payload.source === 'object' && payload.health && typeof payload.health === 'object' &&
-      payload.coverage && typeof payload.coverage === 'object' && payload.authority &&
-      payload.authority.classification === 'source_fact' && payload.authority.decision_authority === false;
+      payload.coverage && typeof payload.coverage === 'object' && validAuthority(payload.authority);
   }
   function validTrial(trial) { return !!trial && typeof trial === 'object' && isTrialId(nctOf(trial)) && !!(clean(valueAt(trial, 'title')) || clean(valueAt(trial, 'brief_title'))); }
   function validMilestone(item) {
@@ -183,6 +235,35 @@
       Number.isSafeInteger(pagination.total) && pagination.total >= 0 &&
       (pagination.next_cursor == null || (typeof pagination.next_cursor === 'string' && /^[A-Za-z0-9_-]{1,384}$/.test(pagination.next_cursor))) &&
       query && typeof query === 'object' && window && typeof window === 'object';
+  }
+  function validChangeEvidence(evidence, id, afterVersion) {
+    return !!evidence && typeof evidence === 'object' && clean(valueAt(evidence, 'provider')) === 'ClinicalTrials.gov' &&
+      clean(valueAt(evidence, 'record_id')) === id && exactHistoryUrl(valueAt(evidence, 'version_url'), id, afterVersion) &&
+      exactHistoryRootUrl(valueAt(evidence, 'history_url'), id) && fullTimestamp(valueAt(evidence, 'retrieved_at')) &&
+      clean(valueAt(evidence, 'coverage')) === 'record_history_complete';
+  }
+  function validRegistryChange(change) {
+    var before = valueAt(change, 'before_display_version'), after = valueAt(change, 'after_display_version'), changes = valueAt(change, 'changes'), shown = valueAt(change, 'shown_change_count'), total = valueAt(change, 'total_display_safe_changes');
+    return !!change && typeof change === 'object' && Number.isSafeInteger(before) && before >= 1 && Number.isSafeInteger(after) && after > before &&
+      fullDate(valueAt(change, 'source_submitted_at')) && clean(valueAt(change, 'interpretation')) === 'registry_record_changed' &&
+      valueAt(change, 'protocol_change_asserted') === false && valueAt(change, 'materiality_assessed') === false &&
+      Number.isSafeInteger(total) && total >= 1 && Number.isSafeInteger(shown) && shown >= 1 && shown <= total &&
+      Array.isArray(changes) && changes.length === shown && changes.length <= 2000 && changes.every(function (item) {
+        return !!item && typeof item === 'object' && CHANGE_KIND_VALUES[clean(valueAt(item, 'kind'))] === true && safeJson(valueAt(item, 'before_value')) && safeJson(valueAt(item, 'after_value'));
+      });
+  }
+  function validChange(item) {
+    var trial = valueAt(item, 'trial'), registryChange = valueAt(item, 'registry_change');
+    return !!item && typeof item === 'object' && validTrial(trial) && validRegistryChange(registryChange) &&
+      validChangeEvidence(valueAt(item, 'evidence'), nctOf(trial), valueAt(registryChange, 'after_display_version')) && validAuthority(valueAt(item, 'authority'));
+  }
+  function validateChangeEnvelope(payload) {
+    var pagination = valueAt(payload, 'pagination'), query = valueAt(payload, 'query'), historyCoverage = valueAt(payload, 'history_coverage'), window = valueAt(payload, 'effective_window');
+    if (!validMeta(payload) || !Array.isArray(payload.changes) || !pagination || typeof pagination !== 'object' || !query || typeof query !== 'object' || !window || typeof window !== 'object' || !historyCoverage || typeof historyCoverage !== 'object') throw new Error('Invalid change list contract');
+    if (pagination.limit !== PAGE_LIMIT || !Number.isSafeInteger(pagination.total) || pagination.total < 0 || (pagination.next_cursor != null && (typeof pagination.next_cursor !== 'string' || !/^[A-Za-z0-9_-]{1,384}$/.test(pagination.next_cursor)))) throw new Error('Invalid change pagination contract');
+    var knowledgeCutoff = valueAt(historyCoverage, 'knowledge_cutoff'), payloadAsOf = valueAt(payload, 'as_of');
+    if (!fullTimestamp(payloadAsOf) || clean(valueAt(historyCoverage, 'class')) !== 'record_history_complete' || clean(valueAt(historyCoverage, 'selection_basis')) !== 'current_trial_record' || !Number.isSafeInteger(valueAt(historyCoverage, 'available_trials')) || valueAt(historyCoverage, 'available_trials') < 0 || !Number.isSafeInteger(valueAt(historyCoverage, 'unavailable_trials')) || valueAt(historyCoverage, 'unavailable_trials') < 0 || (knowledgeCutoff != null && (!fullTimestamp(knowledgeCutoff) || Date.parse(knowledgeCutoff) > Date.parse(payloadAsOf)))) throw new Error('Invalid change coverage contract');
+    if (!changeQueryMatchesCurrentFilters(query) || !effectiveChangeWindowIsSane(window, clean(valueAt(query, 'window')))) throw new Error('Change query binding mismatch');
   }
   function normalizedQueryValue(value) { return clean(value).toLowerCase(); }
   function fullDate(value) {
@@ -217,6 +298,22 @@
       return normalizedQueryValue(actualValue) === normalizedQueryValue(expectedValue);
     });
   }
+  function changeQueryMatchesCurrentFilters(query) {
+    if (!query || typeof query !== 'object') return false;
+    var expected = {
+      change_kind: state.filters.change_kind || 'all',
+      window: CHANGE_WINDOWS[state.filters.window],
+      q: state.filters.q,
+      phase: state.filters.phase,
+      status: state.filters.status,
+      condition: state.filters.condition
+    };
+    return Object.keys(expected).every(function (key) {
+      var expectedValue = expected[key], actualValue = valueAt(query, key);
+      if (!expectedValue) return actualValue == null || clean(actualValue) === '';
+      return normalizedQueryValue(actualValue) === normalizedQueryValue(expectedValue);
+    });
+  }
   function effectiveWindowIsSane(window, apiWindow) {
     if (!window || typeof window !== 'object') return false;
     var from = clean(valueAt(window, 'from_date')), to = clean(valueAt(window, 'to_date')), anchor = clean(valueAt(window, 'anchor_date'));
@@ -225,14 +322,42 @@
     }
     return fullDate(from) && fullDate(to) && fullDate(anchor) && anchor === from && from <= to;
   }
+  function effectiveChangeWindowIsSane(window, apiWindow) {
+    if (!window || typeof window !== 'object') return false;
+    var from = clean(valueAt(window, 'from_date')), to = clean(valueAt(window, 'to_date')), anchor = clean(valueAt(window, 'anchor_date'));
+    if (clean(valueAt(window, 'date_basis')) !== 'source_submitted_at') return false;
+    if (apiWindow === 'all') return fullDate(anchor) && (!from || fullDate(from)) && (!to || fullDate(to)) && (!from || !to || from <= to);
+    return fullDate(from) && fullDate(to) && fullDate(anchor) && anchor === to && from <= to;
+  }
   function validateMilestoneEnvelope(payload) {
     if (!validEnvelope(payload)) throw new Error('Invalid milestone list contract');
     var query = valueAt(payload, 'query');
     if (!queryMatchesCurrentFilters(query)) throw new Error('Milestone query binding mismatch');
     if (!effectiveWindowIsSane(valueAt(payload, 'effective_window'), clean(valueAt(query, 'window')))) throw new Error('Invalid effective registry window');
   }
+  function changeIdentity(item) {
+    var registryChange = valueAt(item, 'registry_change');
+    return nctOf(valueAt(item, 'trial')) + '|' + valueAt(registryChange, 'before_display_version') + '|' + valueAt(registryChange, 'after_display_version') + '|' + clean(valueAt(registryChange, 'source_submitted_at'));
+  }
+  function validateChangePage(items, existingRows) {
+    if (!Array.isArray(items)) throw new Error('Invalid change page');
+    var seen = {};
+    arr(existingRows).forEach(function (item) { seen[changeIdentity(item)] = true; });
+    return items.map(function (item) {
+      if (!validChange(item)) throw new Error('Invalid registry change record');
+      var identity = changeIdentity(item);
+      if (seen[identity]) throw new Error('Duplicate registry change identity');
+      seen[identity] = true;
+      return item;
+    });
+  }
   function milestoneIdentity(item) {
     return nctOf(valueAt(item, 'trial')) + '|' + milestoneKindOf(valueAt(item, 'registry_milestone')) + '|' + clean(valueAt(valueAt(item, 'registry_milestone'), 'date'));
+  }
+  function rowIdentity(item) { return isChangeMode() ? changeIdentity(item) : milestoneIdentity(item); }
+  function selectedRow() {
+    return state.rows.filter(function (item) { return state.selectedKey && rowIdentity(item) === state.selectedKey; })[0] ||
+      state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0];
   }
   function validateMilestonePage(items, existingRows) {
     if (!Array.isArray(items)) throw new Error('Invalid milestone page');
@@ -257,14 +382,27 @@
     if (requestedCursor && nextCursor === requestedCursor) throw new Error('Repeated milestone cursor');
     if (loadedBefore && (!Number.isSafeInteger(previousTotal) || previousTotal !== total)) throw new Error('Milestone total changed during pagination');
   }
+  function validateChangePagination(payload, existingRows, requestedCursor, previousPayload) {
+    var pagination = valueAt(payload, 'pagination'), previous = valueAt(previousPayload, 'pagination');
+    var pageSize = payload.changes.length, loadedBefore = arr(existingRows).length, loadedAfter = loadedBefore + pageSize;
+    var total = pagination.total, nextCursor = clean(pagination.next_cursor), previousTotal = valueAt(previous, 'total');
+    if (pageSize > pagination.limit || loadedAfter > total) throw new Error('Invalid registry change page bounds');
+    if (total > loadedBefore && pageSize === 0) throw new Error('Empty registry change page before total');
+    if (nextCursor && loadedAfter >= total) throw new Error('Unexpected registry change cursor');
+    if (!nextCursor && loadedAfter !== total) throw new Error('Incomplete registry change pagination');
+    if (requestedCursor && nextCursor === requestedCursor) throw new Error('Repeated registry change cursor');
+    if (loadedBefore && (!Number.isSafeInteger(previousTotal) || previousTotal !== total)) throw new Error('Registry change total changed during pagination');
+  }
   function generationKey(payload) {
     var source = valueAt(payload, 'source') || {}, health = valueAt(payload, 'health') || {}, coverage = valueAt(payload, 'coverage') || {};
     return [clean(valueAt(payload, 'as_of')), clean(valueAt(source, 'dataset_timestamp_raw')), clean(valueAt(health, 'last_success_at')), clean(valueAt(coverage, 'class')), valueAt(coverage, 'configured'), valueAt(coverage, 'observed')].join('|');
   }
 
   function readUrl() {
-    var params = new URLSearchParams(window.location.search), field = clean(params.get('field')), windowName = clean(params.get('window'));
+    var params = new URLSearchParams(window.location.search), field = clean(params.get('field')), windowName = clean(params.get('window')), changeKind = clean(params.get('change_kind')), mode = clean(params.get('mode'));
+    state.mode = MODE_VALUES[mode] ? mode : 'milestones';
     state.filters.field = FIELD_VALUES[field] ? field : 'primary_completion';
+    state.filters.change_kind = CHANGE_KIND_VALUES[changeKind] ? changeKind : '';
     state.filters.window = WINDOW_VALUES[windowName] ? windowName : '90';
     state.filters.q = clean(params.get('q')).slice(0, 100);
     state.filters.phase = clean(params.get('phase')).slice(0, 40);
@@ -276,7 +414,9 @@
     var url = new URL(window.location.href), params = url.searchParams;
     function assign(name, value, keepDefault) { if (value && (keepDefault || value !== '90')) params.set(name, value); else params.delete(name); }
     assign('trial', state.selectedId, true);
+    assign('mode', state.mode === 'changes' ? state.mode : '', true);
     assign('field', state.filters.field, true);
+    assign('change_kind', state.filters.change_kind, true);
     assign('window', state.filters.window, true);
     assign('q', state.filters.q, true);
     assign('phase', state.filters.phase, true);
@@ -286,6 +426,7 @@
   }
   function syncControls() {
     ui.field.value = state.filters.field;
+    ui.changeKind.value = state.filters.change_kind;
     ui.search.value = state.filters.q;
     ui.phase.value = state.filters.phase;
     ui.statusFilter.value = state.filters.status;
@@ -296,40 +437,66 @@
       button.setAttribute('aria-checked', active ? 'true' : 'false');
       button.tabIndex = active ? 0 : -1;
     });
+    ui.modeButtons.forEach(function (button) {
+      var active = button.getAttribute('data-mode') === state.mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+      button.tabIndex = active ? 0 : -1;
+      if (active) ui.queuePane.setAttribute('aria-labelledby', button.id);
+    });
+    ui.fieldControl.hidden = isChangeMode();
+    ui.changeKindControl.hidden = !isChangeMode();
+    text(ui.windowLabel, isChangeMode() ? tr('Submission window', '提交窗口') : tr('Record window', '记录窗口'));
+    ui.windowControl.querySelector('.bci-window-options').setAttribute('aria-label', isChangeMode() ? tr('Registry submission window', '登记提交窗口') : tr('Registry date window', '登记日期窗口'));
+    text(ui.queueKicker, modeKicker());
+    text(ui.queueTitle, modeTitle());
+    text(ui.sourceNote, tr('Dates and field updates are recorded by ClinicalTrials.gov from study-sponsor and investigator submissions. A registry listing is not government validation. Review the source record—no trade call.', '日期和字段更新来自 ClinicalTrials.gov 所记录的研究申办方与研究者提交内容。登记收录不代表政府验证。请查看来源记录，不作交易判断。'));
   }
   function localizeControls() {
     var labels = {
       'bci-phase-filter': { PHASE1: ['Phase 1', '一期'], PHASE2: ['Phase 2', '二期'], PHASE3: ['Phase 3', '三期'], PHASE4: ['Phase 4', '四期'] },
       'bci-status-filter': { RECRUITING: ['Recruiting', '招募中'], NOT_YET_RECRUITING: ['Not yet recruiting', '尚未招募'], ACTIVE_NOT_RECRUITING: ['Active, not recruiting', '进行中，未招募'], COMPLETED: ['Completed', '已完成'], TERMINATED: ['Terminated', '已终止'] }
     };
-    [ui.field, ui.phase, ui.statusFilter].forEach(function (select) {
+    [ui.field, ui.changeKind, ui.phase, ui.statusFilter].forEach(function (select) {
       if (!select) return;
       Array.prototype.slice.call(select.options).forEach(function (option) {
         var pair = labels[select.id] && labels[select.id][option.value];
         text(option, pair ? tr(pair[0], pair[1]) : (option.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || option.textContent));
       });
     });
+    Array.prototype.slice.call(ui.changeKind.querySelectorAll('optgroup')).forEach(function (group) {
+      group.label = group.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || group.label;
+    });
     [ui.search, ui.condition].forEach(function (input) {
       if (input) input.placeholder = input.getAttribute(lang() === 'zh' ? 'data-placeholder-zh' : 'data-placeholder-en') || input.placeholder;
     });
-    ui.windowButtons.forEach(function (button) { button.setAttribute('aria-label', button.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || button.textContent); });
+    ui.windowButtons.forEach(function (button) {
+      var value = button.getAttribute('data-window'), milestoneLabel = button.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || button.textContent;
+      button.setAttribute('aria-label', isChangeMode()
+        ? (value === 'all' ? tr('All available source submissions', '全部可用来源提交') : tr('Last ' + value + ' days of source submissions', '最近' + value + '天的来源提交'))
+        : milestoneLabel);
+    });
     [ui.refresh, ui.inspectorClose, ui.brainLaunch].forEach(function (button) {
       if (button) button.setAttribute('aria-label', button.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || button.textContent);
     });
-    ui.queue.setAttribute('aria-label', tr('Registry milestones', '登记里程碑'));
+    ui.queue.setAttribute('aria-label', activeNoun());
+    ui.modeControl.setAttribute('aria-label', tr('Trial intelligence view', '试验智能视图'));
+    ui.modeButtons.forEach(function (button) { button.setAttribute('aria-label', button.getAttribute(lang() === 'zh' ? 'data-label-zh' : 'data-label-en') || button.textContent); });
     setLoadMoreCopy();
   }
   function queryUrl(cursor) {
     var params = new URLSearchParams();
     params.set('limit', String(PAGE_LIMIT));
-    params.set('window', MILESTONE_WINDOWS[state.filters.window]);
-    params.set('milestone_kind', state.filters.field);
+    params.set('window', activeWindow());
+    if (isChangeMode()) {
+      if (state.filters.change_kind) params.set('change_kind', state.filters.change_kind);
+    } else params.set('milestone_kind', state.filters.field);
     if (state.filters.q) params.set('q', state.filters.q);
     if (state.filters.phase) params.set('phase', state.filters.phase);
     if (state.filters.status) params.set('status', state.filters.status);
     if (state.filters.condition) params.set('condition', state.filters.condition);
     if (cursor) params.set('cursor', cursor);
-    return MILESTONE_API + '?' + params.toString();
+    return activeApi() + '?' + params.toString();
   }
 
   function setStatus(kind, label, detail) {
@@ -349,16 +516,18 @@
   }
   function setLoadMoreCopy() {
     if (!ui.loadMore) return;
+    var noun = activeNoun(), singular = isChangeMode() ? tr('registry field update', '登记字段更新') : tr('registry milestone', '登记里程碑');
     var label = state.pageLoading
-      ? tr('Loading more registry milestones', '正在加载更多登记里程碑')
+      ? tr('Loading more ' + noun, '正在加载更多' + noun)
       : (state.appendFailed
-        ? tr('Retry loading more registry milestones', '重试加载更多登记里程碑')
-        : tr('Load more registry milestones', '加载更多登记里程碑'));
+        ? tr('Retry loading more ' + noun, '重试加载更多' + noun)
+        : tr('Load more ' + noun, '加载更多' + noun));
     ui.loadMore.disabled = state.pageLoading;
     ui.loadMore.setAttribute('aria-label', label);
     ui.loadMore.setAttribute('aria-busy', state.pageLoading ? 'true' : 'false');
     text(ui.loadMore.querySelector('.l-en'), state.pageLoading ? 'Loading more…' : (state.appendFailed ? 'Retry load more' : 'Load more'));
     text(ui.loadMore.querySelector('.l-zh'), state.pageLoading ? '正在加载更多…' : (state.appendFailed ? '重试加载更多' : '加载更多'));
+    ui.loadMore.dataset.kind = singular;
   }
   function loadingQueue(append) {
     if (!append) {
@@ -378,8 +547,8 @@
     return badge;
   }
   function makeMilestoneRow(item, index) {
-    var trial = item.trial, milestone = item.registry_milestone, evidence = item.evidence, id = nctOf(trial), button = el('button', 'bci-trial' + (id === state.selectedId ? ' is-selected' : ''));
-    button.type = 'button'; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', id === state.selectedId ? 'true' : 'false'); button.setAttribute('data-trial-id', id); button.tabIndex = index === 0 ? 0 : -1;
+    var trial = item.trial, milestone = item.registry_milestone, evidence = item.evidence, id = nctOf(trial), rowKey = milestoneIdentity(item), selected = rowKey === state.selectedKey, button = el('button', 'bci-trial' + (selected ? ' is-selected' : ''));
+    button.type = 'button'; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', selected ? 'true' : 'false'); button.setAttribute('data-trial-id', id); button.setAttribute('data-row-key', rowKey); button.tabIndex = index === 0 ? 0 : -1;
     var main = el('span', 'bci-trial-main'), line = el('span', 'bci-trial-topline'), kind = milestoneKindOf(milestone);
     line.appendChild(el('span', 'bci-trial-id', id));
     line.appendChild(el('span', 'bci-registry-kind', milestoneKindLabel(kind)));
@@ -395,12 +564,45 @@
     date.appendChild(typeBadge(dateTypeOf(milestone)));
     date.setAttribute('data-precision', precisionOf(milestone));
     button.appendChild(date);
-    button.addEventListener('click', function () { selectTrial(id, trial, evidence, true, button); });
+    button.addEventListener('click', function () { selectTrial(id, trial, evidence, true, button, rowKey); });
+    return button;
+  }
+  function compactValue(value) {
+    var rendered = historyValue(value);
+    return rendered.length > 118 ? rendered.slice(0, 117).replace(/\s+$/, '') + '…' : rendered;
+  }
+  function makeChangeRow(item, index) {
+    var trial = item.trial, registryChange = item.registry_change, evidence = item.evidence, id = nctOf(trial), changes = registryChange.changes, rowKey = changeIdentity(item), selected = rowKey === state.selectedKey, button = el('button', 'bci-trial bci-change-card' + (selected ? ' is-selected' : ''));
+    button.type = 'button'; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', selected ? 'true' : 'false'); button.setAttribute('data-trial-id', id); button.setAttribute('data-row-key', rowKey); button.tabIndex = index === 0 ? 0 : -1;
+    var main = el('span', 'bci-trial-main'), line = el('span', 'bci-trial-topline');
+    line.appendChild(el('span', 'bci-trial-id', id));
+    var kindNames = [], seenKinds = {};
+    changes.forEach(function (change) { var kind = clean(change.kind); if (!seenKinds[kind]) { seenKinds[kind] = true; kindNames.push(kind); } });
+    kindNames.slice(0, 3).forEach(function (kind) { line.appendChild(el('span', 'bci-registry-kind', historyKindLabel(kind))); });
+    if (kindNames.length > 3) line.appendChild(el('span', 'bci-registry-kind', '+' + (kindNames.length - 3)));
+    if (statusOf(trial)) line.appendChild(el('span', 'bci-status-chip', statusOf(trial)));
+    main.appendChild(line); main.appendChild(el('span', 'bci-trial-title', titleOf(trial)));
+    var meta = el('span', 'bci-trial-meta'), phaseText = phasesOf(trial).join(' · ');
+    if (phaseText) meta.appendChild(el('span', '', phaseText));
+    if (sponsorOf(trial)) meta.appendChild(el('span', '', sponsorOf(trial)));
+    main.appendChild(meta);
+    var first = changes[0], preview = el('span', 'bci-change-preview');
+    preview.setAttribute('aria-label', tr('Registry value preview; open the dossier for the full exact value', '登记值预览；打开档案查看完整精确值'));
+    preview.appendChild(el('span', '', compactValue(first.before_value)));
+    preview.appendChild(el('b', '', '→'));
+    preview.appendChild(el('span', '', compactValue(first.after_value)));
+    main.appendChild(preview); button.appendChild(main);
+    var receipt = el('span', 'bci-change-receipt');
+    receipt.appendChild(el('strong', '', tr('Submitted ', '提交日期 ') + timestampLabel(registryChange.source_submitted_at)));
+    receipt.appendChild(el('span', 'bci-change-version', 'V' + registryChange.before_display_version + ' → V' + registryChange.after_display_version));
+    if (registryChange.total_display_safe_changes > registryChange.shown_change_count) receipt.appendChild(el('span', '', tr(registryChange.shown_change_count + ' of ' + registryChange.total_display_safe_changes + ' fields', registryChange.shown_change_count + '/' + registryChange.total_display_safe_changes + '项字段')));
+    button.appendChild(receipt);
+    button.addEventListener('click', function () { selectTrial(id, trial, evidence, true, button, rowKey); });
     return button;
   }
   function syncQueueSelection() {
     Array.prototype.slice.call(ui.queue.querySelectorAll('.bci-trial')).forEach(function (button) {
-      var selected = button.getAttribute('data-trial-id') === state.selectedId;
+      var selected = button.getAttribute('data-row-key') === state.selectedKey;
       button.classList.toggle('is-selected', selected);
       button.setAttribute('aria-selected', selected ? 'true' : 'false');
     });
@@ -408,26 +610,37 @@
   function renderQueue() {
     clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', state.loading ? 'true' : 'false');
     if (state.accessLocked) {
-      ui.queue.appendChild(emptyCard(tr('Registry records are locked', '登记记录已锁定'), tr('Sign in with full access to read registry-recorded dates.', '请以完整访问权限登录，读取登记记录日期。'), '◌'));
+      ui.queue.appendChild(emptyCard(isChangeMode() ? tr('Registry updates are locked', '登记更新已锁定') : tr('Registry records are locked', '登记记录已锁定'), tr('Sign in with full access to read ' + activeNoun() + '.', '请以完整访问权限登录，读取' + activeNoun() + '。'), '◌'));
       ui.queueFooter.hidden = true;
       setLoadMoreCopy();
       return;
     }
     if (!state.rows.length) {
-      ui.queue.appendChild(emptyCard(tr('No recorded dates', '暂无已记录日期'), tr('No registry-recorded primary completion or completion date matches this window and filter set.', '在此窗口和筛选条件下，没有匹配的主要完成或完成登记日期。'), '○'));
+      ui.queue.appendChild(emptyCard(
+        isChangeMode() ? tr('No registry field updates', '暂无登记字段更新') : tr('No recorded dates', '暂无已记录日期'),
+        isChangeMode() ? tr('No exact registry field update matches this submission window and filter set.', '在此提交窗口和筛选条件下，没有匹配的精确登记字段更新。') : tr('No registry-recorded primary completion or completion date matches this window and filter set.', '在此窗口和筛选条件下，没有匹配的主要完成或完成登记日期。'),
+        '○'
+      ));
     } else {
-      state.rows.forEach(function (item, index) { ui.queue.appendChild(makeMilestoneRow(item, index)); });
+      state.rows.forEach(function (item, index) { ui.queue.appendChild(isChangeMode() ? makeChangeRow(item, index) : makeMilestoneRow(item, index)); });
     }
     ui.queueFooter.hidden = !state.nextCursor || state.accessLocked;
     setLoadMoreCopy();
   }
   function setSubtitle(payload) {
-    var pagination = valueAt(payload, 'pagination') || {}, total = valueAt(pagination, 'total'), window = valueAt(payload, 'effective_window') || {};
-    if (typeof total !== 'number') { text(ui.subtitle, tr('Registry-recorded primary completion and completion dates', '登记记录的主要完成和完成日期')); return; }
+    var pagination = valueAt(payload, 'pagination') || {}, total = valueAt(pagination, 'total'), window = valueAt(payload, 'effective_window') || {}, historyCoverage = valueAt(payload, 'history_coverage') || {};
+    if (typeof total !== 'number') { text(ui.subtitle, isChangeMode() ? tr('Exact registry field updates from source submissions', '来源提交中的精确登记字段更新') : tr('Registry-recorded primary completion and completion dates', '登记记录的主要完成和完成日期')); return; }
     var timeLabel = clean(valueAt(window, 'from_date')) && clean(valueAt(window, 'to_date'))
-      ? tr('within the selected record window', '位于所选记录窗口内')
-      : tr('across the available record range', '覆盖可用记录范围');
-    text(ui.subtitle, total === 1 ? tr('1 registry-recorded date ' + timeLabel, '1项登记记录日期' + timeLabel) : tr(total + ' registry-recorded dates ' + timeLabel, total + '项登记记录日期' + timeLabel));
+      ? (isChangeMode() ? tr('within the selected submission window', '位于所选提交窗口内') : tr('within the selected record window', '位于所选记录窗口内'))
+      : (isChangeMode() ? tr('across the available submission range', '覆盖可用提交范围') : tr('across the available record range', '覆盖可用记录范围'));
+    if (isChangeMode()) {
+      var available = valueAt(historyCoverage, 'available_trials'), unavailable = valueAt(historyCoverage, 'unavailable_trials');
+      var coverageLabel = Number.isSafeInteger(available) && Number.isSafeInteger(unavailable)
+        ? tr(' · History coverage: ' + available + ' complete, ' + unavailable + ' unavailable', ' · 历史覆盖：' + available + '项完整，' + unavailable + '项不可用')
+        : '';
+      text(ui.subtitle, (total === 1 ? tr('1 exact registry field update ' + timeLabel, '1项精确登记字段更新' + timeLabel) : tr(total + ' exact registry field updates ' + timeLabel, total + '项精确登记字段更新' + timeLabel)) + coverageLabel);
+    }
+    else text(ui.subtitle, total === 1 ? tr('1 registry-recorded date ' + timeLabel, '1项登记记录日期' + timeLabel) : tr(total + ' registry-recorded dates ' + timeLabel, total + '项登记记录日期' + timeLabel));
   }
 
   function fact(label, value) { if (!value) return null; var box = el('div', 'bci-detail-fact'); box.appendChild(el('span', '', label)); box.appendChild(el('strong', '', value)); return box; }
@@ -441,13 +654,14 @@
     });
     if (!list.childNodes.length) section.appendChild(el('p', 'bci-detail-note', fallback)); else section.appendChild(list); return section;
   }
-  function historyValue(value, depth) {
-    depth = depth || 0; if (depth > 4) return tr('Structured value', '结构化值');
-    if (value === null || typeof value === 'undefined') return tr('Not recorded', '未记录');
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return clean(String(value)) || tr('Not recorded', '未记录');
-    if (Array.isArray(value)) return value.slice(0, 12).map(function (item) { return historyValue(item, depth + 1); }).join(' · ') || tr('Empty', '空');
-    if (typeof value === 'object') return Object.keys(value).slice(0, 12).map(function (key) { return clean(key) + ': ' + historyValue(value[key], depth + 1); }).join(' · ') || tr('Empty', '空');
-    return tr('Not recorded', '未记录');
+  function historyValue(value) {
+    if (typeof value === 'undefined') return tr('Not recorded', '未记录');
+    try {
+      var encoded = JSON.stringify(value);
+      return typeof encoded === 'string' ? encoded : tr('Not recorded', '未记录');
+    } catch (_error) {
+      return tr('Value unavailable', '值暂不可用');
+    }
   }
   function historyUnavailableCopy(reason) {
     var copy = {
@@ -542,19 +756,20 @@
   }
   function closeInspector(options) {
     options = options || {};
-    var returnFocus = state.returnFocus, returnTrialId = returnFocus && clean(returnFocus.getAttribute('data-trial-id'));
+    var returnFocus = state.returnFocus, returnTrialId = returnFocus && clean(returnFocus.getAttribute('data-trial-id')), returnRowKey = returnFocus && str(returnFocus.getAttribute('data-row-key'));
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
-    state.returnFocus = null; state.selectedId = ''; state.selected = null; state.detail = null; abort('detailController');
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a registry milestone to read the current trial record and its source receipt.', '选择一项登记里程碑，查看当前试验记录及其来源凭证。'));
+    state.returnFocus = null; state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; abort('detailController'); state.detailToken += 1;
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' to read the current trial record and its source receipt.', '选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '，查看当前试验记录及其来源凭证。'));
     if (options.writeUrl !== false) writeUrl();
     if (options.render !== false) syncQueueSelection();
+    if ((!returnFocus || !document.contains(returnFocus)) && returnRowKey) returnFocus = Array.prototype.slice.call(ui.queue.querySelectorAll('[data-row-key]')).filter(function (row) { return row.getAttribute('data-row-key') === returnRowKey; })[0];
     if ((!returnFocus || !document.contains(returnFocus)) && isTrialId(returnTrialId)) returnFocus = ui.queue.querySelector('[data-trial-id="' + returnTrialId + '"]');
     if (options.restoreFocus !== false && returnFocus && document.contains(returnFocus) && typeof returnFocus.focus === 'function') returnFocus.focus({ preventScroll: true });
   }
   function detailLoading() { text(ui.inspectorTitle, tr('Loading dossier', '正在加载档案')); clearChildren(ui.inspectorBody); ui.inspectorBody.appendChild(el('div', 'bci-loading-detail', tr('Reading the current official record…', '正在读取当前官方记录…'))); }
-  function selectTrial(id, trial, queueEvidence, update, trigger) {
+  function selectTrial(id, trial, queueEvidence, update, trigger, rowKey) {
     if (!isTrialId(id)) return;
-    state.selectedId = id; state.selected = trial || { nct_id: id, title: id }; state.detail = null; if (update) writeUrl(); syncQueueSelection();
+    state.selectedId = id; state.selectedKey = rowKey || (trigger && str(trigger.getAttribute('data-row-key'))) || ''; state.selected = trial || { nct_id: id, title: id }; state.detail = null; if (update) writeUrl(); syncQueueSelection();
     trigger = trigger && document.contains(trigger) ? trigger : ui.queue.querySelector('[data-trial-id="' + id + '"]');
     openInspector(window.matchMedia('(max-width: 1120px)').matches, trigger); detailLoading();
     abort('detailController'); var controller = new AbortController(), token = state.detailToken + 1; state.detailToken = token; state.detailController = controller;
@@ -570,11 +785,13 @@
   }
 
   function updateMetadata(payload) {
-    var health = valueAt(payload, 'health') || {}, source = valueAt(payload, 'source') || {}, stateName = clean(valueAt(health, 'state')).toLowerCase(), asOf = clean(valueAt(payload, 'as_of')) || clean(valueAt(source, 'dataset_timestamp_raw'));
-    text(ui.asOf, asOf ? tr('As of ', '截至 ') + timestampLabel(asOf) : '');
+    var health = valueAt(payload, 'health') || {}, source = valueAt(payload, 'source') || {}, historyCoverage = valueAt(payload, 'history_coverage') || {}, stateName = clean(valueAt(health, 'state')).toLowerCase(), asOf = clean(valueAt(payload, 'as_of')) || clean(valueAt(source, 'dataset_timestamp_raw')), historyCutoff = clean(valueAt(historyCoverage, 'knowledge_cutoff'));
+    text(ui.asOf, isChangeMode() && historyCutoff
+      ? tr('History retrieved through ', '历史获取截至 ') + timestampLabel(historyCutoff)
+      : (asOf ? tr('As of ', '截至 ') + timestampLabel(asOf) : ''));
     if (stateName === 'stale') { setStatus('stale', tr('Last verified page', '最近已核验页面'), tr('Registry update in progress', '登记库正在更新')); setNotice('stale', tr('The registry update is in progress. You are reading the last verified page; check its as-of date.', '登记库更新正在进行。当前展示最近一次已核验页面；请查看其截至日期。')); }
     else if (stateName === 'unavailable') { setStatus('unavailable', tr('Freshness status unavailable', '新鲜度状态暂不可用'), tr('Showing the current verified page', '正在显示当前已核验页面')); setNotice('error', tr('The freshness check is unavailable. Read the source and retrieval dates before relying on this page.', '新鲜度检查暂不可用。使用此页面前请查看来源和获取日期。')); }
-    else if (state.restarted) { setStatus('restarted', tr('Registry page restarted', '登记页面已重启'), tr('Showing the refreshed verified page', '正在显示刷新后的已核验页面')); setNotice('restart', tr('The registry generation changed while another page was loading. The monitor restarted from the current filters.', '加载另一页时登记生成发生变化。监测器已按当前筛选条件重新开始。')); }
+    else if (state.restarted) { setStatus('restarted', tr('Registry page restarted', '登记页面已重启'), tr('Showing the refreshed verified page', '正在显示刷新后的已核验页面')); setNotice('restart', tr('The registry generation changed while another page was loading. The ' + modeTitle().toLowerCase() + ' restarted from the current filters.', '加载另一页时登记生成发生变化。' + modeTitle() + '已按当前筛选条件重新开始。')); }
     else { setStatus('ready', tr('Verified registry page', '已核验登记页面'), clean(valueAt(source, 'name')) || tr('Official registry source', '官方登记来源')); setNotice('', ''); }
   }
   function isAccessError(error) { return !!error && (error.status === 401 || error.status === 402 || error.status === 403); }
@@ -582,21 +799,21 @@
   function paintLockedWorkspace() {
     ui.workspace.dataset.state = 'locked'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
     setStatus('locked', tr('Full access required', '需要完整访问权限'), tr('Sign in with an entitled account', '请使用已授权账户登录'));
-    setNotice('locked', tr('Registry Milestone Monitor is available with full access. No trial records are shown until access is confirmed.', '登记里程碑监测需要完整访问权限。访问确认前不会显示试验记录。'));
-    ui.queue.appendChild(emptyCard(tr('Registry records are locked', '登记记录已锁定'), tr('Sign in with full access to read registry-recorded dates.', '请以完整访问权限登录，读取登记记录日期。'), '◌'));
-    announce(tr('Registry records are locked.', '登记记录已锁定。'));
+    setNotice('locked', tr('BioCatalyst Intelligence is available with full access. No trial records are shown until access is confirmed.', 'BioCatalyst Intelligence 需要完整访问权限。访问确认前不会显示试验记录。'));
+    ui.queue.appendChild(emptyCard(isChangeMode() ? tr('Registry updates are locked', '登记更新已锁定') : tr('Registry records are locked', '登记记录已锁定'), tr('Sign in with full access to read ' + activeNoun() + '.', '请以完整访问权限登录，读取' + activeNoun() + '。'), '◌'));
+    announce(tr(activeNoun() + ' are locked.', activeNoun() + '已锁定。'));
   }
   function lockWorkspace() {
     abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1; ui.refresh.classList.remove('is-spinning');
     state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = '';
-    state.selectedId = ''; state.selected = null; state.detail = null; state.appendFailed = false; state.accessLocked = true;
+    state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.appendFailed = false; state.accessLocked = true;
     paintLockedWorkspace();
   }
   function paintAppendFailure() {
     ui.workspace.dataset.state = 'append-unavailable';
-    setStatus('stale', tr('Last verified page', '最近已核验页面'), tr('The next registry page could not be loaded', '无法加载下一页登记记录'));
-    setNotice('stale', tr('The next registry page is unavailable. Showing last verified rows; try Load more again.', '下一页登记记录暂不可用。正在显示最近已核验行；请再次加载更多。'));
-    announce(tr('The next registry page is unavailable. Last verified rows remain visible.', '下一页登记记录暂不可用。最近已核验行保持可见。'));
+    setStatus('stale', tr('Last verified page', '最近已核验页面'), tr('The next ' + activeNoun() + ' page could not be loaded', '无法加载下一页' + activeNoun()));
+    setNotice('stale', tr('The next ' + activeNoun() + ' page is unavailable. Showing last verified rows; try Load more again.', '下一页' + activeNoun() + '暂不可用。正在显示最近已核验行；请再次加载更多。'));
+    announce(tr('The next ' + activeNoun() + ' page is unavailable. Last verified rows remain visible.', '下一页' + activeNoun() + '暂不可用。最近已核验行保持可见。'));
     renderQueue();
     if (!ui.queueFooter.hidden && document.activeElement === ui.loadMore) ui.loadMore.focus({ preventScroll: true });
   }
@@ -606,21 +823,21 @@
   }
   function paintUnavailableWorkspace() {
     ui.workspace.dataset.state = 'unavailable'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
-    setStatus('unavailable', tr('Registry page unavailable', '登记页面暂不可用'), tr('No dates are inferred', '不会推断日期'));
+    setStatus('unavailable', tr('Registry page unavailable', '登记页面暂不可用'), tr('No source fields are inferred', '不会推断来源字段'));
     setNotice('error', tr('The verified registry page is temporarily unavailable. No trial records are shown.', '已核验登记页面暂不可用。不会显示试验记录。'));
-    ui.queue.appendChild(emptyCard(tr('Registry page unavailable', '登记页面暂不可用'), tr('Retry the source request. This monitor does not estimate unrecorded dates.', '请重试来源请求。此监测器不会估计未记录日期。'), '×', true));
+    ui.queue.appendChild(emptyCard(tr('Registry page unavailable', '登记页面暂不可用'), tr('Retry the source request. This workspace does not infer unrecorded fields.', '请重试来源请求。此工作台不会推断未记录字段。'), '×', true));
     announce(tr('Registry page unavailable.', '登记页面暂不可用。'));
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a registry milestone when the current page is available.', '当前页面可用后，请选择一项登记里程碑。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' when the current page is available.', '当前页面可用后，请选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '。'));
   }
   function handleUnavailable(error, options) {
     options = options || {};
     if (isAccessError(error)) {
       lockWorkspace();
-      showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a registry milestone when full access is confirmed.', '完整访问权限确认后，请选择一项登记里程碑。'));
+      showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '。'));
       return;
     }
     if (options.append && state.rows.length) { preserveAppendFailure(); return; }
-    state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false;
+    state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.selectedKey = ''; state.appendFailed = false; state.accessLocked = false;
     paintUnavailableWorkspace();
   }
   function loadMilestones(options) {
@@ -631,27 +848,28 @@
     if (!append) {
       state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; if (!options.restarted) state.restarted = false;
       ui.workspace.dataset.state = options.restarted ? 'generation-restarted' : (state.hasLoaded ? 'loading' : 'first-load'); loadingQueue(false);
-      text(ui.subtitle, tr('Retrieving the verified registry page…', '正在获取已核验登记页面…')); setStatus('ready', tr('Retrieving registry records', '正在获取登记记录'), tr('No records are in this page shell', '此页面外壳不含记录'));
+      text(ui.subtitle, tr('Retrieving the verified ' + activeNoun() + ' page…', '正在获取已核验' + activeNoun() + '页面…')); setStatus('ready', tr('Retrieving ' + activeNoun(), '正在获取' + activeNoun()), tr('No records are in this page shell', '此页面外壳不含记录'));
     } else {
-      ui.workspace.dataset.state = 'page-loading'; loadingQueue(true); announce(tr('Loading more registry-recorded dates.', '正在加载更多登记记录日期。'));
+      ui.workspace.dataset.state = 'page-loading'; loadingQueue(true); announce(tr('Loading more ' + activeNoun() + '.', '正在加载更多' + activeNoun() + '。'));
     }
     ui.refresh.classList.add('is-spinning');
     fetchJson(queryUrl(cursor), controller.signal).then(function (payload) {
-      if (token !== state.listToken) return; validateMilestoneEnvelope(payload);
+      if (token !== state.listToken) return;
+      if (isChangeMode()) validateChangeEnvelope(payload); else validateMilestoneEnvelope(payload);
       var incomingGeneration = generationKey(payload);
       if (append && state.generation && incomingGeneration !== state.generation) {
         state.restarted = true; announce(tr('The registry page changed. Reloading the selected filters.', '登记页面已变化。正在重新加载所选筛选条件。'));
         loadMilestones({ replace: true, restarted: true }); return;
       }
-      var existingRows = append ? state.rows : [], rows = validateMilestonePage(payload.milestones, existingRows), pagination = payload.pagination;
-      validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null);
+      var existingRows = append ? state.rows : [], rows = isChangeMode() ? validateChangePage(payload.changes, existingRows) : validateMilestonePage(payload.milestones, existingRows), pagination = payload.pagination;
+      if (isChangeMode()) validateChangePagination(payload, existingRows, cursor, append ? state.payload : null); else validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null);
       if (append) state.rows = state.rows.concat(rows); else state.rows = rows;
       state.payload = payload; state.generation = incomingGeneration; state.nextCursor = clean(valueAt(pagination, 'next_cursor')); state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false;
       ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : (state.rows.length ? 'ready' : 'empty'); updateMetadata(payload); setSubtitle(payload); renderQueue();
-      announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' registry-recorded dates.', '已加载' + state.rows.length + '项登记记录日期。') : tr('No registry-recorded dates match these filters.', '没有登记记录日期匹配这些筛选条件。'));
+      announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。'));
       if (!append && state.selectedId) {
-        var selectedRow = state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0];
-        selectTrial(state.selectedId, selectedRow && selectedRow.trial, selectedRow && selectedRow.evidence, false);
+        var activeRow = selectedRow();
+        selectTrial(state.selectedId, activeRow && activeRow.trial, activeRow && activeRow.evidence, false, null, activeRow && rowIdentity(activeRow));
       }
     }).catch(function (error) {
       if (token !== state.listToken || (error && error.name === 'AbortError')) return;
@@ -669,6 +887,7 @@
   }
   function applyFilters() {
     state.filters.field = ui.field.value;
+    state.filters.change_kind = ui.changeKind.value;
     state.filters.q = clean(ui.search.value).slice(0, 100);
     state.filters.phase = clean(ui.phase.value).slice(0, 40);
     state.filters.status = clean(ui.statusFilter.value).slice(0, 40);
@@ -679,6 +898,17 @@
     if (!WINDOW_VALUES[value] || state.filters.window === value) return;
     state.filters.window = value; syncControls(); applyFilters();
   }
+  function setMode(value, trigger) {
+    if (!MODE_VALUES[value] || state.mode === value) return;
+    abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1;
+    state.mode = value; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; state.restarted = false;
+    state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.returnFocus = null;
+    ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
+    syncControls(); localizeControls(); writeUrl();
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' to read the current trial record and its source receipt.', '选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '，查看当前试验记录及其来源凭证。'));
+    if (trigger && document.contains(trigger)) trigger.focus({ preventScroll: true });
+    loadMilestones({ replace: true });
+  }
   function openBrain() {
     if (window.MMBrain && typeof window.MMBrain.open === 'function') { window.MMBrain.open(); return; }
     setNotice('error', tr('Mastermind is unavailable right now. Your registry filters remain unchanged.', '操盘大脑暂不可用。你的登记筛选条件保持不变。'));
@@ -687,7 +917,14 @@
     var debounceId = 0;
     ui.search.addEventListener('input', function () { window.clearTimeout(debounceId); debounceId = window.setTimeout(applyFilters, 260); });
     ui.condition.addEventListener('input', function () { window.clearTimeout(debounceId); debounceId = window.setTimeout(applyFilters, 260); });
-    [ui.field, ui.phase, ui.statusFilter].forEach(function (node) { node.addEventListener('change', applyFilters); });
+    [ui.field, ui.changeKind, ui.phase, ui.statusFilter].forEach(function (node) { node.addEventListener('change', applyFilters); });
+    ui.modeButtons.forEach(function (button) { button.addEventListener('click', function () { setMode(button.getAttribute('data-mode'), button); }); });
+    ui.modeControl.addEventListener('keydown', function (event) {
+      if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) return;
+      var active = ui.modeButtons.map(function (button) { return button.getAttribute('data-mode'); }).indexOf(state.mode), direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1, target;
+      if (event.key === 'Home') target = 0; else if (event.key === 'End') target = ui.modeButtons.length - 1; else target = (active + direction + ui.modeButtons.length) % ui.modeButtons.length;
+      event.preventDefault(); ui.modeButtons[target].focus(); setMode(ui.modeButtons[target].getAttribute('data-mode'), ui.modeButtons[target]);
+    });
     ui.windowButtons.forEach(function (button) { button.addEventListener('click', function () { setWindow(button.getAttribute('data-window')); }); });
     ui.windowControl.addEventListener('keydown', function (event) {
       if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].indexOf(event.key) < 0) return;
@@ -695,7 +932,7 @@
       if (event.key === 'Home') target = 0; else if (event.key === 'End') target = ui.windowButtons.length - 1; else target = (active + direction + ui.windowButtons.length) % ui.windowButtons.length;
       event.preventDefault(); ui.windowButtons[target].focus(); setWindow(ui.windowButtons[target].getAttribute('data-window'));
     });
-    ui.clear.addEventListener('click', function () { state.filters = { field: 'primary_completion', window: '90', q: '', phase: '', status: '', condition: '' }; syncControls(); applyFilters(); ui.search.focus(); });
+    ui.clear.addEventListener('click', function () { state.filters = defaultFilters(); syncControls(); applyFilters(); ui.search.focus(); });
     ui.brainLaunch.addEventListener('click', openBrain);
     ui.refresh.addEventListener('click', function () { loadMilestones({ replace: true }); });
     ui.loadMore.addEventListener('click', function () { loadMilestones({ append: true }); });
@@ -703,13 +940,13 @@
     ui.queue.addEventListener('keydown', function (event) { if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return; var rows = Array.prototype.slice.call(ui.queue.querySelectorAll('.bci-trial')), current = rows.indexOf(document.activeElement); if (!rows.length) return; event.preventDefault(); var next = current < 0 ? 0 : (current + (event.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length; rows[next].focus(); });
     document.addEventListener('keydown', function (event) { trapInspectorFocus(event); if (event.key === 'Escape' && ui.inspector.classList.contains('is-open')) closeInspector(); });
     document.addEventListener('langchange', function () {
-      localizeControls();
-      if (state.accessLocked) { paintLockedWorkspace(); showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a registry milestone when full access is confirmed.', '完整访问权限确认后，请选择一项登记里程碑。')); return; }
+      syncControls(); localizeControls();
+      if (state.accessLocked) { paintLockedWorkspace(); showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '。')); return; }
       if (ui.workspace.dataset.state === 'unavailable') { paintUnavailableWorkspace(); return; }
       if (state.appendFailed) paintAppendFailure();
-      else if (state.payload) { updateMetadata(state.payload); setSubtitle(state.payload); renderQueue(); }
-      else if (state.loading) { text(ui.subtitle, tr('Retrieving the verified registry page…', '正在获取已核验登记页面…')); setStatus('ready', tr('Retrieving registry records', '正在获取登记记录'), tr('No records are in this page shell', '此页面外壳不含记录')); }
-      if (state.detail) { var selectedRow = state.rows.filter(function (item) { return nctOf(item.trial) === state.selectedId; })[0]; showDetail(state.detail, selectedRow && selectedRow.evidence); }
+      else if (state.payload) { updateMetadata(state.payload); setSubtitle(state.payload); renderQueue(); announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。')); }
+      else if (state.loading) { text(ui.subtitle, tr('Retrieving the verified ' + activeNoun() + ' page…', '正在获取已核验' + activeNoun() + '页面…')); setStatus('ready', tr('Retrieving ' + activeNoun(), '正在获取' + activeNoun()), tr('No records are in this page shell', '此页面外壳不含记录')); announce(tr('Retrieving ' + activeNoun() + '.', '正在获取' + activeNoun() + '。')); }
+      if (state.detail) { var activeRow = selectedRow(); showDetail(state.detail, activeRow && activeRow.evidence); }
       else if (state.detailController && ui.inspector.classList.contains('is-open')) detailLoading();
     });
     window.addEventListener('popstate', function () { abort('listController'); closeInspector({ restoreFocus: false, writeUrl: false, render: false }); readUrl(); syncControls(); loadMilestones({ replace: true }); });
@@ -718,7 +955,7 @@
   function init() {
     cacheUi(); readUrl(); localizeControls(); syncControls(); bindEvents();
     writeUrl();
-    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a registry milestone to read the current trial record and its source receipt.', '选择一项登记里程碑，查看当前试验记录及其来源凭证。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + (isChangeMode() ? 'registry field update' : 'registry milestone') + ' to read the current trial record and its source receipt.', '选择一项' + (isChangeMode() ? '登记字段更新' : '登记里程碑') + '，查看当前试验记录及其来源凭证。'));
     loadMilestones({ replace: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
