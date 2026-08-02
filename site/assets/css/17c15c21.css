@@ -29,7 +29,7 @@ body.public-page{padding-top:0}
   padding:20px;background:#fff;border:1px solid #d2d8e1;border-radius:16px;
   box-shadow:0 24px 70px -30px rgba(18,26,45,.45),0 14px 34px -14px rgba(18,26,45,.28);z-index:97}
 .public-nav-panel[hidden]{display:none}
-.public-nav-panel-research{width:min(590px,calc(100vw - 40px))}
+.public-nav-panel-research{width:min(650px,calc(100vw - 40px))}
 .public-nav-panel-resources{left:auto;right:-80px;width:min(610px,calc(100vw - 40px))}
 .public-nav-panel-head{display:flex;align-items:center;justify-content:space-between;gap:20px;
   padding:2px 2px 16px;border-bottom:1px solid #e2e6ec}

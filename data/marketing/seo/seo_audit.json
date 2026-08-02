@@ -1,15 +1,15 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-08-02T16:00:02Z",
+  "as_of": "2026-08-02T21:41:09Z",
   "health_score": 86,
   "census": {
     "total_pages": 1955,
     "by_family": {
       "core": {
         "pages": 147,
-        "with_canonical": 132,
-        "with_desc": 131,
-        "with_og": 131,
+        "with_canonical": 133,
+        "with_desc": 132,
+        "with_og": 132,
         "with_jsonld": 6,
         "in_sitemap": 10
       },
@@ -66,8 +66,8 @@
     }
   },
   "sitemap": {
-    "total_urls": 2246,
-    "core": 660,
+    "total_urls": 2262,
+    "core": 676,
     "products": 5,
     "stocks": 1581,
     "host_ok": true,
@@ -137,6 +137,13 @@
     "brand_facts_age_days": 6
   },
   "issues": [
+    {
+      "id": "canonical_not_self_baskets_html",
+      "severity": "high",
+      "class": "canonical_not_self",
+      "page": "baskets.html",
+      "detail": "Canonical points to different page: https://www.mastermind-x.com/sector_central.html"
+    },
     {
       "id": "canonical_not_self_baskets_china_ths_html",
       "severity": "high",
@@ -348,27 +355,6 @@
       "detail": "Description length 14 chars (expected 50-170)"
     },
     {
-      "id": "missing_description_narrative_radar_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "narrative_radar.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_narrative_radar_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "narrative_radar.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_narrative_radar_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "narrative_radar.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "missing_description_qa_bottom_sensors_html",
       "severity": "high",
       "class": "missing_description",
@@ -479,6 +465,13 @@
       "class": "missing_og",
       "page": "stock.html",
       "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "canonical_not_self_subsector_rotation_html",
+      "severity": "high",
+      "class": "canonical_not_self",
+      "page": "subsector_rotation.html",
+      "detail": "Canonical points to different page: https://www.mastermind-x.com/sector_central.html"
     },
     {
       "id": "missing_description_tech_lab_html",
@@ -1536,14 +1529,21 @@
       "class": "missing_from_sitemap",
       "page": "markets.html",
       "detail": "Public page not in sitemap: markets.html"
+    },
+    {
+      "id": "missing_from_sitemap_mastermind_html",
+      "severity": "medium",
+      "class": "missing_from_sitemap",
+      "page": "mastermind.html",
+      "detail": "Public page not in sitemap: mastermind.html"
     }
   ],
   "issue_counts_by_class": {
-    "canonical_not_self": 4,
+    "canonical_not_self": 6,
     "page_weight": 1,
-    "missing_description": 29,
-    "missing_og": 29,
-    "missing_canonical": 28,
+    "missing_description": 28,
+    "missing_og": 28,
+    "missing_canonical": 27,
     "desc_length": 10,
     "title_length": 3,
     "missing_lang": 2,
@@ -1555,7 +1555,7 @@
   "issue_counts_by_severity": {
     "critical": 0,
     "high": 47,
-    "medium": 304,
+    "medium": 303,
     "low": 1
   }
 }

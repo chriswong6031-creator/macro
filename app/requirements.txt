@@ -5,6 +5,11 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30
 pydantic>=2.0,<3.0
+# The public Company Intelligence reader verifies immutable R2 objects with a
+# bounded server-side requests stream.  It is imported by the public ticker
+# context router at API startup, so this is a serving-tier dependency rather
+# than a worker-only convenience.
+requests>=2.31,<3.0
 # Reviewed serving-boundary policy (config/site_access.yml). Imported at API
 # startup by app/paywall.py, so this is a hard serving-tier dependency.
 PyYAML>=6.0,<7.0

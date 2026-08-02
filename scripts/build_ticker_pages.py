@@ -1476,25 +1476,40 @@ def _build_meta(
         meta_desc += f" Price: {price_str}."
     if sector:
         meta_desc += f" Sector: {sector}."
-    meta_desc += " Signals, options positioning, factor profile updated nightly."
+    meta_desc += " Signals, options positioning and factor context updated nightly."
 
+    canonical = f"{CANONICAL_BASE}/stocks/{ticker}.html"
+    company_entity: dict[str, Any] = {
+        "@type": "Corporation",
+        "@id": f"{canonical}#company",
+        "name": name,
+        "tickerSymbol": ticker,
+        "url": canonical,
+    }
+    if sector:
+        company_entity["industry"] = sector
+    if desc_trunc:
+        company_entity["description"] = desc_trunc
+
+    # The ticker URL is a living entity dossier, not a dated article. Event
+    # briefs carry Article/NewsArticle markup on their own canonical URLs.
     jsonld = {
         "@context": "https://schema.org",
-        "@type": "Article",
-        "headline": f"{ticker} — {name}: signals, options & factor profile",
+        "@type": "ProfilePage",
+        "@id": f"{canonical}#profile",
+        "name": f"{ticker} — {name} company dossier",
         "datePublished": freshness,
         "dateModified": freshness,
-        "author": {"@type": "Organization", "name": "MastermindX Research"},
         "publisher": {"@type": "Organization", "name": "MastermindX"},
-        "about": {"@type": "Corporation", "name": name, "tickerSymbol": ticker},
-        "url": f"{CANONICAL_BASE}/stocks/{ticker}.html",
+        "mainEntity": company_entity,
+        "url": canonical,
     }
     jsonld_str = json.dumps(jsonld, ensure_ascii=False).replace("</", "<\\/")
 
     return {
         "ticker": ticker,
         "name": name,
-        "canonical": f"{CANONICAL_BASE}/stocks/{ticker}.html",
+        "canonical": canonical,
         "meta_desc": meta_desc,
         "jsonld_str": jsonld_str,
         "freshness": freshness,

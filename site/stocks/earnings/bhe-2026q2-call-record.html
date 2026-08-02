@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BHE — Benchmark Electronics, Inc. Q2 FY2026 earnings call record — MastermindX</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Receipt-bound excerpts from Benchmark Electronics, Inc.&#39;s Q2 FY2026 earnings call transcript.">
+<link rel="canonical" href="https://www.mastermind-x.com/stocks/earnings/bhe-2026q2-call-record.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="BHE — Benchmark Electronics, Inc. Q2 FY2026 earnings call record">
+<meta property="og:description" content="Receipt-bound excerpts from Benchmark Electronics, Inc.&#39;s Q2 FY2026 earnings call transcript.">
+<meta property="og:url" content="https://www.mastermind-x.com/stocks/earnings/bhe-2026q2-call-record.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BHE — Benchmark Electronics, Inc. Q2 FY2026 earnings call record">
+<meta name="twitter:description" content="Receipt-bound excerpts from Benchmark Electronics, Inc.&#39;s Q2 FY2026 earnings call transcript.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=8d7800c8"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/index.html"},{"@type":"ListItem","position":2,"name":"Earnings call records","item":"https://www.mastermind-x.com/stocks/earnings/index.html"},{"@type":"ListItem","position":3,"name":"BHE"}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"BHE — Benchmark Electronics, Inc. Q2 FY2026 earnings call record","description":"Receipt-bound excerpts from Benchmark Electronics, Inc.'s earnings-call transcript. Transcript-only source record; not investment advice.","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.mastermind-x.com/stocks/earnings/bhe-2026q2-call-record.html"},"dateCreated":"2026-08-02T00:08:49Z","dateModified":"2026-08-02T00:08:49Z","temporalCoverage":"2026-07-29","author":{"@type":"Organization","name":"MastermindX"},"publisher":{"@type":"Organization","name":"MastermindX"},"isBasedOn":"https://app.mastermind-x.com/terminal?sym=BHE&pane=transcripts&tx=2026Q2&from=macro"}</script>
+<link rel="stylesheet" href="../../assets/css/55bc728a.css?v=55bc728a">
+<link rel="stylesheet" href="../../assets/css/17c15c21.css?v=17c15c21"><link rel="stylesheet" href="assets/earnings-wire.css?v=287bf262">
+<link rel="preload" as="style" href="../../product-nav-icons.css?v=093ad1ea">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
+</head>
+<body class="estate public-page earnings-wire earnings-wire-article">
+
+<nav class="public-nav" aria-label="Main">
+  <div class="public-nav-in">
+    <a class="public-brand" href="../../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="public-nav-toggle" id="public-nav-toggle" type="button" aria-expanded="false"
+            aria-controls="public-primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="public-nav-links" id="public-primary-navigation">
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-platform-trigger" type="button" aria-expanded="false" aria-controls="public-platform-panel">
+          <span class="l-en">Platform</span><span class="l-zh">平台</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel" id="public-platform-panel" aria-labelledby="public-platform-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">CONNECTED RESEARCH DESK</span><span class="l-zh">互联研究工作台</span></span><strong><span class="l-en">Move from market state to the underlying evidence</span><span class="l-zh">从市场状态一路深入到底层证据</span></strong></div>
+            <a href="../../products/index.html"><span class="l-en">Platform overview →</span><span class="l-zh">平台概览 →</span></a>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="../../products/market-terminal.html"><i>01</i><span><strong><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></strong><small><span class="l-en">Browser charting, watchlists and stock research context.</span><span class="l-zh">浏览器图表、观察列表与股票研究背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../products/mastermind-ai.html"><i>02</i><span><strong>Mastermind AI</strong><small><span class="l-en">A market research assistant grounded in the page and its sources.</span><span class="l-zh">结合当前页面与来源的市场研究助手。</span></small></span></a>
+            <a class="public-nav-card" href="../../products/market-dashboards.html"><i>03</i><span><strong><span class="l-en">Market Dashboards</span><span class="l-zh">市场仪表盘</span></strong><small><span class="l-en">Macro, cycle, sector rotation and cross-asset context.</span><span class="l-zh">宏观、周期、行业轮动与跨资产背景。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-research-trigger" type="button" aria-expanded="false" aria-controls="public-research-panel">
+          <span class="l-en">Research</span><span class="l-zh">研究</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-research" id="public-research-panel" aria-labelledby="public-research-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">PUBLIC RESEARCH SURFACES</span><span class="l-zh">公开研究界面</span></span><strong><span class="l-en">From report excerpts to ticker-level dossiers</span><span class="l-zh">从报告节选到逐股档案</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="https://www.mastermind-x.com/research_vault.html"><i>R</i><span><strong><span class="l-en">Institutional Research</span><span class="l-zh">机构研报</span></strong><small><span class="l-en">Preview the latest three report summaries; full research and PDFs are available with Pro.</span><span class="l-zh">预览最新三篇研报摘要；完整研报与 PDF 为 Pro 专享。</span></small></span></a>
+            <a class="public-nav-card" href="../../stocks/index.html"><i>S</i><span><strong><span class="l-en">Stock Dossiers</span><span class="l-zh">股票档案</span></strong><small><span class="l-en">Ticker pages for technical, fundamental, ownership and options context.</span><span class="l-zh">按股票整理的技术面、基本面、持仓与期权背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../stocks/earnings/index.html"><i>E</i><span><strong><span class="l-en">Earnings Intelligence</span><span class="l-zh">财报情报</span></strong><small><span class="l-en">Receipt-bound call records that lead directly into the ticker dossier.</span><span class="l-zh">可追溯的电话会记录，并可直接进入个股档案。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-resources-trigger" type="button" aria-expanded="false" aria-controls="public-resources-panel">
+          <span class="l-en">Resources</span><span class="l-zh">资源</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-resources" id="public-resources-panel" aria-labelledby="public-resources-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">USEFUL BEFORE SIGNUP</span><span class="l-zh">无需账户即可使用</span></span><strong><span class="l-en">Start by solving one real problem</span><span class="l-zh">先解决一个真实问题</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid two">
+            <a class="public-nav-card" href="../../tools/index.html"><i>T</i><span><strong><span class="l-en">Free Tools</span><span class="l-zh">免费工具</span></strong><small><span class="l-en">Calculators for sizing, risk, returns and portfolios.</span><span class="l-zh">仓位、风险、回报与投资组合计算器。</span></small></span></a>
+            <a class="public-nav-card" href="../../learn/index.html"><i>L</i><span><strong><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></strong><small><span class="l-en">Lessons on technicals, risk, options and filings.</span><span class="l-zh">技术分析、风险、期权与申报文件课程。</span></small></span></a>
+            <a class="public-nav-card" href="../../blog/index.html"><i>B</i><span><strong><span class="l-en">Blog</span><span class="l-zh">博客</span></strong><small><span class="l-en">Plain-English articles on trading math and market mechanics.</span><span class="l-zh">关于交易数学与市场机制的朴素文章。</span></small></span></a>
+            <a class="public-nav-card" href="../../support.html"><i>?</i><span><strong><span class="l-en">Support</span><span class="l-zh">支持</span></strong><small><span class="l-en">Help with account, product and access questions.</span><span class="l-zh">账户、产品与访问问题的帮助入口。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-direct"><a href="../../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a></li>
+    </ul>
+    <div class="public-nav-right">
+      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
+      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <div class="gp-lang">
+            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="../../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    <li>
+<a href="../../index.html">Home</a>    </li>
+<li class="sep" aria-hidden="true">/</li>    <li>
+<a href="../../stocks/earnings/index.html">Earnings call records</a>    </li>
+<li class="sep" aria-hidden="true">/</li>    <li aria-current="page">
+BHE    </li>
+  </ol>
+</nav>
+
+<main id="main">
+<article class="ewa">
+  <header class="ewa-head">
+    <div class="ew-wrap">
+      <div class="ewa-crumb"><a href="index.html"><span class="l-en">Earnings wire</span><span class="l-zh">财报情报线</span></a><span>/</span><span class="mono">BHE</span><span>/</span><span>Benchmark Electronics, Inc.</span></div>
+      <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span><span class="l-en">Verified call record</span><span class="l-zh">已核验电话会记录</span> <span>·</span> <time class="mono" datetime="2026-07-29">2026-07-29</time></div>
+      <div class="ewa-title-row">
+        <div><h1><span class="mono">BHE</span> · Benchmark Electronics, Inc. Q2 FY2026 <span class="l-en">earnings call record</span><span class="l-zh">财报电话会记录</span></h1>
+          <p><span class="l-en">Verbatim, receipt-bound excerpts from the earnings-call transcript. This is a source record, not a synthesized analysis or recommendation.</span><span class="l-zh">来自财报电话会文字记录的原文、可追溯摘录。这是来源记录，不是综合分析或推荐。</span></p>
+        </div>
+<a class="ewa-dossier" href="../BHE.html?from=earnings-wire&amp;tx=2026Q2"><span><span class="l-en">Open ticker dossier</span><span class="l-zh">打开个股档案</span></span><b>BHE</b><i aria-hidden="true">↗</i></a>
+      </div>
+      <div class="ewa-stats">
+        <span><b class="mono">12</b><span class="l-en"> exact excerpts</span><span class="l-zh"> 条原文摘录</span></span>
+        <span><b class="mono">28</b><span class="l-en"> numeric receipts</span><span class="l-zh"> 个数值回执</span></span>
+        <span><b class="mono">B</b><span class="l-en"> governed source tier</span><span class="l-zh"> 治理来源层级</span></span>
+        <span class="ewa-stat-ok"><span class="l-en">Transcript present</span><span class="l-zh">电话会文本已具备</span></span>
+      </div>
+    </div>
+  </header>
+
+
+  <div class="ew-wrap ewa-layout">
+    <aside class="ewa-rail" aria-label="Record details">
+      <div class="ewa-rail-block"><span><span class="l-en">Scope</span><span class="l-zh">范围</span></span><strong><span class="l-en">Transcript only</span><span class="l-zh">仅电话会文本</span></strong><p><span class="l-en">No release, filing, slides, consensus, or price-reaction join is implied here.</span><span class="l-zh">此处不包含新闻稿、申报文件、演示材料、一致预期或股价反应的合并信息。</span></p></div>
+      <div class="ewa-rail-block"><span><span class="l-en">Source body</span><span class="l-zh">来源正文</span></span><strong class="mono">sha256:ccdc0f070aca…</strong><p class="mono">27483 bytes</p></div>
+      <div class="ewa-rail-block"><span><span class="l-en">Verification boundary</span><span class="l-zh">核验边界</span></span><strong><span class="l-en">Receipt verified; raw body not publicly linked</span><span class="l-zh">回执已核验；原始正文未公开链接</span></strong><p><span class="l-en">The hash and byte coordinates bind this page to the captured source snapshot; they are an audit receipt, not a public transcript URL.</span><span class="l-zh">哈希与字节坐标将本页绑定到已捕获的来源快照；它们是审计回执，并非公开电话会链接。</span></p></div>
+      <a class="ewa-terminal" href="https://app.mastermind-x.com/terminal?sym=BHE&amp;pane=transcripts&amp;tx=2026Q2&amp;utm_source=earnings_wire&amp;utm_medium=organic_research&amp;utm_campaign=company_intelligence" target="_blank" rel="noopener noreferrer"><span class="l-en">Continue in Terminal</span><span class="l-zh">在终端继续研究</span> <span aria-hidden="true">↗</span></a>
+    </aside>
+
+    <div class="ewa-main">
+      <section class="ewa-intro" aria-labelledby="record-reading-heading">
+        <span><span class="l-en">The record</span><span class="l-zh">记录内容</span></span>
+        <h2 id="record-reading-heading"><span class="l-en">Call language, kept intact.</span><span class="l-zh">电话会表述，保持原貌。</span></h2>
+        <p><span class="l-en">The excerpts below are selected from the source record under the bounded evidence policy. Wording is not paraphrased; numbers remain the exact spans captured from the call.</span><span class="l-zh">以下摘录按受限证据策略从来源记录中选出。文字未被改写；数字保持电话会中捕获的精确片段。</span></p>
+      </section>
+
+      <section class="ewa-facts" aria-label="Verified excerpts">
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>q_and_a</span></div><span class="mono">3</span></div>
+          <blockquote>“Revenue of $756 million was up 18% compared to last year, while EPS of $0.75 grew at more than twice that rate.”</blockquote>
+          <div class="ewa-attribution"><span>David Moezidis · CEO</span><code>claim_b7db57233bacb104545efd642178c550</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_8ce163a96d8c7b55283d8f06f062b765">756 million</code><code title="claim_c0ea1db433b1cd2092eec2aa678d9291">18%</code><code title="claim_e601594b7403fef4feb9f84df8211ad8">0.75</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>q_and_a</span></div><span class="mono">4</span></div>
+          <blockquote>“At the same time, our focus on execution allowed us to deliver operating income and EPS growth of 30% and 36%, respectively, well within our objective to grow both at 1.5x to 2x the pace of revenue throughout 2026.”</blockquote>
+          <div class="ewa-attribution"><span>David Moezidis · CEO</span><code>claim_a53fee981ea54c68677aaf4c61e1809b</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_44e90f41acacb7aa5e8581d3644a014c">30%</code><code title="claim_3c9c82952868dc4ae2d4f7b51bcdaf96">36%</code><code title="claim_5afcd74ada231d7e6a078bfdd86f91bf">1.5x</code><code title="claim_6a7f0e4e8334264a8d06286ec104fb4a">2x</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>performance</span><span>q_and_a</span></div><span class="mono">4</span></div>
+          <blockquote>“Combined, this gives us the confidence to increase our 2026 revenue outlook to $3 billion, representing approximately 13% growth and achieving a historical high for the company.”</blockquote>
+          <div class="ewa-attribution"><span>David Moezidis · CEO</span><code>claim_f51dd2f245bb55bc2b2e04866df210f0</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_b018652fd69436114b41f8f0b9cb2753">2026</code><code title="claim_24cf30e00babc7476069d1e6d11d159b">3 billion</code><code title="claim_f2af73a6d2002bbb7a07cd8d6a1082c5">13%</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>margins</span><span>demand</span><span>q_and_a</span></div><span class="mono">5</span></div>
+          <blockquote>“For the second quarter, non-GAAP gross margin was 10.5%, improving 30 basis points year-over-year and 20 basis points sequentially, primarily due to volume.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_7184c83d2371cac3f52692611da5c891</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_d54626d9d5fe3fcd6ccca11740ba7fb4">10.5%</code><code title="claim_5a09a1fb3972ffd6a5c87fb3427df4b4">30</code><code title="claim_60cbca3343b851b1e1b2654389845f94">20</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>margins</span><span>q_and_a</span></div><span class="mono">5</span></div>
+          <blockquote>“Non-GAAP operating margin of 5.2% was up 50 basis points year-over-year and 40 basis points sequentially.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_19a9eac698d093389666ee8b4edd90d7</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_5a58f03584136997f8eff573450528de">5.2%</code><code title="claim_d4891a12bca3515482296d309c3c40e5">50</code><code title="claim_cad1b91ee451daf6528fbba71f32adb6">40</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>performance</span><span>q_and_a</span></div><span class="mono">7</span></div>
+          <blockquote>“This momentum is expected to continue throughout the balance of 2026, positioning us to drive operating income and earnings growth at 1.5x to 2x the pace of revenue growth.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_df5f348389ad40d123ec339e72433b63</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_6d8724fc11d2627a943db3b90f7b0b24">2026</code><code title="claim_149a3e69f6b880f9c0b853d38cac0f53">1.5x</code><code title="claim_5bb043d086ea24b465bb03d8efcc9f12">2x</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>capital_allocation</span><span>q_and_a</span></div><span class="mono">8</span></div>
+          <blockquote>“In line with our balanced capital allocation strategy, we also returned $6 million to shareholders through dividends during the quarter.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_3843f6d52ae3853417cb8563242e76f0</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_058a97614bdff33ba0d2c5481df1aa4c">6 million</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>performance</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">8</span></div>
+          <blockquote>“We expect construction to be completed in Q4 2027 to support the growth we&#39;re seeing in the region.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_1d4006be428247d939698770cc1356d8</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_e01cf39329f2aebfc90642a69b3bb94b">2027</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>segment_changes</span><span>q_and_a</span></div><span class="mono">13</span></div>
+          <blockquote>“In summary, turning to slide 13, our performance in Q2 continues to validate our strategy, maintaining relentless focus on customer success while driving operational excellence across the enterprise.”</blockquote>
+          <div class="ewa-attribution"><span>David Moezidis · CEO</span><code>claim_37a946e9dd899d5f8daf743404e627fa</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_c099d97334e2f0633e7af82dcca796ff">13</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>q_and_a</span></div><span class="mono">34</span></div>
+          <blockquote>“What are your customers saying about what order trends should look like going into the back half of the year and into 2027?”</blockquote>
+          <div class="ewa-attribution"><span>Max Michaelis</span><code>claim_30f6aa221888b298963a196fa170cb03</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_39925821b7d486be8f0f36b740a1cc0a">2027</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>demand</span><span>q_and_a</span></div><span class="mono">35</span></div>
+          <blockquote>“There is a lot of bookings that we were very successful with in 2023, 2024, 2025, and we&#39;re now seeing the fruits of that labor, if you will.”</blockquote>
+          <div class="ewa-attribution"><span>David Moezidis · CEO</span><code>claim_dae71d7f3079f6b3f94810d3b0712bf5</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_104792de17bd5ae708b935edaa048305">2023</code><code title="claim_63506649353813d863c0763a289fc4e3">2024</code><code title="claim_a588b634eb3e5b9a6fa924f8328efb22">2025</code></div>
+        </article>
+        <article class="ewa-fact">
+          <div class="ewa-fact-meta"><div class="ew-tags"><span>guidance</span><span>performance</span><span>q_and_a</span></div><span class="mono">51</span></div>
+          <blockquote>“We believe for the full year and going forward to leverage that OpEx, and that&#39;s why we talked about the 1.5x to 2x EPS growth compared to the top line.”</blockquote>
+          <div class="ewa-attribution"><span>Bryan Schumaker · CFO</span><code>claim_88834e6d2ef14620b58c488e15db7a62</code></div>
+          <div class="ewa-numerics"><span><span class="l-en">Exact numeric spans</span><span class="l-zh">精确数值片段</span></span><code title="claim_3ee3502f9b08fa1f4b9513cec6a74ec5">1.5x</code><code title="claim_1a9412ff508b649cd06caa31bb41ae64">2x</code></div>
+        </article>
+      </section>
+
+      <details class="ewa-receipts">
+        <summary><span><span class="l-en">Inspect the source receipts</span><span class="l-zh">检查来源回执</span></span><b>40 <span class="l-en">bound spans</span><span class="l-zh">个已绑定片段</span></b></summary>
+        <div class="ewa-receipt-note"><span class="l-en">Each row identifies the source body, transcript segment and byte span used to verify the visible text.</span><span class="l-zh">每行标识用于核验可见文本的来源正文、电话会片段和字节范围。</span></div>
+        <div class="ewa-table-wrap"><table><thead><tr><th><span class="l-en">Claim</span><span class="l-zh">主张</span></th><th><span class="l-en">Kind</span><span class="l-zh">类型</span></th><th><span class="l-en">Segment</span><span class="l-zh">片段</span></th><th><span class="l-en">Byte span</span><span class="l-zh">字节范围</span></th><th><span class="l-en">Text hash</span><span class="l-zh">文本哈希</span></th></tr></thead><tbody>
+<tr><td><code>claim_b7db57233bacb104545efd642178c550</code></td><td>quote</td><td class="mono">3</td><td class="mono">212–323</td><td><code>1127653a260256…</code></td></tr><tr><td><code>claim_8ce163a96d8c7b55283d8f06f062b765</code></td><td>numeric</td><td class="mono">3</td><td class="mono">224–235</td><td><code>411f1690d53a14…</code></td></tr><tr><td><code>claim_c0ea1db433b1cd2092eec2aa678d9291</code></td><td>numeric</td><td class="mono">3</td><td class="mono">243–246</td><td><code>e70b96ebb11535…</code></td></tr><tr><td><code>claim_e601594b7403fef4feb9f84df8211ad8</code></td><td>numeric</td><td class="mono">3</td><td class="mono">284–288</td><td><code>ce5d3aa79ae561…</code></td></tr><tr><td><code>claim_a53fee981ea54c68677aaf4c61e1809b</code></td><td>quote</td><td class="mono">4</td><td class="mono">0–214</td><td><code>73c043fe0bf176…</code></td></tr><tr><td><code>claim_44e90f41acacb7aa5e8581d3644a014c</code></td><td>numeric</td><td class="mono">4</td><td class="mono">98–101</td><td><code>aa57740dea1752…</code></td></tr><tr><td><code>claim_3c9c82952868dc4ae2d4f7b51bcdaf96</code></td><td>numeric</td><td class="mono">4</td><td class="mono">106–109</td><td><code>16c0f5434ed3ac…</code></td></tr><tr><td><code>claim_5afcd74ada231d7e6a078bfdd86f91bf</code></td><td>numeric</td><td class="mono">4</td><td class="mono">167–171</td><td><code>9ff89eb3456630…</code></td></tr><tr><td><code>claim_6a7f0e4e8334264a8d06286ec104fb4a</code></td><td>numeric</td><td class="mono">4</td><td class="mono">175–177</td><td><code>b595b214b5d486…</code></td></tr><tr><td><code>claim_f51dd2f245bb55bc2b2e04866df210f0</code></td><td>quote</td><td class="mono">4</td><td class="mono">511–688</td><td><code>350a9cd058e6e5…</code></td></tr><tr><td><code>claim_b018652fd69436114b41f8f0b9cb2753</code></td><td>numeric</td><td class="mono">4</td><td class="mono">566–570</td><td><code>158a323a7ba448…</code></td></tr><tr><td><code>claim_24cf30e00babc7476069d1e6d11d159b</code></td><td>numeric</td><td class="mono">4</td><td class="mono">591–600</td><td><code>ce26185d6ea707…</code></td></tr><tr><td><code>claim_f2af73a6d2002bbb7a07cd8d6a1082c5</code></td><td>numeric</td><td class="mono">4</td><td class="mono">629–632</td><td><code>1137d6133e74fa…</code></td></tr><tr><td><code>claim_7184c83d2371cac3f52692611da5c891</code></td><td>quote</td><td class="mono">5</td><td class="mono">375–531</td><td><code>c0fc991a2c5691…</code></td></tr><tr><td><code>claim_d54626d9d5fe3fcd6ccca11740ba7fb4</code></td><td>numeric</td><td class="mono">5</td><td class="mono">425–430</td><td><code>7f3b646967a1f9…</code></td></tr><tr><td><code>claim_5a09a1fb3972ffd6a5c87fb3427df4b4</code></td><td>numeric</td><td class="mono">5</td><td class="mono">442–444</td><td><code>624b60c58c9d8b…</code></td></tr><tr><td><code>claim_60cbca3343b851b1e1b2654389845f94</code></td><td>numeric</td><td class="mono">5</td><td class="mono">477–479</td><td><code>f5ca38f748a1d6…</code></td></tr><tr><td><code>claim_19a9eac698d093389666ee8b4edd90d7</code></td><td>quote</td><td class="mono">5</td><td class="mono">532–637</td><td><code>5f1abd3b42ce95…</code></td></tr><tr><td><code>claim_5a58f03584136997f8eff573450528de</code></td><td>numeric</td><td class="mono">5</td><td class="mono">561–565</td><td><code>2603a7a49339d1…</code></td></tr><tr><td><code>claim_d4891a12bca3515482296d309c3c40e5</code></td><td>numeric</td><td class="mono">5</td><td class="mono">573–575</td><td><code>1a6562590ef19d…</code></td></tr><tr><td><code>claim_cad1b91ee451daf6528fbba71f32adb6</code></td><td>numeric</td><td class="mono">5</td><td class="mono">608–610</td><td><code>d59eced1ded07f…</code></td></tr><tr><td><code>claim_df5f348389ad40d123ec339e72433b63</code></td><td>quote</td><td class="mono">7</td><td class="mono">0–172</td><td><code>5b6c4041469e98…</code></td></tr><tr><td><code>claim_6d8724fc11d2627a943db3b90f7b0b24</code></td><td>numeric</td><td class="mono">7</td><td class="mono">64–68</td><td><code>158a323a7ba448…</code></td></tr><tr><td><code>claim_149a3e69f6b880f9c0b853d38cac0f53</code></td><td>numeric</td><td class="mono">7</td><td class="mono">134–138</td><td><code>9ff89eb3456630…</code></td></tr><tr><td><code>claim_5bb043d086ea24b465bb03d8efcc9f12</code></td><td>numeric</td><td class="mono">7</td><td class="mono">142–144</td><td><code>b595b214b5d486…</code></td></tr><tr><td><code>claim_3843f6d52ae3853417cb8563242e76f0</code></td><td>quote</td><td class="mono">8</td><td class="mono">0–136</td><td><code>ce4d36cbd41d38…</code></td></tr><tr><td><code>claim_058a97614bdff33ba0d2c5481df1aa4c</code></td><td>numeric</td><td class="mono">8</td><td class="mono">73–82</td><td><code>c098ff6ccc2429…</code></td></tr><tr><td><code>claim_1d4006be428247d939698770cc1356d8</code></td><td>quote</td><td class="mono">8</td><td class="mono">568–667</td><td><code>070103b28fa4f0…</code></td></tr><tr><td><code>claim_e01cf39329f2aebfc90642a69b3bb94b</code></td><td>numeric</td><td class="mono">8</td><td class="mono">613–617</td><td><code>5313e5bf17148d…</code></td></tr><tr><td><code>claim_37a946e9dd899d5f8daf743404e627fa</code></td><td>quote</td><td class="mono">13</td><td class="mono">270–469</td><td><code>fc5161561ad05d…</code></td></tr><tr><td><code>claim_c099d97334e2f0633e7af82dcca796ff</code></td><td>numeric</td><td class="mono">13</td><td class="mono">299–301</td><td><code>3fdba35f04dc8c…</code></td></tr><tr><td><code>claim_30f6aa221888b298963a196fa170cb03</code></td><td>quote</td><td class="mono">34</td><td class="mono">416–539</td><td><code>19ec53f6cf3243…</code></td></tr><tr><td><code>claim_39925821b7d486be8f0f36b740a1cc0a</code></td><td>numeric</td><td class="mono">34</td><td class="mono">534–538</td><td><code>5313e5bf17148d…</code></td></tr><tr><td><code>claim_dae71d7f3079f6b3f94810d3b0712bf5</code></td><td>quote</td><td class="mono">35</td><td class="mono">109–250</td><td><code>ca9f1c8d8980a8…</code></td></tr><tr><td><code>claim_104792de17bd5ae708b935edaa048305</code></td><td>numeric</td><td class="mono">35</td><td class="mono">173–177</td><td><code>d398b29d3dbbb9…</code></td></tr><tr><td><code>claim_63506649353813d863c0763a289fc4e3</code></td><td>numeric</td><td class="mono">35</td><td class="mono">179–183</td><td><code>6557739a67283a…</code></td></tr><tr><td><code>claim_a588b634eb3e5b9a6fa924f8328efb22</code></td><td>numeric</td><td class="mono">35</td><td class="mono">185–189</td><td><code>b2b2f104d32c63…</code></td></tr><tr><td><code>claim_88834e6d2ef14620b58c488e15db7a62</code></td><td>quote</td><td class="mono">51</td><td class="mono">379–531</td><td><code>a36e917644d6ba…</code></td></tr><tr><td><code>claim_3ee3502f9b08fa1f4b9513cec6a74ec5</code></td><td>numeric</td><td class="mono">51</td><td class="mono">484–488</td><td><code>9ff89eb3456630…</code></td></tr><tr><td><code>claim_1a9412ff508b649cd06caa31bb41ae64</code></td><td>numeric</td><td class="mono">51</td><td class="mono">492–494</td><td><code>b595b214b5d486…</code></td></tr>        </tbody></table></div>
+      </details>
+
+      <aside class="ewa-disclosure"><span><span class="l-en">Source completeness</span><span class="l-zh">来源完整性</span></span><p><span class="l-en">Transcript: present. Release, filing and slides: not ingested. Consensus: unlicensed/absent. Market reaction: not joined. This page does not fill those gaps with inference.</span><span class="l-zh">电话会文本：已具备。新闻稿、申报文件和演示材料：未接入。一致预期：未授权/缺失。市场反应：未合并。本页不会用推断填补这些空白。</span></p></aside>
+    </div>
+  </div>
+</article>
+</main>
+
+<footer class="public-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
+          <a href="../../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
+          <a href="../../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <a href="../../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
+          <a href="../../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
+          <a href="../../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
+          <a href="../../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
+          <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
+          <a href="../../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+          <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+          <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+          <a href="../../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
+          <a href="../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
+          <a href="../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
+          <a href="../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+    </div>
+  </div>
+</footer>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
+<script src="../../supabase.js?v=8596965f" defer></script>
+<script src="../../account.js?v=f888381f" defer></script>
+<script src="../../mm_brain.js?v=b93132d7" defer></script>
+<script src="../../theme.js?v=402a51a2" defer></script>
+<script>
+(function(){
+  var nav=document.querySelector('.public-nav');
+  if(nav){
+    var raf=false;
+    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
+    window.addEventListener('scroll',function(){
+      if(!raf){raf=true;window.requestAnimationFrame(update);}
+    },{passive:true});
+    update();
+  }
+
+  var drawer=document.getElementById('public-primary-navigation');
+  var drawerBtn=document.getElementById('public-nav-toggle');
+  var triggers=Array.prototype.slice.call(document.querySelectorAll('.public-nav-trigger'));
+  var mq=window.matchMedia('(max-width:900px)');
+  var panelFor=function(trigger){return document.getElementById(trigger.getAttribute('aria-controls'));};
+  var closePanels=function(focus){
+    var focused=null;
+    triggers.forEach(function(trigger){
+      if(trigger.getAttribute('aria-expanded')==='true')focused=trigger;
+      trigger.setAttribute('aria-expanded','false');
+      var panel=panelFor(trigger);if(panel)panel.hidden=true;
+    });
+    if(focus&&focused)focused.focus();
+  };
+  var closeDrawer=function(focus){
+    if(!drawer||!drawerBtn)return;
+    drawer.classList.remove('open');
+    drawerBtn.setAttribute('aria-expanded','false');
+    drawerBtn.setAttribute('aria-label','Open navigation');
+    if(focus)drawerBtn.focus();
+  };
+  triggers.forEach(function(trigger){
+    trigger.addEventListener('click',function(e){
+      e.stopPropagation();
+      var wasOpen=trigger.getAttribute('aria-expanded')==='true';
+      closePanels(false);
+      if(!wasOpen){
+        trigger.setAttribute('aria-expanded','true');
+        var panel=panelFor(trigger);if(panel)panel.hidden=false;
+      }
+    });
+    trigger.addEventListener('keydown',function(e){
+      if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+      e.preventDefault();
+      closePanels(false);
+      trigger.setAttribute('aria-expanded','true');
+      var panel=panelFor(trigger);
+      if(!panel)return;
+      panel.hidden=false;
+      var links=panel.querySelectorAll('a[href]');
+      var target=e.key==='ArrowUp'?links[links.length-1]:links[0];
+      if(target)target.focus();
+    });
+    var group=trigger.closest('.public-nav-group');
+    if(group)group.addEventListener('focusout',function(e){
+      if(mq.matches||group.contains(e.relatedTarget))return;
+      closePanels(false);
+    });
+  });
+  if(drawer&&drawerBtn){
+    drawerBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var opening=drawerBtn.getAttribute('aria-expanded')!=='true';
+      if(opening){
+        drawer.classList.add('open');
+        drawerBtn.setAttribute('aria-expanded','true');
+        drawerBtn.setAttribute('aria-label','Close navigation');
+      }else{
+        closePanels(false);closeDrawer(false);
+      }
+    });
+    drawer.querySelectorAll('a[href]').forEach(function(link){
+      link.addEventListener('click',function(){closePanels(false);closeDrawer(false);});
+    });
+    var reset=function(){closePanels(false);closeDrawer(false);};
+    if(mq.addEventListener)mq.addEventListener('change',reset);else mq.addListener(reset);
+  }
+
+  var btn=document.getElementById('gear-btn');
+  var pop=document.getElementById('gear-pop');
+  document.addEventListener('pointerdown',function(e){
+    if(nav&&!nav.contains(e.target)){closePanels(false);closeDrawer(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    var open=triggers.some(function(trigger){return trigger.getAttribute('aria-expanded')==='true';});
+    if(open){e.preventDefault();closePanels(true);return;}
+    if(drawerBtn&&drawerBtn.getAttribute('aria-expanded')==='true'){e.preventDefault();closeDrawer(true);}
+  });
+  if(!btn||!pop)return;
+  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
+  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
+  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
+  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closePanels(false);
+    var opening=!pop.classList.contains('open');
+    pop.classList.toggle('open',opening);
+    btn.setAttribute('aria-expanded',opening?'true':'false');
+  });
+  segs.forEach(function(s){
+    s.addEventListener('click',function(e){
+      e.stopPropagation();
+      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
+      document.documentElement.setAttribute('data-lang',lang);
+      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+      try{localStorage.setItem('lang',lang);}catch(ignore){}
+      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
+      sync();
+    });
+  });
+  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  });
+  sync();
+})();
+</script><script src="../../onboard.js?v=dc7d4d5b" defer></script>
+</body>
+</html>

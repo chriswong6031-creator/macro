@@ -178,6 +178,13 @@ MUST_RESTART = [
     "engine/capital_structure/projection.py",
     # Government Revenue subaward serving is imported by app/government_revenue.py.
     "engine/government_revenue/subaward_dossiers.py",
+    # The public Company Intelligence API imports the reader plus this
+    # non-inert package at process startup (contracts, health, and views).
+    "engine/neuralweb/company_intelligence_reader.py",
+    "engine/company_intelligence/__init__.py",
+    "engine/company_intelligence/contracts.py",
+    "engine/company_intelligence/health.py",
+    "engine/company_intelligence/views.py",
     # /api/ask + /api/brain engine closure
     "engine/neuralweb/ask_brain.py",
     "engine/neuralweb/chat_plain_words.py",
