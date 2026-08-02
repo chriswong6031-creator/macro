@@ -33,6 +33,62 @@
      BEFORE any live overwrite, so we can detect when the live band moves off it. */
   var bakedLabelEn = null;
 
+  /* ── Feed-behind-the-render floor (mirrors risk_state_live.js) ─────────────
+     china_risk_state.json is published by the intraday VPS lane, NOT by the
+     render, so it can sit a whole session behind the page it patches (the lane
+     does not publish on a closed session — a Friday file is what a Sunday
+     visitor fetches). This patcher owns the gauge but never touches the hero
+     path chart, so a behind-the-render feed had no way to be caught: it
+     repainted the score with an older session's number while the chart kept the
+     rendered one, and the card shipped 37 beside a line whose Jul 31 point read
+     38 (operator report 2026-08-02; 37 was Jul 30's close). Worse, it kept the
+     "· delayed HH:MM UTC" chip on, so the STALER half was the half labelled
+     live. Capture the rendered session once, before any DOM write, and keep the
+     served read whole when the feed cannot match it. */
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var bakedSession;   /* undefined until first read; "" when the page carries none */
+
+  /* The session the RENDER is showing: the hero path chart's last graded row and
+     the board's own as-of stamp, whichever is newer. Memoised on first call —
+     which happens before this file writes anything, so the live overwrite of
+     #ms-date can never feed back into the floor. */
+  function pageSession() {
+    if (bakedSession !== undefined) return bakedSession;
+    bakedSession = "";
+    try {
+      var best = "", t;
+      var svg = document.querySelector(".mx5-sc-right .mx5-path-svg[data-points]");
+      if (svg) {
+        var pts = JSON.parse(svg.getAttribute("data-points") || "[]");
+        t = pts.length ? String(pts[pts.length - 1].d || "") : "";
+        if (DATE_RE.test(t)) best = t;
+      }
+      var el = document.getElementById("ms-date");
+      t = el ? (el.textContent || "").trim() : "";
+      if (DATE_RE.test(t) && t > best) best = t;
+      bakedSession = best;
+    } catch (e) { bakedSession = ""; }
+    return bakedSession;
+  }
+
+  /* The session the FEED describes: its build date while the intraday lane is
+     live, else the nightly close it was built from. */
+  function feedSession(d) {
+    var s = d.live_active ? (d.built || "").slice(0, 10)
+                          : (d.nightly_asof || (d.built || "").slice(0, 10));
+    return DATE_RE.test(s) ? s : "";
+  }
+
+  /* True when the feed is at least as current as the rendered page. An unreadable
+     feed session counts as behind: failing closed keeps the served render, which
+     is always a real single-session snapshot. */
+  function feedIsCurrent(d) {
+    var floor = pageSession();
+    if (!floor) return true;              /* page carries no as-of — nothing to hold */
+    var s = feedSession(d);
+    return !!s && s >= floor;
+  }
+
   /* Render a bilingual verdict as the site's dual l-en/l-zh span pair so it follows
      the html[data-lang] CSS toggle — and keeps switching if the user changes language
      AFTER the live feed patches the node. A single-language text node would freeze in
@@ -53,6 +109,14 @@
     if (!word) return;
     var disp = d.display || {};
     if (!disp.verdict) return;
+
+    /* Feed behind the render: keep the served read WHOLE — score, gauge, thesis
+       and freshness chip alike. Patching any one of them is what split the card. */
+    if (!feedIsCurrent(d)) {
+      var offPill = document.getElementById("ms-live-pill");
+      if (offPill) offPill.classList.remove("on");
+      return;
+    }
 
     /* Capture the baked label on first patch before we overwrite anything. */
     if (bakedLabelEn === null) {

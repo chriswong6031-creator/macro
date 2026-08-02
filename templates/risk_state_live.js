@@ -55,6 +55,67 @@
      BEFORE any live overwrite, so we can tell when the live band has moved off it. */
   var bakedLabelEn = null;
 
+  /* ── Feed-behind-the-render floor ──────────────────────────────────────────
+     The page is rendered from the nightly read; risk_state.json is a SEPARATE
+     artifact published by the intraday VPS lane, and it can sit a whole session
+     BEHIND the render (the lane does not publish on a closed session, so a
+     Friday file is still what a Sunday visitor fetches). patchPath already
+     refuses to move the chart backwards — "never rewrite history" — but the
+     headline had no such floor, so a behind-the-render feed repainted the gauge
+     with an OLDER session's score while the chart kept the newer one, and the
+     same card shipped 44 / Mixed beside a Risk-on line ending Jul 31 (operator
+     report 2026-08-02; 44 was Jul 30's graded score, the chart's Jul 31 was 66).
+     Capture the RENDERED session once, before any patch touches the DOM, and
+     skip the whole read when the feed cannot match it — which is what this
+     file's header has always claimed: "otherwise the page keeps the nightly
+     server-rendered read". */
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var bakedSession;   /* undefined until first read; "" when the page carries none */
+
+  /* The session the RENDER is showing: the chart's last graded row and the
+     board's own as-of stamps, whichever is newest. Memoised on first call,
+     which happens before this file writes anything, so a later live patch of
+     #ms-date can never feed back into the floor. */
+  function pageSession() {
+    if (bakedSession !== undefined) return bakedSession;
+    bakedSession = "";
+    try {
+      var best = "", i, el, t;
+      var svg = document.querySelector(".mx5-sc-right .mx5-path-svg[data-points]");
+      if (svg) {
+        var pts = JSON.parse(svg.getAttribute("data-points") || "[]");
+        t = pts.length ? String(pts[pts.length - 1].d || "") : "";
+        if (DATE_RE.test(t)) best = t;
+      }
+      var ids = ["regime-asof", "ms-date"];
+      for (i = 0; i < ids.length; i++) {
+        el = document.getElementById(ids[i]);
+        t = el ? (el.textContent || "").trim() : "";
+        if (DATE_RE.test(t) && t > best) best = t;
+      }
+      bakedSession = best;
+    } catch (e) { bakedSession = ""; }
+    return bakedSession;
+  }
+
+  /* The session the FEED describes: its own build date while the intraday lane
+     is live, else the nightly close it was built from. */
+  function feedSession(d) {
+    var s = d.live_active ? (d.built || "").slice(0, 10)
+                          : (d.nightly_asof || (d.built || "").slice(0, 10));
+    return DATE_RE.test(s) ? s : "";
+  }
+
+  /* True when the feed is at least as current as the rendered page. A feed whose
+     own session cannot be read counts as behind: failing closed keeps the served
+     render, which is always a real single-session snapshot. */
+  function feedIsCurrent(d) {
+    var floor = pageSession();
+    if (!floor) return true;              /* page carries no as-of — nothing to hold */
+    var s = feedSession(d);
+    return !!s && s >= floor;
+  }
+
   /* score-path chart vocab — mirrors the vz/v values build_site bakes into data-points
      (chart zone vocab, NOT the display labels: Mixed→中性 there, not 混合) */
   var PATH_V  = { RISK_ON: "Risk-on", MIXED: "Mixed", RISK_OFF: "Risk-off" };
@@ -190,6 +251,13 @@
     if (!word) return;
     var disp = d.display || {};
     if (!disp.verdict) return;
+    /* Feed behind the render: keep the served read WHOLE — gauge, copy, chart and
+       freshness chip alike. Patching any one of them is what split the card. */
+    if (!feedIsCurrent(d)) {
+      var offPill = document.getElementById("ms-live-pill");
+      if (offPill) offPill.classList.remove("on");
+      return;
+    }
     /* Stale-feed guard: display.verdict is the SERVER-debounced band word — it needs
        2 consecutive live ticks to flip, so after a nightly band flip it sits stale for
        a whole closed session (2026-07-16: green "Risk-on" painted over a correctly
@@ -328,8 +396,9 @@
     var dt = document.getElementById("ms-date");
     if (dt && d.live_active) {
       var hhmm = (d.built || "").slice(11, 16);
-      var word = d.realtime ? (isZh() ? "实时 " : "live ") : (isZh() ? "延迟 " : "delayed ");
-      dt.textContent = "· " + word + hhmm + " UTC";
+      /* not `word` — that name already holds the #ms-word node in this scope */
+      var fresh = d.realtime ? (isZh() ? "实时 " : "live ") : (isZh() ? "延迟 " : "delayed ");
+      dt.textContent = "· " + fresh + hhmm + " UTC";
       dt.classList.toggle("ms-date-live", !!d.realtime);
     } else if (dt && d.nightly_asof) {
       // market closed / no fresh quote: still show the freshest available CLOSE (the
