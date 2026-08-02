@@ -268,7 +268,7 @@
   {% set c = s.confluence %}
   <div class="panel" id="confluence">
     <h2>{{ t('Confluence setup — 3-day MACD + StochRSI', '共振配置 — 3 日 MACD + StochRSI') }}
-      {{ help("The validated buy/sell engine that drives the main-dashboard Sector setups board (research/SECTOR_CONFLUENCE.md): a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.", "驱动主看板「板块买卖配置」的已验证买卖引擎（research/SECTOR_CONFLUENCE.md）：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。") }}
+      {{ help("The validated buy/sell engine that drives the main-dashboard Sector setups board: a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.", "驱动主看板「板块买卖配置」的已验证买卖引擎：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。") }}
     </h2>
     <p style="margin:6px 0">
       <span class="state" style="border:1px solid {{ c.color }};color:{{ c.color }};padding:2px 9px;border-radius:7px;font-weight:700">{{ t(c.label, c.label_zh) }}</span>
@@ -335,7 +335,7 @@
   {% if s.alpha_leaders %}
   <div class="panel" id="alpha-leaders">
     <h2>{{ t('Alpha leaders — strongest stock-specific momentum in the sector', '阿尔法领跑 — 板块内最强个股动量') }}
-      {{ help("Each stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window. It ranks the names pulling ahead of their OWN sector on stock-specific strength, not just riding the sector tide. 'idio ann' is the annualized idiosyncratic (beta-stripped) return; the entry tag flags a leader that just spiked ('extended' = short-term reversal risk) vs one on a recent dip ('pullback' = constructive entry). Phase-0 validated as a MODEST, regime-decayed edge — context, not a buy list (research/RESIDUAL_ALPHA_MOMENTUM.md).", "每只股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。它排出在个股特定强度上领先于自身板块、而非仅随板块上涨的股票。“年化残差”为年化的特异（剔除贝塔）收益；入场标签标记刚急涨的领跑股（“extended”=短期反转风险）与近期回调者（“pullback”=较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅供参考，而非买入清单。") }}
+      {{ help("Each stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window. It ranks the names pulling ahead of their OWN sector on stock-specific strength, not just riding the sector tide. 'idio ann' is the annualized idiosyncratic (beta-stripped) return; the entry tag flags a leader that just spiked ('extended' = short-term reversal risk) vs one on a recent dip ('pullback' = constructive entry). Phase-0 validated as a MODEST, regime-decayed edge — context, not a buy list.", "每只股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。它排出在个股特定强度上领先于自身板块、而非仅随板块上涨的股票。“年化残差”为年化的特异（剔除贝塔）收益；入场标签标记刚急涨的领跑股（“extended”=短期反转风险）与近期回调者（“pullback”=较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅供参考，而非买入清单。") }}
     </h2>
     <table>
       <tr>
@@ -357,7 +357,7 @@
       </tr>
       {% endfor %}
     </table>
-    <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Sector-neutral residual momentum — a modest, regime-decayed edge measured over 1962–2026 (research/RESIDUAL_ALPHA_MOMENTUM.md). Stock-selection context within the sector, not a standalone buy list.', '板块中性残差动量 —— 基于 1962–2026 测得的温和、随周期衰减的优势。用于板块内选股的参考，而非独立买入清单。') }}</p>
+    <p class="muted" style="font-size:12px;margin-top:8px">{{ t('Sector-neutral residual momentum — a modest, regime-decayed edge measured over 1962–2026. Stock-selection context within the sector, not a standalone buy list.', '板块中性残差动量 —— 基于 1962–2026 测得的温和、随周期衰减的优势。用于板块内选股的参考，而非独立买入清单。') }}</p>
   </div>
   {% endif %}
 

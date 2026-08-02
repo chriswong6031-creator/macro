@@ -458,12 +458,12 @@
   <footer>
     {% if lite %}
     {{ t(
-      'Informational only, not investment advice. Tonghuashun themes are filtered to the china_search price cache and benchmarked to CSI 300. Results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
-      '仅供参考，非投资建议。同花顺主题按 china_search 价格缓存过滤，并以沪深 300 为基准。结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+      'Informational only, not investment advice. Tonghuashun themes are filtered to the china_search price cache and benchmarked to CSI 300. Results are descriptive, not an out-of-sample backtest or buy list.',
+      '仅供参考，非投资建议。同花顺主题按 china_search 价格缓存过滤，并以沪深 300 为基准。结果是描述性信息，不是样本外回测或买入清单。') }}
     {% else %}
     {{ t(
-      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to CSI 300. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
-      '仅供参考，非投资建议。篮子等权重，并以沪深 300 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to CSI 300. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.',
+      '仅供参考，非投资建议。篮子等权重，并以沪深 300 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。') }}
     {% endif %}
     {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
