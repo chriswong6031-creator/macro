@@ -247,6 +247,14 @@ jobs:
           # (b) Switch to a fresh main (never bare 'main' — avoid clobbering local ref).
           git fetch origin main || true
           git checkout -B _journal_main origin/main 2>/dev/null || git checkout -B _journal_main origin/main || true
+          # (b2) The re-anchor above is the ONLY thing that makes this step safe to
+          # dispatch over a propose branch, and it is suffixed `|| true` — a failed
+          # checkout leaves HEAD on metabolism/propose-<id> and the push below would
+          # then land the whole unreviewed proposal on main. Naming _journal_main as
+          # the sole acceptable publish target makes that failure fail closed.
+          PUSH_LABEL="metabolism-build journal"
+          PUSH_MAIN_BRANCHES="_journal_main"
+          if ! push_on_main_ok; then exit 0; fi
           # (c) Restore saved journals.
           mkdir -p data/metabolism/journal || true
           cp -f "$_JSAVE"/*.json data/metabolism/journal/ 2>/dev/null || true

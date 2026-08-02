@@ -82,6 +82,9 @@ jobs:
         run: |
           set -euo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_LABEL="metabolism-immune ci_status"
+          # workflow_dispatch takes any ref — never publish HEAD to main from one.
+          if ! push_on_main_ok; then exit 0; fi
           # If ci_status.json was written, commit it to main so anomaly_monitor can read it.
           STATUS_FILE="data/metabolism/ci_status.json"
           if [ ! -f "$STATUS_FILE" ]; then

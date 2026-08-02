@@ -232,6 +232,62 @@ push_abort_rebase() {
 }
 
 # ---------------------------------------------------------------------------
+# Publish-target containment (P0 2026-08-02).
+#
+# Every lane below ends its commit step with some form of
+#
+#     git pull --rebase --autostash origin main && ... && git push origin HEAD:main
+#
+# and every one of them also carries `workflow_dispatch`, which accepts ANY ref.
+# So dispatching one of these lanes on a feature branch — a legitimate and
+# useful way to read a lane's diagnostic output — REBASES that branch onto main
+# and PUSHES IT TO MAIN: unreviewed commits land with no PR, no review and no
+# CI, while the operator sees only a green audit run. Found 2026-08-02 on
+# seo-director.yml while trying to dispatch it on claude/gsc-index-diagnostics
+# for its GSC output; that dispatch was abandoned and the change went through a
+# normal PR instead.
+#
+# The guard tests the CHECKED-OUT ref, never `github.ref`, because the two come
+# apart in BOTH directions across this estate:
+#
+#   * government-revenue-live.yml pins `ref: main` at checkout, so its HEAD is
+#     main on any trigger ref — a `github.ref` guard would block a legitimate
+#     run;
+#   * metabolism-{propose,adjudicate,build}.yml are DESIGNED to be dispatched
+#     over a propose branch (metabolism/propose-<id>) and re-anchor with
+#     `git checkout -B _journal_main origin/main` before pushing their journal
+#     snapshot to main — a `github.ref` guard would block the entire reason
+#     those steps exist.
+#
+# Those three declare PUSH_MAIN_BRANCHES=_journal_main, which buys a second
+# assertion for free: that re-anchoring `checkout -B` is suffixed `|| true`, so
+# before this guard a FAILED re-anchor silently left HEAD on the propose branch
+# and pushed it to main. Naming the re-anchor branch as the only acceptable
+# publish target makes that failure fail closed.
+#
+# Fail-closed: an unreadable HEAD, a detached HEAD, or any branch name outside
+# the allow-list returns 1. Callers stand down FAIL-SOFT (`exit 0` / `return 1`)
+# — a lane dispatched off main must still run and surface its output in the run
+# log, which is what makes an off-main dispatch a useful thing to do. Only the
+# push is withheld.
+# ---------------------------------------------------------------------------
+
+# Returns 0 when HEAD is a branch that is anchored to main and may therefore be
+# published to refs/heads/main. $PUSH_MAIN_BRANCHES is a space-separated
+# allow-list of local branch names (default: "main").
+push_on_main_ok() {
+  local branch="" allowed="${PUSH_MAIN_BRANCHES:-main}" b
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch=""
+  for b in $allowed; do
+    if [ -n "$branch" ] && [ "$branch" = "$b" ]; then
+      return 0
+    fi
+  done
+  echo "::notice title=not on main - nothing pushed::${PUSH_LABEL:-This lane} ran to completion and its output is in this run's log, but the checked-out ref is '${branch:-unreadable}', not one of: ${allowed} - the push to refs/heads/main is withheld. Pushing HEAD to main from a dispatch ref would land unreviewed commits with no PR and no CI."
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Conflicted-autostash containment (P0 2026-08-01, engine commit d29e4dd44d,
 # emergency heal #4167).
 #

@@ -223,6 +223,14 @@ jobs:
         run: |
           set -uo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_LABEL="marketing-press-wire"
+          # workflow_dispatch takes any ref — never publish HEAD to main from one.
+          # pushed=false keeps the downstream publisher dispatch off: it folds
+          # items.jsonl from main, which this run deliberately did not advance.
+          if ! push_on_main_ok; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
