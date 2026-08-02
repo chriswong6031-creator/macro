@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T03:01:43.187366+00:00",
-  "count": 567,
+  "generated_at": "2026-08-02T03:31:46.562180+00:00",
+  "count": 568,
   "institutions": [
     "Amova",
     "Apollo",
@@ -257,6 +257,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-axxnjdcrpex-52c38c",
+      "title": "Mexico Private Sector Credit Growth Firmed in June (Ramos)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:59Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
