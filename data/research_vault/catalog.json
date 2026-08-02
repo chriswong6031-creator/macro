@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T21:43:22.227350+00:00",
-  "count": 614,
+  "generated_at": "2026-08-02T22:18:46.224172+00:00",
+  "count": 622,
   "institutions": [
     "Amova",
     "Apollo",
@@ -66,6 +66,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ofcmkmkrl9a-fd3387",
+      "title": "Financial Literacy AZ",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:34:02Z",
+      "summary_points": [
+        "**Financial Literacy Gap as Systemic Risk**: Global high literacy at 17.5% (US: 13%, France: 11%), with critical gender (men 23.9% vs women 11.2%) and generational (Gen Z 12.3% vs Boomers 22.2%) disparities driving behavioral risks and poor investment decisions in volatile markets.",
+        "**Inflation Misjudgment Distorts Behavior**: 48.7% globally overestimate inflation (Italy 70.6%, France 70.0%), directly suppressing asset allocation; Gen Z overestimates 60% vs 19% accurate, increasing demand for inflation-protected assets.",
+        "**Wealth Impact of Literacy**: Shifting 50% savings to bonds/equities lifts per capita wealth 14–21% over 20 years (Germany: EUR11,700 surplus); low-literacy households (53%) cannot identify investment products vs 21% of high-literacy groups.",
+        "**AI as Augmentation, Not Replacement**: 48% use AI weekly but literacy gaps persist (18% highly literate users vs 17% overall); overconfidence risks costly errors—portfolio managers must integrate AI with human judgment.",
+        "**Demographic Vulnerabilities**: Gen Z women (9.6% high literacy) and low-income groups (11.8% high literacy) face systemic exclusion; pension reforms shift responsibility to individuals amid rising cost-of-living pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-yhzxfhxz5lp-bd7bf2",
       "title": "India Equity Update July 2026",
       "institution": "Other",
@@ -107,6 +128,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qlbooymfv3b-aa0ef3",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:21:19Z",
+      "summary_points": [
+        "**GE Vernova Q2 Outperformance & Wind Risk**: Beat EPS (USD 2.47 vs 1.86), $5B FCF, 88% organic orders growth (134% Power), but wind orders down 43% due to North American demand softness (fundamental strength with sector-specific risk).",
+        "**NextEra Energy Backlog & Regulatory Tailwinds**: 35.1 GW backlog (battery storage growth driver), FPL’s Florida tariff legislation enabling 21 GW investments (12 GW in advanced discussions), directly expanding capital expenditure opportunities.",
+        "**Sector Volatility & Tactical Shifts**: Frequent \"Most Preferred\" ↔ \"Not Listed\" toggling (e.g., Glencore, Goodman Group) signals rapid portfolio repositioning driven by commodity prices, tech trends, and geopolitical risks, requiring real-time monitoring."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rakrpzmwr2x-a607ec",
       "title": "US markets",
       "institution": "UBS",
@@ -144,6 +184,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yz8jibnuxp0-a5460a",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:01:19Z",
+      "summary_points": [
+        "**Japan forex intervention & BoJ hold**: Ministry of Finance intervened to defend yen (effective only for speculative/temporary weakness); BoJ held rates, signaling no immediate policy shift.",
+        "**UK BoE rate hold**: BoE maintained rates (3 dissenters), with no monetary policy uncertainty risk premium in UK government bonds, reflecting market confidence in BoE communication.",
+        "**Asset Class Rating System**: Five-tier equity rating (Most Attractive to Least Attractive) guides tactical allocation via expected returns and scenario analysis, collapsing to three tiers when combined with other assets.",
+        "**Risk Disclosure Criticality**: Essential for risk assessment; includes AI tool usage, legal restrictions on valuation, and UBS conflict of interest (may trade based on this info)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -292,6 +352,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-nffr9ga8rgt-e4fabf",
+      "title": "MS Nick Savone Global Reflections Aug 1",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:41:54Z",
+      "summary_points": [
+        "**Earnings Season Dominance**: 86% S&P 500 companies beat EPS, led by AI/cloud demand (MSFT, AMZN, AAPL); markets penalize even minor misses, prioritizing execution over uncertainty.",
+        "**Korean Market Flow Surge**: KOSPI +18% driven by $5.1B foreign buying (SK Hynix +30%, Samsung +27%), 5.9x market breadth skew to gainers, Morgan Stanley Korea flows skewed 45% buy.",
+        "**Fed Policy Uncertainty**: Fed held rates amid dissent, disinflation intact despite GDP miss; policy framework uncertainty now outweighs inflation as key risk.",
+        "**Europe Earnings Momentum**: Strongest earnings season in years, net weighted skew to beats +45% (vs.",
+        "+31% prior), guidance raises +23%, US-Europe earnings gap narrowed to historic low."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hx5lyp97g3j-c866ba",
       "title": "Article bmfimultisectorplaybookincreasingdispersion ltr",
       "institution": "Morgan Stanley",
@@ -313,6 +394,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-vxdshnipqrz-46653d",
+      "title": "125976",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:33:16Z",
+      "summary_points": [
+        "**Staking Yield Gap**: Bitcoin lacks staking rewards, while Ethereum/Solana offer validator-based yields—critical for crypto ETP/ETF yield calculations and asset allocation.",
+        "**Core Execution Risks**: Slashing penalties (for validator errors), liquidity mismatch (redemption delays vs.",
+        "unstaked assets), and token dilution from rewards pose direct portfolio volatility and operational threats.",
+        "**Structural Exposure Differential**: PoS (ETH/SOL) exposes investors to both price and staking risk/reward; PoW (BTC) is purely price-driven with no yield component.",
+        "**Technical Efficiency Divide**: PoS networks (ETH/SOL) reduce energy consumption vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-llanmzsusrl-403844",
+      "title": "125974",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:33:03Z",
+      "summary_points": [
+        "**Store-of-Value Differentiation**: Bitcoin’s fixed supply (21M) and decentralization position it as a non-correlated store of value, distinct from Ethereum (programmable settlement) and Solana (high-speed execution).",
+        "**Yield Mechanics**: Bitcoin has no staking yield; Ethereum offers 2.5%–4.0% (network fees, MEV); Solana yields 4.0%–7.0% (protocol inflation, transaction activity), critical for income-driven allocation.",
+        "**Speed-Use Case Alignment**: Bitcoin (3–7 TPS, 10-min confirmations) prioritizes scarcity; Ethereum (15–25 TPS, 12s) enables secure DeFi; Solana (2,825 TPS, 0.4s) targets latency-sensitive applications (DEX, payments) without scaling compromises."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mdbhzpmueud-b2d68d",
       "title": "125973",
       "institution": "Morgan Stanley",
@@ -324,6 +445,46 @@
         "**Scalability Upgrades**: Ongoing protocol enhancements prioritize scalability and sustainability, critical for institutional adoption and long-term ecosystem growth.",
         "**Allocation Risk Structure**: Direct wallet ownership (operational/regulatory risks) vs.",
         "exchange products (simplified access); requires alignment with investor risk tolerance for Web3 growth positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dqbpmjii8hx-cf9a9e",
+      "title": "125972",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:32:38Z",
+      "summary_points": [
+        "**Solana's Technical Edge**: High throughput (thousands TPS), near real-time settlement, and minimal fees enabled by Proof-of-Stake + Proof-of-History consensus, supporting scalable DeFi, NFTs, and gaming without secondary layers.",
+        "**Ecosystem Differentiation**: SOL token powers fees, staking, and security within a high-speed ecosystem (DeFi, NFTs, gaming), distinguishing it from Bitcoin (value transfer) and traditional finance via technical superiority.",
+        "**Implementation Risk Factors**: Portfolio integration hinges on custody model (private keys vs.",
+        "ETFs), regulatory scrutiny, liquidity needs, and risk tolerance—critical for allocation decisions amid custody and compliance vulnerabilities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v1apunjdph5-779fe3",
+      "title": "Ii europe AI macro brief",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T14:31:51Z",
+      "summary_points": [
+        "**EU Productivity Parity Despite Adoption Lag**: European firms achieve 4.5% productivity gains (7.5% time savings/month) matching US potential (1-1.25ppt annual labor growth), but slower diffusion (smaller firms, regulations) risks widening the gap.",
+        "**US-EU Adoption Gap Widens Productivity Differential**: EU adoption at 20% (2025) vs US 43% (2026); intensive use at 6% EU vs 15% US.",
+        "Adopters see 4% higher productivity, with 25% citing system incompatibility as barrier.",
+        "**Management Quality Drives Adoption Gap**: Personnel management index (performance rewards, merit promotion) explains 50% of US-EU gap; 1 std dev increase linked to 10ppt higher AI adoption, mirroring US ICT revolution success."
       ],
       "tags": [],
       "tickers": [],
