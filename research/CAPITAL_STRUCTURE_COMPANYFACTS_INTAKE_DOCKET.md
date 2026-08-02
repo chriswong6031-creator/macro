@@ -34,18 +34,70 @@ are separately counted; a deferred request never becomes a negative issuer fact.
 | `data/capital_structure/companyfacts/generations/<sha256>/coverage.parquet` | `capital_structure.companyfacts_coverage_row/v1` | Immutable generation containing the append-only queue/retrieval history. |
 | `data/capital_structure/companyfacts/receipts/<sha256>.json` | `capital_structure.companyfacts_coverage_receipt/v1` | Immutable sequence/predecessor receipt that commits both ordered prefixes and exact generation files. |
 | `data/capital_structure/companyfacts/coverage_receipt.json` | `capital_structure.companyfacts_current_pointer/v1` | Tiny atomically replaced pointer to the selected immutable receipt/generation. |
+| `capital_structure/companyfacts/current_head.v1.json` in the guard R2 bucket | `capital_structure.companyfacts_head_witness/v1` | Signed, external exact-predecessor witness and the production cross-host CAS authority. |
 
 The collector stages and read-backs both Parquet ledgers under an identity-named
-generation directory, seals an immutable receipt under `receipts/`, then advances
-only the tiny pointer. It never overwrites a ledger or receipt. On startup it
-authenticates the complete predecessor chain, every required generation, and the
-selected generation's exact bytes and ordered prefixes. A fault before pointer
-advance leaves the prior authenticated generation selected; an orphaned staged
-generation or receipt is unreachable evidence, not a source claim.
+generation directory, seals an immutable receipt under `receipts/`, performs the
+external exact-predecessor head CAS, then advances only the tiny local pointer.
+It never overwrites a ledger or receipt. On startup it authenticates the complete
+predecessor chain, every required generation, each selected raw object, and the
+selected generation's exact bytes and ordered prefixes. An orphaned stage or
+receipt is unreachable evidence, not a source claim.
 
-All three artifacts are registered in `config/synapse.yml`. The daily collection
-step runs the adapter immediately after `sec_capital_structure`; this dependency
-is recorded in `.github/workflows/daily.yml` and `config/dag.yml`.
+The four local artifacts are registered in `config/synapse.yml`; the R2 witness
+is a guard, not a data-plane Synapse artifact. The daily collection step runs the
+adapter immediately after `sec_capital_structure`; this dependency is recorded
+in `.github/workflows/daily.yml` and `config/dag.yml`.
+
+## Trust, concurrency, and recovery contract
+
+Receipt and head *hashes are identities, not authorization*. Every receipt now
+carries an `hmac-sha256/v1` authentication envelope, and the R2 head witness is
+signed over the precise selected receipt identity, receipt bytes, generation,
+sequence, and predecessor. A locally rewritten history cannot become current by
+merely recomputing hashes or even by using a local test signer: startup requires
+the external witnessed head to match exactly.
+
+Production has no local signer or local-only fallback. It must be configured
+before the adapter makes a network request with:
+
+- `CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY` (a secret of at least 32 bytes);
+- `CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_KEY_ID` (optional; defaults to
+  `companyfacts-head-v1`); and
+- `COMPANYFACTS_HEAD_GUARD_BUCKET`, or the existing
+  `R2_CAPITAL_STRUCTURE_BUCKET`, or the existing shared `R2_BUCKET`, plus the
+  normal dedicated/shared R2 endpoint and credentials used by
+  `engine.capital_structure.source_store`.
+
+`.github/workflows/daily.yml` passes the required HMAC secret explicitly. This
+is an activation gate, not an optional degradation path: the repository owner
+must provision `CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY` before merging the
+lane. The present shared R2 bucket is a supported guard fallback; a dedicated
+`COMPANYFACTS_HEAD_GUARD_BUCKET` may be supplied later without changing receipt
+semantics.
+
+The guard uses R2 S3 `PutObject` conditions: `If-None-Match: *` for genesis and
+the service-returned quoted ETag in `If-Match` for later heads. A 409/412
+precondition failure is a deterministic compare-and-swap conflict. An advisory
+POSIX `flock` holds the local lease across load, collection, and publish; R2 is
+the authority across hosts.
+
+The order is intentionally guard then pointer. If the external witness is newer
+than the local pointer (including a post-CAS pointer fsync failure), or the local
+pointer is newer than the witness, startup refuses to select either side or call
+SEC. Pointer loss alongside any receipt/generation and all published-head
+mismatches require explicit operator recovery; there is no automatic re-genesis
+or silent rollback. A directory-fsync failure after rename is surfaced as an
+indeterminate publication, not a successful write.
+
+The receipt chain is hard-capped at 512 receipts and each committed Parquet file
+at 128 MiB. Empty/no-op runs do not create a new receipt or advance either head.
+Reaching the cap is a deliberate signed checkpoint/compaction boundary: an
+operator must introduce a versioned, signed checkpoint migration before more
+history can be published. Time checks bracket request setup, streamed response,
+source-store retention, and generation sealing (an already-entered external call
+cannot be forcibly cancelled by the available interfaces). Server `Retry-After`
+is persisted as its full UTC deadline rather than being shortened locally.
 
 ## Scope and hard nonclaims
 
@@ -81,5 +133,8 @@ The focused suite covers canonical request/CIK validation, declared and streamed
 byte caps, unique verified-anchor selection, deterministic starvation-free queue
 progress, source-store failure, honest `ok`/`partial`/`degraded`/`blocked` status,
 force-refresh history preservation, body/semantic/cross-ledger identity checks,
-full-chain startup authentication, retry-after global cooldown, total run budgets,
-and last-good survival across generation/receipt/pointer publish faults.
+full-chain startup authentication, authenticated queue telemetry re-derivation,
+raw-object re-verification before startup, retry-after persistence, total run
+budgets, R2 conditional-CAS/provider-conflict behavior, both head/pointer
+split-brain refusal orders, receipt/no-op cap behavior, and last-good survival
+across generation/receipt/pointer publish faults.

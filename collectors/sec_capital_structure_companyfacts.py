@@ -13,10 +13,12 @@ The scheduler serializes this adapter with the other SEC adapters.  A local
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from hashlib import sha256
+import fcntl
 import hmac
 import json
 import logging
@@ -25,7 +27,7 @@ import os
 from pathlib import Path
 import shutil
 import time
-from typing import Any
+from typing import Any, Iterator, Protocol
 
 import pandas as pd
 import requests
@@ -51,12 +53,13 @@ MAX_RUN_BYTES = 256 * 1024 * 1024
 HARD_MAX_RUN_BYTES = 1024 * 1024 * 1024
 MAX_RUN_SECONDS = 15 * 60.0
 HARD_MAX_RUN_SECONDS = 60 * 60.0
+MAX_RECEIPT_CHAIN_LENGTH = 512
+MAX_GENERATION_FILE_BYTES = 128 * 1024 * 1024
 REFRESH_AFTER = timedelta(days=7)
 RETRY_AFTER = timedelta(hours=1)
 DEFER_AFTER = timedelta(hours=24)
 PACE_SECONDS = 0.12
 MAX_ATTEMPTS = 3
-MAX_RETRY_COOLDOWN_SECONDS = 10 * 60.0
 
 _QUEUE_SCHEDULE = ("retry_due", "new_anchor", "retry_due", "refresh_due")
 
@@ -64,6 +67,9 @@ SOURCE_MANIFEST_SCHEMA = "capital_structure.companyfacts_source_manifest/v1"
 COVERAGE_ROW_SCHEMA = "capital_structure.companyfacts_coverage_row/v1"
 COVERAGE_RECEIPT_SCHEMA = "capital_structure.companyfacts_coverage_receipt/v1"
 CURRENT_POINTER_SCHEMA = "capital_structure.companyfacts_current_pointer/v1"
+HEAD_WITNESS_SCHEMA = "capital_structure.companyfacts_head_witness/v1"
+RECEIPT_AUTH_SCHEME = "hmac-sha256/v1"
+HEAD_GUARD_KEY = "capital_structure/companyfacts/current_head.v1.json"
 
 _SOURCE_MANIFEST_COLUMNS = [
     "schema", "manifest_id", "source_system", "source_id", "issuer", "anchor",
@@ -100,6 +106,167 @@ class CompanyFactsDeferred(CompanyFactsIntakeError):
 
 class CompanyFactsRunBudgetExceeded(CompanyFactsDeferred):
     """The bounded run exhausted its byte or wall-clock budget."""
+
+    def __init__(self, message: str, *, retry_after_at: datetime | None = None) -> None:
+        super().__init__(message)
+        self.retry_after_at = retry_after_at
+
+
+class CompanyFactsPublishIndeterminate(CompanyFactsIntakeError):
+    """A publication crossed an OS durability boundary and needs operator recovery."""
+
+
+class CompanyFactsRetryable(CompanyFactsIntakeError):
+    """A retryable SEC failure, optionally carrying the server retry deadline."""
+
+    def __init__(self, message: str, *, retry_after_at: datetime | None = None) -> None:
+        super().__init__(message)
+        self.retry_after_at = retry_after_at
+
+
+class CompanyFactsSigner(Protocol):
+    """Authenticates receipts and externally witnessed heads."""
+
+    @property
+    def key_id(self) -> str: ...
+
+    def sign(self, payload: bytes) -> str: ...
+
+    def verify(self, payload: bytes, signature: str, *, key_id: str) -> bool: ...
+
+
+class HmacCompanyFactsSigner:
+    """HMAC signer whose key deliberately never lives with published artifacts."""
+
+    def __init__(self, secret: str | bytes, *, key_id: str) -> None:
+        raw = secret.encode("utf-8") if isinstance(secret, str) else secret
+        if not isinstance(raw, bytes) or len(raw) < 32:
+            raise ValueError("Company Facts signing secret must contain at least 32 bytes")
+        if not isinstance(key_id, str) or not key_id.strip():
+            raise ValueError("Company Facts signer key_id is required")
+        self._secret = raw
+        self._key_id = key_id.strip()
+
+    @property
+    def key_id(self) -> str:
+        return self._key_id
+
+    def sign(self, payload: bytes) -> str:
+        return hmac.new(self._secret, b"companyfacts-head-v1\0" + payload, sha256).hexdigest()
+
+    def verify(self, payload: bytes, signature: str, *, key_id: str) -> bool:
+        return key_id == self.key_id and isinstance(signature, str) and hmac.compare_digest(
+            self.sign(payload), signature
+        )
+
+
+class DeterministicTestCompanyFactsSigner(HmacCompanyFactsSigner):
+    """Explicit test-only signer; production uses the env-backed signer below."""
+
+
+class CompanyFactsHeadGuard(Protocol):
+    """External compare-and-swap witness for the selected receipt head."""
+
+    def read(self) -> tuple[dict[str, Any] | None, str | None]: ...
+
+    def advance(
+        self, *, expected: Mapping[str, Any] | None, expected_token: str | None,
+        candidate: Mapping[str, Any],
+    ) -> None: ...
+
+
+class InMemoryCompanyFactsHeadGuard:
+    """Deterministic CAS witness for tests only; never selected by production config."""
+
+    def __init__(self, signer: CompanyFactsSigner) -> None:
+        self._signer = signer
+        self._witness: dict[str, Any] | None = None
+        self._version = 0
+
+    def read(self) -> tuple[dict[str, Any] | None, str | None]:
+        if self._witness is None:
+            return None, None
+        _validate_head_witness(self._witness, signer=self._signer)
+        return dict(self._witness), str(self._version)
+
+    def advance(
+        self, *, expected: Mapping[str, Any] | None, expected_token: str | None,
+        candidate: Mapping[str, Any],
+    ) -> None:
+        observed, token = self.read()
+        if observed != (dict(expected) if expected is not None else None) or token != expected_token:
+            raise CompanyFactsIntakeError("Company Facts head witness compare-and-swap conflict")
+        _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
+        self._witness = dict(candidate)
+        self._version += 1
+
+
+class R2CompanyFactsHeadGuard:
+    """R2-backed externally witnessed, exact-predecessor Company Facts head."""
+
+    def __init__(self, *, client: Any, bucket: str, signer: CompanyFactsSigner, key: str = HEAD_GUARD_KEY) -> None:
+        if not bucket:
+            raise ValueError("Company Facts head-guard bucket is required")
+        self._client = client
+        self._bucket = bucket
+        self._signer = signer
+        self._key = key
+
+    def read(self) -> tuple[dict[str, Any] | None, str | None]:
+        try:
+            response = self._client.get_object(Bucket=self._bucket, Key=self._key)
+        except Exception as exc:  # noqa: BLE001
+            if _is_not_found_error(exc):
+                return None, None
+            raise CompanyFactsIntakeError("Company Facts external head witness is unreadable") from exc
+        try:
+            body = response["Body"].read()
+            witness = _native(json.loads(body))
+            if body != _canonical_bytes(witness) + b"\n":
+                raise CompanyFactsIntakeError("Company Facts external head witness bytes are not canonical")
+            _validate_head_witness(witness, signer=self._signer)
+            # Preserve the service-supplied ETag syntax. The S3/R2 conditional
+            # request header is an entity-tag and SDK callers conventionally pass
+            # the quoted value returned by GetObject straight back as IfMatch.
+            token = str(response.get("ETag") or "").strip()
+            if not token:
+                raise CompanyFactsIntakeError("Company Facts external head witness has no CAS token")
+            return dict(witness), token
+        except CompanyFactsIntakeError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise CompanyFactsIntakeError("Company Facts external head witness is malformed") from exc
+
+    def advance(
+        self, *, expected: Mapping[str, Any] | None, expected_token: str | None,
+        candidate: Mapping[str, Any],
+    ) -> None:
+        observed, token = self.read()
+        normalized_expected = dict(expected) if expected is not None else None
+        if observed != normalized_expected or token != expected_token:
+            raise CompanyFactsIntakeError("Company Facts external head witness compare-and-swap conflict")
+        _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
+        arguments: dict[str, Any] = {
+            "Bucket": self._bucket,
+            "Key": self._key,
+            "Body": _canonical_bytes(dict(candidate)) + b"\n",
+            "ContentType": "application/json",
+        }
+        if token is None:
+            arguments["IfNoneMatch"] = "*"
+        else:
+            arguments["IfMatch"] = token
+        try:
+            self._client.put_object(**arguments)
+        except Exception as exc:  # noqa: BLE001
+            if _is_conditional_write_conflict(exc):
+                raise CompanyFactsIntakeError(
+                    "Company Facts external head witness compare-and-swap conflict"
+                ) from exc
+            raise CompanyFactsIntakeError("Company Facts external head witness CAS failed") from exc
+        confirmed, _ = self.read()
+        if confirmed != dict(candidate):
+            raise CompanyFactsIntakeError("Company Facts external head witness read-back mismatch")
 
 
 def _utc_now() -> datetime:
@@ -147,6 +314,183 @@ def companyfacts_url(cik: object) -> str:
 
 def _canonical_bytes(value: Mapping[str, Any]) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _is_not_found_error(error: Exception) -> bool:
+    """Recognize only authoritative S3/R2 not-found responses."""
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        return False
+    if not isinstance(error, ClientError):
+        return False
+    response = getattr(error, "response", None)
+    details = response.get("Error") if isinstance(response, Mapping) else None
+    return isinstance(details, Mapping) and str(details.get("Code") or "") in {
+        "404", "NoSuchKey", "NotFound",
+    }
+
+
+def _is_conditional_write_conflict(error: Exception) -> bool:
+    """Recognize the S3/R2 precondition responses that make a CAS lose."""
+    response = getattr(error, "response", None)
+    details = response.get("Error") if isinstance(response, Mapping) else None
+    code = str(details.get("Code") or "") if isinstance(details, Mapping) else ""
+    metadata = response.get("ResponseMetadata") if isinstance(response, Mapping) else None
+    status = metadata.get("HTTPStatusCode") if isinstance(metadata, Mapping) else None
+    return code in {"409", "412", "ConditionalRequestConflict", "PreconditionFailed"} or status in {409, 412}
+
+
+def _receipt_identity_material(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Stable content identity excludes only mutable authentication bytes."""
+    material = _native(dict(record))
+    material.pop("receipt_id", None)
+    auth = material.get("auth")
+    if isinstance(auth, Mapping):
+        auth = dict(auth)
+        auth.pop("signature", None)
+        material["auth"] = auth
+    return material
+
+
+def _receipt_auth_payload(record: Mapping[str, Any]) -> bytes:
+    material = _native(dict(record))
+    auth = material.get("auth")
+    if not isinstance(auth, Mapping):
+        raise CompanyFactsIntakeError("Company Facts receipt has no authentication envelope")
+    auth = dict(auth)
+    auth.pop("signature", None)
+    material["auth"] = auth
+    return _canonical_bytes({"domain": "capital_structure.companyfacts_receipt/v1", "receipt": material})
+
+
+def _sign_receipt(record: Mapping[str, Any], *, signer: CompanyFactsSigner) -> dict[str, Any]:
+    signed = _native(dict(record))
+    auth = signed.get("auth")
+    if not isinstance(auth, Mapping):
+        raise CompanyFactsIntakeError("Company Facts receipt has no authentication envelope")
+    if auth.get("scheme") != RECEIPT_AUTH_SCHEME or auth.get("key_id") != signer.key_id:
+        raise CompanyFactsIntakeError("Company Facts receipt signer identity mismatch")
+    signed["receipt_id"] = _receipt_id(signed)
+    signed["auth"] = {**dict(auth), "signature": signer.sign(_receipt_auth_payload(signed))}
+    return signed
+
+
+def _validate_receipt_authentication(record: Mapping[str, Any], *, signer: CompanyFactsSigner) -> None:
+    auth = record.get("auth")
+    if not isinstance(auth, Mapping):
+        raise CompanyFactsIntakeError("Company Facts receipt has no authentication envelope")
+    if auth.get("scheme") != RECEIPT_AUTH_SCHEME:
+        raise CompanyFactsIntakeError("Company Facts receipt authentication scheme is invalid")
+    key_id = auth.get("key_id")
+    signature = auth.get("signature")
+    if not isinstance(key_id, str) or not isinstance(signature, str) or not signer.verify(
+        _receipt_auth_payload(record), signature, key_id=key_id
+    ):
+        raise CompanyFactsIntakeError("Company Facts receipt authentication mismatch")
+
+
+def _head_witness_payload(record: Mapping[str, Any]) -> bytes:
+    material = _native(dict(record))
+    material.pop("signature", None)
+    return _canonical_bytes({"domain": "capital_structure.companyfacts_head_witness/v1", "witness": material})
+
+
+def _head_witness(
+    *, receipt: Mapping[str, Any], receipt_file: Mapping[str, Any], signer: CompanyFactsSigner,
+) -> dict[str, Any]:
+    previous = receipt.get("previous_receipt")
+    record: dict[str, Any] = {
+        "schema": HEAD_WITNESS_SCHEMA,
+        "key_id": signer.key_id,
+        "sequence": int(receipt["sequence"]),
+        "receipt_id": receipt["receipt_id"],
+        "receipt_sha256": receipt_file["sha256"],
+        "receipt_byte_length": receipt_file["byte_length"],
+        "generation_id": receipt["generation"]["generation_id"],
+        "published_at": receipt["published_at"],
+        "previous_receipt_id": previous.get("receipt_id") if isinstance(previous, Mapping) else None,
+    }
+    record["signature"] = signer.sign(_head_witness_payload(record))
+    _validate_head_witness(record, signer=signer)
+    return record
+
+
+def _validate_head_witness(record: Mapping[str, Any], *, signer: CompanyFactsSigner) -> None:
+    expected = {
+        "schema", "key_id", "sequence", "receipt_id", "receipt_sha256", "receipt_byte_length",
+        "generation_id", "published_at", "previous_receipt_id", "signature",
+    }
+    if set(record) != expected or record.get("schema") != HEAD_WITNESS_SCHEMA:
+        raise CompanyFactsIntakeError("Company Facts external head witness shape is invalid")
+    if not isinstance(record.get("sequence"), int) or int(record["sequence"]) < 1:
+        raise CompanyFactsIntakeError("Company Facts external head witness sequence is invalid")
+    for field, prefix in (("receipt_id", "receipt:cs-companyfacts:"), ("generation_id", "generation:cs-companyfacts:")):
+        value = str(record.get(field) or "")
+        digest = value.removeprefix(prefix)
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise CompanyFactsIntakeError("Company Facts external head witness identity is invalid")
+    for field in ("receipt_sha256",):
+        value = str(record.get(field) or "")
+        if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+            raise CompanyFactsIntakeError("Company Facts external head witness digest is invalid")
+    if not isinstance(record.get("receipt_byte_length"), int) or int(record["receipt_byte_length"]) < 1:
+        raise CompanyFactsIntakeError("Company Facts external head witness length is invalid")
+    _parse_stamp(record.get("published_at"), field="external head witness published_at")
+    previous = record.get("previous_receipt_id")
+    if previous is not None:
+        digest = str(previous).removeprefix("receipt:cs-companyfacts:")
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise CompanyFactsIntakeError("Company Facts external head witness predecessor is invalid")
+    key_id, signature = record.get("key_id"), record.get("signature")
+    if not isinstance(key_id, str) or not isinstance(signature, str) or not signer.verify(
+        _head_witness_payload(record), signature, key_id=key_id
+    ):
+        raise CompanyFactsIntakeError("Company Facts external head witness authentication mismatch")
+
+
+def _validate_head_transition(
+    *, previous: Mapping[str, Any] | None, candidate: Mapping[str, Any], signer: CompanyFactsSigner,
+) -> None:
+    _validate_head_witness(candidate, signer=signer)
+    if previous is None:
+        if candidate["sequence"] != 1 or candidate["previous_receipt_id"] is not None:
+            raise CompanyFactsIntakeError("Company Facts external head genesis transition is invalid")
+        return
+    _validate_head_witness(previous, signer=signer)
+    if (
+        int(candidate["sequence"]) != int(previous["sequence"]) + 1
+        or candidate["previous_receipt_id"] != previous["receipt_id"]
+    ):
+        raise CompanyFactsIntakeError("Company Facts external head transition is not exact-predecessor")
+
+
+def _build_production_trust_context() -> tuple[CompanyFactsSigner, CompanyFactsHeadGuard]:
+    """Return the only production trust path; absent secret/witness is a hard stop."""
+    secret = os.environ.get("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY", "")
+    key_id = os.environ.get("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_KEY_ID") or "companyfacts-head-v1"
+    bucket = (
+        os.environ.get("COMPANYFACTS_HEAD_GUARD_BUCKET")
+        or os.environ.get("R2_CAPITAL_STRUCTURE_BUCKET")
+        or os.environ.get("R2_BUCKET")
+    )
+    if not secret or not bucket:
+        raise CompanyFactsIntakeError(
+            "Company Facts production trust is unconfigured: require "
+            "CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY and a head-guard R2 bucket"
+        )
+    try:
+        signer = HmacCompanyFactsSigner(secret, key_id=key_id)
+        from engine.capital_structure.source_store import _capital_structure_r2_client
+
+        client = _capital_structure_r2_client()
+        if client is None:
+            raise CompanyFactsIntakeError("Company Facts external head witness R2 client is unavailable")
+        return signer, R2CompanyFactsHeadGuard(client=client, bucket=bucket, signer=signer)
+    except CompanyFactsIntakeError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise CompanyFactsIntakeError("Company Facts production trust is unconfigured") from exc
 
 
 def _native(value: Any) -> Any:
@@ -200,17 +544,38 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
-def _atomic_write_bytes(path: Path, content: bytes) -> None:
-    """Atomically replace one pointer with bytes verified before the commit point.
+@contextmanager
+def _companyfacts_publish_lease(root: Path) -> Iterator[None]:
+    """Mandatory cross-process lease spanning load, network work, and publish.
 
-    If an injected/system error is reported after ``os.replace`` committed, the
-    new pointer is accepted only when its exact bytes are visible.  Thus callers
-    observe either the prior valid pointer or the complete new one, never a
-    deleted/stale marker.
+    The external R2 witness remains the cross-host CAS authority; this lock
+    prevents two local processes from doing duplicate network work or forking
+    the on-disk receipt chain before that CAS point.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+    lock_path = root / ".companyfacts_publish.lock"
+    with lock_path.open("a+b") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _atomic_write_bytes(
+    path: Path, content: bytes, *, expected_previous: bytes | None | object = ...,
+) -> None:
+    """Atomically replace a pointer under an exact-predecessor publication lease.
+
+    A directory-fsync failure is intentionally *not* softened: visibility after
+    ``os.replace`` is not a durability acknowledgement. The external head witness
+    records the recovery target, while this call reports an indeterminate publish.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
     previous = path.read_bytes() if path.exists() else None
+    if expected_previous is not ... and previous != expected_previous:
+        raise CompanyFactsIntakeError(f"Company Facts pointer exact-predecessor CAS conflict: {path}")
     try:
         with temporary.open("xb") as handle:
             handle.write(content)
@@ -219,20 +584,30 @@ def _atomic_write_bytes(path: Path, content: bytes) -> None:
         if temporary.read_bytes() != content:
             raise CompanyFactsIntakeError(f"staged pointer read-back mismatch: {path}")
         try:
+            # The caller holds the cross-process publication lease and supplies the
+            # exact predecessor it authenticated. Re-check immediately before the
+            # commit so an uncooperative local writer cannot be silently overwritten.
+            if expected_previous is not ...:
+                observed = path.read_bytes() if path.exists() else None
+                if observed != expected_previous:
+                    raise CompanyFactsIntakeError(
+                        f"Company Facts pointer exact-predecessor CAS conflict: {path}"
+                    )
             os.replace(temporary, path)
-            _fsync_directory(path.parent)
         except Exception:
             actual = path.read_bytes() if path.exists() else None
-            if actual == content:
-                # The atomic commit happened even though the syscall/fsync boundary
-                # reported an error. The exact new pointer selects a fully installed,
-                # independently verified immutable receipt, so it is a valid committed
-                # state and must not be deleted or rolled back speculatively.
-                log.warning("Company Facts pointer committed despite post-replace durability error: %s", path)
-                return
             if actual != previous:
                 raise CompanyFactsIntakeError(f"Company Facts pointer state uncertain: {path}")
             raise
+        try:
+            _fsync_directory(path.parent)
+        except Exception as exc:
+            # The rename may be visible but has not crossed a durable directory
+            # boundary. Do not report success; the external witness makes recovery
+            # deterministic and the next startup refuses a mismatched local head.
+            raise CompanyFactsPublishIndeterminate(
+                f"Company Facts pointer durability is indeterminate after replace: {path}"
+            ) from exc
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -318,7 +693,8 @@ def _generation_descriptor(
 
 def _prepare_generation(
     *, source_manifests: pd.DataFrame, coverage: pd.DataFrame, root: Path,
-    prior_receipt: Mapping[str, Any] | None,
+    prior_receipt: Mapping[str, Any] | None, deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
 ) -> _PreparedGeneration:
     source_records = _records(source_manifests)
     coverage_records = _records(coverage)
@@ -338,13 +714,21 @@ def _prepare_generation(
     stage = root / f".generation-stage-{os.getpid()}-{time.time_ns()}"
     stage.mkdir()
     try:
+        if deadline is not None and monotonic() >= deadline:
+            raise CompanyFactsRunBudgetExceeded("Company Facts generation seal exceeded run deadline")
         manifest_path = stage / "source_manifest.parquet"
         coverage_path = stage / "coverage.parquet"
         source_manifests.to_parquet(manifest_path, index=False)
         coverage.to_parquet(coverage_path, index=False)
         for path in (manifest_path, coverage_path):
+            if path.stat().st_size > MAX_GENERATION_FILE_BYTES:
+                raise CompanyFactsIntakeError(
+                    f"Company Facts generation file exceeds {MAX_GENERATION_FILE_BYTES} byte cap: {path.name}"
+                )
             with path.open("rb") as handle:
                 os.fsync(handle.fileno())
+            if deadline is not None and monotonic() >= deadline:
+                raise CompanyFactsRunBudgetExceeded("Company Facts generation seal exceeded run deadline")
         published_manifests = _read_ledger(manifest_path, _SOURCE_MANIFEST_COLUMNS)
         published_coverage = _read_ledger(coverage_path, _COVERAGE_COLUMNS)
         if _ledger_receipt(_records(published_manifests)) != source_ledger:
@@ -386,6 +770,8 @@ def _validate_generation_files(root: Path, descriptor: Mapping[str, Any]) -> tup
     for key, path in (("source_manifest", source_path), ("coverage", coverage_path)):
         if not path.is_file() or path.is_symlink():
             raise CompanyFactsIntakeError(f"committed Company Facts {key} generation file is missing")
+        if path.stat().st_size > MAX_GENERATION_FILE_BYTES:
+            raise CompanyFactsIntakeError("committed Company Facts generation file exceeds byte cap")
         expected = descriptor[key]
         if _file_receipt(path) != {
             "sha256": expected.get("sha256"), "byte_length": expected.get("byte_length")
@@ -416,10 +802,19 @@ def _install_generation(root: Path, prepared: _PreparedGeneration) -> None:
         raise
 
 
+def _discard_prepared_generation(prepared: _PreparedGeneration | None) -> None:
+    """Remove an unpublished stage after budget/publish failure."""
+    if prepared is not None and prepared.stage_path is not None and prepared.stage_path.exists():
+        shutil.rmtree(prepared.stage_path, ignore_errors=True)
+
+
 def _publish_generation(
     *, root: Path, receipt_path: Path, receipt: Mapping[str, Any], prepared: _PreparedGeneration,
+    signer: CompanyFactsSigner, head_guard: CompanyFactsHeadGuard,
+    expected_witness: Mapping[str, Any] | None, expected_witness_token: str | None,
+    expected_pointer: bytes | None,
 ) -> None:
-    """Install generation and immutable receipt, then atomically advance one pointer."""
+    """Seal artifacts, CAS the external head, then advance the local selector."""
     _install_generation(root, prepared)
     receipt_body = _canonical_bytes(dict(receipt)) + b"\n"
     receipt_digest = str(receipt["receipt_id"]).rsplit(":", 1)[-1]
@@ -427,6 +822,15 @@ def _publish_generation(
     immutable_path = root / immutable_relative
     _write_immutable_bytes(immutable_path, receipt_body)
     receipt_file = _file_receipt(immutable_path)
+    witness = _head_witness(receipt=receipt, receipt_file=receipt_file, signer=signer)
+    # This is the authoritative exact-predecessor CAS. It must precede the local
+    # pointer because a missing/old local selector then fails closed rather than
+    # presenting an unwitnessed new head after a power loss.
+    head_guard.advance(
+        expected=expected_witness,
+        expected_token=expected_witness_token,
+        candidate=witness,
+    )
     pointer: dict[str, Any] = {
         "schema": CURRENT_POINTER_SCHEMA,
         "receipt_id": receipt["receipt_id"],
@@ -443,7 +847,7 @@ def _publish_generation(
     )
     _validate_pointer_identity(pointer)
     pointer_body = _canonical_bytes(pointer) + b"\n"
-    _atomic_write_bytes(receipt_path, pointer_body)
+    _atomic_write_bytes(receipt_path, pointer_body, expected_previous=expected_pointer)
     if receipt_path.read_bytes() != pointer_body:
         raise CompanyFactsIntakeError("Company Facts current pointer read-back mismatch")
 
@@ -501,8 +905,7 @@ def _attempt_id(record: Mapping[str, Any]) -> str:
 
 
 def _receipt_id(record: Mapping[str, Any]) -> str:
-    material = {key: value for key, value in record.items() if key != "receipt_id"}
-    return "receipt:cs-companyfacts:" + sha256(_canonical_bytes(material)).hexdigest()
+    return "receipt:cs-companyfacts:" + sha256(_canonical_bytes(_receipt_identity_material(record))).hexdigest()
 
 
 def _pointer_id(record: Mapping[str, Any]) -> str:
@@ -773,6 +1176,30 @@ def _validate_companyfacts_bundle(
         raise CompanyFactsIntakeError("unreferenced Company Facts source manifests are not admissible")
 
 
+def _verify_selected_source_objects(
+    source_records: Sequence[Mapping[str, Any]], *, source_stores: Mapping[str, Any],
+) -> None:
+    """Require every selected retained source object to remain readable by its declared store."""
+    for raw in source_records:
+        source = _native(raw)
+        storage = source.get("storage") if isinstance(source.get("storage"), Mapping) else {}
+        content = source.get("content") if isinstance(source.get("content"), Mapping) else {}
+        store_id = storage.get("store_id")
+        store = source_stores.get(store_id) if isinstance(store_id, str) else None
+        if store is None:
+            raise CompanyFactsIntakeError(
+                f"Company Facts selected source store is unavailable: {store_id!r}"
+            )
+        if getattr(store, "backend", None) != storage.get("backend"):
+            raise CompanyFactsIntakeError("Company Facts selected source store backend is detached")
+        try:
+            body = store.get_verified(storage.get("object_key"), content.get("content_sha256"))
+        except Exception as exc:  # noqa: BLE001
+            raise CompanyFactsIntakeError("Company Facts selected source object verification failed") from exc
+        if body is None or len(body) != int(content.get("byte_length") or -1):
+            raise CompanyFactsIntakeError("Company Facts selected source object is missing or mismatched")
+
+
 def _validate_generation_identity(receipt: Mapping[str, Any]) -> None:
     descriptor = receipt.get("generation")
     if not isinstance(descriptor, Mapping):
@@ -797,7 +1224,9 @@ def _receipt_reference(receipt: Mapping[str, Any], path: Path) -> dict[str, Any]
     return {"receipt_id": receipt["receipt_id"], "path": relative, **_file_receipt(path)}
 
 
-def _read_receipt_reference(root: Path, reference: Mapping[str, Any]) -> dict[str, Any]:
+def _read_receipt_reference(
+    root: Path, reference: Mapping[str, Any], *, signer: CompanyFactsSigner,
+) -> dict[str, Any]:
     receipt_id = str(reference.get("receipt_id") or "")
     digest = receipt_id.removeprefix("receipt:cs-companyfacts:")
     if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
@@ -825,6 +1254,7 @@ def _read_receipt_reference(root: Path, reference: Mapping[str, Any]) -> dict[st
         label="immutable Company Facts receipt",
     )
     _validate_receipt_identity(receipt)
+    _validate_receipt_authentication(receipt, signer=signer)
     _validate_generation_identity(receipt)
     if receipt["receipt_id"] != receipt_id:
         raise CompanyFactsIntakeError("immutable receipt reference/receipt_id mismatch")
@@ -847,13 +1277,17 @@ def _load_receipt_generation(
 
 
 def _walk_receipt_chain(
-    root: Path, current_reference: Mapping[str, Any],
+    root: Path, current_reference: Mapping[str, Any], *, signer: CompanyFactsSigner,
 ) -> list[dict[str, Any]]:
     chain: list[dict[str, Any]] = []
     seen: set[str] = set()
     reference: Mapping[str, Any] | None = current_reference
     while reference is not None:
-        receipt = _read_receipt_reference(root, reference)
+        if len(chain) >= MAX_RECEIPT_CHAIN_LENGTH:
+            raise CompanyFactsIntakeError(
+                "Company Facts receipt chain reached its hard checkpoint/compaction boundary"
+            )
+        receipt = _read_receipt_reference(root, reference, signer=signer)
         receipt_id = str(receipt["receipt_id"])
         if receipt_id in seen:
             raise CompanyFactsIntakeError("Company Facts receipt chain contains a cycle")
@@ -893,13 +1327,23 @@ def _assert_receipt_chain_prefixes(
 
 def _load_committed_bundle(
     *, root: Path, receipt_path: Path, anchor_records: Sequence[Mapping[str, Any]],
+    signer: CompanyFactsSigner | None = None, head_witness: Mapping[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
     """Load only the generation selected by an authenticated immutable receipt chain."""
     legacy_paths = (root / "source_manifest.parquet", root / "coverage.parquet")
+    immutable_history = any((root / name).exists() for name in ("receipts", "generations")) or any(
+        root.glob(".generation-stage-*")
+    )
     if not receipt_path.exists():
-        if any(path.exists() for path in legacy_paths):
-            raise CompanyFactsIntakeError("unreceipted fixed-path Company Facts ledgers require quarantine")
+        if any(path.exists() for path in legacy_paths) or immutable_history or head_witness is not None:
+            raise CompanyFactsIntakeError(
+                "missing Company Facts current pointer with immutable history requires explicit recovery"
+            )
         return [], [], None
+    if signer is None:
+        raise CompanyFactsIntakeError("Company Facts startup requires an authenticated receipt signer")
+    if head_witness is None:
+        raise CompanyFactsIntakeError("Company Facts startup requires an external authenticated head witness")
     if receipt_path.is_symlink():
         raise CompanyFactsIntakeError("Company Facts current pointer cannot be a symlink")
     try:
@@ -918,15 +1362,31 @@ def _load_committed_bundle(
         "receipt_id": pointer["receipt_id"], "path": pointer["receipt_path"],
         "sha256": pointer["receipt_sha256"], "byte_length": pointer["receipt_byte_length"],
     }
-    chain = _walk_receipt_chain(root, current_reference)
+    chain = _walk_receipt_chain(root, current_reference, signer=signer)
     receipt = chain[0]
     if (
         pointer["generation_id"] != receipt["generation"]["generation_id"]
         or pointer["published_at"] != receipt["published_at"]
     ):
         raise CompanyFactsIntakeError("Company Facts pointer is detached from immutable receipt")
+    _validate_head_witness(head_witness, signer=signer)
+    head_file = _file_receipt(root / str(pointer["receipt_path"]))
+    head_previous = receipt.get("previous_receipt")
+    expected_head = {
+        "sequence": int(receipt["sequence"]),
+        "receipt_id": receipt["receipt_id"],
+        "receipt_sha256": head_file["sha256"],
+        "receipt_byte_length": head_file["byte_length"],
+        "generation_id": receipt["generation"]["generation_id"],
+        "published_at": receipt["published_at"],
+        "previous_receipt_id": head_previous.get("receipt_id") if isinstance(head_previous, Mapping) else None,
+    }
+    if any(head_witness[field] != value for field, value in expected_head.items()):
+        raise CompanyFactsIntakeError("Company Facts local pointer is not the externally witnessed head")
     generations: dict[str, tuple[list[dict[str, Any]], list[dict[str, Any]]]] = {}
-    for chained_receipt in chain:
+    prior_sources: list[dict[str, Any]] = []
+    prior_coverage: list[dict[str, Any]] = []
+    for chained_receipt in reversed(chain):
         chained_sources, chained_coverage = _load_receipt_generation(root, chained_receipt)
         anchor_count = int(chained_receipt["anchor_manifest_ledger"]["record_count"])
         if anchor_count > len(anchor_records):
@@ -938,8 +1398,10 @@ def _load_committed_bundle(
         _validate_receipt_semantics(
             chained_receipt, anchor_records=anchor_records[:anchor_count],
             source_records=chained_sources, coverage_records=chained_coverage,
+            prior_source_records=prior_sources, prior_coverage_records=prior_coverage,
         )
         generations[str(chained_receipt["receipt_id"])] = (chained_sources, chained_coverage)
+        prior_sources, prior_coverage = chained_sources, chained_coverage
     source_records, coverage_records = generations[str(receipt["receipt_id"])]
     _assert_receipt_chain_prefixes(
         chain, anchor_records=anchor_records, source_records=source_records,
@@ -977,6 +1439,7 @@ def select_companyfacts_queue(
     *, now: datetime,
     max_ciks: int,
     force_refresh: bool = False,
+    cursor_sequence: int = 0,
     diagnostics: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], int, int]:
     """Return bounded work with deterministic retry/new/refresh progress.
@@ -1028,7 +1491,11 @@ def select_companyfacts_queue(
         rows.sort(key=lambda item: (item["due_at"], item["cik"]))
     due_by_reason = {reason: len(rows) for reason, rows in lanes.items()}
     selected: list[dict[str, Any]] = []
-    cursor = stamp.date().toordinal() % len(_QUEUE_SCHEDULE)
+    if isinstance(cursor_sequence, bool) or not isinstance(cursor_sequence, int) or cursor_sequence < 0:
+        raise ValueError("queue cursor_sequence must be a non-negative integer")
+    # The committed receipt sequence, rather than calendar date, advances the
+    # weighted round robin across manual/retry runs on the same day.
+    cursor = cursor_sequence % len(_QUEUE_SCHEDULE)
     while len(selected) < max_ciks and any(lanes.values()):
         chosen_index: int | None = None
         for offset in range(len(_QUEUE_SCHEDULE)):
@@ -1054,6 +1521,8 @@ def select_companyfacts_queue(
         diagnostics.update({
             "due_by_reason": due_by_reason,
             "selected_by_reason": selected_by_reason,
+            "cursor_sequence": cursor_sequence,
+            "force_refresh": force_refresh,
         })
     return selected, deferred, skipped_fresh
 
@@ -1090,7 +1559,7 @@ def _retry_after_seconds(headers: Any, *, now: datetime) -> float | None:
             return None
     if not math.isfinite(seconds):
         return None
-    return max(0.0, min(seconds, MAX_RETRY_COOLDOWN_SECONDS))
+    return max(0.0, seconds)
 
 
 def stream_companyfacts_response(
@@ -1132,10 +1601,14 @@ def stream_companyfacts_response(
     return raw
 
 
-def _response_error_class(exc: Exception) -> tuple[str, timedelta]:
+def _response_error_class(exc: Exception, *, attempted_at: datetime) -> tuple[str, datetime]:
+    if isinstance(exc, CompanyFactsRetryable):
+        return "retry", _strict_utc(exc.retry_after_at or attempted_at + RETRY_AFTER, field="retry_after")
+    if isinstance(exc, CompanyFactsRunBudgetExceeded) and exc.retry_after_at is not None:
+        return "retry", _strict_utc(exc.retry_after_at, field="retry_after")
     if isinstance(exc, (CompanyFactsResponseTooLarge, CompanyFactsDeferred, ValueError)):
-        return "deferred", DEFER_AFTER
-    return "retry", RETRY_AFTER
+        return "deferred", attempted_at + DEFER_AFTER
+    return "retry", attempted_at + RETRY_AFTER
 
 
 class SecCapitalStructureCompanyFactsAdapter(Adapter):
@@ -1149,6 +1622,9 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         self,
         *,
         source_store=None,
+        source_stores: Mapping[str, Any] | None = None,
+        signer: CompanyFactsSigner | None = None,
+        head_guard: CompanyFactsHeadGuard | None = None,
         now_fn: Callable[[], datetime] = _utc_now,
         fetcher: Callable[..., Any] | None = None,
         sleeper: Callable[[float], None] = time.sleep,
@@ -1159,6 +1635,11 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         max_run_seconds: float = MAX_RUN_SECONDS,
     ) -> None:
         self._injected_source_store = source_store
+        self._injected_source_stores = dict(source_stores) if source_stores is not None else None
+        if (signer is None) != (head_guard is None):
+            raise ValueError("Company Facts signer and head_guard must be supplied together")
+        self._injected_signer = signer
+        self._injected_head_guard = head_guard
         self._now_fn = now_fn
         self._fetcher = fetcher or requests.get
         self._sleep = sleeper
@@ -1195,21 +1676,40 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
 
         return build_source_store()
 
+    def _source_stores(self) -> dict[str, Any]:
+        if self._injected_source_stores is not None:
+            return dict(self._injected_source_stores)
+        if self._injected_source_store is not None:
+            store_id = getattr(self._injected_source_store, "store_id", None)
+            if isinstance(store_id, str):
+                return {store_id: self._injected_source_store}
+            return {}
+        from engine.capital_structure.source_store import build_source_stores
+
+        return build_source_stores()
+
+    def _trust_context(self) -> tuple[CompanyFactsSigner, CompanyFactsHeadGuard]:
+        if self._injected_signer is not None and self._injected_head_guard is not None:
+            return self._injected_signer, self._injected_head_guard
+        return _build_production_trust_context()
+
     def _pace(self) -> None:
-        now = self._monotonic()
-        delay = 0.0
-        if self._last_request_at is not None:
-            delay = max(delay, PACE_SECONDS - (now - self._last_request_at))
-        if self._cooldown_until is not None:
-            delay = max(delay, self._cooldown_until - now)
-        if delay <= 0:
-            return
-        if self._run_deadline is not None and now + delay >= self._run_deadline:
-            raise CompanyFactsRunBudgetExceeded("SEC cooldown exceeds Company Facts run deadline")
-        self._sleep(delay)
-        after_sleep = self._monotonic()
-        if self._cooldown_until is not None and after_sleep >= self._cooldown_until:
-            self._cooldown_until = None
+        while True:
+            now = self._monotonic()
+            delay = 0.0
+            if self._last_request_at is not None:
+                delay = max(delay, PACE_SECONDS - (now - self._last_request_at))
+            if self._cooldown_until is not None:
+                delay = max(delay, self._cooldown_until - now)
+            if delay <= 0:
+                if self._cooldown_until is not None and now >= self._cooldown_until:
+                    self._cooldown_until = None
+                return
+            if self._run_deadline is not None and now + delay >= self._run_deadline:
+                raise CompanyFactsRunBudgetExceeded("SEC cooldown exceeds Company Facts run deadline")
+            self._sleep(delay)
+            if self._monotonic() <= now:
+                raise CompanyFactsRunBudgetExceeded("SEC cooldown sleep did not advance the run clock")
 
     def _extend_global_cooldown(self, seconds: float) -> None:
         if seconds <= 0:
@@ -1262,19 +1762,22 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                     raise CompanyFactsRunBudgetExceeded("Company Facts run wall-clock budget exhausted")
                 response = self._fetcher(
                     url, headers=headers,
-                    timeout=(15, max(1.0, min(45.0, remaining_seconds))), stream=True,
+                    timeout=(max(0.001, min(15.0, remaining_seconds)), max(0.001, min(45.0, remaining_seconds))),
+                    stream=True,
                 )
                 self._last_request_at = self._monotonic()
                 status = getattr(response, "status_code", None)
                 if not isinstance(status, int):
                     raise CompanyFactsIntakeError("SEC response has no integer HTTP status")
                 if status in {429, 500, 502, 503, 504}:
+                    observed_at = _strict_utc(self._now_fn(), field="Retry-After observation clock")
                     retry_after = _retry_after_seconds(
                         getattr(response, "headers", {}),
-                        now=_strict_utc(self._now_fn(), field="Retry-After observation clock"),
+                        now=observed_at,
                     )
                     self._extend_global_cooldown(retry_after or 0.0)
-                    raise requests.HTTPError(f"HTTP {status}", response=response)
+                    retry_at = observed_at + timedelta(seconds=retry_after) if retry_after is not None else None
+                    raise CompanyFactsRetryable(f"HTTP {status}", retry_after_at=retry_at)
                 if status != 200:
                     raise CompanyFactsDeferred(f"SEC Company Facts HTTP {status}")
                 return stream_companyfacts_response(
@@ -1288,13 +1791,16 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 if attempt + 1 >= MAX_ATTEMPTS or not (
-                    is_connection_error(exc) or isinstance(exc, requests.RequestException)
+                    is_connection_error(exc)
+                    or isinstance(exc, requests.RequestException)
+                    or isinstance(exc, CompanyFactsRetryable)
                 ):
                     raise
                 delay = max(float(2 ** attempt), retry_after or 0.0)
                 if self._remaining_run_seconds() <= delay:
                     raise CompanyFactsRunBudgetExceeded(
-                        "SEC retry cooldown exceeds Company Facts run deadline"
+                        "SEC retry cooldown exceeds Company Facts run deadline",
+                        retry_after_at=getattr(exc, "retry_after_at", None),
                     ) from exc
                 self._extend_global_cooldown(delay)
             finally:
@@ -1378,128 +1884,165 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         root = _data_root()
         anchor_path = root.parent / "source_manifest.parquet"
         receipt_path = root / "coverage_receipt.json"
-        anchor_frame = _read_ledger(anchor_path, [
-            "schema", "manifest_id", "source_system", "source_id", "issuer", "filing", "document",
-            "retrieval", "storage", "rights", "privacy", "parser", "spans",
-        ])
-        anchor_records = _records(anchor_frame)
-        anchors = _verified_complete_submission_anchors(anchor_records)
-        existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
-            root=root, receipt_path=receipt_path, anchor_records=anchor_records,
-        )
-        selection_as_of = _strict_utc(self._now_fn(), field="selection_as_of")
         self._run_deadline = self._monotonic() + self.max_run_seconds
         self._run_bytes = 0
-        queue_diagnostics: dict[str, Any] = {}
-        queue, deferred_queue_count, skipped_fresh_count = select_companyfacts_queue(
-            anchors, coverage_records, now=selection_as_of,
-            max_ciks=self.max_ciks_per_run, force_refresh=full_history,
-            diagnostics=queue_diagnostics,
-        )
-        try:
-            source_store = self._source_store()
-            source_store_error: Exception | None = None
-        except Exception as exc:  # noqa: BLE001
-            source_store = None
-            source_store_error = exc
-        fresh_manifests: list[dict[str, Any]] = []
-        fresh_coverage: list[dict[str, Any]] = []
-        counts = {"retrieved": 0, "retry": 0, "deferred": 0}
-        for item in queue:
-            self._require_run_budget()
-            attempted = _strict_utc(self._now_fn(), field="attempted_at")
-            attempted_at = _iso(attempted)
-            try:
-                if source_store is None:
-                    if source_store_error is not None:
-                        raise RuntimeError("content-addressed source store unavailable") from source_store_error
-                    raise RuntimeError("content-addressed source store unavailable")
-                raw = self._fetch_companyfacts(item["cik"])
-                receipt = source_store.put_verified(raw, media_type="application/json")
-                if receipt is None:
-                    raise RuntimeError("source-store write/readback verification failed")
-                retained_at = _iso(_strict_utc(self._now_fn(), field="source retained_at"))
-                manifest = self._source_manifest(
-                    cik=item["cik"], anchor=item["anchor"], raw=raw, receipt=receipt, retained_at=retained_at
-                )
-                fresh_manifests.append(manifest)
-                fresh_coverage.append(self._coverage_row(
-                    item=item, attempted_at=attempted_at, state="retrieved", error=None, retry_after=None, manifest=manifest
-                ))
-                counts["retrieved"] += 1
-            except Exception as exc:  # noqa: BLE001
-                state, delay = _response_error_class(exc)
-                retry_after = _iso(attempted + delay)
-                error = f"{type(exc).__name__}: {exc}"[:500]
-                log.warning("sec_capital_structure_companyfacts: %s %s: %s", item["cik"], state, error)
-                fresh_coverage.append(self._coverage_row(
-                    item=item, attempted_at=attempted_at, state=state, error=error, retry_after=retry_after, manifest=None
-                ))
-                counts[state] += 1
-
-        combined_manifests = _append_immutable(
-            existing_manifests, fresh_manifests, key="manifest_id", label="Company Facts source manifest"
-        )
-        combined_coverage = _append_immutable(
-            coverage_records, fresh_coverage, key="coverage_id", label="Company Facts coverage row"
-        )
-        # The budget governs the complete attempt, including source-store and ledger
-        # sealing work. If it expires, no partial candidate becomes selected.
-        self._require_run_time()
-        _validate_companyfacts_bundle(
-            anchor_records=anchor_records, source_records=combined_manifests,
-            coverage_records=combined_coverage,
-        )
-        manifest_frame = pd.DataFrame(combined_manifests, columns=_SOURCE_MANIFEST_COLUMNS)
-        coverage_frame = pd.DataFrame(combined_coverage, columns=_COVERAGE_COLUMNS)
-        prepared = _prepare_generation(
-            source_manifests=manifest_frame, coverage=coverage_frame, root=root,
-            prior_receipt=prior_receipt,
-        )
-        self._require_run_time()
-        published_at = _strict_utc(self._now_fn(), field="published_at")
-        previous_reference = None
-        if prior_receipt is not None:
-            prior_digest = str(prior_receipt["receipt_id"]).rsplit(":", 1)[-1]
-            previous_reference = _receipt_reference(
-                prior_receipt, root / "receipts" / f"{prior_digest}.json"
+        with _companyfacts_publish_lease(root):
+            signer, head_guard = self._trust_context()
+            witnessed_head, witnessed_token = head_guard.read()
+            source_stores = self._source_stores()
+            anchor_frame = _read_ledger(anchor_path, [
+                "schema", "manifest_id", "source_system", "source_id", "issuer", "filing", "document",
+                "retrieval", "storage", "rights", "privacy", "parser", "spans",
+            ])
+            anchor_records = _records(anchor_frame)
+            anchors = _verified_complete_submission_anchors(anchor_records)
+            existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
+                root=root, receipt_path=receipt_path, anchor_records=anchor_records,
+                signer=signer, head_witness=witnessed_head,
             )
-        receipt = _coverage_receipt(
-            selection_as_of=selection_as_of, published_at=published_at,
-            sequence=int(prior_receipt["sequence"]) + 1 if prior_receipt else 1,
-            previous_receipt=previous_reference, generation=prepared.descriptor,
-            anchor_records=anchor_records,
-            source_records=combined_manifests,
-            coverage_records=combined_coverage,
-            eligible_ciks=len(anchors),
-            queue=queue,
-            max_ciks=self.max_ciks_per_run,
-            deferred_queue_count=deferred_queue_count,
-            skipped_fresh_count=skipped_fresh_count,
-            counts=counts,
-            queue_diagnostics=queue_diagnostics,
-        )
-        _validate_contract(receipt, "capital_structure_companyfacts_coverage_receipt.schema.json", label="Company Facts coverage receipt")
-        _validate_receipt_identity(receipt)
-        _validate_generation_identity(receipt)
-        _validate_receipt_semantics(
-            receipt, anchor_records=anchor_records, source_records=combined_manifests,
-            coverage_records=combined_coverage,
-        )
-        _publish_generation(
-            root=root, receipt_path=receipt_path, receipt=receipt, prepared=prepared,
-        )
-        heartbeat = pd.DataFrame({
-            "status": [receipt["status"]],
-            "eligible_ciks": [len(anchors)], "selected": [len(queue)], "retrieved": [counts["retrieved"]],
-            "retry": [counts["retry"]], "deferred": [counts["deferred"] + deferred_queue_count],
-            "fresh_ciks": [receipt["population"]["fresh_ciks"]],
-            "stale_ciks": [receipt["population"]["stale_ciks"]],
-            "pending_ciks": [receipt["population"]["pending_ciks"]],
-            "run_bytes": [self._run_bytes],
-            "published_at": [receipt["published_at"]],
-        }, index=[pd.Timestamp(published_at.date())])
-        return {"sec_companyfacts_intake": heartbeat}
+            _verify_selected_source_objects(existing_manifests, source_stores=source_stores)
+            self._require_run_time()
+            selection_as_of = _strict_utc(self._now_fn(), field="selection_as_of")
+            queue_diagnostics: dict[str, Any] = {}
+            queue, deferred_queue_count, skipped_fresh_count = select_companyfacts_queue(
+                anchors, coverage_records, now=selection_as_of,
+                max_ciks=self.max_ciks_per_run, force_refresh=full_history,
+                cursor_sequence=int(prior_receipt["sequence"]) if prior_receipt else 0,
+                diagnostics=queue_diagnostics,
+            )
+
+            def heartbeat(*, status: str, population: Mapping[str, int], published_at: datetime | pd.Timestamp,
+                          selected: int, counts: Mapping[str, int]) -> dict[str, pd.DataFrame]:
+                stamp = _parse_stamp(published_at, field="heartbeat published_at")
+                return {"sec_companyfacts_intake": pd.DataFrame({
+                    "status": [status], "eligible_ciks": [len(anchors)], "selected": [selected],
+                    "retrieved": [int(counts["retrieved"])], "retry": [int(counts["retry"])],
+                    "deferred": [int(counts["deferred"]) + deferred_queue_count],
+                    "fresh_ciks": [population["fresh_ciks"]], "stale_ciks": [population["stale_ciks"]],
+                    "pending_ciks": [population["pending_ciks"]], "run_bytes": [self._run_bytes],
+                    "published_at": [_iso(stamp.to_pydatetime())],
+                }, index=[pd.Timestamp(stamp.date())])}
+
+            # No selected work cannot change sealed evidence. Avoid perpetual empty
+            # receipts and the O(n) startup-chain growth they cause.
+            if prior_receipt is not None and not queue:
+                population = _coverage_population(anchors, coverage_records, as_of=selection_as_of)
+                return heartbeat(
+                    status=_coverage_status(eligible_ciks=len(anchors), population=population),
+                    population=population, published_at=_parse_stamp(prior_receipt["published_at"], field="published_at"),
+                    selected=0, counts={"retrieved": 0, "retry": 0, "deferred": 0},
+                )
+
+            try:
+                source_store = self._source_store()
+                source_store_error: Exception | None = None
+                source_store_id = getattr(source_store, "store_id", None)
+                if isinstance(source_store_id, str):
+                    source_stores[source_store_id] = source_store
+            except Exception as exc:  # noqa: BLE001
+                source_store = None
+                source_store_error = exc
+            fresh_manifests: list[dict[str, Any]] = []
+            fresh_coverage: list[dict[str, Any]] = []
+            counts = {"retrieved": 0, "retry": 0, "deferred": 0}
+            for item in queue:
+                self._require_run_budget()
+                attempted = _strict_utc(self._now_fn(), field="attempted_at")
+                attempted_at = _iso(attempted)
+                try:
+                    if source_store is None:
+                        if source_store_error is not None:
+                            raise RuntimeError("content-addressed source store unavailable") from source_store_error
+                        raise RuntimeError("content-addressed source store unavailable")
+                    raw = self._fetch_companyfacts(item["cik"])
+                    self._require_run_time()
+                    receipt = source_store.put_verified(raw, media_type="application/json")
+                    self._require_run_time()
+                    if receipt is None:
+                        raise RuntimeError("source-store write/readback verification failed")
+                    retained_at = _iso(_strict_utc(self._now_fn(), field="source retained_at"))
+                    manifest = self._source_manifest(
+                        cik=item["cik"], anchor=item["anchor"], raw=raw, receipt=receipt, retained_at=retained_at
+                    )
+                    fresh_manifests.append(manifest)
+                    fresh_coverage.append(self._coverage_row(
+                        item=item, attempted_at=attempted_at, state="retrieved", error=None, retry_after=None, manifest=manifest
+                    ))
+                    counts["retrieved"] += 1
+                except Exception as exc:  # noqa: BLE001
+                    state, retry_deadline = _response_error_class(exc, attempted_at=attempted)
+                    retry_after = _iso(retry_deadline)
+                    error = f"{type(exc).__name__}: {exc}"[:500]
+                    log.warning("sec_capital_structure_companyfacts: %s %s: %s", item["cik"], state, error)
+                    fresh_coverage.append(self._coverage_row(
+                        item=item, attempted_at=attempted_at, state=state, error=error, retry_after=retry_after, manifest=None
+                    ))
+                    counts[state] += 1
+
+            combined_manifests = _append_immutable(
+                existing_manifests, fresh_manifests, key="manifest_id", label="Company Facts source manifest"
+            )
+            combined_coverage = _append_immutable(
+                coverage_records, fresh_coverage, key="coverage_id", label="Company Facts coverage row"
+            )
+            self._require_run_time()
+            _validate_companyfacts_bundle(
+                anchor_records=anchor_records, source_records=combined_manifests,
+                coverage_records=combined_coverage,
+            )
+            _verify_selected_source_objects(combined_manifests, source_stores=source_stores)
+            if prior_receipt is not None and int(prior_receipt["sequence"]) >= MAX_RECEIPT_CHAIN_LENGTH:
+                raise CompanyFactsIntakeError(
+                    "Company Facts receipt chain reached its hard checkpoint/compaction boundary"
+                )
+            manifest_frame = pd.DataFrame(combined_manifests, columns=_SOURCE_MANIFEST_COLUMNS)
+            coverage_frame = pd.DataFrame(combined_coverage, columns=_COVERAGE_COLUMNS)
+            prepared: _PreparedGeneration | None = None
+            try:
+                prepared = _prepare_generation(
+                    source_manifests=manifest_frame, coverage=coverage_frame, root=root,
+                    prior_receipt=prior_receipt, deadline=self._run_deadline, monotonic=self._monotonic,
+                )
+                self._require_run_time()
+                published_at = _strict_utc(self._now_fn(), field="published_at")
+                previous_reference = None
+                if prior_receipt is not None:
+                    prior_digest = str(prior_receipt["receipt_id"]).rsplit(":", 1)[-1]
+                    previous_reference = _receipt_reference(
+                        prior_receipt, root / "receipts" / f"{prior_digest}.json"
+                    )
+                sealed_receipt = _coverage_receipt(
+                    selection_as_of=selection_as_of, published_at=published_at,
+                    sequence=int(prior_receipt["sequence"]) + 1 if prior_receipt else 1,
+                    previous_receipt=previous_reference, generation=prepared.descriptor,
+                    anchor_records=anchor_records, source_records=combined_manifests,
+                    coverage_records=combined_coverage, eligible_ciks=len(anchors), queue=queue,
+                    max_ciks=self.max_ciks_per_run, deferred_queue_count=deferred_queue_count,
+                    skipped_fresh_count=skipped_fresh_count, counts=counts,
+                    queue_diagnostics=queue_diagnostics, signer=signer,
+                )
+                _validate_contract(sealed_receipt, "capital_structure_companyfacts_coverage_receipt.schema.json", label="Company Facts coverage receipt")
+                _validate_receipt_identity(sealed_receipt)
+                _validate_receipt_authentication(sealed_receipt, signer=signer)
+                _validate_generation_identity(sealed_receipt)
+                _validate_receipt_semantics(
+                    sealed_receipt, anchor_records=anchor_records, source_records=combined_manifests,
+                    coverage_records=combined_coverage, prior_source_records=existing_manifests,
+                    prior_coverage_records=coverage_records,
+                )
+                expected_pointer = receipt_path.read_bytes() if prior_receipt is not None else None
+                _publish_generation(
+                    root=root, receipt_path=receipt_path, receipt=sealed_receipt, prepared=prepared,
+                    signer=signer, head_guard=head_guard, expected_witness=witnessed_head,
+                    expected_witness_token=witnessed_token, expected_pointer=expected_pointer,
+                )
+            except Exception:
+                _discard_prepared_generation(prepared)
+                raise
+            return heartbeat(
+                status=sealed_receipt["status"], population=sealed_receipt["population"],
+                published_at=published_at, selected=len(queue), counts=counts,
+            )
 
 
 def _append_immutable(
@@ -1576,6 +2119,8 @@ def _coverage_status(*, eligible_ciks: int, population: Mapping[str, int]) -> st
 def _validate_receipt_semantics(
     receipt: Mapping[str, Any], *, anchor_records: Sequence[Mapping[str, Any]],
     source_records: Sequence[Mapping[str, Any]], coverage_records: Sequence[Mapping[str, Any]],
+    prior_source_records: Sequence[Mapping[str, Any]] = (),
+    prior_coverage_records: Sequence[Mapping[str, Any]] = (),
 ) -> None:
     selection = _parse_stamp(receipt["selection_as_of"], field="receipt selection_as_of")
     published = _parse_stamp(receipt["published_at"], field="receipt published_at")
@@ -1625,6 +2170,55 @@ def _validate_receipt_semantics(
     previous = receipt.get("previous_receipt")
     if (sequence == 1) != (previous is None):
         raise CompanyFactsIntakeError("receipt genesis/predecessor invariant mismatch")
+    if len(prior_source_records) > len(source_records) or len(prior_coverage_records) > len(coverage_records):
+        raise CompanyFactsIntakeError("receipt predecessor generation exceeds current generation")
+    if (
+        [_canonical_bytes(_native(row)) for row in source_records[:len(prior_source_records)]]
+        != [_canonical_bytes(_native(row)) for row in prior_source_records]
+        or [_canonical_bytes(_native(row)) for row in coverage_records[:len(prior_coverage_records)]]
+        != [_canonical_bytes(_native(row)) for row in prior_coverage_records]
+    ):
+        raise CompanyFactsIntakeError("receipt generation is not an exact predecessor prefix")
+    source_suffix = [_native(row) for row in source_records[len(prior_source_records):]]
+    coverage_suffix = [_native(row) for row in coverage_records[len(prior_coverage_records):]]
+    expected_queue_diagnostics: dict[str, Any] = {}
+    expected_queue, expected_deferred, expected_skipped = select_companyfacts_queue(
+        anchors,
+        prior_coverage_records,
+        now=selection.to_pydatetime(),
+        max_ciks=int(queue["max_ciks"]),
+        force_refresh=bool(queue["force_refresh"]),
+        cursor_sequence=int(queue["cursor_sequence"]),
+        diagnostics=expected_queue_diagnostics,
+    )
+    if (
+        [item["cik"] for item in expected_queue] != list(queue["priority_order"])
+        or int(queue["deferred_ciks"]) != expected_deferred
+        or int(counts["skipped_fresh"]) != expected_skipped
+        or dict(queue["due_by_reason"]) != expected_queue_diagnostics["due_by_reason"]
+        or dict(queue["selected_by_reason"]) != expected_queue_diagnostics["selected_by_reason"]
+    ):
+        raise CompanyFactsIntakeError("receipt queue telemetry is detached from its predecessor state")
+    if len(coverage_suffix) != selected:
+        raise CompanyFactsIntakeError("receipt selected count does not match coverage suffix")
+    observed_counts = {state: sum(row.get("state") == state for row in coverage_suffix) for state in ("retrieved", "retry", "deferred")}
+    if any(int(counts[state]) != observed_counts[state] for state in observed_counts):
+        raise CompanyFactsIntakeError("receipt outcome counts do not match coverage suffix")
+    for item, row in zip(expected_queue, coverage_suffix, strict=True):
+        if (
+            row.get("cik") != item["cik"]
+            or row.get("anchor_manifest_id") != item["anchor"]["manifest_id"]
+            or int(row.get("attempt_count") or 0) != int(item["attempt_count"])
+            or row.get("queue_reason") != item["queue_reason"]
+        ):
+            raise CompanyFactsIntakeError("receipt coverage suffix is detached from selected queue")
+    source_ids = {str(row.get("manifest_id")) for row in source_suffix}
+    retrieved_source_ids = {
+        str(row["result"]["source_manifest_id"])
+        for row in coverage_suffix if row.get("state") == "retrieved"
+    }
+    if source_ids != retrieved_source_ids or len(source_suffix) != observed_counts["retrieved"]:
+        raise CompanyFactsIntakeError("receipt source suffix is detached from retrieved coverage")
 
 
 def _coverage_receipt(
@@ -1633,7 +2227,7 @@ def _coverage_receipt(
     anchor_records: Sequence[Mapping[str, Any]], source_records: Sequence[Mapping[str, Any]],
     coverage_records: Sequence[Mapping[str, Any]], eligible_ciks: int, queue: Sequence[Mapping[str, Any]], max_ciks: int,
     deferred_queue_count: int, skipped_fresh_count: int, counts: Mapping[str, int],
-    queue_diagnostics: Mapping[str, Any],
+    queue_diagnostics: Mapping[str, Any], signer: CompanyFactsSigner,
 ) -> dict[str, Any]:
     published_at = _strict_utc(published_at, field="published_at")
     selection_as_of = _strict_utc(selection_as_of, field="selection_as_of")
@@ -1654,6 +2248,8 @@ def _coverage_receipt(
         "coverage_ledger": _ledger_receipt(coverage_records),
         "queue": {
             "max_ciks": max_ciks,
+            "force_refresh": bool(queue_diagnostics["force_refresh"]),
+            "cursor_sequence": int(queue_diagnostics["cursor_sequence"]),
             "eligible_ciks": eligible_ciks,
             "selected_ciks": len(queue),
             "deferred_ciks": deferred_queue_count,
@@ -1668,9 +2264,9 @@ def _coverage_receipt(
         "population": population,
         "nonclaims": _NONCLAIMS,
         "authority": _authority(),
+        "auth": {"scheme": RECEIPT_AUTH_SCHEME, "key_id": signer.key_id, "signature": ""},
     }
-    record["receipt_id"] = _receipt_id(record)
-    return record
+    return _sign_receipt(record, signer=signer)
 
 
 if __name__ == "__main__":

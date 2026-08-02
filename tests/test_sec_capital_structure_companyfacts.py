@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json
+import threading
 
 import pandas as pd
 import pytest
@@ -12,6 +13,8 @@ import collectors.sec_capital_structure as filings
 import collectors.sec_capital_structure_companyfacts as companyfacts
 from engine.capital_structure.source_store import ContentAddressedSourceStore, LocalStore
 
+
+_TEST_TRUST: dict[str, tuple[companyfacts.CompanyFactsSigner, companyfacts.CompanyFactsHeadGuard]] = {}
 
 SUBMISSION = b"""\
 <SEC-DOCUMENT>0001234567-26-000001.txt
@@ -96,10 +99,18 @@ def _payload(cik: str = "0001234567") -> bytes:
 def _adapter(tmp_path, monkeypatch, response: Response, *, source_store=None, max_ciks=24, clock=None, **limits):
     root = tmp_path / "data" / "capital_structure" / "companyfacts"
     monkeypatch.setattr(companyfacts, "_data_root", lambda: root)
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("T" * 32, key_id="companyfacts-test-v1")
+    guard = companyfacts.InMemoryCompanyFactsHeadGuard(signer)
+    _TEST_TRUST[str(root)] = (signer, guard)
+    ticks = [1.0]
+    def monotonic():
+        return ticks[0]
+    def sleeper(delay):
+        ticks[0] += delay
     return companyfacts.SecCapitalStructureCompanyFactsAdapter(
         source_store=source_store or _store(tmp_path), now_fn=clock or Clock(),
-        fetcher=lambda *args, **kwargs: response, sleeper=lambda _: None,
-        monotonic=lambda: 1.0, max_ciks_per_run=max_ciks, **limits,
+        fetcher=lambda *args, **kwargs: response, sleeper=sleeper,
+        monotonic=monotonic, max_ciks_per_run=max_ciks, signer=signer, head_guard=guard, **limits,
     ), root
 
 
@@ -113,9 +124,16 @@ def _selected(root):
 
 
 def _load_selected(root, anchor):
+    signer, guard = _TEST_TRUST[str(root)]
+    head, _ = guard.read()
     return companyfacts._load_committed_bundle(
         root=root, receipt_path=root / "coverage_receipt.json", anchor_records=[anchor],
+        signer=signer, head_witness=head,
     )
+
+
+def _trust(root):
+    return _TEST_TRUST[str(root)]
 
 
 def _coverage_row(*, cik: str, anchor_id: str, state: str, attempted_at: str, attempt_count: int = 1):
@@ -176,7 +194,8 @@ def test_queue_is_bounded_deterministic_and_nonempty_lanes_progress():
     for offset in range(4):
         diagnostics = {}
         queue, deferred, skipped_fresh = companyfacts.select_companyfacts_queue(
-            anchors, [retry, fresh], now=now + timedelta(days=offset), max_ciks=1, diagnostics=diagnostics,
+        anchors, [retry, fresh], now=now, max_ciks=1,
+            cursor_sequence=offset, diagnostics=diagnostics,
         )
         assert len(queue) == 1
         assert deferred >= 2
@@ -292,6 +311,12 @@ def test_last_good_selection_survives_each_publish_stage_fault(tmp_path, monkeyp
     with pytest.raises(OSError, match="injected"):
         adapter.fetch(full_history=True)
     assert (root / "coverage_receipt.json").read_bytes() == prior_pointer
+    if target == "_atomic_write_bytes":
+        # The external witness advances before the local pointer so a failed local
+        # CAS cannot expose an unwitnessed head. Recovery is deliberately fail-closed.
+        with pytest.raises(companyfacts.CompanyFactsIntakeError, match="externally witnessed"):
+            _load_selected(root, anchor)
+        return
     loaded_sources, loaded_coverage, loaded_receipt = _load_selected(root, anchor)
     assert len(loaded_sources) == len(loaded_coverage) == 1
     assert loaded_receipt["sequence"] == 1
@@ -353,18 +378,11 @@ def test_body_identity_and_cross_ledger_semantics_are_fail_closed(tmp_path, monk
 def test_retry_after_global_cooldown_and_total_run_byte_budget(tmp_path, monkeypatch):
     responses = [
         Response(b"", status=429, headers={"Retry-After": "99999"}),
-        Response(b"", status=429, headers={"Retry-After": "99999"}),
-        Response(b"", status=429, headers={"Retry-After": "99999"}),
-        Response(_payload()),
     ]
-    sleeps = []
     adapter, _ = _adapter(tmp_path, monkeypatch, Response(_payload()))
     adapter._fetcher = lambda *args, **kwargs: responses.pop(0)
-    adapter._sleep = sleeps.append
-    with pytest.raises(requests.HTTPError):
+    with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="cooldown"):
         adapter._fetch_companyfacts("0001234567")
-    assert adapter._fetch_companyfacts("0001234567") == _payload()
-    assert any(delay == companyfacts.MAX_RETRY_COOLDOWN_SECONDS for delay in sleeps)
 
     limited, _ = _adapter(
         tmp_path / "limited", monkeypatch, Response(_payload()),
@@ -374,3 +392,345 @@ def test_retry_after_global_cooldown_and_total_run_byte_budget(tmp_path, monkeyp
     with pytest.raises(companyfacts.CompanyFactsRunBudgetExceeded, match="byte budget"):
         limited._fetch_companyfacts("0001234567")
     assert limited._run_bytes > limited.max_run_bytes
+
+
+def test_production_requires_external_authenticated_head_before_network(tmp_path, monkeypatch):
+    root = tmp_path / "data" / "capital_structure" / "companyfacts"
+    monkeypatch.setattr(companyfacts, "_data_root", lambda: root)
+    monkeypatch.delenv("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY", raising=False)
+    monkeypatch.delenv("COMPANYFACTS_HEAD_GUARD_BUCKET", raising=False)
+    monkeypatch.delenv("R2_CAPITAL_STRUCTURE_BUCKET", raising=False)
+    monkeypatch.delenv("R2_BUCKET", raising=False)
+    called = []
+    adapter = companyfacts.SecCapitalStructureCompanyFactsAdapter(
+        fetcher=lambda *args, **kwargs: called.append(args), sleeper=lambda _: None,
+    )
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="production trust is unconfigured"):
+        adapter.fetch()
+    assert called == []
+
+
+def test_production_trust_uses_shared_r2_bucket_only_when_explicitly_configured(monkeypatch):
+    import engine.capital_structure.source_store as source_store
+
+    client = object()
+    monkeypatch.setenv("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY", "H" * 32)
+    monkeypatch.setenv("CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_KEY_ID", "")
+    monkeypatch.delenv("COMPANYFACTS_HEAD_GUARD_BUCKET", raising=False)
+    monkeypatch.delenv("R2_CAPITAL_STRUCTURE_BUCKET", raising=False)
+    monkeypatch.setenv("R2_BUCKET", "shared-evidence")
+    monkeypatch.setattr(source_store, "_capital_structure_r2_client", lambda: client)
+    signer, guard = companyfacts._build_production_trust_context()
+    assert signer.key_id == "companyfacts-head-v1"
+    assert isinstance(guard, companyfacts.R2CompanyFactsHeadGuard)
+    assert guard._bucket == "shared-evidence" and guard._client is client  # noqa: SLF001
+
+
+def test_r2_head_guard_uses_r2_conditional_puts_with_service_etags(monkeypatch):
+    class PreconditionFailed(RuntimeError):
+        response = {
+            "Error": {"Code": "PreconditionFailed"},
+            "ResponseMetadata": {"HTTPStatusCode": 412},
+        }
+
+    class Body:
+        def __init__(self, body):
+            self.body = body
+
+        def read(self):
+            return self.body
+
+    class R2:
+        def __init__(self):
+            self.body = None
+            self.etag = None
+            self.puts = []
+            self.fail_next_put = False
+
+        def get_object(self, **_kwargs):
+            if self.body is None:
+                raise KeyError("missing")
+            return {"Body": Body(self.body), "ETag": self.etag}
+
+        def put_object(self, **kwargs):
+            self.puts.append(kwargs)
+            if self.fail_next_put:
+                self.fail_next_put = False
+                raise PreconditionFailed("concurrent writer won")
+            if kwargs.get("IfNoneMatch") == "*" and self.body is not None:
+                raise RuntimeError("precondition failed")
+            if "IfMatch" in kwargs and kwargs["IfMatch"] != self.etag:
+                raise RuntimeError("precondition failed")
+            self.body = kwargs["Body"]
+            self.etag = f'"etag-{len(self.puts)}"'
+
+    monkeypatch.setattr(companyfacts, "_is_not_found_error", lambda error: isinstance(error, KeyError))
+    signer = companyfacts.DeterministicTestCompanyFactsSigner("R" * 32, key_id="r2-test-v1")
+    client = R2()
+    guard = companyfacts.R2CompanyFactsHeadGuard(client=client, bucket="test", signer=signer)
+    first = {
+        "schema": companyfacts.HEAD_WITNESS_SCHEMA,
+        "key_id": signer.key_id,
+        "sequence": 1,
+        "receipt_id": "receipt:cs-companyfacts:" + "1" * 64,
+        "receipt_sha256": "2" * 64,
+        "receipt_byte_length": 1,
+        "generation_id": "generation:cs-companyfacts:" + "3" * 64,
+        "published_at": "2026-08-02T12:00:00Z",
+        "previous_receipt_id": None,
+    }
+    first["signature"] = signer.sign(companyfacts._head_witness_payload(first))
+    guard.advance(expected=None, expected_token=None, candidate=first)
+    observed, token = guard.read()
+    assert observed == first and token == '"etag-1"'
+    assert client.puts[0]["IfNoneMatch"] == "*"
+
+    second = {**first, "sequence": 2, "receipt_id": "receipt:cs-companyfacts:" + "4" * 64,
+              "previous_receipt_id": first["receipt_id"]}
+    second["signature"] = signer.sign(companyfacts._head_witness_payload(second))
+    client.fail_next_put = True
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="compare-and-swap conflict"):
+        guard.advance(expected=observed, expected_token=token, candidate=second)
+    assert client.puts[1]["IfMatch"] == '"etag-1"'
+    guard.advance(expected=observed, expected_token=token, candidate=second)
+    assert client.puts[2]["IfMatch"] == '"etag-1"'
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="compare-and-swap conflict"):
+        guard.advance(expected=observed, expected_token=token, candidate=second)
+
+
+def test_pointer_loss_with_immutable_artifacts_fails_closed_before_network(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    (root / "coverage_receipt.json").unlink()
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="missing Company Facts current pointer"):
+        adapter.fetch(full_history=True)
+    assert called == []
+
+
+def test_saved_valid_pointer_replay_and_fully_resealed_local_head_are_rejected(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    old_pointer = (root / "coverage_receipt.json").read_bytes()
+    adapter.fetch(full_history=True)
+    (root / "coverage_receipt.json").write_bytes(old_pointer)
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="externally witnessed"):
+        adapter.fetch()
+    assert called == []
+
+    # Even a locally re-signed, internally consistent alternative receipt cannot
+    # replace the externally witnessed head.
+    signer, guard = _trust(root)
+    _, current, _, _ = _selected(root)
+    forged = deepcopy(current)
+    forged["policy_version"] = "locally-resealed-attacker-version"
+    forged["auth"]["signature"] = ""
+    forged = companyfacts._sign_receipt(forged, signer=signer)
+    forged_body = companyfacts._canonical_bytes(forged) + b"\n"
+    forged_path = root / "receipts" / f"{forged['receipt_id'].rsplit(':', 1)[-1]}.json"
+    forged_path.write_bytes(forged_body)
+    pointer = {
+        "schema": companyfacts.CURRENT_POINTER_SCHEMA,
+        "receipt_id": forged["receipt_id"],
+        "receipt_path": f"receipts/{forged_path.name}",
+        "receipt_sha256": companyfacts._file_receipt(forged_path)["sha256"],
+        "receipt_byte_length": len(forged_body),
+        "generation_id": forged["generation"]["generation_id"],
+        "published_at": forged["published_at"],
+    }
+    pointer["pointer_id"] = companyfacts._pointer_id(pointer)
+    (root / "coverage_receipt.json").write_bytes(companyfacts._canonical_bytes(pointer) + b"\n")
+    witnessed, _ = guard.read()
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="externally witnessed"):
+        companyfacts._load_committed_bundle(
+            root=root, receipt_path=root / "coverage_receipt.json", anchor_records=[anchor],
+            signer=signer, head_witness=witnessed,
+        )
+
+
+def test_split_brain_external_witness_ahead_of_local_pointer_refuses_network(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    prior_pointer = (root / "coverage_receipt.json").read_bytes()
+    adapter.fetch(full_history=True)
+    (root / "coverage_receipt.json").write_bytes(prior_pointer)
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="externally witnessed"):
+        adapter.fetch()
+    assert called == []
+
+
+def test_split_brain_local_pointer_ahead_of_external_witness_refuses_network(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    _, guard = _trust(root)
+    witnessed_one, _ = guard.read()
+    assert witnessed_one is not None
+    adapter.fetch(full_history=True)
+    # Simulate the impossible-in-normal-order crash/administrative split where a
+    # local selector is newer than the remote authority. Startup must not choose
+    # either side or make another SEC call.
+    guard._witness = dict(witnessed_one)  # noqa: SLF001 - deterministic test fixture
+    guard._version += 1  # noqa: SLF001 - deterministic test fixture
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="externally witnessed"):
+        adapter.fetch()
+    assert called == []
+
+
+def test_cross_process_lease_and_external_cas_produce_one_linear_history(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    seed, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    seed.fetch()
+    signer, guard = _trust(root)
+    serialized_clock = Clock(datetime(2026, 8, 3, 12, tzinfo=timezone.utc))
+    first = companyfacts.SecCapitalStructureCompanyFactsAdapter(
+        source_store=store, signer=signer, head_guard=guard,
+        now_fn=serialized_clock,
+        fetcher=lambda *args, **kwargs: Response(_payload()), sleeper=lambda _: None, monotonic=lambda: 1.0,
+    )
+    second = companyfacts.SecCapitalStructureCompanyFactsAdapter(
+        source_store=store, signer=signer, head_guard=guard,
+        now_fn=serialized_clock,
+        fetcher=lambda *args, **kwargs: Response(_payload()), sleeper=lambda _: None, monotonic=lambda: 1.0,
+    )
+    barrier = threading.Barrier(2)
+    errors = []
+    def run(adapter):
+        try:
+            barrier.wait(timeout=5)
+            adapter.fetch(full_history=True)
+        except BaseException as exc:  # noqa: BLE001
+            errors.append(exc)
+    threads = [threading.Thread(target=run, args=(candidate,)) for candidate in (first, second)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert errors == []
+    _, receipt, _, coverage = _selected(root)
+    assert receipt["sequence"] == 3
+    assert len(coverage) == 3
+    assert sorted(json.loads(path.read_text())["sequence"] for path in (root / "receipts").glob("*.json")) == [1, 2, 3]
+
+
+def test_fsync_after_replace_is_indeterminate_not_success(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    original = companyfacts._fsync_directory
+    def fail_pointer_directory(path):
+        if path == root:
+            raise OSError("injected pointer fsync failure")
+        return original(path)
+    monkeypatch.setattr(companyfacts, "_fsync_directory", fail_pointer_directory)
+    with pytest.raises(companyfacts.CompanyFactsPublishIndeterminate, match="durability is indeterminate"):
+        adapter.fetch(full_history=True)
+
+
+def test_startup_refuses_selected_generation_when_raw_object_is_missing(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    _, _, sources, _ = _selected(root)
+    object_path = tmp_path / "objects" / sources[0]["storage"]["object_key"]
+    object_path.unlink()
+    called = []
+    adapter._fetcher = lambda *args, **kwargs: called.append(args)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="source object is missing"):
+        adapter.fetch()
+    assert called == []
+
+
+def test_authenticated_receipt_telemetry_is_rederived_from_predecessor_delta(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    _, receipt, sources, coverage = _selected(root)
+    signer, _ = _trust(root)
+    forged = deepcopy(receipt)
+    forged["queue"].update(
+        selected_ciks=0, deferred_ciks=999, priority_order=[],
+        due_by_reason={"retry_due": 0, "new_anchor": 0, "refresh_due": 0},
+        selected_by_reason={"retry_due": 0, "new_anchor": 0, "refresh_due": 0},
+    )
+    forged["counts"].update(retrieved=0, retry=0, deferred=0, skipped_fresh=777)
+    forged["auth"]["signature"] = ""
+    forged = companyfacts._sign_receipt(forged, signer=signer)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="queue telemetry"):
+        companyfacts._validate_receipt_semantics(
+            forged, anchor_records=[anchor], source_records=sources, coverage_records=coverage,
+        )
+
+
+def test_retry_after_is_persisted_as_the_server_deadline(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(b"", status=429, headers={"Retry-After": "7200"}), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    _, _, _, coverage = _selected(root)
+    attempted = companyfacts._parse_stamp(coverage[0]["attempted_at"], field="attempted")
+    retry_after = companyfacts._parse_stamp(coverage[0]["retry_after"], field="retry_after")
+    assert coverage[0]["state"] == "retry"
+    assert (retry_after - attempted).total_seconds() >= 7200
+
+
+def test_noop_runs_do_not_inflate_receipt_chain_and_caps_are_fail_closed(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    adapter.fetch()
+    pointer = (root / "coverage_receipt.json").read_bytes()
+    _, guard = _trust(root)
+    witnessed, witness_token = guard.read()
+    adapter.fetch()
+    assert (root / "coverage_receipt.json").read_bytes() == pointer
+    assert guard.read() == (witnessed, witness_token)
+    monkeypatch.setattr(companyfacts, "MAX_RECEIPT_CHAIN_LENGTH", 1)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="checkpoint/compaction boundary"):
+        adapter.fetch(full_history=True)
+
+
+def test_generation_storage_cap_and_request_timeout_obey_remaining_budget(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    anchor = _anchor_manifest(store)
+    adapter, root = _adapter(tmp_path, monkeypatch, Response(_payload()), source_store=store)
+    _write_anchor(root, anchor)
+    monkeypatch.setattr(companyfacts, "MAX_GENERATION_FILE_BYTES", 1)
+    with pytest.raises(companyfacts.CompanyFactsIntakeError, match="generation file exceeds"):
+        adapter.fetch()
+    assert not (root / "coverage_receipt.json").exists()
+
+    observed = []
+    bounded, _ = _adapter(tmp_path / "bounded", monkeypatch, Response(_payload()))
+    bounded._run_deadline = 1.1
+    bounded._fetcher = lambda *args, **kwargs: (observed.append(kwargs["timeout"]) or Response(_payload()))
+    assert bounded._fetch_companyfacts("0001234567") == _payload()
+    assert observed and max(observed[0]) <= 0.101

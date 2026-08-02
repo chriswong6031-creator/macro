@@ -5,7 +5,7 @@
   "description": "Immutable, chained Company Facts receipt. The tiny current pointer selects one receipt; every receipt identity-binds its predecessor, exact generation files, and ordered ledger prefixes.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "population", "nonclaims", "authority"],
+  "required": ["schema", "receipt_id", "selection_as_of", "published_at", "as_of", "sequence", "previous_receipt", "policy_version", "status", "generation", "anchor_manifest_ledger", "companyfacts_manifest_ledger", "coverage_ledger", "queue", "counts", "population", "nonclaims", "authority", "auth"],
   "properties": {
     "schema": {"const": "capital_structure.companyfacts_coverage_receipt/v1"},
     "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
@@ -22,9 +22,11 @@
     "coverage_ledger": {"$ref": "#/$defs/ledger"},
     "queue": {
       "type": "object", "additionalProperties": false,
-      "required": ["max_ciks", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason"],
+      "required": ["max_ciks", "force_refresh", "cursor_sequence", "eligible_ciks", "selected_ciks", "deferred_ciks", "priority_order", "due_by_reason", "selected_by_reason"],
       "properties": {
         "max_ciks": {"type": "integer", "minimum": 0},
+        "force_refresh": {"type": "boolean"},
+        "cursor_sequence": {"type": "integer", "minimum": 0},
         "eligible_ciks": {"type": "integer", "minimum": 0},
         "selected_ciks": {"type": "integer", "minimum": 0},
         "deferred_ciks": {"type": "integer", "minimum": 0},
@@ -55,7 +57,8 @@
       }
     },
     "nonclaims": {"type": "array", "minItems": 6, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-    "authority": {"$ref": "#/$defs/authority"}
+    "authority": {"$ref": "#/$defs/authority"},
+    "auth": {"$ref": "#/$defs/auth"}
   },
   "$defs": {
     "ledger": {
@@ -117,6 +120,15 @@
       "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
       "properties": {
         "is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "prophet_authority": {"const": false}
+      }
+    },
+    "auth": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scheme", "key_id", "signature"],
+      "properties": {
+        "scheme": {"const": "hmac-sha256/v1"},
+        "key_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
       }
     }
   }
