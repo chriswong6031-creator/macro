@@ -32,7 +32,7 @@ def test_dossier_ui_is_progressive_and_semantically_precise() -> None:
         "Load more awards",
         "Load more actions",
         "None is GAAP backlog or reported revenue",
-        "government_revenue_dossiers.v1",
+        "schema_version!=='1.0.0'",
         "generation_mismatch",
     ):
         assert marker in TEMPLATE or marker in DOSSIER_JS
@@ -48,12 +48,12 @@ def test_dossier_runtime_loads_one_generation_and_escapes_source_text(tmp_path: 
     content_id = "grd1-" + "a" * 24
     responses = {
         "/api/government-revenue/dossier/company/LMT": {
-            "schema_version": "government_revenue_dossiers.v1",
+            "schema_version": "1.0.0",
             "content_id": content_id,
             "company": {"ticker": "LMT", "action_count": 1},
         },
         "/api/government-revenue/company/LMT/awards?limit=8": {
-            "schema_version": "government_revenue_dossiers.v1",
+            "schema_version": "1.0.0",
             "content_id": content_id,
             "source_coverage": {"scope": "bounded official sample"},
             "freshness": {"status": "ok"},
@@ -70,7 +70,7 @@ def test_dossier_runtime_loads_one_generation_and_escapes_source_text(tmp_path: 
             "total": 1,
         },
         "/api/government-revenue/award/award-1": {
-            "schema_version": "government_revenue_dossiers.v1",
+            "schema_version": "1.0.0",
             "content_id": content_id,
             "award": {
                 "award_key": "award-1",
@@ -92,7 +92,7 @@ def test_dossier_runtime_loads_one_generation_and_escapes_source_text(tmp_path: 
             },
         },
         "/api/government-revenue/award/award-1/actions?limit=20": {
-            "schema_version": "government_revenue_dossiers.v1",
+            "schema_version": "1.0.0",
             "content_id": content_id,
             "results": [
                 {

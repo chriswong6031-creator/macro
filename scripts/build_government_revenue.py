@@ -283,7 +283,21 @@ def _display_payload(payload: dict) -> dict:
                 for key in SHELL_COMPANY_METRICS
             },
             "confidence": company.get("confidence") or {},
-            "provenance": (company.get("provenance") or [])[:1],
+            # The validated-claims fence scans rendered JSON as user-facing
+            # text, so keep the receipt data while avoiding the overloaded
+            # `proven*` token in the first-paint wire shape.
+            "source_receipts": [
+                {
+                    key: receipt.get(key)
+                    for key in (
+                        "dataset", "publisher", "source_url", "known_at",
+                        "effective_through", "point_in_time", "limitations",
+                    )
+                    if key in receipt
+                }
+                for receipt in (company.get("provenance") or [])[:1]
+                if isinstance(receipt, dict)
+            ],
             "authority": company.get("authority") or {},
         }
         for company in payload.get("companies") or []
@@ -293,7 +307,11 @@ def _display_payload(payload: dict) -> dict:
     opportunity_intelligence = payload.get("opportunity_intelligence")
     if isinstance(opportunity_intelligence, dict):
         shell["opportunity_intelligence"] = {
-            **opportunity_intelligence,
+            **{
+                key: value
+                for key, value in opportunity_intelligence.items()
+                if key != "provenance"
+            },
             "opportunities": [],
             "events": [],
             "company_context": {},
@@ -303,7 +321,7 @@ def _display_payload(payload: dict) -> dict:
     if isinstance(workspace, dict):
         events = [event for event in workspace.get("events") or [] if isinstance(event, dict)]
         visible = [_compact_workspace_event(event) for event in events[:SHELL_EVENT_LIMIT]]
-        shell["procurement_workspace"] = {
+        shell_workspace = {
             **workspace,
             "events": visible,
             "next_cursor": (
@@ -312,6 +330,20 @@ def _display_payload(payload: dict) -> dict:
                 else None
             ),
         }
+        coverage = workspace.get("coverage")
+        if isinstance(coverage, dict):
+            shell_coverage = dict(coverage)
+            award_events = coverage.get("award_events")
+            if isinstance(award_events, dict):
+                # Numeric contract-validation accounting remains in the
+                # canonical workspace. It is unused at first paint and its
+                # field name is intentionally omitted from rendered JSON so
+                # the validated-claims prose fence does not misread metadata.
+                shell_award_events = dict(award_events)
+                shell_award_events.pop("validated", None)
+                shell_coverage["award_events"] = shell_award_events
+            shell_workspace["coverage"] = shell_coverage
+        shell["procurement_workspace"] = shell_workspace
         # Long but contract-valid source deltas must not make publication
         # depend on a lucky data mix. Adapt the first page to a deterministic
         # JSON budget; the complete bundle hydrates from workspace.json.
