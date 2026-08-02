@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-08-01",
-  "generated_utc": "2026-08-01T23:48:03.449104+00:00",
+  "as_of": "2026-08-02",
+  "generated_utc": "2026-08-02T01:13:19.749699+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -20,7 +20,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 74,
+  "n_signals": 75,
   "n_broken": 33,
   "signals": [
     {
@@ -240,44 +240,6 @@
       "clamped": null
     },
     {
-      "ticker": "BA",
-      "signal_score": 59,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.85,
-      "convergence_score": 5,
-      "channels": [
-        "affiliation",
-        "gov_grant",
-        "lobbying",
-        "patent_cluster",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -6.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -14.3,
-      "ret_20d": -4.6,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Jim Cramer",
-          "rel": "ENDORSES",
-          "kind": "influencer"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "GOOGL",
       "signal_score": 50,
       "conviction": "high",
@@ -314,6 +276,43 @@
         }
       ],
       "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BA",
+      "signal_score": 49,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.55,
+      "convergence_score": 4,
+      "channels": [
+        "affiliation",
+        "gov_grant",
+        "patent_cluster",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -6.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -14.3,
+      "ret_20d": -4.6,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Jim Cramer",
+          "rel": "ENDORSES",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -374,6 +373,42 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BRK.B",
+      "signal_score": 45,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.35,
+      "convergence_score": 3,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "congress_buy"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "no_price_data": true,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": null,
+      "ret_20d": null,
+      "above_50dma": null,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "CONTROLS",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -545,35 +580,6 @@
       "channels": [
         "material_8k",
         "unusual_options"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "ACM",
-      "signal_score": 35,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 2,
-      "channels": [
-        "gov_contract_accel",
-        "special_situation"
       ],
       "trump_linked": false,
       "rs_vs_spy_60d": null,
@@ -932,35 +938,29 @@
       "clamped": null
     },
     {
-      "ticker": "BRK.B",
+      "ticker": "T",
       "signal_score": 31,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 0.9,
+      "weighted_score": 1.1,
       "convergence_score": 2,
       "channels": [
-        "13f_add",
-        "affiliation"
+        "congress_cluster",
+        "lobbying"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "no_price_data": true,
+      "rs_vs_spy_60d": -13.4,
+      "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": null,
-      "ret_20d": null,
-      "above_50dma": null,
+      "off_high_252": -19.3,
+      "ret_20d": 14.5,
+      "above_50dma": true,
       "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Warren Buffett",
-          "rel": "CONTROLS",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1221,36 +1221,6 @@
       "clamped": null
     },
     {
-      "ticker": "IBM",
-      "signal_score": 50,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.6,
-      "convergence_score": 3,
-      "channels": [
-        "github_momentum",
-        "gov_contract_accel",
-        "patent_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -4.8,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -32.1,
-      "ret_20d": -22.8,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "LUV",
       "signal_score": 41,
       "conviction": "medium",
@@ -1316,6 +1286,36 @@
         }
       ],
       "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "IBM",
+      "signal_score": 35,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.15,
+      "convergence_score": 3,
+      "channels": [
+        "github_momentum",
+        "gov_contract",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -4.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -32.1,
+      "ret_20d": -22.8,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

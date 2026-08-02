@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T02:01:39.734127+00:00",
-  "count": 565,
+  "generated_at": "2026-08-02T02:46:41.393089+00:00",
+  "count": 566,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-fqhuk3cmaxu-e18cea",
+      "title": "Euro Weekly Digest",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:33:09Z",
+      "summary_points": [
+        "**Q2 GDP Beat & Domestic Resilience**: Euro area Q2 GDP +0.4% q/q (exceeding ECB’s 0.2% forecast), driven by strong domestic demand in Germany, Italy, Spain, and Austria, with confidence surveys (e.g., Germany’s business climate index 86.6) confirming robust momentum.",
+        "**Inflation Containment & Core Stability**: Core HICP at 2.5% y/y (July), driven solely by energy in core goods (0.9% vs 0.7% prior), with no broad-based spillovers or second-round inflation risks, supporting ECB rate hike potential.",
+        "**Credit Flows Defy Geopolitical Headwinds**: June bank lending survey shows EUR 46B monthly credit flows (corporate loans EUR 26B), contradicting expectations of war-driven growth disruption and signaling ECB policy tightening.",
+        "**ECB Policy Divergence & Rate Outlook**: Kazimir signals potential additional rate hike amid inflation concerns, while Patsalides remains uncertain, creating near-term policy ambiguity; market pricing at ~2.75% vs DB forecast of 2.5%.",
+        "**Critical Data Catalysts**: S&P Global Eurozone Composite PMI (Aug 5) and ECB Economic Bulletin (Aug 6) are pivotal; weak PMI could signal slowing growth, while ECB bulletin may influence rate decisions amid sticky inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-mc1inxw9hbr-575573",
       "title": "Amazon July 31",

@@ -388,6 +388,15 @@ html[data-lang="zh"] .oew-tk-px .k{letter-spacing:.02em;text-transform:none}
 @media (max-width:640px){
   .oew-lvrow{grid-template-columns:auto 1fr}
   .oew-lvrow .oew-lv-pct,.oew-lvrow .oew-lv-px{grid-column:2;justify-self:start}
+  /* M3 fix: .oew-wcheck (§4) added real width to the Ceiling/Floor rows only.
+     .oew-lv-main .n is flex with default nowrap+shrink, so under 640px the
+     label text itself was squeezed and wrapped mid-word ("Ceiling — call
+     wall" across three lines) to make room for the pips + chip staying on
+     one line. Let items wrap as whole units instead of reflowing internally:
+     the label never breaks, and the chip drops to its own line when tight. */
+  .oew-lv-main .n{flex-wrap:wrap;row-gap:4px}
+  .oew-lv-main .n>*{flex:none}
+  .oew-lv-main .n>.oew-wcheck{margin-left:0}
 }
 .oew-lv-sw{width:9px;height:9px;border-radius:2px;flex:none}
 .oew-lv-main .n{font-weight:650;display:inline-flex;align-items:center;gap:7px}
@@ -466,3 +475,88 @@ html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font
 @media (prefers-reduced-motion:reduce){
   .oew *,.oew *::before,.oew *::after{animation:none !important;transition:none !important}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OIP W1 — nav front door + Ticker workbench depth
+   (research/options_estate/W1_DESIGN_SPEC.md). The filmstrip's OWN .oew-film-*
+   rules live in the shared templates/illus.css (it also renders on gex.html,
+   which does not carry this page's <style> block) — everything below is
+   options.html-only chrome: the Ticker search toolbar, the wall-check chip, the
+   two new Ticker reads, the shared empty-state shell, and the declared-cap link.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── §2.4 Ticker search/typeahead toolbar (parity with gex.html's #gx-q) ── */
+.oew-tktoolbar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+.oew-tksearch{position:relative;flex:1 1 260px;max-width:400px}
+.oew-tksearch .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  opacity:.55;font-size:14px;pointer-events:none;color:var(--muted)}
+.oew-tksearch input{width:100%;padding:10px 13px 10px 36px;border:1px solid var(--hair);
+  border-radius:var(--r-ctl);background:var(--tile);color:var(--text);
+  font-size:13.5px;font-family:var(--font-ui)}
+.oew-tksearch input::placeholder{color:var(--muted)}
+.oew-tksearch input:focus-visible{outline:2px solid var(--oew-accent);outline-offset:1px;
+  border-color:var(--oew-accent)}
+.oew-tksugg{position:absolute;top:112%;left:0;right:0;min-width:300px;background:var(--panel);
+  border:1px solid var(--hair);border-radius:var(--r-panel);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px;display:none;z-index:20;
+  max-height:340px;overflow-y:auto}
+.oew-tksugg.on{display:block}
+.oew-tksugg .row{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;
+  cursor:pointer;border-radius:8px;align-items:center}
+.oew-tksugg .row:hover,.oew-tksugg .row.hl{background:var(--tile)}
+.oew-tksugg .row b{font-family:var(--font-mono);font-weight:700}
+.oew-tksugg .row .g{color:var(--ink-3);font-size:11.5px}
+.oew-tkhint{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.oew-tkhint kbd{font-family:var(--font-mono);border:1px solid var(--hair);border-radius:4px;
+  padding:1px 5px;background:var(--tile);font-size:10px}
+@media (max-width:560px){ .oew-tkhint{display:none} }
+
+/* ── §4.3 wall-persistence cross-check chip (appended to Ceiling/Floor rows) ── */
+.oew-wcheck{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;
+  margin-left:var(--s2);padding:2px 7px;border-radius:var(--r-pill);white-space:nowrap;cursor:help}
+.oew-wcheck-yes{color:var(--oew-accent);background:color-mix(in srgb, var(--oew-accent) 12%, transparent)}
+.oew-wcheck-no{color:var(--ink-3);background:var(--tile)}
+
+/* ── §5.2 "Rich or cheap?" fill-track (the posture console's 5-pip idiom,
+   resized — it lives outside .oew-console and needs its own sizing) ── */
+.oew-rich-track{display:inline-flex;gap:3px;align-items:center;cursor:help;margin-bottom:var(--s3)}
+.oew-rich-pip{width:34px;height:8px;border-radius:2px;background:color-mix(in srgb,var(--text) 13%,transparent)}
+.oew-rich-pip.on{background:var(--oew-accent)}
+.oew-rich-band{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;margin-left:var(--s3)}
+.oew-rich-building{font-size:11.5px;color:var(--muted);font-weight:600;padding:3px 9px;border:1px dashed var(--hair);
+  border-radius:var(--r-pill)}
+
+/* ── §5.2 "Where positions built" — diverging bars, sector-bar idiom, 2 cols ── */
+.oew-pb{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:560px){.oew-pb{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-pb-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
+.oew-pb-col{display:grid;gap:6px}
+.oew-pb-row{display:grid;grid-template-columns:48px 1fr 74px;gap:var(--s2);align-items:center;font-size:12px}
+.oew-pb-row .k{font-weight:700}
+.oew-pb-row .bar-track{position:relative;height:14px;background:color-mix(in srgb,var(--text) 7%,transparent);border-radius:3px;overflow:hidden}
+.oew-pb-row .bar{position:absolute;inset:0 auto 0 0;border-radius:3px;background:color-mix(in srgb,var(--oew-accent) 62%,transparent);min-width:2px}
+.oew-pb-row .bar.unwind{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.oew-pb-row .v{text-align:right;font-weight:650}
+.oew-pb-row .v.build{color:var(--oew-accent)}
+.oew-pb-pctile{margin-top:var(--s2);padding-top:var(--s2);border-top:1px solid var(--hair);font-size:11px;color:var(--ink-3)}
+/* coverage-gap note block (reuses .oew-empty typography, adds the receipt look) */
+.oew-pb-note{font-size:12.5px;color:var(--ink-2);line-height:1.55;padding:var(--s2) 0}
+
+/* ── §5.4 .oew-notyet — the shared first-class empty-state shell ── */
+.oew-notyet{display:flex;align-items:center;gap:var(--s5);padding:var(--s2) 0}
+.oew-notyet-ghost{flex:none;width:96px;height:56px;border:1.5px dashed var(--hair);
+  border-radius:var(--r-ctl);background:
+    repeating-linear-gradient(135deg, var(--hair) 0 1px, transparent 1px 7px);
+  opacity:.55}
+.oew-notyet-cone{clip-path:polygon(0% 46%, 0% 54%, 100% 8%, 100% 92%)}
+.oew-notyet-bar{clip-path:polygon(0% 70%,22% 70%,22% 30%,44% 30%,44% 55%,66% 55%,66% 15%,88% 15%,88% 45%,100% 45%,100% 100%,0% 100%)}
+.oew-notyet-say{margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:56ch}
+.oew-notyet-say em{color:var(--text);font-style:normal;font-weight:600}
+@media (max-width:560px){ .oew-notyet{flex-direction:column;align-items:flex-start;gap:var(--s3)} }
+
+/* ── §6 declared-cap link (Scanner / Leaders panel-header right area) ── */
+.oew-ph-more{font-size:11px;font-weight:600;color:var(--oew-accent);text-decoration:none;
+  white-space:nowrap;margin-left:auto}
+.oew-ph-more:hover{text-decoration:underline}
+.oew-ph-more:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px;border-radius:3px}

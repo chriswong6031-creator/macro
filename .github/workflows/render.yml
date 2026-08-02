@@ -92,6 +92,7 @@ on:
       - "scripts/build_baskets.py"
       - "scripts/build_biocatalyst.py"
       - "scripts/build_government_revenue.py"
+      - "scripts/check_government_revenue_projection.py"
       - "scripts/build_baskets_canada.py"
       - "scripts/build_baskets_china.py"
       - "scripts/build_baskets_china_ths.py"
@@ -474,7 +475,7 @@ jobs:
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
               templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
-              templates/baskets.html.j2|templates/methodology.html.j2|templates/government_revenue.html.j2|scripts/build_baskets.py|scripts/build_methodology.py|scripts/build_government_revenue.py) echo baskets;;
+              templates/baskets.html.j2|templates/methodology.html.j2|templates/government_revenue.html.j2|scripts/build_baskets.py|scripts/build_methodology.py|scripts/build_government_revenue.py|scripts/check_government_revenue_projection.py) echo baskets;;
               templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|templates/fundamental_forensics.*|templates/biocatalyst.*|scripts/build_site.py|scripts/build_fundamental_forensics.py|scripts/build_biocatalyst.py) echo macro;;
               templates/special_situations.html.j2|templates/_special_situations_*.html.j2|scripts/build_special_situations.py) echo sits;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
@@ -1090,7 +1091,9 @@ jobs:
         # externalize_css can create and prune content-addressed stylesheets. Validate the
         # exact post-normalization tree that would be committed, not only the pre-pass.
         if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
-        run: python3 scripts/check_site_asset_refs.py site
+        run: |
+          python3 scripts/check_site_asset_refs.py site
+          python -m scripts.check_government_revenue_projection
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
         env:
@@ -1170,6 +1173,7 @@ jobs:
           # The sync/runtime/marker heals above can replace pages after the standalone
           # finalized-tree step. Validate the exact healed tree represented by the index.
           python3 scripts/check_site_asset_refs.py site
+          python -m scripts.check_government_revenue_projection
           commit_index "$RENDER_MESSAGE"
           RENDER_COMMIT=$(git rev-parse HEAD)
           RENDER_PARENT=$(git rev-parse "$RENDER_COMMIT^")
@@ -1218,11 +1222,21 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            GOVREV_PROJECTION_INPUTS=(
+              data/government_revenue/
+              lib/pages.py
+              scripts/build_government_revenue.py
+              scripts/check_government_revenue_projection.py
+              scripts/inject_data_base.py
+              scripts/externalize_css.py
+              scripts/optimize_assets.py
+              scripts/check_template_site_sync.py
+            )
             # Common path: main advanced only in code/data while this run changed
             # site/templates. Keep the metadata shortcut inside that exact contract:
             # a newer site/template delta needs the guarded porcelain path below,
             # because an asset deletion can invalidate a page without a path conflict.
-            if git diff --quiet "$RENDER_PARENT" origin/main -- site/ templates/ && \
+            if git diff --quiet "$RENDER_PARENT" origin/main -- site/ templates/ "${GOVREV_PROJECTION_INPUTS[@]}" && \
               PUBLISH_COMMIT=$(push_metadata_replay_commit \
                 "$RENDER_PARENT" origin/main "$RENDER_COMMIT" \
                 "$RENDER_MESSAGE" "$PUBLISH_INDEX"); then
@@ -1231,6 +1245,7 @@ jobs:
               # promised objects already present on origin. Pushing an anonymous object
               # ID makes Git hydrate those unchanged blobs before packing.
               git update-ref "$PUBLISH_REF" "$PUBLISH_COMMIT"
+              python -m scripts.check_government_revenue_projection
               if push_do origin "$PUBLISH_REF:refs/heads/main"; then
                 git update-ref HEAD "$PUBLISH_COMMIT"
                 git update-ref -d "$PUBLISH_REF"
@@ -1294,6 +1309,7 @@ jobs:
               # its content-addressed asset. Recheck the actual post-rebase tree before
               # creating a heal commit or pushing it to the live branch.
               python3 scripts/check_site_asset_refs.py site
+              python -m scripts.check_government_revenue_projection
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the
@@ -1311,6 +1327,14 @@ jobs:
                   echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded render commit only"
                 fi
               fi
+              if ! git diff --quiet HEAD -- \
+                site/government_revenue.html \
+                site/government-revenue-data/latest.json \
+                site/government-revenue-data/workspace.json; then
+                echo "::error title=government-revenue projection uncommitted::refusing to push a HEAD older than the validated procurement projection"
+                exit 1
+              fi
+              python -m scripts.check_government_revenue_projection
               if push_do; then echo "pushed rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
