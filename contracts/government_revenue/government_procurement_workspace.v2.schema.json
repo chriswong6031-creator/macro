@@ -315,10 +315,13 @@
           "properties": {
             "projection_state": {"type": "string"}, "award_event_snapshots": {"type": "string"},
             "award_action_versions": {"type": "string"}, "collection_receipts": {"type": "string"},
-            "projection_generation": {"type": "string"}
+            "projection_generation": {"type": "string"}, "recipient_entity_graph": {"type": "string"}
           }
         },
         "ingest": {"$ref": "#/$defs/awardEventIngest"},
+        "recipient_resolution_coverage": {
+          "$ref": "https://mastermind-x.com/contracts/government_revenue/government_recipient_resolution_coverage.v1.schema.json"
+        },
         "limitations": {"type": "array", "items": {"type": "string"}},
         "bounded_sample_complete": {"type": ["boolean", "null"]},
         "source_exhausted": {"type": ["boolean", "null"]},

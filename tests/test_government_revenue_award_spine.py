@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 
 import pandas as pd
+import pytest
 
 from collectors.usaspending_awards import (
     AWARD_ACTION_VERSION_COLUMNS,
@@ -14,6 +16,7 @@ from collectors.usaspending_awards import (
     award_event_projection_generation,
 )
 from engine.government_revenue import build_payload
+from engine.government_revenue import metrics as government_revenue_metrics
 from engine.government_revenue.freshness import effective_freshness
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 from tests.test_government_revenue import _fixture_root
@@ -31,7 +34,12 @@ def _award_events(payload: dict) -> list[dict]:
     ]
 
 
-def _write_live_forward_spine(root, *, include_generation: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _write_live_forward_spine(
+    root,
+    *,
+    include_generation: bool = True,
+    include_action: bool = False,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Write a minimally valid forward ledger pair plus its receipt-bound state."""
 
     data_dir = root / "data" / "government_revenue"
@@ -68,7 +76,40 @@ def _write_live_forward_spine(root, *, include_generation: bool = True) -> tuple
         "coverage_scope": "bounded receipt-bound configured-universe forward sample",
     })
     snapshots = pd.DataFrame([snapshot_row], columns=AWARD_EVENT_SNAPSHOT_COLUMNS)
-    actions = pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS)
+    action_rows = []
+    if include_action:
+        action_endpoint = "https://api.usaspending.gov/api/v2/transactions/"
+        action_row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
+        action_row.update({
+            "discovery_query_ticker": "NOC",
+            "generated_unique_award_id": "FORWARD-1",
+            "generated_award_id": "FORWARD-1",
+            "award_key": award_key,
+            "award_id": "PIID-FORWARD-1",
+            "piid": "PIID-FORWARD-1",
+            "action_id": "ACTION-FORWARD-1",
+            "modification_number": "P00001",
+            "recipient_name": "Unresolved Official Recipient",
+            "recipient_uei": "UEI-FORWARD-1",
+            "federal_action_obligation": -5_000_000.0,
+            "action_date": "2026-07-31T00:00:00Z",
+            "source_field_presence": json.dumps([
+                "recipient_name", "recipient_uei", "federal_action_obligation",
+                "action_date",
+            ]),
+            "event_state_sha256": "c" * 64,
+            "known_at": observed_at,
+            "effective_at": "2026-07-31T00:00:00Z",
+            "first_seen_at": observed_at,
+            "source_url": action_endpoint,
+            "source_receipt_id": "forward-action-receipt",
+            "source_response_sha256": "d" * 64,
+            "receipt_verified": True,
+            "event_eligible": True,
+            "coverage_scope": "bounded receipt-bound configured-universe forward sample",
+        })
+        action_rows.append(action_row)
+    actions = pd.DataFrame(action_rows, columns=AWARD_ACTION_VERSION_COLUMNS)
     snapshot_path = data_dir / "award_event_snapshots.parquet"
     action_path = data_dir / "award_action_versions.parquet"
     snapshots.to_parquet(snapshot_path, index=False)
@@ -129,15 +170,94 @@ def _write_live_forward_spine(root, *, include_generation: bool = True) -> tuple
             "coverage_manifest_changed_this_run": False,
         },
     }))
-    (data_dir / "collection_receipts.jsonl").write_text(json.dumps({
+    receipts = [{
         "receipt_id": "forward-detail-receipt",
         "rail": "award_detail",
         "observed_at": observed_at,
         "endpoint": endpoint,
         "response_sha256": "b" * 64,
         "subject": {"award_key": award_key},
-    }) + "\n")
+    }]
+    if include_action:
+        receipts.append({
+            "receipt_id": "forward-action-receipt",
+            "rail": "award_action",
+            "observed_at": observed_at,
+            "endpoint": "https://api.usaspending.gov/api/v2/transactions/",
+            "response_sha256": "d" * 64,
+            "subject": {"award_key": award_key, "action_id": "ACTION-FORWARD-1"},
+        })
+    (data_dir / "collection_receipts.jsonl").write_text(
+        "".join(json.dumps(receipt) + "\n" for receipt in receipts)
+    )
     return snapshots, actions
+
+
+def _reviewed_noc_graph(*, future: bool = False, conflicting: bool = False) -> dict:
+    known_at = "2026-08-02T12:00:00Z" if future else "2026-08-01T10:00:00Z"
+    temporal = {
+        "known_at": "2026-07-30T00:00:00Z",
+        "valid_from": "2020-01-01T00:00:00Z",
+        "valid_to": None,
+        "evidence_refs": ["evidence:noc-official"],
+    }
+    graph = {
+        "contract": "government_recipient_entity_graph.v1",
+        "schema_version": "1.0.0",
+        "graph_id": "recipient-graph:noc:test",
+        "graph_known_at": known_at,
+        "graph_effective_at": known_at,
+        "evidence": [{
+            "evidence_id": "evidence:noc-official",
+            "source_ref": "official:sam-entity-registration:noc-test",
+            "known_at": "2026-07-30T00:00:00Z",
+            "valid_from": "2020-01-01T00:00:00Z",
+            "valid_to": None,
+        }],
+        "companies": [{
+            "company_id": "central:NOC",
+            "ticker": "NOC",
+            "verification_state": "reviewed",
+            **temporal,
+        }],
+        "legal_entities": [{
+            "entity_id": "legal:noc-forward-recipient",
+            "canonical_name": "Northrop Grumman Test Recipient",
+            "verification_state": "reviewed",
+            **temporal,
+        }],
+        "identifiers": [{
+            "identifier_id": "identifier:noc-forward-uei",
+            "entity_id": "legal:noc-forward-recipient",
+            "namespace": "sam_uei",
+            "value": "UEI-FORWARD-1",
+            "verification_state": "reviewed",
+            **temporal,
+        }],
+        "ownership_edges": [{
+            "edge_id": "ownership:noc-forward-to-noc",
+            "child_entity_id": "legal:noc-forward-recipient",
+            "parent_company_id": "central:NOC",
+            "relationship": "wholly_owned",
+            "economic_share": 1.0,
+            "verification_state": "reviewed",
+            **temporal,
+        }],
+        "blocks": [],
+        "conflicts": [],
+        "overrides": [],
+    }
+    if conflicting:
+        graph["conflicts"].append({
+            "conflict_id": "conflict:noc-forward-uei",
+            "scope": "identifier",
+            "namespace": "sam_uei",
+            "value": "UEI-FORWARD-1",
+            "reason_code": "reviewed_sources_conflict",
+            "reviewer_state": "reviewed",
+            **temporal,
+        })
+    return graph
 
 
 def test_legacy_award_tables_never_become_public_award_events_without_forward_state(tmp_path):
@@ -201,6 +321,102 @@ def test_live_forward_spine_projects_an_unmapped_event_never_from_discovery_tick
     assert events[0]["primary_ticker"] is None
     assert events[0]["listed_company_impacts"] == []
     assert events[0]["evidence"]["mapping_class"] == "unmapped"
+
+
+def test_reviewed_exact_uei_graph_adds_one_noc_impact_without_changing_event_identity(
+    tmp_path,
+    monkeypatch,
+):
+    root = _fixture_root(tmp_path)
+    _write_live_forward_spine(root)
+    unmapped = _award_events(build_payload(root, as_of="2026-08-01"))[0]
+    graph_path = root / "data" / "government_revenue" / "recipient_entity_graph.json"
+    graph_path.write_text(json.dumps(_reviewed_noc_graph()), encoding="utf-8")
+
+    real_loader = government_revenue_metrics.load_recipient_entity_graph
+    admissions = []
+
+    def counted_loader(*args, **kwargs):
+        admissions.append(deepcopy(args[0]))
+        return real_loader(*args, **kwargs)
+
+    monkeypatch.setattr(
+        government_revenue_metrics,
+        "load_recipient_entity_graph",
+        counted_loader,
+    )
+    mapped_payload = build_payload(root, as_of="2026-08-01")
+    mapped = _award_events(mapped_payload)[0]
+
+    assert len(admissions) == 1
+    assert mapped["event_id"] == unmapped["event_id"]
+    assert mapped["record_id"] == unmapped["record_id"]
+    assert mapped["award_change"]["source_identity"] == unmapped["award_change"]["source_identity"]
+    assert mapped["evidence"]["receipts"] == unmapped["evidence"]["receipts"]
+    assert [impact["ticker"] for impact in mapped["listed_company_impacts"]] == ["NOC"]
+    assert mapped["primary_ticker"] == "NOC"
+    coverage = mapped_payload["freshness"]["award_events"][
+        "recipient_resolution_coverage"
+    ]
+    assert coverage["resolution_graph"]["load_status"] == "ready"
+    assert coverage["snapshot"]["records"]["issuer_attributed_records"] == 1
+
+
+@pytest.mark.parametrize(
+    "graph",
+    [
+        {"contract": "invalid-recipient-graph"},
+        _reviewed_noc_graph(future=True),
+        _reviewed_noc_graph(conflicting=True),
+    ],
+    ids=("invalid", "future", "conflicting"),
+)
+def test_invalid_future_or_conflicting_graph_preserves_source_event_but_withholds_impact(
+    tmp_path,
+    graph,
+):
+    root = _fixture_root(tmp_path)
+    _write_live_forward_spine(root)
+    without_graph = _award_events(build_payload(root, as_of="2026-08-01"))[0]
+    graph_path = root / "data" / "government_revenue" / "recipient_entity_graph.json"
+    graph_path.write_text(json.dumps(graph), encoding="utf-8")
+
+    payload = build_payload(root, as_of="2026-08-01")
+    event = _award_events(payload)[0]
+
+    assert event["event_id"] == without_graph["event_id"]
+    assert event["record_id"] == without_graph["record_id"]
+    assert event["award_change"]["source_identity"] == without_graph["award_change"]["source_identity"]
+    assert event["evidence"]["receipts"] == without_graph["evidence"]["receipts"]
+    assert event["listed_company_impacts"] == []
+    assert event["primary_ticker"] is None
+
+
+def test_resolution_coverage_uses_real_independent_absolute_amount_rails(tmp_path):
+    root = _fixture_root(tmp_path)
+    _write_live_forward_spine(root, include_action=True)
+    graph_path = root / "data" / "government_revenue" / "recipient_entity_graph.json"
+    graph_path.write_text(json.dumps(_reviewed_noc_graph()), encoding="utf-8")
+
+    payload = build_payload(root, as_of="2026-08-01")
+    coverage = payload["freshness"]["award_events"][
+        "recipient_resolution_coverage"
+    ]
+
+    assert coverage["snapshot"]["amounts"]["field"] == "total_obligation"
+    assert coverage["snapshot"]["amounts"]["basis"] == "absolute"
+    assert coverage["snapshot"]["amounts"]["candidate_amount"] == pytest.approx(
+        20_000_000.0
+    )
+    assert coverage["action"]["amounts"]["field"] == "federal_action_obligation"
+    assert coverage["action"]["amounts"]["basis"] == "absolute"
+    assert coverage["action"]["amounts"]["candidate_amount"] == pytest.approx(
+        5_000_000.0
+    )
+    assert coverage["snapshot"]["collection"]["queries_requested"] == 0
+    assert coverage["action"]["collection"]["queries_requested"] == 0
+    assert coverage["snapshot"]["records"]["issuer_attributed_records"] == 1
+    assert coverage["action"]["records"]["issuer_attributed_records"] == 1
 
 
 def test_live_state_without_a_full_generation_binding_withholds_all_award_events(tmp_path):

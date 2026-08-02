@@ -15809,6 +15809,68 @@ artifacts:
       scope only, not recipient-to-issuer attribution. Display/context only; request
       handlers paginate precomputed records and cannot recalculate or enrich them.
 
+  government-revenue-recipient-entity-graph:
+    path: data/government_revenue/recipient_entity_graph.json
+    format: json
+    producer: scripts/curate_government_revenue_recipient_graph.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: on-demand
+    storage: git
+    asof_field: graph_known_at
+    freshness_sla_hours: 8760
+    schema: government_recipient_entity_graph.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/metrics.py, scripts/build_government_revenue.py, scripts/check_government_revenue_projection.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Human-reviewed exact UEI, CAGE, and USAspending-recipient ownership graph. The
+      empty-first canonical generation is valid and intentionally contains no fabricated
+      mappings. Discovery tickers, fuzzy names, legacy award rows, and collectors cannot
+      write or infer this artifact. It may annotate receipt-bound source copies only;
+      every rank, size, gate, signal-origin, candidate-add, and escalation authority is false.
+
+  government-revenue-recipient-resolution-coverage:
+    path: data/government_revenue/recipient_resolution_coverage.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_recipient_resolution_coverage.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/build_government_revenue.py, scripts/check_government_revenue_projection.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Builder-owned independent snapshot/action attribution coverage over verified visible
+      forward ledgers. Denominators use absolute total_obligation and
+      federal_action_obligation values so de-obligations cannot cancel exposure. The exact
+      object is embedded in award-event freshness; every rank, size, gate, signal-origin,
+      candidate-add, and escalation authority is false.
+
   site-government-revenue-latest:
     path: site/government-revenue-data/latest.json
     format: json

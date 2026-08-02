@@ -14,6 +14,10 @@ from scripts.check_government_revenue_projection import (
 )
 from engine.government_revenue.workspace import build_procurement_workspace
 from engine.government_revenue.dossiers import build_dossier_payload
+from engine.government_revenue.entity_resolution import (
+    build_recipient_resolution_coverage,
+    load_recipient_entity_graph,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +27,7 @@ RENDER_LANES = (
 )
 
 
-def _generation(root: Path) -> tuple[Path, Path, Path]:
+def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path, Path, Path]:
     template_dir = root / "templates"
     template_dir.mkdir(parents=True)
     template_dir.joinpath("government_revenue.html.j2").write_text(
@@ -71,6 +75,45 @@ def _generation(root: Path) -> tuple[Path, Path, Path]:
     }
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True)
+    if recipient_activation:
+        graph = {
+            "contract": "government_recipient_entity_graph.v1",
+            "schema_version": "1.0.0",
+            "graph_id": "recipient-graph:projection-empty",
+            "graph_known_at": "2026-08-02T00:00:00Z",
+            "graph_effective_at": "2026-08-02T00:00:00Z",
+            "evidence": [],
+            "companies": [],
+            "legal_entities": [],
+            "identifiers": [],
+            "ownership_edges": [],
+            "blocks": [],
+            "conflicts": [],
+            "overrides": [],
+        }
+        canonical_dir.joinpath("recipient_entity_graph.json").write_text(
+            json.dumps(graph), encoding="utf-8"
+        )
+        coverage = build_recipient_resolution_coverage(
+            [],
+            [],
+            load_recipient_entity_graph(graph, as_of=payload["as_of"]),
+            as_of=payload["as_of"],
+            snapshot_amount_field="total_obligation",
+            action_amount_field="federal_action_obligation",
+        )
+        payload["freshness"] = {
+            "award_events": {"recipient_resolution_coverage": coverage}
+        }
+        workspace["freshness"]["award_events"][
+            "recipient_resolution_coverage"
+        ] = coverage
+        canonical_dir.joinpath("recipient_resolution_coverage.json").write_text(
+            build_government_revenue._canonical_json(coverage), encoding="utf-8"
+        )
+        workspace["bundle_id"] = build_government_revenue._workspace_bundle_id(
+            workspace
+        )
     canonical_dir.joinpath("latest.json").write_text(
         json.dumps(payload, separators=(",", ":")), encoding="utf-8"
     )
@@ -102,6 +145,61 @@ def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> No
 
     with pytest.raises(ProjectionDriftError, match="latest twin differs"):
         validate_projection(tmp_path)
+
+
+def test_projection_fence_accepts_strict_recipient_graph_and_coverage_binding(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path, recipient_activation=True)
+
+    result = validate_projection(tmp_path)
+
+    assert result["recipient_graph_id"] == "recipient-graph:projection-empty"
+
+
+@pytest.mark.parametrize(
+    "target",
+    ("recipient_entity_graph.json", "recipient_resolution_coverage.json"),
+)
+def test_projection_fence_rejects_missing_recipient_activation_member(
+    tmp_path: Path,
+    target: str,
+) -> None:
+    _generation(tmp_path, recipient_activation=True)
+    (tmp_path / "data" / "government_revenue" / target).unlink()
+
+    with pytest.raises(ProjectionDriftError, match="recipient"):
+        validate_projection(tmp_path)
+
+
+def test_projection_fence_rejects_invalid_graph_or_mismatched_coverage(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path, recipient_activation=True)
+    graph_path = (
+        tmp_path / "data" / "government_revenue" / "recipient_entity_graph.json"
+    )
+    graph = json.loads(graph_path.read_text(encoding="utf-8"))
+    graph["contract"] = "invalid.v0"
+    graph_path.write_text(json.dumps(graph), encoding="utf-8")
+    with pytest.raises(ProjectionDriftError, match="recipient activation"):
+        validate_projection(tmp_path)
+
+    mismatch_root = tmp_path / "mismatch"
+    _generation(mismatch_root, recipient_activation=True)
+    coverage_path = (
+        mismatch_root
+        / "data"
+        / "government_revenue"
+        / "recipient_resolution_coverage.json"
+    )
+    coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+    coverage["limitations"].append("tampered but schema-valid keyed representation")
+    coverage_path.write_text(
+        build_government_revenue._canonical_json(coverage), encoding="utf-8"
+    )
+    with pytest.raises(ProjectionDriftError, match="differs from embedded"):
+        validate_projection(mismatch_root)
 
 
 def test_projection_fence_rejects_stale_public_dossier_twin(tmp_path: Path) -> None:

@@ -1,0 +1,15 @@
+{
+  "contract": "government_recipient_entity_graph.v1",
+  "schema_version": "1.0.0",
+  "graph_id": "recipient-graph:reviewed-empty:2026-08-02",
+  "graph_known_at": "2026-08-02T00:00:00+00:00",
+  "graph_effective_at": "2026-08-02T00:00:00+00:00",
+  "evidence": [],
+  "companies": [],
+  "legal_entities": [],
+  "identifiers": [],
+  "ownership_edges": [],
+  "blocks": [],
+  "conflicts": [],
+  "overrides": []
+}

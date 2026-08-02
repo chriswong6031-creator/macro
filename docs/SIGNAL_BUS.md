@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 2 |
-| government-revenue-foresight | 21 |
+| government-revenue-foresight | 23 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 356 |
-| infrastructure | 120 |
+| infrastructure | 122 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 532 |
+| git | 534 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -391,10 +391,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-latest | `data/government_revenue/latest.json` | json | intraday | display | 3 | 1 |
 | government-revenue-award-action-versions | `data/government_revenue/award_action_versions.parquet` | parquet | collect | infrastructure | 3 | 0 |
 | government-revenue-award-event-snapshots | `data/government_revenue/award_event_snapshots.parquet` | parquet | collect | infrastructure | 3 | 0 |
+| government-revenue-recipient-entity-graph | `data/government_revenue/recipient_entity_graph.json` | json | on-demand | infrastructure | 3 | 0 |
 | government-revenue-award-event-projection-state | `data/government_revenue/award_event_projection_state.json` | json | collect | infrastructure | 2 | 0 |
 | government-revenue-dossiers | `data/government_revenue/dossiers.json` | json | intraday | display | 2 | 0 |
 | government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
+| government-revenue-recipient-resolution-coverage | `data/government_revenue/recipient_resolution_coverage.json` | json | intraday | infrastructure | 2 | 0 |
 | government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
 | site-government-revenue-latest | `site/government-revenue-data/latest.json` | json | intraday | display | 2 | 0 |
 | government-revenue-award-actions | `data/government_revenue/award_actions.parquet` | parquet | collect | infrastructure | 1 | 0 |

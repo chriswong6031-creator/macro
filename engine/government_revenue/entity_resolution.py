@@ -22,9 +22,11 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 from datetime import date, datetime, time, timezone
+from functools import lru_cache
 from hashlib import sha256
 import json
 import math
+from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
@@ -161,6 +163,9 @@ _ALL_STATES = (
     "conflicted",
 )
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_RFC3339_DATETIME = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 
 
@@ -208,11 +213,17 @@ def _graph_error(errors: list[str], code: str) -> None:
 
 
 def _strict_datetime(value: Any) -> datetime | None:
-    """Strict graph timestamps must be explicit datetimes, not date shorthands."""
+    """Accept only RFC3339 graph timestamps with an explicit UTC offset."""
     raw = _text(value)
-    if raw is None or "T" not in raw:
+    if raw is None or _RFC3339_DATETIME.fullmatch(raw) is None:
         return None
-    return _timestamp(raw)
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
 
 
 def _graph_rows(
@@ -2293,6 +2304,67 @@ def coverage_invariants(coverage: Mapping[str, Any]) -> bool:
     return bool(isinstance(invariants, Mapping) and invariants and all(invariants.values()))
 
 
+@lru_cache(maxsize=1)
+def _recipient_resolution_coverage_validator() -> Any:
+    """Load the strict coverage contract with its local nested dependency."""
+
+    from jsonschema import Draft202012Validator, FormatChecker
+    from referencing import Registry, Resource
+
+    contract_dir = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "government_revenue"
+    )
+    entity_schema = json.loads(
+        (contract_dir / "government_entity_coverage.v1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    coverage_schema = json.loads(
+        (
+            contract_dir
+            / "government_recipient_resolution_coverage.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    registry = Registry().with_resource(
+        entity_schema["$id"], Resource.from_contents(entity_schema)
+    )
+    return Draft202012Validator(
+        coverage_schema,
+        registry=registry,
+        format_checker=FormatChecker(),
+    )
+
+
+def is_valid_recipient_resolution_coverage(value: Any) -> bool:
+    """Validate the complete coverage object and every declared invariant.
+
+    Schema validity alone is insufficient at a publication boundary: a
+    syntactically valid report may explicitly disclose that attribution or
+    accounting invariants failed. Such a generation remains useful for local
+    diagnosis, but it is not eligible to replace the canonical artifact.
+    """
+
+    if not isinstance(value, Mapping):
+        return False
+    try:
+        if any(_recipient_resolution_coverage_validator().iter_errors(value)):
+            return False
+    except Exception:  # noqa: BLE001 - an unavailable validator is not a pass
+        return False
+    if not coverage_invariants(value):
+        return False
+    for rail in ("snapshot", "action"):
+        report = value.get(rail)
+        invariants = report.get("invariants") if isinstance(report, Mapping) else None
+        if not isinstance(invariants, Mapping) or not invariants or not all(
+            item is True for item in invariants.values()
+        ):
+            return False
+    return True
+
+
 __all__ = [
     "AUTHORITY",
     "COVERAGE_CONTRACT",
@@ -2307,6 +2379,7 @@ __all__ = [
     "coverage_invariants",
     "dedupe_source_records",
     "load_recipient_entity_graph",
+    "is_valid_recipient_resolution_coverage",
     "resolve_recipient",
     "resolve_records",
     "source_record_key",

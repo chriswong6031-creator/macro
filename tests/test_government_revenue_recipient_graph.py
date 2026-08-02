@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
@@ -16,9 +17,11 @@ from engine.government_revenue.entity_resolution import (
     resolve_recipient,
     source_record_key,
 )
+from scripts.curate_government_revenue_recipient_graph import curate_graph
 
 
 CONTRACTS = Path(__file__).parents[1] / "contracts" / "government_revenue"
+ROOT = Path(__file__).parents[1]
 
 
 def _schema(name: str) -> dict:
@@ -143,6 +146,7 @@ def test_loader_requires_reviewed_exact_graph_and_uses_no_display_name_join():
     ("mutate", "error_code"),
     [
         (lambda graph: graph["identifiers"][0].update({"evidence_refs": []}), "missing_evidence_refs"),
+        (lambda graph: graph.update({"graph_known_at": "2026-06-30T12:00:00"}), "invalid_graph_known_at"),
         (lambda graph: graph["identifiers"][0].update({"known_at": "2026-07-01T00:00:00+00:00"}), "future_known_claim"),
         (lambda graph: graph["ownership_edges"][0].update({"valid_from": "2026-07-01T00:00:00+00:00"}), "future_effective_claim"),
         (lambda graph: graph["ownership_edges"][0].update({"parent_company_id": "central:UNKNOWN"}), "ownership_references_unknown_company"),
@@ -397,3 +401,119 @@ def test_new_graph_and_coverage_contracts_validate_with_existing_entity_coverage
         registry=registry,
         format_checker=FormatChecker(),
     ).validate(coverage)
+
+
+def test_canonical_empty_first_graph_is_strict_and_reports_zero_real_rail_coverage():
+    graph = json.loads(
+        (
+            ROOT
+            / "data"
+            / "government_revenue"
+            / "recipient_entity_graph.json"
+        ).read_text(encoding="utf-8")
+    )
+    Draft202012Validator(
+        _schema("government_recipient_entity_graph.v1.schema.json"),
+        format_checker=FormatChecker(),
+    ).validate(graph)
+    assert all(
+        graph[field] == []
+        for field in (
+            "evidence", "companies", "legal_entities", "identifiers",
+            "ownership_edges", "blocks", "conflicts", "overrides",
+        )
+    )
+    loaded = load_recipient_entity_graph(graph, as_of="2026-08-02")
+    assert loaded["status"] == "ready"
+    coverage = build_recipient_resolution_coverage(
+        [],
+        [],
+        loaded,
+        as_of="2026-08-02",
+        snapshot_amount_field="total_obligation",
+        action_amount_field="federal_action_obligation",
+    )
+    assert coverage["snapshot"]["amounts"] == {
+        "field": "total_obligation",
+        "basis": "absolute",
+        "candidate_amount": None,
+        "mapped_attributable_amount": None,
+        "mapped_unallocated_amount": None,
+        "unmapped_amount": None,
+        "mapping_coverage_ratio": None,
+        "recipient_identity_resolution_ratio": None,
+        "issuer_attribution_count_ratio": None,
+    }
+    assert coverage["action"]["amounts"]["field"] == "federal_action_obligation"
+    assert coverage["snapshot"]["records"]["unique_source_records"] == 0
+    assert coverage["action"]["records"]["unique_source_records"] == 0
+
+
+def test_manual_curator_atomically_publishes_only_a_strict_reviewed_graph(tmp_path):
+    candidate_path = tmp_path / "candidate.json"
+    target_path = tmp_path / "recipient_entity_graph.json"
+    candidate_path.write_text(json.dumps(_graph()), encoding="utf-8")
+
+    loaded = curate_graph(candidate_path, target_path=target_path, as_of="2026-06-30")
+
+    assert loaded["status"] == "ready"
+    assert json.loads(target_path.read_text(encoding="utf-8")) == _graph()
+    assert target_path.read_text(encoding="utf-8").endswith("\n")
+
+    invalid = _graph()
+    invalid["graph_known_at"] = "2026-06-30T12:00:00"
+    candidate_path.write_text(json.dumps(invalid), encoding="utf-8")
+    before = target_path.read_bytes()
+    with pytest.raises(ValueError, match="failed admission"):
+        curate_graph(candidate_path, target_path=target_path, as_of="2026-06-30")
+    assert target_path.read_bytes() == before
+
+
+def test_dag_and_synapse_register_only_the_reviewed_graph_and_coverage_artifacts():
+    dag = yaml.safe_load((ROOT / "config" / "dag.yml").read_text(encoding="utf-8"))
+    modules = dag.get("modules") or dag.get("artifacts") or []
+    builder = next(
+        row for row in modules
+        if isinstance(row, dict) and row.get("module") == "scripts.build_government_revenue"
+    )
+    collector = next(
+        row for row in modules
+        if isinstance(row, dict) and row.get("module") == "collectors.usaspending_awards"
+    )
+    graph_path = "data/government_revenue/recipient_entity_graph.json"
+    coverage_path = "data/government_revenue/recipient_resolution_coverage.json"
+    assert graph_path in builder["reads"]
+    assert coverage_path in builder["writes"]
+    assert graph_path not in collector.get("reads", [])
+    assert graph_path not in collector.get("writes", [])
+    assert coverage_path not in collector.get("writes", [])
+
+    registry = yaml.safe_load(
+        (ROOT / "config" / "synapse.yml").read_text(encoding="utf-8")
+    )["artifacts"]
+    recipient_artifacts = {
+        artifact_id: row
+        for artifact_id, row in registry.items()
+        if row.get("path") in {graph_path, coverage_path}
+    }
+    assert set(recipient_artifacts) == {
+        "government-revenue-recipient-entity-graph",
+        "government-revenue-recipient-resolution-coverage",
+    }
+    assert recipient_artifacts["government-revenue-recipient-entity-graph"]["producer"] == (
+        "scripts/curate_government_revenue_recipient_graph.py"
+    )
+    expected_authority = {
+        "can_rank": False,
+        "can_size": False,
+        "can_gate": False,
+        "can_originate_signal": False,
+        "can_add_candidates": False,
+        "can_escalate": False,
+    }
+    for row in recipient_artifacts.values():
+        assert row["tier"] == "infrastructure"
+        assert row["horizon_role"] == "context"
+        assert row["weights"] == "none"
+        assert row["scored_path_surfaces"] == []
+        assert row["authority"] == expected_authority

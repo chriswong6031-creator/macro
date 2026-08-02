@@ -26,6 +26,11 @@ from typing import Any, Iterable
 import pandas as pd
 
 from engine.government_revenue.award_events import build_award_change_events
+from engine.government_revenue.entity_resolution import (
+    attach_recipient_resolutions,
+    build_recipient_resolution_coverage,
+    load_recipient_entity_graph,
+)
 from engine.government_revenue.opportunities import SOURCE_URL as SAM_OPPORTUNITIES_URL
 from engine.government_revenue.opportunities import build_opportunity_intelligence
 from engine.government_revenue.workspace import build_procurement_workspace
@@ -50,6 +55,8 @@ AWARD_EVENT_SNAPSHOTS_FILENAME = "award_event_snapshots.parquet"
 AWARD_ACTION_VERSIONS_FILENAME = "award_action_versions.parquet"
 AWARD_EVENT_PROJECTION_STATE_FILENAME = "award_event_projection_state.json"
 COLLECTION_RECEIPTS_FILENAME = "collection_receipts.jsonl"
+RECIPIENT_ENTITY_GRAPH_FILENAME = "recipient_entity_graph.json"
+RECIPIENT_RESOLUTION_COVERAGE_FILENAME = "recipient_resolution_coverage.json"
 AWARD_EVENT_PROJECTION_STATE_SCHEMA = "government_revenue.award_event_projection_state.v1"
 AWARD_EVENT_COVERAGE_MANIFEST_PREFIX = "award-coverage-"
 AWARD_EVENT_FORWARD_SCOPE = (
@@ -507,6 +514,102 @@ def _award_event_projection(
         ingest_status,
         knowledge_cutoff=knowledge_cutoff,
     )
+    loaded_recipient_graph: dict[str, Any] | None = None
+    recipient_graph_artifact: str | None = None
+
+    def resolution_context(
+        snapshot_frame: pd.DataFrame,
+        action_frame: pd.DataFrame,
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+        """Attach reviewed exact-ID annotations and report isolated coverage.
+
+        This closure is called only after the source-lane decision has been
+        reached. For a live generation that means state, two-ledger generation,
+        receipt, and point-in-time verification have already passed. Historical
+        checkouts without the receipt-bound triad receive an honest zero-row
+        report when a curated graph exists, without synthesizing source rows.
+        The graph file is read and admitted exactly once per payload build.
+        """
+
+        nonlocal loaded_recipient_graph, recipient_graph_artifact
+        if loaded_recipient_graph is None:
+            graph_value, recipient_graph_artifact = _read_required_json(
+                data_dir / RECIPIENT_ENTITY_GRAPH_FILENAME
+            )
+            graph_input: Any
+            if recipient_graph_artifact == "ready" and isinstance(graph_value, dict):
+                graph_input = graph_value
+            elif recipient_graph_artifact == "absent":
+                graph_input = None
+            else:
+                # Preserve unreadable/invalid as distinct from an absent
+                # curated graph at the strict loader boundary.
+                graph_input = []
+            loaded_recipient_graph = load_recipient_entity_graph(
+                graph_input,
+                as_of=knowledge_cutoff.to_pydatetime(),
+            )
+
+        # The strict loader already admitted this local normalized view. It has
+        # no public graph contract marker, so the resolver consumes it without
+        # re-running graph admission per row. No caller-supplied normalized
+        # object crosses this boundary: it was created above from the one file
+        # read in this closure. Absent/invalid results retain their fail-closed
+        # wrapper and contain no resolution graph to traverse.
+        annotation_graph: dict[str, Any] = loaded_recipient_graph
+        if (
+            loaded_recipient_graph.get("status") == "ready"
+            and isinstance(loaded_recipient_graph.get("graph"), dict)
+        ):
+            annotation_graph = loaded_recipient_graph["graph"]
+
+        snapshot_rows = snapshot_frame.to_dict(orient="records")
+        action_rows = action_frame.to_dict(orient="records")
+        attached_snapshots = attach_recipient_resolutions(
+            snapshot_rows,
+            annotation_graph,
+            as_of=knowledge_cutoff.to_pydatetime(),
+        )
+        attached_actions = attach_recipient_resolutions(
+            action_rows,
+            annotation_graph,
+            as_of=knowledge_cutoff.to_pydatetime(),
+        )
+        snapshot_columns = [*snapshot_frame.columns]
+        action_columns = [*action_frame.columns]
+        if "recipient_resolution" not in snapshot_columns:
+            snapshot_columns.append("recipient_resolution")
+        if "recipient_resolution" not in action_columns:
+            action_columns.append("recipient_resolution")
+        annotated_snapshot_frame = pd.DataFrame(
+            attached_snapshots,
+            columns=snapshot_columns,
+        )
+        annotated_action_frame = pd.DataFrame(
+            attached_actions,
+            columns=action_columns,
+        )
+        # The receipt-bound projection manifest proves a bounded generation,
+        # not one synthetic query per ledger. Until the collector publishes
+        # exact query accounting for these two independent returned scopes,
+        # leave collection counts explicitly unknown instead of inventing 1/1.
+        collection = {
+            "queries_requested": 0,
+            "queries_complete": 0,
+            "queries_partial": 0,
+            "queries_failed": 0,
+        }
+        coverage = build_recipient_resolution_coverage(
+            attached_snapshots,
+            attached_actions,
+            loaded_recipient_graph,
+            as_of=knowledge_cutoff.to_pydatetime(),
+            snapshot_collection=collection,
+            action_collection=collection,
+            snapshot_amount_field="total_obligation",
+            action_amount_field="federal_action_obligation",
+        )
+        return annotated_snapshot_frame, annotated_action_frame, coverage
 
     def envelope(
         *,
@@ -523,7 +626,17 @@ def _award_event_projection(
         receipts_available: int = 0,
         events_visible: int = 0,
         artifacts: dict[str, str] | None = None,
+        recipient_resolution_coverage: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        if recipient_resolution_coverage is None:
+            _, _, recipient_resolution_coverage = resolution_context(
+                pd.DataFrame(),
+                pd.DataFrame(),
+            )
+        resolved_artifacts = dict(artifacts or {"projection_state": state_artifact})
+        resolved_artifacts["recipient_entity_graph"] = str(
+            recipient_graph_artifact or "unverified"
+        )
         result = {
             "status": status,
             "availability": availability,
@@ -540,8 +653,9 @@ def _award_event_projection(
             "receipt_claims_visible": int(receipt_claims_visible),
             "collection_receipts_available": int(receipts_available),
             "events_visible": int(events_visible),
-            "artifacts": artifacts or {"projection_state": state_artifact},
+            "artifacts": resolved_artifacts,
             "ingest": ingest_health,
+            "recipient_resolution_coverage": recipient_resolution_coverage,
             # This separates a successfully observed declared sample from an
             # exhausted USAspending corpus.  Consumers may suppress the event
             # rail when the bounded sample is incomplete, but must not read
@@ -766,10 +880,18 @@ def _award_event_projection(
             artifacts=artifact_states,
         )
 
+    snapshots_annotated, actions_annotated, resolution_coverage = resolution_context(
+        snapshots_visible,
+        actions_visible,
+    )
+    artifact_states["recipient_entity_graph"] = str(
+        recipient_graph_artifact or "unverified"
+    )
+
     try:
         events = build_award_change_events(
-            snapshots_visible,
-            actions_visible,
+            snapshots_annotated,
+            actions_annotated,
             companies=companies,
             source_receipts=receipts,
             as_of=as_of_day.date().isoformat(),
@@ -790,6 +912,7 @@ def _award_event_projection(
             receipt_claims_visible=len(receipt_claims),
             receipts_available=len(receipts),
             artifacts=artifact_states,
+            recipient_resolution_coverage=resolution_coverage,
         )
 
     ingest_state = str(ingest_health.get("status") or "unverified")
@@ -817,6 +940,7 @@ def _award_event_projection(
         receipts_available=len(receipts),
         events_visible=len(events),
         artifacts=artifact_states,
+        recipient_resolution_coverage=resolution_coverage,
     )
 
 

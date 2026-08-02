@@ -86,6 +86,34 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         build_government_revenue._validate_payload(canonical_latest)
     except ValueError as exc:
         raise ProjectionDriftError("canonical latest schema is invalid") from exc
+    try:
+        recipient_coverage = build_government_revenue._validate_recipient_activation(
+            root,
+            canonical_latest,
+        )
+    except ValueError as exc:
+        raise ProjectionDriftError("canonical recipient activation is invalid") from exc
+    if recipient_coverage is not None:
+        coverage_path = (
+            canonical_dir
+            / build_government_revenue.RECIPIENT_RESOLUTION_COVERAGE_FILENAME
+        )
+        coverage_raw, committed_coverage = _read_json(
+            coverage_path,
+            "canonical recipient resolution coverage",
+        )
+        if build_government_revenue._canonical_json(committed_coverage).encode(
+            "utf-8"
+        ) != coverage_raw:
+            raise ProjectionDriftError(
+                "canonical recipient resolution coverage bytes are non-canonical"
+            )
+        if build_government_revenue._canonical_json(committed_coverage) != (
+            build_government_revenue._canonical_json(recipient_coverage)
+        ):
+            raise ProjectionDriftError(
+                "canonical recipient resolution coverage differs from embedded award-event freshness"
+            )
 
     if public_latest_raw != canonical_latest_raw:
         raise ProjectionDriftError("public latest twin differs from canonical latest bytes")
@@ -177,6 +205,11 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         "events": len(canonical_workspace.get("events") or []),
         "dossier_content_id": canonical_dossier.get("content_id"),
         "dossier_awards": len(canonical_dossier.get("awards") or []),
+        "recipient_graph_id": (
+            recipient_coverage.get("resolution_graph", {}).get("graph_id")
+            if recipient_coverage is not None
+            else None
+        ),
     }
 
 
