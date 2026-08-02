@@ -125,6 +125,9 @@ jobs:
         run: |
           set -uo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          PUSH_LABEL="marketing-media-backfill"
+          # workflow_dispatch takes any ref — never publish HEAD to main from one.
+          if ! push_on_main_ok; then exit 0; fi
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/marketing/outbox/media_urls.jsonl 2>/dev/null || true

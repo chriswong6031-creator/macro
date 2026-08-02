@@ -343,6 +343,12 @@ jobs:
           # within the run itself, not just across runs. Echoes "pushed" so the
           # caller can gate the dispatch on it.
           commit_and_push() {
+            # workflow_dispatch takes any ref — never publish HEAD to main from one.
+            # Inside the function, not before the poller: the radar above must still
+            # run and log its passes on an off-main dispatch. Returning 1 also keeps
+            # the caller from dispatching the publisher for state that never landed.
+            if ! push_on_main_ok; then return 1; fi
+
             # Stage ONLY this lane's paths (ledger law). data/massive_stock_day is
             # gitignored, so a hydrated parquet can never ride along.
             git add data/marketing/outbox 2>/dev/null || true

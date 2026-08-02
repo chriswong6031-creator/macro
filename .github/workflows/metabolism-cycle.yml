@@ -384,6 +384,12 @@ jobs:
           # Write fresh status snapshot
           python -m engine.metabolism.budget_gate --mode manual --write-status 2>/dev/null || true
 
+          # The snapshot above is written on ANY dispatch ref; only publishing it to
+          # main is gated. workflow_dispatch takes any ref — never publish HEAD to main
+          # from one.
+          PUSH_LABEL="metabolism-cycle budget status"
+          if ! push_on_main_ok; then exit 0; fi
+
           # Narrow-commit: ONLY data/metabolism/key_budget_status.json
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"

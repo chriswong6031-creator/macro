@@ -114,6 +114,12 @@ jobs:
 
           python -m scripts.metabolism_audit $ARGS
 
+          # The audit above runs on ANY dispatch ref and its output is in this log;
+          # only publishing it to main is gated. workflow_dispatch takes any ref, and
+          # `git push origin HEAD:main` from one lands unreviewed commits with no CI.
+          PUSH_LABEL="metabolism-audit"
+          if ! push_on_main_ok; then exit 0; fi
+
           # Commit audit records + governance events (narrow add, rebase-safe)
           git add data/ai_costs/usage.d data/metabolism/audit/ data/neuralweb/governance.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then

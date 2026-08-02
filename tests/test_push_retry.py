@@ -974,3 +974,240 @@ def test_every_lane_loop_sources_the_shared_policy():
         assert n_loops, f"{lane} carries no push_attempt loop"
         assert text.count("push_retry_init") == n_loops, f"{lane}: init/loop count mismatch"
         assert text.count('scripts/ci/push_retry.sh"') >= 1, f"{lane} never sources the policy"
+
+
+# ---------------------------------------------------------------------------
+# 10. push_on_main_ok — never publish a dispatch ref to main
+#
+# 2026-08-02: every lane below ends its commit step with some form of
+# `git push origin HEAD:main`, and every one of them also carries
+# workflow_dispatch, which accepts ANY ref. Dispatching seo-director on
+# claude/gsc-index-diagnostics to read its GSC diagnostics would therefore have
+# rebased that branch onto main and PUSHED IT TO MAIN — unreviewed commits
+# landing with no PR, no review and no CI, under a green audit run.
+#
+# The guard tests the CHECKED-OUT ref, never `github.ref`, because the two come
+# apart in both directions: government-revenue-live.yml pins `ref: main` (safe
+# on any trigger ref), while metabolism-{propose,adjudicate,build}.yml are
+# DESIGNED to be dispatched over a propose branch and re-anchor onto
+# _journal_main before publishing their journal snapshot.
+# ---------------------------------------------------------------------------
+
+
+def _repo_on_branch(tmp_path: Path, branch: str) -> Path:
+    repo = tmp_path / f"repo-{branch.replace('/', '-')}"
+    repo.mkdir()
+    _init_repo(repo)
+    (repo / "f.txt").write_text("x")
+    subprocess.run(["git", "-C", str(repo), "add", "f.txt"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "c0"], check=True)
+    if branch != "main":
+        subprocess.run(["git", "-C", str(repo), "checkout", "-qb", branch], check=True)
+    return repo
+
+
+def test_guard_allows_a_run_on_main(tmp_path):
+    repo = _repo_on_branch(tmp_path, "main")
+    r = run_sh("push_on_main_ok && echo ALLOWED", cwd=repo)
+    assert r.returncode == 0, r.stderr
+    assert "ALLOWED" in r.stdout
+    assert "::notice" not in r.stdout, "a run on main must stand down silently"
+
+
+def test_guard_refuses_the_dispatch_branch_that_found_this(tmp_path):
+    """The exact 2026-08-02 case: seo-director dispatched on a diagnostics branch."""
+    repo = _repo_on_branch(tmp_path, "claude/gsc-index-diagnostics")
+    r = run_sh(
+        'PUSH_LABEL="seo-director"\n'
+        "if push_on_main_ok; then echo PUSHED; else echo WITHHELD; fi",
+        cwd=repo,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "WITHHELD" in r.stdout and "PUSHED" not in r.stdout
+    assert "claude/gsc-index-diagnostics" in r.stdout, "the notice must name the ref it refused"
+
+
+def test_guard_notice_starts_the_line_and_is_plain_word(tmp_path):
+    """GitHub drops an annotation that does not START the line (repo law, #3587)."""
+    repo = _repo_on_branch(tmp_path, "feature/x")
+    r = run_sh("push_on_main_ok || true", cwd=repo)
+    notices = [ln for ln in r.stdout.splitlines() if "::notice" in ln]
+    assert len(notices) == 1, f"expected exactly one annotation, got {notices}"
+    assert notices[0].startswith("::notice"), (
+        f"annotation must start the line or GitHub silently drops it: {notices[0]!r}"
+    )
+    # The operator has to be able to tell "withheld" from "crashed".
+    low = notices[0].lower()
+    assert "not" in low and "push" in low
+
+
+@pytest.mark.parametrize("state", ["detached", "not-a-repo"])
+def test_guard_fails_closed_when_head_is_unreadable(tmp_path, state):
+    """Fail-closed: anything the guard cannot positively identify as main is refused."""
+    if state == "detached":
+        repo = _repo_on_branch(tmp_path, "main")
+        sha = _git_output(repo, "rev-parse", "HEAD")
+        subprocess.run(["git", "-C", str(repo), "checkout", "-q", "--detach", sha], check=True)
+    else:
+        repo = tmp_path / "bare-dir"
+        repo.mkdir()
+    r = run_sh("if push_on_main_ok; then echo PUSHED; else echo WITHHELD; fi", cwd=repo)
+    assert r.returncode == 0, r.stderr
+    assert "WITHHELD" in r.stdout, f"{state} must not be treated as main"
+
+
+def test_re_anchor_lanes_accept_only_the_re_anchor_branch(tmp_path):
+    """metabolism-{propose,adjudicate,build} publish from _journal_main, not main.
+
+    Their `git checkout -B _journal_main origin/main` is suffixed `|| true`, so a
+    FAILED re-anchor used to leave HEAD on metabolism/propose-<id> and push the
+    whole unreviewed proposal to main. Naming the re-anchor branch as the only
+    acceptable publish target makes that failure fail closed.
+    """
+    ok = _repo_on_branch(tmp_path, "_journal_main")
+    r = run_sh('PUSH_MAIN_BRANCHES="_journal_main"; push_on_main_ok && echo ALLOWED', cwd=ok)
+    assert r.returncode == 0 and "ALLOWED" in r.stdout, r.stderr
+
+    # The re-anchor did not happen — HEAD is still the propose branch.
+    bad = _repo_on_branch(tmp_path, "metabolism/propose-c42")
+    r = run_sh(
+        'PUSH_MAIN_BRANCHES="_journal_main"\n'
+        "if push_on_main_ok; then echo PUSHED; else echo WITHHELD; fi",
+        cwd=bad,
+    )
+    assert "WITHHELD" in r.stdout, "a failed re-anchor must never publish the propose branch"
+
+
+# ---------------------------------------------------------------------------
+# 10b. Workflow wiring — DERIVED, so a NEW lane that publishes to main is caught
+#      too. Nothing here is an allow-list of known-good files.
+# ---------------------------------------------------------------------------
+
+WORKFLOW_DIR = REPO_ROOT / ".github" / "workflows"
+
+# `git push origin HEAD:main` / `push_do origin HEAD:main`: publishes whatever
+# HEAD happens to be, which on a workflow_dispatch is whatever ref was chosen.
+_PUBLISH_HEAD_RE = re.compile(r"(?:git push|push_do)\s+[^\n;&|]*\bHEAD:(?:main|refs/heads/main)\b")
+# `push_do origin "$REF:refs/heads/main"`: publishes a named ref to main.
+_PUBLISH_REF_RE = re.compile(r"(?:git push|push_do)\s+[^\n;&|]*:refs/heads/main\b")
+
+
+def _shell_code(run: str) -> str:
+    """Drop whole-line shell comments.
+
+    These blocks carry long prose rationales that quote the very command they are
+    explaining, so matching raw text finds pushes inside comments and mis-orders
+    the guard against them. A commented-out push is not a push.
+    """
+    return "\n".join("" if ln.lstrip().startswith("#") else ln for ln in run.splitlines())
+
+
+def _publishing_steps():
+    """Yield (workflow, job, step_name, code, triggers) for every step that writes main."""
+    for wf in sorted(WORKFLOW_DIR.glob("*.yml")):
+        doc = yaml.safe_load(wf.read_text())
+        triggers = doc.get(True) or doc.get("on") or {}
+        triggers = set(triggers) if isinstance(triggers, (dict, list)) else {triggers}
+        for job_name, job in (doc.get("jobs") or {}).items():
+            for step in (job.get("steps") or []):
+                code = _shell_code(step.get("run") or "")
+                if _PUBLISH_HEAD_RE.search(code) or _PUBLISH_REF_RE.search(code):
+                    yield wf.name, job_name, step.get("name", "?"), code, triggers
+
+
+def test_the_estate_still_has_publishing_steps_to_check():
+    """Fail-closed: a broken detector must not read as a clean audit."""
+    found = list(_publishing_steps())
+    assert len(found) >= 18, f"detector found only {len(found)} publishing steps — it is broken"
+
+
+def test_every_head_to_main_push_is_guarded_first():
+    """A step that publishes HEAD to main must call push_on_main_ok BEFORE it.
+
+    This is the mutation-check anchor: delete the guard from any lane's commit
+    step (or from scripts/ci/push_retry.sh) and this goes red.
+    """
+    unguarded = []
+    for wf, job, step_name, run, _triggers in _publishing_steps():
+        m = _PUBLISH_HEAD_RE.search(run)
+        if not m:
+            continue
+        guard = run.find("push_on_main_ok")
+        if guard == -1:
+            unguarded.append(f"{wf} :: {job}/{step_name} — never calls push_on_main_ok")
+        elif guard > m.start():
+            unguarded.append(f"{wf} :: {job}/{step_name} — guard runs AFTER the push")
+    assert not unguarded, (
+        "these steps push HEAD to refs/heads/main from whatever ref the run was "
+        "dispatched on, landing unreviewed commits with no PR and no CI:\n  "
+        + "\n  ".join(unguarded)
+    )
+
+
+def test_named_ref_publishes_are_replay_built_or_guarded():
+    """`push_do origin "$REF:refs/heads/main"` must not publish the dispatch branch.
+
+    render.yml and daily.yml publish a ref built by push_metadata_replay_commit:
+    the commit is parented on origin/main and carries only that lane's own path
+    diff, so it structurally cannot smuggle a feature branch's commits onto main.
+    Any OTHER named-ref publish must carry the explicit guard instead.
+    """
+    bad = []
+    for wf, job, step_name, run, _triggers in _publishing_steps():
+        if not _PUBLISH_REF_RE.search(run) or _PUBLISH_HEAD_RE.search(run):
+            continue
+        if "push_metadata_replay_commit" in run or "push_on_main_ok" in run:
+            continue
+        bad.append(f"{wf} :: {job}/{step_name}")
+    assert not bad, (
+        "these steps push a named ref to refs/heads/main without either the "
+        "origin/main-parented metadata replay or push_on_main_ok:\n  " + "\n  ".join(bad)
+    )
+
+
+def test_the_guard_is_not_wired_as_a_github_ref_check():
+    """A `github.ref` guard would be the WRONG fix and would break two lane families.
+
+    government-revenue-live.yml pins `ref: main` at checkout (safe on any trigger
+    ref), and metabolism-{propose,adjudicate,build}.yml are dispatched over a
+    propose branch on purpose. Both are correct today precisely because the guard
+    reads the checked-out ref instead.
+    """
+    for wf, job, step_name, run, _t in _publishing_steps():
+        assert "github.ref" not in run, (
+            f"{wf} :: {job}/{step_name} guards the publish on github.ref; the "
+            f"checked-out ref is the one that gets pushed and the two differ here"
+        )
+
+
+_REANCHOR_RE = re.compile(r"git checkout -B (\S+) origin/main")
+
+
+def test_re_anchoring_lanes_declare_their_publish_target():
+    """A lane that re-anchors onto origin/main must NAME that branch as the target.
+
+    The quiet half of this guard. metabolism-{propose,adjudicate,build} publish
+    from _journal_main, so if the PUSH_MAIN_BRANCHES declaration is ever dropped
+    the allow-list falls back to "main", the re-anchored HEAD never matches, and
+    the step stands down on EVERY run — safe, silent, and permanently dark, while
+    publishing that journal to main is the entire reason the step exists. Caught
+    by mutation-checking the guard: removing the declaration left the suite green.
+    """
+    missing, checked = [], 0
+    for wf, job, step_name, code, _t in _publishing_steps():
+        m = _REANCHOR_RE.search(code)
+        if not m:
+            continue
+        checked += 1
+        branch = m.group(1)
+        decl = re.search(r'PUSH_MAIN_BRANCHES="?([^"\n]+)"?', code)
+        if not decl:
+            missing.append(f"{wf} :: {job}/{step_name} re-anchors onto {branch} but declares no PUSH_MAIN_BRANCHES")
+        elif branch not in decl.group(1).split():
+            missing.append(
+                f"{wf} :: {job}/{step_name} re-anchors onto {branch} but allows only "
+                f"'{decl.group(1)}' — the step can never publish"
+            )
+    assert not missing, "re-anchored lanes that can never publish:\n  " + "\n  ".join(missing)
+    # Fail-closed: a broken detector must not read as a clean audit.
+    assert checked >= 3, f"expected the 3 metabolism journal lanes, detected {checked}"
