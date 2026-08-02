@@ -1,0 +1,56 @@
+{
+  "cik": 320193,
+  "entityName": "Example Issuer",
+  "facts": {
+    "us-gaap": {
+      "CommonStockSharesOutstanding": {
+        "units": {
+          "shares": [
+            {
+              "end": "2025-09-27",
+              "val": 150000000,
+              "accn": "0000320193-25-000077",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2025-10-31",
+              "frame": "CY2025Q3I"
+            }
+          ]
+        }
+      }
+    },
+    "dei": {
+      "EntityCommonStockSharesOutstanding": {
+        "units": {
+          "shares": [
+            {
+              "end": "2025-10-17",
+              "val": 151000000,
+              "accn": "0000320193-25-000077",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2025-10-31"
+            }
+          ]
+        }
+      },
+      "EntityPublicFloat": {
+        "units": {
+          "USD": [
+            {
+              "end": "2025-03-28",
+              "val": 2580000000000,
+              "accn": "0000320193-25-000077",
+              "fy": 2025,
+              "fp": "FY",
+              "form": "10-K",
+              "filed": "2025-10-31"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
