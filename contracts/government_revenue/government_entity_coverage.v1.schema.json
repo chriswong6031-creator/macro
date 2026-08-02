@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_entity_coverage.v1.schema.json",
+  "title": "Government Entity Attribution Coverage v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "as_of", "known_at", "collection", "records",
+    "states", "amounts", "invariants", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_entity_coverage.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "as_of": {"$ref": "#/$defs/nullableTemporal"},
+    "known_at": {"$ref": "#/$defs/nullableTemporal"},
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["queries_requested", "queries_complete", "queries_partial", "queries_failed", "query_completion_ratio", "complete_scope"],
+      "properties": {
+        "queries_requested": {"type": "integer", "minimum": 0},
+        "queries_complete": {"type": "integer", "minimum": 0},
+        "queries_partial": {"type": "integer", "minimum": 0},
+        "queries_failed": {"type": "integer", "minimum": 0},
+        "query_completion_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "complete_scope": {"type": "boolean"}
+      }
+    },
+    "records": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_records", "unique_source_records", "duplicates_removed",
+        "records_eligible_for_coverage", "records_excluded_unstable_identity",
+        "records_excluded_asof_mismatch",
+        "records_with_usable_amount", "records_without_usable_amount",
+        "recipient_identity_resolved_records", "issuer_attributed_records",
+        "unresolved_records", "conflicted_records", "rejected_records"
+      ],
+      "properties": {
+        "input_records": {"type": "integer", "minimum": 0},
+        "unique_source_records": {"type": "integer", "minimum": 0},
+        "duplicates_removed": {"type": "integer", "minimum": 0},
+        "records_eligible_for_coverage": {"type": "integer", "minimum": 0},
+        "records_excluded_unstable_identity": {"type": "integer", "minimum": 0},
+        "records_excluded_asof_mismatch": {"type": "integer", "minimum": 0},
+        "records_with_usable_amount": {"type": "integer", "minimum": 0},
+        "records_without_usable_amount": {"type": "integer", "minimum": 0},
+        "recipient_identity_resolved_records": {"type": "integer", "minimum": 0},
+        "issuer_attributed_records": {"type": "integer", "minimum": 0},
+        "unresolved_records": {"type": "integer", "minimum": 0},
+        "conflicted_records": {"type": "integer", "minimum": 0},
+        "rejected_records": {"type": "integer", "minimum": 0}
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0},
+      "required": ["confirmed", "reviewed", "candidate_review", "unresolved", "rejected", "out_of_scope", "conflicted"]
+    },
+    "amounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field", "basis", "candidate_amount", "mapped_attributable_amount",
+        "mapped_unallocated_amount", "unmapped_amount", "mapping_coverage_ratio",
+        "recipient_identity_resolution_ratio", "issuer_attribution_count_ratio"
+      ],
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "basis": {"const": "absolute"},
+        "candidate_amount": {"type": ["number", "null"]},
+        "mapped_attributable_amount": {"type": ["number", "null"]},
+        "mapped_unallocated_amount": {"type": ["number", "null"]},
+        "unmapped_amount": {"type": ["number", "null"]},
+        "mapping_coverage_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "recipient_identity_resolution_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "issuer_attribution_count_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "global_source_dedupe", "state_count_balances", "mapped_amount_not_greater_than_candidate",
+        "attributed_rows_have_single_issuer", "allocation_within_bounds",
+        "stable_source_identity_only", "analysis_cutoff_matches_requested"
+      ],
+      "properties": {
+        "global_source_dedupe": {"type": "boolean"},
+        "state_count_balances": {"type": "boolean"},
+        "mapped_amount_not_greater_than_candidate": {"type": "boolean"},
+        "attributed_rows_have_single_issuer": {"type": "boolean"},
+        "allocation_within_bounds": {"type": "boolean"},
+        "stable_source_identity_only": {"type": "boolean"},
+        "analysis_cutoff_matches_requested": {"type": "boolean"}
+      }
+    },
+    "limitations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "nullableTemporal": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    }
+  }
+}
