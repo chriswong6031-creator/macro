@@ -6633,6 +6633,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
        it was missing from this exclusion list, so the button could never leave risk mode.
        Unknown/new states deliberately stay on the risk side (conservative). #}
     {% set _mx5_risk_elevated = (_mx5_rdr_state not in ('calm','quiet','dormant','none','unknown','')) or (_mx5_radar_top >= 50) %}
+    {# This flag means "the radar is not calm" — it fires at 'watch' and at a bare
+       top_score >= 50. It is NOT the engine's 'elevated' band, which starts at 78
+       (_DEFAULT_BANDS in engine/risk_radar.py: watch 55 / caution 68 / elevated 78 /
+       risk-off 88). The chip below hard-coded the word "Elevated", so a score of 61 —
+       'watch' to the engine, two bands below elevated — shipped as "Elevated Risk · 61" next to a 69 risk-ON
+       tape read, which is what made the pair look self-contradicting. The two scores
+       ARE opposite-polarity and may legitimately diverge (tape composite: higher =
+       more supportive; radar: higher = more drawdown risk); only the band NAME was
+       wrong. Label from the engine's own state so the word always matches the number,
+       and reuse "Risk building" — the sibling radar card's existing wording. #}
+    {% set _MX5_RDR_LBL = {
+         'watch':    ('Risk watch',    '风险观察'),
+         'caution':  ('Risk building', '风险积聚'),
+         'elevated': ('Elevated risk', '风险偏高'),
+         'risk-off': ('Risk-off',      '避险')
+       } %}
+    {% set _mx5_risk_lbl = _MX5_RDR_LBL.get(_mx5_rdr_state, ('Risk building', '风险积聚')) %}
     {# Factor rows for factor popover #}
     {# MS (hero scope), NOT MS2 — MS2 is set later in the ledger section and is
        undefined here, which rendered "0 signals aligned" + an empty factor popover #}
@@ -7015,8 +7032,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             <circle cx="12" cy="17" r="1" fill="currentColor"/>
           </svg>
-          <span class="l-en">Elevated Risk{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
-          <span class="l-zh">风险偏高{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
+          <span class="l-en">{{ _mx5_risk_lbl[0] }}{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
+          <span class="l-zh">{{ _mx5_risk_lbl[1] }}{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
         </button>
         {% else %}
         {# Fallback: risk not elevated, no ignition data — neutral Risk Detail #}
