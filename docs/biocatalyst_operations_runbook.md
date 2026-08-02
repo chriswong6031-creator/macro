@@ -453,3 +453,75 @@ SEC/issuer documents, cash and financing, clinical outcome labels,
 regulatory/patent data, competitive intelligence, valuation/expected-value
 models, market structure, and any Prophet or Neural Web authority contract. The
 API and UI must omit those fields rather than synthesize substitutes.
+
+## 11. B4A Drugs@FDA archive fence (dark)
+
+B4A is a separate FDA-native transaction, not an extension of the B1/B2 trial
+worker. Its future worker state, lock, raw namespace, derived generation, and
+`current.json` are all under a dedicated regulatory state root. A failed FDA
+archive can therefore never modify the ClinicalTrials.gov generation pointer,
+trial health, worker lock, or API read surface.
+
+The current `drugs_at_fda` registry entry is deliberately executable-dark:
+`production_ingest_allowed: false`, `public_projection: blocked_until_review`,
+and `BIOCATALYST_REGULATORY_ENABLED=0`. The separate
+`scripts/biocatalyst_regulatory_worker.py` reads that registry before it can
+open a network connection and rejects an attempted enablement. No B4A service
+or timer is installed, enabled, or started by the existing BioCatalyst setup or
+updater. An explicit source-rights advancement, dedicated state/R2 credentials,
+source canary, replay review, and separately reviewed service/timer are all
+required before any live collection.
+
+When reviewed collection is eventually armed, one transaction must acquire the
+official FDA data page before and after the exact `drugsatfda.zip` GET. It
+retains exact page and ZIP bytes privately, validates the three HTTP receipts,
+and identifies a release only by raw archive SHA-256. FDA's displayed “Data
+Last Updated”, content-disposition token, Last-Modified header, and ZIP member
+timestamps are descriptive metadata; none becomes a row effective time,
+knowledge time, or release identity. The FDA page says the archive is updated
+each morning Monday through Friday, but the worker must not infer a precise
+publication time or assume one immutable release per day.
+
+The private remote commit is intentionally source-evidence only: it must bind
+and read back the exact landing pages, ZIP, canonical receipt, and twelve table
+manifests before the local pointer advances. The release-local SQLite index is
+derived, local, and rebuildable from that exact remote ZIP; it is not mirrored
+through the current bytes-only object-store interface. A disaster rehydrate
+must replay the remote ZIP and reconcile the committed table manifests before
+installing a new local SQLite generation. Each table manifest also carries a
+source-derived typed-row semantic digest; initial publication and crash recovery
+must match the SQLite digest to that exact-member digest, so a locally rehashed
+sidecar cannot become truth merely by rewriting its own metadata.
+
+The 12 expected CRLF, tab-delimited tables are parsed as strict cp1252. ZIP
+traversal/symlink/encryption/duplicate-name/member-count/size/compression-ratio
+or row-count ceiling failures, unknown files, BOM/LF/header drift, duplicate or missing logical
+primary keys, and undeclared row shapes all fail closed before a derived pointer
+can advance. The sole currently reviewed row-shape exception is scoped to the
+exact 2026-07-31 archive hash and one CRLF physical `ApplicationDocs.txt` line;
+it removes only a known empty overflow field and records its line hash and
+field counts in the private manifest. It is not a generic repair rule.
+
+Referential closure is intentionally not a completeness precondition. Current
+FDA data has source-native orphans and sentinel source text such as empty
+`TECode`, literal `Null`, `UNKNOWN`, `N/A`, and numeric `0`. The parser retains
+those exact values and counts unresolved links; it never fabricates a parent,
+maps an FDA sponsor to a company/ticker, or discards rows merely to make a
+graph look clean. The derived graph carries only FDA application/product,
+submission/class/property, action, marketing-status, TE, and document facts.
+It does not claim a pending application, PDUFA, IND, hold, CRL, approval odds,
+medical meaning, trial/asset identity, or Prophet/Neural Web/trade authority.
+
+The pinned 2026-07-31 witness archive `5ff17b3e…fb8092c53` contains 959,263
+source rows. Its retained-orphan counts are products→application 11,
+submissions→application 5,378, documents→application 3,
+documents→submission 152, joins→submission 494, joins→action lookup 296,
+marketing→product 599, properties→submission 256, and TE→product 12. These
+values are a parser regression witness for that exact archive, not a promise
+that future releases must have the same source-quality gaps.
+
+B4A writes no product API or user-facing regulatory lens while public
+projection remains blocked. A later B4B promotion must construct a separately
+allowlisted, entitled, no-store public DTO from the private, replay-bound
+generation and must omit raw object keys, local paths, receipt bodies, physical
+line hashes, credentials, and internal storage coordinates.

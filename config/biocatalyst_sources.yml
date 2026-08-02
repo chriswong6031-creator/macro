@@ -208,6 +208,32 @@ sources:
     production_ingest_allowed: false
     raw_archive: private_only_after_review
     public_projection: blocked_until_review
+    source_page_url: "https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files"
+    archive_url: "https://www.fda.gov/media/89850/download?attachment="
+    source_refresh_semantics: source_page_states_updated_each_morning_monday_through_friday_no_publication_time_inferred
+    release_identity: exact_archive_sha256_only
+    source_date_semantics: landing_page_data_last_updated_is_source_reported_release_date_not_row_effective_time
+    zip_member_timestamp_semantics: descriptive_only_not_release_or_effective_time
+    accepted_encoding: cp1252_strict
+    source_quality_policy: retain_and_quantify_declared_source_native_orphans_never_invent_parents
+    private_commit_policy: exact_landing_zip_canonical_receipt_and_table_manifest_readback_before_local_pointer
+    sqlite_index_policy: local_rebuildable_from_exact_remote_archive_never_remote_mirrored
+    known_shape_exceptions:
+      - archive_sha256: "5ff17b3eeb88c1d0e5338cdc2a24caf687aed82dc0fbde7aec46810fb8092c53"
+        table_name: ApplicationDocs.txt
+        physical_row_number: 78723
+        physical_row_sha256: "ba089d86d6982a8d5ab35eecd3c15c3efd8777235b52cab84591cd87cd76d8e0"
+        policy: remove_only_empty_field_immediately_before_application_docs_date
+    prohibited_claims:
+      - pending_application
+      - pdufa_date
+      - ind_or_clinical_hold
+      - complete_response_letter_completeness
+      - approval_odds
+      - medical_or_clinical_meaning
+      - issuer_company_or_ticker_identity
+      - trial_or_asset_identity
+      - prophet_or_trade_authority
     default_coverage_class: source_release
     launch_critical: false
     collection_target: every_source_release

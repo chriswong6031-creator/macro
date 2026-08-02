@@ -64,6 +64,66 @@ registrations:
       - macro_biocatalyst_api
     operational_owner: mastermindx_platform_ops
 
+  drugs_at_fda_release_archive:
+    canonical_owner: biocatalyst
+    implementation_state: dark_b4a_private_only
+    source_rights_gate:
+      source_registry: drugs_at_fda
+      production_ingest_allowed: false
+      public_projection: blocked_until_review
+    writer:
+      service: macro_biocatalyst_regulatory_worker
+      module: collectors.biocatalyst.drugs_at_fda
+      storage_class: private_immutable_source_archive
+      artifact: "biocatalyst/raw/drugs_at_fda/{landing|archive}/{content_sha256}.{html|zip}"
+      schemas:
+        - drugs_at_fda_release_receipt.v1
+        - drugs_at_fda_table_manifest.v1
+    cadence: blocked_until_source_rights_and_operator_arming
+    retry_replay_policy: receipt_backed_content_addressed_idempotent_replay
+    consumers:
+      - drugs_at_fda_private_query_index
+    prohibited_uses:
+      - public_projection
+      - product_api
+      - user_facing_regulatory_lens
+      - issuer_company_or_ticker_resolution
+      - trial_or_asset_resolution
+      - regulatory_outcome_or_probability_inference
+      - neural_web_or_prophet_authority
+    operational_owner: mastermindx_platform_ops
+
+  drugs_at_fda_private_query_index:
+    canonical_owner: biocatalyst
+    implementation_state: dark_b4a_private_only
+    source_rights_gate:
+      source_registry: drugs_at_fda
+      production_ingest_allowed: false
+      public_projection: blocked_until_review
+    writer:
+      service: macro_biocatalyst_regulatory_worker
+      module: collectors.biocatalyst.drugs_at_fda
+      storage_class: private_atomic_sqlite_generation
+      artifact: "/var/lib/macro-biocatalyst-regulatory/state/generations/{release_id}/release.sqlite"
+      schemas:
+        - fda_application_snapshot.v1
+        - fda_submission_observation.v1
+        - fda_regulatory_event.v1
+        - fda_application_dossier.v1
+    cadence: after_complete_private_release_archive
+    retry_replay_policy: replay_from_receipted_exact_archive_before_atomic_pointer_advance
+    consumers: []
+    prohibited_uses:
+      - public_projection
+      - cross_source_entity_join
+      - company_or_ticker_identity
+      - pdufa_or_pending_application_claim
+      - ind_hold_or_complete_response_letter_claim
+      - clinical_or_medical_interpretation
+      - prophet_candidate_origination
+      - neural_web_decision_authority
+    operational_owner: mastermindx_platform_ops
+
   generic_company_identity:
     canonical_owner: corporate_intelligence
     implementation_state: blocked_pending_executable_contract

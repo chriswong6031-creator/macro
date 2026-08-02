@@ -27,7 +27,7 @@ def test_ownership_policy_is_one_writer_and_fail_closed() -> None:
     assert policy["duplicate_writer_behavior"] == "hard_fail"
 
 
-def test_biocatalyst_owns_only_the_source_canonical_trial_lane() -> None:
+def test_biocatalyst_owns_only_declared_source_canonical_and_dark_regulatory_lanes() -> None:
     registrations = _registry()["registrations"]
     owned = {
         name
@@ -39,12 +39,36 @@ def test_biocatalyst_owns_only_the_source_canonical_trial_lane() -> None:
         "clinicaltrials_source_record",
         "trial_snapshot_and_exact_diff",
         "biocatalyst_read_projection",
+        "drugs_at_fda_release_archive",
+        "drugs_at_fda_private_query_index",
     }
-    for name in owned:
+    for name in {
+        "clinicaltrials_source_record",
+        "trial_snapshot_and_exact_diff",
+        "biocatalyst_read_projection",
+    }:
         registration = registrations[name]
         assert registration["implementation_state"] == "frozen_for_b0a"
         assert registration["writer"] is not None
         assert registration["operational_owner"] == "mastermindx_platform_ops"
+    for name in {
+        "drugs_at_fda_release_archive",
+        "drugs_at_fda_private_query_index",
+    }:
+        registration = registrations[name]
+        assert registration["implementation_state"] == "dark_b4a_private_only"
+        assert registration["writer"] is not None
+        assert registration["operational_owner"] == "mastermindx_platform_ops"
+        assert registration["source_rights_gate"] == {
+            "source_registry": "drugs_at_fda",
+            "production_ingest_allowed": False,
+            "public_projection": "blocked_until_review",
+        }
+        assert "public_projection" in registration["prohibited_uses"]
+        assert any(
+            "prophet" in prohibited
+            for prohibited in registration["prohibited_uses"]
+        )
 
 
 def test_shared_company_document_and_capital_lanes_are_not_faked() -> None:
