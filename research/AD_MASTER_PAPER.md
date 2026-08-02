@@ -215,7 +215,8 @@ specific-signal widgets keep the site's small `demo` as-of tag.
 | "356 tracked funds" (13F) | landing Smart Money section |
 | "34 themes, four lanes" | landing Theme Rotations section |
 | "Terminal free forever / nothing to install" | landing Terminal section |
-| "Rebuilt nightly" | nightly pipeline; landing "rebuilt nightly" as-of tags |
+| "Rebuilt nightly" (site surfaces; NOT ad copy — see §9 R3 ruling 1) | nightly pipeline; landing "rebuilt nightly" as-of tags |
+| "Updated every trading day" / "daily" (the ad-copy form of freshness) | same nightly pipeline, said without builder jargon |
 | "Insider & Congress trades as filings land" | landing Insider & Congress section |
 | "$24,000 a year" institutional desks | public list prices of major institutional terminals (~$22–27k/yr), debranded |
 | "$2.50 a day" | $900/yr ÷ 365 = $2.47, rounded **up** |
@@ -280,6 +281,19 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
   low) — the chart is a claim. Occlusion re-lands: ghost trails never under the solid
   chip, slivers carry identity atoms only (tk, stages) with nm/zone dropped rather than
   amputated.
+- **R3 operator rulings (2026-08-02, on the round-3 brief before build)** — the
+  retail-simplicity pass; all five are standing copy law: (1) **no builder jargon for
+  freshness** — "rebuilt nightly"/"every night" assumes the reader knows we run a
+  nightly build; say "updated every trading day"/"daily," and use "live" only where
+  literally true (options flow, charting), never for daily signals; (2) **the launch
+  discount goes upfront** — 50% off appears in post line 1 and as a flag at the top of
+  the canvas, not only in the bottom offer bar; (3) **no geography** while targeting is
+  US-only — no country/coverage lists; (4) **no "public record / graded in public /
+  forward-ledger" talk in ads** — users don't care and it has become the vibe-coded
+  finance-SaaS house style (reads AI); the track record remains a product surface, not
+  ad copy; (5) **never "13F" on a retail surface** — say "institutional flow" / "what
+  institutions are buying." Meta-rule: customers are retail — reduce complexity,
+  plain words everywhere.
 - **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
   defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
   budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap
