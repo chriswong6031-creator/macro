@@ -23,6 +23,15 @@ def _text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _porcelain_rebase_at(lane: Path, text: str) -> int:
+    """Return the publication rebase after asserting its lane-specific contract."""
+    if lane.name == "render.yml":
+        rebase = text.index("git rebase --autostash -X theirs origin/main")
+        assert text.index("push_fetch_main_for_rebase") < rebase
+        return rebase
+    return text.index("git pull --rebase --autostash -X theirs origin main")
+
+
 def test_crypto_page_restores_current_house_style_asset_contract() -> None:
     page = _text(ROOT / "site" / "crypto.html")
     css = ROOT / "site" / "assets" / "css" / "ab184288.css"
@@ -59,7 +68,7 @@ def test_engine_render_never_commits_after_a_failed_guard() -> None:
 def test_render_lanes_guard_both_possible_porcelain_push_heads() -> None:
     for lane in LANES:
         text = _text(lane)
-        rebase = text.index("git pull --rebase --autostash -X theirs origin main")
+        rebase = _porcelain_rebase_at(lane, text)
         post_rebase = text[rebase:]
         guards = [
             match.start()

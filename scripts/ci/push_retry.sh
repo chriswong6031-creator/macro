@@ -287,6 +287,125 @@ push_on_main_ok() {
   return 1
 }
 
+# Untracked checkout-collision containment (P0 2026-08-02, render run
+# 30727439896).
+#
+# `git fetch origin main` updates FETCH_HEAD but, with checkout@v4's explicit
+# fetch, need not update refs/remotes/origin/main.  The old render sweep compared
+# untracked paths with that stale remote-tracking ref; the subsequent `git pull`
+# fetched a newer main and its checkout repeatedly refused two generated
+# news-translation cache files.  A retry could therefore never make progress.
+#
+# Fetch main into its named tracking ref, then move ONLY worktree-untracked paths
+# which that exact fetched tree tracks into the disposable Actions RUNNER_TEMP.
+# The move is deliberately unavailable outside GitHub Actions: a developer's
+# checkout must fail closed rather than have a helper relocate local work.  Staged
+# output and tracked dirty files are absent from `git ls-files --others`, so they
+# stay in place for the caller's normal --autostash rebase.
+# ---------------------------------------------------------------------------
+
+push_quarantine_untracked_collisions() {
+  local target="${1:-origin/main}" target_commit temp_base list quarantine f entry
+  local collisions=0 moved=0
+
+  if ! target_commit=$(git rev-parse --verify "${target}^{commit}"); then
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision target missing::cannot resolve ${target} before a rebase; refusing an unverified checkout sweep"
+    return 1
+  fi
+
+  # Build the list before we ask for Actions authority.  A local no-collision
+  # invocation remains a true no-op; a local collision fails closed below.
+  temp_base="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+  [ -d "$temp_base" ] || {
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision list unavailable::temporary directory is unavailable; refusing an unverified checkout sweep"
+    return 1
+  }
+  list=$(mktemp "${temp_base%/}/push-untracked-list.XXXXXX") || {
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision list unavailable::could not create a temporary untracked-path list"
+    return 1
+  }
+  if ! git -c core.quotePath=false ls-files --others --exclude-standard -z > "$list" \
+    || ! git -c core.quotePath=false ls-files --others --ignored --exclude-standard -z >> "$list"; then
+    rm -f -- "$list"
+    PUSH_FAIL_CLASS="sync"
+    echo "::error title=collision enumeration failed::git could not enumerate untracked paths; refusing an unverified checkout sweep"
+    return 1
+  fi
+
+  while IFS= read -r -d '' f; do
+    if ! entry=$(git ls-tree --name-only "$target_commit" -- "$f"); then
+      rm -f -- "$list"
+      PUSH_FAIL_CLASS="sync"
+      echo "::error title=collision tree lookup failed::could not inspect ${target} for an untracked path; refusing an unverified checkout sweep"
+      return 1
+    fi
+    [ -z "$entry" ] || collisions=$(( collisions + 1 ))
+  done < "$list"
+
+  if [ "$collisions" -eq 0 ]; then
+    rm -f -- "$list"
+    PUSH_QUARANTINE_COUNT=0
+    return 0
+  fi
+  if [ "${GITHUB_ACTIONS:-}" != "true" ] || [ -z "${RUNNER_TEMP:-}" ] || [ ! -d "$RUNNER_TEMP" ]; then
+    rm -f -- "$list"
+    PUSH_FAIL_CLASS="collision-quarantine"
+    echo "::error title=untracked checkout collision::${collisions} untracked path(s) collide with ${target}; refusing to relocate local work outside GitHub Actions"
+    return 1
+  fi
+
+  quarantine=$(mktemp -d "${RUNNER_TEMP%/}/push-untracked-collision.XXXXXX") || {
+    rm -f -- "$list"
+    PUSH_FAIL_CLASS="collision-quarantine"
+    echo "::error title=collision quarantine unavailable::could not create an Actions-only quarantine under RUNNER_TEMP"
+    return 1
+  }
+  mkdir -p "$quarantine/files" || {
+    rm -f -- "$list"
+    PUSH_FAIL_CLASS="collision-quarantine"
+    echo "::error title=collision quarantine unavailable::could not initialize the Actions-only quarantine"
+    return 1
+  }
+  printf '%s\n' "$target_commit" > "$quarantine/target-commit.txt"
+  while IFS= read -r -d '' f; do
+    entry=$(git ls-tree --name-only "$target_commit" -- "$f") || {
+      rm -f -- "$list"
+      PUSH_FAIL_CLASS="collision-quarantine"
+      echo "::error title=collision tree lookup failed::could not inspect ${target} while quarantining; refusing the rebase"
+      return 1
+    }
+    [ -z "$entry" ] && continue
+    mkdir -p "$quarantine/files/$(dirname "$f")" \
+      && mv -- "$f" "$quarantine/files/$f" \
+      && printf '%s\0' "$f" >> "$quarantine/paths.nul" || {
+        rm -f -- "$list"
+        PUSH_FAIL_CLASS="collision-quarantine"
+        echo "::error title=collision quarantine failed::could not quarantine a proven untracked collision; refusing the rebase"
+        return 1
+      }
+    moved=$(( moved + 1 ))
+  done < "$list"
+  rm -f -- "$list"
+  PUSH_QUARANTINE_COUNT="$moved"
+  PUSH_QUARANTINE_DIR="$quarantine"
+  echo "::notice title=untracked checkout collision quarantined::moved ${moved} proven untracked collision(s) to ${quarantine}; ${target} is authoritative for the rebase"
+  return 0
+}
+
+# Fetch the ref the caller will actually rebase onto, then perform the narrow
+# collision containment against that exact object.  Do not replace this with
+# `git fetch origin main`: that only promises FETCH_HEAD, recreating #30727439896.
+push_fetch_main_for_rebase() {
+  if ! git fetch origin +refs/heads/main:refs/remotes/origin/main; then
+    PUSH_FAIL_CLASS="sync"
+    return 1
+  fi
+  push_quarantine_untracked_collisions origin/main
+}
+
 # ---------------------------------------------------------------------------
 # Conflicted-autostash containment (P0 2026-08-01, engine commit d29e4dd44d,
 # emergency heal #4167).
