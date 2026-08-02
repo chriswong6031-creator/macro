@@ -35,6 +35,7 @@ import re
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -807,8 +808,9 @@ def _brain_tool_schemas() -> list[dict]:
         {
             "name": "get_quote",
             "description": (
-                "Fetch a live quote for a symbol. Tries TERMINAL_HUB_URL first, "
-                "then manifest.json fallback, then site/live/quotes.json. "
+                "Fetch a live quote for a symbol. Tries the quote-hub /quotes batch "
+                "endpoint (TERMINAL_HUB_URL) first, then the VPS quotes_full state "
+                "snapshot, then manifest.json fallback, then site/live/quotes.json. "
                 "Always returns source and as_of."
             ),
             "input_schema": {
@@ -1658,25 +1660,107 @@ def _symbol_grounding_digest(
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
-    """Try TERMINAL_HUB_URL, then manifest row, then site/live/quotes.json."""
+    """Try the quote-hub /quotes batch endpoint, then the VPS quotes_full state
+    snapshot, then the manifest row, then site/live/quotes.json."""
     symbol = _safe_symbol(params.get("symbol") or "")
     if not symbol:
         return {"error": "symbol required"}
 
-    # 1. Live hub
+    # 1. Live hub — the charting-app quote-hub's /quotes BATCH endpoint. That hub
+    #    (hub/hub.js) exposes ONLY /health and /quotes?syms=CSV; the /quote/{symbol}
+    #    this leg used to call has never existed on any host, and the
+    #    {"error": "not found"} the VPS returned was simply its catch-all 404.
     try:
-        url = f"{terminal_hub_url.rstrip('/')}/quote/{symbol}"
+        url = f"{terminal_hub_url.rstrip('/')}/quotes?syms={urllib.parse.quote(symbol)}"
         req = urllib.request.Request(url, headers={"User-Agent": "brain-gateway/1.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read())
-        data["source"] = "terminal_hub"
-        if "as_of" not in data:
-            data["as_of"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        return data
+            payload = json.loads(resp.read())
+        # Body is a {SYM: row} map; a symbol the hub has no data for is simply ABSENT
+        # (empty body when it has nothing at all). An error payload or a missing row
+        # is a MISS, not a quote, and must not mask the local fallbacks below.
+        if not isinstance(payload, dict) or payload.get("error"):
+            raise ValueError("hub miss")
+        row = payload.get(symbol)
+        if not isinstance(row, dict) or row.get("last") is None:
+            raise ValueError("hub miss")
+        # TRAP: on a symbol's FIRST request the hub cold-subscribes and writes a
+        # manifest-EOD placeholder whose ts is the SUBSCRIBE time — an old close
+        # stamped with the current clock. Serving it would launder a stale price under
+        # a fresh as-of. The discriminator is regularSessionDate, written only once a
+        # real Polygon AM bar has landed. Crypto rows never carry it, but their WS ts
+        # is genuinely real-time, so the guard is US-only. Falling through to the
+        # quotes_full snapshot (honest Yahoo regularMarketTime) is strictly more
+        # truthful, and this request already armed the subscribe, so the NEXT ask gets
+        # real delayed bars.
+        if row.get("market") == "us" and not row.get("regularSessionDate"):
+            raise ValueError("hub cold placeholder")
+        # Hub ts is epoch SECONDS (the quotes_full leg below is milliseconds).
+        ts_s = row.get("ts")
+        as_of = None
+        if isinstance(ts_s, (int, float)) and not isinstance(ts_s, bool) and ts_s > 0:
+            as_of = datetime.fromtimestamp(ts_s, tz=timezone.utc).isoformat(timespec="seconds")
+        out = {
+            "symbol": symbol,
+            "price": row.get("last"),
+            "prev_close": row.get("prevClose"),
+            "change_pct": row.get("chg"),
+            "as_of": as_of or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "live": row.get("live"),
+            "source": "terminal_hub",
+        }
+        # Same plain-word delay vocabulary as the quotes_full leg below: the
+        # model-visible payload gets a number it can verbalize ("about 15 minutes
+        # delayed"), never the raw basis slug ("DELAYED_15M" is banned vocab).
+        basis = str(row.get("basis") or "")
+        basis_delay = re.search(r"(\d+)", basis)
+        if basis.upper().startswith("DELAYED") and basis_delay:
+            out["delayed_min"] = int(basis_delay.group(1))
+        return {k: v for k, v in out.items() if v is not None}
     except Exception:  # noqa: BLE001
         pass
 
-    # 2. manifest.json fallback
+    # 2. VPS live-plane full snapshot (~2,100 symbols, refreshed ~every 5 min by the
+    #    macro-live snapshot lane via scripts/build_live_quotes.py).
+    #    WHY a local file read and not an HTTP fetch: the served site/live/quotes.json
+    #    at step 4 is the 34-symbol DISPLAY set; the full universe is deliberately NOT
+    #    web-addressable and lives root-side in the state dir. This gateway runs
+    #    root-side (macro-api.service), so it reads the file directly — that is what
+    #    gives the instant-fact lane and the deep loop single-stock coverage on the VPS.
+    full_env = os.environ.get("MACRO_QUOTES_FULL_PATH")
+    quotes_full_path = (
+        Path(full_env) if full_env
+        else Path(os.environ.get("MACRO_LIVE_STATE_DIR", "/var/lib/macro-live/state"))
+        / "quotes_full.json"
+    )
+    try:
+        if quotes_full_path.exists():
+            snap = json.loads(quotes_full_path.read_text(encoding="utf-8"))
+            row = (snap.get("quotes") or {}).get(symbol) or {}
+            if row.get("price") is not None:
+                # Per-quote ts (epoch ms) is the honest as-of; the snapshot's own asof
+                # only says when the batch was written.
+                as_of = None
+                ts_ms = row.get("ts")
+                if isinstance(ts_ms, (int, float)) and not isinstance(ts_ms, bool) and ts_ms > 0:
+                    as_of = datetime.fromtimestamp(
+                        ts_ms / 1000, tz=timezone.utc
+                    ).isoformat(timespec="seconds")
+                out = {
+                    "symbol": symbol,
+                    "price": row.get("price"),
+                    "prev_close": row.get("prevClose"),
+                    "change_pct": row.get("changePct"),
+                    "as_of": as_of or snap.get("asof"),
+                    "source": "live_plane_full",
+                }
+                delayed_min = (snap.get("meta") or {}).get("delayed_min")
+                if delayed_min:
+                    out["delayed_min"] = delayed_min
+                return {k: v for k, v in out.items() if v is not None}
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 3. manifest.json fallback
     manifest_path = terminal_data_dir / "manifest.json"
     try:
         if manifest_path.exists():
@@ -1695,7 +1779,7 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
     except Exception:  # noqa: BLE001
         pass
 
-    # 3. site/live/quotes.json fallback
+    # 4. site/live/quotes.json fallback
     quotes_path = root / "site" / "live" / "quotes.json"
     try:
         if quotes_path.exists():
