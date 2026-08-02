@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T10:02:27.656460+00:00",
-  "count": 586,
+  "generated_at": "2026-08-02T10:23:54.671780+00:00",
+  "count": 587,
   "institutions": [
     "Amova",
     "Apollo",
@@ -612,7 +612,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:27Z",
-      "summary_points": [],
+      "summary_points": [
+        "**AI Semiconductor Revenue Surge**: Projected $834bn annual revenue by 2026 (Semiconductors/Hardware Enablers outpacing Software), with memory producers' revenue revised up $174bn since ChatGPT, signaling structural growth acceleration.",
+        "**Taiwan Supply Chain Dominance**: Taiwan shipments up 72% since 2022 (AI hardware), US AI hardware net imports hit $55.7bn in May (Taiwan dominant), highlighting critical geopolitical supply chain dependency and risk.",
+        "**AI-Driven Labor Disruption**: 69% of executives cite AI as cause for layoffs (188,793 layoffs, May 2023–June 2026), with 32% expecting 3%+ workforce reduction, directly impacting sector valuations and operational planning.",
+        "**Sector-Specific Adoption Leaders**: Healthcare/Social Assistance firms show highest expected adoption surge (12-13pp in 6 months), while Utilities (+6.5%) and Educational Services (+5.5%) lead growth, enabling targeted sector allocation.",
+        "**Productivity Impact & Correlation**: 23% average productivity uplift (academic) vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -627,7 +633,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:22Z",
-      "summary_points": [],
+      "summary_points": [
+        "**KOSPI's Valuation Extremes**: NTM P/E at 4.7x (lowest since 2001), significantly below regional peers (India 20.7x, Taiwan 18.6x) and historical troughs (GFC P/E 9.4x), signaling severe undervaluation with 37.6% EPS growth potential.",
+        "**Foreign Flow Paradox**: Record single-day foreign inflow amid year-to-date outflows; foreign ownership light (49.4% semiconductor ownership), with persistent net outflows (-1,689 bn KRW) despite recent inflows.",
+        "**Leverage Reduction**: Leveraged ETF AUM halved to $26bn (from $53bn peak), margin loans declined to $22bn, indicating reduced market leverage and lower speculative risk.",
+        "**Sector Divergence**: Tech sector up 114.5% YTD (driving +56.5% KOSPI YTD) vs.",
+        "Construction down 13.5% and Telecom/Utilities facing negative EPS revisions (-25%/-28%)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -642,7 +654,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:17Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Korea's $5.2bn inflow**: Record foreign buying driven by tech rebound, offsetting regional outflows and signaling strong sector interest despite broader EM de-risking.",
+        "**EM ex-China outflows surge**: $177bn cumulative FII outflows in 2026 (Taiwan -$2.6bn, Korea -$101bn), indicating heightened regional risk and policy-driven capital flight.",
+        "**Japan vs Korea divergence**: Japan emerges as top Asia FII buyer (+$68bn), contrasting Korea’s heavy selling (-$101bn), highlighting geopolitical fragmentation and divergent market flows.",
+        "**Southbound flow deceleration**: Sharp decline in net buying ($2.38bn vs 52-wk avg $224m), signaling potential short-term rotation amid sustained growth since 2014.",
+        "**China active/passive shift**: Net positive flows (+$16bn) driven by active inflows (+$4.1bn) offsetting passive outflows (-$18.1bn), revealing strategic allocation shifts."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -657,11 +675,37 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:12:12Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Hardwood Pricing Weakness**: Sellers cut prices to $560/t (July), with incremental sales at $550/t due to excess supply; RISI’s fixed $550/t pricing (3-month term) signals weak market fundamentals, compounded by new Chinese mills and weak paper pricing limiting buyer appetite.",
+        "**China Price Declines & Margin Compression**: Hardwood re-sale down $2/t to $567 and softwood domestic prices down RMB 13-22/t; combined with APP’s higher EBITDA break-even vs Brazil, creates direct margin compression risk.",
+        "**Brazilian Tariff Policy Shift**: Paper producers seek 16%→30% tariff hike amid 160% import surge (H2 2026 vs prior year), posing critical policy risk to domestic competitiveness against Asian imports.",
+        "**Capex-Driven Cash Flow Strain**: APP’s Assets under Construction surge to $3.5B by 6M26, coinciding with peak 2024 investing cash flow; aggressive capacity build risks near-term profitability if demand lags."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5dtlj4raedp-598550",
+      "title": "The Flow Show Credibility, Intervention & Liquidation",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:08:25Z",
+      "summary_points": [
+        "**Geopolitical Intervention & AI Supremacy Risk**: US/Japan/Korea coordinated FX intervention to prevent JPY collapse and protect Korea/Taiwan stocks, directly countering China’s AI dominance threat—critical for regional equity positioning.",
+        "**BofA Bull & Bear Indicator at 9.4 (Sell Zone)**: Extreme bearish sentiment (down from 9.6) amid 81% hedge fund bullishness and 98% equity flow bullishness, signaling imminent risk asset correction.",
+        "**Semiconductor ETF Inflows Surge**: $53bn YTD inflows (SMH, SOXX) directly correlating with SOX index growth, driving sector momentum as primary capital allocation catalyst.",
+        "**Portfolio Strategy Shift**: Retreat from equities/tech into staples, REITs, small cap, biotech, and USD due to tightening financial conditions, \"no macro landing\" consensus, and fiscal policy focus.",
+        "**Overbought Correction Risks**: Oil (47.1% VTD), Commodities (Brent Crude 49.1% VTD), EM Equities (12.6% VTD), and Japan Equities (12.2% VTD) show overbought conditions with significant deviations from 200-day averages."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
@@ -672,7 +716,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:08:20Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Equity flow reversal**: Weekly equity flows surged to +$31.2bn (vs -$7.75bn prior), but 12-week moving average declined since Dec 2024, signaling short-term volatility amid potential trend reversal.",
+        "**Bond fund inflow slowdown**: US high-grade bond funds inflows weakened sharply ($0.19bn vs $1.23bn), while short-term HG inflows accelerated ($2.04bn vs $1.49bn), indicating shifting credit quality preferences.",
+        "**Fixed income dominance**: Fixed income led YTD flows (6.8% of AUM), with high-grade (6.7%) and munis (6.4%) outpacing equities (1.2%), reflecting strong investor preference for safer assets.",
+        "**Negative dealer inventories**: US issuer IG corporate bond inventories at -$6.4bn, signaling constrained liquidity and potential pricing pressure in fixed income markets.",
+        "**New issue underperformance**: Multiple IG corporate bonds (e.g., MBGGR) show negative break performance (-3, -2, -1), creating portfolio risk as new issue pricing underperformed secondary markets."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -687,7 +737,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:08:17Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Global Earnings Revision Ratio**: Near 5-year high (0.99), confirming strong earnings support; Semiconductors, Tech Hardware, and Energy lead sector performance.",
+        "**Geopolitical Risk Concentration**: Taiwan (59%) and Mexico (65%) highest news pulse, signaling acute US-China tensions and emerging market volatility requiring urgent risk assessment.",
+        "**Sector Rotation & Risk Divergence**: Germany’s Tech Hardware (-13.5%) highlights European tech vulnerability; Energy outperforms globally (Japan: +7.3%, Global avg: +3.6%), while Semiconductors surge YTD (+43.6%).",
+        "**Market Structure Shift**: ACWI underperforms equal-weighted short-term (last week: -0.3% vs.",
+        "+0.4%), but outperforms long-term (YTD: +9.0% vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -702,7 +758,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:08:01Z",
-      "summary_points": [],
+      "summary_points": [
+        "**IG Supply Surge & M&A Pipeline**: August supply at $140bn (highest since 2020), with H2 2026 supply projected at $196bn driven by M&A (Health Care/F&B sectors), creating significant supply pressure and underweight rationale.",
+        "**2Q Earnings Beat & Revenue Strength**: Core US IG issuers (+17% YoY earnings, +8.3% above expectations; +2.1% revenue surprise), signaling robust fundamentals amid muted market reaction to positive surprises.",
+        "**IG Fund/ETF Inflows Collapse**: Daily inflows plummeted from $3bn to $1bn in July, reflecting weakening demand and critical flow deterioration for portfolio positioning.",
+        "**AI Supply Decline & Technical Weakness**: AI-related supply fell to $37bn (July vs $54bn June), while net IG supply turned negative (-$17bn July vs +$63bn June), indicating reduced demand and technical stress.",
+        "**Geopolitical & Policy Risks**: IG spreads widened +3bps in July due to Fed uncertainty, Iran tensions, and AI profitability concerns, with FOMC \"hormetic stress\" partially offsetting supply pressures."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
