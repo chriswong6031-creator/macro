@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T17:03:19.907829+00:00",
-  "count": 607,
+  "generated_at": "2026-08-02T17:33:22.908303+00:00",
+  "count": 608,
   "institutions": [
     "Amova",
     "Apollo",
@@ -143,6 +143,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e6ywbs1jblw-bb70a0",
+      "title": "Weekly viewpoints",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:58:05Z",
+      "summary_points": [
+        "**European Bank Valuation**: 30% discount to market (avg P/E 10x), CET1 16%, LCR >150%, improving NIMs and 14% returns on capital driven by cost discipline and AI/security infrastructure investment.",
+        "**Oil-Geopolitics Reflexivity**: Oil price thresholds ($70-$100) directly trigger US-Iran conflict escalation/de-escalation, demonstrating market-driven political calculations critical for energy risk assessment.",
+        "**US Fed Policy Anchoring**: Hawkish inflation control stance (despite rate cut expectations) anchors bond markets, supported by 25%+ Q2 corporate earnings growth, strong labor market, and bank profits.",
+        "**Debt-Servicing Cost Dynamics**: Rising US debt-servicing costs (>USD 1T annually) tighten monetary-fiscal interplay; 10-year yield relative to policy rate now critical for stabilizing government financing.",
+        "**Policy Rate Stabilizer Effect**: Higher policy rates curb long-term yield rises, reducing fiscal burden and stabilizing government budget financing amid elevated debt-servicing costs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
