@@ -330,7 +330,20 @@ def _loop_scripts() -> list[tuple[str, str]]:
         for job_name, job in doc["jobs"].items():
             for step in job.get("steps", []):
                 code = _code(step.get("run") or "")
-                if "pull --rebase --autostash" in code and re.search(
+                # TWO rebase spellings count, and both must, or this census goes
+                # blind: the original `git pull --rebase --autostash`, and the
+                # explicit `push_fetch_main_for_rebase` + `git rebase --autostash
+                # origin/main` form render.yml moved to so its untracked-collision
+                # sweep runs against the exact fetched tree. Matching only the
+                # first is not a narrower guard but a SILENT one — render.yml
+                # vanishes from by_job, every assertion below stops covering it,
+                # and the suite still reports green.
+                rebases_onto_main = (
+                    "pull --rebase --autostash" in code
+                    or ("push_fetch_main_for_rebase" in code
+                        and re.search(r"git rebase [^\n]*--autostash", code))
+                )
+                if rebases_onto_main and re.search(
                     r"^\s*git add [^\n]*\bsite/", code, re.M
                 ):
                     out.append((f"{wf_name}:{job_name}:{step.get('name')}", code))
