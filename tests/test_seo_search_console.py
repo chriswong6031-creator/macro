@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import types
 from datetime import date, timedelta
@@ -45,18 +46,26 @@ from engine.marketing.seo_search_console import (  # noqa: E402
     _core_inspect_urls,
     _DEFAULT_PROPERTY,
     _DAILY_FILE,
+    _describe_shape,
     _emit_index_annotations,
     _GAPS_FILE,
     _GAP_MAX_CTR,
     _GAP_MIN_IMPRESSIONS,
     _GAP_POS_HIGH,
     _GAP_POS_LOW,
+    _identity_for_disk,
+    _index_status_doc,
     _INDEX_STATUS_FILE,
+    _mask_email,
     _MAX_INSPECT_URLS,
     _PAGE_CAP_MONTHS,
+    _parse_sa_json,
     _print_index_summary,
+    _print_summary,
+    _redacted_for_disk,
     _SCORECARD_FILE,
     _STATE_FILE,
+    _validate_sa_info,
     collect_index_status,
     fetch_search_analytics,
     fetch_sitemaps,
@@ -64,6 +73,7 @@ from engine.marketing.seo_search_console import (  # noqa: E402
     inspect_urls,
     load_sa_info,
     run,
+    sa_identity,
 )
 
 # ---------------------------------------------------------------------------
@@ -81,6 +91,9 @@ _PRIVATE_KEY = (
     "-----END PRIVATE KEY-----\n"
 )
 _CLIENT_EMAIL = "mastermindx@mastermindx-503122.iam.gserviceaccount.com"
+_PROJECT_ID = "mastermindx-503122"
+#: What _CLIENT_EMAIL must look like once it reaches a COMMITTED artifact.
+_MASKED_EMAIL = "mas***@***.gserviceaccount.com"
 
 
 def _sa_info(**over) -> dict:
@@ -1213,9 +1226,12 @@ class TestLoadSaInfo:
 
         info, err = load_sa_info()
         assert info is None
+        # The innermost layer IS the key file here, so the fingerprint says so.
+        inner_len = len(json.dumps(_sa_info()))
         assert err == (
             "GSC_SA_JSON parsed to str after 2 unwraps — "
-            "the secret is multiply-encoded"
+            "the secret is multiply-encoded "
+            f"[inner payload: looks like a complete JSON object ({inner_len} chars)]"
         ), err
 
     def test_garbage_is_named_not_valid_json(self, monkeypatch):
@@ -1370,6 +1386,303 @@ class TestLoadSaInfo:
             assert "BEGIN PRIVATE KEY" not in emitted, (payload[:40], err)
 
 
+# ---------------------------------------------------------------------------
+# Tests: the payload SHAPE fingerprint
+#
+# Live run 30742044120 rejected the secret with only
+#   GSC_SA_JSON is multiply-encoded and the inner layer is not valid JSON:
+#   Expecting value: line 1 column 1 (char 0)
+# — which says the paste was a quoted string but not WHAT string.  Each wrong
+# operator guess costs a 30-60 min CI cycle, so the error now names the SHAPE
+# (category + character count) of what actually landed in the secret.  It must
+# NEVER name the content: the classifier returns literals and a len(), nothing
+# derived from the payload's bytes.
+# ---------------------------------------------------------------------------
+
+
+_LENGTH_SUFFIX_RE = re.compile(r" \((\d+) chars\)$")
+
+
+class TestDescribeShape:
+    """One test per category — each must be distinguishable from the others.
+
+    Every assertion here fails if its branch is deleted (the payload then falls
+    through to 'unrecognized text'), so none of them is vacuous.
+    """
+
+    def test_empty_string(self):
+        assert _describe_shape("") == "empty / whitespace-only (0 chars)"
+
+    def test_whitespace_only(self):
+        assert _describe_shape("  \n\t  ") == "empty / whitespace-only (0 chars)"
+
+    def test_email_is_named_actionably(self):
+        """The likeliest paste: the SA's own address instead of its key file."""
+        out = _describe_shape(_CLIENT_EMAIL)
+        assert out.startswith("looks like an email address — "), out
+        assert "paste the CONTENTS of the downloaded .json key file" in out, out
+        assert "not the service-account email" in out, out
+        assert out.endswith(f"({len(_CLIENT_EMAIL)} chars)"), out
+
+    def test_email_survives_surrounding_whitespace(self):
+        out = _describe_shape(f"  {_CLIENT_EMAIL}\n")
+        assert out.startswith("looks like an email address"), out
+
+    def test_prose_containing_an_at_sign_is_not_an_email(self):
+        """The regex anchors the WHOLE payload — a sentence must not match."""
+        out = _describe_shape("email me @ mastermindx@example.com please")
+        assert out == "unrecognized text (41 chars)", out
+
+    def test_bare_pem_is_named(self):
+        out = _describe_shape(_PRIVATE_KEY)
+        assert out.startswith("looks like a bare PEM private key — "), out
+        assert "not just the private_key field" in out, out
+
+    def test_absolute_path_is_named(self):
+        out = _describe_shape("/Users/chriswong/secrets/mastermindx-key.json")
+        assert out.startswith("looks like a FILE PATH — "), out
+        assert "must contain the file's CONTENTS" in out, out
+        assert "GOOGLE_APPLICATION_CREDENTIALS" in out, out
+
+    def test_home_relative_path_is_named(self):
+        out = _describe_shape("~/keys/sa.json")
+        assert out.startswith("looks like a FILE PATH"), out
+
+    def test_bare_json_basename_is_a_path(self):
+        out = _describe_shape("mastermindx-503122-a1b2c3d4.json")
+        assert out.startswith("looks like a FILE PATH"), out
+
+    def test_truncated_json_is_named(self):
+        payload = json.dumps(_sa_info())[:-4]
+        out = _describe_shape(payload)
+        assert out.startswith("looks like TRUNCATED JSON"), out
+        assert "the paste was cut off" in out, out
+        assert out.endswith(f"({len(payload)} chars)"), out
+
+    def test_complete_json_object_is_not_called_truncated(self):
+        payload = json.dumps(_sa_info())
+        assert _describe_shape(payload) == (
+            f"looks like a complete JSON object ({len(payload)} chars)"
+        )
+
+    def test_unrecognized_text(self):
+        assert _describe_shape("paste your key here") == "unrecognized text (19 chars)"
+
+    def test_length_reported_for_every_category(self):
+        payloads = [
+            "",
+            _CLIENT_EMAIL,
+            _PRIVATE_KEY,
+            "/etc/gsc/key.json",
+            json.dumps(_sa_info())[:-4],
+            json.dumps(_sa_info()),
+            "hello",
+        ]
+        for payload in payloads:
+            out = _describe_shape(payload)
+            hit = _LENGTH_SUFFIX_RE.search(out)
+            assert hit, f"no length in {out!r}"
+            assert int(hit.group(1)) == len(payload.strip()), out
+
+    def test_categories_are_mutually_distinguishable(self):
+        """A collapsed classifier (one label for everything) fails here."""
+        labels = {
+            _LENGTH_SUFFIX_RE.sub("", _describe_shape(p))
+            for p in (
+                "",
+                _CLIENT_EMAIL,
+                _PRIVATE_KEY,
+                "/etc/gsc/key.json",
+                json.dumps(_sa_info())[:-4],
+                json.dumps(_sa_info()),
+                "hello",
+            )
+        }
+        assert len(labels) == 7, labels
+
+
+class TestCredentialShapeHintInErrors:
+    """The fingerprint reaches the operator-facing error, outer AND inner layer."""
+
+    def test_quoted_email_reports_the_INNER_shape(self, monkeypatch):
+        """Exact reproduction of live run 30742044120's payload shape."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_CLIENT_EMAIL))
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err.startswith(
+            "GSC_SA_JSON is multiply-encoded and the inner layer is not valid JSON:"
+        ), err
+        assert "[inner payload: looks like an email address" in err, err
+        assert f"({len(_CLIENT_EMAIL)} chars)]" in err, err
+
+    def test_quoted_path_reports_the_INNER_shape(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps("/home/ci/gsc-key.json"))
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "[inner payload: looks like a FILE PATH" in err, err
+
+    def test_bare_email_reports_the_OUTER_shape(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", _CLIENT_EMAIL)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err.startswith("GSC_SA_JSON is not valid JSON:"), err
+        assert "[payload: looks like an email address" in err, err
+
+    def test_bare_pem_reports_the_OUTER_shape(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", _PRIVATE_KEY)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "[payload: looks like a bare PEM private key" in err, err
+
+    def test_truncated_paste_reports_the_OUTER_shape(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        payload = json.dumps(_sa_info())[:-4]
+        monkeypatch.setenv("GSC_SA_JSON", payload)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "[payload: looks like TRUNCATED JSON" in err, err
+        assert f"({len(payload)} chars)]" in err, err
+
+    def test_unrecognized_paste_still_reports_a_length(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", "paste the key here")
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "[payload: unrecognized text (18 chars)]" in err, err
+
+    def test_validate_error_carries_the_shape_too(self, monkeypatch):
+        """A 2300-char complete object with a missing key ≠ a 40-char paste."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        blob = _sa_info()
+        blob.pop("token_uri")
+        payload = json.dumps(blob)
+        monkeypatch.setenv("GSC_SA_JSON", payload)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "missing keys: token_uri" in err, err
+        assert err.endswith(
+            f"[payload: looks like a complete JSON object ({len(payload)} chars)]"
+        ), err
+
+    def test_wrong_type_error_carries_the_shape_too(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        payload = json.dumps(_sa_info(type="authorized_user"))
+        monkeypatch.setenv("GSC_SA_JSON", payload)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "type='authorized_user'" in err, err
+        assert "[payload: looks like a complete JSON object" in err, err
+
+    def test_file_source_gets_the_fingerprint_as_well(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        p = tmp_path / "wrong.json"
+        p.write_text(_CLIENT_EMAIL, encoding="utf-8")
+
+        info, err = load_sa_info(creds_path=p)
+        assert info is None
+        assert "[payload: looks like an email address" in err, err
+
+    def test_valid_double_encoded_still_loads_unchanged(self, monkeypatch):
+        """Non-regression for PR #4269 — the fingerprint must not gate success."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(json.dumps(_sa_info())))
+
+        info, err = load_sa_info()
+        assert err is None, f"double-encoded secret rejected: {err}"
+        assert info["client_email"] == _CLIENT_EMAIL
+        assert info["private_key"] == _PRIVATE_KEY
+
+    def test_valid_single_encoded_still_loads_unchanged(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info()))
+
+        info, err = load_sa_info()
+        assert err is None, err
+        assert info["type"] == "service_account"
+
+    def test_no_error_path_emits_any_20_char_window_of_the_key(
+        self, tmp_path, monkeypatch
+    ):
+        """SECURITY: sweep every path with a realistic PEM-shaped key present.
+
+        Substring-level, not sentinel-level: no 20-character window of the key
+        body may survive into any emitted string.
+        """
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        blob = _sa_info()
+        no_email = _sa_info()
+        no_email.pop("client_email")
+
+        windows = {
+            _PRIVATE_KEY[i:i + 20] for i in range(len(_PRIVATE_KEY) - 19)
+        }
+        assert len(windows) > 50, "fixture key too short to make this test mean much"
+
+        emitted: list[tuple[str, str]] = []
+
+        env_payloads = {
+            "valid": json.dumps(blob),
+            "double-encoded": json.dumps(json.dumps(blob)),
+            "triple-encoded": json.dumps(json.dumps(json.dumps(blob))),
+            "wrong-type": json.dumps(_sa_info(type="authorized_user")),
+            "missing-key": json.dumps(no_email),
+            "not-an-object": json.dumps([blob]),
+            "truncated": json.dumps(blob)[:-4],
+            "bare-pem": _PRIVATE_KEY,
+            "quoted-pem": json.dumps(_PRIVATE_KEY),
+            "key-only-object": '{"private_key": "'
+                               + _PRIVATE_KEY.replace("\n", "\\n") + '"}',
+            "pem-then-garbage": _PRIVATE_KEY + "\n{oops",
+        }
+        for name, payload in env_payloads.items():
+            monkeypatch.setenv("GSC_SA_JSON", payload)
+            _info, err = load_sa_info()
+            emitted.append((f"env:{name}", err or ""))
+
+        # File sources take a different branch of load_sa_info.
+        for name, body in (
+            ("file:bare-pem", _PRIVATE_KEY),
+            ("file:truncated", json.dumps(blob)[:-4]),
+            ("file:key-only", json.dumps({"private_key": _PRIVATE_KEY})),
+        ):
+            p = tmp_path / f"{name.split(':')[1]}.txt"
+            p.write_text(body, encoding="utf-8")
+            _info, err = load_sa_info(creds_path=p)
+            emitted.append((name, err or ""))
+
+        # And the three helpers directly, with key material in hand.
+        emitted.append(("shape:pem", _describe_shape(_PRIVATE_KEY)))
+        emitted.append(("shape:object", _describe_shape(json.dumps(blob))))
+        emitted.append(
+            ("parse:direct", _parse_sa_json(_PRIVATE_KEY, "GSC_SA_JSON")[1] or "")
+        )
+        emitted.append((
+            "validate:direct",
+            _validate_sa_info(no_email, "GSC_SA_JSON", raw=json.dumps(blob)) or "",
+        ))
+
+        assert len([t for _, t in emitted if t]) >= 14, emitted
+
+        for label, text in emitted:
+            assert "NEVER_LEAK_THIS_STRING" not in text, (label, text)
+            assert "BEGIN PRIVATE KEY" not in text, (label, text)
+            for window in windows:
+                assert window not in text, (label, text)
+
+
 class TestBearerTokenFromInfo:
     def test_auth_failure_is_one_clean_scrubbed_line(self, monkeypatch):
         """A google.auth blow-up becomes one line, with key material removed."""
@@ -1478,9 +1791,11 @@ class TestStatusReasons:
         state = run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
 
         assert state["available"] is False
+        inner_len = len(json.dumps(_sa_info()))
         assert state["reason"] == (
             "GSC_SA_JSON parsed to str after 2 unwraps — "
-            "the secret is multiply-encoded"
+            "the secret is multiply-encoded "
+            f"[inner payload: looks like a complete JSON object ({inner_len} chars)]"
         )
         lines = _annotation_lines(capsys.readouterr().out)
         hit = [ln for ln in lines if "gsc-credentials-malformed" in ln]
@@ -1498,6 +1813,182 @@ class TestStatusReasons:
             ln for ln in _annotation_lines(capsys.readouterr().out)
             if "gsc-credentials-malformed" in ln
         ]
+
+
+# ---------------------------------------------------------------------------
+# Tests: the SA identity is PRINTED in full but COMMITTED masked
+#
+# This repository is PUBLIC and both search_console_state.json and
+# search_console_index_status.json are tracked files, so anything they carry is
+# permanent and world-readable.  They read `"service_account": {}` today only
+# because the credential is still broken — the masking has to land before the
+# secret is fixed, not after.  The operator still needs the full address on
+# stdout to resolve a 403, so the split is: full in memory + stdout, masked on
+# disk, at the write boundary.
+# ---------------------------------------------------------------------------
+
+
+def _artifact_texts(tmp_path) -> dict:
+    """Raw BYTES-as-text of every JSON artifact written under tmp_path."""
+    seo_dir = tmp_path / _ARTIFACTS_REL
+    return {
+        name: (seo_dir / name).read_text(encoding="utf-8")
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE, _SCORECARD_FILE, _GAPS_FILE)
+        if (seo_dir / name).exists()
+    }
+
+
+class TestMaskEmail:
+    def test_service_account_address_shape(self):
+        assert _mask_email(_CLIENT_EMAIL) == _MASKED_EMAIL
+
+    def test_local_part_is_not_reconstructible(self):
+        out = _mask_email(_CLIENT_EMAIL)
+        assert _CLIENT_EMAIL.split("@")[0] not in out
+        assert _PROJECT_ID not in out
+        assert out.startswith("mas***@")
+
+    def test_two_label_domain_kept_whole(self):
+        assert _mask_email("someone@example.com") == "som***@example.com"
+
+    def test_non_email_never_echoed(self):
+        assert _mask_email("not-an-address") == "***"
+        assert _mask_email("") == "***"
+        assert _mask_email(None) == "***"  # type: ignore[arg-type]
+
+
+class TestIdentityForDisk:
+    def test_project_id_is_dropped_entirely(self):
+        out = _identity_for_disk(sa_identity(_sa_info()))
+        assert "project_id" not in out
+        assert out == {"client_email": _MASKED_EMAIL}
+
+    def test_client_email_key_survives_for_readers(self):
+        assert "client_email" in _identity_for_disk(sa_identity(_sa_info()))
+
+    def test_empty_identity_stays_empty(self):
+        assert _identity_for_disk({}) == {}
+        assert _identity_for_disk(None) == {}
+
+
+class TestIdentityRedactedOnDisk:
+    def _run_success(self, tmp_path, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        _stub_index_endpoints(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": [_make_api_row()]},
+        )
+        creds_file = _write_creds(tmp_path)
+        return run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                   write=True, pace_s=0)
+
+    def test_success_run_commits_no_full_email_and_no_project_id(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """THE gate: assert on the file bytes, not the in-memory dict."""
+        state = self._run_success(tmp_path, monkeypatch)
+        capsys.readouterr()  # drop the annotation noise
+
+        texts = _artifact_texts(tmp_path)
+        assert _STATE_FILE in texts and _INDEX_STATUS_FILE in texts
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, f"{name} committed the full address"
+            assert _PROJECT_ID not in text, f"{name} committed the project id"
+
+        # ...and the masked form IS there, in both identity-carrying artifacts.
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE):
+            doc = json.loads(texts[name])
+            assert doc["service_account"] == {"client_email": _MASKED_EMAIL}, name
+
+        # STDOUT is unchanged: the operator still gets the full address.
+        _print_summary(state, tmp_path / _ARTIFACTS_REL)
+        out = capsys.readouterr().out
+        assert _CLIENT_EMAIL in out, "operator lost the address they need for a 403"
+
+    def test_in_memory_doc_is_not_aliased_by_the_write(
+        self, tmp_path, monkeypatch
+    ):
+        """The returned state keeps FULL values after the masked write."""
+        state = self._run_success(tmp_path, monkeypatch)
+
+        assert state["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert state["service_account"]["project_id"] == _PROJECT_ID
+        idx = state["index_status"]
+        assert idx["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert idx["service_account"]["project_id"] == _PROJECT_ID
+
+    def test_redactor_copies_instead_of_mutating(self):
+        """No-alias at every depth — the caller's dict must survive intact."""
+        doc = _index_status_doc(
+            as_of_iso="2026-07-20", prop=_DEFAULT_PROPERTY, available=False,
+            reason=f"service account {_CLIENT_EMAIL} lacks access",
+            sitemaps={"sitemaps": [{"path": f"{_PROJECT_ID}.xml"}],
+                      "never_downloaded": [], "count": 1},
+            urls=[{"url": "u1", "error": f"denied for {_CLIENT_EMAIL}"}],
+            identity=sa_identity(_sa_info()),
+        )
+        before = json.dumps(doc, sort_keys=True)
+
+        out = _redacted_for_disk(doc)
+
+        assert json.dumps(doc, sort_keys=True) == before, "caller's doc mutated"
+        assert doc["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert out is not doc
+        assert out["service_account"] is not doc["service_account"]
+        assert out["sitemaps"] is not doc["sitemaps"]
+        assert out["urls"] is not doc["urls"]
+        assert out["urls"][0] is not doc["urls"][0]
+
+    def test_403_reason_is_masked_on_disk_but_full_on_stdout(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """The reason string EMBEDS the address — masking only the identity
+        block would leak it right back on the likeliest failure there is."""
+        state = _run_with_status(tmp_path, monkeypatch, 403)
+
+        # In memory + annotation: full address, unchanged.
+        assert _CLIENT_EMAIL in state["reason"]
+        hit = [ln for ln in _annotation_lines(capsys.readouterr().out)
+               if "gsc-no-access" in ln]
+        assert hit and _CLIENT_EMAIL in hit[0]
+
+        # On disk: not a trace of it, in either artifact.
+        texts = _artifact_texts(tmp_path)
+        assert _STATE_FILE in texts and _INDEX_STATUS_FILE in texts
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, f"{name} leaked the address"
+            assert _PROJECT_ID not in text, f"{name} leaked the project id"
+        on_disk = json.loads(texts[_STATE_FILE])
+        assert _MASKED_EMAIL in on_disk["reason"]
+        assert "add it as a user in Search Console" in on_disk["reason"]
+
+    @pytest.mark.parametrize("status", [401, 403, 404, 500])
+    def test_no_write_branch_commits_the_address(
+        self, tmp_path, monkeypatch, status, capsys
+    ):
+        _run_with_status(tmp_path, monkeypatch, status)
+        capsys.readouterr()
+        texts = _artifact_texts(tmp_path)
+        assert texts, "no artifacts written"
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, (status, name)
+            assert _PROJECT_ID not in text, (status, name)
+
+    def test_missing_credentials_branch_still_writes_the_key(
+        self, tmp_path, monkeypatch
+    ):
+        """No identity to mask, but the KEY must stay for downstream readers."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE):
+            doc = json.loads(_artifact_texts(tmp_path)[name])
+            assert doc["service_account"] == {}, name
 
 
 # ---------------------------------------------------------------------------
@@ -1838,7 +2329,10 @@ class TestIndexStatusArtifact:
         assert doc["as_of"] == "2026-07-20"
         assert doc["available"] is True
         assert doc["property"] == _DEFAULT_PROPERTY
-        assert doc["service_account"]["client_email"] == _CLIENT_EMAIL
+        # PUBLIC repo: the artifact is committed, so the address is MASKED on
+        # disk (full value stays in memory and on stdout — see
+        # TestIdentityRedactedOnDisk).
+        assert doc["service_account"]["client_email"] == _MASKED_EMAIL
         assert doc["sitemaps"]["count"] == 2
         assert doc["sitemaps"]["never_downloaded"] == [
             "https://www.mastermind-x.com/news-sitemap.xml"

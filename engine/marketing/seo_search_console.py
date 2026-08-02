@@ -32,7 +32,10 @@ quote-wrapped, i.e. ``json.dumps`` applied twice).  google-auth's
 ``from_service_account_file`` does ``json.load(f)`` then ``.keys()`` on the
 result, so a double-encoded blob crashes with the opaque
 ``'str' object has no attribute 'keys'``.  ``load_sa_info`` unwraps up to two
-layers of string encoding and, past that, says exactly what is wrong.
+layers of string encoding and, past that, says exactly what is wrong — including
+a content-free SHAPE fingerprint of the rejected payload (``_describe_shape``:
+category label + character count, never the payload) so the operator does not
+spend a 30-60 min CI cycle per guess about what they actually pasted.
 
 CLI:
   python -m engine.marketing.seo_search_console --root . [--days 28] [--dry-run]
@@ -43,8 +46,13 @@ Soft-import: if not installed, writes unavailable state with reason.
 
 SECURITY: ``private_key`` (and any other key material) is NEVER logged, never
 printed, never returned in an error string, never written to any artifact — not
-even truncated.  ``client_email`` and ``project_id`` ARE surfaced on purpose:
-the operator needs them to know which service account to grant GSC access to.
+even truncated.  ``client_email`` and ``project_id`` ARE surfaced on STDOUT on
+purpose: the operator needs them to know which service account to grant GSC
+access to.  They are NOT written to disk unmasked — this repository is PUBLIC
+and both JSON artifacts are committed, so ``_redacted_for_disk`` masks the
+address (``mas***@***.gserviceaccount.com``) and drops ``project_id`` at every
+write of those two docs, including where the 403 reason string embeds the
+address.  The in-memory doc keeps the full values for the printed summary.
 """
 from __future__ import annotations
 
@@ -222,6 +230,60 @@ def _one_line(text: str, limit: int = 300) -> str:
     return flat[:limit]
 
 
+#: A whole payload that matches this (after strip) is an ADDRESS, not a key file.
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
+#: A single-line ``*.json`` value carrying no brace is a PATH, not file contents.
+_JSON_PATH_RE = re.compile(r"^[^\n\r{}]{1,255}\.json$", re.IGNORECASE)
+
+
+def _describe_shape(text: str) -> str:
+    """Classify a REJECTED credential payload without ever echoing it.
+
+    Every failed operator guess costs a full CI cycle (run 30742044120 burned one
+    on ``the inner layer is not valid JSON: Expecting value: line 1 column 1``,
+    which says the paste was *a quoted string* but not WHAT string), so a parse
+    error has to name the SHAPE of what was actually pasted.
+
+    Returns a fixed category label plus the payload LENGTH in characters (a
+    40-char value is obviously not a key file; a real one is ~2300+).  First
+    match wins.
+
+    SECURITY: the return value is built from literals and ``len()`` only — it can
+    never contain the payload, a substring of it, or one byte of ``private_key``.
+    The payload is inspected, never logged.  Length is measured after stripping
+    surrounding whitespace, i.e. on the same text the parser saw.
+    """
+    s = str(text).strip()
+    n = len(s)
+    if not s:
+        return "empty / whitespace-only (0 chars)"
+    if _EMAIL_RE.match(s):
+        label = (
+            "looks like an email address — paste the CONTENTS of the downloaded "
+            ".json key file, not the service-account email"
+        )
+    elif s.startswith("-----BEGIN"):
+        label = (
+            "looks like a bare PEM private key — the secret must be the whole "
+            ".json key file, not just the private_key field"
+        )
+    elif s.startswith("/") or s.startswith("~/") or _JSON_PATH_RE.match(s):
+        label = (
+            "looks like a FILE PATH — GSC_SA_JSON must contain the file's "
+            "CONTENTS; use GOOGLE_APPLICATION_CREDENTIALS for a path"
+        )
+    elif s.startswith("{") and not s.endswith("}"):
+        label = (
+            "looks like TRUNCATED JSON (starts with '{' but does not end with "
+            "'}') — the paste was cut off"
+        )
+    elif s.startswith("{"):
+        label = "looks like a complete JSON object"
+    else:
+        label = "unrecognized text"
+    return f"{label} ({n} chars)"
+
+
 def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     """Parse a service-account JSON blob, tolerating a double-encoded secret.
 
@@ -231,6 +293,10 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     ``_MAX_JSON_UNWRAPS`` times, stopping as soon as the result is not a string.
     A double-encoded secret (the operator's actual failure) therefore just works;
     anything deeper is named rather than crashed on.
+
+    Every error string carries a ``_describe_shape`` fingerprint of the layer that
+    actually failed — the INNER layer past depth 0, because that is where a pasted
+    email address or file path lands once the outer quotes come off.
     """
     text = raw.strip().lstrip("﻿").strip()
     if not text:
@@ -241,19 +307,29 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
         try:
             obj = json.loads(obj)
         except (json.JSONDecodeError, TypeError, ValueError) as exc:
-            # Never echo the payload — JSONDecodeError only carries a position.
+            # Never echo the payload — JSONDecodeError only carries a position,
+            # and _describe_shape returns a category label + length, no content.
+            # `obj` still holds the layer that failed (the assignment never ran),
+            # so past depth 0 this fingerprints the INNER layer — where a pasted
+            # email or file path actually shows up.
+            layer = obj if isinstance(obj, str) else text
             if depth == 0:
-                return None, f"{source} is not valid JSON: {_one_line(exc, 120)}"
+                return None, (
+                    f"{source} is not valid JSON: {_one_line(exc, 120)} "
+                    f"[payload: {_describe_shape(layer)}]"
+                )
             return None, (
                 f"{source} is multiply-encoded and the inner layer is not valid "
-                f"JSON: {_one_line(exc, 120)}"
+                f"JSON: {_one_line(exc, 120)} "
+                f"[inner payload: {_describe_shape(layer)}]"
             )
         if not isinstance(obj, str):
             break
     else:
         return None, (
             f"{source} parsed to str after {_MAX_JSON_UNWRAPS} unwraps — "
-            f"the secret is multiply-encoded"
+            f"the secret is multiply-encoded "
+            f"[inner payload: {_describe_shape(obj)}]"
         )
 
     if not isinstance(obj, dict):
@@ -263,19 +339,30 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     return obj, None
 
 
-def _validate_sa_info(info: dict, source: str) -> str | None:
+def _validate_sa_info(
+    info: dict, source: str, raw: str | None = None
+) -> str | None:
     """Return a precise error string, or None when ``info`` is usable.
 
-    SECURITY: names the missing KEYS, never their values.
+    ``raw`` is the payload AS PASTED; when given, a content-free shape
+    fingerprint of it is appended so the operator sees the size and kind of what
+    landed in the secret alongside the field-level complaint.
+
+    SECURITY: names the missing KEYS, never their values; the fingerprint is a
+    category label plus a length (see ``_describe_shape``).
     """
+    hint = "" if raw is None else f" [payload: {_describe_shape(raw)}]"
     missing = [k for k in _SA_REQUIRED_KEYS if not str(info.get(k) or "").strip()]
     if missing:
-        return f"{source}: service-account JSON missing keys: {', '.join(missing)}"
+        return (
+            f"{source}: service-account JSON missing keys: "
+            f"{', '.join(missing)}{hint}"
+        )
     actual_type = str(info.get("type"))
     if actual_type != _SA_TYPE:
         return (
             f"{source}: service-account JSON has type={actual_type!r} — "
-            f"expected {_SA_TYPE!r}"
+            f"expected {_SA_TYPE!r}{hint}"
         )
     return None
 
@@ -340,14 +427,20 @@ def load_sa_info(
         return None, err
     assert info is not None  # narrowed by err is None
 
-    err = _validate_sa_info(info, source)
+    err = _validate_sa_info(info, source, raw=raw)
     if err is not None:
         return None, err
     return info, None
 
 
 def sa_identity(info: dict | None) -> dict:
-    """The non-secret identity fields, safe to print and to write to artifacts."""
+    """The non-secret identity fields — safe to PRINT, never to commit.
+
+    ``client_email`` is what the operator needs to fix a 403 (grant that address
+    access in the Search Console UI), so stdout carries it in full.  Disk is a
+    different question: this repo is PUBLIC, and both artifacts are committed —
+    see ``_redacted_for_disk``, which every write of those two docs goes through.
+    """
     if not info:
         return {}
     out = {}
@@ -355,6 +448,91 @@ def sa_identity(info: dict | None) -> dict:
         val = info.get(field)
         if isinstance(val, str) and val:
             out[field] = val
+    return out
+
+
+def _mask_email(email: str) -> str:
+    """``a@b.iam.gserviceaccount.com`` -> ``a***@***.gserviceaccount.com``.
+
+    Recognizable (the operator can tell it is THEIR service account, and that it
+    is a service account at all) but not harvestable — neither the local part nor
+    the project-bearing subdomain survives.
+    """
+    if not isinstance(email, str) or "@" not in email:
+        return "***"
+    local, _, domain = email.partition("@")
+    head = local[:3]
+    labels = domain.split(".")
+    tail = ".".join(labels[-2:]) if len(labels) > 2 else domain
+    prefix = "***." if len(labels) > 2 else ""
+    return f"{head}***@{prefix}{tail}"
+
+
+def _identity_for_disk(identity: dict | None) -> dict:
+    """The committable form of ``sa_identity``: masked email, no project_id.
+
+    ``project_id`` is dropped outright — it has no diagnostic use on disk and is
+    pure reconnaissance value in a public repo.  ``client_email`` keeps its KEY
+    so a reader indexing the block does not KeyError; only the value shrinks.
+    """
+    if not identity:
+        return {}
+    email = identity.get("client_email")
+    if isinstance(email, str) and email:
+        return {"client_email": _mask_email(email)}
+    return {}
+
+
+def _scrub_identity_strings(node: Any, subs: list[tuple[str, str]]) -> Any:
+    """Deep COPY of ``node`` with each ``(needle, mask)`` applied to every string."""
+    if isinstance(node, str):
+        out = node
+        for needle, mask in subs:
+            if needle in out:
+                out = out.replace(needle, mask)
+        return out
+    if isinstance(node, dict):
+        return {k: _scrub_identity_strings(v, subs) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_scrub_identity_strings(v, subs) for v in node]
+    return node
+
+
+def _redacted_for_disk(doc: dict) -> dict:
+    """A COPY of ``doc`` that is safe to commit to a PUBLIC repository.
+
+    ``search_console_state.json`` and ``search_console_index_status.json`` are
+    both tracked, so anything they carry is permanent and world-readable the
+    moment the nightly commits them.  Redaction lives HERE, at the write
+    boundary, not in ``sa_identity`` — the in-memory doc keeps the full address
+    so ``_print_summary`` and the 403 reason still name the account out loud.
+
+    Two surfaces, because masking only the identity block would be defeated by
+    the likeliest failure there is:
+      1. ``service_account`` -> ``_identity_for_disk`` (masked, project_id gone),
+      2. every other string in the doc has the same address (and the project id)
+         substituted out — the 403 reason embeds ``client_email`` verbatim, and
+         that reason is persisted to BOTH artifacts.
+
+    The result never aliases ``doc``: the caller's dict is untouched at any depth.
+    """
+    if not isinstance(doc, dict):
+        return doc
+    identity = doc.get("service_account")
+    identity = identity if isinstance(identity, dict) else {}
+
+    subs: list[tuple[str, str]] = []
+    email = identity.get("client_email")
+    if isinstance(email, str) and email:
+        subs.append((email, _mask_email(email)))
+    project = identity.get("project_id")
+    # After the email, never before: the project id is a SUBSTRING of it.
+    if isinstance(project, str) and project:
+        subs.append((project, "***"))
+
+    out = _scrub_identity_strings(doc, subs)
+    if "service_account" in doc:
+        out["service_account"] = _identity_for_disk(identity)
     return out
 
 
@@ -1293,9 +1471,10 @@ def run(
         """
         state["index_status"] = idx_doc
         if write:
+            # PUBLIC repo: both of these are committed — mask at the boundary.
             for path, obj in (
-                (seo_dir / _STATE_FILE, _state_for_disk(state)),
-                (seo_dir / _INDEX_STATUS_FILE, idx_doc),
+                (seo_dir / _STATE_FILE, _redacted_for_disk(_state_for_disk(state))),
+                (seo_dir / _INDEX_STATUS_FILE, _redacted_for_disk(idx_doc)),
             ):
                 try:
                     _write_json_atomic(path, obj)
@@ -1400,11 +1579,17 @@ def run(
 
     if write:
         try:
-            # 1. State file (always first).
-            _write_json_atomic(seo_dir / _STATE_FILE, _state_for_disk(state))
+            # 1. State file (always first).  PUBLIC repo: both this and the
+            #    index-status doc are committed — mask the SA identity here.
+            _write_json_atomic(
+                seo_dir / _STATE_FILE,
+                _redacted_for_disk(_state_for_disk(state)),
+            )
 
             # 2. Index-status diagnostics.
-            _write_json_atomic(seo_dir / _INDEX_STATUS_FILE, idx_doc)
+            _write_json_atomic(
+                seo_dir / _INDEX_STATUS_FILE, _redacted_for_disk(idx_doc)
+            )
 
             # 3. Parquet: append-dedupe.
             cutoff = as_of - timedelta(days=_PAGE_CAP_MONTHS * 30)
