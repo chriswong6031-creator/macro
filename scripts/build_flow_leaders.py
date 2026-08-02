@@ -1027,7 +1027,7 @@ def build(
     board_b_rows.sort(key=_board_b_sort_key)
 
     # ── Board totals — EVERY qualifying row ships (OIP W1.6-A, spec §2.4) ─────
-    # The former `_BOARD_CAP = 25` slice is gone.  Both boards are already sorted
+    # The former top-25 board slice is gone.  Both boards are already sorted
     # (A: recurrence then net_prem_norm_abs desc; B: days_since_inflection asc,
     # nulls last) and the workspace's Leaders mode now renders top-12 with a
     # "Show all N" expander over the SAME client-side array — so a cap here would
