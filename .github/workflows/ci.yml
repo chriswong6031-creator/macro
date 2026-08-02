@@ -2049,6 +2049,21 @@ on:
       - "scripts/collect_zori.py"
       - "scripts/fetch_earnings_scores.py"
       - "scripts/publish_earnings_r2.py"
+      # Company Intelligence is an immutable R2 projection over the earnings
+      # history and Terminal transcript marker. Its focused contract and
+      # refresh tests run in the publish-r2-client pack; list every source and
+      # test half so a workflow-only/test-only edit cannot evade that proof.
+      - "engine/company_intelligence/**"
+      - "engine/earnings_transcript_intake.py"
+      - "scripts/build_company_intelligence.py"
+      - "scripts/publish_company_intelligence_r2.py"
+      - "scripts/refresh_company_intelligence.py"
+      - ".github/workflows/company-intelligence.yml"
+      - "tests/test_company_intelligence_contracts.py"
+      - "tests/test_company_intelligence_views.py"
+      - "tests/test_company_intelligence_health.py"
+      - "tests/test_publish_company_intelligence_r2.py"
+      - "tests/test_company_intelligence_refresh.py"
       # unrun-russell-breadth
       - "tests/test_russell_breadth.py"
       # unrun-brain-gateway
