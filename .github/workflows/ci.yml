@@ -2327,6 +2327,7 @@ on:
       - "tests/test_seo_foundation.py"
       - "tests/test_signal_contracts_wiring.py"
       - "tests/test_signal_sanity.py"
+      - "tests/test_ticker_dossier_render_lane.py"
       - "tests/test_ticker_pages.py"
       - "tests/test_ts_u1_session_date.py"
       - "tests/test_w4_pit_fixes.py"

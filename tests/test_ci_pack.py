@@ -189,6 +189,7 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
         "scripts/build_earnings_public_wire.py",
         "templates/earnings_wire/**",
         "tests/test_earnings_public_wire.py",
+        "tests/test_ticker_dossier_render_lane.py",
     }
     assert required_paths <= paths
 
@@ -206,6 +207,7 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     )
     publish_ops = job_commands("unrun-publish-ops")
     assert "tests/test_earnings_public_wire.py" in publish_ops
+    assert "tests/test_ticker_dossier_render_lane.py" in publish_ops
     assert "tests/test_ticker_pages.py" in publish_ops
 
 
