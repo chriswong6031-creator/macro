@@ -28,18 +28,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets")
 
 
-def _build_government_revenue_workbench() -> bool:
-    """Run the additive desk builder and make its failure observable."""
-    try:
-        from scripts.build_government_revenue import build as build_government_revenue
-
-        build_government_revenue(config.ROOT)
-        return True
-    except Exception as exc:  # noqa: BLE001 — additive desk never sinks baskets
-        log.error("government revenue workbench (via build_baskets) failed: %s", exc)
-        return False
-
-
 def _check_basket_store_staleness(data: dict) -> None:
     """Emit a GitHub Actions warning (and an ops alert if available) when the basket
     price store is older than the last completed NYSE session.
@@ -403,13 +391,6 @@ def main() -> int:
         _build_anticipation()                             # anticipation.html + per-ticker cones
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("anticipation page (via build_baskets) failed: %s", e)
-
-    # Vertical Intelligence Workbench: official procurement facts mapped to
-    # public-company revenue context.  It rides the existing baskets render lane
-    # so daily, closing-bell, and express renders all refresh the standalone desk
-    # without adding another workflow process.  The builder is deterministic and
-    # fail-soft; missing award/action detail preserves the aggregate velocity view.
-    _build_government_revenue_workbench()
 
     # W3.8 — FREEZE US basket levels + membership hashes (append-only, PIT).
     # Runs AFTER compute_baskets() and the chart pop, so both `data` (BASKETS metadata)

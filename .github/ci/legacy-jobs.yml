@@ -3378,7 +3378,14 @@ jobs:
       - name: prove boto3 is present (a silent re-skip is the regression)
         run: python -c "import boto3, botocore"
       - name: R2 publish client + transport tests (boto3 tests execute here)
-        run: python -m pytest tests/test_publish_r2.py -q -rs
+        run: >-
+          python -m pytest
+          tests/test_publish_r2.py
+          tests/test_company_intelligence_contracts.py
+          tests/test_company_intelligence_views.py
+          tests/test_company_intelligence_health.py
+          tests/test_publish_company_intelligence_r2.py
+          tests/test_company_intelligence_refresh.py -q -rs
 
   chart-render:
     if: ${{ false }}

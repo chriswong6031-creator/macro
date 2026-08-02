@@ -191,6 +191,7 @@ def all_adapters() -> dict:
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
+        ("sam_gov_opportunities", "collectors.sam_gov", "SamGovOpportunitiesAdapter"),  # Government Revenue Foresight: normalized active/archive notice + amendment/document evidence ledgers; GATED on SAM_API_KEY
         ("federal_register", "collectors.federal_register", "FederalRegisterAdapter"),  # Federal Register policy-doc velocity (keyless; two-stage AGENCY-SLUG x TERM filter; theme_event radar leg); degrades gracefully when absent
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("imf_weo", "collectors.imf_weo", "ImfWeoAdapter"),         # IRD-W1: IMF WEO DataMapper — annual debt/primary-balance/CA fundamentals (keyless; US shard)
@@ -360,7 +361,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "finnhub_transcripts",   # altdata-W1: transcript metadata catalog (same-day; plan-gated no-op on free tier)
     "stocktwits",            # altdata-W1: public bullish/bearish ratios + watchlist_count (keyless)
     "google_trends",         # SGA-W4: pytrends weekly relative search-interest (rotating ~20/night; 'blocked' when pytrends absent)
-    "polygon_news", "github_repos", "sam_gov", "usaspending", "usaspending_awards", "prediction_markets",
+    "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
 }
@@ -484,6 +485,8 @@ def main() -> int:
                     help="run ONLY collectors in this named shard group (asia|crypto|slow|us)")
     ap.add_argument("--exclude-group", default="",
                     help="run everything EXCEPT collectors in this named shard group")
+    ap.add_argument("--exclude", default="",
+                    help="comma-separated collector names to omit from this run")
     ap.add_argument("--skip-quality", action="store_true",
                     help="skip the end-of-collection data-quality audit gate")
     ap.add_argument("--skip-shadow-importance", action="store_true",
@@ -502,8 +505,12 @@ def main() -> int:
     if args.exclude_group:
         drop = group_members(args.exclude_group, registry)
         registry = {k: v for k, v in registry.items() if k not in drop}
+    if args.exclude:
+        drop = {name.strip() for name in args.exclude.split(",") if name.strip()}
+        registry = {k: v for k, v in registry.items() if k not in drop}
     log.info("collect scope: %d adapters%s", len(registry),
-             f" (group={args.group or '-'} exclude={args.exclude_group or '-'} only={args.only or '-'})")
+             f" (group={args.group or '-'} exclude_group={args.exclude_group or '-'} "
+             f"exclude={args.exclude or '-'} only={args.only or '-'})")
 
     # US-scope post-collect tail gate (2026-07-11 asia-lane runtime diet; #2193 timeout
     # incident). The basket/index-universe refreshes, Finviz classifications, Polygon

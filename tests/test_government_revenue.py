@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from engine.government_revenue import build_payload, load_latest_payload, ticker_context
+from engine.government_revenue.metrics import _awards_point_in_time, _filter_point_in_time
 
 
 def _fixture_root(tmp_path):
@@ -158,6 +159,17 @@ def test_payload_metrics_are_lag_aware_and_deterministic(tmp_path):
     assert "FUTURE" not in {x["action_id"] for x in company["recent_actions"]}
     assert payload["freshness"]["status"] == "partial"
     assert payload["freshness"]["award_detail"]["status"] == "unavailable"
+    assert company["confidence"]["level"] == "medium"
+    assert company["confidence"]["uncapped_level"] == "high"
+    assert company["confidence"]["bounded_sample"] is True
+    expiry_event = next(
+        row for row in payload["procurement_workspace"]["events"]
+        if row["kind"] == "recompete" and row["primary_ticker"] == "LMT"
+    )
+    link = expiry_event["listed_company_impacts"][0]["cross_desk_links"][0]
+    assert link["contract"] == "vertical_link.v1"
+    assert link["href"] == "fundamental_forensics.html?symbol=LMT"
+    assert link["available"] is True
 
 
 def test_catalyst_and_provenance_contracts_are_generic_context_only(tmp_path):
@@ -167,7 +179,12 @@ def test_catalyst_and_provenance_contracts_are_generic_context_only(tmp_path):
     for fact in company["catalyst_facts"]:
         assert fact["contract"] == "vertical_catalyst_fact.v1"
         assert fact["entity_id"] == "LMT"
-        assert fact["classification"] == "observed_fact"
+        expected_class = (
+            "derived_deterministic"
+            if fact["kind"] == "recompete_window"
+            else "observed_fact"
+        )
+        assert fact["classification"] == expected_class
         assert fact["evidence_refs"]
         assert fact["authority"]["can_originate_signal"] is False
         assert fact["authority"]["can_rank"] is False
@@ -193,6 +210,7 @@ def test_ticker_context_is_tiny_authority_safe_bridge(tmp_path):
         "can_escalate": False,
     }
     assert context["provenance"]
+    assert context["opportunity_candidates"] == []
     assert ticker_context(payload, "MISSING") is None
 
 
@@ -265,6 +283,52 @@ def test_historical_snapshot_nulls_do_not_leak_later_ceiling_enrichment(tmp_path
     assert company["awards"][0]["program"] is None
 
 
+def test_historical_detail_requires_visibility_and_effective_clocks():
+    cutoff = pd.Timestamp("2026-08-01T23:59:59.999999Z")
+
+    # A legacy frame without an immutable observation clock cannot be replayed
+    # honestly, even when its effective date happens to precede the request.
+    assert _filter_point_in_time(
+        pd.DataFrame([{"ticker": "LMT", "effective_at": "2026-07-01T00:00:00Z"}]),
+        cutoff,
+        cutoff,
+    ).empty
+    # Likewise, a known row without an event/action clock has no PIT location.
+    assert _filter_point_in_time(
+        pd.DataFrame([{"ticker": "LMT", "known_at": "2026-07-01T00:00:00Z"}]),
+        cutoff,
+        cutoff,
+    ).empty
+
+    awards = pd.DataFrame([{
+        "ticker": "LMT",
+        "award_id": "A1",
+        "generated_award_id": "CONT_AWD_A1",
+        "first_seen_at": "2026-07-01T00:00:00Z",
+        "known_at": "2026-07-01T00:00:00Z",
+        "effective_at": "2026-07-01T00:00:00Z",
+        # This is the mutable latest row.  It cannot become historical state
+        # merely because the only snapshot sits beyond the effective cutoff.
+        "total_obligated": 999.0,
+    }])
+    future_effective_snapshot = pd.DataFrame([{
+        "ticker": "LMT",
+        "award_id": "A1",
+        "generated_award_id": "CONT_AWD_A1",
+        "known_at": "2026-07-15T00:00:00Z",
+        "effective_at": "2026-09-01T00:00:00Z",
+        "total_obligated": 999.0,
+    }])
+    visible = _awards_point_in_time(
+        awards,
+        future_effective_snapshot,
+        cutoff,
+        cutoff,
+    )
+
+    assert visible.empty
+
+
 def test_ingest_freshness_separates_aggregate_detail_and_action_health(tmp_path):
     root = _fixture_root(tmp_path)
     status_path = root / "data" / "government_revenue" / "ingest_status.json"
@@ -291,6 +355,83 @@ def test_ingest_freshness_separates_aggregate_detail_and_action_health(tmp_path)
     partial = build_payload(root, as_of="2026-08-01")
     assert partial["freshness"]["status"] == "partial"
     assert partial["freshness"]["award_detail"]["status"] == "partial"
+    assert partial["freshness"]["actions"]["status"] == "partial"
+
+
+def test_ingest_freshness_consumes_v2_rail_denominators_without_corpus_overclaim(tmp_path):
+    root = _fixture_root(tmp_path)
+    status_path = root / "data" / "government_revenue" / "ingest_status.json"
+    status = {
+        "schema_version": "government_revenue.ingest_status.v2",
+        "observed_at": "2026-08-01T12:00:00+00:00",
+        "entities_requested": 2,
+        "awards_seen": 2,
+        "awards_total": 2,
+        "actions_seen": 3,
+        "actions_total": 3,
+        "errors": [],
+        "rails": {
+            "awards": {
+                "state": "complete",
+                "last_successful_observed_at": "2026-08-01T12:00:00+00:00",
+                "pages": {"requested": 2, "succeeded": 2},
+                "denominators": {"entities_requested": 2, "queries_complete": 2},
+                "completeness": {
+                    "state": "complete",
+                    "full_usaspending_corpus": False,
+                    "scope": "recipient-query contract awards in the configured time window only",
+                },
+                "response_receipts": 2,
+            },
+            "award_detail": {
+                "state": "complete",
+                "last_successful_observed_at": "2026-08-01T12:00:00+00:00",
+                "pages": {"requested": 2, "succeeded": 2},
+                "denominators": {"candidate_awards": 2, "succeeded": 2},
+                "completeness": {
+                    "state": "complete",
+                    "full_usaspending_corpus": False,
+                    "scope": "bounded top-award detail sample",
+                },
+                "response_receipts": 2,
+            },
+            "actions": {
+                "state": "complete",
+                "last_successful_observed_at": "2026-08-01T12:00:00+00:00",
+                "pages": {"requested": 3, "succeeded": 3, "unresolved_has_next_awards": 0},
+                "denominators": {"sampled_awards": 2, "queries_complete": 2},
+                "completeness": {
+                    "state": "complete",
+                    "full_usaspending_corpus": False,
+                    "scope": "complete history for the bounded award-detail sample only",
+                },
+                "response_receipts": 3,
+            },
+        },
+    }
+    status_path.write_text(json.dumps(status))
+
+    payload = build_payload(root, as_of="2026-08-01")
+    detail = payload["freshness"]["award_detail"]
+    actions = payload["freshness"]["actions"]
+
+    assert payload["freshness"]["status"] == "ok"
+    assert detail["status"] == "ok"
+    assert detail["collection_state"] == {"awards": "complete", "award_detail": "complete"}
+    assert detail["denominators"]["awards"]["queries_complete"] == 2
+    assert detail["response_receipts"] == 4
+    assert detail["full_usaspending_corpus"] is False
+    assert actions["status"] == "ok"
+    assert actions["pages"]["actions"]["unresolved_has_next_awards"] == 0
+    assert actions["response_receipts"] == 7
+    assert actions["full_usaspending_corpus"] is False
+
+    status["rails"]["actions"]["state"] = "partial"
+    status["rails"]["actions"]["pages"]["unresolved_has_next_awards"] = 1
+    status_path.write_text(json.dumps(status))
+    partial = build_payload(root, as_of="2026-08-01")
+    assert partial["freshness"]["status"] == "partial"
+    assert partial["freshness"]["award_detail"]["status"] == "ok"
     assert partial["freshness"]["actions"]["status"] == "partial"
 
 

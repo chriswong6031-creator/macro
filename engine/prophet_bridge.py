@@ -70,6 +70,8 @@ from typing import Any
 
 import pandas as pd
 
+from engine.government_revenue.freshness import effective_freshness
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -307,11 +309,23 @@ _GOVERNMENT_REVENUE_METRICS = (
     "awards_with_current_value",
     "backlog_scope",
     "funding_pct",
+    "net_award_action_flow_90d",
+    "positive_award_action_flow_90d",
+    "award_action_flow_basis",
     "modification_impulse_90d",
     "deobligations_90d",
     "agency_concentration",
     "program_concentration",
 )
+
+
+def _government_revenue_freshness(
+    payload: dict,
+    reference: Any | None = None,
+) -> tuple[str, str]:
+    """Read elapsed-time-aware governed health rails."""
+    evaluated = effective_freshness(payload, reference=reference)
+    return str(evaluated["status"]), str(evaluated["opportunities"])
 
 
 def _load_government_revenue_context(
@@ -356,6 +370,7 @@ def _load_government_revenue_context(
     # never annotate a historical/backfill plan. Date-only anchors mean evidence
     # known through the end of that UTC day; malformed/missing knowledge stamps
     # fail closed whenever a cutoff is supplied.
+    cutoff = None
     if asof is not None:
         try:
             cutoff = pd.Timestamp(asof)
@@ -384,6 +399,16 @@ def _load_government_revenue_context(
         if payload_known > cutoff or payload_day > cutoff:
             return {}
 
+    overall_status, opportunity_status = _government_revenue_freshness(
+        payload,
+        reference=cutoff,
+    )
+    if overall_status != "ok":
+        # Prophet prose must never make an aged or degraded procurement snapshot
+        # look current. The source remains visible on its governed workbench.
+        return {}
+    opportunities_current = opportunity_status == "ok"
+
     out: dict[str, dict] = {}
     for company in payload.get("companies") or []:
         if not isinstance(company, dict):
@@ -400,8 +425,17 @@ def _load_government_revenue_context(
         context = {
             "as_of": payload.get("as_of"),
             "known_at": payload.get("known_at"),
+            "freshness": {
+                "status": overall_status,
+                "opportunities": opportunity_status,
+            },
             "metrics": metrics,
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
+            "opportunity_candidates": (
+                (company.get("opportunity_candidates") or [])[:2]
+                if opportunities_current
+                else []
+            ),
             "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
             "confidence": company.get("confidence"),
             "provenance": (company.get("provenance") or [])[:3],
@@ -426,6 +460,9 @@ def _government_revenue_sentence(context: dict | None) -> tuple[str, str] | None
     """Return deterministic EN/ZH plan annotation from procurement facts."""
     if not context:
         return None
+    freshness = context.get("freshness")
+    if isinstance(freshness, dict) and str(freshness.get("status") or "").lower() != "ok":
+        return None
     metrics = context.get("metrics") or {}
     velocity = metrics.get("award_velocity_yoy_pct")
     latest_month = metrics.get("latest_complete_month")
@@ -443,6 +480,36 @@ def _government_revenue_sentence(context: dict | None) -> tuple[str, str] | None
     if isinstance(funded_backlog, (int, float)) and math.isfinite(float(funded_backlog)):
         parts_en.append(f"observed funded contract capacity was ${float(funded_backlog) / 1_000_000_000:.2f}B")
         parts_zh.append(f"观察到的已拨款合同余量为 ${float(funded_backlog) / 1_000_000_000:.2f}B")
+    opportunity = next(
+        (
+            row for row in context.get("opportunity_candidates") or []
+            if isinstance(row, dict)
+            and str(row.get("source_url") or "").startswith(
+                ("https://sam.gov/", "https://api.sam.gov/")
+            )
+        ),
+        None,
+    )
+    if opportunity:
+        title = re.sub(r"<[^>]*>", " ", str(opportunity.get("title") or "SAM.gov opportunity"))
+        title = " ".join(title.split())[:96]
+        days = opportunity.get("days_to_response")
+        timing_en = (
+            f" with a response due in {days} days"
+            if isinstance(days, int) and days >= 0
+            else ""
+        )
+        timing_zh = (
+            f"，距响应截止还有 {days} 天"
+            if isinstance(days, int) and days >= 0
+            else ""
+        )
+        parts_en.append(
+            f"SAM.gov lists “{title}”{timing_en}; its issuer link is rule-based, not a bidder or award forecast"
+        )
+        parts_zh.append(
+            f"SAM.gov 列出“{title}”{timing_zh}；发行人关联来自规则匹配，并非投标方或授标预测"
+        )
     if not parts_en:
         return None
     return (
