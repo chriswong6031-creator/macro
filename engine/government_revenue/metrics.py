@@ -25,6 +25,10 @@ from typing import Any, Iterable
 
 import pandas as pd
 
+from engine.government_revenue.opportunities import SOURCE_URL as SAM_OPPORTUNITIES_URL
+from engine.government_revenue.opportunities import build_opportunity_intelligence
+from engine.government_revenue.workspace import build_procurement_workspace
+
 SCHEMA_VERSION = "company_government_revenue.v1"
 CONTEXT_CONTRACT = "vertical_intelligence_context.v1"
 CATALYST_CONTRACT = "vertical_catalyst_fact.v1"
@@ -150,19 +154,33 @@ def _filter_point_in_time(
     knowledge_cutoff: pd.Timestamp,
     effective_cutoff: pd.Timestamp | None = None,
 ) -> pd.DataFrame:
+    """Keep only facts observable and effective by the requested cutoff.
+
+    Detail/action ledgers are optional, but a row without an immutable
+    visibility clock is not usable in a historical reconstruction.  Returning
+    it merely because a legacy file omitted the column would turn the latest
+    file state into faux historical knowledge.  The same rule applies to an
+    explicit effective cutoff: a mutable detail fact without an effective
+    event/action clock cannot be placed honestly on an as-of timeline.
+    """
     if frame.empty:
         return frame.copy()
     out = frame.copy()
     known_col = _knowledge_column(out)
-    if known_col:
-        known = pd.to_datetime(out[known_col], utc=True, errors="coerce")
-        out = out[known.notna() & (known <= knowledge_cutoff)]
+    if not known_col:
+        return out.iloc[0:0].copy()
+    known = pd.to_datetime(out[known_col], utc=True, errors="coerce")
+    out = out[known.notna() & (known <= knowledge_cutoff)]
     if effective_cutoff is not None:
+        effective: pd.Series | None = None
         for col in ("effective_at", "action_date"):
-            if col in out.columns:
-                effective = pd.to_datetime(out[col], utc=True, errors="coerce")
-                out = out[effective.isna() | (effective <= effective_cutoff)]
-                break
+            if col not in out.columns:
+                continue
+            parsed = pd.to_datetime(out[col], utc=True, errors="coerce")
+            effective = parsed if effective is None else effective.fillna(parsed)
+        if effective is None:
+            return out.iloc[0:0].copy()
+        out = out[effective.notna() & (effective <= effective_cutoff)]
     return out.copy()
 
 
@@ -182,10 +200,57 @@ def _load_monthly(repo: Path) -> pd.DataFrame:
     return out.apply(pd.to_numeric, errors="coerce")
 
 
+def _with_award_identity(frame: pd.DataFrame) -> pd.DataFrame:
+    """Attach the stable generated-award-first identity used by PIT ledgers."""
+    out = frame.copy()
+    generated = out.get("generated_award_id", pd.Series(index=out.index, dtype=object))
+    piid = out.get("award_id", pd.Series(index=out.index, dtype=object))
+    canonical = generated.where(generated.notna() & generated.astype(str).str.strip().ne(""))
+    canonical = canonical.fillna("piid:" + piid.fillna("").astype(str))
+    out["_award_identity"] = canonical.astype(str)
+    return out
+
+
+def _exclude_snapshot_backed_awards(
+    awards: pd.DataFrame,
+    snapshots: pd.DataFrame,
+) -> pd.DataFrame:
+    """Do not fall back to mutable award rows where a snapshot ledger exists.
+
+    A snapshot observed after the replay/effective cutoff is evidence that the
+    current award row may contain future fields.  The absence of a *visible*
+    snapshot is not permission to use that mutable row; omit that identity
+    until a valid snapshot exists.  Rows with no snapshot ledger remain eligible
+    for the normal dual-clock fallback.
+    """
+    if (
+        awards.empty
+        or snapshots.empty
+        or "ticker" not in awards.columns
+        or "ticker" not in snapshots.columns
+    ):
+        return awards.copy()
+    award_keys = _with_award_identity(awards)
+    snapshot_keys = _with_award_identity(snapshots)
+    backed = set(zip(
+        snapshot_keys["ticker"].fillna("").astype(str),
+        snapshot_keys["_award_identity"].astype(str),
+    ))
+    visible = [
+        (ticker, identity) not in backed
+        for ticker, identity in zip(
+            award_keys["ticker"].fillna("").astype(str),
+            award_keys["_award_identity"].astype(str),
+        )
+    ]
+    return award_keys.loc[visible].drop(columns=["_award_identity"])
+
+
 def _overlay_snapshots(
     awards: pd.DataFrame,
     snapshots: pd.DataFrame,
     knowledge_cutoff: pd.Timestamp,
+    effective_cutoff: pd.Timestamp,
 ) -> pd.DataFrame:
     """Reconstruct mutable award state wholly from the latest visible snapshot.
 
@@ -196,21 +261,12 @@ def _overlay_snapshots(
     """
     if awards.empty or snapshots.empty:
         return awards.copy()
-    snaps = _filter_point_in_time(snapshots, knowledge_cutoff)
+    snaps = _filter_point_in_time(snapshots, knowledge_cutoff, effective_cutoff)
     if snaps.empty or "ticker" not in snaps.columns:
         return awards.copy()
 
-    def keyed(frame: pd.DataFrame) -> pd.DataFrame:
-        out = frame.copy()
-        generated = out.get("generated_award_id", pd.Series(index=out.index, dtype=object))
-        piid = out.get("award_id", pd.Series(index=out.index, dtype=object))
-        canonical = generated.where(generated.notna() & generated.astype(str).str.strip().ne(""))
-        canonical = canonical.fillna("piid:" + piid.fillna("").astype(str))
-        out["_award_identity"] = canonical.astype(str)
-        return out
-
-    identities = keyed(awards)
-    snaps = keyed(snaps)
+    identities = _with_award_identity(awards)
+    snaps = _with_award_identity(snaps)
     order_col = _knowledge_column(snaps) or "snapshot_date"
     order = pd.to_datetime(snaps[order_col], utc=True, errors="coerce")
     snaps = snaps.assign(_snapshot_order=order).sort_values("_snapshot_order")
@@ -243,6 +299,7 @@ def _awards_point_in_time(
     awards: pd.DataFrame,
     snapshots: pd.DataFrame,
     knowledge_cutoff: pd.Timestamp,
+    effective_cutoff: pd.Timestamp,
 ) -> pd.DataFrame:
     """Resolve mutable awards through their daily first-observed snapshots.
 
@@ -253,17 +310,27 @@ def _awards_point_in_time(
     """
     if awards.empty:
         return awards.copy()
-    visible_snapshots = _filter_point_in_time(snapshots, knowledge_cutoff)
+    visible_snapshots = _filter_point_in_time(
+        snapshots,
+        knowledge_cutoff,
+        effective_cutoff,
+    )
     if visible_snapshots.empty or not {"ticker", "award_id"}.issubset(visible_snapshots.columns):
-        return _filter_point_in_time(awards, knowledge_cutoff)
+        fallback = _filter_point_in_time(awards, knowledge_cutoff, effective_cutoff)
+        return _exclude_snapshot_backed_awards(fallback, snapshots)
     if "first_seen_at" in awards.columns:
         first_seen = pd.to_datetime(awards["first_seen_at"], utc=True, errors="coerce")
         identities = awards[first_seen.notna() & (first_seen <= knowledge_cutoff)].copy()
     else:
-        identities = _filter_point_in_time(awards, knowledge_cutoff)
+        identities = _filter_point_in_time(awards, knowledge_cutoff, effective_cutoff)
     if identities.empty:
         return identities
-    return _overlay_snapshots(identities, visible_snapshots, knowledge_cutoff)
+    return _overlay_snapshots(
+        identities,
+        visible_snapshots,
+        knowledge_cutoff,
+        effective_cutoff,
+    )
 
 
 def _velocity(series: pd.Series, complete_month: pd.Timestamp) -> dict:
@@ -410,11 +477,14 @@ def _backlog(frame: pd.DataFrame, as_of_day: pd.Timestamp) -> dict:
 
 def _modification_metrics(actions: pd.DataFrame, as_of_day: pd.Timestamp) -> dict:
     empty = {
+        "net_award_action_flow_90d": None,
+        "positive_award_action_flow_90d": None,
         "modification_impulse_90d": None,
         "modifications_net_90d": None,
         "positive_modifications_90d": None,
         "deobligations_90d": None,
-        "modification_impulse_basis": "no action records",
+        "award_action_flow_basis": "no action records",
+        "modification_impulse_basis": "legacy compatibility alias; no action records",
     }
     if actions.empty or "action_date" not in actions.columns:
         return empty
@@ -426,10 +496,13 @@ def _modification_metrics(actions: pd.DataFrame, as_of_day: pd.Timestamp) -> dic
     trailing = amounts[(dates >= as_of_day - pd.Timedelta(days=364)) & (dates <= as_of_day)]
     if recent.empty:
         return empty | {
+            "net_award_action_flow_90d": 0.0,
+            "positive_award_action_flow_90d": 0.0,
             "modifications_net_90d": 0.0,
             "positive_modifications_90d": 0.0,
             "deobligations_90d": 0.0,
-            "modification_impulse_basis": "net 90-day actions / positive trailing-365-day actions",
+            "award_action_flow_basis": "net 90-day transaction actions / positive trailing-365-day actions",
+            "modification_impulse_basis": "legacy alias; includes initial, option, modification, and unclassified actions",
         }
     net = float(recent.fillna(0).sum())
     pos = float(recent[recent > 0].sum())
@@ -437,11 +510,14 @@ def _modification_metrics(actions: pd.DataFrame, as_of_day: pd.Timestamp) -> dic
     denom = float(trailing[trailing > 0].sum())
     impulse = 100.0 * net / denom if denom > 0 else None
     return {
+        "net_award_action_flow_90d": _number(net),
+        "positive_award_action_flow_90d": _number(pos),
         "modification_impulse_90d": _number(impulse, 1),
         "modifications_net_90d": _number(net),
         "positive_modifications_90d": _number(pos),
         "deobligations_90d": _number(deob),
-        "modification_impulse_basis": "net 90-day actions / positive trailing-365-day actions",
+        "award_action_flow_basis": "net 90-day transaction actions / positive trailing-365-day actions",
+        "modification_impulse_basis": "legacy alias; includes initial, option, modification, and unclassified actions",
     }
 
 
@@ -526,6 +602,8 @@ def _recompetes(frame: pd.DataFrame, as_of_day: pd.Timestamp) -> list[dict]:
     for _, row in work.head(8).iterrows():
         out.append({
             "award_id": _first_text(row, ("award_id",)),
+            "generated_award_id": _first_text(row, ("generated_award_id",)),
+            "award_key": _first_text(row, ("award_key", "generated_award_id", "award_id")),
             "end_date": _date_iso(row["_end"]),
             "days_to_end": int(row["_days"]),
             "total_obligated": _first_number(row, ("total_obligated", "award_amount")),
@@ -553,6 +631,8 @@ def _catalyst_fact(
     detail: str,
     value: dict | None,
     evidence_refs: list[str],
+    *,
+    classification: str = "observed_fact",
 ) -> dict:
     evidence = "|".join(evidence_refs)
     return {
@@ -560,7 +640,7 @@ def _catalyst_fact(
         "id": _fact_id(ticker, kind, effective_at, evidence),
         "entity_id": ticker,
         "kind": kind,
-        "classification": "observed_fact",
+        "classification": classification,
         "effective_at": effective_at,
         "known_at": known_at,
         "headline": headline,
@@ -629,6 +709,7 @@ def _catalysts(
             first.get("basis") or "Period-of-performance end date rule.",
             {"amount": first.get("days_to_end"), "unit": "days_to_end"},
             [first.get("source_url") or SPENDING_BY_AWARD_URL],
+            classification="derived_deterministic",
         ))
     return facts[:8]
 
@@ -651,7 +732,12 @@ def _confidence(
         points += 1
     match = entity.get("match_confidence", "low")
     points += {"high": 2, "medium": 1}.get(match, 0)
-    level = "high" if points >= 7 else "medium" if points >= 4 else "low" if points else "unavailable"
+    raw_level = "high" if points >= 7 else "medium" if points >= 4 else "low" if points else "unavailable"
+    # Award/detail collection is intentionally bounded in v1. Fresh data is not
+    # the same thing as complete data, so the UI confidence may not display as
+    # high until a collector reports auditable completeness denominators.
+    bounded_detail = bool(not awards.empty or not actions.empty)
+    level = "medium" if bounded_detail and raw_level == "high" else raw_level
     limitations = []
     if entity.get("match_method") == "curated_fuzzy_name":
         limitations.append("recipient query is a curated fuzzy-name match; subsidiaries and false positives require UEI validation")
@@ -659,8 +745,13 @@ def _confidence(
         limitations.append("award-level detail is not yet collected")
     if actions.empty:
         limitations.append("transaction actions are not yet collected")
+    if bounded_detail:
+        limitations.append("award and action detail is a bounded sample; confidence is capped at medium")
     return {
         "level": level,
+        "uncapped_level": raw_level,
+        "bounded_sample": bounded_detail,
+        "maximum_presentation_level": "medium" if bounded_detail else None,
         "coverage_points": points,
         "components": {
             "entity_match": match,
@@ -727,6 +818,8 @@ def _freshness_contract(
     ingest_age = age_days(ingest_ts) if ingest_visible else None
     errors = status_doc.get("errors") if ingest_visible else []
     errors = errors if isinstance(errors, list) else []
+    rails_doc = status_doc.get("rails") if ingest_visible else {}
+    rails_doc = rails_doc if isinstance(rails_doc, dict) else {}
     entities_requested = status_doc.get("entities_requested") if ingest_visible else None
     try:
         entities_requested_n = int(entities_requested) if entities_requested is not None else None
@@ -736,7 +829,7 @@ def _freshness_contract(
         entities_requested_n is not None and entities_requested_n >= entities_total
     )
 
-    def rail_status(stages: set[str], *, require_awards: bool) -> tuple[str, int]:
+    def legacy_rail_status(stages: set[str], *, require_awards: bool) -> tuple[str, int]:
         rail_errors = sum(
             1 for error in errors
             if isinstance(error, dict) and str(error.get("stage") or "") in stages
@@ -753,12 +846,90 @@ def _freshness_contract(
             return "partial", rail_errors
         return "ok", rail_errors
 
-    detail_status, detail_errors = rail_status(
-        {"awards", "award_detail"}, require_awards=True
-    )
-    action_status, action_errors = rail_status(
-        {"awards", "award_detail", "actions"}, require_awards=False
-    )
+    def rail(name: str) -> dict:
+        value = rails_doc.get(name)
+        return value if isinstance(value, dict) else {}
+
+    def current_rail_state(name: str) -> str | None:
+        value = str(rail(name).get("state") or "").strip().lower()
+        return value or None
+
+    def combined_v2_status(names: tuple[str, ...]) -> str:
+        """Map explicit collector rails to presentation health without inflating coverage."""
+        if not status_doc:
+            return "unavailable"
+        if not ingest_visible:
+            return "future_at_asof"
+        states = [current_rail_state(name) for name in names]
+        if not any(states):
+            return "unavailable"
+        if "failed" in states:
+            return "failed"
+        if any(state in {"partial", "not_requested", None} for state in states):
+            return "partial"
+        if any(state not in {"complete"} for state in states):
+            return "partial"
+        successful_stamps = [
+            _timestamp(rail(name).get("last_successful_observed_at")) for name in names
+        ]
+        successful_stamps = [stamp for stamp in successful_stamps if stamp is not None]
+        oldest_success = min(successful_stamps) if successful_stamps else ingest_ts
+        if oldest_success is None:
+            return "unverified"
+        if age_days(oldest_success) > DETAIL_FRESHNESS_SLA_DAYS:
+            return "stale"
+        return "ok"
+
+    def rail_error_count(stages: set[str]) -> int:
+        return sum(
+            1 for error in errors
+            if isinstance(error, dict) and str(error.get("stage") or "") in stages
+        )
+
+    if rails_doc:
+        detail_status = combined_v2_status(("awards", "award_detail"))
+        action_status = combined_v2_status(("awards", "award_detail", "actions"))
+        detail_errors = rail_error_count({"awards", "award_detail"})
+        action_errors = rail_error_count({"awards", "award_detail", "actions"})
+    else:
+        detail_status, detail_errors = legacy_rail_status(
+            {"awards", "award_detail"}, require_awards=True
+        )
+        action_status, action_errors = legacy_rail_status(
+            {"awards", "award_detail", "actions"}, require_awards=False
+        )
+
+    def rail_metadata(names: tuple[str, ...]) -> dict:
+        selected = {name: rail(name) for name in names if rail(name)}
+        successful = [
+            _timestamp(value.get("last_successful_observed_at"))
+            for value in selected.values()
+        ]
+        successful = [stamp for stamp in successful if stamp is not None]
+        return {
+            "collection_state": {
+                name: str(value.get("state") or "unavailable") for name, value in selected.items()
+            },
+            "last_successful_observed_at": (
+                min(successful).isoformat() if successful else None
+            ),
+            "pages": {
+                name: value.get("pages") for name, value in selected.items()
+                if isinstance(value.get("pages"), dict)
+            },
+            "denominators": {
+                name: value.get("denominators") for name, value in selected.items()
+                if isinstance(value.get("denominators"), dict)
+            },
+            "completeness": {
+                name: value.get("completeness") for name, value in selected.items()
+                if isinstance(value.get("completeness"), dict)
+            },
+            "response_receipts": sum(
+                int(value.get("response_receipts") or 0) for value in selected.values()
+            ),
+            "full_usaspending_corpus": False,
+        }
     detail = {
         "status": detail_status,
         "observed_at": _instant_iso(ingest_ts) if ingest_visible else None,
@@ -779,6 +950,7 @@ def _freshness_contract(
             status_doc.get("detail_awards_limit_per_entity") if ingest_visible else None
         ),
         "freshness_sla_days": DETAIL_FRESHNESS_SLA_DAYS,
+        **rail_metadata(("awards", "award_detail")),
     }
     actions = {
         "status": action_status,
@@ -794,6 +966,7 @@ def _freshness_contract(
             status_doc.get("detail_awards_limit_per_entity") if ingest_visible else None
         ),
         "freshness_sla_days": DETAIL_FRESHNESS_SLA_DAYS,
+        **rail_metadata(("awards", "award_detail", "actions")),
     }
 
     if aggregate_status == "ok" and detail_status == "ok" and action_status == "ok":
@@ -802,6 +975,8 @@ def _freshness_contract(
         overall = "stale"
     elif aggregate_status == "unavailable" and detail_status == "unavailable":
         overall = "unavailable"
+    elif "failed" in {detail_status, action_status}:
+        overall = "partial"
     else:
         overall = "partial"
     visible_known = [monthly_known_at if monthly_visible else None, ingest_ts if ingest_visible else None]
@@ -830,8 +1005,16 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
     awards_raw = _read_frame(gov_dir / "awards.parquet")
     actions_raw = _read_frame(gov_dir / "award_actions.parquet")
     snapshots_raw = _read_frame(gov_dir / "award_snapshots.parquet")
-    awards = _awards_point_in_time(awards_raw, snapshots_raw, knowledge_cutoff)
-    actions = _filter_point_in_time(actions_raw, knowledge_cutoff, as_of_day)
+    # Both mutable award snapshots and transaction actions must be known by
+    # the replay cutoff *and* effective no later than the requested as-of day.
+    # ``knowledge_cutoff`` is the inclusive end of that UTC day.
+    awards = _awards_point_in_time(
+        awards_raw,
+        snapshots_raw,
+        knowledge_cutoff,
+        knowledge_cutoff,
+    )
+    actions = _filter_point_in_time(actions_raw, knowledge_cutoff, knowledge_cutoff)
 
     month_start = as_of_day.replace(day=1)
     complete_cutoff = month_start - pd.DateOffset(months=REPORTING_LAG_MONTHS)
@@ -949,6 +1132,22 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
             "authority": _AUTHORITY.copy(),
         })
 
+    opportunity_intelligence = build_opportunity_intelligence(
+        repo,
+        company_payloads,
+        as_of=as_of_day,
+        knowledge_cutoff=knowledge_cutoff,
+        freshness_reference=(
+            pd.Timestamp.now(tz="UTC") if as_of is None else knowledge_cutoff
+        ),
+    )
+    opportunity_context = opportunity_intelligence.get("company_context") or {}
+    for company in company_payloads:
+        company["opportunity_candidates"] = list(
+            opportunity_context.get(company["ticker"]) or []
+        )
+    known_values.append(opportunity_intelligence.get("known_at"))
+
     ttm_values = [c["metrics"].get("ttm_obligations") for c in company_payloads]
     valid_ttm = [float(v) for v in ttm_values if v is not None]
     velocities = [c["metrics"].get("award_velocity_yoy_pct") for c in company_payloads]
@@ -1011,6 +1210,9 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
         ),
         "cross_company_shared_awards": shared_award_count,
         "recompete_watch_count": int(sum(len(c["recompete_candidates"]) for c in company_payloads)),
+        "active_opportunities": opportunity_intelligence.get("market", {}).get("active_opportunities", 0),
+        "opportunity_amendments_7d": opportunity_intelligence.get("market", {}).get("amendments_7d", 0),
+        "opportunity_company_candidate_links": opportunity_intelligence.get("market", {}).get("company_candidate_links", 0),
         "award_velocity_breadth": {
             "accelerating": accelerating,
             "stable": sum(v is not None and -20 < v < 20 for v in velocities),
@@ -1033,6 +1235,29 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
         knowledge_cutoff=knowledge_cutoff,
     )
     detail_freshness = freshness["award_detail"]
+    freshness["opportunities"] = opportunity_intelligence.get("freshness", {})
+    payload_known_at = _latest_known_at(known_values)
+    vertical_links_by_ticker = {
+        company["ticker"]: [{
+            "contract": "vertical_link.v1",
+            "surface_id": "filing_forensics",
+            "label_en": "Filing Forensics",
+            "label_zh": "财报取证",
+            "href": f"fundamental_forensics.html?symbol={company['ticker']}",
+            "entity_type": "ticker",
+            "entity_id": company["ticker"],
+            "available": True,
+        }]
+        for company in company_payloads
+    }
+    procurement_workspace = build_procurement_workspace(
+        opportunity_intelligence,
+        company_payloads,
+        as_of=as_of_day.date().isoformat(),
+        known_at=payload_known_at,
+        award_freshness=detail_freshness,
+        vertical_links_by_ticker=vertical_links_by_ticker,
+    )
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1046,7 +1271,7 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
             "sibling_ready": True,
         },
         "as_of": as_of_day.date().isoformat(),
-        "known_at": _latest_known_at(known_values),
+        "known_at": payload_known_at,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": {
             "publisher": "U.S. Treasury, USAspending.gov",
@@ -1055,6 +1280,7 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
                 SPENDING_BY_AWARD_URL,
                 AWARD_DETAIL_URL,
                 TRANSACTIONS_URL,
+                SAM_OPPORTUNITIES_URL,
             ],
             "reporting_lag_months": REPORTING_LAG_MONTHS,
         },
@@ -1078,8 +1304,13 @@ def build_payload(root: Path | None = None, as_of: str | None = None) -> dict:
                 "award actions and snapshots are first-seen ledgers; the legacy monthly frame is only "
                 "replayable from its collection-level known_at"
             ),
+            "opportunity_records_visible": opportunity_intelligence.get("coverage", {}).get("records_visible", 0),
+            "opportunity_revision_records_visible": opportunity_intelligence.get("coverage", {}).get("revision_records_visible", 0),
+            "opportunity_documents_visible": opportunity_intelligence.get("coverage", {}).get("documents_visible", 0),
         },
         "market": market,
+        "opportunity_intelligence": opportunity_intelligence,
+        "procurement_workspace": procurement_workspace,
         "companies": company_payloads,
     }
 
@@ -1104,6 +1335,7 @@ def ticker_context(payload: dict, ticker: str) -> dict | None:
         "metrics": company.get("metrics", {}),
         "catalyst_facts": company.get("catalyst_facts", []),
         "recompete_candidates": company.get("recompete_candidates", []),
+        "opportunity_candidates": company.get("opportunity_candidates", []),
         "confidence": company.get("confidence", {}),
         "provenance": company.get("provenance", []),
         "authority": _AUTHORITY.copy(),

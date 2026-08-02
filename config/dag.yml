@@ -29,8 +29,12 @@ lanes:
           at the end of this lane is gated on this step's outcome.
       - id: collect_us
         module: scripts.collect
-        args: [--exclude-group, asia, --skip-shadow-importance]
+        args: [--exclude-group, asia, --exclude, sam_gov_opportunities, --skip-shadow-importance]
         note: >
+          SAM opportunities are excluded because government-revenue-live is the
+          sole serialized SAM ledger writer. After this daily checkpoint lands,
+          a synchronous reusable-workflow call makes that same dedicated lane
+          fold changed USAspending evidence before engine context readers start.
           fetch_finviz_themes also runs in this step but is called as
           'python scripts/fetch_finviz_themes.py' (not python -m), so the
           conformance parser cannot extract it via _PYTHON_M_RE. It is intentionally
@@ -1939,6 +1943,16 @@ lanes:
           by spine in all/macro/fast scopes. Credential and non-empty-index
           guarded; retries three times and fails the lane after exhaustion.
           --no-manifest preserves the remote multi-market manifest.
+      - id: build_government_revenue
+        module: scripts.build_government_revenue
+        args: [--site-only]
+        note: >
+          Deterministic site projection refresh before the site-wide normalizers,
+          repeated after every successful rebase in the push loop. The lane fails
+          closed if rebuilding would mutate the committed canonical latest/workspace
+          generation; it may publish only the matching site twins and embedded page.
+          This closes a stale-checkout overwrite race without granting SAM-ledger
+          ownership to the generic render lane.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -2201,6 +2215,16 @@ lanes:
           by spine in every all/macro scope. Credential and non-empty-index
           guarded; retries three times and fails the lane after exhaustion.
           --no-manifest preserves the remote multi-market manifest.
+      - id: build_government_revenue
+        module: scripts.build_government_revenue
+        args: [--site-only]
+        note: >
+          Deterministic site projection refresh before the site-wide normalizers,
+          repeated after every successful rebase in the push loop. The lane fails
+          closed if rebuilding would mutate the committed canonical latest/workspace
+          generation; it may publish only the matching site twins and embedded page.
+          This closes a stale-checkout overwrite race without granting SAM-ledger
+          ownership to the generic render lane.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -2434,6 +2458,30 @@ lanes:
       - id: build_whitehouse
         module: scripts.build_whitehouse
         note: event-driven; commit only on change (rc=10)
+
+  # ── government-revenue-live.yml / refresh ───────────────────────────────
+  - workflow: .github/workflows/government-revenue-live.yml
+    job: refresh
+    steps:
+      - id: collect_sam_opportunities
+        module: scripts.collect
+        args: [--only, sam_gov_opportunities, --skip-quality, --skip-shadow-importance]
+        note: >
+          Bounded SAM.gov opportunity poll only. The workflow sets a non-nightly
+          COLLECT_LANE, so guarded forward-ledger graders cannot advance; shared
+          collect byproducts remain unstaged. Every complete source receipt is
+          published to keep current-state health live; a normalized semantic
+          fingerprint separates quiet heartbeat folds from alert-worthy evidence.
+      - id: build_government_revenue
+        module: scripts.build_government_revenue
+        note: >
+          Sole serialized SAM ledger and canonical projection owner. Runs after each
+          complete SAM health/evidence fold, a synchronous daily reusable call, or a
+          path-filtered main push carrying evidence/source changes, then re-renders
+          after every rebase before pushing. Generic site-wide render lanes may repeat
+          the deterministic build only when the canonical generation stays byte-clean,
+          preventing an older embedded page from overwriting newer evidence. No
+          scoring, ranking, sizing, gating, or candidate origination is permitted.
 
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
@@ -2893,6 +2941,7 @@ modules:
       - data/government_revenue/awards.parquet
       - data/government_revenue/award_actions.parquet
       - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/collection_receipts.jsonl
       - data/government_revenue/ingest_status.json
       - data/government_revenue/collector_heartbeat.parquet
     impure: true
@@ -2900,8 +2949,32 @@ modules:
     event_driven: false
     note: >
       Keyless official USAspending award-search/detail/transaction collector.
-      Granular composite-key ledgers persist atomically inside the collector;
-      both direct CLI and standard Adapter runs emit the dated heartbeat frame.
+      Granular composite-key ledgers and an append-only hash-only retrieval-receipt
+      ledger persist atomically inside the collector; both direct CLI and standard
+      Adapter runs emit the dated heartbeat frame.
+
+  - module: collectors.sam_gov
+    reads:
+      - data/sam_gov/naics_themes.json
+      - data/government_revenue/opportunities.parquet
+      - data/government_revenue/opportunity_revisions.parquet
+      - data/government_revenue/opportunity_documents.parquet
+      - data/government_revenue/opportunity_ingest_status.json
+    writes:
+      - data/government_revenue/opportunities.parquet
+      - data/government_revenue/opportunity_revisions.parquet
+      - data/government_revenue/opportunity_documents.parquet
+      - data/government_revenue/opportunity_ingest_status.json
+      - data/government_revenue/sam_opportunity_heartbeat.parquet
+    impure: true
+    needs_secrets: true
+    event_driven: false
+    note: >
+      SamGovOpportunitiesAdapter uses the official public Opportunities v2 API to
+      retain latest source state plus MastermindX first-seen revisions and bounded
+      document evidence. A partial/failed receipt preserves the last-good ledgers;
+      no collector result is a bidder prediction, award confirmation, forward ledger,
+      or investment authority.
 
   - module: scripts.build_baskets
     reads:
@@ -2909,29 +2982,47 @@ modules:
       - data/breadth/_closes_cache.parquet
       - data/stocks/*.parquet
       - data/radar/theses.jsonl
-      - data/usaspending/obligations.parquet
-      - data/government_revenue/entities.json
-      - data/government_revenue/awards.parquet
-      - data/government_revenue/award_actions.parquet
-      - data/government_revenue/award_snapshots.parquet
-      - data/government_revenue/ingest_status.json
     writes:
       - site/basketdata/baskets.json
       - site/basketdata/radar.json
       - site/basketdata/flow.json
       - site/basketdata/sector_pulse.json
       - data/baskets/latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_government_revenue
+    reads:
+      - data/usaspending/obligations.parquet
+      - data/usaspending/_meta.json
+      - data/government_revenue/entities.json
+      - data/government_revenue/awards.parquet
+      - data/government_revenue/award_actions.parquet
+      - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/ingest_status.json
+      - data/government_revenue/opportunities.parquet
+      - data/government_revenue/opportunity_revisions.parquet
+      - data/government_revenue/opportunity_documents.parquet
+      - data/government_revenue/opportunity_ingest_status.json
+    writes:
       - data/government_revenue/latest.json
+      - data/government_revenue/workspace.json
       - site/government-revenue-data/latest.json
+      - site/government-revenue-data/workspace.json
       - site/government_revenue.html
     impure: false
     needs_secrets: false
     event_driven: false
     note: >
-      The Government Revenue Foresight vertical workbench rides this existing
-      render lane through scripts.build_government_revenue. It is a pure,
-      fail-soft projection of committed official-data stores and emits only
-      display/context artifacts with no rank, size, or gate authority.
+      Deterministic context/display projection over committed USAspending and SAM
+      first-seen evidence. government-revenue-live.yml is the sole serialized SAM
+      ledger and canonical projection writer and re-renders after every rebase.
+      Generic site-wide render lanes may call the builder only with a fail-closed
+      canonical-byte guard, so they can refresh matching site twins without advancing
+      evidence state. The builder emits public-company exposure candidates
+      and procurement events with explicit provenance/limitations, never bidder
+      odds, revenue forecasts, an investment rank, sizing rule, gate, or new signal.
 
   - module: scripts.build_baskets_canada
     reads:

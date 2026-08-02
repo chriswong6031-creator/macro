@@ -1068,6 +1068,16 @@ jobs:
         # next render's watermark union keeps every unfinished scope dirty.
         if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
         run: |
+          # Government Revenue carries an embedded first-paint bundle. Rebuild it
+          # from this checkout's committed evidence before any site-wide rewrite;
+          # build_baskets intentionally no longer owns this projection.
+          python -m scripts.build_government_revenue --site-only
+          if ! git diff --quiet -- \
+            data/government_revenue/latest.json \
+            data/government_revenue/workspace.json; then
+            echo "::error title=government-revenue projection drift::render would publish site twins from evidence that is not already committed canonically"
+            exit 1
+          fi
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
           # ::warning::, not a bare echo — this step is the only thing that moves a ?v=
@@ -1241,6 +1251,16 @@ jobs:
               # Prove the rebased render commit itself before any optional heal. If a
               # later follow-up commit is skipped, this is the exact HEAD we still push.
               python3 scripts/check_site_asset_refs.py site
+              # A SAM evidence commit may have landed after this render began. Rebuild
+              # from the just-rebased canonical generation before site-wide normalizers
+              # can replay the checkout-time embedded bundle over that newer evidence.
+              python -m scripts.build_government_revenue --site-only
+              if ! git diff --quiet -- \
+                data/government_revenue/latest.json \
+                data/government_revenue/workspace.json; then
+                echo "::error title=government-revenue projection drift::post-rebase canonical and rebuilt procurement bundles differ"
+                exit 1
+              fi
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-render (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's

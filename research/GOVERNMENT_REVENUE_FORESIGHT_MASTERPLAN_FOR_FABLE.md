@@ -2,7 +2,7 @@
 
 > **Canonical deliverable.** This is the single build handoff for the Government Revenue Foresight product. If a chat summary, scratch note, competitor screenshot, or older procurement memo conflicts with this file, this file wins until it is superseded in-repo.
 
-- **Status:** canonical full-suite masterplan plus implemented W1 vertical slice
+- **Status:** canonical full-suite masterplan plus implemented W1 and W2 procurement-delta workbench
 - **Evidence cut:** 2026-08-01
 - **Primary domain:** U.S. federal contracting, defense programs, grants, OTAs, SBIR/STTR, and public-company revenue exposure
 - **Initial authority tier:** display/context only; no rank, size, gate, conviction, or trade authority
@@ -10,21 +10,45 @@
 
 ### Implementation snapshot — 2026-08-01
 
-Implemented with this handoff:
+Implemented through Wave 2 with this handoff:
 
-- a keyless USAspending award-search, award-detail, and transaction collector;
+- a keyless USAspending award-search, bounded award-detail, and fully paginated
+  transaction-history collector with rail-specific completeness denominators;
 - bitemporal award, action, and daily snapshot ledgers with canonical generated-award identity;
+- hash-only append-only USAspending collection receipts that bind each official response
+  without persisting raw response bodies or credentials;
+- a SAM.gov opportunity collector with bounded pagination, retry/backoff, versioned
+  notice/revision/attachment ledgers, exact field diffs, attachment hashes, point-in-time
+  replay, atomic last-good preservation, and redacted failure receipts;
 - a 21-company defense/aerospace entity seed and lag-aware obligation-velocity engine;
-- bounded observed-capacity, modification, concentration, and rule-based recompete context;
+- bounded observed-capacity, net award-action flow, concentration, and rule-based
+  period-of-performance expiry context;
 - separate aggregate/detail/action freshness and explicit sample-coverage disclosure;
-- a production-facing Government Revenue Foresight desk, read-only API, navigation entry,
-  build lane, Synapse/DAG ownership, and display-only Neural Web/Prophet annotations;
+- a governed `government_procurement_workspace.v1` delta feed and
+  `government_procurement_event.v1` evidence contract, with backend-owned display priority
+  explicitly separated from investment rank;
+- bounded read-only workspace, event, opportunity, opportunity-detail, and recompete APIs;
+- an investor-first three-pane Changes / Opportunities / Recompetes workbench with source
+  receipts, exact revision diffs, issuer-transmission limits, keyboard operation, mobile
+  sheets, bilingual UI, and compact first-response hydration;
+- a serialized 30-minute best-effort SAM lane that publishes every complete health receipt,
+  separates quiet polls from alert-worthy semantic changes, folds daily USAspending evidence
+  before Neural Web/Prophet readers start, and re-renders after every rebase;
+- Synapse/DAG ownership plus display-only Neural Web/Prophet annotations and versioned
+  cross-desk links into Filing Forensics;
 - live-source validation on 1,936 awards and 34,181 transaction actions with zero ingest
   errors at this evidence cut.
 
+Operational dependency: no `SAM_API_KEY` repository secret was configured at this evidence
+cut. The SAM lane therefore ships fail-closed with an honest unavailable/last-good state;
+real opportunity polling begins only after a free server-side SAM key is installed. The
+public SAM API exposes the latest active version, so the revision ledger captures versions
+observed after activation rather than claiming complete pre-activation history.
+
 Still roadmap—not represented as shipped parity:
 
-- SAM.gov opportunity/amendment documents and saved-search alerts;
+- SAM archive reconciliation/full historical version acquisition, saved monitors, typed
+  user alerts, and capture/research cases;
 - grants, subawards, OTAs, SBIR/STTR progression, DIBBS, forecasts, protests, and DoD
   budget-line ingestion;
 - audited UEI/CAGE/subsidiary lineage, subcontractor graph, vehicle/IDIQ seat detection,
@@ -32,11 +56,12 @@ Still roadmap—not represented as shipped parity:
 - calibrated likely-bidder, award-value, revenue-timing, and beneficiary models;
 - issuer filing/transcript reconciliation, forward validation, and any promotion beyond
   display/context authority;
-- capture CRM, proposal workflows, partner discovery, user automations, exports, and MCP.
+- capture CRM, proposal workflows, partner discovery, user automations, exports, semantic
+  retrieval/RAG, and MCP.
 
-This fence is deliberate: the current desk is a real, frequently refreshable investor
-vertical slice, while the remainder of this document is the clean-room build program for
-full capability parity and differentiation.
+This fence is deliberate: the current desk is a real investor workbench with production
+refresh machinery and truthful blocked-source behavior, while the remainder of this
+document is the clean-room build program for full capability parity and differentiation.
 
 ---
 
@@ -1416,6 +1441,18 @@ Exit gate:
 
 ### Lane 2 — opportunities, forecasts, and recompetes
 
+**Wave 2 receipt:** the SAM notice/revision/document spine, governed event/workspace
+contracts, point-in-time amendment diffs, source-revision semantics, derived expiry
+watches, investor workbench, bounded APIs, and frequent semantic change-detection lane
+are implemented. Activation against the live source is blocked only on installation of a
+server-side `SAM_API_KEY`; no synthetic opportunity is substituted while it is absent.
+The current GitHub-hosted lane targets a best-effort 30-minute poll. Complete quiet polls
+publish current-state health without creating semantic alerts; failed, incomplete, or
+missed polls age stale in both the client and server-side Neural Web/Prophet readers. A
+true 15-minute SLA remains a managed-live-plane upgrade, not a present deployment claim.
+The forecast registry, award/opportunity family linker, saved monitors, and complete
+active/archive reconciliation remain open.
+
 Build:
 
 - SAM API adapter, documents, revisions/amendments, and active/archive reconciliation;
@@ -1427,7 +1464,8 @@ Build:
 
 Exit gate:
 
-- 15-minute target poll without duplicate alert storms;
+- 30-minute scheduled poll without duplicate alert storms; move to the managed
+  live plane before claiming a hard 15-minute SLA;
 - amendment field diffs and document hashes validated;
 - linked-record precision reported separately from recall;
 - official dates visually separated from inferred windows.
@@ -1602,7 +1640,7 @@ Report precision, recall, unresolved rate, and **wrong-ticker dollar rate**. Opt
 
 | Data family | Collection | Reconciliation | Stale threshold |
 |---|---|---|---|
-| SAM active opportunities | 15 minutes | Daily; archived weekly | 45 minutes during expected service hours |
+| SAM active opportunities | 30 minutes best-effort (current); 15 minutes after managed-plane migration | Daily; archived weekly | 90 minutes during expected service hours |
 | USAspending award deltas | Daily | Weekly delta and monthly bulk | 48 hours |
 | Issuer filings | Central engine, event-driven | Nightly bulk | Per central contract |
 | Agency forecasts | Daily source check | Quarterly inventory review | Source-specific |

@@ -1,0 +1,421 @@
+name: government-revenue-live
+# ─────────────────────────────────────────────────────────────────────────────
+# Government Revenue Foresight — SAM.gov opportunity evidence fast path.
+#
+# This is intentionally a bounded, SAM-only change detector.  It polls roughly
+# every 30 minutes, but GitHub Actions cron is best-effort rather than a
+# hard-real-time service.  The active SAM source itself publishes on a daily
+# cadence (archived notices weekly); the useful promise here is prompt
+# propagation when a new observable notice, revision, or attachment appears.
+#
+# The daily collection remains the sole guarded forward-ledger advancer. This
+# lane is the sole SAM ledger and canonical Government Revenue projection owner:
+# scheduled runs stage first-seen SAM evidence; path-filtered main pushes fold daily
+# USAspending evidence and desk changes. Shared collect byproducts remain
+# runner-local and are never committed. Generic site-wide render lanes may repeat
+# a byte-guarded deterministic rebake so their HTML sweeps cannot overwrite a
+# newer embedded bundle, but cannot advance canonical evidence. The closest
+# proven commit/push pattern is whitehouse-sentinel.yml, upgraded here to the
+# shared push_retry policy because this lane can contend with render and live
+# writers. If a true <=15-minute production SLA becomes necessary, move this
+# bounded poll to the managed live plane rather than treating GitHub cron as one.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    - cron: "7,37 * * * *" # 30-minute coarse cadence, offset from common :00/:30 writers
+  workflow_dispatch:
+    inputs:
+      projection_only:
+        description: "Fold committed USAspending/source changes without polling SAM"
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      projection_only:
+        description: "Fold committed evidence without polling SAM"
+        required: true
+        type: boolean
+  push:
+    branches: [main]
+    # The dedicated lane also folds daily USAspending evidence and source-code /
+    # template changes. Generated twins are intentionally absent to avoid a
+    # self-trigger loop after this workflow publishes them.
+    paths:
+      - "data/government_revenue/awards.parquet"
+      - "data/government_revenue/award_actions.parquet"
+      - "data/government_revenue/award_snapshots.parquet"
+      - "data/government_revenue/entities.json"
+      - "data/government_revenue/ingest_status.json"
+      - "data/government_revenue/collection_receipts.jsonl"
+      - "data/government_revenue/opportunities.parquet"
+      - "data/government_revenue/opportunity_revisions.parquet"
+      - "data/government_revenue/opportunity_documents.parquet"
+      - "data/government_revenue/opportunity_ingest_status.json"
+      - "data/usaspending/obligations.parquet"
+      - "data/usaspending/_meta.json"
+      - "contracts/government_revenue/**"
+      - "collectors/sam_gov.py"
+      - "engine/government_revenue/**"
+      - "lib/pages.py"
+      - "scripts/build_government_revenue.py"
+      - "scripts/collect.py"
+      - "templates/_interfonts.html.j2"
+      - "templates/_navlinks.html.j2"
+      - "templates/_seo_head.html.j2"
+      - "templates/_site_nav.html.j2"
+      - "templates/data_base.js"
+      - "templates/government_revenue.html.j2"
+
+permissions:
+  contents: write
+
+concurrency:
+  # A completed first-seen observation must not be discarded halfway through a
+  # persist/publish cycle.  The next 30-minute tick can wait.
+  group: government-revenue-live
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # workflow_call follows a daily data push; always begin from the current
+          # production ref rather than the caller's checkout-time SHA.
+          ref: main
+          fetch-depth: 1
+
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+
+      - name: fingerprint committed SAM evidence
+        id: baseline
+        if: ${{ github.event_name != 'push' && inputs.projection_only != true }}
+        # The collector refreshes last_seen_at and its dated heartbeat on every
+        # successful poll. The fingerprint deliberately excludes those clocks so
+        # downstream alerting can distinguish semantic evidence from a quiet
+        # health receipt. Both are published: otherwise a healthy quiet source
+        # would age falsely stale after the 90-minute current-state SLA.
+        run: |
+          python - "$RUNNER_TEMP/govrev-sam-material-before.sha256" <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          import pandas as pd
+
+          ROOT = Path(".")
+          SPECS = {
+              "opportunities": (
+                  ROOT / "data/government_revenue/opportunities.parquet",
+                  ("notice_id", "revision_id", "content_sha256", "effective_at"),
+              ),
+              "revisions": (
+                  ROOT / "data/government_revenue/opportunity_revisions.parquet",
+                  ("notice_id", "revision_id", "content_sha256", "effective_at"),
+              ),
+              "documents": (
+                  ROOT / "data/government_revenue/opportunity_documents.parquet",
+                  ("notice_id", "revision_id", "document_key", "content_sha256", "hash_basis", "fetch_status"),
+              ),
+          }
+
+
+          def scalar(value):
+              if value is None:
+                  return None
+              try:
+                  if pd.isna(value):
+                      return None
+              except (TypeError, ValueError):
+                  pass
+              if isinstance(value, pd.Timestamp):
+                  return value.isoformat()
+              if isinstance(value, (str, int, float, bool)):
+                  return value
+              return str(value)
+
+
+          def rows(path: Path, columns: tuple[str, ...]):
+              if not path.exists():
+                  return []
+              try:
+                  frame = pd.read_parquet(path, columns=list(columns))
+              except Exception:
+                  # A missing column in a legacy first-run artifact is harmless:
+                  # read it whole and normalize the absent field to null instead.
+                  frame = pd.read_parquet(path)
+              records = [
+                  {column: scalar(row.get(column)) for column in columns}
+                  for row in frame.reindex(columns=list(columns)).to_dict(orient="records")
+              ]
+              return sorted(records, key=lambda row: json.dumps(row, sort_keys=True, default=str))
+
+
+          # Presence is itself material on the first complete poll.  Without it,
+          # a missing legacy artifact and an intentionally empty complete ledger
+          # would hash the same and the first good empty state would never publish.
+          payload = {
+              name: {"present": path.exists(), "rows": rows(path, columns)}
+              for name, (path, columns) in SPECS.items()
+          }
+          raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+          Path(sys.argv[1]).write_text(hashlib.sha256(raw).hexdigest() + "\n", encoding="utf-8")
+          PY
+
+      - name: collect SAM opportunity evidence (last-good gated)
+        id: collect
+        if: ${{ github.event_name != 'push' && inputs.projection_only != true }}
+        # collect.py contains shared health/qledger housekeeping.  This named lane
+        # is not the nightly lane, so it cannot advance the guarded forward
+        # graders; only the explicit government-revenue paths below may publish.
+        continue-on-error: true
+        env:
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}
+          COLLECT_LANE: government-revenue-live
+        run: python -m scripts.collect --only sam_gov_opportunities --skip-quality --skip-shadow-importance
+
+      - name: gate publication on complete health or material evidence
+        id: gate
+        if: ${{ always() }}
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          EVENT_NAME: ${{ github.event_name }}
+          PROJECTION_ONLY: ${{ inputs.projection_only }}
+        run: |
+          python - "$RUNNER_TEMP/govrev-sam-material-before.sha256" "$GITHUB_OUTPUT" <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          import pandas as pd
+
+          ROOT = Path(".")
+          STATUS_PATH = ROOT / "data/government_revenue/opportunity_ingest_status.json"
+          SPECS = {
+              "opportunities": (
+                  ROOT / "data/government_revenue/opportunities.parquet",
+                  ("notice_id", "revision_id", "content_sha256", "effective_at"),
+              ),
+              "revisions": (
+                  ROOT / "data/government_revenue/opportunity_revisions.parquet",
+                  ("notice_id", "revision_id", "content_sha256", "effective_at"),
+              ),
+              "documents": (
+                  ROOT / "data/government_revenue/opportunity_documents.parquet",
+                  ("notice_id", "revision_id", "document_key", "content_sha256", "hash_basis", "fetch_status"),
+              ),
+          }
+
+
+          def scalar(value):
+              if value is None:
+                  return None
+              try:
+                  if pd.isna(value):
+                      return None
+              except (TypeError, ValueError):
+                  pass
+              if isinstance(value, pd.Timestamp):
+                  return value.isoformat()
+              if isinstance(value, (str, int, float, bool)):
+                  return value
+              return str(value)
+
+
+          def fingerprint() -> str:
+              payload = {}
+              for name, (path, columns) in SPECS.items():
+                  frame = pd.read_parquet(path, columns=list(columns))
+                  records = [
+                      {column: scalar(row.get(column)) for column in columns}
+                      for row in frame.reindex(columns=list(columns)).to_dict(orient="records")
+                  ]
+                  payload[name] = {
+                      "present": path.exists(),
+                      "rows": sorted(
+                          records, key=lambda row: json.dumps(row, sort_keys=True, default=str)
+                      ),
+                  }
+              raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+              return hashlib.sha256(raw).hexdigest()
+
+
+          event_name = os.environ.get("EVENT_NAME", "unknown")
+          projection_only = os.environ.get("PROJECTION_ONLY", "false").lower() == "true"
+          outcome = os.environ.get("COLLECT_OUTCOME", "unknown")
+          status_name = "missing"
+          partial = True
+          material_changed = False
+          reason = "collect_not_successful"
+          records = {}
+          if event_name == "push" or projection_only:
+              # A path-filtered main push means an upstream evidence generation or
+              # desk implementation changed.  This job is the sole canonical
+              # projection owner, so fold it even though the SAM collector is intentionally
+              # skipped for push-triggered runs.
+              status_name = "not_polled"
+              partial = False
+              material_changed = True
+              reason = "main_input_generation_changed"
+          elif outcome == "success" and STATUS_PATH.exists() and all(path.exists() for path, _ in SPECS.values()):
+              try:
+                  status = json.loads(STATUS_PATH.read_text(encoding="utf-8"))
+                  status_name = str(status.get("status") or "missing")
+                  partial = bool(status.get("partial", True))
+                  records = status.get("records") if isinstance(status.get("records"), dict) else {}
+                  if status_name == "ok" and not partial:
+                      before = Path(sys.argv[1]).read_text(encoding="utf-8").strip()
+                      material_changed = fingerprint() != before
+                      reason = (
+                          "material_evidence"
+                          if material_changed
+                          else "complete_quiet_health_receipt"
+                      )
+                  else:
+                      reason = "partial_or_failed_source_receipt"
+              except Exception:
+                  # A malformed receipt is incomplete evidence.  Do not disclose
+                  # arbitrary source error text (or environment values) in logs.
+                  reason = "unreadable_source_receipt"
+          elif outcome == "success":
+              reason = "required_last_good_artifact_missing"
+
+          publish = (
+              event_name == "push" or projection_only
+              or (outcome == "success" and status_name == "ok" and not partial)
+          )
+          with Path(sys.argv[2]).open("a", encoding="utf-8") as fh:
+              fh.write(f"publish={'yes' if publish else 'no'}\n")
+              fh.write(f"reason={reason}\n")
+          safe_counts = {
+              key: records.get(key)
+              for key in ("opportunities_seen", "revisions_seen", "documents_seen")
+              if isinstance(records.get(key), (int, float))
+          }
+          print(
+              "government-revenue publish gate: "
+              f"event={event_name} collect={outcome} status={status_name} partial={str(partial).lower()} "
+              f"material_changed={str(material_changed).lower()} publish={'yes' if publish else 'no'} "
+              f"counts={safe_counts}"
+          )
+          PY
+
+      - name: build Government Revenue projection
+        if: ${{ steps.gate.outputs.publish == 'yes' }}
+        run: python -m scripts.build_government_revenue
+
+      - name: commit complete evidence projection
+        if: ${{ steps.gate.outputs.publish == 'yes' }}
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Stage only the first-seen SAM evidence, its runner heartbeat, and the
+          # rebuilt context/display twins.  In particular, do NOT stage shared
+          # collect run-status, qledger, governance, or forward-ledger byproducts.
+          # A projection-only or path-triggered first run can legitimately have
+          # no SAM ledger yet (for example before SAM_API_KEY is installed).
+          # `git add` fatals on an absent, never-tracked path, so stage only
+          # evidence paths that currently exist or whose deletion is tracked.
+          stage_candidates=(
+            data/government_revenue/opportunities.parquet
+            data/government_revenue/opportunity_revisions.parquet
+            data/government_revenue/opportunity_documents.parquet
+            data/government_revenue/opportunity_ingest_status.json
+            data/government_revenue/sam_opportunity_heartbeat.parquet
+            data/government_revenue/latest.json
+            data/government_revenue/workspace.json
+            site/government-revenue-data/latest.json
+            site/government-revenue-data/workspace.json
+            site/government_revenue.html
+          )
+          stage_paths=()
+          for path in "${stage_candidates[@]}"; do
+            if [ -e "$path" ] || git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+              stage_paths+=("$path")
+            fi
+          done
+          git add -- "${stage_paths[@]}"
+          if git diff --cached --quiet; then
+            echo "no material Government Revenue artifacts to publish"
+            exit 0
+          fi
+          push_staged_clean \
+            data/government_revenue/opportunities.parquet \
+            data/government_revenue/opportunity_revisions.parquet \
+            data/government_revenue/opportunity_documents.parquet \
+            data/government_revenue/opportunity_ingest_status.json \
+            data/government_revenue/sam_opportunity_heartbeat.parquet \
+            data/government_revenue/latest.json \
+            data/government_revenue/workspace.json \
+            site/government-revenue-data/latest.json \
+            site/government-revenue-data/workspace.json \
+            site/government_revenue.html
+          git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
+
+          # Generated files are committed before the rebase.  Any remaining
+          # tracked mutation is a shared collect byproduct and is deliberately
+          # allowed to autostash on this disposable runner checkout, never staged.
+          PUSH_MAX_ATTEMPTS=8
+          PUSH_BUDGET_SECS=300
+          PUSH_ALARM=90
+          push_retry_init "government-revenue evidence"
+          while push_attempt; do
+            git fetch origin main || true
+            # A mid-run main commit can start tracking an untracked side-effect;
+            # autostash only contains tracked changes.  The generated projection
+            # is already committed, so the origin/main copy is authoritative for
+            # this narrow intersection and the local side-effect is disposable.
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
+              # Rebuild AFTER every successful rebase.  A daily USAspending commit
+              # can land while this run is collecting SAM; replaying the pre-sync
+              # projection would otherwise publish a mixed evidence generation.
+              # A non-fast-forward push loops back through this same re-render.
+              python -m scripts.build_government_revenue
+              git add \
+                data/government_revenue/latest.json \
+                data/government_revenue/workspace.json \
+                site/government-revenue-data/latest.json \
+                site/government-revenue-data/workspace.json \
+                site/government_revenue.html
+              push_staged_clean \
+                data/government_revenue/latest.json \
+                data/government_revenue/workspace.json \
+                site/government-revenue-data/latest.json \
+                site/government-revenue-data/workspace.json \
+                site/government_revenue.html
+              if ! git diff --cached --quiet; then
+                git commit --amend --no-edit
+              fi
+              if push_do origin HEAD:main; then
+                echo "pushed Government Revenue evidence on attempt ${PUSH_ATTEMPT}"
+                push_won
+                exit 0
+              fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning title=government-revenue-live::could not publish complete evidence after ${PUSH_ATTEMPT} attempts; prior live projection remains authoritative"
+          exit 0

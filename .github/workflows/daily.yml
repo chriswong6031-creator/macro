@@ -62,6 +62,8 @@ jobs:
     # evening source retry loops (under forensics). 185m buys survival at the observed
     # pace + commit headroom while the growth is root-caused.
     timeout-minutes: 185
+    outputs:
+      government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
@@ -232,7 +234,10 @@ jobs:
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           # --skip-shadow-importance: the ~13-14m shadow passes run standalone in
           # collect_tail (2026-07-14 split) — off the engine job's critical path.
-          python -m scripts.collect --exclude-group asia --skip-shadow-importance
+          # sam_gov_opportunities is excluded because government-revenue-live.yml
+          # is its sole serialized ledger owner. Two workflows must never merge and
+          # overwrite the same revision/document Parquets concurrently.
+          python -m scripts.collect --exclude-group asia --exclude sam_gov_opportunities --skip-shadow-importance
       - name: compile capital-structure event spine (offline, context-only)
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
         # the data commit so immutable event versions/edges ride the same checkpoint.
@@ -312,8 +317,10 @@ jobs:
       # Every git network op is alarm-bounded (macOS runners have no GNU timeout;
       # perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
       - name: push data (survives a job-cap cancel; alarm-bounded git ops)
+        id: pushdata
         if: always() && steps.commitdata.outputs.committed == 'true'
         run: |
+          echo "published=false" >> "$GITHUB_OUTPUT"
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
@@ -336,7 +343,12 @@ jobs:
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
-              if push_do; then echo "pushed data on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+              if push_do; then
+                echo "pushed data on attempt $PUSH_ATTEMPT"
+                echo "published=true" >> "$GITHUB_OUTPUT"
+                push_won
+                exit 0
+              fi
             fi
             push_abort_rebase
             push_backoff
@@ -387,6 +399,18 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.publish_r2 --dirs massive_stock_day || echo "::warning::massive_stock_day R2 publish failed (non-fatal — R2 copy goes stale; the engine job's strict audit_r2 anchor goes red within 26h)"
+
+  government_revenue_projection:
+    # A GITHUB_TOKEN push intentionally cannot recursively launch a push workflow.
+    # Call the serialized owner synchronously instead, so the engine checkout and
+    # its Neural Web/Prophet readers cannot race the prior procurement generation.
+    needs: collect
+    if: needs.collect.outputs.government_revenue_projection_needed == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/government-revenue-live.yml
+    with:
+      projection_only: true
 
   # collect_tail: the slow post-adapter accrual band, split out of `collect`
   # (2026-07-14) so the engine job starts as soon as the adapter sweep commits
@@ -722,7 +746,7 @@ jobs:
           echo "::warning::could not push collect-tail data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   engine:
-    needs: collect
+    needs: [collect, government_revenue_projection]
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 200    # was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_news (~26–29m even on green nights, largely GDELT rate-limit backoff — cache/de-rate the sweep or move the news suite into the parallel builders band). Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.

@@ -65,6 +65,7 @@ from typing import Any
 
 import pandas as pd
 
+from engine.government_revenue.freshness import effective_freshness
 from engine.neuralweb.options_plane import (
     options_structure_block as _options_structure_block,
 )
@@ -1757,6 +1758,15 @@ def _government_revenue_visible_at(payload: dict, now: datetime | None) -> bool:
         return False
 
 
+def _government_revenue_freshness(
+    payload: dict,
+    now: datetime | None = None,
+) -> tuple[str, str]:
+    """Return elapsed-time-aware overall/opportunity rail states."""
+    evaluated = effective_freshness(payload, reference=now)
+    return str(evaluated["status"]), str(evaluated["opportunities"])
+
+
 def _summarize_government_revenue(
     repo: Path,
     now: datetime | None = None,
@@ -1775,6 +1785,33 @@ def _summarize_government_revenue(
         return {}, "data/government_revenue/latest.json schema mismatch"
     if not _government_revenue_visible_at(payload, now):
         return {}, "data/government_revenue/latest.json newer than replay knowledge clock"
+    overall_status, opportunity_status = _government_revenue_freshness(payload, now)
+    if overall_status != "ok":
+        # Keep the lobe's health visible to operators, but suppress procurement
+        # weather that could be mistaken for current context downstream.
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "degraded": True,
+            "asof": payload.get("as_of"),
+            "known_at": payload.get("known_at"),
+            "workbench": payload.get("workbench") or {"id": "government_revenue"},
+            "freshness": {
+                "status": overall_status,
+                "opportunities": opportunity_status,
+            },
+            "coverage": {},
+            "market": {},
+            "authority": {
+                "can_add_candidates": False,
+                "can_rank": False,
+                "can_raise_size": False,
+                "can_lower_size": False,
+                "can_gate": False,
+                "can_escalate": False,
+            },
+            "honesty_note": "degraded procurement artifact; market facts suppressed until fresh",
+        }, f"freshness {overall_status}; procurement weather suppressed"
     market = payload.get("market") or {}
     coverage = payload.get("coverage") or {}
     velocity_breadth = market.get("award_velocity_breadth") or {}
@@ -1788,6 +1825,10 @@ def _summarize_government_revenue(
         "asof": payload.get("as_of"),
         "known_at": payload.get("known_at"),
         "workbench": payload.get("workbench") or {"id": "government_revenue"},
+        "freshness": {
+            "status": overall_status,
+            "opportunities": opportunity_status,
+        },
         "coverage": _sparse({
             "companies": first_present(
                 coverage.get("companies"),
@@ -1818,6 +1859,9 @@ def _summarize_government_revenue(
                 market.get("funded_backlog"),
             ),
             "recompete_watch_count": market.get("recompete_watch_count"),
+            "active_opportunities": market.get("active_opportunities"),
+            "opportunity_amendments_7d": market.get("opportunity_amendments_7d"),
+            "opportunity_company_candidate_links": market.get("opportunity_company_candidate_links"),
         }),
         "authority": {
             "can_add_candidates": False,
@@ -1972,6 +2016,9 @@ _GOVERNMENT_REVENUE_METRICS = (
     "awards_with_current_value",
     "backlog_scope",
     "funding_pct",
+    "net_award_action_flow_90d",
+    "positive_award_action_flow_90d",
+    "award_action_flow_basis",
     "modification_impulse_90d",
     "deobligations_90d",
     "agency_concentration",
@@ -2007,6 +2054,19 @@ def _load_government_revenue_map(
             "candidate_context.government_revenue: latest.json newer than replay clock — block omitted"
         )
         return {}
+    overall_status, opportunity_status = _government_revenue_freshness(payload, now)
+    if overall_status != "ok":
+        gap_notes.append(
+            "candidate_context.government_revenue: latest.json freshness "
+            f"{overall_status} — company facts suppressed"
+        )
+        return {}
+    opportunities_current = opportunity_status == "ok"
+    if not opportunities_current:
+        gap_notes.append(
+            "candidate_context.government_revenue: opportunity freshness "
+            f"{opportunity_status} — opportunity candidates suppressed"
+        )
     out: dict[str, dict] = {}
     for company in payload.get("companies") or []:
         if not isinstance(company, dict) or not company.get("ticker"):
@@ -2015,8 +2075,17 @@ def _load_government_revenue_map(
         block = _sparse({
             "as_of": payload.get("as_of"),
             "known_at": payload.get("known_at"),
+            "freshness": {
+                "status": overall_status,
+                "opportunities": opportunity_status,
+            },
             "metrics": _sparse({key: metrics.get(key) for key in _GOVERNMENT_REVENUE_METRICS}),
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
+            "opportunity_candidates": (
+                (company.get("opportunity_candidates") or [])[:3]
+                if opportunities_current
+                else []
+            ),
             "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
             "confidence": company.get("confidence"),
             "provenance": (company.get("provenance") or [])[:3],

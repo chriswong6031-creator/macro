@@ -15,6 +15,7 @@ from collectors.usaspending_awards import (
     UsaspendingAwardsAdapter,
     UsaspendingAwardsCollector,
     append_first_seen,
+    append_snapshot_versions,
     enrich_award,
     merge_awards,
     normalize_action,
@@ -162,6 +163,27 @@ def test_award_merge_preserves_detail_values_when_new_search_row_has_nulls():
     assert merged.iloc[0]["last_seen_at"] == OBSERVED
 
 
+def test_successful_detail_explicit_null_clears_prior_current_and_potential_values():
+    first = enrich_award(
+        normalize_award(_raw_award(100.0), "LMT", "2026-07-01T00:00:00+00:00"),
+        {"base_exercised_options": 140.0, "base_and_all_options": 220.0},
+    )
+    cleared = enrich_award(
+        normalize_award(_raw_award(150.0), "LMT", OBSERVED),
+        {"base_exercised_options": None, "base_and_all_options": None},
+    )
+    merged = merge_awards(
+        pd.DataFrame([first], columns=AWARD_COLUMNS),
+        pd.DataFrame([cleared], columns=AWARD_COLUMNS),
+    )
+
+    assert pd.isna(merged.iloc[0]["current_award_amount"])
+    assert pd.isna(merged.iloc[0]["potential_award_amount"])
+    assert merged.iloc[0]["current_award_amount_observed_at"] == OBSERVED
+    assert merged.iloc[0]["potential_award_amount_observed_at"] == OBSERVED
+    assert merged.iloc[0]["total_obligated"] == 150.0
+
+
 def test_generated_award_identity_prevents_same_piid_collision():
     first = normalize_award(_raw_award(100.0), "LMT", OBSERVED)
     second_raw = _raw_award(200.0)
@@ -180,7 +202,7 @@ def test_generated_award_identity_prevents_same_piid_collision():
     assert set(merged["total_obligated"]) == {100.0, 200.0}
 
 
-def test_actions_and_daily_snapshots_are_append_first_seen_idempotent():
+def test_actions_and_state_version_snapshots_are_append_first_seen_idempotent():
     award = normalize_award(_raw_award(), "LMT", OBSERVED)
     action = normalize_action({"id": "TX1", "action_date": "2026-07-31"}, award, OBSERVED)
     incoming = pd.DataFrame([action], columns=ACTION_COLUMNS)
@@ -189,14 +211,68 @@ def test_actions_and_daily_snapshots_are_append_first_seen_idempotent():
     assert len(once) == len(twice) == 1
 
     daily = snapshot_rows(pd.DataFrame([award], columns=AWARD_COLUMNS), OBSERVED)
-    snapshots = append_first_seen(
-        pd.DataFrame(columns=SNAPSHOT_COLUMNS), daily, ["ticker", "award_id", "snapshot_date"], SNAPSHOT_COLUMNS
-    )
-    snapshots = append_first_seen(
-        snapshots, daily, ["ticker", "award_id", "snapshot_date"], SNAPSHOT_COLUMNS
-    )
+    snapshots = append_snapshot_versions(pd.DataFrame(columns=SNAPSHOT_COLUMNS), daily)
+    snapshots = append_snapshot_versions(snapshots, daily)
     assert len(snapshots) == 1
     assert snapshots.iloc[0]["snapshot_date"] == "2026-08-01"
+    assert len(snapshots.iloc[0]["snapshot_content_sha256"]) == 64
+
+
+def test_snapshot_transition_ledger_retains_state_reversion():
+    states = []
+    first_seen = "2026-08-01T10:00:00+00:00"
+    for amount, known_at in (
+        (100.0, first_seen),
+        (150.0, "2026-08-01T12:00:00+00:00"),
+        (100.0, "2026-08-01T14:00:00+00:00"),
+    ):
+        award = normalize_award(_raw_award(amount), "LMT", known_at)
+        award["first_seen_at"] = first_seen
+        states.append(snapshot_rows(
+            pd.DataFrame([award], columns=AWARD_COLUMNS), known_at
+        ))
+    ledger = pd.DataFrame(columns=SNAPSHOT_COLUMNS)
+    for state in states:
+        ledger = append_snapshot_versions(ledger, state)
+
+    assert ledger["total_obligated"].tolist() == [100.0, 150.0, 100.0]
+    assert ledger["snapshot_content_sha256"].iloc[0] == ledger["snapshot_content_sha256"].iloc[2]
+    assert ledger["known_at"].is_unique
+
+
+def test_same_day_award_change_creates_new_snapshot_and_preserves_prior_enrichment(tmp_path):
+    collector = UsaspendingAwardsCollector(root=tmp_path, request_pacing_seconds=0)
+    first = enrich_award(
+        normalize_award(_raw_award(100.0), "LMT", "2026-08-01T10:00:00+00:00"),
+        {"base_exercised_options": 140.0, "base_and_all_options": 220.0},
+    )
+    collector.persist(
+        pd.DataFrame([first], columns=AWARD_COLUMNS),
+        pd.DataFrame(columns=ACTION_COLUMNS),
+        "2026-08-01T10:00:00+00:00",
+    )
+    search_only = normalize_award(
+        _raw_award(150.0), "LMT", "2026-08-01T14:00:00+00:00"
+    )
+    totals = collector.persist(
+        pd.DataFrame([search_only], columns=AWARD_COLUMNS),
+        pd.DataFrame(columns=ACTION_COLUMNS),
+        "2026-08-01T14:00:00+00:00",
+    )
+
+    snapshots = pd.read_parquet(
+        tmp_path / "data" / "government_revenue" / "award_snapshots.parquet"
+    ).sort_values("known_at")
+    current = pd.read_parquet(
+        tmp_path / "data" / "government_revenue" / "awards.parquet"
+    ).iloc[0]
+
+    assert totals["snapshots_total"] == len(snapshots) == 2
+    assert snapshots["snapshot_date"].tolist() == ["2026-08-01", "2026-08-01"]
+    assert snapshots["total_obligated"].tolist() == [100.0, 150.0]
+    assert snapshots["current_award_amount"].tolist() == [140.0, 140.0]
+    assert snapshots["potential_award_amount"].tolist() == [220.0, 220.0]
+    assert current["current_award_amount"] == 140.0
 
 
 class _Response:
@@ -251,6 +327,39 @@ class _Session:
         })
 
 
+class _PagedSession(_Session):
+    """Route award/action pages by the supplied page integer."""
+
+    def __init__(self, *, award_pages, action_pages):
+        super().__init__()
+        self.award_pages = award_pages
+        self.action_pages = action_pages
+
+    def post(self, url, json, headers, timeout):
+        self.calls.append((url, json, headers, timeout))
+        pages = self.award_pages if url == AWARDS_URL else self.action_pages
+        if url not in {AWARDS_URL, TRANSACTIONS_URL}:
+            raise AssertionError(f"unexpected URL {url}")
+        page = int(json["page"])
+        payload = pages.get(page)
+        if payload is None:
+            raise AssertionError(f"unexpected page {page} for {url}")
+        if isinstance(payload, Exception):
+            raise payload
+        return _Response(payload)
+
+
+def _write_entities(tmp_path):
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "entities.json").write_text(json.dumps({
+        "entities": {
+            "LMT": {"name": "Lockheed Martin", "recipient_search_text": "LOCKHEED MARTIN"}
+        }
+    }))
+    return data_dir
+
+
 def test_bounded_collector_builds_all_three_ledgers_without_network(tmp_path):
     data_dir = tmp_path / "data" / "government_revenue"
     data_dir.mkdir(parents=True)
@@ -291,12 +400,284 @@ def test_bounded_collector_builds_all_three_ledgers_without_network(tmp_path):
     assert (data_dir / "award_actions.parquet").exists()
     assert (data_dir / "award_snapshots.parquet").exists()
     ingest = json.loads((data_dir / "ingest_status.json").read_text())
-    assert ingest["schema_version"] == "government_revenue.ingest_status.v1"
+    assert ingest["schema_version"] == "government_revenue.ingest_status.v2"
     assert ingest["source_urls"] == [AWARDS_URL, AWARD_DETAIL_URL, TRANSACTIONS_URL]
+    assert ingest["status"] == "ok"
+    assert ingest["rails"]["awards"]["completeness"]["full_usaspending_corpus"] is False
+    assert ingest["rails"]["actions"]["state"] == "complete"
+    assert ingest["collection_receipts"]["raw_response_bodies_persisted"] is False
+    receipt_lines = (data_dir / "collection_receipts.jsonl").read_text().splitlines()
+    assert len(receipt_lines) == 3
+    assert all(len(json.loads(line)["response_sha256"]) == 64 for line in receipt_lines)
     saved_award = pd.read_parquet(data_dir / "awards.parquet").iloc[0]
     assert saved_award["current_award_amount"] == 100.0
     assert saved_award["potential_award_amount"] == 150.0
     assert saved_award["program"] == "F-35 Joint Strike Fighter"
+
+
+def test_selected_ticker_run_cannot_claim_complete_configured_universe(tmp_path):
+    data_dir = _write_entities(tmp_path)
+    entities = json.loads((data_dir / "entities.json").read_text())
+    entities["entities"]["NOC"] = {
+        "name": "Northrop Grumman",
+        "recipient_search_text": "NORTHROP GRUMMAN",
+    }
+    (data_dir / "entities.json").write_text(json.dumps(entities))
+
+    status = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    assert status["status"] == "partial"
+    assert status["full_configured_universe"] is False
+    assert status["entities_requested"] == 1
+    assert status["entities_configured_total"] == 2
+    assert status["rails"]["awards"]["state"] == "partial"
+    assert status["rails"]["awards"]["denominators"]["full_configured_universe"] is False
+
+
+def test_action_history_paginates_to_explicit_has_next_false_and_reports_denominators(tmp_path):
+    data_dir = _write_entities(tmp_path)
+    session = _PagedSession(
+        award_pages={
+            1: {"results": [_raw_award()], "page_metadata": {"hasNext": False}},
+        },
+        action_pages={
+            1: {
+                "results": [
+                    {"id": "TX1", "action_date": "2026-07-30", "federal_action_obligation": 1.0},
+                    {"id": "TX2", "action_date": "2026-07-29", "federal_action_obligation": 2.0},
+                ],
+                "page_metadata": {"hasNext": True},
+            },
+            2: {
+                "results": [
+                    {"id": "TX3", "action_date": "2026-07-28", "federal_action_obligation": 3.0},
+                ],
+                "page_metadata": {"hasNext": False},
+            },
+        },
+    )
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        max_action_pages=3,
+        request_pacing_seconds=0,
+    )
+
+    status = collector.collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    action_pages = [call[1]["page"] for call in session.calls if call[0] == TRANSACTIONS_URL]
+    rail = status["rails"]["actions"]
+
+    assert action_pages == [1, 2]
+    assert status["status"] == "ok"
+    assert status["actions_seen"] == status["actions_total"] == 3
+    assert rail["state"] == "complete"
+    assert rail["pages"] == {
+        "requested": 2,
+        "succeeded": 2,
+        "safety_cap_per_award": 3,
+        "unresolved_has_next_awards": 0,
+        "missing_has_next_awards": 0,
+    }
+    assert rail["records"]["raw"] == rail["records"]["accepted"] == 3
+    assert rail["denominators"] == {
+        "sampled_awards": 1,
+        "queries_attempted": 1,
+        "queries_complete": 1,
+        "queries_partial": 0,
+        "queries_failed": 0,
+        "queries_not_requested": 0,
+    }
+    receipts = [json.loads(line) for line in (data_dir / "collection_receipts.jsonl").read_text().splitlines()]
+    action_receipts = [row for row in receipts if row["rail"] == "actions"]
+    assert [row["page"] for row in action_receipts] == [1, 2]
+    assert all(len(row["request_sha256"]) == len(row["response_sha256"]) == 64 for row in receipts)
+
+
+def test_action_safety_cap_never_claims_complete_history(tmp_path):
+    _write_entities(tmp_path)
+    session = _PagedSession(
+        award_pages={
+            1: {"results": [_raw_award()], "page_metadata": {"hasNext": False}},
+        },
+        action_pages={
+            1: {
+                "results": [{"id": "TX1", "action_date": "2026-07-30"}],
+                "page_metadata": {"hasNext": True},
+            },
+        },
+    )
+    collector = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=session,
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        max_action_pages=1,
+        request_pacing_seconds=0,
+    )
+
+    status = collector.collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    rail = status["rails"]["actions"]
+
+    assert status["status"] == "partial"
+    assert status["partial"] is True
+    assert rail["state"] == "partial"
+    assert rail["pages"]["unresolved_has_next_awards"] == 1
+    assert rail["completeness"]["full_usaspending_corpus"] is False
+    assert rail["completeness"]["claim"].startswith("actions paginate")
+    assert any(
+        error["stage"] == "actions" and error["reason"] == "max_pages_reached_with_has_next"
+        for error in status["errors"]
+    )
+
+
+def test_failed_award_rail_preserves_all_last_good_ledgers_and_clock(tmp_path, monkeypatch):
+    data_dir = _write_entities(tmp_path)
+    seed = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    last_good_bytes = {
+        name: (data_dir / name).read_bytes()
+        for name in ("awards.parquet", "award_actions.parquet", "award_snapshots.parquet")
+    }
+
+    failed = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    )
+
+    def fail_post(*_args, **_kwargs):
+        raise RuntimeError("upstream api_key=not-for-status network failure")
+
+    monkeypatch.setattr(failed, "_post", fail_post)
+    status = failed.collect(["LMT"], as_of="2026-08-02", lookback_days=30)
+
+    assert status["status"] == "failed"
+    assert status["last_successful_observed_at"] == seed["observed_at"]
+    assert status["rails"]["awards"]["last_successful_observed_at"] == seed["observed_at"]
+    assert all((data_dir / name).read_bytes() == original for name, original in last_good_bytes.items())
+    assert "not-for-status" not in json.dumps(status)
+
+
+def test_receipt_binding_failure_marks_every_requested_rail_failed(tmp_path, monkeypatch):
+    data_dir = _write_entities(tmp_path)
+    seed = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    last_good_bytes = {
+        name: (data_dir / name).read_bytes()
+        for name in ("awards.parquet", "award_actions.parquet", "award_snapshots.parquet")
+    }
+
+    def fail_receipt(*_args, **_kwargs):
+        raise RuntimeError("receipt ledger unavailable")
+
+    monkeypatch.setattr(
+        "collectors.usaspending_awards._append_collection_receipts", fail_receipt
+    )
+    status = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-02", lookback_days=30)
+
+    assert status["status"] == "failed"
+    assert status["last_successful_observed_at"] == seed["observed_at"]
+    assert {
+        name: status["rails"][name]["state"]
+        for name in ("awards", "award_detail", "actions")
+    } == {"awards": "failed", "award_detail": "failed", "actions": "failed"}
+    assert all(
+        status["rails"][name]["last_successful_observed_at"] == seed["observed_at"]
+        for name in ("awards", "award_detail", "actions")
+    )
+    assert all((data_dir / name).read_bytes() == original for name, original in last_good_bytes.items())
+
+
+def test_same_observation_is_idempotent_for_ledgers_and_receipt_ids(tmp_path, monkeypatch):
+    data_dir = _write_entities(tmp_path)
+    monkeypatch.setattr("collectors.usaspending_awards._utc_iso", lambda value=None: OBSERVED)
+    first = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    second = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+
+    assert first["status"] == second["status"] == "ok"
+    assert second["awards_total"] == 1
+    assert second["actions_total"] == 1
+    assert second["snapshots_total"] == 1
+    assert second["collection_receipts"]["new_receipts_this_run"] == 0
+    receipts = [json.loads(line) for line in (data_dir / "collection_receipts.jsonl").read_text().splitlines()]
+    assert len(receipts) == len({row["receipt_id"] for row in receipts}) == 3
+
+
+def test_later_identical_collection_appends_receipts_without_rewriting_prior_entries(tmp_path, monkeypatch):
+    data_dir = _write_entities(tmp_path)
+    clock = [OBSERVED]
+    monkeypatch.setattr("collectors.usaspending_awards._utc_iso", lambda value=None: clock[0])
+    first = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    receipt_path = data_dir / "collection_receipts.jsonl"
+    first_bytes = receipt_path.read_bytes()
+
+    # Same official responses later on the same UTC day are a new retrieval event,
+    # so receipts append while the award/action/snapshot ledgers stay idempotent.
+    clock[0] = "2026-08-01T13:00:00+00:00"
+    second = UsaspendingAwardsCollector(
+        root=tmp_path,
+        session=_Session(),
+        max_pages=1,
+        max_action_awards_per_entity=1,
+        request_pacing_seconds=0,
+    ).collect(["LMT"], as_of="2026-08-01", lookback_days=30)
+    second_bytes = receipt_path.read_bytes()
+    receipts = [json.loads(line) for line in second_bytes.decode().splitlines()]
+
+    assert second_bytes.startswith(first_bytes)
+    assert first["collection_receipts"]["new_receipts_this_run"] == 3
+    assert second["collection_receipts"]["new_receipts_this_run"] == 3
+    assert len(receipts) == 6
+    assert [row["response_sha256"] for row in receipts[:3]] == [
+        row["response_sha256"] for row in receipts[3:]
+    ]
+    assert second["awards_total"] == first["awards_total"] == 1
+    assert second["actions_total"] == first["actions_total"] == 1
+    assert second["snapshots_total"] == first["snapshots_total"] == 1
 
 
 def test_standard_adapter_is_importable_and_emits_only_heartbeat(monkeypatch):
@@ -318,6 +699,7 @@ def test_standard_adapter_is_importable_and_emits_only_heartbeat(monkeypatch):
     assert list(frames) == ["collector_heartbeat"]
     assert adapter.stored_series() == ["collector_heartbeat"]
     assert frames["collector_heartbeat"].iloc[0]["actions_total"] == 4.0
+    assert frames["collector_heartbeat"].iloc[0]["collection_complete"] == 0.0
 
 
 def test_cli_heartbeat_writer_targets_explicit_root(tmp_path):
@@ -337,6 +719,7 @@ def test_cli_heartbeat_writer_targets_explicit_root(tmp_path):
     assert path == tmp_path / "data" / "government_revenue" / "collector_heartbeat.parquet"
     assert frame.index[0] == pd.Timestamp("2026-08-01")
     assert frame.iloc[0]["actions_total"] == 4.0
+    assert frame.iloc[0]["collection_partial"] == 0.0
 
 
 def test_collect_registry_exposes_usaspending_awards_adapter():
