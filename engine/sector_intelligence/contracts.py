@@ -8,9 +8,11 @@ entire registry build.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
 from decimal import Decimal, InvalidOperation
+from difflib import SequenceMatcher
 import copy
 import hashlib
 import json
@@ -46,6 +48,12 @@ _TRIAL_OBSERVATION_CONTRACT_ID = "trial_snapshot_observation.v1"
 _TRIAL_SNAPSHOT_CONTRACT_ID = "trial_snapshot.v1"
 _TRIAL_DIFF_CONTRACT_ID = "trial_version_diff.v1"
 _TRIAL_COVERAGE_CONTRACT_ID = "trial_coverage_epoch.v1"
+_CTGOV_HISTORY_RECEIPT_CONTRACT_ID = "ctgov_history_receipt.v1"
+_CTGOV_HISTORY_RUN_CONTRACT_ID = "ctgov_history_run.v1"
+_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_history_source_snapshot.v1"
+_TRIAL_HISTORY_DIFF_CONTRACT_ID = "trial_history_exact_diff.v1"
+_TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
+_TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
 _SOURCE_RECORD_CONTRACT_ID = "source_record.v1"
 _EVIDENCE_CLAIM_CONTRACT_ID = "evidence_claim.v1"
 _FEATURE_SNAPSHOT_CONTRACT_ID = "feature_snapshot.v1"
@@ -1651,6 +1659,18 @@ def _contract_semantic_issues(
         return _trial_projection_issues(document)
     if contract_id == _TRIAL_COVERAGE_CONTRACT_ID:
         return _trial_coverage_issues(document)
+    if contract_id == _CTGOV_HISTORY_RECEIPT_CONTRACT_ID:
+        return _history_receipt_issues(document)
+    if contract_id == _CTGOV_HISTORY_RUN_CONTRACT_ID:
+        return _history_run_issues(document)
+    if contract_id == _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID:
+        return _history_source_snapshot_issues(document)
+    if contract_id == _TRIAL_HISTORY_DIFF_CONTRACT_ID:
+        return _history_diff_issues(document)
+    if contract_id == _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID:
+        return _history_change_fact_issues(document)
+    if contract_id == _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID:
+        return _history_read_model_issues(document)
     if contract_id == _PAGE_RECEIPT_CONTRACT_ID:
         response = document.get("response")
         issues: list[ValidationIssue] = []
@@ -1946,6 +1966,49 @@ def exact_json_diff(before: Any, after: Any) -> list[dict[str, Any]]:
 
     walk(before, after, ())
     return sorted(operations, key=lambda operation: operation["json_path"])
+
+
+def exact_history_json_diff(before: Any, after: Any) -> list[dict[str, Any]]:
+    """Return the B2 exact diff with history-plane change-family labels.
+
+    The JSON operation semantics remain byte-for-byte identical to
+    :func:`exact_json_diff`; only the closed family taxonomy is adapted for the
+    historical change-fact plane.  This keeps B1's frozen contract untouched.
+    """
+
+    families: list[dict[str, Any]] = []
+    for operation in exact_json_diff(before, after):
+        normalized = copy.deepcopy(operation)
+        path = normalized["json_path"]
+        if path.endswith("/overallStatus"):
+            family = "registry_status"
+        elif "/enrollmentInfo" in path:
+            family = "enrollment"
+        elif "/statusModule/" in path and any(
+            marker in path
+            for marker in ("startDateStruct", "primaryCompletionDateStruct", "completionDateStruct")
+        ):
+            family = "study_date"
+        elif "/contactsLocationsModule/locations" in path:
+            family = "site_listing"
+        elif any(
+            marker in path
+            for marker in (
+                "/outcomesModule/primaryOutcomes",
+                "/outcomesModule/secondaryOutcomes",
+                "/outcomesModule/otherOutcomes",
+            )
+        ):
+            family = "endpoint_record"
+        elif "/sponsorCollaboratorsModule/leadSponsor" in path:
+            family = "sponsor"
+        elif "/armsInterventionsModule/interventions" in path:
+            family = "intervention"
+        else:
+            family = "other"
+        normalized["change_family"] = family
+        families.append(normalized)
+    return families
 
 
 _MISSING = object()
@@ -3364,6 +3427,662 @@ def validate_trial_projection_against_source(
         raise ContractValidationError(_TRIAL_SNAPSHOT_CONTRACT_ID, issues)
 
 
+def _history_receipt_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="receipt_payload_sha256",
+        excluded_fields=frozenset(("receipt_payload_sha256",)),
+        code="history_receipt.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    resource_kind = document.get("resource_kind")
+    source_version = document.get("source_version")
+    request = document.get("request")
+    response = document.get("response")
+    nct_id = document.get("nct_id")
+    if resource_kind == "history_index" and source_version is not None:
+        issues.append(
+            ValidationIssue(
+                "$.source_version",
+                "history_receipt.resource_binding",
+                "a history-index receipt cannot name an individual source version",
+            )
+        )
+    if resource_kind == "history_version" and (
+        isinstance(source_version, bool) or not isinstance(source_version, int)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.source_version",
+                "history_receipt.resource_binding",
+                "a history-version receipt requires a non-boolean integer version",
+            )
+        )
+    if isinstance(request, Mapping) and isinstance(nct_id, str):
+        source_uri = request.get("source_uri")
+        if isinstance(source_uri, str) and f"/studies/{nct_id}" not in source_uri:
+            issues.append(
+                ValidationIssue(
+                    "$.request.source_uri",
+                    "history_receipt.identity",
+                    "request URI must identify the wrapper NCT ID",
+                )
+            )
+        if resource_kind == "history_version" and isinstance(source_version, int):
+            expected_suffix = f"/history/{source_version}"
+            if isinstance(source_uri, str) and not source_uri.endswith(expected_suffix):
+                issues.append(
+                    ValidationIssue(
+                        "$.request.source_uri",
+                        "history_receipt.resource_binding",
+                        "version request URI must end with the requested source version",
+                    )
+                )
+    if isinstance(response, Mapping) and isinstance(nct_id, str):
+        raw_key = response.get("raw_response_object_key")
+        raw_hash = response.get("exact_response_sha256")
+        if (
+            isinstance(raw_key, str)
+            and isinstance(raw_hash, str)
+            and not raw_key.endswith(f"/{raw_hash}.json")
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.response.raw_response_object_key",
+                    "history_receipt.object_key",
+                    "raw response object key must be content-addressed by response hash",
+                )
+            )
+        if isinstance(raw_key, str) and f"/{nct_id}/" not in raw_key:
+            issues.append(
+                ValidationIssue(
+                    "$.response.raw_response_object_key",
+                    "history_receipt.identity",
+                    "raw response object key must identify the wrapper NCT ID",
+                )
+            )
+    issue = _timestamp_order_issue(
+        document, "transaction_from", "transaction_to", "history_receipt.transaction"
+    )
+    if issue is not None:
+        issues.append(issue)
+    if isinstance(response, Mapping):
+        received = _parse_temporal(response.get("received_at"))
+        transaction = _parse_temporal(document.get("transaction_from"))
+        if received is not None and transaction is not None and transaction < received:
+            issues.append(
+                ValidationIssue(
+                    "$.transaction_from",
+                    "history_receipt.transaction",
+                    "receipt transaction time cannot precede response receipt time",
+                )
+            )
+    return issues
+
+
+def _history_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="run_payload_sha256",
+        excluded_fields=frozenset(("run_payload_sha256",)),
+        code="history_run.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    manifest = document.get("version_manifest")
+    refs = document.get("history_version_receipt_refs")
+    if isinstance(manifest, list):
+        versions = [entry.get("source_version") for entry in manifest if isinstance(entry, Mapping)]
+        displays = [entry.get("display_version") for entry in manifest if isinstance(entry, Mapping)]
+        if versions != list(range(len(versions))):
+            issues.append(
+                ValidationIssue(
+                    "$.version_manifest",
+                    "history_run.version_sequence",
+                    "history versions must be contiguous and zero-based",
+                )
+            )
+        if displays != [version + 1 for version in versions if isinstance(version, int)]:
+            issues.append(
+                ValidationIssue(
+                    "$.version_manifest",
+                    "history_run.display_sequence",
+                    "display versions must be exactly one greater than source versions",
+                )
+            )
+    if document.get("run_state") == "complete":
+        complete = (
+            document.get("completeness_state") == "history_complete"
+            and document.get("finished_at") is not None
+            and isinstance(manifest, list)
+            and isinstance(refs, list)
+            and len(manifest) == len(refs)
+            and len(refs) > 0
+            and document.get("error_codes") == []
+        )
+        if not complete:
+            issues.append(
+                ValidationIssue(
+                    "$.run_state",
+                    "history_run.complete",
+                    "complete history runs require full version receipt coverage and no errors",
+                )
+            )
+        if (
+            document.get("history_index_receipt_ref")
+            == document.get("history_index_post_receipt_ref")
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.history_index_post_receipt_ref",
+                    "history_run.index_receipt",
+                    "complete history runs require distinct pre-index and post-index receipt references",
+                )
+            )
+    elif document.get("completeness_state") == "history_complete":
+        issues.append(
+            ValidationIssue(
+                "$.completeness_state",
+                "history_run.incomplete",
+                "only complete runs may claim a complete historical version chain",
+            )
+        )
+    for first, second, code in (
+        ("started_at", "finished_at", "history_run.interval"),
+        ("started_at", "transaction_from", "history_run.transaction"),
+    ):
+        issue = _timestamp_order_issue(document, first, second, code)
+        if issue is not None:
+            issues.append(issue)
+    return issues
+
+
+def _history_source_snapshot_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="snapshot_payload_sha256",
+        excluded_fields=frozenset(("snapshot_payload_sha256",)),
+        code="history_snapshot.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    canonical_study = document.get("canonical_study")
+    nct_id = document.get("nct_id")
+    content_hash = document.get("canonical_content_sha256")
+    source_version = document.get("source_version")
+    if isinstance(canonical_study, Mapping) and isinstance(content_hash, str):
+        actual_hash = canonical_json_sha256(canonical_study)
+        if content_hash != actual_hash:
+            issues.append(
+                ValidationIssue(
+                    "$.canonical_content_sha256",
+                    "history_snapshot.content_hash",
+                    "canonical content hash must match the historical source study",
+                )
+            )
+        source_nct = _resolve_json_pointer(
+            canonical_study, "/protocolSection/identificationModule/nctId"
+        )
+        if source_nct != nct_id:
+            issues.append(
+                ValidationIssue(
+                    "$.canonical_study.protocolSection.identificationModule.nctId",
+                    "history_snapshot.identity",
+                    "historical source study NCT ID must match wrapper NCT ID",
+                )
+            )
+    if isinstance(nct_id, str) and isinstance(content_hash, str) and isinstance(source_version, int):
+        expected_ref = f"src:ctgov-history:{nct_id}:version:{source_version}:sha256:{content_hash}"
+        if document.get("source_record_ref") != expected_ref:
+            issues.append(
+                ValidationIssue(
+                    "$.source_record_ref",
+                    "history_snapshot.content_address",
+                    "source record reference must bind NCT ID, history version, and content hash",
+                )
+            )
+        if document.get("display_version") != source_version + 1:
+            issues.append(
+                ValidationIssue(
+                    "$.display_version",
+                    "history_snapshot.display_version",
+                    "display version must be one greater than the zero-based source version",
+                )
+            )
+    source_uri = document.get("source_uri")
+    if isinstance(nct_id, str) and isinstance(source_version, int) and isinstance(source_uri, str):
+        expected_uri = f"https://clinicaltrials.gov/study/{nct_id}?a={source_version + 1}&tab=history"
+        if source_uri != expected_uri:
+            issues.append(
+                ValidationIssue(
+                    "$.source_uri",
+                    "history_snapshot.source_uri",
+                    "source URI must identify the public record-history display version",
+                )
+            )
+    for first, second, code in (
+        ("retrieved_at", "transaction_from", "history_snapshot.transaction"),
+    ):
+        issue = _timestamp_order_issue(document, first, second, code)
+        if issue is not None:
+            issues.append(issue)
+    return issues
+
+
+def _history_diff_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="diff_payload_sha256",
+        excluded_fields=frozenset(("diff_payload_sha256",)),
+        code="history_diff.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    before_hash = document.get("before_content_sha256")
+    after_hash = document.get("after_content_sha256")
+    if isinstance(before_hash, str) and before_hash == after_hash:
+        issues.append(
+            ValidationIssue(
+                "$.after_content_sha256",
+                "history_diff.noop_hash",
+                "historical diff must connect two different canonical source hashes",
+            )
+        )
+    if document.get("after_source_version") != document.get("before_source_version", -2) + 1:
+        issues.append(
+            ValidationIssue(
+                "$.after_source_version",
+                "history_diff.version_sequence",
+                "exact historical diffs must connect consecutive source versions",
+            )
+        )
+    operations = document.get("operations")
+    if isinstance(operations, list):
+        paths = [item.get("json_path") for item in operations if isinstance(item, Mapping)]
+        if len(paths) != len(set(paths)) or (
+            all(isinstance(path, str) for path in paths) and paths != sorted(paths)
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.operations",
+                    "history_diff.order",
+                    "historical diff operations must have unique lexicographically ordered paths",
+                )
+            )
+        for index, operation in enumerate(operations):
+            if not isinstance(operation, Mapping):
+                continue
+            expected = {"add": ("missing", "present"), "remove": ("present", "missing"), "replace": ("present", "present")}.get(operation.get("op"))
+            if expected is not None and (operation.get("before_state"), operation.get("after_state")) != expected:
+                issues.append(
+                    ValidationIssue(
+                        f"$.operations[{index}]",
+                        "history_diff.operation_state",
+                        "operation states must match the JSON patch operation",
+                    )
+                )
+    return issues
+
+
+def _history_change_fact_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="fact_payload_sha256",
+        excluded_fields=frozenset(("fact_payload_sha256",)),
+        code="history_change_fact.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    if document.get("after_source_version") != document.get("before_source_version", -2) + 1:
+        issues.append(
+            ValidationIssue(
+                "$.after_source_version",
+                "history_change_fact.version_sequence",
+                "change facts must bind consecutive historical versions",
+            )
+        )
+    return issues
+
+
+def _history_read_model_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="model_payload_sha256",
+        excluded_fields=frozenset(("model_payload_sha256",)),
+        code="history_read_model.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    versions = document.get("versions")
+    if isinstance(versions, list):
+        display_versions = [entry.get("display_version") for entry in versions if isinstance(entry, Mapping)]
+        if display_versions != sorted(display_versions) or len(display_versions) != len(set(display_versions)):
+            issues.append(
+                ValidationIssue(
+                    "$.versions",
+                    "history_read_model.version_order",
+                    "public history versions must be unique and ordered by display version",
+                )
+            )
+    private_key_fragments = (
+        "raw",
+        "hash",
+        "sha256",
+        "receipt",
+        "ref",
+        "objectkey",
+        "path",
+        "jsonpath",
+        "provenance",
+    )
+
+    def walk(value: Any, path: tuple[str | int, ...]) -> None:
+        if isinstance(value, Mapping):
+            for key, nested in value.items():
+                normalized_key = (
+                    key.casefold().replace("_", "") if isinstance(key, str) else ""
+                )
+                root_integrity_field = path == () and key in {
+                    "model_payload_sha256",
+                    "hash_scope",
+                }
+                if not root_integrity_field and (
+                    not isinstance(key, str) or any(
+                        fragment in normalized_key for fragment in private_key_fragments
+                    )
+                ):
+                    issues.append(
+                        ValidationIssue(
+                            _json_path((*path, key)),
+                            "history_read_model.private_provenance",
+                            "public history model cannot expose private provenance or integrity keys",
+                        )
+                    )
+                walk(nested, (*path, key))
+        elif isinstance(value, list):
+            for index, nested in enumerate(value):
+                walk(nested, (*path, index))
+
+    walk(document, ())
+    return issues
+
+
+def derive_trial_registry_change_descriptors(
+    before_study: Mapping[str, Any], after_study: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Derive the closed, decision-inert B2 fact projection from two studies.
+
+    This is deliberately independent of a fact document: the validator uses it
+    to make every fact's kind, paths, and values replayable from exact source
+    snapshots rather than trust a rehashed semantic assertion.
+    """
+
+    def pointer_value(document: Mapping[str, Any], pointer: str) -> Any:
+        return _resolve_json_pointer(document, pointer)
+
+    def json_value(value: Any) -> Any:
+        return None if value is _MISSING else value
+
+    def object_list(value: Any) -> list[dict[str, Any]]:
+        return [item for item in value if isinstance(item, Mapping)] if isinstance(value, list) else []
+
+    def normal_text(value: Any) -> str:
+        return " ".join(value.casefold().split()) if isinstance(value, str) else ""
+
+    def endpoint_items(study: Mapping[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+        module = "/protocolSection/outcomesModule/"
+        return [
+            (role, outcome)
+            for role, field in (
+                ("primary", "primaryOutcomes"),
+                ("secondary", "secondaryOutcomes"),
+                ("other", "otherOutcomes"),
+            )
+            for outcome in object_list(pointer_value(study, module + field))
+        ]
+
+    def exact_pairs(
+        before: Sequence[Any], after: Sequence[Any]
+    ) -> tuple[list[tuple[Any, Any]], list[Any], list[Any]]:
+        after_by_hash: dict[str, list[Any]] = {}
+        for item in after:
+            item_value = item[1] if isinstance(item, tuple) else item
+            after_by_hash.setdefault(canonical_json_sha256(item_value), []).append(item)
+        pairs: list[tuple[Any, Any]] = []
+        unmatched_before: list[Any] = []
+        for item in before:
+            item_value = item[1] if isinstance(item, tuple) else item
+            candidates = after_by_hash.get(canonical_json_sha256(item_value), [])
+            if candidates:
+                pairs.append((item, candidates.pop(0)))
+            else:
+                unmatched_before.append(item)
+        return pairs, unmatched_before, [item for values in after_by_hash.values() for item in values]
+
+    def outcome_score(before: Mapping[str, Any], after: Mapping[str, Any]) -> float:
+        before_measure, after_measure = normal_text(before.get("measure")), normal_text(after.get("measure"))
+        if not before_measure or not after_measure:
+            return 0.0
+        return (
+            0.65 * SequenceMatcher(None, before_measure, after_measure, autojunk=False).ratio()
+            + 0.25
+            * SequenceMatcher(
+                None,
+                normal_text(before.get("timeFrame")),
+                normal_text(after.get("timeFrame")),
+                autojunk=False,
+            ).ratio()
+            + 0.10
+            * SequenceMatcher(
+                None,
+                normal_text(before.get("description")),
+                normal_text(after.get("description")),
+                autojunk=False,
+            ).ratio()
+        )
+
+    def unique_outcome_pairs(
+        before: Sequence[tuple[str, dict[str, Any]]], after: Sequence[tuple[str, dict[str, Any]]]
+    ) -> tuple[
+        list[tuple[tuple[str, dict[str, Any]], tuple[str, dict[str, Any]]]],
+        list[tuple[str, dict[str, Any]]],
+        list[tuple[str, dict[str, Any]]],
+    ]:
+        exact, unmatched_before, unmatched_after = exact_pairs(before, after)
+        candidates: dict[tuple[int, int], float] = {}
+        for before_index, (_, before_item) in enumerate(unmatched_before):
+            for after_index, (_, after_item) in enumerate(unmatched_after):
+                score = outcome_score(before_item, after_item)
+                if score >= 0.80:
+                    candidates[(before_index, after_index)] = score
+        paired_before: set[int] = set()
+        paired_after: set[int] = set()
+        pairs = list(exact)
+        for (before_index, after_index), score in sorted(
+            candidates.items(), key=lambda item: (-item[1], item[0])
+        ):
+            if before_index in paired_before or after_index in paired_after:
+                continue
+            before_alternatives = [
+                value
+                for (index, candidate_after_index), value in candidates.items()
+                if index == before_index and candidate_after_index != after_index
+            ]
+            after_alternatives = [
+                value
+                for (candidate_before_index, index), value in candidates.items()
+                if index == after_index and candidate_before_index != before_index
+            ]
+            before_margin = score - max(before_alternatives, default=0.0)
+            after_margin = score - max(after_alternatives, default=0.0)
+            if before_margin < 0.10 or after_margin < 0.10:
+                continue
+            paired_before.add(before_index)
+            paired_after.add(after_index)
+            pairs.append((unmatched_before[before_index], unmatched_after[after_index]))
+        plausible_before = {before_index for before_index, _ in candidates}
+        plausible_after = {after_index for _, after_index in candidates}
+        return (
+            pairs,
+            [
+                item
+                for index, item in enumerate(unmatched_before)
+                if index not in paired_before and index not in plausible_before
+            ],
+            [
+                item
+                for index, item in enumerate(unmatched_after)
+                if index not in paired_after and index not in plausible_after
+            ],
+        )
+
+    def unique_intervention_pairs(
+        before: Sequence[dict[str, Any]], after: Sequence[dict[str, Any]]
+    ) -> tuple[
+        list[tuple[dict[str, Any], dict[str, Any]]], list[dict[str, Any]], list[dict[str, Any]]
+    ]:
+        exact, unmatched_before, unmatched_after = exact_pairs(before, after)
+        candidates: dict[tuple[int, int], float] = {}
+        for before_index, before_item in enumerate(unmatched_before):
+            for after_index, after_item in enumerate(unmatched_after):
+                before_name, after_name = normal_text(before_item.get("name")), normal_text(after_item.get("name"))
+                if not before_name or not after_name:
+                    continue
+                name_score = SequenceMatcher(None, before_name, after_name, autojunk=False).ratio()
+                type_score = (
+                    1.0
+                    if normal_text(before_item.get("type")) == normal_text(after_item.get("type"))
+                    else 0.0
+                )
+                score = 0.8 * name_score + 0.2 * type_score
+                if score >= 0.85:
+                    candidates[(before_index, after_index)] = score
+        paired_before: set[int] = set()
+        paired_after: set[int] = set()
+        pairs = list(exact)
+        for (before_index, after_index), _score in sorted(
+            candidates.items(), key=lambda item: (-item[1], item[0])
+        ):
+            if before_index in paired_before or after_index in paired_after:
+                continue
+            if (
+                sum(1 for index, _ in candidates if index == before_index) != 1
+                or sum(1 for _, index in candidates if index == after_index) != 1
+            ):
+                continue
+            paired_before.add(before_index)
+            paired_after.add(after_index)
+            pairs.append((unmatched_before[before_index], unmatched_after[after_index]))
+        plausible_before = {before_index for before_index, _ in candidates}
+        plausible_after = {after_index for _, after_index in candidates}
+        return (
+            pairs,
+            [
+                item
+                for index, item in enumerate(unmatched_before)
+                if index not in paired_before and index not in plausible_before
+            ],
+            [
+                item
+                for index, item in enumerate(unmatched_after)
+                if index not in paired_after and index not in plausible_after
+            ],
+        )
+
+    descriptors: list[dict[str, Any]] = []
+
+    def add(kind: str, paths: Sequence[str], before_value: Any, after_value: Any) -> None:
+        descriptors.append(
+            {
+                "kind": kind,
+                "source_json_paths": sorted(set(paths)),
+                "before_value": before_value,
+                "after_value": after_value,
+            }
+        )
+
+    for kind, path in (
+        ("registry_status_changed", "/protocolSection/statusModule/overallStatus"),
+        ("enrollment_changed", "/protocolSection/designModule/enrollmentInfo"),
+        ("study_date_changed", "/protocolSection/statusModule/startDateStruct"),
+        ("study_date_changed", "/protocolSection/statusModule/primaryCompletionDateStruct"),
+        ("study_date_changed", "/protocolSection/statusModule/completionDateStruct"),
+        ("lead_sponsor_text_changed", "/protocolSection/sponsorCollaboratorsModule/leadSponsor"),
+    ):
+        before_value, after_value = json_value(pointer_value(before_study, path)), json_value(pointer_value(after_study, path))
+        if canonical_json_bytes(before_value) != canonical_json_bytes(after_value):
+            add(kind, [path], before_value, after_value)
+
+    site_path = "/protocolSection/contactsLocationsModule/locations"
+    before_sites, after_sites = object_list(pointer_value(before_study, site_path)), object_list(pointer_value(after_study, site_path))
+    if canonical_json_bytes(before_sites) != canonical_json_bytes(after_sites):
+        before_counts = Counter(canonical_json_sha256(item) for item in before_sites)
+        after_counts = Counter(canonical_json_sha256(item) for item in after_sites)
+        added_count = sum((after_counts - before_counts).values())
+        removed_count = sum((before_counts - after_counts).values())
+        add(
+            "site_listing_changed",
+            [site_path],
+            {"count": len(before_sites), "added_count": added_count, "removed_count": removed_count},
+            {"count": len(after_sites), "added_count": added_count, "removed_count": removed_count},
+        )
+
+    module_name = {
+        "primary": "primaryOutcomes",
+        "secondary": "secondaryOutcomes",
+        "other": "otherOutcomes",
+    }
+
+    def endpoint_paths(before_role: str, after_role: str) -> list[str]:
+        return sorted(
+            {
+                f"/protocolSection/outcomesModule/{module_name[before_role]}",
+                f"/protocolSection/outcomesModule/{module_name[after_role]}",
+            }
+        )
+
+    pairs, removed_outcomes, added_outcomes = unique_outcome_pairs(
+        endpoint_items(before_study), endpoint_items(after_study)
+    )
+    for (before_role, before_outcome), (after_role, after_outcome) in pairs:
+        paths = endpoint_paths(before_role, after_role)
+        if before_role != after_role:
+            add("endpoint_role_changed", paths, before_role, after_role)
+        for kind, key in (
+            ("endpoint_measure_changed", "measure"),
+            ("endpoint_time_frame_changed", "timeFrame"),
+            ("endpoint_description_changed", "description"),
+        ):
+            before_value, after_value = before_outcome.get(key), after_outcome.get(key)
+            if canonical_json_bytes(before_value) != canonical_json_bytes(after_value):
+                add(kind, paths, before_value, after_value)
+    for role, outcome in removed_outcomes:
+        add("endpoint_removed", endpoint_paths(role, role), {"role": role, "outcome": outcome}, None)
+    for role, outcome in added_outcomes:
+        add("endpoint_added", endpoint_paths(role, role), None, {"role": role, "outcome": outcome})
+
+    intervention_path = "/protocolSection/armsInterventionsModule/interventions"
+    pairs, removed_interventions, added_interventions = unique_intervention_pairs(
+        object_list(pointer_value(before_study, intervention_path)),
+        object_list(pointer_value(after_study, intervention_path)),
+    )
+    for before_intervention, after_intervention in pairs:
+        if canonical_json_bytes(before_intervention) != canonical_json_bytes(after_intervention):
+            add("intervention_changed", [intervention_path], before_intervention, after_intervention)
+    for intervention in removed_interventions:
+        add("intervention_removed", [intervention_path], intervention, None)
+    for intervention in added_interventions:
+        add("intervention_added", [intervention_path], None, intervention)
+    return descriptors
+
+
 def validate_trial_diff_against_snapshots(
     diff: Mapping[str, Any],
     before_snapshot: Mapping[str, Any],
@@ -3624,3 +4343,963 @@ def validate_trial_diff_against_snapshots(
         )
     if issues:
         raise ContractValidationError(_TRIAL_DIFF_CONTRACT_ID, issues)
+
+
+def _history_study_from_payload(
+    payload: Mapping[str, Any],
+    *,
+    nct_id: Any,
+    path: str,
+) -> tuple[Mapping[str, Any] | None, list[ValidationIssue]]:
+    """Resolve the one CT.gov study and prove its NCT identity."""
+
+    issues: list[ValidationIssue] = []
+    study = payload.get("study")
+    source_nct = (
+        _resolve_json_pointer(study, "/protocolSection/identificationModule/nctId")
+        if isinstance(study, Mapping)
+        else _MISSING
+    )
+    if not isinstance(study, Mapping) or source_nct != nct_id:
+        issues.append(
+            ValidationIssue(
+                path,
+                "history_receipt.source_identity",
+                "raw history response must contain the requested ClinicalTrials.gov study NCT ID",
+            )
+        )
+        return None, issues
+    return study, issues
+
+
+def validate_ctgov_history_receipt_against_raw_response(
+    receipt: Mapping[str, Any],
+    raw_response_body: bytes | bytearray | memoryview,
+    *,
+    repo_root: Path | str | None = None,
+) -> Mapping[str, Any]:
+    """Replay one history receipt against its exact archived source bytes."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_CTGOV_HISTORY_RECEIPT_CONTRACT_ID, receipt)
+    issues: list[ValidationIssue] = []
+    if not isinstance(raw_response_body, (bytes, bytearray, memoryview)):
+        raise ContractValidationError(
+            _CTGOV_HISTORY_RECEIPT_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.response.raw_response_object_key",
+                    "history_receipt.raw_response_type",
+                    "raw history evidence must be supplied as exact bytes",
+                ),
+            ),
+        )
+    raw_bytes = bytes(raw_response_body)
+    response = receipt.get("response")
+    response = response if isinstance(response, Mapping) else {}
+    actual_hash = hashlib.sha256(raw_bytes).hexdigest()
+    if response.get("exact_response_sha256") != actual_hash:
+        issues.append(
+            ValidationIssue(
+                "$.response.exact_response_sha256",
+                "history_receipt.raw_response_hash",
+                "receipt response hash must equal the exact archived bytes",
+            )
+        )
+    if response.get("byte_count") != len(raw_bytes):
+        issues.append(
+            ValidationIssue(
+                "$.response.byte_count",
+                "history_receipt.raw_response_length",
+                "receipt byte count must equal the exact archived bytes",
+            )
+        )
+    object_key = response.get("raw_response_object_key")
+    if not isinstance(object_key, str) or not object_key.endswith(f"/{actual_hash}.json"):
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "history_receipt.raw_response_object_identity",
+                "raw response object key must terminate with the exact archived response SHA-256",
+            )
+        )
+    headers = response.get("headers")
+    content_length = headers.get("content-length") if isinstance(headers, Mapping) else None
+    if content_length is not None and (
+        not isinstance(content_length, str)
+        or re.fullmatch(r"[0-9]+", content_length) is None
+        or int(content_length) != len(raw_bytes)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.response.headers.content-length",
+                "history_receipt.raw_response_length",
+                "content-length must equal the archived response byte count when retained",
+            )
+        )
+    parsed: Any = _MISSING
+    try:
+        parsed = json.loads(
+            raw_bytes.decode("utf-8"),
+            object_pairs_hook=_strict_json_object,
+            parse_constant=_reject_nonfinite_json_constant,
+            parse_float=_strict_json_float,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "history_receipt.raw_response_json",
+                f"raw history response must be unambiguous UTF-8 JSON: {exc}",
+            )
+        )
+    if parsed is not _MISSING and not isinstance(parsed, Mapping):
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "history_receipt.raw_response_shape",
+                "raw history response must be a JSON object",
+            )
+        )
+    if isinstance(parsed, Mapping):
+        _study, identity_issues = _history_study_from_payload(
+            parsed,
+            nct_id=receipt.get("nct_id"),
+            path="$.response.raw_response_object_key",
+        )
+        issues.extend(identity_issues)
+        resource_kind = receipt.get("resource_kind")
+        source_version = receipt.get("source_version")
+        if resource_kind == "history_version":
+            raw_version = parsed.get("studyVersion")
+            if isinstance(raw_version, bool) or raw_version != source_version:
+                issues.append(
+                    ValidationIssue(
+                        "$.source_version",
+                        "history_receipt.version_binding",
+                        "raw historical response studyVersion must equal the receipted source version",
+                    )
+                )
+        if resource_kind == "history_index" and not isinstance(parsed.get("history"), Mapping):
+            issues.append(
+                ValidationIssue(
+                    "$.response.raw_response_object_key",
+                    "history_receipt.index_shape",
+                    "raw history-index response must contain a history object",
+                )
+            )
+    if issues:
+        raise ContractValidationError(_CTGOV_HISTORY_RECEIPT_CONTRACT_ID, issues)
+    assert isinstance(parsed, Mapping)
+    return parsed
+
+
+def _history_manifest_from_index_payload(
+    payload: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], list[ValidationIssue]]:
+    """Replay the exact bounded version manifest from a raw history index."""
+
+    issues: list[ValidationIssue] = []
+    history = payload.get("history")
+    changes = history.get("changes") if isinstance(history, Mapping) else None
+    if not isinstance(changes, list) or not changes:
+        return [], [
+            ValidationIssue(
+                "$.history.changes",
+                "history_run.index_manifest",
+                "raw history index must contain a non-empty changes list",
+            )
+        ]
+    manifest: list[dict[str, Any]] = []
+    seen_versions: set[int] = set()
+    for index, change in enumerate(changes):
+        path = f"$.history.changes[{index}]"
+        if not isinstance(change, Mapping):
+            issues.append(
+                ValidationIssue(path, "history_run.index_manifest", "history change must be an object")
+            )
+            continue
+        source_version = change.get("version")
+        if isinstance(source_version, bool) or not isinstance(source_version, int) or source_version < 0:
+            issues.append(
+                ValidationIssue(f"{path}.version", "history_run.index_manifest", "history version must be a non-negative integer")
+            )
+            continue
+        if source_version in seen_versions:
+            issues.append(
+                ValidationIssue(f"{path}.version", "history_run.index_manifest", "history versions must be unique")
+            )
+            continue
+        seen_versions.add(source_version)
+        submitted = change.get("date")
+        qc_at = change.get("lastUpdateSubmitQcDate")
+        labels = change.get("moduleLabels")
+        valid_date = isinstance(submitted, str)
+        if valid_date:
+            try:
+                date.fromisoformat(submitted)
+            except ValueError:
+                valid_date = False
+        valid_qc = qc_at is None or isinstance(qc_at, str)
+        if isinstance(qc_at, str):
+            try:
+                date.fromisoformat(qc_at)
+            except ValueError:
+                valid_qc = False
+        if not valid_date or not valid_qc:
+            issues.append(
+                ValidationIssue(path, "history_run.index_manifest", "history dates must be ISO calendar dates")
+            )
+            continue
+        if not isinstance(labels, list) or any(
+            not isinstance(label, str) or not label.strip() for label in labels
+        ) or len(labels) != len(set(labels)):
+            issues.append(
+                ValidationIssue(f"{path}.moduleLabels", "history_run.index_manifest", "module labels must be unique non-empty strings")
+            )
+            continue
+        if any(not isinstance(change.get(field), str) or not change[field] for field in ("status", "studyType")):
+            issues.append(
+                ValidationIssue(path, "history_run.index_manifest", "history change must retain status and studyType strings")
+            )
+            continue
+        manifest.append(
+            {
+                "source_version": source_version,
+                "display_version": source_version + 1,
+                "source_submitted_at": submitted,
+                "source_last_update_submit_qc_at": qc_at,
+                "module_labels": list(labels),
+            }
+        )
+    if [entry["source_version"] for entry in manifest] != list(range(len(manifest))):
+        issues.append(
+            ValidationIssue(
+                "$.history.changes",
+                "history_run.index_manifest",
+                "history versions must be contiguous and zero-based in source order",
+            )
+        )
+    return manifest, issues
+
+
+def validate_ctgov_history_run_against_receipts(
+    run: Mapping[str, Any],
+    index_receipt: Mapping[str, Any],
+    index_post_receipt: Mapping[str, Any],
+    version_receipts: Sequence[Mapping[str, Any]],
+    *,
+    raw_bodies_by_receipt: Mapping[str, bytes | bytearray | memoryview],
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay a complete history run from both index captures and all raw versions."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_CTGOV_HISTORY_RUN_CONTRACT_ID, run)
+    supplied_receipts = [index_receipt, index_post_receipt, *version_receipts]
+    for receipt in supplied_receipts:
+        registry.validate(_CTGOV_HISTORY_RECEIPT_CONTRACT_ID, receipt)
+    receipt_ids = [receipt.get("receipt_id") for receipt in supplied_receipts]
+    expected_ids = {receipt_id for receipt_id in receipt_ids if isinstance(receipt_id, str)}
+    if not isinstance(raw_bodies_by_receipt, Mapping) or set(raw_bodies_by_receipt) != expected_ids:
+        raise ContractValidationError(
+            _CTGOV_HISTORY_RUN_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.history_version_receipt_refs",
+                    "history_run.raw_coverage",
+                    "raw bodies must exactly cover both index receipts and every version receipt",
+                ),
+            ),
+        )
+    if len(receipt_ids) != len(expected_ids):
+        raise ContractValidationError(
+            _CTGOV_HISTORY_RUN_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.history_index_post_receipt_ref",
+                    "history_run.receipt_identity",
+                    "all complete-run receipts, including pre/post indexes, must be distinct",
+                ),
+            ),
+        )
+    parsed_by_receipt = {
+        receipt["receipt_id"]: validate_ctgov_history_receipt_against_raw_response(
+            receipt,
+            raw_bodies_by_receipt[receipt["receipt_id"]],
+            repo_root=repo_root,
+        )
+        for receipt in supplied_receipts
+    }
+    issues: list[ValidationIssue] = []
+    nct_id = run.get("nct_id")
+    if run.get("run_state") != "complete" or run.get("completeness_state") != "history_complete":
+        issues.append(
+            ValidationIssue(
+                "$.run_state",
+                "history_run.complete",
+                "this validator accepts only complete history runs",
+            )
+        )
+    for field, receipt, expected_kind in (
+        ("history_index_receipt_ref", index_receipt, "history_index"),
+        ("history_index_post_receipt_ref", index_post_receipt, "history_index"),
+    ):
+        if run.get(field) != receipt.get("receipt_id"):
+            issues.append(
+                ValidationIssue(f"$.{field}", "history_run.receipt_binding", f"{field} must match its supplied index receipt")
+            )
+        if receipt.get("resource_kind") != expected_kind:
+            issues.append(
+                ValidationIssue(f"$.{field}", "history_run.index_receipt", "both supplied index receipts must be history-index receipts")
+            )
+        if receipt.get("run_id") != run.get("run_id") or receipt.get("nct_id") != nct_id:
+            issues.append(
+                ValidationIssue(f"$.{field}", "history_run.receipt_binding", "index receipt must belong to this complete run and NCT ID")
+            )
+    if index_receipt.get("receipt_id") == index_post_receipt.get("receipt_id"):
+        issues.append(
+            ValidationIssue(
+                "$.history_index_post_receipt_ref",
+                "history_run.index_receipt",
+                "pre-index and post-index receipts must be distinct captures",
+            )
+        )
+    expected_refs = [receipt.get("receipt_id") for receipt in version_receipts]
+    if run.get("history_version_receipt_refs") != expected_refs:
+        issues.append(
+            ValidationIssue(
+                "$.history_version_receipt_refs",
+                "history_run.receipt_binding",
+                "version receipt references must exactly match the ordered supplied receipts",
+            )
+        )
+    for index, receipt in enumerate(version_receipts):
+        if receipt.get("resource_kind") != "history_version":
+            issues.append(
+                ValidationIssue(f"$.history_version_receipt_refs[{index}]", "history_run.version_receipt_kind", "every version receipt must identify a historical study version")
+            )
+        if receipt.get("run_id") != run.get("run_id") or receipt.get("nct_id") != nct_id:
+            issues.append(
+                ValidationIssue(f"$.history_version_receipt_refs[{index}]", "history_run.receipt_binding", "version receipt must belong to this complete run and NCT ID")
+            )
+    run_started = _parse_temporal(run.get("started_at"))
+    run_finished = _parse_temporal(run.get("finished_at"))
+
+    def receipt_time(receipt: Mapping[str, Any], field: str) -> datetime | None:
+        if field == "received_at":
+            response = receipt.get("response")
+            value = response.get("received_at") if isinstance(response, Mapping) else None
+        else:
+            value = receipt.get(field)
+        return _parse_temporal(value)
+
+    if run_started is not None and run_finished is not None:
+        receipt_times: dict[str, tuple[datetime | None, datetime | None]] = {}
+        for receipt in supplied_receipts:
+            receipt_id = receipt.get("receipt_id")
+            if not isinstance(receipt_id, str):
+                continue
+            received_at = receipt_time(receipt, "received_at")
+            transaction_from = receipt_time(receipt, "transaction_from")
+            receipt_times[receipt_id] = (received_at, transaction_from)
+            for field, value in (
+                ("response.received_at", received_at),
+                ("transaction_from", transaction_from),
+            ):
+                if value is None or not run_started <= value <= run_finished:
+                    issues.append(
+                        ValidationIssue(
+                            "$.history_index_post_receipt_ref",
+                            "history_run.receipt_chronology",
+                            f"every receipt {field} must fall within the complete run interval",
+                        )
+                    )
+        chronology_receipts = [index_receipt, *version_receipts, index_post_receipt]
+        for field_index in (0, 1):
+            chronology_values = [
+                receipt_times.get(receipt.get("receipt_id"), (None, None))[field_index]
+                for receipt in chronology_receipts
+            ]
+            if any(value is None for value in chronology_values) or any(
+                earlier >= later
+                for earlier, later in zip(chronology_values, chronology_values[1:])
+                if earlier is not None and later is not None
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.history_index_post_receipt_ref",
+                        "history_run.receipt_chronology",
+                        "pre-index, ordered version receipts, and post-index receipt must be strictly increasing in receipt and transaction time",
+                    )
+                )
+        pre_received = receipt_times.get(index_receipt.get("receipt_id"), (None, None))[0]
+        post_transaction = receipt_times.get(index_post_receipt.get("receipt_id"), (None, None))[1]
+        run_transaction = _parse_temporal(run.get("transaction_from"))
+        if (
+            pre_received is None
+            or post_transaction is None
+            or run_transaction is None
+            or not run_started < pre_received
+            or post_transaction > run_finished
+            or not run_finished < run_transaction
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.history_index_post_receipt_ref",
+                    "history_run.receipt_chronology",
+                    "complete run timing must strictly surround collection and advance its transaction time after the terminal receipt",
+                )
+            )
+        for receipt_id, (received_at, transaction_from) in receipt_times.items():
+            if received_at is None or transaction_from is None or received_at >= transaction_from:
+                issues.append(
+                    ValidationIssue(
+                        "$.history_version_receipt_refs",
+                        "history_run.receipt_chronology",
+                        f"receipt {receipt_id} must record receipt time before its transaction time",
+                    )
+                )
+    pre_manifest, pre_issues = _history_manifest_from_index_payload(
+        parsed_by_receipt[index_receipt["receipt_id"]]
+    )
+    post_manifest, post_issues = _history_manifest_from_index_payload(
+        parsed_by_receipt[index_post_receipt["receipt_id"]]
+    )
+    issues.extend(pre_issues)
+    issues.extend(post_issues)
+    if pre_manifest != post_manifest:
+        issues.append(
+            ValidationIssue(
+                "$.history_index_post_receipt_ref",
+                "history_run.index_roundtrip",
+                "pre-index and post-index raw responses must replay to identical version manifests",
+            )
+        )
+    if run.get("version_manifest") != pre_manifest:
+        issues.append(
+            ValidationIssue(
+                "$.version_manifest",
+                "history_run.index_manifest",
+                "run version manifest must equal the replayed pre/post index manifest",
+            )
+        )
+    if [receipt.get("source_version") for receipt in version_receipts] != [
+        entry["source_version"] for entry in pre_manifest
+    ]:
+        issues.append(
+            ValidationIssue(
+                "$.history_version_receipt_refs",
+                "history_run.version_receipt_order",
+                "ordered version receipts must cover every replayed source version exactly once",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_CTGOV_HISTORY_RUN_CONTRACT_ID, issues)
+
+
+def validate_trial_history_snapshot_against_evidence(
+    snapshot: Mapping[str, Any],
+    run: Mapping[str, Any],
+    index_receipt: Mapping[str, Any],
+    index_post_receipt: Mapping[str, Any],
+    version_receipt: Mapping[str, Any],
+    *,
+    all_version_receipts: Sequence[Mapping[str, Any]],
+    raw_bodies_by_receipt: Mapping[str, bytes | bytearray | memoryview],
+    repo_root: Path | str | None = None,
+) -> None:
+    """Bind one snapshot to the exact raw version response inside a complete run."""
+
+    if not any(
+        receipt.get("receipt_id") == version_receipt.get("receipt_id")
+        for receipt in all_version_receipts
+    ):
+        raise ContractValidationError(
+            _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.history_version_receipt_ref",
+                    "history_snapshot.evidence_binding",
+                    "the supplied version receipt must be included in complete run evidence",
+                ),
+            ),
+        )
+    validate_ctgov_history_run_against_receipts(
+        run,
+        index_receipt,
+        index_post_receipt,
+        all_version_receipts,
+        raw_bodies_by_receipt=raw_bodies_by_receipt,
+        repo_root=repo_root,
+    )
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID, snapshot)
+    raw_payload = validate_ctgov_history_receipt_against_raw_response(
+        version_receipt,
+        raw_bodies_by_receipt[version_receipt["receipt_id"]],
+        repo_root=repo_root,
+    )
+    raw_study, raw_issues = _history_study_from_payload(
+        raw_payload,
+        nct_id=run.get("nct_id"),
+        path="$.canonical_study",
+    )
+    issues: list[ValidationIssue] = list(raw_issues)
+    manifest = run.get("version_manifest")
+    source_version = snapshot.get("source_version")
+    matching_manifest = next(
+        (
+            entry
+            for entry in manifest
+            if isinstance(entry, Mapping)
+            and entry.get("source_version") == source_version
+        ),
+        None,
+    ) if (
+        isinstance(manifest, list)
+        and isinstance(source_version, int)
+        and not isinstance(source_version, bool)
+    ) else None
+    bindings = (
+        ("nct_id", run.get("nct_id")),
+        ("run_ref", run.get("run_id")),
+        ("history_index_receipt_ref", index_receipt.get("receipt_id")),
+        ("history_version_receipt_ref", version_receipt.get("receipt_id")),
+        ("source_version", version_receipt.get("source_version")),
+        ("retrieved_at", version_receipt.get("response", {}).get("received_at")),
+    )
+    for field, expected in bindings:
+        if snapshot.get(field) != expected:
+            issues.append(
+                ValidationIssue(f"$.{field}", "history_snapshot.evidence_binding", f"{field} must match the complete history run evidence")
+            )
+    snapshot_seed = canonical_json_sha256(
+        {
+            "nct_id": run.get("nct_id"),
+            "source_version": source_version,
+            "canonical_content_sha256": snapshot.get("canonical_content_sha256"),
+            "run_ref": run.get("run_id"),
+        }
+    )
+    expected_snapshot_id = (
+        f"ctgov_history_snapshot_{run.get('nct_id')}_{snapshot_seed[:24]}"
+    )
+    if snapshot.get("source_snapshot_id") != expected_snapshot_id:
+        issues.append(
+            ValidationIssue(
+                "$.source_snapshot_id",
+                "history_snapshot.deterministic_id",
+                "source snapshot ID must be derived from its run-bound exact source content",
+            )
+        )
+    if raw_study is not None and not _canonical_json_equal(raw_study, snapshot.get("canonical_study")):
+        issues.append(
+            ValidationIssue(
+                "$.canonical_study",
+                "history_snapshot.raw_replay",
+                "canonical study must equal the study in the exact receipted version response",
+            )
+        )
+    if isinstance(matching_manifest, Mapping):
+        for field in ("display_version", "source_submitted_at", "source_last_update_submit_qc_at"):
+            if snapshot.get(field) != matching_manifest.get(field):
+                issues.append(
+                    ValidationIssue(f"$.{field}", "history_snapshot.manifest_binding", f"{field} must match the source history manifest entry")
+                )
+    else:
+        issues.append(
+            ValidationIssue("$.source_version", "history_snapshot.manifest_binding", "source version must resolve to a manifest entry")
+        )
+    if issues:
+        raise ContractValidationError(_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID, issues)
+
+
+def validate_trial_history_diff_against_snapshots(
+    diff: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay and bind a historical exact diff from immutable source snapshots."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_HISTORY_DIFF_CONTRACT_ID, diff)
+    registry.validate(_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID, before_snapshot)
+    registry.validate(_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID, after_snapshot)
+    issues: list[ValidationIssue] = []
+    bindings = (
+        ("nct_id", before_snapshot.get("nct_id")),
+        ("before_source_snapshot_ref", before_snapshot.get("source_snapshot_id")),
+        ("after_source_snapshot_ref", after_snapshot.get("source_snapshot_id")),
+        ("before_source_version", before_snapshot.get("source_version")),
+        ("after_source_version", after_snapshot.get("source_version")),
+        ("before_content_sha256", before_snapshot.get("canonical_content_sha256")),
+        ("after_content_sha256", after_snapshot.get("canonical_content_sha256")),
+        ("retrieved_at", after_snapshot.get("retrieved_at")),
+        ("transaction_from", after_snapshot.get("transaction_from")),
+    )
+    for field, expected in bindings:
+        if diff.get(field) != expected:
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}",
+                    "history_diff.snapshot_binding",
+                    f"{field} must match the referenced historical source snapshot",
+                )
+            )
+    if after_snapshot.get("nct_id") != before_snapshot.get("nct_id"):
+        issues.append(
+            ValidationIssue(
+                "$.after_source_snapshot_ref",
+                "history_diff.identity",
+                "both historical source snapshots must identify the same NCT ID",
+            )
+        )
+    if diff.get("source_record_refs") != [
+        before_snapshot.get("source_record_ref"), after_snapshot.get("source_record_ref")
+    ]:
+        issues.append(
+            ValidationIssue(
+                "$.source_record_refs",
+                "history_diff.snapshot_binding",
+                "source record references must preserve before/after history order",
+            )
+        )
+    diff_seed = canonical_json_sha256(
+        {
+            "before_source_snapshot_ref": before_snapshot.get("source_snapshot_id"),
+            "after_source_snapshot_ref": after_snapshot.get("source_snapshot_id"),
+            "before_content_sha256": before_snapshot.get("canonical_content_sha256"),
+            "after_content_sha256": after_snapshot.get("canonical_content_sha256"),
+        }
+    )
+    expected_diff_id = f"trial_history_diff_{before_snapshot.get('nct_id')}_{diff_seed[:24]}"
+    if diff.get("diff_id") != expected_diff_id:
+        issues.append(
+            ValidationIssue(
+                "$.diff_id",
+                "history_diff.deterministic_id",
+                "diff ID must be derived from its exact before/after snapshot bindings",
+            )
+        )
+    expected_operations = exact_history_json_diff(
+        before_snapshot.get("canonical_study"), after_snapshot.get("canonical_study")
+    )
+    if diff.get("operations") != expected_operations:
+        issues.append(
+            ValidationIssue(
+                "$.operations",
+                "history_diff.exactness",
+                "operations must equal the deterministic diff of historical source snapshots",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_TRIAL_HISTORY_DIFF_CONTRACT_ID, issues)
+
+
+def validate_trial_registry_change_fact_against_diff(
+    fact: Mapping[str, Any],
+    diff: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Ensure a semantic fact remains a decision-inert view of an exact diff."""
+
+    validate_trial_history_diff_against_snapshots(
+        diff, before_snapshot, after_snapshot, repo_root=repo_root
+    )
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID, fact)
+    issues: list[ValidationIssue] = []
+    bindings = (
+        ("nct_id", diff.get("nct_id")),
+        ("diff_ref", diff.get("diff_id")),
+        ("before_source_snapshot_ref", diff.get("before_source_snapshot_ref")),
+        ("after_source_snapshot_ref", diff.get("after_source_snapshot_ref")),
+        ("before_source_version", diff.get("before_source_version")),
+        ("after_source_version", diff.get("after_source_version")),
+        ("transaction_from", after_snapshot.get("transaction_from")),
+    )
+    for field, expected in bindings:
+        if fact.get(field) != expected:
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}",
+                    "history_change_fact.diff_binding",
+                    f"{field} must match the exact historical diff",
+                )
+            )
+    fact_seed = canonical_json_sha256(
+        {
+            "diff_ref": diff.get("diff_id"),
+            "kind": fact.get("kind"),
+            "source_json_paths": fact.get("source_json_paths"),
+            "before_value": fact.get("before_value"),
+            "after_value": fact.get("after_value"),
+        }
+    )
+    expected_fact_id = f"trial_registry_change_{diff.get('nct_id')}_{fact_seed[:24]}"
+    if fact.get("change_fact_id") != expected_fact_id:
+        issues.append(
+            ValidationIssue(
+                "$.change_fact_id",
+                "history_change_fact.deterministic_id",
+                "change fact ID must be derived from its exact diff projection",
+            )
+        )
+    operation_paths = [
+        operation.get("json_path")
+        for operation in diff.get("operations", ())
+        if isinstance(operation, Mapping) and isinstance(operation.get("json_path"), str)
+    ]
+    for path in fact.get("source_json_paths", ()):
+        if not isinstance(path, str):
+            continue
+        supported = any(
+            path == operation_path
+            or path.startswith(operation_path + "/")
+            or operation_path.startswith(path + "/")
+            for operation_path in operation_paths
+        )
+        if not supported:
+            issues.append(
+                ValidationIssue(
+                    "$.source_json_paths",
+                    "history_change_fact.exact_support",
+                    "every semantic source path must be supported by an exact diff operation",
+                )
+            )
+            break
+    before_study = before_snapshot.get("canonical_study")
+    after_study = after_snapshot.get("canonical_study")
+    if isinstance(before_study, Mapping) and isinstance(after_study, Mapping):
+        expected_descriptors = derive_trial_registry_change_descriptors(
+            before_study, after_study
+        )
+        fact_matches_exact_projection = any(
+            descriptor["kind"] == fact.get("kind")
+            and descriptor["source_json_paths"] == fact.get("source_json_paths")
+            and _canonical_json_equal(descriptor["before_value"], fact.get("before_value"))
+            and _canonical_json_equal(descriptor["after_value"], fact.get("after_value"))
+            for descriptor in expected_descriptors
+        )
+        if not fact_matches_exact_projection:
+            issues.append(
+                ValidationIssue(
+                    "$.kind",
+                    "history_change_fact.semantic_replay",
+                    "fact kind, source paths, and before/after values must equal a deterministic projection of the exact source snapshots",
+                )
+            )
+    else:
+        issues.append(
+            ValidationIssue(
+                "$.before_source_snapshot_ref",
+                "history_change_fact.semantic_replay",
+                "change facts require canonical before and after source studies for deterministic replay",
+            )
+        )
+    fact_transaction = _parse_temporal(fact.get("transaction_from"))
+    diff_transaction = _parse_temporal(diff.get("transaction_from"))
+    if fact_transaction is not None and diff_transaction is not None and fact_transaction < diff_transaction:
+        issues.append(
+            ValidationIssue(
+                "$.transaction_from",
+                "history_change_fact.transaction",
+                "change fact transaction time cannot precede its exact diff",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID, issues)
+
+
+def validate_trial_history_read_model(
+    model: Mapping[str, Any],
+    snapshots: Sequence[Mapping[str, Any]],
+    facts: Sequence[Mapping[str, Any]],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Bind the public-safe history model to internal snapshots and facts."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_HISTORY_READ_MODEL_CONTRACT_ID, model)
+    for snapshot in snapshots:
+        registry.validate(_TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID, snapshot)
+    for fact in facts:
+        registry.validate(_TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID, fact)
+    ordered_snapshots = sorted(snapshots, key=lambda item: item["source_version"])
+    ordered_facts = sorted(
+        facts,
+        key=lambda item: (
+            item["after_source_version"], item["kind"], item["change_fact_id"]
+        ),
+    )
+    issues: list[ValidationIssue] = []
+    if model.get("available") is True and not ordered_snapshots:
+        issues.append(
+            ValidationIssue(
+                "$.available",
+                "history_read_model.snapshot_binding",
+                "an available public history model requires historical source snapshots",
+            )
+        )
+    if model.get("available") is False and (ordered_snapshots or ordered_facts):
+        issues.append(
+            ValidationIssue(
+                "$.available",
+                "history_read_model.unavailable_binding",
+                "an unavailable public history model cannot carry snapshots or change facts",
+            )
+        )
+    if ordered_snapshots:
+        nct_id = ordered_snapshots[0].get("nct_id")
+        if model.get("nct_id") != nct_id or any(
+            snapshot.get("nct_id") != nct_id for snapshot in ordered_snapshots
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.nct_id",
+                    "history_read_model.identity",
+                    "public history model and all snapshots must identify one NCT ID",
+                )
+            )
+        source_versions = [snapshot.get("source_version") for snapshot in ordered_snapshots]
+        display_versions = [snapshot.get("display_version") for snapshot in ordered_snapshots]
+        if source_versions != list(range(len(ordered_snapshots))) or display_versions != list(
+            range(1, len(ordered_snapshots) + 1)
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.versions",
+                    "history_read_model.snapshot_sequence",
+                    "available public history models require the complete zero-based source version chain",
+                )
+            )
+        expected_versions = [
+            {
+                "display_version": snapshot["display_version"],
+                "source_submitted_at": snapshot["source_submitted_at"],
+                "url": snapshot["source_uri"],
+            }
+            for snapshot in ordered_snapshots
+        ]
+        if model.get("versions") != expected_versions:
+            issues.append(
+                ValidationIssue(
+                    "$.versions",
+                    "history_read_model.snapshot_binding",
+                    "public versions must be a private-provenance-free projection of source snapshots",
+                )
+            )
+        if model.get("retrieved_at") != ordered_snapshots[-1].get("retrieved_at"):
+            issues.append(
+                ValidationIssue(
+                    "$.retrieved_at",
+                    "history_read_model.snapshot_binding",
+                    "public history retrieval time must match the latest source snapshot",
+                )
+            )
+    expected_fact_descriptors: list[dict[str, Any]] = []
+    for before_snapshot, after_snapshot in zip(
+        ordered_snapshots, ordered_snapshots[1:]
+    ):
+        before_version = before_snapshot.get("source_version")
+        after_version = after_snapshot.get("source_version")
+        if after_version != before_version + 1:
+            issues.append(
+                ValidationIssue(
+                    "$.versions",
+                    "history_read_model.snapshot_sequence",
+                    "public history facts require every adjacent source snapshot version",
+                )
+            )
+            continue
+        before_study = before_snapshot.get("canonical_study")
+        after_study = after_snapshot.get("canonical_study")
+        if not isinstance(before_study, Mapping) or not isinstance(after_study, Mapping):
+            issues.append(
+                ValidationIssue(
+                    "$.versions",
+                    "history_read_model.fact_completeness",
+                    "public history facts require canonical studies for every adjacent snapshot pair",
+                )
+            )
+            continue
+        diff_seed = canonical_json_sha256(
+            {
+                "before_source_snapshot_ref": before_snapshot.get("source_snapshot_id"),
+                "after_source_snapshot_ref": after_snapshot.get("source_snapshot_id"),
+                "before_content_sha256": before_snapshot.get("canonical_content_sha256"),
+                "after_content_sha256": after_snapshot.get("canonical_content_sha256"),
+            }
+        )
+        expected_diff_ref = f"trial_history_diff_{before_snapshot.get('nct_id')}_{diff_seed[:24]}"
+        for descriptor in derive_trial_registry_change_descriptors(
+            before_study, after_study
+        ):
+            expected_fact_descriptors.append(
+                {
+                    "nct_id": before_snapshot.get("nct_id"),
+                    "diff_ref": expected_diff_ref,
+                    "before_source_snapshot_ref": before_snapshot.get("source_snapshot_id"),
+                    "after_source_snapshot_ref": after_snapshot.get("source_snapshot_id"),
+                    "before_source_version": before_version,
+                    "after_source_version": after_version,
+                    "kind": descriptor["kind"],
+                    "source_json_paths": descriptor["source_json_paths"],
+                    "before_value": descriptor["before_value"],
+                    "after_value": descriptor["after_value"],
+                    "transaction_from": after_snapshot.get("transaction_from"),
+                }
+            )
+    actual_fact_descriptors = [
+        {
+            "nct_id": fact.get("nct_id"),
+            "diff_ref": fact.get("diff_ref"),
+            "before_source_snapshot_ref": fact.get("before_source_snapshot_ref"),
+            "after_source_snapshot_ref": fact.get("after_source_snapshot_ref"),
+            "before_source_version": fact.get("before_source_version"),
+            "after_source_version": fact.get("after_source_version"),
+            "kind": fact.get("kind"),
+            "source_json_paths": fact.get("source_json_paths"),
+            "before_value": fact.get("before_value"),
+            "after_value": fact.get("after_value"),
+            "transaction_from": fact.get("transaction_from"),
+        }
+        for fact in ordered_facts
+    ]
+    if Counter(map(canonical_json_bytes, actual_fact_descriptors)) != Counter(
+        map(canonical_json_bytes, expected_fact_descriptors)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.changes",
+                "history_read_model.fact_completeness",
+                "facts must be the exact non-duplicated deterministic projection of every adjacent source snapshot pair",
+            )
+        )
+    expected_changes = [
+        {
+            "kind": fact["kind"],
+            "before_display_version": fact["before_source_version"] + 1,
+            "after_display_version": fact["after_source_version"] + 1,
+            "before_value": fact["before_value"],
+            "after_value": fact["after_value"],
+        }
+        for fact in ordered_facts
+    ]
+    if model.get("changes") != expected_changes:
+        issues.append(
+            ValidationIssue(
+                "$.changes",
+                "history_read_model.fact_binding",
+                "public changes must be a private-provenance-free projection of change facts",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_TRIAL_HISTORY_READ_MODEL_CONTRACT_ID, issues)

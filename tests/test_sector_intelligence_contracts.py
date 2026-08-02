@@ -137,6 +137,19 @@ def test_discovers_every_declared_contract_by_document_id() -> None:
     assert "biocatalyst_ontology.v1" in schemas
 
 
+def test_b2_history_contracts_are_discovered_as_a_closed_contract_set() -> None:
+    schemas = discover_contract_schemas(ROOT)
+
+    assert {
+        "ctgov_history_receipt.v1",
+        "ctgov_history_run.v1",
+        "trial_history_source_snapshot.v1",
+        "trial_history_exact_diff.v1",
+        "trial_registry_change_fact.v1",
+        "trial_history_read_model.v1",
+    } <= set(schemas)
+
+
 @pytest.mark.parametrize(
     "fixture",
     sorted(GENERIC_FIXTURE_DIR.glob("*.valid.json")),

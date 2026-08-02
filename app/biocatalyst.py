@@ -44,6 +44,16 @@ _AUTHORITY = {
         "raise_authority",
     ],
 }
+_HISTORY_PRIVATE_KEY_FRAGMENTS = (
+    "raw",
+    "hash",
+    "receipt",
+    "ref",
+    "object_key",
+    "path",
+    "json_path",
+    "provenance",
+)
 
 
 def _publication_runtime() -> tuple[type[Exception], type[Any]]:
@@ -242,7 +252,154 @@ def _countries(value: object) -> tuple[int | None, list[str]]:
     return count, countries[:100]
 
 
-def _public_trial(snapshot: Mapping[str, Any], *, detail: bool) -> dict[str, Any]:
+def _history_json_value(value: object, *, depth: int = 0) -> Any:
+    """Copy a bounded historical value or reject leaked provenance recursively."""
+
+    if depth > 12:
+        raise _unavailable()
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return _text(value, maximum=12_000)
+    if isinstance(value, Mapping):
+        if len(value) > 100:
+            raise _unavailable()
+        copied: dict[str, Any] = {}
+        for key, nested in value.items():
+            if not isinstance(key, str) or any(
+                fragment in key.casefold()
+                for fragment in _HISTORY_PRIVATE_KEY_FRAGMENTS
+            ):
+                raise _unavailable()
+            copied[key] = _history_json_value(nested, depth=depth + 1)
+        return copied
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        if len(value) > 200:
+            raise _unavailable()
+        return [_history_json_value(item, depth=depth + 1) for item in value]
+    raise _unavailable()
+
+
+def _history_url(value: object, *, nct_id: str, version: int | None = None) -> str:
+    rendered = _text(value, maximum=512)
+    if rendered is None:
+        raise _unavailable()
+    expected = f"https://clinicaltrials.gov/study/{nct_id}"
+    if version is None:
+        if rendered != expected + "?tab=history":
+            raise _unavailable()
+    elif rendered != expected + f"?a={version}&tab=history":
+        raise _unavailable()
+    return rendered
+
+
+def _history_for_api(model: Mapping[str, Any], *, nct_id: str) -> dict[str, Any]:
+    """Serve only the pointer-bound, public-safe B2 history read model.
+
+    The model carries an integrity self-hash for publication validation, but
+    product clients must never receive hash, receipt, object, reference, or
+    source-path provenance.  Every nested before/after value is copied through
+    the same denylist to make this boundary robust to future model additions.
+    """
+
+    available = model.get("available")
+    if available is False:
+        reason = _text(
+            model.get("unavailable_reason")
+            if "unavailable_reason" in model
+            else model.get("reason"),
+            maximum=80,
+        )
+        return {
+            "available": False,
+            "state": "unavailable",
+            "reason": reason or "not_collected",
+        }
+    if available is not True or model.get("nct_id") != nct_id:
+        raise _unavailable()
+    source_name = _text(model.get("source_name"), maximum=80)
+    if source_name != "ClinicalTrials.gov":
+        raise _unavailable()
+    versions = model.get("versions")
+    changes = model.get("changes")
+    if (
+        not isinstance(versions, Sequence)
+        or isinstance(versions, (str, bytes))
+        or not isinstance(changes, Sequence)
+        or isinstance(changes, (str, bytes))
+        or len(versions) > 500
+        or len(changes) > 2_000
+    ):
+        raise _unavailable()
+    public_versions: list[dict[str, Any]] = []
+    for row in versions:
+        if not isinstance(row, Mapping):
+            raise _unavailable()
+        display_version = row.get("display_version")
+        submitted_at = _text(row.get("source_submitted_at"), maximum=10)
+        if (
+            not isinstance(display_version, int)
+            or isinstance(display_version, bool)
+            or display_version < 1
+            or submitted_at is None
+            or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", submitted_at)
+        ):
+            raise _unavailable()
+        public_versions.append(
+            {
+                "display_version": display_version,
+                "submitted_at": submitted_at,
+                "url": _history_url(
+                    row.get("url"), nct_id=nct_id, version=display_version
+                ),
+            }
+        )
+    public_changes: list[dict[str, Any]] = []
+    for row in changes:
+        if not isinstance(row, Mapping):
+            raise _unavailable()
+        kind = _text(row.get("kind"), maximum=120)
+        before_version = row.get("before_display_version")
+        after_version = row.get("after_display_version")
+        if (
+            kind is None
+            or not isinstance(before_version, int)
+            or isinstance(before_version, bool)
+            or not isinstance(after_version, int)
+            or isinstance(after_version, bool)
+            or before_version < 1
+            or after_version <= before_version
+        ):
+            raise _unavailable()
+        public_changes.append(
+            {
+                "kind": kind,
+                "before_display_version": before_version,
+                "after_display_version": after_version,
+                "before_value": _history_json_value(row.get("before_value")),
+                "after_value": _history_json_value(row.get("after_value")),
+            }
+        )
+    return {
+        "available": True,
+        "state": "available",
+        "source": {
+            "name": source_name,
+            "url": _history_url(model.get("source_history_url"), nct_id=nct_id),
+        },
+        "coverage": _text(model.get("coverage_class"), maximum=80),
+        "retrieved_at": _text(model.get("retrieved_at"), maximum=64),
+        "versions": public_versions,
+        "changes": public_changes,
+    }
+
+
+def _public_trial(
+    snapshot: Mapping[str, Any],
+    *,
+    detail: bool,
+    history_model: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     facts = snapshot.get("facts")
     attribution = snapshot.get("source_attribution")
     if not isinstance(facts, Mapping) or not isinstance(attribution, Mapping):
@@ -294,10 +451,12 @@ def _public_trial(snapshot: Mapping[str, Any], *, detail: bool) -> dict[str, Any
                     "retrieved_at": snapshot.get("retrieved_at"),
                     "coverage": snapshot.get("coverage_class"),
                 },
-                "history": {
-                    "available": False,
-                    "reason": "current_only_source_cut",
-                },
+                "history": _history_for_api(
+                    history_model
+                    if isinstance(history_model, Mapping)
+                    else {"available": False, "unavailable_reason": "not_collected"},
+                    nct_id=snapshot["nct_id"],
+                ),
             }
         )
     return row
@@ -492,6 +651,13 @@ def trial_detail(
     )
     if snapshot is None:
         raise HTTPException(status_code=404, detail="trial not covered", headers=_PRIVATE_HEADERS)
+    history_model = projection.history_models_by_nct.get(nct_id)
+    if not isinstance(history_model, Mapping):
+        raise _unavailable()
     payload = _meta(projection, operational)
-    payload["trial"] = _public_trial(snapshot, detail=True)
+    payload["trial"] = _public_trial(
+        snapshot,
+        detail=True,
+        history_model=history_model,
+    )
     return _response(payload)

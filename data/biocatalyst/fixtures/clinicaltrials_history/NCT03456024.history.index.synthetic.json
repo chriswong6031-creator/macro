@@ -1,0 +1,48 @@
+{
+  "study": {
+    "hasResults": false,
+    "protocolSection": {
+      "identificationModule": {
+        "nctId": "NCT03456024",
+        "briefTitle": "Sanitized registry-history fixture"
+      },
+      "statusModule": {
+        "overallStatus": "UNKNOWN"
+      }
+    }
+  },
+  "topics": {},
+  "history": {
+    "changes": [
+      {
+        "version": 0,
+        "date": "2018-02-28",
+        "status": "ACTIVE_NOT_RECRUITING",
+        "studyType": "OBSERVATIONAL",
+        "moduleLabels": [],
+        "lastUpdateSubmitQcDate": "2018-02-28"
+      },
+      {
+        "version": 1,
+        "date": "2018-03-07",
+        "status": "ACTIVE_NOT_RECRUITING",
+        "studyType": "OBSERVATIONAL",
+        "moduleLabels": [
+          "Study Status",
+          "Outcome Measures"
+        ],
+        "lastUpdateSubmitQcDate": "2018-03-07"
+      }
+    ],
+    "originalData": {
+      "enrollmentInfo": {
+        "count": 250,
+        "type": "ESTIMATED"
+      }
+    },
+    "lastUpdateVersions": {
+      "primaryOutcomes": 1
+    },
+    "outcomesUpdateCount": 1
+  }
+}

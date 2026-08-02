@@ -2915,12 +2915,12 @@ jobs:
 
   biocatalyst:
     if: ${{ false }}
-    # BioCatalyst B1/B1b: verified ClinicalTrials.gov ingestion, immutable
+    # BioCatalyst B1/B1b/B2: verified ClinicalTrials.gov ingestion, immutable
     # current-generation publication, normalized trial source-fact projection,
-    # deployment isolation, and the authenticated workbench API. This deliberately
+    # exact Record History replay, deployment isolation, and the authenticated workbench API. This deliberately
     # exercises the security adversarial cases alongside the normal worker path:
-    # a rehashed artifact must still be bound to current source-state provenance,
-    # never merely look structurally valid.
+    # a rehashed promotion candidate must still replay against current private
+    # source-state evidence, never merely look structurally valid.
     #
     # The direct wildcard keeps every test_biocatalyst_*.py suite wired at birth
     # without relying on a brittle manually-maintained list; shell expansion is
@@ -2941,6 +2941,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_*.py
           tests/test_clinicaltrials_biocatalyst.py
+          tests/test_clinicaltrials_history.py
           tests/test_sector_intelligence_contracts.py
           tests/test_sector_intelligence_ownership.py
           tests/test_deploy_update_self_heal.py -q

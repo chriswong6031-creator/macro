@@ -1,0 +1,35 @@
+{
+  "studyVersion": 0,
+  "study": {
+    "hasResults": false,
+    "protocolSection": {
+      "identificationModule": {
+        "nctId": "NCT03456024",
+        "briefTitle": "Sanitized registry-history fixture"
+      },
+      "statusModule": {
+        "overallStatus": "ACTIVE_NOT_RECRUITING",
+        "primaryCompletionDateStruct": {
+          "date": "2017-04-30",
+          "type": "ACTUAL"
+        }
+      },
+      "designModule": {
+        "studyType": "OBSERVATIONAL",
+        "enrollmentInfo": {
+          "count": 250,
+          "type": "ESTIMATED"
+        }
+      },
+      "outcomesModule": {
+        "primaryOutcomes": [
+          {
+            "measure": "Chronica abdomninal pain 2 years after gastric sleeve",
+            "description": "sanitized questionnaire",
+            "timeFrame": "2 years"
+          }
+        ]
+      }
+    }
+  }
+}

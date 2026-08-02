@@ -85,6 +85,51 @@ def test_canary_is_disabled_and_empty_by_default() -> None:
     assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
 
 
+def test_record_history_canary_is_separate_bounded_and_dark_by_default() -> None:
+    registry = _load_yaml(SOURCE_REGISTRY)
+    source = registry["sources"]["clinicaltrials_gov_record_history"]
+    canary = registry["b2_history_canary"]
+
+    assert source["production_ingest_allowed"] is False
+    assert source["raw_archive"] == "private_only"
+    assert source["interface_stability"] == "undocumented_ui_backing_route"
+    assert source["source_shape_canary_required"] is True
+    assert source["etag_semantics"] == (
+        "retained_as_transport_metadata_never_content_identity_or_freshness"
+    )
+    assert source["source_version_semantics"] == (
+        "source_record_history_versions_not_event_time"
+    )
+    assert {
+        "attribute_clinicaltrials_gov",
+        "do_not_use_extracted_email_addresses_for_marketing",
+        "display_source_submitter_responsibility_note",
+        "do_not_present_registry_as_government_validation",
+    } <= set(source["distribution_obligations"])
+    assert canary["default_enabled"] is False
+    assert canary["default_allowlist"] == []
+    assert canary["production_enable_env"] == "BIOCATALYST_HISTORY_ENABLED"
+    assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
+    assert canary["universe_relation"] == "exact_b1_current_nct_set"
+    assert set(canary["allowed_contracts"]) == {
+        "ctgov_history_receipt.v1",
+        "ctgov_history_run.v1",
+        "trial_history_source_snapshot.v1",
+        "trial_history_exact_diff.v1",
+        "trial_registry_change_fact.v1",
+        "trial_history_read_model.v1",
+    }
+    assert "no protocol or materiality inference" in canary[
+        "allowed_product_language"
+    ]
+
+    # B2 registration must not steal B1's watermark or product-language policy.
+    assert "ctgov_watermark.v1" in registry["b0a_canary"]["allowed_contracts"]
+    assert "first observed within this interval" in registry["b0a_canary"][
+        "allowed_product_language"
+    ]
+
+
 def test_benchmark_products_cannot_become_data_or_code_dependencies() -> None:
     sources = _load_yaml(SOURCE_REGISTRY)["sources"]
     for source_id in ("biopharmcatalyst_benchmark", "biopharmiq_benchmark"):
