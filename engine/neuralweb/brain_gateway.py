@@ -1702,10 +1702,25 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
             quotes = json.loads(quotes_path.read_text(encoding="utf-8"))
             row = (quotes.get("quotes") or quotes.get("symbols") or {}).get(symbol) or {}
             if row:
+                # W5.1: the live plane writes per-row `ts` (epoch ms) and file-level
+                # `asof` — this reader asked for `as_of`, which the file never carries,
+                # so every quote from this source shipped DATELESS (and the instant
+                # lane's dateless-refuse gate correctly rejected all of them).
+                _row_ts = row.get("ts")
+                _as_of = None
+                if isinstance(_row_ts, (int, float)) and _row_ts > 0:
+                    try:
+                        _as_of = datetime.fromtimestamp(
+                            float(_row_ts) / 1000.0, tz=timezone.utc
+                        ).isoformat(timespec="seconds")
+                    except (OverflowError, OSError, ValueError):
+                        _as_of = None
                 return {
                     "symbol": symbol,
                     "price": row.get("price") or row.get("last"),
-                    "as_of": quotes.get("as_of"),
+                    "change_pct": row.get("changePct"),
+                    "prev_close": row.get("prevClose"),
+                    "as_of": _as_of or quotes.get("asof") or quotes.get("as_of"),
                     "source": "site_quotes",
                 }
     except Exception:  # noqa: BLE001
