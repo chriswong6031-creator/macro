@@ -651,7 +651,13 @@ class TestLiveConformance:
             )
             site_only_command = "python -m scripts.build_government_revenue --site-only"
             assert lane_text.count(site_only_command) >= 2
-            rebase_at = lane_text.index("git pull --rebase --autostash -X theirs origin main")
+            if lane == "render.yml":
+                rebase_at = lane_text.index("git rebase --autostash -X theirs origin/main")
+                assert lane_text.index("push_fetch_main_for_rebase") < rebase_at
+            else:
+                rebase_at = lane_text.index(
+                    "git pull --rebase --autostash -X theirs origin main"
+                )
             rebuild_at = lane_text.index(
                 site_only_command, rebase_at
             )

@@ -28,6 +28,15 @@ RENDER_LANES = (
 )
 
 
+def _porcelain_rebase_at(lane: Path, source: str) -> int:
+    """Keep the render lane's explicit fetched-main rebase fail-closed."""
+    if lane.name == "render.yml":
+        rebase = source.index("git rebase --autostash -X theirs origin/main")
+        assert source.index("push_fetch_main_for_rebase") < rebase
+        return rebase
+    return source.index("git pull --rebase --autostash -X theirs origin main")
+
+
 def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path, Path, Path]:
     template_dir = root / "templates"
     template_dir.mkdir(parents=True)
@@ -321,7 +330,7 @@ def test_render_lanes_validate_projection_after_final_heals_and_before_commit(
 @pytest.mark.parametrize("lane", RENDER_LANES, ids=lambda path: path.name)
 def test_render_lanes_refuse_to_push_an_uncommitted_projection(lane: Path) -> None:
     source = lane.read_text(encoding="utf-8")
-    rebase = source.index("git pull --rebase --autostash -X theirs origin main")
+    rebase = _porcelain_rebase_at(lane, source)
     post_rebase = source[rebase:]
     head_gate = post_rebase.index("git diff --quiet HEAD --")
     final_guard = post_rebase.index(
