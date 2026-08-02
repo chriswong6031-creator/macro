@@ -158,7 +158,8 @@ around the strand field is house furniture.
 
 | State | EN (≤14 words, ends in a doctrine stance) | ZH |
 |---|---|---|
-| `holds` | `Late-summer strength holds up after counting every window tried. Get ready.` | `夏末走强，在计入所有测试窗口后依然成立。做好准备。` |
+| `own` | `Late-summer strength here is this name's own, not the market's. Get ready.` | `夏末走强源自该股自身，而非大盘。做好准备。` |
+| `market` | `Late-summer strength here is really the market's calendar. Watch, don't chase.` | `夏末走强其实来自大盘日历，而非该股。观察，不要追。` |
 | `fails` | `Looks strong, but not after counting every window tried. Stand aside.` | `看似强势，但计入所有测试窗口后并不成立。建议观望。` |
 | `thin` | `Only 6 years of history — too few to call. Watch, don't chase.` | `仅 6 年历史，样本太少，暂无结论。观察，不要追。` |
 
@@ -174,12 +175,23 @@ Sep–Oct 秋季 / Nov–Dec 年末`, × `strength 走强 / weakness 走弱`.
 | 1 | `Aug 3 → Sep 11` | `8月3日 → 9月11日` | the window; dates only, no jargon |
 | 2 | `15 years` | `15 年` | independent sample — **required beside the headline** |
 | 3 | `9 of 15 up` | `15 年中 9 年上涨` | agreement |
-| 4 | `Doesn't hold up` / `Holds up` / `Not enough years` | `不成立` / `成立` / `年数不足` | **the differentiator chip** |
+| 4 | four states, see below | four states, see below | **the differentiator chip** |
 | 5 | `Through Jul 31` | `截至 7月31日` | freshness |
 
-Chip 4 tints: `holds` → `--up` tint; `fails` → `--muted` (**not** `--down`; a
-failed test is not a bearish signal, and painting it red would be a lie);
-`thin` → `--muted` with a dashed border.
+**Chip 4 is four-state, not binary** (revised — see §12.6). It reads the
+strongest *true* claim available, which requires running the scanner on both the
+raw and the market-neutral panel:
+
+| Raw | Vs market | Chip 4 EN | Chip 4 ZH | Tint |
+|---|---|---|---|---|
+| clears | clears | `Its own pattern` | `该股自身的规律` | `--up` |
+| clears | does not | `The market's pattern` | `跟随大盘的规律` | `--info` |
+| does not | — | `Doesn't hold up` | `不成立` | `--muted` |
+| fewer than 6 years | — | `Not enough years` | `年数不足` | `--muted`, dashed border |
+
+`fails` is `--muted`, **never** `--down`: a failed test is not a bearish signal,
+and painting it red would be a lie. `The market's pattern` gets `--info` because
+it is a real finding, just not a name-specific one.
 
 **Banned from Tier 1 on this page** (doctrine Law 2, plus this page's own list):
 `p-value`, `maxT`, `familywise`, `FDR`, `BY`, `q≤`, `n=`, `t-stat`, `bootstrap`,
@@ -454,10 +466,17 @@ The word `validated` must not appear (CI-guarded,
   },
   "default_window": {
     "start_doy": 215, "end_doy": 254, "source": "symbol_best",
-    "abs_t": 5.9, "null_max_exceedance_pct": 9.0, "state": "fails"
+    "abs_t": 5.9, "null_max_exceedance_pct": 9.0,
+    "state": "market",
+    "raw_clears": true, "neutral_clears": false
   },
   "neutral": {
-    "market": { "benchmark": "SPY", "beta_source": "pit_trailing_252d", "years": ["…same shape as years"] }
+    "market": {
+      "benchmark": "SPY",
+      "beta_source": "pit_trailing_252d_shifted_one_session",
+      "years": ["…same shape as years"],
+      "family": { "…": "same shape as the raw family block, incl. its own null" }
+    }
   }
 }
 ```
@@ -615,3 +634,47 @@ panel, which changes once per calendar year. Recompute `family.null` only when
 256-symbol nightly affordable — without it, B=2,000 resamples × 2,645 windows ×
 256 symbols is a 15–35 minute job every single night for a result that is
 identical 364 days out of 365.
+
+### §12.6 The finding that gave the page its best feature
+
+A second probe asked whether the corrected test fires more often on real symbols
+than on noise, across a random sample of 59–60 eligible names (B=400):
+
+| Panel | Symbols firing | Rate | vs chance |
+|---|---:|---:|---:|
+| Raw | 10 / 59 | **16.9%** | 3.4× |
+| Market-neutral residual | 6 / 59 | **10.2%** | 2.0× |
+| Pure noise (control) | 2 / 40 | 5.0% | 1.0× |
+
+Two things follow, and both are load-bearing.
+
+**There is real calendar structure in the cross-section.** Firing at 3.4× the
+chance rate is not an artifact of a broken null — the same null returns exactly
+5.0% on noise. So the page will not be a constant "no", and it should not be
+built as though it will.
+
+**Most of it is the market's calendar, not the name's.** Removing a
+point-in-time trailing-beta market leg drops the fire rate from 16.9% to 10.2%.
+Six of the ten firing symbols (`AEIS`, `EMB`, `EWS`, `EZA`, `SOXX`, `VGK` —
+mostly sector and international ETFs) fire **raw only**: their "seasonality" is
+inherited. Four (`CL`, `FMBM`, `MU`, `ZW_F`) fire in **both**: they carry calendar
+structure of their own.
+
+This is what makes `Raw | Vs market | Detrended` (§5) the most important control
+on the page rather than a cosmetic option, and it is why chip 4 is four-state
+(§3). A user who sees "this stock is strong every August" and acts on it, when
+the truth is "August is strong for everything and this stock has a beta of 1.1",
+has learned nothing and taken a position for the wrong reason. Naming that
+difference on the glance tier is the single most useful thing this page does, and
+no incumbent surfaces it.
+
+**Across-symbol multiplicity is disclosed, not corrected away.** Browsing N
+symbols runs N familywise tests, so ~5% fire by chance regardless. A naive
+Benjamini–Yekutieli across the 59 per-symbol p-values leaves **zero** survivors
+(smallest `q_BY` ≈ 0.47) — but BY treats 59 heavily correlated equity symbols as
+59 independent hypotheses, so it is far too conservative here and must not be
+presented as the verdict. The honest handling is the honesty strip (§8): state
+the program-level fire rate against the 5% chance expectation and let the
+per-symbol page make the per-symbol claim. **Compute those rates over the real
+universe at B=2,000 and ship them — never hardcode the probe numbers above,
+which came from a 59-symbol sample at B=400 and are indicative only.**
