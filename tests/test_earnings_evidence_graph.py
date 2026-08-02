@@ -249,6 +249,21 @@ def test_execution_receipts_prove_zero_provider_and_no_token_use() -> None:
         assert not imports & {"openai", "anthropic", "boto3", "requests"}
 
 
+def test_workflow_cache_is_limited_to_intake_not_append_only_cas_output() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "earnings-evidence-graph.yml").read_text(encoding="utf-8")
+    intake_paths = "${{ runner.temp }}/earnings-evidence/intake-state.json\n            ${{ runner.temp }}/earnings-evidence/bodies"
+    assert workflow.count(intake_paths) == 2
+    cache_sections = [
+        workflow.split(anchor, 1)[1].split("\n      - name:", 1)[0]
+        for anchor in ("uses: actions/cache/restore@v4", "uses: actions/cache/save@v4")
+    ]
+    for section in cache_sections:
+        assert "path: ${{ runner.temp }}/earnings-evidence\n" not in section
+        assert "earnings-evidence/output" not in section
+        assert "earnings-evidence/objects" not in section
+        assert "earnings-evidence/generations" not in section
+
+
 def test_direct_graph_is_structural_and_resolves_each_fact_once() -> None:
     pack, graph = _pair(_body())
     direct = [claim for claim in graph["claims"] if claim["claim_type"] != "derived_metric"]
