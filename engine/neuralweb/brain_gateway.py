@@ -35,6 +35,7 @@ import re
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -807,9 +808,10 @@ def _brain_tool_schemas() -> list[dict]:
         {
             "name": "get_quote",
             "description": (
-                "Fetch a live quote for a symbol. Tries TERMINAL_HUB_URL first, then the "
-                "VPS quotes_full state snapshot, then manifest.json fallback, then "
-                "site/live/quotes.json. Always returns source and as_of."
+                "Fetch a live quote for a symbol. Tries the quote-hub /quotes batch "
+                "endpoint (TERMINAL_HUB_URL) first, then the VPS quotes_full state "
+                "snapshot, then manifest.json fallback, then site/live/quotes.json. "
+                "Always returns source and as_of."
             ),
             "input_schema": {
                 "type": "object",
@@ -1658,27 +1660,62 @@ def _symbol_grounding_digest(
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
-    """Try TERMINAL_HUB_URL, then the VPS quotes_full state snapshot, then the manifest
-    row, then site/live/quotes.json."""
+    """Try the quote-hub /quotes batch endpoint, then the VPS quotes_full state
+    snapshot, then the manifest row, then site/live/quotes.json."""
     symbol = _safe_symbol(params.get("symbol") or "")
     if not symbol:
         return {"error": "symbol required"}
 
-    # 1. Live hub
+    # 1. Live hub — the charting-app quote-hub's /quotes BATCH endpoint. That hub
+    #    (hub/hub.js) exposes ONLY /health and /quotes?syms=CSV; the /quote/{symbol}
+    #    this leg used to call has never existed on any host, and the
+    #    {"error": "not found"} the VPS returned was simply its catch-all 404.
     try:
-        url = f"{terminal_hub_url.rstrip('/')}/quote/{symbol}"
+        url = f"{terminal_hub_url.rstrip('/')}/quotes?syms={urllib.parse.quote(symbol)}"
         req = urllib.request.Request(url, headers={"User-Agent": "brain-gateway/1.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read())
-        # A hub that answers HTTP 200 with {"error": "not found"} is a MISS, not a
-        # quote: returning it here would mask every local fallback below (the VPS hub
-        # carries no single-stock quotes at all, so this was the whole ladder).
-        if not isinstance(data, dict) or data.get("error"):
+            payload = json.loads(resp.read())
+        # Body is a {SYM: row} map; a symbol the hub has no data for is simply ABSENT
+        # (empty body when it has nothing at all). An error payload or a missing row
+        # is a MISS, not a quote, and must not mask the local fallbacks below.
+        if not isinstance(payload, dict) or payload.get("error"):
             raise ValueError("hub miss")
-        data["source"] = "terminal_hub"
-        if "as_of" not in data:
-            data["as_of"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        return data
+        row = payload.get(symbol)
+        if not isinstance(row, dict) or row.get("last") is None:
+            raise ValueError("hub miss")
+        # TRAP: on a symbol's FIRST request the hub cold-subscribes and writes a
+        # manifest-EOD placeholder whose ts is the SUBSCRIBE time — an old close
+        # stamped with the current clock. Serving it would launder a stale price under
+        # a fresh as-of. The discriminator is regularSessionDate, written only once a
+        # real Polygon AM bar has landed. Crypto rows never carry it, but their WS ts
+        # is genuinely real-time, so the guard is US-only. Falling through to the
+        # quotes_full snapshot (honest Yahoo regularMarketTime) is strictly more
+        # truthful, and this request already armed the subscribe, so the NEXT ask gets
+        # real delayed bars.
+        if row.get("market") == "us" and not row.get("regularSessionDate"):
+            raise ValueError("hub cold placeholder")
+        # Hub ts is epoch SECONDS (the quotes_full leg below is milliseconds).
+        ts_s = row.get("ts")
+        as_of = None
+        if isinstance(ts_s, (int, float)) and not isinstance(ts_s, bool) and ts_s > 0:
+            as_of = datetime.fromtimestamp(ts_s, tz=timezone.utc).isoformat(timespec="seconds")
+        out = {
+            "symbol": symbol,
+            "price": row.get("last"),
+            "prev_close": row.get("prevClose"),
+            "change_pct": row.get("chg"),
+            "as_of": as_of or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "live": row.get("live"),
+            "source": "terminal_hub",
+        }
+        # Same plain-word delay vocabulary as the quotes_full leg below: the
+        # model-visible payload gets a number it can verbalize ("about 15 minutes
+        # delayed"), never the raw basis slug ("DELAYED_15M" is banned vocab).
+        basis = str(row.get("basis") or "")
+        basis_delay = re.search(r"(\d+)", basis)
+        if basis.upper().startswith("DELAYED") and basis_delay:
+            out["delayed_min"] = int(basis_delay.group(1))
+        return {k: v for k, v in out.items() if v is not None}
     except Exception:  # noqa: BLE001
         pass
 

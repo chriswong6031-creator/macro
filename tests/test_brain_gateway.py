@@ -758,6 +758,33 @@ _QF_TS_MS = 1785591900000
 _QF_TS_ISO = "2026-08-01T13:45:00+00:00"
 
 
+#: Fixed instant in the HUB's per-row ``ts`` — epoch SECONDS there, milliseconds in
+#: quotes_full — and the ISO the ladder must derive from it. Deliberately a DIFFERENT
+#: instant from _QF_TS_MS so a hub assertion cannot pass on a quotes_full as-of.
+_HUB_TS_S = 1785593100
+_HUB_TS_ISO = "2026-08-01T14:05:00+00:00"
+
+
+class _JsonResp:
+    """urlopen's context-manager shape over a fixed JSON body."""
+
+    def __init__(self, payload):
+        self._body = json.dumps(payload).encode()
+
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def read(self): return self._body
+
+
+def _hub_urlopen(payload, seen: list | None = None):
+    """side_effect for urllib.request.urlopen that serves `payload` and records the URL."""
+    def _open(req, *a, **kw):
+        if seen is not None:
+            seen.append(getattr(req, "full_url", req))
+        return _JsonResp(payload)
+    return _open
+
+
 def _write_quotes_full(path, quotes: dict, meta: dict | None = None) -> None:
     """A quotes_full.json in the shape scripts/build_live_quotes.py writes."""
     path.write_text(json.dumps({
@@ -827,6 +854,80 @@ def test_get_quote_hub_error_payload_falls_through(tmp_path, monkeypatch):
     assert result.get("error") is None, "a 200-with-error hub reply is a miss, not a quote"
     assert result.get("source") == "live_plane_full"
     assert result.get("price") == 231.5
+
+
+def test_get_quote_hub_batch_shape(tmp_path):
+    """The hub speaks /quotes?syms=CSV and answers a {SYM: row} map — /quote/{symbol}
+    never existed on any host, so the endpoint shape is pinned here."""
+    seen: list[str] = []
+    payload = {"AAPL": {"last": 231.9, "ts": _HUB_TS_S, "prevClose": 229.0, "chg": 1.27,
+                        "market": "us", "regularSessionDate": "2026-07-31",
+                        "basis": "DELAYED_15M", "source": "polygon-delayed", "live": False}}
+
+    with patch("urllib.request.urlopen", side_effect=_hub_urlopen(payload, seen)):
+        result = gw._tool_get_quote({"symbol": "AAPL"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert seen and "/quotes?syms=AAPL" in seen[0], f"wrong hub endpoint: {seen!r}"
+    assert result.get("source") == "terminal_hub"
+    assert result.get("price") == 231.9
+    assert result.get("change_pct") == 1.27
+    assert result.get("prev_close") == 229.0
+    assert result.get("as_of") == _HUB_TS_ISO, "hub ts is epoch SECONDS, not ms"
+    # The raw basis slug never reaches the model-visible payload; the delay travels
+    # as the same numeric vocabulary the quotes_full leg uses.
+    assert "basis" not in result
+    assert result.get("delayed_min") == 15
+
+
+def test_get_quote_hub_placeholder_falls_through(tmp_path, monkeypatch):
+    """A cold-subscribe placeholder is an old close stamped with the SUBSCRIBE time.
+    The honest snapshot must outrank a time-laundered price."""
+    qf = tmp_path / "quotes_full.json"
+    _write_quotes_full(qf, {"AAPL": {"price": 231.5, "ts": _QF_TS_MS, "prevClose": 229.0,
+                                     "changePct": 1.09}})
+    monkeypatch.setenv("MACRO_QUOTES_FULL_PATH", str(qf))
+    # No regularSessionDate => no real Polygon bar has landed for this symbol yet.
+    payload = {"AAPL": {"last": 210.0, "ts": _HUB_TS_S, "prevClose": 229.0, "chg": 0.0,
+                        "market": "us", "basis": "EOD", "source": "manifest", "live": False}}
+
+    with patch("urllib.request.urlopen", side_effect=_hub_urlopen(payload)):
+        result = gw._tool_get_quote({"symbol": "AAPL"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "live_plane_full"
+    assert result.get("price") == 231.5, "the placeholder's stale close must not win"
+    assert result.get("as_of") == _QF_TS_ISO
+
+
+def test_get_quote_hub_crypto_row_served(tmp_path):
+    """Crypto rows never carry regularSessionDate, but their WS ts is genuinely
+    real-time — the placeholder guard is US-only and must not eat them."""
+    payload = {"BTC-USD": {"last": 118250.0, "ts": _HUB_TS_S, "prevClose": 117000.0,
+                           "chg": 1.07, "market": "crypto", "source": "coinbase",
+                           "live": True}}
+
+    with patch("urllib.request.urlopen", side_effect=_hub_urlopen(payload)):
+        result = gw._tool_get_quote({"symbol": "BTC-USD"}, tmp_path,
+                                    "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "terminal_hub"
+    assert result.get("price") == 118250.0
+    assert result.get("as_of") == _HUB_TS_ISO
+    assert result.get("live") is True
+
+
+def test_get_quote_hub_empty_body_falls_through(tmp_path):
+    """A symbol the hub has no data for is simply ABSENT from the map (empty body when
+    it has nothing) — that is a miss, not a quote."""
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-07-31",
+        "symbols": {"NVDA": {"price": 120.5, "verdict": "buy", "wr": 0.62}},
+    }))
+
+    with patch("urllib.request.urlopen", side_effect=_hub_urlopen({})):
+        result = gw._tool_get_quote({"symbol": "NVDA"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "manifest"
+    assert result.get("price") == 120.5
 
 
 def test_get_quote_row_without_price_skipped(tmp_path, monkeypatch):
