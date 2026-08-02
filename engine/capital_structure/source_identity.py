@@ -97,6 +97,42 @@ def validate_manifest_ledger(records: Sequence[Mapping[str, Any]]) -> None:
         seen[manifest_id] = encoded
 
 
+def validate_manifest_content_binding(record: Mapping[str, Any]) -> None:
+    """Require a manifest's hash, object key, and root span to bind the same bytes.
+
+    Schema validation checks field shapes and immutable identity checks the full
+    manifest body. This semantic guard prevents a well-formed, re-signed body
+    from pointing one of those three coordinates at a different object.
+    """
+    document = record.get("document") or {}
+    storage = record.get("storage") or {}
+    digest = str(document.get("content_sha256") or "").lower()
+    if not _is_sha256(digest):
+        raise ManifestIdentityError("document.content_sha256 must be lowercase SHA-256")
+    if str(document.get("root_locator") or "").lower() != f"sha256:{digest}":
+        raise ManifestIdentityError("document.root_locator must bind document.content_sha256")
+    object_key = str(storage.get("object_key") or "")
+    if object_key != f"capital_structure/sec/sha256/{digest[:2]}/{digest}":
+        raise ManifestIdentityError("storage.object_key must bind document.content_sha256")
+    byte_length = document.get("byte_length")
+    if isinstance(byte_length, bool) or not isinstance(byte_length, int) or byte_length < 0:
+        raise ManifestIdentityError("document.byte_length must be a non-negative integer")
+    expected_locator = f"bytes:0-{byte_length}"
+    matches = [
+        span for span in (record.get("spans") or [])
+        if isinstance(span, Mapping)
+        and str(span.get("locator_type") or "") == "document"
+        and str(span.get("locator") or "") == expected_locator
+        and str(span.get("text_sha256") or "").lower() == digest
+    ]
+    if not matches:
+        raise ManifestIdentityError("manifest lacks exact document root span")
+
+
+def _is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(char in "0123456789abcdef" for char in value)
+
+
 def merge_manifest_ledgers(
     existing: Sequence[Mapping[str, Any]],
     fresh: Sequence[Mapping[str, Any]],

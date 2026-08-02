@@ -280,3 +280,41 @@ and the full public dossier UI:
 
 No later wave may describe these blocked capabilities as live merely because the schemas or
 dashboard placeholders exist.
+
+## Wave 2B direct document terms
+
+Wave 2B adds `data/capital_structure/document_term_observations.parquet`, an append-only
+row/security-scoped ledger of only direct named registration-fee-table fields. The canonical
+parser reads a retained **complete submission** through its manifest's exact `store_id`,
+content-addressed object key, and SHA-256 verification. It inspects both the exact primary
+child and any `EX-FILING FEES` child already contained in those immutable submission bytes;
+the collector does not need to invent a separate exhibit manifest. A missing or mismatched
+object aborts the term generation rather than creating a null/zero result.
+
+The direct fields are amount to be registered, proposed maximum offering price per unit,
+proposed maximum aggregate offering price, registration fee, and filing fee rate. Values are
+decimal strings and each observed fact is tied to one explicit fee-table row, security title,
+security classification, and field cell. Share amounts, debt principal, units, and generic
+securities retain different dimensions; a generic amount is never defaulted to shares. A
+denominated fee rate retains its explicit numerator in `value` and denominator in `scale`
+with unit `USD_per_USD`; it is not stored or advertised as a normalized ratio. Multiple rows create
+distinct observation slots and are never summed or collapsed. Competing tables or unsupported
+dimensions are `ambiguous` with a null value. No matching direct value is `unavailable`, never
+evidence that capacity is zero or that no financing can occur. Every observed row carries exact
+table, row, security-cell, and term-cell byte spans/hashes (or the verified root span for a
+document-level unavailable finding), source rights/privacy metadata, and an immutable correction
+chain.
+
+For terms, `source_available_at` records durable source retention while canonical
+`available_at` is the time Mastermind produced that extraction/correction. This makes parser
+corrections point-in-time safe: a later parser upgrade cannot backdate a fact to the original
+SEC filing. The normal nightly compiler processes only new manifests or an older parser
+version; `--rebuild` is the deliberate correction path.
+
+This lane does **not** create instruments, active or remaining capacity, aggregate offering
+amounts, fully diluted shares, cash runway, overhang, risk, probability, rank, entry, sizing,
+or Prophet authority. A fee-table aggregate offering-price cell is historical document evidence
+only; a later reconciliation receipt must establish registration family, lifecycle, take-down,
+and time validity before any issuer-state calculation can consume it. See
+`research/CAPITAL_STRUCTURE_DOCUMENT_TERMS_WAVE2B_FABLE_HANDOFF.md` for the explicit next-gate
+handoff.
