@@ -337,7 +337,13 @@ def main() -> int:
 
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
-    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # baskets.json is NOT written here — it is written AFTER the sector_pulse merge below.
+    # The merged China Sector Intelligence page FETCHES this artifact instead of reading an
+    # inline embed, so it must carry the pulse velocity/heat keys that baskets_desk.js reads
+    # (pulse_heat / pulse_rank_delta_* / pulse_score_delta_5d). Writing here froze a
+    # pre-merge snapshot — the identical bug the US builder already fixed
+    # (scripts/build_baskets.py:152-188), measured 2026-08-02: chinabasketdata/baskets.json
+    # carried 0 pulse keys on 22 themes while basketdata/baskets.json carried all 6 on 47.
     # SECTOR PULSE — compact per-theme rotation data product. Also merges velocity/heat keys
     # into theme_intel for the rotation-scorecard page enhancements. Additive — never breaks build.
     try:
@@ -348,6 +354,14 @@ def main() -> int:
             _sp.write_score_snapshot(data["theme_intel"], "china")   # accrues the baskets_china velocity stream
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_pulse china hook failed: %s", e)
+
+    # FAIL-SOFT PRE-ORGAN WRITE (JSON half of the #2886 double-render contract). Post-pulse-merge
+    # and pre-chart-pop, so it carries BOTH the velocity/heat keys and the chart matrix — the
+    # fetching page needs one artifact for BASKETS and CHART. This snapshot is what survives if
+    # the china_basket_turn organ or the signal/overlap merge below raises, so an organ crash
+    # never leaves the page with a MISSING or stale-from-yesterday JSON. The AUTHORITATIVE write
+    # is the post-organ one further down (grep: AUTHORITATIVE baskets.json write).
+    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
     if emergence:
         (fdir / "narrative_emergence.json").write_text(
             json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))
@@ -484,17 +498,31 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_basket_turn organ failed: %s", e)
 
-    # Member conviction signals + cross-basket overlap — computed after turn annotation so
-    # turn_state is already on each basket row in `data`. These are additive display features.
+    # Member conviction signals + cross-basket overlap — computed after the turn organ so the
+    # turn annotation is already on disk. NOTE the turn organ annotates the DISK copy (`_bj`),
+    # never `data`, so turn_state lives only in baskets.json; anything merged from `data` below
+    # must be merged FIELD-WISE onto the disk payload, never by replacing whole basket rows.
+    # These are additive display features.
     _compute_member_signals(data, site)
     _compute_basket_overlaps(data)
 
-    # Re-write baskets.json to include the newly attached intel + member signals + overlaps.
-    # (The turn annotation above already did a re-write from the disk copy; we write on top
-    # of `data` in memory which includes member signals and overlaps added since that write.)
+    # AUTHORITATIVE baskets.json write — the artifact the merged page FETCHES. Runs after the
+    # china_basket_turn organ AND the signal/overlap merge, and produces exactly the payload the
+    # second _render_page call below inlines, so the fetched JSON and the rendered page can never
+    # disagree. A pre-organ-only JSON is the us_stocks one-build-lag class (#2829): the lifecycle
+    # chips / Entry Radar read turn_state and would silently never fire.
+    # (The turn annotation above already re-wrote from the disk copy; we merge on top of that
+    # with the member signals and overlaps `data` gained since.)
     try:
         _bj_path2 = fdir / "baskets.json"
         _bj2 = json.loads(_bj_path2.read_text())
+        # theme_intel is refreshed wholesale from memory: sector_pulse merges the velocity/heat
+        # keys into it, and every write since the fail-soft one round-trips through disk. The
+        # fail-soft write is already post-merge, so this is normally a no-op — it is the guard
+        # that keeps a future re-order of that write from silently re-freezing a pre-merge
+        # theme_intel. Truthiness-gated: an absent in-memory theme_intel never blanks the disk copy.
+        if data.get("theme_intel"):
+            _bj2["theme_intel"] = data["theme_intel"]
         # Build a lookup from the in-memory data (has sig_tier, ret_5d, top_overlaps, etc.)
         _mem_lookup: dict = {}
         for _b in (data.get("baskets") or []):
