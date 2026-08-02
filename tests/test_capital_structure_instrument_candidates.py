@@ -116,8 +116,10 @@ def test_candidate_projection_is_one_to_one_and_preserves_direct_evidence_withou
     }
     assert all("instrument_id" not in row and "instrument_candidate_id" not in row for row in rows)
     assert all(row["authority"] == {
-        "context_only": True, "may_calculate_capacity": False, "may_emit_risk": False,
-        "may_emit_probability": False, "may_gate_prophet": False,
+        "is_context_only": True, "instrument_authority": False, "capacity_authority": False,
+        "risk_authority": False, "probability_authority": False, "rank_authority": False,
+        "sizing_authority": False, "entry_authority": False, "trade_authority": False,
+        "prophet_authority": False,
     } for row in rows)
 
 
@@ -128,7 +130,28 @@ def test_rate_and_fee_rows_remain_evidence_only_not_an_implied_supply_or_capacit
     assert rate["candidate"]["supply_role"] == "not_applicable"
     assert rate["candidate"]["state"]["reason"] == "direct_security_class_mapping_supply_not_applicable"
     assert "capacity" not in rate
-    assert rate["authority"]["may_calculate_capacity"] is False
+    assert rate["authority"]["capacity_authority"] is False
+
+
+def test_candidate_contract_rejects_legacy_or_partial_authority_vocabulary():
+    row = compile_candidate_term_records(
+        _direct_rows(), generated_at="2026-08-04T00:00:00Z",
+    )["observations"][0]
+    validator = Draft202012Validator(_candidate_contract(), format_checker=FormatChecker())
+
+    legacy = deepcopy(row)
+    legacy["authority"] = {
+        "context_only": True,
+        "may_calculate_capacity": False,
+        "may_emit_risk": False,
+        "may_emit_probability": False,
+        "may_gate_prophet": False,
+    }
+    assert list(validator.iter_errors(legacy))
+
+    partial = deepcopy(row)
+    del partial["authority"]["trade_authority"]
+    assert list(validator.iter_errors(partial))
 
 
 def test_unknown_direct_security_and_unsupported_term_type_stay_explicitly_deferred():

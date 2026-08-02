@@ -142,7 +142,10 @@ Prophet receives context as cited facts first. Any hard gate/weight requires a
 separate proposal: versioned input snapshot, causal rationale, adversarial
 backtest, shadow mode, calibration by cohort, override/audit policy, and an
 explicit rollback switch. Until then the issuer-state lobe has
-`may_gate_prophet=false` by contract.
+`prophet_authority=false` by contract. The W3A candidate-term contract also
+sets every other authority lane false (`instrument`, `capacity`, `risk`,
+`probability`, `rank`, `sizing`, `entry`, and `trade`) while preserving
+`is_context_only=true`.
 
 ## Current W3A contract and compiler boundary
 

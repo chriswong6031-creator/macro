@@ -417,11 +417,16 @@ def _project_record(
             "available_at": generated_at,
         },
         "authority": {
-            "context_only": True,
-            "may_calculate_capacity": False,
-            "may_emit_risk": False,
-            "may_emit_probability": False,
-            "may_gate_prophet": False,
+            "is_context_only": True,
+            "instrument_authority": False,
+            "capacity_authority": False,
+            "risk_authority": False,
+            "probability_authority": False,
+            "rank_authority": False,
+            "sizing_authority": False,
+            "entry_authority": False,
+            "trade_authority": False,
+            "prophet_authority": False,
         },
     }
     record["candidate_term_id"] = candidate_term_id_for(record)

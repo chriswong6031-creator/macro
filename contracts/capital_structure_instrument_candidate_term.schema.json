@@ -112,13 +112,22 @@
     "authority": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["context_only", "may_calculate_capacity", "may_emit_risk", "may_emit_probability", "may_gate_prophet"],
+      "required": [
+        "is_context_only", "instrument_authority", "capacity_authority",
+        "risk_authority", "probability_authority", "rank_authority",
+        "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"
+      ],
       "properties": {
-        "context_only": {"const": true},
-        "may_calculate_capacity": {"const": false},
-        "may_emit_risk": {"const": false},
-        "may_emit_probability": {"const": false},
-        "may_gate_prophet": {"const": false}
+        "is_context_only": {"const": true},
+        "instrument_authority": {"const": false},
+        "capacity_authority": {"const": false},
+        "risk_authority": {"const": false},
+        "probability_authority": {"const": false},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
       }
     }
   },
