@@ -108,3 +108,48 @@ def test_emergence_alert_skips_below_bar(tmp_path, monkeypatch):
     weak = _emergence([_nv("seed"), _nv("faint", score=ea.ALERT_MIN - 10)], as_of="2026-06-19")
     assert ea.rebuild(weak) == []
     assert ea.load_events() == []
+
+
+# ------------------------------------------- AI-scout watch display register (#3821)
+# The scout's emerging_watch is LLM prose printed VERBATIM by the Forming Narratives
+# panel, so it is a user-cycle surface: the falsifier register never appears there
+# (operator ruling 2026-07-27).  The CONDITION must survive the rewrite word-for-word.
+_COND = "if it loses eligibility or falls below rank 3 within 15 days."
+
+
+def test_watch_register_rewrites_kill_label_and_keeps_the_condition():
+    out = ne._watch_register("Tech may challenge Miners. Kill criterion: " + _COND)
+    assert out == "Tech may challenge Miners. Watching for: " + _COND
+    assert "Kill" not in out and "kill" not in out
+
+
+def test_watch_register_covers_label_variants():
+    for lab in ("Kill criterion:", "kill criterion :", "Kill-criterion:", "KILL CRITERIA:",
+                "Kill:", "kill："):
+        out = ne._watch_register("Watch X. " + lab + " " + _COND)
+        assert out == "Watch X. Watching for: " + _COND, lab
+    # bare noun phrase (no colon) de-registers without inventing a label
+    assert ne._watch_register("Its kill criterion is tight.") == \
+        "Its watch condition is tight."
+
+
+def test_watch_register_is_idempotent_and_leaves_clean_text_alone():
+    clean = "Tech may challenge Miners. Watching for: " + _COND
+    assert ne._watch_register(clean) == clean
+    assert ne._watch_register(ne._watch_register(clean)) == clean
+    # a word that merely CONTAINS "kill" is untouched
+    assert ne._watch_register("Overkill: not a label.") == "Overkill: not a label."
+
+
+def test_ai_watch_de_registers_a_stale_brief(tmp_path):
+    """Old-vintage ai_desk_<region>.json (the gated desk lane re-runs on its own cadence)
+    must not leak the old register through the panel payload."""
+    alloc = tmp_path / "site" / "allocationdata"
+    alloc.mkdir(parents=True)
+    (alloc / "ai_desk_hk.json").write_text(
+        '{"emerging_watch": "Semis may take leadership. Kill criterion: ' + _COND + '",'
+        ' "confidence": "low", "state_asof": "2026-08-01"}', encoding="utf-8")
+    w = ne._ai_watch(tmp_path, "hk")
+    assert w is not None
+    assert w["text"] == "Semis may take leadership. Watching for: " + _COND
+    assert w["confidence"] == "low"
