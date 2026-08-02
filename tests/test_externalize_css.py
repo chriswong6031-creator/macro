@@ -1,9 +1,16 @@
-"""Inline-CSS externalization — lift big <style> blocks to cached hash files.
+"""Inline-asset externalization — lift big <style>/<script> to cached hash files.
 
 The sweep (scripts/externalize_css.py) must keep rendering byte-identical: the
 CSS crosses to the external file verbatim, links replace blocks in place (cascade
 + first-paint profile preserved), tiny blocks stay inline, and orphaned hash
 files are pruned — strictly within site/assets/css/. These guard those invariants.
+
+The same sweep also lifts OPT-IN inline JS (`<script data-externalize>`) into
+site/assets/js/<hash>.js under the same rules. JS is opt-in where CSS is
+automatic because an inline script here routinely carries render-time data, and
+a content-hashed file is served `immutable, max-age=1y` — the one place a
+nightly bake must never land. The JS half of this file pins BOTH directions:
+a marked block lifts, and an unmarked one never does.
 
 Run: .venv/bin/python -m pytest tests/test_externalize_css.py -q
 """
@@ -14,11 +21,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.pages import externalize_css_text  # noqa: E402
+from lib.pages import externalize_css_text, externalize_js_text  # noqa: E402
 from scripts.externalize_css import MIN_BYTES, externalize  # noqa: E402
 
 _BIG = ".x{color:red}" + "/*" + "p" * (MIN_BYTES + 100) + "*/"  # > MIN_BYTES
 _SMALL = ".y{color:blue}"  # < MIN_BYTES
+_BIG_JS = "(function(){var a=1;/*" + "j" * (MIN_BYTES + 100) + "*/})();"  # > MIN_BYTES
+_SMALL_JS = "var y = 1;"  # < MIN_BYTES
 
 
 def _href_for(recorder):
@@ -556,3 +565,211 @@ def test_absent_page_that_dropped_its_link_does_not_pin_the_sheet_forever(tmp_pa
     (site / "gone.html").unlink()
     externalize(site)
     assert not (css / "abcd1234.css").exists()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# OPT-IN inline-JS externalization  (lib.pages.externalize_js_text)
+# ═════════════════════════════════════════════════════════════════════════════
+# The workspace IIFE on options.html is 68KB of static code riding in a
+# short-TTL document, so it can never be cached. Lifting it to a content-hashed
+# file makes it `immutable, max-age=1y` at the edge — but ONLY the static half
+# may go: options.html.j2 keeps `window.OEW_TICKER_MANIFEST` in its own inline
+# script precisely because a nightly-baked value inside the hash file would be
+# replayed at returning visitors until some unrelated edit re-minted the hash.
+# That is why the transform is opt-in, and why the tests below pin the
+# not-lifted direction as hard as the lifted one.
+
+
+def _src_for(recorder):
+    def make_src(js, index):
+        recorder.append((js, index))
+        return f"assets/js/blk{index}.js?v=abc"
+    return make_src
+
+
+def test_marked_big_script_becomes_external_and_js_crosses_byte_for_byte():
+    seen = []
+    html = f"<body><script data-externalize>{_BIG_JS}</script></body>"
+    out = externalize_js_text(html, _src_for(seen))
+    assert out == '<body><script src="assets/js/blk1.js?v=abc"></script></body>'
+    assert seen == [(_BIG_JS, 1)]  # exact JS handed to the writer, no mutation
+
+
+def test_unmarked_big_script_is_never_lifted():
+    """The default is INLINE. Every other inline script on this site mixes
+    render-time data into its code; lifting one blind would freeze it."""
+    html = f"<body><script>{_BIG_JS}</script></body>"
+    assert externalize_js_text(html, _src_for([])) == html
+
+
+def test_marked_small_script_stays_inline_with_its_marker():
+    """Below the threshold a request costs more than the bytes save — and the
+    marker survives, so the block is re-offered once it grows."""
+    html = f"<body><script data-externalize>{_SMALL_JS}</script></body>"
+
+    def make_src(js, index):
+        return None if len(js.encode()) < MIN_BYTES else f"assets/js/{index}.js"
+
+    out = externalize_js_text(html, make_src)
+    assert out == html
+    assert "data-externalize" in out
+
+
+def test_marked_tag_that_already_has_src_is_untouched():
+    """Nothing inline to lift; rewriting it would drop the real src."""
+    html = '<script data-externalize src="theme.js"></script>'
+    assert externalize_js_text(html, _src_for([])) == html
+
+
+def test_svg_internal_marked_script_never_lifted():
+    """A <script src> inside inline SVG is foreign content, not an HTML script —
+    the same class of inertness that kept SVG <style> blocks inline."""
+    html = f'<figure><svg viewBox="0 0 10 10"><script data-externalize>{_BIG_JS}</script></svg></figure>'
+    assert externalize_js_text(html, _src_for([])) == html
+
+
+def test_svg_internal_stays_while_marked_html_script_lifts():
+    html = (
+        f"<body><script data-externalize>{_BIG_JS}</script>"
+        f"<svg><script data-externalize>{_BIG_JS}</script></svg></body>"
+    )
+    out = externalize_js_text(html, _src_for([]))
+    assert out.count("<script data-externalize>") == 1  # svg block kept
+    assert "<svg><script data-externalize>" in out
+    assert '<script src="assets/js/blk1.js?v=abc"></script>' in out
+
+
+def test_none_src_leaves_marked_block_inline():
+    html = f"<script data-externalize>{_BIG_JS}</script>"
+    assert externalize_js_text(html, lambda *a: None) == html
+
+
+def test_idempotent_when_no_marked_blocks_remain():
+    """The emitted tag carries no marker, so a swept page comes back untouched."""
+    already = '<script src="assets/js/deadbeef.js?v=deadbeef"></script>'
+    assert externalize_js_text(already, _src_for([])) == already
+
+
+def test_marker_match_is_not_a_word_boundary():
+    """`\\b` before an attribute NAME also matches a longer `-`-joined attribute,
+    which is how a guard silently starts matching data- variants it never meant
+    to. Both directions must miss."""
+    for attrs in ("data-externalized", "data-externalize-off", "x-data-externalize"):
+        html = f"<script {attrs}>{_BIG_JS}</script>"
+        assert externalize_js_text(html, _src_for([])) == html, f"{attrs} matched the marker"
+
+
+def test_index_counts_marked_candidates_only():
+    seen = []
+    html = (
+        f"<script>{_BIG_JS}</script>"                      # unmarked — not a candidate
+        f"<script data-externalize>{_BIG_JS}a</script>"    # candidate 1
+        f'<script data-externalize src="x.js"></script>'   # already external
+        f"<script data-externalize>{_BIG_JS}b</script>"    # candidate 2
+    )
+    externalize_js_text(html, _src_for(seen))
+    assert [i for _js, i in seen] == [1, 2]
+
+
+# ---- end-to-end sweep, JS side (real files) ---------------------------------
+
+def test_sweep_externalizes_marked_js_and_is_byte_identical(tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    page = (f"<html><head></head><body><script data-externalize>{_BIG_JS}</script>"
+            f"<script data-externalize>{_SMALL_JS}</script></body></html>")
+    (site / "options.html").write_text(page, encoding="utf-8")
+
+    assert externalize(site) == 1
+    out = (site / "options.html").read_text()
+    assert 'src="assets/js/' in out
+    assert f"<script data-externalize>{_SMALL_JS}</script>" in out  # small stays inline
+    js_files = list((site / "assets" / "js").glob("*.js"))
+    assert len(js_files) == 1 and js_files[0].read_text() == _BIG_JS
+    assert "data-dbase" in out  # written via write_page
+    assert externalize(site) == 0  # idempotent
+
+
+def test_sweep_js_depth_relative_src(tmp_path):
+    site = tmp_path / "site"
+    sub = site / "stocks"
+    sub.mkdir(parents=True)
+    (sub / "AAPL.html").write_text(
+        f"<head></head><body><script data-externalize>{_BIG_JS}</script></body>",
+        encoding="utf-8")
+    externalize(site)
+    assert 'src="../assets/js/' in (sub / "AAPL.html").read_text()
+
+
+def test_sweep_dedupes_identical_marked_blocks(tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    for name in ("options.html", "options_screener.html"):
+        (site / name).write_text(
+            f"<head></head><body><script data-externalize>{_BIG_JS}</script></body>",
+            encoding="utf-8")
+    externalize(site)
+    assert len(list((site / "assets" / "js").glob("*.js"))) == 1
+
+
+def test_sweep_prunes_js_orphans_independently_of_css(tmp_path):
+    """Two hash trees, two reference sets. A page that links only CSS must not
+    make every JS file look referenced, and vice versa."""
+    site = tmp_path / "site"
+    css, js = site / "assets" / "css", site / "assets" / "js"
+    css.mkdir(parents=True)
+    js.mkdir(parents=True)
+    (css / "11111111.css").write_text("/* linked below */", encoding="utf-8")
+    (css / "00000000.css").write_text("/* nobody links me */", encoding="utf-8")
+    (js / "22222222.js").write_text("/* loaded below */", encoding="utf-8")
+    (js / "00000000.js").write_text("/* nobody loads me */", encoding="utf-8")
+    (site / "macro.html").write_text(
+        '<html><head><link rel="stylesheet" href="assets/css/11111111.css?v=11111111">'
+        '</head><body><script src="assets/js/22222222.js?v=22222222"></script>'
+        "</body></html>", encoding="utf-8")
+
+    externalize(site)
+
+    assert (css / "11111111.css").exists() and (js / "22222222.js").exists()
+    assert not (css / "00000000.css").exists()
+    assert not (js / "00000000.js").exists()
+
+
+def test_prune_spares_a_script_only_an_absent_committed_page_loads(tmp_path):
+    """The #3988/#4042 shape, JS side: in a partial checkout the pages on disk
+    are not the pages that ship, so orphanhood cannot be decided from them."""
+    site = _init_repo(tmp_path)
+    js = site / "assets" / "js"
+    js.mkdir(parents=True)
+    (js / "abcd1234.js").write_text("/* loaded by the absent page */", encoding="utf-8")
+    (site / "gone.html").write_text(
+        '<html><body><script src="assets/js/abcd1234.js?v=abcd1234"></script></body></html>',
+        encoding="utf-8")
+    (site / "here.html").write_text("<html><head></head><body></body></html>", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "-c", "commit.gpgsign=false", "commit", "-qm", "seed")
+
+    (site / "gone.html").unlink()  # simulate the partial checkout
+    externalize(site)
+
+    assert (js / "abcd1234.js").exists(), (
+        "pruned a script that a committed-but-absent page still loads")
+
+
+def test_unenumerable_checkout_skips_both_prunes(tmp_path, monkeypatch):
+    """None means 'cannot prove orphanhood' — fail closed on BOTH trees, not
+    just the one the guard was originally written for."""
+    import scripts.externalize_css as mod
+
+    site = tmp_path / "site"
+    css, js = site / "assets" / "css", site / "assets" / "js"
+    css.mkdir(parents=True)
+    js.mkdir(parents=True)
+    (css / "00000000.css").write_text("/* orphan */", encoding="utf-8")
+    (js / "00000000.js").write_text("/* orphan */", encoding="utf-8")
+    (site / "macro.html").write_text("<html><head></head><body></body></html>", encoding="utf-8")
+
+    monkeypatch.setattr(mod, "_committed_refs_for_absent_pages", lambda _site: None)
+    externalize(site)
+
+    assert (css / "00000000.css").exists() and (js / "00000000.js").exists()

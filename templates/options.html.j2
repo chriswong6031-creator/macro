@@ -978,23 +978,31 @@ html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
 </div><!-- /oew -->
 
 <script>
-/* OIP W1 §2.3: the SAME manifest array gex.html bakes as window.GEX_MANIFEST
-   (scripts/build_gex_board.py writes it to site/gex/index.json; this page's
-   builder — scripts/build_options_command.py — reads that existing file back
-   and re-embeds it here) so Ticker mode's search shares gex.html's exact
-   universe rather than growing a second, possibly-drifting one. Assigned as the
-   first statement of the SAME script tag as the workspace IIFE below — not a
-   second <script> — so the page keeps exactly one inline script after the
-   chrome (test_build_options_command.py's _extract_workspace_script anchors on
-   that). Execution order is unaffected either way: this is a plain top-level
-   statement that runs before the IIFE which reads it. */
+/* Render-time DATA only — re-baked nightly, must stay inline (it can never ride
+   in the content-hashed static file below). W1 §2.3: OEW_TICKER_MANIFEST is the
+   SAME manifest gex.html bakes as window.GEX_MANIFEST (scripts/build_gex_board.py
+   writes it to site/gex/index.json; this page's builder —
+   scripts/build_options_command.py — reads that existing file back and re-embeds
+   it) so Ticker-mode search shares gex.html's exact universe rather than growing
+   a second, possibly-drifting one. OEW_DEFAULT_TICKER is the per-render default
+   the IIFE reads back. test_build_options_command.py::_extract_workspace_script
+   anchors on this pair: this data script FIRST, then the data-externalize IIFE.
+   Both are plain top-level statements, so they run before the IIFE that reads
+   them regardless of whether the IIFE ships inline or as an external file. */
 window.OEW_TICKER_MANIFEST = {{ ticker_manifest_json|safe }};
+window.OEW_DEFAULT_TICKER = {{ (counts.ticker or 'SPY') | tojson }};
+</script>
+<script data-externalize>
 /* ══════════════════════════════════════════════════════════════════════════
    OPTIONS WORKSPACE — mode switching + the lazy payload fetches.
    PAYLOAD LAW: the chrome and the Brief are baked above and need no network.
    Scanner / Ticker / Leaders fetch their JSON with plain fetch() on first
    activation and cache it for the session. NEVER inject a <script> loader —
    that bypasses asset stamping (#3372).
+   STATIC code only — marked data-externalize so the post-render sweep
+   (scripts/externalize_css.py) lifts it to a cached assets/js/<hash>.js; any
+   render-time value must go through the data script above or it will freeze
+   behind an immutable, max-age=1y URL and replay a stale nightly bake.
    ══════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
@@ -1002,7 +1010,7 @@ var MODES = ['brief','scanner','ticker','leaders'];
 var loaded = { brief: true };
 var cache  = {};
 var tabs = Array.prototype.slice.call(document.querySelectorAll('.oew-tab'));
-var DEFAULT_TICKER = {{ (counts.ticker or 'SPY') | tojson }};
+var DEFAULT_TICKER = window.OEW_DEFAULT_TICKER || 'SPY';
 var curTicker = DEFAULT_TICKER;
 
 function esc(s){

@@ -1,4 +1,4 @@
-"""Post-render inline-CSS externalization: lift big <style> blocks to cached files.
+"""Post-render inline-asset externalization: lift big <style>/<script> to cached files.
 
 macro.html + the country dashboards carry ~440KB of inline `<style>` (45% of the
 page) that re-ships inside the HTML on every daily re-render — it can't be cached
@@ -25,8 +25,17 @@ Excluded pages are still READ for the reference scan even though they are never
 rewritten — _prune_orphans reclaims a hash file the moment no page links it, so
 an excluded page that legitimately links one must keep it alive.
 
+The same sweep also lifts OPT-IN inline JS: a `<script data-externalize>` block
+(>= MIN_BYTES, no `src`) moves to `site/assets/js/<hash>.js` under the identical
+content-hash + `?v=` + prune rules. JS is opt-in where CSS is automatic because
+an inline script here routinely carries render-time DATA — freezing a nightly
+bake behind an `immutable, max-age=1y` URL would replay stale numbers at
+returning visitors — so the author marks only the STATIC half and keeps the data
+in its own inline script. See lib.pages.externalize_js_text.
+
 Runs after all builders + inject_data_base, before optimize_assets. Idempotent +
-never raises. Core rewrite: lib.pages.externalize_css_text.
+never raises. Core rewrites: lib.pages.externalize_css_text /
+lib.pages.externalize_js_text.
 
 Run standalone: python -m scripts.externalize_css
 """
@@ -38,7 +47,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -46,6 +55,7 @@ from lib.pages import (  # noqa: E402
     HAND_AUTHORED_PAGES,
     dbase_prefix,
     externalize_css_text,
+    externalize_js_text,
     write_page,
 )
 
@@ -53,7 +63,9 @@ log = logging.getLogger("externalize_css")
 
 MIN_BYTES = 1024  # below this, an inline block is cheaper than a request
 _CSS_SUBDIR = ("assets", "css")
+_JS_SUBDIR = ("assets", "js")
 _REF_RE = re.compile(r"assets/css/([0-9a-f]{6,64})\.css")  # hash refs in final pages
+_JS_REF_RE = re.compile(r"assets/js/([0-9a-f]{6,64})\.js")  # ditto, JS side
 
 
 def _paired_page_names(site_dir: Path) -> Set[str]:
@@ -97,8 +109,8 @@ def _paired_page_names(site_dir: Path) -> Set[str]:
     return {n for n in names if n.lower().endswith(".html")}
 
 
-def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
-    """Hash refs held by pages that are COMMITTED but MISSING from this tree.
+def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Tuple[Set[str], Set[str]]]:
+    """Hash refs (css, js) held by pages that are COMMITTED but MISSING here.
 
     _prune_orphans decides orphanhood from the pages this sweep can SEE. That is
     only sound when the tree holds every page that ships. A lane whose checkout
@@ -115,14 +127,14 @@ def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
     honored, which in a healthy full checkout is the empty set and costs exactly
     one `git ls-files`.
 
-    Returns the empty set when there is no committed baseline to consult (no
-    git checkout, no git binary): nothing can be committed-but-absent, so the
+    Returns a pair of EMPTY sets when there is no committed baseline to consult
+    (no git checkout, no git binary): nothing can be committed-but-absent, so the
     on-disk scan is complete by definition and pruning proceeds as before.
 
     Returns None only when a checkout EXISTS but could not be enumerated — the
     one case where unseen committed pages may be real and unknowable. The caller
-    treats None as "cannot prove orphanhood" and SKIPS pruning: keeping a stale
-    file wastes a few KB, deleting a live one breaks a shipping page.
+    treats None as "cannot prove orphanhood" and SKIPS BOTH prunes: keeping a
+    stale file wastes a few KB, deleting a live one breaks a shipping page.
     """
     root = site_dir.parent
     try:
@@ -131,7 +143,7 @@ def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
             capture_output=True, timeout=30,
         )
         if probe.returncode != 0:
-            return set()  # not a checkout — disk is the whole truth
+            return set(), set()  # not a checkout — disk is the whole truth
         listed = subprocess.run(
             ["git", "-C", str(root), "ls-files", "-z", "--", site_dir.name],
             capture_output=True, timeout=60,
@@ -144,8 +156,9 @@ def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
             if rel.endswith(".html") and not (root / rel).exists()
         ]
         if not absent:
-            return set()  # full checkout — on-disk scan already saw everything
+            return set(), set()  # full checkout — on-disk scan saw everything
         refs: Set[str] = set()
+        js_refs: Set[str] = set()
         # One `git show` per absent page; absent pages are rare by construction.
         for rel in absent:
             blob = subprocess.run(
@@ -153,26 +166,31 @@ def _committed_refs_for_absent_pages(site_dir: Path) -> Optional[Set[str]]:
                 capture_output=True, timeout=60,
             )
             if blob.returncode == 0:
-                refs.update(_REF_RE.findall(blob.stdout.decode("utf-8", "replace")))
+                body = blob.stdout.decode("utf-8", "replace")
+                refs.update(_REF_RE.findall(body))
+                js_refs.update(_JS_REF_RE.findall(body))
         print(f"::warning title=externalize-css-partial-tree::{len(absent)} committed "
-              f"page(s) missing from this checkout; honoring their CSS refs so the "
-              f"prune cannot delete a live stylesheet", flush=True)
-        return refs
+              f"page(s) missing from this checkout; honoring their CSS + JS refs so "
+              f"the prune cannot delete a live asset", flush=True)
+        return refs, js_refs
     except FileNotFoundError:  # no git binary — no committed baseline exists
-        return set()
+        return set(), set()
     except (OSError, subprocess.SubprocessError) as e:  # noqa: BLE001
         log.warning("committed-page ref scan failed (%s); skipping prune", e)
         return None
 
 
 def externalize(site_dir: Path) -> int:
-    """Externalize inline CSS across every page under site_dir; prune orphaned
+    """Externalize inline CSS (all big blocks) and opt-in inline JS (blocks
+    marked ``data-externalize``) across every page under site_dir; prune orphaned
     hash files. Returns the number of pages modified. Never raises."""
     site_dir = Path(site_dir)
     if not site_dir.is_dir():
         return 0
     css_root = site_dir.joinpath(*_CSS_SUBDIR)
-    referenced: Set[str] = set()  # hashes still linked by some page
+    js_root = site_dir.joinpath(*_JS_SUBDIR)
+    referenced: Set[str] = set()  # css hashes still linked by some page
+    referenced_js: Set[str] = set()  # js hashes still loaded by some page
     pages_changed = 0
     # Pairs always ship at the site ROOT, so match on the full path — a sub-dir
     # page that happens to be named index.html is a normal page and IS swept.
@@ -196,6 +214,7 @@ def externalize(site_dir: Path) -> int:
             # scan would hand _prune_orphans a stylesheet that three live pages
             # still reference and it would delete it on the next render.
             referenced.update(_REF_RE.findall(text))
+            referenced_js.update(_JS_REF_RE.findall(text))
             continue
         prefix = dbase_prefix(html)  # "" at root, "../" per sub-dir (matches the shim)
 
@@ -214,13 +233,33 @@ def externalize(site_dir: Path) -> int:
                     return None
             return f"{_prefix}assets/css/{h}.css?v={h}"
 
+        def make_js_src(js: str, index: int, _prefix: str = prefix) -> Optional[str]:
+            data = js.encode("utf-8")
+            if len(data) < MIN_BYTES:
+                return None
+            h = hashlib.sha256(data).hexdigest()[:8]
+            dst = js_root / f"{h}.js"
+            if not dst.exists():
+                try:
+                    js_root.mkdir(parents=True, exist_ok=True)
+                    dst.write_text(js, encoding="utf-8")
+                except OSError as e:
+                    log.warning("write js %s failed: %s", dst.name, e)
+                    return None
+            return f"{_prefix}assets/js/{h}.js?v={h}"
+
         try:
             new = externalize_css_text(text, make_href)
         except Exception as e:  # noqa: BLE001
             log.warning("externalize failed for %s (%s)", html.name, e)
             new = text
-        # record every css hash the FINAL page links (new links + any from a prior run)
+        try:
+            new = externalize_js_text(new, make_js_src)
+        except Exception as e:  # noqa: BLE001
+            log.warning("externalize js failed for %s (%s)", html.name, e)
+        # record every hash the FINAL page links/loads (new refs + any from a prior run)
         referenced.update(_REF_RE.findall(new))
+        referenced_js.update(_JS_REF_RE.findall(new))
         if new != text:
             try:
                 write_page(html, new)  # keeps the data-base shim; avoids raw write_text
@@ -232,24 +271,27 @@ def externalize(site_dir: Path) -> int:
     # this checkout never materialized. See _committed_refs_for_absent_pages.
     unseen = _committed_refs_for_absent_pages(site_dir)
     if unseen is None:
-        log.info("externalized CSS on %d page(s); skipped %d source page(s) "
+        log.info("externalized CSS+JS on %d page(s); skipped %d source page(s) "
                  "(plain-copy pairs + hand-authored); prune SKIPPED "
                  "(cannot confirm the tree is complete)", pages_changed, len(skip))
         return pages_changed
-    pruned = _prune_orphans(css_root, referenced | unseen)
-    log.info("externalized CSS on %d page(s); skipped %d source page(s) "
-             "(plain-copy pairs + hand-authored); pruned %d orphan file(s)",
-             pages_changed, len(skip), pruned)
+    unseen_css, unseen_js = unseen
+    pruned = _prune_orphans(css_root, referenced | unseen_css)
+    pruned_js = _prune_orphans(js_root, referenced_js | unseen_js, suffix=".js")
+    log.info("externalized CSS+JS on %d page(s); skipped %d source page(s) "
+             "(plain-copy pairs + hand-authored); pruned %d orphan css + %d orphan js file(s)",
+             pages_changed, len(skip), pruned, pruned_js)
     return pages_changed
 
 
-def _prune_orphans(css_root: Path, referenced: Set[str]) -> int:
-    """Delete hash files under css_root that no page links anymore. Strictly
-    scoped to css_root/*.css so a bug can never reach real content."""
-    if not css_root.is_dir():
+def _prune_orphans(asset_root: Path, referenced: Set[str], suffix: str = ".css") -> int:
+    """Delete hash files under asset_root that no page references anymore.
+    Strictly scoped to asset_root/*<suffix> so a bug can never reach real
+    content."""
+    if not asset_root.is_dir():
         return 0
     pruned = 0
-    for f in css_root.glob("*.css"):
+    for f in asset_root.glob(f"*{suffix}"):
         if f.stem not in referenced:
             try:
                 f.unlink()

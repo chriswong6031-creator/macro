@@ -163,6 +163,13 @@ public:
     - /factordata/tech_lab.json
   prefixes:
     - /assets/css/
+    # Content-hashed page scripts, minted by scripts/externalize_css.py from
+    # inline `<script data-externalize>` blocks. Same shape as the CSS tree
+    # beside it: derived, per-page presentation code with no signal payload —
+    # the render-time DATA those scripts read stays inline in the (gated) HTML.
+    # The hash IS the filename, so an edit mints a new URL and the Caddyfile's
+    # @public_versioned immutable-1y rule can never serve stale bytes.
+    - /assets/js/
     - /assets/landing/
     - /factordata/tech_events/
     # Free SEO estate (active product ruling / PR #3387).
