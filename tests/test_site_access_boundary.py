@@ -374,6 +374,17 @@ def test_generated_data_is_not_accidentally_public():
         "/live/release_publications.json",
         "/prophet/showcase.json",
         "/seasonalitydata/methodology.json",
+        # Stock seasonality calendar clock. Computed calendar statistics over
+        # public split/dividend-adjusted price history, shipped WITH the
+        # selection accounting that prices them: no forecast, no score, no
+        # cross-symbol ordering, no board membership. index.json is the covered
+        # -symbol catalog plus the program-level fire rates the honesty strip
+        # prints; the SPY entity is the ONE committed per-symbol panel, kept so
+        # the page has an honest first paint. Every other entity file is
+        # gitignored and served from R2, which is why this is two exact entries
+        # and not a /seasonalitydata/ prefix.
+        "/seasonalitydata/index.json",
+        "/seasonalitydata/entities/SPY.json",
         "/factordata/tech_lab.json",
         # Static Natural Earth geometry required by the public start-page globe.
         "/world-110m.json",

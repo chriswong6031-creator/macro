@@ -796,6 +796,40 @@ jobs:
           tests/test_sec_capital_structure.py
           tests/test_nwqs_c_dilution.py -q
 
+  stock-seasonality:
+    if: ${{ false }}
+    # WIRING LAW (#1253 precedent): a suite that NO job names never runs. The
+    # foundation suite (tests/test_biopharma_seasonality_foundation.py) landed
+    # with no job naming it and has therefore never executed in CI — this job is
+    # its home as well as the calendar clock's.
+    #
+    # What rots here if it is unguarded is not cosmetic. The engine folds ~25
+    # complete years onto a 365-slot clock and prices a 2645-window search with a
+    # resampling null; a leap-day return quietly dropped, a window that wraps
+    # December into January, or a null that shifts every year TOGETHER (which
+    # relocates a real seasonal effect instead of removing it) all produce output
+    # that looks entirely plausible and is wrong. The calibration test — pure
+    # noise must fire at roughly its nominal 5% — is the one that separates a real
+    # familywise correction from a decorative one, and nothing else in the repo
+    # can catch that regression.
+    #
+    # Offline: the artifact tests build a synthetic parquet store in tmp_path, so
+    # no network and no dependence on the committed data/yahoo/ tree.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install seasonality test deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: seasonality contracts, panel, curve, window family, null, and artifact
+        run: >
+          python -m pytest
+          tests/test_biopharma_seasonality_foundation.py
+          tests/test_stock_seasonality_engine.py -q
+
   china-native-collectors:
     if: ${{ false }}
     # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /

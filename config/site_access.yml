@@ -158,6 +158,24 @@ public:
     # screener data, and the event graph are not yet commissioned. It contains
     # no ticker rows, scores, customer data, or proprietary market payload.
     - /seasonalitydata/methodology.json
+    # Stock seasonality calendar clock — the two git-tracked files of that
+    # artifact set. Public because the payload carries no forecast, no score and
+    # no cross-symbol ordering: it is computed calendar statistics over public
+    # split/dividend-adjusted price history, shipped WITH the selection
+    # accounting that prices them (a per-symbol familywise null plus a
+    # program-level fire rate against the 5% chance expectation), and the
+    # methodology manifest describing exactly this has been public since the
+    # foundation landed.
+    #
+    # THIS LIST IS THE EXCEPTION, NOT A PREFIX — deliberately, and for a reason
+    # that is about delivery rather than sensitivity. The ~290 per-symbol entity
+    # files are gitignored and served from Cloudflare R2 (publish_r2 --dirs
+    # seasonalitydata/entities), so they never pass through Caddy at all and a
+    # /seasonalitydata/ prefix here would widen the boundary for nothing. The one
+    # entity file below is the default symbol, kept committed so the page has an
+    # honest first paint (and something indexable) without R2.
+    - /seasonalitydata/index.json
+    - /seasonalitydata/entities/SPY.json
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json
