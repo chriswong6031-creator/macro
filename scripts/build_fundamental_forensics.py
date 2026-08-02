@@ -45,6 +45,10 @@ from engine.fundamental_forensics.private_state import (
     decode_state_blob,
     publish_state_blob,
 )
+from engine.fundamental_forensics.disclosure_projection import (
+    DisclosureProjectionError,
+    read_disclosure_projection_directory,
+)
 
 log = logging.getLogger("build_fundamental_forensics")
 
@@ -113,6 +117,18 @@ DETECTORS = (
         "threshold_zh": "最新与最早的（净利润 − 经营现金流）/ 资产差值 ≥ 3 个百分点",
     },
 )
+
+# The state transport remains intentionally compact even when the raw archive
+# cache grows.  The disclosure projection module bounds each company record;
+# this second guard prevents a one-off bulk import from crowding out the
+# existing broad-universe workbench state.  Omitted records remain available in
+# the private projection directory and are reported explicitly in coverage.
+# Real two-track Inline XBRL comparisons can legitimately reach ~550 KiB even
+# after the redline/receipt caps are applied (AAPL's annual + quarterly pair is
+# a measured example). Keep a firm per-company ceiling, but do not silently
+# discard the very evidence-heavy issuers this feature exists to investigate.
+MAX_DISCLOSURE_PROJECTION_BYTES = 768 * 1024
+MAX_DISCLOSURE_STATE_BYTES = 12 * 1024 * 1024
 
 
 def _finite(value: Any) -> float | None:
@@ -480,6 +496,67 @@ def _source_generated_at(quarterly: pd.DataFrame, annual: pd.DataFrame, as_of: s
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _state_disclosure_projection(projection: dict[str, Any]) -> dict[str, Any]:
+    """Return the browser-safe private slice of one verified projection.
+
+    The on-disk projection is already bounded and source-receipt rich.  Keep
+    the explicit source/clock fields in state, but drop the duplicate issuer
+    identity because it is carried by the company object that owns this slice.
+    """
+    return {
+        "schema": projection["schema"],
+        "projection_id": projection["projection_id"],
+        "clocks": dict(projection["clocks"]),
+        "source": dict(projection["source"]),
+        "coverage": dict(projection["coverage"]),
+        "tracks": list(projection["tracks"]),
+        "limitations": list(projection["limitations"]),
+        "display_only": True,
+        "authority": "review_priority_only",
+    }
+
+
+def _load_disclosure_projections(root: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Load optional, prebuilt accession-level comparisons without blocking v1.
+
+    Heavy SEC retrieval/comparison is deliberately elsewhere.  A bad optional
+    private projection is ignored fail-soft here; it cannot turn a successful
+    base workbench build into an invented disclosure result.
+    """
+    try:
+        return read_disclosure_projection_directory(root), []
+    except DisclosureProjectionError as exc:
+        log.warning("ignored invalid disclosure projection directory: %s", exc)
+        return {}, [type(exc).__name__]
+
+
+def _disclosure_budgeted(
+    projections: dict[str, dict[str, Any]],
+) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
+    """Select canonical projection records that fit the compact state budget."""
+    selected: dict[str, dict[str, Any]] = {}
+    total = 0
+    too_large = 0
+    deferred = 0
+    for ticker, projection in sorted(projections.items()):
+        encoded = json.dumps(projection, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        if len(encoded) > MAX_DISCLOSURE_PROJECTION_BYTES:
+            too_large += 1
+            continue
+        if total + len(encoded) > MAX_DISCLOSURE_STATE_BYTES:
+            deferred += 1
+            continue
+        selected[ticker] = projection
+        total += len(encoded)
+    return selected, {
+        "loaded": len(projections),
+        "selected": len(selected),
+        "too_large": too_large,
+        "deferred_for_state_budget": deferred,
+        "embedded_bytes": total,
+    }
+
+
 def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, Any]:
     q_path = root / "data" / "edgar" / "statements_quarterly.parquet"
     a_path = root / "data" / "edgar" / "statements.parquet"
@@ -488,6 +565,8 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
     quarterly = pd.read_parquet(q_path)
     annual = pd.read_parquet(a_path) if a_path.exists() else pd.DataFrame()
     names, sectors, ciks = _metadata(root)
+    disclosure_projections, disclosure_load_issues = _load_disclosure_projections(root)
+    disclosure_projections, disclosure_budget = _disclosure_budgeted(disclosure_projections)
 
     for col in ("fiscal_year", "fiscal_quarter"):
         quarterly[col] = pd.to_numeric(quarterly[col], errors="coerce")
@@ -503,6 +582,9 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
     ranked: list[dict[str, Any]] = []
     coverage_by_detector = {d["id"]: {"evaluated": 0, "triggered": 0} for d in DETECTORS}
     all_latest_filed: list[str] = []
+    disclosure_attached = 0
+    disclosure_tracks_ready = 0
+    disclosure_tracks_not_evaluable = 0
 
     for ticker, rows in quarterly.groupby("ticker", sort=True):
         rows = rows.sort_values(["period_end", "filed"])
@@ -559,7 +641,7 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
             }
 
         recent = rows.tail(8).iloc[::-1]
-        companies[ticker] = {
+        company = {
             "symbol": ticker,
             "name": names.get(ticker, ticker),
             "sector": sectors.get(ticker, "Unclassified"),
@@ -577,6 +659,13 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
             "findings": findings,
             "periods": [_clean_period(row) for _, row in recent.iterrows()],
         }
+        disclosure = disclosure_projections.get(ticker)
+        if disclosure is not None:
+            company["disclosures"] = _state_disclosure_projection(disclosure)
+            disclosure_attached += 1
+            disclosure_tracks_ready += int(disclosure["coverage"].get("tracks_ready") or 0)
+            disclosure_tracks_not_evaluable += int(disclosure["coverage"].get("tracks_not_evaluable") or 0)
+        companies[ticker] = company
         for finding in findings:
             ranked.append({
                 "symbol": ticker,
@@ -611,18 +700,23 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
             "label": "SEC Company Facts normalized broad-universe projection",
             "basis": "repository quarterly and annual EDGAR panels",
             "limitations_en": [
-                "This broad-universe projection preserves filing dates but is not accession-coherent and does not expose revision lineage.",
+                "This broad-universe statements projection preserves filing dates but is not accession-coherent; optional disclosure records below have their own accession and source-receipt lineage.",
                 "Quarterly flow fields can be derived from year-to-date facts, and different metrics can come from independently selected standard concepts.",
                 "Open the SEC source endpoints before relying on a finding; company-specific taxonomy and corporate actions can require review.",
                 "Findings are deterministic review prompts, not misconduct claims, ratings, or trading signals.",
             ],
             "limitations_zh": [
-                "广覆盖投影保留申报日期，但并非 accession 一致，也不展示修订谱系。",
+                "广覆盖报表投影保留申报日期，但并非 accession 一致；下方可选披露记录拥有各自的 accession 与来源回执谱系。",
                 "季度流量字段可能由年初至今数据推导，不同指标也可能来自独立选择的标准概念。",
                 "依赖任何发现前请打开 SEC 来源端点；公司自定义分类及公司行动可能需要人工复核。",
                 "发现是确定性的复核提示，不是欺诈指控、评级或交易信号。",
             ],
             "companyfacts_url_pattern": "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json",
+            "accession_disclosure_projection": {
+                "available": bool(disclosure_projections),
+                "basis": "prebuilt checksum-bound primary-document comparisons; never fetched during render",
+                "knowledge_clock": "source_event_acceptance_time",
+            },
         },
         "summary": {
             "companies": len(companies),
@@ -631,6 +725,14 @@ def compose_state(root: Path, *, generated_at: str | None = None) -> dict[str, A
             "watch": len(ranked) - high_n,
             "latest_filing": as_of,
             "detector_coverage": coverage_by_detector,
+            "disclosure_coverage": {
+                **disclosure_budget,
+                "attached_to_companies": disclosure_attached,
+                "unmatched_company_projections": max(0, disclosure_budget["selected"] - disclosure_attached),
+                "tracks_ready": disclosure_tracks_ready,
+                "tracks_not_evaluable": disclosure_tracks_not_evaluable,
+                "load_issues": disclosure_load_issues,
+            },
         },
         "detectors": list(DETECTORS),
         "default_symbol": default_symbol,

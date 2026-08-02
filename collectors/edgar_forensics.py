@@ -22,7 +22,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import pandas as pd
 import requests
@@ -32,6 +32,10 @@ from lib import config
 
 log = logging.getLogger("edgar_forensics")
 SEC_DATA = "https://data.sec.gov"
+
+
+class SecResponseTooLarge(RuntimeError):
+    """A SEC response exceeded the caller's explicit bounded-ingest budget."""
 
 
 @dataclass(frozen=True)
@@ -185,6 +189,7 @@ class SecForensicsCollector:
         user_agent: str,
         min_interval_seconds: float = 0.12,
         timeout_seconds: float = 30.0,
+        max_response_bytes: int | None = None,
         session: requests.Session | None = None,
     ) -> None:
         if "@" not in user_agent:
@@ -193,6 +198,7 @@ class SecForensicsCollector:
         self.user_agent = user_agent
         self.min_interval_seconds = max(0.1, min_interval_seconds)
         self.timeout_seconds = timeout_seconds
+        self.max_response_bytes = _byte_limit(max_response_bytes, field="max_response_bytes")
         self.session = session or requests.Session()
         self._last_request_at = 0.0
 
@@ -201,8 +207,18 @@ class SecForensicsCollector:
         if wait > 0:
             time.sleep(wait)
 
-    def fetch(self, cik: int | str, endpoint: str, *, retrieved_at: str | None = None) -> RetrievalReceipt:
+    def fetch(
+        self,
+        cik: int | str,
+        endpoint: str,
+        *,
+        retrieved_at: str | None = None,
+        max_response_bytes: int | None = None,
+    ) -> RetrievalReceipt:
         url = endpoint_url(cik, endpoint)
+        limit = self.max_response_bytes
+        if max_response_bytes is not None:
+            limit = _byte_limit(max_response_bytes, field="max_response_bytes")
         last_error: Exception | None = None
         for attempt in range(4):
             self._pace()
@@ -216,18 +232,28 @@ class SecForensicsCollector:
                 if response.status_code in (429, 500, 502, 503, 504):
                     raise requests.HTTPError(f"SEC transient HTTP {response.status_code}")
                 response.raise_for_status()
+                _reject_declared_oversize(response.headers, limit, url=url)
+                content = response.content
+                if not isinstance(content, bytes):
+                    raise RuntimeError(f"SEC response body is not bytes for {url}")
+                if limit is not None and len(content) > limit:
+                    raise SecResponseTooLarge(
+                        f"SEC response exceeds bounded ingest limit ({len(content)} > {limit}) for {url}"
+                    )
                 # Reject non-JSON bodies before they enter the immutable source plane.
-                json.loads(response.content)
+                json.loads(content)
                 return persist_response(
                     self.raw_root,
                     cik=cik,
                     endpoint=endpoint,
                     url=url,
-                    content=response.content,
+                    content=content,
                     retrieved_at=retrieved_at or _utc_now(),
                     etag=response.headers.get("ETag"),
                     last_modified=response.headers.get("Last-Modified"),
                 )
+            except SecResponseTooLarge:
+                raise
             except (requests.RequestException, json.JSONDecodeError) as exc:
                 last_error = exc
                 if attempt < 3:
@@ -236,6 +262,33 @@ class SecForensicsCollector:
 
     def fetch_company(self, cik: int | str, *, retrieved_at: str | None = None) -> list[RetrievalReceipt]:
         return [self.fetch(cik, endpoint, retrieved_at=retrieved_at) for endpoint in ("companyfacts", "submissions")]
+
+
+def _byte_limit(value: int | None, *, field: str) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{field} must be a positive integer or None")
+    return value
+
+
+def _reject_declared_oversize(headers: Any, limit: int | None, *, url: str) -> None:
+    """Fail before persistence when SEC provides an honest oversized length header."""
+    if limit is None or not isinstance(headers, Mapping):
+        return
+    raw = headers.get("Content-Length") or headers.get("content-length")
+    if raw is None:
+        return
+    try:
+        declared = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return
+    if declared < 0:
+        raise SecResponseTooLarge(f"SEC response has invalid Content-Length for {url}")
+    if declared > limit:
+        raise SecResponseTooLarge(
+            f"SEC response exceeds bounded ingest limit ({declared} > {limit}) for {url}"
+        )
 
 
 def _user_agent(root: Path) -> str:

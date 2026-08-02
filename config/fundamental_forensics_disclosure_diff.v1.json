@@ -1,0 +1,148 @@
+{
+  "schema": "fundamental_forensics.disclosure_diff.registry/v1",
+  "version": "filing-disclosure-diff/v1",
+  "source_excerpt_chars": 360,
+  "max_embedded_source_chars": 16384,
+  "sections": [
+    {
+      "key": "risk_factors",
+      "label_key": "disclosure.section.risk_factors",
+      "labels": {"en": "Risk factors", "zh-Hans": "风险因素"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\bitem\\s*1a\\.?\\s*(risk factors)?\\b", "\\brisk factors\\b"]
+    },
+    {
+      "key": "business",
+      "label_key": "disclosure.section.business",
+      "labels": {"en": "Business", "zh-Hans": "业务"},
+      "forms": ["10-K"],
+      "patterns": ["\\bitem\\s*1\\.?\\s*business\\b", "^business$"]
+    },
+    {
+      "key": "mda",
+      "label_key": "disclosure.section.mda",
+      "labels": {"en": "Management discussion", "zh-Hans": "管理层讨论"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\bitem\\s*(7|2)\\.?\\s*management['’]?s discussion", "\\bmanagement['’]?s discussion and analysis\\b"]
+    },
+    {
+      "key": "financial_statements",
+      "label_key": "disclosure.section.financial_statements",
+      "labels": {"en": "Financial statements", "zh-Hans": "财务报表"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\bitem\\s*(8|1)\\.?\\s*financial statements", "\\bfinancial statements and supplementary data\\b", "^financial statements$"]
+    },
+    {
+      "key": "controls",
+      "label_key": "disclosure.section.controls",
+      "labels": {"en": "Controls and procedures", "zh-Hans": "控制与程序"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\bitem\\s*(9a|4)\\.?\\s*controls and procedures", "\\bcontrols and procedures\\b", "\\binternal control over financial reporting\\b"]
+    },
+    {
+      "key": "revenue_recognition",
+      "label_key": "disclosure.section.revenue_recognition",
+      "labels": {"en": "Revenue recognition", "zh-Hans": "收入确认"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\brevenue recognition\\b", "\\brevenues? from contracts with customers\\b"]
+    },
+    {
+      "key": "accounting_policies",
+      "label_key": "disclosure.section.accounting_policies",
+      "labels": {"en": "Accounting policies", "zh-Hans": "会计政策"},
+      "forms": ["10-K", "10-Q"],
+      "patterns": ["\\bsignificant accounting policies\\b", "\\baccounting policies\\b"]
+    },
+    {
+      "key": "auditor_report",
+      "label_key": "disclosure.section.auditor_report",
+      "labels": {"en": "Auditor report", "zh-Hans": "审计师报告"},
+      "forms": ["10-K"],
+      "patterns": ["\\breport of independent registered public accounting firm\\b", "\\bindependent registered public accounting firm\\b"]
+    }
+  ],
+  "topics": [
+    {"key": "risk_factors", "patterns": ["\\brisk factors?\\b"]},
+    {"key": "revenue_recognition", "patterns": ["\\brevenue recognition\\b", "\\brecognize revenue\\b", "\\brevenue is recognized\\b"]},
+    {"key": "accounting_policies", "patterns": ["\\bsignificant accounting policies\\b", "\\baccounting policies\\b"]},
+    {"key": "auditor", "patterns": ["\\bindependent registered public accounting firm\\b", "\\b(?:llp|p\\.c\\.|pllc)\\b"]},
+    {"key": "icfr", "patterns": ["\\binternal control over financial reporting\\b", "\\bmaterial weakness(?:es)?\\b", "\\bcontrols and procedures\\b"]}
+  ],
+  "boilerplate_patterns": [
+    "\\bforward[- ]looking statements?\\b",
+    "\\bactual results? (?:may|could|might) differ materially\\b",
+    "\\bthis annual report contains\\b",
+    "\\bexcept as required by law\\b"
+  ],
+  "auditor_pattern": "\\b(?:PricewaterhouseCoopers(?: LLP)?|Deloitte(?: & Touche)?(?: LLP)?|Ernst & Young(?: LLP)?|KPMG(?: LLP)?|BDO(?: USA)?(?:,? P\\.C\\.)?|Grant Thornton(?: LLP)?|RSM(?: US)?(?: LLP)?|[A-Z][A-Za-z&.,' -]{2,80}?(?:LLP|P\\.C\\.|PLLC))\\b",
+  "detectors": [
+    {
+      "detector_id": "kpi_disappearance",
+      "order": 10,
+      "label_key": "disclosure.finding.kpi_disappearance",
+      "labels": {"en": "KPI disclosure disappearance", "zh-Hans": "KPI 披露消失"},
+      "priority": "high",
+      "kpi_patterns": [
+        {"key": "monthly_active_users", "pattern": "\\bmonthly active users?\\b"},
+        {"key": "daily_active_users", "pattern": "\\bdaily active users?\\b"},
+        {"key": "net_revenue_retention", "pattern": "\\b(?:net|dollar[- ]based) revenue retention\\b"},
+        {"key": "active_customers", "pattern": "\\bactive customers?\\b"},
+        {"key": "paying_customers", "pattern": "\\bpaying customers?\\b"},
+        {"key": "subscribers", "pattern": "\\bsubscribers?\\b"},
+        {"key": "same_store_sales", "pattern": "\\bsame[- ]store sales\\b"},
+        {"key": "orders", "pattern": "\\b(?:annualized )?orders?\\b"}
+      ],
+      "benign_explanation": "A metric can be renamed, moved to earnings materials, or omitted in a shorter filing.",
+      "limitations": ["phrase_based_label_matching", "does_not_establish_management_motive"]
+    },
+    {
+      "detector_id": "risk_factor_wording_change",
+      "order": 20,
+      "label_key": "disclosure.finding.risk_factor_wording_change",
+      "labels": {"en": "Risk-factor wording change", "zh-Hans": "风险因素措辞变化"},
+      "priority": "high",
+      "min_changed_token_ratio": "0.25",
+      "min_changed_tokens": 8,
+      "benign_explanation": "This is a lexical change flag, not a legal-materiality conclusion.",
+      "limitations": ["does_not_determine_legal_materiality", "section_heading_detection_is_pattern_based"]
+    },
+    {
+      "detector_id": "revenue_recognition_policy_change",
+      "order": 30,
+      "label_key": "disclosure.finding.revenue_recognition_policy_change",
+      "labels": {"en": "Revenue recognition policy change", "zh-Hans": "收入确认政策变化"},
+      "priority": "high",
+      "min_changed_token_ratio": "0.12",
+      "min_changed_tokens": 4,
+      "scope_direct_patterns": [
+        "\\brevenue\\s+is\\s+recognized\\b",
+        "\\brecogniz(?:e|es|ed)\\s+revenue\\b"
+      ],
+      "scope_heading_patterns": [
+        "^revenue\\s+recognition(?:\\s+policies|\\s+policy)?$",
+        "^significant\\s+accounting\\s+policies$"
+      ],
+      "scope_heading_neighbor_limit": 8,
+      "benign_explanation": "Policy wording can change because of presentation, standard-adoption boilerplate, or relocation.",
+      "limitations": ["does_not_quantify_economic_effect", "does_not_classify_the_reason_for_change"]
+    },
+    {
+      "detector_id": "auditor_change",
+      "order": 40,
+      "label_key": "disclosure.finding.auditor_change",
+      "labels": {"en": "Auditor change", "zh-Hans": "审计师变更"},
+      "priority": "high",
+      "benign_explanation": "A firm-name change can reflect a legal-name update or audit-firm combination.",
+      "limitations": ["firm_extraction_is_pattern_based", "engagement_change_requires_source_review"]
+    },
+    {
+      "detector_id": "icfr_material_weakness_change",
+      "order": 50,
+      "label_key": "disclosure.finding.icfr_material_weakness_change",
+      "labels": {"en": "ICFR or material-weakness change", "zh-Hans": "ICFR 或重大缺陷变化"},
+      "priority": "high",
+      "benign_explanation": "Control language can describe a remediated, historical, or acquired-business condition.",
+      "limitations": ["does_not_determine_remediation_status", "negation_handling_is_sentence_based"]
+    }
+  ]
+}

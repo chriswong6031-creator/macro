@@ -3026,6 +3026,34 @@ def test_get_fundamentals_adds_bounded_forensics_context_only_when_authorized(tm
                 "values": [{"current": 0.42}],
                 "evidence": [{"url": "https://example.invalid/raw"}],
             }],
+            "disclosures": {
+                "projection_id": "ffdisclosure_projection_fixture",
+                "clocks": {"as_of": "2026-07-31T23:59:59Z"},
+                "coverage": {"tracks_ready": 1},
+                "tracks": [{
+                    "form": "10-K",
+                    "status": "ready",
+                    "prior_filing": {"accession": "0000000001-25-000001", "report_date": "2024-12-31"},
+                    "current_filing": {"accession": "0000000001-26-000001", "report_date": "2025-12-31"},
+                    "comparison": {
+                        "coverage": {"redlines_total": 8, "redlines_non_suppressed": 2},
+                        "findings": [{
+                            "detector_id": "auditor_change",
+                            "state": "triggered",
+                            "priority": "high",
+                            "review_level": "review_now",
+                            "labels": {"en": "Auditor change"},
+                            "prior_accession": "0000000001-25-000001",
+                            "current_accession": "0000000001-26-000001",
+                            "why_flagged": {"firm_changed": "true"},
+                            "evidence_receipts": [{
+                                "source_url": "https://www.sec.gov/Archives/example.htm",
+                                "source_excerpt": "private auditor excerpt",
+                            }],
+                        }],
+                    },
+                }],
+            },
         }},
     }
     with gzip.open(ff / "state.json.gz", "wt", encoding="utf-8") as fh:
@@ -3046,6 +3074,11 @@ def test_get_fundamentals_adds_bounded_forensics_context_only_when_authorized(tm
     assert ctx["findings"][0]["detector"] == "inventory_build"
     assert "values" not in ctx["findings"][0]
     assert "evidence" not in ctx["findings"][0]
+    changes = ctx["disclosure_changes"]
+    assert changes["findings"][0]["detector"] == "auditor_change"
+    assert changes["source_trace_available"] is True
+    assert "source_excerpt" not in json.dumps(changes)
+    assert "source_url" not in json.dumps(changes)
 
 
 def test_dispatch_fundamentals_requires_active_site_full_for_forensics(tmp_path):

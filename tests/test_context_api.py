@@ -145,6 +145,39 @@ def _write_forensics_state(root: Path) -> Path:
                     "period_current": "FY2025 Q3",
                     "period_prior": "FY2024 Q3",
                 }],
+                "disclosures": {
+                    "projection_id": "ffdisclosure_projection_fixture",
+                    "clocks": {"as_of": "2026-07-31T23:59:59Z"},
+                    "coverage": {"tracks_ready": 1, "tracks_not_evaluable": 1},
+                    "tracks": [{
+                        "form": "10-K",
+                        "status": "ready",
+                        "prior_filing": {"accession": "0000000001-25-000001", "report_date": "2024-09-30"},
+                        "current_filing": {"accession": "0000000001-26-000001", "report_date": "2025-09-30"},
+                        "comparison": {
+                            "coverage": {"redlines_total": 17, "redlines_non_suppressed": 5},
+                            "findings": [{
+                                "detector_id": "risk_factor_wording_change",
+                                "state": "triggered",
+                                "priority": "high",
+                                "review_level": "review_now",
+                                "labels": {"en": "Risk-factor wording change"},
+                                "prior_accession": "0000000001-25-000001",
+                                "current_accession": "0000000001-26-000001",
+                                "why_flagged": {"changed_paragraph_count": "3"},
+                                "evidence_receipts": [{
+                                    "source_url": "https://www.sec.gov/Archives/example.htm",
+                                    "source_excerpt": "private filing excerpt",
+                                }],
+                            }],
+                        },
+                    }, {
+                        "form": "10-Q",
+                        "status": "not_evaluable",
+                        "reason": "fewer_than_two_cached_primary_documents_at_acceptance_cutoff",
+                        "comparison": None,
+                    }],
+                },
             },
         },
     }
@@ -766,6 +799,11 @@ def test_forensics_dimension_is_context_only_and_compact(tmp_path):
     assert dim["value"]["workbench_url"].endswith("?symbol=AAPL")
     assert dim["value"]["findings"][0]["detector"] == "receivables_stretch"
     assert "values" not in dim["value"]["findings"][0]
+    changes = dim["value"]["disclosure_changes"]
+    assert changes["basis"] == "accession_aware_sec_primary_document_comparison"
+    assert changes["findings"][0]["detector"] == "risk_factor_wording_change"
+    assert changes["tracks"][1]["status"] == "not_evaluable"
+    assert "source_excerpt" not in json.dumps(changes)
 
 
 def test_forensics_snapshot_never_leaks_before_generated_clock(tmp_path):

@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
-| fundamental-forensics | 1 |
+| fundamental-forensics | 2 |
 | government-revenue-foresight | 8 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 352 |
-| infrastructure | 109 |
+| infrastructure | 110 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -118,7 +118,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | git | 518 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
-| r2 | 11 |
+| r2 | 12 |
 
 ## Artifacts by owner_program
 
@@ -380,6 +380,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
+| fundamental-forensics-sec-source-snapshot | `fundamental_forensics/sec-source/v1/latest.json` | json | daily-engine | infrastructure | 2 | 0 |
 
 ### government-revenue-foresight
 

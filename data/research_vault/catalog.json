@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T23:16:11.472198+00:00",
-  "count": 557,
+  "generated_at": "2026-08-02T00:01:17.165474+00:00",
+  "count": 559,
   "institutions": [
     "Amova",
     "Apollo",
@@ -64,6 +64,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ifkfbqiyx16-401fb8",
+      "title": "US Equities Weekly Rundown 7 31 26",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:29:39Z",
+      "summary_points": [
+        "**AI-Driven Sector Divergence**: Hyperscalers (MSFT +21%, AMZN +17% WTD) outperformed amid S&P 500 flatness; Homebuilders/Memory underperformed; 34% SPX earnings reported with extreme stock vs.",
+        "index divergence (MSFT +550bn cap vs.",
+        "AAPL -500bn drop, SPX <1% weekly move).",
+        "**Institutional Flow Surge & Leverage Shift**: Largest net buying since Nov '20 (+3.9 SDs), driven by short covers (58% Macro Products, 42% Single Stocks); US L/S Gross leverage at 208.1 (18th percentile), Net at 52.8% (45th percentile).",
+        "**High Beta Momentum Drawdown Severity**: Current drawdown at -32.79% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-fsfvm56gazi-7da3cb",
       "title": "Global Healthcare Pharmaceuticals Friday Fodder Inconsistent Dynamics Through the First Week of Peak Earnings",
       "institution": "Goldman Sachs",
@@ -102,6 +123,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z0yf3bt2q2t-a3c5c5",
+      "title": "American Electric Power (AEP) Weaker quarter but growth outlook still strong",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:29Z",
+      "summary_points": [
+        "**EPS Guidance & Regulatory Catalyst**: 2026 EPS raised to $6.25–$6.55 (from $6.15–$6.45) driven by regulatory progress in Ohio/Oklahoma/Texas and $3bn equity forwards de-risking; price target lifted to $150 (+17.3% upside).",
+        "**Neutral Rating Risk**: Growth outlook (7–9% annual growth, >9% EPS CAGR to 2030) maintained at Neutral due to timing uncertainty of ERCOT load conversion (impacting 2027–2031 capital plan).",
+        "**Debt Expansion vs.",
+        "Margin Gains**: EBIT margin rising to 29.9% (12/26E) but long-term debt increasing to $50.2B (12/26E) from $44.1B (12/25), signaling growing balance sheet risk despite margin expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
