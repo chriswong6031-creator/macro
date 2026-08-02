@@ -120,7 +120,7 @@ def test_gated_shell_omits_locked_rows_and_the_setup_strip():
         rows=preview, groups=[], cat_chips=[], cat_chips_more=[], sector_opts=[],
         theme_opts=[], total=3, n_cats=1, counts={}, coverage={}, built="2026-07-25 00:00 UTC",
         top_setups=[], grade_a=1, new_today=0, intel_cov={},
-        gate={"tier": "insider", "payload": "/premiumdata/special_situations.json",
+        gate={"tier": "essential", "payload": "/premiumdata/special_situations.json",
               "preview": 1, "locked": 2},
         C=C_STUB)
     assert set(TICKER_RE.findall(shell)) == {"aaa"}
@@ -252,5 +252,5 @@ def test_shipped_payload_declares_the_required_tier():
     payload = json.loads(PAYLOAD.read_text())
     assert payload["schema"] == "tier_payload.v1"
     if payload.get("gated"):
-        assert payload["required_tier"] == "insider"
+        assert payload["required_tier"] == "essential"
         assert payload["locked"] > 0
