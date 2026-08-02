@@ -520,6 +520,29 @@ The word `validated` must not appear (CI-guarded,
 }
 ```
 
+### Storage and fetch path (revised — see §14)
+
+Per-entity payloads are ~100 KB each once the market-neutral panel is included;
+at ~256 symbols that is ~28 MB rewritten nightly, which git must not carry. They
+follow the repo's established idiom for heavy per-ticker artifacts (the Odds
+Desk — `site/odds.js`, the `site/oddsmatrix/` block in `.gitignore`):
+
+| Artifact | Storage |
+|---|---|
+| `seasonalitydata/methodology.json` | git-tracked |
+| `seasonalitydata/index.json` | git-tracked (small) |
+| `seasonalitydata/entities/<SYM>.json` | **gitignored + R2**, via `publish_r2 --dirs seasonality_entities` |
+| `seasonalitydata/entities/<default>.json` | git-tracked as a `.gitignore` negation, so SSR first paint and search indexing have real data |
+
+The page therefore fetches entities from
+`(window.DATA_BASE || '') + 'seasonalitydata/entities/<SYM>.json'`, and only
+`index.json` + the one tracked default entity need a Caddy public entry alongside
+the existing methodology path. A cross-origin fetch has more failure modes than a
+same-origin one (CORS, `DATA_BASE` unset in a local render, R2 not yet populated
+for a new symbol), so failure is a first-class state: on initial load the SSR view
+stays with the §3 error copy; on a symbol switch the previously loaded symbol
+stays on screen. Never a blank chart, never a fabricated one.
+
 ### What the client computes, and what it must not
 
 The client computes **exactly**, for any window `[a, b]`, from `years[].cum`:
@@ -748,3 +771,32 @@ delivers the thesis.
 width (raised to `.14` with no dim state), the 20–80 band was invisible under the
 strands (`.08` → `.12`), and the current-year thread at `1.75px / .9` dominated
 the median ink it is supposed to sit beneath (now `1.3px / .62`).
+
+---
+
+## §14 Storage arithmetic (main loop, 2026-08-01)
+
+The contract in §9 ships, per symbol, up to 25 years × 365 daily cumulative
+values — and §12.6 doubled that by adding the market-neutral panel with its own
+family and null. Quantized to integers in 1e-5 units that is roughly **100 KB per
+entity**, and across ~256 covered symbols roughly **28 MB rewritten every night**.
+
+Committing that to git would be a slow-motion repository failure: near-zero delta
+compression (every value changes when the vendor re-adjusts), a nightly commit
+larger than most of the site, and a VPS pull that grows without bound.
+
+The repo already solved this. The Odds Desk ships heavy per-ticker JSON
+gitignored and R2-published, fetched client-side through `DATA_BASE`, while its
+small catalog stays git-tracked — see `scripts/publish_r2.py` `DEFAULT_DIRS`, the
+`site/oddsmatrix/` block in `.gitignore`, and the fetch in `site/odds.js`. This
+program adopts that idiom unchanged, with one addition: the **default symbol's
+entity file stays git-tracked** via a `.gitignore` negation, because a page whose
+first paint depends on a cross-origin fetch has no honest server-rendered state
+and nothing for a search engine to index — and search visibility is most of the
+reason this page is public at all (§10, §8).
+
+A useful side effect: R2-served files never pass through Caddy, so the
+default-deny public allowlist needs only `index.json` and that one default entity
+beside the existing methodology entry. No broad prefix, and the existing
+`test_methodology_manifest_is_in_reviewed_public_boundary` assertion stands
+untouched.
