@@ -6,7 +6,8 @@ Covers:
   3. Dollar-amount violation.
   4. Secret env-var violation (MASTERMIND_<NAME>).
   5. Clean counts-only fixture passes with zero violations.
-  6. mastermind_snapshot.json is exempt from key scan but not host-path scan.
+  6. mastermind_snapshot.json: by-design keys (ticker/positions/venue) allowed,
+     fill economics (cost_basis/entry_price/shares) fire, host-path not exempt.
   7. Data-governance and site/mastermind broad host-path scan (non-key-scan paths).
   8. Nested key violation (key nested inside a list/dict).
   9. Ignore-rail check: data/private/ and data/operator/ are gitignored.
@@ -232,11 +233,11 @@ class TestCleanFixture:
 # ---------------------------------------------------------------------------
 class TestSnapshotExemption:
     def test_ticker_key_exempt_from_key_scan(self) -> None:
-        """mastermind_snapshot.json may contain tickers (FB-R1); key scan skipped."""
+        """mastermind_snapshot.json may contain ticker/positions/venue (FB-R1);
+        those by-design keys are allowed in the partial key scan."""
         text = _j({
             "schema": "mastermind_snapshot.v1",
-            "ticker": "NVDA",
-            "weight": 0.15,
+            "positions": [{"ticker": "NVDA", "weight": 0.15, "venue": "US"}],
         })
         violations = scan(
             ROOT,
@@ -245,7 +246,41 @@ class TestSnapshotExemption:
         )
         key_violations = [v for v in violations if v["violation_type"] == "forbidden_key"]
         assert len(key_violations) == 0, (
-            f"mastermind_snapshot.json should be exempt from key scan; got: {key_violations}"
+            f"by-design snapshot keys should not fire; got: {key_violations}"
+        )
+
+    def test_fill_economics_fire_in_snapshot_key_scan(self) -> None:
+        """RUL-CL-6b: fill/held-book economics in the snapshot MUST fire.
+
+        Regression pin for the 2026-08-01 exposure (37 cost_basis keys on
+        main, PR #4209 recovery): the old blanket key-scan exemption made this
+        guard blind to the one artifact the BRIDGE law was written for, and the
+        diff-scoped H2 check never rescans an unchanged file on main."""
+        text = _j({
+            "schema": "mastermind_snapshot.v1",
+            "positions": [{
+                "ticker": "NVDA",
+                "weight": 0.15,
+                "cost_basis": 123.45,
+                "entry_price": 120.0,
+                "shares": 100,
+            }],
+        })
+        violations = scan(
+            ROOT,
+            extra_artifacts={"site/mastermind/mastermind_snapshot.json": text},
+            skip_ignore_rail=True,
+        )
+        caught = {
+            v["json_path"].rsplit(".", 1)[-1]
+            for v in violations
+            if v["violation_type"] == "forbidden_key"
+        }
+        assert {"cost_basis", "entry_price", "shares"} <= caught, (
+            f"fill economics must fire in the snapshot partial key scan; caught: {sorted(caught)}"
+        )
+        assert "ticker" not in caught and "positions" not in caught, (
+            f"by-design keys must not fire; caught: {sorted(caught)}"
         )
 
     def test_host_path_not_exempt_in_snapshot(self) -> None:
@@ -528,4 +563,38 @@ class TestF1DiskTraversalE2E:
         )
         assert "secret_env_pattern" not in vtypes, (
             f"secret_env_pattern must be exempt in snapshot; violations={violations}"
+        )
+
+    def test_e2e_snapshot_partial_key_scan_catches_cost_basis(
+        self, tmp_path: "Path"
+    ) -> None:
+        """Disk-traversal proof of the RUL-CL-6b partial key scan: cost_basis
+        planted in a real on-disk mastermind_snapshot.json is caught, while the
+        by-design ticker/positions keys stay silent.  This is the path CI
+        exercises — the in-memory extra_artifacts branch alone cannot prove the
+        disk branch passes allowed_keys through."""
+        import json as _json
+        from scripts.check_private_boundary import scan as _scan
+
+        (tmp_path / "data" / "governance").mkdir(parents=True)
+        (tmp_path / "site" / "mastermind").mkdir(parents=True)
+
+        snap = {
+            "schema": "mastermind_snapshot.v1",
+            "positions": [{"ticker": "NVDA", "weight": 0.15, "cost_basis": 123.45}],
+        }
+        snap_path = tmp_path / "site" / "mastermind" / "mastermind_snapshot.json"
+        snap_path.write_text(_json.dumps(snap), encoding="utf-8")
+
+        violations = _scan(tmp_path, skip_ignore_rail=True)
+        caught = {
+            v["json_path"].rsplit(".", 1)[-1]
+            for v in violations
+            if v["violation_type"] == "forbidden_key"
+        }
+        assert "cost_basis" in caught, (
+            f"cost_basis on disk must be caught; violations={violations}"
+        )
+        assert "ticker" not in caught and "positions" not in caught, (
+            f"by-design keys must not fire on disk; caught: {sorted(caught)}"
         )
