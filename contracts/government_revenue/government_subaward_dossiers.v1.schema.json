@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_subaward_dossiers.v1.schema.json",
+  "title": "Government Subaward Dossiers v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "content_id", "as_of", "known_at", "generated_at",
+    "authority", "source_coverage", "freshness", "limitations", "primes", "subawards"
+  ],
+  "properties": {
+    "contract": {"const": "government_subaward_dossiers.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^grsd1-[a-f0-9]{24}$"},
+    "as_of": {"type": "string", "format": "date"},
+    "known_at": {"$ref": "#/$defs/nullableInstant"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "source_coverage": {"$ref": "#/$defs/sourceCoverage"},
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "limitations": {"$ref": "#/$defs/limitations"},
+    "primes": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {"$ref": "#/$defs/prime"}
+    },
+    "subawards": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {"$ref": "#/$defs/subaward"}
+    }
+  },
+  "$defs": {
+    "nullableText": {"type": ["string", "null"], "maxLength": 4000},
+    "nullableDate": {
+      "oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]
+    },
+    "nullableInstant": {
+      "oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "context_only", "can_rank", "can_size", "can_gate",
+        "can_originate_signal", "can_add_candidates", "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    },
+    "sourceCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "records_loaded", "records_published", "records_dropped",
+        "configured_cap", "truncated_by_artifact_cap", "bounded_collection", "reason"
+      ],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "records_loaded": {"type": "integer", "minimum": 0},
+        "records_published": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "records_dropped": {"type": "integer", "minimum": 0},
+        "configured_cap": {"const": 2000},
+        "truncated_by_artifact_cap": {"type": "boolean"},
+        "bounded_collection": {"type": ["boolean", "null"]},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "observed_at", "known_at", "reason"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "observed_at": {"$ref": "#/$defs/nullableInstant"},
+        "known_at": {"$ref": "#/$defs/nullableInstant"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "primeCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "collection_state", "reported_count", "count_verified",
+        "high_count_parent", "detail_rows", "pages_fetched", "source_exhausted",
+        "truncated_by_collection_policy", "records_published", "reason"
+      ],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]},
+        "collection_state": {
+          "enum": [
+            "not_selected", "zero", "complete", "high_count_count_only",
+            "run_cap_count_only"
+          ]
+        },
+        "reported_count": {"type": ["integer", "null"], "minimum": 0},
+        "count_verified": {"type": "boolean"},
+        "high_count_parent": {"type": "boolean"},
+        "detail_rows": {"type": "integer", "minimum": 0},
+        "pages_fetched": {"type": "integer", "minimum": 0},
+        "source_exhausted": {"type": "boolean"},
+        "truncated_by_collection_policy": {"type": "boolean"},
+        "records_published": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "prime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_generated_award_id", "award_key", "coverage", "subaward_keys",
+        "subaward_count"
+      ],
+      "properties": {
+        "parent_generated_award_id": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "award_key": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "coverage": {"$ref": "#/$defs/primeCoverage"},
+        "subaward_keys": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {"type": "string", "pattern": "^subaward:[a-f0-9]{32}$"}
+        },
+        "subaward_count": {"type": "integer", "minimum": 0, "maximum": 2000}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_subaward_id", "displayed_subaward_number", "parent_generated_award_id"
+      ],
+      "properties": {
+        "source_subaward_id": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "displayed_subaward_number": {"type": ["string", "null"], "maxLength": 1000},
+        "parent_generated_award_id": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "dates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_date", "effective_at", "known_at", "first_seen_at", "last_seen_at"],
+      "properties": {
+        "action_date": {"$ref": "#/$defs/nullableDate"},
+        "effective_at": {"$ref": "#/$defs/nullableDate"},
+        "known_at": {"type": "string", "format": "date-time"},
+        "first_seen_at": {"type": "string", "format": "date-time"},
+        "last_seen_at": {"$ref": "#/$defs/nullableInstant"}
+      }
+    },
+    "reportedAmount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "semantic", "currency"],
+      "properties": {
+        "amount": {"type": ["number", "null"]},
+        "semantic": {"const": "reported_subaward_amount"},
+        "currency": {"const": "USD"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "subaward_url", "parent_award_url"],
+      "properties": {
+        "publisher": {"const": "USAspending.gov"},
+        "subaward_url": {"type": "string", "format": "uri", "maxLength": 1000},
+        "parent_award_url": {"type": "string", "format": "uri", "maxLength": 1000}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_id", "response_sha256", "source_record_count", "effective_at",
+        "known_at", "limitations"
+      ],
+      "properties": {
+        "receipt_id": {"type": "string", "minLength": 1, "maxLength": 400},
+        "response_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_record_count": {"type": "integer", "minimum": 0},
+        "effective_at": {"$ref": "#/$defs/nullableDate"},
+        "known_at": {"type": "string", "format": "date-time"},
+        "limitations": {"$ref": "#/$defs/limitations"}
+      }
+    },
+    "subaward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subaward_key", "parent_award_key", "identity", "subawardee_name",
+        "subaward_type", "description", "description_truncated", "dates",
+        "reported_amount", "source", "provenance"
+      ],
+      "properties": {
+        "subaward_key": {"type": "string", "pattern": "^subaward:[a-f0-9]{32}$"},
+        "parent_award_key": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "identity": {"$ref": "#/$defs/identity"},
+        "subawardee_name": {"type": ["string", "null"], "maxLength": 1000},
+        "subaward_type": {"type": ["string", "null"], "maxLength": 200},
+        "description": {"type": ["string", "null"], "maxLength": 2000},
+        "description_truncated": {"type": "boolean"},
+        "dates": {"$ref": "#/$defs/dates"},
+        "reported_amount": {"$ref": "#/$defs/reportedAmount"},
+        "source": {"$ref": "#/$defs/source"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    }
+  }
+}

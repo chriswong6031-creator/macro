@@ -1,0 +1,27 @@
+{
+  "page_metadata": {
+    "page": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "next": null,
+    "previous": null
+  },
+  "results": [
+    {
+      "id": 101,
+      "subaward_number": "DISPLAY-REPEATS",
+      "action_date": "2026-07-30",
+      "amount": 125000.5,
+      "description": "Official fixture row one",
+      "recipient_name": "SUBRECIPIENT ONE"
+    },
+    {
+      "id": 102,
+      "subaward_number": "DISPLAY-REPEATS",
+      "action_date": "2026-07-29",
+      "amount": 75000,
+      "description": "Official fixture row two",
+      "recipient_name": "SUBRECIPIENT TWO"
+    }
+  ]
+}

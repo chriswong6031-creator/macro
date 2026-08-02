@@ -81,6 +81,12 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     public_dossier_raw, _public_dossier = _read_json(
         public_dir / "dossiers.json", "public dossier twin"
     )
+    canonical_subaward_raw, canonical_subaward = _read_json(
+        canonical_dir / "subaward_dossiers.json", "canonical subaward dossier"
+    )
+    public_subaward_raw, _public_subaward = _read_json(
+        public_dir / "subaward-dossiers.json", "public subaward dossier twin"
+    )
 
     try:
         build_government_revenue._validate_payload(canonical_latest)
@@ -125,6 +131,10 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             "public dossier twin differs from canonical dossier bytes"
         )
+    if public_subaward_raw != canonical_subaward_raw:
+        raise ProjectionDriftError(
+            "public subaward dossier twin differs from canonical subaward dossier bytes"
+        )
     try:
         build_government_revenue._validate_dossier_payload(canonical_dossier)
     except ValueError as exc:
@@ -133,6 +143,14 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         canonical_dossier_raw
     ):
         raise ProjectionDriftError("canonical dossier bytes are non-canonical")
+    try:
+        build_government_revenue._validate_subaward_dossier_payload(canonical_subaward)
+    except ValueError as exc:
+        raise ProjectionDriftError("canonical subaward dossier schema is invalid") from exc
+    if build_government_revenue._canonical_json(canonical_subaward).encode("utf-8") != (
+        canonical_subaward_raw
+    ):
+        raise ProjectionDriftError("canonical subaward dossier bytes are non-canonical")
 
     embedded_workspace = _object(
         canonical_latest.get("procurement_workspace"),
@@ -205,6 +223,8 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         "events": len(canonical_workspace.get("events") or []),
         "dossier_content_id": canonical_dossier.get("content_id"),
         "dossier_awards": len(canonical_dossier.get("awards") or []),
+        "subaward_dossier_content_id": canonical_subaward.get("content_id"),
+        "subaward_dossiers": len(canonical_subaward.get("subawards") or []),
         "recipient_graph_id": (
             recipient_coverage.get("resolution_graph", {}).get("graph_id")
             if recipient_coverage is not None
@@ -228,7 +248,9 @@ def main(argv: list[str] | None = None) -> int:
         "government revenue projection OK — "
         f"bundle={result['bundle_id']} html={result['html_bytes']}B "
         f"events={result['events']} dossier={result['dossier_content_id']} "
-        f"awards={result['dossier_awards']}"
+        f"awards={result['dossier_awards']} "
+        f"subaward_dossier={result['subaward_dossier_content_id']} "
+        f"subawards={result['subaward_dossiers']}"
     )
     return 0
 

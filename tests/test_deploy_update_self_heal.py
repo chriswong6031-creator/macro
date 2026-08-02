@@ -176,6 +176,8 @@ MUST_RESTART = [
     "engine/capital_structure/__init__.py",
     "engine/capital_structure/event_spine.py",
     "engine/capital_structure/projection.py",
+    # Government Revenue subaward serving is imported by app/government_revenue.py.
+    "engine/government_revenue/subaward_dossiers.py",
     # /api/ask + /api/brain engine closure
     "engine/neuralweb/ask_brain.py",
     "engine/neuralweb/chat_plain_words.py",

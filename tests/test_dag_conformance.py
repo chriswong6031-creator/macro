@@ -517,6 +517,11 @@ class TestLiveConformance:
             "data/government_revenue/recipient_entity_graph.json",
             "data/government_revenue/ingest_status.json",
             "data/government_revenue/collection_receipts.jsonl",
+            "data/government_revenue/subaward_snapshots.parquet",
+            "data/government_revenue/subaward_collection_receipts.jsonl",
+            "data/government_revenue/subaward_projection_state.json",
+            "data/government_revenue/subaward_ingest_status.json",
+            "data/government_revenue/subaward_collector_heartbeat.parquet",
             "data/government_revenue/opportunities.parquet",
             "data/government_revenue/opportunity_revisions.parquet",
             "data/government_revenue/opportunity_documents.parquet",
@@ -525,6 +530,7 @@ class TestLiveConformance:
             "data/usaspending/_meta.json",
             "collectors/sam_gov.py",
             "collectors/usaspending_awards.py",
+            "collectors/usaspending_subawards.py",
             "lib/pages.py",
             "templates/_interfonts.html.j2",
             "templates/_navlinks.html.j2",
@@ -593,12 +599,16 @@ class TestLiveConformance:
             "data/government_revenue/award_action_versions.parquet",
             "data/government_revenue/award_event_projection_state.json",
             "data/government_revenue/recipient_resolution_coverage.json",
+            "data/government_revenue/subaward_dossiers.json",
             "data/government_revenue/workspace.json",
+            "site/government-revenue-data/subaward-dossiers.json",
             "site/government-revenue-data/workspace.json",
         ):
             assert path in commit["run"]
         assert "assert_award_event_bundle" in commit["run"]
         assert "assert_award_event_source_clean" in commit["run"]
+        assert "assert_subaward_bundle" in commit["run"]
+        assert "assert_subaward_source_clean" in commit["run"]
         assert "assert_recipient_graph_source_clean" in commit["run"]
         assert "collectors and projection builders cannot write or stage" in commit["run"]
         assert "receipt-bound award artifacts must arrive as one committed bundle" in commit["run"]
@@ -607,6 +617,18 @@ class TestLiveConformance:
             "does not stage or collect the receipt ledger."
         )
         assert 'stage_candidates+=("${award_event_bundle_paths[@]}")' in commit["run"]
+        assert (
+            "subaward snapshots, receipts, activation state, and ingest status "
+            "must arrive as one committed bundle"
+        ) in commit["run"]
+        assert "publishing an unavailable zero-row dossier" in commit["run"]
+        assert "cannot stage a USAspending subaward source mutation" in commit["run"]
+        assert "subaward_projection_generation_matches" in commit["run"]
+        assert "subaward source snapshot does not match its activation generation" in commit["run"]
+        assert commit["run"].count("data/government_revenue/subaward_dossiers.json") >= 3
+        assert commit["run"].count("site/government-revenue-data/subaward-dossiers.json") >= 3
+        assert "data/government_revenue/subaward_dossiers.json" not in push_trigger["paths"]
+        assert "site/government-revenue-data/subaward-dossiers.json" not in push_trigger["paths"]
         assert "scripts/ci/push_retry.sh" in commit["run"]
         assert "push_autostash_ok" in commit["run"]
         assert "Rebuild AFTER every successful rebase" in commit["run"]
@@ -636,6 +658,8 @@ class TestLiveConformance:
             normalize_at = lane_text.index("python -m scripts.optimize_assets", rebuild_at)
             assert rebase_at < rebuild_at < normalize_at
             assert "post-rebase canonical and rebuilt procurement bundles differ" in lane_text
+            assert lane_text.count("data/government_revenue/subaward_dossiers.json") >= 2
+            assert "site/government-revenue-data/subaward-dossiers.json" in lane_text
 
         daily_text = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text(
             encoding="utf-8"

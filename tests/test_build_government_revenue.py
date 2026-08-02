@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from engine.government_revenue.workspace import build_procurement_workspace
+from engine.government_revenue.subaward_dossiers import is_valid_subaward_dossier_payload
 from engine.government_revenue.entity_resolution import (
     build_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -99,6 +100,10 @@ def test_builder_writes_canonical_site_twin_and_page(tmp_path: Path, monkeypatch
     assert workspace_payload["schema_version"] == "government_procurement_workspace.v2"
     assert workspace_payload["bundle_id"].startswith("grw2-")
     assert len(workspace_payload["bundle_id"]) == len("grw2-") + 24
+    subaward = tmp_path / "data" / "government_revenue" / "subaward_dossiers.json"
+    subaward_site = tmp_path / "site" / "government-revenue-data" / "subaward-dossiers.json"
+    assert subaward.exists() and subaward.read_bytes() == subaward_site.read_bytes()
+    assert is_valid_subaward_dossier_payload(json.loads(subaward.read_text()))
     assert "Government Revenue" in html.read_text()
 
 
@@ -129,8 +134,10 @@ def test_site_only_rebuild_uses_canonical_bytes_without_recalculation(
 
     canonical = tmp_path / "data" / "government_revenue" / "latest.json"
     workspace = tmp_path / "data" / "government_revenue" / "workspace.json"
+    subaward = tmp_path / "data" / "government_revenue" / "subaward_dossiers.json"
     canonical_before = canonical.read_bytes()
     workspace_before = workspace.read_bytes()
+    subaward_before = subaward.read_bytes()
     template.write_text("<main>v2 {{ payload_json|safe }}</main>", encoding="utf-8")
     monkeypatch.setattr(
         build_government_revenue,
@@ -146,6 +153,10 @@ def test_site_only_rebuild_uses_canonical_bytes_without_recalculation(
     assert (
         tmp_path / "site" / "government-revenue-data" / "workspace.json"
     ).read_bytes() == workspace_before
+    assert subaward.read_bytes() == subaward_before
+    assert (
+        tmp_path / "site" / "government-revenue-data" / "subaward-dossiers.json"
+    ).read_bytes() == subaward_before
     assert "<main>v2 " in html.read_text(encoding="utf-8")
 
 
@@ -166,6 +177,23 @@ def test_site_only_rebuild_fails_closed_on_generation_mismatch(
     workspace_path.write_text(json.dumps(workspace), encoding="utf-8")
 
     with pytest.raises(ValueError, match="generation mismatch"):
+        build_government_revenue.build_site_only(tmp_path)
+
+
+def test_site_only_requires_the_committed_subaward_twin_when_prime_dossier_exists(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+    build_government_revenue.build(tmp_path)
+    (tmp_path / "data" / "government_revenue" / "subaward_dossiers.json").unlink()
+
+    with pytest.raises(ValueError, match="subaward dossier"):
         build_government_revenue.build_site_only(tmp_path)
 
 

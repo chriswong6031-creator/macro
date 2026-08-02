@@ -15615,6 +15615,121 @@ artifacts:
       rather than being overwritten. Operational provenance/context only, never an
       authority, score, rank, size, gate, or investment signal.
 
+  government-revenue-subaward-snapshots:
+    path: data/government_revenue/subaward_snapshots.parquet
+    format: parquet
+    producer: collectors/usaspending_subawards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.subaward_snapshot.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/usaspending_subawards.py, engine/government_revenue/subaward_dossiers.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Bounded immutable observations of self-reported USAspending subaward records,
+      identified by exact prime generated award ID plus the source-native broker row ID.
+      Repeating displayed subaward numbers are never deduplicated or treated as identity.
+      Reported amounts are subrecipient context, not federal obligations, prime value,
+      backlog, revenue, cash, issuer attribution, or investment authority.
+
+  government-revenue-subaward-collection-receipts:
+    path: data/government_revenue/subaward_collection_receipts.jsonl
+    format: jsonl
+    producer: collectors/usaspending_subawards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.subaward_collection_receipt.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/usaspending_subawards.py, engine/government_revenue/subaward_dossiers.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Append-only hash-only receipts for exact USAspending subaward count and identity-page
+      requests. Raw requests, responses, headers, and credentials are not persisted. The
+      separate ledger prevents prime-award receipts from being misrepresented as subaward
+      evidence and supplies no scoring, ranking, gating, or signal authority.
+
+  government-revenue-subaward-projection-state:
+    path: data/government_revenue/subaward_projection_state.json
+    format: json
+    producer: collectors/usaspending_subawards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: last_observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.subaward_projection_state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/usaspending_subawards.py, engine/government_revenue/subaward_dossiers.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Collector-owned activation and deterministic bounded parent-coverage state bound to
+      the exact capped collection manifest and snapshot generation. It distinguishes an
+      uninitialized empty-first rail from a complete bounded generation; partial or corrupt
+      state fails closed and cannot authorize fallback to mutable prime or fuzzy search data.
+
+  government-revenue-subaward-ingest-status:
+    path: data/government_revenue/subaward_ingest_status.json
+    format: json
+    producer: collectors/usaspending_subawards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.subaward_ingest_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/subaward_dossiers.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Operational receipt for per-run count/detail coverage, caps, truncation, and last-good
+      publication eligibility. High-count parents can remain count-only rather than silently
+      sampling detail rows. This status is descriptive infrastructure, never alpha or authority.
+
+  government-revenue-subaward-collector-heartbeat:
+    path: data/government_revenue/subaward_collector_heartbeat.parquet
+    format: parquet
+    producer: collectors/usaspending_subawards.py
+    known_extra_writers:
+      - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/collect.py]
+    external_consumers: []
+    notes: >
+      Date-indexed health receipt emitted by direct CLI and standard Adapter runs after a
+      complete bounded subaward collection. It carries no subaward economics, company
+      mapping, score, rank, gate, candidate, or Prophet authority.
+
   government-revenue-sam-opportunities:
     path: data/government_revenue/opportunities.parquet
     format: parquet
@@ -15809,6 +15924,37 @@ artifacts:
       scope only, not recipient-to-issuer attribution. Display/context only; request
       handlers paginate precomputed records and cannot recalculate or enrich them.
 
+  government-revenue-subaward-dossiers:
+    path: data/government_revenue/subaward_dossiers.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_subaward_dossiers.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Canonical content-addressed, capped subaward evidence generation. Every record is
+      linked to the prime dossier only by an exact generated USAspending award ID and is
+      served as reported subrecipient context. Missing source artifacts produce a valid
+      unavailable zero-row generation; a partial, corrupt, or mixed source bundle fails
+      closed. All ranking, sizing, gating, signal, candidate, and escalation authority is false.
+
   government-revenue-recipient-entity-graph:
     path: data/government_revenue/recipient_entity_graph.json
     format: json
@@ -15934,6 +16080,35 @@ artifacts:
       Public byte-identical twin of government-revenue-dossiers. The API requires both
       twins, exact bytes, strict schema validation, and a matching content-derived ID;
       malformed, stale, or mixed generations fail closed.
+
+  site-government-revenue-subaward-dossiers:
+    path: site/government-revenue-data/subaward-dossiers.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_subaward_dossiers.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Public byte-identical twin of government-revenue-subaward-dossiers. The API requires
+      both twins, exact bytes, strict schema validation, and the same content-derived ID;
+      it cannot recalculate, enrich, or attribute records at request time.
 
   # --- Capital Structure Intelligence W0-W1: immutable SEC evidence/event spine ---
   capital-structure-discovery:

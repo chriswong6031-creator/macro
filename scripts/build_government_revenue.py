@@ -39,6 +39,12 @@ from engine.government_revenue.dossiers import (  # noqa: E402
     dossier_content_id,
     is_valid_dossier_payload,
 )
+from engine.government_revenue.subaward_dossiers import (  # noqa: E402
+    SUBAWARD_DOSSIER_CONTRACT,
+    build_subaward_dossier_payload,
+    is_valid_subaward_dossier_payload,
+    subaward_dossier_content_id,
+)
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     is_valid_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -478,6 +484,51 @@ def _validate_dossier_payload(payload: object) -> dict:
     return payload
 
 
+def _prime_award_key_by_generated_id(dossier: dict) -> dict[str, str]:
+    """Return the sole legal bridge from a source parent ID to a dossier key.
+
+    Subaward source rows may name their prime only by USAspending's generated
+    award ID.  The prime dossier owns the path-safe public award key, so this
+    map is assembled *after* the prime projection and rejects a duplicate or
+    malformed bridge instead of guessing through PIID, recipient text, or a
+    collector ticker.
+    """
+    mapping: dict[str, str] = {}
+    for row in dossier.get("awards") or []:
+        if not isinstance(row, dict):
+            raise ValueError("government revenue dossier contains an invalid award row")
+        award_key = row.get("award_key")
+        identity = row.get("identity")
+        generated_award_id = (
+            identity.get("generated_award_id")
+            if isinstance(identity, dict)
+            else None
+        )
+        if generated_award_id is None:
+            continue
+        if not isinstance(generated_award_id, str) or not generated_award_id:
+            raise ValueError("government revenue dossier has an invalid generated award ID")
+        if not isinstance(award_key, str) or not award_key:
+            raise ValueError("government revenue dossier has an invalid award key")
+        previous = mapping.get(generated_award_id)
+        if previous is not None and previous != award_key:
+            raise ValueError("government revenue dossier has an ambiguous generated award ID")
+        mapping[generated_award_id] = award_key
+    return mapping
+
+
+def _validate_subaward_dossier_payload(payload: object) -> dict:
+    """Reject a subaward rail before either public twin is replaced."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != SUBAWARD_DOSSIER_CONTRACT
+        or not is_valid_subaward_dossier_payload(payload)
+        or subaward_dossier_content_id(payload) != payload.get("content_id")
+    ):
+        raise ValueError("government revenue subaward dossier returned an invalid schema")
+    return payload
+
+
 def _recipient_activation_required(root: Path) -> bool:
     """Return whether this checkout has entered the exact-recipient lane.
 
@@ -571,6 +622,15 @@ def _write_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
     return canonical, site
 
 
+def _write_subaward_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
+    """Atomically publish the independently governed subaward twins."""
+    canonical = root / "data" / "government_revenue" / "subaward_dossiers.json"
+    site = root / "site" / "government-revenue-data" / "subaward-dossiers.json"
+    _atomic_write_text(canonical, dossier_raw)
+    _atomic_write_text(site, dossier_raw)
+    return canonical, site
+
+
 def _write_site_projection(
     root: Path,
     payload: dict,
@@ -619,6 +679,16 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     dossier = _validate_dossier_payload(
         build_dossier_payload(root=root, as_of=payload.get("as_of"))
     )
+    # Build the prime dossier first.  The subaward projector only receives the
+    # exact generated-award-ID -> public award-key bridge; it never gets a
+    # ticker/name/PIID fallback that could create a false parent relationship.
+    subaward_dossier = _validate_subaward_dossier_payload(
+        build_subaward_dossier_payload(
+            root=root,
+            as_of=payload.get("as_of"),
+            prime_award_key_by_generated_id=_prime_award_key_by_generated_id(dossier),
+        )
+    )
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
@@ -636,6 +706,7 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
         )
     dossier_raw = _canonical_json(dossier)
     _write_dossier_twins(root, dossier_raw)
+    _write_subaward_dossier_twins(root, _canonical_json(subaward_dossier))
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -709,6 +780,17 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         if _canonical_json(dossier) != dossier_raw:
             raise ValueError("canonical government revenue dossier bytes are non-canonical")
         _write_dossier_twins(root, dossier_raw)
+        subaward_path = canonical_dir / "subaward_dossiers.json"
+        try:
+            subaward_raw = subaward_path.read_text(encoding="utf-8")
+            subaward = _validate_subaward_dossier_payload(json.loads(subaward_raw))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical government revenue subaward dossier is invalid") from exc
+        if _canonical_json(subaward) != subaward_raw:
+            raise ValueError("canonical government revenue subaward dossier bytes are non-canonical")
+        _write_subaward_dossier_twins(root, subaward_raw)
+    elif (canonical_dir / "subaward_dossiers.json").exists():
+        raise ValueError("canonical subaward dossier exists without a prime dossier")
     html_path, json_path = _write_site_projection(
         root,
         payload,
