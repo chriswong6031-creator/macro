@@ -79,11 +79,12 @@ price-free CTA `7-DAY FREE TRIAL + 50% OFF`.
 
 Contact sheet: `renders/_headline_contact_sheet.png`.
 
-**Tape clip (R3.7):** every square clips the candle field to an L-shaped safe zone —
-`polygon(0% 44%, 88% 44%, 88% 0%, 100% 0%, 100% 100%, 0% 100%)` — so the tape keeps its
-corner climb and bottom sweep while no candle can ever fall under headline or
-description, whatever the headline length. Opacity raised to .46/.38 because the clip
-guarantees text clearance.
+**Tape treatment (R3.8, supersedes the R3.7 clip):** the field runs **continuous across
+the full canvas** — clipping it produced a visible cut line wherever text sat, which
+reads worse than an overlap. Text clearance now comes from **whisper opacity**
+(.17/.14 on the squares, .19/.15 on the 628) instead of geometry: the tape stays a
+readable rising chart everywhere while nothing competes with the copy. Never
+reintroduce a clip/mask edge inside the composition.
 
 ## Verification state
 
