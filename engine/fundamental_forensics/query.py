@@ -46,14 +46,25 @@ import re
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
-from .metric_registry import ConceptAlias, FormulaRule, MappingRule, MetricContract, MetricRegistry
+from .metric_registry import (
+    ConceptAlias,
+    FormulaRule,
+    GovernanceBundle,
+    MappingRule,
+    MetricContract,
+    MetricRegistry,
+)
 from .periods import CalendarKind, PeriodKind, TypedPeriod
 from .raw_ledger import (
     FactEventType,
+    FactContext,
+    FactUnit,
     MAX_DECIMAL_SOURCE_CHARS,
     MAX_XBRL_ACCURACY_MAGNITUDE,
     RawFactLedger,
     RawFactOccurrence,
+    SourceIdentity,
+    TemporalClocks,
     canonical_json,
     decimal_text,
     parse_utc,
@@ -63,6 +74,7 @@ from .raw_ledger import (
 
 
 QUERY_SCHEMA = "fundamental_forensics.metric_query/v1"
+CELL_RECEIPT_SCHEMA = "fundamental_forensics.metric_cell_receipt/v1"
 REGISTRY_PROJECTION_SCHEMA = "fundamental_forensics.registry_projection/v1"
 REGISTRY_PROJECTION_VERSION = "cutoff-projection-v1"
 FILING_METADATA_SCHEMA = "fundamental_forensics.filing_metadata/v1"
@@ -71,13 +83,27 @@ FILING_METADATA_SCHEMA = "fundamental_forensics.filing_metadata/v1"
 # that needs a bulk history/export job must use a durable worker lane rather
 # than accidentally turn a request path into an unbounded scan.
 HARD_MAX_TICKERS = 50
+HARD_MAX_ENTITY_BINDINGS = HARD_MAX_TICKERS
 HARD_MAX_METRICS = 50
 HARD_MAX_PERIODS = 32
 HARD_MAX_CELLS = 10_000
 HARD_MAX_VISIBLE_SOURCE_EVENTS_PER_CELL = 10_000
 HARD_MAX_PROVENANCE_IDS = 10_000
 HARD_MAX_DEPENDENCY_RECEIPTS = HARD_MAX_METRICS
+HARD_MAX_RECEIPT_NODES = HARD_MAX_DEPENDENCY_RECEIPTS
+HARD_MAX_RECEIPT_EDGES = HARD_MAX_DEPENDENCY_RECEIPTS
+HARD_MAX_RECEIPT_DEPTH = HARD_MAX_DEPENDENCY_RECEIPTS
+HARD_MAX_MATRIX_NODES = 50_000
+HARD_MAX_MATRIX_EDGES = 200_000
+HARD_MAX_RECEIPT_WIRE_BYTES = 128 * 1024 * 1024
 MAX_QUERY_TEXT_CHARS = 4096
+
+# A selected occurrence can prove that the normalized value is internally
+# consistent with one immutable source artifact.  It cannot, without the
+# external append-only ledger, prove that no higher-precedence occurrence was
+# eligible or that an absence result was exhaustive.
+RECEIPT_PROOF_SCOPE = "selected_occurrence_consistency_only"
+RECEIPT_SELECTION_PROOF = "external_immutable_ledger_required"
 
 # Formula arithmetic is deliberately owned by this kernel rather than by the
 # process-global Decimal context. The contract is IEEE decimal128-shaped:
@@ -338,6 +364,116 @@ def _canonical_text_tuple(
 ) -> tuple[str, ...]:
     items = _bounded_collection(value, field_name=field_name, maximum=maximum)
     return tuple(sorted({_require_text(item, field_name=field_name) for item in items}))
+
+
+def _ordered_text_tuple(
+    value: Any,
+    *,
+    field_name: str,
+    maximum: int = HARD_MAX_DEPENDENCY_RECEIPTS,
+) -> tuple[str, ...]:
+    """Freeze an order-sensitive identifier sequence without deduplicating it."""
+    items = tuple(
+        _require_text(item, field_name=field_name)
+        for item in _bounded_collection(value, field_name=field_name, maximum=maximum)
+    )
+    if len(set(items)) != len(items):
+        raise QueryValidationError(f"{field_name} cannot contain duplicates")
+    return items
+
+
+def _strict_wire_mapping(
+    value: Any,
+    *,
+    field_name: str,
+    allowed: frozenset[str],
+    required: frozenset[str] | None = None,
+) -> dict[str, Any]:
+    """Read a small wire object without trusting a hostile Mapping iterator."""
+    if not isinstance(value, Mapping):
+        raise QueryValidationError(f"{field_name} must be an object")
+    pairs = _bounded_collection(
+        value.items(),
+        field_name=field_name,
+        maximum=len(allowed),
+    )
+    out: dict[str, Any] = {}
+    for key, item in pairs:
+        normalized_key = _require_text(key, field_name=f"{field_name} field")
+        if normalized_key in out:
+            raise QueryValidationError(f"{field_name} contains duplicate field {normalized_key}")
+        out[normalized_key] = item
+    unknown = set(out) - set(allowed)
+    if unknown:
+        raise QueryValidationError(
+            f"{field_name} contains unsupported field(s): {', '.join(sorted(unknown))}"
+        )
+    missing = set(required or ()) - set(out)
+    if missing:
+        raise QueryValidationError(
+            f"{field_name} is missing required field(s): {', '.join(sorted(missing))}"
+        )
+    return out
+
+
+def _wire_list(
+    value: Any,
+    *,
+    field_name: str,
+    maximum: int,
+) -> tuple[Any, ...]:
+    """Admit only a real decoded-JSON list, then enforce ``limit + 1``."""
+    if type(value) is not list:
+        raise QueryValidationError(f"{field_name} must be a JSON list")
+    return _bounded_collection(value, field_name=field_name, maximum=maximum)
+
+
+def _admit_json_wire(
+    value: Any,
+    *,
+    field_name: str,
+    maximum_bytes: int = HARD_MAX_RECEIPT_WIRE_BYTES,
+) -> None:
+    """Bound an already-decoded JSON tree before semantic reconstruction.
+
+    Exact built-in containers make iteration terminating; the byte counter is
+    deliberately conservative and prevents a bounded node count from hiding
+    an enormous aggregate of maximum-sized raw tokens.
+    """
+    stack = [value]
+    consumed = 0
+    while stack:
+        item = stack.pop()
+        if item is None or isinstance(item, (bool, int)):
+            consumed += 8
+        elif isinstance(item, str):
+            if len(item) > maximum_bytes - consumed:
+                raise QueryBoundsError(
+                    f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
+                )
+            consumed += len(item.encode("utf-8")) + 8
+        elif type(item) is list:
+            consumed += 2 + len(item)
+            stack.extend(item)
+        elif type(item) is dict:
+            consumed += 2 + len(item)
+            for key, nested in item.items():
+                if not isinstance(key, str):
+                    raise QueryValidationError(f"{field_name} object keys must be strings")
+                if len(key) > maximum_bytes - consumed:
+                    raise QueryBoundsError(
+                        f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
+                    )
+                consumed += len(key.encode("utf-8")) + 4
+                stack.append(nested)
+        else:
+            raise QueryValidationError(
+                f"{field_name} must contain only decoded JSON values"
+            )
+        if consumed > maximum_bytes:
+            raise QueryBoundsError(
+                f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
+            )
 
 
 def _optional_digest(value: Any, *, field_name: str) -> str | None:
@@ -646,6 +782,7 @@ class CellProvenance:
     policy: BitemporalPolicy
     source_snapshot_at: datetime
     recorded_cutoff_at: datetime
+    source_entity_id: str | None = None
     source: str | None = None
     accession: str | None = None
     document_id: str | None = None
@@ -695,7 +832,7 @@ class CellProvenance:
     alias_priority: int | None = None
     source_occurrence_ids: tuple[str, ...] = ()
     dependency_cell_ids: tuple[str, ...] = ()
-    dependency_cells: tuple["MetricCell", ...] = ()
+    selected_raw_fact: RawFactOccurrence | None = None
     reason: str | None = None
 
     def __post_init__(self) -> None:
@@ -769,6 +906,7 @@ class CellProvenance:
             _date_value(self.filed_at, field_name="provenance.filed_at"),
         )
         for field_name in (
+            "source_entity_id",
             "source",
             "accession",
             "document_id",
@@ -897,40 +1035,17 @@ class CellProvenance:
         object.__setattr__(
             self,
             "dependency_cell_ids",
-            _canonical_text_tuple(
-                self.dependency_cell_ids, field_name="provenance.dependency_cell_ids"
+            _ordered_text_tuple(
+                self.dependency_cell_ids,
+                field_name="provenance.dependency_cell_ids",
             ),
         )
-
-        dependency_cells = _bounded_collection(
-            self.dependency_cells,
-            field_name="provenance.dependency_cells",
-            maximum=HARD_MAX_DEPENDENCY_RECEIPTS,
-        )
-        if any(not isinstance(item, MetricCell) for item in dependency_cells):
+        if self.selected_raw_fact is not None and not isinstance(
+            self.selected_raw_fact, RawFactOccurrence
+        ):
             raise QueryValidationError(
-                "provenance.dependency_cells must contain immutable MetricCell receipts"
+                "provenance.selected_raw_fact must be an immutable RawFactOccurrence"
             )
-        dependency_cells = tuple(sorted(dependency_cells, key=lambda item: item.cell_id or ""))
-        if len({item.cell_id for item in dependency_cells}) != len(dependency_cells):
-            raise QueryValidationError("provenance.dependency_cells cannot contain duplicates")
-        for item in dependency_cells:
-            dependency_provenance = item.provenance
-            if (
-                dependency_provenance.policy is not self.policy
-                or dependency_provenance.source_snapshot_at != self.source_snapshot_at
-                or dependency_provenance.recorded_cutoff_at != self.recorded_cutoff_at
-            ):
-                raise QueryValidationError(
-                    "embedded dependency receipt policy/cutoffs do not match formula provenance"
-                )
-        derived_dependency_ids = tuple(item.cell_id for item in dependency_cells)
-        if self.dependency_cell_ids and self.dependency_cell_ids != derived_dependency_ids:
-            raise QueryValidationError(
-                "provenance.dependency_cell_ids do not match embedded dependency receipts"
-            )
-        object.__setattr__(self, "dependency_cells", dependency_cells)
-        object.__setattr__(self, "dependency_cell_ids", derived_dependency_ids)
 
         self._validate_clock_order()
         self._validate_kind_completeness()
@@ -960,6 +1075,7 @@ class CellProvenance:
             prerequisites = tuple(
                 value
                 for value in (
+                    self.source_ready_at,
                     self.recorded_at,
                     self.mapping_available_at,
                     self.filing_metadata_available_at,
@@ -1021,7 +1137,8 @@ class CellProvenance:
                 self.confidence,
                 self.alias_priority,
                 self.source_occurrence_ids,
-                self.dependency_cells,
+                self.dependency_cell_ids,
+                self.selected_raw_fact,
             )
             if any(value not in (None, (), []) for value in excluded):
                 raise QueryValidationError("opaque provenance cannot expose receipt details")
@@ -1073,15 +1190,21 @@ class CellProvenance:
                     self.formula_rule_id,
                     self.formula_rule_version,
                     self.formula_digest,
-                    self.dependency_cells,
+                    self.dependency_cell_ids,
                 )
             ):
                 raise QueryValidationError("direct provenance cannot contain formula receipts")
+            if self.selected_raw_fact is not None and self.source_entity_id is None:
+                raise QueryValidationError(
+                    "direct raw evidence requires provenance.source_entity_id"
+                )
             return
         if self.formula_rule_id is None or self.formula_rule_version is None:
             raise QueryValidationError("formula provenance requires its immutable formula rule")
         if self.formula_digest is None:
             raise QueryValidationError("formula provenance requires its formula digest")
+        if self.selected_raw_fact is not None:
+            raise QueryValidationError("formula provenance cannot embed a selected raw fact")
         if self.computed_at is not None or self.published_at is not None:
             raise QueryValidationError(
                 "on-demand formula provenance cannot claim computed_at or published_at"
@@ -1096,6 +1219,7 @@ class CellProvenance:
             "policy": self.policy.value,
             "source_snapshot_at": utc_text(self.source_snapshot_at),
             "recorded_cutoff_at": utc_text(self.recorded_cutoff_at),
+            "source_entity_id": self.source_entity_id,
             "source": self.source,
             "accession": self.accession,
             "document_id": self.document_id,
@@ -1140,15 +1264,373 @@ class CellProvenance:
             "alias_priority": self.alias_priority,
             "source_occurrence_ids": list(self.source_occurrence_ids),
             "dependency_cell_ids": list(self.dependency_cell_ids),
-            "dependency_receipts": [item.to_dict() for item in self.dependency_cells],
+            "selected_raw_fact": (
+                self.selected_raw_fact.to_dict()
+                if self.selected_raw_fact is not None
+                else None
+            ),
             "reason": self.reason,
         }
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "CellProvenance":
+        return _cell_provenance_from_dict(value)
+
+
+def _period_request_from_dict(value: Any) -> PeriodRequest:
+    allowed = frozenset(
+        {
+            "kind",
+            "start",
+            "end",
+            "fiscal_year",
+            "fiscal_quarter",
+            "calendar_kind",
+            "fiscal_year_weeks",
+            "week_count",
+            "inferred_week_count",
+            "semantics",
+            "label",
+        }
+    )
+    raw = _strict_wire_mapping(
+        value,
+        field_name="cell.period",
+        allowed=allowed,
+        required=allowed,
+    )
+    try:
+        period = PeriodRequest(
+            kind=raw["kind"],
+            start=raw["start"],
+            end=raw["end"],
+            fiscal_year=raw["fiscal_year"],
+            fiscal_quarter=raw["fiscal_quarter"],
+            calendar_kind=raw["calendar_kind"],
+            fiscal_year_weeks=raw["fiscal_year_weeks"],
+            week_count=raw["week_count"],
+            label=raw["label"],
+        )
+    except (TypeError, ValueError) as exc:
+        raise QueryValidationError(f"invalid cell period: {exc}") from exc
+    if canonical_json(period.to_dict()) != canonical_json(raw):
+        raise QueryValidationError("cell.period derived fields do not match canonical period")
+    return period
+
+
+def _raw_fact_from_dict(value: Any) -> RawFactOccurrence:
+    raw_allowed = frozenset(
+        {
+            "occurrence_id",
+            "logical_key",
+            "duplicate_group_key",
+            "source",
+            "concept_qname",
+            "context",
+            "unit",
+            "dimensions_known",
+            "source_occurrence_key",
+            "raw_token",
+            "parsed_value",
+            "is_nil",
+            "xml_lang",
+            "decimals",
+            "precision",
+            "inline_format",
+            "inline_sign",
+            "inline_scale",
+            "hidden",
+            "source_span",
+            "event_type",
+            "revision_of",
+            "clocks",
+        }
+    )
+    raw = _strict_wire_mapping(
+        value,
+        field_name="selected_raw_fact",
+        allowed=raw_allowed,
+        required=raw_allowed,
+    )
+    source_allowed = frozenset(
+        {"source", "entity_id", "accession", "document_id", "body_sha256", "source_url"}
+    )
+    source_raw = _strict_wire_mapping(
+        raw["source"],
+        field_name="selected_raw_fact.source",
+        allowed=source_allowed,
+        required=source_allowed,
+    )
+    context_allowed = frozenset(
+        {
+            "context_id",
+            "entity_scheme",
+            "entity_identifier",
+            "instant",
+            "start",
+            "end",
+            "explicit_dimensions",
+            "typed_dimensions",
+            "semantic_key",
+        }
+    )
+    context_raw = _strict_wire_mapping(
+        raw["context"],
+        field_name="selected_raw_fact.context",
+        allowed=context_allowed,
+        required=context_allowed,
+    )
+    clocks_allowed = frozenset(
+        {"accepted_at", "recorded_at", "mapping_available_at", "computed_at", "published_at"}
+    )
+    clocks_raw = _strict_wire_mapping(
+        raw["clocks"],
+        field_name="selected_raw_fact.clocks",
+        allowed=clocks_allowed,
+        required=clocks_allowed,
+    )
+    unit: FactUnit | None = None
+    if raw["unit"] is not None:
+        unit_allowed = frozenset(
+            {"unit_id", "measures", "denominator_measures", "semantic_key"}
+        )
+        unit_raw = _strict_wire_mapping(
+            raw["unit"],
+            field_name="selected_raw_fact.unit",
+            allowed=unit_allowed,
+            required=unit_allowed,
+        )
+        measures = _wire_list(
+            unit_raw["measures"],
+            field_name="selected_raw_fact.unit.measures",
+            maximum=16,
+        )
+        denominator_measures = _wire_list(
+            unit_raw["denominator_measures"],
+            field_name="selected_raw_fact.unit.denominator_measures",
+            maximum=16,
+        )
+        try:
+            unit = FactUnit(
+                unit_id=unit_raw["unit_id"],
+                measures=list(measures),
+                denominator_measures=list(denominator_measures),
+            )
+        except (TypeError, ValueError) as exc:
+            raise QueryValidationError(f"invalid selected raw unit: {exc}") from exc
+        if canonical_json(unit.to_dict()) != canonical_json(unit_raw):
+            raise QueryValidationError("selected raw unit semantic_key is invalid")
+    try:
+        source = SourceIdentity(**source_raw)
+        context = FactContext(
+            context_id=context_raw["context_id"],
+            entity_scheme=context_raw["entity_scheme"],
+            entity_identifier=context_raw["entity_identifier"],
+            instant=context_raw["instant"],
+            start=context_raw["start"],
+            end=context_raw["end"],
+            explicit_dimensions=context_raw["explicit_dimensions"],
+            typed_dimensions=context_raw["typed_dimensions"],
+        )
+        clocks = TemporalClocks(**clocks_raw)
+        source_span: tuple[int, int] | None = None
+        if raw["source_span"] is not None:
+            span = _wire_list(
+                raw["source_span"],
+                field_name="selected_raw_fact.source_span",
+                maximum=2,
+            )
+            if len(span) != 2:
+                raise QueryValidationError(
+                    "selected_raw_fact.source_span must contain exactly two integers"
+                )
+            source_span = (span[0], span[1])
+        fact = RawFactOccurrence(
+            source=source,
+            concept_qname=raw["concept_qname"],
+            context=context,
+            clocks=clocks,
+            unit=unit,
+            dimensions_known=raw["dimensions_known"],
+            source_occurrence_key=raw["source_occurrence_key"],
+            raw_token=raw["raw_token"],
+            parsed_value=raw["parsed_value"],
+            is_nil=raw["is_nil"],
+            xml_lang=raw["xml_lang"],
+            decimals=raw["decimals"],
+            precision=raw["precision"],
+            inline_format=raw["inline_format"],
+            inline_sign=raw["inline_sign"],
+            inline_scale=raw["inline_scale"],
+            hidden=raw["hidden"],
+            source_span=source_span,
+            event_type=raw["event_type"],
+            revision_of=raw["revision_of"],
+            occurrence_id=raw["occurrence_id"],
+        )
+    except (TypeError, ValueError) as exc:
+        raise QueryValidationError(f"invalid selected raw fact: {exc}") from exc
+    if canonical_json(context.to_dict()) != canonical_json(context_raw):
+        raise QueryValidationError("selected raw context semantic_key is invalid")
+    if canonical_json(fact.to_dict()) != canonical_json(raw):
+        raise QueryValidationError("selected raw fact derived identity is invalid")
+    return fact
+
+
+def _cell_provenance_from_dict(value: Any) -> CellProvenance:
+    allowed = frozenset(
+        {
+            "kind",
+            "evaluation_policy",
+            "policy",
+            "source_snapshot_at",
+            "recorded_cutoff_at",
+            "source_entity_id",
+            "source",
+            "accession",
+            "document_id",
+            "source_url",
+            "source_body_sha256",
+            "form",
+            "filed_at",
+            "filing_metadata_available_at",
+            "filing_metadata_content_sha256",
+            "accepted_at",
+            "recorded_at",
+            "mapping_available_at",
+            "governance_available_at",
+            "computed_at",
+            "published_at",
+            "source_ready_at",
+            "system_ready_at",
+            "concept_qname",
+            "taxonomy",
+            "concept",
+            "unit",
+            "metric_rule_id",
+            "metric_rule_version",
+            "metric_rule_digest",
+            "mapping_rule_id",
+            "mapping_rule_version",
+            "mapping_digest",
+            "mapping_rule_ids",
+            "mapping_rule_versions",
+            "mapping_digests",
+            "formula_rule_id",
+            "formula_rule_version",
+            "formula_digest",
+            "catalog_id",
+            "catalog_version",
+            "catalog_digest",
+            "mapping_pack_version",
+            "mapping_pack_digest",
+            "formula_pack_version",
+            "formula_pack_digest",
+            "confidence",
+            "alias_priority",
+            "source_occurrence_ids",
+            "dependency_cell_ids",
+            "selected_raw_fact",
+            "reason",
+        }
+    )
+    raw = _strict_wire_mapping(
+        value,
+        field_name="cell.provenance",
+        allowed=allowed,
+        required=allowed,
+    )
+    selected = (
+        _raw_fact_from_dict(raw["selected_raw_fact"])
+        if raw["selected_raw_fact"] is not None
+        else None
+    )
+    mapping_rule_ids = _wire_list(
+        raw["mapping_rule_ids"],
+        field_name="cell.provenance.mapping_rule_ids",
+        maximum=HARD_MAX_PROVENANCE_IDS,
+    )
+    mapping_rule_versions = _wire_list(
+        raw["mapping_rule_versions"],
+        field_name="cell.provenance.mapping_rule_versions",
+        maximum=HARD_MAX_PROVENANCE_IDS,
+    )
+    mapping_digests = _wire_list(
+        raw["mapping_digests"],
+        field_name="cell.provenance.mapping_digests",
+        maximum=HARD_MAX_PROVENANCE_IDS,
+    )
+    source_occurrence_ids = _wire_list(
+        raw["source_occurrence_ids"],
+        field_name="cell.provenance.source_occurrence_ids",
+        maximum=HARD_MAX_PROVENANCE_IDS,
+    )
+    dependency_cell_ids = _wire_list(
+        raw["dependency_cell_ids"],
+        field_name="cell.provenance.dependency_cell_ids",
+        maximum=HARD_MAX_DEPENDENCY_RECEIPTS,
+    )
+    try:
+        return CellProvenance(
+            **{
+                **raw,
+                "selected_raw_fact": selected,
+                "mapping_rule_ids": mapping_rule_ids,
+                "mapping_rule_versions": mapping_rule_versions,
+                "mapping_digests": mapping_digests,
+                "source_occurrence_ids": source_occurrence_ids,
+                "dependency_cell_ids": dependency_cell_ids,
+            }
+        )
+    except (TypeError, ValueError) as exc:
+        raise QueryValidationError(f"invalid cell provenance: {exc}") from exc
+
+
+def _cell_node_from_dict(value: Any) -> "CellNode":
+    allowed = frozenset(
+        {
+            "cell_id",
+            "governance_bundle_id",
+            "ticker",
+            "entity_id",
+            "metric_id",
+            "period",
+            "state",
+            "status",
+            "value",
+            "unit",
+            "reason",
+            "provenance",
+        }
+    )
+    raw = _strict_wire_mapping(
+        value,
+        field_name="cell_node",
+        allowed=allowed,
+        required=allowed,
+    )
+    if raw["status"] != raw["state"]:
+        raise QueryValidationError("cell node status must equal state")
+    return CellNode(
+        governance_bundle_id=raw["governance_bundle_id"],
+        ticker=raw["ticker"],
+        entity_id=raw["entity_id"],
+        metric_id=raw["metric_id"],
+        period=_period_request_from_dict(raw["period"]),
+        state=raw["state"],
+        value=raw["value"],
+        unit=raw["unit"],
+        provenance=CellProvenance.from_dict(raw["provenance"]),
+        reason=raw["reason"],
+        cell_id=raw["cell_id"],
+    )
+
 
 @dataclass(frozen=True)
-class MetricCell:
-    """One normalized result or an explicit no-result state."""
+class CellNode:
+    """One immutable row in a non-recursive metric receipt DAG."""
 
+    governance_bundle_id: str
     ticker: str
     entity_id: str
     metric_id: str
@@ -1161,22 +1643,27 @@ class MetricCell:
     cell_id: str | None = None
 
     def __post_init__(self) -> None:
+        bundle_id = _require_text(
+            self.governance_bundle_id,
+            field_name="governance_bundle_id",
+        )
+        if not _SHA256_RE.fullmatch(bundle_id):
+            raise QueryValidationError("governance_bundle_id must be lowercase 64-hex")
         ticker = _require_text(self.ticker, field_name="ticker").upper()
         if not _TICKER_RE.fullmatch(ticker):
             raise QueryValidationError(f"invalid ticker: {self.ticker!r}")
-        state = CellState(self.state)
+        try:
+            state = CellState(self.state)
+        except ValueError as exc:
+            raise QueryValidationError(f"invalid cell state: {self.state!r}") from exc
         if not isinstance(self.period, PeriodRequest):
             raise TypeError("period must be a PeriodRequest")
         if not isinstance(self.provenance, CellProvenance):
             raise TypeError("provenance must be CellProvenance")
-        parsed_value: Decimal | None
         if state is CellState.VALUE:
             if self.value is None:
                 raise QueryValidationError("value cells require a Decimal value")
-            try:
-                parsed_value = _bounded_decimal(self.value, field_name="cell value")
-            except QueryValidationError as exc:
-                raise QueryValidationError(str(exc)) from exc
+            parsed_value = _bounded_decimal(self.value, field_name="cell value")
             if not self.unit:
                 raise QueryValidationError("value cells require a unit")
         else:
@@ -1191,38 +1678,8 @@ class MetricCell:
             raise QueryValidationError("value cells cannot carry a reason")
         if state is not CellState.VALUE and reason is None:
             raise QueryValidationError("missing/not_evaluable cells require a reason")
-        payload = {
-            "ticker": ticker,
-            "entity_id": entity_id,
-            "metric_id": metric_id,
-            "period": self.period.to_dict(),
-            "state": state.value,
-            "value": decimal_text(parsed_value),
-            "unit": unit,
-            "provenance": self.provenance.to_dict(),
-            "reason": reason,
-        }
-        expected_cell_id = stable_id("metric_cell", payload)
-        if self.cell_id is not None:
-            supplied_cell_id = _require_text(self.cell_id, field_name="cell_id")
-            if supplied_cell_id != expected_cell_id:
-                raise QueryValidationError("cell_id does not match the canonical cell payload")
         if reason != self.provenance.reason:
             raise QueryValidationError("cell reason must exactly match provenance.reason")
-        if self.provenance.kind is ProvenanceKind.FORMULA:
-            dependencies = self.provenance.dependency_cells
-            if any(
-                item.ticker != ticker or item.entity_id != entity_id
-                for item in dependencies
-            ):
-                raise QueryValidationError(
-                    "formula dependency receipts must match the formula cell entity"
-                )
-            dependency_metric_ids = tuple(item.metric_id for item in dependencies)
-            if len(set(dependency_metric_ids)) != len(dependency_metric_ids):
-                raise QueryValidationError(
-                    "formula dependency receipts must have unique metric_ids"
-                )
         if state is CellState.VALUE:
             if self.provenance.kind is ProvenanceKind.OPAQUE:
                 raise QueryValidationError("value cells cannot carry opaque provenance")
@@ -1230,6 +1687,7 @@ class MetricCell:
                 raise QueryValidationError("value cell unit must match provenance.unit")
             if self.provenance.kind is ProvenanceKind.DIRECT:
                 required = {
+                    "source_entity_id": self.provenance.source_entity_id,
                     "source": self.provenance.source,
                     "accession": self.provenance.accession,
                     "document_id": self.provenance.document_id,
@@ -1248,15 +1706,9 @@ class MetricCell:
                     "mapping_rule_version": self.provenance.mapping_rule_version,
                     "mapping_digest": self.provenance.mapping_digest,
                     "source_occurrence_ids": self.provenance.source_occurrence_ids,
+                    "selected_raw_fact": self.provenance.selected_raw_fact,
                 }
             else:
-                if any(
-                    item.state is not CellState.VALUE
-                    for item in self.provenance.dependency_cells
-                ):
-                    raise QueryValidationError(
-                        "value formula cells require value dependency receipts"
-                    )
                 required = {
                     "source": self.provenance.source,
                     "accession": self.provenance.accession,
@@ -1267,15 +1719,33 @@ class MetricCell:
                     "formula_rule_id": self.provenance.formula_rule_id,
                     "formula_rule_version": self.provenance.formula_rule_version,
                     "formula_digest": self.provenance.formula_digest,
-                    "dependency_receipts": self.provenance.dependency_cells,
+                    "dependency_cell_ids": self.provenance.dependency_cell_ids,
                 }
-            missing_receipts = tuple(name for name, value in required.items() if not value)
+            missing_receipts = tuple(name for name, item in required.items() if not item)
             if missing_receipts:
                 raise QueryValidationError(
                     "value cell provenance is incomplete: " + ", ".join(missing_receipts)
                 )
         elif self.provenance.kind is ProvenanceKind.OPAQUE and unit is not None:
             raise QueryValidationError("opaque cells cannot expose a governed unit")
+        payload = {
+            "governance_bundle_id": bundle_id,
+            "ticker": ticker,
+            "entity_id": entity_id,
+            "metric_id": metric_id,
+            "period": self.period.to_dict(),
+            "state": state.value,
+            "value": decimal_text(parsed_value),
+            "unit": unit,
+            "reason": reason,
+            "provenance": self.provenance.to_dict(),
+        }
+        expected_cell_id = stable_id("metric_cell", payload)
+        if self.cell_id is not None:
+            supplied = _require_text(self.cell_id, field_name="cell_id")
+            if supplied != expected_cell_id:
+                raise QueryValidationError("cell_id does not match the canonical cell payload")
+        object.__setattr__(self, "governance_bundle_id", bundle_id)
         object.__setattr__(self, "ticker", ticker)
         object.__setattr__(self, "entity_id", entity_id)
         object.__setattr__(self, "metric_id", metric_id)
@@ -1287,16 +1757,12 @@ class MetricCell:
 
     @property
     def status(self) -> CellState:
-        """Compatibility-friendly status spelling for table renderers."""
         return self.state
-
-    @property
-    def is_value(self) -> bool:
-        return self.state is CellState.VALUE
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "cell_id": self.cell_id,
+            "governance_bundle_id": self.governance_bundle_id,
             "ticker": self.ticker,
             "entity_id": self.entity_id,
             "metric_id": self.metric_id,
@@ -1308,6 +1774,978 @@ class MetricCell:
             "reason": self.reason,
             "provenance": self.provenance.to_dict(),
         }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "CellNode":
+        return _cell_node_from_dict(value)
+
+
+@dataclass(frozen=True)
+class MetricCell:
+    """A self-validating root cell plus its bounded, flat dependency DAG."""
+
+    governance_bundle: GovernanceBundle
+    ticker: str
+    entity_id: str
+    metric_id: str
+    period: PeriodRequest
+    state: CellState | str
+    value: Decimal | str | int | None
+    unit: str | None
+    provenance: CellProvenance
+    dependency_nodes: tuple[CellNode, ...] = ()
+    reason: str | None = None
+    cell_id: str | None = None
+    proof_scope: str = RECEIPT_PROOF_SCOPE
+    selection_proof: str = RECEIPT_SELECTION_PROOF
+    _root_node: CellNode = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.governance_bundle, GovernanceBundle):
+            raise TypeError("governance_bundle must be a GovernanceBundle")
+        if self.proof_scope != RECEIPT_PROOF_SCOPE:
+            raise QueryValidationError("metric receipt proof_scope is unsupported")
+        if self.selection_proof != RECEIPT_SELECTION_PROOF:
+            raise QueryValidationError("metric receipt selection_proof is unsupported")
+        dependencies = _bounded_collection(
+            self.dependency_nodes,
+            field_name="dependency_nodes",
+            maximum=HARD_MAX_RECEIPT_NODES - 1,
+        )
+        if any(not isinstance(item, CellNode) for item in dependencies):
+            raise QueryValidationError("dependency_nodes must contain CellNode values")
+        root = CellNode(
+            governance_bundle_id=self.governance_bundle.content_id,
+            ticker=self.ticker,
+            entity_id=self.entity_id,
+            metric_id=self.metric_id,
+            period=self.period,
+            state=self.state,
+            value=self.value,
+            unit=self.unit,
+            provenance=self.provenance,
+            reason=self.reason,
+            cell_id=self.cell_id,
+        )
+        nodes: dict[str, CellNode] = {root.cell_id: root}
+        for node in dependencies:
+            if node.governance_bundle_id != self.governance_bundle.content_id:
+                raise QueryValidationError("receipt DAG node references a different governance bundle")
+            existing = nodes.get(node.cell_id)
+            if existing is not None:
+                if existing != node:
+                    raise QueryValidationError("receipt DAG contains conflicting duplicate cell_id")
+                raise QueryValidationError("dependency_nodes cannot repeat a cell_id")
+            nodes[node.cell_id] = node
+        postorder = _validate_receipt_graph(
+            root_cell_ids=(root.cell_id,),
+            nodes=nodes,
+            maximum_nodes=HARD_MAX_RECEIPT_NODES,
+            maximum_edges=HARD_MAX_RECEIPT_EDGES,
+            maximum_depth=HARD_MAX_RECEIPT_DEPTH,
+        )
+        _validate_node_semantics(
+            root_cell_ids=(root.cell_id,),
+            nodes=nodes,
+            postorder=postorder,
+            governance_bundle=self.governance_bundle,
+        )
+        object.__setattr__(self, "ticker", root.ticker)
+        object.__setattr__(self, "entity_id", root.entity_id)
+        object.__setattr__(self, "metric_id", root.metric_id)
+        object.__setattr__(self, "period", root.period)
+        object.__setattr__(self, "state", root.state)
+        object.__setattr__(self, "value", root.value)
+        object.__setattr__(self, "unit", root.unit)
+        object.__setattr__(self, "provenance", root.provenance)
+        object.__setattr__(self, "reason", root.reason)
+        object.__setattr__(self, "cell_id", root.cell_id)
+        object.__setattr__(
+            self,
+            "dependency_nodes",
+            tuple(sorted((node for key, node in nodes.items() if key != root.cell_id), key=lambda item: item.cell_id)),
+        )
+        object.__setattr__(self, "_root_node", root)
+
+    @property
+    def status(self) -> CellState:
+        return self.state
+
+    @property
+    def is_value(self) -> bool:
+        return self.state is CellState.VALUE
+
+    @property
+    def root_node(self) -> CellNode:
+        return self._root_node
+
+    @property
+    def nodes(self) -> tuple[CellNode, ...]:
+        return tuple(sorted((self._root_node, *self.dependency_nodes), key=lambda item: item.cell_id))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": CELL_RECEIPT_SCHEMA,
+            "proof_scope": self.proof_scope,
+            "selection_proof": self.selection_proof,
+            "governance_bundle": self.governance_bundle.to_dict(),
+            "root_cell_id": self.cell_id,
+            "nodes": [item.to_dict() for item in self.nodes],
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "MetricCell":
+        _admit_json_wire(value, field_name="metric_cell_receipt")
+        raw = _strict_wire_mapping(
+            value,
+            field_name="metric_cell_receipt",
+            allowed=frozenset(
+                {
+                    "schema",
+                    "proof_scope",
+                    "selection_proof",
+                    "governance_bundle",
+                    "root_cell_id",
+                    "nodes",
+                }
+            ),
+            required=frozenset(
+                {
+                    "schema",
+                    "proof_scope",
+                    "selection_proof",
+                    "governance_bundle",
+                    "root_cell_id",
+                    "nodes",
+                }
+            ),
+        )
+        if raw["schema"] != CELL_RECEIPT_SCHEMA:
+            raise QueryValidationError("unsupported metric cell receipt schema")
+        if raw["proof_scope"] != RECEIPT_PROOF_SCOPE:
+            raise QueryValidationError("metric receipt proof_scope is unsupported")
+        if raw["selection_proof"] != RECEIPT_SELECTION_PROOF:
+            raise QueryValidationError("metric receipt selection_proof is unsupported")
+        try:
+            bundle = GovernanceBundle.from_dict(raw["governance_bundle"])
+        except (TypeError, ValueError) as exc:
+            raise QueryValidationError(f"invalid governance bundle: {exc}") from exc
+        node_values = _wire_list(
+            raw["nodes"],
+            field_name="metric_cell_receipt.nodes",
+            maximum=HARD_MAX_RECEIPT_NODES,
+        )
+        nodes = tuple(CellNode.from_dict(item) for item in node_values)
+        root_id = _require_text(raw["root_cell_id"], field_name="root_cell_id")
+        matches = tuple(item for item in nodes if item.cell_id == root_id)
+        if len(matches) != 1:
+            raise QueryValidationError("metric receipt root_cell_id must identify exactly one node")
+        root = matches[0]
+        result = cls(
+            governance_bundle=bundle,
+            ticker=root.ticker,
+            entity_id=root.entity_id,
+            metric_id=root.metric_id,
+            period=root.period,
+            state=root.state,
+            value=root.value,
+            unit=root.unit,
+            provenance=root.provenance,
+            dependency_nodes=tuple(item for item in nodes if item.cell_id != root_id),
+            reason=root.reason,
+            cell_id=root.cell_id,
+            proof_scope=raw["proof_scope"],
+            selection_proof=raw["selection_proof"],
+        )
+        if canonical_json(result.to_dict()) != canonical_json(raw):
+            raise QueryValidationError("metric receipt is not in canonical wire form")
+        return result
+
+    verify_receipt_dict = from_dict
+
+
+def _validate_receipt_graph(
+    *,
+    root_cell_ids: Sequence[str],
+    nodes: Mapping[str, CellNode],
+    maximum_nodes: int,
+    maximum_edges: int,
+    maximum_depth: int,
+) -> tuple[str, ...]:
+    """Validate a flat DAG iteratively and return a children-first order."""
+    roots = _ordered_text_tuple(
+        root_cell_ids,
+        field_name="root_cell_ids",
+        maximum=HARD_MAX_CELLS,
+    )
+    if not roots:
+        raise QueryValidationError("receipt DAG requires at least one root_cell_id")
+    if len(nodes) > maximum_nodes:
+        raise QueryBoundsError(f"receipt DAG exceeds the node safety limit {maximum_nodes}")
+    for key, node in nodes.items():
+        if key != node.cell_id:
+            raise QueryValidationError("receipt DAG key does not match node.cell_id")
+    missing_roots = tuple(root for root in roots if root not in nodes)
+    if missing_roots:
+        raise QueryValidationError("receipt DAG root_cell_id does not identify a node")
+    edge_count = 0
+    for node in nodes.values():
+        edge_count += len(node.provenance.dependency_cell_ids)
+        if edge_count > maximum_edges:
+            raise QueryBoundsError(
+                f"receipt DAG exceeds the edge safety limit {maximum_edges}"
+            )
+        for dependency_id in node.provenance.dependency_cell_ids:
+            if dependency_id not in nodes:
+                raise QueryValidationError(
+                    "receipt DAG dependency_cell_id does not identify a node"
+                )
+
+    color: dict[str, int] = {}
+    postorder: list[str] = []
+    for root in roots:
+        if color.get(root) == 2:
+            continue
+        stack: list[tuple[str, bool, int]] = [(root, False, 1)]
+        while stack:
+            node_id, exiting, depth = stack.pop()
+            if depth > maximum_depth:
+                raise QueryBoundsError(
+                    f"receipt DAG exceeds the depth safety limit {maximum_depth}"
+                )
+            state = color.get(node_id, 0)
+            if exiting:
+                if state == 1:
+                    color[node_id] = 2
+                    postorder.append(node_id)
+                continue
+            if state == 2:
+                continue
+            if state == 1:
+                raise QueryValidationError("receipt DAG contains a dependency cycle")
+            color[node_id] = 1
+            stack.append((node_id, True, depth))
+            dependencies = nodes[node_id].provenance.dependency_cell_ids
+            for dependency_id in reversed(dependencies):
+                if dependency_id == node_id or color.get(dependency_id) == 1:
+                    raise QueryValidationError("receipt DAG contains a dependency cycle")
+                if color.get(dependency_id) != 2:
+                    stack.append((dependency_id, False, depth + 1))
+    if set(color) != set(nodes):
+        raise QueryValidationError("receipt DAG contains orphan/unreachable nodes")
+    return tuple(postorder)
+
+
+def _reachable_receipt_nodes(
+    root_cell_id: str,
+    nodes: Mapping[str, CellNode],
+    *,
+    maximum: int,
+) -> tuple[str, ...]:
+    """Collect one root's unique local proof without recursive expansion."""
+    pending = [root_cell_id]
+    seen: set[str] = set()
+    ordered: list[str] = []
+    edge_count = 0
+    while pending:
+        node_id = pending.pop()
+        if node_id in seen:
+            continue
+        if node_id not in nodes:
+            raise QueryValidationError("receipt dependency references a missing node")
+        seen.add(node_id)
+        ordered.append(node_id)
+        if len(seen) > maximum:
+            raise QueryBoundsError(f"local receipt exceeds the node safety limit {maximum}")
+        dependencies = nodes[node_id].provenance.dependency_cell_ids
+        edge_count += len(dependencies)
+        if edge_count > HARD_MAX_RECEIPT_EDGES:
+            raise QueryBoundsError(
+                f"local receipt exceeds the edge safety limit {HARD_MAX_RECEIPT_EDGES}"
+            )
+        pending.extend(reversed(dependencies))
+    return tuple(ordered)
+
+
+def _enforce_matrix_wire_budget(
+    *,
+    governance_bundle: GovernanceBundle,
+    policy: QueryPolicy,
+    entities: Sequence[QueryEntity],
+    metric_ids: Sequence[str],
+    periods: Sequence[PeriodRequest],
+    root_cell_ids: Sequence[str],
+    nodes: Sequence[CellNode],
+) -> None:
+    """Reject an in-memory matrix that could not pass its own wire parser."""
+    base = {
+        "schema": QUERY_SCHEMA,
+        "proof_scope": RECEIPT_PROOF_SCOPE,
+        "selection_proof": RECEIPT_SELECTION_PROOF,
+        "policy": policy.to_dict(),
+        "entities": [item.to_dict() for item in entities],
+        "metric_ids": list(metric_ids),
+        "periods": [item.to_dict() for item in periods],
+        "governance_bundle": governance_bundle.to_dict(),
+        "root_cell_ids": list(root_cell_ids),
+        "nodes": [],
+        "query_hash": "0" * 64,
+    }
+    encoded = canonical_json(base)
+    if len(encoded) > HARD_MAX_RECEIPT_WIRE_BYTES:
+        raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+    consumed = len(encoded.encode("utf-8")) + len(nodes)
+    if consumed > HARD_MAX_RECEIPT_WIRE_BYTES:
+        raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+    for node in nodes:
+        remaining = HARD_MAX_RECEIPT_WIRE_BYTES - consumed
+        node_text = canonical_json(node.to_dict())
+        if len(node_text) > remaining:
+            raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+        consumed += len(node_text.encode("utf-8"))
+        if consumed > HARD_MAX_RECEIPT_WIRE_BYTES:
+            raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+
+
+def _period_contract_error_for(
+    contract: MetricContract,
+    period: PeriodRequest,
+) -> str | None:
+    expected = PeriodKind(contract.period_constraints.kind)
+    actual = PeriodKind.INSTANT if period.normalized.is_instant else PeriodKind.DURATION
+    if actual is not expected:
+        return f"outside_period_constraint: metric requires {expected.value}, requested {actual.value}"
+    if expected is PeriodKind.DURATION:
+        days = period.normalized.duration_days
+        minimum = contract.period_constraints.min_duration_days
+        maximum = contract.period_constraints.max_duration_days
+        if days is None or minimum is None or maximum is None:
+            return "outside_period_constraint: duration bounds are not evaluable"
+        if not minimum <= days <= maximum:
+            return (
+                "outside_period_constraint: duration "
+                f"{days} days is outside {minimum}..{maximum}"
+            )
+    return None
+
+
+def _dependency_period_for(
+    output_period: PeriodRequest,
+    dependency: MetricContract,
+    formula: FormulaRule,
+) -> PeriodRequest:
+    dependency_kind = PeriodKind(dependency.period_constraints.kind)
+    if formula.dependency_period_alignment == "same_period":
+        return output_period
+    if formula.dependency_period_alignment == "ending_instant_to_duration":
+        if dependency_kind is PeriodKind.INSTANT:
+            return PeriodRequest(
+                kind=PeriodKind.INSTANT,
+                end=output_period.normalized.end,
+                fiscal_year=output_period.normalized.fiscal_year,
+                fiscal_quarter=output_period.normalized.fiscal_quarter,
+            )
+        return output_period
+    raise QueryValidationError(
+        "unsupported governed dependency_period_alignment: "
+        f"{formula.dependency_period_alignment}"
+    )
+
+
+def _eval_formula_decimal(expression: str, values: Mapping[str, Decimal]) -> Decimal:
+    """Evaluate governed arithmetic under the fixed query Decimal contract."""
+    try:
+        root = ast.parse(expression, mode="eval").body
+    except SyntaxError as exc:
+        raise QueryValidationError("formula expression is invalid") from exc
+    try:
+        with localcontext(_formula_context()):
+            normalized_values: dict[str, Decimal] = {}
+            for name, value in values.items():
+                if not isinstance(value, Decimal):
+                    raise QueryValidationError(
+                        f"formula dependency {name} is not a Decimal value"
+                    )
+                normalized_values[name] = +_bounded_decimal(
+                    value,
+                    field_name=f"formula dependency {name}",
+                )
+
+            def visit(node: ast.AST) -> Decimal:
+                if isinstance(node, ast.Name):
+                    try:
+                        return normalized_values[node.id]
+                    except KeyError as exc:
+                        raise QueryValidationError(
+                            f"formula references unbound dependency: {node.id}"
+                        ) from exc
+                if isinstance(node, ast.BinOp):
+                    left, right = visit(node.left), visit(node.right)
+                    if isinstance(node.op, ast.Add):
+                        return left + right
+                    if isinstance(node.op, ast.Sub):
+                        return left - right
+                    if isinstance(node.op, ast.Mult):
+                        return left * right
+                    if isinstance(node.op, ast.Div):
+                        if right == 0:
+                            raise ZeroDivisionError
+                        return left / right
+                raise QueryValidationError(
+                    "formula contains unsupported expression construct"
+                )
+
+            result = +visit(root)
+            if not result.is_finite():
+                raise QueryValidationError("formula result is not finite")
+            return _bounded_decimal(result, field_name="formula result")
+    except (DecimalException, OverflowError) as exc:
+        raise QueryValidationError(
+            "formula numeric result violates the fixed decimal contract"
+        ) from exc
+
+
+def _bundle_projection_receipt(bundle: GovernanceBundle) -> dict[str, str]:
+    """Recompute the legacy per-lane digests from the authoritative bundle."""
+    out: dict[str, str] = {}
+    contract_payloads = [_contract_definition_payload(item) for item in bundle.contracts]
+    if bundle.catalog is not None:
+        out.update(
+            {
+                "catalog_id": bundle.catalog.identifier,
+                "catalog_version": REGISTRY_PROJECTION_VERSION,
+                "catalog_content_sha256": _content_digest(
+                    {
+                        "schema": REGISTRY_PROJECTION_SCHEMA,
+                        "lane": "catalog",
+                        "catalog_id": bundle.catalog.identifier,
+                        "contracts": contract_payloads,
+                    }
+                ),
+            }
+        )
+    mapping_payloads = [
+        _mapping_rule_payload(mapping)
+        for contract in bundle.contracts
+        for mapping in contract.mappings
+    ]
+    if bundle.mapping_pack is not None:
+        out.update(
+            {
+                "mapping_pack_version": REGISTRY_PROJECTION_VERSION,
+                "mapping_pack_content_sha256": _content_digest(
+                    {
+                        "schema": REGISTRY_PROJECTION_SCHEMA,
+                        "lane": "mapping",
+                        "mappings": sorted(
+                            mapping_payloads,
+                            key=lambda item: (
+                                item["metric_id"],
+                                item["rule"]["rule_id"],
+                                item["rule"]["version"],
+                            ),
+                        ),
+                    }
+                ),
+            }
+        )
+    formula_payloads = [
+        _formula_rule_payload(contract.formula)
+        for contract in bundle.contracts
+        if contract.formula is not None
+    ]
+    if bundle.formula_pack is not None:
+        out.update(
+            {
+                "formula_pack_version": REGISTRY_PROJECTION_VERSION,
+                "formula_pack_content_sha256": _content_digest(
+                    {
+                        "schema": REGISTRY_PROJECTION_SCHEMA,
+                        "lane": "formula",
+                        "formulas": sorted(
+                            formula_payloads,
+                            key=lambda item: (
+                                item["metric_id"],
+                                item["rule"]["rule_id"],
+                                item["rule"]["version"],
+                            ),
+                        ),
+                    }
+                ),
+            }
+        )
+    return out
+
+
+def _governance_available_at(
+    bundle: GovernanceBundle,
+    contract: MetricContract,
+) -> datetime:
+    if bundle.catalog is None:
+        raise QueryValidationError("cell metric has no visible catalog lane")
+    clocks = [bundle.catalog.available_at, contract.rule.available_at]
+    if contract.mappings:
+        if bundle.mapping_pack is None:
+            raise QueryValidationError("direct metric has no visible mapping lane")
+        clocks.append(bundle.mapping_pack.available_at)
+        clocks.extend(mapping.rule.available_at for mapping in contract.mappings)
+    if contract.formula is not None:
+        if bundle.formula_pack is None:
+            raise QueryValidationError("formula metric has no visible formula lane")
+        clocks.extend((bundle.formula_pack.available_at, contract.formula.rule.available_at))
+    return max(clocks)
+
+
+def _validate_node_governance(
+    node: CellNode,
+    bundle: GovernanceBundle,
+    receipt: Mapping[str, str],
+) -> MetricContract:
+    provenance = node.provenance
+    if node.governance_bundle_id != bundle.content_id:
+        raise QueryValidationError("cell node governance bundle reference is invalid")
+    if provenance.recorded_cutoff_at != bundle.recorded_at:
+        raise QueryValidationError("cell cutoff does not match governance bundle cutoff")
+    try:
+        contract = bundle.metric(node.metric_id)
+    except KeyError as exc:
+        raise QueryValidationError("cell metric is absent from the governance bundle") from exc
+    if provenance.kind is ProvenanceKind.OPAQUE:
+        if contract.mappings or contract.formula is not None:
+            raise QueryValidationError("opaque provenance contradicts visible metric governance")
+        if (
+            node.state is not CellState.MISSING
+            or node.value is not None
+            or node.unit is not None
+            or node.reason != "governance unavailable at recorded_at cutoff"
+            or provenance.dependency_cell_ids
+        ):
+            raise QueryValidationError("opaque cell does not match governance-unavailable result")
+        return contract
+
+    expected_contract_digest = _content_digest(_contract_definition_payload(contract))
+    expected_contract = (
+        contract.rule.rule_id,
+        contract.rule.version,
+        expected_contract_digest,
+    )
+    actual_contract = (
+        provenance.metric_rule_id,
+        provenance.metric_rule_version,
+        provenance.metric_rule_digest,
+    )
+    if actual_contract != expected_contract:
+        raise QueryValidationError("cell metric contract receipt does not match governance bundle")
+    if bundle.catalog is None:
+        raise QueryValidationError("normalized cell requires a visible catalog lane")
+    expected_catalog = (
+        receipt.get("catalog_id"),
+        receipt.get("catalog_version"),
+        receipt.get("catalog_content_sha256"),
+    )
+    actual_catalog = (
+        provenance.catalog_id,
+        provenance.catalog_version,
+        provenance.catalog_digest,
+    )
+    if actual_catalog != expected_catalog:
+        raise QueryValidationError("cell catalog receipt does not match governance bundle")
+    expected_mapping_pack = (
+        receipt.get("mapping_pack_version"),
+        receipt.get("mapping_pack_content_sha256"),
+    )
+    actual_mapping_pack = (
+        provenance.mapping_pack_version,
+        provenance.mapping_pack_digest,
+    )
+    if any(item is not None for item in actual_mapping_pack):
+        if actual_mapping_pack != expected_mapping_pack:
+            raise QueryValidationError("cell mapping pack receipt does not match governance bundle")
+    expected_formula_pack = (
+        receipt.get("formula_pack_version"),
+        receipt.get("formula_pack_content_sha256"),
+    )
+    actual_formula_pack = (
+        provenance.formula_pack_version,
+        provenance.formula_pack_digest,
+    )
+    if any(item is not None for item in actual_formula_pack):
+        if actual_formula_pack != expected_formula_pack:
+            raise QueryValidationError("cell formula pack receipt does not match governance bundle")
+    if provenance.governance_available_at != _governance_available_at(bundle, contract):
+        raise QueryValidationError("cell governance availability does not match governance bundle")
+
+    if provenance.kind is ProvenanceKind.DIRECT:
+        if not contract.mappings or contract.formula is not None:
+            raise QueryValidationError("direct provenance contradicts metric governance")
+        expected_mapping_ids = tuple(sorted({item.rule.rule_id for item in contract.mappings}))
+        expected_mapping_versions = tuple(sorted({item.rule.version for item in contract.mappings}))
+        expected_mapping_digests = tuple(
+            sorted(_content_digest(_mapping_rule_payload(item)) for item in contract.mappings)
+        )
+        if provenance.mapping_rule_ids != expected_mapping_ids:
+            raise QueryValidationError("cell omits or invents a visible mapping rule ID")
+        if provenance.mapping_rule_versions != expected_mapping_versions:
+            raise QueryValidationError("cell omits or invents a visible mapping rule version")
+        if provenance.mapping_digests != expected_mapping_digests:
+            raise QueryValidationError("cell omits or invents a visible mapping rule digest")
+        if provenance.confidence != contract.confidence:
+            raise QueryValidationError("direct cell confidence does not match metric contract")
+    else:
+        formula = contract.formula
+        if formula is None or contract.mappings:
+            raise QueryValidationError("formula provenance contradicts metric governance")
+        expected_formula = (
+            formula.rule.rule_id,
+            formula.rule.version,
+            _content_digest(_formula_rule_payload(formula)),
+        )
+        actual_formula = (
+            provenance.formula_rule_id,
+            provenance.formula_rule_version,
+            provenance.formula_digest,
+        )
+        if actual_formula != expected_formula:
+            raise QueryValidationError("cell formula receipt does not match governance bundle")
+        if provenance.confidence != formula.rule.confidence:
+            raise QueryValidationError("formula cell confidence does not match formula rule")
+    return contract
+
+
+def _selected_mapping_alias(
+    provenance: CellProvenance,
+    contract: MetricContract,
+) -> ConceptAlias | None:
+    selected = (
+        provenance.mapping_rule_id,
+        provenance.mapping_rule_version,
+        provenance.mapping_digest,
+    )
+    if all(item is None for item in selected):
+        if any(
+            item is not None
+            for item in (
+                provenance.concept_qname,
+                provenance.taxonomy,
+                provenance.concept,
+                provenance.alias_priority,
+            )
+        ):
+            raise QueryValidationError("cell alias receipt is incomplete")
+        return None
+    if any(item is None for item in selected):
+        raise QueryValidationError("cell selected mapping receipt is incomplete")
+    matches = tuple(
+        mapping
+        for mapping in contract.mappings
+        if (
+            mapping.rule.rule_id,
+            mapping.rule.version,
+            _content_digest(_mapping_rule_payload(mapping)),
+        )
+        == selected
+    )
+    if len(matches) != 1:
+        raise QueryValidationError("cell selected mapping is absent or ambiguous in bundle")
+    aliases = tuple(
+        alias
+        for alias in matches[0].taxonomy_concept_aliases
+        if (
+            f"{alias.taxonomy}:{alias.concept}" == provenance.concept_qname
+            and alias.taxonomy == provenance.taxonomy
+            and alias.concept == provenance.concept
+            and alias.priority == provenance.alias_priority
+        )
+    )
+    if len(aliases) != 1:
+        raise QueryValidationError("cell selected alias does not match governed mapping")
+    return aliases[0]
+
+
+def _validate_direct_node(node: CellNode, contract: MetricContract) -> None:
+    provenance = node.provenance
+    alias = _selected_mapping_alias(provenance, contract)
+    period_error = _period_contract_error_for(contract, node.period)
+    if period_error is not None:
+        if (
+            node.state is not CellState.NOT_EVALUABLE
+            or node.value is not None
+            or node.reason != period_error
+            or node.unit != (contract.units[0] if contract.units else None)
+            or provenance.selected_raw_fact is not None
+        ):
+            raise QueryValidationError("direct period rejection does not match governance")
+        return
+    if node.state is not CellState.VALUE:
+        if provenance.selected_raw_fact is not None:
+            raise QueryValidationError("non-value direct cell cannot claim selected raw evidence")
+        return
+    fact = provenance.selected_raw_fact
+    if fact is None or alias is None:
+        raise QueryValidationError("direct value cell requires selected raw fact and alias")
+    if provenance.form not in contract.period_constraints.allowed_forms:
+        raise QueryValidationError("direct value filing form violates metric contract")
+    if provenance.source_entity_id != node.entity_id or fact.source.entity_id != node.entity_id:
+        raise QueryValidationError("selected raw fact entity does not match cell entity")
+    if fact.parsed_value is None or _bounded_decimal(fact.parsed_value, field_name="raw fact value") != node.value:
+        raise QueryValidationError("selected raw fact value does not match cell value")
+    if _canonical_raw_unit(fact) != node.unit or node.unit not in contract.units:
+        raise QueryValidationError("selected raw fact unit does not match governed cell unit")
+    if fact.concept_qname != provenance.concept_qname:
+        raise QueryValidationError("selected raw fact concept does not match provenance")
+    if fact.concept_qname != f"{alias.taxonomy}:{alias.concept}":
+        raise QueryValidationError("selected raw fact concept does not match governed alias")
+    expected_source = (
+        fact.source.source,
+        fact.source.accession,
+        fact.source.document_id,
+        fact.source.source_url,
+        fact.source.body_sha256,
+    )
+    actual_source = (
+        provenance.source,
+        provenance.accession,
+        provenance.document_id,
+        provenance.source_url,
+        provenance.source_body_sha256,
+    )
+    if actual_source != expected_source:
+        raise QueryValidationError("selected raw fact source identity does not match provenance")
+    expected_clocks = (
+        fact.accepted_at,
+        fact.recorded_at,
+        fact.mapping_available_at,
+        fact.computed_at,
+        fact.published_at,
+    )
+    actual_clocks = (
+        provenance.accepted_at,
+        provenance.recorded_at,
+        provenance.mapping_available_at,
+        provenance.computed_at,
+        provenance.published_at,
+    )
+    if actual_clocks != expected_clocks:
+        raise QueryValidationError("selected raw fact clocks do not match provenance")
+    if fact.occurrence_id not in provenance.source_occurrence_ids:
+        raise QueryValidationError("selected raw occurrence is absent from lineage IDs")
+    if provenance.source_ready_at is None or fact.accepted_at is None:
+        raise QueryValidationError("selected raw fact requires source readiness")
+    if provenance.source_ready_at < fact.accepted_at:
+        raise QueryValidationError("source_ready_at precedes selected raw fact")
+    if (
+        provenance.system_ready_at is None
+        or provenance.system_ready_at < fact.clocks.system_ready_at
+    ):
+        raise QueryValidationError("system_ready_at precedes selected raw fact")
+    if not BitemporalMetricQueryEngine._context_matches_period(fact, node.period):
+        raise QueryValidationError("selected raw fact period does not match cell period")
+    if not BitemporalMetricQueryEngine._fact_dimensions_allowed(fact, contract):
+        raise QueryValidationError("selected raw fact dimensions violate metric contract")
+
+
+def _expected_formula_outcome(
+    dependencies: Sequence[CellNode],
+    formula: FormulaRule,
+) -> tuple[CellState, Decimal | None, str | None]:
+    not_evaluable = [item for item in dependencies if item.state is CellState.NOT_EVALUABLE]
+    if not_evaluable:
+        return (
+            CellState.NOT_EVALUABLE,
+            None,
+            "incompatible_dependencies: "
+            + ", ".join(
+                f"{item.metric_id} ({item.reason or 'not_evaluable'})"
+                for item in not_evaluable
+            ),
+        )
+    missing = [item for item in dependencies if item.state is CellState.MISSING]
+    if missing:
+        return (
+            CellState.MISSING,
+            None,
+            "missing_dependency: "
+            + ", ".join(
+                f"{item.metric_id} ({item.reason or 'missing'})" for item in missing
+            ),
+        )
+    revision_bases = {
+        (
+            item.provenance.source,
+            item.provenance.accession,
+            item.provenance.document_id,
+            item.provenance.source_body_sha256,
+        )
+        for item in dependencies
+    }
+    if (
+        len(revision_bases) != 1
+        or any(any(part is None for part in basis) for basis in revision_bases)
+    ):
+        return (
+            CellState.NOT_EVALUABLE,
+            None,
+            "incompatible_revision_basis: formula dependencies require one shared source accession/document",
+        )
+    values = {item.metric_id: item.value for item in dependencies}
+    if any(value is None for value in values.values()):
+        raise QueryValidationError("formula value dependency lacks a Decimal value")
+    try:
+        result = _eval_formula_decimal(
+            formula.expression,
+            {key: value for key, value in values.items() if value is not None},
+        )
+    except ZeroDivisionError:
+        return CellState.NOT_EVALUABLE, None, "division_by_zero"
+    except QueryValidationError as exc:
+        return CellState.NOT_EVALUABLE, None, str(exc)
+    return CellState.VALUE, result, None
+
+
+def _validate_formula_node(
+    node: CellNode,
+    contract: MetricContract,
+    nodes: Mapping[str, CellNode],
+) -> None:
+    formula = contract.formula
+    if formula is None:
+        raise QueryValidationError("formula node has no governed formula")
+    period_error = _period_contract_error_for(contract, node.period)
+    if period_error is not None:
+        if node.provenance.dependency_cell_ids:
+            raise QueryValidationError("period-invalid formula cell cannot claim dependencies")
+        if (
+            node.state is not CellState.NOT_EVALUABLE
+            or node.value is not None
+            or node.reason != period_error
+            or node.unit != formula.output_unit
+        ):
+            raise QueryValidationError("formula period rejection does not match governance")
+        return
+    dependency_ids = node.provenance.dependency_cell_ids
+    dependencies = tuple(nodes[item] for item in dependency_ids)
+    if tuple(item.metric_id for item in dependencies) != formula.dependencies:
+        raise QueryValidationError("formula dependency metric IDs/order do not match governance")
+    for dependency, dependency_id in zip(dependencies, formula.dependencies):
+        dependency_contract = None
+        try:
+            # Every dependency was already validated against the same bundle;
+            # its contract is resolved again by the caller's closure below.
+            dependency_contract = node  # type-narrowing placeholder
+        finally:
+            del dependency_contract
+        if dependency.ticker != node.ticker or dependency.entity_id != node.entity_id:
+            raise QueryValidationError("formula dependency entity does not match parent cell")
+    # Contract resolution needs the bundle, but period alignment can be checked
+    # by the outer semantic validator before calling this helper.
+    expected_mapping_ids = tuple(
+        sorted(
+            {
+                identifier
+                for item in dependencies
+                for identifier in item.provenance.mapping_rule_ids
+            }
+        )
+    )
+    expected_mapping_versions = tuple(
+        sorted(
+            {
+                version
+                for item in dependencies
+                for version in item.provenance.mapping_rule_versions
+            }
+        )
+    )
+    expected_mapping_digests = tuple(
+        sorted(
+            {
+                digest
+                for item in dependencies
+                for digest in item.provenance.mapping_digests
+            }
+        )
+    )
+    provenance = node.provenance
+    if provenance.mapping_rule_ids != expected_mapping_ids:
+        raise QueryValidationError("formula mapping rule ID summary does not match dependencies")
+    if provenance.mapping_rule_versions != expected_mapping_versions:
+        raise QueryValidationError("formula mapping rule version summary does not match dependencies")
+    if provenance.mapping_digests != expected_mapping_digests:
+        raise QueryValidationError("formula mapping digest summary does not match dependencies")
+    for field_name in ("source", "accession", "document_id", "source_body_sha256", "source_url"):
+        values = {getattr(item.provenance, field_name) for item in dependencies}
+        expected = next(iter(values)) if len(values) == 1 else None
+        if getattr(provenance, field_name) != expected:
+            raise QueryValidationError(f"formula {field_name} summary does not match dependencies")
+    expected_source_ready = _clock_max(
+        item.provenance.source_ready_at for item in dependencies
+    )
+    expected_system_ready = _clock_max(
+        [max(contract.rule.available_at, formula.rule.available_at)]
+        + [item.provenance.system_ready_at for item in dependencies]
+    )
+    if provenance.source_ready_at != expected_source_ready:
+        raise QueryValidationError("formula source_ready_at does not match dependencies")
+    if provenance.system_ready_at != expected_system_ready:
+        raise QueryValidationError("formula system_ready_at does not match dependencies")
+    expected_state, expected_value, expected_reason = _expected_formula_outcome(
+        dependencies,
+        formula,
+    )
+    if (
+        node.state is not expected_state
+        or node.value != expected_value
+        or node.reason != expected_reason
+        or node.unit != formula.output_unit
+    ):
+        raise QueryValidationError("formula cell result does not recompute from governed dependencies")
+
+
+def _validate_node_semantics(
+    *,
+    root_cell_ids: Sequence[str],
+    nodes: Mapping[str, CellNode],
+    postorder: Sequence[str],
+    governance_bundle: GovernanceBundle,
+) -> None:
+    del root_cell_ids  # graph validation already binds reachability to roots.
+    receipt = _bundle_projection_receipt(governance_bundle)
+    contracts: dict[str, MetricContract] = {}
+    for node_id in postorder:
+        node = nodes[node_id]
+        contract = _validate_node_governance(node, governance_bundle, receipt)
+        contracts[node_id] = contract
+        if node.provenance.kind is ProvenanceKind.OPAQUE:
+            continue
+        if node.provenance.kind is ProvenanceKind.DIRECT:
+            _validate_direct_node(node, contract)
+            continue
+        formula = contract.formula
+        if formula is None:
+            raise QueryValidationError("formula node has no governed formula")
+        if _period_contract_error_for(contract, node.period) is None:
+            dependencies = tuple(
+                nodes[item] for item in node.provenance.dependency_cell_ids
+            )
+            for dependency, dependency_metric_id in zip(
+                dependencies,
+                formula.dependencies,
+            ):
+                dependency_contract = contracts[dependency.cell_id]
+                expected_period = _dependency_period_for(
+                    node.period,
+                    dependency_contract,
+                    formula,
+                )
+                if dependency.metric_id != dependency_metric_id:
+                    raise QueryValidationError(
+                        "formula dependency metric IDs/order do not match governance"
+                    )
+                if dependency.period != expected_period:
+                    raise QueryValidationError(
+                        "formula dependency period alignment does not match governance"
+                    )
+        _validate_formula_node(node, contract, nodes)
 
 
 @dataclass(frozen=True)
@@ -1388,31 +2826,61 @@ def _canonical_registry_receipt(value: Mapping[str, Any]) -> dict[str, str]:
 class MetricMatrix:
     """A cross-company/metric/period result with stable JSON and CSV exports."""
 
+    governance_bundle: GovernanceBundle
     policy: QueryPolicy
     entities: tuple[QueryEntity, ...]
     metric_ids: tuple[str, ...]
     periods: tuple[PeriodRequest, ...]
     cells: tuple[MetricCell, ...]
-    registry_receipt: Mapping[str, Any]
     schema: str = QUERY_SCHEMA
+    proof_scope: str = RECEIPT_PROOF_SCOPE
+    selection_proof: str = RECEIPT_SELECTION_PROOF
+    _nodes: tuple[CellNode, ...] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if self.schema != QUERY_SCHEMA:
             raise QueryValidationError(f"unsupported matrix schema: {self.schema}")
+        if not isinstance(self.governance_bundle, GovernanceBundle):
+            raise TypeError("governance_bundle must be a GovernanceBundle")
         if not isinstance(self.policy, QueryPolicy):
             raise TypeError("policy must be QueryPolicy")
-        if any(not isinstance(item, QueryEntity) for item in self.entities):
+        if self.governance_bundle.recorded_at != self.policy.recorded_at:
+            raise QueryValidationError("matrix governance cutoff does not match matrix policy")
+        if self.proof_scope != RECEIPT_PROOF_SCOPE:
+            raise QueryValidationError("matrix receipt proof_scope is unsupported")
+        if self.selection_proof != RECEIPT_SELECTION_PROOF:
+            raise QueryValidationError("matrix receipt selection_proof is unsupported")
+        entities_input = _bounded_collection(
+            self.entities,
+            field_name="matrix.entities",
+            maximum=HARD_MAX_TICKERS,
+        )
+        metrics_input = _bounded_collection(
+            self.metric_ids,
+            field_name="matrix.metric_ids",
+            maximum=HARD_MAX_METRICS,
+        )
+        periods_input = _bounded_collection(
+            self.periods,
+            field_name="matrix.periods",
+            maximum=HARD_MAX_PERIODS,
+        )
+        cells_input = _bounded_collection(
+            self.cells,
+            field_name="matrix.cells",
+            maximum=HARD_MAX_CELLS,
+        )
+        if any(not isinstance(item, QueryEntity) for item in entities_input):
             raise TypeError("matrix entities must be QueryEntity instances")
-        if any(not isinstance(item, PeriodRequest) for item in self.periods):
+        if any(not isinstance(item, PeriodRequest) for item in periods_input):
             raise TypeError("matrix periods must be PeriodRequest instances")
-        if any(not isinstance(item, MetricCell) for item in self.cells):
+        if any(not isinstance(item, MetricCell) for item in cells_input):
             raise TypeError("matrix cells must be MetricCell instances")
-        receipt = _canonical_registry_receipt(self.registry_receipt)
-        entities = tuple(sorted(self.entities, key=lambda item: (item.ticker, item.entity_id)))
-        metrics_raw = tuple(_require_text(item, field_name="metric_id") for item in self.metric_ids)
+        entities = tuple(sorted(entities_input, key=lambda item: (item.ticker, item.entity_id)))
+        metrics_raw = tuple(_require_text(item, field_name="metric_id") for item in metrics_input)
         metrics = tuple(sorted(metrics_raw))
-        periods = tuple(sorted(self.periods, key=lambda item: item.key))
-        cells = tuple(sorted(self.cells, key=_cell_sort_key))
+        periods = tuple(sorted(periods_input, key=lambda item: item.key))
+        cells = tuple(sorted(cells_input, key=_cell_sort_key))
         if not entities or not metrics or not periods:
             raise QueryValidationError("matrix requires at least one entity, metric, and period")
         if len({item.ticker for item in entities}) != len(entities):
@@ -1443,6 +2911,8 @@ class MetricMatrix:
         if cell_keys != expected_keys:
             raise QueryValidationError("matrix cells do not match the declared entity/metric/period membership")
         for cell in cells:
+            if cell.governance_bundle.content_id != self.governance_bundle.content_id:
+                raise QueryValidationError("matrix cells must reference one governance bundle")
             if entity_by_ticker.get(cell.ticker) != cell.entity_id:
                 raise QueryValidationError("matrix cell ticker/entity identity does not match its entity binding")
             provenance = cell.provenance
@@ -1452,83 +2922,73 @@ class MetricMatrix:
                 or provenance.recorded_cutoff_at != self.policy.recorded_at
             ):
                 raise QueryValidationError("matrix cell provenance policy/cutoffs do not match matrix policy")
-        pending = list(cells)
-        inspected_cell_ids: set[str] = set()
-        while pending:
-            cell = pending.pop()
-            if cell.cell_id in inspected_cell_ids:
-                continue
-            inspected_cell_ids.add(cell.cell_id)
-            provenance = cell.provenance
+        node_by_id: dict[str, CellNode] = {}
+        for cell in cells:
+            for node in cell.nodes:
+                existing_node = node_by_id.get(node.cell_id)
+                if existing_node is not None and existing_node != node:
+                    raise QueryValidationError("matrix contains conflicting duplicate DAG nodes")
+                node_by_id[node.cell_id] = node
+                if len(node_by_id) > HARD_MAX_MATRIX_NODES:
+                    raise QueryBoundsError(
+                        f"matrix receipt exceeds the node safety limit {HARD_MAX_MATRIX_NODES}"
+                    )
+        root_cell_ids = tuple(cell.cell_id for cell in cells)
+        postorder = _validate_receipt_graph(
+            root_cell_ids=root_cell_ids,
+            nodes=node_by_id,
+            maximum_nodes=HARD_MAX_MATRIX_NODES,
+            maximum_edges=HARD_MAX_MATRIX_EDGES,
+            maximum_depth=HARD_MAX_RECEIPT_DEPTH,
+        )
+        for node in node_by_id.values():
+            provenance = node.provenance
             if (
                 provenance.policy is not self.policy.selection
                 or provenance.source_snapshot_at != self.policy.source_snapshot_at
                 or provenance.recorded_cutoff_at != self.policy.recorded_at
             ):
                 raise QueryValidationError(
-                    "embedded cell provenance policy/cutoffs do not match matrix policy"
+                    "matrix DAG node policy/cutoffs do not match matrix policy"
                 )
-            if provenance.kind is ProvenanceKind.OPAQUE:
-                continue
-            expected_catalog = (
-                provenance.catalog_id,
-                provenance.catalog_version,
-                provenance.catalog_digest,
-            )
-            actual_catalog = (
-                receipt.get("catalog_id"),
-                receipt.get("catalog_version"),
-                receipt.get("catalog_content_sha256"),
-            )
-            if expected_catalog != actual_catalog:
-                raise QueryValidationError(
-                    "cell catalog receipt does not match matrix registry receipt"
-                )
-            for lane, expected, actual in (
-                (
-                    "mapping",
-                    (provenance.mapping_pack_version, provenance.mapping_pack_digest),
-                    (
-                        receipt.get("mapping_pack_version"),
-                        receipt.get("mapping_pack_content_sha256"),
-                    ),
-                ),
-                (
-                    "formula",
-                    (provenance.formula_pack_version, provenance.formula_pack_digest),
-                    (
-                        receipt.get("formula_pack_version"),
-                        receipt.get("formula_pack_content_sha256"),
-                    ),
-                ),
-            ):
-                if any(value is not None for value in expected) and expected != actual:
-                    raise QueryValidationError(
-                        f"cell {lane} pack receipt does not match matrix registry receipt"
-                    )
-            pending.extend(provenance.dependency_cells)
+        _validate_node_semantics(
+            root_cell_ids=root_cell_ids,
+            nodes=node_by_id,
+            postorder=postorder,
+            governance_bundle=self.governance_bundle,
+        )
+        ordered_nodes = tuple(sorted(node_by_id.values(), key=lambda item: item.cell_id))
+        _enforce_matrix_wire_budget(
+            governance_bundle=self.governance_bundle,
+            policy=self.policy,
+            entities=entities,
+            metric_ids=metrics,
+            periods=periods,
+            root_cell_ids=root_cell_ids,
+            nodes=ordered_nodes,
+        )
         object.__setattr__(self, "entities", entities)
         object.__setattr__(self, "metric_ids", metrics)
         object.__setattr__(self, "periods", periods)
         object.__setattr__(self, "cells", cells)
-        # The receipt participates in the query hash.  A frozen dataclass is
-        # not enough if this remains a caller-owned mutable dict: mutating it
-        # after construction would silently rewrite a matrix's identity.
         object.__setattr__(
             self,
-            "registry_receipt",
-            MappingProxyType(receipt),
+            "_nodes",
+            ordered_nodes,
         )
 
     def _unsigned_dict(self) -> dict[str, Any]:
         return {
             "schema": self.schema,
+            "proof_scope": self.proof_scope,
+            "selection_proof": self.selection_proof,
             "policy": self.policy.to_dict(),
             "entities": [item.to_dict() for item in self.entities],
             "metric_ids": list(self.metric_ids),
             "periods": [item.to_dict() for item in self.periods],
-            "registry": dict(self.registry_receipt),
-            "cells": [item.to_dict() for item in self.cells],
+            "governance_bundle": self.governance_bundle.to_dict(),
+            "root_cell_ids": [item.cell_id for item in self.cells],
+            "nodes": [item.to_dict() for item in self._nodes],
         }
 
     @property
@@ -1540,6 +3000,156 @@ class MetricMatrix:
         value["query_hash"] = self.query_hash
         return value
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "MetricMatrix":
+        _admit_json_wire(value, field_name="metric_matrix_receipt")
+        allowed = frozenset(
+            {
+                "schema",
+                "proof_scope",
+                "selection_proof",
+                "policy",
+                "entities",
+                "metric_ids",
+                "periods",
+                "governance_bundle",
+                "root_cell_ids",
+                "nodes",
+                "query_hash",
+            }
+        )
+        raw = _strict_wire_mapping(
+            value,
+            field_name="metric_matrix_receipt",
+            allowed=allowed,
+            required=allowed,
+        )
+        if raw["schema"] != QUERY_SCHEMA:
+            raise QueryValidationError("unsupported matrix schema")
+        if raw["proof_scope"] != RECEIPT_PROOF_SCOPE:
+            raise QueryValidationError("matrix receipt proof_scope is unsupported")
+        if raw["selection_proof"] != RECEIPT_SELECTION_PROOF:
+            raise QueryValidationError("matrix receipt selection_proof is unsupported")
+        policy_raw = _strict_wire_mapping(
+            raw["policy"],
+            field_name="matrix.policy",
+            allowed=frozenset({"selection", "source_snapshot_at", "recorded_at"}),
+            required=frozenset({"selection", "source_snapshot_at", "recorded_at"}),
+        )
+        policy = QueryPolicy(**policy_raw)
+        try:
+            bundle = GovernanceBundle.from_dict(raw["governance_bundle"])
+        except (TypeError, ValueError) as exc:
+            raise QueryValidationError(f"invalid governance bundle: {exc}") from exc
+        entity_values = _wire_list(
+            raw["entities"],
+            field_name="matrix.entities",
+            maximum=HARD_MAX_TICKERS,
+        )
+        entities: list[QueryEntity] = []
+        for item in entity_values:
+            entity_raw = _strict_wire_mapping(
+                item,
+                field_name="matrix.entity",
+                allowed=frozenset({"ticker", "entity_id"}),
+                required=frozenset({"ticker", "entity_id"}),
+            )
+            entities.append(QueryEntity(**entity_raw))
+        metric_ids = tuple(
+            _require_text(item, field_name="matrix.metric_id")
+            for item in _wire_list(
+                raw["metric_ids"],
+                field_name="matrix.metric_ids",
+                maximum=HARD_MAX_METRICS,
+            )
+        )
+        periods = tuple(
+            _period_request_from_dict(item)
+            for item in _wire_list(
+                raw["periods"],
+                field_name="matrix.periods",
+                maximum=HARD_MAX_PERIODS,
+            )
+        )
+        node_values = _wire_list(
+            raw["nodes"],
+            field_name="matrix.nodes",
+            maximum=HARD_MAX_MATRIX_NODES,
+        )
+        node_by_id: dict[str, CellNode] = {}
+        for item in node_values:
+            node = CellNode.from_dict(item)
+            if node.cell_id in node_by_id:
+                raise QueryValidationError("matrix wire contains duplicate cell_id nodes")
+            node_by_id[node.cell_id] = node
+        root_ids = _ordered_text_tuple(
+            _wire_list(
+                raw["root_cell_ids"],
+                field_name="matrix.root_cell_ids",
+                maximum=HARD_MAX_CELLS,
+            ),
+            field_name="matrix.root_cell_ids",
+            maximum=HARD_MAX_CELLS,
+        )
+        postorder = _validate_receipt_graph(
+            root_cell_ids=root_ids,
+            nodes=node_by_id,
+            maximum_nodes=HARD_MAX_MATRIX_NODES,
+            maximum_edges=HARD_MAX_MATRIX_EDGES,
+            maximum_depth=HARD_MAX_RECEIPT_DEPTH,
+        )
+        _validate_node_semantics(
+            root_cell_ids=root_ids,
+            nodes=node_by_id,
+            postorder=postorder,
+            governance_bundle=bundle,
+        )
+        cells: list[MetricCell] = []
+        for root_id in root_ids:
+            root = node_by_id[root_id]
+            reachable = _reachable_receipt_nodes(
+                root_id,
+                node_by_id,
+                maximum=HARD_MAX_RECEIPT_NODES,
+            )
+            cells.append(
+                MetricCell(
+                    governance_bundle=bundle,
+                    ticker=root.ticker,
+                    entity_id=root.entity_id,
+                    metric_id=root.metric_id,
+                    period=root.period,
+                    state=root.state,
+                    value=root.value,
+                    unit=root.unit,
+                    provenance=root.provenance,
+                    dependency_nodes=tuple(
+                        node_by_id[item] for item in reachable if item != root_id
+                    ),
+                    reason=root.reason,
+                    cell_id=root.cell_id,
+                )
+            )
+        result = cls(
+            governance_bundle=bundle,
+            policy=policy,
+            entities=tuple(entities),
+            metric_ids=metric_ids,
+            periods=periods,
+            cells=tuple(cells),
+            schema=raw["schema"],
+            proof_scope=raw["proof_scope"],
+            selection_proof=raw["selection_proof"],
+        )
+        supplied_hash = _require_text(raw["query_hash"], field_name="query_hash")
+        if not _SHA256_RE.fullmatch(supplied_hash) or supplied_hash != result.query_hash:
+            raise QueryValidationError("query_hash does not match canonical unsigned receipt")
+        if canonical_json(result.to_dict()) != canonical_json(raw):
+            raise QueryValidationError("matrix receipt is not in canonical wire form")
+        return result
+
+    verify_receipt_dict = from_dict
+
     def to_json_bytes(self) -> bytes:
         return canonical_json(self.to_dict()).encode("utf-8")
 
@@ -1550,6 +3160,11 @@ class MetricMatrix:
         writer.writerow(
             (
                 "query_hash",
+                "receipt_authority",
+                "proof_scope",
+                "selection_proof",
+                "governance_bundle_id",
+                "root_cell_id",
                 "ticker",
                 "entity_id",
                 "metric_id",
@@ -1575,16 +3190,12 @@ class MetricMatrix:
                 "mapping_rule_id",
                 "mapping_rule_version",
                 "mapping_digest",
-                "mapping_rule_ids",
-                "mapping_rule_versions",
-                "mapping_digests",
                 "formula_rule_id",
                 "formula_rule_version",
                 "formula_digest",
                 "confidence",
                 "source_occurrence_ids",
                 "dependency_cell_ids",
-                "provenance_receipt",
             )
         )
         for cell in self.cells:
@@ -1596,6 +3207,11 @@ class MetricMatrix:
             # text value with a leading apostrophe.
             row = (
                 query_hash,
+                "json_sidecar_required",
+                self.proof_scope,
+                self.selection_proof,
+                self.governance_bundle.content_id,
+                cell.cell_id,
                 cell.ticker,
                 cell.entity_id,
                 cell.metric_id,
@@ -1621,19 +3237,15 @@ class MetricMatrix:
                 provenance.mapping_rule_id or "",
                 provenance.mapping_rule_version or "",
                 provenance.mapping_digest or "",
-                canonical_json(list(provenance.mapping_rule_ids)),
-                canonical_json(list(provenance.mapping_rule_versions)),
-                canonical_json(list(provenance.mapping_digests)),
                 provenance.formula_rule_id or "",
                 provenance.formula_rule_version or "",
                 provenance.formula_digest or "",
                 provenance.confidence or "",
                 canonical_json(list(provenance.source_occurrence_ids)),
                 canonical_json(list(provenance.dependency_cell_ids)),
-                canonical_json(provenance.to_dict()),
             )
             writer.writerow(
-                tuple(value if index == 10 else _csv_safe(value) for index, value in enumerate(row))
+                tuple(value if index == 16 else _csv_safe(value) for index, value in enumerate(row))
             )
         return output.getvalue().encode("utf-8")
 
@@ -1673,6 +3285,7 @@ class _AliasCandidate:
 @dataclass(frozen=True)
 class _RegistryProjection:
     recorded_at: datetime
+    governance_bundle: GovernanceBundle
     contracts_by_metric: Mapping[str, MetricContract]
     mappings_by_metric: Mapping[str, tuple[MappingRule, ...]]
     formulas_by_metric: Mapping[str, FormulaRule]
@@ -1688,7 +3301,7 @@ class _RegistryProjection:
 
 @dataclass(frozen=True)
 class _LineageMetadata:
-    root_occurrence_id: str
+    root_duplicate_group_key: str
     depth: int
     source_ready_at: datetime | None
     system_ready_at: datetime
@@ -1945,13 +3558,16 @@ class BitemporalMetricQueryEngine:
         if isinstance(ledger, RawFactLedger):
             self.ledger = ledger
         else:
-            self.ledger = RawFactLedger(tuple(ledger))
+            # RawFactLedger owns the hard ``limit + 1`` materialization.  Do
+            # not eagerly tuple an adversarial/non-terminating iterable first.
+            self.ledger = RawFactLedger(ledger)
         if not isinstance(registry, MetricRegistry):
             raise TypeError("registry must be a MetricRegistry")
         self.registry = registry
         self.bounds = bounds or QueryBounds()
         if not isinstance(self.bounds, QueryBounds):
             raise TypeError("bounds must be QueryBounds")
+        self._governance_bundle_by_recorded_at: dict[datetime, GovernanceBundle] = {}
         self._entities = self._normalize_entities(entities)
         # Immutable indexes make a matrix query proportional to the requested
         # cells and their matching fact groups, not to all ledger events for
@@ -1971,7 +3587,7 @@ class BitemporalMetricQueryEngine:
             parent_lineage = lineage_by_id.get(event.revision_of) if event.revision_of else None
             if parent_lineage is None:
                 source_ready_at = event.accepted_at
-                root_occurrence_id = event.occurrence_id
+                root_duplicate_group_key = event.duplicate_group_key
                 depth = 0
                 system_ready_at = event.clocks.system_ready_at
             else:
@@ -1980,14 +3596,14 @@ class BitemporalMetricQueryEngine:
                     if parent_lineage.source_ready_at is not None and event.accepted_at is not None
                     else None
                 )
-                root_occurrence_id = parent_lineage.root_occurrence_id
+                root_duplicate_group_key = parent_lineage.root_duplicate_group_key
                 depth = parent_lineage.depth + 1
                 system_ready_at = max(
                     parent_lineage.system_ready_at,
                     event.clocks.system_ready_at,
                 )
             lineage_by_id[event.occurrence_id] = _LineageMetadata(
-                root_occurrence_id=root_occurrence_id,
+                root_duplicate_group_key=root_duplicate_group_key,
                 depth=depth,
                 source_ready_at=source_ready_at,
                 system_ready_at=system_ready_at,
@@ -2004,7 +3620,6 @@ class BitemporalMetricQueryEngine:
         )
         self._parent_by_occurrence_id = MappingProxyType(parent_by_id)
         self._lineage_by_occurrence_id = MappingProxyType(lineage_by_id)
-        self._known_entity_ids = frozenset(event.source.entity_id for event in self.ledger.events)
         self._filing_metadata_by_occurrence = self._freeze_filing_metadata(filing_metadata)
 
     @staticmethod
@@ -2012,9 +3627,21 @@ class BitemporalMetricQueryEngine:
         entities: Mapping[str, str] | Iterable[QueryEntity],
     ) -> dict[str, QueryEntity]:
         if isinstance(entities, Mapping):
-            raw = (QueryEntity(ticker=str(ticker), entity_id=str(entity_id)) for ticker, entity_id in entities.items())
+            bindings = _bounded_collection(
+                entities.items(),
+                field_name="entities",
+                maximum=HARD_MAX_ENTITY_BINDINGS,
+            )
+            raw = tuple(
+                QueryEntity(ticker=str(ticker), entity_id=str(entity_id))
+                for ticker, entity_id in bindings
+            )
         else:
-            raw = entities
+            raw = _bounded_collection(
+                entities,
+                field_name="entities",
+                maximum=HARD_MAX_ENTITY_BINDINGS,
+            )
         out: dict[str, QueryEntity] = {}
         for item in raw:
             entity = item if isinstance(item, QueryEntity) else QueryEntity(**item)  # type: ignore[arg-type]
@@ -2032,25 +3659,15 @@ class BitemporalMetricQueryEngine:
         projection therefore derives every catalog/pack and per-rule digest
         exclusively from definitions whose own availability clock is visible.
         """
-        catalog_visible = self.registry.available_at <= policy.recorded_at
-        mapping_pack_visible = (
-            catalog_visible
-            and self.registry.mapping_pack_available_at <= policy.recorded_at
-        )
-        formula_pack_visible = (
-            catalog_visible
-            and self.registry.formula_pack_available_at <= policy.recorded_at
-        )
-        visible_contracts = tuple(
-            sorted(
-                (
-                    contract
-                    for contract in self.registry.contracts
-                    if catalog_visible and contract.rule.available_at <= policy.recorded_at
-                ),
-                key=lambda item: item.metric_id,
-            )
-        )
+        try:
+            bundle = self.registry.governance_bundle_at(policy.recorded_at)
+        except (TypeError, ValueError) as exc:
+            raise QueryValidationError(f"cannot construct governance bundle: {exc}") from exc
+        self._governance_bundle_by_recorded_at[policy.recorded_at] = bundle
+        catalog_visible = bundle.catalog is not None
+        mapping_pack_visible = bundle.mapping_pack is not None
+        formula_pack_visible = bundle.formula_pack is not None
+        visible_contracts = bundle.contracts
         contracts_by_metric = {item.metric_id: item for item in visible_contracts}
         mappings_by_metric: dict[str, tuple[MappingRule, ...]] = {}
         formulas_by_metric: dict[str, FormulaRule] = {}
@@ -2066,39 +3683,27 @@ class BitemporalMetricQueryEngine:
             contract_payload = _contract_definition_payload(contract)
             catalog_payloads.append(contract_payload)
             contract_digests[contract.metric_id] = _content_digest(contract_payload)
-            visible_mappings = tuple(
-                sorted(
-                    (
-                        mapping
-                        for mapping in contract.mappings
-                        if mapping_pack_visible
-                        and mapping.rule.available_at <= policy.recorded_at
-                    ),
-                    key=lambda item: (item.rule.rule_id, item.rule.version),
-                )
-            )
+            visible_mappings = contract.mappings
             mappings_by_metric[contract.metric_id] = visible_mappings
-            governing_clocks = [self.registry.available_at, contract.rule.available_at]
+            if bundle.catalog is None:  # pragma: no cover - bundle invariant.
+                raise QueryValidationError("visible contract requires a catalog lane")
+            governing_clocks = [bundle.catalog.available_at, contract.rule.available_at]
             for mapping in visible_mappings:
                 payload = _mapping_rule_payload(mapping)
                 mapping_payloads.append(payload)
                 key = (contract.metric_id, mapping.rule.rule_id, mapping.rule.version)
                 mapping_digests[key] = _content_digest(payload)
                 governing_clocks.extend(
-                    (self.registry.mapping_pack_available_at, mapping.rule.available_at)
+                    (bundle.mapping_pack.available_at, mapping.rule.available_at)  # type: ignore[union-attr]
                 )
             formula = contract.formula
-            if (
-                formula_pack_visible
-                and formula is not None
-                and formula.rule.available_at <= policy.recorded_at
-            ):
+            if formula is not None:
                 formulas_by_metric[contract.metric_id] = formula
                 payload = _formula_rule_payload(formula)
                 formula_payloads.append(payload)
                 formula_digests[contract.metric_id] = _content_digest(payload)
                 governing_clocks.extend(
-                    (self.registry.formula_pack_available_at, formula.rule.available_at)
+                    (bundle.formula_pack.available_at, formula.rule.available_at)  # type: ignore[union-attr]
                 )
             governance_available[contract.metric_id] = max(governing_clocks)
 
@@ -2107,7 +3712,7 @@ class BitemporalMetricQueryEngine:
                 {
                     "schema": REGISTRY_PROJECTION_SCHEMA,
                     "lane": "catalog",
-                    "catalog_id": self.registry.catalog_id,
+                    "catalog_id": bundle.catalog.identifier,
                     "contracts": catalog_payloads,
                 }
             )
@@ -2155,7 +3760,7 @@ class BitemporalMetricQueryEngine:
             assert catalog_digest is not None
             receipt_values.update(
                 {
-                "catalog_id": self.registry.catalog_id,
+                "catalog_id": bundle.catalog.identifier,
                 "catalog_version": REGISTRY_PROJECTION_VERSION,
                 "catalog_content_sha256": catalog_digest,
                 }
@@ -2179,6 +3784,7 @@ class BitemporalMetricQueryEngine:
         receipt = MappingProxyType(receipt_values)
         return _RegistryProjection(
             recorded_at=policy.recorded_at,
+            governance_bundle=bundle,
             contracts_by_metric=MappingProxyType(contracts_by_metric),
             mappings_by_metric=MappingProxyType(mappings_by_metric),
             formulas_by_metric=MappingProxyType(formulas_by_metric),
@@ -2299,10 +3905,6 @@ class BitemporalMetricQueryEngine:
         normalized = _require_text(ticker, field_name="ticker").upper()
         entity = self._entities.get(normalized)
         if entity is None:
-            # Entity IDs are valid non-display identifiers in programmatic
-            # callers, but only when exact; this is not a ticker lookup guess.
-            if normalized in self._known_entity_ids:
-                return QueryEntity(ticker=normalized, entity_id=normalized)
             raise QueryValidationError(f"unknown ticker/entity: {normalized}")
         return entity
 
@@ -2428,12 +4030,12 @@ class BitemporalMetricQueryEngine:
             for selector in sorted(selectors, key=lambda item: item.key)
         )
         return MetricMatrix(
+            governance_bundle=projection.governance_bundle,
             policy=query_policy,
             entities=entities,
             metric_ids=metric_ids,
             periods=selectors,
             cells=cells,
-            registry_receipt=projection.receipt,
         )
 
     query = query_matrix
@@ -2596,9 +4198,41 @@ class BitemporalMetricQueryEngine:
         value: Decimal | None,
         unit: str | None,
         provenance: CellProvenance,
+        dependency_cells: Sequence[MetricCell] = (),
+        governance_bundle: GovernanceBundle | None = None,
         reason: str | None = None,
     ) -> MetricCell:
+        dependencies = _bounded_collection(
+            dependency_cells,
+            field_name="formula dependency cells",
+            maximum=HARD_MAX_RECEIPT_NODES - 1,
+        )
+        if any(not isinstance(item, MetricCell) for item in dependencies):
+            raise QueryValidationError("formula dependency cells must be MetricCell receipts")
+        bundle = governance_bundle
+        if bundle is None:
+            bundle = self._governance_bundle_by_recorded_at.get(
+                provenance.recorded_cutoff_at
+            )
+            if bundle is None:  # pragma: no cover - private caller invariant.
+                raise QueryValidationError(
+                    "cell construction requires an established cutoff governance bundle"
+                )
+        node_by_id: dict[str, CellNode] = {}
+        for dependency in dependencies:
+            if dependency.governance_bundle.content_id != bundle.content_id:
+                raise QueryValidationError("formula dependencies use a different governance bundle")
+            for node in dependency.nodes:
+                existing = node_by_id.get(node.cell_id)
+                if existing is not None and existing != node:
+                    raise QueryValidationError("formula dependencies contain conflicting cell IDs")
+                node_by_id[node.cell_id] = node
+                if len(node_by_id) > HARD_MAX_RECEIPT_NODES - 1:
+                    raise QueryBoundsError(
+                        f"formula receipt exceeds {HARD_MAX_RECEIPT_NODES} unique nodes"
+                    )
         return MetricCell(
+            governance_bundle=bundle,
             ticker=entity.ticker,
             entity_id=entity.entity_id,
             metric_id=metric_id,
@@ -2607,6 +4241,7 @@ class BitemporalMetricQueryEngine:
             value=value,
             unit=unit,
             provenance=provenance,
+            dependency_nodes=tuple(node_by_id.values()),
             reason=reason,
         )
 
@@ -2689,26 +4324,7 @@ class BitemporalMetricQueryEngine:
         return result
 
     def _period_contract_error(self, contract: MetricContract, period: PeriodRequest) -> str | None:
-        expected = PeriodKind(contract.period_constraints.kind)
-        actual = (
-            PeriodKind.INSTANT
-            if period.normalized.is_instant
-            else PeriodKind.DURATION
-        )
-        if actual is not expected:
-            return f"outside_period_constraint: metric requires {expected.value}, requested {actual.value}"
-        if expected is PeriodKind.DURATION:
-            days = period.normalized.duration_days
-            minimum = contract.period_constraints.min_duration_days
-            maximum = contract.period_constraints.max_duration_days
-            if days is None or minimum is None or maximum is None:
-                return "outside_period_constraint: duration bounds are not evaluable"
-            if not minimum <= days <= maximum:
-                return (
-                    "outside_period_constraint: duration "
-                    f"{days} days is outside {minimum}..{maximum}"
-                )
-        return None
+        return _period_contract_error_for(contract, period)
 
     def _direct_rule_available_at(self, contract: MetricContract, mapping: MappingRule) -> datetime:
         # Rule availability is a system knowledge gate, not a source-event
@@ -2955,7 +4571,9 @@ class BitemporalMetricQueryEngine:
         # Two visible roots have no attested revision relationship. Filing
         # time and hashes are not a source-fusion policy, so never infer one.
         root_ids = {
-            self._lineage_by_occurrence_id[item[3][0].occurrence_id].root_occurrence_id
+            self._lineage_by_occurrence_id[
+                item[3][0].occurrence_id
+            ].root_duplicate_group_key
             for item in ordered
             if item[3]
         }
@@ -3276,6 +4894,7 @@ class BitemporalMetricQueryEngine:
                 raise AssertionError("value source selection omitted occurrence")
             metadata = self._metadata_for(fact, policy)
             source_receipt = {
+                "source_entity_id": fact.source.entity_id,
                 "source": fact.source.source,
                 "accession": fact.source.accession,
                 "document_id": fact.source.document_id,
@@ -3364,6 +4983,7 @@ class BitemporalMetricQueryEngine:
                     projection,
                     policy,
                     contract,
+                    selected_raw_fact=fact,
                     **source_receipt,
                 ),
             )
@@ -3428,72 +5048,11 @@ class BitemporalMetricQueryEngine:
         dependency: MetricContract,
         formula: FormulaRule,
     ) -> PeriodRequest:
-        dependency_kind = PeriodKind(dependency.period_constraints.kind)
-        if formula.dependency_period_alignment == "same_period":
-            return output_period
-        if formula.dependency_period_alignment == "ending_instant_to_duration":
-            if dependency_kind is PeriodKind.INSTANT:
-                return PeriodRequest(
-                    kind=PeriodKind.INSTANT,
-                    end=output_period.normalized.end,
-                    fiscal_year=output_period.normalized.fiscal_year,
-                    fiscal_quarter=output_period.normalized.fiscal_quarter,
-                )
-            return output_period
-        raise QueryValidationError(
-            f"unsupported governed dependency_period_alignment: {formula.dependency_period_alignment}"
-        )
+        return _dependency_period_for(output_period, dependency, formula)
 
     @staticmethod
     def _eval_formula(expression: str, values: Mapping[str, Decimal]) -> Decimal:
-        """Evaluate governed arithmetic under the fixed query Decimal contract."""
-        try:
-            root = ast.parse(expression, mode="eval").body
-        except SyntaxError as exc:  # pragma: no cover - registry validation catches this first.
-            raise QueryValidationError("formula expression is invalid") from exc
-
-        try:
-            with localcontext(_formula_context()):
-                normalized_values: dict[str, Decimal] = {}
-                for name, value in values.items():
-                    if not isinstance(value, Decimal):
-                        raise QueryValidationError(
-                            f"formula dependency {name} is not a Decimal value"
-                        )
-                    normalized_values[name] = +_bounded_decimal(
-                        value, field_name=f"formula dependency {name}"
-                    )
-
-                def visit(node: ast.AST) -> Decimal:
-                    if isinstance(node, ast.Name):
-                        try:
-                            return normalized_values[node.id]
-                        except KeyError as exc:
-                            raise QueryValidationError(
-                                f"formula references unbound dependency: {node.id}"
-                            ) from exc
-                    if isinstance(node, ast.BinOp):
-                        left, right = visit(node.left), visit(node.right)
-                        if isinstance(node.op, ast.Add):
-                            return left + right
-                        if isinstance(node.op, ast.Sub):
-                            return left - right
-                        if isinstance(node.op, ast.Mult):
-                            return left * right
-                        if isinstance(node.op, ast.Div):
-                            if right == 0:
-                                raise ZeroDivisionError
-                            return left / right
-                    raise QueryValidationError("formula contains unsupported expression construct")
-
-                value = +visit(root)
-                if not value.is_finite():
-                    raise QueryValidationError("formula result is not finite")
-                return _bounded_decimal(value, field_name="formula result")
-        except (DecimalException, OverflowError) as exc:
-            raise QueryValidationError(
-                "formula numeric result violates the fixed decimal contract"
-            ) from exc
+        return _eval_formula_decimal(expression, values)
 
     def _formula_provenance(
         self,
@@ -3549,7 +5108,7 @@ class BitemporalMetricQueryEngine:
             document_id=common("document_id"),
             source_body_sha256=common("source_body_sha256"),
             source_url=common("source_url"),
-            dependency_cells=tuple(dependencies),
+            dependency_cell_ids=tuple(item.cell_id for item in dependencies),
             unit=formula.output_unit,
         )
 
@@ -3639,6 +5198,7 @@ class BitemporalMetricQueryEngine:
                 provenance=self._formula_provenance(
                     projection, policy, contract, formula, dependency_cells, reason=reason
                 ),
+                dependency_cells=dependency_cells,
                 reason=reason,
             )
         missing = [item for item in dependency_cells if item.state is CellState.MISSING]
@@ -3656,6 +5216,7 @@ class BitemporalMetricQueryEngine:
                 provenance=self._formula_provenance(
                     projection, policy, contract, formula, dependency_cells, reason=reason
                 ),
+                dependency_cells=dependency_cells,
                 reason=reason,
             )
         values = {item.metric_id: item.value for item in dependency_cells}
@@ -3685,6 +5246,7 @@ class BitemporalMetricQueryEngine:
                 provenance=self._formula_provenance(
                     projection, policy, contract, formula, dependency_cells, reason=reason
                 ),
+                dependency_cells=dependency_cells,
                 reason=reason,
             )
         try:
@@ -3704,6 +5266,7 @@ class BitemporalMetricQueryEngine:
                 provenance=self._formula_provenance(
                     projection, policy, contract, formula, dependency_cells, reason=reason
                 ),
+                dependency_cells=dependency_cells,
                 reason=reason,
             )
         except QueryValidationError as exc:
@@ -3718,6 +5281,7 @@ class BitemporalMetricQueryEngine:
                 provenance=self._formula_provenance(
                     projection, policy, contract, formula, dependency_cells, reason=reason
                 ),
+                dependency_cells=dependency_cells,
                 reason=reason,
             )
         return self._new_cell(
@@ -3730,6 +5294,7 @@ class BitemporalMetricQueryEngine:
             provenance=self._formula_provenance(
                 projection, policy, contract, formula, dependency_cells
             ),
+            dependency_cells=dependency_cells,
         )
 
 
@@ -3742,6 +5307,8 @@ __all__ = [
     "BitemporalMetricQueryEngine",
     "BitemporalPolicy",
     "BitemporalQueryPolicy",
+    "CELL_RECEIPT_SCHEMA",
+    "CellNode",
     "CellProvenance",
     "CellState",
     "DeterministicExport",
@@ -3753,9 +5320,16 @@ __all__ = [
     "FORMULA_DECIMAL_PRECISION",
     "HARD_MAX_CELLS",
     "HARD_MAX_DEPENDENCY_RECEIPTS",
+    "HARD_MAX_ENTITY_BINDINGS",
+    "HARD_MAX_MATRIX_EDGES",
+    "HARD_MAX_MATRIX_NODES",
     "HARD_MAX_METRICS",
     "HARD_MAX_PERIODS",
     "HARD_MAX_PROVENANCE_IDS",
+    "HARD_MAX_RECEIPT_DEPTH",
+    "HARD_MAX_RECEIPT_EDGES",
+    "HARD_MAX_RECEIPT_NODES",
+    "HARD_MAX_RECEIPT_WIRE_BYTES",
     "HARD_MAX_TICKERS",
     "HARD_MAX_VISIBLE_SOURCE_EVENTS_PER_CELL",
     "MAX_QUERY_TEXT_CHARS",
@@ -3769,6 +5343,8 @@ __all__ = [
     "PeriodSelector",
     "ProvenanceKind",
     "QUERY_SCHEMA",
+    "RECEIPT_PROOF_SCOPE",
+    "RECEIPT_SELECTION_PROOF",
     "QueryBounds",
     "QueryBoundsError",
     "QueryCutoffs",

@@ -23,10 +23,12 @@ import engine.fundamental_forensics.query as query_module
 from engine.fundamental_forensics.query import (
     BitemporalMetricQueryEngine,
     BitemporalPolicy,
+    CellNode,
     CellProvenance,
     CellState,
     EvaluationPolicy,
     FilingMetadata,
+    HARD_MAX_RECEIPT_NODES,
     MetricCell,
     MetricMatrix,
     PeriodRequest,
@@ -383,17 +385,29 @@ def test_governed_formula_propagates_dependency_clocks_and_receipts() -> None:
     assert cell.provenance.recorded_at is None
     assert cell.provenance.computed_at is None
     assert cell.provenance.published_at is None
-    assert len(cell.provenance.dependency_cells) == 2
+    direct_dependencies = tuple(
+        node
+        for node in cell.dependency_nodes
+        if node.cell_id in cell.provenance.dependency_cell_ids
+    )
+    assert len(direct_dependencies) == 2
     assert cell.provenance.dependency_cell_ids == tuple(
-        item.cell_id for item in cell.provenance.dependency_cells
+        item.cell_id
+        for metric_id in ("revenue", "gross_profit")
+        for item in direct_dependencies
+        if item.metric_id == metric_id
     )
     assert {
-        item.provenance.accepted_at for item in cell.provenance.dependency_cells
+        item.provenance.accepted_at for item in direct_dependencies
     } == {
         datetime(2026, 8, 2, 1, tzinfo=timezone.utc),
         datetime(2026, 8, 2, 3, tzinfo=timezone.utc),
     }
-    assert cell.to_dict()["provenance"]["dependency_receipts"]
+    receipt = cell.to_dict()
+    assert receipt["root_cell_id"] == cell.cell_id
+    assert len(receipt["nodes"]) == 3
+    assert all("dependency_receipts" not in item["provenance"] for item in receipt["nodes"])
+    assert MetricCell.from_dict(receipt).to_dict() == receipt
 
 
 def test_accession_metadata_adapter_supplies_filed_date_without_backdating_acceptance() -> None:
@@ -483,7 +497,10 @@ def test_cross_company_matrix_export_is_deterministic_and_receipt_complete() -> 
     assert json_one.payload == json_two.payload and json_one.sha256 == json_two.sha256
     assert csv_one.payload == csv_two.payload and csv_one.sha256 == csv_two.sha256
     assert matrix.query_hash in json_one.payload.decode("utf-8")
-    assert csv_one.payload.decode("utf-8").startswith("query_hash,ticker,entity_id,metric_id,")
+    assert csv_one.payload.decode("utf-8").startswith(
+        "query_hash,receipt_authority,proof_scope,selection_proof,governance_bundle_id,root_cell_id,"
+    )
+    assert MetricMatrix.from_dict(json.loads(json_one.payload)).query_hash == matrix.query_hash
 
 
 def test_strict_bounds_and_unsupported_metric_or_concept_fail_safely() -> None:
