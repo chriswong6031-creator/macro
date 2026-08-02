@@ -1744,12 +1744,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2/markupsafe are for the chat-nav guard below, which RENDERS
+      # _site_nav.html.j2 rather than grepping it (CI packs install minimal deps,
+      # not requirements.txt — an unlisted import here is an ImportError, not a skip).
       - name: install minimal deps (theme.js bake reads config.yml)
-        run: pip install pyyaml pytest
+        run: pip install pyyaml pytest jinja2 markupsafe
       - name: template-site-sync selftest (gate fires on synthetic divergence)
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # The other half of plain-copy integrity: byte-matching its site copy says
+      # nothing about whether chat.html's HEADER still matches the shared partial.
+      # It did not — 12 live pages missing, 17 removed pages still linked — because
+      # the block was hand-copied and no gate compared it to anything.
+      - name: chat-nav selftest (gate fires on a hand-edited header)
+        run: python3 scripts/sync_chat_nav.py --selftest
+      - name: chat.html's header must match _site_nav.html.j2
+        run: python3 scripts/sync_chat_nav.py
       # ui.asset_stamp — the OTHER half of this law, and the reason it bit users. The
       # `--fix` above rewrites the site copy of every plain-copy pair FROM templates/,
       # and it runs AFTER the stamping sweep in every lane, so a ?v= stamp written only
