@@ -292,7 +292,26 @@ class TestSeoValues:
 
 class TestSeoPathUniqueness:
     """Literal seo_path values must be unique across templates (no two pages
-    claim the same canonical URL) and end in .html."""
+    claim the same canonical URL) and end in .html.
+
+    REDIRECT STUBS ARE EXEMPT FROM UNIQUENESS (not from the .html format rule).
+    A noindex stub that meta-refreshes onto another page SHOULD carry that
+    page's canonical — that is the whole point of the pattern, and pointing a
+    stub at itself would ask search engines to index a page whose only content
+    is "go somewhere else". The rule exists to stop two REAL pages claiming one
+    URL, which is still enforced below.
+
+    Detected structurally (noindex + a redirect), not by filename, so a stub
+    cannot dodge the uniqueness rule by being named like one — and a real page
+    cannot accidentally acquire the exemption without also declaring itself
+    noindex and redirecting, which no indexable page does.
+    """
+
+    @staticmethod
+    def _is_redirect_stub(content: str) -> bool:
+        noindex = 'name="robots" content="noindex' in content
+        redirects = ('content="0;url=' in content) or ("location.replace(" in content)
+        return noindex and redirects
 
     def test_seo_path_uniqueness_and_format(self) -> None:
         path_to_template: dict[str, str] = {}
@@ -300,11 +319,14 @@ class TestSeoPathUniqueness:
 
         for tmpl in _public_page_templates():
             content = tmpl.read_text(encoding="utf-8")
+            stub = self._is_redirect_stub(content)
             paths = _extract_seo_path_values(content)
             for path in paths:
                 assert path == "" or path.endswith(".html"), (
                     f"{tmpl.name}: seo_path {path!r} does not end in .html"
                 )
+                if stub:
+                    continue          # a stub inherits its target's canonical
                 if path in path_to_template:
                     duplicates.append(
                         f"seo_path={path!r} claimed by both "
