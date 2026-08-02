@@ -258,6 +258,35 @@ def _telemetry() -> dict:
     }
 
 
+def _retrieval_queue_receipt() -> dict:
+    lanes = [
+        "registration", "state", "prospectus", "reg_a", "issuer_current_report",
+        "issuer_periodic", "issuer_proxy",
+    ]
+    return {
+        "schema": "capital_structure.retrieval_queue_receipt.v1",
+        "as_of": "2026-08-01T12:00:00Z",
+        "policy_version": "capital-structure-sec-form-policy/1.2.0",
+        "max_filings": 14,
+        "selected_count": 0,
+        "deferred_count": 0,
+        "lane_quota_slots": {
+            "registration": 4, "state": 2, "prospectus": 2, "reg_a": 1,
+            "issuer_current_report": 2, "issuer_periodic": 2, "issuer_proxy": 1,
+        },
+        "lanes": [{
+            "lane": lane, "pending_count": 0, "selected_count": 0,
+            "deferred_count": 0, "oldest_pending_first_seen": None,
+            "oldest_pending_age_days": None, "unknown_first_seen_count": 0,
+        } for lane in lanes],
+        "authority": {
+            "is_context_only": True, "rank_authority": False,
+            "sizing_authority": False, "entry_authority": False,
+            "prophet_authority": False,
+        },
+    }
+
+
 @pytest.mark.parametrize(("name", "factory"), [
     ("capital_structure_source_manifest.schema.json", _source_manifest),
     ("capital_structure_event.schema.json", _event),
@@ -267,6 +296,7 @@ def _telemetry() -> dict:
     ("capital_structure_event_edge.schema.json", _edge),
     ("capital_structure_review_item.schema.json", _review_item),
     ("capital_structure_telemetry.schema.json", _telemetry),
+    ("capital_structure_retrieval_queue_receipt.schema.json", _retrieval_queue_receipt),
 ])
 def test_contracts_are_strict_draft_2020_12(name, factory):
     schema = _schema(name)
@@ -338,6 +368,24 @@ def test_event_is_immutable_context_only_and_has_classification_and_pit_dual_clo
     record = _event()
     record["authority"]["prophet_authority"] = True
     _invalid("capital_structure_event.schema.json", record, "False was expected")
+
+
+def test_event_file_number_provenance_is_optional_for_legacy_but_closed_when_present():
+    legacy = _event()
+    _validate("capital_structure_event.schema.json", legacy)
+
+    hardened = _event()
+    hardened["filing"]["file_number_provenance"] = {
+        "state": "observed", "value": "333-123456",
+        "candidate_values": ["333-123456"],
+        "sources": ["legacy_sgml_file_number", "sec_header_file_number"],
+    }
+    _validate("capital_structure_event.schema.json", hardened)
+
+    hardened["filing"]["file_number_provenance"]["inferred"] = True
+    _invalid(
+        "capital_structure_event.schema.json", hardened, "Additional properties"
+    )
 
 
 def test_term_observation_preserves_reported_value_and_allows_unknown_as_null_not_zero():
