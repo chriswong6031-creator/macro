@@ -46,6 +46,26 @@ def _rehash_event(event: dict) -> dict:
     return event
 
 
+def _rehash_stable_id(value: dict, field: str, prefix: str) -> dict:
+    identity = copy.deepcopy(value)
+    identity.pop(field)
+    value[field] = prefix + sha256(
+        json.dumps(
+            identity,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()[:24]
+    return value
+
+
+def _rehash_bundle(bundle: dict) -> dict:
+    return _rehash_stable_id(
+        bundle, "generation_id", "registration-lifecycle:cs:"
+    )
+
+
 def _event(
     suffix: int,
     form: str,
@@ -623,6 +643,42 @@ def test_correction_version_without_exact_supersedes_edge_is_deferred():
     }
 
 
+@pytest.mark.parametrize(
+    "foreign_logical_key, correction_version", [(True, 2), (False, 3)]
+)
+def test_correction_must_target_direct_prior_version_of_same_logical_sec_observation(
+    foreign_logical_key: bool,
+    correction_version: int,
+):
+    original = _event(76, "S-3", accepted_at="2026-08-01T10:00:00Z")
+    correction = _event(
+        77 if foreign_logical_key else 76,
+        "S-3",
+        accepted_at="2026-08-01T10:00:00Z",
+        seen_at="2026-08-04T10:00:00Z",
+        correction_version=correction_version,
+        correction_of=original["event_id"],
+        source_suffix="foreign-logical" if foreign_logical_key else "skipped-version",
+    )
+    correction_edge = _edge(
+        correction,
+        original,
+        "supersedes",
+        observed_at="2026-08-04T10:00:00Z",
+    )
+
+    bundle = _compile(
+        [original, correction],
+        [correction_edge],
+        as_of="2026-08-05T00:00:00Z",
+    )
+
+    assert bundle["records"] == []
+    assert {item["reason"] for item in bundle["deferred"]} == {
+        "correction_history_mismatch"
+    }
+
+
 def test_group_changing_correction_does_not_retarget_an_old_lifecycle_edge():
     original = _event(81, "S-3", accepted_at="2026-08-01T10:00:00Z")
     effect = _event(82, "EFFECT", accepted_at="2026-08-02T10:00:00Z")
@@ -792,3 +848,68 @@ def test_schema_pins_the_complete_scope_and_unavailable_firewall():
     weakened["scope"]["does_not_establish"] = ["trade_decision"]
     with pytest.raises(ValueError, match="violates contract"):
         validate_registration_lifecycle_bundle(weakened)
+
+
+def test_semantic_validator_rejects_empty_observed_or_unbound_lifecycle_artifacts():
+    events, edges = _scenario("full_lifecycle")
+    bundle = _compile(events, edges)
+
+    empty_observed = copy.deepcopy(bundle)
+    empty_observed["records"] = []
+    empty_observed["coverage"].update(
+        {
+            "state": "observed",
+            "reason": "linked_observed_registration_lifecycles_only",
+            "lifecycle_count": 0,
+            "timeline_event_count": 0,
+        }
+    )
+    _rehash_bundle(empty_observed)
+    with pytest.raises(ValueError, match="semantic invariant failed: observed coverage"):
+        validate_registration_lifecycle_bundle(empty_observed)
+
+    contradictory_latest = copy.deepcopy(bundle)
+    record = contradictory_latest["records"][0]
+    record["latest_observed_event_id"] = record["timeline"][0]["event_id"]
+    record["observed_registration_state"] = "filed"
+    _rehash_bundle(contradictory_latest)
+    with pytest.raises(
+        ValueError, match="semantic invariant failed: lifecycle .* latest event"
+    ):
+        validate_registration_lifecycle_bundle(contradictory_latest)
+
+    absent_derivation_membership = copy.deepcopy(bundle)
+    derivation = absent_derivation_membership["records"][0]["derivation_receipt"]
+    derivation["event_ids"] = []
+    _rehash_stable_id(derivation, "receipt_id", "receipt:lifecycle:cs:")
+    _rehash_bundle(absent_derivation_membership)
+    with pytest.raises(
+        ValueError,
+        match="semantic invariant failed: lifecycle .* timeline is not covered",
+    ):
+        validate_registration_lifecycle_bundle(absent_derivation_membership)
+
+    forged_source_receipt = copy.deepcopy(bundle)
+    forged_source_receipt["source_receipt"]["receipt_id"] = (
+        "receipt:registration-lifecycle:cs:" + "0" * 24
+    )
+    _rehash_bundle(forged_source_receipt)
+    with pytest.raises(
+        ValueError, match="semantic invariant failed: source_receipt.receipt_id"
+    ):
+        validate_registration_lifecycle_bundle(forged_source_receipt)
+
+    partial_events, partial_edges = _scenario("post_withdrawal_effect")
+    partial = _compile(partial_events, partial_edges)
+    partial_record = partial["records"][0]
+    partial_record["coverage"] = {
+        "state": "observed",
+        "reason": "linked_observed_registration_events_only",
+        "deferred_ids": [],
+    }
+    _rehash_bundle(partial)
+    with pytest.raises(
+        ValueError,
+        match="semantic invariant failed: lifecycle .* coverage does not bind",
+    ):
+        validate_registration_lifecycle_bundle(partial)
