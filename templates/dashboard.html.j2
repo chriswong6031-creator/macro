@@ -2526,7 +2526,15 @@ body.page-macro .mxqm-q2-fill.active{opacity:.42}
 body.page-macro .mxqm-q3-fill.active{opacity:.42}
 body.page-macro .mxqm-q4-fill.active{opacity:.42}
 body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif}
-body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:8px;letter-spacing:.06em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+{# Label type is sized by the LONGEST label, not by taste: GROWTH-SCARE at the old
+   8px/.06em measured 71.5 user units inside a 65-unit tile and bled out both sides.
+   6.6px/.04em puts it at 57.4 (3.8 clear each side) in the real face, and still 62.0
+   (1.5 clear) in the widest system-ui fallback that font-display:swap shows while
+   InterDisplay-700.woff2 is in flight — so it never overflows in either state.
+   CJK keeps 8px below: 2-4 glyphs never approach the tile edge and Chinese suffers
+   more than Latin at small sizes. #}
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums}
 body.page-macro .mxqm-odds.active{fill:#fff}
 body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}
@@ -6742,19 +6750,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mxqm-glance">
           {% if _qvi_deg or not _qm_gain %}
           {# Degraded or no momentum data — stable read #}
-          <span class="l-en"><b>{{ _qm_hard_en }}</b> — stable read. Treat the label as backdrop, watch the risk score.</span>
-          <span class="l-zh"><b>{{ _qm_hard_zh }}</b> — 读数稳定。以周期标签为背景，关注风险评分。</span>
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, and the read is stable.</span>
+          <span class="l-zh">当前为<b>{{ _qm_hard_zh }}</b>，读数稳定。</span>
           {% else %}
           {% set _qm_gain_names = _qm_quad.get(_qm_gain, [_qm_gain, _qm_gain]) %}
           {# "today's odds" is load-bearing wording: the historical base rate below
              answers a DIFFERENT question and points somewhere else, and without the
              two being named apart they read as one self-contradicting claim. #}
           {% if _qm_gain == _qm_hard %}
-          <span class="l-en"><b>{{ _qm_hard_en }}</b> now; today’s odds are firming behind it — treat the label as backdrop, watch the risk score.</span>
-          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期；今日概率正在向其巩固 — 以标签为背景，关注风险评分。</span>
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, and today’s odds are firming behind it.</span>
+          <span class="l-zh">当前为<b>{{ _qm_hard_zh }}</b>，今日概率正在向其巩固。</span>
           {% else %}
-          <span class="l-en"><b>{{ _qm_hard_en }}</b> now; today’s odds are drifting toward <b>{{ _qm_gain_names[0] }}</b> — treat the label as backdrop, watch the risk score.</span>
-          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期；今日概率正向<b>{{ _qm_gain_names[1] }}</b>漂移 — 以标签为背景，关注风险评分。</span>
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, with today’s odds drifting toward <b>{{ _qm_gain_names[0] }}</b>.</span>
+          <span class="l-zh">当前为<b>{{ _qm_hard_zh }}</b>，今日概率正向<b>{{ _qm_gain_names[1] }}</b>漂移。</span>
           {% endif %}
           {% endif %}
         </div>
@@ -6835,21 +6843,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Quad labels (top of each tile) + odds numeral (centre) — bilingual via
                  l-en/l-zh (the toggle works on SVG <text>; NO t() inside <text>). #}
               {# Q3 Stagflation #}
-              <text class="mxqm-quad-label l-en" x="37" y="24" text-anchor="middle">STAGFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="37" y="24" text-anchor="middle">滞胀</text>
-              {% if _p_q3 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q3' %} active{% endif %}" x="37" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en" x="37.5" y="24" text-anchor="middle">STAGFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="24" text-anchor="middle">滞胀</text>
+              {% if _p_q3 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q3' %} active{% endif %}" x="37.5" y="52" text-anchor="middle">{{ _p_q3 }}%</text>{% endif %}
               {# Q2 Reflation #}
-              <text class="mxqm-quad-label l-en" x="113" y="24" text-anchor="middle">REFLATION</text>
-              <text class="mxqm-quad-label l-zh" x="113" y="24" text-anchor="middle">再通胀</text>
-              {% if _p_q2 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q2' %} active{% endif %}" x="113" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
+              {% if _p_q2 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q2' %} active{% endif %}" x="112.5" y="52" text-anchor="middle">{{ _p_q2 }}%</text>{% endif %}
               {# Q4 Growth-scare #}
-              <text class="mxqm-quad-label l-en" x="37" y="99" text-anchor="middle">GROWTH-SCARE</text>
-              <text class="mxqm-quad-label l-zh" x="37" y="99" text-anchor="middle">增长恐慌</text>
-              {% if _p_q4 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q4' %} active{% endif %}" x="37" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
+              <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
+              {% if _p_q4 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q4' %} active{% endif %}" x="37.5" y="127" text-anchor="middle">{{ _p_q4 }}%</text>{% endif %}
               {# Q1 Goldilocks #}
-              <text class="mxqm-quad-label l-en" x="113" y="99" text-anchor="middle">GOLDILOCKS</text>
-              <text class="mxqm-quad-label l-zh" x="113" y="99" text-anchor="middle">理想增长</text>
-              {% if _p_q1 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q1' %} active{% endif %}" x="113" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
+              <text class="mxqm-quad-label l-en" x="112.5" y="99" text-anchor="middle">GOLDILOCKS</text>
+              <text class="mxqm-quad-label l-zh" x="112.5" y="99" text-anchor="middle">理想增长</text>
+              {% if _p_q1 is not none %}<text class="mxqm-odds{% if _qm_hard == 'Q1' %} active{% endif %}" x="112.5" y="127" text-anchor="middle">{{ _p_q1 }}%</text>{% endif %}
               {# Axis labels — bilingual; kept subtle at the edges #}
               <text class="mxqm-axis-label l-en" x="75" y="160" text-anchor="middle">growth →</text>
               <text class="mxqm-axis-label l-zh" x="75" y="160" text-anchor="middle">增长 →</text>
@@ -6874,8 +6882,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _qm_nx = (pb.next_list if (pb is defined and pb and pb.next_list) else []) %}
         {% if _qm_nx %}
         <div class="mxqm-hist">
-          <span class="l-en">Historically after {{ _qm_hard_en }}: {% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[0] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}, {% endif %}{% endfor %} — a base rate from past regimes, not today’s odds.</span>
-          <span class="l-zh">历史上{{ _qm_hard_zh }}之后：{% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[1] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}、{% endif %}{% endfor %} — 这是过去周期的基准比例，并非今日概率。</span>
+          <span class="l-en">After past {{ _qm_hard_en }}s: {% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[0] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}, {% endif %}{% endfor %}.</span>
+          <span class="l-zh">历史上{{ _qm_hard_zh }}之后：{% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[1] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}、{% endif %}{% endfor %}。</span>
         </div>
         {% endif %}
         {% endif %}{# /_qm_hard #}
@@ -6924,14 +6932,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if _gk_grip_en or _gk_cname %}
         <div class="mxqm-hold">
           <span class="mxqm-hold-txt">
-            <span class="l-en">{% if _gk_grip_en %}{{ _gk_grip_en|capitalize }}{% endif %}{% if _gk_grip_en and _gk_cname %} — {% endif %}{% if _gk_cname %}weakest support is <b>{{ _gk_cname[0] }}</b>{% endif %}.</span>
-            <span class="l-zh">{% if _gk_grip_zh %}{{ _gk_grip_zh }}{% endif %}{% if _gk_grip_zh and _gk_cname %} — {% endif %}{% if _gk_cname %}最弱支撑为<b>{{ _gk_cname[1] }}</b>{% endif %}。</span>
+            <span class="l-en">{% if _gk_grip_en %}{{ _gk_grip_en|capitalize }}{% endif %}{% if _gk_grip_en and _gk_cname %}. {% endif %}{% if _gk_cname %}Weakest leg: <b>{{ _gk_cname[0] }}</b>{% endif %}.</span>
+            <span class="l-zh">{% if _gk_grip_zh %}{{ _gk_grip_zh }}{% endif %}{% if _gk_grip_zh and _gk_cname %}。{% endif %}{% if _gk_cname %}最弱一环：<b>{{ _gk_cname[1] }}</b>{% endif %}。</span>
           </span>
           {% if _gk_rc_bits_en %}{{ help(_gk_rc_bits_en|join(' · '), _gk_rc_bits_zh|join(' · ')) }}{% endif %}
         </div>
         {% endif %}
         {# Footer — one line, kept (Fable ruling). #}
-        <div class="mxqm-foot"><span class="l-en">About the regime label — not the 0–100 risk score.</span><span class="l-zh">指周期标签——并非 0–100 风险评分。</span></div>
+        <div class="mxqm-foot"><span class="l-en">Describes the label, not the risk score.</span><span class="l-zh">描述的是周期标签，而非风险评分。</span></div>
       </div>
       </div>{# /mx5-flipctx-anchor #}
 
@@ -14522,10 +14530,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
   }
   .row-pop-decision .row-pop-name{
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;line-height:1.25;
+    overflow:hidden;font-size:13.5px;line-height:1.25;white-space:normal;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
   }
   .row-pop-decision .row-pop-tag{
-    margin-left:0;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    margin-left:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     padding:3px 7px;border-radius:7px;font-size:9px;
   }
   .row-pop-summary,.row-pop-theme-hero{
@@ -14575,7 +14584,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .row-pop-stat>strong.warn{color:var(--warn)}
   .row-pop-stat small{margin-top:3px;font-size:9px;color:var(--muted)}
   .row-pop-score-ring{
-    --ring-color:var(--muted);width:64px;height:64px;position:relative;isolation:isolate;
+    --ring-color:var(--muted);width:72px;height:72px;position:relative;isolation:isolate;
     flex:none;display:grid;place-content:center;text-align:center;border-radius:50%;
     background:conic-gradient(var(--ring-color) calc(var(--score) * 1%),color-mix(in srgb,var(--muted) 13%,transparent) 0);
   }
@@ -14587,9 +14596,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .row-pop-score-ring.warn{--ring-color:var(--warn)}
   .row-pop-score-ring.dn{--ring-color:var(--down)}
   .row-pop-score-ring strong,.row-pop-score-ring small{position:relative;z-index:1}
-  .row-pop-score-ring strong{font-size:17px;line-height:1;color:var(--text)}
+  .row-pop-score-ring strong{font-size:20px;line-height:1;letter-spacing:-.01em;color:var(--text)}
   .row-pop-score-ring small{
-    margin-top:2px;font-size:8px;color:var(--muted);text-transform:uppercase;
+    margin-top:4px;font-size:7.5px;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;
   }
   .row-pop-trust{display:flex;min-height:18px;flex-wrap:wrap;gap:5px;margin-top:2px}
   .row-pop-trust>span{
@@ -14915,10 +14924,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
           <span>
             {%- if x.get('conflict_reason_en') -%}<span class="l-en">Signals disagree. Wait for breadth and price to align.</span><span class="l-zh">信号不一致，等待广度与价格同步。</span>
-            {%- elif _reco in ('accumulate','enter') -%}<span class="l-en">Leadership is broad — add on pullbacks, not strength.</span><span class="l-zh">领先面广 — 回调时加仓，不追强势。</span>
-            {%- elif _reco == 'trim' -%}<span class="l-en">Momentum is extended — protect gains into strength.</span><span class="l-zh">动能已延伸 — 逢强保护利润。</span>
-            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth is fading — stand aside until a fresh turn.</span><span class="l-zh">广度转弱 — 等待新转向前观望。</span>
-            {%- else -%}<span class="l-en">Trend is intact — wait for a cleaner entry.</span><span class="l-zh">趋势完好 — 等待更干净的入场。</span>{%- endif -%}
+            {%- elif _reco in ('accumulate','enter') -%}<span class="l-en">Leadership is broad. Add on pullbacks, not into strength.</span><span class="l-zh">领先面广。回调时加仓，不要追强势。</span>
+            {%- elif _reco == 'trim' -%}<span class="l-en">Momentum is extended. Protect gains into strength.</span><span class="l-zh">动能已过度延伸。逢强保护利润。</span>
+            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth is fading. Stand aside until it turns again.</span><span class="l-zh">广度转弱。在重新转强之前先观望。</span>
+            {%- else -%}<span class="l-en">Trend is intact. Wait for a cleaner entry.</span><span class="l-zh">趋势完好。等待更干净的入场点。</span>{%- endif -%}
           </span>
         </span>
       </div>
@@ -15503,13 +15512,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _entry_ok = not (es and es.get('status') in ['extended','topping','exit','avoid','blocked']) %}
         {% set _fl = namespace(rows=[]) %}
         {% if c %}{% for cau in (c.cautions or []) %}{% if cau != 'accounting watch' %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endif %}{% endfor %}{% endif %}
-        {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving — don't chase above the zone", '已在异动 — 勿在买区上方追高')] %}{% endif %}
-        {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Extended ' ~ ('%.1f'|format(n.ext_z)) ~ 'σ over trend — chase risk', '高于趋势' ~ ('%.1f'|format(n.ext_z)) ~ 'σ — 追高风险')] %}{% endif %}
-        {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Anti-chase watch — parabolic tail', '反追涨观察 — 抛物线尾部')] %}{% endif %}
+        {% if (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}{% set _fl.rows = _fl.rows + [("Already moving. Don't chase above the buy zone.", '已在异动。不要在买区上方追高。')] %}{% endif %}
+        {% if n.get('ext_z') is not none and n.ext_z > 2.0 %}{% set _fl.rows = _fl.rows + [('Stretched unusually far above its trend line, so chasing is risky.', '远高于趋势线，追高风险较大。')] %}{% endif %}
+        {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
         {% set _es_chip = n.get('earnings_soon') %}
         {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
-        {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance: ' ~ n.sector_stance ~ ' — single-stock trigger, not a sector call', '板块态度：' ~ (n.sector_stance_zh or n.sector_stance) ~ ' — 个股信号，非板块判断')] %}{% endif %}
-        {% if n.get('hold') and n.hold.get('state') == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken — thesis void level hit', '筑底破位 — 失效价已触发')] %}{% endif %}
+        {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a call on the sector.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。这是个股信号，并非对板块的判断。')] %}{% endif %}
+        {% if n.get('hold') and n.hold.get('state') == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken: price hit the level that voids the thesis.', '筑底破位：价格已触及使论点失效的水平。')] %}{% endif %}
         {# OEU M-PRO: display-tier options context, folded into the SAME ⚠ popover as every
            other caution (no new chip, no layout change). Rows are pre-derived (en, zh) pairs
            attached by build_site._attach_board_display_chips via lib/options_context.py; the
