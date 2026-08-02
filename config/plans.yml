@@ -28,7 +28,7 @@ features:
     name: Mastermind Pro chat (Opus)
 
 # Display contract for the Terminal indicator library. The Terminal gates advanced
-# modules directly from the account tier (free < insider < pro); this block lets the
+# modules directly from the account tier (free < essential < pro); this block lets the
 # two pricing surfaces describe that same cumulative access without inventing counts.
 # Keep it aligned with terminal/lib/suites/* module definitions and IndicatorsModal.
 terminal_indicators:
@@ -36,16 +36,14 @@ terminal_indicators:
   advanced_total: 31
   access:
     free: 1
-    insider: 15
+    essential: 15
     pro: 31
 
 # Paid products. `tier` is the string written to user_entitlements.tier and read by
-# brain_gateway._resolve_tier (must match config/brain.yml quota keys: insider | pro).
+# brain_gateway._resolve_tier (must match config/brain.yml quota keys: essential | pro).
 products:
-  insider:
-    tier: insider
-    # Display name only — the `insider` key, `tier: insider`, the lookup keys and every
-    # entitlement string are unchanged (a rename migration owns those separately).
+  essential:
+    tier: essential
     name: Essential
     # No trial (operator 2026-07-31): the funnel puts everyone who wants to try the
     # product into Pro's 7 days; Essential is a deliberate manual choice, bought outright.
@@ -53,14 +51,20 @@ products:
     # Checkout rejects trial_period_days below 1, so "no trial" must be an absent field.
     trial_days: 0
     features: [site_full, terminal_live_options]
+    # PERMANENT, never pruned. `_lookup_key_to_tier` maps each of these onto this
+    # product's tier; dropping one silently downgrades every subscription still sitting
+    # on that Price to free. `insider_2026_v2_*` were the LIVE keys the day the rename
+    # shipped — they are legacy the moment the current keys below stop matching them.
     legacy_lookup_keys:
       - insider_monthly
       - insider_annual
       - insider_2026_monthly
       - insider_2026_annual
+      - insider_2026_v2_monthly
+      - insider_2026_v2_annual
     prices:
-      monthly: { lookup_key: insider_2026_v2_monthly, unit_amount: 9900,  interval: month }
-      annual:  { lookup_key: insider_2026_v2_annual,  unit_amount: 90000, interval: year }
+      monthly: { lookup_key: essential_2026_v2_monthly, unit_amount: 9900,  interval: month }
+      annual:  { lookup_key: essential_2026_v2_annual,  unit_amount: 90000, interval: year }
   pro:
     tier: pro
     name: Pro
@@ -74,6 +78,22 @@ products:
     prices:
       monthly: { lookup_key: pro_2026_v2_monthly, unit_amount: 14900,  interval: month }
       annual:  { lookup_key: pro_2026_v2_annual,  unit_amount: 130800, interval: year }
+
+# Product-key history: `<current products key>: [<former key>, ...]`.
+#
+# A Stripe Product is tagged `metadata.mnz_product = <products key>`, which is how
+# scripts/stripe_bootstrap.py finds it again on every re-run. Renaming a products key
+# would therefore leave the LIVE Product unfindable and make the next bootstrap CREATE a
+# second one — orphaning the prices, the entitlement features and the portal config that
+# every existing subscription hangs off. This list tells the bootstrap to adopt the old
+# Product instead: it re-tags the metadata to the new key and updates the display name in
+# place, so the same Stripe object keeps serving checkout, invoices and the portal.
+#
+# Entries are permanent — a re-run against a fresh environment (or an account restored
+# from a pre-rename state) must still find its way home.
+legacy_product_keys:
+  essential:
+    - insider
 
 # Founding Pro is a limited offer on the annual Pro product, not a fourth entitlement tier.
 # The checkout paths automatically apply this Stripe promotion while it is active. The Promotion
@@ -113,4 +133,4 @@ offers:
 
 # Entitlement precedence — if a customer ever holds overlapping active subscriptions, the
 # highest-ranked tier wins. Also the display order (low -> high) on the plans page.
-tier_rank: [free, insider, pro]
+tier_rank: [free, essential, pro]

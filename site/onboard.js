@@ -37,14 +37,16 @@
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
   var TRIAL_DAYS = 7;
-  // ── tier alias (rename migration, Phase 1) ────────────────────────────────
-  // `insider` is the WIRE value; `essential` is the display rename's alias of it
-  // (lib/tiers.py is the server's copy of this exact table). This file is served
-  // `immutable` with a far-future max-age, so a browser can still be running THIS
-  // copy long after the stored value flips — every tier that arrives from outside
-  // (?plan=, /api/me, a stash, an opener's opts) hops through normTier() before
-  // anything keys on it, and every internal comparison can then stay canonical.
-  var TIER_ALIAS = { essential: "insider" };
+  // ── tier alias (rename migration, Phase 2) ────────────────────────────────
+  // `essential` is the WIRE value; `insider` is what the estate shipped before the
+  // rename (lib/tiers.py is the server's copy of this exact table). The direction
+  // reversed in Phase 2 and the old value never expires: entitlement rows written
+  // before the flip still say `insider`, this file is served `immutable` with a
+  // far-future max-age so an older copy keeps sending it, and the landing's
+  // `data-plan` / `?plan=` markup ids still spell it. Every tier that arrives from
+  // outside (?plan=, /api/me, a stash, an opener's opts) hops through normTier()
+  // before anything keys on it, so every internal comparison stays canonical.
+  var TIER_ALIAS = { insider: "essential" };
   function normTier(v) {
     var t = String(v == null ? "" : v).trim().toLowerCase();
     return TIER_ALIAS[t] || t;
@@ -57,12 +59,12 @@
     out.tier = normTier(me.tier);
     return out;
   }
-  // Mirrors config/plans.yml products[].trial_days. Essential (internal key
-  // "insider") has NO trial as of 2026-07-31: the funnel puts everyone who wants to
-  // try the desk into Pro's seven days, and Essential is bought outright. Every
-  // trial promise in this sheet is keyed off this map — nothing may offer a trial
-  // the billing spine will not actually create.
-  var TRIAL_BY_PLAN = { insider: 0, pro: TRIAL_DAYS };
+  // Mirrors config/plans.yml products[].trial_days. Essential has NO trial as of
+  // 2026-07-31: the funnel puts everyone who wants to try the desk into Pro's seven
+  // days, and Essential is bought outright. Every trial promise in this sheet is
+  // keyed off this map — nothing may offer a trial the billing spine will not
+  // actually create.
+  var TRIAL_BY_PLAN = { essential: 0, pro: TRIAL_DAYS };
   function trialDaysFor(plan) { return TRIAL_BY_PLAN[normTier(plan)] || 0; }
   function planHasTrial(plan) { return trialDaysFor(plan) > 0; }
   // Browser `type=email` accepts local-network shapes such as `name@domain`.
@@ -73,7 +75,7 @@
   // Raw cents — the ONLY hand-entered plan numbers (mirror config/plans.yml /
   // terminal plans.ts). Every displayed figure is DERIVED from these.
   var CENTS = {
-    insider: { monthly: 9900, annual: 90000 },
+    essential: { monthly: 9900, annual: 90000 },
     pro:     { monthly: 14900, annual: 130800 }
   };
   var FOUNDING_PRO = { key: "founding_pro", active: true, annual: 90000, cap: 2000, claimed: null };
@@ -87,9 +89,9 @@
   function annualBilled(key) { return Math.round(annualCents(key) / 100); }
   function annualWas(key) { return normTier(key) === "pro" && FOUNDING_PRO.active ? Math.round(CENTS.pro.annual / 12 / 100) : monthlyPrice(key); }
   function savePct(key) { var c = cents(key); return Math.round(((c.monthly - annualCents(key) / 12) / c.monthly) * 100); }
-  function bestSavePct() { return Math.max(savePct("insider"), savePct("pro")); }
+  function bestSavePct() { return Math.max(savePct("essential"), savePct("pro")); }
   function firstInvoiceTotal(key, period) { return period === "annual" ? annualBilled(key) : monthlyPrice(key); }
-  function proWedge() { return perMonth("pro", "annual") - perMonth("insider", "annual"); }
+  function proWedge() { return perMonth("pro", "annual") - perMonth("essential", "annual"); }
 
   // ── bilingual: [en, zh] tuples. `zh` may contain inline HTML (matches the
   //    landing's data-zh contract, which swaps innerHTML). ──────────────────────
@@ -558,7 +560,7 @@
   };
   var LATTICE = [
     { tier: "free",    lbl: "rowFree",    tiles: [["read", "tlRead"], ["signals", "tlSignals"], ["charts", "tlCharts"]] },
-    { tier: "insider", lbl: "rowInsider", tiles: [["flow", "tlFlow"], ["desks", "tlDesks"], ["flash", "tlFlash"]] },
+    { tier: "essential", lbl: "rowInsider", tiles: [["flow", "tlFlow"], ["desks", "tlDesks"], ["flash", "tlFlash"]] },
     { tier: "pro",     lbl: "rowPro",     tiles: [["reports", "tlReports"], ["dives", "tlDives"], ["bots", "tlBots"]] }
   ];
   // which tile each "what you trade" answer pins — the pick has a visible consequence
@@ -706,7 +708,7 @@
   function T(tag, cls, key, attrs) { var n = h(tag, cls, attrs); n.setAttribute("data-k", key); n.innerHTML = tx(key); return n; }
 
   // ══════════════════════════ stepper ════════════════════════════════════════
-  function paidSelected() { return S.plan === "insider" || S.plan === "pro"; }
+  function paidSelected() { return S.plan === "essential" || S.plan === "pro"; }
   function renderSteps() {
     var defs = [
       { n: STEP_ACCOUNT, key: "stAccount" },
@@ -779,7 +781,9 @@
     ca:     { t: "SHOP.TO", c: ["SHOP", "RY", "ENB", "CNQ", "BN"] },
     global: { t: "SPY",     c: ["SPY", "ASML", "0700", "NVDA", "TSM"] }
   };
-  var RANK = { free: 0, insider: 1, essential: 1, pro: 2, unlimited: 2 };
+  // Ranks BOTH tier spellings: this is fed pre-normalisation in places, and a
+  // pre-rename row saying "insider" must not out-rank nothing.
+  var RANK = { free: 0, essential: 1, insider: 1, pro: 2, unlimited: 2 };
 
   function stageStep() {
     // upgrade mode plays the same stage on its OWN two-step lane
@@ -856,7 +860,7 @@
     var st = "setup", stKey = "plateSetup";
     if (step === 5) { st = "live"; stKey = "plateLive"; }
     else if (step === 4) { st = "trial"; stKey = planHasTrial(S.plan) ? "asmTrial" : "asmCheckout"; }
-    else if (step === 3 && tier && tier !== "free") { st = tier === "pro" ? "pro" : "insider"; stKey = tier === "pro" ? "planPro" : "planInsider"; }
+    else if (step === 3 && tier && tier !== "free") { st = tier === "pro" ? "pro" : "essential"; stKey = tier === "pro" ? "planPro" : "planInsider"; }
     else if (step === 3 && tier === "free") { st = "setup"; stKey = "planFree"; }
     stBox.setAttribute("data-st", st);
     stTxt.setAttribute("data-k", stKey); stTxt.textContent = tx(stKey);
@@ -1273,7 +1277,7 @@
     // plan cards
     var plans = h("div", "obm-plans");
     plans.appendChild(planCard("free"));
-    plans.appendChild(planCard("insider"));
+    plans.appendChild(planCard("essential"));
     plans.appendChild(planCard("pro"));
     root.appendChild(plans);
 
@@ -1313,7 +1317,7 @@
   // the tier headers are the picker, so a comparison ends in a decision instead
   // of a scroll position. Back returns to the exact step it opened from.
   var _cmpLastFocus = null;
-  function compareCols() { return ["free", "insider", "pro"]; }
+  function compareCols() { return ["free", "essential", "pro"]; }
   function compareTierPickable(t) {
     // in upgrade mode Free is the plan you already have — readable, not pickable
     return !(S.mode === "upgrade" && t === "free");
@@ -1327,7 +1331,7 @@
   function openCompare() {
     if (S.compare) return;
     S.compare = true;
-    S.compareCol = compareTierPickable(S.plan) ? S.plan : "insider";
+    S.compareCol = compareTierPickable(S.plan) ? S.plan : "essential";
     _cmpLastFocus = document.activeElement;
     buildCompare();
   }
@@ -1554,7 +1558,7 @@
         r.appendChild(chip); r.appendChild(tspan); miss.appendChild(r);
       });
       box.appendChild(miss);
-    } else if (S.plan === "insider") {
+    } else if (S.plan === "essential") {
       box.appendChild(hd("sumPlusInsider"));
       box.appendChild(list(["plusIns1", "plusIns2", "plusIns3"]));
       var wedge = h("div", "obm-wedge");
@@ -1698,7 +1702,7 @@
       if (!S.upPre) {
         var o = S.upgradeOpts || {};
         var oPlan = normTier(o.plan);
-        S.plan = (oPlan === "insider" || oPlan === "pro") ? oPlan : "pro";
+        S.plan = (oPlan === "essential" || oPlan === "pro") ? oPlan : "pro";
         S.period = (o.period === "monthly" || o.period === "annual") ? o.period : "annual";
         S.planTouched = true; S.confirmPending = false;   // signed-in: no email-confirm gate
         S.upPre = true;
@@ -1710,9 +1714,9 @@
     var lanes = upgradeLanes(tier, interval);
     if (!lanes.length) return upgradeBest(root);   // pro-annual / unlimited
 
-    // insider-monthly has the three-lane "switch to annual" story; the single-lane
-    // cases (insider-annual, pro-monthly) all point up to Pro Annual.
-    var subKey = (tier === "insider" && (interval === "monthly" || !interval)) ? "upToAnnualSub" : "upProAnnualSub";
+    // essential-monthly has the three-lane "switch to annual" story; the single-lane
+    // cases (essential-annual, pro-monthly) all point up to Pro Annual.
+    var subKey = (tier === "essential" && (interval === "monthly" || !interval)) ? "upToAnnualSub" : "upProAnnualSub";
     root.appendChild(T("p", "obm-sub", subKey));
 
     var wrap = h("div", "obm-plans obm-up-lanes");
@@ -1735,7 +1739,7 @@
     root.appendChild(periodToggle());
 
     var plans = h("div", "obm-plans");
-    plans.appendChild(planCard("insider"));
+    plans.appendChild(planCard("essential"));
     plans.appendChild(planCard("pro"));
     root.appendChild(plans);
 
@@ -1785,24 +1789,24 @@
   function upgradeLanes(tier, interval) {
     tier = normTier(tier);
     var monthly = (interval === "monthly" || !interval);
-    if (tier === "insider" && monthly) {
+    if (tier === "essential" && monthly) {
       // Lead with Pro Annual — the recommended, largest-step upgrade (tier + annual),
       // then the alternatives. Order = persuasion order; `popular` drives the ribbon.
       return [
         { tier: "pro", interval: "annual", popular: true },
         { tier: "pro", interval: "monthly" },
-        { tier: "insider", interval: "annual" }
+        { tier: "essential", interval: "annual" }
       ];
     }
-    if (tier === "insider") return [{ tier: "pro", interval: "annual", proPitch: true }];   // insider-annual
+    if (tier === "essential") return [{ tier: "pro", interval: "annual", proPitch: true }];   // essential-annual
     if (tier === "pro" && monthly) return [{ tier: "pro", interval: "annual", proPitch: true }];
     return [];   // pro-annual / unlimited → best-plan panel
   }
 
   function upgradeLaneCard(ln) {
     var annual = ln.interval === "annual";
-    var nmKey = ln.tier === "insider" ? "laneInsAnnual" : (annual ? "laneProAnnual" : "laneProMonthly");
-    var whoKey = ln.tier === "insider" ? "laneInsAnnualWho" : (annual ? "laneProAnnualWho" : "laneProMonthlyWho");
+    var nmKey = ln.tier === "essential" ? "laneInsAnnual" : (annual ? "laneProAnnual" : "laneProMonthly");
+    var whoKey = ln.tier === "essential" ? "laneInsAnnualWho" : (annual ? "laneProAnnualWho" : "laneProMonthlyWho");
     var hue = ln.tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
     var mo = perMonth(ln.tier, ln.interval);
     var card = h("button", "obm-plan obm-up-lane" + (ln.popular ? " obm-hot" : ""), { type: "button" });
@@ -1820,7 +1824,7 @@
     }
     left.appendChild(nm);
     left.appendChild(T("div", "obm-plan-who", whoKey));
-    // pro-pitch framing line (insider-annual / pro-monthly → pro-annual) — computed
+    // pro-pitch framing line (essential-annual / pro-monthly → pro-annual) — computed
     if (ln.proPitch) {
       var pitch = h("p", "obm-up-pitch");
       var a = annualBilled(ln.tier), m = monthlyPrice(ln.tier) * 12, p = savePct(ln.tier);
@@ -2266,7 +2270,7 @@
     build();
     S.mode = mode || "signup";
     var optPlan = opts ? normTier(opts.plan) : "";
-    if (optPlan === "free" || optPlan === "insider" || optPlan === "pro") S.plan = optPlan;
+    if (optPlan === "free" || optPlan === "essential" || optPlan === "pro") S.plan = optPlan;
     if (opts && opts.period && (opts.period === "monthly" || opts.period === "annual")) S.period = opts.period;
     if (opts && opts.resume) S.step = STEP_PREFS;
     if (S.mode === "signin") S.step = STEP_ACCOUNT;
@@ -2394,7 +2398,7 @@
     var plan = normTier(sp.get("plan")), period = sp.get("period");
     return {
       mode: (wantSignin && !wantSignup) ? "signin" : "signup",
-      plan: (plan === "insider" || plan === "pro" || plan === "free") ? plan : null,
+      plan: (plan === "essential" || plan === "pro" || plan === "free") ? plan : null,
       period: (period === "monthly" || period === "annual") ? period : null,
       resume: sp.get("onboard") === "resume"
     };
@@ -2516,9 +2520,11 @@
       } else if (tier === "free") {
         // signed-in free tier → unchanged: keep the card's own trial copy, open the sheet
         makePlanLive(pc, null, start, { plan: plan, period: pc.getAttribute("data-period") || "annual" });
-      } else if (plan === "insider") {
-        // held by an Insider, bundled into Pro/unlimited — either way, not a purchase
-        makeInert(pc, tier === "insider" ? "yourPlan" : "included");
+      } else if (normTier(plan) === "essential") {
+        // `plan` is the landing's data-plan MARKUP id, which still spells the old name
+        // (Phase 4 owns those); normTier lands it canonical before the comparison.
+        // Held by an Essential member, bundled into Pro/unlimited — not a purchase.
+        makeInert(pc, tier === "essential" ? "yourPlan" : "included");
       } else if (plan === "pro") {
         if (proTop) makeInert(pc, "yourPlan");
         else if (tier === "pro") makePlanLive(pc, "upgradeAnnual", start, { plan: "pro", period: "annual" });

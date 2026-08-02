@@ -394,8 +394,8 @@ def test_tier_resolution_fallback_on_network_error():
 def test_trialing_status_uses_trial_allowance():
     """status='trialing' returns trial allowances regardless of tier name."""
     root = _make_temp_root()
-    allowance_fast = gw._get_allowance("insider", "trialing", "fast", root)
-    allowance_pro = gw._get_allowance("insider", "trialing", "pro", root)
+    allowance_fast = gw._get_allowance("essential", "trialing", "fast", root)
+    allowance_pro = gw._get_allowance("essential", "trialing", "pro", root)
     # trial: fast=25/trial, pro=3/trial
     assert allowance_fast["limit"] == 25
     assert allowance_fast["period"] == "trial"
@@ -404,9 +404,9 @@ def test_trialing_status_uses_trial_allowance():
 
 
 def test_active_status_uses_tier_allowance():
-    """status='active' with tier='insider' returns insider monthly allowances."""
+    """status='active' with tier='essential' returns the Essential monthly allowances."""
     root = _make_temp_root()
-    allowance = gw._get_allowance("insider", "active", "fast", root)
+    allowance = gw._get_allowance("essential", "active", "fast", root)
     assert allowance["limit"] == 300
     assert allowance["period"] == "month"
 
@@ -586,7 +586,7 @@ def test_sse_done_has_required_fields(tmp_path):
 
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
-            with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "essential", "status": "active", "current_period_end": None}):
                 with patch.object(gw, "_ensure_thread", return_value=None):
                     with patch("lib.ai_costs.record_usage", return_value=True):
                         events = list(gw.chat_stream("hello", "user2", lane="fast", root=root))
@@ -1229,7 +1229,7 @@ def test_get_user_quotas_returns_both_lanes(tmp_path):
     """get_user_quotas returns fast and pro quota info."""
     root = _make_temp_root()
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
-        with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+        with patch.object(gw, "_resolve_tier", return_value={"tier": "essential", "status": "active", "current_period_end": None}):
             result = gw.get_user_quotas("user_q", root=root)
 
     assert "tier" in result
@@ -3054,7 +3054,7 @@ def test_chat_stream_fails_over_to_fallback_on_dead_primary(tmp_path):
         ]
         with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
             with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
-                with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "essential", "status": "active", "current_period_end": None}):
                     with patch.object(gw, "_ensure_thread", return_value=None):
                         with patch("lib.ai_costs.record_usage", return_value=True):
                             events = list(gw.chat_stream("hello", "user_failover", lane="fast", root=root))
@@ -3082,7 +3082,7 @@ def test_chat_stream_degraded_emits_visible_delta(tmp_path):
         ]
         with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
             with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
-                with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "essential", "status": "active", "current_period_end": None}):
                     with patch.object(gw, "_ensure_thread", return_value=None):
                         with patch("lib.ai_costs.record_usage", return_value=True):
                             events = list(gw.chat_stream("hello", "user_alldead", lane="fast", root=root))
@@ -3642,7 +3642,7 @@ def test_stream_emits_suggest_between_delta_and_done(tmp_path):
 
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
-            with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "essential", "status": "active", "current_period_end": None}):
                 with patch.object(gw, "_ensure_thread", return_value=None):
                     with patch("lib.ai_costs.record_usage", return_value=True):
                         events = list(gw.chat_stream("how risky?", "user_sse_next", lane="fast", root=root))
@@ -6199,7 +6199,7 @@ def test_brain_stream_route_threads_stored_prefs():
 
 
 # ---------------------------------------------------------------------------
-# The 'essential' alias (rename migration, Phase 1)
+# The 'insider' alias (rename migration, Phase 2 — the direction REVERSED)
 #
 # This is the gateway's highest-stakes tolerance gap because it is SILENT.
 # _get_allowance picks `quotas[tier] if tier in quotas else quotas['free']`, so an
@@ -6207,26 +6207,31 @@ def test_brain_stream_route_threads_stored_prefs():
 # (5 fast questions a WEEK instead of 300 a month).
 # ---------------------------------------------------------------------------
 
-def test_essential_allowance_is_identical_to_insider_on_both_lanes():
+def test_pre_rename_allowance_is_identical_to_the_canonical_one_on_both_lanes():
     root = _make_temp_root()
     for lane in ("fast", "pro"):
-        assert (gw._get_allowance("essential", "active", lane, root)
-                == gw._get_allowance("insider", "active", lane, root))
+        assert (gw._get_allowance("insider", "active", lane, root)
+                == gw._get_allowance("essential", "active", lane, root))
 
 
-def test_essential_is_not_silently_demoted_to_the_free_bucket():
-    """The failure this prevents, asserted as itself rather than as an equality."""
+def test_a_pre_rename_row_is_not_silently_demoted_to_the_free_bucket():
+    """The failure this prevents, asserted as itself rather than as an equality.
+
+    config/brain.yml's quota bucket is now keyed `essential`. A row still carrying the
+    pre-rename value is NOT back-filled, so without the alias hop every grandfathered
+    paying customer drops from 300 fast questions a month to the free 5 a week.
+    """
     root = _make_temp_root()
-    got = gw._get_allowance("essential", "active", "fast", root)
+    got = gw._get_allowance("insider", "active", "fast", root)
     assert got == {"limit": 300, "period": "month"}
     assert got != gw._get_allowance("free", "active", "fast", root)
 
 
-def test_essential_trialing_still_takes_the_trial_bucket():
+def test_pre_rename_trialing_still_takes_the_trial_bucket():
     """Status outranks tier — the alias must not change which axis wins."""
     root = _make_temp_root()
-    assert (gw._get_allowance("essential", "trialing", "fast", root)
-            == gw._get_allowance("insider", "trialing", "fast", root))
+    assert (gw._get_allowance("insider", "trialing", "fast", root)
+            == gw._get_allowance("essential", "trialing", "fast", root))
 
 
 def test_an_unknown_tier_still_falls_back_to_free():
@@ -6243,7 +6248,7 @@ def test_resolve_tier_normalizes_the_stored_row_before_caching():
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def read(self):
-            return json.dumps([{"tier": "essential", "status": "active",
+            return json.dumps([{"tier": "insider", "status": "active",
                                 "current_period_end": None}]).encode()
 
     with patch.dict("os.environ", {
@@ -6258,18 +6263,18 @@ def test_resolve_tier_normalizes_the_stored_row_before_caching():
             cached = gw._TIER_CACHE["aliased_user"][0]
             gw._TIER_CACHE.clear()
 
-    assert result["tier"] == "insider", "the alias must not escape the resolver"
-    assert cached["tier"] == "insider", "and it must not be what gets cached either"
+    assert result["tier"] == "essential", "the alias must not escape the resolver"
+    assert cached["tier"] == "essential", "and it must not be what gets cached either"
     assert result["status"] == "active"
 
 
 def test_resolve_tier_leaves_a_canonical_row_untouched():
-    """No behaviour change for the rows that exist today."""
+    """No behaviour change for a row the catalog already agrees with."""
     class _Resp:
         def __enter__(self): return self
         def __exit__(self, *a): return False
         def read(self):
-            return json.dumps([{"tier": "insider", "status": "active",
+            return json.dumps([{"tier": "essential", "status": "active",
                                 "current_period_end": None}]).encode()
 
     with patch.dict("os.environ", {
@@ -6283,4 +6288,4 @@ def test_resolve_tier_leaves_a_canonical_row_untouched():
         with gw._TIER_CACHE_LOCK:
             gw._TIER_CACHE.clear()
 
-    assert result["tier"] == "insider"
+    assert result["tier"] == "essential"

@@ -260,7 +260,7 @@ deny:
   prefixes: []
 
 premium:
-  default_tier: insider
+  default_tier: essential
   required_feature: site_full
 
   # Paths whose premium requirement is enforced RIGHT NOW, ahead of the

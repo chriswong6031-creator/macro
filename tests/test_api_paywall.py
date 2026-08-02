@@ -49,7 +49,7 @@ def test_ask_allows_active_site_full_when_armed(monkeypatch):
     monkeypatch.setattr(
         paywall,
         "_store_entitlement",
-        lambda uid: ({"tier": "insider", "status": "active", "features": ["site_full"]}, True),
+        lambda uid: ({"tier": "essential", "status": "active", "features": ["site_full"]}, True),
     )
     monkeypatch.setattr(
         "engine.neuralweb.ask_brain.ask",

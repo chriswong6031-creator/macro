@@ -278,7 +278,7 @@ def enforce_site_full(user: dict[str, Any], *, always: bool = False) -> dict[str
             403,
             detail={
                 "locked": True,
-                "tier": "insider",
+                "tier": "essential",
                 "required_feature": "site_full",
                 "upgrade_url": "/plans.html?upgrade=1",
             },
@@ -295,7 +295,7 @@ def _headers(verdict: str) -> dict[str, str]:
     }
 
 
-def _locked(request: Request, path: str, tier: str = "insider") -> Response:
+def _locked(request: Request, path: str, tier: str = "essential") -> Response:
     if _is_document(request, path):
         try:
             body = INTERSTITIAL.read_text(encoding="utf-8")
@@ -347,7 +347,7 @@ def paywall_check(request: Request) -> Response:
         feature = str(cfg["premium"]["required_feature"])
         allowed, tier = _entitled(uid, feature)
         if not allowed:
-            return _locked(request, path, str(cfg["premium"].get("default_tier") or "insider"))
+            return _locked(request, path, str(cfg["premium"].get("default_tier") or "essential"))
         return Response(status_code=204, headers=_headers(f"allow-{tier}"))
     except Exception as exc:  # noqa: BLE001 — fail CLOSED under every error
         log.warning("paywall: check failed closed (%s)", exc)

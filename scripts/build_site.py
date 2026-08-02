@@ -3302,7 +3302,7 @@ def _plans_view_model() -> dict:
 
     return {
         "currency": catalog.get("currency", "usd"),
-        "insider": _tier_vm("insider"),
+        "essential": _tier_vm("essential"),
         "pro": _tier_vm("pro"),
         "founding": founding,
         "terminal_indicators": catalog.get("terminal_indicators", {}),
@@ -3322,14 +3322,14 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
     html = env.get_template("plans.html.j2").render(
         generated_utc=generated,
         currency=vm["currency"],
-        insider=vm["insider"],
+        essential=vm["essential"],
         pro=vm["pro"],
         founding=vm["founding"],
         terminal_indicators=vm["terminal_indicators"],
     )
     write_page(site / "plans.html", html)
-    log.info("wrote plans.html (insider $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
-             vm["insider"]["monthly_pm"], vm["insider"]["annual_pm"], vm["insider"]["save_pct"],
+    log.info("wrote plans.html (essential $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
+             vm["essential"]["monthly_pm"], vm["essential"]["annual_pm"], vm["essential"]["save_pct"],
              vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])
 
 

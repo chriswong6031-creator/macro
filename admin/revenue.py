@@ -40,7 +40,10 @@ from . import users
 
 log = logging.getLogger("macro.admin.revenue")
 
-_TIERS = ("insider", "pro")
+# The catalog's entitlement tiers. `_sub_tier` resolves through
+# billing._lookup_key_to_tier, so a subscription still sitting on a pre-rename PRICE
+# already reports the current tier and lands in these buckets rather than "other".
+_TIERS = ("essential", "pro")
 _INTERVALS = ("monthly", "annual")
 _TRIALING_ACTIVE = ("active", "trialing")
 
