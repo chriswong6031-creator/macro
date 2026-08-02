@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T15:03:03.289610+00:00",
-  "count": 601,
+  "generated_at": "2026-08-02T15:33:06.224475+00:00",
+  "count": 602,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-wknelafcr0l-441486",
+      "title": "JPM PI Monthly Wrap Metrics 2026.07.31 1",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:52:08Z",
+      "summary_points": [
+        "**Extreme bearish positioning divergence**: SPX rising while positioning (options/futures) remains deeply negative (Call/Put ratio -1.0 to -3.0), indicating overextended bearish sentiment and high short-covering risk.",
+        "**Global HF net flows negative with regional shifts**: Global HF net flows -0.2z (US flat, Europe -0.3z, APAC +2z), with APAC tech/energy sold and EMEA buying financials/healthcare.",
+        "**Leverage risk intensifies**: Global net leverage at 71.5% (up 3.6% WoW), Equity L/S at 58.3% (up 2.8% WoW), with Multi-Strat net leverage +7.5% WoW signaling aggressive directional bets.",
+        "**Mean reversion signal active**: 4Wk Z-score below -1.5z (ATTRACTION signal) validated by 2015-2022 data, with SPX trending upward amid this signal.",
+        "**ETF flows outpace SPX**: Sustained ETF inflows (12m rolling sum) consistently exceeding SPX in 20d avg, indicating institutional positioning strength."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 35,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-hx5lyp97g3j-c866ba",
       "title": "Article bmfimultisectorplaybookincreasingdispersion ltr",
