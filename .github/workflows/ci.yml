@@ -98,6 +98,12 @@ on:
       - "tests/test_no_absolute_path_part_prunes.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
+      # chat.html header guard: the one product page that cannot {% include %} the
+      # shared nav (it is a plain-copy pair) has its header RENDERED from
+      # _site_nav.html.j2 instead. Named here, not just reached via templates/**,
+      # so a PR touching only the generator still runs the job that checks it.
+      - "scripts/sync_chat_nav.py"
+      - "tests/test_chat_nav_sync.py"
       # ?v= stamp lane guard (ui.asset_stamp): the sweep that moves a stamp, and the
       # ordering/staging contract the lanes must keep for it to survive to main. The
       # lane YAMLs themselves already reach this via ".github/workflows/**" below.

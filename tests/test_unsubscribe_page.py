@@ -660,7 +660,7 @@ PUBLIC_EXACT = frozenset({
     "/sitemap.xml", "/llms.txt", "/brand-facts.json",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
-    "/chat.css", "/chat_nav.css",
+    "/chat.css",
     "/theme.css", "/navigation-refresh.css", "/product-nav-icons.css",
     "/logo_config.js", "/stock-logos.js", "/theme.js", "/dashboard-icons.css",
     "/dashboard-icons.js", "/chart_i18n.js", "/timemachine.js", "/tablesort.js",
