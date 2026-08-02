@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_source_snapshot.schema.json",
+  "title": "SEC Company Facts source snapshot linkage",
+  "description": "One immutable retained Company Facts snapshot linked to direct share-count fact revisions. It is separate from correction lineage and makes no coverage, selection, risk, or trading claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source_receipt_id", "source_receipt", "fact_links"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_source_snapshot.v1"},
+    "source_receipt_id": {"type": "string", "pattern": "^companyfacts-receipt:cs:[a-f0-9]{24}$"},
+    "source_receipt": {"type": "object"},
+    "fact_links": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/factLink"}
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason"],
+      "properties": {
+        "disposition": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "direct_sec_companyfacts_fact", "unexpected_unit", "missing_value",
+            "negative_value", "missing_period_end", "missing_filing_provenance",
+            "missing_system_availability", "system_availability_precedes_filed_date",
+            "multiple_distinct_values_for_fact_slot", "multiple_distinct_contexts_for_fact_slot",
+            "malformed_fact_entry"
+          ]
+        }
+      }
+    },
+    "factLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "logical_observation_id", "fact_revision_id", "observation_id", "state",
+        "point_in_time", "fact_entry_sha256s"
+      ],
+      "properties": {
+        "logical_observation_id": {"type": "string", "pattern": "^share-count-slot:cs:[a-f0-9]{24}$"},
+        "fact_revision_id": {"type": "string", "pattern": "^share-count-revision:cs:[a-f0-9]{24}$"},
+        "observation_id": {"type": "string", "pattern": "^share-count:cs:[a-f0-9]{24}$"},
+        "state": {"$ref": "#/$defs/state"},
+        "point_in_time": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_retrieved_at", "system_available_at", "available_at"],
+          "properties": {
+            "source_retrieved_at": {"type": "string", "format": "date-time"},
+            "system_available_at": {"type": "string", "format": "date-time"},
+            "available_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "fact_entry_sha256s": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

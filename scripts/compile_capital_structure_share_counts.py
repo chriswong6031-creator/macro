@@ -3,7 +3,8 @@
 This command is intentionally not a collector.  It never fetches SEC endpoints
 and never consults the legacy fetch-time ``edgar_facts`` cache as a historical
 point-in-time source.  An upstream intake lane must first retain exact Company
-Facts bytes and pass a hash-bound receipt.  Without both inputs the command
+Facts bytes and pass a closed, hash-bound receipt with durable raw-object and
+manifest locators.  Without both inputs the command
 prints an explicit unavailable result rather than inventing coverage.
 
 Usage:

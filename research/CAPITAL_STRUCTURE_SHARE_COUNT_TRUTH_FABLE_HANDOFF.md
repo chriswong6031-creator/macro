@@ -18,6 +18,8 @@ authority. A public-float *dollar fact* is not converted into float shares.
 The canonical implementation files are:
 
 - `contracts/capital_structure_share_count_observation.schema.json`
+- `contracts/capital_structure_companyfacts_source_receipt.schema.json`
+- `contracts/capital_structure_companyfacts_source_snapshot.schema.json`
 - `engine/capital_structure/share_count_truth.py`
 - `scripts/compile_capital_structure_share_counts.py`
 - `tests/test_capital_structure_share_count_truth.py`
@@ -28,6 +30,11 @@ Each immutable row represents one fact slot:
 
 `issuer + metric kind + XBRL namespace/name + source unit + period end + accession + form + filed date`.
 
+`fact_revision_id` identifies the direct fact revision only. It is computed from
+fact-slot semantics and in-scope raw fact-entry hashes, deliberately excluding
+whole-payload metadata/hash, retained-object locator, receipt ID and receipt
+clocks. Those identify a source snapshot, not a corrected share fact.
+
 The row retains:
 
 - the direct SEC XBRL namespace/name, source unit and `scale="1"` (Company
@@ -37,10 +44,14 @@ The row retains:
 - period end, fiscal year/period/frame where Company Facts supplies them;
 - accession, form and filed date; `accepted_at` stays null because Company
   Facts does not provide it;
-- an exact retained-payload SHA-256, SEC Company Facts endpoint, JSON-pointer
-  path and SHA-256 of every raw fact entry used;
+- an exact retained-payload SHA-256, SEC Company Facts endpoint, content-
+  addressed raw-object locator, durable manifest locator, JSON-pointer path and
+  SHA-256 of every raw fact entry used;
 - an upstream source-receipt clock and `system_available_at`, which is the only
   `available_at` exposed by this plane;
+- a separate `source_snapshot` result row that links every supplied receipt to
+  its fact revisions and snapshot-local availability state without advancing a
+  fact correction chain;
 - concept-semantic security classification (`common_stock`) for both share
   concepts, while public float is honestly marked `not_security_specific`;
 - closed state (`observed`, `deferred`, `ambiguous`) and immutable correction
@@ -56,6 +67,11 @@ the kernel never chooses one as “the” current count or assumes they reconcil
 `compile_share_count_observations(source_bytes, source_receipt, ...)` requires
 the exact JSON bytes plus a receipt naming their SHA-256. The receipt is strict:
 
+- it validates against the closed
+  `capital_structure.companyfacts_source_receipt.v1` schema, including
+  `version=1`, `source_system=sec_companyfacts`,
+  `acquisition_state=provided_snapshot`, a content-addressed durable raw-object
+  locator and a durable manifest locator;
 - issuer CIK and SEC endpoint must match exactly;
 - source receipt is an externally provided snapshot, not a collector result;
 - source retrieval and system-availability timestamps must be timezone-aware;
@@ -73,6 +89,17 @@ receipt emits an explicit `status="unavailable"` result with
 The current acquisition limitation is real: this wave supplies the kernel and
 contract only. A future intake lane must retain raw Company Facts bytes and its
 receipt before this can claim issuer or market coverage.
+
+### Snapshot refreshes versus fact corrections
+
+A source snapshot may change because SEC refreshed root metadata, another
+uninvolved concept changed, the whole-payload hash changed, or Mastermind
+received it later. The compiler retains that receipt in its `source_snapshot`
+result row with links to stable `fact_revision_id`s. It does **not** create
+`correction_version + 1`. Only a change in a direct in-scope fact revision may
+advance a correction chain. Caller-side persistence must retain immutable
+observations and every `source_snapshot` result; future as-of selection must
+use receipt clocks from the snapshot links, never invent a synthetic correction.
 
 ## 3. Failure behavior
 
@@ -115,13 +142,16 @@ the correction chain.
 
 `tests/test_capital_structure_share_count_truth.py` pins:
 
-- strict Draft 2020-12 schema validation and all authority fences;
+- strict Draft 2020-12 observation and closed receipt-schema validation,
+  durable raw-object/manifest locators, and all authority fences;
 - separate `us-gaap` shares, DEI shares and DEI public-float rows;
 - unexpected-unit defer without silent reinterpretation;
 - duplicate fact values becoming ambiguous rather than “latest wins”;
 - hash-bound source bytes and receipt-clock failures;
 - filing-date versus system-availability PIT refusal; and
-- contiguous, non-branching correction lineage.
+- contiguous, non-branching correction lineage; and
+- root-metadata/payload-hash/receipt-clock refreshes that remain receipt-linked
+  but create zero false fact corrections.
 
 This is a solid substrate for parity work, but not parity itself: it adds a
 truthful denominator evidence layer rather than cosmetic “dilution risk” cards.

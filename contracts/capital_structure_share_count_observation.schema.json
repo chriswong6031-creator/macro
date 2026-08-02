@@ -6,7 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema", "observation_id", "logical_observation_id", "issuer_id", "metric",
+    "schema", "observation_id", "logical_observation_id", "fact_revision_id", "issuer_id", "metric",
     "fact", "security_class", "period", "filing", "state", "reported",
     "normalized", "evidence", "source_acquisition", "point_in_time",
     "relationships", "version", "authority"
@@ -15,6 +15,7 @@
     "schema": {"const": "capital_structure.share_count_observation.v1"},
     "observation_id": {"type": "string", "pattern": "^share-count:cs:[a-f0-9]{24}$"},
     "logical_observation_id": {"type": "string", "pattern": "^share-count-slot:cs:[a-f0-9]{24}$"},
+    "fact_revision_id": {"type": "string", "pattern": "^share-count-revision:cs:[a-f0-9]{24}$", "description": "Hash of direct fact-slot semantics and raw in-scope fact-entry hashes only; it deliberately excludes whole-snapshot metadata, source payload hash, retained-object locator, and receipt clocks."},
     "issuer_id": {"type": "string", "pattern": "^issuer:[0-9]{10}$"},
     "metric": {
       "type": "object",
@@ -93,12 +94,15 @@
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source_receipt_id", "source_system", "source_url", "source_payload_sha256", "fact_entries"],
+      "required": ["source_receipt_id", "source_receipt_schema", "source_system", "source_url", "source_payload_sha256", "raw_object_locator", "manifest_locator", "fact_entries"],
       "properties": {
         "source_receipt_id": {"type": "string", "pattern": "^companyfacts-receipt:cs:[a-f0-9]{24}$"},
+        "source_receipt_schema": {"const": "capital_structure.companyfacts_source_receipt.v1"},
         "source_system": {"const": "sec_companyfacts"},
         "source_url": {"type": "string", "format": "uri"},
         "source_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "raw_object_locator": {"type": "string", "pattern": "^capital_structure/sec/companyfacts/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "manifest_locator": {"type": "string", "pattern": "^companyfacts-manifest:cs:[a-f0-9]{64}$"},
         "fact_entries": {
           "type": "array",
           "minItems": 1,

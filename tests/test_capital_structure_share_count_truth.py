@@ -14,6 +14,7 @@ from engine.capital_structure.share_count_truth import (
     compile_share_count_observations,
     observation_id_for,
     source_acquisition_unavailable_result,
+    validate_source_snapshot,
     validate_share_count_history,
 )
 from scripts.compile_capital_structure_share_counts import main
@@ -22,6 +23,8 @@ from scripts.compile_capital_structure_share_counts import main
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "capital_structure" / "share_count_truth" / "companyfacts_0000320193.json"
 SCHEMA_PATH = ROOT / "contracts" / "capital_structure_share_count_observation.schema.json"
+RECEIPT_SCHEMA_PATH = ROOT / "contracts" / "capital_structure_companyfacts_source_receipt.schema.json"
+SNAPSHOT_SCHEMA_PATH = ROOT / "contracts" / "capital_structure_companyfacts_source_snapshot.schema.json"
 
 
 def _source_bytes() -> bytes:
@@ -34,12 +37,17 @@ def _payload(source_bytes: bytes | None = None) -> dict:
 
 def _receipt(source_bytes: bytes | None = None, **overrides) -> dict:
     raw = source_bytes or _source_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
     receipt = {
+        "schema": "capital_structure.companyfacts_source_receipt.v1",
+        "version": 1,
         "source_system": "sec_companyfacts",
         "acquisition_state": "provided_snapshot",
         "issuer_id": "issuer:0000320193",
         "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
-        "source_payload_sha256": hashlib.sha256(raw).hexdigest(),
+        "source_payload_sha256": digest,
+        "raw_object_locator": f"capital_structure/sec/companyfacts/sha256/{digest[:2]}/{digest}",
+        "manifest_locator": f"companyfacts-manifest:cs:{digest}",
         "source_retrieved_at": "2025-11-01T00:00:00Z",
         "system_available_at": "2025-11-01T00:03:00Z",
     }
@@ -54,6 +62,14 @@ def _compile(source_bytes: bytes | None = None, *, existing=()):
 
 def _schema() -> dict:
     return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _receipt_schema() -> dict:
+    return json.loads(RECEIPT_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _snapshot_schema() -> dict:
+    return json.loads(SNAPSHOT_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def _validate(record: dict) -> list[str]:
@@ -78,6 +94,7 @@ def test_contract_is_strict_and_three_named_sec_facts_are_preserved_separately()
     }
     for row in rows:
         assert not _validate(row)
+        assert row["fact_revision_id"].startswith("share-count-revision:cs:")
         assert row["state"] == {"disposition": "observed", "reason": "direct_sec_companyfacts_fact"}
         assert row["point_in_time"]["available_at"] == "2025-11-01T00:03:00Z"
         assert row["source_acquisition"]["collector_state"] == "not_implemented_in_share_count_truth_wave"
@@ -85,6 +102,8 @@ def test_contract_is_strict_and_three_named_sec_facts_are_preserved_separately()
             "is_context_only": True, "rank_authority": False, "sizing_authority": False,
             "entry_authority": False, "trade_authority": False, "prophet_authority": False,
         }
+        assert row["evidence"]["source_receipt_schema"] == "capital_structure.companyfacts_source_receipt.v1"
+        assert row["evidence"]["raw_object_locator"].endswith(row["evidence"]["source_payload_sha256"])
 
     gaap = next(row for row in rows if row["fact"]["name"] == "CommonStockSharesOutstanding")
     assert gaap["reported"] == {"value": "150000000", "unit": "shares", "scale": "1"}
@@ -144,13 +163,37 @@ def test_same_value_with_distinct_xbrl_context_is_ambiguous_not_arbitrarily_sele
 
 def test_invalid_source_hash_and_temporal_receipt_fail_closed():
     raw = _source_bytes()
+    wrong_hash = "a" * 64
     with pytest.raises(ShareCountTruthError, match="payload hash"):
-        compile_share_count_observations(raw, _receipt(raw, source_payload_sha256="a" * 64))
+        compile_share_count_observations(raw, _receipt(
+            raw,
+            source_payload_sha256=wrong_hash,
+            raw_object_locator=f"capital_structure/sec/companyfacts/sha256/{wrong_hash[:2]}/{wrong_hash}",
+        ))
     with pytest.raises(ShareCountTruthError, match="cannot precede"):
         compile_share_count_observations(
             raw,
             _receipt(raw, source_retrieved_at="2025-11-01T00:04:00Z", system_available_at="2025-11-01T00:03:00Z"),
         )
+
+
+def test_closed_receipt_requires_version_and_durable_raw_object_manifest_locators():
+    Draft202012Validator.check_schema(_receipt_schema())
+    Draft202012Validator.check_schema(_snapshot_schema())
+    raw = _source_bytes()
+    receipt = _receipt(raw)
+    receipt["unexpected"] = True
+    with pytest.raises(ShareCountTruthError, match="(?i)additional properties"):
+        compile_share_count_observations(raw, receipt)
+
+    missing_manifest = _receipt(raw)
+    missing_manifest.pop("manifest_locator")
+    with pytest.raises(ShareCountTruthError, match="manifest_locator"):
+        compile_share_count_observations(raw, missing_manifest)
+
+    non_content_addressed = _receipt(raw, raw_object_locator="capital_structure/sec/companyfacts/latest")
+    with pytest.raises(ShareCountTruthError, match="raw_object_locator"):
+        compile_share_count_observations(raw, non_content_addressed)
 
 
 def test_source_available_before_a_fact_was_filed_is_deferred_not_backdated():
@@ -207,6 +250,50 @@ def test_changed_snapshot_creates_a_nonbranching_immutable_correction_lineage():
     idempotent = _compile(_with_payload(payload), existing=changed)
     assert idempotent["counts"]["new_observations"] == 0
     assert idempotent["observations"] == changed
+
+
+def test_unrelated_snapshot_metadata_hash_and_receipt_clock_do_not_create_fact_corrections():
+    original_result = _compile()
+    original = original_result["observations"]
+    payload = _payload()
+    payload["entityName"] = "Example Issuer (issuer-root metadata refreshed)"
+    refreshed_raw = _with_payload(payload)
+    refreshed = compile_share_count_observations(
+        refreshed_raw,
+        _receipt(
+            refreshed_raw,
+            source_retrieved_at="2025-11-02T01:00:00Z",
+            system_available_at="2025-11-02T01:04:00Z",
+        ),
+        existing_observations=original,
+    )
+
+    # Whole-snapshot provenance changed, but none of the direct fact entries
+    # did. The fact ledger remains immutable and correction-free.
+    assert refreshed["counts"]["new_observations"] == 0
+    assert refreshed["observations"] == original
+    validate_share_count_history(refreshed["observations"])
+
+    # The refreshed snapshot is still retained as an explicit receipt-bound
+    # linkage, so the system never loses its newer raw-payload/PIT provenance.
+    snapshot = refreshed["source_snapshot"]
+    assert snapshot["source_receipt"]["source_payload_sha256"] == hashlib.sha256(refreshed_raw).hexdigest()
+    assert snapshot["source_receipt_id"] != original_result["source_snapshot"]["source_receipt_id"]
+    assert {link["observation_id"] for link in snapshot["fact_links"]} == {
+        row["observation_id"] for row in original
+    }
+    assert {link["fact_revision_id"] for link in snapshot["fact_links"]} == {
+        row["fact_revision_id"] for row in original
+    }
+    assert {link["point_in_time"]["available_at"] for link in snapshot["fact_links"]} == {
+        "2025-11-02T01:04:00Z"
+    }
+    validate_source_snapshot(snapshot)
+
+    tampered = deepcopy(snapshot)
+    tampered["fact_links"][0]["point_in_time"]["available_at"] = "2025-11-02T01:05:00Z"
+    with pytest.raises(ShareCountTruthError, match="available_at"):
+        validate_source_snapshot(tampered)
 
 
 def test_explicit_no_source_result_and_cli_do_not_claim_collector_coverage(capsys, tmp_path):
