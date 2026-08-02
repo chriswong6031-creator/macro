@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import base64
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from decimal import Decimal, DecimalException, localcontext
 import gzip
 from hashlib import sha256
@@ -89,11 +89,6 @@ ATTESTATION_MATCH_POLICY_FINGERPRINT = sha256(
 
 class FilingAttestationError(ValueError):
     """An attestation input cannot safely make the narrow ``ffatt_`` claim."""
-
-
-def _utc_now() -> datetime:
-    """Internal clock seam for deterministic tests; never a public build argument."""
-    return datetime.now(timezone.utc)
 
 
 def _text(value: Any, *, field: str, maximum: int = MAX_TEXT_BYTES) -> str:
@@ -1036,9 +1031,15 @@ def build_filing_attestation(
     extraction: IxbrlExtraction | Mapping[str, Any],
     *,
     authority: PinnedSourceAuthority,
+    attested_at: datetime | str,
     companyfacts_paths: CompanyFactsSourcePaths | None = None,
 ) -> FilingAttestation:
-    """Read a pinned snapshot and seal the exact limited source correspondence."""
+    """Read a pinned snapshot and seal the exact limited source correspondence.
+
+    ``attested_at`` is an explicit operator-observation clock.  The deterministic
+    kernel never samples wall time, and rejects a clock that predates any source
+    evidence used by the attestation.
+    """
     # The protocol exists for narrow test/adapter seams, but an artifact that
     # labels its authority as a pinned internal source snapshot must only be
     # sealed by the concrete adapter that reloads and checksum-verifies that
@@ -1139,8 +1140,10 @@ def build_filing_attestation(
             raise FilingAttestationError("CompanyFactsSourcePaths subclasses are not accepted")
         cf_binding, cf_evidence, _, _ = _companyfacts_attestation(authority=authority, paths=companyfacts_paths, cik=cik, accession=accession, extraction=extraction_value)
         cf_binding["requested"] = True
-    # This is intentionally sampled after all source reads and parser replay.
-    attested_at = _clock(_utc_now(), field="attested_at")
+    # The operator clock is validated only after all source reads and parser
+    # replay, so its lower-bound check covers every admitted dependency without
+    # making the deterministic kernel consult ambient wall time.
+    attested_at = _clock(attested_at, field="attested_at")
     prerequisite_clocks = [snapshot_at, p["assembly"]["assembled_at"], e["extraction"]["computed_at"], source_manifest["clocks"]["recorded_at"]]
     if cf_binding["requested"]:
         prerequisite_clocks.extend([cf_binding["captured_at"], cf_binding["recorded_at"], cf_evidence["manifest"]["outer"]["snapshot_at"]])
@@ -1209,7 +1212,11 @@ def verify_filing_attestation_source(
     if checked_package.package_id != stored_record["package"]["package_id"] or checked_extraction.extraction_id != stored_record["extraction"]["extraction_id"]:
         raise FilingAttestationError("source verifier package/extraction does not bind attestation")
     rebuilt = build_filing_attestation(
-        checked_package, checked_extraction, authority=authority, companyfacts_paths=companyfacts_paths
+        checked_package,
+        checked_extraction,
+        authority=authority,
+        attested_at=stored_record["clocks"]["attested_at"],
+        companyfacts_paths=companyfacts_paths,
     )
     if not hmac.compare_digest(_semantic_replay_bytes(rebuilt.to_dict()), _semantic_replay_bytes(stored_record)):
         raise FilingAttestationError("fresh source replay does not reproduce filing attestation semantics")
