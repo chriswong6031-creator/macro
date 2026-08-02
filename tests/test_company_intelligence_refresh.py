@@ -66,3 +66,11 @@ def test_workflow_is_scheduled_off_render_and_handles_only_safe_cas_conflict() -
     assert "python -m scripts.refresh_company_intelligence" in workflow
     assert 'if [ "$rc" -eq 2 ]' in workflow
     assert "R2_SECRET_ACCESS_KEY" in workflow
+
+
+def test_scheduled_workflow_contains_its_sparse_import_closure() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/company-intelligence.yml").read_text(encoding="utf-8")
+    assert "lib/config.py" in workflow
+    install_line = next(line for line in workflow.splitlines() if "pip install --quiet" in line)
+    assert "pyyaml" in install_line
+    assert "requests" in install_line
