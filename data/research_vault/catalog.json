@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T07:32:09.816313+00:00",
-  "count": 579,
+  "generated_at": "2026-08-02T08:02:29.726329+00:00",
+  "count": 580,
   "institutions": [
     "Amova",
     "Apollo",
@@ -272,6 +272,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lamwulcqm8j-e18e99",
+      "title": "First Solar Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:10Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
