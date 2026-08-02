@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T04:31:58.123713+00:00",
-  "count": 571,
+  "generated_at": "2026-08-02T04:46:56.311403+00:00",
+  "count": 572,
   "institutions": [
     "Amova",
     "Apollo",
@@ -332,6 +332,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wk2obrjvnxr-63386b",
+      "title": "US Daily July GSAI Heating Up",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:28Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
