@@ -15924,6 +15924,33 @@ artifacts:
       capital_structure/sec/sha256; storage.store_id preserves the non-secret physical
       namespace, while the compact provenance ledger is git-retained.
 
+  capital-structure-document-term-observations:
+    path: data/capital_structure/document_term_observations.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_document_terms.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: available_at
+    freshness_sla_hours: 30
+    schema: capital_structure.document_term_observation.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only, row/security-scoped transcription of direct named registration-fee-table
+      fields from primary or EX-FILING FEES children inside manifest-addressed complete SEC
+      submissions. Values remain dimensional decimal strings with exact cell/source spans.
+      Each term is observed, unavailable, or ambiguous; multiple rows are never aggregated
+      or collapsed. This is not an instrument ledger or issuer-state
+      calculation and grants no capacity, overhang, runway, risk, probability, rank, entry,
+      sizing, or Prophet authority. The first later consumer must be registered here before
+      using this artifact.
+
   capital-structure-event-versions:
     path: data/capital_structure/event_versions.parquet
     format: parquet
