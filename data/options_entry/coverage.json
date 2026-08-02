@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-02T00:50:45.402316+00:00",
+  "generated_at": "2026-08-02T09:14:00.499551+00:00",
   "as_of": "2026-08-02",
   "absent_stores": [],
   "feature_coverage": {
@@ -475,8 +475,8 @@
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-01 21:14 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-08-02 03:09 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -489,7 +489,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-02T00:50:45.360270+00:00",
+      "generated_at": "2026-08-02T09:14:00.454834+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -499,7 +499,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-02T00:50:45.402307+00:00",
+    "generated_at_utc": "2026-08-02T09:14:00.499542+00:00",
     "as_of": "2026-08-02",
     "absent_stores": []
   }
