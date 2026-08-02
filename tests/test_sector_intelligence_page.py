@@ -65,9 +65,12 @@ def test_payload_externalized_not_embedded() -> None:
 
 
 def test_dead_v1_desk_stays_dead() -> None:
+    # renderStanceChips is NOT in this list: PR #4241 (MLC-W2b) rebuilt it as a LIVE
+    # act-board surface (invocation pinned in test_theme_scoring_conflicted) — only
+    # the V1 fork's members stay banned.
     s = _read(TPL / "sector_central.html.j2")
     for fn in ("renderThemeDesk", "renderConcentration", "renderScorecards",
-               "renderMacroCtx", "decorateRealActivity", "renderStanceChips",
+               "renderMacroCtx", "decorateRealActivity",
                "renderActNow", "_fetchRadar"):
         assert fn not in s, f"dead V1 desk function {fn} resurrected"
 

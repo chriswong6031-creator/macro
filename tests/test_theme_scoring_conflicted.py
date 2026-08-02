@@ -513,8 +513,8 @@ class TestBasketTemplateParses:
         was dead in production and the pins were transitional-state time bombs.
         baskets.html.j2 is now a redirect stub; the live MLC split-view surface is
         the conviction-card divergence note (xsr-split + split_copy) rendered on
-        sector_central.html.j2. Reconnecting the stance-matrix fetch to the rvx
-        lanes is a separately-tracked follow-up, not silently asserted here.
+        sector_central.html.j2. PR #4241 (MLC-W2b) reconnected the stance-matrix
+        surface onto the live act board; #4237 carries that shape (pins below).
         """
         src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
         assert "xsr-split" in src, "conviction split-view note lost"
@@ -522,6 +522,34 @@ class TestBasketTemplateParses:
         # the stub must not silently regrow a stance fetch nobody boots
         stub = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
         assert "stance_matrix.json" not in stub
+
+    # ── MLC-W2b pins (#4241 shape, retargeted at the act board's post-merge home) ──
+
+    def test_merged_page_has_actnow_footnote_element(self):
+        """Pins the ELEMENT (id="..."), not a bare substring: the #3282 rvx revamp
+        deleted the element while JS kept referencing it and the old substring
+        assertion stayed green on the dead surface."""
+        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
+        assert 'id="actnow-footnote"' in src
+
+    def test_merged_page_invokes_renderStanceChips(self):
+        """renderStanceChips must be INVOKED, not merely defined (#3282 regression)."""
+        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
+        assert "function renderStanceChips" in src
+        assert "renderStanceChips();" in src
+
+    def test_merged_page_has_mlcdata_stance_matrix_url(self):
+        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
+        assert "stance_matrix.json" in src
+
+    def test_merged_page_v1_actnow_fork_stays_deleted(self):
+        """The dead V1 renderActNow fork must not return; the live rvx act board owns
+        the conflicted display (fold into the wait lane + _conflicted row tag). The
+        chip selector is data-mlc-bid — data-bid is banned by tests/test_ftr_w3_ui.py."""
+        src = (TEMPLATE_DIR / "sector_central.html.j2").read_text(encoding="utf-8")
+        assert "function renderActNow(" not in src
+        assert "_conflicted" in src
+        assert "data-mlc-bid" in src
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
