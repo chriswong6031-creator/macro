@@ -34,7 +34,6 @@
           "weight": 0.0618,
           "verdict": "hold",
           "rs_pctile": 81.7,
-          "entry_price": 580.17,
           "opened_at": "2026-07-25T20:10:06.750443+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -66,7 +65,6 @@
           "weight": 0.0523,
           "verdict": "hold",
           "rs_pctile": 60.3,
-          "entry_price": 167.15,
           "opened_at": "2026-07-25T20:10:06.750443+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -98,7 +96,6 @@
           "weight": 0.0618,
           "verdict": "hold",
           "rs_pctile": 82.1,
-          "entry_price": 171.12,
           "opened_at": "2026-07-25T20:10:06.750443+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -130,7 +127,6 @@
           "weight": 0.0618,
           "verdict": "hold",
           "rs_pctile": 84.9,
-          "entry_price": 292.54,
           "opened_at": "2026-07-25T20:10:06.750443+00:00",
           "held_days": 0,
           "thesis_full": {
@@ -161,29 +157,9 @@
           "stage": 2,
           "weight": 0.0638,
           "verdict": "add",
-          "thesis_id": "2026-07-24-LNG-conv",
-          "time_stop_by": "2026-10-21",
-          "confluence": 0.429,
-          "entry_price": 257.87,
-          "research": {
-            "paper_id": "2026-07-24-LNG",
-            "mode": "engine",
-            "engine_score": 71,
-            "research_score": 76,
-            "combined": 74,
-            "viability": "compelling",
-            "confirmed": true,
-            "summary": "LNG — research desk 76/100, 'compelling'. At $271.99 the multi-sided read is favorable and the entry is reasonable.",
-            "price_at_review": 271.99
-          },
-          "retained": false,
-          "size_stage": "full",
-          "entry_levels": {
-            "ticker": "LNG",
-            "price": 271.99
-          },
           "opened_at": "2026-07-25T20:10:06.750443+00:00",
           "held_days": 0,
+          "thesis_id": "2026-07-24-LNG-conv",
           "thesis_full": {
             "summary": "LNG clears the multi-sided conviction gate: 5/7 lenses are bullish (confluence +0.43), size_authority = up. No hard vetoes. Sized at 6.4% — the confluence-weighted allocation within the conviction sleeve budget.",
             "why_now": "All 7 scored lenses were evaluated today; 5 sided bullish, 2 bearish, giving a positive +0.43 net confluence. Size authority is 'up' — no veto blocked sizing.",
@@ -206,6 +182,25 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. LNG receives 6.4% (confluence +0.43 (5/7 lenses bullish = +0.43 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-21.",
             "confluence": 0.429,
             "prob_correct": 0.7
+          },
+          "research": {
+            "paper_id": "2026-07-24-LNG",
+            "mode": "engine",
+            "engine_score": 71,
+            "research_score": 76,
+            "combined": 74,
+            "viability": "compelling",
+            "confirmed": true,
+            "summary": "LNG — research desk 76/100, 'compelling'. At $271.99 the multi-sided read is favorable and the entry is reasonable.",
+            "price_at_review": 271.99
+          },
+          "confluence": 0.429,
+          "size_stage": "full",
+          "retained": false,
+          "time_stop_by": "2026-10-21",
+          "entry_levels": {
+            "ticker": "LNG",
+            "price": 271.99
           }
         }
       ],
@@ -1159,11 +1154,6 @@
           "rationale": "A genuinely uncorrelated diversifier from my healthcare/tech legs. XLE recommend=true and, at confluence +0.50 with 3/4 lenses bullish, carries the HIGHEST live confluence of any Flagship holding — the tape is confirming energy even as it fades cyclicals like financials (XLF vetoed cycle_blocked) and semis. Flagship re-established the position today. It gives the book a real-asset / inflation-sensitive leg that pays off if the Goldilocks liquidity read stays intact, while behaving differently from XLV in a growth scare. Medium size — 'fair' viability (63), so measured, not a press.",
           "opened_at": "2026-07-23T23:27:42.518893+00:00",
           "held_days": 0,
-          "cost_basis": 59.62,
-          "current_price": 59.62,
-          "market_value": 54850.4,
-          "unrealized_pnl": 0.0,
-          "unrealized_pct": 0.0,
           "thesis_full": {
             "summary": "A genuinely uncorrelated diversifier from my healthcare/tech legs. XLE recommend=true and, at confluence +0.50 with 3/4 lenses bullish, carries the HIGHEST live confluence of any Flagship holding — the tape is confirming energy even as it fades cyclicals like financials (XLF vetoed cycle_blocked) and semis. Flagship re-established the position today. It gives the book a real-asset / inflation-sensitive leg that pays off if the Goldilocks liquidity read stays intact, while behaving differently from XLV in a growth scare. Medium size — 'fair' viability (63), so measured, not a press.",
             "why_now": "A genuinely uncorrelated diversifier from my healthcare/tech legs. XLE recommend=true and, at confluence +0.50 with 3/4 lenses bullish, carries the HIGHEST live confluence of any Flagship holding — the tape is confirming energy even as it fades cyclicals like financials (XLF vetoed cycle_blocked) and semis. Flagship re-established the position today. It gives the book a real-asset / inflation-sensitive leg that pays off if the Goldilocks liquidity read stays intact, while behaving differently from XLV in a growth scare. Medium size — 'fair' viability (63), so measured, not a press.",
@@ -1180,11 +1170,6 @@
           "rationale": "The book's anchor and the firm's single highest-rated idea: XLV scores 94/100 'compelling' on Flagship's research desk AND Flagship is actively ADDING it (pending buy) while it sells semis/momentum/small-caps. It is tape-confirmed — #2 relative-strength sector and the only top-RS sector holding positive 20-day momentum while tech leaders distribute. This is textbook confirmation-over-prediction: defensive leadership that has already turned, exactly what the ROTATE_DEFENSIVE posture and the desk's own selling calls for. With my book edge running negative, doctrine says lean hardest on the firm's best-rated name — so I press it as the largest weight.",
           "opened_at": "2026-07-23T23:27:42.518893+00:00",
           "held_days": 0,
-          "cost_basis": 161.44,
-          "current_price": 162.57,
-          "market_value": 26011.2,
-          "unrealized_pnl": 180.8,
-          "unrealized_pct": 0.7,
           "thesis_full": {
             "summary": "The book's anchor and the firm's single highest-rated idea: XLV scores 94/100 'compelling' on Flagship's research desk AND Flagship is actively ADDING it (pending buy) while it sells semis/momentum/small-caps. It is tape-confirmed — #2 relative-strength sector and the only top-RS sector holding positive 20-day momentum while tech leaders distribute. This is textbook confirmation-over-prediction: defensive leadership that has already turned, exactly what the ROTATE_DEFENSIVE posture and the desk's own selling calls for. With my book edge running negative, doctrine says lean hardest on the firm's best-rated name — so I press it as the largest weight.",
             "why_now": "The book's anchor and the firm's single highest-rated idea: XLV scores 94/100 'compelling' on Flagship's research desk AND Flagship is actively ADDING it (pending buy) while it sells semis/momentum/small-caps. It is tape-confirmed — #2 relative-strength sector and the only top-RS sector holding positive 20-day momentum while tech leaders distribute. This is textbook confirmation-over-prediction: defensive leadership that has already turned, exactly what the ROTATE_DEFENSIVE posture and the desk's own selling calls for. With my book edge running negative, doctrine says lean hardest on the firm's best-rated name — so I press it as the largest weight.",
@@ -1201,11 +1186,6 @@
           "rationale": "My single growth/tech expression so the book is not one-sidedly defensive in a regime still labeled Goldilocks with expanding liquidity. ANET wins the tech cluster over AAPL and XLK on every axis: research 82/100 'compelling' (vs AAPL 73), live confluence +0.33 with 4/6 lenses bullish, and size_authority = UP — the one tech name Flagship's tape is actively confirming rather than merely holding. Confirmation over prediction favors the name with the strongest live signal. Sized only medium, not pressed: tech is the vulnerable cluster (Flagship is selling SMH/MTUM), so this is a confirmed toe-hold on growth, not a bet against the defensive rotation.",
           "opened_at": "2026-07-24T23:27:29.464608+00:00",
           "held_days": 0,
-          "cost_basis": 173.99,
-          "current_price": 173.99,
-          "market_value": 10091.42,
-          "unrealized_pnl": 0.0,
-          "unrealized_pct": 0.0,
           "thesis_full": {
             "summary": "My single growth/tech expression so the book is not one-sidedly defensive in a regime still labeled Goldilocks with expanding liquidity. ANET wins the tech cluster over AAPL and XLK on every axis: research 82/100 'compelling' (vs AAPL 73), live confluence +0.33 with 4/6 lenses bullish, and size_authority = UP — the one tech name Flagship's tape is actively confirming rather than merely holding. Confirmation over prediction favors the name with the strongest live signal. Sized only medium, not pressed: tech is the vulnerable cluster (Flagship is selling SMH/MTUM), so this is a confirmed toe-hold on growth, not a bet against the defensive rotation.",
             "why_now": "My single growth/tech expression so the book is not one-sidedly defensive in a regime still labeled Goldilocks with expanding liquidity. ANET wins the tech cluster over AAPL and XLK on every axis: research 82/100 'compelling' (vs AAPL 73), live confluence +0.33 with 4/6 lenses bullish, and size_authority = UP — the one tech name Flagship's tape is actively confirming rather than merely holding. Confirmation over prediction favors the name with the strongest live signal. Sized only medium, not pressed: tech is the vulnerable cluster (Flagship is selling SMH/MTUM), so this is a confirmed toe-hold on growth, not a bet against the defensive rotation.",
@@ -1829,11 +1809,6 @@
           "rationale": "Mercury General is the defensive P&C-insurance ballast — low beta, ~flat unrealized, low correlation to the growth names being distributed. XLF is cycle entry-favored (RS rank 5, above 200d, mom_20d +4.69) and higher-for-longer rates (10Y +to 4.70) support insurance investment carry. In a validated growth-scare / ROTATE_DEFENSIVE posture this is exactly the exposure to hold near the top of the book; I keep it as a core anchor, trimmed one point only to make room for the broader XLV/XLF defensive adds.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 38,
-          "cost_basis": 105.3822,
-          "current_price": 109.49,
-          "market_value": 85781.9,
-          "unrealized_pnl": 3218.33,
-          "unrealized_pct": 3.9,
           "thesis_full": {
             "summary": "Mercury General is the defensive P&C-insurance ballast — low beta, ~flat unrealized, low correlation to the growth names being distributed. XLF is cycle entry-favored (RS rank 5, above 200d, mom_20d +4.69) and higher-for-longer rates (10Y +to 4.70) support insurance investment carry. In a validated growth-scare / ROTATE_DEFENSIVE posture this is exactly the exposure to hold near the top of the book; I keep it as a core anchor, trimmed one point only to make room for the broader XLV/XLF defensive adds.",
             "why_now": "Mercury General is the defensive P&C-insurance ballast — low beta, ~flat unrealized, low correlation to the growth names being distributed. XLF is cycle entry-favored (RS rank 5, above 200d, mom_20d +4.69) and higher-for-longer rates (10Y +to 4.70) support insurance investment carry. In a validated growth-scare / ROTATE_DEFENSIVE posture this is exactly the exposure to hold near the top of the book; I keep it as a core anchor, trimmed one point only to make room for the broader XLV/XLF defensive adds.",
@@ -1850,11 +1825,6 @@
           "rationale": "Howmet — quality aero/defense structural cyclical inside the XLI industrials the cycle engine favors for entry (rank 6, above 200d, mom_60d positive). It is working (+4.75%) and defense/aero demand is secular and relatively insulated from the consumer-growth scare that risk_radar is flagging (growth_cyc_def, growth_defensives leading). Core secular-quality cyclical — I hold it near full as a confirmed-working offense leg that is not the fragile AI factor.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 38,
-          "cost_basis": 276.1437,
-          "current_price": 280.12,
-          "market_value": 64726.72,
-          "unrealized_pnl": 918.8,
-          "unrealized_pct": 1.44,
           "thesis_full": {
             "summary": "Howmet — quality aero/defense structural cyclical inside the XLI industrials the cycle engine favors for entry (rank 6, above 200d, mom_60d positive). It is working (+4.75%) and defense/aero demand is secular and relatively insulated from the consumer-growth scare that risk_radar is flagging (growth_cyc_def, growth_defensives leading). Core secular-quality cyclical — I hold it near full as a confirmed-working offense leg that is not the fragile AI factor.",
             "why_now": "Howmet — quality aero/defense structural cyclical inside the XLI industrials the cycle engine favors for entry (rank 6, above 200d, mom_60d positive). It is working (+4.75%) and defense/aero demand is secular and relatively insulated from the consumer-growth scare that risk_radar is flagging (growth_cyc_def, growth_defensives leading). Core secular-quality cyclical — I hold it near full as a confirmed-working offense leg that is not the fragile AI factor.",
@@ -1871,11 +1841,6 @@
           "rationale": "United Rentals — high-quality equipment-rental cyclical (+4.8%, above 200d) but carrying a late-cycle 'do not add' tag and the highest economic beta in the book. It is genuinely working and cyclicals are the cycle-plane's entry-favored side, but the validated defensive rotation and froth/vol_shock warnings keep it on a leash: I hold a mid-size position, not full weight, and it is first to cut if the growth scare deepens post-FOMC.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 38,
-          "cost_basis": 1089.166,
-          "current_price": 1076.625,
-          "market_value": 54604.92,
-          "unrealized_pnl": -636.06,
-          "unrealized_pct": -1.15,
           "thesis_full": {
             "summary": "United Rentals — high-quality equipment-rental cyclical (+4.8%, above 200d) but carrying a late-cycle 'do not add' tag and the highest economic beta in the book. It is genuinely working and cyclicals are the cycle-plane's entry-favored side, but the validated defensive rotation and froth/vol_shock warnings keep it on a leash: I hold a mid-size position, not full weight, and it is first to cut if the growth scare deepens post-FOMC.",
             "why_now": "United Rentals — high-quality equipment-rental cyclical (+4.8%, above 200d) but carrying a late-cycle 'do not add' tag and the highest economic beta in the book. It is genuinely working and cyclicals are the cycle-plane's entry-favored side, but the validated defensive rotation and froth/vol_shock warnings keep it on a leash: I hold a mid-size position, not full weight, and it is first to cut if the growth scare deepens post-FOMC.",
@@ -1892,11 +1857,6 @@
           "rationale": "Arista — best-in-class AI-infra networking, fundamentals intact (decision matrix bull-skewed, no vetoes). But the AI Infrastructure basket is flagged deteriorating/crowded and froth_fragility reads 'euphoric, leaders distributing under a held index — narrowing-top risk,' and this is precisely the growth factor that leads the tape DOWN on risk-off days. So I own the quality but cap it at a starter — capped exposure to a fragile factor, not a conviction bet, consistent with shrink-offense.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 38,
-          "cost_basis": 170.5787,
-          "current_price": 163.44,
-          "market_value": 50520.69,
-          "unrealized_pnl": -2206.62,
-          "unrealized_pct": -4.18,
           "thesis_full": {
             "summary": "Arista — best-in-class AI-infra networking, fundamentals intact (decision matrix bull-skewed, no vetoes). But the AI Infrastructure basket is flagged deteriorating/crowded and froth_fragility reads 'euphoric, leaders distributing under a held index — narrowing-top risk,' and this is precisely the growth factor that leads the tape DOWN on risk-off days. So I own the quality but cap it at a starter — capped exposure to a fragile factor, not a conviction bet, consistent with shrink-offense.",
             "why_now": "Arista — best-in-class AI-infra networking, fundamentals intact (decision matrix bull-skewed, no vetoes). But the AI Infrastructure basket is flagged deteriorating/crowded and froth_fragility reads 'euphoric, leaders distributing under a held index — narrowing-top risk,' and this is precisely the growth factor that leads the tape DOWN on risk-off days. So I own the quality but cap it at a starter — capped exposure to a fragile factor, not a conviction bet, consistent with shrink-offense.",
@@ -1913,11 +1873,6 @@
           "rationale": "Financials — a second defensive-cyclical add that broadens my insurance-only financial exposure into the sector proper. XLF is cycle entry-favored (RS rank 5), above its 200d with positive momentum (mom_20d +4.69, mom_60d +4.6), and a higher-for-longer rate backdrop (10Y rising to ~4.70, hawkish Fed) is a net tailwind for bank/insurer net-interest and carry. Cycles plane + sector-RS both confirm, satisfying Charter P1; sized modestly as a supporting defensive-value leg.",
           "opened_at": "2026-07-29T15:00:08.747940+00:00",
           "held_days": 0,
-          "cost_basis": 57.29,
-          "current_price": 57.105,
-          "market_value": 38888.5,
-          "unrealized_pnl": -125.99,
-          "unrealized_pct": -0.32,
           "thesis_full": {
             "summary": "Financials — a second defensive-cyclical add that broadens my insurance-only financial exposure into the sector proper. XLF is cycle entry-favored (RS rank 5), above its 200d with positive momentum (mom_20d +4.69, mom_60d +4.6), and a higher-for-longer rate backdrop (10Y rising to ~4.70, hawkish Fed) is a net tailwind for bank/insurer net-interest and carry. Cycles plane + sector-RS both confirm, satisfying Charter P1; sized modestly as a supporting defensive-value leg.",
             "why_now": "Financials — a second defensive-cyclical add that broadens my insurance-only financial exposure into the sector proper. XLF is cycle entry-favored (RS rank 5), above its 200d with positive momentum (mom_20d +4.69, mom_60d +4.6), and a higher-for-longer rate backdrop (10Y rising to ~4.70, hawkish Fed) is a net tailwind for bank/insurer net-interest and carry. Cycles plane + sector-RS both confirm, satisfying Charter P1; sized modestly as a supporting defensive-value leg.",
@@ -1934,11 +1889,6 @@
           "rationale": "Energy — trimmed to a residual. The overnight oil catalyst that once justified a full leg has deflated (WTI reversed), and XLE is neither in the cycle entry-favored set nor the sector-RS top, so I will not carry a full commodities position on a driver that reversed. But with inflation_score sticky at 0.84 and the 10Y rising, a small energy sleeve remains a legitimate sticky-inflation / rate hedge into a hawkish FOMC, and the position sits +6% above its 200d. Residual hedge only.",
           "opened_at": "2026-07-08T15:00:07.424551+00:00",
           "held_days": 21,
-          "cost_basis": 55.9755,
-          "current_price": 58.855,
-          "market_value": 24240.1,
-          "unrealized_pnl": 1185.97,
-          "unrealized_pct": 5.14,
           "thesis_full": {
             "summary": "Energy — trimmed to a residual. The overnight oil catalyst that once justified a full leg has deflated (WTI reversed), and XLE is neither in the cycle entry-favored set nor the sector-RS top, so I will not carry a full commodities position on a driver that reversed. But with inflation_score sticky at 0.84 and the 10Y rising, a small energy sleeve remains a legitimate sticky-inflation / rate hedge into a hawkish FOMC, and the position sits +6% above its 200d. Residual hedge only.",
             "why_now": "Energy — trimmed to a residual. The overnight oil catalyst that once justified a full leg has deflated (WTI reversed), and XLE is neither in the cycle entry-favored set nor the sector-RS top, so I will not carry a full commodities position on a driver that reversed. But with inflation_score sticky at 0.84 and the 10Y rising, a small energy sleeve remains a legitimate sticky-inflation / rate hedge into a hawkish FOMC, and the position sits +6% above its 200d. Residual hedge only.",
@@ -1955,11 +1905,6 @@
           "rationale": "Health Care is the single cleanest read on the board and my largest add: RS rank 2, above its 200d, and the rare sector with BOTH momentum legs positive (mom_20d +3.8, mom_60d +8.85) while most sectors have negative 20d momentum — and it is in the cycle-engine entry-favored set. It is defensive AND confirmed-working, so it satisfies Charter P1 twice over (cycles plane + sector-RS both agree with the perception layer's defensive tilt). This is how I raise the defensive floor the posture calls for without reaching for a name that is merely 'not falling.'",
           "opened_at": "2026-07-29T15:00:08.747940+00:00",
           "held_days": 0,
-          "cost_basis": 167.15,
-          "current_price": 167.41,
-          "market_value": 6863.81,
-          "unrealized_pnl": 10.66,
-          "unrealized_pct": 0.16,
           "thesis_full": {
             "summary": "Health Care is the single cleanest read on the board and my largest add: RS rank 2, above its 200d, and the rare sector with BOTH momentum legs positive (mom_20d +3.8, mom_60d +8.85) while most sectors have negative 20d momentum — and it is in the cycle-engine entry-favored set. It is defensive AND confirmed-working, so it satisfies Charter P1 twice over (cycles plane + sector-RS both agree with the perception layer's defensive tilt). This is how I raise the defensive floor the posture calls for without reaching for a name that is merely 'not falling.'",
             "why_now": "Health Care is the single cleanest read on the board and my largest add: RS rank 2, above its 200d, and the rare sector with BOTH momentum legs positive (mom_20d +3.8, mom_60d +8.85) while most sectors have negative 20d momentum — and it is in the cycle-engine entry-favored set. It is defensive AND confirmed-working, so it satisfies Charter P1 twice over (cycles plane + sector-RS both agree with the perception layer's defensive tilt). This is how I raise the defensive floor the posture calls for without reaching for a name that is merely 'not falling.'",
@@ -2584,11 +2529,6 @@
           "rationale": "Dry powder. I cut pure cash to fund the re-risk but keep a meaningful T-bill buffer because risk_state is elevated and the leading fragility (negative GEX, cross-asset concentration at 86th-pctile absorption) front-runs air-pockets. With the 10Y hawkishly repriced, duration is no haven (TLT/IEF below 50d and 200d) and gold is not trending — short T-bills are the correct defensive asset and redeployable liquidity if the fragility converts.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 36,
-          "cost_basis": 100.6186,
-          "current_price": 100.6699,
-          "market_value": 97616.81,
-          "unrealized_pnl": 49.71,
-          "unrealized_pct": 0.05,
           "thesis_full": {
             "summary": "Dry powder. I cut pure cash to fund the re-risk but keep a meaningful T-bill buffer because risk_state is elevated and the leading fragility (negative GEX, cross-asset concentration at 86th-pctile absorption) front-runs air-pockets. With the 10Y hawkishly repriced, duration is no haven (TLT/IEF below 50d and 200d) and gold is not trending — short T-bills are the correct defensive asset and redeployable liquidity if the fragility converts.",
             "why_now": "Dry powder. I cut pure cash to fund the re-risk but keep a meaningful T-bill buffer because risk_state is elevated and the leading fragility (negative GEX, cross-asset concentration at 86th-pctile absorption) front-runs air-pockets. With the 10Y hawkishly repriced, duration is no haven (TLT/IEF below 50d and 200d) and gold is not trending — short T-bills are the correct defensive asset and redeployable liquidity if the fragility converts.",
@@ -2606,11 +2546,6 @@
           "rationale": "Financials are confirmed above 50d/200d (+6.33%) with positive momentum (20d +4.7%, 60d +4.6%) yet sit at only pctile 45 — genuine, uncrowded cyclical participation, unlike the extended megacap-tech and energy leaders. Adds cyclical breadth consistent with the mid-cycle Goldilocks frame without stacking the concentrated bet.",
           "opened_at": "2026-07-24T15:00:04.300460+00:00",
           "held_days": 5,
-          "cost_basis": 56.229,
-          "current_price": 57.105,
-          "market_value": 77777.01,
-          "unrealized_pnl": 1193.09,
-          "unrealized_pct": 1.56,
           "thesis_full": {
             "summary": "Financials are confirmed above 50d/200d (+6.33%) with positive momentum (20d +4.7%, 60d +4.6%) yet sit at only pctile 45 — genuine, uncrowded cyclical participation, unlike the extended megacap-tech and energy leaders. Adds cyclical breadth consistent with the mid-cycle Goldilocks frame without stacking the concentrated bet.",
             "why_now": "Financials are confirmed above 50d/200d (+6.33%) with positive momentum (20d +4.7%, 60d +4.6%) yet sit at only pctile 45 — genuine, uncrowded cyclical participation, unlike the extended megacap-tech and energy leaders. Adds cyclical breadth consistent with the mid-cycle Goldilocks frame without stacking the concentrated bet.",
@@ -2628,11 +2563,6 @@
           "rationale": "Token growth sleeve only. Big-cap tech is the crowded side of the concentration warning and sits below its 50d, but it remains +7.77% above its 200d and I keep a small position to participate if leadership persists — deliberately underweight the most concentrated, most extended bet (SMH +30% vs 200d) that I refuse to chase.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 36,
-          "cost_basis": 713.8168,
-          "current_price": 667.9276,
-          "market_value": 47110.66,
-          "unrealized_pnl": -3236.68,
-          "unrealized_pct": -6.43,
           "thesis_full": {
             "summary": "Token growth sleeve only. Big-cap tech is the crowded side of the concentration warning and sits below its 50d, but it remains +7.77% above its 200d and I keep a small position to participate if leadership persists — deliberately underweight the most concentrated, most extended bet (SMH +30% vs 200d) that I refuse to chase.",
             "why_now": "Token growth sleeve only. Big-cap tech is the crowded side of the concentration warning and sits below its 50d, but it remains +7.77% above its 200d and I keep a small position to participate if leadership persists — deliberately underweight the most concentrated, most extended bet (SMH +30% vs 200d) that I refuse to chase.",
@@ -2650,11 +2580,6 @@
           "rationale": "Equal-weight S&P — the cleanest answer to the lit cross-asset-concentration warning: it re-risks toward the broad tape without doubling the crowded cap-weight/US-liquidity bet. Confirmed above 50d and 200d (+6.98%), positive 60d momentum, pctile 72 (not extended). Co-largest position as the ballast of the re-risk.",
           "opened_at": "2026-07-02T15:00:04.450824+00:00",
           "held_days": 27,
-          "cost_basis": 214.1301,
-          "current_price": 216.63,
-          "market_value": 44675.28,
-          "unrealized_pnl": 515.56,
-          "unrealized_pct": 1.17,
           "thesis_full": {
             "summary": "Equal-weight S&P — the cleanest answer to the lit cross-asset-concentration warning: it re-risks toward the broad tape without doubling the crowded cap-weight/US-liquidity bet. Confirmed above 50d and 200d (+6.98%), positive 60d momentum, pctile 72 (not extended). Co-largest position as the ballast of the re-risk.",
             "why_now": "Equal-weight S&P — the cleanest answer to the lit cross-asset-concentration warning: it re-risks toward the broad tape without doubling the crowded cap-weight/US-liquidity bet. Confirmed above 50d and 200d (+6.98%), positive 60d momentum, pctile 72 (not extended). Co-largest position as the ballast of the re-risk.",
@@ -2672,11 +2597,6 @@
           "rationale": "Benchmark anchor, scaled up. I am accountable to SPY and it sits +6.0% above its 200d in a Goldilocks/expanding-liquidity regime; carrying only a token core while ~70% in cash was paying a large tracking-error drag as the index ground higher. Below its 50d, so I size it as an honest beta anchor rather than a conviction growth bet — the single most effective lever to stop leaking relative NAV without stacking onto the crowded cap-weight concentration warning.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 36,
-          "cost_basis": 743.1258,
-          "current_price": 734.85,
-          "market_value": 43732.57,
-          "unrealized_pnl": -492.51,
-          "unrealized_pct": -1.11,
           "thesis_full": {
             "summary": "Benchmark anchor, scaled up. I am accountable to SPY and it sits +6.0% above its 200d in a Goldilocks/expanding-liquidity regime; carrying only a token core while ~70% in cash was paying a large tracking-error drag as the index ground higher. Below its 50d, so I size it as an honest beta anchor rather than a conviction growth bet — the single most effective lever to stop leaking relative NAV without stacking onto the crowded cap-weight concentration warning.",
             "why_now": "Benchmark anchor, scaled up. I am accountable to SPY and it sits +6.0% above its 200d in a Goldilocks/expanding-liquidity regime; carrying only a token core while ~70% in cash was paying a large tracking-error drag as the index ground higher. Below its 50d, so I size it as an honest beta anchor rather than a conviction growth bet — the single most effective lever to stop leaking relative NAV without stacking onto the crowded cap-weight concentration warning.",
@@ -2694,11 +2614,6 @@
           "rationale": "Quality factor, above 50d/200d (+6.34%), pctile 69 — not extended. With risk_state elevated and a concentration warning lit, tilting beta toward balance-sheet quality is the correct way to add exposure without adding fragility. Forms the defensive half of the re-risk alongside XLV.",
           "opened_at": "2026-07-24T15:00:04.300460+00:00",
           "held_days": 5,
-          "cost_basis": 216.8049,
-          "current_price": 217.36,
-          "market_value": 30865.12,
-          "unrealized_pnl": 78.82,
-          "unrealized_pct": 0.26,
           "thesis_full": {
             "summary": "Quality factor, above 50d/200d (+6.34%), pctile 69 — not extended. With risk_state elevated and a concentration warning lit, tilting beta toward balance-sheet quality is the correct way to add exposure without adding fragility. Forms the defensive half of the re-risk alongside XLV.",
             "why_now": "Quality factor, above 50d/200d (+6.34%), pctile 69 — not extended. With risk_state elevated and a concentration warning lit, tilting beta toward balance-sheet quality is the correct way to add exposure without adding fragility. Forms the defensive half of the re-risk alongside XLV.",
@@ -2716,11 +2631,6 @@
           "rationale": "Highest-quality expression of a re-risk with a defensive tilt. Healthcare ranks #2 on RS, above 50d/200d (+6.75%), positive and improving momentum (20d +3.8%, 60d +8.9%), pctile 60 — confirmed leadership that is NOT extended. Exactly the equity participation the ROTATE_DEFENSIVE posture and elevated fragility call for.",
           "opened_at": "2026-07-24T15:00:04.300460+00:00",
           "held_days": 5,
-          "cost_basis": 162.94,
-          "current_price": 167.41,
-          "market_value": 21763.3,
-          "unrealized_pnl": 581.1,
-          "unrealized_pct": 2.74,
           "thesis_full": {
             "summary": "Highest-quality expression of a re-risk with a defensive tilt. Healthcare ranks #2 on RS, above 50d/200d (+6.75%), positive and improving momentum (20d +3.8%, 60d +8.9%), pctile 60 — confirmed leadership that is NOT extended. Exactly the equity participation the ROTATE_DEFENSIVE posture and elevated fragility call for.",
             "why_now": "Highest-quality expression of a re-risk with a defensive tilt. Healthcare ranks #2 on RS, above 50d/200d (+6.75%), positive and improving momentum (20d +3.8%, 60d +8.9%), pctile 60 — confirmed leadership that is NOT extended. Exactly the equity participation the ROTATE_DEFENSIVE posture and elevated fragility call for.",
@@ -2738,11 +2648,6 @@
           "rationale": "Industrials are a confirmed mid-cycle cyclical leader (above 50d/200d, +9.58% vs 200d, pctile 80) that complements RSP/XLF as broad cyclical breadth without adding tech concentration. Kept modest rather than added because pctile 80 with slightly negative 20d momentum is edging toward extension.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 36,
-          "cost_basis": 182.5034,
-          "current_price": 178.27,
-          "market_value": 19022.07,
-          "unrealized_pnl": -451.72,
-          "unrealized_pct": -2.32,
           "thesis_full": {
             "summary": "Industrials are a confirmed mid-cycle cyclical leader (above 50d/200d, +9.58% vs 200d, pctile 80) that complements RSP/XLF as broad cyclical breadth without adding tech concentration. Kept modest rather than added because pctile 80 with slightly negative 20d momentum is edging toward extension.",
             "why_now": "Industrials are a confirmed mid-cycle cyclical leader (above 50d/200d, +9.58% vs 200d, pctile 80) that complements RSP/XLF as broad cyclical breadth without adding tech concentration. Kept modest rather than added because pctile 80 with slightly negative 20d momentum is edging toward extension.",
@@ -2760,11 +2665,6 @@
           "rationale": "Small broadening/liquidity-expansion tilt. Small-caps screen well on leadership health (above 50d/200d, +10.67% vs 200d) but pctile 93 with negative 20d momentum is a take-profit/extension flag, so I keep it deliberately small — enough to participate in the broadening, not enough to be caught long extension if the lit fragility converts.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 36,
-          "cost_basis": 298.2754,
-          "current_price": 289.86,
-          "market_value": 11185.9,
-          "unrealized_pnl": -324.76,
-          "unrealized_pct": -2.82,
           "thesis_full": {
             "summary": "Small broadening/liquidity-expansion tilt. Small-caps screen well on leadership health (above 50d/200d, +10.67% vs 200d) but pctile 93 with negative 20d momentum is a take-profit/extension flag, so I keep it deliberately small — enough to participate in the broadening, not enough to be caught long extension if the lit fragility converts.",
             "why_now": "Small broadening/liquidity-expansion tilt. Small-caps screen well on leadership health (above 50d/200d, +10.67% vs 200d) but pctile 93 with negative 20d momentum is a take-profit/extension flag, so I keep it deliberately small — enough to participate in the broadening, not enough to be caught long extension if the lit fragility converts.",
@@ -3392,11 +3292,6 @@
           "rationale": null,
           "opened_at": "2026-06-23T01:36:10.615687+00:00",
           "held_days": 36,
-          "cost_basis": 86.6706,
-          "current_price": 85.43,
-          "market_value": 115535.19,
-          "unrealized_pnl": -1677.78,
-          "unrealized_pct": -1.43,
           "thesis_full": null
         },
         {
@@ -3410,11 +3305,6 @@
           "rationale": null,
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
           "held_days": 28,
-          "cost_basis": 13.0961,
-          "current_price": 14.66,
-          "market_value": 105464.04,
-          "unrealized_pnl": 11250.48,
-          "unrealized_pct": 11.94,
           "thesis_full": null
         },
         {
@@ -3428,11 +3318,6 @@
           "rationale": null,
           "opened_at": "2026-07-10T01:35:00.479578+00:00",
           "held_days": 19,
-          "cost_basis": 19.543,
-          "current_price": 16.35,
-          "market_value": 74686.8,
-          "unrealized_pnl": -14585.79,
-          "unrealized_pct": -16.34,
           "thesis_full": null
         },
         {
@@ -3446,11 +3331,6 @@
           "rationale": null,
           "opened_at": "2026-07-23T01:35:00.593327+00:00",
           "held_days": 6,
-          "cost_basis": 4.9,
-          "current_price": 4.68,
-          "market_value": 57198.96,
-          "unrealized_pnl": -2688.84,
-          "unrealized_pct": -4.49,
           "thesis_full": null
         },
         {
@@ -3464,11 +3344,6 @@
           "rationale": null,
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
           "held_days": 28,
-          "cost_basis": 37.4491,
-          "current_price": 37.35,
-          "market_value": 47489.14,
-          "unrealized_pnl": -125.96,
-          "unrealized_pct": -0.26,
           "thesis_full": null
         },
         {
@@ -3482,11 +3357,6 @@
           "rationale": null,
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
           "held_days": 23,
-          "cost_basis": 10.53,
-          "current_price": 10.54,
-          "market_value": 46553.26,
-          "unrealized_pnl": 44.17,
-          "unrealized_pct": 0.09,
           "thesis_full": null
         },
         {
@@ -3500,11 +3370,6 @@
           "rationale": null,
           "opened_at": "2026-07-22T01:35:00.711978+00:00",
           "held_days": 7,
-          "cost_basis": 23.98,
-          "current_price": 21.36,
-          "market_value": 44514.24,
-          "unrealized_pnl": -5460.08,
-          "unrealized_pct": -10.93,
           "thesis_full": null
         },
         {
@@ -3518,11 +3383,6 @@
           "rationale": null,
           "opened_at": "2026-07-22T01:35:00.711978+00:00",
           "held_days": 7,
-          "cost_basis": 6.0971,
-          "current_price": 4.79,
-          "market_value": 32356.45,
-          "unrealized_pnl": -8829.46,
-          "unrealized_pct": -21.44,
           "thesis_full": null
         }
       ],
@@ -4138,11 +3998,6 @@
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 37,
-          "cost_basis": 448.3611,
-          "current_price": 447.2,
-          "market_value": 139720.38,
-          "unrealized_pnl": -362.75,
-          "unrealized_pct": -0.26,
           "thesis_full": null
         },
         {
@@ -4156,11 +4011,6 @@
           "rationale": null,
           "opened_at": "2026-07-09T01:42:56.199873+00:00",
           "held_days": 20,
-          "cost_basis": 78.934,
-          "current_price": 83.25,
-          "market_value": 103063.5,
-          "unrealized_pnl": 5343.2,
-          "unrealized_pct": 5.47,
           "thesis_full": null
         },
         {
@@ -4174,11 +4024,6 @@
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
           "held_days": 16,
-          "cost_basis": 8.2041,
-          "current_price": 9.13,
-          "market_value": 89738.77,
-          "unrealized_pnl": 9101.0,
-          "unrealized_pct": 11.29,
           "thesis_full": null
         },
         {
@@ -4192,11 +4037,6 @@
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 37,
-          "cost_basis": 6.8289,
-          "current_price": 7.36,
-          "market_value": 88009.59,
-          "unrealized_pnl": 6351.24,
-          "unrealized_pct": 7.78,
           "thesis_full": null
         },
         {
@@ -4210,11 +4050,6 @@
           "rationale": null,
           "opened_at": "2026-07-01T01:35:06.770648+00:00",
           "held_days": 28,
-          "cost_basis": 6.97,
-          "current_price": 8.49,
-          "market_value": 58020.66,
-          "unrealized_pnl": 10387.68,
-          "unrealized_pct": 21.81,
           "thesis_full": null
         },
         {
@@ -4228,11 +4063,6 @@
           "rationale": null,
           "opened_at": "2026-07-23T01:36:34.539608+00:00",
           "held_days": 6,
-          "cost_basis": 4.58,
-          "current_price": 4.75,
-          "market_value": 51053.0,
-          "unrealized_pnl": 1827.16,
-          "unrealized_pct": 3.71,
           "thesis_full": null
         },
         {
@@ -4246,11 +4076,6 @@
           "rationale": null,
           "opened_at": "2026-07-03T01:35:00.962739+00:00",
           "held_days": 26,
-          "cost_basis": 57.1158,
-          "current_price": 59.3,
-          "market_value": 40324.0,
-          "unrealized_pnl": 1485.25,
-          "unrealized_pct": 3.82,
           "thesis_full": null
         },
         {
@@ -4264,11 +4089,6 @@
           "rationale": null,
           "opened_at": "2026-07-10T01:44:17.779308+00:00",
           "held_days": 19,
-          "cost_basis": 108.0,
-          "current_price": 112.0,
-          "market_value": 38137.74,
-          "unrealized_pnl": 1362.06,
-          "unrealized_pct": 3.7,
           "thesis_full": null
         },
         {
@@ -4282,11 +4102,6 @@
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 37,
-          "cost_basis": 5.23,
-          "current_price": 5.45,
-          "market_value": 32670.55,
-          "unrealized_pnl": 1318.81,
-          "unrealized_pct": 4.21,
           "thesis_full": null
         },
         {
@@ -4300,11 +4115,6 @@
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
           "held_days": 16,
-          "cost_basis": 53.05,
-          "current_price": 57.1,
-          "market_value": 30331.76,
-          "unrealized_pnl": 2151.38,
-          "unrealized_pct": 7.63,
           "thesis_full": null
         }
       ],
@@ -4897,26 +4707,18 @@
       "positions": [
         {
           "ticker": "XLU",
-          "shares": 11093.854005,
-          "market_value": 513312.62,
           "weight": 0.49429
         },
         {
           "ticker": "XLV",
-          "shares": 1971.349717,
-          "market_value": 320245.76,
           "weight": 0.308378
         },
         {
           "ticker": "XLF",
-          "shares": 1855.976244,
-          "market_value": 104472.9,
           "weight": 0.100601
         },
         {
           "ticker": "XLP",
-          "shares": 1194.457716,
-          "market_value": 100453.89,
           "weight": 0.096731
         }
       ],

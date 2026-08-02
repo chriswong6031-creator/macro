@@ -16,9 +16,12 @@ ALL committed ``data/governance/*.json``, ``data/governance/*.jsonl``, and
 host paths, dollar amounts, secret env-var patterns).  New artifacts are
 covered automatically -- no per-file registration required.
 
-``site/mastermind/mastermind_snapshot.json`` is EXEMPT from the private-key,
-dollar-amount, and secret-env scans (FB-R1: the paper book publishes
-tickers/weights by design) but is NOT exempt from host-path scans.
+``site/mastermind/mastermind_snapshot.json`` is EXEMPT from the dollar-amount
+and secret-env scans (FB-R1: the paper book publishes tickers/weights and
+prose price levels by design) but is NOT exempt from host-path scans, and
+receives a PARTIAL key scan: only the by-design keys in
+``_KEY_SCAN_ALLOWED_KEYS`` are permitted — every other forbidden key
+(``cost_basis``, ``entry_price``, ``shares``, ...) still fires (RUL-CL-6b).
 
 Exit codes
 ----------
@@ -102,12 +105,28 @@ _SCAN_GLOBS: tuple[str, ...] = (
     "site/mastermind/*.json",
 )
 
-# Artifacts exempt from the private-key/dollar/secret scan but NOT from
-# host-path scans.  mastermind_snapshot.json publishes tickers/weights by
+# Artifacts exempt from the dollar/secret scan but NOT from host-path scans.
+# mastermind_snapshot.json publishes tickers/weights and prose price levels by
 # design (FB-R1).
 _KEY_SCAN_EXEMPT: frozenset[str] = frozenset([
     "site/mastermind/mastermind_snapshot.json",
 ])
+
+# Partial key scan for exempt artifacts (RUL-CL-6b BRIDGE law).  FB-R1 lets the
+# snapshot publish book composition by design, but held-book/fill economics
+# must never reach a public site/ path.  The macro-side H2 check
+# (scripts/check_ruling_conflicts.py) is diff-scoped and never rescans an
+# unchanged file — 37 cost_basis keys sat on main unnoticed until PR #4209
+# touched the file (2026-08-01).  THIS guard scans shipped artifacts on every
+# run, so the snapshot now gets a key scan with only the by-design keys
+# allowed; any other _FORBIDDEN_KEYS / id-pattern hit (cost_basis,
+# entry_price, shares, ...) fires.  Fail-closed: extend the allowlist only
+# with a ruling citation.
+_KEY_SCAN_ALLOWED_KEYS: dict[str, frozenset[str]] = {
+    "site/mastermind/mastermind_snapshot.json": frozenset({
+        "ticker", "positions", "venue",
+    }),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +163,7 @@ def _scan_artifact(
     check_host_path: bool = True,
     check_secret_env: bool = True,
     check_dollar_amount: bool = True,
+    allowed_keys: frozenset[str] = frozenset(),
 ) -> list[dict]:
     """Scan one JSON artifact for violations.
 
@@ -154,6 +174,8 @@ def _scan_artifact(
     check_keys           : Whether to scan for forbidden field names (FB-R8).
                            Includes both _FORBIDDEN_KEYS membership and the
                            _RE_FORBIDDEN_KEY_PATTERN id/uid suffix regex.
+    allowed_keys         : Lower-case keys excused from the forbidden-key scan
+                           for this artifact (RUL-CL-6b partial exemption).
     check_host_path      : Whether to scan for host paths in string values.
     check_secret_env     : Whether to scan for MASTERMIND_<NAME> patterns.
     check_dollar_amount  : Whether to scan for dollar-amount patterns.
@@ -180,7 +202,9 @@ def _scan_artifact(
         # (1) Forbidden key names in counts-only artifacts (scan b)
         if check_keys and key is not None:
             key_lower = key.lower()
-            if key_lower in _FORBIDDEN_KEYS or _RE_FORBIDDEN_KEY_PATTERN.match(key_lower):
+            if key_lower in allowed_keys:
+                pass
+            elif key_lower in _FORBIDDEN_KEYS or _RE_FORBIDDEN_KEY_PATTERN.match(key_lower):
                 violations.append({
                     "artifact": rel_path,
                     "json_path": json_path,
@@ -307,14 +331,16 @@ def scan(
         # Selftest / synthetic-fixture path: scan only the provided artifacts.
         for rel_path, text in extra_artifacts.items():
             is_exempt = rel_path in _KEY_SCAN_EXEMPT
-            # Exempt artifacts (mastermind_snapshot.json) skip the counts-only
-            # scan (keys + dollar amounts + secret env) but remain subject to
-            # the host-path scan.
+            partial = _KEY_SCAN_ALLOWED_KEYS.get(rel_path)
+            # Exempt artifacts (mastermind_snapshot.json) skip the dollar/secret
+            # scans but remain subject to the host-path scan — and, when they
+            # carry a _KEY_SCAN_ALLOWED_KEYS entry, to the partial key scan.
             violations.extend(
                 _scan_artifact(
                     rel_path,
                     text,
-                    check_keys=not is_exempt,
+                    check_keys=(partial is not None) or not is_exempt,
+                    allowed_keys=partial or frozenset(),
                     check_dollar_amount=not is_exempt,
                     check_secret_env=not is_exempt,
                     check_host_path=True,
@@ -334,6 +360,7 @@ def scan(
     for rel_path in sorted(all_paths):
         rel_path_norm = rel_path.replace("\\", "/")
         is_exempt = rel_path_norm in _KEY_SCAN_EXEMPT
+        partial = _KEY_SCAN_ALLOWED_KEYS.get(rel_path_norm)
 
         try:
             text = (root / rel_path).read_text(encoding="utf-8")
@@ -344,7 +371,8 @@ def scan(
             _scan_artifact(
                 rel_path_norm,
                 text,
-                check_keys=not is_exempt,
+                check_keys=(partial is not None) or not is_exempt,
+                allowed_keys=partial or frozenset(),
                 check_dollar_amount=not is_exempt,
                 check_secret_env=not is_exempt,
                 check_host_path=True,
@@ -471,13 +499,13 @@ def _run_selftest(root: Path) -> int:
             print(f"    unexpected violation: {d}")
     print(f"  selftest [{status}] counts-only clean fixture -> no violations")
 
-    # -- Test 7: mastermind_snapshot.json exempt from key scan ----------------
-    # Snapshot may contain tickers by design (FB-R1) -- exempt from key scan.
-    # It must NOT be exempt from host-path scan.
+    # -- Test 7: mastermind_snapshot.json partial key exemption ---------------
+    # Snapshot may contain ticker/positions/venue by design (FB-R1) -- those
+    # keys are allowed.  It must NOT be exempt from host-path scan, and every
+    # OTHER forbidden key must still fire (RUL-CL-6b).
     fixture_snap_tickers = json.dumps({
         "schema": "mastermind_snapshot.v1",
-        "ticker": "NVDA",
-        "weight": 0.15,
+        "positions": [{"ticker": "NVDA", "weight": 0.15, "venue": "US"}],
         "note": "position published by design",
     })
     v7a = scan(
@@ -489,7 +517,42 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if exempt_ok else "FAIL"
     if not exempt_ok:
         all_passed = False
-    print(f"  selftest [{status}] mastermind_snapshot.json ticker exempt from key scan")
+    print(f"  selftest [{status}] mastermind_snapshot.json by-design keys allowed")
+
+    # Fill/held-book economics in the snapshot -> forbidden_key CAUGHT.
+    # Regression pin for the 2026-08-01 exposure (37 cost_basis keys on main,
+    # PR #4209 recovery): the blanket key-scan exemption made this guard blind
+    # to the one artifact the RUL-CL-6b BRIDGE law was written for.
+    fixture_snap_costbasis = json.dumps({
+        "schema": "mastermind_snapshot.v1",
+        "positions": [{
+            "ticker": "NVDA",
+            "weight": 0.15,
+            "cost_basis": 123.45,
+            "entry_price": 120.0,
+            "shares": 100,
+        }],
+    })
+    v7c = scan(
+        root,
+        extra_artifacts={"site/mastermind/mastermind_snapshot.json": fixture_snap_costbasis},
+        skip_ignore_rail=True,
+    )
+    caught = {
+        d["json_path"].rsplit(".", 1)[-1]
+        for d in v7c
+        if d["violation_type"] == "forbidden_key"
+    }
+    snap_econ_ok = (
+        {"cost_basis", "entry_price", "shares"} <= caught
+        and "ticker" not in caught
+        and "positions" not in caught
+    )
+    status = "PASS" if snap_econ_ok else "FAIL"
+    if not snap_econ_ok:
+        all_passed = False
+        print(f"    caught keys: {sorted(caught)}")
+    print(f"  selftest [{status}] mastermind_snapshot.json fill economics -> forbidden_key")
 
     # Snapshot is NOT exempt from host-path scan
     fixture_snap_host = json.dumps({
