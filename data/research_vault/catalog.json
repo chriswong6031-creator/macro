@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T12:17:43.605644+00:00",
-  "count": 593,
+  "generated_at": "2026-08-02T12:47:52.759820+00:00",
+  "count": 594,
   "institutions": [
     "Amova",
     "Apollo",
@@ -60,6 +60,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vr9pxcwoy44-c03eb7",
+      "title": "ING Think think ahead warsh wants a quieter fed the bank of england shows how",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:58:33Z",
+      "summary_points": [
+        "**Fed Communication Shift**: Central banks' overuse of forward guidance risks market confusion; BoE's 2013 review (reduced communication) offers blueprint for Warsh-led Fed prioritizing stability over directional signals.",
+        "**Core PCE Focus & September Drivers**: Fed prioritizes Core PCE (3.76%) over Core CPI (2.58%); September decision hinges on inflation releases (seasonal softness, rental easing), jobs data, and oil prices as key risk factor.",
+        "**Labor Market Misalignment**: June jobs miss (57k vs forecast), rising unemployment (4.3%), and labor participation drop signal unemployment rate is poor health gauge—critical for Fed policy and market pricing.",
+        "**No September Hike Expectation**: Fed policy outlook shows no majority for tightening (5-6 regional presidents rotating off), rates held until 2027, market pricing of 25bp hike reduced to 2-in-3 chance.",
+        "**Inflation Surprise Risk**: Downside inflation surprise (1.2% YoY monthly deflation) driven by services alone could shock base rate path and trigger volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
