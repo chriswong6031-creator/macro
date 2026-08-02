@@ -18,7 +18,7 @@ needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not o
 
 def test_dossier_ui_is_progressive_and_semantically_precise() -> None:
     for marker in (
-        'src="government-revenue-dossiers.js"',
+        'data-sync src="government-revenue-dossiers.js"',
         'id="dossierBook"',
         "Official award book",
         "Stable award identity",

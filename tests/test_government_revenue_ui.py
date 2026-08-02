@@ -215,8 +215,8 @@ def test_keyboard_url_mobile_and_zero_data_paths_are_first_class() -> None:
 def test_research_briefcase_is_local_auditable_and_workspace_gated() -> None:
     implementation = TEMPLATE + BRIEFCASE + BRIEFCASE_UI
     for marker in (
-        'src="government-revenue-briefcase.js"',
-        'src="government-revenue-briefcase-ui.js"',
+        'data-sync src="government-revenue-briefcase.js"',
+        'data-sync src="government-revenue-briefcase-ui.js"',
         'id="researchBriefcase"',
         'id="savedViewSelect"',
         'id="toggleLocalAlert"',

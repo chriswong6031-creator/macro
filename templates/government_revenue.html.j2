@@ -123,9 +123,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 <aside class="evidence-drawer" id="evidenceDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-head"><strong id="drawerTitle">{{ t('Evidence receipts','证据凭证') }}</strong><button class="tool-btn" type="button" id="drawerClose">{{ t('Close','关闭') }} · Esc</button></div><div class="drawer-body" id="drawerBody"></div></aside>
 
 <script id="gov-data" type="application/json">{{ payload_json|replace('</', '<\/')|safe }}</script>
-<script src="government-revenue-dossiers.js"></script>
-<script src="government-revenue-briefcase.js"></script>
-<script src="government-revenue-briefcase-ui.js"></script>
+<script data-sync src="government-revenue-dossiers.js"></script>
+<script data-sync src="government-revenue-briefcase.js"></script>
+<script data-sync src="government-revenue-briefcase-ui.js"></script>
 <script>
 (function(){
   'use strict';
