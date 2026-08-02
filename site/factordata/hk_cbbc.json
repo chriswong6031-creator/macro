@@ -319,7 +319,7 @@
   "sld_call_levels_in_store": 1405,
   "sld_max_issue_date": "2026-07-31",
   "sld_freshness": "fresh",
-  "sld_pdftotext_available": null,
+  "sld_pdftotext_available": true,
   "sld_banner": null,
   "display_only": true
 }

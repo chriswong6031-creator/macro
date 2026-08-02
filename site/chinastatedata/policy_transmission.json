@@ -5,8 +5,8 @@
     "may_originate": false,
     "may_escalate": false
   },
-  "built": "2026-08-01T09:51:22.594024+00:00",
-  "asof": "2026-08-01",
+  "built": "2026-08-02T09:47:29.637985+00:00",
+  "asof": "2026-08-02",
   "policy_impulse": "targeted_support",
   "transmission_channel": [
     "fiscal_or_structural",
@@ -118,10 +118,10 @@
   ],
   "staleness": {
     "per_source_days": {
-      "lpr": 12,
-      "rrr": 451,
-      "fr007": 1,
-      "communiques": 95
+      "lpr": 13,
+      "rrr": 452,
+      "fr007": 2,
+      "communiques": 96
     }
   },
   "priced_in_check": {
