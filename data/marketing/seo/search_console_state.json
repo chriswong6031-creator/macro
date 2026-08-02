@@ -1,12 +1,12 @@
 {
   "schema": "gsc_state.v1",
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "available": false,
-  "reason": "credentials not configured",
+  "reason": "api error: 'str' object has no attribute 'keys'",
   "property": "sc-domain:mastermind-x.com",
   "window": {
-    "start": "2026-07-05",
-    "end": "2026-08-01"
+    "start": "2026-07-06",
+    "end": "2026-08-02"
   },
   "rows_fetched": 0,
   "rows_may_be_incomplete": true
