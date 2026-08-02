@@ -407,11 +407,16 @@ _BBC_SRC_PATH = Path(__file__).resolve().parent.parent / "scripts" / "build_bask
 _PULSE_KEYS = ("pulse_heat", "pulse_heat_grade", "pulse_rank_delta_1d",
                "pulse_rank_delta_5d", "pulse_rank_delta_20d", "pulse_score_delta_5d")
 
-# Mirrors templates/baskets_china.html.j2:474-475 so the inlined payload is parseable.
-_STUB_TEMPLATE = ("<html><head></head><body><script>\n"
-                  "const BASKETS = {{ baskets_json|safe }};\n"
-                  "const CHART   = {{ chart_json|safe }};\n"
-                  "</script></body></html>\n")
+# The harness used to write a hand-authored mirror of the page template's inline
+# payload lines. That mirror ROTTED silently the moment the China Sector Intelligence
+# consolidation (2026-08) turned baskets_china.html.j2 into a redirect stub: the tests
+# kept rendering a template with `const BASKETS = {{ baskets_json|safe }}` that no
+# longer existed anywhere in the repo, so they could not have seen the externalization
+# land — or fail. Copy the REAL template instead; the builder renders it contextless,
+# so there is nothing to mirror and nothing left to drift.
+_REAL_PAGE_TEMPLATE = (
+    Path(__file__).resolve().parent.parent / "templates" / "baskets_china.html.j2"
+)
 
 
 class _InjectedFault(RuntimeError):
@@ -448,8 +453,10 @@ def _drive_full_build(tmp_path, monkeypatch, *, turn_raises=False, merge_raises=
     china_search close cache, the CSI 300 store group — are not present on a dev box or
     in the CI packs). Everything the ordering contract is about stays the module's own
     code: the sector_pulse merge, the fail-soft write, the organ annotation, the
-    signal/overlap merge, the authoritative write and the re-render all run for real,
-    so a re-order shows up here. Returns the tmp site dir.
+    signal/overlap merge and the authoritative write all run for real, so a re-order
+    shows up here. (The #2886 second render used to run here too; the China Sector
+    Intelligence consolidation externalized the payload and deleted it — the shell is
+    rendered once, contextless.) Returns the tmp site dir.
     """
     from engine import baskets_china as _e_bc
     from engine import basket_freeze as _e_bf
@@ -462,7 +469,15 @@ def _drive_full_build(tmp_path, monkeypatch, *, turn_raises=False, merge_raises=
     from scripts import build_theme_detail as _s_btd
 
     (tmp_path / "templates").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "templates" / "baskets_china.html.j2").write_text(_STUB_TEMPLATE)
+    (tmp_path / "templates" / "baskets_china.html.j2").write_text(
+        _REAL_PAGE_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    for _inc in ("_seo_head.html.j2",):   # the stub includes it
+        _src_inc = _REAL_PAGE_TEMPLATE.parent / _inc
+        if _src_inc.exists():
+            (tmp_path / "templates" / _inc).write_text(
+                _src_inc.read_text(encoding="utf-8"), encoding="utf-8"
+            )
     site = tmp_path / "site"
     site.mkdir(parents=True, exist_ok=True)
 
@@ -508,11 +523,9 @@ def _read_baskets_json(site):
     return json.loads((site / "chinabasketdata" / "baskets.json").read_text())
 
 
-def _inlined_baskets(site):
-    """Parse the BASKETS payload back out of the rendered page."""
-    html = (site / "baskets_china.html").read_text()
-    body = html.split("const BASKETS = ", 1)[1].rsplit(";\nconst CHART", 1)[0]
-    return json.loads(body)
+# _inlined_baskets() lived here: it parsed the BASKETS payload back out of the
+# rendered page. Removed with the China Sector Intelligence consolidation — the page
+# is a redirect stub and inlines nothing, so the helper could only ever IndexError.
 
 
 def test_baskets_json_carries_pulse_keys_after_full_build(tmp_path, monkeypatch):
@@ -561,21 +574,33 @@ def test_baskets_json_carries_signal_overlap_merge_and_chart(tmp_path, monkeypat
     assert bj.get("sleeve_chip"), "header chips computed before the write did not reach it"
 
 
-def test_fetched_json_and_inlined_page_payload_agree(tmp_path, monkeypatch):
-    """The JSON the page fetches and the payload the page inlines are the same state.
+def test_page_inlines_nothing_and_the_json_is_the_sole_delivery(tmp_path, monkeypatch):
+    """The fetched JSON is now the ONLY delivery path for the payload.
 
-    While both delivery paths are live (the inline embed dies with the template merge),
-    a divergence means one of the two is a stale snapshot.
+    Was test_fetched_json_and_inlined_page_payload_agree: it compared the inline
+    embed against the JSON while both were live. The China Sector Intelligence
+    consolidation externalized the payload — baskets_china.html is a redirect stub
+    and the merged page fetches chinabasketdata/baskets.json — so there is no second
+    copy left to disagree. The assertion that mattered (the shipped payload carries
+    post-organ turn_state, the overlap merge and the pulse keys) moves onto the one
+    surviving artifact, where it is now the only thing standing between the page and
+    a stale read.
     """
     site = _drive_full_build(tmp_path, monkeypatch)
-    disk = {b["id"]: b for b in _read_baskets_json(site)["baskets"]}
-    inline = {b["id"]: b for b in _inlined_baskets(site)["baskets"]}
-    assert set(disk) == set(inline)
-    for bid in disk:
-        assert disk[bid].get("turn_state") == inline[bid].get("turn_state")
-        assert disk[bid].get("top_overlaps") == inline[bid].get("top_overlaps")
-    inline_themes = (_inlined_baskets(site).get("theme_intel") or {}).get("themes") or []
-    assert all(k in inline_themes[0] for k in _PULSE_KEYS)
+    page = (site / "baskets_china.html").read_text()
+    assert "const BASKETS = " not in page, "inline BASKETS embed came back"
+    assert "const CHART" not in page, "inline CHART embed came back"
+    assert 'http-equiv="refresh"' in page, "baskets_china.html is no longer a stub"
+
+    bj = _read_baskets_json(site)
+    assert bj["baskets"], "fetched artifact is empty — the page has nothing to render"
+    assert any(b.get("turn_state") for b in bj["baskets"]), (
+        "no turn_state in the fetched JSON — the page lost the lifecycle chips the "
+        "post-organ write exists to deliver"
+    )
+    assert all("top_overlaps" in b for b in bj["baskets"])
+    themes = (bj.get("theme_intel") or {}).get("themes") or []
+    assert all(k in themes[0] for k in _PULSE_KEYS)
 
 
 def test_baskets_json_survives_turn_organ_failure(tmp_path, monkeypatch):
@@ -636,8 +661,16 @@ def test_failsoft_baskets_json_write_is_post_pulse_merge_and_pre_chart_pop():
 
 
 def test_authoritative_baskets_json_write_is_post_organ_and_post_merge():
-    """The authoritative write follows the turn organ AND the signal/overlap merge,
-    and precedes the re-render that inlines the same payload."""
+    """The authoritative write follows the turn organ AND the signal/overlap merge.
+
+    The final leg used to be `i_auth < i_rerender` — the authoritative write had to
+    precede the #2886 second render, or the page inlined a payload the JSON did not
+    have. The China Sector Intelligence consolidation externalized the payload and
+    deleted that re-render, so the leg is retargeted rather than dropped: the pin is
+    now that NO re-render exists at all, which is the stronger form of the same
+    guarantee — with one shell render and one authoritative JSON write, the artifact
+    the page fetches is the last state written, by construction.
+    """
     src = _BBC_SRC_PATH.read_text()
     auth = "_bj_path2.write_text("
     assert src.count(auth) == 1
@@ -646,11 +679,14 @@ def test_authoritative_baskets_json_write_is_post_organ_and_post_merge():
     i_signals = _src_at(src, "_compute_member_signals(data, site)")
     i_overlaps = _src_at(src, "_compute_basket_overlaps(data)")
     i_auth = _src_at(src, auth)
-    i_rerender = _src_at(src, "_render_page(_bj2_render)")
     assert i_failsoft < i_organ, "fail-soft write must precede the organ to be fail-soft"
     assert i_organ < i_signals < i_auth, "authoritative write is not post-organ/post-signals"
     assert i_overlaps < i_auth, "authoritative write is not post-overlap-merge"
-    assert i_auth < i_rerender, "page re-renders from a payload the JSON does not have"
+    assert "_render_page(_bj2_render)" not in src, (
+        "the post-organ re-render is back — with the payload externalized the page "
+        "has nothing to re-render FROM, so this can only mean the inline embed "
+        "returned (masterplan §0 gate 5)"
+    )
 
 
 def test_authoritative_write_refreshes_theme_intel_from_memory():

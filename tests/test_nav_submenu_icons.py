@@ -55,8 +55,22 @@ EXPECTED_ICON_FAMILIES = {
 # least one other user in this menu, so no FAMILY leaves the set — only the
 # per-span count moves. If a family ever does drop out, the families assertion
 # above fails first and this comment is the place to say why.
-EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-EXPECTED_EMITTED_ICON_COUNT = 56
+#
+# China Sector Intelligence consolidation (2026-08, nav 5 -> 3): a family DID drop
+# out, so per the note above, here is why. The China group's nested "Sector Central"
+# submenu (trigger + 5 rows = 6 spans) flattens to 3 rows, net -3, so 56 -> 53 —
+# counted off the re-rendered _navlinks.html.j2, not by hand. submenu-icon-rotation
+# leaves the EMITTED set: the China Subsector Rotation row was its last user in this
+# menu once the US row folded into the merged US page one program earlier. It stays
+# in EXPECTED_ICON_FAMILIES rather than leaving entirely (the submenu-icon-leader
+# precedent) because product-nav-icons.css still draws it and dashboard-icons.js
+# still uses it — it is used elsewhere, just not in THIS rendered menu, which is
+# exactly the allocation/bitcoin case. submenu-icon-baskets (5 -> 4) and
+# submenu-icon-intelligence (4 -> 3) lose spans but keep other users, so they stay.
+EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {
+    "allocation", "bitcoin", "rotation",
+}
+EXPECTED_EMITTED_ICON_COUNT = 53
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
