@@ -19,6 +19,7 @@ from .contracts import (
     canonical_json_bytes,
     canonical_json_sha256,
     event_key,
+    iso_timestamp,
     sha256_bytes,
     validate_evidence_pair,
     verify_fact_pack_against_transcript,
@@ -172,7 +173,14 @@ def build_generation(
             "object_key": f"objects/{digest}.json",
         }
         artifacts[files[path]["object_key"]] = body
-    generated = str((coverage or {}).get("index_generated_at") or (max(generated_at) if generated_at else "1970-01-01T00:00:00Z"))
+    # ``transcript_source`` canonicalizes Terminal's RFC3339 receipt to UTC
+    # ``Z`` form.  The root carries that same receipt, so normalize the index
+    # marker before comparing it to the per-event evidence or validating the
+    # root contract (Terminal currently emits ``+00:00``).
+    generated = iso_timestamp(
+        (coverage or {}).get("index_generated_at") or (max(generated_at) if generated_at else "1970-01-01T00:00:00Z"),
+        field="coverage.index_generated_at",
+    )
     prior_coverage = prior_manifest.get("coverage") if isinstance(prior_manifest, Mapping) else None
     dates = [str(pair.fact_pack["event"]["date"]) for pair in collected.values()]
     if isinstance(prior_coverage, Mapping):
@@ -188,6 +196,7 @@ def build_generation(
     if supplied_coverage:
         if set(supplied_coverage) != expected_coverage_context:
             raise ValueError("coverage context fields mismatch")
+        supplied_coverage["index_generated_at"] = generated
     else:
         supplied_coverage = {
             "selection_policy": "explicit_input",

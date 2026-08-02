@@ -339,6 +339,25 @@ def test_unchanged_index_is_true_noop_and_receipts_stay_stable(monkeypatch, tmp_
     assert json.loads((worker / "bodies" / "AAPL" / "2026Q1.receipt.json").read_text(encoding="utf-8"))["index_generated_at"] == "2026-02-01T00:00:00Z"
 
 
+def test_refresh_canonicalizes_terminal_plus_zero_timestamp_for_root_contract(monkeypatch, tmp_path: Path) -> None:
+    body = _body()
+    index = _index(body)
+    index["generated_at"] = "2026-02-01T00:00:00+00:00"
+    current = {"index": index, "remote": None}
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_global_index", lambda _url: current["index"])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_body", lambda _url, _ref: body)
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.load_remote_root_state", lambda: (current["remote"], None, None))
+
+    def publish_root(out: Path, **_kwargs: object) -> int:
+        current["remote"] = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+        return 0
+
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.publish", publish_root)
+    assert refresh(tmp_path / "worker", max_bodies=1, out_dir=tmp_path / "public", promote=True) == 0
+    assert current["remote"]["generated_at"] == "2026-02-01T00:00:00Z"
+    assert current["remote"]["coverage"]["index_generated_at"] == "2026-02-01T00:00:00Z"
+
+
 def test_cache_loss_uses_remote_catalog_for_correction_lineage(monkeypatch, tmp_path: Path) -> None:
     original = _body(ticker="AAPL", text="Revenue was 100 million.")
     corrected = _body(ticker="AAPL", text="Revenue was 101 million.")
