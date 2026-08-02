@@ -242,9 +242,9 @@
           ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence']
         ]],
         ['Themes & rotation', [
-          ['Sector Central', 'Cycles, heat and gated reads', 'sector_central_china.html', 'sectors'],
-          ['Theme Baskets', 'Tonghuashun concepts compared', 'baskets_china.html', 'baskets'],
-          ['Subsector Rotation', 'Catch concepts gaining velocity', 'subsector_rotation_china.html', 'rotation', null, null, 'cyan'],
+          // 2026-08 China SI consolidation: the three sector/theme/rotation pages are one now
+          // (baskets_china.html / subsector_rotation_china.html are redirect stubs).
+          ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors'],
           ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative', null, null, '']
         ]],
         ['Flows & policy', [

@@ -369,59 +369,22 @@ def main() -> int:
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-    # W5-B: load the sleeve summary stats for the strategy card (additive, best-effort).
-    # Reads the committed sleeve JSON if it exists; falling back to None just hides the card stats.
-    # Also reads rederive_stats.primary.full for Sharpe + n (replaces hardcoded ~0.57 / 349).
-    sleeve_stats = None
-    try:
-        _sleeve_json = site / "factordata" / "cn_reversal_sleeve.json"
-        if _sleeve_json.exists():
-            _sd = json.loads(_sleeve_json.read_text())
-            _sf = (_sd.get("sizing") or {}).get("sleeve_factor")
-            _nm = _sd.get("n_members")
-            if _sf is not None and _nm is not None:
-                sleeve_stats = {"n_members": int(_nm), "sleeve_factor": float(_sf)}
-                # Pull re-derived Sharpe + n from rederive_stats.primary.full (source-of-truth).
-                _rd = (_sd.get("rederive_stats") or {}).get("primary") or {}
-                _full = _rd.get("full") or {}
-                _sh = _full.get("sharpe")
-                _nr = _full.get("n")
-                if _sh is not None:
-                    sleeve_stats["sharpe"] = float(_sh)
-                if _nr is not None:
-                    sleeve_stats["n_rebalances"] = int(_nr)
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.debug("baskets_china: sleeve stats load skipped (%s)", e)
+    # (sleeve_stats for the strategy card moved to build_china_sector_central — the card
+    #  now renders on the merged China Sector Intelligence page, not here.)
 
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
 
-    def _render_page(payload: dict) -> None:
-        """Render + write baskets_china.html for the given basket payload.
-
-        Called twice: once here (pre-turn-organ, so an organ failure still ships
-        a page), and once after the china_basket_turn organ + signal/overlap
-        merge — the organ runs post-write by dependency (it reads the
-        just-written level series), so without the re-render the INLINED page
-        payload would lack turn_state and the lifecycle chips / Entry Radar
-        would silently never fire from turn states (us_stocks one-build-lag
-        class, cf. #2829).
-
-        #2886 double-render contract: theme_context= must be passed to EVERY
-        render call so the final page retains the hero. Both calls use the same
-        theme_context dict (computed once above, before the first render)."""
-        _html = env.get_template("baskets_china.html.j2").render(
-            baskets_json=json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
-            chart_json=json.dumps(chart, separators=(",", ":")),
-            bench_en="CSI 300", bench_zh="沪深300",
-            generated_utc=built,
-            sleeve_stats=sleeve_stats,
-            theme_context=theme_context)
-        write_page(site / "baskets_china.html", _html)
-        return len(_html)
-
-    _page_kb = (_render_page(data) or 0) // 1024
+    # China SI consolidation (2026-08): baskets_china.html is now a redirect STUB into
+    # sector_central_china.html — the merged page FETCHES chinabasketdata/baskets.json
+    # (fail-soft + authoritative writes below preserve the #2886 guarantees on the JSON)
+    # and renders the theme-context hero server-side from theme_context_cn.json (written
+    # above by engine.theme_context). The FactorWatch template lives on as
+    # baskets_china_factorwatch.html.j2 for the THS browser (build_baskets_china_ths).
+    # The stub forwards inbound #b-<id>/#theme-<id> hashes so old deep links resolve on
+    # the merged page (openBasket/openTheme transplanted there).
+    _stub_html = env.get_template("baskets_china.html.j2").render()
+    write_page(site / "baskets_china.html", _stub_html)
+    _page_kb = len(_stub_html) // 1024
 
     # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer
     # (basket cycle records were attached above, before the JSON write, so the detail
@@ -508,8 +471,8 @@ def main() -> int:
 
     # AUTHORITATIVE baskets.json write — the artifact the merged page FETCHES. Runs after the
     # china_basket_turn organ AND the signal/overlap merge, and produces exactly the payload the
-    # second _render_page call below inlines, so the fetched JSON and the rendered page can never
-    # disagree. A pre-organ-only JSON is the us_stocks one-build-lag class (#2829): the lifecycle
+    # merged China Sector Intelligence page renders from, so a stale JSON is a stale page.
+    # A pre-organ-only JSON is the us_stocks one-build-lag class (#2829): the lifecycle
     # chips / Entry Radar read turn_state and would silently never fire.
     # (The turn annotation above already re-wrote from the disk copy; we merge on top of that
     # with the member signals and overlaps `data` gained since.)
@@ -550,21 +513,10 @@ def main() -> int:
                     _m2["ret_5d"] = _msrc.get("ret_5d")
         _bj_path2.write_text(json.dumps(_bj2, separators=(",", ":"), default=str))
         log.info("baskets.json: re-wrote with member signals + overlaps")
-
-        # RE-RENDER the page with the fully-merged payload (turn_state + intel +
-        # signals + overlaps). The initial render happened before the turn organ
-        # by dependency; this second render makes the INLINED payload match the
-        # final baskets.json so lifecycle chips + Entry Radar fire (#2829 class).
-        try:
-            _bj2_render = dict(_bj2)
-            # baskets.json still carries the chart subtree (written pre-pop); the page
-            # inlines chart separately as CHART — re-inlining it in BASKETS is 235KB
-            # of dead payload (review 07-18).
-            _bj2_render.pop("chart", None)
-            _kb2 = (_render_page(_bj2_render) or 0) // 1024
-            log.info("baskets_china.html: re-rendered with turn_state-merged payload (%d KB shipped)", _kb2)
-        except Exception as _re:  # noqa: BLE001 — additive; first render already shipped
-            log.warning("baskets_china.html re-render failed (first render stands): %s", _re)
+        # (No page re-render: baskets_china.html is a static stub since the China SI
+        # consolidation. The merged page fetches this JSON, so the authoritative write
+        # above plays the role the old #2886 second render did — the fetched payload
+        # carries turn_state + intel + signals + overlaps.)
     except Exception as _we:  # noqa: BLE001 — additive
         log.warning("baskets.json final re-write failed: %s", _we)
 

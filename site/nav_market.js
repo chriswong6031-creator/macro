@@ -189,9 +189,8 @@
           // content), verbatim copy from _navlinks.html.j2's own relocated row.
           ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
             'movers.html', 'stocks', '每日异动', '免费 · 今日涨跌最大 · 联动主题'],
-          // Sector Intelligence consolidation (#4237, 2026-08): Sector Central + Theme
-          // Baskets + Subsector Rotation are ONE page now (the old URLs are redirect
-          // stubs) — one menu row, matching the collapsed _navlinks flyout.
+          // 2026-08 SI consolidation: Sector Central + Theme Baskets + Subsector Rotation
+          // are one page now (baskets.html / subsector_rotation.html are redirect stubs).
           ['Sector Intelligence', 'Sectors, themes & rotation in one read', 'sector_central.html', 'sectors']
         ]],
         ['Signals & strategy', [
@@ -242,9 +241,9 @@
           ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence']
         ]],
         ['Themes & rotation', [
-          ['Sector Central', 'Cycles, heat and gated reads', 'sector_central_china.html', 'sectors'],
-          ['Theme Baskets', 'Tonghuashun concepts compared', 'baskets_china.html', 'baskets'],
-          ['Subsector Rotation', 'Catch concepts gaining velocity', 'subsector_rotation_china.html', 'rotation', null, null, 'cyan'],
+          // 2026-08 China SI consolidation: the three sector/theme/rotation pages are one now
+          // (baskets_china.html / subsector_rotation_china.html are redirect stubs).
+          ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors'],
           ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative', null, null, '']
         ]],
         ['Flows & policy', [

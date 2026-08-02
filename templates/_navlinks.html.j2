@@ -106,16 +106,13 @@
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span>{{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="{{ NP }}china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span>{{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet · alpha · setups', '先知 · 阿尔法 · 布局') }}</span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="{{ NP }}sector_central_china.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Central', '行业中枢') }}<span class="d">{{ t('Cycle map · heat · gated reads', '周期图谱 · 热度 · 门控研判') }}</span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="{{ NP }}sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Central', '行业中枢') }}<span class="d">{{ t('Live desk · cycle map · one gated read per sector & theme · graded', '实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分') }}</span></a>
-            <a href="{{ NP }}baskets_china.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span>{{ t('Thematic Baskets & Rotation', '主题篮子与轮动') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate', '等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动') }}</span></a>
-            <a href="{{ NP }}subsector_rotation_china.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span>{{ t('Subsector Rotation', '子行业轮动') }}<span class="d">{{ t('233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early', '233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题') }}</span></a>
-            <a href="{{ NP }}subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
-            <a href="{{ NP }}china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span>{{ t('Market Heatmap', '市场热力图') }}<span class="d">{{ t('Every A-share · sector treemap · market-cap', '全部A股 · 板块树图 · 按市值') }}</span></a>
-          </div>
-        </div>
+        {# 2026-08 China Sector Intelligence consolidation: the 5-entry Sector Central flyout
+           (Sector Central / Thematic Baskets & Rotation / Subsector Rotation / Subsector
+           Confluence / Market Heatmap) collapsed to three flat rows — Baskets + Subsector
+           Rotation merged INTO sector_central_china.html, mirroring the US collapse above. #}
+        <a href="{{ NP }}sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Gated board · cycle map · whole-market rotation · theme baskets — one page', '门控研判 · 周期图谱 · 全市场轮动 · 主题篮子 — 一页尽览') }}</span></a>
+        <a href="{{ NP }}subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts', '同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
+        <a href="{{ NP }}china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span>{{ t('Market Heatmap', '市场热力图') }}<span class="d">{{ t('Every A-share · sector treemap · market-cap', '全部A股 · 板块树图 · 按市值') }}</span></a>
         <a href="{{ NP }}china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('China News Feed', '中国新闻流') }}<span class="d">{{ t('Policy tone · official sources · market tags', '政策基调 · 官方来源 · 市场标签') }}</span></a>
         <div class="nav-dd nav-sub">
