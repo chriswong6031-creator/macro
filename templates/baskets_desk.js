@@ -1,5 +1,5 @@
 // Shared Theme Rotation Desk renderer — used by every baskets page (US/CN/HK/CA/Intl).
-// Relies on per-page globals: BASKETS, CHART, THEME, THEME_ALERTS + helpers esc/cssv/
+// Relies on per-page globals: BASKETS, CHART, THEME + helpers esc/cssv/
 // fmtPct/cls/sparkSvg/ratio/sparkTail. Call deskBoot() after those are defined.
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
@@ -560,24 +560,6 @@ function renderScorecards(){
 function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return;const det=d.querySelector('details');if(det)det.open=true;
   d.scrollIntoView({behavior:'smooth',block:'center'});d.style.transition='box-shadow .3s';d.style.boxShadow='0 0 0 2px var(--link)';setTimeout(()=>{d.style.boxShadow='';},1200);}
 
-function renderBell(){
-  const wrap=document.getElementById('theme-bell'); if(!wrap) return;
-  const btn=document.getElementById('bell-btn'), menu=document.getElementById('bell-menu'), badgeEl=document.getElementById('bell-badge');
-  const evs=(THEME_ALERTS||[]).slice(0,12);
-  const SEEN='fw-theme-bell-seen', lastSeen=localStorage.getItem(SEEN)||'';
-  const unread=evs.filter(e=>e.ts>lastSeen).length;
-  if(unread>0){ badgeEl.textContent=unread>9?'9+':String(unread); badgeEl.classList.add('on'); }
-  const ago=ts=>{const dd=Math.floor((Date.now()-new Date(ts).getTime())/86400000);return dd<=0?L('today','今日'):dd===1?L('1d ago','1天前'):L(dd+'d ago',dd+'天前');};
-  menu.innerHTML=`<div class="bhd">🧺 ${L('Theme rotation alerts','主题轮动警报')}<span style="flex:1"></span><a href="alerts.html" class="muted" style="font-size:11px;text-decoration:underline">${L('Alert Center →','警报中心 →')}</a></div>`+
-    (evs.length?evs.map(e=>`<div class="bell-item" data-id="${esc(e.asset)}">
-      <div class="bi-hl">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</div>
-      <div class="bi-dt">${ago(e.ts)}</div></div>`).join(''):`<div class="bell-empty">${L('No recent theme changes — recommendations are steady.','近期无主题变化 — 建议保持稳定。')}</div>`);
-  btn.onclick=ev=>{ev.stopPropagation();const open=menu.classList.toggle('open');
-    if(open){badgeEl.classList.remove('on'); if(evs.length) localStorage.setItem(SEEN,evs[0].ts);}};
-  menu.querySelectorAll('.bell-item').forEach(it=>it.onclick=()=>{menu.classList.remove('open');openTheme(it.dataset.id);});
-  document.addEventListener('click',e=>{ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
-}
-
 // MLC-W2b: inject split-view / mixed-reads chips on theme-desk tcards.
 // Fetches stance_matrix.json once (client-side, after render); fail-silent on any error.
 // Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law.
@@ -621,5 +603,5 @@ function renderStanceChips(){
 function deskBoot(){ try{ renderSleeveChip(); }catch(e){} try{ renderActNow(); }catch(e){}
   try{ renderMacroCtx(); }catch(e){}
   try{ renderThemeDesk(); }catch(e){} try{ renderConcentration(); }catch(e){}
-  try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){} try{ renderBell(); }catch(e){}
+  try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){}
   try{ renderStanceChips(); }catch(e){} }

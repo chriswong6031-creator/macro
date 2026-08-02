@@ -262,8 +262,7 @@ def main() -> int:
         return 0
 
     # THEME ROTATION DESK (regionalized) — score/label/recommend + 5-day rotation + act-now +
-    # concentration, rides inside baskets_json; region alerts feed the page bell. Additive.
-    theme_alerts_recent = []
+    # concentration, rides inside baskets_json; region alerts feed the alert ledger. Additive.
     try:
         from engine.theme_scoring import compute_theme_intel
         ti = compute_theme_intel("china")
@@ -271,7 +270,6 @@ def main() -> int:
             data["theme_intel"] = ti
             from engine import theme_alerts
             theme_alerts.rebuild(ti, "china")
-            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get("as_of"), region="china")
             # Attach score/label/reco/clean_entry_q/rollover_risk_band onto each basket row
             # so the page can sort by score and show the desk findings without a second round-trip.
             _attach_basket_intel(data)
@@ -402,7 +400,6 @@ def main() -> int:
         _html = env.get_template("baskets_china.html.j2").render(
             baskets_json=json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
             chart_json=json.dumps(chart, separators=(",", ":")),
-            theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
             bench_en="CSI 300", bench_zh="沪深300",
             generated_utc=built,
             sleeve_stats=sleeve_stats,
