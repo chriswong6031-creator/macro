@@ -53,11 +53,16 @@ from engine.marketing.seo_search_console import (  # noqa: E402
     _GAP_MIN_IMPRESSIONS,
     _GAP_POS_HIGH,
     _GAP_POS_LOW,
+    _identity_for_disk,
+    _index_status_doc,
     _INDEX_STATUS_FILE,
+    _mask_email,
     _MAX_INSPECT_URLS,
     _PAGE_CAP_MONTHS,
     _parse_sa_json,
     _print_index_summary,
+    _print_summary,
+    _redacted_for_disk,
     _SCORECARD_FILE,
     _STATE_FILE,
     _validate_sa_info,
@@ -68,6 +73,7 @@ from engine.marketing.seo_search_console import (  # noqa: E402
     inspect_urls,
     load_sa_info,
     run,
+    sa_identity,
 )
 
 # ---------------------------------------------------------------------------
@@ -85,6 +91,9 @@ _PRIVATE_KEY = (
     "-----END PRIVATE KEY-----\n"
 )
 _CLIENT_EMAIL = "mastermindx@mastermindx-503122.iam.gserviceaccount.com"
+_PROJECT_ID = "mastermindx-503122"
+#: What _CLIENT_EMAIL must look like once it reaches a COMMITTED artifact.
+_MASKED_EMAIL = "mas***@***.gserviceaccount.com"
 
 
 def _sa_info(**over) -> dict:
@@ -1807,6 +1816,182 @@ class TestStatusReasons:
 
 
 # ---------------------------------------------------------------------------
+# Tests: the SA identity is PRINTED in full but COMMITTED masked
+#
+# This repository is PUBLIC and both search_console_state.json and
+# search_console_index_status.json are tracked files, so anything they carry is
+# permanent and world-readable.  They read `"service_account": {}` today only
+# because the credential is still broken — the masking has to land before the
+# secret is fixed, not after.  The operator still needs the full address on
+# stdout to resolve a 403, so the split is: full in memory + stdout, masked on
+# disk, at the write boundary.
+# ---------------------------------------------------------------------------
+
+
+def _artifact_texts(tmp_path) -> dict:
+    """Raw BYTES-as-text of every JSON artifact written under tmp_path."""
+    seo_dir = tmp_path / _ARTIFACTS_REL
+    return {
+        name: (seo_dir / name).read_text(encoding="utf-8")
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE, _SCORECARD_FILE, _GAPS_FILE)
+        if (seo_dir / name).exists()
+    }
+
+
+class TestMaskEmail:
+    def test_service_account_address_shape(self):
+        assert _mask_email(_CLIENT_EMAIL) == _MASKED_EMAIL
+
+    def test_local_part_is_not_reconstructible(self):
+        out = _mask_email(_CLIENT_EMAIL)
+        assert _CLIENT_EMAIL.split("@")[0] not in out
+        assert _PROJECT_ID not in out
+        assert out.startswith("mas***@")
+
+    def test_two_label_domain_kept_whole(self):
+        assert _mask_email("someone@example.com") == "som***@example.com"
+
+    def test_non_email_never_echoed(self):
+        assert _mask_email("not-an-address") == "***"
+        assert _mask_email("") == "***"
+        assert _mask_email(None) == "***"  # type: ignore[arg-type]
+
+
+class TestIdentityForDisk:
+    def test_project_id_is_dropped_entirely(self):
+        out = _identity_for_disk(sa_identity(_sa_info()))
+        assert "project_id" not in out
+        assert out == {"client_email": _MASKED_EMAIL}
+
+    def test_client_email_key_survives_for_readers(self):
+        assert "client_email" in _identity_for_disk(sa_identity(_sa_info()))
+
+    def test_empty_identity_stays_empty(self):
+        assert _identity_for_disk({}) == {}
+        assert _identity_for_disk(None) == {}
+
+
+class TestIdentityRedactedOnDisk:
+    def _run_success(self, tmp_path, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        _stub_index_endpoints(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": [_make_api_row()]},
+        )
+        creds_file = _write_creds(tmp_path)
+        return run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                   write=True, pace_s=0)
+
+    def test_success_run_commits_no_full_email_and_no_project_id(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """THE gate: assert on the file bytes, not the in-memory dict."""
+        state = self._run_success(tmp_path, monkeypatch)
+        capsys.readouterr()  # drop the annotation noise
+
+        texts = _artifact_texts(tmp_path)
+        assert _STATE_FILE in texts and _INDEX_STATUS_FILE in texts
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, f"{name} committed the full address"
+            assert _PROJECT_ID not in text, f"{name} committed the project id"
+
+        # ...and the masked form IS there, in both identity-carrying artifacts.
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE):
+            doc = json.loads(texts[name])
+            assert doc["service_account"] == {"client_email": _MASKED_EMAIL}, name
+
+        # STDOUT is unchanged: the operator still gets the full address.
+        _print_summary(state, tmp_path / _ARTIFACTS_REL)
+        out = capsys.readouterr().out
+        assert _CLIENT_EMAIL in out, "operator lost the address they need for a 403"
+
+    def test_in_memory_doc_is_not_aliased_by_the_write(
+        self, tmp_path, monkeypatch
+    ):
+        """The returned state keeps FULL values after the masked write."""
+        state = self._run_success(tmp_path, monkeypatch)
+
+        assert state["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert state["service_account"]["project_id"] == _PROJECT_ID
+        idx = state["index_status"]
+        assert idx["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert idx["service_account"]["project_id"] == _PROJECT_ID
+
+    def test_redactor_copies_instead_of_mutating(self):
+        """No-alias at every depth — the caller's dict must survive intact."""
+        doc = _index_status_doc(
+            as_of_iso="2026-07-20", prop=_DEFAULT_PROPERTY, available=False,
+            reason=f"service account {_CLIENT_EMAIL} lacks access",
+            sitemaps={"sitemaps": [{"path": f"{_PROJECT_ID}.xml"}],
+                      "never_downloaded": [], "count": 1},
+            urls=[{"url": "u1", "error": f"denied for {_CLIENT_EMAIL}"}],
+            identity=sa_identity(_sa_info()),
+        )
+        before = json.dumps(doc, sort_keys=True)
+
+        out = _redacted_for_disk(doc)
+
+        assert json.dumps(doc, sort_keys=True) == before, "caller's doc mutated"
+        assert doc["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert out is not doc
+        assert out["service_account"] is not doc["service_account"]
+        assert out["sitemaps"] is not doc["sitemaps"]
+        assert out["urls"] is not doc["urls"]
+        assert out["urls"][0] is not doc["urls"][0]
+
+    def test_403_reason_is_masked_on_disk_but_full_on_stdout(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """The reason string EMBEDS the address — masking only the identity
+        block would leak it right back on the likeliest failure there is."""
+        state = _run_with_status(tmp_path, monkeypatch, 403)
+
+        # In memory + annotation: full address, unchanged.
+        assert _CLIENT_EMAIL in state["reason"]
+        hit = [ln for ln in _annotation_lines(capsys.readouterr().out)
+               if "gsc-no-access" in ln]
+        assert hit and _CLIENT_EMAIL in hit[0]
+
+        # On disk: not a trace of it, in either artifact.
+        texts = _artifact_texts(tmp_path)
+        assert _STATE_FILE in texts and _INDEX_STATUS_FILE in texts
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, f"{name} leaked the address"
+            assert _PROJECT_ID not in text, f"{name} leaked the project id"
+        on_disk = json.loads(texts[_STATE_FILE])
+        assert _MASKED_EMAIL in on_disk["reason"]
+        assert "add it as a user in Search Console" in on_disk["reason"]
+
+    @pytest.mark.parametrize("status", [401, 403, 404, 500])
+    def test_no_write_branch_commits_the_address(
+        self, tmp_path, monkeypatch, status, capsys
+    ):
+        _run_with_status(tmp_path, monkeypatch, status)
+        capsys.readouterr()
+        texts = _artifact_texts(tmp_path)
+        assert texts, "no artifacts written"
+        for name, text in texts.items():
+            assert _CLIENT_EMAIL not in text, (status, name)
+            assert _PROJECT_ID not in text, (status, name)
+
+    def test_missing_credentials_branch_still_writes_the_key(
+        self, tmp_path, monkeypatch
+    ):
+        """No identity to mask, but the KEY must stay for downstream readers."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+
+        for name in (_STATE_FILE, _INDEX_STATUS_FILE):
+            doc = json.loads(_artifact_texts(tmp_path)[name])
+            assert doc["service_account"] == {}, name
+
+
+# ---------------------------------------------------------------------------
 # Tests: sitemap diagnostics
 # ---------------------------------------------------------------------------
 
@@ -2144,7 +2329,10 @@ class TestIndexStatusArtifact:
         assert doc["as_of"] == "2026-07-20"
         assert doc["available"] is True
         assert doc["property"] == _DEFAULT_PROPERTY
-        assert doc["service_account"]["client_email"] == _CLIENT_EMAIL
+        # PUBLIC repo: the artifact is committed, so the address is MASKED on
+        # disk (full value stays in memory and on stdout — see
+        # TestIdentityRedactedOnDisk).
+        assert doc["service_account"]["client_email"] == _MASKED_EMAIL
         assert doc["sitemaps"]["count"] == 2
         assert doc["sitemaps"]["never_downloaded"] == [
             "https://www.mastermind-x.com/news-sitemap.xml"

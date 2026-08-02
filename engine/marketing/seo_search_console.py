@@ -46,8 +46,13 @@ Soft-import: if not installed, writes unavailable state with reason.
 
 SECURITY: ``private_key`` (and any other key material) is NEVER logged, never
 printed, never returned in an error string, never written to any artifact — not
-even truncated.  ``client_email`` and ``project_id`` ARE surfaced on purpose:
-the operator needs them to know which service account to grant GSC access to.
+even truncated.  ``client_email`` and ``project_id`` ARE surfaced on STDOUT on
+purpose: the operator needs them to know which service account to grant GSC
+access to.  They are NOT written to disk unmasked — this repository is PUBLIC
+and both JSON artifacts are committed, so ``_redacted_for_disk`` masks the
+address (``mas***@***.gserviceaccount.com``) and drops ``project_id`` at every
+write of those two docs, including where the 403 reason string embeds the
+address.  The in-memory doc keeps the full values for the printed summary.
 """
 from __future__ import annotations
 
@@ -429,7 +434,13 @@ def load_sa_info(
 
 
 def sa_identity(info: dict | None) -> dict:
-    """The non-secret identity fields, safe to print and to write to artifacts."""
+    """The non-secret identity fields — safe to PRINT, never to commit.
+
+    ``client_email`` is what the operator needs to fix a 403 (grant that address
+    access in the Search Console UI), so stdout carries it in full.  Disk is a
+    different question: this repo is PUBLIC, and both artifacts are committed —
+    see ``_redacted_for_disk``, which every write of those two docs goes through.
+    """
     if not info:
         return {}
     out = {}
@@ -437,6 +448,91 @@ def sa_identity(info: dict | None) -> dict:
         val = info.get(field)
         if isinstance(val, str) and val:
             out[field] = val
+    return out
+
+
+def _mask_email(email: str) -> str:
+    """``a@b.iam.gserviceaccount.com`` -> ``a***@***.gserviceaccount.com``.
+
+    Recognizable (the operator can tell it is THEIR service account, and that it
+    is a service account at all) but not harvestable — neither the local part nor
+    the project-bearing subdomain survives.
+    """
+    if not isinstance(email, str) or "@" not in email:
+        return "***"
+    local, _, domain = email.partition("@")
+    head = local[:3]
+    labels = domain.split(".")
+    tail = ".".join(labels[-2:]) if len(labels) > 2 else domain
+    prefix = "***." if len(labels) > 2 else ""
+    return f"{head}***@{prefix}{tail}"
+
+
+def _identity_for_disk(identity: dict | None) -> dict:
+    """The committable form of ``sa_identity``: masked email, no project_id.
+
+    ``project_id`` is dropped outright — it has no diagnostic use on disk and is
+    pure reconnaissance value in a public repo.  ``client_email`` keeps its KEY
+    so a reader indexing the block does not KeyError; only the value shrinks.
+    """
+    if not identity:
+        return {}
+    email = identity.get("client_email")
+    if isinstance(email, str) and email:
+        return {"client_email": _mask_email(email)}
+    return {}
+
+
+def _scrub_identity_strings(node: Any, subs: list[tuple[str, str]]) -> Any:
+    """Deep COPY of ``node`` with each ``(needle, mask)`` applied to every string."""
+    if isinstance(node, str):
+        out = node
+        for needle, mask in subs:
+            if needle in out:
+                out = out.replace(needle, mask)
+        return out
+    if isinstance(node, dict):
+        return {k: _scrub_identity_strings(v, subs) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_scrub_identity_strings(v, subs) for v in node]
+    return node
+
+
+def _redacted_for_disk(doc: dict) -> dict:
+    """A COPY of ``doc`` that is safe to commit to a PUBLIC repository.
+
+    ``search_console_state.json`` and ``search_console_index_status.json`` are
+    both tracked, so anything they carry is permanent and world-readable the
+    moment the nightly commits them.  Redaction lives HERE, at the write
+    boundary, not in ``sa_identity`` — the in-memory doc keeps the full address
+    so ``_print_summary`` and the 403 reason still name the account out loud.
+
+    Two surfaces, because masking only the identity block would be defeated by
+    the likeliest failure there is:
+      1. ``service_account`` -> ``_identity_for_disk`` (masked, project_id gone),
+      2. every other string in the doc has the same address (and the project id)
+         substituted out — the 403 reason embeds ``client_email`` verbatim, and
+         that reason is persisted to BOTH artifacts.
+
+    The result never aliases ``doc``: the caller's dict is untouched at any depth.
+    """
+    if not isinstance(doc, dict):
+        return doc
+    identity = doc.get("service_account")
+    identity = identity if isinstance(identity, dict) else {}
+
+    subs: list[tuple[str, str]] = []
+    email = identity.get("client_email")
+    if isinstance(email, str) and email:
+        subs.append((email, _mask_email(email)))
+    project = identity.get("project_id")
+    # After the email, never before: the project id is a SUBSTRING of it.
+    if isinstance(project, str) and project:
+        subs.append((project, "***"))
+
+    out = _scrub_identity_strings(doc, subs)
+    if "service_account" in doc:
+        out["service_account"] = _identity_for_disk(identity)
     return out
 
 
@@ -1375,9 +1471,10 @@ def run(
         """
         state["index_status"] = idx_doc
         if write:
+            # PUBLIC repo: both of these are committed — mask at the boundary.
             for path, obj in (
-                (seo_dir / _STATE_FILE, _state_for_disk(state)),
-                (seo_dir / _INDEX_STATUS_FILE, idx_doc),
+                (seo_dir / _STATE_FILE, _redacted_for_disk(_state_for_disk(state))),
+                (seo_dir / _INDEX_STATUS_FILE, _redacted_for_disk(idx_doc)),
             ):
                 try:
                     _write_json_atomic(path, obj)
@@ -1482,11 +1579,17 @@ def run(
 
     if write:
         try:
-            # 1. State file (always first).
-            _write_json_atomic(seo_dir / _STATE_FILE, _state_for_disk(state))
+            # 1. State file (always first).  PUBLIC repo: both this and the
+            #    index-status doc are committed — mask the SA identity here.
+            _write_json_atomic(
+                seo_dir / _STATE_FILE,
+                _redacted_for_disk(_state_for_disk(state)),
+            )
 
             # 2. Index-status diagnostics.
-            _write_json_atomic(seo_dir / _INDEX_STATUS_FILE, idx_doc)
+            _write_json_atomic(
+                seo_dir / _INDEX_STATUS_FILE, _redacted_for_disk(idx_doc)
+            )
 
             # 3. Parquet: append-dedupe.
             cutoff = as_of - timedelta(days=_PAGE_CAP_MONTHS * 30)
