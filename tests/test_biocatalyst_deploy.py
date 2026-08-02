@@ -22,6 +22,8 @@ SECURE_PATHS_PATH = DEPLOY / "biocatalyst-secure-paths.py"
 REQUIREMENTS_PATH = DEPLOY / "biocatalyst-requirements.txt"
 API_REQUIREMENTS_PATH = ROOT / "app" / "requirements.txt"
 UPDATE_PATH = DEPLOY / "update.sh"
+CI_WORKFLOW_PATH = ROOT / ".github" / "workflows" / "ci.yml"
+LEGACY_JOBS_PATH = ROOT / ".github" / "ci" / "legacy-jobs.yml"
 
 
 def _text(path: Path) -> str:
@@ -39,6 +41,14 @@ def test_biocatalyst_deploy_shell_scripts_have_valid_syntax():
     for script in (RUNTIME_PATH, SETUP_PATH, UPDATE_PATH):
         subprocess.run(["bash", "-n", str(script)], check=True)
     subprocess.run([sys.executable, "-m", "py_compile", str(SECURE_PATHS_PATH)], check=True)
+
+
+def test_record_history_collector_tests_are_owned_by_the_biocatalyst_ci_lane():
+    workflow = _text(CI_WORKFLOW_PATH)
+    legacy_jobs = _text(LEGACY_JOBS_PATH)
+
+    assert '"tests/test_clinicaltrials_history.py"' in workflow
+    assert "tests/test_clinicaltrials_history.py" in legacy_jobs
 
 
 def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
@@ -218,6 +228,7 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
 
     for key in (
         "BIOCATALYST_ENABLED",
+        "BIOCATALYST_HISTORY_ENABLED=0",
         "BIOCATALYST_CANARY_NCTS",
         "BIOCATALYST_USER_AGENT",
         "BIOCATALYST_R2_ENDPOINT",
@@ -486,6 +497,7 @@ def test_requirements_pin_the_dedicated_r2_sdk_floor():
 
     assert "boto3>=1.37.32,<2.0" in requirements
     assert "requests>=2.31,<3.0" in requirements
+    assert "PyYAML>=6.0,<7.0" in requirements
 
 
 def test_update_reconciles_only_a_fully_operator_installed_lane_without_arming_it():

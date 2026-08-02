@@ -1,8 +1,9 @@
 # BioCatalyst Operations Runbook
 
-Status: B1 worker implementation is implemented and reviewed but **dark by
-default**. No live enablement, product API exposure, Prophet signal, or Neural
-Web authority is asserted by this document.
+Status: the B1 source-state lane, authenticated B1b read surface, and bounded B2
+Record History adapter are implemented but **dark by default**. API/UI presence
+does not imply that live evidence exists. No Prophet signal, ranking, trade
+authority, or Neural Web decision authority is asserted by this document.
 
 ## 1. Scope and ownership
 
@@ -11,6 +12,13 @@ lane for an explicit NCT canary allowlist. BioCatalyst owns exact raw
 ClinicalTrials.gov response objects, sanitized fetch receipts, source snapshots,
 an allowlisted read projection, immutable local/R2 retention receipts, and
 bounded operational health.
+
+B2 adds an opt-in Record History evidence adapter for exactly the same NCT
+allowlist. It owns exact private index/version bytes, pre/post index receipts,
+version-bound historical source snapshots, replayable exact diffs, neutral
+registry-change facts, and a sanitized per-trial read model. The adapter does
+not infer why a registry field changed, when a real-world event occurred, or
+whether a change is clinically or financially material.
 
 Named operational owner: `mastermindx_platform_ops`.
 
@@ -40,6 +48,14 @@ The worker is disabled by default. Explicit operator arming requires:
    conditional-create capability check; and
 7. an initial complete run whose raw pages, receipts, snapshots, and counts
    reconcile.
+
+`BIOCATALYST_HISTORY_ENABLED` is a separate optional switch and defaults to
+`0`. Setting it to `1` is permitted only after the
+`clinicaltrials_gov_record_history` source-registry entry is changed through
+review to allow production ingestion, the undocumented source-shape canary
+passes, and an exact canary run survives private replay. Arming B1 does not arm
+B2. The Record History adapter must stay disabled while its source-registry
+entry says `production_ingest_allowed: false`.
 
 Before the lane is provisioned, the macro API's BioCatalyst sandbox paths use
 systemd's optional-path prefix so their absence cannot prevent the serving API
@@ -124,6 +140,13 @@ biocatalyst/runs/clinicaltrials/{yyyy}/{mm}/{run_id}.json
 biocatalyst/raw/clinicaltrials/v2/{nct_id}/{canonical_content_sha256}.json
 biocatalyst/source_snapshots/clinicaltrials/{nct_id}/{source_snapshot_id}.json
 biocatalyst/mirror_receipts/{run_id}.json
+biocatalyst/raw/clinicaltrials/history/{nct_id}/index/{exact_response_sha256}.json
+biocatalyst/raw/clinicaltrials/history/{nct_id}/version-{source_version}/{exact_response_sha256}.json
+biocatalyst/receipts/clinicaltrials/history/{yyyy}/{mm}/{run_id}/{receipt_id}.json
+biocatalyst/runs/clinicaltrials/history/{yyyy}/{mm}/{run_id}.json
+biocatalyst/source_snapshots/clinicaltrials/history/{nct_id}/{source_snapshot_id}.json
+biocatalyst/derived/clinicaltrials/history/{nct_id}/diffs/{diff_payload_sha256}.json
+biocatalyst/derived/clinicaltrials/history/{nct_id}/facts/{fact_payload_sha256}.json
 ```
 
 Only a complete, independently revalidated private tree is conditionally
@@ -166,6 +189,7 @@ snapshot, private object key, absolute filesystem path, or credential):
 /var/lib/macro-biocatalyst/public/generations/{run_id}/source_manifest.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trials/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trial_snapshots/{nct_id}.json
+/var/lib/macro-biocatalyst/public/generations/{run_id}/history/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/health.json
 /var/lib/macro-biocatalyst/public/health.json
 ```
@@ -213,9 +237,26 @@ poisoning guard; an offset-less value is compared only as UTC-shaped civil time
 without silently assigning an upstream timezone. ClinicalTrials.gov attribution
 and BioCatalyst's normalization disclosure remain on every public source state.
 
-ClinicalTrials.gov's public product may expose prior study versions, but B1 is
-not a historical-version ingest. A separately validated historical adapter is
-required before any historical-change claim.
+ClinicalTrials.gov's public product exposes prior submitted study versions.
+B2 reads the UI-backing `/api/int/studies/{NCT}?history=true` index and exact
+`/api/int/studies/{NCT}/history/{version}` objects. These are undocumented
+interfaces, not the supported v2 API, so their shape is canary-gated and their
+ETag is never treated as a freshness or content-identity signal.
+
+A complete B2 attempt fetches the history index, fetches only the exact version
+IDs listed by that index, then fetches the index again. The two index bodies
+must describe the same ordered manifest. Missing, duplicate, reordered,
+fabricated, or gapped versions; an index race; a source-shape change; or any
+receipt/raw-byte mismatch quarantines the candidate. The current bounded
+contract requires a zero-based contiguous chain; it never fills a gap by
+requesting an unlisted version.
+
+Registry version submission dates are source dates, not BioCatalyst knowledge
+timestamps and not proof of real-world event timing. B2's only public event
+semantics are exact before/after registry field values grouped by submitted
+version. Every fact remains `source_fact`, `current_only: false`,
+`decision_authority: false`, and usable only for display, context, or
+explanation.
 
 The worker stores two distinct hashes:
 
@@ -235,9 +276,12 @@ shared CT.gov relational validator, and the schemas that govern the run,
 receipt, and source snapshot. The worker and offline replay reject a run whose
 digest does not match the executing code surface.
 
-Initial coverage is always `current_only`. Poll frequency and elapsed service
-time never promote a trial to `full_version`. Historical cutoffs and change
-claims are future B2 capabilities, not B1 fallbacks.
+The B1 current-state projection remains `current_only`; poll frequency and
+elapsed service time never promote it. A B2 history read model is available
+only when its entire version chain is independently replayed from private raw
+evidence. If B2 is disabled or a refresh fails, publication may carry forward
+only the byte-identical prior, pointer-bound, already validated history model.
+With no last-good model it publishes an explicit bounded `unavailable` state.
 
 Permitted product language:
 
@@ -281,9 +325,10 @@ good current generation. A post-archive failure leaves a bounded private
 incident receipt linking the candidate run, R2 verification state, dead-letter
 reference, and prior/observed pointer without exposing paths or secrets.
 
-B2 may later add prospective observations, exact registry diffs, historical
-adapters, and product-facing change language. Those artifacts are not emitted
-or inferred by B1.
+B2 exact registry diffs and neutral change facts are a separate evidence plane.
+They do not alter B1 source-state watermarks and cannot substitute for missing
+raw history evidence. The public projection excludes raw bodies, receipts,
+object keys, filesystem paths, JSON paths, private hashes, and credentials.
 
 ## 6. Health and SLO accounting
 
@@ -326,12 +371,24 @@ Runtime configuration is held outside git. The worker receives only:
 - `BIOCATALYST_ENABLED`;
 - `BIOCATALYST_CANARY_NCTS`;
 - `BIOCATALYST_USER_AGENT`;
+- optional `BIOCATALYST_HISTORY_ENABLED`, which accepts only `0` or `1` and
+  defaults to `0`;
 - `BIOCATALYST_R2_ENDPOINT`, `BIOCATALYST_R2_BUCKET`,
   `BIOCATALYST_R2_ACCESS_KEY_ID`, and `BIOCATALYST_R2_SECRET_ACCESS_KEY`; and
 - the service-injected fixed state/public roots
   `/var/lib/macro-biocatalyst/state` and `/var/lib/macro-biocatalyst/public`.
 
 The API process gets read access to the public projection only. It must not receive object-store write credentials. Receipts allowlist safe request and response headers and hash pagination tokens; they reject authorization, cookie, API-key, proxy-authorization, and set-cookie fields.
+
+The worker-owned public root is an explicit single-writer trust boundary. Public
+artifact, manifest, and pointer hashes detect corruption and cross-binding;
+they are not a cryptographic signature against the authorized worker identity
+or host root maliciously rewriting an entire internally consistent tree.
+Evidence authenticity is established before promotion by replay against the
+private source tree and verified R2 mirror. The API's read-only mount prevents
+the serving process from becoming that writer. Suspected worker or host-root
+compromise requires disabling publication and replaying from private evidence;
+request-time hash validation alone is not sufficient recovery evidence.
 
 The static worker identity has no login shell, no Linux capabilities, no write
 access to application code or its versioned runtime, and no direct file access
@@ -345,16 +402,17 @@ manual rollback; neither limitation weakens the no-follow or atomic-swap gates.
 
 ## 8. Replay and correction
 
-Replay reads immutable receipts, exact archived page bytes, canonical content
-objects, and source snapshots into an isolated staging projection. It must
-reproduce B1 source states and the public manifest byte-for-byte for the pinned
-parser version before a future operator-approved promotion. Standalone schema
-validation is insufficient; raw evidence and snapshot relationships are always
+Replay reads immutable receipts, exact archived page/history bytes, canonical
+content objects, and source snapshots into an isolated staging projection. It
+must reproduce B1 source states and B2 history read models byte-for-byte for the
+pinned parser version before an operator-approved promotion. Standalone schema
+validation is insufficient; raw evidence, pre/post index agreement, per-version
+bindings, snapshot relationships, diffs, and neutral facts are always
 rechecked.
 
 A parser upgrade creates a new parsed projection version. It does not rewrite a
-raw source object. Observation, correction, supersession, and diff workflows
-are explicitly deferred to B2.
+raw source object. Corrections or supersessions mint new derived artifacts;
+they never mutate prior snapshots, diffs, or facts.
 
 ## 9. Incident response
 
@@ -385,13 +443,13 @@ Response:
 
 Rollback is a pointer change to the prior verified projection generation. Immutable source objects and receipts are never deleted during an incident.
 
-## 10. B1 closure and B2 fence
+## 10. B2 closure and next-lane fence
 
 B1 can be operator-armed because NCT identity is source-canonical and the
-source-state lane needs no company/security join. It remains a local,
-dark-by-default evidence worker until a separately reviewed read API and UI
-integration are delivered. Full BioCatalyst intelligence remains open pending
-company/security identity, SEC/issuer documents, cash and financing, clinical
-outcome labels, regulatory/patent data, market structure, and any Prophet or
-Neural Web authority contract. The API and UI must omit those fields rather
-than synthesize substitutes.
+source-state lane needs no company/security join. B2 history remains separately
+dark until its undocumented source adapter clears the registry and canary gates
+above. Full BioCatalyst parity remains open pending company/security identity,
+SEC/issuer documents, cash and financing, clinical outcome labels,
+regulatory/patent data, competitive intelligence, valuation/expected-value
+models, market structure, and any Prophet or Neural Web authority contract. The
+API and UI must omit those fields rather than synthesize substitutes.

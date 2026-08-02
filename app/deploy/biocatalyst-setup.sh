@@ -36,6 +36,7 @@ Usage: biocatalyst-setup.sh [--verify-prereqs]
 Installs the BioCatalyst systemd service and timer without enabling either one.
 The root-owned /etc/macro-biocatalyst.env file must contain:
   BIOCATALYST_ENABLED=1
+  BIOCATALYST_HISTORY_ENABLED=0  # optional B2 adapter; keep 0 until separately reviewed
   BIOCATALYST_CANARY_NCTS=<comma-separated NCT ids>
   BIOCATALYST_USER_AGENT=<descriptive contact string>
   BIOCATALYST_R2_ENDPOINT=<BioCatalyst-scoped endpoint>

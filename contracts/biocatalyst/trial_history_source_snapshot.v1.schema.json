@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_history_source_snapshot.v1.schema.json",
+  "title": "BioCatalyst Historical Trial Source Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "source_snapshot_id", "nct_id", "source_id", "run_ref", "history_index_receipt_ref", "history_version_receipt_ref", "source_version", "display_version", "source_record_ref", "source_uri", "source_submitted_at", "source_last_update_submit_qc_at", "canonical_study", "canonical_content_sha256", "retrieved_at", "source_fact", "current_only", "coverage_class", "authority", "transaction_from", "transaction_to", "snapshot_payload_sha256", "hash_scope"],
+  "properties": {
+    "contract_id": {"const": "trial_history_source_snapshot.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "source_snapshot_id": {"type": "string", "pattern": "^ctgov_history_snapshot_[A-Za-z0-9_-]+$"},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "source_id": {"const": "clinicaltrials_gov_record_history"},
+    "run_ref": {"type": "string", "pattern": "^ctgov_history_run_[A-Za-z0-9_-]+$"},
+    "history_index_receipt_ref": {"type": "string", "pattern": "^ctgov_history_receipt_[A-Za-z0-9_-]+$"},
+    "history_version_receipt_ref": {"type": "string", "pattern": "^ctgov_history_receipt_[A-Za-z0-9_-]+$"},
+    "source_version": {"type": "integer", "minimum": 0},
+    "display_version": {"type": "integer", "minimum": 1},
+    "source_record_ref": {"type": "string", "pattern": "^src:ctgov-history:NCT[0-9]{8}:version:[0-9]+:sha256:[a-f0-9]{64}$"},
+    "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}\\?a=[1-9][0-9]*&tab=history$"},
+    "source_submitted_at": {"type": "string", "format": "date"},
+    "source_last_update_submit_qc_at": {"type": ["string", "null"], "format": "date"},
+    "canonical_study": {"type": "object"},
+    "canonical_content_sha256": {"$ref": "#/$defs/sha256"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "source_fact": {"const": true},
+    "current_only": {"const": false},
+    "coverage_class": {"const": "record_history_complete"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "snapshot_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "hash_scope": {"const": "canonical_payload_excluding_snapshot_payload_sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"], "properties": {"classification": {"const": "source_fact"}, "decision_authority": {"const": false}, "allowed_uses": {"const": ["display", "context", "explain"]}, "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}}
+  }
+}

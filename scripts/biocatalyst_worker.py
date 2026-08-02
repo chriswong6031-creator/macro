@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 import fcntl
 import hashlib
@@ -24,8 +24,11 @@ import stat
 from typing import Any, Callable, Iterator, Mapping, Protocol
 import uuid
 
+import yaml
+
 from engine.biocatalyst.publication import (
     CommittedGeneration,
+    HistoryPublicationEvidence,
     PublicationError,
     PublicGenerationPublisher,
     archive_failed_attempt,
@@ -39,6 +42,12 @@ from engine.biocatalyst.publication import (
     validate_candidate_run,
     write_private_incident,
 )
+from engine.biocatalyst.history import (
+    build_history_exact_diff,
+    build_history_read_model,
+    build_unavailable_history_read_model,
+    derive_history_change_facts,
+)
 from engine.biocatalyst.storage import (
     BinaryObjectStore,
     DedicatedR2Config,
@@ -51,6 +60,12 @@ from engine.sector_intelligence import (
     canonical_json_bytes,
     canonical_json_sha256,
     validate_ctgov_publication_bundle,
+    validate_contract,
+    validate_ctgov_history_receipt_against_raw_response,
+    validate_ctgov_history_run_against_receipts,
+    validate_trial_history_diff_against_snapshots,
+    validate_trial_registry_change_fact_against_diff,
+    validate_trial_history_snapshot_against_evidence,
 )
 
 
@@ -64,8 +79,11 @@ _SOURCE_TIMESTAMP_RE = re.compile(
     r"(?:Z|[+-][0-9]{2}:[0-9]{2})?$"
 )
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
+_HISTORY_RUN_ID_RE = re.compile(r"^ctgov_history_run_NCT[0-9]{8}_[A-Za-z0-9_-]+$")
+_HISTORY_SNAPSHOT_ID_RE = re.compile(r"^ctgov_history_snapshot_[A-Za-z0-9_-]+$")
 _SERVICE_STATE_ROOT = Path("/var/lib/macro-biocatalyst/state")
 _SERVICE_PUBLIC_ROOT = Path("/var/lib/macro-biocatalyst/public")
+_SOURCE_REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "biocatalyst_sources.yml"
 _SAFE_ERROR_CODES = frozenset(
     {
         "ARCHIVE_READBACK_MISMATCH",
@@ -258,6 +276,7 @@ class WorkerConfig:
     nct_ids: tuple[str, ...]
     user_agent: str
     r2: DedicatedR2Config
+    history_enabled: bool = False
 
     def __post_init__(self) -> None:
         state_root, public_root = _validated_root_pair(self.state_root, self.public_root)
@@ -270,6 +289,8 @@ class WorkerConfig:
             raise WorkerConfigError("BIOCATALYST_CANARY_NCTS_INVALID")
         if len(self.user_agent.strip()) < 12 or len(self.user_agent) > 512 or "@" not in self.user_agent:
             raise WorkerConfigError("BIOCATALYST_USER_AGENT_INVALID")
+        if not isinstance(self.history_enabled, bool):
+            raise WorkerConfigError("BIOCATALYST_HISTORY_ENABLED_INVALID")
         object.__setattr__(self, "state_root", state_root)
         object.__setattr__(self, "public_root", public_root)
 
@@ -312,6 +333,13 @@ class Collector(Protocol):
 
 
 CollectorFactory = Callable[..., Collector]
+
+
+class HistoryCollector(Protocol):
+    def collect_nct(self, nct_id: str) -> Any: ...
+
+
+HistoryCollectorFactory = Callable[..., HistoryCollector]
 StoreFactory = Callable[[DedicatedR2Config], BinaryObjectStore]
 
 
@@ -355,6 +383,39 @@ def _parse_nct_ids(raw: str | None) -> tuple[str, ...]:
     return values
 
 
+def _parse_history_enabled(raw: str | None) -> bool:
+    value = (raw or "").strip()
+    if value in {"", "0"}:
+        return False
+    if value == "1":
+        return True
+    raise WorkerConfigError("BIOCATALYST_HISTORY_ENABLED_INVALID")
+
+
+def _history_source_production_allowed(
+    registry_path: Path | None = None,
+) -> bool:
+    """Fail closed unless the versioned source registry explicitly approves B2.
+
+    The environment switch is an operator control, not a rights override.  A
+    reviewed repository change must advance the source registry before a
+    production service can instantiate the undocumented Record History adapter.
+    """
+
+    registry_path = _SOURCE_REGISTRY_PATH if registry_path is None else registry_path
+    try:
+        payload = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+        source = payload["sources"]["clinicaltrials_gov_record_history"]
+    except (OSError, UnicodeError, yaml.YAMLError, KeyError, TypeError):
+        return False
+    return bool(
+        isinstance(source, Mapping)
+        and source.get("source_id") == "clinicaltrials_gov_record_history"
+        and source.get("production_ingest_allowed") is True
+        and source.get("source_shape_canary_required") is True
+    )
+
+
 def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPlan:
     """Parse the env contract without ever falling back to another R2 plane."""
 
@@ -362,6 +423,19 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
     state_root, public_root = _service_runtime_paths(values)
     raw_ncts = values.get("BIOCATALYST_CANARY_NCTS", "")
     configured_nct_count = len({item.strip() for item in raw_ncts.split(",") if item.strip()})
+    try:
+        history_enabled = _parse_history_enabled(values.get("BIOCATALYST_HISTORY_ENABLED"))
+        if history_enabled and not _history_source_production_allowed():
+            raise WorkerConfigError("BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED")
+    except WorkerConfigError as exc:
+        return EnvironmentPlan(
+            state="invalid",
+            config=None,
+            state_root=state_root,
+            public_root=public_root,
+            configured_nct_count=configured_nct_count,
+            error_code=exc.code,
+        )
     enabled = values.get("BIOCATALYST_ENABLED", "").strip()
     if enabled in {"", "0"}:
         return EnvironmentPlan(
@@ -389,6 +463,7 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             nct_ids=_parse_nct_ids(raw_ncts),
             user_agent=values.get("BIOCATALYST_USER_AGENT", "").strip(),
             r2=DedicatedR2Config.from_environment(values),
+            history_enabled=history_enabled,
         )
     except (StorageError, WorkerConfigError) as exc:
         return EnvironmentPlan(
@@ -864,6 +939,570 @@ def _default_collector_factory(
     )
 
 
+def _default_history_collector_factory(
+    *,
+    private_root: Path,
+    nct_ids: tuple[str, ...],
+    user_agent: str,
+    now_fn: Callable[[], datetime],
+) -> HistoryCollector:
+    """Construct the optional B2 source collector without a public-root handle."""
+
+    from collectors.biocatalyst.clinicaltrials_history import (
+        ClinicalTrialsHistoryCollector,
+        ClinicalTrialsHistoryConfig,
+    )
+
+    return ClinicalTrialsHistoryCollector(
+        private_root=private_root,
+        config=ClinicalTrialsHistoryConfig(nct_ids=nct_ids, user_agent=user_agent),
+        now_fn=now_fn,
+    )
+
+
+def _history_source_uri(nct_id: str, resource_kind: str, source_version: int | None) -> str:
+    root = f"https://clinicaltrials.gov/api/int/studies/{nct_id}"
+    if resource_kind == "history_index" and source_version is None:
+        return f"{root}?history=true"
+    if resource_kind == "history_version" and type(source_version) is int and source_version >= 0:
+        return f"{root}/history/{source_version}"
+    raise PublicationError("HISTORY_EVIDENCE_INVALID")
+
+
+def _history_date(value: object) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    try:
+        date.fromisoformat(value)
+    except ValueError as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    return value
+
+
+def _history_study(payload: Mapping[str, Any], nct_id: str) -> Mapping[str, Any]:
+    study = payload.get("study")
+    try:
+        source_nct = study["protocolSection"]["identificationModule"]["nctId"]
+    except (KeyError, TypeError) as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    if not isinstance(study, Mapping) or source_nct != nct_id:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    return study
+
+
+def _history_manifest_from_index(payload: Mapping[str, Any], nct_id: str) -> list[dict[str, Any]]:
+    """Rebuild the only allowed version manifest from private raw index bytes."""
+
+    _history_study(payload, nct_id)
+    history = payload.get("history")
+    changes = history.get("changes") if isinstance(history, Mapping) else None
+    if not isinstance(changes, list) or not changes:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    manifest: list[dict[str, Any]] = []
+    for source_version, change in enumerate(changes):
+        if not isinstance(change, Mapping) or type(change.get("version")) is not int:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        if change["version"] != source_version:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        module_labels = change.get("moduleLabels")
+        if (
+            not isinstance(module_labels, list)
+            or len(module_labels) != len(set(module_labels))
+            or any(not isinstance(label, str) or not label.strip() for label in module_labels)
+            or not isinstance(change.get("status"), str)
+            or not change["status"]
+            or not isinstance(change.get("studyType"), str)
+            or not change["studyType"]
+        ):
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        qc = change.get("lastUpdateSubmitQcDate")
+        if qc is not None:
+            qc = _history_date(qc)
+        manifest.append(
+            {
+                "source_version": source_version,
+                "display_version": source_version + 1,
+                "source_submitted_at": _history_date(change.get("date")),
+                "source_last_update_submit_qc_at": qc,
+                "module_labels": list(module_labels),
+            }
+        )
+    return manifest
+
+
+def _history_run_location(run: Mapping[str, Any], nct_id: str) -> tuple[str, str, str]:
+    started_at = run.get("started_at")
+    run_id = run.get("run_id")
+    if not isinstance(started_at, str) or not isinstance(run_id, str) or not _HISTORY_RUN_ID_RE.fullmatch(run_id):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    try:
+        started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    if started.tzinfo is None or run.get("nct_id") != nct_id:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    normalized = started.astimezone(timezone.utc)
+    stamp = normalized.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    expected_id = "ctgov_history_run_" + nct_id + "_" + stamp.replace("-", "").replace(":", "").replace(".", "")
+    if run_id != expected_id:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    return f"{normalized.year:04d}", f"{normalized.month:02d}", run_id
+
+
+def _history_receipt_from_stage(
+    private_stage: Path,
+    *,
+    year: str,
+    month: str,
+    run_id: str,
+    nct_id: str,
+    suffix: str,
+    resource_kind: str,
+    source_version: int | None,
+    config: WorkerConfig,
+) -> tuple[dict[str, Any], bytes]:
+    """Reload one content-addressed receipt and its exact raw JSON object."""
+
+    expected_receipt_id = f"ctgov_history_receipt_{run_id.removeprefix('ctgov_history_run_')}_{suffix}"
+    receipt_path = _private_object_path(
+        private_stage,
+        f"biocatalyst/receipts/clinicaltrials/history/{year}/{month}/{run_id}/{expected_receipt_id}.json",
+    )
+    receipt = _strict_json_object(receipt_path)
+    try:
+        validate_contract("ctgov_history_receipt.v1", receipt)
+    except Exception as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    request = receipt.get("request")
+    if (
+        receipt.get("receipt_id") != expected_receipt_id
+        or receipt.get("run_id") != run_id
+        or receipt.get("source_id") != "clinicaltrials_gov_record_history"
+        or receipt.get("resource_kind") != resource_kind
+        or receipt.get("nct_id") != nct_id
+        or receipt.get("source_version") != source_version
+        or not isinstance(request, Mapping)
+        or request.get("method") != "GET"
+        or request.get("source_uri") != _history_source_uri(nct_id, resource_kind, source_version)
+        or request.get("credentials_stored") is not False
+    ):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    _expect_headers(request.get("headers"), config)
+    response = receipt.get("response")
+    digest = response.get("exact_response_sha256") if isinstance(response, Mapping) else None
+    if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    resource_key = "index" if resource_kind == "history_index" else f"version-{source_version}"
+    _raw_path, raw = _expect_exact_response(
+        response,
+        private_stage=private_stage,
+        expected_raw_key=(
+            f"biocatalyst/raw/clinicaltrials/history/{nct_id}/{resource_key}/{digest}.json"
+        ),
+    )
+    return receipt, raw
+
+
+def _private_history_derived_path(
+    private_stage: Path,
+    *,
+    nct_id: str,
+    kind: str,
+    digest: object,
+) -> Path:
+    """Return the one fixed content-addressed private derived-artifact path."""
+
+    if kind not in {"diffs", "facts"} or not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    root = private_stage.resolve(strict=True)
+    candidate = root / "biocatalyst" / "derived" / "clinicaltrials" / "history" / nct_id / kind / f"{digest}.json"
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    return candidate
+
+
+def _write_private_history_derived_immutable(
+    private_stage: Path,
+    *,
+    nct_id: str,
+    kind: str,
+    document: Mapping[str, Any],
+    digest_field: str,
+) -> Path:
+    """Write one canonical derived B2 artifact exactly once, or reject divergence."""
+
+    digest = document.get(digest_field)
+    path = _private_history_derived_path(
+        private_stage, nct_id=nct_id, kind=kind, digest=digest
+    )
+    payload = canonical_json_bytes(document) + b"\n"
+    root = private_stage.resolve(strict=True)
+    current = root
+    for component in path.relative_to(root).parts[:-1]:
+        current = current / component
+        try:
+            metadata = current.lstat()
+        except FileNotFoundError:
+            try:
+                current.mkdir(mode=0o700)
+                metadata = current.lstat()
+            except (FileExistsError, OSError) as exc:
+                raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        except OSError as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        if current.is_symlink() or not stat.S_ISDIR(metadata.st_mode):
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+
+    def verify_existing() -> Path:
+        existing = _path_within(path, root, code="HISTORY_EVIDENCE_INVALID")
+        try:
+            actual = existing.read_bytes()
+        except OSError as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        if actual != payload:
+            raise PublicationError("IMMUTABLE_OBJECT_COLLISION")
+        return existing
+
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        try:
+            descriptor = os.open(path, flags, 0o600)
+        except FileExistsError:
+            return verify_existing()
+        except OSError as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        except OSError as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    except OSError as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    else:
+        if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        return verify_existing()
+    return verify_existing()
+
+
+def _complete_history_model_from_result(
+    *,
+    private_stage: Path,
+    result: object,
+    nct_id: str,
+    config: WorkerConfig,
+    generated_at: str,
+) -> tuple[dict[str, Any], HistoryPublicationEvidence]:
+    """Replay one B2 result strictly from the private stage, not object memory."""
+
+    run_path = _path_within(getattr(result, "run_path", None), private_stage, code="HISTORY_EVIDENCE_INVALID")
+    run = _strict_json_object(run_path)
+    year, month, run_id = _history_run_location(run, nct_id)
+    expected_run_path = _private_object_path(
+        private_stage,
+        f"biocatalyst/runs/clinicaltrials/history/{year}/{month}/{run_id}.json",
+    )
+    if run_path != expected_run_path or run_path.read_bytes() != canonical_json_bytes(run) + b"\n":
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    if getattr(result, "run_id", None) != run_id or getattr(result, "nct_id", None) != nct_id:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    try:
+        validate_contract("ctgov_history_run.v1", run)
+    except Exception as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    manifest = run.get("version_manifest")
+    if not isinstance(manifest, list) or not manifest:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    index_receipt, index_raw = _history_receipt_from_stage(
+        private_stage, year=year, month=month, run_id=run_id, nct_id=nct_id,
+        suffix="index_pre", resource_kind="history_index", source_version=None, config=config,
+    )
+    try:
+        index_payload = validate_ctgov_history_receipt_against_raw_response(
+            index_receipt, index_raw
+        )
+    except Exception as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    raw_manifest = _history_manifest_from_index(index_payload, nct_id)
+    if manifest != raw_manifest or run.get("history_index_receipt_ref") != index_receipt.get("receipt_id"):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    version_receipts: list[dict[str, Any]] = []
+    raw_bodies_by_receipt: dict[str, bytes] = {index_receipt["receipt_id"]: index_raw}
+    raw_studies: dict[int, Mapping[str, Any]] = {}
+    source_versions = [entry.get("source_version") for entry in manifest if isinstance(entry, Mapping)]
+    if (
+        len(source_versions) != len(manifest)
+        or any(type(version) is not int or version < 0 for version in source_versions)
+        or source_versions != sorted(source_versions)
+        or len(source_versions) != len(set(source_versions))
+    ):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    # B2's current contract deliberately requires a contiguous complete chain.
+    # Check that against the *listed* source IDs before any version lookup; do
+    # not turn a 0,2 index into a fabricated fetch for source version 1.
+    if source_versions != list(range(len(source_versions))):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    for version in source_versions:
+        receipt, raw = _history_receipt_from_stage(
+            private_stage, year=year, month=month, run_id=run_id, nct_id=nct_id,
+            suffix=f"version_{version}", resource_kind="history_version",
+            source_version=version, config=config,
+        )
+        try:
+            payload = validate_ctgov_history_receipt_against_raw_response(receipt, raw)
+        except Exception as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        if type(payload.get("studyVersion")) is not int or payload.get("studyVersion") != version:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        raw_studies[version] = _history_study(payload, nct_id)
+        version_receipts.append(receipt)
+        raw_bodies_by_receipt[receipt["receipt_id"]] = raw
+    post_receipt, post_raw = _history_receipt_from_stage(
+        private_stage, year=year, month=month, run_id=run_id, nct_id=nct_id,
+        suffix="index_post", resource_kind="history_index", source_version=None, config=config,
+    )
+    raw_bodies_by_receipt[post_receipt["receipt_id"]] = post_raw
+    if (
+        run.get("history_index_post_receipt_ref") != post_receipt.get("receipt_id")
+        or post_receipt.get("receipt_id") == index_receipt.get("receipt_id")
+    ):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    try:
+        validate_ctgov_history_run_against_receipts(
+            run,
+            index_receipt,
+            post_receipt,
+            version_receipts,
+            raw_bodies_by_receipt=raw_bodies_by_receipt,
+        )
+    except Exception as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+
+    snapshot_root = private_stage / "biocatalyst" / "source_snapshots" / "clinicaltrials" / "history" / nct_id
+    if not snapshot_root.is_dir() or snapshot_root.is_symlink():
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    snapshots_by_version: dict[int, dict[str, Any]] = {}
+    entries = sorted(snapshot_root.iterdir(), key=lambda item: item.name)
+    if len(entries) != len(manifest):
+        raise PublicationError("HISTORY_EVIDENCE_INVALID")
+    for path in entries:
+        if path.is_symlink() or not path.is_file() or path.suffix != ".json":
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        snapshot_path = _path_within(path, private_stage, code="HISTORY_EVIDENCE_INVALID")
+        snapshot = _strict_json_object(snapshot_path)
+        source_version = snapshot.get("source_version")
+        if type(source_version) is not int or source_version not in source_versions:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        content_hash = snapshot.get("canonical_content_sha256")
+        expected_snapshot_id = (
+            f"ctgov_history_snapshot_{nct_id}_"
+            + canonical_json_sha256(
+                {
+                    "nct_id": nct_id,
+                    "source_version": source_version,
+                    "canonical_content_sha256": content_hash,
+                    "run_ref": run_id,
+                }
+            )[:24]
+            if isinstance(content_hash, str)
+            else ""
+        )
+        if (
+            not _HISTORY_SNAPSHOT_ID_RE.fullmatch(str(snapshot.get("source_snapshot_id")))
+            or snapshot.get("source_snapshot_id") != expected_snapshot_id
+            or path.name != f"{expected_snapshot_id}.json"
+            or source_version in snapshots_by_version
+            or snapshot_path.read_bytes() != canonical_json_bytes(snapshot) + b"\n"
+            or canonical_json_bytes(snapshot.get("canonical_study")) != canonical_json_bytes(raw_studies[source_version])
+        ):
+            raise PublicationError("HISTORY_EVIDENCE_INVALID")
+        try:
+            validate_trial_history_snapshot_against_evidence(
+                snapshot,
+                run,
+                index_receipt,
+                post_receipt,
+                version_receipts[source_version],
+                all_version_receipts=version_receipts,
+                raw_bodies_by_receipt=raw_bodies_by_receipt,
+            )
+        except Exception as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+        snapshots_by_version[source_version] = snapshot
+    snapshots = [snapshots_by_version[version] for version in source_versions]
+    facts: list[dict[str, Any]] = []
+    for before, after in zip(snapshots, snapshots[1:]):
+        if before["canonical_content_sha256"] == after["canonical_content_sha256"]:
+            continue
+        try:
+            diff = build_history_exact_diff(
+                before,
+                after,
+                transaction_from=after["transaction_from"],
+            )
+            diff_path = _write_private_history_derived_immutable(
+                private_stage,
+                nct_id=nct_id,
+                kind="diffs",
+                document=diff,
+                digest_field="diff_payload_sha256",
+            )
+            reloaded_diff = _strict_json_object(diff_path)
+            if diff_path.read_bytes() != canonical_json_bytes(reloaded_diff) + b"\n":
+                raise PublicationError("HISTORY_EVIDENCE_INVALID")
+            validate_trial_history_diff_against_snapshots(reloaded_diff, before, after)
+            for fact in derive_history_change_facts(before, after, reloaded_diff):
+                fact_path = _write_private_history_derived_immutable(
+                    private_stage,
+                    nct_id=nct_id,
+                    kind="facts",
+                    document=fact,
+                    digest_field="fact_payload_sha256",
+                )
+                reloaded_fact = _strict_json_object(fact_path)
+                if fact_path.read_bytes() != canonical_json_bytes(reloaded_fact) + b"\n":
+                    raise PublicationError("HISTORY_EVIDENCE_INVALID")
+                validate_trial_registry_change_fact_against_diff(
+                    reloaded_fact,
+                    reloaded_diff,
+                    before,
+                    after,
+                )
+                facts.append(reloaded_fact)
+        except Exception as exc:
+            raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+    try:
+        model = build_history_read_model(snapshots, facts, generated_at=generated_at)
+        return model, HistoryPublicationEvidence(
+            snapshots=tuple(snapshots),
+            facts=tuple(facts),
+        )
+    except Exception as exc:
+        raise PublicationError("HISTORY_EVIDENCE_INVALID") from exc
+
+
+def _prior_complete_history_models(
+    publisher: PublicGenerationPublisher,
+    config: WorkerConfig,
+) -> dict[str, dict[str, Any]]:
+    """Read only pointer-bound complete B2 models; B1.1 is not last-good history."""
+
+    try:
+        projection = publisher.read_trial_projection()
+    except PublicationError:
+        return {}
+    if projection is None:
+        return {}
+    models: dict[str, dict[str, Any]] = {}
+    for nct_id in config.nct_ids:
+        model = projection.history_models_by_nct.get(nct_id)
+        if isinstance(model, Mapping) and model.get("available") is True:
+            models[nct_id] = json.loads(canonical_json_bytes(model))
+    return models
+
+
+def _history_unavailable_reason(exc: BaseException) -> str:
+    code = getattr(exc, "code", "")
+    if isinstance(code, str) and (
+        code.startswith("INVALID_HISTORY")
+        or code.startswith("HISTORY_")
+        or code in {"RAW_EVIDENCE_INVALID", "HISTORY_EVIDENCE_INVALID"}
+    ):
+        return "source_shape_drift"
+    return "incomplete_chain"
+
+
+def _history_models_for_generation(
+    *,
+    private_stage: Path,
+    config: WorkerConfig,
+    publisher: PublicGenerationPublisher,
+    history_collector_factory: HistoryCollectorFactory,
+    generated_at: str,
+    now_fn: Callable[[], datetime],
+) -> tuple[dict[str, dict[str, Any]], dict[str, HistoryPublicationEvidence]]:
+    """Build one model per current NCT without letting B2 availability gate B1."""
+
+    # The public pointer is the only eligible history cache.  Disabling the
+    # collector suppresses refreshes; it must not silently erase a complete,
+    # already pointer-bound source-fact chain.
+    prior_models = _prior_complete_history_models(publisher, config)
+    if not config.history_enabled:
+        models: dict[str, dict[str, Any]] = {}
+        evidence: dict[str, HistoryPublicationEvidence] = {}
+        for nct_id in config.nct_ids:
+            prior_model = prior_models.get(nct_id)
+            if prior_model is not None:
+                models[nct_id] = prior_model
+                evidence[nct_id] = HistoryPublicationEvidence(carried_forward=True)
+            else:
+                models[nct_id] = build_unavailable_history_read_model(
+                    nct_id, unavailable_reason="disabled", generated_at=generated_at
+                )
+                evidence[nct_id] = HistoryPublicationEvidence()
+        return models, evidence
+    try:
+        collector = history_collector_factory(
+            private_root=private_stage,
+            nct_ids=config.nct_ids,
+            user_agent=config.user_agent,
+            now_fn=now_fn,
+        )
+    except Exception as exc:
+        reason = _history_unavailable_reason(exc)
+        models = {}
+        evidence = {}
+        for nct_id in config.nct_ids:
+            prior_model = prior_models.get(nct_id)
+            if prior_model is not None:
+                models[nct_id] = prior_model
+                evidence[nct_id] = HistoryPublicationEvidence(carried_forward=True)
+            else:
+                models[nct_id] = build_unavailable_history_read_model(
+                    nct_id, unavailable_reason=reason, generated_at=generated_at
+                )
+                evidence[nct_id] = HistoryPublicationEvidence()
+        return models, evidence
+    models: dict[str, dict[str, Any]] = {}
+    evidence: dict[str, HistoryPublicationEvidence] = {}
+    for nct_id in config.nct_ids:
+        try:
+            result = collector.collect_nct(nct_id)
+            models[nct_id], evidence[nct_id] = _complete_history_model_from_result(
+                private_stage=private_stage,
+                result=result,
+                nct_id=nct_id,
+                config=config,
+                generated_at=generated_at,
+            )
+        except Exception as exc:
+            prior_model = prior_models.get(nct_id)
+            if prior_model is not None:
+                models[nct_id] = prior_model
+                evidence[nct_id] = HistoryPublicationEvidence(carried_forward=True)
+            else:
+                models[nct_id] = build_unavailable_history_read_model(
+                    nct_id,
+                    unavailable_reason=_history_unavailable_reason(exc),
+                    generated_at=generated_at,
+                )
+                evidence[nct_id] = HistoryPublicationEvidence()
+    return models, evidence
+
+
 def _default_store_factory(config: DedicatedR2Config) -> BinaryObjectStore:
     return DedicatedR2Store(config)
 
@@ -967,6 +1606,7 @@ def run_once(
     config: WorkerConfig,
     *,
     collector_factory: CollectorFactory = _default_collector_factory,
+    history_collector_factory: HistoryCollectorFactory = _default_history_collector_factory,
     store_factory: StoreFactory = _default_store_factory,
     now_fn: Callable[[], datetime] = _utc_now,
     publisher_factory: Callable[[Path], PublicGenerationPublisher] = PublicGenerationPublisher,
@@ -1050,6 +1690,19 @@ def run_once(
                 config=config,
             )
 
+            # B2 is deliberately optional.  It starts only after the B1 source
+            # bundle has been independently replayed, and every B2 failure is
+            # collapsed to a per-NCT complete prior model or an explicit
+            # unavailable model.  It can never replace the current B1 facts.
+            history_models_by_nct, history_evidence_by_nct = _history_models_for_generation(
+                private_stage=private_stage,
+                config=config,
+                publisher=publisher,
+                history_collector_factory=history_collector_factory,
+                generated_at=run["finished_at"],
+                now_fn=now_fn,
+            )
+
             # Validate the collector's public projection against independently
             # validated private snapshots while it is still a disposable stage.
             # No R2 object or actual public generation exists at this point.
@@ -1066,6 +1719,8 @@ def run_once(
                 raw_page_bodies_by_receipt=(
                     validated_evidence.raw_page_bodies_by_receipt
                 ),
+                history_models_by_nct=history_models_by_nct,
+                history_evidence_by_nct=history_evidence_by_nct,
             )
 
             # Construct the dedicated client only after every local source,
@@ -1155,6 +1810,7 @@ def run_from_environment(
     environ: Mapping[str, str] | None = None,
     *,
     collector_factory: CollectorFactory = _default_collector_factory,
+    history_collector_factory: HistoryCollectorFactory = _default_history_collector_factory,
     store_factory: StoreFactory = _default_store_factory,
     now_fn: Callable[[], datetime] = _utc_now,
 ) -> WorkerResult:
@@ -1166,6 +1822,7 @@ def run_from_environment(
         return run_once(
             plan.config,
             collector_factory=collector_factory,
+            history_collector_factory=history_collector_factory,
             store_factory=store_factory,
             now_fn=now_fn,
         )

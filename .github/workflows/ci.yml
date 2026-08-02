@@ -543,8 +543,8 @@ on:
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
       - "tests/test_context_api.py"
-      # BioCatalyst B1/B1b: ClinicalTrials.gov evidence lineage, the normalized
-      # trial-fact projection, authenticated read API, and its separately rendered
+      # BioCatalyst B1/B1b/B2: ClinicalTrials.gov evidence lineage, normalized
+      # trial facts, exact Record History replay, authenticated read API, and its rendered
       # workbench. Keep the source registry, contracts, public reader, deployment
       # isolation, and every test half together: current-only source facts must not
       # silently gain signal authority, and a test-only security re-pin must still
@@ -577,6 +577,7 @@ on:
       - "docs/biocatalyst_operations_runbook.md"
       - "tests/test_biocatalyst_*.py"
       - "tests/test_clinicaltrials_biocatalyst.py"
+      - "tests/test_clinicaltrials_history.py"
       - "tests/test_sector_intelligence_contracts.py"
       - "tests/test_sector_intelligence_ownership.py"
       - "tests/test_deploy_update_self_heal.py"

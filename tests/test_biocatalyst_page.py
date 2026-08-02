@@ -73,7 +73,9 @@ def test_biocatalyst_shell_has_one_accessible_three_pane_workbench():
         assert f'id="{identifier}"' in html or f'class="{identifier}"' in html
     ids = re.findall(r'\bid="([^"]+)"', html)
     assert len(ids) == len(set(ids))
-    assert "This view does not make a forecast or a trade call." in html
+    assert "This view does not make a forecast or trade call." in html
+    assert "registry listing is not government validation" in html
+    assert "MastermindX normalizes records submitted to ClinicalTrials.gov" in html
     assert "<option" in html
     assert re.search(r"<option[^>]*>\s*<span", html) is None
 
@@ -97,6 +99,16 @@ def test_biocatalyst_client_uses_only_the_authenticated_fact_api():
         "Primary endpoints",
         "Secondary endpoints",
         "bci-endpoint",
+        "Registry record updates",
+        "V' + group.before + ' → V' + group.after",
+        "Submitted ",
+        "Before: ",
+        "After: ",
+        "historyUnavailableCopy",
+        "historyKindLabel",
+        "Registry field updated",
+        "登记字段更新",
+        "incomplete_chain",
         "next_cursor",
         "?limit=250",
         "sameGeneration",
@@ -106,6 +118,17 @@ def test_biocatalyst_client_uses_only_the_authenticated_fact_api():
     assert "innerHTML" not in js
     assert "clinicaltrials.gov/study/" in js
     assert "probability" not in js.lower()
+    assert "normalized.replace(/_/g, ' ')" not in js
+    for forbidden in (
+        "protocol amendment",
+        "activated",
+        "closed",
+        "delay",
+        "velocity",
+        "materiality",
+        "forecast",
+    ):
+        assert forbidden not in js.lower()
 
 
 def test_biocatalyst_assets_have_responsive_motion_and_focus_guards():

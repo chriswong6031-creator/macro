@@ -82,6 +82,32 @@ def test_global_cycles_uses_accessible_in_panel_drill() -> None:
     assert "panel.setAttribute('inert', '')" in THEME_JS
 
 
+def test_settings_close_is_not_overridden_by_gear_focus() -> None:
+    """Returning focus to the gear must preserve a deliberate popover close."""
+    for source in (THEME_JS, SITE_THEME_JS):
+        assert (
+            '.nav-settings:focus-within '
+            '.nav-settings-btn[aria-expanded="true"] + .settings-pop'
+        ) in source
+        assert ".nav-settings:not(.settings-dismissed):hover .settings-pop" in source
+        assert '.nav-settings:focus-within .settings-pop' not in source
+
+        focusin = source.split("wrap.addEventListener('focusin'", 1)[1].split(
+            "wrap.addEventListener('focusout'", 1
+        )[0]
+        # Pointer focus occurs before click, so one explicit pointer-intent flag
+        # keeps click as the sole toggle while Tab focus still opens directly.
+        assert "var _gearPointerDown = false;" in source
+        assert "gear.addEventListener('pointerdown'" in source
+        assert "_gearPointerDown = false;" in source
+        assert "if (isOpen() || wrap.contains(e.relatedTarget)) return;" in focusin
+        assert "if (e.target === gear && _gearPointerDown) return;" in focusin
+        assert "open();" in focusin
+        assert "wrap.classList.add('settings-dismissed');" in source
+        assert "wrap.classList.remove('settings-dismissed');" in source
+        assert "wrap.addEventListener('mouseenter'" in source
+
+
 def test_market_folding_reuses_canonical_menu_dom() -> None:
     assert "foldTarget.appendChild(toSubmenu(countries[k]))" in MARKET_JS
     assert "intlMenu.querySelector(':scope > .nav-market-rail')" in MARKET_JS
