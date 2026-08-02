@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T01:30:19.777220+00:00",
-  "count": 563,
+  "generated_at": "2026-08-02T01:46:35.079931+00:00",
+  "count": 564,
   "institutions": [
     "Amova",
     "Apollo",
@@ -221,6 +221,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cp6ztgxmiwb-97c1a2",
+      "title": "Weekly Fund Flows Re Acceleration of US Inflows",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:40Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
