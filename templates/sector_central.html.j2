@@ -263,9 +263,6 @@
   .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
   #theme-desk .tc-extra { display:none; }
   /* Compact chip scale inside desk-table Flags cells — keeps rows one line tall */
-  #theme-desk td .txrow { margin:0; gap:3px; max-height:38px; overflow:hidden; align-content:flex-start; }
-  #theme-desk td .txrow .chip, #theme-desk td .txrow .ftr-stale-chip, #theme-desk td .txrow .ftr-heat-chip,
-  #theme-desk td .txrow [class^="te-"], #theme-desk td .txrow [class^="ra-"] {
     font-size:9px; padding:1px 5px; line-height:14px; border-radius:4px; }
   .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
   .tpill.up { color:var(--up); } .tpill.dn { color:var(--down); } .tpill.wn { color:var(--warn); }
@@ -327,32 +324,10 @@
   .ftr-tape-band.visible { display:block; }
   .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
   /* ── FTR W3: per-card chip strip additions ──────────────────────────────── */
-  .ftr-disagree-chip { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.38); color:var(--amber,#fb923c); white-space:nowrap; }
-  .ftr-stale-chip    { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.28); color:var(--down); white-space:nowrap; }
-  .ftr-heat-chip { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; white-space:nowrap; }
-  .ftr-heat-chip.hot     { background:rgba(35,192,138,.10); border:1px solid rgba(35,192,138,.30); color:var(--up); }
-  .ftr-heat-chip.heating { background:rgba(250,204,21,.08); border:1px solid rgba(250,204,21,.30); color:var(--warn); }
-  .ftr-heat-chip.cooling { background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.25); color:var(--down); }
-  .ftr-heat-chip.broken  { background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.25); color:var(--down); opacity:.8; }
   .ftr-live-chg { font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; }
   .ftr-live-chg.up { color:var(--up); }
   .ftr-live-chg.dn { color:var(--down); }
   /* ── FTR W4: Turn-watch inline card ─────────────────────────────────────── */
-  .ftr-tw-card { border-radius:8px; border:1px solid rgba(249,115,22,.32); background:rgba(249,115,22,.05); overflow:hidden; margin:4px 0 0; }
-  .ftr-tw-card.watch { border-color:rgba(250,204,21,.32); background:rgba(250,204,21,.04); }
-  .ftr-tw-hd { display:flex; align-items:center; gap:7px; padding:6px 10px; border-bottom:1px solid rgba(249,115,22,.18); }
-  .ftr-tw-card.watch .ftr-tw-hd { border-bottom-color:rgba(250,204,21,.18); }
-  .ftr-tw-badge { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:5px; color:var(--orange,#f97316); background:rgba(249,115,22,.16); border:1px solid rgba(249,115,22,.38); }
-  .ftr-tw-badge.watch { color:var(--warn); background:rgba(250,204,21,.10); border-color:rgba(250,204,21,.32); }
-  .ftr-tw-k { font-size:11.5px; font-weight:600; color:var(--text); }
-  .ftr-tw-asof { font-size:10.5px; color:var(--muted); margin-left:auto; }
-  .ftr-tw-legs { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:rgba(249,115,22,.07); }
-  .ftr-tw-card.watch .ftr-tw-legs { background:rgba(250,204,21,.05); }
-  .ftr-tw-leg { padding:5px 9px; background:var(--bg); }
-  .ftr-tw-leg-nm { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; margin-bottom:1px; }
-  .ftr-tw-leg-val { font-size:11px; font-weight:700; color:var(--muted); }
-  .ftr-tw-leg.fired .ftr-tw-leg-val { color:var(--up); }
-  .ftr-tw-disc { font-size:10px; color:var(--muted); padding:4px 10px; border-top:1px solid var(--line); font-style:italic; }
 
   /* ── Theme Context Hero — aurora living-glass ─────────────────────────── */
   #theme-context-hero { position:relative; overflow:hidden; border-radius:12px;
@@ -928,7 +903,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
        (5 leaders | 3 laggards) with ordinals + display names + mirrored
        shared-scale bars, inline flow chips only when notable, "Show full
        tape" expander, one merged footnote.
-       Fetched from live/basket_pulse.json + basketdata/turn_watch.json.
+       Fetched from live/basket_pulse.json.
        De-escalation / display tier only (FT-R1, FT-R2).
        Stale-gating: disagreement chips SUPPRESSED (never inverted) when stale
        or session==closed (FT-R12). T+1 fade note in the footnote (FT-R3) in
@@ -1226,164 +1201,10 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     }
   }
 
-  // ── Per-card tape chip injection (disagreement + heat + stale) ───────────
-  // Called after the main theme desk renders. Looks for [id^="theme-"] elements
-  // (rendered by baskets_desk.js as id="theme-${t.id}") and appends FTR chip strips.
-  function injectCardChips(pulse, turnWatch, sectorPulse, stale){
-    // index pulse by basket id
-    var pulseById = {};
-    (pulse&&pulse.baskets||[]).forEach(function(b){ pulseById[b.id]=b; });
-    // index turn_watch by basket id
-    var twById = {};
-    ((turnWatch&&turnWatch.baskets)||[]).forEach(function(b){ twById[b.basket_id]=b; });
-    // index sector_pulse by id
-    var spById = {};
-    ((sectorPulse&&sectorPulse.themes)||[]).forEach(function(t){ spById[t.id]=t; });
+  // ── Per-card tape chip lane REMOVED (#4257 finding) ──────────────────────
+  // It injected chips onto theme-prefixed desk cards no renderer on this page
+  // creates — dead since #3282; its two JSON fetches dropped with it.
 
-    // Target the theme desk cards (rendered by baskets_desk.js as id="theme-<bid>")
-    // baskets_desk.js renders: <div class="tcard" id="theme-${t.id}" ...>
-    // No data-bid attr exists; derive bid from the id prefix.
-    var cards = document.querySelectorAll('[id^="theme-"]');
-    cards.forEach(function(card){
-      var bid = card.id.slice(6);  // "theme-".length === 6
-      if(!bid) return;
-      // Remove any previously injected FTR chips to avoid duplication on re-render
-      var old = card.querySelectorAll('.ftr-chip-strip');
-      old.forEach(function(el){el.remove();});
-      // Remove any previously injected turn-watch cards
-      var oldTw = card.querySelectorAll('.ftr-tw-card');
-      oldTw.forEach(function(el){el.remove();});
-
-      var pb = pulseById[bid];
-      var tw = twById[bid];
-      var sp = spById[bid];
-      var chips = [];
-
-      // Stale chip (from freshness data or pulse stale flag)
-      if(pb && pb.stale){
-        chips.push('<span class="ftr-stale-chip">'+L('STALE','数据陈旧')+'</span>');
-      }
-
-      // Disagreement chip: suppressed when stale (FT-R12). User-first copy
-      // (docs/DESIGN_DOCTRINE.md): plain words at a glance; the tape-rank /
-      // reco / base-rate receipt lives in the data-tip (Tier 2).
-      if(!stale && pb && !pb.stale && pb.live_ew_chg_pct!=null && pb.tape_rank!=null){
-        // Find this basket's slow reco. BASKETS.baskets records are pure
-        // definitions (no reco); the scored ratings the cards render from live
-        // on BASKETS.theme_intel.themes, with turn_watch slow_reco as fallback.
-        var themeIntel = (window.BASKETS&&window.BASKETS.theme_intel)||null;
-        var theme = ((themeIntel&&themeIntel.themes)||[]).find(function(t){return t.id===bid;});
-        var slowReco = (theme&&theme.reco)||(tw&&tw.slow_reco)||'';
-        var slowAsOf = (theme&&theme.reco) ? ((themeIntel&&themeIntel.as_of)||'') : ((tw&&tw.reco_as_of)||'');
-        var tapeRankNum = pb.tape_rank;
-        var totalBaskets = (pulse&&pulse.baskets||[]).filter(function(b){return b.tape_rank!=null;}).length;
-        // Disagreement = tape rank in top third while slow reco is weak, or bottom third while strong
-        var isHighRank = tapeRankNum > totalBaskets * 0.67;
-        var isLowRank  = tapeRankNum < totalBaskets * 0.33;
-        var slowIsWeak = slowReco==='hold'||slowReco==='reduce'||slowReco==='trim'||slowReco==='avoid';
-        var slowIsStrong = slowReco==='accumulate'||slowReco==='enter';
-        if((isHighRank && slowIsWeak) || (isLowRank && slowIsStrong)){
-          var chgStr = (pb.live_ew_chg_pct>=0?'+':'')+pb.live_ew_chg_pct.toFixed(1)+'%';
-          var RECO_EN={hold:'Hold',reduce:'Reduce',trim:'Trim',avoid:'Avoid',accumulate:'Accumulate',enter:'Buy'};
-          var RECO_ZH={hold:'持有',reduce:'减持',trim:'减仓',avoid:'回避',accumulate:'加仓',enter:'买入'};
-          var recoEn=RECO_EN[slowReco]||(theme&&theme.reco_en)||slowReco;
-          var recoZh=RECO_ZH[slowReco]||(theme&&theme.reco_zh)||recoEn;
-          var dirEn = isHighRank?'strong today':'weak today';
-          var dirZh = isHighRank?'今日强势':'今日走弱';
-          var dateStr = slowAsOf ? slowAsOf.slice(5) : ''; // MM-DD
-          var tipEn='Receipt: tape rank '+tapeRankNum+' of '+totalBaskets+' this session ('+chgStr+') vs slow rating '+slowReco.toUpperCase()+(dateStr?' (as-of '+dateStr+')':'')+' · T+1 fade base rate 58% (n=26) · display tier, never reorders ratings.';
-          var tipZh='技术说明：本时段行情排名 '+tapeRankNum+'/'+totalBaskets+'（'+chgStr+'），慢速评级 '+slowReco.toUpperCase()+(dateStr?'（截至'+dateStr+'）':'')+' · T+1消退基础概率58%（n=26）· 仅展示层，不改变评级。';
-          chips.push('<span class="ftr-disagree-chip" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
-            +'<span>'+L(dirEn+' — still rated '+esc(recoEn), dirZh+' — 主评级仍为「'+esc(recoZh)+'」')+'</span>'
-            +'<span style="font-size:9.5px;opacity:.75">'+L('~6 in 10 fade in a day','约六成一天内消退')+'</span>'
-            +'</span>');
-        }
-      }
-
-      // Sector pulse heat chip + rank_delta_5d (W8)
-      if(sp){
-        var heat = sp.heat;
-        var rd5 = sp.rank_delta_5d;
-        if(heat&&heat!=='idle'){
-          var heatLabels = {hot:['HOT','强势'],heating:['HEATING','加热'],cooling:['COOLING','降温'],broken:['BROKEN','破位']};
-          var hl = heatLabels[heat]||[heat.toUpperCase(),heat];
-          chips.push('<span class="ftr-heat-chip '+heat+'">'+L(esc(hl[0]),esc(hl[1]))+'</span>');
-        }
-        if(rd5!=null){
-          var rdClass = rd5>0?'pos':'neg';
-          var rdArrow = rd5>0?'&#8593;':'&#8595;';
-          // compact form at rest; full sentence in the hover tip
-          chips.push('<span class="chip" style="font-size:10px" data-tip-en="moved '+rdArrow+Math.abs(rd5)+' rank spots this week" data-tip-zh="本周排名变动'+rdArrow+Math.abs(rd5)+'位">'
-            +'<span class="'+rdClass+'">'+rdArrow+Math.abs(rd5)+'</span></span>');
-        }
-      }
-
-      // Emit chip strip if any chips
-      if(chips.length){
-        var stripEl = document.createElement('div');
-        stripEl.className = 'ftr-chip-strip chip-strip';
-        stripEl.innerHTML = chips.join('');
-        card.appendChild(stripEl);
-      }
-
-      // Turn-watch card (W4) — always shown for WATCH/IGNITION regardless of stale.
-      // User-first copy per docs/DESIGN_DOCTRINE.md + #2221 vocabulary:
-      // STRONG SIGN / EARLY SIGN badges, plain-word legs (technical construction
-      // in per-leg data-tips), plain footer; the Oracle-P8 receipt lives in the
-      // footer's ? tip (Tier 2). Gate logic and states unchanged.
-      if(tw && (tw.state==='WATCH'||tw.state==='IGNITION')){
-        var isIgnition = tw.state==='IGNITION';
-        var legs = tw.legs||{};
-        var k = tw.k||0;
-        var LEG_LABELS = {
-          impulse_day:       [L('Big up day','单日大涨'),            L('&#8531; of stocks +3%+','&#8531;成分股涨3%+'),
-                              'Impulse day: at least one-third of members up 3%+ today.','脉冲日：至少三分之一成分股当日上涨3%以上。'],
-          rs_z:              [L('Strong vs market','跑赢大盘'),       L('vs other groups','对比其他板块'),
-                              'Relative strength: cross-sectional z-score of returns vs the basket universe.','相对强度：对比全部篮子的横截面收益z值。'],
-          breadth_surge:     [L('Breadth jump','广度跃升'),          L('more stocks rising','更多成分上涨'),
-                              'Breadth surge: z-score jump in % of members above their 50-day average.','广度突破：成分股站上50日均线比例的z值跃升。'],
-          volume_confirm:    [L('Volume backs it','放量配合'),        L('&#215;1.5 usual volume','约1.5倍常量'),
-                              'Volume confirm: equal-weight dollar volume at least 1.5× its recent average.','成交量确认：等权美元成交量达近期均值1.5倍以上。'],
-          complex_confirm:   [L('Related groups agree','相关板块同步'),L('siblings improving','兄弟板块转强'),
-                              'Complex confirm: sibling baskets in the same complex also show positive relative strength.','复合确认：同一复合板块的兄弟篮子相对强度同步转正。'],
-          shock_relative_bid:[L('Event-driven','事件驱动'),          L('oil / geopolitics','油价/地缘'),
-                              'Shock flag: the move coincides with an oil/geopolitical shock driver.','冲击标志：走势与油价/地缘冲击驱动同时出现。']
-        };
-        var twTipEn='Technical receipt: fast turn meter, state '+tw.state+' ('+k+' of 6 legs). Backtested basket-level washout→turn edge = null (Oracle P8); T+1 fade base rate 58% (n=26). Slow ratings unchanged; display tier only.';
-        var twTipZh='技术说明：快速拐点计量，状态 '+tw.state+'（6条腿中'+k+'条触发）。篮子级洗盘→拐点回测优势为空值（Oracle P8）；T+1消退基础概率58%（n=26）。慢速评级未变；仅展示层。';
-        var twHtml = '<div class="ftr-tw-card'+(isIgnition?'':' watch')+'">'
-          +'<div class="ftr-tw-hd">'
-          +'<span class="ftr-tw-badge'+(isIgnition?'':' watch')+'">'+L(isIgnition?'&#9889; STRONG SIGN':'&#9889; EARLY SIGN', isIgnition?'&#9889; 较强迹象':'&#9889; 初步迹象')+'</span>'
-          +'<span class="ftr-tw-k">'+L(k+' of 6 signs',k+' / 6 项迹象')+'</span>'
-          +'<span class="ftr-tw-asof">'+L('updated nightly','每晚更新')+(tw.as_of?' · '+esc(tw.as_of):'')+'</span>'
-          +'</div>'
-          +'<div class="ftr-tw-legs">';
-        var legOrder = ['impulse_day','rs_z','breadth_surge','volume_confirm','complex_confirm','shock_relative_bid'];
-        legOrder.forEach(function(lk){
-          var fired = !!legs[lk];
-          var ll = LEG_LABELS[lk]||[lk,lk,'',''];
-          var legTip=ll[2]?' data-tip-en="'+esc(ll[2])+'" data-tip-zh="'+esc(ll[3])+'"':'';
-          twHtml += '<div class="ftr-tw-leg'+(fired?' fired':'')+'"'+legTip+'>'
-            +'<div class="ftr-tw-leg-nm">'+ll[0]+'</div>'
-            +'<div class="ftr-tw-leg-val">'+(fired?'&#10003; ':L('— ','— '))+ll[1]+'</div>'
-            +'</div>';
-        });
-        twHtml += '</div>'
-          +'<div class="ftr-tw-disc">'+L(
-            'Not a buy signal: in 26 past cases about 6 in 10 of these early signs faded within a day. If the turn is real, this theme&#39;s rating upgrades on its own.',
-            '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，主题评级会自行升级。'
-          )+' <span class="ftr-t1-help" data-tip-en="'+esc(twTipEn)+'" data-tip-zh="'+esc(twTipZh)+'">?</span></div></div>';
-        var twEl = document.createElement('div');
-        twEl.innerHTML = twHtml;
-        // Insert before chip strip if present, else at end
-        var chipStrip = card.querySelector('.ftr-chip-strip');
-        if(chipStrip){ card.insertBefore(twEl.firstChild, chipStrip); }
-        else { card.appendChild(twEl.firstChild); }
-      }
-    });
-  }
-
-  // ── Slim tape strip (one-line summary above the full band) ──────────────
   function renderSlimStrip(pulse){
     var strip=document.getElementById('ftr-tape-strip');
     if(!strip) return;
@@ -1431,7 +1252,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   }
 
   // ── Main fetch + render ───────────────────────────────────────────────────
-  function renderTapeBand(pulse, turnWatch, sectorPulse){
+  function renderTapeBand(pulse){
     var band = document.getElementById('ftr-tape-band');
     if(!band) return;
     if(!pulse){ band.classList.remove('visible'); return; }
@@ -1442,16 +1263,11 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     // Full band: state token + ONE as-of + ranked two-column body
     renderTapeStrip(pulse);
 
-    // Inject per-card chips (called after a small delay to let theme desk render first)
-    var chipsSuppressed = isChipSuppressed(pulse);
-    setTimeout(function(){
-      injectCardChips(pulse, turnWatch, sectorPulse, chipsSuppressed);
-    }, 120);
   }
 
   // ── Fetch all three data sources (tolerant, fail-silent per FT-R8) ───────
-  var pulse=null, turnWatch=null, sectorPulse=null;
-  function tryRender(){ renderTapeBand(pulse, turnWatch, sectorPulse); }
+  var pulse=null;
+  function tryRender(){ renderTapeBand(pulse); }
 
   function fetchJson(url, cb){
     fetch(url,{cache:'no-cache'})
@@ -1461,13 +1277,6 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   }
 
   fetchJson('live/basket_pulse.json', function(d){ pulse=d; tryRender(); });
-  fetchJson('basketdata/turn_watch.json', function(d){ turnWatch=d; tryRender(); });
-  fetchJson('basketdata/sector_pulse.json', function(d){ sectorPulse=d; tryRender(); });
-
-  // Re-run chip injection after theme desk is likely rendered (fallback)
-  setTimeout(function(){
-    if(pulse) injectCardChips(pulse, turnWatch, sectorPulse, isChipSuppressed(pulse));
-  }, 800);
   })();
   </script>
 
@@ -1796,44 +1605,7 @@ function deepStrip(obj) {
 deepStrip(BASKETS); deepStrip(THEME_ALERTS);
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
-// ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
-// All labels are DESCRIPTIVE — they characterise current rank/score trajectory; no
-// forward-return forecast is implied (house rule: honest framing).
-const HEAT_PILL = {
-  heating: ['heat-pill heating', '▲', 'heating', '加热'],
-  hot:     ['heat-pill hot',     '★', 'hot',     '强势'],
-  cooling: ['heat-pill cooling', '▽', 'cooling', '降温'],
-  broken:  ['heat-pill broken',  '✕', 'broken',  '破位'],
-};
-function heatDot(t){
-  const h = t && t.pulse_heat;
-  if(!h || h==='idle') return '';
-  const p = HEAT_PILL[h];
-  if(!p) return '';
-  return `<span class="${p[0]} heat-dot" data-tip-en="${esc(p[2])} — descriptive" data-tip-zh="${esc(p[3])} — 描述性"></span>`;
-}
-function rankTrajectory(t){
-  const r5 = t && t.pulse_rank_delta_5d;
-  const r20 = t && t.pulse_rank_delta_20d;
-  if(r5 == null) return '';
-  const fmt5 = (r5>0?'▲':'▼')+Math.abs(r5);
-  const fmt20 = r20!=null ? ' · 20d '+(r20>0?'▲':'▼')+Math.abs(r20) : '';
-  return fmt5 + fmt20;
-}
-function actNowPulseBar(themes){
-  const sizePill = renderRegimeSizing();
-  const byHeat = h => (themes||[]).filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
-  const heating = byHeat('heating'), cooling = byHeat('cooling');
-  const BASE = window.BASKET_BASE||'basket/';
-  const links = arr => arr.map(t=>`<a href="${BASE}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
-  const parts = [];
-  if(sizePill) parts.push(sizePill);
-  if(heating.length) parts.push(`<span class="pulse-grp">🔥 ${L('Heating','加热')}: ${links(heating)}</span>`);
-  if(cooling.length) parts.push(`<span class="pulse-grp">❄ ${L('Cooling','降温')}: ${links(cooling)}</span>`);
-  if(!parts.length) return '';
-  return `<div class="pulse-bar">${parts.join('')}</div>`;
-}
-
+// W4 velocity/heat card-chip helpers removed with the dead FTR chip lane (#4257).
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
 const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
 const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];

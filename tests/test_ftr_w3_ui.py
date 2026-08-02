@@ -129,25 +129,25 @@ class TestBasketsW3Markers:
         assert "dtp-rank" in src
 
     def test_no_raw_state_display_labels(self):
-        """IGNITION/WATCH stay as JSON states but must not be user-facing labels
-        (docs/DESIGN_DOCTRINE.md Law 2 — plain words on Tier 1)."""
+        """IGNITION/WATCH must never be user-facing labels (DESIGN_DOCTRINE Law 2).
+        The plain-label turn-watch card (STRONG SIGN / EARLY SIGN) rode the dead
+        FTR chip lane, retired per #4257 — the live turn read is the SR
+        "Turns this week" rail."""
         src = _src("sector_central.html.j2")
         assert "&#9889; IGNITION" not in src
         assert "&#9889; WATCH" not in src
-        assert "STRONG SIGN" in src
-        assert "EARLY SIGN" in src
 
-    def test_disagree_chip(self):
-        """Amber disagreement chip (FT-R2 display, FT-R12 stale-gated)."""
-        assert "ftr-disagree-chip" in _src("sector_central.html.j2")
-
-    def test_tw_card(self):
-        """Turn-watch inline card for WATCH/IGNITION states."""
-        assert "ftr-tw-card" in _src("sector_central.html.j2")
-
-    def test_stale_chip_present(self):
-        """FT-R12: STALE chip must be renderable from source."""
-        assert "ftr-stale-chip" in _src("sector_central.html.j2")
+    def test_ftr_card_chip_lane_stays_retired(self):
+        """#4257: the FTR per-card chip lane (injectCardChips onto [id^="theme-"]
+        desk cards) was dead since #3282 — nothing on this page creates its
+        targets, and its two JSON fetches were fetch-and-discard. The whole lane
+        must stay absent. (The old presence pins stayed green through the entire
+        dead window — source-substring pins prove nothing about reach.)"""
+        src = _src("sector_central.html.j2")
+        for token in ("injectCardChips", "ftr-disagree-chip", "ftr-tw-card",
+                      "ftr-chip-strip", "ftr-heat-chip", "ftr-stale-chip",
+                      'id^="theme-"'):
+            assert token not in src, f"dead chip lane resurfacing: {token}"
 
     def test_t1_fade_rate(self):
         """FT-R3: T+1 58% fade base rate retained (in the Tier-2 technical receipt)."""
@@ -161,7 +161,9 @@ class TestBasketsW3Markers:
         src = _src("sector_central.html.j2")
         assert "Not a buy signal" in src
         assert "6 in 10" in src
-        assert "Oracle P8" in src  # receipt survives on Tier 2 (data-tip / ? tip)
+        # 58% technical receipt lives in the band footnote ? tip; the Oracle-P8
+        # receipt rode the dead chip lane (retired, #4257)
+        assert "ftr-t1-help" in src
         assert "Expected-null forward meter" not in src
 
     def test_no_validated_copy(self):
@@ -185,29 +187,21 @@ class TestBasketsW3Markers:
         """FT-R8: fetch errors must be swallowed (catch present)."""
         assert ".catch(" in _src("sector_central.html.j2")
 
-    def test_turn_watch_json_fetch(self):
-        """Tape band fetches turn_watch.json for WATCH/IGNITION states."""
-        assert "turn_watch.json" in _src("sector_central.html.j2")
-
     def test_basket_pulse_json_fetch(self):
         assert "basket_pulse.json" in _src("sector_central.html.j2")
 
-    def test_sector_pulse_json_fetch(self):
-        assert "sector_pulse.json" in _src("sector_central.html.j2")
-
-    def test_card_selector_uses_id_prefix_not_data_bid(self):
-        """BLOCKER fix: must use [id^="theme-"] selector (not [data-bid] which matches nothing).
-
-        baskets_desk.js renders cards as id="theme-<bid>" with no data-bid attribute.
-        Using [data-bid] produces an empty NodeList — all per-card chips silently no-op.
-        """
+    def test_dead_lane_fetches_stay_gone(self):
+        """#4257: turn_watch.json + sector_pulse.json fed ONLY the dead chip lane
+        here (the tape band renders from basket_pulse.json alone) — 61KB of
+        fetch-and-discard per load. Producers stay (basket_detail + notify hooks
+        consume them); this page must not refetch without a consumer."""
         src = _src("sector_central.html.j2")
-        assert '[id^="theme-"]' in src, (
-            "Card selector must be [id^='theme-'] — [data-bid] matches nothing in the DOM"
-        )
-        assert "[data-bid]" not in src, (
-            "[data-bid] selector matches nothing (baskets_desk.js emits no data-bid attrs)"
-        )
+        assert "turn_watch.json" not in src
+        assert "sector_pulse.json" not in src
+
+    # (test_card_selector_uses_id_prefix_not_data_bid removed with the lane, #4257 —
+    # the selector token is asserted ABSENT in test_ftr_card_chip_lane_stays_retired;
+    # the live MLC chips use data-mlc-bid, pinned in test_theme_scoring_conflicted.)
 
     def test_t1_fade_in_tape_band_html(self):
         """FT-R3: the fade note must be always-rendered HTML in the tape band footer
@@ -383,13 +377,10 @@ class TestFtrW3BasketsRender:
         html = _render_baskets(["SPY"])
         assert "ftr-dtp-body" in html
 
-    def test_disagree_chip_in_render(self):
+    def test_dead_chip_lane_absent_in_render(self):
         html = _render_baskets(["SPY"])
-        assert "ftr-disagree-chip" in html
-
-    def test_tw_card_in_render(self):
-        html = _render_baskets(["SPY"])
-        assert "ftr-tw-card" in html
+        for token in ("ftr-disagree-chip", "ftr-tw-card", "injectCardChips"):
+            assert token not in html, f"dead chip lane in render: {token}"
 
     def test_t1_fade_rate_in_render(self):
         html = _render_baskets(["SPY"])
@@ -398,8 +389,10 @@ class TestFtrW3BasketsRender:
     def test_plain_null_disclosure_in_render(self):
         html = _render_baskets(["SPY"])
         assert "Not a buy signal" in html
-        assert "Oracle P8" in html  # Tier-2 receipt survives
+        assert "ftr-t1-help" in html  # 58% receipt tip (Oracle-P8 rode the dead lane)
 
-    def test_sector_pulse_fetch_in_render(self):
+    def test_dead_lane_fetches_absent_in_render(self):
         html = _render_baskets(["SPY"])
-        assert "sector_pulse.json" in html
+        assert "basket_pulse.json" in html
+        assert "sector_pulse.json" not in html
+        assert "turn_watch.json" not in html
