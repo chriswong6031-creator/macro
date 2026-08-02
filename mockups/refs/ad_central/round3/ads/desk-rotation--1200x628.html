@@ -5,51 +5,83 @@
 
 <div class="ad ad--s628 ad--paper">
 
+  <!-- rising candle field — whisper opacity, band lifted so the climb reads
+       behind the headline and the board zone, never against the offer bar. -->
+  <div class="candle-field" style="-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 7%,#000 66%,transparent 86%);mask-image:linear-gradient(180deg,transparent 0%,#000 7%,#000 66%,transparent 86%)"><img src="../assets/field_rot_628.svg" style="width:100%;height:100%;object-fit:cover"></div>
+
   <div class="brandbar">
     <div class="brand"><span class="brand-m">M</span><span class="brand-n">MASTERMINDX</span></div>
-    <span class="kicker-pill"><span class="dot"></span>SECTOR ROTATION DESK</span>
     <span class="spacer"></span>
     <span class="offer-flag">LAUNCH — 50% OFF</span>
   </div>
 
-  <h1 class="headline" style="font-size:48px;padding-top:8px">See the <span class="grad">rotation</span><br>before your<br>watchlist does.</h1>
-  <p class="sub" style="max-width:590px;padding-top:6px;font-size:27px">Every theme sorted into four <span style="white-space:nowrap">plain-word</span> lanes — <b>updated daily.</b></p>
+  <h1 class="headline" style="font-size:48px;padding-top:10px">See the <span class="grad">rotation</span><br>before your<br>watchlist does.</h1>
+  <p class="sub" style="max-width:520px;padding-top:12px;font-size:23px">Institutional-grade signals on<br>every stock — <b>buy, wait or avoid</b>,<br>updated every trading day.</p>
 
-  <div class="chips" style="padding-top:6px;max-width:700px">
-    <span class="chip gold"><i></i>34 themes</span>
-    <span class="chip"><i></i>Macro dashboards</span>
-    <span class="chip v"><i></i>Institutional flow</span>
-    <span class="chip g"><i></i>Daily signals</span>
-  </div>
+  <!-- ILLUSTRATION — the same two beats as the square, read along the blue
+       thread: Semiconductors leaves ALMOST READY, lands in BUY NOW, and the
+       thread runs straight on out of the board into a name inside it. -->
+  <div class="stage stage--side" style="width:1200px">
 
-  <div class="stage stage--side">
+    <!-- BEAT 2 (the WHAT) — the name inside that sector, staged and zoned. -->
+    <div class="card w-prophet front" style="width:420px;left:436px;top:177px;transform:scale(.58);transform-origin:top left">
+      <div class="top">
+        <span class="pill--near pill">NEAR</span>
+        <span class="demo-tag">demo</span>
+      </div>
+      <svg class="spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1f8b41" stop-opacity=".16"/>
+          <stop offset="1" stop-color="#1f8b41" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="M4 46 L18 41 L30 47 L44 35 L56 39 L70 29 L84 34 L96 23 L110 28 L124 17 L138 23 L152 13 L166 18 L180 9 L196 13 L196 60 L4 60 Z" fill="url(#gv)"/>
+        <path class="spark-g" d="M4 46 L18 41 L30 47 L44 35 L56 39 L70 29 L84 34 L96 23 L110 28 L124 17 L138 23 L152 13 L166 18 L180 9 L196 13"/>
+      </svg>
+      <div class="id"><span class="tk">NVDA</span><span class="nm">NVIDIA</span></div>
+      <div class="sector">Information Technology</div>
+      <div class="stages">
+        <span class="stg">Base</span><span class="stg">Turn</span><span class="stg on">Ready</span><span class="stg">Trend</span>
+      </div>
+      <div class="zone">ZONE <b>$199 – $203</b><span class="dt">Jul 14</span></div>
+    </div>
 
-    <!-- hero: the four-lane board (round-2 vetted demo rows). -->
-    <div class="card w-lanes front" style="width:640px;left:26px;top:100px;transform:scale(.78);transform-origin:top left">
+    <!-- BEAT 1 (the WHERE) — four plain-word lanes, right edge on the page's
+         48px margin. BUY NOW carries a third, open slot: the arriving row. -->
+    <div class="card w-lanes front" data-x="board" style="width:604px;left:741px;top:124px;transform:scale(.68);transform-origin:top left">
       <p class="kick">WHAT TO ACT ON NOW <span class="asof">demo</span></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 22px">
-        <div class="lane buy"><h4><i></i>BUY NOW</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px">
+        <div class="lane buy" style="margin-bottom:22px"><h4><i></i>BUY NOW</h4>
           <div class="row">Big Pharma<span class="sc">69</span></div>
-          <div class="row">US Energy<span class="sc">71</span></div></div>
+          <div class="row">US Energy<span class="sc">71</span></div>
+          <div class="row" data-x="landed" style="margin-top:14px;margin-left:-14px;margin-right:-10px;border:2px solid var(--blue);background:var(--panel);box-shadow:var(--sh-lift);transform:rotate(-1.7deg)">Semiconductors<span class="sc" style="color:var(--blue-ink)">64</span></div></div>
         <div class="lane soon"><h4><i></i>ALMOST READY</h4>
           <div class="row">Industrials<span class="sc">58</span></div>
-          <div class="row">Payments<span class="sc">64</span></div></div>
-        <div class="lane take"><h4><i></i>TAKE PROFITS</h4>
+          <div class="row" data-x="semi">Semiconductors<span class="sc">64</span></div></div>
+        <div class="lane take" style="opacity:.65"><h4><i></i>TAKE PROFITS</h4>
           <div class="row">Defensives<span class="sc">57</span></div></div>
-        <div class="lane aside"><h4><i></i>STAND ASIDE</h4>
+        <div class="lane aside" style="opacity:.65"><h4><i></i>STAND ASIDE</h4>
           <div class="row">Cybersecurity<span class="sc">72</span></div></div>
       </div>
     </div>
 
+    <!-- the blue thread -->
+    <svg style="position:absolute;left:0;top:0;width:1200px;height:628px;z-index:4;overflow:visible" viewBox="0 0 1200 628" fill="none">
+      <defs>
+        <marker id="rot628-ah" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 1 1 L 11 6 L 1 11 z" fill="#285fff"/>
+        </marker>
+      </defs>
+      <path data-x="arrowA" d="M 1108 288 C 1060 298 1024 307 948 311"
+            stroke="#285fff" stroke-width="4.4" stroke-linecap="round" fill="none" marker-end="url(#rot628-ah)"/>
+      <path data-x="arrowB" d="M 745 313 C 722 317 706 312 684 308"
+            stroke="#285fff" stroke-width="4.4" stroke-linecap="round" fill="none" marker-end="url(#rot628-ah)"/>
+    </svg>
+
   </div>
 
-  <div class="offer" style="margin-top:auto;margin-right:48px;padding:16px 28px">
-    <div class="cell"><span class="t">7-DAY FREE TRIAL</span><span class="d">THEN FOUNDING RATE</span></div>
-    <div class="div"></div>
-    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">50% OFF · ANNUAL</span></div>
-    <span class="cta">Try Pro free</span>
+  <div class="offer" style="margin-top:auto;margin-bottom:40px;padding:16px 28px">
+    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">LAUNCH SALE</span></div>
+    <span class="cta" style="font-size:27px;padding:19px 28px">Start 7-day free trial</span>
   </div>
-
-  <p class="micro" style="justify-content:flex-start;padding-top:8px;padding-bottom:10px">2,000 founding memberships · allotment shrinks daily · <b>mastermind-x.com</b></p>
 
 </div>

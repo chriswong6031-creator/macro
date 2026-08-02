@@ -3,32 +3,71 @@
 <title>call — 1200x628</title>
 <link rel="stylesheet" href="../_ads.css">
 
+<style>
+/* ── round-3 "call" — deck rebuild ────────────────────────────────────
+   New rules live here, never in _ads.css. Every colour, radius, shadow
+   and face below resolves to an existing token; nothing new introduced.
+
+   THE MOTTO PLATE — Inter 900 uppercase. The two locked lines set to
+   within ~0.5% of the same measure, so flush-left at .98 leading they
+   stack into one solid rectangle of type. The block is the structure.
+
+   THE DECK — today's call pulled out of a book of calls. FOUR CARDS OF
+   ONE PHYSICAL SIZE (500 × 449 authored, scaled .74) stacked pyramid-
+   style: each card behind sits 46px up and 26px right of the one in
+   front, so only its top identity bar peeks out and the rest of its
+   body is hidden behind the cards ahead of it. Equal size is what makes
+   it read as one deck in 3D rather than four cards of different sizes.
+   No rotation — the orthogonal offset IS the depth cue, and rotation
+   would leave half-covered stubs, the defect this rebuild removes. */
+
+.motto{font-weight:900;line-height:.98;letter-spacing:-.022em}
+
+.deck-c{width:500px;height:449px;padding:18px 30px 0;transform-origin:top left}
+.deck-row{display:flex;align-items:center;gap:16px}
+.deck-row .tk{font-weight:800;font-size:29px;letter-spacing:-.01em}
+.deck-row .pill--near{font-size:18px;padding:5px 14px;letter-spacing:.05em}
+.deck-row .edge{margin-left:auto;font-size:19px;font-weight:700;color:var(--muted);white-space:nowrap}
+.deck-row .edge b{color:var(--q-green);font-size:24px;font-weight:800;margin-left:6px}
+
+/* offer — one price cell over one action, stacked so the button spans
+   the text column's full measure and the deck keeps the right half. */
+.offer--stack{flex-direction:column;align-items:stretch;gap:16px}
+.offer--stack .cta{margin-left:0;display:block;text-align:center}
+</style>
+
 <div class="ad ad--s628 ad--dark">
 
-  <div class="candle-field"><img src="../../round2/assets/candle_field.svg" style="width:100%;height:100%;object-fit:cover"></div>
+  <!-- the rising tape, per-ad asset. Mask raised so the chart reads
+       behind the motto and the deck instead of hiding under them. -->
+  <div class="candle-field" style="inset:70px 0 20px 560px;-webkit-mask-image:linear-gradient(100deg,transparent 0%,#000 22%,#000 100%);mask-image:linear-gradient(100deg,transparent 0%,#000 22%,#000 100%)"><img src="../assets/field_call_628.svg" style="width:100%;height:100%;object-fit:cover;object-position:right center"></div>
 
   <div class="brandbar">
     <div class="brand"><span class="brand-m">M</span><span class="brand-n">MASTERMINDX</span></div>
-    <span class="kicker-pill"><span class="dot"></span>MARKET INTELLIGENCE DESK</span>
     <span class="spacer"></span>
     <span class="offer-flag">LAUNCH — 50% OFF</span>
   </div>
 
-  <h1 class="headline" style="font-size:52px;max-width:600px;padding-top:8px">Daily stock signals.<br><span class="grad">Institutional grade.</span></h1>
-  <p class="sub" style="max-width:570px;padding-top:8px;font-size:27px">Buy, wait or avoid — every stock graded <span style="white-space:nowrap">0–100</span>, with an exact entry zone. <b>Updated every trading day.</b></p>
+  <h1 class="headline motto" style="font-size:58px;padding-top:28px">KNOW WHEN TO BUY<br><span class="grad">KNOW WHAT TO BUY</span></h1>
+  <p class="sub" style="max-width:716px;padding-top:22px;font-size:26px"><span style="white-space:nowrap">Institutional-grade</span> signals on every stock —<br><b>buy, wait or avoid</b>, updated every trading day.</p>
 
-  <div class="chips" style="padding-top:8px;max-width:700px">
-    <span class="chip g"><i></i>Sector rotation</span>
-    <span class="chip"><i></i>Macro dashboards</span>
-    <span class="chip t"><i></i>Advanced charting</span>
-    <span class="chip v"><i></i>AI analyst</span>
-  </div>
+  <div class="stage stage--side" style="width:1200px">
 
-  <div class="stage stage--side">
+    <!-- the deck behind today's call: three more graded rows.
+         Landing showcase demo data (prophet.showcase/v2, 2026-07-02).
+         Same card size as the front SBUX card; only left/top change. -->
+    <div class="card deck-c" style="left:782px;top:123px;transform:scale(.74);z-index:0;filter:brightness(.90)">
+      <div class="deck-row"><span class="tk">ARLO</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>99</b></span></div>
+    </div>
+    <div class="card deck-c" style="left:756px;top:169px;transform:scale(.74);z-index:1;filter:brightness(.94)">
+      <div class="deck-row"><span class="tk">CPAY</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>90</b></span></div>
+    </div>
+    <div class="card deck-c" style="left:730px;top:215px;transform:scale(.74);z-index:2;filter:brightness(.97)">
+      <div class="deck-row"><span class="tk">REZI</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>83</b></span></div>
+    </div>
 
-    <!-- hero: the SBUX decision card. Landing showcase demo data
-         (prophet.showcase/v2, 2026-07-02 board) — a real graded call. -->
-    <div class="card w-prophet front" style="left:56px;top:96px;transform:scale(.88);transform-origin:top left">
+    <!-- the open call: the SBUX decision card, unchanged data. -->
+    <div class="card w-prophet" style="position:absolute;width:500px;left:704px;top:261px;transform:scale(.74);transform-origin:top left;z-index:3">
       <div class="top">
         <span class="pill--buy pill">BUY</span>
         <span class="demo-tag">demo</span>
@@ -53,13 +92,9 @@
 
   </div>
 
-  <div class="offer" style="margin-top:auto;margin-right:48px;padding:17px 28px">
-    <div class="cell"><span class="t">7-DAY FREE TRIAL</span><span class="d">THEN FOUNDING RATE</span></div>
-    <div class="div"></div>
-    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">50% OFF · ANNUAL</span></div>
-    <span class="cta">Try Pro free</span>
+  <div class="offer offer--stack" style="--offer:29px;margin:auto 0 36px 48px;width:604px;padding:22px 26px">
+    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">LAUNCH SALE</span></div>
+    <span class="cta">Start 7-day free trial</span>
   </div>
-
-  <p class="micro" style="justify-content:flex-start;padding-top:10px;padding-bottom:12px">Research tools — not investment advice · 2,000 founding memberships · <b>mastermind-x.com</b></p>
 
 </div>

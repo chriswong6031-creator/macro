@@ -3,45 +3,68 @@
 <title>call — 1080x1080</title>
 <link rel="stylesheet" href="../_ads.css">
 
+<style>
+/* ── round-3 "call" — deck rebuild (square) ───────────────────────────
+   Sibling of call--1200x628. New rules live here, never in _ads.css;
+   every colour, radius, shadow and face resolves to an existing token.
+
+   THE MOTTO PLATE — Inter 900 uppercase, two locked lines of near-
+   identical measure stacked at .98 leading into one block of type.
+
+   THE DECK — today's call pulled out of a book of calls. FOUR CARDS OF
+   ONE PHYSICAL SIZE (580 × 449 authored, scaled .74) stacked pyramid-
+   style: each card behind sits 48px up and 38px right of the one in
+   front, so only its top identity bar peeks out and the rest of its
+   body is hidden behind the cards ahead of it. Equal size is what makes
+   it read as one deck in 3D rather than four cards of different sizes.
+   The cards are set wide here because the square gives width, not
+   height. No rotation — the orthogonal offset IS the depth cue. */
+
+.motto{font-weight:900;line-height:.98;letter-spacing:-.022em}
+
+.deck-c{width:580px;height:449px;padding:20px 32px 0;transform-origin:top left}
+.deck-row{display:flex;align-items:center;gap:18px}
+.deck-row .tk{font-weight:800;font-size:29px;letter-spacing:-.01em}
+.deck-row .pill--near{font-size:18px;padding:5px 15px;letter-spacing:.05em}
+.deck-row .edge{margin-left:auto;font-size:19px;font-weight:700;color:var(--muted);white-space:nowrap}
+.deck-row .edge b{color:var(--q-green);font-size:25px;font-weight:800;margin-left:6px}
+</style>
+
 <div class="ad ad--s1080 ad--dark">
 
-  <div class="candle-field"><img src="../../round2/assets/candle_field.svg" style="width:100%;height:100%;object-fit:cover"></div>
+  <!-- the rising tape, per-ad asset. The source is 1200x640, so it is
+       placed as a full-width band (1080x576, undistorted) high in the
+       canvas rather than cover-cropped to a square, which would throw
+       away the left-to-right rise. -->
+  <div class="candle-field" style="inset:150px 0 auto 0;height:576px;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 12%,#000 78%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 12%,#000 78%,transparent 100%)"><img src="../assets/field_call_1080.svg" style="width:100%;height:100%;object-fit:fill"></div>
 
   <div class="brandbar">
     <div class="brand"><span class="brand-m">M</span><span class="brand-n">MASTERMINDX</span></div>
     <span class="spacer"></span>
     <span class="offer-flag">LAUNCH — 50% OFF</span>
   </div>
-  <p class="catline">MARKET INTELLIGENCE DESK</p>
+  <p class="catline" style="padding-top:8px">MARKET INTELLIGENCE DESK</p>
 
-  <h1 class="headline" style="font-size:72px;padding-top:12px">Daily stock signals.<br><span class="grad">Institutional grade.</span></h1>
-  <p class="sub" style="max-width:990px;padding-top:10px;font-size:34px">Buy, wait or avoid — every stock graded <span style="white-space:nowrap">0–100</span>, with an exact entry zone. <b>Updated every trading day.</b></p>
+  <h1 class="headline motto" style="font-size:70px;padding-top:10px">KNOW WHEN TO BUY<br><span class="grad">KNOW WHAT TO BUY</span></h1>
+  <p class="sub" style="max-width:1010px;padding-top:14px;font-size:27px"><span style="white-space:nowrap">Institutional-grade</span> signals on every stock —<br><b>buy, wait or avoid</b>, updated every trading day.</p>
 
-  <div class="chips" style="padding-top:12px;max-width:780px">
-    <span class="chip g"><i></i>Sector rotation</span>
-    <span class="chip"><i></i>Macro dashboards</span>
-    <span class="chip t"><i></i>Advanced charting</span>
-    <span class="chip v"><i></i>AI analyst</span>
-  </div>
+  <div class="stage stage--side" style="width:1080px">
 
-  <div class="stage" style="--stageh:296px;margin-top:8px">
-
-    <!-- behind: macro gauge sliver, right side. Identity atoms only. -->
-    <div class="card w-read behind" style="left:620px;top:28px;transform:rotate(2.5deg) scale(.66);transform-origin:top left">
-      <p class="kick">MARKET RISK <span class="asof">demo</span></p>
-      <div class="gz-row">
-        <svg class="gz" viewBox="0 0 250 170">
-          <path d="M25 150 A100 100 0 0 1 225 150" fill="none" stroke="#eaecf0" stroke-width="22" stroke-linecap="round"/>
-          <path d="M25 150 A100 100 0 0 1 138 51" fill="none" stroke="#b07d05" stroke-width="22" stroke-linecap="round"/>
-          <circle cx="138" cy="51" r="13" fill="#fff" stroke="#b07d05" stroke-width="5"/>
-        </svg>
-        <div class="num gold"><b>57</b><span>Mixed tape</span></div>
-      </div>
-      <p class="stance"><b>Watch, don't chase.</b></p>
+    <!-- the deck behind today's call: three more graded rows.
+         Landing showcase demo data (prophet.showcase/v2, 2026-07-02).
+         Same card size as the front SBUX card; only left/top change. -->
+    <div class="card deck-c" style="left:382px;top:424px;transform:scale(.74);z-index:0;filter:brightness(.90)">
+      <div class="deck-row"><span class="tk">ARLO</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>99</b></span></div>
+    </div>
+    <div class="card deck-c" style="left:344px;top:472px;transform:scale(.74);z-index:1;filter:brightness(.94)">
+      <div class="deck-row"><span class="tk">CPAY</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>90</b></span></div>
+    </div>
+    <div class="card deck-c" style="left:306px;top:520px;transform:scale(.74);z-index:2;filter:brightness(.97)">
+      <div class="deck-row"><span class="tk">REZI</span><span class="pill pill--near">NEAR</span><span class="edge">EDGE<b>83</b></span></div>
     </div>
 
-    <!-- hero: the SBUX decision card (landing showcase demo data). -->
-    <div class="card w-prophet front" style="left:84px;top:0;transform:scale(.70);transform-origin:top left">
+    <!-- the open call: the SBUX decision card, unchanged data. -->
+    <div class="card w-prophet" style="position:absolute;width:580px;left:268px;top:568px;transform:scale(.74);transform-origin:top left;z-index:3">
       <div class="top">
         <span class="pill--buy pill">BUY</span>
         <span class="demo-tag">demo</span>
@@ -66,13 +89,9 @@
 
   </div>
 
-  <div class="offer" style="margin-top:12px">
-    <div class="cell"><span class="t">7-DAY FREE TRIAL</span><span class="d">THEN FOUNDING RATE</span></div>
-    <div class="div"></div>
-    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">50% OFF · ANNUAL</span></div>
-    <span class="cta">Try Pro free</span>
+  <div class="offer" style="--offer:27px;margin:auto var(--pad) 42px;padding:18px 26px">
+    <div class="cell"><span class="t"><span class="was">$149</span>$75/mo</span><span class="d">LAUNCH SALE</span></div>
+    <span class="cta">Start 7-day free trial</span>
   </div>
-
-  <p class="micro" style="padding-top:10px;padding-bottom:12px;font-size:20px;white-space:nowrap">Research tools — not investment advice · 2,000 founding memberships · <b>mastermind-x.com</b></p>
 
 </div>
