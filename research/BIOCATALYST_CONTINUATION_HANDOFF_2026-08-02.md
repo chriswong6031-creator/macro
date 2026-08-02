@@ -1,36 +1,25 @@
 # BioCatalyst continuation handoff — 2026-08-02
 
-Canonical continuation note. This is a clean-room public-source build; do not use or transmit competitor credentials.
+Canonical continuation note. The active objective remains full BioPharmCatalyst-class parity and superiority through clean-room public-source intelligence. Never use, store, or transmit competitor credentials.
 
-## B1 foundation
+## Shipped foundation: B1
 
-- PR: https://github.com/chriswong6031-creator/macro/pull/4227
-- Branch/worktree: `claude/biocatalyst-b1b-20260802` at `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b1b-20260802`
-- Current head: `c801354fa21`
-- Fresh CI run: https://github.com/chriswong6031-creator/macro/actions/runs/30732736923
-- The preceding run failed only because current `main` emitted a numeric JSON field named `validated`; `c801354fa21` masks only that JSON key while still catching prose on the same line. Local selftest and the full claim scan pass.
-- Production ingestion must remain dark. No dedicated BioCatalyst R2 credentials or source-rights approval are present; keep `macro-biocatalyst.timer` disabled.
+- PR [#4227](https://github.com/chriswong6031-creator/macro/pull/4227) merged as `6f41169bdf13`; all four CI packs and security fences passed.
+- Production advanced to a descendant (`/api/health` returned checkout `837e55db1b8`). The deployed `site/biocatalyst.html` hash exactly matched `origin/main`.
+- The VPS setup installed the isolated worker runtime and units. `macro-api` is active; anonymous `/api/biocatalyst/v1/health`, `/trials`, and `/trials/{NCT}` return `401`, not `404`; the same three paths are mounted in the internal OpenAPI document.
+- `/etc/macro-biocatalyst.env` is root-owned mode `0600`. `macro-biocatalyst.timer` is disabled/inactive and must stay dark: there are no dedicated R2 credentials or source-rights approval.
+- B1's `render` and `engine-render` runs `30733044334` and `30733044318` were still queued behind older long-running render jobs at handoff. Production itself was independently verified.
 
-Next: wait for every PR check, squash-merge #4227, verify `origin/main`, wait for `https://mastermind-x.com/api/health` to advance, run `/opt/macro/app/deploy/biocatalyst-setup.sh` on the VPS, restart `macro-api`, and verify anonymous BioCatalyst API requests return `401` rather than `404`. Confirm the timer is disabled/inactive and do not run ingestion.
+## Release-ready next slice: B2 exact registry history
 
-## B2 exact registry history
+- Worktree: `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b2-history-20260802`
+- Final branch: `codex/biocatalyst-b2-history-final-20260802`, rebased cleanly onto `origin/main` at `a35aa77395a7`.
+- Code commit: `f5781660066`; its stable patch ID exactly matches preserved backup commit `4bd93482948`. The original pushed backup branch remains `codex/biocatalyst-b2-history-20260802`; do not force-push it.
+- Fresh post-rebase validation: `531 passed, 5 warnings in 692.61s`; warnings are FastAPI/Starlette deprecations. `git diff --check`, shell syntax, and all four changed JS assets pass. Earlier responsive browser QA passed at 390/820/1440 in dark/light and English/Chinese.
+- B2 adds exact ClinicalTrials.gov Record History receipts, version snapshots, deterministic diffs and neutral change facts, replay-bound promotion, authenticated API history output, and before/after UI. It remains facts-only, rights-gated, `production_ingest_allowed: false`, and has no materiality, prediction, Prophet, or trade authority.
 
-- Branch/worktree: `codex/biocatalyst-b2-history-20260802` at `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b2-history-20260802`
-- Pushed commit: `4bd93482948` (`feat(biocatalyst): add evidence-bound trial history`)
-- Validation: 534 B2/B1 tests passed; final shared-UI regression slice 35 passed; workflow YAML, template/site sync, Node syntax, `py_compile`, and `git diff --check` passed. Red-team found no remaining P0-P2 issue under the documented single-writer public-root trust model.
-- Browser QA passed at 390/820/1440, dark/light, English/Chinese, including exact V1 to V2 before/after history. The Settings focus/pointer close defect was fixed and live-browser verified.
-- History remains rights-gated and dark (`production_ingest_allowed: false`). It emits exact source facts only: no materiality, protocol interpretation, forecast, Prophet authority, or trade authority.
-
-B2 is based on the pre-squash B1 commit `993ce827e30251dad2204615d0c9c4e1475b3fd8`. After B1 lands, preserve the pushed branch as backup and create a fresh final branch without force-pushing:
-
-```bash
-git fetch origin
-git rebase --onto origin/main 993ce827e30251dad2204615d0c9c4e1475b3fd8 codex/biocatalyst-b2-history-20260802
-git switch -c codex/biocatalyst-b2-history-final-20260802
-```
-
-Resolve moving-main conflicts by retaining both BioCatalyst and newer shared CI/deploy/theme changes. Rerun the B2 test shards and UI checks, push the new branch, open a PR, squash-merge, then repeat production health/API/UI verification. Keep ingestion dark.
+Continue the ship loop from this worktree: push the final branch, open a PR to `main`, wait for every required check, squash-merge, verify the merge on `origin/main`, wait for render/deploy, then verify production health, authenticated route mounting, UI deployment, and that the timer remains disabled. If `origin/main` advances before push, rebase and rerun the affected validation slice.
 
 ## Next parity lane
 
-The next honest lane is B4A: the complete official weekday Drugs@FDA ZIP transformed into an FDA-native application/product/submission/action graph. An empty preparation worktree exists at `.claude/worktrees/biocatalyst-b4a-regulatory-20260802` on `codex/biocatalyst-b4a-regulatory-20260802`; rebase it to the future `origin/main` before use. Do not add ticker/company/trial fuzzy joins, pending PDUFA claims, approval odds, or medical claims. The following waves are Orange Book patents/exclusivities, then labels/shortages/safety, then shared-identity corporate/SEC consumers for cash runway, dilution, licensing economics, and governed Prophet context.
+Resume B4A only after B2 ships. Its empty worktree is `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/biocatalyst-b4a-regulatory-20260802`; fetch and rebase it to fresh `origin/main`. Build official weekday Drugs@FDA complete-ZIP receipts and exact release/table manifests into an FDA-native application/product/submission/action/document graph. Keep it dark pending source-rights approval. Exclude fuzzy company/ticker/trial joins, pending PDUFA/IND/hold/CRL claims, approval odds, and medical claims. Subsequent lanes are Orange Book patents/exclusivities; labels, shortages, and safety; then governed company/SEC identity consumers for cash runway, dilution, licensing economics, Neural Web context, Mastermind synthesis, and Prophet scoring.
