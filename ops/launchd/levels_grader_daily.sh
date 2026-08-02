@@ -30,10 +30,18 @@ for Y in 2026 2025 2024 2023 2022 2021 2020 2019 2018 2017; do
       --start "$Y-01-01" --end "$Y-12-31" --publish \
     && echo "$Y" >> "$STATE" \
     && echo "levelsgrader: chunk $Y DONE $(date)"
+  # R2.4: refresh the live scorecards from whatever is graded so far (non-fatal).
+  "$PY" -m scripts.build_level_grades_summary \
+    || echo "levelsgrader: scorecard publish failed (non-fatal)"
   exit 0   # one chunk per pass — next pass continues the queue
 done
 
-# all chunks done → maintenance: rolling 14-day re-grade
+# all chunks done → maintenance: rolling 14-day re-grade, then the R2.4 scorecards
 START=$("$PY" -c "from datetime import date,timedelta;print((date.today()-timedelta(days=14)).isoformat())")
 echo "levelsgrader: maintenance window $START → now  $(date)"
-exec "$PY" -m scripts.build_levels_track_record --universe stocks --start "$START" --publish
+"$PY" -m scripts.build_levels_track_record --universe stocks --start "$START" --publish
+rc=$?
+echo "levelsgrader: track-record pass exit=$rc — publishing level-grade scorecards $(date)"
+"$PY" -m scripts.build_level_grades_summary \
+  || echo "levelsgrader: scorecard publish failed (non-fatal)"
+exit $rc
