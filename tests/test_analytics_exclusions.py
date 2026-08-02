@@ -239,7 +239,8 @@ def test_ips_seed_the_excluded_set(monkeypatch):
 def test_bot_cte_signals_and_config_extension(monkeypatch):
     monkeypatch.setattr(a, "_load_exclusions", lambda: {
         "emails": [], "locations": [], "ips": [],
-        "bots": {"ips": ["34.122.147.229"], "ua_pattern": "MyScanner", "org_pattern": "acme labs"},
+        "bots": {"ips": ["34.122.147.229"], "ua_pattern": "MyScanner", "org_pattern": "acme labs",
+                 "asn_pattern": "64500"},
         "geo_overrides": [],
     })
     cte = a._bot_cte()
@@ -247,6 +248,7 @@ def test_bot_cte_signals_and_config_extension(monkeypatch):
     assert "e.ua ~*" in cte and "Googlebot" in cte and "MyScanner" in cte   # default + extension
     assert "g.is_hosting is true and coalesce(g.is_vpn, false) = false" in cte  # datacenter-not-VPN
     assert "g.org ~*" in cte and "meta platforms" in cte and "acme labs" in cte
+    assert "g.asn::text ~*" in cte and "396982" in cte and "64500" in cte  # Google ASN default + extension
 
 
 def test_not_a_bot_predicate_null_safe():
