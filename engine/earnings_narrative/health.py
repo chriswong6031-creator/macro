@@ -8,9 +8,13 @@ from typing import Any, Mapping
 from .contracts import (
     CLAIM_GRAPH_SCHEMA,
     FACT_PACK_SCHEMA,
+    TERMINAL_TRANSCRIPT_SCHEMA,
     canonical_json_bytes,
+    canonical_transcript_body_bytes,
     sha256_bytes,
     validate_evidence_pair,
+    validate_terminal_transcript,
+    verify_fact_pack_against_transcript,
     validate_manifest,
 )
 
@@ -71,23 +75,27 @@ def validate_generation(out_dir: Path, manifest: Mapping[str, Any] | None = None
             issues.append(f"sha256:{relative}")
         try:
             item = json.loads(body.decode("utf-8"))
-            if canonical_json_bytes(item) != body:
+            expected_bytes = canonical_transcript_body_bytes(item) if block["schema"] == TERMINAL_TRANSCRIPT_SCHEMA else canonical_json_bytes(item)
+            if expected_bytes != body:
                 issues.append(f"noncanonical:{relative}")
             parsed[relative] = item
         except Exception:
             issues.append(f"json:{relative}")
     for key, event in marker["events"].items():
         assert isinstance(event, Mapping)
-        fact_path, graph_path = event["fact_pack"], event["claim_graph"]
+        fact_path, graph_path, source_path = event["fact_pack"], event["claim_graph"], event["source_body"]
         fact, graph = parsed.get(fact_path), parsed.get(graph_path)
-        if fact is None or graph is None:
+        source_body = parsed.get(source_path)
+        if fact is None or graph is None or source_body is None:
             continue
         try:
-            if not isinstance(fact, Mapping) or not isinstance(graph, Mapping):
+            if not isinstance(fact, Mapping) or not isinstance(graph, Mapping) or not isinstance(source_body, Mapping):
                 raise ValueError("artifact is not an object")
-            if fact.get("schema") != FACT_PACK_SCHEMA or graph.get("schema") != CLAIM_GRAPH_SCHEMA:
+            if fact.get("schema") != FACT_PACK_SCHEMA or graph.get("schema") != CLAIM_GRAPH_SCHEMA or source_body.get("schema") != TERMINAL_TRANSCRIPT_SCHEMA:
                 raise ValueError("artifact schema mismatch")
             validate_evidence_pair(fact, graph)
+            validate_terminal_transcript(source_body)
+            verify_fact_pack_against_transcript(fact, source_body)
             if str(fact["source"]["body_sha256"]) != event["source_sha256"]:
                 raise ValueError("event source revision mismatch")
             if f"{fact['event']['ticker']}/{fact['event']['transcript_id']}" != key:

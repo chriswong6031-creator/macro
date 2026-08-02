@@ -14,11 +14,14 @@ from .contracts import (
     FACT_PACK_SCHEMA,
     KNOWN_OMISSIONS,
     MANIFEST_SCHEMA,
+    TERMINAL_TRANSCRIPT_SCHEMA,
+    canonical_transcript_body_bytes,
     canonical_json_bytes,
     canonical_json_sha256,
     event_key,
     sha256_bytes,
     validate_evidence_pair,
+    verify_fact_pack_against_transcript,
     validate_manifest,
 )
 
@@ -27,6 +30,7 @@ from .contracts import (
 class EvidencePair:
     fact_pack: Mapping[str, Any]
     claim_graph: Mapping[str, Any]
+    transcript: Mapping[str, Any]
 
 
 def _prior_event_sources(prior_manifest: object | None) -> dict[str, str]:
@@ -76,6 +80,7 @@ def build_generation(
     collected: dict[str, EvidencePair] = {}
     for pair in pairs:
         validate_evidence_pair(pair.fact_pack, pair.claim_graph)
+        verify_fact_pack_against_transcript(pair.fact_pack, pair.transcript)
         key = event_key(pair.fact_pack["event"])
         if key in collected:
             raise ValueError(f"duplicate evidence pair: {key}")
@@ -93,14 +98,21 @@ def build_generation(
         generated_at.append(str(pair.fact_pack["source"]["index_generated_at"]))
         fact_path = f"fact_packs/{key}.json"
         graph_path = f"claim_graphs/{key}.json"
+        source_path = f"source_bodies/{source_sha}.json"
         artifacts[fact_path] = canonical_json_bytes(pair.fact_pack)
         artifacts[graph_path] = canonical_json_bytes(pair.claim_graph)
+        source_body = canonical_transcript_body_bytes(pair.transcript)
+        existing_source = artifacts.get(source_path)
+        if existing_source is not None and existing_source != source_body:
+            raise ValueError(f"source body hash collision: {source_path}")
+        artifacts[source_path] = source_body
         old_sha = previous.get(key)
         events[key] = {
             "source_sha256": source_sha,
             "supersedes_source_sha256": old_sha if old_sha and old_sha != source_sha else None,
             "fact_pack": fact_path,
             "claim_graph": graph_path,
+            "source_body": source_path,
         }
     normalized_omissions = _normalise_omissions(omissions)
     # No current evidence is an explicit partial result, never a plausible
@@ -112,7 +124,11 @@ def build_generation(
         path: {
             "sha256": sha256_bytes(body),
             "bytes": len(body),
-            "schema": FACT_PACK_SCHEMA if path.startswith("fact_packs/") else CLAIM_GRAPH_SCHEMA,
+            "schema": (
+                FACT_PACK_SCHEMA if path.startswith("fact_packs/")
+                else CLAIM_GRAPH_SCHEMA if path.startswith("claim_graphs/")
+                else TERMINAL_TRANSCRIPT_SCHEMA
+            ),
         }
         for path, body in sorted(artifacts.items())
     }
