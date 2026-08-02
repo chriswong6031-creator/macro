@@ -98,6 +98,61 @@ sources:
       - government_verified_science_or_safety
       - source_record_is_independently_verified
 
+  clinicaltrials_gov_record_history:
+    source_id: clinicaltrials_gov_record_history
+    name: ClinicalTrials.gov Record History
+    owner: biocatalyst
+    producer: collectors.biocatalyst.clinicaltrials_history
+    base_url: "https://clinicaltrials.gov/api/int/studies"
+    documentation_url: "https://clinicaltrials.gov/study-basics/how-to-read-study-record"
+    terms_url: "https://clinicaltrials.gov/about-site/terms-conditions"
+    interface_stability: undocumented_ui_backing_route
+    source_shape_canary_required: true
+    etag_semantics: retained_as_transport_metadata_never_content_identity_or_freshness
+    license_class: us_government_source_facts
+    rights_state: operator_review_required_before_enable
+    production_ingest_allowed: false
+    raw_archive: private_only
+    public_projection: blocked_until_enable
+    distribution_obligations:
+      - attribute_clinicaltrials_gov
+      - display_source_processing_date
+      - keep_projected_data_current
+      - disclose_content_modifications
+      - do_not_assert_proprietary_rights_over_source_database
+      - do_not_use_extracted_email_addresses_for_marketing
+      - display_source_submitter_responsibility_note
+      - do_not_present_registry_as_government_validation
+    default_coverage_class: record_history_complete
+    source_version_semantics: source_record_history_versions_not_event_time
+    launch_critical: false
+    collection_target: operator_armed_explicit_nct_allowlist
+    freshness_slo_seconds: null
+    opportunity_semantics: one_complete_per_nct_history_chain
+    completeness_semantics: history_index_roundtrip_and_every_version_receipted
+    maximum_consecutive_misses: 0
+    parser_version: clinicaltrials_record_history_parser.v1
+    user_agent_env: BIOCATALYST_USER_AGENT
+    request_headers_allowlist:
+      - accept
+      - accept-encoding
+      - user-agent
+    receipt_response_headers_allowlist:
+      - content-encoding
+      - content-type
+      - content-length
+      - date
+      - etag
+      - last-modified
+    prohibited_claims:
+      - protocol_changed_from_registry_diff_alone
+      - material_trial_change_from_registry_diff_alone
+      - endpoint_met_or_missed_from_registry_diff_alone
+      - site_activated_from_location_appearance
+      - enrollment_velocity_from_historical_counts
+      - government_verified_science_or_safety
+      - source_record_is_independently_verified
+
   aact:
     source_id: aact
     name: Aggregate Analysis of ClinicalTrials.gov
@@ -260,3 +315,20 @@ b0a_canary:
     - trial_coverage_epoch.v1
     - ctgov_watermark.v1
   allowed_product_language: "ClinicalTrials.gov's registry record changed; first observed within this interval."
+
+b2_history_canary:
+  source_id: clinicaltrials_gov_record_history
+  universe_mode: explicit_nct_allowlist
+  allowlist_config_env: BIOCATALYST_CANARY_NCTS
+  universe_relation: exact_b1_current_nct_set
+  default_allowlist: []
+  production_enable_env: BIOCATALYST_HISTORY_ENABLED
+  default_enabled: false
+  allowed_contracts:
+    - ctgov_history_receipt.v1
+    - ctgov_history_run.v1
+    - trial_history_source_snapshot.v1
+    - trial_history_exact_diff.v1
+    - trial_registry_change_fact.v1
+    - trial_history_read_model.v1
+  allowed_product_language: "ClinicalTrials.gov's registry record changed between source versions; no protocol or materiality inference."

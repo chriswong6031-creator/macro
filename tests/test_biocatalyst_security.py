@@ -6,6 +6,7 @@ network, service path, or credential is required.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
@@ -23,10 +24,16 @@ from collectors.biocatalyst.clinicaltrials_v2 import (
 )
 import engine.biocatalyst.publication as publication_module
 from engine.biocatalyst.publication import (
+    HistoryPublicationEvidence,
     PreparedGeneration,
     PublicationError,
     PublicGenerationPublisher,
     archive_private_stage,
+)
+from engine.biocatalyst.history import (
+    build_history_exact_diff,
+    build_history_read_model,
+    derive_history_change_facts,
 )
 from engine.sector_intelligence import canonical_json_bytes, canonical_json_sha256
 import scripts.biocatalyst_worker as worker
@@ -36,6 +43,7 @@ from tests.test_biocatalyst_worker import (
     NOW,
     config as worker_config,
 )
+from tests.test_biocatalyst_history import _history_chain
 
 
 RUN_ID = "ctgov_run_20260801T160000000000Z_abcdef123456"
@@ -149,6 +157,84 @@ def _rehash_trial_projection(
     pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
 
 
+def _history_model_for_security() -> dict[str, Any]:
+    """One contract-valid public B2 history artifact with no private evidence."""
+
+    model: dict[str, Any] = {
+        "contract_id": "trial_history_read_model.v1",
+        "schema_version": "1.0.0",
+        "history_model_id": "trial_history_model_NCT00000001_security",
+        "nct_id": "NCT00000001",
+        "available": True,
+        "source_name": "ClinicalTrials.gov",
+        "source_history_url": "https://clinicaltrials.gov/study/NCT00000001?tab=history",
+        "coverage_class": "record_history_complete",
+        "current_only": False,
+        "unavailable_reason": None,
+        "retrieved_at": "2026-08-01T15:00:02.000000Z",
+        "versions": [
+            {
+                "display_version": 1,
+                "source_submitted_at": "2026-08-01",
+                "url": "https://clinicaltrials.gov/study/NCT00000001?a=1&tab=history",
+            }
+        ],
+        "changes": [],
+        "authority": {
+            "classification": "source_fact",
+            "decision_authority": False,
+            "allowed_uses": ["display", "context", "explain"],
+            "forbidden_uses": [
+                "originate_signal",
+                "rank_security",
+                "select_security",
+                "size_position",
+                "gate_decision",
+                "execute_trade",
+                "raise_authority",
+            ],
+        },
+        "generated_at": "2026-08-01T15:00:02.000000Z",
+        "hash_scope": "canonical_payload_excluding_model_payload_sha256",
+    }
+    model["model_payload_sha256"] = canonical_json_sha256(model)
+    return model
+
+
+def _install_rehashed_v12_history_artifact(
+    publisher: PublicGenerationPublisher,
+    model: dict[str, Any],
+) -> None:
+    """Model an attacker who rehashes outer public files but not model identity."""
+
+    pointer_path, generation, pointer = _generation_paths(publisher)
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifact_path = generation / "history" / "NCT00000001.json"
+    artifact_path.parent.mkdir(exist_ok=True)
+    artifact_bytes = canonical_json_bytes(model) + b"\n"
+    artifact_path.write_bytes(artifact_bytes)
+    manifest["schema_version"] = "1.2.0"
+    artifact_entry = {
+        "name": "history/NCT00000001.json",
+        "sha256": sha256(artifact_bytes).hexdigest(),
+        "byte_count": len(artifact_bytes),
+    }
+    for index, existing in enumerate(manifest["artifacts"]):
+        if existing["name"] == artifact_entry["name"]:
+            manifest["artifacts"][index] = artifact_entry
+            break
+    else:
+        manifest["artifacts"].append(artifact_entry)
+    manifest["artifacts"].sort(key=lambda item: item["name"])
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+
+
 def test_operational_health_goes_stale_at_read_time_without_a_worker_run(
     committed_generation: tuple[Any, PublicGenerationPublisher],
 ) -> None:
@@ -211,6 +297,115 @@ def test_top_level_current_and_health_symlinks_are_not_trusted(
     publisher.health_path.symlink_to(outside_health)
     with pytest.raises(PublicationError):
         publisher.read_operational_health(now=NOW)
+
+
+def test_rehashed_history_artifact_without_its_own_hash_cannot_be_read(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    """The public manifest/pointer hash is insufficient for B2 history facts."""
+
+    _, publisher = committed_generation
+    model = _history_model_for_security()
+    # Simulate a full outer-tree rehash after a semantic mutation while leaving
+    # the public model's own content-address intact.  Both promotion-time and
+    # request-time validation must reject it.
+    model["generated_at"] = "2026-08-01T15:00:03.000000Z"
+    _install_rehashed_v12_history_artifact(publisher, model)
+
+    with pytest.raises(PublicationError) as exc:
+        publisher.read_trial_projection()
+    assert exc.value.code == "TRIAL_HISTORY_PROJECTION_INVALID"
+
+
+def test_history_publication_replays_exact_facts_and_allows_only_byte_exact_carry_forward() -> None:
+    """A self-rehashed public B2 model cannot substitute for private evidence."""
+
+    _, _, snapshots = _history_chain()
+    diff = build_history_exact_diff(
+        *snapshots,
+        transaction_from=snapshots[1]["transaction_from"],
+    )
+    facts = derive_history_change_facts(*snapshots, diff)
+    model = build_history_read_model(
+        snapshots,
+        facts,
+        generated_at="2026-08-02T00:00:14Z",
+    )
+    nct_id = model["nct_id"]
+    fresh = HistoryPublicationEvidence(
+        snapshots=tuple(snapshots),
+        facts=tuple(facts),
+    )
+
+    publication_module._validate_history_publication_evidence(
+        model,
+        nct_id=nct_id,
+        evidence=fresh,
+        prior_model_bytes=None,
+    )
+
+    mismatched_fact = dict(facts[0])
+    mismatched_fact["nct_id"] = "NCT99999999"
+    with pytest.raises(PublicationError) as exc:
+        publication_module._validate_history_publication_evidence(
+            model,
+            nct_id=nct_id,
+            evidence=HistoryPublicationEvidence(
+                snapshots=tuple(snapshots),
+                facts=(mismatched_fact,),
+            ),
+            prior_model_bytes=None,
+        )
+    assert exc.value.code == "TRIAL_HISTORY_EVIDENCE_BINDING_MISMATCH"
+
+    for mutate in (
+        lambda candidate: candidate["changes"][0].__setitem__("kind", "forged_kind"),
+        lambda candidate: candidate["changes"][0].__setitem__(
+            "after_value", "forged registry value"
+        ),
+        lambda candidate: candidate["versions"][0].__setitem__(
+            "source_submitted_at", "2025-12-31"
+        ),
+    ):
+        forged = deepcopy(model)
+        mutate(forged)
+        forged["model_payload_sha256"] = canonical_json_sha256(
+            {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+        )
+        with pytest.raises(PublicationError) as exc:
+            publication_module._validate_history_publication_evidence(
+                forged,
+                nct_id=nct_id,
+                evidence=fresh,
+                prior_model_bytes=None,
+            )
+        assert exc.value.code == "TRIAL_HISTORY_EVIDENCE_INVALID"
+
+    carry = HistoryPublicationEvidence(carried_forward=True)
+    canonical_bytes = canonical_json_bytes(model) + b"\n"
+    publication_module._validate_history_publication_evidence(
+        model,
+        nct_id=nct_id,
+        evidence=carry,
+        prior_model_bytes=canonical_bytes,
+    )
+    forged_carry = deepcopy(model)
+    forged_carry["generated_at"] = "2026-08-02T00:00:15Z"
+    forged_carry["model_payload_sha256"] = canonical_json_sha256(
+        {
+            key: value
+            for key, value in forged_carry.items()
+            if key != "model_payload_sha256"
+        }
+    )
+    with pytest.raises(PublicationError) as exc:
+        publication_module._validate_history_publication_evidence(
+            forged_carry,
+            nct_id=nct_id,
+            evidence=carry,
+            prior_model_bytes=canonical_bytes,
+        )
+    assert exc.value.code == "TRIAL_HISTORY_CARRY_FORWARD_MISMATCH"
 
 
 @pytest.mark.parametrize("field", ("last_attempt_at", "last_success_at"))
