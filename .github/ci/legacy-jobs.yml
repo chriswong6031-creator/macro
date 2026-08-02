@@ -748,9 +748,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyyaml requests
+        run: pip install pytest pandas numpy pyyaml requests lxml
       - name: china_news collector tests (incl. adapter-registered-without-akshare)
         run: python -m pytest tests/test_china_news.py -q
+      - name: strict SEC filing parser and receipt-bound extraction contracts
+        run: |
+          python -m pytest \
+            tests/test_edgar_13f.py \
+            tests/test_sec_filing_parser.py \
+            tests/test_fundamental_forensics_ixbrl_extraction.py -q
       - name: adapter registry must stay populated
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance"
+             xmlns:xbrldi="http://xbrl.org/2006/xbrldi"
+             xmlns:ex="https://example.test/taxonomy">
+  <xbrli:context id="instant">
+    <xbrli:entity>
+      <xbrli:identifier scheme="https://www.sec.gov/CIK">0000000001</xbrli:identifier>
+      <xbrli:segment><xbrldi:explicitMember dimension="ex:RegionAxis">ex:NorthMember</xbrldi:explicitMember></xbrli:segment>
+    </xbrli:entity>
+    <xbrli:period><xbrli:instant>2025-12-31</xbrli:instant></xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="duration">
+    <xbrli:entity><xbrli:identifier scheme="https://www.sec.gov/CIK">0000000001</xbrli:identifier></xbrli:entity>
+    <xbrli:period><xbrli:startDate>2025-01-01</xbrli:startDate><xbrli:endDate>2025-12-31</xbrli:endDate></xbrli:period>
+    <xbrli:scenario><xbrldi:typedMember dimension="ex:ChannelAxis"><ex:Channel>Direct</ex:Channel></xbrldi:typedMember></xbrli:scenario>
+  </xbrli:context>
+  <xbrli:unit id="usd"><xbrli:measure>ex:USD</xbrli:measure></xbrli:unit>
+  <xbrli:unit id="usdPerShare"><xbrli:divide><xbrli:unitNumerator><xbrli:measure>ex:USD</xbrli:measure></xbrli:unitNumerator><xbrli:unitDenominator><xbrli:measure>ex:shares</xbrli:measure></xbrli:unitDenominator></xbrli:divide></xbrli:unit>
+  <ex:Revenue id="revenue" contextRef="duration" unitRef="usd" decimals="0">1234000</ex:Revenue>
+  <ex:Label contextRef="instant" xml:lang="en">Café</ex:Label>
+</xbrli:xbrl>

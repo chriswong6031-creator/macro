@@ -16,12 +16,22 @@ from .sec_document_spine import (
     build_filing_manifests,
     select_periodic_comparables,
 )
+from .ixbrl_extraction import (
+    FFXBRL_SCHEMA,
+    IxbrlExtraction,
+    IxbrlExtractionError,
+    build_ixbrl_extraction,
+    verify_ixbrl_extraction_source,
+)
 
 __all__ = [
     "FindingState",
+    "FFXBRL_SCHEMA",
     "FILING_MANIFEST_SCHEMA",
     "FilingManifestError",
     "ForensicsRegistry",
+    "IxbrlExtraction",
+    "IxbrlExtractionError",
     "KnowledgeClock",
     "RunResult",
     "VintagePolicy",
@@ -29,6 +39,7 @@ __all__ = [
     "DisclosureDiffRegistry",
     "DisclosureFinding",
     "build_filing_manifests",
+    "build_ixbrl_extraction",
     "compare_filings",
     "load_disclosure_diff_registry",
     "load_registry",
@@ -36,4 +47,5 @@ __all__ = [
     "registry_from_dict",
     "run_fixture_slice",
     "select_periodic_comparables",
+    "verify_ixbrl_extraction_source",
 ]
