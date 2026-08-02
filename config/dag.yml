@@ -3001,6 +3001,31 @@ modules:
       the last good bundle. Its append-only hash-only retrieval-receipt ledger and both
       direct CLI and standard Adapter runs emit the dated heartbeat frame.
 
+  - module: collectors.usaspending_subawards
+    reads:
+      - data/government_revenue/awards.parquet
+      - data/government_revenue/subaward_snapshots.parquet
+      - data/government_revenue/subaward_collection_receipts.jsonl
+      - data/government_revenue/subaward_projection_state.json
+      - data/government_revenue/subaward_ingest_status.json
+    writes:
+      - data/government_revenue/subaward_snapshots.parquet
+      - data/government_revenue/subaward_collection_receipts.jsonl
+      - data/government_revenue/subaward_projection_state.json
+      - data/government_revenue/subaward_ingest_status.json
+      - data/government_revenue/subaward_collector_heartbeat.parquet
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Keyless official USAspending prime-to-subaward evidence collector. Exact generated
+      prime award IDs scope bounded count and record-page requests; native broker
+      subaward IDs remain distinct even when displayed subaward numbers repeat. Per-prime
+      and per-run caps are explicit, hash-only receipts bind every published observation,
+      and interrupted or partial generations preserve the last good state. Reported
+      subaward amounts are self-reported context, never federal obligations, outlays,
+      additive prime value, issuer attribution, backlog, revenue, cash, or investment authority.
+
   - module: collectors.sam_gov
     reads:
       - data/sam_gov/naics_themes.json
@@ -3054,6 +3079,10 @@ modules:
       - data/government_revenue/award_event_projection_state.json
       - data/government_revenue/collection_receipts.jsonl
       - data/government_revenue/ingest_status.json
+      - data/government_revenue/subaward_snapshots.parquet
+      - data/government_revenue/subaward_collection_receipts.jsonl
+      - data/government_revenue/subaward_projection_state.json
+      - data/government_revenue/subaward_ingest_status.json
       - data/government_revenue/opportunities.parquet
       - data/government_revenue/opportunity_revisions.parquet
       - data/government_revenue/opportunity_documents.parquet
@@ -3062,10 +3091,12 @@ modules:
       - data/government_revenue/latest.json
       - data/government_revenue/workspace.json
       - data/government_revenue/dossiers.json
+      - data/government_revenue/subaward_dossiers.json
       - data/government_revenue/recipient_resolution_coverage.json
       - site/government-revenue-data/latest.json
       - site/government-revenue-data/workspace.json
       - site/government-revenue-data/dossiers.json
+      - site/government-revenue-data/subaward-dossiers.json
       - site/government_revenue.html
     impure: false
     needs_secrets: false
@@ -3084,6 +3115,9 @@ modules:
       fail-closed canonical-byte guard, so they can refresh matching site twins without
       advancing evidence state. A separate content-addressed dossier generation exposes
       bounded official award/action history and byte-identical canonical/public twins.
+      A sibling content-addressed subaward dossier rail consumes only its separately
+      receipt-bound generation and exact prime generated-ID linkage; it never widens the
+      prime dossier contract or adds reported subaward amounts to prime obligations.
       The builder emits public-company exposure candidates
       and procurement events with explicit provenance/limitations, never bidder odds,
       revenue forecasts, an investment rank, sizing rule, gate, or new signal.

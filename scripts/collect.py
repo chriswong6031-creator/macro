@@ -171,6 +171,7 @@ def all_adapters() -> dict:
         ("kalshi_releases", "collectors.kalshi_releases", "KalshiReleasesAdapter"),  # Kalshi CPI/NFP/claims bracket markets → implied distribution snapshots (MRI PR-K; keyless)
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
         ("usaspending_awards", "collectors.usaspending_awards", "UsaspendingAwardsAdapter"),  # keyless award/action detail + PIT snapshots -> Government Revenue Foresight
+        ("usaspending_subawards", "collectors.usaspending_subawards", "UsaspendingSubawardsAdapter"),  # bounded official count + identity pages; source-only, non-additive subaward context
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
@@ -361,7 +362,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "finnhub_transcripts",   # altdata-W1: transcript metadata catalog (same-day; plan-gated no-op on free tier)
     "stocktwits",            # altdata-W1: public bullish/bearish ratios + watchlist_count (keyless)
     "google_trends",         # SGA-W4: pytrends weekly relative search-interest (rotating ~20/night; 'blocked' when pytrends absent)
-    "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "prediction_markets",
+    "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
 }

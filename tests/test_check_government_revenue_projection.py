@@ -14,6 +14,7 @@ from scripts.check_government_revenue_projection import (
 )
 from engine.government_revenue.workspace import build_procurement_workspace
 from engine.government_revenue.dossiers import build_dossier_payload
+from engine.government_revenue.subaward_dossiers import build_subaward_dossier_payload
 from engine.government_revenue.entity_resolution import (
     build_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -124,6 +125,16 @@ def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path
     canonical_dir.joinpath("dossiers.json").write_text(
         build_government_revenue._canonical_json(dossier), encoding="utf-8"
     )
+    subaward_dossier = build_subaward_dossier_payload(
+        root,
+        as_of="2026-08-02",
+        prime_award_key_by_generated_id=(
+            build_government_revenue._prime_award_key_by_generated_id(dossier)
+        ),
+    )
+    canonical_dir.joinpath("subaward_dossiers.json").write_text(
+        build_government_revenue._canonical_json(subaward_dossier), encoding="utf-8"
+    )
     return build_government_revenue.build_site_only(root)
 
 
@@ -135,6 +146,8 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["events"] == 1
     assert result["bundle_id"].startswith("grw2-")
     assert result["dossier_content_id"].startswith("grd1-")
+    assert result["subaward_dossier_content_id"].startswith("grsd1-")
+    assert result["subaward_dossiers"] == 0
     assert result["html_bytes"] < 250_000
 
 
@@ -208,6 +221,17 @@ def test_projection_fence_rejects_stale_public_dossier_twin(tmp_path: Path) -> N
     public_dossier.write_text('{"stale":true}', encoding="utf-8")
 
     with pytest.raises(ProjectionDriftError, match="dossier twin differs"):
+        validate_projection(tmp_path)
+
+
+def test_projection_fence_rejects_stale_public_subaward_dossier_twin(tmp_path: Path) -> None:
+    _generation(tmp_path)
+    public_dossier = (
+        tmp_path / "site" / "government-revenue-data" / "subaward-dossiers.json"
+    )
+    public_dossier.write_text('{"stale":true}', encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match="subaward dossier twin differs"):
         validate_projection(tmp_path)
 
 

@@ -25,6 +25,11 @@ from engine.government_revenue.dossiers import (
     dossier_content_id,
     is_valid_dossier_payload,
 )
+from engine.government_revenue.subaward_dossiers import (
+    SUBAWARD_DOSSIER_CONTRACT,
+    is_valid_subaward_dossier_payload,
+    subaward_dossier_content_id,
+)
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
 router = APIRouter()
@@ -38,12 +43,18 @@ _DOSSIER_PATHS = (
     _REPO / "data" / "government_revenue" / "dossiers.json",
     _REPO / "site" / "government-revenue-data" / "dossiers.json",
 )
+_SUBAWARD_DOSSIER_PATHS = (
+    _REPO / "data" / "government_revenue" / "subaward_dossiers.json",
+    _REPO / "site" / "government-revenue-data" / "subaward-dossiers.json",
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 _NOTICE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _AWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
-_LOCK = threading.Lock()
+_SUBAWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
+_LOCK = threading.RLock()
 _CACHE: dict = {"path": None, "mtime_ns": None, "payload": None}
 _DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SENSITIVE_KEY = re.compile(
     r"(?:^private|api[_-]?key|authorization|(?:^|_)(?:secret|token|password|credential)s?(?:$|_)|"
     r"raw_(?:body|payload|receipt|request|response)|(?:request|response)_headers)",
@@ -152,6 +163,124 @@ def _load_dossiers() -> dict:
         ):
             raise HTTPException(status_code=503, detail="government revenue dossier artifact schema mismatch")
         _DOSSIER_CACHE.update(state=state, payload=payload)
+        return payload
+
+
+def _prime_award_key_by_generated_id(payload: dict) -> dict[str, str]:
+    """Build the exact, source-native parent bridge from the prime dossier."""
+    mapping: dict[str, str] = {}
+    for row in payload.get("awards") or []:
+        if not isinstance(row, dict):
+            raise HTTPException(status_code=503, detail="government revenue dossier schema mismatch")
+        award_key = row.get("award_key")
+        identity = row.get("identity")
+        generated_award_id = (
+            identity.get("generated_award_id") if isinstance(identity, dict) else None
+        )
+        if generated_award_id is None:
+            continue
+        if not isinstance(generated_award_id, str) or not generated_award_id or not isinstance(award_key, str) or not award_key:
+            raise HTTPException(status_code=503, detail="government revenue dossier parent bridge invalid")
+        previous = mapping.get(generated_award_id)
+        if previous is not None and previous != award_key:
+            raise HTTPException(status_code=503, detail="government revenue dossier parent bridge ambiguous")
+        mapping[generated_award_id] = award_key
+    return mapping
+
+
+def _subaward_parent_binding(row: dict) -> tuple[str, str] | None:
+    """Read only the strict parent pair emitted by the build-time rail."""
+    award_key = row.get("parent_award_key")
+    identity = row.get("identity")
+    generated_award_id = (
+        identity.get("parent_generated_award_id")
+        if isinstance(identity, dict)
+        else None
+    )
+    if not isinstance(award_key, str) or not award_key:
+        return None
+    if not isinstance(generated_award_id, str) or not generated_award_id:
+        return None
+    return award_key, generated_award_id
+
+
+def _validate_subaward_parent_bindings(payload: dict, prime_payload: dict) -> None:
+    """Fail closed unless every subaward cites exactly one prime dossier row."""
+    prime_by_generated = _prime_award_key_by_generated_id(prime_payload)
+    envelopes: dict[str, str] = {}
+    for envelope in payload.get("primes") or []:
+        if not isinstance(envelope, dict):
+            raise HTTPException(status_code=503, detail="government revenue subaward dossier schema mismatch")
+        generated_award_id = envelope.get("parent_generated_award_id")
+        award_key = envelope.get("award_key")
+        if not isinstance(generated_award_id, str) or not generated_award_id or not isinstance(award_key, str) or not award_key:
+            raise HTTPException(status_code=503, detail="government revenue subaward parent binding invalid")
+        if generated_award_id in envelopes:
+            raise HTTPException(status_code=503, detail="government revenue subaward parent binding ambiguous")
+        if prime_by_generated.get(generated_award_id) != award_key:
+            raise HTTPException(status_code=503, detail="government revenue subaward parent binding unresolved")
+        envelopes[generated_award_id] = award_key
+    if envelopes != prime_by_generated:
+        raise HTTPException(status_code=503, detail="government revenue subaward parent coverage mismatch")
+    for row in payload.get("subawards") or []:
+        if not isinstance(row, dict):
+            raise HTTPException(status_code=503, detail="government revenue subaward dossier schema mismatch")
+        binding = _subaward_parent_binding(row)
+        if binding is None:
+            raise HTTPException(status_code=503, detail="government revenue subaward parent binding invalid")
+        award_key, generated_award_id = binding
+        if prime_by_generated.get(generated_award_id) != award_key:
+            raise HTTPException(status_code=503, detail="government revenue subaward parent binding unresolved")
+
+
+def _load_subaward_dossiers() -> dict:
+    """Load one exact, precomputed subaward generation or fail closed.
+
+    This cache is deliberately independent from the prime dossier cache.  The
+    subaward artifact has its own content identity and twin boundary, but is
+    admitted only when every stored parent pair matches the current prime
+    dossier's exact generated-award-ID bridge.
+    """
+    canonical, site = _SUBAWARD_DOSSIER_PATHS
+    # Read the prime dossier before deciding a subaward cache hit: a subaward
+    # payload that survived while its prime parent generation changed is not a
+    # valid bound rail.
+    prime_payload = _load_dossiers()
+    try:
+        canonical_state = canonical.stat()
+        site_state = site.stat()
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="government revenue subaward dossier artifact unavailable") from exc
+    state = (
+        canonical_state.st_mtime_ns,
+        canonical_state.st_size,
+        site_state.st_mtime_ns,
+        site_state.st_size,
+        prime_payload.get("content_id"),
+    )
+    with _LOCK:
+        if (
+            _SUBAWARD_DOSSIER_CACHE["payload"] is not None
+            and _SUBAWARD_DOSSIER_CACHE["state"] == state
+        ):
+            return _SUBAWARD_DOSSIER_CACHE["payload"]
+        try:
+            canonical_bytes = canonical.read_bytes()
+            site_bytes = site.read_bytes()
+            payload = json.loads(canonical_bytes)
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="government revenue subaward dossier artifact unreadable") from exc
+        if canonical_bytes != site_bytes:
+            raise HTTPException(status_code=503, detail="government revenue subaward dossier artifact twin mismatch")
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != SUBAWARD_DOSSIER_CONTRACT
+            or not is_valid_subaward_dossier_payload(payload)
+            or subaward_dossier_content_id(payload) != payload.get("content_id")
+        ):
+            raise HTTPException(status_code=503, detail="government revenue subaward dossier artifact schema mismatch")
+        _validate_subaward_parent_bindings(payload, prime_payload)
+        _SUBAWARD_DOSSIER_CACHE.update(state=state, payload=payload)
         return payload
 
 
@@ -296,6 +425,24 @@ def _validated_award_key(value: str) -> str:
     return value
 
 
+def _validated_subaward_key(value: str) -> str:
+    if not _SUBAWARD_KEY.fullmatch(value):
+        raise HTTPException(status_code=400, detail="invalid subaward key")
+    return value
+
+
+def _validated_action_date(value: str | None, *, label: str) -> str | None:
+    if value is None:
+        return None
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        raise HTTPException(status_code=400, detail=f"invalid {label}")
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"invalid {label}") from exc
+    return value
+
+
 def _dossier_cursor_binding(scope: dict) -> str:
     """Bind opaque cursors to the exact artifact, route, and stored-field filters."""
     raw = json.dumps(scope, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
@@ -329,6 +476,42 @@ def _decode_dossier_cursor(cursor: str | None, *, content_id: str, binding: str)
         or value > 50_000
     ):
         raise HTTPException(status_code=400, detail="invalid dossier cursor")
+    return value
+
+
+def _encode_subaward_cursor(offset: int, *, content_id: str, binding: str) -> str:
+    """Emit an opaque cursor bound to one immutable subaward generation."""
+    if offset < 0 or offset > 50_000:
+        raise ValueError("invalid subaward cursor offset")
+    raw = f"sd1:{content_id}:{binding}:{offset}"
+    return base64.urlsafe_b64encode(raw.encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_subaward_cursor(
+    cursor: str | None,
+    *,
+    content_id: str,
+    binding: str,
+) -> int:
+    if not cursor:
+        return 0
+    if len(cursor) > 200 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid subaward cursor")
+    try:
+        padded = cursor + "=" * (-len(cursor) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("ascii")
+        version, cursor_content, cursor_binding, offset = raw.split(":", 3)
+        value = int(offset)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid subaward cursor") from exc
+    if (
+        version != "sd1"
+        or cursor_content != content_id
+        or cursor_binding != binding
+        or value < 0
+        or value > 50_000
+    ):
+        raise HTTPException(status_code=400, detail="invalid subaward cursor")
     return value
 
 
@@ -400,6 +583,46 @@ def _public_dossier_action(row: dict) -> dict:
     return _scrub_public(out)
 
 
+def _subaward_map(payload: dict) -> dict[str, dict]:
+    return {
+        row["subaward_key"]: row
+        for row in payload.get("subawards") or []
+        if isinstance(row, dict) and isinstance(row.get("subaward_key"), str)
+    }
+
+
+def _subaward_parent_coverage(payload: dict, award_key: str) -> dict:
+    matches = [
+        row
+        for row in payload.get("primes") or []
+        if isinstance(row, dict) and row.get("award_key") == award_key
+    ]
+    if len(matches) != 1 or not isinstance(matches[0].get("coverage"), dict):
+        raise HTTPException(
+            status_code=503,
+            detail="government revenue subaward parent coverage unavailable",
+        )
+    return matches[0]["coverage"]
+
+
+def _public_subaward(row: dict) -> dict:
+    """Expose only stored public subaward evidence, never source receipts."""
+    allowed = {
+        "subaward_key", "parent_award_key", "identity", "subawardee_name",
+        "subaward_type", "description", "description_truncated", "dates",
+        "reported_amount", "source", "provenance",
+    }
+    out = {key: row[key] for key in allowed if key in row}
+    source = row.get("source")
+    if isinstance(source, dict):
+        out["source"] = {
+            "publisher": "USAspending.gov",
+            "subaward_url": _dossier_source_url(source.get("subaward_url")),
+            "parent_award_url": _dossier_source_url(source.get("parent_award_url")),
+        }
+    return _scrub_public(out)
+
+
 def _dossier_envelope(payload: dict, *, results: list[dict], next_cursor: str | None, total: int) -> dict:
     return _scrub_public({
         "schema_version": payload.get("schema_version"),
@@ -408,6 +631,31 @@ def _dossier_envelope(payload: dict, *, results: list[dict], next_cursor: str | 
         "known_at": payload.get("known_at"),
         "source_coverage": payload.get("source_coverage"),
         "freshness": payload.get("freshness"),
+        "results": results,
+        "next_cursor": next_cursor,
+        "total": total,
+    })
+
+
+def _subaward_dossier_envelope(
+    payload: dict,
+    *,
+    results: list[dict],
+    next_cursor: str | None,
+    total: int,
+    parent_coverage: dict,
+) -> dict:
+    """Return a precomputed-only subaward page with explicit coverage state."""
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "authority": payload.get("authority"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "parent_coverage": parent_coverage,
+        "limitations": payload.get("limitations"),
         "results": results,
         "next_cursor": next_cursor,
         "total": total,
@@ -635,6 +883,123 @@ def award_actions(
         ),
         total=len(filtered),
     )
+
+
+def _subaward_action_date(row: dict) -> str | None:
+    dates = row.get("dates")
+    value = dates.get("action_date") if isinstance(dates, dict) else None
+    return value if isinstance(value, str) else None
+
+
+def _subaward_subrecipient_text(row: dict) -> str:
+    return str(row.get("subawardee_name") or "").casefold()
+
+
+@router.get("/api/government-revenue/award/{award_key}/subawards")
+def award_subawards(
+    award_key: str,
+    subrecipient: str | None = Query(default=None, min_length=1, max_length=200),
+    action_date_from: str | None = Query(default=None),
+    action_date_to: str | None = Query(default=None),
+    sort: str = Query(default="action_date_desc", pattern=r"^action_date_desc$"),
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> dict:
+    """Page only precomputed, exact-parent subaward observations.
+
+    An empty valid rail returns a normal zero-result envelope for a covered
+    prime award.  That expresses an uninitialized or unavailable source
+    honestly without inventing a subaward relationship; a malformed or
+    partial artifact is rejected by the loader before it reaches this route.
+    """
+    award_key = _validated_award_key(award_key)
+    date_from = _validated_action_date(action_date_from, label="action_date_from")
+    date_to = _validated_action_date(action_date_to, label="action_date_to")
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise HTTPException(status_code=400, detail="invalid action date range")
+    normalized_subrecipient = subrecipient.casefold().strip() if subrecipient else None
+    if normalized_subrecipient == "":
+        raise HTTPException(status_code=400, detail="invalid subrecipient")
+
+    prime_payload = _load_dossiers()
+    if award_key not in set(_prime_award_key_by_generated_id(prime_payload).values()):
+        raise HTTPException(status_code=404, detail="award not covered")
+    payload = _load_subaward_dossiers()
+    parent_coverage = _subaward_parent_coverage(payload, award_key)
+    rows = [
+        row
+        for row in payload.get("subawards") or []
+        if isinstance(row, dict)
+        and (binding := _subaward_parent_binding(row)) is not None
+        and binding[0] == award_key
+    ]
+    filtered = [
+        row for row in rows
+        if (not normalized_subrecipient or normalized_subrecipient in _subaward_subrecipient_text(row))
+        and (
+            (date_from is None and date_to is None)
+            or (
+                (row_date := _subaward_action_date(row)) is not None
+                and (date_from is None or row_date >= date_from)
+                and (date_to is None or row_date <= date_to)
+            )
+        )
+    ]
+    filtered.sort(
+        key=lambda row: (_subaward_action_date(row) or "", str(row.get("subaward_key") or "")),
+        reverse=True,
+    )
+    binding = _dossier_cursor_binding({
+        "route": "award_subawards",
+        "award_key": award_key,
+        "subrecipient": normalized_subrecipient,
+        "action_date_from": date_from,
+        "action_date_to": date_to,
+        "sort": sort,
+    })
+    offset = _decode_subaward_cursor(
+        cursor, content_id=payload["content_id"], binding=binding,
+    )
+    page = filtered[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _subaward_dossier_envelope(
+        payload,
+        results=[_public_subaward(row) for row in page],
+        next_cursor=(
+            _encode_subaward_cursor(
+                next_offset, content_id=payload["content_id"], binding=binding,
+            )
+            if next_offset < len(filtered)
+            else None
+        ),
+        total=len(filtered),
+        parent_coverage=parent_coverage,
+    )
+
+
+@router.get("/api/government-revenue/subaward/{subaward_key}")
+def subaward(subaward_key: str) -> dict:
+    """Return one exact precomputed subaward observation, never live lookup."""
+    subaward_key = _validated_subaward_key(subaward_key)
+    payload = _load_subaward_dossiers()
+    row = _subaward_map(payload).get(subaward_key)
+    if row is None:
+        raise HTTPException(status_code=404, detail="subaward not covered")
+    binding = _subaward_parent_binding(row)
+    if binding is None:
+        raise HTTPException(status_code=503, detail="government revenue subaward parent binding invalid")
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "authority": payload.get("authority"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "parent_coverage": _subaward_parent_coverage(payload, binding[0]),
+        "limitations": payload.get("limitations"),
+        "subaward": _public_subaward(row),
+    })
 
 
 @router.get("/api/government-revenue/award/{award_key}")

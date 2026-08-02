@@ -17,7 +17,10 @@ name: government-revenue-live
 # bounded, receipt-bound baseline. This lane only folds an already committed, complete triad;
 # its local guard is bounded (three paths plus a small JSON state) and fails closed
 # before a partial source generation can publish. Shared collect byproducts remain
-# runner-local and are never committed. Generic site-wide render lanes may repeat a
+# runner-local and are never committed. The daily collector likewise remains the sole
+# writer of the four-file USAspending subaward source bundle; this lane validates its
+# generation and publishes only the derived content-addressed subaward twins. Generic
+# site-wide render lanes may repeat a
 # byte-guarded deterministic rebake so their HTML sweeps cannot overwrite a newer
 # embedded bundle, but cannot advance canonical evidence. The closest proven
 # commit/push pattern is whitehouse-sentinel.yml, upgraded here to the shared
@@ -57,6 +60,11 @@ on:
       - "data/government_revenue/recipient_entity_graph.json"
       - "data/government_revenue/ingest_status.json"
       - "data/government_revenue/collection_receipts.jsonl"
+      - "data/government_revenue/subaward_snapshots.parquet"
+      - "data/government_revenue/subaward_collection_receipts.jsonl"
+      - "data/government_revenue/subaward_projection_state.json"
+      - "data/government_revenue/subaward_ingest_status.json"
+      - "data/government_revenue/subaward_collector_heartbeat.parquet"
       - "data/government_revenue/opportunities.parquet"
       - "data/government_revenue/opportunity_revisions.parquet"
       - "data/government_revenue/opportunity_documents.parquet"
@@ -66,6 +74,7 @@ on:
       - "contracts/government_revenue/**"
       - "collectors/sam_gov.py"
       - "collectors/usaspending_awards.py"
+      - "collectors/usaspending_subawards.py"
       - "engine/government_revenue/**"
       - "lib/pages.py"
       - "scripts/build_government_revenue.py"
@@ -355,6 +364,13 @@ jobs:
             data/government_revenue/award_event_projection_state.json
           )
           award_event_receipt_path=data/government_revenue/collection_receipts.jsonl
+          subaward_bundle_paths=(
+            data/government_revenue/subaward_snapshots.parquet
+            data/government_revenue/subaward_collection_receipts.jsonl
+            data/government_revenue/subaward_projection_state.json
+            data/government_revenue/subaward_ingest_status.json
+          )
+          subaward_heartbeat_path=data/government_revenue/subaward_collector_heartbeat.parquet
           recipient_graph_path=data/government_revenue/recipient_entity_graph.json
 
           assert_award_event_bundle() {
@@ -504,6 +520,65 @@ jobs:
             fi
           }
 
+          assert_subaward_bundle() {
+            local present=0 tracked=0 path
+            for path in "${subaward_bundle_paths[@]}"; do
+              [ -f "$path" ] && present=$((present + 1))
+              git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 && tracked=$((tracked + 1))
+            done
+            if [ "$present" -eq 0 ]; then
+              if [ "$tracked" -ne 0 ]; then
+                echo "::error title=subaward bundle missing::tracked receipt-bound subaward artifacts disappeared from the checkout; refusing a partial projection"
+                return 1
+              fi
+              # Empty-first is an explicit public state until the daily collector
+              # establishes its first complete receipt-bound generation.
+              SUBAWARD_BUNDLE_PRESENT=false
+              echo "receipt-bound subaward bundle not initialized yet; publishing an unavailable zero-row dossier"
+              return 0
+            fi
+            if [ "$present" -ne "${#subaward_bundle_paths[@]}" ] || [ "$tracked" -ne "${#subaward_bundle_paths[@]}" ]; then
+              echo "::error title=subaward bundle incomplete::subaward snapshots, receipts, activation state, and ingest status must arrive as one committed bundle"
+              return 1
+            fi
+            python - \
+              data/government_revenue/subaward_projection_state.json \
+              data/government_revenue/subaward_snapshots.parquet <<'PY'
+          from __future__ import annotations
+
+          import json
+          import sys
+          from pathlib import Path
+
+          import pandas as pd
+
+          from collectors.usaspending_subawards import subaward_projection_generation_matches
+
+          try:
+              state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              snapshots = pd.read_parquet(Path(sys.argv[2]))
+          except Exception as exc:
+              raise SystemExit("subaward source generation could not be read") from exc
+          if not isinstance(state, dict) or not subaward_projection_generation_matches(state, snapshots):
+              raise SystemExit("subaward source snapshot does not match its activation generation")
+          PY
+            SUBAWARD_BUNDLE_PRESENT=true
+          }
+
+          assert_subaward_source_clean() {
+            # The 30-minute SAM lane is a reader of daily-owned subaward evidence.
+            # It may publish deterministic dossier twins, but it cannot advance,
+            # rewrite, or stage any collector-owned source or health artifact.
+            if ! git diff --quiet -- "${subaward_bundle_paths[@]}" "$subaward_heartbeat_path"; then
+              echo "::error title=subaward source mutation::the SAM fast path cannot publish a locally changed USAspending subaward source bundle"
+              return 1
+            fi
+            if ! git diff --cached --quiet -- "${subaward_bundle_paths[@]}" "$subaward_heartbeat_path"; then
+              echo "::error title=subaward source staged::the SAM fast path cannot stage a USAspending subaward source mutation"
+              return 1
+            fi
+          }
+
           assert_recipient_graph_source_clean() {
             # Recipient attribution is a separately reviewed exact-ID input.
             # Neither the SAM collector nor the projection builder may curate,
@@ -520,10 +595,13 @@ jobs:
 
           assert_award_event_bundle
           assert_award_event_source_clean
+          assert_subaward_bundle
+          assert_subaward_source_clean
           assert_recipient_graph_source_clean
 
           # Stage only the first-seen SAM evidence, its runner heartbeat, the protected
-          # complete event bundle, and rebuilt context/display twins. In particular, do
+          # complete event bundle, and rebuilt context/display twins (including the
+          # separately governed subaward dossier). In particular, do
           # NOT stage shared collect run-status, qledger, governance, receipt-ledger, or
           # other forward-ledger byproducts. The event bundle paths below are clean
           # carry-through inputs after the guard above, never a second collection writer.
@@ -540,10 +618,12 @@ jobs:
             data/government_revenue/latest.json
             data/government_revenue/workspace.json
             data/government_revenue/dossiers.json
+            data/government_revenue/subaward_dossiers.json
             data/government_revenue/recipient_resolution_coverage.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
             site/government-revenue-data/dossiers.json
+            site/government-revenue-data/subaward-dossiers.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -572,10 +652,12 @@ jobs:
             data/government_revenue/latest.json \
             data/government_revenue/workspace.json \
             data/government_revenue/dossiers.json \
+            data/government_revenue/subaward_dossiers.json \
             data/government_revenue/recipient_resolution_coverage.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
             site/government-revenue-data/dossiers.json \
+            site/government-revenue-data/subaward-dossiers.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
@@ -602,16 +684,20 @@ jobs:
               # A non-fast-forward push loops back through this same re-render.
               assert_award_event_bundle
               assert_award_event_source_clean
+              assert_subaward_bundle
+              assert_subaward_source_clean
               assert_recipient_graph_source_clean
               python -m scripts.build_government_revenue
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
+                data/government_revenue/subaward_dossiers.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
+                site/government-revenue-data/subaward-dossiers.json \
                 site/government_revenue.html
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
@@ -620,10 +706,12 @@ jobs:
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
+                data/government_revenue/subaward_dossiers.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
+                site/government-revenue-data/subaward-dossiers.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

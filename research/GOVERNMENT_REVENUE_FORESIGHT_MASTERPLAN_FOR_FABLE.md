@@ -1425,6 +1425,18 @@ Exit gate:
 
 ### Lane 1 — federal award-action spine
 
+**Wave 6 receipt:** the first subaward substrate is implemented as an independent,
+receipt-bound USAspending rail. It uses exact prime generated-award IDs and native broker
+row IDs, preserves semantic versions, and publishes content-addressed canonical/public
+dossier twins plus bounded list/detail APIs. Collection is capped at 160 deterministic
+parents, 100 rows per page, five pages per parent, 2,000 detail rows per run, and 2,000
+public current identities. Parents above 500 reported rows or beyond the run cap publish
+verified counts with explicit count-only coverage and no invented details. Reported
+subaward amounts remain self-reported subrecipient context—not obligations, outlays,
+prime value, backlog, revenue, cash, issuer attribution, or additive value. This receipt
+does not claim the full bulk-history lane, issuer/subcontractor mapping, frontend dossier
+panel, or signal authority; those remain gated follow-ons.
+
 Build:
 
 - bulk historical contracts, IDVs, grants, and subawards;
