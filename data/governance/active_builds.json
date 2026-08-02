@@ -1,35 +1,191 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-01T19:09:40.571160+00:00",
+  "generated_at": "2026-08-02T01:14:21.966790+00:00",
   "base": {
-    "sha": "a2d2dfe46671d4910a36bbb958d1acd8c8ef7f46"
+    "sha": "8300a2b990f8dc70ebc3cb7e109f985175cdd94a"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 4190,
-      "title": "policy_watch: revamp to macro.html design quality",
-      "head_ref": "claude/ui-enhancement-older-page-d75ac0",
-      "updated_at": "2026-08-01T14:11:36Z",
+      "number": 4219,
+      "title": "Options: publish the exposure profile block + retire the last cumulative-flip copy",
+      "head_ref": "claude/msc-profile-wave",
+      "updated_at": "2026-08-02T01:02:00Z",
       "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 3,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "engine/policy_intent_desk.py",
-        "site/policy_watch.html",
-        "templates/policy_watch.html.j2"
+        "engine/agg_trend.py",
+        "engine/gex_engine.py",
+        "engine/options_hub.py",
+        "engine/options_matrix.py",
+        "scripts/repair_gex_history.py",
+        "tests/test_agg_greek_trend.py",
+        "tests/test_gex_engine.py",
+        "tests/test_options_hub.py",
+        "tests/test_options_matrix.py"
       ],
       "protected_paths_touched": []
+    },
+    {
+      "number": 4212,
+      "title": "Capital Structure Wave 2A: observed filing-state projection",
+      "head_ref": "codex/capital-structure-wave2a-projection",
+      "updated_at": "2026-08-02T00:39:18Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 16,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "contracts/capital_structure_projection.schema.json",
+        "data/capital_structure/projection.json",
+        "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md",
+        "docs/SIGNAL_BUS.md",
+        "engine/capital_structure/__init__.py",
+        "engine/capital_structure/projection.py",
+        "scripts/build_capital_structure_projection.py",
+        "site/capital-structure-data/latest.json",
+        "tests/test_build_capital_structure_projection.py",
+        "tests/test_capital_structure_projection.py",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ]
+    },
+    {
+      "number": 4209,
+      "title": "fix(register): strip front-facing falsifier register beyond the Policy Watch estate (incl. the four dated reports)",
+      "head_ref": "claude/silly-mahavira-49e33e",
+      "updated_at": "2026-08-02T01:12:47Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 95,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/alerts/alerts_log.parquet",
+        "engine/ai_desk.py",
+        "engine/ai_desk_scorer.py",
+        "engine/altdata_brain.py",
+        "engine/briefing.py",
+        "engine/btc_alerts.py",
+        "engine/china_intel_analysis.py",
+        "engine/china_radar.py",
+        "engine/demand_ledger.py",
+        "engine/desk_grader.py",
+        "engine/falsifier_tripwires.py",
+        "engine/foresight_analyst.py",
+        "engine/hub_track_record.py",
+        "engine/index_leadership_track.py",
+        "engine/intel_hub.py",
+        "engine/master_brain.py",
+        "engine/master_brain_scorer.py",
+        "engine/narrative_rotation.py",
+        "engine/neuralweb/theme_asymmetry.py",
+        "engine/stock_desk.py",
+        "engine/subsector_track_record.py",
+        "engine/thematic_desk.py",
+        "scripts/build_reports.py",
+        "scripts/build_state_of_themes.py",
+        "scripts/build_vector.py",
+        "site/ai_desk.html",
+        "site/ai_desk.js",
+        "site/ai_desk.json",
+        "site/ai_desk_thematic.js",
+        "site/aibrief.html",
+        "site/aidesk_lean.js",
+        "site/allocation.html",
+        "site/allocation_canada.html",
+        "site/allocation_china.html",
+        "site/allocation_hk.html",
+        "site/allocationdata/ai_desk_canada.json",
+        "site/allocationdata/ai_desk_china.json",
+        "site/allocationdata/ai_desk_hk.json",
+        "site/allocationdata/ai_desk_us.json",
+        "site/allocationdata/allocation.json",
+        "site/allocationdata/allocation_canada.json",
+        "site/allocationdata/allocation_china.json",
+        "site/allocationdata/allocation_hk.json",
+        "site/alt_data.html",
+        "site/altdata/brain.json",
+        "site/altdata/mastermind.json",
+        "site/china_history.html",
+        "site/china_intel.html",
+        "site/china_intel/command.json",
+        "site/china_intel_analysis/analysis.json",
+        "site/china_radar.html",
+        "site/china_stocks_lab.html",
+        "site/chinaradar/radar.json",
+        "site/committee.html",
+        "site/congress_trades.html",
+        "site/foresight.html",
+        "site/intel_hub/hub.json",
+        "site/intel_hub/track_record.json",
+        "site/intelligence/briefing.json",
+        "site/intelligence_hub.html",
+        "site/marketdata/index_leadership.json",
+        "site/marketdata/subsector_rotation.json",
+        "site/neural_web.html",
+        "site/neuralwebdata/theme_asymmetry.json",
+        "site/report_bessent_jun24.html",
+        "site/report_haven_audition.html",
+        "site/report_relapse_jul8.html",
+        "site/report_second_act.html",
+        "site/reports.html",
+        "site/start.html",
+        "site/state_of_themes.html",
+        "site/stock.html",
+        "site/us_track_record.html",
+        "site/whdata/tw-2026-06-30-tga-release.json",
+        "site/whitehouse.html",
+        "templates/ai_desk.html.j2",
+        "templates/ai_desk.js",
+        "templates/ai_desk_thematic.js",
+        "templates/aibrief.html.j2",
+        "templates/aidesk_lean.js",
+        "templates/allocation.html.j2",
+        "templates/alt_data.html.j2",
+        "templates/china_history.html.j2",
+        "templates/china_intel.html.j2",
+        "templates/china_radar.html.j2",
+        "templates/china_stocks_lab.html.j2",
+        "templates/committee.html.j2",
+        "templates/foresight.html.j2",
+        "templates/neural_web.html.j2",
+        "templates/report_bessent_jun24.html.j2",
+        "templates/report_haven_audition.html.j2",
+        "templates/report_relapse_jul8.html.j2",
+        "templates/report_second_act.html.j2",
+        "templates/state_of_themes.html.j2",
+        "tests/test_front_facing_register.py"
+      ],
+      "protected_paths_touched": [
+        "engine/neuralweb/theme_asymmetry.py",
+        "site/neuralwebdata/theme_asymmetry.json"
+      ]
     },
     {
       "number": 4185,
       "title": "feat(tiers): Phase 2 \u2014 the catalog speaks essential; Stripe product migrates in place",
       "head_ref": "claude/tier-essential-m2",
-      "updated_at": "2026-08-01T11:15:39Z",
+      "updated_at": "2026-08-01T22:58:44Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -93,371 +249,10 @@
       ]
     },
     {
-      "number": 4183,
-      "title": "engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store",
-      "head_ref": "claude/vigilant-dijkstra-e5f8b4",
-      "updated_at": "2026-08-01T11:39:10Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "engine/hk_cbbc.py",
-        "templates/hk.html.j2",
-        "tests/test_hk_cbbc.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4162,
-      "title": "outbox: fable audit of the 2026-08-01 nightly slate \u2014 approvals + rejections with named reasons",
-      "head_ref": "claude/nightly-audit-0801",
-      "updated_at": "2026-08-01T11:39:15Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 13,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "admin/marketing.py",
-        "admin/marketing_floor.py",
-        "admin/server.py",
-        "admin/static/app.js",
-        "admin/static/styles.css",
-        "data/marketing/outbox/status_ledger.jsonl",
-        "engine/marketing/copy_auditor.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/market_facts.py",
-        "engine/marketing/outbox.py",
-        "tests/test_admin_marketing.py",
-        "tests/test_admin_marketing_floor.py",
-        "tests/test_marketing_anchor_law.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4132,
-      "title": "test(options): sweep hover + aria + script-authored copy \u2014 the tier the guard could not see",
-      "head_ref": "claude/options-tip-copy-sweep",
-      "updated_at": "2026-07-31T07:39:35Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "scripts/build_options_command.py",
-        "templates/options.html.j2",
-        "tests/test_build_options_command.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4130,
-      "title": "fix(gex): IV-rank band must not render through a directional token",
-      "head_ref": "claude/magical-feynman-5d5479",
-      "updated_at": "2026-07-31T07:39:37Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "site/gex.js",
-        "tests/test_gex_js_iv_rank_color.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4123,
-      "title": "feat(oip-w1): nav front door + Ticker workbench depth \u2014 filmstrip, search, 5 new reads",
-      "head_ref": "claude/oip-w1-build",
-      "updated_at": "2026-07-31T06:43:26Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 100,
-      "files_truncated": true,
-      "files_error": false,
-      "files": [
-        "engine/session_digest.py",
-        "lib/illus.py",
-        "mockups/refs/oip/w1/build/01_nav_flyout_en_dark.png",
-        "mockups/refs/oip/w1/build/02_ticker_core_en_dark.png",
-        "mockups/refs/oip/w1/build/02_ticker_core_en_light.png",
-        "mockups/refs/oip/w1/build/02_ticker_core_zh_dark.png",
-        "mockups/refs/oip/w1/build/03_ticker_core_mobile_375.png",
-        "mockups/refs/oip/w1/build/04_scanner_declared_cap_en_dark.png",
-        "mockups/refs/oip/w1/build/05_leaders_declared_caps_en_dark.png",
-        "mockups/refs/oip/w1/build/06_gex_detail_head_filmstrip_en_dark.png",
-        "mockups/refs/oip/w1/build/07_chrome_light_sanity.png",
-        "mockups/refs/oip/w1/build/08_ticker_degraded_states_aapl_en_dark.png",
-        "mockups/refs/oip/w1/build/fix_b1_nav_flyout_js_enabled_en.png",
-        "mockups/refs/oip/w1/build/fix_b1_nav_flyout_js_enabled_zh.png",
-        "mockups/refs/oip/w1/build/fix_b2_wall_check_agree_disagree_en.png",
-        "mockups/refs/oip/w1/build/fix_b2_wall_check_agree_disagree_zh.png",
-        "mockups/refs/oip/w1/build/fix_b2_wall_check_disagree_tooltip_en.png",
-        "mockups/refs/oip/w1/build/fix_b2_wall_check_disagree_tooltip_zh.png",
-        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_high_coverage_en.png",
-        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_high_coverage_zh.png",
-        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_low_coverage_en.png",
-        "mockups/refs/oip/w1/build/fix_b3_filmstrip_six_shapes_low_coverage_zh.png",
-        "mockups/refs/oip/w1/build/fix_m1_filmstrip_real_minutes_zero_and_absent_en.png",
-        "mockups/refs/oip/w1/build/fix_m1_filmstrip_real_minutes_zero_and_absent_zh.png",
-        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_dark_en.png",
-        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_dark_zh.png",
-        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_light_en.png",
-        "mockups/refs/oip/w1/build/fix_m2_iv_rank_bands_light_zh.png",
-        "mockups/refs/oip/w1/build/fix_m3_wall_check_mobile_375px_en.png",
-        "mockups/refs/oip/w1/build/fix_m3_wall_check_mobile_375px_zh.png",
-        "research/options_estate/W1_DESIGN_SPEC.md",
-        "scripts/build_gex_board.py",
-        "scripts/build_options_command.py",
-        "scripts/build_session_digest.py",
-        "site/_mockup_ccw_credit_desk.html",
-        "site/about-research.html",
-        "site/account.js",
-        "site/advanced.html",
-        "site/ai_desk.html",
-        "site/aibrief.html",
-        "site/alerts.html",
-        "site/allocation.html",
-        "site/allocation_canada.html",
-        "site/allocation_china.html",
-        "site/allocation_hk.html",
-        "site/alt_data.html",
-        "site/anticipation.html",
-        "site/basket/ai_agents.html",
-        "site/basket/ai_infra.html",
-        "site/basket/ai_neoclouds.html",
-        "site/basket/ai_semiconductors.html",
-        "site/basket/ai_software.html",
-        "site/basket/big_pharma.html",
-        "site/basket/critical_minerals.html",
-        "site/basket/crypto.html",
-        "site/basket/crypto_rails.html",
-        "site/basket/cybersecurity.html",
-        "site/basket/data_center_power.html",
-        "site/basket/defense.html",
-        "site/basket/defensives.html",
-        "site/basket/energy_complex.html",
-        "site/basket/gold_miners.html",
-        "site/basket/housing.html",
-        "site/basket/industrial_distribution.html",
-        "site/basket/insurance.html",
-        "site/basket/mag7.html",
-        "site/basket/managed_care.html",
-        "site/basket/memory_storage.html",
-        "site/basket/non_ai_software.html",
-        "site/basket/non_ai_tech.html",
-        "site/basket/nuclear_power.html",
-        "site/basket/obesity_glp1.html",
-        "site/basket/payments_fintech.html",
-        "site/basket/power_grid.html",
-        "site/basket/quantum_computing.html",
-        "site/basket/regional_banks.html",
-        "site/basket/reshoring.html",
-        "site/basket/retail.html",
-        "site/basket/robotics_automation.html",
-        "site/basket/semicap_equipment.html",
-        "site/basket/space_economy.html",
-        "site/basket/travel.html",
-        "site/basket/uranium_miners.html",
-        "site/basket/us_sector_comm.html",
-        "site/basket/us_sector_discretionary.html",
-        "site/basket/us_sector_energy.html",
-        "site/basket/us_sector_financials.html",
-        "site/basket/us_sector_health.html",
-        "site/basket/us_sector_industrials.html",
-        "site/basket/us_sector_materials.html",
-        "site/basket/us_sector_realestate.html",
-        "site/basket/us_sector_staples.html",
-        "site/basket/us_sector_tech.html",
-        "site/basket/us_sector_utilities.html",
-        "site/basket_canada/ca_asset_mgrs.html",
-        "site/basket_canada/ca_banks.html",
-        "site/basket_canada/ca_base_metals.html",
-        "site/basket_canada/ca_consumer.html",
-        "site/basket_canada/ca_gold.html",
-        "site/basket_canada/ca_insurers.html"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4105,
-      "title": "fix(ship-guard): the uncommitted gate must judge THIS checkout's work only",
-      "head_ref": "claude/gallant-turing-2a018e",
-      "updated_at": "2026-07-31T01:17:59Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".claude/hooks/ship_loop_guard.py",
-        "AGENTS.md",
-        "CLAUDE.md",
-        "tests/test_ship_loop_guard.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4070,
-      "title": "fix(calculators): keep the whole anchor inside each language branch \u2014 48 t() calls shipped href=\"</span>\"",
-      "head_ref": "claude/silly-dirac-5422a9",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 56,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci-main-heartbeat.yml",
-        ".github/workflows/ci.yml",
-        "site/tools/calculators/cagr.html",
-        "site/tools/calculators/compounding.html",
-        "site/tools/calculators/covered-call.html",
-        "site/tools/calculators/dividend.html",
-        "site/tools/calculators/dollar-cost-averaging.html",
-        "site/tools/calculators/drawdown-recovery.html",
-        "site/tools/calculators/forex-pip-value.html",
-        "site/tools/calculators/inflation.html",
-        "site/tools/calculators/kelly-criterion.html",
-        "site/tools/calculators/margin.html",
-        "site/tools/calculators/net-worth.html",
-        "site/tools/calculators/options-profit.html",
-        "site/tools/calculators/percentage-gain-loss.html",
-        "site/tools/calculators/portfolio-rebalancing.html",
-        "site/tools/calculators/position-size.html",
-        "site/tools/calculators/retirement.html",
-        "site/tools/calculators/risk-of-ruin.html",
-        "site/tools/calculators/risk-reward.html",
-        "site/tools/calculators/roi.html",
-        "site/tools/calculators/rule-of-72.html",
-        "site/tools/calculators/savings-goal.html",
-        "site/tools/calculators/sharpe-ratio.html",
-        "site/tools/calculators/short-selling.html",
-        "site/tools/calculators/stock-average.html",
-        "site/tools/calculators/stop-loss-take-profit.html",
-        "site/tools/calculators/trade-profit.html",
-        "templates/calculators/cagr.html.j2",
-        "templates/calculators/compounding.html.j2",
-        "templates/calculators/covered_call.html.j2",
-        "templates/calculators/dividend.html.j2",
-        "templates/calculators/dollar_cost_averaging.html.j2",
-        "templates/calculators/drawdown_recovery.html.j2",
-        "templates/calculators/forex_pip_value.html.j2",
-        "templates/calculators/inflation.html.j2",
-        "templates/calculators/kelly_criterion.html.j2",
-        "templates/calculators/margin.html.j2",
-        "templates/calculators/net_worth.html.j2",
-        "templates/calculators/options_profit.html.j2",
-        "templates/calculators/percentage_gain_loss.html.j2",
-        "templates/calculators/portfolio_rebalancing.html.j2",
-        "templates/calculators/position_size.html.j2",
-        "templates/calculators/retirement.html.j2",
-        "templates/calculators/risk_of_ruin.html.j2",
-        "templates/calculators/risk_reward.html.j2",
-        "templates/calculators/roi.html.j2",
-        "templates/calculators/rule_of_72.html.j2",
-        "templates/calculators/savings_goal.html.j2",
-        "templates/calculators/sharpe_ratio.html.j2",
-        "templates/calculators/short_selling.html.j2",
-        "templates/calculators/stock_average.html.j2",
-        "templates/calculators/stop_loss_take_profit.html.j2",
-        "templates/calculators/trade_profit.html.j2",
-        "tests/test_i18n_split_tag_guard.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci-main-heartbeat.yml",
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 4067,
-      "title": "feat(intelligence): wire_rank.v1 sidecar \u2014 non-public ranked wire view for the Mastermind brain",
-      "head_ref": "claude/wire-rank-sidecar",
-      "updated_at": "2026-08-01T04:18:56Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 7,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "config/press_sources.yml",
-        "docs/marketing_publisher_runbook.md",
-        "engine/marketing/press_lane.py",
-        "scripts/marketing_fastlane_daemon.py",
-        "scripts/marketing_press_wire.py",
-        "tests/test_marketing_fastlane.py",
-        "tests/test_marketing_scoring_brain.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4064,
-      "title": "fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions",
-      "head_ref": "claude/cranky-dhawan-44683d",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 10,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "config/synapse.yml",
-        "data/options_flow/cohorts_ai_semiconductors.parquet",
-        "data/options_flow/cohorts_ai_software.parquet",
-        "data/options_flow/cohorts_mag7.parquet",
-        "data/options_flow/cohorts_memory_storage.parquet",
-        "docs/SIGNAL_BUS.md",
-        "engine/flow_cohorts.py",
-        "scripts/build_flow_desk.py",
-        "site/flowdata/cohorts.json",
-        "tests/test_flow_cohorts.py"
-      ],
-      "protected_paths_touched": [
-        "config/synapse.yml",
-        "docs/SIGNAL_BUS.md"
-      ]
-    },
-    {
-      "number": 4063,
-      "title": "docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834",
-      "head_ref": "claude/leader-radar-lane-provenance",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/daily.yml",
-        ".github/workflows/engine-render.yml",
-        ".github/workflows/render.yml"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/daily.yml",
-        ".github/workflows/engine-render.yml",
-        ".github/workflows/render.yml"
-      ]
-    },
-    {
       "number": 4056,
       "title": "fix(site): repair 605 dead basket links + guard dead site references",
       "head_ref": "claude/funny-tharp-1d755d",
-      "updated_at": "2026-07-30T19:22:58Z",
+      "updated_at": "2026-08-02T00:35:06Z",
       "is_draft": false,
       "merge_state": "DIRTY",
       "merge_state_raw": "DIRTY",
@@ -575,144 +370,12 @@
         ".github/workflows/render.yml",
         "scripts/check_site_asset_refs.py"
       ]
-    },
-    {
-      "number": 4049,
-      "title": "fix(intraday-flow): \"~Net call premium\" was a net TOTAL \u2014 re-source it from the call-only series",
-      "head_ref": "claude/hungry-dhawan-ac99c5",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 5,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        "site/intraday_flow.html",
-        "templates/intraday_flow.html.j2",
-        "tests/test_intraday_flow_ncp_js.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 4041,
-      "title": "fix(flow): a zero-coverage cohort day publishes no tilt word \u2014 PR #4007 vintage diagnosis",
-      "head_ref": "claude/relaxed-engelbart-4a9924",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "engine/flow_cohorts.py",
-        "templates/flow_desk.html.j2",
-        "tests/test_flow_cohorts.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 4013,
-      "title": "massive_stock_day: revive the frozen whole-market store \u2014 collect-lane creds + R2 round-trip, store-absent fence, loud tripwires",
-      "head_ref": "claude/youthful-jang-0434e9",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 13,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/daily.yml",
-        "collectors/massive_stock_day.py",
-        "config.yml",
-        "data/massive_stock_day/_backfill_state.json",
-        "data/massive_stock_day/_manifest.json",
-        "scripts/audit_common.py",
-        "scripts/audit_massive_store.py",
-        "scripts/audit_r2.py",
-        "scripts/collect.py",
-        "tests/test_audit_massive_store.py",
-        "tests/test_audit_r2.py",
-        "tests/test_massive_stock_day_fence.py",
-        "tests/test_massive_stock_day_state.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/daily.yml"
-      ]
-    },
-    {
-      "number": 4004,
-      "title": "fix(gex): dealer-gamma flip NaN in every short-gamma regime \u2014 source the legacy frame's flip from the engine grid",
-      "head_ref": "claude/fervent-wozniak-835240",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 5,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "collectors/cboe.py",
-        "engine/market_gamma.py",
-        "tests/test_cboe_gex_flip.py",
-        "tests/test_market_gamma_contract.py",
-        "tests/test_vol_shock_scorecard.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 3956,
-      "title": "fix(intl): UI/UX + layout pass \u2014 kill the grid voids, align type to macro.html",
-      "head_ref": "claude/intl-ui-audit-redesign-c454dc",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "templates/intl.html.j2",
-        "tests/test_intl_build.py",
-        "tests/test_intl_recovery_quality.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 3879,
-      "title": "ci: guard admin/static/*.js against out-of-scope references (eslint no-undef)",
-      "head_ref": "claude/priceless-robinson-0eb29a",
-      "updated_at": "2026-07-30T19:22:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml",
-        "config/house_law_checks.yml",
-        "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
-        "scripts/check_admin_js.py",
-        "tests/test_admin_js_no_undef.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml",
-        "scripts/check_admin_js.py"
-      ]
     }
   ],
   "collisions": [
     {
-      "pr_a": 4185,
-      "pr_b": 4070,
+      "pr_a": 4212,
+      "pr_b": 4185,
       "shared_files": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml"
@@ -721,86 +384,7 @@
       "any_protected": true
     },
     {
-      "pr_a": 4185,
-      "pr_b": 4049,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4185,
-      "pr_b": 3879,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4070,
-      "pr_b": 4049,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4070,
-      "pr_b": 3879,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4064,
-      "pr_b": 4041,
-      "shared_files": [
-        "engine/flow_cohorts.py",
-        "tests/test_flow_cohorts.py"
-      ],
-      "shared_count": 2,
-      "any_protected": false
-    },
-    {
-      "pr_a": 4063,
-      "pr_b": 4056,
-      "shared_files": [
-        ".github/workflows/engine-render.yml",
-        ".github/workflows/render.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4049,
-      "pr_b": 3879,
-      "shared_files": [
-        ".github/ci/legacy-jobs.yml",
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4185,
-      "pr_b": 4162,
-      "shared_files": [
-        "admin/static/app.js"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 4185,
+      "pr_a": 4212,
       "pr_b": 4056,
       "shared_files": [
         ".github/workflows/ci.yml"
@@ -809,44 +393,8 @@
       "any_protected": true
     },
     {
-      "pr_a": 4132,
-      "pr_b": 4123,
-      "shared_files": [
-        "scripts/build_options_command.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 4070,
+      "pr_a": 4185,
       "pr_b": 4056,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4063,
-      "pr_b": 4013,
-      "shared_files": [
-        ".github/workflows/daily.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4056,
-      "pr_b": 4049,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 4056,
-      "pr_b": 3879,
       "shared_files": [
         ".github/workflows/ci.yml"
       ],
@@ -855,6 +403,51 @@
     }
   ],
   "recent_merged": [
+    {
+      "number": 4218,
+      "title": "BioCatalyst B1: hardened ClinicalTrials.gov ingestion lane",
+      "merged_at": "2026-08-02T01:09:14Z"
+    },
+    {
+      "number": 4217,
+      "title": "privacy: strip fill economics from public mastermind snapshot (RUL-CL-6b)",
+      "merged_at": "2026-08-02T01:12:40Z"
+    },
+    {
+      "number": 4216,
+      "title": "Government Revenue Foresight: Wave 2 live procurement parity",
+      "merged_at": "2026-08-02T00:51:16Z"
+    },
+    {
+      "number": 4215,
+      "title": "Company Intelligence: immutable producer plane",
+      "merged_at": "2026-08-02T00:50:39Z"
+    },
+    {
+      "number": 4214,
+      "title": "tests: pin capital-structure compile step structurally, not by text slice",
+      "merged_at": "2026-08-02T01:12:43Z"
+    },
+    {
+      "number": 4213,
+      "title": "Fix Filing Forensics bootstrap on macOS Bash 3.2",
+      "merged_at": "2026-08-02T00:32:38Z"
+    },
+    {
+      "number": 4210,
+      "title": "Filing Forensics: add SEC disclosure source spine",
+      "merged_at": "2026-08-01T23:49:51Z"
+    },
+    {
+      "number": 4208,
+      "title": "fix(policy): strip front-facing falsifier register from the Policy Watch estate",
+      "merged_at": "2026-08-02T01:12:49Z"
+    },
+    {
+      "number": 4207,
+      "title": "fix(options): repair the dated GEX archive \u2014 450 snapshots carried the flip defect",
+      "merged_at": "2026-08-01T19:41:55Z"
+    },
     {
       "number": 4206,
       "title": "fix(options): six publisher defects an adversarial audit found in code I shipped today",
@@ -931,6 +524,11 @@
       "merged_at": "2026-08-01T15:24:39Z"
     },
     {
+      "number": 4190,
+      "title": "policy_watch: revamp to macro.html design quality",
+      "merged_at": "2026-08-01T23:36:22Z"
+    },
+    {
       "number": 4189,
       "title": "fix(options): gamma flip was the wrong estimator \u2014 repair all three sites",
       "merged_at": "2026-08-01T12:49:59Z"
@@ -954,6 +552,11 @@
       "number": 4184,
       "title": "Ship Filing Forensics workbench",
       "merged_at": "2026-08-01T12:11:07Z"
+    },
+    {
+      "number": 4183,
+      "title": "engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store",
+      "merged_at": "2026-08-01T23:36:25Z"
     },
     {
       "number": 4182,
@@ -1054,6 +657,11 @@
       "number": 4163,
       "title": "Restore smooth single-instance start page runtime",
       "merged_at": "2026-08-01T06:13:50Z"
+    },
+    {
+      "number": 4162,
+      "title": "outbox: fable audit of the 2026-08-01 nightly slate \u2014 approvals + rejections with named reasons",
+      "merged_at": "2026-08-02T00:26:10Z"
     },
     {
       "number": 4161,
@@ -1191,9 +799,19 @@
       "merged_at": "2026-07-31T10:19:16Z"
     },
     {
+      "number": 4132,
+      "title": "test(options): sweep hover + aria + script-authored copy \u2014 the tier the guard could not see",
+      "merged_at": "2026-08-01T23:36:29Z"
+    },
+    {
       "number": 4131,
       "title": "Fix hidden mega-menu drill accessibility",
       "merged_at": "2026-07-31T07:39:03Z"
+    },
+    {
+      "number": 4130,
+      "title": "fix(gex): IV-rank band must not render through a directional token",
+      "merged_at": "2026-08-01T23:36:33Z"
     },
     {
       "number": 4129,
@@ -1224,6 +842,11 @@
       "number": 4124,
       "title": "Align crypto dashboards with MastermindX house style",
       "merged_at": "2026-07-31T03:34:34Z"
+    },
+    {
+      "number": 4123,
+      "title": "feat(oip-w1): nav front door + Ticker workbench depth \u2014 filmstrip, search, 5 new reads",
+      "merged_at": "2026-08-02T00:27:47Z"
     },
     {
       "number": 4122,
@@ -1309,6 +932,11 @@
       "number": 4106,
       "title": "Crypto Cockpit Wave 3: governed multi-asset intelligence",
       "merged_at": "2026-07-31T00:57:48Z"
+    },
+    {
+      "number": 4105,
+      "title": "fix(ship-guard): the uncommitted gate must judge THIS checkout's work only",
+      "merged_at": "2026-08-01T23:36:36Z"
     },
     {
       "number": 4104,
@@ -1476,14 +1104,34 @@
       "merged_at": "2026-07-30T11:02:22Z"
     },
     {
+      "number": 4070,
+      "title": "fix(calculators): keep the whole anchor inside each language branch \u2014 48 t() calls shipped href=\"</span>\"",
+      "merged_at": "2026-08-01T23:36:39Z"
+    },
+    {
       "number": 4069,
       "title": "fix(ops): give the ThetaData EOD store's only offsite backup a real tripwire",
       "merged_at": "2026-07-30T12:20:44Z"
     },
     {
+      "number": 4067,
+      "title": "feat(intelligence): wire_rank.v1 sidecar \u2014 non-public ranked wire view for the Mastermind brain",
+      "merged_at": "2026-08-01T23:36:43Z"
+    },
+    {
       "number": 4065,
       "title": "fix(r2): size the connection pool from the worker count \u2014 a flat 64 froze the offsite manifest nightly",
       "merged_at": "2026-07-30T10:55:04Z"
+    },
+    {
+      "number": 4064,
+      "title": "fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions",
+      "merged_at": "2026-08-01T23:36:47Z"
+    },
+    {
+      "number": 4063,
+      "title": "docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834",
+      "merged_at": "2026-08-02T00:25:57Z"
     },
     {
       "number": 4062,
@@ -1541,6 +1189,11 @@
       "merged_at": "2026-07-30T11:24:19Z"
     },
     {
+      "number": 4049,
+      "title": "fix(intraday-flow): \"~Net call premium\" was a net TOTAL \u2014 re-source it from the call-only series",
+      "merged_at": "2026-08-01T23:36:51Z"
+    },
+    {
       "number": 4048,
       "title": "fix(hot-tape): the P1 radar fires \u2014 delay-aware freshness, self-fetched tape, repaired writer lane, multi-pass cadence",
       "merged_at": "2026-07-30T09:06:07Z"
@@ -1574,6 +1227,11 @@
       "number": 4042,
       "title": "Restore the start-page intelligence panel stylesheet",
       "merged_at": "2026-07-30T08:24:47Z"
+    },
+    {
+      "number": 4041,
+      "title": "fix(flow): a zero-coverage cohort day publishes no tilt word \u2014 PR #4007 vintage diagnosis",
+      "merged_at": "2026-08-02T00:25:43Z"
     },
     {
       "number": 4040,
@@ -1691,6 +1349,11 @@
       "merged_at": "2026-07-30T03:41:52Z"
     },
     {
+      "number": 4013,
+      "title": "massive_stock_day: revive the frozen whole-market store \u2014 collect-lane creds + R2 round-trip, store-absent fence, loud tripwires",
+      "merged_at": "2026-08-02T00:24:39Z"
+    },
+    {
       "number": 4012,
       "title": "feat(macro): make official releases live and date-scoped",
       "merged_at": "2026-07-30T04:03:14Z"
@@ -1729,6 +1392,11 @@
       "number": 4005,
       "title": "fix(brain): market-packet yield units \u00f710 against the real feed + curve-tenor feed pins \u2014 W1 diagnosis",
       "merged_at": "2026-07-30T03:27:25Z"
+    },
+    {
+      "number": 4004,
+      "title": "fix(gex): dealer-gamma flip NaN in every short-gamma regime \u2014 source the legacy frame's flip from the engine grid",
+      "merged_at": "2026-08-01T23:36:56Z"
     },
     {
       "number": 4003,
@@ -1959,6 +1627,11 @@
       "number": 3957,
       "title": "feat: refresh navigation and ticker search",
       "merged_at": "2026-07-29T11:53:16Z"
+    },
+    {
+      "number": 3956,
+      "title": "fix(intl): UI/UX + layout pass \u2014 kill the grid voids, align type to macro.html",
+      "merged_at": "2026-08-01T23:36:59Z"
     },
     {
       "number": 3955,
@@ -2309,6 +1982,11 @@
       "number": 3880,
       "title": "fix(billing): survive the test\u2192live Stripe switch \u2014 mode-scoped customer verification + comp-safe reconciler",
       "merged_at": "2026-07-28T06:16:11Z"
+    },
+    {
+      "number": 3879,
+      "title": "ci: guard admin/static/*.js against out-of-scope references (eslint no-undef)",
+      "merged_at": "2026-08-02T00:26:24Z"
     },
     {
       "number": 3878,
@@ -3224,136 +2902,6 @@
       "number": 3681,
       "title": "test(chronicle): restore the two gate-1 teeth a stale-tree merge silently dropped",
       "merged_at": "2026-07-26T14:36:14Z"
-    },
-    {
-      "number": 3680,
-      "title": "fix(ci): give chronicle-suite a main heartbeat \u2014 the lane whose absence cost five duplicate PRs",
-      "merged_at": "2026-07-26T14:36:23Z"
-    },
-    {
-      "number": 3679,
-      "title": "governance(chronicle): register the gate-5 kill (intraday store regen FORBIDDEN) + refresh the build map",
-      "merged_at": "2026-07-26T14:36:27Z"
-    },
-    {
-      "number": 3678,
-      "title": "fix(heatmap): market pulse said \"Money flowing to weakness in X\" on broad-decline days",
-      "merged_at": "2026-07-26T14:36:35Z"
-    },
-    {
-      "number": 3677,
-      "title": "fix(hooks): base-side-red awareness for the ship-loop CI gate \u2014 stop pinning merged heads forever",
-      "merged_at": "2026-07-26T14:29:46Z"
-    },
-    {
-      "number": 3676,
-      "title": "perf(landing,chat): lift the inline page CSS into paired stylesheets \u2014 the follow-up #3650 filed",
-      "merged_at": "2026-07-26T15:05:23Z"
-    },
-    {
-      "number": 3675,
-      "title": "fix(free-estate): 52 stale pages + 15 CTA-less calculators; wire the drift law into CI",
-      "merged_at": "2026-07-26T14:29:37Z"
-    },
-    {
-      "number": 3674,
-      "title": "fix(china-breadth): fail a truncated Sina walk instead of publishing a short count",
-      "merged_at": "2026-07-26T14:29:54Z"
-    },
-    {
-      "number": 3673,
-      "title": "fix(landing): self-host Archivo \u2014 the display face never arrived in China",
-      "merged_at": "2026-07-26T14:30:00Z"
-    },
-    {
-      "number": 3672,
-      "title": "feat(brain): read_china_flows \u2014 the brain can finally cite the Tushare plane",
-      "merged_at": "2026-07-26T14:08:59Z"
-    },
-    {
-      "number": 3671,
-      "title": "feat(brain): light-mode theme for the Mastermind chat + a launcher that survives white",
-      "merged_at": "2026-07-26T14:30:17Z"
-    },
-    {
-      "number": 3670,
-      "title": "PSS-F4: downside-vol asymmetry flip (semivariance regime turn) \u2014 prereg + analysis",
-      "merged_at": "2026-07-26T14:30:23Z"
-    },
-    {
-      "number": 3669,
-      "title": "harden(chronicle): take the renderer out of the adapter's import closure",
-      "merged_at": "2026-07-26T14:21:50Z"
-    },
-    {
-      "number": 3668,
-      "title": "test(ci): close P1 \u2014 136 unrun-but-triggerable publish-path suites (12 lanes) + 4 red-on-main repairs",
-      "merged_at": "2026-07-26T15:02:05Z"
-    },
-    {
-      "number": 3667,
-      "title": "docs(census): record the FTR product call \u2014 resolved as marker rot, both suites wired",
-      "merged_at": "2026-07-26T14:31:06Z"
-    },
-    {
-      "number": 3666,
-      "title": "feat(china): quote the whole-board \u6da8\u8dcc\u5bb6\u6570, not the map's 1,510-name sample",
-      "merged_at": "2026-07-26T14:02:28Z"
-    },
-    {
-      "number": 3664,
-      "title": "fix(track-record): score real trades, not board membership marked to today (US + CN)",
-      "merged_at": "2026-07-26T14:02:48Z"
-    },
-    {
-      "number": 3663,
-      "title": "docs(census): heal the unrun-test census against merged main",
-      "merged_at": "2026-07-26T14:02:51Z"
-    },
-    {
-      "number": 3662,
-      "title": "fix(research-vault): show transfer progress \u2014 the download was working, silently",
-      "merged_at": "2026-07-26T14:03:01Z"
-    },
-    {
-      "number": 3661,
-      "title": "docs(theta-r2sync): record the 2026-07-25 M2\u2192M1 host migration in the runbook",
-      "merged_at": "2026-07-26T13:56:25Z"
-    },
-    {
-      "number": 3660,
-      "title": "fix(chronicle): survive the hourly vault-catalog lane \u2014 regen store, pin catalog vintage, declare jinja2",
-      "merged_at": "2026-07-26T14:16:01Z"
-    },
-    {
-      "number": 3659,
-      "title": "fix(daily): pin collect_tail to theta-m1 so tape_flow lands on the Terminal host nightly",
-      "merged_at": "2026-07-26T14:03:21Z"
-    },
-    {
-      "number": 3658,
-      "title": "feat(brain-chat): Enter writes a new line; Stop hands the message back",
-      "merged_at": "2026-07-26T13:41:17Z"
-    },
-    {
-      "number": 3657,
-      "title": "fix(chronicle): rebuild the committed store so main's staleness gate goes green",
-      "merged_at": "2026-07-26T13:35:19Z"
-    },
-    {
-      "number": 3656,
-      "title": "fix(brain): Terminal chat degraded on every chart turn \u2014 synthesis had no way to answer",
-      "merged_at": "2026-07-26T13:29:44Z"
-    },
-    {
-      "number": 3655,
-      "title": "design(landing): serif display figures \u2014 Newsreader replaces Archivo Expanded Black on every big number",
-      "merged_at": "2026-07-26T14:03:28Z"
-    },
-    {
-      "number": 3654,
-      "title": "feat(research-vault): raise the daily download cap to 50/day for lifetime Pro",
-      "merged_at": "2026-07-26T14:03:34Z"
     }
   ]
 }

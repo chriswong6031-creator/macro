@@ -2,59 +2,41 @@
 
 # Active Build Map
 
-Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window): 500  |  base: `a2d2dfe46671d4910a36bbb958d1acd8c8ef7f46`
+Generated: 2026-08-02T01:14:21.966790+00:00  |  Open PRs: 5  |  Merged (window): 500  |  base: `8300a2b990f8dc70ebc3cb7e109f985175cdd94a`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4190 | policy_watch: revamp to macro.html design quality | `claude/ui-enhancement-older-page-d75ac0` | 2026-08-01 | ⚠ CONFLICTING |
+| #4219 | Options: publish the exposure profile block + retire the last cumulative-flip copy | `claude/msc-profile-wave` | 2026-08-02 | — |
+| #4212 | Capital Structure Wave 2A: observed filing-state projection | `codex/capital-structure-wave2a-projection` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:5 |
+| #4209 | fix(register): strip front-facing falsifier register beyond the Policy Watch estate (incl. the four dated reports) | `claude/silly-mahavira-49e33e` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:2 |
 | #4185 | feat(tiers): Phase 2 — the catalog speaks essential; Stripe product migrates in place | `claude/tier-essential-m2` | 2026-08-01 | ⚠ protected:2 |
-| #4183 | engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store | `claude/vigilant-dijkstra-e5f8b4` | 2026-08-01 | ⚠ CONFLICTING |
-| #4162 | outbox: fable audit of the 2026-08-01 nightly slate — approvals + rejections with named reasons | `claude/nightly-audit-0801` | 2026-08-01 | — |
-| #4132 | test(options): sweep hover + aria + script-authored copy — the tier the guard could not see | `claude/options-tip-copy-sweep` | 2026-07-31 | — |
-| #4130 | fix(gex): IV-rank band must not render through a directional token | `claude/magical-feynman-5d5479` | 2026-07-31 | — |
-| #4123 | feat(oip-w1): nav front door + Ticker workbench depth — filmstrip, search, 5 new reads | `claude/oip-w1-build` | 2026-07-31 | files-truncated |
-| #4105 | fix(ship-guard): the uncommitted gate must judge THIS checkout's work only | `claude/gallant-turing-2a018e` | 2026-07-31 | — |
-| #4070 | fix(calculators): keep the whole anchor inside each language branch — 48 t() calls shipped href="</span>" | `claude/silly-dirac-5422a9` | 2026-07-30 | ⚠ protected:2 |
-| #4067 | feat(intelligence): wire_rank.v1 sidecar — non-public ranked wire view for the Mastermind brain | `claude/wire-rank-sidecar` | 2026-08-01 | — |
-| #4064 | fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions | `claude/cranky-dhawan-44683d` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:2 |
-| #4063 | docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834 | `claude/leader-radar-lane-provenance` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:3 |
-| #4056 | fix(site): repair 605 dead basket links + guard dead site references | `claude/funny-tharp-1d755d` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:7 / files-truncated |
-| #4049 | fix(intraday-flow): "~Net call premium" was a net TOTAL — re-source it from the call-only series | `claude/hungry-dhawan-ac99c5` | 2026-07-30 | ⚠ protected:1 |
-| #4041 | fix(flow): a zero-coverage cohort day publishes no tilt word — PR #4007 vintage diagnosis | `claude/relaxed-engelbart-4a9924` | 2026-07-30 | — |
-| #4013 | massive_stock_day: revive the frozen whole-market store — collect-lane creds + R2 round-trip, store-absent fence, loud tripwires | `claude/youthful-jang-0434e9` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4004 | fix(gex): dealer-gamma flip NaN in every short-gamma regime — source the legacy frame's flip from the engine grid | `claude/fervent-wozniak-835240` | 2026-07-30 | ⚠ CONFLICTING |
-| #3956 | fix(intl): UI/UX + layout pass — kill the grid voids, align type to macro.html | `claude/intl-ui-audit-redesign-c454dc` | 2026-07-30 | — |
-| #3879 | ci: guard admin/static/*.js against out-of-scope references (eslint no-undef) | `claude/priceless-robinson-0eb29a` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:2 |
+| #4056 | fix(site): repair 605 dead basket links + guard dead site references | `claude/funny-tharp-1d755d` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:7 / files-truncated |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
-> ℹ 1 of 19 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #4185 | #4070 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4185 | #4049 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4185 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4070 | #4049 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4070 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4064 | #4041 | 2 | `engine/flow_cohorts.py`, `tests/test_flow_cohorts.py` |
-| #4063 | #4056 | 2 ⚠ | `.github/workflows/engine-render.yml`, `.github/workflows/render.yml` |
-| #4049 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4185 | #4162 | 1 | `admin/static/app.js` |
+| #4212 | #4185 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4212 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4185 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4132 | #4123 | 1 | `scripts/build_options_command.py` |
-| #4070 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4063 | #4013 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #4056 | #4049 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4056 | #3879 | 1 ⚠ | `.github/workflows/ci.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4218 | BioCatalyst B1: hardened ClinicalTrials.gov ingestion lane | 2026-08-02 |
+| #4217 | privacy: strip fill economics from public mastermind snapshot (RUL-CL-6b) | 2026-08-02 |
+| #4216 | Government Revenue Foresight: Wave 2 live procurement parity | 2026-08-02 |
+| #4215 | Company Intelligence: immutable producer plane | 2026-08-02 |
+| #4214 | tests: pin capital-structure compile step structurally, not by text slice | 2026-08-02 |
+| #4213 | Fix Filing Forensics bootstrap on macOS Bash 3.2 | 2026-08-02 |
+| #4210 | Filing Forensics: add SEC disclosure source spine | 2026-08-01 |
+| #4208 | fix(policy): strip front-facing falsifier register from the Policy Watch estate | 2026-08-02 |
+| #4207 | fix(options): repair the dated GEX archive — 450 snapshots carried the flip defect | 2026-08-01 |
 | #4206 | fix(options): six publisher defects an adversarial audit found in code I shipped today | 2026-08-01 |
 | #4205 | Fail closed on render dead-asset races | 2026-08-01 |
 | #4204 | fix(render): rebuild crypto before asset guard | 2026-08-01 |
@@ -70,11 +52,13 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4194 | feat(options): nine-year aggregate greek trend + repair a $1.1tn headline defect | 2026-08-01 |
 | #4193 | Biopharma seasonality intelligence foundation | 2026-08-01 |
 | #4192 | Automate Terminal-to-earnings intelligence intake | 2026-08-01 |
+| #4190 | policy_watch: revamp to macro.html design quality | 2026-08-01 |
 | #4189 | fix(options): gamma flip was the wrong estimator — repair all three sites | 2026-08-01 |
 | #4188 | feat(biocatalyst): freeze evidence contract foundation | 2026-08-01 |
 | #4187 | fix: contain Stage earnings filters on mobile | 2026-08-01 |
 | #4186 | hk_cbbc: light up the dark W1 freshness banner on the leverage card | 2026-08-01 |
 | #4184 | Ship Filing Forensics workbench | 2026-08-01 |
+| #4183 | engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store | 2026-08-01 |
 | #4182 | Government Revenue Foresight vertical workbench | 2026-08-01 |
 | #4181 | feat: repair earnings intelligence spine and Stage surfaces | 2026-08-01 |
 | #4180 | P0 follow-up: wire push_autostash_ok into every narrow single-path lane | 2026-08-01 |
@@ -95,6 +79,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4165 | design(nav): hover bridge + Attio-style cross-fade between mega menus | 2026-08-01 |
 | #4164 | design(pricing): Essential rename (display), radical card simplification, no-trial Essential | 2026-08-01 |
 | #4163 | Restore smooth single-instance start page runtime | 2026-08-01 |
+| #4162 | outbox: fable audit of the 2026-08-01 nightly slate — approvals + rejections with named reasons | 2026-08-02 |
 | #4161 | feat(brain): Analyst OS W4 — Pro full-report escalation, codex vision, Terra wire translation | 2026-08-01 |
 | #4160 | Fix Research Vault stale first paint | 2026-08-01 |
 | #4159 | feat(seo): IndexNow adapter + bare-path 301 aliases — post-outage reindex push | 2026-08-01 |
@@ -122,13 +107,16 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4136 | Landing: subtle elastic motion for existing hero grid | 2026-07-31 |
 | #4135 | fix(flow-leaders): plain words for same-day expiry, and a guard that can see the hover tier | 2026-07-31 |
 | #4133 | feat(mastermind): live in-chat charts, lane-scaled answers, richer narration (ui.mm_brain_v3) | 2026-07-31 |
+| #4132 | test(options): sweep hover + aria + script-authored copy — the tier the guard could not see | 2026-08-01 |
 | #4131 | Fix hidden mega-menu drill accessibility | 2026-07-31 |
+| #4130 | fix(gex): IV-rank band must not render through a directional token | 2026-08-01 |
 | #4129 | feat: show indicator access in pricing tiers | 2026-07-31 |
 | #4128 | Publish canonical product navigation on Start | 2026-07-31 |
 | #4127 | Refresh non-Bitcoin macro desk surfaces | 2026-07-31 |
 | #4126 | test(nav): fix the icon-set test's render premise, and light up its dark sibling | 2026-07-31 |
 | #4125 | design(options): one verdict surface — chrome keeps the caveat, drops the chip | 2026-07-31 |
 | #4124 | Align crypto dashboards with MastermindX house style | 2026-07-31 |
+| #4123 | feat(oip-w1): nav front door + Ticker workbench depth — filmstrip, search, 5 new reads | 2026-08-02 |
 | #4122 | fix(brain): plain-word projection for state enums at the chat read-tool boundary | 2026-07-31 |
 | #4121 | Fix ticker search for Chinese IME and bilingual names | 2026-07-31 |
 | #4120 | fix(billing): stop leaking the Stripe runbook in public error bodies | 2026-07-31 |
@@ -146,6 +134,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4108 | feat(brain): Analyst OS W3 — per-user memory, trade journal, durable preferences | 2026-07-31 |
 | #4107 | Stop mega menu hover animation flicker | 2026-07-30 |
 | #4106 | Crypto Cockpit Wave 3: governed multi-asset intelligence | 2026-07-31 |
+| #4105 | fix(ship-guard): the uncommitted gate must judge THIS checkout's work only | 2026-08-01 |
 | #4104 | Match refreshed menus to approved mockup interactions | 2026-07-30 |
 | #4103 | fix(hot-tape): a quote source GitHub cannot throttle — VPS live plane as a macro floor | 2026-07-30 |
 | #4102 | Adapt menu hover grace to responsive gap | 2026-07-30 |
@@ -179,8 +168,12 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4073 | fix(inputs): us3m is DGS3MO — break the silent DGS3MO/DTB3 alias collision | 2026-07-30 |
 | #4072 | perf(render): bound checkout history and reserve heavy runner | 2026-07-30 |
 | #4071 | Fix crowded mobile news hero | 2026-07-30 |
+| #4070 | fix(calculators): keep the whole anchor inside each language branch — 48 t() calls shipped href="</span>" | 2026-08-01 |
 | #4069 | fix(ops): give the ThetaData EOD store's only offsite backup a real tripwire | 2026-07-30 |
+| #4067 | feat(intelligence): wire_rank.v1 sidecar — non-public ranked wire view for the Mastermind brain | 2026-08-01 |
 | #4065 | fix(r2): size the connection pool from the worker count — a flat 64 froze the offsite manifest nightly | 2026-07-30 |
+| #4064 | fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions | 2026-08-01 |
+| #4063 | docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834 | 2026-08-02 |
 | #4062 | Fix missing globe on public start page | 2026-07-30 |
 | #4060 | feat(brain): Analyst OS W2 — historical analogues, curve detail, street clusters, wire-rank reader, eval harness | 2026-07-30 |
 | #4059 | fix(hot-tape): the quote log must report the ceiling it actually applied | 2026-07-30 |
@@ -192,6 +185,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4052 | Animate the landing hero as a living market field | 2026-07-30 |
 | #4051 | Bring navigation menus to approved mockup parity | 2026-07-30 |
 | #4050 | Refine the start-page greeting presentation and timing | 2026-07-30 |
+| #4049 | fix(intraday-flow): "~Net call premium" was a net TOTAL — re-source it from the call-only series | 2026-08-01 |
 | #4048 | fix(hot-tape): the P1 radar fires — delay-aware freshness, self-fetched tape, repaired writer lane, multi-pass cadence | 2026-07-30 |
 | #4047 | perf: reveal dashboard instantly when Terminal closes | 2026-07-30 |
 | #4046 | fix(macro): restore compact header glance layer | 2026-07-30 |
@@ -199,6 +193,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4044 | ops(live-flow): restore a git-refreshable M1 deploy path + document the two-machine reality | 2026-07-30 |
 | #4043 | design(prophet-live): P1 surface spec + committed reference crops | 2026-07-30 |
 | #4042 | Restore the start-page intelligence panel stylesheet | 2026-07-30 |
+| #4041 | fix(flow): a zero-coverage cohort day publishes no tilt word — PR #4007 vintage diagnosis | 2026-08-02 |
 | #4040 | Default heavy renders to the faster Mac pool | 2026-07-30 |
 | #4039 | Align Canada and HK action boards with China UI | 2026-07-30 |
 | #4037 | fix: make crypto allocation redirect render-owned | 2026-07-30 |
@@ -222,6 +217,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4016 | fix(tests): force both datasketch states in the triage degraded-state test — env-shaped pass removed | 2026-07-30 |
 | #4015 | Fix responsive navigation overflow | 2026-07-30 |
 | #4014 | docs(mastermind): W1 curve-tenor build-time amendment — diagnosis outcome + feed-dependent-units law | 2026-07-30 |
+| #4013 | massive_stock_day: revive the frozen whole-market store — collect-lane creds + R2 round-trip, store-absent fence, loud tripwires | 2026-08-02 |
 | #4012 | feat(macro): make official releases live and date-scoped | 2026-07-30 |
 | #4011 | feat: launch crypto intelligence cockpit wave 2 | 2026-07-30 |
 | #4010 | fix(marketing): dark-desk park at dispatch — a wired-but-dark desk can no longer post via --post-now | 2026-07-30 |
@@ -230,6 +226,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #4007 | fix(flow_desk): lane-gate all data/ writes (HOUSE-U5) — flows proxies + cohort accrual (FD-EXP P0) | 2026-07-30 |
 | #4006 | feat(intelligence): Intelligence Desk V2 — clustering floor, snapshot honesty, approve→outbox delivery, Alpaca lane, LLM drafts, surface v2 | 2026-07-30 |
 | #4005 | fix(brain): market-packet yield units ÷10 against the real feed + curve-tenor feed pins — W1 diagnosis | 2026-07-30 |
+| #4004 | fix(gex): dealer-gamma flip NaN in every short-gamma regime — source the legacy frame's flip from the engine grid | 2026-08-01 |
 | #4003 | Fix mobile Terminal reopen black screen | 2026-07-30 |
 | #4002 | docs(theta-ops): W0 M1 heal record — vintage skew, first autonomous matrix publish | 2026-07-30 |
 | #4001 | ci: wire the three strictly-dark GEX suites — model layer, engine math, polygon accrual | 2026-07-30 |
@@ -276,6 +273,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #3959 | feat: complete real-time intelligence desk | 2026-07-29 |
 | #3958 | Keep embedded Terminal launcher public at the access edge | 2026-07-29 |
 | #3957 | feat: refresh navigation and ticker search | 2026-07-29 |
+| #3956 | fix(intl): UI/UX + layout pass — kill the grid voids, align type to macro.html | 2026-08-01 |
 | #3955 | research: Crypto Master Cockpit masterplan — vector.html rebuild + crypto asset-class platform | 2026-07-29 |
 | #3953 | Launch Terminal as a native full-screen workspace | 2026-07-29 |
 | #3952 | Fix fastlane news rail activation and deploy lifecycle | 2026-07-29 |
@@ -346,6 +344,7 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #3883 | Marketing: replace X ads with mobile Category campaign | 2026-07-28 |
 | #3881 | fix(ci): a merged close must not cancel the PR's own proof run | 2026-07-28 |
 | #3880 | fix(billing): survive the test→live Stripe switch — mode-scoped customer verification + comp-safe reconciler | 2026-07-28 |
+| #3879 | ci: guard admin/static/*.js against out-of-scope references (eslint no-undef) | 2026-08-02 |
 | #3878 | Fix World Markets card height stretching | 2026-07-28 |
 | #3877 | Marketing: 20 production-ready X ad experiments | 2026-07-28 |
 | #3876 | fix(tests): prophet bridge main() smoke tests leak site/prophet/showcase.json | 2026-07-28 |
@@ -529,32 +528,6 @@ Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window)
 | #3683 | fix(ci): restore 10 jobs a stale-base squash-merge silently deleted | 2026-07-26 |
 | #3682 | fix(brain-a11y): the Mastermind launcher is a real button — Tab, Enter, Space | 2026-07-26 |
 | #3681 | test(chronicle): restore the two gate-1 teeth a stale-tree merge silently dropped | 2026-07-26 |
-| #3680 | fix(ci): give chronicle-suite a main heartbeat — the lane whose absence cost five duplicate PRs | 2026-07-26 |
-| #3679 | governance(chronicle): register the gate-5 kill (intraday store regen FORBIDDEN) + refresh the build map | 2026-07-26 |
-| #3678 | fix(heatmap): market pulse said "Money flowing to weakness in X" on broad-decline days | 2026-07-26 |
-| #3677 | fix(hooks): base-side-red awareness for the ship-loop CI gate — stop pinning merged heads forever | 2026-07-26 |
-| #3676 | perf(landing,chat): lift the inline page CSS into paired stylesheets — the follow-up #3650 filed | 2026-07-26 |
-| #3675 | fix(free-estate): 52 stale pages + 15 CTA-less calculators; wire the drift law into CI | 2026-07-26 |
-| #3674 | fix(china-breadth): fail a truncated Sina walk instead of publishing a short count | 2026-07-26 |
-| #3673 | fix(landing): self-host Archivo — the display face never arrived in China | 2026-07-26 |
-| #3672 | feat(brain): read_china_flows — the brain can finally cite the Tushare plane | 2026-07-26 |
-| #3671 | feat(brain): light-mode theme for the Mastermind chat + a launcher that survives white | 2026-07-26 |
-| #3670 | PSS-F4: downside-vol asymmetry flip (semivariance regime turn) — prereg + analysis | 2026-07-26 |
-| #3669 | harden(chronicle): take the renderer out of the adapter's import closure | 2026-07-26 |
-| #3668 | test(ci): close P1 — 136 unrun-but-triggerable publish-path suites (12 lanes) + 4 red-on-main repairs | 2026-07-26 |
-| #3667 | docs(census): record the FTR product call — resolved as marker rot, both suites wired | 2026-07-26 |
-| #3666 | feat(china): quote the whole-board 涨跌家数, not the map's 1,510-name sample | 2026-07-26 |
-| #3664 | fix(track-record): score real trades, not board membership marked to today (US + CN) | 2026-07-26 |
-| #3663 | docs(census): heal the unrun-test census against merged main | 2026-07-26 |
-| #3662 | fix(research-vault): show transfer progress — the download was working, silently | 2026-07-26 |
-| #3661 | docs(theta-r2sync): record the 2026-07-25 M2→M1 host migration in the runbook | 2026-07-26 |
-| #3660 | fix(chronicle): survive the hourly vault-catalog lane — regen store, pin catalog vintage, declare jinja2 | 2026-07-26 |
-| #3659 | fix(daily): pin collect_tail to theta-m1 so tape_flow lands on the Terminal host nightly | 2026-07-26 |
-| #3658 | feat(brain-chat): Enter writes a new line; Stop hands the message back | 2026-07-26 |
-| #3657 | fix(chronicle): rebuild the committed store so main's staleness gate goes green | 2026-07-26 |
-| #3656 | fix(brain): Terminal chat degraded on every chart turn — synthesis had no way to answer | 2026-07-26 |
-| #3655 | design(landing): serif display figures — Newsreader replaces Archivo Expanded Black on every big number | 2026-07-26 |
-| #3654 | feat(research-vault): raise the daily download cap to 50/day for lifetime Pro | 2026-07-26 |
 
 ---
 
