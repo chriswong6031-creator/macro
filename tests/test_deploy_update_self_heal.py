@@ -22,7 +22,9 @@ def test_codex_runtime_setup_has_valid_shell_syntax():
     subprocess.run(["bash", "-n", str(runtime_setup)], check=True)
     text = runtime_setup.read_text(encoding="utf-8")
     assert '@openai/codex@$CODEX_CLI_VERSION' in text
-    assert "CODEX_STATE_DIR/auth.json" in text
+    assert "CODEX_STATE_DIRS" in text
+    assert '$state_dir/auth.json' in text
+    assert "/var/lib/macro-codex:/var/lib/macro-codex-2" in text
 
 
 def test_live_setup_installs_press_scoring_backend():
@@ -38,8 +40,12 @@ def test_deployed_services_share_root_only_codex_state():
     ):
         unit = (ROOT / relative).read_text(encoding="utf-8")
         assert "Environment=CODEX_HOME=/var/lib/macro-codex" in unit
+        assert (
+            "Environment=CODEX_ACCOUNT_HOMES="
+            "/var/lib/macro-codex:/var/lib/macro-codex-2"
+        ) in unit
         assert "Environment=CODEX_PROVIDER_ENABLED=1" in unit
-        assert "StateDirectory=macro-codex" in unit
+        assert "StateDirectory=macro-codex macro-codex-2" in unit
         assert "StateDirectoryMode=0700" in unit
 
 
