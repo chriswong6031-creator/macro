@@ -56,6 +56,7 @@ def validate_generation(out_dir: Path, manifest: Mapping[str, Any] | None = None
     except OSError:
         issues.append("immutable_manifest_missing")
     parsed: dict[str, object] = {}
+    event_dates: list[str] = []
     for relative, block in marker["files"].items():
         assert isinstance(relative, str) and isinstance(block, Mapping)
         # The manifest validator accepts only generated paths, but retain an
@@ -100,8 +101,15 @@ def validate_generation(out_dir: Path, manifest: Mapping[str, Any] | None = None
                 raise ValueError("event source revision mismatch")
             if f"{fact['event']['ticker']}/{fact['event']['transcript_id']}" != key:
                 raise ValueError("event key mismatch")
+            event_dates.append(str(fact["event"]["date"]))
         except Exception as exc:  # noqa: BLE001
             issues.append(f"pair:{key}:{exc}")
+    coverage = marker["coverage"]
+    if event_dates:
+        if coverage["oldest_call_date"] != min(event_dates) or coverage["newest_call_date"] != max(event_dates):
+            issues.append("coverage_dates_mismatch")
+    elif coverage["oldest_call_date"] is not None or coverage["newest_call_date"] is not None:
+        issues.append("coverage_dates_mismatch")
     if issues:
         return {
             "status": "invalid",

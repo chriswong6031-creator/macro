@@ -59,11 +59,15 @@ _CLAIM_KEYS = frozenset({
 _GRAPH_KEYS = frozenset({"schema", "authority", "event", "source", "claims", "warnings", "insufficiency", "execution"})
 _MANIFEST_KEYS = frozenset({
     "schema", "authority", "generation_id", "generated_at", "status", "warnings",
-    "omissions", "events", "files", "execution",
+    "omissions", "coverage", "events", "files", "execution",
 })
 _EVENT_MANIFEST_KEYS = frozenset({"source_sha256", "supersedes_source_sha256", "fact_pack", "claim_graph", "source_body"})
 _FILE_KEYS = frozenset({"sha256", "bytes", "schema"})
 _OMISSION_KEYS = frozenset({"event_key", "reason", "expected_source_sha256"})
+_COVERAGE_KEYS = frozenset({
+    "selection_policy", "cohort_limit", "historical_completeness", "event_count",
+    "oldest_call_date", "newest_call_date", "index_body_count", "index_generated_at",
+})
 
 KNOWN_WARNINGS = frozenset({"empty_segment", "overlong_sentence", "no_numeric_statements", "selection_bounded", "no_selected_bodies"})
 KNOWN_INSUFFICIENCY = frozenset({"no_extractable_segments", "no_numeric_statements"})
@@ -134,7 +138,7 @@ def iso_timestamp(value: object, *, field: str) -> str:
 
 
 def iso_date(value: object, *, field: str) -> str:
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or len(value) != 10:
         raise ContractError(f"{field} must be an ISO date")
     try:
         return date.fromisoformat(value[:10]).isoformat()
@@ -509,6 +513,28 @@ def validate_manifest(payload: object) -> None:
     if row.get("status") not in {"ready", "partial"}:
         raise ContractError("manifest status invalid")
     _warnings(row.get("warnings"), allowed=KNOWN_WARNINGS, name="manifest.warnings")
+    coverage = _mapping(row.get("coverage"), name="manifest.coverage")
+    _keys(coverage, _COVERAGE_KEYS, name="manifest.coverage")
+    if coverage.get("selection_policy") not in {"explicit_input", "bootstrap_since_then_new_or_corrected"}:
+        raise ContractError("manifest coverage selection_policy invalid")
+    if not isinstance(coverage.get("cohort_limit"), int) or isinstance(coverage.get("cohort_limit"), bool) or not 1 <= coverage["cohort_limit"] <= 2_000:
+        raise ContractError("manifest coverage cohort_limit invalid")
+    if not isinstance(coverage.get("historical_completeness"), bool):
+        raise ContractError("manifest coverage historical_completeness invalid")
+    if not isinstance(coverage.get("event_count"), int) or isinstance(coverage.get("event_count"), bool) or coverage["event_count"] < 0:
+        raise ContractError("manifest coverage event_count invalid")
+    if not isinstance(coverage.get("index_body_count"), int) or isinstance(coverage.get("index_body_count"), bool) or coverage["index_body_count"] < coverage["event_count"]:
+        raise ContractError("manifest coverage index_body_count invalid")
+    if iso_timestamp(coverage.get("index_generated_at"), field="manifest.coverage.index_generated_at") != row["generated_at"]:
+        raise ContractError("manifest coverage index_generated_at must equal generated_at")
+    oldest, newest = coverage.get("oldest_call_date"), coverage.get("newest_call_date")
+    if coverage["event_count"] == 0:
+        if oldest is not None or newest is not None:
+            raise ContractError("empty manifest coverage dates must be null")
+    elif iso_date(oldest, field="manifest.coverage.oldest_call_date") > iso_date(newest, field="manifest.coverage.newest_call_date"):
+        raise ContractError("manifest coverage dates invalid")
+    if coverage["historical_completeness"] and coverage["event_count"] != coverage["index_body_count"]:
+        raise ContractError("historically complete coverage must include every indexed body")
     omissions = row.get("omissions")
     if not isinstance(omissions, list):
         raise ContractError("manifest omissions invalid")
@@ -557,6 +583,15 @@ def validate_manifest(payload: object) -> None:
                 raise ContractError("manifest file block invalid")
     if set(files) != {path for block in events.values() for path in (block["fact_pack"], block["claim_graph"], block["source_body"])}:
         raise ContractError("manifest files must exactly cover event artifacts")
+    if coverage["event_count"] != len(events):
+        raise ContractError("manifest coverage event_count must match events")
+    # Event dates are available only in the referenced artifacts; the health
+    # verifier replays those paths. Here we pin content addressability before
+    # any filesystem access.
+    unsigned = dict(row)
+    unsigned["generation_id"] = "0" * 32
+    if canonical_json_sha256(unsigned)[:32] != row["generation_id"]:
+        raise ContractError("manifest generation_id does not match canonical unsigned manifest")
     # ``ready`` means the immutable tree is complete and verifies. Coverage
     # notices and an individual event's insufficiency remain explicit in their
     # own receipts; they are not a reason to suppress healthy peers.
