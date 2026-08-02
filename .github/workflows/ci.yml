@@ -698,6 +698,12 @@ on:
       # (previously run by ZERO jobs); test-only edits must trigger a run too.
       - "tests/test_news_translate_render_gate.py"
       - "tests/test_news_translate_en.py"
+      # Analyst OS W5 (latency wave): true token streaming, tool-loop economics,
+      # instant-fact lane + latency instrumentation. Bench script has a parser test.
+      - "tests/test_brain_streaming.py"
+      - "tests/test_brain_tool_economics.py"
+      - "tests/test_brain_instant_lane.py"
+      - "scripts/brain_latency_bench.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
