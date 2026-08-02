@@ -53,6 +53,9 @@
 <script src="theme.js"></script>
 <script src="stockdata.js"></script>
 <script src="heatmap.js"></script>
+{# the strip's "full rotation map →" link points at the merged Sector Intelligence page
+   (subsector_rotation.html is now a redirect stub — skip the extra hop). #}
+<script>window.SR_CFG = Object.assign(window.SR_CFG||{}, {pageHref: 'sector_central.html#si-movement'});</script>
 <script src="subsector_rotation.js"></script>
 </body>
 </html>

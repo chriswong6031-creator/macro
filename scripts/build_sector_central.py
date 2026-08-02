@@ -140,7 +140,9 @@ def main() -> int:
     (fdir / "sector_central.json").write_text(
         json.dumps(data, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
-    env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=False)
+    # autoescape=True: the merged Sector Intelligence template descends from the baskets
+    # rvx template (written for an autoescaping env); flows_html is |safe-marked in-template.
+    env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
     try:
         from engine import i18n
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
@@ -151,8 +153,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive embed, never fatal
         log.warning("sector_central: flow board failed (%s)", e)
         flows_html = None
+    # Sector-intelligence handoff from build_baskets (hero verdict / factor-season chip /
+    # money-flow verdict / member-symbol registry). Fail-soft: absent file → fallback hero.
+    ctx: dict = {}
     try:
-        html = env.get_template("sector_central.html.j2").render(flows_html=flows_html)
+        ctx_p = site / "basketdata" / "si_handoff.json"
+        if ctx_p.exists():
+            ctx = json.loads(ctx_p.read_text(encoding="utf-8")) or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_central: theme_context handoff read failed (%s)", e)
+    try:
+        html = env.get_template("sector_central.html.j2").render(
+            flows_html=flows_html,
+            theme_context=ctx.get("theme_context"),
+            factor_season=ctx.get("factor_season"),
+            flow=ctx.get("flow"),
+            basket_member_syms=ctx.get("basket_member_syms") or [],
+            generated_utc=ctx.get("generated_utc") or data.get("as_of") or "")
         write_page(site / "sector_central.html", html, encoding="utf-8")
     except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job
         # The CI step that runs this is a bare `run:` (its claim "the builder returns 0 on any
@@ -169,7 +186,11 @@ def main() -> int:
     # required runtime files are absent.
     import shutil
     for asset in ("product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
-                  "sector_cycles.css", "sector_cycles.js"):
+                  "sector_cycles.css", "sector_cycles.js",
+                  # MOVEMENT donors extracted from the retired subsector_rotation page.
+                  # subsector_rotation.js exports window.SRR, which time_machine.js needs.
+                  "subsector_rotation.js", "rotation_events.js", "desk_watch.js",
+                  "time_machine.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)

@@ -144,7 +144,7 @@ def _render_baskets(flow=None):
     ctx = {"basket_member_syms": []}
     if flow is not None:
         ctx["flow"] = flow
-    return env.get_template("baskets.html.j2").render(**ctx)
+    return env.get_template("sector_central.html.j2").render(**ctx)
 
 
 def _money_flow_card(html):

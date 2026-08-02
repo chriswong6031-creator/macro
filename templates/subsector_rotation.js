@@ -388,16 +388,23 @@
 
   function render(root){
     root.className='sr-scope';
-    // Build toggle buttons — sectors only when _data.sectors exists
+    // Build toggle buttons — sectors AND themes only when present in the feed. The US feed
+    // dropped its Finviz-taxonomy themes unit (Sector Intelligence consolidation 2026-08:
+    // "themes" there means the 47 curated baskets, rendered elsewhere on that page); the
+    // China feed keeps its THS-concept themes unit, so the button stays data-driven.
     var hasSectors = _data && Array.isArray(_data.sectors) && _data.sectors.length > 0;
+    var hasThemes = _data && Array.isArray(_data.themes) && _data.themes.length > 0 && _data.themes_unit !== false;
     var sectorBtn = hasSectors
       ? '<button type="button" data-u="sectors" class="'+(_unit==='sectors'?'on':'')+'">'+L('Sector ETFs','行业ETF')+' <b>'+(_data.n_sectors||_data.sectors.length)+'</b></button>'
+      : '';
+    var themeBtn = hasThemes
+      ? '<button type="button" data-u="themes" class="'+(_unit==='themes'?'on':'')+'">'+L('Themes','主题')+' <b>'+(_data.n_themes||_data.themes.length)+'</b></button>'
       : '';
     root.innerHTML=''
       +'<div class="sr-bar">'
         +'<div class="sr-toggle" role="group">'
           +'<button type="button" data-u="subsectors" class="'+(_unit==='subsectors'?'on':'')+'">'+L('Subsectors','子行业')+' <b>'+_data.n_subsectors+'</b></button>'
-          +'<button type="button" data-u="themes" class="'+(_unit==='themes'?'on':'')+'">'+L('Themes','主题')+' <b>'+_data.n_themes+'</b></button>'
+          +themeBtn
           +sectorBtn
         +'</div>'
         +'<div class="sr-grow"></div>'
