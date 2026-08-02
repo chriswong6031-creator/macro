@@ -5,13 +5,15 @@ name: earnings-evidence-graph
 # record; this cache only accelerates bounded full-history backfill batches.
 on:
   schedule:
-    - cron: "43 */6 * * *"
+    # One serialized, receipt-verified batch per hour: this is a backfill
+    # throttle, not a claim that any one bounded batch is complete.
+    - cron: "43 * * * *"
   workflow_dispatch:
     inputs:
       max_bodies:
         description: "Maximum full-history index deltas fetched per run (1..500)"
         required: false
-        default: "100"
+        default: "500"
         type: string
       promote:
         description: "Append this verified bounded batch to the public catalog"
@@ -68,7 +70,7 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          MAX_BODIES: ${{ inputs.max_bodies || '100' }}
+          MAX_BODIES: ${{ inputs.max_bodies || '500' }}
           SHOULD_PROMOTE: ${{ github.event_name == 'schedule' || inputs.promote }}
         run: |
           set -euo pipefail

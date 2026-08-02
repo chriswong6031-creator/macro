@@ -266,6 +266,17 @@ def test_workflow_cache_is_limited_to_intake_not_append_only_cas_output() -> Non
     assert workflow.count("earnings-evidence-v2-") == 3
 
 
+def test_workflow_serializes_the_hourly_backfill_throttle() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "earnings-evidence-graph.yml").read_text(encoding="utf-8")
+    # Scheduled work has no dispatch inputs, so both the advertised default and
+    # the event fallback must cap the serial lane at the same 500 bodies/hour.
+    assert 'cron: "43 * * * *"' in workflow
+    assert 'default: "500"' in workflow
+    assert "MAX_BODIES: ${{ inputs.max_bodies || '500' }}" in workflow
+    assert "group: earnings-evidence-graph-publication" in workflow
+    assert "cancel-in-progress: false" in workflow
+
+
 def test_direct_graph_is_structural_and_resolves_each_fact_once() -> None:
     pack, graph = _pair(_body())
     direct = [claim for claim in graph["claims"] if claim["claim_type"] != "derived_metric"]
