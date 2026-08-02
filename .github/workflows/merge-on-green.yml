@@ -28,7 +28,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write        # squash-merge, and delete the merged head ref
+  contents: write        # squash-merge, delete the merged head ref, and merge
+                         # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
 
 concurrency:

@@ -2313,8 +2313,8 @@
     
     <div class="ird-hchip state-ok">
       <div class="hc-lbl"><span class="l-en">Dollar</span><span class="l-zh">美元</span></div>
-        <div class="hc-state info"><span class="l-en">Mixed picture</span><span class="l-zh">信号混合</span></div>
-        <div class="hc-detail"><span class="l-en">Rate gaps and risk mood both in play</span><span class="l-zh">利差与风险情绪均有影响</span></div>
+        <div class="hc-state" style="color:var(--muted);font-size:12px;"><span class="l-en">Read updates tonight</span><span class="l-zh">今晚更新读数</span></div>
+        <div class="hc-detail"><span class="l-en">Not enough fresh data</span><span class="l-zh">数据暂不足</span></div>
       <div class="hc-stance" style="margin-top:5px;"><b><span class="l-en">Watch — don't chase</span><span class="l-zh">观望，勿追入</span></b> <span class="l-en">dollar strength</span><span class="l-zh">美元强势</span></div>
     </div>
 
@@ -2641,17 +2641,19 @@
     <div class="panel">
       <div class="sec-h">
         <h2><span class="l-en">What's driving the dollar?</span><span class="l-zh">美元走势的驱动因素</span>
-            <span class="help">?<span class="tip"><span class="l-en">Dollar regime uses a 120-day rolling window. Rate-differential weight: how much of the DXY move correlates with the US-vs-world short-rate spread. Risk-off weight: DXY vs VIX co-movement. Residual: unexplained. Dual-window confirmed over both 5d and 20d. Weights used: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}. Window-sensitive: regime may shift with a different window.</span><span class="l-zh">美元制度使用120日滚动窗口。利差权重：DXY走势与美国对全球短期利差的相关程度。避险权重：DXY与VIX的同步走势。残差：不可解释部分。双窗口在5日和20日均已确认。使用权重：{'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}。窗口敏感：不同窗口下制度判断可能不同。</span></span></span>
+            <span class="help">?<span class="tip"><span class="l-en">Dollar read updates nightly from the forex desk. The regime is determined by a 120-day rolling decomposition comparing rate-differential vs risk-off vs residual drivers. When data is fresh, this panel shows the dominant regime and a one-sentence explanation.</span><span class="l-zh">美元读数每晚从外汇台更新。制度由120日滚动分解确定，比较利差、避险与残差驱动因素。数据刷新后，本面板显示主导制度及一句话说明。</span></span></span>
         </h2>
         <span class="sub"><span class="l-en">Watch — don't chase dollar strength until the read is fresh</span><span class="l-zh">等待最新读数后再追美元强势</span></span>
       </div>
 
       <div class="ird-dollar-card">
-            <div class="regime-word"><span class="l-en">Mixed picture</span><span class="l-zh">信号混合</span></div>
-            <div class="regime-sentence"><span class="l-en">No single driver dominates the dollar's recent move — both rate differences and risk sentiment are playing a role.</span><span class="l-zh">近期美元走势无单一主导因素——利差与风险情绪均有作用。</span></div>
+          
+          <div class="ird-dollar-null">
+            <span class="l-en">Not enough fresh data — the dollar read updates after tonight's build.</span><span class="l-zh">数据暂不足——美元读数将在今晚构建后更新。</span>
+          </div>
       </div>
       <p class="caveat ird-asof">
-          <span class="l-en">120-day rolling window · As of 2026-08-02</span><span class="l-zh">120日滚动窗口 · 截至2026-08-02</span>
+          <span class="l-en">Dollar regime read not yet available — updates nightly.</span><span class="l-zh">美元制度读数暂不可用——每晚更新。</span>
       </p>
     </div><!-- /dollar -->
 
@@ -3669,7 +3671,7 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
   } catch(e){}
 })();
 </script>
-<script src="theme.js?v=d3d5e037" defer></script>
+<script src="theme.js?v=402a51a2" defer></script>
 <script src="tablesort.js?v=484d9333" defer></script>
 </body>
 </html>

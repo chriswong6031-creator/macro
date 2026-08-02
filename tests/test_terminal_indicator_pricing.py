@@ -38,10 +38,10 @@ def test_landing_and_onboarding_compare_show_each_tier_access():
         page = (ROOT / rel).read_text()
         assert "Advanced indicator modules" in page
         assert f"Terminal charting — {access['core_count']} core indicators" in page
-        assert f"<b>{access['access']['insider']} of {access['advanced_total']}</b> advanced modules" in page
+        assert f"<b>{access['access']['essential']} of {access['advanced_total']}</b> advanced modules" in page
         assert f"<b>All {access['access']['pro']}</b> advanced modules" in page
         assert f"{access['access']['free']} / {access['advanced_total']}" in page
-        assert f"{access['access']['insider']} / {access['advanced_total']}" in page
+        assert f"{access['access']['essential']} / {access['advanced_total']}" in page
         assert f"All {access['access']['pro']}" in page
         assert "Candle Painter" in page
 
@@ -51,8 +51,8 @@ def test_landing_and_onboarding_compare_show_each_tier_access():
             f'{{ l: ["Advanced indicator modules", "高级指标模块"], '
             f'v: [["{access["access"]["free"]} / {access["advanced_total"]}", '
             f'"{access["access"]["free"]} / {access["advanced_total"]}"], '
-            f'["{access["access"]["insider"]} / {access["advanced_total"]}", '
-            f'"{access["access"]["insider"]} / {access["advanced_total"]}"], '
+            f'["{access["access"]["essential"]} / {access["advanced_total"]}", '
+            f'"{access["access"]["essential"]} / {access["advanced_total"]}"], '
             f'["All {access["access"]["pro"]}", "全部 {access["access"]["pro"]} 个"]] }}'
         ) in compare
 
@@ -66,7 +66,7 @@ def test_rendered_plans_page_names_the_indicator_ladder():
     ).get_template("plans.html.j2").render(
         generated_utc="test",
         currency=vm["currency"],
-        insider=vm["insider"],
+        essential=vm["essential"],
         pro=vm["pro"],
         founding=vm["founding"],
         terminal_indicators=vm["terminal_indicators"],
@@ -74,7 +74,7 @@ def test_rendered_plans_page_names_the_indicator_ladder():
     assert "Advanced indicator modules" in page
     assert f"{access['core_count']} " in page and "core indicators" in page
     assert f"{access['access']['free']} / {access['advanced_total']}" in page
-    assert f"{access['access']['insider']} / {access['advanced_total']}" in page
+    assert f"{access['access']['essential']} / {access['advanced_total']}" in page
     assert f'<span class="l-zh">全部</span> {access["access"]["pro"]}<small' in page
 
 

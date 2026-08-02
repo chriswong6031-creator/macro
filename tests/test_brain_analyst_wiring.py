@@ -131,7 +131,7 @@ def test_search_research_gate_free_tier(tmp_path, monkeypatch):
     assert out.get("tier") == "free"
 
 
-def test_search_research_serves_insider_and_pro(tmp_path, monkeypatch):
+def test_search_research_serves_essential_and_pro(tmp_path, monkeypatch):
     import json
     cat_dir = tmp_path / "data" / "research_vault"
     cat_dir.mkdir(parents=True)
@@ -142,7 +142,9 @@ def test_search_research_serves_insider_and_pro(tmp_path, monkeypatch):
                    "summary_points": ["Supply risk repricing"], "tags": [],
                    "tickers": [], "top_pick": False, "pages": 3, "language": "en"}],
     }))
-    for tier in ("insider", "pro"):
+    # 'insider' is the PRE-RENAME spelling a grandfathered entitlement row still carries;
+    # the gate normalises it, so both must open the door.
+    for tier in ("essential", "insider", "pro"):
         monkeypatch.setattr(gw, "_resolve_tier",
                             lambda uid, root=None, _t=tier: {"tier": _t, "status": "active"})
         out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
@@ -199,7 +201,7 @@ def test_analogues_gate_free_tier(tmp_path, monkeypatch):
     assert out.get("tier") == "free"
 
 
-def test_analogues_insider_reaches_module_and_degrades_honestly(tmp_path, monkeypatch):
+def test_analogues_essential_reaches_module_and_degrades_honestly(tmp_path, monkeypatch):
     # tmp_path has no parquet estate: the gate passes, the module answers with its
     # own honest unavailable error instead of raising or fabricating episodes.
     monkeypatch.setattr(gw, "_resolve_tier",
@@ -267,14 +269,18 @@ def test_recall_sessions_signed_in_reaches_module(tmp_path, monkeypatch):
 
 # ── 10. Analyst OS W4 — vault full-report escalation gate (operator ruling) ──
 
-def test_report_mode_insider_gets_pro_required(tmp_path, monkeypatch):
-    """Operator ruling 2026-07-31: full reports are PRO-only; Insider keeps summaries."""
+def test_report_mode_essential_gets_pro_required(tmp_path, monkeypatch):
+    """Operator ruling 2026-07-31: full reports are PRO-only; Essential keeps summaries.
+
+    The resolver is mocked with the PRE-RENAME spelling on purpose — the reported tier
+    must come back canonical, proving the gate normalises rather than echoing a raw row.
+    """
     monkeypatch.setattr(gw, "_resolve_tier",
                         lambda uid, root=None: {"tier": "insider", "status": "active"})
     out = _dispatch("search_research",
                     {"mode": "report", "report_id": "x1"}, tmp_path, user_id="u1")
     assert out.get("error") == "pro_required"
-    assert out.get("tier") == "insider"
+    assert out.get("tier") == "essential"
 
 
 def test_report_mode_pro_reaches_module_with_user_ctx(tmp_path, monkeypatch):
@@ -296,7 +302,7 @@ def test_report_mode_pro_reaches_module_with_user_ctx(tmp_path, monkeypatch):
     assert seen["user_ctx"] == {"user_id": "u7"}
 
 
-def test_search_mode_still_serves_insider_with_no_user_ctx(tmp_path, monkeypatch):
+def test_search_mode_still_serves_essential_with_no_user_ctx(tmp_path, monkeypatch):
     from engine.neuralweb import brain_market_intel as bmi
     seen = {}
 

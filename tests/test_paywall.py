@@ -68,18 +68,18 @@ def test_active_site_full_allows(monkeypatch):
     monkeypatch.setattr(
         paywall,
         "_store_entitlement",
-        lambda uid: ({"tier": "insider", "status": "active", "features": ["site_full"]}, True),
+        lambda uid: ({"tier": "essential", "status": "active", "features": ["site_full"]}, True),
     )
     r = _check()
     assert r.status_code == 204
-    assert r.headers["x-paywall"] == "allow-insider"
+    assert r.headers["x-paywall"] == "allow-essential"
 
 
 @pytest.mark.parametrize(
     "row",
     [
         {"tier": "free", "status": "active", "features": []},
-        {"tier": "insider", "status": "past_due", "features": ["site_full"]},
+        {"tier": "essential", "status": "past_due", "features": ["site_full"]},
         {"tier": "pro", "status": "active", "features": []},
         {"tier": "pro", "status": "canceled", "features": ["site_full"]},
     ],
@@ -160,11 +160,11 @@ def test_enforced_early_payload_allows_entitled_while_switch_off(monkeypatch):
     monkeypatch.setattr(
         paywall,
         "_store_entitlement",
-        lambda uid: ({"tier": "insider", "status": "trialing", "features": ["site_full"]}, True),
+        lambda uid: ({"tier": "essential", "status": "trialing", "features": ["site_full"]}, True),
     )
     r = _check("/premiumdata/special_situations.json", "asset")
     assert r.status_code == 204
-    assert r.headers["x-paywall"] == "allow-insider"
+    assert r.headers["x-paywall"] == "allow-essential"
 
 
 def test_enforced_early_anon_payload_locks(monkeypatch):
@@ -209,12 +209,13 @@ def test_noncanonical_paths_deny(monkeypatch, path):
 
 
 # ===========================================================================
-# The 'essential' alias (rename migration, Phase 1)
+# The 'insider' alias (rename migration, Phase 2 — the direction REVERSED)
 # ===========================================================================
-def test_essential_row_allows_exactly_like_insider(monkeypatch):
-    """An entitlement row carrying the ALIAS is the same customer as one carrying the wire
-    value. The wall gates on the FEATURE, so this passes on its own — the assertion that
-    matters is that the alias never becomes a THIRD outcome."""
+def test_pre_rename_row_allows_exactly_like_the_canonical_one(monkeypatch):
+    """An entitlement row still carrying the PRE-RENAME value is the same customer as one
+    carrying the current wire value — and those rows are never back-filled. The wall gates
+    on the FEATURE, so this passes on its own; the assertion that matters is that the alias
+    never becomes a THIRD outcome."""
     _arm(monkeypatch)
     monkeypatch.setattr(
         paywall,
@@ -229,11 +230,11 @@ def test_essential_row_allows_exactly_like_insider(monkeypatch):
 @pytest.mark.parametrize(
     "row",
     [
-        {"tier": "essential", "status": "past_due", "features": ["site_full"]},
-        {"tier": "essential", "status": "active", "features": []},
+        {"tier": "insider", "status": "past_due", "features": ["site_full"]},
+        {"tier": "insider", "status": "active", "features": []},
     ],
 )
-def test_essential_rows_fail_closed_wherever_insider_does(monkeypatch, row):
+def test_pre_rename_rows_fail_closed_wherever_the_canonical_one_does(monkeypatch, row):
     _arm(monkeypatch)
     monkeypatch.setattr(paywall, "_store_entitlement", lambda uid: (row, True))
     r = _check()
@@ -242,24 +243,25 @@ def test_essential_rows_fail_closed_wherever_insider_does(monkeypatch, row):
 
 
 def test_account_plan_label_reads_essential_for_both_keys():
-    """The account pill (site/account.js renders plan_label) must not be the one surface
-    still saying 'Insider' — config/plans.yml already names this product 'Essential', and
+    """The account pill (site/account.js renders plan_label) must name the CURRENT product
+    for both spellings — config/plans.yml names it 'Essential', and
     app/billing_emails.plan_name() already reads that name onto every receipt."""
     from app.main import _PLAN_LABELS
 
-    assert _PLAN_LABELS["insider"] == "Essential"
     assert _PLAN_LABELS["essential"] == "Essential"
+    assert _PLAN_LABELS["insider"] == "Essential"
     assert _PLAN_LABELS["pro"] == "Pro"
 
 
-def test_brain_allowance_never_drops_an_aliased_paying_row_to_free():
+def test_brain_allowance_never_drops_a_pre_rename_paying_row_to_free():
     """The silent failure lib/tiers.py exists to prevent: _get_allowance selects
     quotas[tier] if tier in quotas else quotas['free'], so an unrecognised tier does not
-    raise — it hands a paying customer the free 5-a-week bucket."""
+    raise — it hands a paying customer the free 5-a-week bucket. After the flip the bucket
+    is keyed `essential`, so the row that would land there is the grandfathered one."""
     from engine.neuralweb import brain_gateway as gw
 
     for lane in ("fast", "pro"):
-        assert (gw._get_allowance("essential", "active", lane)
-                == gw._get_allowance("insider", "active", lane))
+        assert (gw._get_allowance("insider", "active", lane)
+                == gw._get_allowance("essential", "active", lane))
     free_fast = gw._get_allowance("free", "active", "fast")
-    assert gw._get_allowance("essential", "active", "fast") != free_fast
+    assert gw._get_allowance("insider", "active", "fast") != free_fast

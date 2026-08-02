@@ -34,6 +34,16 @@ merge. On the `GITHUB_TOKEN` fallback the merge still lands and the VPS's 3-minu
 pull plus the nightly `scope=all` re-render still deliver it — degraded, not
 broken.
 
+STALE BASES. A clean head whose merge GitHub refuses is not automatically a
+human's problem. main takes ~19 commits in 3 hours here while a pack run takes
+~30 minutes, so a pull request routinely goes green and is stale before its own
+proof finishes. That used to end at `merge-blocked`, waiting for someone to
+rebase by hand — which is how a one-hour-old pull request becomes a three-day-old
+one. The sweeper now asks GitHub to merge main into the head itself
+(`update-branch`); if GitHub declines, the conflict is real and the label is
+applied exactly as before. The merge gate is unchanged: an updated head is
+UNPROVEN until its fresh checks conclude, and a later sweep judges it on those.
+
 Individual pull-request outcomes are ANNOTATIONS, never job failures: one PR with
 a red check must not fail a sweep that also had clean PRs to merge. The process
 exits non-zero only when the sweep itself could not run.
@@ -256,6 +266,50 @@ def delete_head_ref(repo: str, pull: dict[str, Any], token: str) -> None:
     )
 
 
+def update_branch(repo: str, pull: dict[str, Any], token: str) -> bool:
+    """Merge `main` into a clean-but-stale head. True when GitHub accepted it.
+
+    ONLY reached for a pull request whose every check already concluded clean and
+    whose merge GitHub then refused. The refusal splits two ways and only one of
+    them is a human's problem:
+
+      * the base moved under us — the head is fine, it is simply no longer merge-
+        able against the newer main. GitHub can fast-forward that itself, and the
+        resulting head re-runs CI before anything merges.
+      * a real content conflict — update-branch answers 422 and the caller falls
+        through to `merge-blocked`, exactly as before.
+
+    This is the fix for the observed failure mode: main takes ~19 commits in 3
+    hours while a pack run takes ~30 minutes, so a pull request can go green and
+    be stale before its own proof finishes. Every such head then waits for a human
+    to rebase it by hand, which is how a one-hour-old pull request becomes a
+    three-day-old one. Nothing here weakens the merge gate — an updated head is
+    unproven until its fresh checks conclude, and the next sweep judges it on
+    those.
+    """
+    number = pull.get("number")
+    status, body = _request(
+        "PUT",
+        f"{GITHUB_API}/repos/{repo}/pulls/{number}/update-branch",
+        token,
+        {"expected_head_sha": str((pull.get("head") or {}).get("sha") or "")},
+    )
+    if status in {200, 202}:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: checks were clean but the base had moved — merged main "
+            "into the head. Its fresh checks decide the merge on a later sweep.",
+        )
+        return True
+    detail = str((body or {}).get("message") or f"HTTP {status}")
+    print(
+        f"PR #{number}: update-branch declined ({detail}) — treating as a real conflict.",
+        flush=True,
+    )
+    return False
+
+
 def sweep_pull(
     repo: str, pull: dict[str, Any], read_token: str, merge_token: str
 ) -> str:
@@ -329,17 +383,26 @@ def sweep_pull(
 
     if status in {405, 409}:
         # GitHub's "not mergeable" pair: 405 for a blocked/dirty merge, 409 for a
-        # base that moved under us. Both need a human, and both are exactly what
-        # merge-blocked exists to surface.
+        # base that moved under us. Only the second is genuinely a human's
+        # problem-free case, so try to clear it before reaching for a label.
         detail = str((body or {}).get("message") or f"HTTP {status}")
+        if update_branch(repo, pull, merge_token):
+            # The head now carries main. It is UNPROVEN until its fresh checks
+            # conclude, so nothing merges on this pass and the label stays armed
+            # for the sweep that judges those checks. Any stale `merge-blocked`
+            # from an earlier pass is cleared: the branch is moving again.
+            clear_blocked(repo, pull, merge_token)
+            return "updated"
         mark_blocked(
             repo,
             pull,
             (
                 "`merge-on-green` sweeper: **not merging.** Every check was clean, but "
                 f"GitHub refused the squash merge: _{detail}_\n\n"
-                "This is usually a conflict with `main`. Rebase or merge `main` into the "
-                "branch and the next sweep will pick it up (the label stays armed)."
+                "The sweeper then tried to merge `main` into this branch itself and "
+                "GitHub declined that too, which means a REAL content conflict rather "
+                "than a stale base. Resolve it by hand and the next sweep will pick it "
+                "up (the label stays armed)."
             ),
             merge_token,
         )

@@ -661,7 +661,7 @@ def test_the_served_artifact_is_not_public_anywhere():
     free = POLICY["free_registered"]
     assert SERVED_URL_PATH not in set(free["exact"])
     assert not any(SERVED_URL_PATH.startswith(p) for p in free["prefixes"])
-    assert POLICY["premium"]["default_tier"] == "insider"
+    assert POLICY["premium"]["default_tier"] == "essential"
 
 
 def test_the_public_live_exceptions_are_exactly_the_three_reviewed_files():
