@@ -1,0 +1,54 @@
+# Deterministic promotion law for transcript-backed earnings story packets.
+#
+# This is a routing policy, not a market signal.  The R2 evidence graph has
+# only first-party transcript bodies, so Tier A is structurally unavailable:
+# a long-form article needs the release / filing / slides evidence that is not
+# present in this lane.  Tier B is a compact, cited brief candidate only; the
+# existing Press rail still stages and verifies it before any later emission.
+schema: earnings.story_promotion/v1
+authority: context_only
+version: "1.0.0"
+decision_source: governed_triage
+source:
+  required_kind: transcript
+  required_completeness:
+    release: not_ingested
+    filing: not_ingested
+    transcript: present
+    slides: not_ingested
+    consensus: unlicensed_absent
+tiers:
+  A:
+    enabled: false
+    reason_code: tier_a_transcript_only_blocked
+  B:
+    enabled: true
+    min_management_facts: 2
+    min_press_countable_numeric_receipts: 3
+    min_substantive_categories: 2
+    min_material_categories: 1
+    substantive_categories:
+      - capital_allocation
+      - demand
+      - guidance
+      - management_commitments
+      - margins
+      - performance
+      - risks
+      - segment_changes
+    material_categories:
+      - capital_allocation
+      - demand
+      - guidance
+      - margins
+      - performance
+      - risks
+  C:
+    enabled: true
+    reason_code: tier_c_default_hold
+forbidden_inputs:
+  - consensus
+  - market_data
+  - market_reaction
+  - theme_context
+  - trading_action
