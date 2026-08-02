@@ -38,6 +38,7 @@ from engine.research_vault.r2_store import LocalStore
 
 
 STAMP = "2026-08-02T12:00:00.000000Z"
+ATTESTED_AT = "2026-08-02T16:00:00.000000Z"
 CONTENT = b"<html xmlns='http://www.w3.org/1999/xhtml'><body>fixture</body></html>"
 SNAPSHOT_ID = "ffsecsrc_" + "a" * 64
 
@@ -231,8 +232,9 @@ def _companyfacts_body(value: str = "1", *, duplicate: bool = False) -> bytes:
 
 def test_seals_pinned_index_member_manifest_and_parser_replay(install_parser, monkeypatch, tmp_path):
     package, extraction, authority = _inputs(install_parser, tmp_path)
-    monkeypatch.setattr("engine.fundamental_forensics.filing_attestation._utc_now", lambda: datetime(2026, 8, 2, 16, tzinfo=timezone.utc))
-    attestation = build_filing_attestation(package, extraction, authority=authority)
+    attestation = build_filing_attestation(
+        package, extraction, authority=authority, attested_at=ATTESTED_AT
+    )
     record = attestation.to_dict()
     assert attestation.attestation_id.startswith("ffatt_")
     assert record["coverage"]["selected_member_parser_replayed"] is True
@@ -242,14 +244,30 @@ def test_seals_pinned_index_member_manifest_and_parser_replay(install_parser, mo
     verify_filing_attestation_source(attestation, package, extraction, authority=authority)
 
 
+def test_requires_explicit_causal_operator_clock(install_parser, monkeypatch, tmp_path):
+    package, extraction, authority = _inputs(install_parser, tmp_path)
+
+    with pytest.raises(TypeError, match="attested_at"):
+        build_filing_attestation(package, extraction, authority=authority)
+
+    with pytest.raises(FilingAttestationError, match="predates source evidence"):
+        build_filing_attestation(
+            package,
+            extraction,
+            authority=authority,
+            attested_at="2026-08-02T14:59:59.000000Z",
+        )
+
+
 def test_tamper_and_hostile_nominals_fail_closed(install_parser, monkeypatch, tmp_path):
     package, extraction, authority = _inputs(install_parser, tmp_path)
-    monkeypatch.setattr("engine.fundamental_forensics.filing_attestation._utc_now", lambda: datetime(2026, 8, 2, 16, tzinfo=timezone.utc))
     index_key = package.to_dict()["archive_index"]["document"]["storage_key"]
     outer = authority._snapshot.entry_for(kind="archive", relative_path=index_key)
     assert authority._store.put_bytes(outer.object_key, b"tampered") is True
     with pytest.raises(FilingAttestationError, match="index source read failed"):
-        build_filing_attestation(package, extraction, authority=authority)
+        build_filing_attestation(
+            package, extraction, authority=authority, attested_at=ATTESTED_AT
+        )
 
     class HostilePackage(FilingPackage):
         @property
@@ -257,13 +275,19 @@ def test_tamper_and_hostile_nominals_fail_closed(install_parser, monkeypatch, tm
             raise RuntimeError("must not dispatch subclass")
 
     with pytest.raises(FilingAttestationError, match="subclasses"):
-        build_filing_attestation(HostilePackage(package.to_dict()), extraction, authority=authority)
+        build_filing_attestation(
+            HostilePackage(package.to_dict()),
+            extraction,
+            authority=authority,
+            attested_at=ATTESTED_AT,
+        )
 
 
 def test_restore_rejects_duplicate_noncanonical_and_forged_claims(install_parser, monkeypatch, tmp_path):
     package, extraction, authority = _inputs(install_parser, tmp_path)
-    monkeypatch.setattr("engine.fundamental_forensics.filing_attestation._utc_now", lambda: datetime(2026, 8, 2, 16, tzinfo=timezone.utc))
-    content = build_filing_attestation(package, extraction, authority=authority).to_json_bytes()
+    content = build_filing_attestation(
+        package, extraction, authority=authority, attested_at=ATTESTED_AT
+    ).to_json_bytes()
     with pytest.raises(FilingAttestationError, match="canonically"):
         filing_attestation_from_json_bytes(b" " + content)
     with pytest.raises(FilingAttestationError, match="duplicate"):
@@ -295,19 +319,36 @@ def test_exact_companyfacts_projection_is_one_to_one_and_preserves_decimal_preci
     extraction = _numeric_extraction(package, monkeypatch)
     state: dict = {}
     authority = _authority(tmp_path, package, manifest, index_content, prepare=_companyfacts_prepare(state, _companyfacts_body()))
-    monkeypatch.setattr("engine.fundamental_forensics.filing_attestation._utc_now", lambda: datetime(2026, 8, 2, 16, tzinfo=timezone.utc))
-    attestation = build_filing_attestation(package, extraction, authority=authority, companyfacts_paths=state["paths"])
+    attestation = build_filing_attestation(
+        package,
+        extraction,
+        authority=authority,
+        attested_at=ATTESTED_AT,
+        companyfacts_paths=state["paths"],
+    )
     assert len(attestation.to_dict()["company_facts"]["matches"]) == 1
 
     near_state: dict = {}
     near_authority = _authority(tmp_path / "near", package, manifest, index_content, prepare=_companyfacts_prepare(near_state, _companyfacts_body("1.0000000000000000000000000001")))
-    near = build_filing_attestation(package, extraction, authority=near_authority, companyfacts_paths=near_state["paths"]).to_dict()
+    near = build_filing_attestation(
+        package,
+        extraction,
+        authority=near_authority,
+        attested_at=ATTESTED_AT,
+        companyfacts_paths=near_state["paths"],
+    ).to_dict()
     assert near["company_facts"]["matches"] == []
     assert near["company_facts"]["reason_counts"]["no_exact_companyfacts_row"] == 1
 
     duplicate_extraction = _numeric_extraction(package, monkeypatch, duplicate=True)
     duplicate_state: dict = {}
     duplicate_authority = _authority(tmp_path / "duplicate", package, manifest, index_content, prepare=_companyfacts_prepare(duplicate_state, _companyfacts_body()))
-    duplicate = build_filing_attestation(package, duplicate_extraction, authority=duplicate_authority, companyfacts_paths=duplicate_state["paths"]).to_dict()
+    duplicate = build_filing_attestation(
+        package,
+        duplicate_extraction,
+        authority=duplicate_authority,
+        attested_at=ATTESTED_AT,
+        companyfacts_paths=duplicate_state["paths"],
+    ).to_dict()
     assert duplicate["company_facts"]["matches"] == []
     assert duplicate["company_facts"]["reason_counts"]["ambiguous_ixbrl_fact"] == 2
