@@ -285,12 +285,19 @@ def validate_context(payload: object) -> None:
     _keys(period, _PERIOD_KEYS, "context.period")
     for field in _PERIOD_KEYS:
         _date(period.get(field), f"context.period.{field}", nullable=field in {"consensus_available_on", "latest_reporting_filing_date"})
+    build_as_of = parse_date(period["build_as_of"], field="context.period.build_as_of")
     if period["comparison_period"] >= period["consensus_period"] or period["filing_window_closed_on"] < period["consensus_period"]:
         raise ContractError("context.period chronology invalid")
+    if parse_date(period["filing_window_closed_on"], field="context.period.filing_window_closed_on") > build_as_of:
+        raise ContractError("context.period filing window cannot close after build cutoff")
     consensus_end = parse_date(period["consensus_period"], field="context.period.consensus_period")
     for field in ("consensus_available_on", "latest_reporting_filing_date"):
-        if period[field] is not None and parse_date(period[field], field=f"context.period.{field}") <= consensus_end:
-            raise ContractError("context.period availability must be a public filing date after period end")
+        if period[field] is not None:
+            availability = parse_date(period[field], field=f"context.period.{field}")
+            if availability <= consensus_end:
+                raise ContractError("context.period availability must be a public filing date after period end")
+            if availability > build_as_of:
+                raise ContractError("context.period availability cannot be after build cutoff")
     _coverage(item.get("coverage"), "context.coverage")
     coverage = item["coverage"]
     if (period["consensus_available_on"] is None) != bool(coverage["missing_manager_count"]):
@@ -303,6 +310,8 @@ def validate_context(payload: object) -> None:
     seen: set[str] = set()
     for index, raw in enumerate(positions):
         _position(raw, f"context.positions[{index}]")
+        if parse_date(raw["filing_date"], field=f"context.positions[{index}].filing_date") > build_as_of:
+            raise ContractError("context.positions filing date cannot be after build cutoff")
         manager = raw["manager"]
         if manager in seen:
             raise ContractError("context.positions manager duplicate")
@@ -311,6 +320,11 @@ def validate_context(payload: object) -> None:
         raise ContractError("context.positions must be sorted")
     _consensus(item.get("consensus"), "context.consensus", positions)
     _trend(item.get("trend"), "context.trend", coverage["active_manager_count"])
+    for index, point in enumerate(item["trend"]["periods"]):
+        if point["available_on"] is not None and parse_date(
+            point["available_on"], field=f"context.trend.periods[{index}].available_on"
+        ) > build_as_of:
+            raise ContractError("context.trend availability cannot be after build cutoff")
     warnings = item.get("warnings")
     if not isinstance(warnings, list) or warnings != sorted(set(warnings)) or any(w not in _WARNINGS for w in warnings):
         raise ContractError("context.warnings invalid")

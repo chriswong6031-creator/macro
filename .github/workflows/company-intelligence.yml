@@ -121,9 +121,7 @@ jobs:
           set -e
           if [ "$side_rc" -eq 2 ]; then
             echo "::notice title=company-theme-exposure::root manifest promotion lost a safe compare-and-swap race"
-            exit 0
-          fi
-          if [ "$side_rc" -ne 0 ]; then
+          elif [ "$side_rc" -ne 0 ]; then
             exit "$side_rc"
           fi
           # 13F's latest observed snapshot can be an early single-manager
@@ -137,10 +135,8 @@ jobs:
             --snapshot-root data/smart_money
             --universe-membership data/universe/membership.parquet
             --out-dir "$RUNNER_TEMP/company-institutional-context"
+            --as-of "$(date -u +%F)"
           )
-          if [ "${DRY_RUN:-false}" = "true" ]; then
-            INST_ARGS+=(--as-of "$(date -u +%F)")
-          fi
           python -m scripts.build_company_institutional_context "${INST_ARGS[@]}"
           INST_PUBLISH_ARGS=(--out-dir "$RUNNER_TEMP/company-institutional-context")
           if [ "${DRY_RUN:-false}" = "true" ]; then

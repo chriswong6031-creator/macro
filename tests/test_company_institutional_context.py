@@ -88,7 +88,10 @@ def _bundle(tmp_path: Path, *, missing: bool = False):
 
 def test_aligned_period_never_admits_early_q2_reporters() -> None:
     assert aligned_consensus_period("2026-08-02") == ("2026-03-31", "2025-12-31", "2026-05-15")
-    assert aligned_consensus_period("2026-08-14")[0] == "2026-06-30"
+    assert aligned_consensus_period("2026-08-14") == ("2026-06-30", "2026-03-31", "2026-08-14")
+    # 45 days after Q4 2025 lands on Saturday, followed by Presidents' Day.
+    assert aligned_consensus_period("2026-02-16")[0] == "2025-09-30"
+    assert aligned_consensus_period("2026-02-17") == ("2025-12-31", "2025-09-30", "2026-02-17")
 
 
 def test_coverage_aligned_context_excludes_closed_and_collapses_share_classes(tmp_path) -> None:
@@ -138,6 +141,50 @@ def test_missing_comparison_snapshot_never_mints_a_new_action(tmp_path) -> None:
     )
     assert generated["AAPL"]["positions"][0]["action"] == "unavailable"
     assert "comparison_snapshots_missing" in generated["AAPL"]["warnings"]
+
+
+def test_future_filing_is_not_visible_and_contract_refuses_future_availability(tmp_path) -> None:
+    contexts, ci = _company_tree(tmp_path / "company")
+    root = tmp_path / "smart_money"
+    _snapshot(root, "alpha", "2026-03-31", "2026-05-15", _rows(shares_a=7))
+    _snapshot(root, "alpha", "2026-06-30", "2026-08-20", _rows(shares_a=9))
+    universe = tmp_path / "membership.parquet"
+    _universe(universe)
+    config = _config()
+    generated, manifest = build_bundle(
+        contexts, company_manifest=ci, smart_money_config=config["smart_money"]["funds"],
+        smart_money_config_sha256=canonical_json_sha256(config), share_class_equivalence_sha256="b" * 64,
+        universe_membership_sha256="a" * 64, snapshot_root=root, universe_membership=universe, as_of="2026-08-14",
+    )
+    assert manifest["consensus_period"] == "2026-06-30"
+    assert generated["AAPL"]["coverage"]["missing_manager_count"] == 1
+    assert generated["AAPL"]["positions"] == []
+    assert generated["AAPL"]["period"]["latest_reporting_filing_date"] is None
+    tampered = json.loads(json.dumps(generated["AAPL"]))
+    tampered["period"]["latest_reporting_filing_date"] = "2026-08-20"
+    with pytest.raises(ContractError, match="after build cutoff"):
+        validate_context(tampered)
+
+
+def test_share_class_exit_and_remaining_class_are_collapsed_before_action(tmp_path) -> None:
+    contexts, ci = _company_tree(tmp_path / "company")
+    root = tmp_path / "smart_money"
+    _snapshot(root, "alpha", "2025-12-31", "2026-02-17", _rows(shares_a=100, shares_b=1))
+    _snapshot(root, "alpha", "2026-03-31", "2026-05-15", _rows(shares_a=0, shares_b=1))
+    universe = tmp_path / "membership.parquet"
+    _universe(universe)
+    config = _config()
+    generated, _manifest = build_bundle(
+        contexts, company_manifest=ci, smart_money_config=config["smart_money"]["funds"],
+        smart_money_config_sha256=canonical_json_sha256(config), share_class_equivalence_sha256="b" * 64,
+        universe_membership_sha256="a" * 64, snapshot_root=root, universe_membership=universe, as_of="2026-08-02",
+    )
+    position = generated["AAPL"]["positions"][0]
+    assert position["action"] == "trim"
+    assert position["is_current_holder"] is True
+    assert position["shares"] == 1
+    assert position["value_usd"] == 10
+    assert generated["AAPL"]["consensus"]["current_holder_count"] == 1
 
 
 def test_contract_refuses_unknowns_signal_claims_and_period_end_availability(tmp_path) -> None:

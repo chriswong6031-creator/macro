@@ -17,11 +17,12 @@ import tempfile
 from typing import Any, Mapping
 
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 import yaml
 
 from engine.company_intelligence.contracts import ContractError, parse_date, safe_ticker, validate_context as validate_company_context, validate_manifest as validate_company_manifest
 from engine.company_theme_exposure.views import load_company_generation
-from engine.smart_money import _norm, diff_snapshots, issuer_key, resolve_tickers
+from engine.smart_money import _norm, issuer_key, resolve_tickers
 
 from .contracts import (
     AUTHORITY, CONTEXT_SCHEMA, MANIFEST_SCHEMA, bytes_sha256, canonical_json_bytes,
@@ -30,6 +31,7 @@ from .contracts import (
 
 
 FILING_WINDOW_DAYS = 45
+ACTION_MOVE_FRAC = 0.10
 TREND_VALUE_CHANGE_PCT = 15.0
 
 
@@ -55,6 +57,19 @@ def _previous_quarter(value: date) -> date:
     raise ContractError(f"not a quarter end: {value.isoformat()}")
 
 
+def _next_federal_business_day(value: date) -> date:
+    """Move a weekend/federal-holiday deadline to the next business day."""
+    holidays = {
+        stamp.date()
+        for stamp in USFederalHolidayCalendar().holidays(
+            start=pd.Timestamp(value), end=pd.Timestamp(value + timedelta(days=10))
+        )
+    }
+    while value.weekday() >= 5 or value in holidays:
+        value += timedelta(days=1)
+    return value
+
+
 def aligned_consensus_period(as_of: str | date) -> tuple[str, str, str]:
     """Return current/prior exact snapshot periods after the 45-day 13F window.
 
@@ -64,9 +79,11 @@ def aligned_consensus_period(as_of: str | date) -> tuple[str, str, str]:
     """
     build_date = _as_date(as_of)
     quarter = _quarter_end_on_or_before(build_date)
-    while quarter + timedelta(days=FILING_WINDOW_DAYS) > build_date:
+    deadline = _next_federal_business_day(quarter + timedelta(days=FILING_WINDOW_DAYS))
+    while deadline > build_date:
         quarter = _previous_quarter(quarter)
-    return quarter.isoformat(), _previous_quarter(quarter).isoformat(), (quarter + timedelta(days=FILING_WINDOW_DAYS)).isoformat()
+        deadline = _next_federal_business_day(quarter + timedelta(days=FILING_WINDOW_DAYS))
+    return quarter.isoformat(), _previous_quarter(quarter).isoformat(), deadline.isoformat()
 
 
 def _load_manager_config(path: Path) -> dict[str, Mapping[str, Any]]:
@@ -116,7 +133,13 @@ def _snapshot_path(root: Path, manager: str, period: str) -> Path:
     return root / manager / f"{period}.parquet"
 
 
-def _read_snapshot(root: Path, manager: str, period: str) -> tuple[pd.DataFrame, dict[str, Any]] | None:
+def _read_snapshot(
+    root: Path,
+    manager: str,
+    period: str,
+    *,
+    available_as_of: date | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]] | None:
     path = _snapshot_path(root, manager, period)
     if not path.is_file():
         return None
@@ -132,7 +155,9 @@ def _read_snapshot(root: Path, manager: str, period: str) -> tuple[pd.DataFrame,
     if period_values != {period} or len(dates) != 1:
         raise ContractError(f"13F snapshot period or filing date inconsistent: {path}")
     filing_date = next(iter(dates))
-    parse_date(filing_date, field="filing_date")
+    parsed_filing_date = parse_date(filing_date, field="filing_date")
+    if available_as_of is not None and parsed_filing_date > available_as_of:
+        return None
     return frame, {
         "path": path.relative_to(Path.cwd()).as_posix() if path.is_relative_to(Path.cwd()) else f"data/smart_money/{manager}/{period}.parquet",
         "sha256": bytes_sha256(path),
@@ -142,7 +167,12 @@ def _read_snapshot(root: Path, manager: str, period: str) -> tuple[pd.DataFrame,
     }
 
 
-def _snapshot_index(snapshot_root: Path, active_managers: list[str]) -> tuple[dict[str, list[dict[str, Any]]], str, int]:
+def _snapshot_index(
+    snapshot_root: Path,
+    active_managers: list[str],
+    *,
+    available_as_of: date,
+) -> tuple[dict[str, list[dict[str, Any]]], str, int]:
     """Hash the entire exact raw snapshot catalogue (not only a lucky ticker)."""
     index: dict[str, list[dict[str, Any]]] = {}
     total = 0
@@ -154,7 +184,7 @@ def _snapshot_index(snapshot_root: Path, active_managers: list[str]) -> tuple[di
                 try:
                     period = path.stem
                     parse_date(period, field="snapshot period")
-                    loaded = _read_snapshot(snapshot_root, manager, period)
+                    loaded = _read_snapshot(snapshot_root, manager, period, available_as_of=available_as_of)
                     if loaded is not None:
                         _frame, receipt = loaded
                         records.append({key: receipt[key] for key in ("path", "sha256", "bytes", "period_end", "filing_date")})
@@ -171,30 +201,77 @@ def _manager_grade(spec: Mapping[str, Any]) -> str:
     return str(value) if isinstance(value, str) and value else "not_graded"
 
 
+def _resolved_snapshot(
+    frame: pd.DataFrame | None,
+    name_map: Mapping[str, str],
+) -> tuple[pd.DataFrame, set[str]]:
+    """Resolve one snapshot and aggregate equivalent share classes first."""
+    columns = ["canonical_ticker", "issuer", "shares", "value_usd"]
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=columns), set()
+    equity = frame[frame["sh_type"].astype(str).eq("SH")].copy()
+    if equity.empty:
+        return pd.DataFrame(columns=columns), set()
+    grouped = equity.groupby("cusip", as_index=False).agg(
+        issuer=("issuer", "first"), shares=("shares", "sum"), value_usd=("value_usd", "sum")
+    )
+    resolved = resolve_tickers(grouped, dict(name_map), {})
+    unresolved = {str(value) for value in resolved.loc[resolved["ticker"].isna(), "cusip"].tolist()}
+    resolved = resolved[resolved["ticker"].notna()].copy()
+    if resolved.empty:
+        return pd.DataFrame(columns=columns), unresolved
+    resolved["canonical_ticker"] = [
+        issuer_key(str(ticker), str(cusip))
+        for ticker, cusip in zip(resolved["ticker"], resolved["cusip"])
+    ]
+    order = resolved.sort_values(["value_usd", "canonical_ticker"], ascending=[False, True])
+    collapsed = order.groupby("canonical_ticker", as_index=False).agg(
+        issuer=("issuer", "first"), shares=("shares", "sum"), value_usd=("value_usd", "sum")
+    )
+    return collapsed, unresolved
+
+
 def _resolve_diff(
     current: pd.DataFrame,
     previous: pd.DataFrame | None,
     name_map: Mapping[str, str],
 ) -> tuple[pd.DataFrame, int, int]:
-    """Resolve and collapse one manager's exact two-quarter delta by issuer key."""
-    diff = diff_snapshots(previous, current)
-    if diff.empty:
-        return diff, 0, 0
-    resolved = resolve_tickers(diff, dict(name_map), {})
-    unresolved = int(resolved["ticker"].isna().sum())
-    resolved = resolved[resolved["ticker"].notna()].copy()
-    if resolved.empty:
-        return resolved, 0, unresolved
-    resolved["canonical_ticker"] = [issuer_key(str(ticker), str(cusip)) for ticker, cusip in zip(resolved["ticker"], resolved["cusip"])]
-    # Do not double count two listed classes of the same issuer in one manager.
-    # The largest current-dollar lot determines the descriptive action; values,
-    # shares and book weights remain sums across the collapsed issuer.
-    order = resolved.sort_values(["value_usd", "canonical_ticker"], ascending=[False, True])
-    collapsed = order.groupby("canonical_ticker", as_index=False).agg(
-        action=("action", "first"), pct_portfolio=("pct_portfolio", "sum"), value_usd=("value_usd", "sum"),
-        shares=("shares", "sum"), shares_change_pct=("shares_change_pct", "first"), issuer=("issuer", "first"),
-    )
-    return collapsed, int(len(collapsed)), unresolved
+    """Classify exact issuer-level deltas after economic share-class collapse."""
+    current_resolved, current_unresolved = _resolved_snapshot(current, name_map)
+    prior_resolved, prior_unresolved = _resolved_snapshot(previous, name_map)
+    if current_resolved.empty and prior_resolved.empty:
+        return pd.DataFrame(), 0, len(current_unresolved | prior_unresolved)
+    current_total = float(current.loc[current["sh_type"].astype(str).eq("SH"), "value_usd"].sum()) or 1.0
+    merged = current_resolved.merge(
+        prior_resolved,
+        on="canonical_ticker",
+        how="outer",
+        suffixes=("_current", "_prior"),
+    ).fillna({"shares_current": 0.0, "value_usd_current": 0.0, "shares_prior": 0.0, "value_usd_prior": 0.0})
+    rows: list[dict[str, Any]] = []
+    for row in merged.itertuples(index=False):
+        current_shares = float(row.shares_current)
+        prior_shares = float(row.shares_prior)
+        if current_shares <= 0 and prior_shares > 0:
+            action, change = "exit", -100.0
+        elif prior_shares <= 0:
+            action, change = "new", None
+        else:
+            fraction = (current_shares - prior_shares) / prior_shares
+            action = "add" if fraction > ACTION_MOVE_FRAC else "trim" if fraction < -ACTION_MOVE_FRAC else "hold"
+            change = round(100.0 * fraction, 1)
+        value_usd = float(row.value_usd_current)
+        rows.append({
+            "canonical_ticker": str(row.canonical_ticker),
+            "issuer": str(row.issuer_current if isinstance(row.issuer_current, str) else row.issuer_prior),
+            "action": action,
+            "pct_portfolio": 100.0 * value_usd / current_total,
+            "value_usd": value_usd,
+            "shares": current_shares,
+            "shares_change_pct": change,
+        })
+    collapsed = pd.DataFrame(rows).sort_values("canonical_ticker").reset_index(drop=True)
+    return collapsed, int(len(collapsed)), len(current_unresolved | prior_unresolved)
 
 
 def _period_aggregate(
@@ -277,13 +354,15 @@ def build_bundle(
     if not active_managers:
         raise ContractError("all smart money managers are closed")
     name_map = _membership_name_map(universe_membership)
-    snapshot_index, snapshot_index_sha256, snapshot_count = _snapshot_index(snapshot_root, active_managers)
+    snapshot_index, snapshot_index_sha256, snapshot_count = _snapshot_index(
+        snapshot_root, active_managers, available_as_of=run_date
+    )
 
     current: dict[str, tuple[pd.DataFrame, dict[str, Any]]] = {}
     previous: dict[str, tuple[pd.DataFrame, dict[str, Any]]] = {}
     for manager in active_managers:
-        now = _read_snapshot(snapshot_root, manager, consensus_period)
-        prior = _read_snapshot(snapshot_root, manager, comparison_period)
+        now = _read_snapshot(snapshot_root, manager, consensus_period, available_as_of=run_date)
+        prior = _read_snapshot(snapshot_root, manager, comparison_period, available_as_of=run_date)
         if now is not None:
             current[manager] = now
         if prior is not None:
@@ -301,7 +380,7 @@ def build_bundle(
     for period in _history_periods(snapshot_index, consensus_period):
         period_snaps: dict[str, tuple[pd.DataFrame, dict[str, Any]]] = {}
         for manager in active_managers:
-            loaded = _read_snapshot(snapshot_root, manager, period)
+            loaded = _read_snapshot(snapshot_root, manager, period, available_as_of=run_date)
             if loaded is not None:
                 period_snaps[manager] = loaded
         aggregate, meta = _period_aggregate(period_snaps, active_managers, name_map)
