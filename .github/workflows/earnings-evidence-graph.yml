@@ -1,0 +1,101 @@
+name: earnings-evidence-graph
+
+# The index is Terminal's reader-visible commit marker.  This worker discovers
+# only its advertised bodies, keeps a durable bounded cursor, and promotes only
+# after the cached current corpus has been rebuilt and fully verified.
+on:
+  schedule:
+    - cron: "43 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      bootstrap_since:
+        description: "First-run date floor (YYYY-MM-DD); does not affect an existing cached cursor"
+        required: false
+        default: "2026-01-01"
+        type: string
+      max_bodies:
+        description: "Maximum current-index bodies fetched per run (1..500)"
+        required: false
+        default: "100"
+        type: string
+      promote:
+        description: "Promote after (and only after) the bounded cursor drains"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: earnings-evidence-graph-publication
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine/earnings_narrative
+            engine/earnings_transcript_intake.py
+            scripts/build_earnings_evidence_graph.py
+            scripts/refresh_earnings_evidence_graph.py
+            scripts/publish_earnings_evidence_graph_r2.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install R2 client only
+        run: python -m pip install --quiet boto3 requests
+
+      - name: restore bounded intake cursor and verified body cache
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/earnings-evidence
+          key: earnings-evidence-v1-${{ github.run_id }}
+          restore-keys: |
+            earnings-evidence-v1-
+
+      - name: discover Terminal revisions and promote only a complete tree
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          BOOTSTRAP_SINCE: ${{ inputs.bootstrap_since || '2026-01-01' }}
+          MAX_BODIES: ${{ inputs.max_bodies || '100' }}
+          SHOULD_PROMOTE: ${{ github.event_name == 'schedule' || inputs.promote }}
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --work-dir "$RUNNER_TEMP/earnings-evidence"
+            --out-dir "$RUNNER_TEMP/earnings-evidence/output"
+            --bootstrap-since "$BOOTSTRAP_SINCE"
+            --max-bodies "$MAX_BODIES"
+          )
+          if [ "${SHOULD_PROMOTE}" = "true" ]; then
+            ARGS+=(--promote)
+          fi
+          set +e
+          python -m scripts.refresh_earnings_evidence_graph "${ARGS[@]}"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::notice title=earnings-evidence::root manifest promotion lost a safe compare-and-swap race"
+            exit 0
+          fi
+          exit "$rc"
+
+      - name: save bounded intake cursor and verified body cache
+        if: always() && steps.restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/earnings-evidence
+          key: earnings-evidence-v1-${{ github.run_id }}
