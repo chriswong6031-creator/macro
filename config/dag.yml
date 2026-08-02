@@ -3045,6 +3045,7 @@ modules:
       - data/usaspending/obligations.parquet
       - data/usaspending/_meta.json
       - data/government_revenue/entities.json
+      - data/government_revenue/recipient_entity_graph.json
       - data/government_revenue/awards.parquet
       - data/government_revenue/award_actions.parquet
       - data/government_revenue/award_snapshots.parquet
@@ -3060,8 +3061,11 @@ modules:
     writes:
       - data/government_revenue/latest.json
       - data/government_revenue/workspace.json
+      - data/government_revenue/dossiers.json
+      - data/government_revenue/recipient_resolution_coverage.json
       - site/government-revenue-data/latest.json
       - site/government-revenue-data/workspace.json
+      - site/government-revenue-data/dossiers.json
       - site/government_revenue.html
     impure: false
     needs_secrets: false
@@ -3070,14 +3074,32 @@ modules:
       Deterministic context/display projection over committed USAspending and SAM
       first-seen evidence. The dedicated receipt-bound award-event projector consumes
       only the forward snapshot/action-version/state bundle plus the canonical retrieval
-      receipts; missing, unreadable, warming, or unverified inputs fail closed rather
+      receipts. A separately reviewed exact-ID recipient graph annotates copied visible
+      rows only after those receipt/generation/PIT gates; the builder emits independent
+      absolute-dollar snapshot/action resolution coverage. Missing, unreadable, warming,
+      or unverified inputs fail closed rather
       than falling back to mutable context ledgers. government-revenue-live.yml is the
       sole serialized SAM ledger and canonical projection writer and re-renders after
       every rebase. Generic site-wide render lanes may call the builder only with a
       fail-closed canonical-byte guard, so they can refresh matching site twins without
-      advancing evidence state. The builder emits public-company exposure candidates
+      advancing evidence state. A separate content-addressed dossier generation exposes
+      bounded official award/action history and byte-identical canonical/public twins.
+      The builder emits public-company exposure candidates
       and procurement events with explicit provenance/limitations, never bidder odds,
       revenue forecasts, an investment rank, sizing rule, gate, or new signal.
+
+  - module: scripts.curate_government_revenue_recipient_graph
+    reads: []
+    writes:
+      - data/government_revenue/recipient_entity_graph.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Manual analyst-controlled admission command for a complete reviewed graph.
+      It performs no discovery, fuzzy matching, enrichment, or inferred mapping;
+      a candidate must pass the runtime's strict exact-ID, RFC3339 temporal,
+      evidence, ownership, ambiguity, and cycle gates before atomic replacement.
 
   - module: scripts.build_baskets_canada
     reads:

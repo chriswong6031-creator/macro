@@ -1117,7 +1117,7 @@ def _recipient_resolution(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
 def _resolved_issuer_impact(
     row: Mapping[str, Any],
     company_index: Mapping[str, Mapping[str, Any]],
-) -> tuple[str, Mapping[str, Any], Mapping[str, Any], list[Mapping[str, Any]], list[str]] | None:
+) -> tuple[str, Mapping[str, Any], Mapping[str, Any], list[Mapping[str, Any]], list[str], float] | None:
     """Validate the resolution state, issuer agreement, ownership path and proof."""
 
     resolution = _recipient_resolution(row)
@@ -1131,6 +1131,9 @@ def _resolved_issuer_impact(
     if not _strict_true(resolution.get("source_identity_stable")):
         return None
     if not isinstance(ownership_path, list) or not ownership_path or not all(isinstance(edge, Mapping) for edge in ownership_path):
+        return None
+    economic_share = _number(resolution.get("economic_share"))
+    if economic_share is None or not 0 < economic_share <= 1:
         return None
     ticker = _text(issuer.get("ticker")).upper()
     if not ticker:
@@ -1160,7 +1163,14 @@ def _resolved_issuer_impact(
     # the resolution and for at least one ownership edge to the public issuer.
     if not resolution_refs or not path_refs or _identifier_conflicts(row, resolution):
         return None
-    return ticker, company, resolution, ownership_path, sorted(set(resolution_refs + path_refs))
+    return (
+        ticker,
+        company,
+        resolution,
+        ownership_path,
+        sorted(set(resolution_refs + path_refs)),
+        economic_share,
+    )
 
 
 def _impact(
@@ -1173,7 +1183,7 @@ def _impact(
     resolved = _resolved_issuer_impact(row, company_index)
     if resolved is None:
         return None
-    ticker, company, resolution, ownership_path, resolution_refs = resolved
+    ticker, company, resolution, ownership_path, resolution_refs, economic_share = resolved
     metrics = company.get("metrics") if isinstance(company.get("metrics"), Mapping) else {}
     denominator = _number(
         _first(
@@ -1181,8 +1191,11 @@ def _impact(
             ("ttm_government_obligations", "government_obligations_ttm", "ttm_obligations"),
         )
     )
-    absolute_amount = abs(amount) if amount is not None else None
-    ratio = absolute_amount / denominator if absolute_amount is not None and denominator and denominator > 0 else None
+    source_amount = abs(amount) if amount is not None else None
+    attributable_amount = (
+        source_amount * economic_share if source_amount is not None else None
+    )
+    ratio = attributable_amount / denominator if attributable_amount is not None and denominator and denominator > 0 else None
     if ratio is None:
         band, score = "unknown", 0.0
     elif ratio >= 0.10:
@@ -1204,9 +1217,16 @@ def _impact(
         "stance": "watch_dont_chase",
         "stance_scope": "research",
         "materiality": {
-            "basis": "absolute event amount / resolved issuer TTM government obligations",
-            "event_amount_usd": absolute_amount,
+            "basis": "absolute event amount x reviewed economic share / resolved issuer TTM government obligations",
+            "basis_code": "reviewed_attributable_absolute_event_amount_over_issuer_ttm_government_obligations",
+            "coverage_note": (
+                f"Issuer-impact numerator applies reviewed economic share {economic_share:.6g}; "
+                "it is not revenue, backlog, margin, or investment authority."
+            ),
+            "event_amount_usd": attributable_amount,
             "government_obligations_ttm_usd": denominator,
+            "numerator_value": attributable_amount,
+            "denominator_value": denominator,
             "ratio": ratio,
             "band": band,
             "score": score,

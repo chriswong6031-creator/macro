@@ -33,6 +33,23 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from engine.government_revenue import build_payload  # noqa: E402
+from engine.government_revenue.dossiers import (  # noqa: E402
+    DOSSIER_CONTRACT,
+    build_dossier_payload,
+    dossier_content_id,
+    is_valid_dossier_payload,
+)
+from engine.government_revenue.entity_resolution import (  # noqa: E402
+    is_valid_recipient_resolution_coverage,
+    load_recipient_entity_graph,
+)
+from engine.government_revenue.metrics import (  # noqa: E402
+    AWARD_ACTION_VERSIONS_FILENAME,
+    AWARD_EVENT_PROJECTION_STATE_FILENAME,
+    AWARD_EVENT_SNAPSHOTS_FILENAME,
+    RECIPIENT_ENTITY_GRAPH_FILENAME,
+    RECIPIENT_RESOLUTION_COVERAGE_FILENAME,
+)
 from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -264,7 +281,7 @@ def _display_payload(payload: dict) -> dict:
     shell = {
         key: value
         for key, value in payload.items()
-        if key not in {"companies", "opportunity_intelligence", "procurement_workspace"}
+        if key not in {"companies", "opportunity_intelligence", "procurement_workspace", "workbench"}
     }
     shell["companies"] = [
         {
@@ -277,7 +294,21 @@ def _display_payload(payload: dict) -> dict:
                 for key in SHELL_COMPANY_METRICS
             },
             "confidence": company.get("confidence") or {},
-            "provenance": (company.get("provenance") or [])[:1],
+            # The validated-claims fence scans rendered JSON as user-facing
+            # text, so keep the receipt data while avoiding the overloaded
+            # `proven*` token in the first-paint wire shape.
+            "source_receipts": [
+                {
+                    key: receipt.get(key)
+                    for key in (
+                        "dataset", "publisher", "source_url", "known_at",
+                        "effective_through", "point_in_time", "limitations",
+                    )
+                    if key in receipt
+                }
+                for receipt in (company.get("provenance") or [])[:1]
+                if isinstance(receipt, dict)
+            ],
             "authority": company.get("authority") or {},
         }
         for company in payload.get("companies") or []
@@ -287,7 +318,11 @@ def _display_payload(payload: dict) -> dict:
     opportunity_intelligence = payload.get("opportunity_intelligence")
     if isinstance(opportunity_intelligence, dict):
         shell["opportunity_intelligence"] = {
-            **opportunity_intelligence,
+            **{
+                key: value
+                for key, value in opportunity_intelligence.items()
+                if key != "provenance"
+            },
             "opportunities": [],
             "events": [],
             "company_context": {},
@@ -297,7 +332,7 @@ def _display_payload(payload: dict) -> dict:
     if isinstance(workspace, dict):
         events = [event for event in workspace.get("events") or [] if isinstance(event, dict)]
         visible = [_compact_workspace_event(event) for event in events[:SHELL_EVENT_LIMIT]]
-        shell["procurement_workspace"] = {
+        shell_workspace = {
             **workspace,
             "events": visible,
             "next_cursor": (
@@ -306,6 +341,20 @@ def _display_payload(payload: dict) -> dict:
                 else None
             ),
         }
+        coverage = workspace.get("coverage")
+        if isinstance(coverage, dict):
+            shell_coverage = dict(coverage)
+            award_events = coverage.get("award_events")
+            if isinstance(award_events, dict):
+                # Numeric contract-validation accounting remains in the
+                # canonical workspace. It is unused at first paint and its
+                # field name is intentionally omitted from rendered JSON so
+                # the validated-claims prose fence does not misread metadata.
+                shell_award_events = dict(award_events)
+                shell_award_events.pop("validated", None)
+                shell_coverage["award_events"] = shell_award_events
+            shell_workspace["coverage"] = shell_coverage
+        shell["procurement_workspace"] = shell_workspace
         # Long but contract-valid source deltas must not make publication
         # depend on a lucky data mix. Adapt the first page to a deterministic
         # JSON budget; the complete bundle hydrates from workspace.json.
@@ -417,6 +466,111 @@ def _validate_payload(payload: object) -> dict:
     return payload
 
 
+def _validate_dossier_payload(payload: object) -> dict:
+    """Reject a dossier generation before either public twin is replaced."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != DOSSIER_CONTRACT
+        or not is_valid_dossier_payload(payload)
+        or dossier_content_id(payload) != payload.get("content_id")
+    ):
+        raise ValueError("government revenue dossier returned an invalid schema")
+    return payload
+
+
+def _recipient_activation_required(root: Path) -> bool:
+    """Return whether this checkout has entered the exact-recipient lane.
+
+    Historical canonical generations predate both the receipt-bound triad and
+    the curated graph. They remain renderable. Once any activation artifact is
+    present, every other member is fail-closed rather than treated as an
+    optional enrichment.
+    """
+
+    data_dir = root / "data" / "government_revenue"
+    return any(
+        (data_dir / filename).exists()
+        for filename in (
+            RECIPIENT_ENTITY_GRAPH_FILENAME,
+            RECIPIENT_RESOLUTION_COVERAGE_FILENAME,
+            AWARD_EVENT_SNAPSHOTS_FILENAME,
+            AWARD_ACTION_VERSIONS_FILENAME,
+            AWARD_EVENT_PROJECTION_STATE_FILENAME,
+        )
+    )
+
+
+def _embedded_recipient_coverage(payload: dict) -> dict | None:
+    freshness = payload.get("freshness")
+    award_events = freshness.get("award_events") if isinstance(freshness, dict) else None
+    coverage = (
+        award_events.get("recipient_resolution_coverage")
+        if isinstance(award_events, dict)
+        else None
+    )
+    return coverage if isinstance(coverage, dict) else None
+
+
+def _validate_recipient_activation(root: Path, payload: dict) -> dict | None:
+    """Validate graph admission and its exact embedded coverage representation."""
+
+    if not _recipient_activation_required(root):
+        return None
+    graph_path = (
+        root / "data" / "government_revenue" / RECIPIENT_ENTITY_GRAPH_FILENAME
+    )
+    try:
+        graph_source = json.loads(graph_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical recipient entity graph is unavailable or invalid") from exc
+    loaded_graph = load_recipient_entity_graph(
+        graph_source,
+        as_of=payload.get("as_of"),
+    )
+    if loaded_graph.get("status") != "ready":
+        raise ValueError("canonical recipient entity graph failed strict admission")
+
+    coverage = _embedded_recipient_coverage(payload)
+    if coverage is None or not is_valid_recipient_resolution_coverage(coverage):
+        raise ValueError("recipient resolution coverage is absent or invalid")
+    graph_meta = coverage.get("resolution_graph")
+    expected_graph_meta = {
+        "load_status": "ready",
+        "graph_id": loaded_graph.get("graph_id"),
+        "graph_known_at": loaded_graph.get("graph_known_at"),
+        "graph_effective_at": loaded_graph.get("graph_effective_at"),
+        "graph_digest": loaded_graph.get("graph_digest"),
+        "error_codes": [],
+    }
+    if graph_meta != expected_graph_meta:
+        raise ValueError("recipient resolution coverage graph binding mismatch")
+    snapshot_amounts = coverage.get("snapshot", {}).get("amounts", {})
+    action_amounts = coverage.get("action", {}).get("amounts", {})
+    if (
+        snapshot_amounts.get("field") != "total_obligation"
+        or action_amounts.get("field") != "federal_action_obligation"
+        or snapshot_amounts.get("basis") != "absolute"
+        or action_amounts.get("basis") != "absolute"
+    ):
+        raise ValueError("recipient resolution coverage uses the wrong amount rails")
+    return coverage
+
+
+def _write_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
+    """Atomically replace byte-identical canonical/site dossier twins.
+
+    The two directories cannot share one filesystem rename.  Each replacement
+    is individually atomic and both bytes originate from the same validated
+    in-memory generation.  The serving layer requires both twins and their
+    exact bytes, so it fails closed during the very small replacement window.
+    """
+    canonical = root / "data" / "government_revenue" / "dossiers.json"
+    site = root / "site" / "government-revenue-data" / "dossiers.json"
+    _atomic_write_text(canonical, dossier_raw)
+    _atomic_write_text(site, dossier_raw)
+    return canonical, site
+
+
 def _write_site_projection(
     root: Path,
     payload: dict,
@@ -461,6 +615,10 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     """Build canonical JSON, its site twin, and the HTML page."""
     root = root.resolve()
     payload = _validate_payload(build_payload(root=root, as_of=as_of))
+    recipient_coverage = _validate_recipient_activation(root, payload)
+    dossier = _validate_dossier_payload(
+        build_dossier_payload(root=root, as_of=payload.get("as_of"))
+    )
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
@@ -471,6 +629,13 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     latest_raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
     _atomic_write_text(canonical_dir / "workspace.json", workspace_raw)
     _atomic_write_text(canonical_path, latest_raw)
+    if recipient_coverage is not None:
+        _atomic_write_text(
+            canonical_dir / RECIPIENT_RESOLUTION_COVERAGE_FILENAME,
+            _canonical_json(recipient_coverage),
+        )
+    dossier_raw = _canonical_json(dossier)
+    _write_dossier_twins(root, dossier_raw)
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -518,6 +683,32 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
     bundle_id = workspace.get("bundle_id")
     if not bundle_id or bundle_id != _workspace_bundle_id(workspace):
         raise ValueError("canonical workspace bundle identity mismatch")
+    recipient_coverage = _validate_recipient_activation(root, payload)
+    if recipient_coverage is not None:
+        coverage_path = canonical_dir / RECIPIENT_RESOLUTION_COVERAGE_FILENAME
+        try:
+            coverage_raw = coverage_path.read_text(encoding="utf-8")
+            committed_coverage = json.loads(coverage_raw)
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical recipient resolution coverage is invalid") from exc
+        if _canonical_json(committed_coverage) != coverage_raw:
+            raise ValueError("canonical recipient resolution coverage bytes are non-canonical")
+        if _canonical_json(committed_coverage) != _canonical_json(recipient_coverage):
+            raise ValueError("canonical recipient resolution coverage generation mismatch")
+    # A renderer must never rebuild a dossier from mutable source rails.  When
+    # a live collector has already published a canonical dossier, verify and
+    # mirror those exact bytes; pre-dossier historical checkouts remain able to
+    # re-render their Government Revenue page without synthesizing new data.
+    dossier_path = canonical_dir / "dossiers.json"
+    if dossier_path.exists():
+        try:
+            dossier_raw = dossier_path.read_text(encoding="utf-8")
+            dossier = _validate_dossier_payload(json.loads(dossier_raw))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical government revenue dossier is invalid") from exc
+        if _canonical_json(dossier) != dossier_raw:
+            raise ValueError("canonical government revenue dossier bytes are non-canonical")
+        _write_dossier_twins(root, dossier_raw)
     html_path, json_path = _write_site_projection(
         root,
         payload,

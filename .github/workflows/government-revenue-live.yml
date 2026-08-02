@@ -54,6 +54,7 @@ on:
       - "data/government_revenue/award_action_versions.parquet"
       - "data/government_revenue/award_event_projection_state.json"
       - "data/government_revenue/entities.json"
+      - "data/government_revenue/recipient_entity_graph.json"
       - "data/government_revenue/ingest_status.json"
       - "data/government_revenue/collection_receipts.jsonl"
       - "data/government_revenue/opportunities.parquet"
@@ -348,6 +349,7 @@ jobs:
             data/government_revenue/award_event_projection_state.json
           )
           award_event_receipt_path=data/government_revenue/collection_receipts.jsonl
+          recipient_graph_path=data/government_revenue/recipient_entity_graph.json
 
           assert_award_event_bundle() {
             local present=0 tracked=0 path
@@ -496,8 +498,23 @@ jobs:
             fi
           }
 
+          assert_recipient_graph_source_clean() {
+            # Recipient attribution is a separately reviewed exact-ID input.
+            # Neither the SAM collector nor the projection builder may curate,
+            # infer, or stage it from fuzzy discovery rows.
+            if [ ! -f "$recipient_graph_path" ] || ! git ls-files --error-unmatch -- "$recipient_graph_path" >/dev/null 2>&1; then
+              echo "::error title=recipient graph missing::the canonical reviewed recipient graph must be committed before publication"
+              return 1
+            fi
+            if ! git diff --quiet -- "$recipient_graph_path" || ! git diff --cached --quiet -- "$recipient_graph_path"; then
+              echo "::error title=recipient graph mutation::collectors and projection builders cannot write or stage the curated recipient graph"
+              return 1
+            fi
+          }
+
           assert_award_event_bundle
           assert_award_event_source_clean
+          assert_recipient_graph_source_clean
 
           # Stage only the first-seen SAM evidence, its runner heartbeat, the protected
           # complete event bundle, and rebuilt context/display twins. In particular, do
@@ -516,8 +533,11 @@ jobs:
             data/government_revenue/sam_opportunity_heartbeat.parquet
             data/government_revenue/latest.json
             data/government_revenue/workspace.json
+            data/government_revenue/dossiers.json
+            data/government_revenue/recipient_resolution_coverage.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
+            site/government-revenue-data/dossiers.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -545,8 +565,11 @@ jobs:
             data/government_revenue/award_event_projection_state.json \
             data/government_revenue/latest.json \
             data/government_revenue/workspace.json \
+            data/government_revenue/dossiers.json \
+            data/government_revenue/recipient_resolution_coverage.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
+            site/government-revenue-data/dossiers.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
@@ -573,12 +596,16 @@ jobs:
               # A non-fast-forward push loops back through this same re-render.
               assert_award_event_bundle
               assert_award_event_source_clean
+              assert_recipient_graph_source_clean
               python -m scripts.build_government_revenue
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
+                data/government_revenue/dossiers.json \
+                data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
+                site/government-revenue-data/dossiers.json \
                 site/government_revenue.html
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
@@ -586,8 +613,11 @@ jobs:
                 data/government_revenue/award_event_projection_state.json \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
+                data/government_revenue/dossiers.json \
+                data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
+                site/government-revenue-data/dossiers.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

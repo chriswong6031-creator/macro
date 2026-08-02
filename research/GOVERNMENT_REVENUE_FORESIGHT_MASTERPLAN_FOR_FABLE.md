@@ -1,6 +1,8 @@
 # Government Revenue Foresight — canonical product and implementation masterplan for Fable
 
 > **Canonical deliverable.** This is the single build handoff for the Government Revenue Foresight product. If a chat summary, scratch note, competitor screenshot, or older procurement memo conflicts with this file, this file wins until it is superseded in-repo.
+>
+> **Resume note:** current shipped implementation state and the next-account start sequence live in `research/GOVERNMENT_REVENUE_FORESIGHT_ACCOUNT_HANDOFF.md`.
 
 - **Status:** canonical full-suite masterplan plus implemented W1 and W2 procurement-delta workbench
 - **Evidence cut:** 2026-08-01

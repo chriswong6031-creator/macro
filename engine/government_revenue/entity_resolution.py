@@ -22,16 +22,96 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 from datetime import date, datetime, time, timezone
+from functools import lru_cache
 from hashlib import sha256
 import json
 import math
+from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
 
 RESOLUTION_CONTRACT = "government_recipient_resolution.v1"
 COVERAGE_CONTRACT = "government_entity_coverage.v1"
+RECIPIENT_GRAPH_CONTRACT = "government_recipient_entity_graph.v1"
+RECIPIENT_RESOLUTION_COVERAGE_CONTRACT = "government_recipient_resolution_coverage.v1"
 SCHEMA_VERSION = "1.0.0"
+
+# A strict graph is loaded into this small wrapper before it is permitted to
+# affect issuer attribution.  The raw resolver remains backward compatible for
+# the legacy fixture graph, but production callers should pass this load result.
+# Importantly, an absent or invalid graph produces unresolved annotations rather
+# than preventing source records from flowing through the award/event rail.
+_GRAPH_LOAD_RESULT_CONTRACT = "government_recipient_entity_graph_load_result.v1"
+_GRAPH_LOAD_SOURCE_KEY = "_strict_source_graph"
+_GRAPH_LOAD_STATUSES = {"ready", "absent", "invalid"}
+_GRAPH_TOP_LEVEL_FIELDS = {
+    "contract",
+    "schema_version",
+    "graph_id",
+    "graph_known_at",
+    "graph_effective_at",
+    "evidence",
+    "companies",
+    "legal_entities",
+    "identifiers",
+    "ownership_edges",
+    "blocks",
+    "conflicts",
+    "overrides",
+}
+_GRAPH_TEMPORAL_FIELDS = {"known_at", "valid_from", "valid_to", "evidence_refs"}
+_GRAPH_ROW_FIELDS = {
+    "evidence": {"evidence_id", "source_ref", "known_at", "valid_from", "valid_to"},
+    "company": {"company_id", "ticker", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "legal_entity": {"entity_id", "canonical_name", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "identifier": {"identifier_id", "entity_id", "namespace", "value", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "ownership_edge": {
+        "edge_id", "child_entity_id", "parent_entity_id", "parent_company_id", "relationship",
+        "economic_share", "verification_state", *_GRAPH_TEMPORAL_FIELDS,
+    },
+    "block": {
+        "block_id", "scope", "namespace", "value", "target_edge_id", "child_entity_id",
+        "target_entity_id", "target_company_id", "reason_code", "reviewer_state", *_GRAPH_TEMPORAL_FIELDS,
+    },
+    "conflict": {
+        "conflict_id", "scope", "namespace", "value", "child_entity_id", "candidate_entity_ids",
+        "candidate_company_ids", "reason_code", "reviewer_state", *_GRAPH_TEMPORAL_FIELDS,
+    },
+    "override": {
+        "override_id", "action", "namespace", "value", "source_record_key", "target_entity_id",
+        "target_company_id", "child_entity_id", "target_edge_id", "relationship", "economic_share",
+        "reviewer_state", *_GRAPH_TEMPORAL_FIELDS,
+    },
+}
+_GRAPH_ROW_REQUIRED = {
+    "evidence": {"evidence_id", "source_ref", "known_at", "valid_from", "valid_to"},
+    "company": {"company_id", "ticker", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "legal_entity": {"entity_id", "canonical_name", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "identifier": {"identifier_id", "entity_id", "namespace", "value", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "ownership_edge": {"edge_id", "child_entity_id", "relationship", "economic_share", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
+    "block": {"block_id", "scope", "reason_code", "reviewer_state", *_GRAPH_TEMPORAL_FIELDS},
+    "conflict": {"conflict_id", "scope", "reason_code", "reviewer_state", *_GRAPH_TEMPORAL_FIELDS},
+    "override": {"override_id", "action", "reviewer_state", *_GRAPH_TEMPORAL_FIELDS},
+}
+_REVIEWED_GRAPH_STATES = {"confirmed", "reviewed", "analyst_approved"}
+_GRAPH_IDENTIFIER_NAMESPACES = {"sam_uei", "cage", "usaspending_recipient_id"}
+_GRAPH_EDGE_RELATIONSHIPS = {
+    "wholly_owned",
+    "majority_owned",
+    "partial_owned",
+    "joint_venture",
+}
+_GRAPH_OVERRIDE_ACTIONS = {
+    "assert_identifier",
+    "assert_mapping",
+    "assert_ownership",
+    "block",
+    "block_identifier",
+    "block_ownership",
+    "reject_identifier",
+    "retire_edge",
+}
 
 AUTHORITY = {
     "tier": "display",
@@ -83,6 +163,9 @@ _ALL_STATES = (
     "conflicted",
 )
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_RFC3339_DATETIME = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 
 
@@ -121,6 +204,585 @@ def _timestamp(value: Any, *, end_of_day: bool = False) -> datetime | None:
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value is not None else None
+
+
+def _graph_error(errors: list[str], code: str) -> None:
+    """Add one stable loader code without leaking arbitrary source text."""
+    if code not in errors:
+        errors.append(code)
+
+
+def _strict_datetime(value: Any) -> datetime | None:
+    """Accept only RFC3339 graph timestamps with an explicit UTC offset."""
+    raw = _text(value)
+    if raw is None or _RFC3339_DATETIME.fullmatch(raw) is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def _graph_rows(
+    graph: Mapping[str, Any], field: str, errors: list[str]
+) -> list[dict[str, Any]]:
+    value = graph.get(field)
+    if not isinstance(value, list):
+        _graph_error(errors, f"invalid_{field}")
+        return []
+    rows: list[dict[str, Any]] = []
+    for row in value:
+        if not isinstance(row, Mapping):
+            _graph_error(errors, f"invalid_{field}")
+            continue
+        rows.append(deepcopy(dict(row)))
+    return rows
+
+
+def _graph_unique_ids(
+    rows: Iterable[Mapping[str, Any]], field: str, errors: list[str]
+) -> set[str]:
+    ids: set[str] = set()
+    for row in rows:
+        value = _text(row.get(field))
+        if value is None:
+            _graph_error(errors, f"missing_{field}")
+            continue
+        if value in ids:
+            _graph_error(errors, f"duplicate_{field}")
+            continue
+        ids.add(value)
+    return ids
+
+
+def _assert_graph_row_shape(
+    row: Mapping[str, Any], row_kind: str, errors: list[str]
+) -> None:
+    """Apply the graph contract's closed-world row shape in the runtime loader."""
+    allowed = _GRAPH_ROW_FIELDS[row_kind]
+    required = _GRAPH_ROW_REQUIRED[row_kind]
+    if set(row) - allowed:
+        _graph_error(errors, f"unknown_{row_kind}_field")
+    if required - set(row):
+        _graph_error(errors, f"missing_{row_kind}_field")
+
+
+def _graph_temporal_claim(
+    row: Mapping[str, Any],
+    *,
+    errors: list[str],
+    evidence: Mapping[str, Mapping[str, Any]],
+    graph_known_at: datetime | None,
+    graph_effective_at: datetime | None,
+    analysis_as_of: datetime | None,
+    require_evidence: bool = True,
+) -> None:
+    """Validate clocks and evidence on one graph claim, never repairing it.
+
+    The graph snapshot is itself point-in-time.  A claim or its evidence that
+    post-dates the graph snapshot (or the requested replay) cannot be silently
+    retained as a future fact.  This is intentionally stricter than resolver
+    filtering: the loader refuses to certify a graph with future leakage.
+    """
+    known_at = _strict_datetime(row.get("known_at"))
+    valid_from = _strict_datetime(row.get("valid_from"))
+    valid_to_raw = row.get("valid_to")
+    valid_to = None if valid_to_raw is None else _strict_datetime(valid_to_raw)
+    if known_at is None:
+        _graph_error(errors, "invalid_claim_known_at")
+    if valid_from is None:
+        _graph_error(errors, "invalid_claim_valid_from")
+    if valid_to_raw is not None and valid_to is None:
+        _graph_error(errors, "invalid_claim_valid_to")
+    if valid_from is not None and valid_to is not None and valid_to < valid_from:
+        _graph_error(errors, "claim_validity_window_inverted")
+    if known_at is not None and graph_known_at is not None and known_at > graph_known_at:
+        _graph_error(errors, "future_known_claim")
+    if valid_from is not None and graph_effective_at is not None and valid_from > graph_effective_at:
+        _graph_error(errors, "future_effective_claim")
+    if analysis_as_of is not None:
+        if known_at is not None and known_at > analysis_as_of:
+            _graph_error(errors, "future_known_at_analysis_asof")
+        if valid_from is not None and valid_from > analysis_as_of:
+            _graph_error(errors, "future_effective_at_analysis_asof")
+
+    refs = _evidence_refs(row)
+    if require_evidence and not refs:
+        _graph_error(errors, "missing_evidence_refs")
+    for ref in refs:
+        source = evidence.get(ref)
+        if source is None:
+            _graph_error(errors, "unknown_evidence_ref")
+            continue
+        evidence_known_at = _strict_datetime(source.get("known_at"))
+        evidence_valid_from = _strict_datetime(source.get("valid_from"))
+        if evidence_known_at is None or evidence_valid_from is None:
+            _graph_error(errors, "invalid_evidence_clock")
+            continue
+        if known_at is not None and evidence_known_at > known_at:
+            _graph_error(errors, "evidence_known_after_claim")
+        if graph_known_at is not None and evidence_known_at > graph_known_at:
+            _graph_error(errors, "future_known_evidence")
+        if graph_effective_at is not None and evidence_valid_from > graph_effective_at:
+            _graph_error(errors, "future_effective_evidence")
+        if analysis_as_of is not None and (
+            evidence_known_at > analysis_as_of or evidence_valid_from > analysis_as_of
+        ):
+            _graph_error(errors, "future_evidence_at_analysis_asof")
+
+
+def _intervals_overlap(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    """Return whether two validated inclusive ownership/identifier intervals overlap."""
+    left_start = _strict_datetime(left.get("valid_from"))
+    right_start = _strict_datetime(right.get("valid_from"))
+    left_end = _strict_datetime(left.get("valid_to")) if left.get("valid_to") is not None else None
+    right_end = _strict_datetime(right.get("valid_to")) if right.get("valid_to") is not None else None
+    if left_start is None or right_start is None:
+        return True
+    left_upper = left_end or datetime.max.replace(tzinfo=timezone.utc)
+    right_upper = right_end or datetime.max.replace(tzinfo=timezone.utc)
+    return left_start <= right_upper and right_start <= left_upper
+
+
+def _graph_fingerprint(graph: Mapping[str, Any]) -> str:
+    """Hash the reviewed graph only; source-record identity is deliberately separate."""
+    encoded = json.dumps(graph, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
+def _graph_load_result(
+    *,
+    status: str,
+    graph: Mapping[str, Any] | None = None,
+    graph_id: str | None = None,
+    graph_known_at: datetime | None = None,
+    graph_effective_at: datetime | None = None,
+    graph_digest: str | None = None,
+    errors: Iterable[str] = (),
+    source_graph: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    assert status in _GRAPH_LOAD_STATUSES
+    result = {
+        "contract": _GRAPH_LOAD_RESULT_CONTRACT,
+        "schema_version": SCHEMA_VERSION,
+        "status": status,
+        "graph": deepcopy(dict(graph)) if isinstance(graph, Mapping) else None,
+        "graph_id": graph_id,
+        "graph_known_at": _iso(graph_known_at),
+        "graph_effective_at": _iso(graph_effective_at),
+        "graph_digest": graph_digest,
+        "error_codes": sorted({code for code in errors if _text(code)}),
+    }
+    if source_graph is not None:
+        # Retain the strict source only for in-memory/replay verification. The
+        # resolver re-loads it rather than trusting a caller-supplied normalized
+        # graph payload that merely claims to be loader output.
+        result[_GRAPH_LOAD_SOURCE_KEY] = deepcopy(dict(source_graph))
+    return result
+
+
+def _is_strict_graph_load_result(graph: Any) -> bool:
+    return isinstance(graph, Mapping) and graph.get("contract") == _GRAPH_LOAD_RESULT_CONTRACT
+
+
+def _graph_for_resolution(
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None = None,
+) -> tuple[Mapping[str, Any] | None, str | None]:
+    """Unwrap a strict graph result, preserving legacy resolver compatibility."""
+    if graph is None:
+        return None, "recipient_graph_absent"
+    if not isinstance(graph, Mapping):
+        return None, "recipient_graph_invalid"
+    if _is_strict_graph_load_result(graph):
+        status = _text(graph.get("status"))
+        if status != "ready" or not isinstance(graph.get("graph"), Mapping):
+            return None, (
+                "recipient_graph_absent" if status == "absent" else "recipient_graph_invalid"
+            )
+        source_graph = graph.get(_GRAPH_LOAD_SOURCE_KEY)
+        if not isinstance(source_graph, Mapping):
+            return None, "recipient_graph_invalid"
+        verified = load_recipient_entity_graph(source_graph, as_of=as_of)
+        if (
+            verified.get("status") != "ready"
+            or _text(graph.get("graph_digest")) != _text(verified.get("graph_digest"))
+            or not isinstance(verified.get("graph"), Mapping)
+        ):
+            return None, "recipient_graph_invalid"
+        return verified["graph"], None
+    if graph.get("contract") == RECIPIENT_GRAPH_CONTRACT:
+        loaded = load_recipient_entity_graph(graph, as_of=as_of)
+        return _graph_for_resolution(loaded, as_of=as_of)
+    return graph, None
+
+
+def _assert_graph_references(
+    *,
+    identifiers: Iterable[Mapping[str, Any]],
+    ownership_edges: Iterable[Mapping[str, Any]],
+    blocks: Iterable[Mapping[str, Any]],
+    conflicts: Iterable[Mapping[str, Any]],
+    overrides: Iterable[Mapping[str, Any]],
+    entity_ids: set[str],
+    company_ids: set[str],
+    edge_ids: set[str],
+    errors: list[str],
+) -> None:
+    """Ensure every graph pointer names a reviewed node, never a display name."""
+    for row in identifiers:
+        if _text(row.get("entity_id")) not in entity_ids:
+            _graph_error(errors, "identifier_references_unknown_entity")
+    for edge in ownership_edges:
+        child = _text(edge.get("child_entity_id"))
+        parent_entity = _text(edge.get("parent_entity_id"))
+        parent_company = _text(edge.get("parent_company_id"))
+        if child not in entity_ids:
+            _graph_error(errors, "ownership_references_unknown_child_entity")
+        if bool(parent_entity) == bool(parent_company):
+            _graph_error(errors, "ownership_requires_exactly_one_parent")
+        if parent_entity and parent_entity not in entity_ids:
+            _graph_error(errors, "ownership_references_unknown_parent_entity")
+        if parent_company and parent_company not in company_ids:
+            _graph_error(errors, "ownership_references_unknown_company")
+    for row in blocks:
+        scope = _text(row.get("scope"))
+        if scope == "identifier":
+            namespace = _normal_namespace(row.get("namespace"))
+            if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not _normal_identifier(namespace or "", row.get("value")):
+                _graph_error(errors, "identifier_block_missing_exact_identifier")
+        elif scope == "ownership":
+            if not any(
+                _text(row.get(field))
+                for field in ("target_edge_id", "target_entity_id", "target_company_id")
+            ):
+                _graph_error(errors, "ownership_block_missing_target")
+        else:
+            _graph_error(errors, "invalid_block_scope")
+        if _text(row.get("target_edge_id")) and _text(row.get("target_edge_id")) not in edge_ids:
+            _graph_error(errors, "block_references_unknown_edge")
+        if _text(row.get("child_entity_id")) and _text(row.get("child_entity_id")) not in entity_ids:
+            _graph_error(errors, "block_references_unknown_child_entity")
+        if _text(row.get("target_entity_id")) and _text(row.get("target_entity_id")) not in entity_ids:
+            _graph_error(errors, "block_references_unknown_entity")
+        if _text(row.get("target_company_id")) and _text(row.get("target_company_id")) not in company_ids:
+            _graph_error(errors, "block_references_unknown_company")
+    for row in conflicts:
+        scope = _text(row.get("scope"))
+        if scope == "identifier":
+            namespace = _normal_namespace(row.get("namespace"))
+            if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not _normal_identifier(namespace or "", row.get("value")):
+                _graph_error(errors, "identifier_conflict_missing_exact_identifier")
+        elif scope in {"ownership", "issuer"}:
+            if _text(row.get("child_entity_id")) not in entity_ids:
+                _graph_error(errors, "conflict_references_unknown_child_entity")
+        else:
+            _graph_error(errors, "invalid_conflict_scope")
+        for entity_id in row.get("candidate_entity_ids") or []:
+            if _text(entity_id) not in entity_ids:
+                _graph_error(errors, "conflict_references_unknown_entity")
+        for company_id in row.get("candidate_company_ids") or []:
+            if _text(company_id) not in company_ids:
+                _graph_error(errors, "conflict_references_unknown_company")
+    for row in overrides:
+        action = (_text(row.get("action")) or "").lower()
+        if action not in _GRAPH_OVERRIDE_ACTIONS:
+            _graph_error(errors, "invalid_override_action")
+            continue
+        namespace = _normal_namespace(row.get("namespace"))
+        value = _normal_identifier(namespace or "", row.get("value")) if namespace else None
+        target_entity = _text(row.get("target_entity_id"))
+        target_company = _text(row.get("target_company_id"))
+        if action in _ASSERT_IDENTIFIER_ACTIONS:
+            if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not value or target_entity not in entity_ids:
+                _graph_error(errors, "invalid_identifier_override")
+        if action in _ASSERT_OWNERSHIP_ACTIONS:
+            child = _text(row.get("child_entity_id"))
+            if child not in entity_ids or bool(target_entity) == bool(target_company):
+                _graph_error(errors, "invalid_ownership_override")
+            if target_entity and target_entity not in entity_ids:
+                _graph_error(errors, "override_references_unknown_entity")
+            if target_company and target_company not in company_ids:
+                _graph_error(errors, "override_references_unknown_company")
+            relationship = (_text(row.get("relationship")) or "").lower()
+            share, share_error = _edge_share(row)
+            if relationship not in _GRAPH_EDGE_RELATIONSHIPS or share_error:
+                _graph_error(errors, "invalid_ownership_override_economics")
+        if action in _BLOCK_ACTIONS and not (
+            (namespace in _GRAPH_IDENTIFIER_NAMESPACES and value)
+            or _text(row.get("source_record_key"))
+            or _text(row.get("target_edge_id"))
+            or target_entity
+            or target_company
+        ):
+            _graph_error(errors, "invalid_block_override")
+        if _text(row.get("target_edge_id")) and _text(row.get("target_edge_id")) not in edge_ids:
+            _graph_error(errors, "override_references_unknown_edge")
+
+
+def _assert_graph_topology(
+    *,
+    identifiers: list[dict[str, Any]],
+    ownership_edges: list[dict[str, Any]],
+    entity_ids: set[str],
+    errors: list[str],
+) -> None:
+    """Reject a graph whose exact joins or ownership walk is ambiguous or cyclic."""
+    identifier_groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in identifiers:
+        namespace = _normal_namespace(row.get("namespace"))
+        value = _normal_identifier(namespace or "", row.get("value")) if namespace else None
+        if namespace and value:
+            identifier_groups[(namespace, value)].append(row)
+    for rows in identifier_groups.values():
+        for ordinal, left in enumerate(rows):
+            for right in rows[ordinal + 1:]:
+                if (
+                    _text(left.get("entity_id")) != _text(right.get("entity_id"))
+                    and _intervals_overlap(left, right)
+                ):
+                    _graph_error(errors, "ambiguous_exact_identifier_path")
+
+    edges_by_child: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    for edge in ownership_edges:
+        child = _text(edge.get("child_entity_id"))
+        if child:
+            edges_by_child[child].append(edge)
+        parent = _text(edge.get("parent_entity_id"))
+        if child and parent:
+            adjacency[child].add(parent)
+    for rows in edges_by_child.values():
+        for ordinal, left in enumerate(rows):
+            for right in rows[ordinal + 1:]:
+                if _intervals_overlap(left, right):
+                    _graph_error(errors, "ambiguous_ownership_path")
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(node: str) -> None:
+        if node in visiting:
+            _graph_error(errors, "ownership_cycle")
+            return
+        if node in visited:
+            return
+        visiting.add(node)
+        for child in adjacency.get(node, set()):
+            visit(child)
+        visiting.remove(node)
+        visited.add(node)
+
+    for entity_id in entity_ids:
+        visit(entity_id)
+
+
+def load_recipient_entity_graph(
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None = None,
+) -> dict[str, Any]:
+    """Validate and normalize a reviewed exact-recipient graph.
+
+    This is the only new v1 graph admission point. It accepts no display-name
+    keys or fuzzy candidates, copies rather than mutates the supplied graph,
+    and returns a status wrapper so source event collection can continue when
+    attribution data is absent or rejected.
+    """
+    if graph is None:
+        return _graph_load_result(status="absent", errors=["recipient_graph_absent"])
+    if not isinstance(graph, Mapping):
+        return _graph_load_result(status="invalid", errors=["recipient_graph_not_mapping"])
+
+    raw = deepcopy(dict(graph))
+    errors: list[str] = []
+    if set(raw) != _GRAPH_TOP_LEVEL_FIELDS:
+        _graph_error(errors, "graph_shape_invalid")
+    if raw.get("contract") != RECIPIENT_GRAPH_CONTRACT:
+        _graph_error(errors, "graph_contract_invalid")
+    if raw.get("schema_version") != SCHEMA_VERSION:
+        _graph_error(errors, "graph_schema_version_invalid")
+    graph_id = _text(raw.get("graph_id"))
+    if graph_id is None:
+        _graph_error(errors, "missing_graph_id")
+    graph_known_at = _strict_datetime(raw.get("graph_known_at"))
+    graph_effective_at = _strict_datetime(raw.get("graph_effective_at"))
+    if graph_known_at is None:
+        _graph_error(errors, "invalid_graph_known_at")
+    if graph_effective_at is None:
+        _graph_error(errors, "invalid_graph_effective_at")
+    analysis_as_of = _timestamp(as_of, end_of_day=True) if as_of is not None else None
+    if as_of is not None and analysis_as_of is None:
+        _graph_error(errors, "invalid_analysis_as_of")
+    if analysis_as_of is not None:
+        if graph_known_at is not None and graph_known_at > analysis_as_of:
+            _graph_error(errors, "future_known_graph")
+        if graph_effective_at is not None and graph_effective_at > analysis_as_of:
+            _graph_error(errors, "future_effective_graph")
+
+    evidence_rows = _graph_rows(raw, "evidence", errors)
+    company_rows = _graph_rows(raw, "companies", errors)
+    entity_rows = _graph_rows(raw, "legal_entities", errors)
+    identifier_rows = _graph_rows(raw, "identifiers", errors)
+    edge_rows = _graph_rows(raw, "ownership_edges", errors)
+    block_rows = _graph_rows(raw, "blocks", errors)
+    conflict_rows = _graph_rows(raw, "conflicts", errors)
+    override_rows = _graph_rows(raw, "overrides", errors)
+
+    evidence_ids = _graph_unique_ids(evidence_rows, "evidence_id", errors)
+    company_ids = _graph_unique_ids(company_rows, "company_id", errors)
+    entity_ids = _graph_unique_ids(entity_rows, "entity_id", errors)
+    _graph_unique_ids(identifier_rows, "identifier_id", errors)
+    edge_ids = _graph_unique_ids(edge_rows, "edge_id", errors)
+    _graph_unique_ids(block_rows, "block_id", errors)
+    _graph_unique_ids(conflict_rows, "conflict_id", errors)
+    _graph_unique_ids(override_rows, "override_id", errors)
+
+    evidence_by_id = {
+        _text(row.get("evidence_id")): row
+        for row in evidence_rows
+        if _text(row.get("evidence_id"))
+    }
+    for row in evidence_rows:
+        _assert_graph_row_shape(row, "evidence", errors)
+        if _text(row.get("source_ref")) is None:
+            _graph_error(errors, "missing_evidence_source_ref")
+        _graph_temporal_claim(
+            row,
+            errors=errors,
+            evidence=evidence_by_id,
+            graph_known_at=graph_known_at,
+            graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+            require_evidence=False,
+        )
+    for row in company_rows:
+        _assert_graph_row_shape(row, "company", errors)
+        if _text(row.get("ticker")) is None or _TICKER.fullmatch(_text(row.get("ticker")) or "") is None:
+            _graph_error(errors, "invalid_company_ticker")
+        if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "company_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in entity_rows:
+        _assert_graph_row_shape(row, "legal_entity", errors)
+        if _text(row.get("canonical_name")) is None:
+            _graph_error(errors, "missing_entity_display_name")
+        if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "entity_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in identifier_rows:
+        _assert_graph_row_shape(row, "identifier", errors)
+        namespace = _normal_namespace(row.get("namespace"))
+        if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not _normal_identifier(namespace or "", row.get("value")):
+            _graph_error(errors, "invalid_exact_identifier")
+        if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "identifier_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in edge_rows:
+        _assert_graph_row_shape(row, "ownership_edge", errors)
+        relationship = (_text(row.get("relationship")) or "").lower()
+        if relationship not in _GRAPH_EDGE_RELATIONSHIPS:
+            _graph_error(errors, "invalid_ownership_relationship")
+        share, share_error = _edge_share(row)
+        if relationship != "wholly_owned" and (share is None or share_error):
+            _graph_error(errors, "ownership_economic_share_missing")
+        elif share_error:
+            _graph_error(errors, "ownership_economic_share_invalid")
+        if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "ownership_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in block_rows:
+        _assert_graph_row_shape(row, "block", errors)
+        if (_text(row.get("reviewer_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "block_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in conflict_rows:
+        _assert_graph_row_shape(row, "conflict", errors)
+        if (_text(row.get("reviewer_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "conflict_not_reviewed")
+        if _text(row.get("reason_code")) is None:
+            _graph_error(errors, "missing_conflict_reason")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+    for row in override_rows:
+        _assert_graph_row_shape(row, "override", errors)
+        if (_text(row.get("reviewer_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
+            _graph_error(errors, "override_not_reviewed")
+        _graph_temporal_claim(
+            row, errors=errors, evidence=evidence_by_id,
+            graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+            analysis_as_of=analysis_as_of,
+        )
+
+    _assert_graph_references(
+        identifiers=identifier_rows, ownership_edges=edge_rows, blocks=block_rows,
+        conflicts=conflict_rows, overrides=override_rows, entity_ids=entity_ids,
+        company_ids=company_ids, edge_ids=edge_ids, errors=errors,
+    )
+    _assert_graph_topology(
+        identifiers=identifier_rows, ownership_edges=edge_rows,
+        entity_ids=entity_ids, errors=errors,
+    )
+    if errors:
+        return _graph_load_result(
+            status="invalid", graph_id=graph_id, graph_known_at=graph_known_at,
+            graph_effective_at=graph_effective_at, errors=errors,
+        )
+
+    normalized_blocks: list[dict[str, Any]] = []
+    for block in block_rows:
+        materialized = deepcopy(block)
+        materialized["override_id"] = _text(block.get("block_id")) or "block"
+        materialized["action"] = (
+            "block_identifier" if _text(block.get("scope")) == "identifier" else "block_ownership"
+        )
+        normalized_blocks.append(materialized)
+    normalized = {
+        "entities": entity_rows,
+        "companies": company_rows,
+        "identifiers": identifier_rows,
+        "ownership_edges": edge_rows,
+        "overrides": override_rows + normalized_blocks,
+        "_recipient_entity_graph_loaded_v1": True,
+        "_recipient_graph_id": graph_id,
+        "_recipient_graph_known_at": _iso(graph_known_at),
+        "_recipient_graph_effective_at": _iso(graph_effective_at),
+        "_recipient_graph_explicit_conflicts": conflict_rows,
+    }
+    graph_digest = _graph_fingerprint(raw)
+    normalized["_recipient_graph_digest"] = graph_digest
+    return _graph_load_result(
+        status="ready", graph=normalized, graph_id=graph_id,
+        graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
+        graph_digest=graph_digest, source_graph=raw,
+    )
 
 
 def _normal_namespace(value: Any) -> str | None:
@@ -522,6 +1184,49 @@ def _graph_identifier_rows(graph: Mapping[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+def _active_explicit_conflicts(
+    graph: Mapping[str, Any], *, effective_at: datetime, knowledge_cutoff: datetime
+) -> list[dict[str, Any]]:
+    """Return reviewed graph conflicts that are visible at this exact replay clock."""
+    raw = graph.get("_recipient_graph_explicit_conflicts")
+    rows = _list_of_dicts(raw if raw is not None else graph.get("conflicts"))
+    return [
+        row for row in rows
+        if _approved_override(row)
+        and _mapping_evidence_ready(
+            row,
+            effective_at=effective_at,
+            knowledge_cutoff=knowledge_cutoff,
+        )
+    ]
+
+
+def _identifier_conflicts(
+    conflicts: Iterable[Mapping[str, Any]],
+    identifiers: Iterable[tuple[str, str, str]],
+) -> list[Mapping[str, Any]]:
+    pairs = {(namespace, value) for namespace, value, _rule in identifiers}
+    matches: list[Mapping[str, Any]] = []
+    for conflict in conflicts:
+        if (_text(conflict.get("scope")) or "").lower() != "identifier":
+            continue
+        namespace = _normal_namespace(conflict.get("namespace"))
+        value = _normal_identifier(namespace or "", conflict.get("value")) if namespace else None
+        if namespace and value and (namespace, value) in pairs:
+            matches.append(conflict)
+    return matches
+
+
+def _entity_conflicts(
+    conflicts: Iterable[Mapping[str, Any]], entity_id: str
+) -> list[Mapping[str, Any]]:
+    return [
+        conflict for conflict in conflicts
+        if (_text(conflict.get("scope")) or "").lower() in {"ownership", "issuer"}
+        and _text(conflict.get("child_entity_id")) == entity_id
+    ]
+
+
 def _active_overrides(
     graph: Mapping[str, Any], *, effective_at: datetime, knowledge_cutoff: datetime
 ) -> list[dict[str, Any]]:
@@ -686,10 +1391,23 @@ def _ownership_edges(
             materialized["_via_override"] = True
             rows.append(materialized)
 
+    def applies_to_child(override: Mapping[str, Any]) -> bool:
+        if _text(override.get("child_entity_id")) == child_entity_id:
+            return True
+        target_edge_id = _text(override.get("target_edge_id") or override.get("edge_id"))
+        target_company_id = _text(override.get("target_company_id"))
+        target_entity_id = _text(override.get("target_entity_id"))
+        return any(
+            (target_edge_id and target_edge_id == _text(edge.get("edge_id")))
+            or (target_company_id and target_company_id == _text(edge.get("parent_company_id")))
+            or (target_entity_id and target_entity_id == _text(edge.get("parent_entity_id")))
+            for edge in rows
+        )
+
     blockers = [
         override for override in overrides
         if (_text(override.get("action")) or "").lower() in _BLOCK_OWNERSHIP_ACTIONS
-        and _text(override.get("child_entity_id")) == child_entity_id
+        and applies_to_child(override)
     ]
     if not blockers:
         return rows
@@ -885,7 +1603,7 @@ def _result(
 
 def resolve_recipient(
     record: Mapping[str, Any],
-    graph: Mapping[str, Any],
+    graph: Mapping[str, Any] | None,
     *,
     as_of: str | datetime | None = None,
 ) -> dict[str, Any]:
@@ -899,6 +1617,7 @@ def resolve_recipient(
     effective_at = _timestamp(raw.get("event_effective_at") or raw.get("effective_at") or raw.get("action_date"))
     record_known_at = _timestamp(raw.get("known_at") or raw.get("first_seen_at"))
     analysis_as_of = _timestamp(as_of, end_of_day=True) if as_of is not None else record_known_at
+    graph_view, graph_error = _graph_for_resolution(graph, as_of=as_of)
 
     if raw.get("_source_identity_conflict"):
         return _result(
@@ -949,6 +1668,13 @@ def resolve_recipient(
             recipient_entity_id=None, issuer=None, ownership_path=[], economic_share=None,
             evidence_refs=[], reason_codes=["record_not_effective_at_asof"],
         )
+    if graph_error or graph_view is None:
+        return _result(
+            record=raw, effective_at=effective_at, record_known_at=record_known_at,
+            analysis_as_of=analysis_as_of, state="unresolved", rule="none",
+            recipient_entity_id=None, issuer=None, ownership_path=[], economic_share=None,
+            evidence_refs=[], reason_codes=[graph_error or "recipient_graph_invalid"],
+        )
 
     identifiers = _record_identifier_pairs(raw)
     if not identifiers:
@@ -959,8 +1685,22 @@ def resolve_recipient(
             evidence_refs=[], reason_codes=["missing_exact_identifier"],
         )
     overrides = _active_overrides(
-        graph, effective_at=effective_at, knowledge_cutoff=analysis_as_of
+        graph_view, effective_at=effective_at, knowledge_cutoff=analysis_as_of
     )
+    explicit_conflicts = _active_explicit_conflicts(
+        graph_view, effective_at=effective_at, knowledge_cutoff=analysis_as_of
+    )
+    matching_identifier_conflicts = _identifier_conflicts(explicit_conflicts, identifiers)
+    if matching_identifier_conflicts:
+        return _result(
+            record=raw, effective_at=effective_at, record_known_at=record_known_at,
+            analysis_as_of=analysis_as_of, state="conflicted", rule="none",
+            recipient_entity_id=None, issuer=None, ownership_path=[], economic_share=None,
+            evidence_refs=[
+                ref for row in matching_identifier_conflicts for ref in _evidence_refs(row)
+            ],
+            reason_codes=["explicit_identifier_conflict"],
+        )
     blocking_overrides = _preflight_identifier_blocks(
         overrides,
         record=raw,
@@ -983,7 +1723,7 @@ def resolve_recipient(
     issuer_claims: set[str] = set()
     for namespace, value, default_rule in identifiers:
         candidates, global_block = _identifier_candidates(
-            graph,
+            graph_view,
             namespace=namespace,
             value=value,
             effective_at=effective_at,
@@ -1050,6 +1790,17 @@ def resolve_recipient(
 
     entity_id = next(iter(mapped_entities))
     default_rule = mapped_rules[0]
+    matching_entity_conflicts = _entity_conflicts(explicit_conflicts, entity_id)
+    if matching_entity_conflicts:
+        return _result(
+            record=raw, effective_at=effective_at, record_known_at=record_known_at,
+            analysis_as_of=analysis_as_of, state="conflicted", rule=default_rule,
+            recipient_entity_id=entity_id, issuer=None, ownership_path=[], economic_share=None,
+            evidence_refs=[
+                ref for row in matching_entity_conflicts for ref in _evidence_refs(row)
+            ],
+            reason_codes=["explicit_ownership_or_issuer_conflict"],
+        )
     via_override = any(match["via_override"] for match in matched_entries)
     identity_reviewed = via_override or any(
         (_text(match["row"].get("verification_state") or match["row"].get("reviewer_state")) or "").lower()
@@ -1058,7 +1809,7 @@ def resolve_recipient(
     )
     issuer, path, share, ownership_state, ownership_reasons, ownership_evidence = _resolve_ownership(
         entity_id,
-        graph,
+        graph_view,
         effective_at=effective_at,
         knowledge_cutoff=analysis_as_of,
         overrides=overrides,
@@ -1096,7 +1847,7 @@ def resolve_recipient(
 
 def resolve_records(
     records: Iterable[Mapping[str, Any]],
-    graph: Mapping[str, Any],
+    graph: Mapping[str, Any] | None,
     *,
     as_of: str | datetime | None = None,
 ) -> list[dict[str, Any]]:
@@ -1105,6 +1856,192 @@ def resolve_records(
         {"record": record, "resolution": resolve_recipient(record, graph, as_of=as_of)}
         for record in dedupe_source_records(records, as_of=as_of)
     ]
+
+
+def attach_recipient_resolution(
+    record: Mapping[str, Any],
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None = None,
+    field: str = "recipient_resolution",
+) -> dict[str, Any]:
+    """Return an in-memory source-record copy with a non-authoritative resolution.
+
+    The caller-owned record is never mutated and the source fields are copied
+    verbatim. Resolution is annotation-only; a graph change can alter this
+    annotation but cannot alter ``source_record_key(record)`` or event identity.
+    """
+    if not isinstance(record, Mapping):
+        raise TypeError("record must be a mapping")
+    target_field = _text(field)
+    if target_field is None:
+        raise ValueError("resolution field must be a non-empty string")
+    joined = deepcopy(dict(record))
+    joined[target_field] = resolve_recipient(record, graph, as_of=as_of)
+    return joined
+
+
+def attach_recipient_resolutions(
+    records: Iterable[Mapping[str, Any]],
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None = None,
+    field: str = "recipient_resolution",
+) -> list[dict[str, Any]]:
+    """Attach annotation copies for many raw records without deduping or mutation."""
+    return [
+        attach_recipient_resolution(record, graph, as_of=as_of, field=field)
+        for record in records
+        if isinstance(record, Mapping)
+    ]
+
+
+def _coverage_resolution_items(
+    records: Iterable[Mapping[str, Any]],
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None,
+    force_withheld: bool,
+) -> list[dict[str, Any]]:
+    """Coerce raw, attached, and resolver rows into isolated coverage inputs."""
+    raw_records: list[Mapping[str, Any]] = []
+    resolved: list[dict[str, Any]] = []
+    for item in records:
+        if not isinstance(item, Mapping):
+            continue
+        nested_record = item.get("record")
+        nested_resolution = item.get("resolution")
+        if isinstance(nested_record, Mapping) and isinstance(nested_resolution, Mapping):
+            if force_withheld:
+                raw_records.append(nested_record)
+            else:
+                resolved.append({
+                    "record": deepcopy(dict(nested_record)),
+                    "resolution": deepcopy(dict(nested_resolution)),
+                })
+            continue
+        attached = item.get("recipient_resolution")
+        if isinstance(attached, Mapping):
+            source = deepcopy(dict(item))
+            source.pop("recipient_resolution", None)
+            if force_withheld:
+                raw_records.append(source)
+            else:
+                resolved.append({"record": source, "resolution": deepcopy(dict(attached))})
+            continue
+        raw_records.append(item)
+    if raw_records:
+        resolved.extend(resolve_records(raw_records, graph, as_of=as_of))
+    return resolved
+
+
+def _coverage_graph_result(
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None,
+) -> dict[str, Any]:
+    if _is_strict_graph_load_result(graph):
+        return deepcopy(dict(graph))
+    return load_recipient_entity_graph(graph, as_of=as_of)
+
+
+def _coverage_graph_metadata(loaded: Mapping[str, Any]) -> dict[str, Any]:
+    status = _text(loaded.get("status"))
+    return {
+        "load_status": status if status in _GRAPH_LOAD_STATUSES else "invalid",
+        "graph_id": _text(loaded.get("graph_id")),
+        "graph_known_at": _text(loaded.get("graph_known_at")),
+        "graph_effective_at": _text(loaded.get("graph_effective_at")),
+        "graph_digest": _text(loaded.get("graph_digest")),
+        "error_codes": sorted({
+            value for value in (_text(code) for code in loaded.get("error_codes", [])) if value
+        }),
+    }
+
+
+def build_recipient_resolution_coverage(
+    snapshots: Iterable[Mapping[str, Any]],
+    actions: Iterable[Mapping[str, Any]],
+    graph: Mapping[str, Any] | None,
+    *,
+    as_of: str | datetime | None = None,
+    snapshot_collection: Mapping[str, Any] | None = None,
+    action_collection: Mapping[str, Any] | None = None,
+    snapshot_amount_field: str = "amount",
+    action_amount_field: str = "amount",
+) -> dict[str, Any]:
+    """Report returned-scope recipient coverage independently for snapshots/actions.
+
+    Both denominator rails use absolute values through ``build_entity_coverage``.
+    If the strict graph is absent or invalid, source rows remain visible and are
+    re-resolved as unresolved; pre-attached issuer annotations are never trusted.
+    """
+    loaded = _coverage_graph_result(graph, as_of=as_of)
+    metadata = _coverage_graph_metadata(loaded)
+    graph_ready = metadata["load_status"] == "ready"
+    snapshot_items = _coverage_resolution_items(
+        snapshots, loaded, as_of=as_of, force_withheld=not graph_ready
+    )
+    action_items = _coverage_resolution_items(
+        actions, loaded, as_of=as_of, force_withheld=not graph_ready
+    )
+    snapshot = build_entity_coverage(
+        snapshot_items,
+        amount_field=snapshot_amount_field,
+        amount_basis="absolute",
+        collection=snapshot_collection,
+        as_of=as_of,
+    )
+    action = build_entity_coverage(
+        action_items,
+        amount_field=action_amount_field,
+        amount_basis="absolute",
+        collection=action_collection,
+        as_of=as_of,
+    )
+    as_of_stamp = _timestamp(as_of, end_of_day=True) if as_of is not None else None
+    if as_of_stamp is None:
+        report_stamps = [
+            _timestamp(snapshot.get("as_of")),
+            _timestamp(action.get("as_of")),
+        ]
+        present = [stamp for stamp in report_stamps if stamp is not None]
+        as_of_stamp = max(present) if present else None
+    known_stamps = [
+        _timestamp(snapshot.get("known_at")),
+        _timestamp(action.get("known_at")),
+        _timestamp(metadata.get("graph_known_at")),
+    ]
+    known_at = max((stamp for stamp in known_stamps if stamp is not None), default=None)
+    withheld = (
+        graph_ready
+        or (
+            snapshot["records"]["issuer_attributed_records"] == 0
+            and action["records"]["issuer_attributed_records"] == 0
+        )
+    )
+    limitations = [
+        "Snapshot and action coverage are independent returned-scope reports; neither is corpus coverage.",
+        "Absolute amounts keep unresolved and conflicted de-obligations in each denominator.",
+    ]
+    if not graph_ready:
+        limitations.append("Recipient graph is absent or invalid; issuer impacts are withheld while source records remain available.")
+    return {
+        "contract": RECIPIENT_RESOLUTION_COVERAGE_CONTRACT,
+        "schema_version": SCHEMA_VERSION,
+        "as_of": _iso(as_of_stamp),
+        "known_at": _iso(known_at),
+        "resolution_graph": metadata,
+        "snapshot": snapshot,
+        "action": action,
+        "invariants": {
+            "snapshot_independent": True,
+            "action_independent": True,
+            "absolute_denominators": True,
+            "graph_withheld_when_not_ready": withheld,
+        },
+        "limitations": limitations,
+    }
 
 
 def _amount(value: Any) -> float | None:
@@ -1367,14 +2304,82 @@ def coverage_invariants(coverage: Mapping[str, Any]) -> bool:
     return bool(isinstance(invariants, Mapping) and invariants and all(invariants.values()))
 
 
+@lru_cache(maxsize=1)
+def _recipient_resolution_coverage_validator() -> Any:
+    """Load the strict coverage contract with its local nested dependency."""
+
+    from jsonschema import Draft202012Validator, FormatChecker
+    from referencing import Registry, Resource
+
+    contract_dir = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "government_revenue"
+    )
+    entity_schema = json.loads(
+        (contract_dir / "government_entity_coverage.v1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    coverage_schema = json.loads(
+        (
+            contract_dir
+            / "government_recipient_resolution_coverage.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    registry = Registry().with_resource(
+        entity_schema["$id"], Resource.from_contents(entity_schema)
+    )
+    return Draft202012Validator(
+        coverage_schema,
+        registry=registry,
+        format_checker=FormatChecker(),
+    )
+
+
+def is_valid_recipient_resolution_coverage(value: Any) -> bool:
+    """Validate the complete coverage object and every declared invariant.
+
+    Schema validity alone is insufficient at a publication boundary: a
+    syntactically valid report may explicitly disclose that attribution or
+    accounting invariants failed. Such a generation remains useful for local
+    diagnosis, but it is not eligible to replace the canonical artifact.
+    """
+
+    if not isinstance(value, Mapping):
+        return False
+    try:
+        if any(_recipient_resolution_coverage_validator().iter_errors(value)):
+            return False
+    except Exception:  # noqa: BLE001 - an unavailable validator is not a pass
+        return False
+    if not coverage_invariants(value):
+        return False
+    for rail in ("snapshot", "action"):
+        report = value.get(rail)
+        invariants = report.get("invariants") if isinstance(report, Mapping) else None
+        if not isinstance(invariants, Mapping) or not invariants or not all(
+            item is True for item in invariants.values()
+        ):
+            return False
+    return True
+
+
 __all__ = [
     "AUTHORITY",
     "COVERAGE_CONTRACT",
+    "RECIPIENT_GRAPH_CONTRACT",
+    "RECIPIENT_RESOLUTION_COVERAGE_CONTRACT",
     "RESOLUTION_CONTRACT",
     "SCHEMA_VERSION",
+    "attach_recipient_resolution",
+    "attach_recipient_resolutions",
     "build_entity_coverage",
+    "build_recipient_resolution_coverage",
     "coverage_invariants",
     "dedupe_source_records",
+    "load_recipient_entity_graph",
+    "is_valid_recipient_resolution_coverage",
     "resolve_recipient",
     "resolve_records",
     "source_record_key",

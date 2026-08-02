@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_recipient_entity_graph.v1.schema.json",
+  "title": "Government Recipient Entity Graph v1",
+  "description": "Reviewed, evidence-bound, point-in-time recipient attribution graph. Display names are metadata only and can never be join keys.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "graph_id", "graph_known_at", "graph_effective_at",
+    "evidence", "companies", "legal_entities", "identifiers", "ownership_edges",
+    "blocks", "conflicts", "overrides"
+  ],
+  "properties": {
+    "contract": {"const": "government_recipient_entity_graph.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "graph_id": {"type": "string", "minLength": 1},
+    "graph_known_at": {"$ref": "#/$defs/dateTime"},
+    "graph_effective_at": {"$ref": "#/$defs/dateTime"},
+    "evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "companies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/company"}
+    },
+    "legal_entities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/legalEntity"}
+    },
+    "identifiers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/identifier"}
+    },
+    "ownership_edges": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/ownershipEdge"}
+    },
+    "blocks": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/block"}
+    },
+    "conflicts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/conflict"}
+    },
+    "overrides": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/override"}
+    }
+  },
+  "$defs": {
+    "dateTime": {"type": "string", "format": "date-time"},
+    "nullableDateTime": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/dateTime"}]},
+    "evidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "reviewState": {"enum": ["confirmed", "reviewed", "analyst_approved"]},
+    "temporalClaim": {
+      "type": "object",
+      "required": ["known_at", "valid_from", "valid_to", "evidence_refs"],
+      "properties": {
+        "known_at": {"$ref": "#/$defs/dateTime"},
+        "valid_from": {"$ref": "#/$defs/dateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+        "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "source_ref", "known_at", "valid_from", "valid_to"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "source_ref": {"type": "string", "minLength": 1},
+        "known_at": {"$ref": "#/$defs/dateTime"},
+        "valid_from": {"$ref": "#/$defs/dateTime"},
+        "valid_to": {"$ref": "#/$defs/nullableDateTime"}
+      }
+    },
+    "company": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["company_id", "ticker", "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "company_id": {"type": "string", "minLength": 1},
+            "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+            "verification_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    },
+    "legalEntity": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entity_id", "canonical_name", "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "entity_id": {"type": "string", "minLength": 1},
+            "canonical_name": {"type": "string", "minLength": 1},
+            "verification_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    },
+    "identifier": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["identifier_id", "entity_id", "namespace", "value", "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "identifier_id": {"type": "string", "minLength": 1},
+            "entity_id": {"type": "string", "minLength": 1},
+            "namespace": {"enum": ["sam_uei", "cage", "usaspending_recipient_id"]},
+            "value": {"type": "string", "minLength": 1},
+            "verification_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    },
+    "ownershipEdge": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["edge_id", "child_entity_id", "relationship", "economic_share", "verification_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "edge_id": {"type": "string", "minLength": 1},
+            "child_entity_id": {"type": "string", "minLength": 1},
+            "parent_entity_id": {"type": "string", "minLength": 1},
+            "parent_company_id": {"type": "string", "minLength": 1},
+            "relationship": {"enum": ["wholly_owned", "majority_owned", "partial_owned", "joint_venture"]},
+            "economic_share": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+            "verification_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        },
+        {
+          "oneOf": [
+            {"required": ["parent_entity_id"], "not": {"required": ["parent_company_id"]}},
+            {"required": ["parent_company_id"], "not": {"required": ["parent_entity_id"]}}
+          ]
+        },
+        {
+          "if": {"properties": {"relationship": {"const": "joint_venture"}}, "required": ["relationship"]},
+          "then": {"properties": {"economic_share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}}
+        }
+      ]
+    },
+    "block": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["block_id", "scope", "reason_code", "reviewer_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "block_id": {"type": "string", "minLength": 1},
+            "scope": {"enum": ["identifier", "ownership"]},
+            "namespace": {"enum": ["sam_uei", "cage", "usaspending_recipient_id"]},
+            "value": {"type": "string", "minLength": 1},
+            "target_edge_id": {"type": "string", "minLength": 1},
+            "child_entity_id": {"type": "string", "minLength": 1},
+            "target_entity_id": {"type": "string", "minLength": 1},
+            "target_company_id": {"type": "string", "minLength": 1},
+            "reason_code": {"type": "string", "minLength": 1},
+            "reviewer_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    },
+    "conflict": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conflict_id", "scope", "reason_code", "reviewer_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "conflict_id": {"type": "string", "minLength": 1},
+            "scope": {"enum": ["identifier", "ownership", "issuer"]},
+            "namespace": {"enum": ["sam_uei", "cage", "usaspending_recipient_id"]},
+            "value": {"type": "string", "minLength": 1},
+            "child_entity_id": {"type": "string", "minLength": 1},
+            "candidate_entity_ids": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "candidate_company_ids": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "reason_code": {"type": "string", "minLength": 1},
+            "reviewer_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    },
+    "override": {
+      "allOf": [
+        {"$ref": "#/$defs/temporalClaim"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["override_id", "action", "reviewer_state", "known_at", "valid_from", "valid_to", "evidence_refs"],
+          "properties": {
+            "override_id": {"type": "string", "minLength": 1},
+            "action": {"enum": ["assert_identifier", "assert_mapping", "assert_ownership", "block", "block_identifier", "block_ownership", "reject_identifier", "retire_edge"]},
+            "namespace": {"enum": ["sam_uei", "cage", "usaspending_recipient_id"]},
+            "value": {"type": "string", "minLength": 1},
+            "source_record_key": {"type": "string", "minLength": 1},
+            "target_entity_id": {"type": "string", "minLength": 1},
+            "target_company_id": {"type": "string", "minLength": 1},
+            "child_entity_id": {"type": "string", "minLength": 1},
+            "target_edge_id": {"type": "string", "minLength": 1},
+            "relationship": {"enum": ["wholly_owned", "majority_owned", "partial_owned", "joint_venture"]},
+            "economic_share": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+            "reviewer_state": {"$ref": "#/$defs/reviewState"},
+            "known_at": {"$ref": "#/$defs/dateTime"},
+            "valid_from": {"$ref": "#/$defs/dateTime"},
+            "valid_to": {"$ref": "#/$defs/nullableDateTime"},
+            "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
+          }
+        }
+      ]
+    }
+  }
+}

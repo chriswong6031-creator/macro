@@ -29,6 +29,7 @@ def _resolution(
     state="confirmed",
     include_path_evidence=True,
     recipient_uei="UEI-001",
+    economic_share=1.0,
 ):
     return {
         "resolution_state": state,
@@ -38,6 +39,7 @@ def _resolution(
             "external_ids": [{"namespace": "sam_uei", "value": recipient_uei}],
         },
         "issuer": {"company_id": company_id or f"central:{ticker}", "ticker": ticker},
+        "economic_share": economic_share,
         "ownership_path": [
             {
                 "edge_id": f"ownership:{ticker}",
@@ -547,6 +549,39 @@ def test_company_impacts_require_confirmed_or_reviewed_resolution_and_ownership_
     assert [item["ticker"] for item in impact] == ["AAA"]
     assert impact[0]["resolution_state"] == "confirmed"
     assert impact[0]["ownership_path"][0]["edge_id"] == "ownership:AAA"
+
+
+def test_company_impact_materiality_scales_partial_ownership_by_reviewed_economic_share():
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    partial = _snapshot(
+        generated_unique_award_id="PARTIAL",
+        award_id="PARTIAL",
+        current_award_amount=100,
+        recipient_resolution=_resolution("AAA", economic_share=0.5),
+    )
+
+    event = _events([partial], companies=companies)[0]
+    materiality = event["listed_company_impacts"][0]["materiality"]
+
+    assert materiality["event_amount_usd"] == 50
+    assert materiality["numerator_value"] == 50
+    assert materiality["denominator_value"] == 1_000
+    assert materiality["ratio"] == pytest.approx(0.05)
+    assert materiality["band"] == "medium"
+    assert "reviewed economic share 0.5" in materiality["coverage_note"]
+
+
+def test_company_impact_withholds_missing_or_invalid_economic_share():
+    companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
+    missing_share = _snapshot(
+        generated_unique_award_id="NO-SHARE",
+        award_id="NO-SHARE",
+        recipient_resolution=_resolution("AAA", economic_share=None),
+    )
+
+    event = _events([missing_share], companies=companies)[0]
+
+    assert event["listed_company_impacts"] == []
 
 
 def test_exact_identifier_issuer_conflict_withholds_all_company_impacts():

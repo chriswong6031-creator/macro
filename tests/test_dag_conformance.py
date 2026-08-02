@@ -514,6 +514,7 @@ class TestLiveConformance:
             "data/government_revenue/award_action_versions.parquet",
             "data/government_revenue/award_event_projection_state.json",
             "data/government_revenue/entities.json",
+            "data/government_revenue/recipient_entity_graph.json",
             "data/government_revenue/ingest_status.json",
             "data/government_revenue/collection_receipts.jsonl",
             "data/government_revenue/opportunities.parquet",
@@ -591,12 +592,15 @@ class TestLiveConformance:
             "data/government_revenue/award_event_snapshots.parquet",
             "data/government_revenue/award_action_versions.parquet",
             "data/government_revenue/award_event_projection_state.json",
+            "data/government_revenue/recipient_resolution_coverage.json",
             "data/government_revenue/workspace.json",
             "site/government-revenue-data/workspace.json",
         ):
             assert path in commit["run"]
         assert "assert_award_event_bundle" in commit["run"]
         assert "assert_award_event_source_clean" in commit["run"]
+        assert "assert_recipient_graph_source_clean" in commit["run"]
+        assert "collectors and projection builders cannot write or stage" in commit["run"]
         assert "receipt-bound award artifacts must arrive as one committed bundle" in commit["run"]
         assert "data/government_revenue/collection_receipts.jsonl" in commit["run"], (
             "The source guard must preserve the receipt binding even though the SAM lane "

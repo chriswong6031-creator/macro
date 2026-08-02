@@ -321,6 +321,13 @@
         "from_id": {"type": ["string", "null"]},
         "to_id": {"type": ["string", "null"]},
         "relation": {"type": ["string", "null"]},
+        "relationship": {"enum": ["wholly_owned", "majority_owned", "partial_owned", "joint_venture", null]},
+        "child_entity_id": {"type": ["string", "null"]},
+        "parent_entity_id": {"type": ["string", "null"]},
+        "parent_company_id": {"type": ["string", "null"]},
+        "economic_share": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+        "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+        "valid_to": {"$ref": "#/$defs/nullableTemporal"},
         "effective_at": {"$ref": "#/$defs/nullableTemporal"},
         "known_at": {"$ref": "#/$defs/nullableTemporal"},
         "evidence_refs": {"type": "array", "items": {"type": "string"}}

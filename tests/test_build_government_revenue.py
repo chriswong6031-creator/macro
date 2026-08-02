@@ -8,6 +8,10 @@ from pathlib import Path
 import pytest
 
 from engine.government_revenue.workspace import build_procurement_workspace
+from engine.government_revenue.entity_resolution import (
+    build_recipient_resolution_coverage,
+    load_recipient_entity_graph,
+)
 from scripts import build_baskets, build_government_revenue
 
 
@@ -29,6 +33,49 @@ def _payload() -> dict:
         ),
         "companies": [{"ticker": "LMT", "name": "Lockheed Martin", "metrics": {}}],
     }
+
+
+def _empty_graph() -> dict:
+    return {
+        "contract": "government_recipient_entity_graph.v1",
+        "schema_version": "1.0.0",
+        "graph_id": "recipient-graph:builder-empty",
+        "graph_known_at": "2026-08-01T00:00:00Z",
+        "graph_effective_at": "2026-08-01T00:00:00Z",
+        "evidence": [],
+        "companies": [],
+        "legal_entities": [],
+        "identifiers": [],
+        "ownership_edges": [],
+        "blocks": [],
+        "conflicts": [],
+        "overrides": [],
+    }
+
+
+def _activate_recipient_graph(root: Path, payload: dict) -> dict:
+    graph = _empty_graph()
+    data_dir = root / "data" / "government_revenue"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / "recipient_entity_graph.json").write_text(
+        json.dumps(graph), encoding="utf-8"
+    )
+    loaded = load_recipient_entity_graph(graph, as_of=payload["as_of"])
+    coverage = build_recipient_resolution_coverage(
+        [],
+        [],
+        loaded,
+        as_of=payload["as_of"],
+        snapshot_amount_field="total_obligation",
+        action_amount_field="federal_action_obligation",
+    )
+    payload["freshness"] = {
+        "award_events": {"recipient_resolution_coverage": coverage}
+    }
+    payload["procurement_workspace"]["freshness"]["award_events"][
+        "recipient_resolution_coverage"
+    ] = coverage
+    return coverage
 
 
 def test_builder_writes_canonical_site_twin_and_page(tmp_path: Path, monkeypatch) -> None:
@@ -122,6 +169,106 @@ def test_site_only_rebuild_fails_closed_on_generation_mismatch(
         build_government_revenue.build_site_only(tmp_path)
 
 
+def test_builder_atomically_persists_exact_embedded_recipient_coverage(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    payload = _payload()
+    coverage = _activate_recipient_graph(tmp_path, payload)
+    monkeypatch.setattr(
+        build_government_revenue,
+        "build_payload",
+        lambda **_kwargs: payload,
+    )
+
+    build_government_revenue.build(tmp_path)
+
+    coverage_path = (
+        tmp_path
+        / "data"
+        / "government_revenue"
+        / "recipient_resolution_coverage.json"
+    )
+    assert coverage_path.exists()
+    assert coverage_path.read_text(encoding="utf-8") == (
+        build_government_revenue._canonical_json(coverage)
+    )
+    canonical = json.loads(
+        (tmp_path / "data" / "government_revenue" / "latest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert canonical["freshness"]["award_events"][
+        "recipient_resolution_coverage"
+    ] == coverage
+
+
+@pytest.mark.parametrize(
+    "missing_name",
+    ("recipient_entity_graph.json", "recipient_resolution_coverage.json"),
+)
+def test_site_only_requires_committed_graph_and_coverage_without_recalculation(
+    tmp_path: Path,
+    monkeypatch,
+    missing_name: str,
+) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    payload = _payload()
+    _activate_recipient_graph(tmp_path, payload)
+    monkeypatch.setattr(
+        build_government_revenue,
+        "build_payload",
+        lambda **_kwargs: payload,
+    )
+    build_government_revenue.build(tmp_path)
+    (tmp_path / "data" / "government_revenue" / missing_name).unlink()
+    monkeypatch.setattr(
+        build_government_revenue,
+        "build_payload",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("site-only recalculated recipient coverage")
+        ),
+    )
+
+    with pytest.raises(ValueError, match="recipient"):
+        build_government_revenue.build_site_only(tmp_path)
+
+
+def test_builder_rejects_receipt_bound_activation_without_curated_graph(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    data_dir = tmp_path / "data" / "government_revenue"
+    data_dir.mkdir(parents=True)
+    # Presence of any canonical triad member activates the strict publication
+    # fence; its bytes are not interpreted by this builder-boundary test.
+    (data_dir / "award_event_projection_state.json").write_text(
+        "{}", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        build_government_revenue,
+        "build_payload",
+        lambda **_kwargs: _payload(),
+    )
+
+    with pytest.raises(ValueError, match="recipient entity graph"):
+        build_government_revenue.build(tmp_path)
+
+
 def test_atomic_writer_leaves_one_complete_artifact_and_no_temp_file(tmp_path: Path) -> None:
     artifact = tmp_path / "artifact.json"
     artifact.write_text('{"old":true}', encoding="utf-8")
@@ -179,8 +326,33 @@ def test_display_payload_is_first_page_only_while_canonical_workspace_stays_comp
         "positive_award_action_flow_90d": None,
         "modification_impulse_90d": None,
     }
-    assert shell["companies"][0]["provenance"] == [{"dataset": "first"}]
+    assert shell["companies"][0]["source_receipts"] == [{"dataset": "first"}]
     assert "awards" not in shell["companies"][0]
+
+
+def test_display_payload_excludes_unused_workbench_contract_metadata() -> None:
+    payload = _payload()
+    payload["workbench"] = {
+        "id": "government_revenue",
+        "provenance_contract": "vertical_provenance.v1",
+        "context_contract": "vertical_intelligence_context.v1",
+    }
+    payload["opportunity_intelligence"] = {
+        "provenance": [{"contract": "vertical_provenance.v1"}],
+        "opportunities": [],
+        "events": [],
+        "company_context": {},
+    }
+    payload["procurement_workspace"].setdefault("coverage", {})["award_events"] = {
+        "input": 0,
+        "validated": 0,
+    }
+
+    shell = build_government_revenue._display_payload(payload)
+
+    assert "workbench" not in shell
+    assert '"validated"' not in json.dumps(shell, sort_keys=True).lower()
+    assert payload["procurement_workspace"]["coverage"]["award_events"]["validated"] == 0
 
 
 def test_compact_shell_keeps_current_state_truth_without_full_receipt_duplication() -> None:

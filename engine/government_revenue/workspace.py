@@ -159,9 +159,26 @@ def _workspace_validator() -> Any:
             encoding="utf-8"
         )
     )
-    registry = Registry().with_resource(
-        event_schema["$id"], Resource.from_contents(event_schema)
+    entity_coverage_schema = json.loads(
+        (contract_dir / "government_entity_coverage.v1.schema.json").read_text(
+            encoding="utf-8"
+        )
     )
+    recipient_coverage_schema = json.loads(
+        (
+            contract_dir
+            / "government_recipient_resolution_coverage.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    registry = Registry()
+    for schema in (
+        event_schema,
+        entity_coverage_schema,
+        recipient_coverage_schema,
+    ):
+        registry = registry.with_resource(
+            schema["$id"], Resource.from_contents(schema)
+        )
     return Draft202012Validator(
         workspace_schema,
         registry=registry,
