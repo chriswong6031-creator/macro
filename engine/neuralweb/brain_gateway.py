@@ -37,9 +37,10 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Generator, Iterable
+from typing import Any, Callable, Generator, Iterable
 
 from lib.tiers import normalize_tier
 from engine.fundamental_forensics.private_state import load_state
@@ -3863,7 +3864,13 @@ _SEED_ANALOGUE_TERMS: tuple[str, ...] = (
 
 _SEED_PLAN_LINE = (
     "\n\nTOOL PLAN for this question shape: start with {tools}; spend any remaining calls "
-    "only on what discriminates between your candidate explanations."
+    "only on what discriminates between your candidate explanations. "
+    # W5-T one-batch nudge: reads that do not depend on each other now run at the same
+    # time server-side, so asking for them together costs one round instead of three.
+    # Advisory, like the rest of this line — nothing caps or reorders what the model asks for.
+    "When several of those reads do not depend on each other, ask for them together in "
+    "one first response — they run side by side, so a batch costs no more wall-clock "
+    "than a single read."
 )
 
 
@@ -5230,6 +5237,209 @@ def _extract_citations_brain(
 
 
 # ---------------------------------------------------------------------------
+# Tool-loop economics (Analyst OS W5, contract T)
+# ---------------------------------------------------------------------------
+# Three levers, all shared by BOTH loops (_run_brain_loop and _run_brain_loop_stream)
+# so neither surface can drift from the other:
+#   1. one round's tool_use blocks execute CONCURRENTLY (the round used to be a
+#      sequential for-loop, so a get_watchlist + get_portfolio_brief + get_quote round
+#      paid three round-trips end to end);
+#   2. render_inline_chart's model-visible tool_result is a compact stub (the SVG rides
+#      the client `chart` event, not the model's context window);
+#   3. the per-turn messages array carries one cache breakpoint so rounds 2+ read the
+#      prefix from cache.
+
+_TOOL_PARALLEL_MAX_WORKERS = 6
+
+# INLINE-ONLY denylist — these run on the calling thread, in block order, never on a
+# worker. The audit behind it (every handler _dispatch_brain_tool can reach):
+#   * set_chat_preference is the only tool that WRITES anywhere (Supabase user_metadata
+#     via lib.user_prefs). A remote read-modify-write has no lock to hold, and two
+#     concurrent patches of the same record can lose one silently — the one outcome
+#     worse than a slow save.
+#   * the chart command/state tools (_CHART_COMMAND_TOOLS + read_chart_state) are the
+#     Terminal's command channel: a drawing scene is an ORDERED sequence
+#     (scene.begin → draw.* → scene.end) and read_chart_state does a read-modify-write
+#     on _chart_state_store (expiry prune). That store IS _chart_state_lock-guarded, so
+#     this is belt-and-braces, not a correctness fix — and these handlers are pure
+#     sub-millisecond validators, so inlining them costs nothing measurable.
+# Everything else was audited as parallel-safe: the shared structures they touch are
+# either lock-guarded (_TIER_CACHE, brain_user_memory._CACHE, brain_curve/_analogues
+# caches, _chart_state_store) or idempotent check-then-set memoisation whose worst case
+# is duplicate compute (_BRAIN_CONFIG_CACHE, _GUEST_CFG_CACHE,
+# brain_user_memory._STANCE_MATCHERS, functools.lru_cache — itself thread-safe). The
+# cortex/ask_brain read tools are pure filesystem reads with no module-level mutation.
+# The remaining hazard is first-time LAZY IMPORTS racing inside worker threads; CPython
+# serialises those per module, and _run_tool_block's catch-all turns any residual
+# import hiccup into ONE tool's error result instead of a dead turn.
+_INLINE_ONLY_TOOLS = frozenset(
+    {"set_chat_preference", "read_chart_state"} | set(_CHART_COMMAND_TOOLS)
+)
+
+
+def _run_tool_blocks(
+    blocks: list, run_one: Callable[[Any], dict],
+) -> list[dict]:
+    """Execute one round's tool_use *blocks*, returning results in BLOCK order.
+
+    Concurrency is an optimisation with two hard invariants:
+
+    * **Order.** The returned list is indexed by the block's position in
+      ``resp.content``, never by completion order — the Anthropic contract pairs
+      tool_result to tool_use by id, but the model reads the results in the order they
+      arrive and the chart/command SSE emitters key off the same sequence.
+    * **Isolation.** ``run_one`` never raises (see :func:`_run_tool_block`), so one
+      exploding tool yields its own error payload and its siblings still land.
+
+    A single-block round (the common case) is called INLINE — an executor for one
+    sub-100ms local read is pure overhead. Denylisted tools (:data:`_INLINE_ONLY_TOOLS`)
+    always run on the calling thread, interleaved in block order with the workers.
+    """
+    n = len(blocks)
+    if n == 0:
+        return []
+    parallel = [
+        i for i, b in enumerate(blocks)
+        if str(getattr(b, "name", "") or "") not in _INLINE_ONLY_TOOLS
+    ]
+    if len(parallel) < 2:
+        # Nothing to overlap — one worker would only add thread setup to the round.
+        return [run_one(b) for b in blocks]
+
+    results: list[Any] = [None] * n
+    parallel_set = set(parallel)
+    with ThreadPoolExecutor(
+        max_workers=min(_TOOL_PARALLEL_MAX_WORKERS, len(parallel)),
+        thread_name_prefix="brain-tool",
+    ) as pool:
+        futures = {i: pool.submit(run_one, blocks[i]) for i in parallel}
+        # Denylisted tools run HERE, on this thread, while the workers are in flight.
+        for i, block in enumerate(blocks):
+            if i not in parallel_set:
+                results[i] = run_one(block)
+        for i, fut in futures.items():
+            try:
+                results[i] = fut.result()
+            except Exception as exc:  # noqa: BLE001 — a worker must never kill the turn
+                results[i] = _tool_failure_result(
+                    str(getattr(blocks[i], "name", "") or ""), exc)
+    return results
+
+
+def _tool_failure_result(tool_name: str, exc: BaseException) -> dict:
+    """The error payload a tool that RAISED hands to the model.
+
+    Before parallel rounds existed an uncaught handler exception killed the whole turn
+    (it propagated out of the round's for-loop). Naming the failure as this tool's
+    result keeps the sibling reads — and the answer — alive, and the model can route
+    around one dead tool exactly as it already routes around ``{"error": …}``.
+    """
+    log.warning("brain_gateway: tool %r raised (%s: %s)",
+                tool_name, type(exc).__name__, exc)
+    return {"error": f"tool {tool_name or 'unknown'} failed: {type(exc).__name__}: {exc}"}
+
+
+def _run_tool_block(block: Any, dispatch: Callable[[str, dict], dict]) -> dict:
+    """Run ONE tool_use block through *dispatch*, never raising.
+
+    The catch-all is deliberately the same on the inline and the threaded path: a
+    1-tool round and a 3-tool round must fail identically, or the batch size silently
+    decides whether a broken tool costs one result or the whole turn.
+
+    Scoped to ``Exception`` on purpose — an interpreter-level ``BaseException``
+    (KeyboardInterrupt, SystemExit) is not a tool failure and must still unwind.
+    """
+    tool_name = str(getattr(block, "name", "") or "")
+    try:
+        return dispatch(tool_name, getattr(block, "input", None) or {})
+    except Exception as exc:  # noqa: BLE001
+        return _tool_failure_result(tool_name, exc)
+
+
+# The SVG a render_inline_chart round produces is up to 60KB (~15k tokens) of markup the
+# model cannot act on — and json.dumps put it in the tool_result VERBATIM, so every
+# later round re-read it. The picture already reaches the user by its own channel (the
+# `chart` SSE event on the stream path, the `charts` list on chat()), so the model gets
+# a receipt instead. Model-visible ONLY: the collectors/emitters keep reading the full
+# result dict.
+_CHART_STUB_NOTE = "chart drawn for the user; do not describe the SVG"
+
+# Keys the stub owns or deliberately drops (loop-internal plumbing the model never used).
+_CHART_STUB_DROP = frozenset(
+    {"svg", "ok", "rendered", "ticker", "timeframe", "note", "client_executed", "type"}
+)
+
+
+def _model_visible_tool_result(tool_name: str, result: Any) -> Any:
+    """The tool result as the MODEL sees it — identical to *result* except for the
+    render_inline_chart SVG fence.
+
+    An error result (no ``svg`` key — e.g. ``{"error": "symbol required"}``) passes
+    through untouched: the model must still see why the draw failed.
+    """
+    if tool_name != "render_inline_chart" or not isinstance(result, dict):
+        return result
+    if "svg" not in result:
+        return result
+    svg = result.get("svg") or ""
+    rendered = bool(svg)
+    stub: dict = {
+        "ok": True,                      # the TOOL ran; `rendered` says whether it drew
+        "rendered": rendered,
+        "ticker": result.get("ticker", ""),
+        "timeframe": result.get("timeframe", "DAILY"),
+        "note": (_CHART_STUB_NOTE if rendered
+                 else (result.get("note")
+                       or f"chart unavailable for {result.get('ticker', '')}")),
+    }
+    # Carry through any small scalar summary the handler computes alongside the picture
+    # (it has none today; this keeps a future one from silently vanishing behind the
+    # fence). Anything large or nested stays out — that is what the fence is for.
+    for key, val in result.items():
+        if key in _CHART_STUB_DROP:
+            continue
+        if val is None or isinstance(val, (bool, int, float)):
+            stub[key] = val
+        elif isinstance(val, str) and len(val) <= 200:
+            stub[key] = val
+    return stub
+
+
+def _cache_control_last_message(messages: list[dict]) -> None:
+    """Stamp ONE ephemeral cache breakpoint on the last content block of the LAST
+    message, in place — call it once, after history + grounding + question are
+    assembled and BEFORE round 1.
+
+    System and tools already carry their own breakpoints (:func:`_cache_control_system`,
+    :func:`_cache_control_tools`); this third one closes the last uncached prefix, the
+    messages array, whose grounding digest + question are byte-identical for every round
+    of the turn and were being re-sent whole each time. Three breakpoints total, inside
+    the provider's limit of four.
+
+    A str content becomes a one-element text block list — the same wire shape the vision
+    path already sends. Later rounds append their own messages (assistant turns,
+    tool_result batches) AFTER this one, so they inherit the cached prefix and must NOT
+    be stamped themselves; nothing here touches them.
+    """
+    if not messages:
+        return
+    last = messages[-1]
+    if not isinstance(last, dict):
+        return
+    content = last.get("content")
+    if isinstance(content, str):
+        if not content:
+            return
+        last["content"] = [
+            {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
+        ]
+        return
+    if isinstance(content, list) and content and isinstance(content[-1], dict):
+        # Copy the block rather than mutate it: image blocks are caller-owned.
+        content[-1] = {**content[-1], "cache_control": {"type": "ephemeral"}}
+
+
+# ---------------------------------------------------------------------------
 # Core chat loop (non-streaming)
 # ---------------------------------------------------------------------------
 
@@ -5359,6 +5569,8 @@ def _run_brain_loop(
     # History (up to 12 prior turns) + current message
     messages: list[dict] = _filter_history(history[-24:])   # cap 12 turns = 24 messages
     messages.append({"role": "user", "content": turn_content})
+    # W5-T: rounds 2+ reuse this whole prefix from cache (see the helper's note).
+    _cache_control_last_message(messages)
 
     answer_text = ""
     tool_call_count = 0
@@ -5402,14 +5614,22 @@ def _run_brain_loop(
             break
 
         tool_results = []
-        for block in resp.content:
-            if getattr(block, "type", "") != "tool_use":
-                continue
+        tool_blocks = [b for b in resp.content if getattr(b, "type", "") == "tool_use"]
+        # W5-T: one round's independent reads overlap; results come back in BLOCK order.
+        round_results = _run_tool_blocks(
+            tool_blocks,
+            lambda b: _run_tool_block(
+                b,
+                lambda name, params: _dispatch_brain_tool(
+                    name, params, root, terminal_data_dir, terminal_hub_url,
+                    user_id=user_id, internals_ok=internals_ok,
+                    chart_client=("terminal" if safe_page == "terminal" else ""),
+                ),
+            ),
+        )
+        for block, result in zip(tool_blocks, round_results):
             tool_name = block.name
-            tool_params = block.input or {}
             tool_id = block.id
-
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
             # Collect annotate_chart payloads for the response
             if tool_name == "annotate_chart" and result.get("client_executed"):
@@ -5419,7 +5639,8 @@ def _run_brain_loop(
             if tool_name in _CHART_COMMAND_TOOLS and result.get("client_executed"):
                 commands.append(result)
 
-            # Collect inline chart payloads (W6c)
+            # Collect inline chart payloads (W6c) — the CLIENT keeps the whole picture;
+            # only the model-visible tool_result below is fenced down to a stub.
             if tool_name == "render_inline_chart" and result.get("client_executed"):
                 charts.append({
                     "type": "chart",
@@ -5431,7 +5652,9 @@ def _run_brain_loop(
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(_json_safe(result), default=str),
+                "content": json.dumps(
+                    _json_safe(_model_visible_tool_result(tool_name, result)),
+                    default=str),
             })
 
         tool_call_count += 1
@@ -5825,6 +6048,8 @@ def _run_brain_loop_stream(
 
     messages: list[dict] = _filter_history_stream(history[-24:])
     messages.append({"role": "user", "content": turn_content})
+    # W5-T: rounds 2+ reuse this whole prefix from cache (see the helper's note).
+    _cache_control_last_message(messages)
 
     tool_call_count = 0
     last_resp_content: list = []
@@ -5875,17 +6100,31 @@ def _run_brain_loop_stream(
             break
 
         tool_results = []
-        for block in resp.content:
-            if getattr(block, "type", "") != "tool_use":
-                continue
+        tool_blocks = [b for b in resp.content if getattr(b, "type", "") == "tool_use"]
+
+        # Emit tool progress events for the WHOLE round up front (name kept for the
+        # deployed widget; labels added). They used to interleave with execution; now
+        # the round's reads genuinely start together, so announcing them together is the
+        # honest narration — and it keeps every event of the round in block order.
+        for block in tool_blocks:
+            yield _tool_event(block.name, block.input or {})
+
+        # W5-T: one round's independent reads overlap; results come back in BLOCK order.
+        round_results = _run_tool_blocks(
+            tool_blocks,
+            lambda b: _run_tool_block(
+                b,
+                lambda name, params: _dispatch_brain_tool(
+                    name, params, root, terminal_data_dir, terminal_hub_url,
+                    user_id=user_id, internals_ok=internals_ok,
+                    chart_client=("terminal" if safe_page == "terminal" else ""),
+                ),
+            ),
+        )
+
+        for block, result in zip(tool_blocks, round_results):
             tool_name = block.name
-            tool_params = block.input or {}
             tool_id = block.id
-
-            # Emit tool progress event (name kept for the deployed widget; labels added)
-            yield _tool_event(tool_name, tool_params)
-
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
             if tool_name == "annotate_chart" and result.get("client_executed"):
                 annotations.append(result)
@@ -5914,10 +6153,13 @@ def _run_brain_loop_stream(
                 # ignores an svg-less chart event (it tests `j.svg`), so this is additive.
                 yield f"data: {json.dumps(chart_payload)}\n\n"
 
+            # The CLIENT event above keeps the whole picture; the model gets a receipt.
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(_json_safe(result), default=str),
+                "content": json.dumps(
+                    _json_safe(_model_visible_tool_result(tool_name, result)),
+                    default=str),
             })
 
         tool_call_count += 1

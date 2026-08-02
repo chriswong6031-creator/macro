@@ -3353,7 +3353,7 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, options_hub_oi, live_flow, levels_ledger]
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, options_hub_oi, live_flow, levels_ledger, massive_stock_day]
                       # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
                       # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
                       # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
@@ -3365,6 +3365,9 @@ r2_data_plane:
                       # The gex_history dated accrual is probed separately (audit_r2.ACCRUAL_ANCHORS).
                       # This list REPLACES audit_r2.DEFAULT_ANCHORS wholesale, so the anchor must be here to
                       # take effect; tests/test_audit_r2.py pins it against a silent drop.
+                      # massive_stock_day armed 2026-07-29: the whole-market daily store now publishes nightly FROM THE COLLECT JOB (restore -> incremental -> publish),
+                      # so its manifest is re-put every night; audit_r2's coverage probe additionally content-checks the embedded collector manifest, keying the hole
+                      # test on coverage.max_missing_run_weekdays_recent (trailing window) so only a NEW tip-adjacent gap reds the heartbeat.
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
                       # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
                       # thetadata_eod fits the same envelope: launchd 22:00 PT = ~05:00 UTC, so ~9.5h healthy
@@ -3422,6 +3425,10 @@ quality:
   massive_stale_bdays: 5         # newest anchor bar older than this many business days = stale FLAG only
   massive_manifest_ahead_bdays: 2  # manifest latest_date > this many business days ahead of anchor content = lie (fail)
   massive_min_files: 100         # fewer parquets than this = store absent (CI runner checkout) -> skipped, never a fail
+  massive_recent_window_bdays: 90  # continuity FAILS only inside this trailing window; a deeper gap flags instead of aborting
+                                   # every full run — a full-history run can be an artifact of a stale/mid-backfill state snapshot
+                                   # or a remainder the capped incremental is already chipping, neither of which is tonight's feed.
+                                   # Also the window collectors/massive_stock_day.py stamps as coverage.max_missing_run_weekdays_recent.
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs

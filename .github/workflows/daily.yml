@@ -161,6 +161,28 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs attention
+      - name: restore massive_stock_day store from R2 (whole-market daily store; incremental upserts on top)
+        # data/massive_stock_day (~617 MB, ~20k per-ticker parquets) is R2-CANONICAL: a
+        # checkout holds only the two committed JSON sidecars. Restore FIRST so
+        # collectors/massive_stock_day.py run_incremental() upserts the new trading days
+        # ON TOP of the full store instead of tripping its store-absent fence (that fence
+        # exists because fetching into a throwaway tree would mark days processed in the
+        # COMMITTED resume state and lose them permanently).
+        # continue-on-error: the publish-back step after "commit data" is GATED on this
+        # step's outcome, so a failed or partial restore can never clobber the deep store
+        # on R2 — fetch_r2 exits 1 on any download failure, and publish_r2's
+        # _DATA_DIR_MIN_FILES floor is the second fence. On failure the adapter blocks
+        # loudly (::warning) and the night self-heals tomorrow.
+        # Incident: the store froze 2026-07-04→07-29 (run_status no_creds ×21) with the
+        # secrets never wired into this job at all — see the collector step below.
+        id: massive_restore
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -169,6 +191,16 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
+          # Massive S3 flat-file entitlement — gates the whole-market daily store's
+          # incremental (collectors/massive_stock_day.py). These four were only ever set
+          # on the ENGINE job's builder step; their absence HERE is what froze the store
+          # 2026-07-04→07-29: run_incremental() returned {"blocked": "no_creds"} every
+          # night, the adapter raised, and graceful degradation swallowed it under a
+          # green run (21 consecutive breaker increments in data/run_status.json).
+          MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
+          MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
+          MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
+          MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
           QUIVER_API_KEY: ${{ secrets.QUIVER_API_KEY }}     # Quiver alt-data suite (collectors/quiver.py); absent -> 'blocked', non-fatal
           GRANTS_GOV_API_KEY: ${{ secrets.GRANTS_GOV_API_KEY }}  # Simpler Grants.gov pre-award FOA flow (collectors/grants_gov.py); free Login.gov key; absent -> 'blocked', non-fatal
           FDA_API_KEY: ${{ secrets.FDA_API_KEY }}           # openFDA higher rate limit (collectors/openfda.py); OPTIONAL — keyless works at 1k/day
@@ -225,6 +257,22 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
+        # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
+        # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
+        # so the store's content audit has never executed nightly. The 2026-07 freeze
+        # ran 18 sessions with zero audit coverage behind that hole. Hence its own step.
+        # The module bare-prints ::error/::warning annotations and exits 1 on a content
+        # fail; continue-on-error keeps the night's commit safe while the annotations
+        # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
+        # data/quality/massive_store_audit.json, picked up by "commit data" below.
+        continue-on-error: true
+        env:
+          COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
+                                  # (elsewhere an absent store is normal). Without it the
+                                  # "restore failed -> store did not advance" warning — the
+                                  # single loudest signal here — would never be emitted.
+        run: python -m scripts.audit_massive_store
       - name: commit data (local checkpoint — no network ops in this step)
         id: commitdata
         run: |
@@ -323,6 +371,22 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.publish_r2 --dirs attention || echo "::warning::attention R2 publish failed (non-fatal — R2 store goes stale, chip self-heals within the 120d fetch window)"
+      - name: publish massive_stock_day store back to R2 (gated on the restore)
+        # The incremental's delta rides back to the canonical copy (content-hash skip, so
+        # only tonight's new/changed parquets upload). The manifest object is put LAST and
+        # unconditionally on a full publish — that Last-Modified is exactly what the
+        # engine job's audit_r2 anchor keys on, so this step is what keeps that anchor
+        # green. Gated on massive_restore for the same reason as attention above: a
+        # shallow or partial local tree must never overwrite the deep store, and here the
+        # collector's store-absent fence means such a tree would not even have advanced.
+        # Runs after "commit data" so the upload never delays the commit. Non-fatal.
+        if: steps.massive_restore.outcome == 'success'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs massive_stock_day || echo "::warning::massive_stock_day R2 publish failed (non-fatal — R2 copy goes stale; the engine job's strict audit_r2 anchor goes red within 26h)"
 
   # collect_tail: the slow post-adapter accrual band, split out of `collect`
   # (2026-07-14) so the engine job starts as soon as the adapter sweep commits
@@ -2810,7 +2874,10 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day,stock_personality,oddsmatrix,odds_ohlcv || echo "::warning::R2 publish failed (non-fatal)"
+        # massive_stock_day moved to the COLLECT job (2026-07-29) — it is restored, advanced and
+        # published there. An engine checkout never holds that store, so listing it here only ever
+        # produced a nightly publish_r2 refusal warning (under the _DATA_DIR_MIN_FILES floor).
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,stock_personality,oddsmatrix,odds_ohlcv || echo "::warning::R2 publish failed (non-fatal)"
       - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data
@@ -2821,9 +2888,18 @@ jobs:
         # publish did not land -> red run + step summary.
         # Deploy is unaffected (artifact steps below are if:always()); the scheduled
         # heartbeat (scripts/healthcheck.py) independently re-probes with a 26h limit.
+        # massive_stock_day joined the strict anchors 2026-07-29: its manifest is re-put by
+        # the COLLECT job's publish earlier in this same run, so a dead feed, a failed
+        # restore or a skipped publish turns this step red within 26h instead of freezing
+        # the store silently for weeks (07-04→07-29). Safe to anchor only because that
+        # manifest now carries coverage.max_missing_run_weekdays_recent — audit_r2's
+        # coverage probe keys the hole test on that trailing-window figure, so only a NEW
+        # tip-adjacent gap reds this step; a large full-history run (a stale/mid-backfill
+        # state snapshot, or a remainder the capped incremental is still chipping) stays
+        # reported without failing the build.
         if: always()
         run: |
-          if ! python -m scripts.audit_r2 --strict --anchors stockdata,ohlc --max-age-hours 26; then
+          if ! python -m scripts.audit_r2 --strict --anchors stockdata,ohlc,massive_stock_day --max-age-hours 26; then
             echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
@@ -3364,6 +3440,23 @@ jobs:
             echo "::warning title=prophet_governor::rc=$rc (prophet_status/suggestions may be stale)"
           fi
           exit 0
+      - name: restore massive_stock_day store from R2 (hot-tape pack wide-tail source)
+        # engine/marketing/hot_tape_pack.py scans this store as the ~20k-name WIDE TAIL,
+        # unioned freshest-source-per-ticker with the curated data/baskets/ohlcv +
+        # data/stocks trees. This job's checkout never held it, so the nightly pack has
+        # been quietly covering only the ~3k curated names — the pack degrades by design
+        # (a name present only in the massive store just drops out), which is exactly why
+        # nothing ever reported it. Read-only here: no publish-back, and the marketing
+        # step is deliberately NOT gated on this — a failed restore costs coverage, never
+        # the job. `needs: engine` (which needs collect) puts this after the collect job's
+        # publish, so the restore picks up tonight's tip.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24
       - name: Marketing — NW lobe governor
         continue-on-error: true
         env:

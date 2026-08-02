@@ -55,6 +55,7 @@ _DEFAULTS = {
     "massive_stale_bdays": 5,       # newest anchor bar older than this many business days = stale FLAG
     "massive_manifest_ahead_bdays": 2,  # manifest latest_date this far ahead of anchor content = manifest lie (fail)
     "massive_min_files": 100,       # fewer parquets than this = store absent (CI checkout) -> universe skipped
+    "massive_recent_window_bdays": 90,  # continuity is judged over the trailing N bdays only; a deeper gap flags (descriptive, not tonight's feed)
     "email_alerts": False,          # NEVER email — deterministic file + conspicuous log only
 }
 

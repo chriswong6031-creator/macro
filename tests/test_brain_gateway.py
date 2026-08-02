@@ -1581,6 +1581,16 @@ def test_context_sanitization_reaches_loop(tmp_path):
     user_msgs = [m for m in first_call_msgs if m.get("role") == "user"]
     assert user_msgs, f"no user-role message found in create() call: {first_call_msgs}"
     user_content = user_msgs[-1]["content"]
+    if isinstance(user_content, list):
+        # W5-T: the turn's last message carries the messages cache breakpoint, so its
+        # content is the block-list wire shape. This test is about the TEXT that reached
+        # the model, not the container it rode in — join the text blocks and assert on
+        # the same string as before.
+        user_content = "\n".join(
+            b.get("text", "") for b in user_content
+            if isinstance(b, dict) and b.get("type") == "text"
+        )
+    assert isinstance(user_content, str) and user_content
 
     # DIRECT assertions on the actual string passed to the LLM:
     # 1. No raw angle brackets (script/html injection stripped)
