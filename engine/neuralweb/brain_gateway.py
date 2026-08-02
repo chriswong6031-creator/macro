@@ -3612,7 +3612,7 @@ def _dispatch_brain_tool(
             # (Essential/Pro). Execution-time gate, portfolio-brief idiom: the model
             # gets the gate explained instead of fabricating research.
             if not user_id:
-                return {"error": "insider_required", "note": (
+                return {"error": "essential_required", "note": (
                     "Institutional research search needs a signed-in Essential or Pro "
                     "account — explain the gate and answer from the desk's own signals.")}
             _ent = _resolve_tier(user_id, root=root)
@@ -3624,7 +3624,7 @@ def _dispatch_brain_tool(
             _status = _ent.get("status") or "active"
             if not (_tier in ("essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
-                return {"error": "insider_required", "tier": _tier, "note": (
+                return {"error": "essential_required", "tier": _tier, "note": (
                     "The research vault is an Essential/Pro capability. This user is on "
                     f"the '{_tier}' tier — explain the gate; do not fabricate research.")}
             _mode = str(tool_params.get("mode") or "search").strip().lower()
@@ -3652,7 +3652,7 @@ def _dispatch_brain_tool(
             # (display-tier, China-analog idiom). Depth capability → Essential/Pro,
             # same execution-time gate shape as search_research.
             if not user_id:
-                return {"error": "insider_required", "note": (
+                return {"error": "essential_required", "note": (
                     "Historical analogues need a signed-in Essential or Pro account — "
                     "explain the gate and answer from the current desk reads.")}
             _ent = _resolve_tier(user_id, root=root)
@@ -3661,7 +3661,7 @@ def _dispatch_brain_tool(
             _status = _ent.get("status") or "active"
             if not (_tier in ("essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
-                return {"error": "insider_required", "tier": _tier, "note": (
+                return {"error": "essential_required", "tier": _tier, "note": (
                     "Historical analogues are an Essential/Pro capability. This user is "
                     f"on the '{_tier}' tier — explain the gate; never invent episodes.")}
             from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415

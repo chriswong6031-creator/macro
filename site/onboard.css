@@ -97,7 +97,7 @@
   --obm-field-h:46px;
   --obm-radius:14px;
   --ob-free:#5d6b7e;      /* muted     */
-  --ob-insider:#0f9d8f;   /* teal      */
+  --ob-essential:#0f9d8f; /* teal      */
   --ob-pro:#7862e0;       /* violet    */
   color:var(--ink);
   font-family:'Inter',system-ui,-apple-system,sans-serif;
@@ -276,7 +276,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-plate-st[data-st="live"]{color:#17a34a;background:rgba(23,163,74,.13)}
 .obm-plate-st[data-st="live"] i{display:block;animation:obmBlink 2.4s ease-in-out infinite}
 .obm-plate-st[data-st="trial"]{color:#b07d05;background:rgba(176,125,5,.13)}
-.obm-plate-st[data-st="essential"]{color:var(--ob-insider);background:rgba(15,157,143,.14)}
+.obm-plate-st[data-st="essential"]{color:var(--ob-essential);background:rgba(15,157,143,.14)}
 .obm-plate-st[data-st="pro"]{color:#8b76ea;background:rgba(120,98,224,.16)}
 @keyframes obmBlink{0%,100%{opacity:1}50%{opacity:.28}}
 
@@ -318,7 +318,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 }
 .obm-row.obm-on .obm-row-lbl{color:var(--row-hue)}
 .obm-row[data-tier="free"]{--row-hue:var(--blue)}
-.obm-row[data-tier="essential"]{--row-hue:var(--ob-insider)}
+.obm-row[data-tier="essential"]{--row-hue:var(--ob-essential)}
 .obm-row[data-tier="pro"]{--row-hue:#8b76ea}
 
 .obm-tile{

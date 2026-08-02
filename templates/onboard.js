@@ -37,14 +37,16 @@
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
   var TRIAL_DAYS = 7;
-  // ── tier alias (rename migration, Phase 2) ────────────────────────────────
+  // ── tier alias (rename migration, Phases 2 + 4) ───────────────────────────
   // `essential` is the WIRE value; `insider` is what the estate shipped before the
   // rename (lib/tiers.py is the server's copy of this exact table). The direction
-  // reversed in Phase 2 and the old value never expires: entitlement rows written
-  // before the flip still say `insider`, this file is served `immutable` with a
-  // far-future max-age so an older copy keeps sending it, and the landing's
-  // `data-plan` / `?plan=` markup ids still spell it. Every tier that arrives from
-  // outside (?plan=, /api/me, a stash, an opener's opts) hops through normTier()
+  // reversed in Phase 2, Phase 4 flipped the landing's `data-plan` / `?plan=` markup
+  // ids to match — and the old value STILL never expires: entitlement rows written
+  // before the flip say `insider` and are never back-filled, this file is served
+  // `immutable` with a far-future max-age so an older copy keeps sending it, and old
+  // shared links carry `?plan=insider` indefinitely. This table is permanent, and
+  // nothing here may ever EMIT `insider`. Every tier that arrives from outside
+  // (?plan=, data-plan, /api/me, a stash, an opener's opts) hops through normTier()
   // before anything keys on it, so every internal comparison stays canonical.
   var TIER_ALIAS = { insider: "essential" };
   function normTier(v) {
@@ -1807,7 +1809,7 @@
     var annual = ln.interval === "annual";
     var nmKey = ln.tier === "essential" ? "laneInsAnnual" : (annual ? "laneProAnnual" : "laneProMonthly");
     var whoKey = ln.tier === "essential" ? "laneInsAnnualWho" : (annual ? "laneProAnnualWho" : "laneProMonthlyWho");
-    var hue = ln.tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
+    var hue = ln.tier === "pro" ? "var(--ob-pro)" : "var(--ob-essential)";
     var mo = perMonth(ln.tier, ln.interval);
     var card = h("button", "obm-plan obm-up-lane" + (ln.popular ? " obm-hot" : ""), { type: "button" });
     card.style.setProperty("--obm-accent", hue);
@@ -2004,7 +2006,7 @@
   }
   function orderCard() {
     var tier = S.plan, annual = S.period === "annual";
-    var hue = tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
+    var hue = tier === "pro" ? "var(--ob-pro)" : "var(--ob-essential)";
     var mo = perMonth(tier, S.period), total = firstInvoiceTotal(tier, S.period);
     var date = fmtDate(trialChargeDate());
     var trial = planHasTrial(tier);
@@ -2521,8 +2523,9 @@
         // signed-in free tier → unchanged: keep the card's own trial copy, open the sheet
         makePlanLive(pc, null, start, { plan: plan, period: pc.getAttribute("data-period") || "annual" });
       } else if (normTier(plan) === "essential") {
-        // `plan` is the landing's data-plan MARKUP id, which still spells the old name
-        // (Phase 4 owns those); normTier lands it canonical before the comparison.
+        // `plan` is the landing's data-plan MARKUP id. Phase 4 flipped it to `essential`,
+        // but a warm-cached index.html still serves `insider`, so normTier lands it
+        // canonical before the comparison rather than matching a literal.
         // Held by an Essential member, bundled into Pro/unlimited — not a purchase.
         makeInert(pc, tier === "essential" ? "yourPlan" : "included");
       } else if (plan === "pro") {

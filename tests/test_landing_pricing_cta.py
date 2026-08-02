@@ -13,14 +13,25 @@ SHIPPING file and executed under node against stub DOM nodes, so an edit to the
 branch matrix fails the test on behaviour rather than on wording.
 
   logged-out            -> untouched (applyAuthChrome never runs)
-  free (signed in)      -> Free inert "Current plan"; Insider/Pro keep trial copy
-  insider (any interval)-> Insider inert "Your plan";  Pro "Upgrade"
-  pro + monthly         -> Insider inert "Included";   Pro "Upgrade to Annual"
-  pro + annual          -> Insider inert "Included";   Pro inert "Your plan"
-  pro lifetime (comp)   -> Insider inert "Included";   Pro inert "Your plan"
-  unlimited             -> Insider inert "Included";   Pro inert "Your plan"
+  free (signed in)      -> Free inert "Current plan"; Essential/Pro keep trial copy
+  insider (any interval)-> Essential inert "Your plan";  Pro "Upgrade"
+  pro + monthly         -> Essential inert "Included";   Pro "Upgrade to Annual"
+  pro + annual          -> Essential inert "Included";   Pro inert "Your plan"
+  pro lifetime (comp)   -> Essential inert "Included";   Pro inert "Your plan"
+  unlimited             -> Essential inert "Included";   Pro inert "Your plan"
   essential (any interval) -> identical to its insider twin (the rename migration's
-                           alias; the card KEYS stay `data-plan="insider"`)
+                           alias)
+
+Both axes of the rename are exercised, and neither may be dropped:
+
+  * the /api/me TIER — 'essential' is what the catalog stores now, 'insider' is what
+    a row written before Phase 2 still says (never back-filled);
+  * the landing's data-plan MARKUP id — Phase 4 flipped the card to
+    ``data-plan="essential"``, but onboard.js ships ``immutable`` with a far-future
+    max-age, so THIS copy can be paired with a warm-cached index.html still carrying
+    ``data-plan="insider"``. Every node test below runs over BOTH card ids
+    (``CARD_IDS``) and must paint identically; that is what forbids re-introducing a
+    literal ``plan === "essential"`` comparison in place of ``normTier(plan)``.
 """
 
 from __future__ import annotations
@@ -55,6 +66,37 @@ def test_billing_toggle_updates_paid_plan_cta_period(rel: str) -> None:
     assert "el.dataset.period = period;" in apply_pricing
     assert "url.searchParams.set('period', period);" in apply_pricing
     assert "el.href = url.toString();" in apply_pricing
+
+
+@pytest.mark.parametrize("rel", ("templates/index.html", "site/index.html"))
+def test_the_landing_emits_the_canonical_paid_tier_id(rel: str) -> None:
+    """Phase 4: every machine id the landing WRITES says `essential`.
+
+    `insider` stays ACCEPTED forever (normTier on the way in, and the Terminal's own
+    VALID_TIERS keeps both) — but nothing may EMIT it again, or the rename never
+    finishes. The signup href is the one that leaves this estate: the Terminal has
+    accepted `?plan=essential` since its PR #289.
+    """
+    html = (ROOT / rel).read_text(encoding="utf-8")
+    assert 'data-plan="essential" data-period="annual"' in html, "Essential card CTA"
+    assert "&amp;plan=essential&amp;period=annual" in html, "signup href"
+    assert '<div class="matrix-card rv" data-plan="essential">' in html, "matrix default"
+    assert 'data-mx-plan="essential"' in html, "matrix mobile tab"
+    assert 'data-plan="insider"' not in html
+    assert 'data-mx-plan="insider"' not in html
+    assert "plan=insider" not in html
+
+
+@pytest.mark.parametrize("rel", ("templates/landing.css", "site/landing.css"))
+def test_the_mobile_matrix_css_keys_on_the_same_card_id(rel: str) -> None:
+    """`.matrix-card[data-plan=…]` is the ONLY thing that un-hides the paid column on
+    mobile, and the inline matrix JS writes that attribute straight from
+    `data-mx-plan`. Flipping the markup id without this selector leaves the Essential
+    tab selectable and its column blank — a silent, mobile-only break."""
+    css = (ROOT / rel).read_text(encoding="utf-8")
+    assert '.matrix-card[data-plan="essential"] .mx th:nth-child(3)' in css
+    assert '.matrix-card[data-plan="essential"] .mx td:nth-child(3)' in css
+    assert 'data-plan="insider"' not in css
 
 
 # ───────────────────────── source slicing (shared helper) ──────────────────────
@@ -116,8 +158,16 @@ def _apply_auth_chrome(rel: str) -> str:
     ))
 
 
-# The three landing pricing cards, in DOM order.
-_PLANS = ("free", "insider", "pro")
+# The paid-mid card's `data-plan` markup id. PAID_CARD is what templates/index.html
+# ships after Phase 4; LEGACY_CARD is what a warm-cached copy of that page still
+# carries. onboard.js must paint the two identically — see the module docstring.
+PAID_CARD = "essential"
+LEGACY_CARD = "insider"
+CARD_IDS = (PAID_CARD, LEGACY_CARD)
+
+# The three landing pricing cards, in DOM order. Keyed by the CANONICAL id: the
+# legacy-card run is re-keyed onto it in _run_matrix so one EXPECTED table covers both.
+_PLANS = ("free", PAID_CARD, "pro")
 
 _HARNESS = """
 var CALLS = [];
@@ -131,7 +181,7 @@ function _mk(plan, period) {
   a.style = {};
   return a;
 }
-var CARDS = [_mk("free", null), _mk("insider", "annual"), _mk("pro", "annual")];
+var CARDS = [_mk("free", null), _mk("__PAID_CARD__", "annual"), _mk("pro", "annual")];
 var document = {
   getElementById: function () { return null; },
   querySelectorAll: function (sel) { return sel === ".js-plan-cta" ? CARDS : []; }
@@ -153,7 +203,7 @@ __APPLY_AUTH_CHROME__
 var out = {};
 JSON.parse(__ME_LIST__).forEach(function (me) {
   CALLS = [];
-  CARDS = [_mk("free", null), _mk("insider", "annual"), _mk("pro", "annual")];
+  CARDS = [_mk("free", null), _mk("__PAID_CARD__", "annual"), _mk("pro", "annual")];
   applyAuthChrome(me.payload);
   out[me.name] = CALLS;
 });
@@ -161,16 +211,30 @@ process.stdout.write(JSON.stringify(out));
 """
 
 
-def _run_matrix(rel: str, personas: dict[str, dict]) -> dict[str, list[dict]]:
+def _run_matrix(rel: str, personas: dict[str, dict],
+                card_id: str = PAID_CARD) -> dict[str, list[dict]]:
+    """Paint every persona against a landing whose paid-mid card is `card_id`.
+
+    The recorded `plan` is re-keyed onto PAID_CARD so a legacy-card run compares
+    against the SAME expected table — the assertions then differ only in what the
+    shipping JS was handed, which is the whole point of the second leg.
+    """
+    assert card_id in CARD_IDS, f"unknown card id {card_id!r}"
     me_list = [{"name": k, "payload": v} for k, v in personas.items()]
     script = (
         _HARNESS
         .replace("__APPLY_AUTH_CHROME__", _apply_auth_chrome(rel))
+        .replace("__PAID_CARD__", card_id)
         .replace("__ME_LIST__", json.dumps(json.dumps(me_list)))
     )
     res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}"
-    return json.loads(res.stdout)
+    out = json.loads(res.stdout)
+    for calls in out.values():
+        for c in calls:
+            if c["plan"] == card_id:
+                c["plan"] = PAID_CARD
+    return out
 
 
 # ───────────────────────── layer 2: the entitlement matrix ─────────────────────
@@ -214,67 +278,68 @@ PERSONAS: dict[str, dict] = {
 EXPECTED: dict[str, dict[str, tuple[str, str | None]]] = {
     "free": {
         "free": ("inert", "current"),
-        "insider": ("live", None),
+        "essential": ("live", None),
         "pro": ("live", None),
     },
     "insider-monthly": {
         "free": ("inert", "included"),
-        "insider": ("inert", "yourPlan"),
+        "essential": ("inert", "yourPlan"),
         "pro": ("live", "upgrade"),
     },
     "insider-annual": {
         "free": ("inert", "included"),
-        "insider": ("inert", "yourPlan"),
+        "essential": ("inert", "yourPlan"),
         "pro": ("live", "upgrade"),
     },
     "pro-monthly": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("live", "upgradeAnnual"),
     },
     "pro-annual": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("inert", "yourPlan"),
     },
     "pro-lifetime": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("inert", "yourPlan"),
     },
     "unlimited": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("inert", "yourPlan"),
     },
     "pro-comp-monthly": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("inert", "yourPlan"),
     },
     "pro-comp-canceled": {
         "free": ("inert", "included"),
-        "insider": ("inert", "included"),
+        "essential": ("inert", "included"),
         "pro": ("live", "upgradeAnnual"),
     },
     # identical to their insider twins above, by construction — see the parity test
     "essential-monthly": {
         "free": ("inert", "included"),
-        "insider": ("inert", "yourPlan"),
+        "essential": ("inert", "yourPlan"),
         "pro": ("live", "upgrade"),
     },
     "essential-annual": {
         "free": ("inert", "included"),
-        "insider": ("inert", "yourPlan"),
+        "essential": ("inert", "yourPlan"),
         "pro": ("live", "upgrade"),
     },
 }
 
 
 @needs_node
+@pytest.mark.parametrize("card_id", CARD_IDS)
 @pytest.mark.parametrize("rel", REL_ONBOARD)
-def test_entitlement_cta_matrix(rel: str) -> None:
-    got = _run_matrix(rel, PERSONAS)
+def test_entitlement_cta_matrix(rel: str, card_id: str) -> None:
+    got = _run_matrix(rel, PERSONAS, card_id)
     for name, want in EXPECTED.items():
         calls = {c["plan"]: c for c in got[name]}
         assert set(calls) == set(_PLANS), f"{name}: not every card was painted ({sorted(calls)})"
@@ -286,22 +351,25 @@ def test_entitlement_cta_matrix(rel: str) -> None:
 
 
 @needs_node
+@pytest.mark.parametrize("card_id", CARD_IDS)
 @pytest.mark.parametrize("rel", REL_ONBOARD)
-def test_an_essential_payload_paints_exactly_like_its_insider_twin(rel: str) -> None:
+def test_an_essential_payload_paints_exactly_like_its_insider_twin(
+        rel: str, card_id: str) -> None:
     """Stated as parity against the canonical persona rather than as a second expected
     table, so it cannot drift from whatever the insider legs are supposed to do."""
-    got = _run_matrix(rel, PERSONAS)
+    got = _run_matrix(rel, PERSONAS, card_id)
     for alias, wire in (("essential-monthly", "insider-monthly"),
                         ("essential-annual", "insider-annual")):
         assert got[alias] == got[wire], f"{alias} diverged from {wire}"
 
 
 @needs_node
+@pytest.mark.parametrize("card_id", CARD_IDS)
 @pytest.mark.parametrize("rel", REL_ONBOARD)
-def test_every_actionable_paid_cta_targets_pro_annual(rel: str) -> None:
-    """Insider and Pro-Monthly are both sold UP to Pro Annual — the sheet's own
+def test_every_actionable_paid_cta_targets_pro_annual(rel: str, card_id: str) -> None:
+    """Essential and Pro-Monthly are both sold UP to Pro Annual — the sheet's own
     lane matrix (upgradeLanes) then tailors the panel; no new upgrade UI here."""
-    got = _run_matrix(rel, PERSONAS)
+    got = _run_matrix(rel, PERSONAS, card_id)
     for name in ("insider-monthly", "insider-annual", "pro-monthly",
                  "essential-monthly", "essential-annual"):
         pro = [c for c in got[name] if c["plan"] == "pro"][0]
@@ -312,11 +380,12 @@ def test_every_actionable_paid_cta_targets_pro_annual(rel: str) -> None:
 
 
 @needs_node
+@pytest.mark.parametrize("card_id", CARD_IDS)
 @pytest.mark.parametrize("rel", REL_ONBOARD)
-def test_no_paid_member_is_offered_a_trial(rel: str) -> None:
+def test_no_paid_member_is_offered_a_trial(rel: str, card_id: str) -> None:
     """The operator bug, stated as an invariant: for every non-free signed-in
     payload, NO pricing CTA may be left carrying its own (trial) copy."""
-    got = _run_matrix(rel, PERSONAS)
+    got = _run_matrix(rel, PERSONAS, card_id)
     for name, me in PERSONAS.items():
         if me["tier"] == "free":
             continue

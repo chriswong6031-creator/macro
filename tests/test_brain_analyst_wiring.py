@@ -120,14 +120,14 @@ def test_get_market_events_survives_junk_model_arguments(tmp_path):
 
 def test_search_research_gate_guest(tmp_path):
     out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="")
-    assert out.get("error") == "insider_required"
+    assert out.get("error") == "essential_required"
 
 
 def test_search_research_gate_free_tier(tmp_path, monkeypatch):
     monkeypatch.setattr(gw, "_resolve_tier",
                         lambda uid, root=None: {"tier": "free", "status": "active"})
     out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
-    assert out.get("error") == "insider_required"
+    assert out.get("error") == "essential_required"
     assert out.get("tier") == "free"
 
 
@@ -190,14 +190,14 @@ def test_w2_tool_labels_bilingual():
 
 def test_analogues_gate_guest(tmp_path):
     out = _dispatch("get_historical_analogues", {}, tmp_path, user_id="")
-    assert out.get("error") == "insider_required"
+    assert out.get("error") == "essential_required"
 
 
 def test_analogues_gate_free_tier(tmp_path, monkeypatch):
     monkeypatch.setattr(gw, "_resolve_tier",
                         lambda uid, root=None: {"tier": "free", "status": "active"})
     out = _dispatch("get_historical_analogues", {}, tmp_path, user_id="u1")
-    assert out.get("error") == "insider_required"
+    assert out.get("error") == "essential_required"
     assert out.get("tier") == "free"
 
 

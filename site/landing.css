@@ -1332,7 +1332,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:56px 0 48px;color
   .mx thead th small{font-size:9.5px;line-height:1.25}
   .mx th:nth-child(n+2),.mx td:nth-child(n+2){display:none}
   .matrix-card[data-plan="free"] .mx th:nth-child(2),.matrix-card[data-plan="free"] .mx td:nth-child(2),
-  .matrix-card[data-plan="insider"] .mx th:nth-child(3),.matrix-card[data-plan="insider"] .mx td:nth-child(3),
+  .matrix-card[data-plan="essential"] .mx th:nth-child(3),.matrix-card[data-plan="essential"] .mx td:nth-child(3),
   .matrix-card[data-plan="pro"] .mx th:nth-child(4),.matrix-card[data-plan="pro"] .mx td:nth-child(4){display:table-cell;width:32%}
   .mx .grp td{display:table-cell !important;width:auto !important;padding:10px 12px}
   .mx .ok{font-size:16px}

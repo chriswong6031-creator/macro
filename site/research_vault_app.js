@@ -105,7 +105,10 @@
   // Teaser gate: reading full PDFs is Pro-only. Every non-Pro visitor sees the
   // same fixed latest-three preview, and the app starts locked while auth resolves
   // so there is never a flash of the full catalog.
-  var USER_TIER = 'anon';    // 'anon' | 'free' | 'insider' (display: Essential) | 'pro'
+  // Raw wire value from /api/me — NOT normalised, because the only comparison below
+  // is against 'pro'. 'essential' is the canonical paid-mid tier; a row written before
+  // the rename still says 'insider' and is never back-filled, so both reach here.
+  var USER_TIER = 'anon';    // 'anon' | 'free' | 'essential' (legacy: 'insider') | 'pro'
   function feedUnlocked() { return USER_TIER === 'pro'; }
   function teaseCount() { return 3; }
   function previewItems() {
