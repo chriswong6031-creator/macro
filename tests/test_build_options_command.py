@@ -839,11 +839,13 @@ def test_hover_sweep_catches_a_planted_term_in_both_languages(page):
 def test_script_sweep_catches_a_planted_term_in_both_languages(page):
     """Same control for the literal stream, planted as the workspace script's
     own tip constants really are written — a bilingual pair inside an array."""
-    body = _extract_workspace_script(page)
+    # Splice INSIDE the IIFE (before its closing `})();`) so the doctored page
+    # still parses as the two-script shape _workspace_script_parts pins.
+    inner = _workspace_script_parts(page)[1][: -len(_IIFE_CLOSE)]
     plant = ("\nvar PLANT = ['x','y', false,\n"
              "  'Mostly same-day (0DTE) options — usually day-trading, not positioning for a move.',\n"
              "  '以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。'];\n")
-    doctored = page.replace(body, body + plant, 1)
+    doctored = page.replace(inner, inner + plant, 1)
     assert doctored != page, "could not splice the plant into the workspace script"
     hits = _banned_vocabulary_hits(_script_authored_text(doctored), BANNED_ON_TIER_2)
     assert hits == {"0DTE": 2}, f"script sweep blind to a planted violation: {hits}"
@@ -1051,16 +1053,45 @@ _HAS_NODE = _shutil.which("node") is not None
 _needs_node = pytest.mark.skipif(not _HAS_NODE, reason="node not on PATH")
 
 
-def _extract_workspace_script(rendered: str) -> str:
-    """The workspace's one inline <script>'s IIFE body (everything up to but
-    excluding the closing `})();`) — renderScanner/Ticker/Leaders are
-    closure-local, so a test call must be spliced INSIDE it."""
+_IIFE_OPEN_TAG = "<script data-externalize>"
+_IIFE_CLOSE = "})();"
+
+
+def _workspace_script_parts(rendered: str) -> tuple[str, str]:
+    """The workspace's TWO post-chrome scripts: (data body, IIFE body).
+
+    options.html.j2 splits render-time DATA from static CODE.  First an inline
+    `<script>` carrying only `window.OEW_*` assignments — re-baked nightly, so it
+    can never ride in a content-hashed file.  Then `<script data-externalize>`
+    holding the IIFE, which the post-render sweep (scripts/externalize_css.py)
+    lifts verbatim into site/assets/js/<hash>.js so returning visitors cache it.
+
+    Both returned bodies are contiguous substrings of `rendered`, so a test may
+    still splice into either one by plain string replacement.
+    """
     anchor = rendered.index("<!-- /oew -->")
-    start = rendered.index("<script>", anchor) + len("<script>")
-    end = rendered.index("</script>", start)
-    body = rendered[start:end].strip()
-    assert body.endswith("})();"), "options.html.j2's script no longer ends in the expected IIFE close"
-    return body[: -len("})();")]
+    d_start = rendered.index("<script>", anchor) + len("<script>")
+    d_end = rendered.index("</script>", d_start)
+    data_body = rendered[d_start:d_end].strip()
+    assert "window.OEW_TICKER_MANIFEST" in data_body, (
+        "the first post-chrome <script> is no longer the render-time data script"
+    )
+    i_start = rendered.index(_IIFE_OPEN_TAG, d_end) + len(_IIFE_OPEN_TAG)
+    i_end = rendered.index("</script>", i_start)
+    iife_body = rendered[i_start:i_end].strip()
+    assert iife_body.endswith(_IIFE_CLOSE), (
+        "options.html.j2's script no longer ends in the expected IIFE close"
+    )
+    return data_body, iife_body
+
+
+def _extract_workspace_script(rendered: str) -> str:
+    """The workspace's executable JS with the IIFE left OPEN — the data script's
+    globals, then the IIFE body up to but excluding its closing `})();`.
+    renderScanner/Ticker/Leaders are closure-local, so a test call must be
+    spliced INSIDE it (append the splice, then `})();`)."""
+    data_body, iife_body = _workspace_script_parts(rendered)
+    return data_body + "\n" + iife_body[: -len(_IIFE_CLOSE)]
 
 
 _DOM_STUB = """
@@ -1070,12 +1101,95 @@ var document = { querySelectorAll: function(){ return []; },
 var location = { hash: '', search: '' };
 var history = { replaceState: function(){} };
 var fetch = function(){ return Promise.reject(new Error('fetch disabled in test')); };
-// OIP W1: window.OEW_TICKER_MANIFEST is now the workspace script's own first
-// statement (the manifest embed shares its <script> tag with the IIFE — see
-// _extract_workspace_script), so a bare Node eval needs a minimal window global
-// to assign onto, same as it already needs document/location/history/fetch.
+// OIP W1: window.OEW_TICKER_MANIFEST / window.OEW_DEFAULT_TICKER are the
+// workspace's render-time data script — its own inline <script> tag, ahead of
+// the data-externalize IIFE (see _workspace_script_parts).  _extract_workspace_
+// script concatenates the two in document order, so a bare Node eval still needs
+// a minimal window global to assign onto, same as document/location/history/fetch.
 var window = { addEventListener: function(){} };
 """
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data / code split — the cacheability contract for the externalized IIFE
+# ─────────────────────────────────────────────────────────────────────────────
+def test_workspace_data_and_code_scripts_are_split(page):
+    """Exactly two scripts after the workspace: the render-time data script,
+    then the static IIFE marked for externalization — in that order.
+
+    The order is load-bearing (the IIFE reads window.OEW_DEFAULT_TICKER), and so
+    is the split: anything render-time inside the MARKED script would be lifted
+    into a content-hashed file the edge serves `immutable, max-age=1y`, freezing
+    a nightly bake for every returning visitor.
+    """
+    tail = page[page.index("<!-- /oew -->"):]
+    opens = [m.start() for m in re.finditer(r"<script\b", tail)]
+    assert len(opens) >= 2, "the workspace lost its post-chrome scripts"
+    first, second = tail[opens[0]:], tail[opens[1]:]
+    assert first.startswith("<script>"), "the data script must be a plain <script>"
+    assert not first.startswith("<script data-"), "the data script must NOT be marked"
+    assert second.startswith(_IIFE_OPEN_TAG), (
+        "the second post-chrome script must be exactly '<script data-externalize>' — "
+        "the sweep and these tests both anchor on that literal"
+    )
+
+    data_body, iife_body = _workspace_script_parts(page)
+    assert "window.OEW_TICKER_MANIFEST" in data_body
+    assert "window.OEW_DEFAULT_TICKER" in data_body
+    # The lifted half must hold no render-time value and no un-rendered Jinja.
+    assert "OEW_TICKER_MANIFEST =" not in iife_body, (
+        "the manifest embed leaked into the externalized script — it would freeze"
+    )
+    assert "{{" not in iife_body, "an un-rendered Jinja expression is inside the IIFE"
+    assert "DEFAULT_TICKER = window.OEW_DEFAULT_TICKER" in iife_body
+
+
+def test_externalized_iife_is_byte_static_across_renders():
+    """Two renders whose DATA differs must produce a byte-identical IIFE.
+
+    This is what makes the hash file cacheable at all: the content hash is the
+    filename, so any per-render byte inside the marked script would mint a new
+    file (and a new URL) every night and hand back nothing. The data script is
+    where the difference is allowed to land, and must actually show it — a pin
+    that passed on two identical renders would prove nothing.
+    """
+    a = _stores()
+    b = _stores()
+    b["gex"] = {k: v for k, v in (b["gex"] or {}).items() if k != "SPY"}  # counts.ticker -> SPX
+    b["gex_index"] = [{"key": "AAPL", "en": "Apple", "zh": "苹果", "asof": "2026-07-24"}]
+
+    data_a, iife_a = _workspace_script_parts(render(REPO, a))
+    data_b, iife_b = _workspace_script_parts(render(REPO, b))
+
+    assert data_a != data_b, "the fixtures did not actually change the render-time data"
+    assert '"SPY"' in data_a and '"SPX"' in data_b, "OEW_DEFAULT_TICKER did not move"
+    assert iife_a == iife_b, (
+        "the externalized script is not byte-static across renders — a render-time "
+        "value has leaked into it and the hash file will churn nightly"
+    )
+
+
+def test_shipped_page_reads_its_externalized_file():
+    """The committed artifact, end to end: the page loads a hash file that
+    exists, holds the IIFE, and still carries its inline data script."""
+    shipped = REPO / "site" / "options.html"
+    if not shipped.exists():
+        pytest.skip("site/options.html not present in this checkout")
+    text = shipped.read_text(encoding="utf-8")
+    m = re.search(r'<script src="assets/js/([0-9a-f]{6,64})\.js\?v=\1"', text)
+    assert m, (
+        "the shipped options.html carries no externalized workspace script — "
+        "re-run scripts.externalize_css + scripts.optimize_assets"
+    )
+    asset = REPO / "site" / "assets" / "js" / f"{m.group(1)}.js"
+    assert asset.is_file(), f"shipped page references a missing asset: {asset}"
+    body = asset.read_text(encoding="utf-8").strip()
+    assert body.endswith(_IIFE_CLOSE), "the externalized file is not the workspace IIFE"
+    assert "renderScanner" in body, "the externalized file lost the mode renderers"
+    assert _IIFE_OPEN_TAG not in text, "an unlifted data-externalize block is still shipping"
+    assert "window.OEW_TICKER_MANIFEST = " in text, (
+        "the render-time manifest must stay INLINE — it can never ride in the hash file"
+    )
 
 
 @_needs_node
@@ -1493,11 +1607,12 @@ def test_search_behavior_end_to_end():
     rather than just pinning their source text.
 
     Renders its OWN page (not the shared `page` fixture) with a purpose-built
-    gex_index, because window.OEW_TICKER_MANIFEST is the workspace script's own
-    FIRST statement (baked server-side from ticker_manifest_json) — it assigns
-    over anything a test pre-seeds on `window` before the extracted script runs,
-    so the only way to control what setupTickerSearch() sees is through the
-    fixture the template is rendered against.
+    gex_index, because window.OEW_TICKER_MANIFEST is baked server-side into the
+    workspace's render-time data script (from ticker_manifest_json) and
+    _extract_workspace_script prepends that script to the IIFE — so it assigns
+    over anything a test pre-seeds on `window`, and the only way to control what
+    setupTickerSearch() sees is through the fixture the template is rendered
+    against.
     """
     manifest_stores = _stores()
     manifest_stores["gex_index"] = [

@@ -464,6 +464,81 @@ def externalize_css_text(
     return _STYLE_BLOCK_RE.sub(_repl, text)
 
 
+# --- inline-JS externalization (OPT-IN, unlike CSS) --------------------------
+# A page's inline <script> is not the same kind of thing as its inline <style>.
+# Almost every one on this site mixes render-time DATA with code (the data-base
+# shim, the theme boot script, every builder that bakes a payload into a
+# `window.X = {...}` assignment), and a content-hashed static file is the one
+# place that data must never land: the hash freezes tonight's numbers behind an
+# `immutable, max-age=1y` URL, so returning visitors keep replaying a stale
+# nightly bake. So this transform lifts NOTHING by default — a block opts in by
+# carrying `data-externalize`, which is the author's assertion that the block is
+# static code and that every render-time value it needs arrives from a separate,
+# still-inline data script.
+EXTERNALIZE_JS_ATTR = "data-externalize"
+_SCRIPT_BLOCK_RE = re.compile(r"<script\b([^>]*)>(.*?)</script>", re.IGNORECASE | re.DOTALL)
+# Lookarounds, NOT `\b`: a word boundary in front of an attribute name also
+# matches the tail of a longer `-`-joined attribute (`\bexternalize` matches
+# inside `data-externalize`, `\bsrc=` inside `data-src=`), which is how a guard
+# written against one attribute quietly starts matching its data- variants.
+_EXTERNALIZE_ATTR_RE = re.compile(
+    rf"(?<![\w-]){EXTERNALIZE_JS_ATTR}(?![\w-])", re.IGNORECASE
+)
+_SCRIPT_SRC_ATTR_RE = re.compile(r"(?<![\w-])src\s*=", re.IGNORECASE)
+
+
+def externalize_js_text(text: str, make_src: Callable[[str, int], Optional[str]]) -> str:
+    """Replace each opt-in ``<script data-externalize>`` block with ``<script src>``.
+
+    ``make_src(js, index)`` writes the script (or dedupes to an existing one) and
+    returns the ``src`` — or ``None`` to leave that block inline (below a size
+    threshold, or one we choose not to touch). ``index`` is the block's 1-based
+    position among the page's marked CANDIDATES (marked, and not already
+    carrying ``src``). The JS crosses over byte-for-byte, so behavior is
+    unchanged.
+
+    OPT-IN is the whole design, and it is the one place this differs from
+    ``externalize_css_text``. Inline scripts on this site routinely embed
+    render-time data (``window.OEW_TICKER_MANIFEST = […]``, the theme boot
+    script's localStorage read, the data-base shim), and a blind lift would
+    freeze a nightly bake into a content-hashed file the edge serves
+    ``immutable, max-age=1y`` — a returning visitor would replay last week's
+    numbers until some unrelated edit re-minted the hash. Marking a block
+    asserts it is STATIC: any render-time value must reach it through a separate
+    inline data script, or it will freeze.
+
+    A marked tag that already has ``src`` is left alone (nothing to lift), and
+    blocks inside inline ``<svg>`` are NEVER lifted (see ``_svg_spans``) — a
+    ``<script src>`` there is foreign content, not an HTML script.
+
+    Idempotent: the replacement carries no marker, so a page already swept has
+    no marked blocks left and comes back untouched; a block left inline keeps
+    its marker and is re-offered next run.
+
+    ``defer`` and the ``?v=`` stamp are NOT this function's business — the
+    emitted tag is deliberately bare and ``optimize_assets_text`` (which runs
+    downstream in every lane) adds both.
+    """
+    counter = [0]
+    svg_spans = _svg_spans(text)
+
+    def _repl(m: "re.Match[str]") -> str:
+        attrs, js = m.group(1), m.group(2)
+        if not _EXTERNALIZE_ATTR_RE.search(attrs):
+            return m.group(0)  # not opted in
+        if _SCRIPT_SRC_ATTR_RE.search(attrs):
+            return m.group(0)  # already external — nothing inline to lift
+        counter[0] += 1
+        if any(a <= m.start() < b for a, b in svg_spans):
+            return m.group(0)  # SVG-internal <script>: must stay inline
+        src = make_src(js, counter[0])
+        if not src:
+            return m.group(0)  # left inline, marker intact
+        return f'<script src="{src}"></script>'
+
+    return _SCRIPT_BLOCK_RE.sub(_repl, text)
+
+
 # The shim is INLINED, not linked. It has to be a blocking script at the top of
 # <head> (it patches window.fetch before any page data fetch), and as an external
 # ref that made it the one resource that stalls the HTML parser for a full
