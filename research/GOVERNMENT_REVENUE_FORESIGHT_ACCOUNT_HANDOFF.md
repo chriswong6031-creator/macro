@@ -8,7 +8,7 @@ Use `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md` as the canon
 - Wave 5 adds a separate content-addressed `government_revenue_dossiers.v1` artifact, byte-identical canonical/public twins, stable generated-award identity, bounded company/award/action APIs with generation-bound cursors, and a progressive premium award-book/action-tape UI.
 - Wave 5 also adds the strict exact-recipient graph and independent absolute-dollar coverage contracts plus fail-closed resolver helpers. It deliberately ships without fabricated mappings; no discovery ticker or fuzzy company name becomes issuer proof.
 - The live and generic render workflows now carry and verify `dossiers.json`; the projection fence rejects stale, malformed, non-canonical, or mixed dossier generations.
-- Focused local checkpoint: 81 Government Revenue API/build/contract/UI/projection/recipient-graph tests pass.
+- Focused local checkpoint: 133 Government Revenue API/build/contract/UI/projection/recipient-graph/DAG/Synapse tests pass; the repository claims fence and a real local API/browser award-book/action-tape smoke test also pass.
 
 ## Truth and authority fences
 

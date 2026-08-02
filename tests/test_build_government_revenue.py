@@ -179,7 +179,7 @@ def test_display_payload_is_first_page_only_while_canonical_workspace_stays_comp
         "positive_award_action_flow_90d": None,
         "modification_impulse_90d": None,
     }
-    assert shell["companies"][0]["provenance"] == [{"dataset": "first"}]
+    assert shell["companies"][0]["source_receipts"] == [{"dataset": "first"}]
     assert "awards" not in shell["companies"][0]
 
 
@@ -190,11 +190,22 @@ def test_display_payload_excludes_unused_workbench_contract_metadata() -> None:
         "provenance_contract": "vertical_provenance.v1",
         "context_contract": "vertical_intelligence_context.v1",
     }
+    payload["opportunity_intelligence"] = {
+        "provenance": [{"contract": "vertical_provenance.v1"}],
+        "opportunities": [],
+        "events": [],
+        "company_context": {},
+    }
+    payload["procurement_workspace"].setdefault("coverage", {})["award_events"] = {
+        "input": 0,
+        "validated": 0,
+    }
 
     shell = build_government_revenue._display_payload(payload)
 
     assert "workbench" not in shell
-    assert "provenance_contract" not in json.dumps(shell, sort_keys=True)
+    assert '"validated"' not in json.dumps(shell, sort_keys=True).lower()
+    assert payload["procurement_workspace"]["coverage"]["award_events"]["validated"] == 0
 
 
 def test_compact_shell_keeps_current_state_truth_without_full_receipt_duplication() -> None:
