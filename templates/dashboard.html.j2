@@ -14017,8 +14017,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
 
   {# ===================== SECTOR HEAT STRIP — compact one-row rotation read (macro only) =====================
-     DISPLAY-ONLY: shows up to 4 heating (▲) and 4 cooling/broken (▽) themes, each linking to
-     baskets.html#theme-<id>. Hidden when sector_heat is None (pulse unavailable). Never fatal.
+     DISPLAY-ONLY: shows up to 4 heating (▲) and 4 cooling/broken (▽) themes, each linking
+     straight to basket/<id>.html (the theme's own detail page — NOT the retired
+     baskets.html#theme-<id> hop, which now only serves stale inbound links via the
+     redirect stub's resolver). Hidden when sector_heat is None. Never fatal.
      i18n: dual l-en/l-zh spans; no translated text in attributes; data-tip-en/zh for tooltips.
      Jinja key access: sector_heat is a Python dict — use .get() style via d.key (Jinja) or
      the 'is defined' guard on every nested key to avoid crashes on missing keys. #}
