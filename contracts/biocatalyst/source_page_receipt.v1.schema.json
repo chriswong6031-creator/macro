@@ -28,7 +28,7 @@
         "page_token_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
         "headers": {
           "type": "object",
-          "propertyNames": {"enum": ["accept", "user-agent"]},
+          "propertyNames": {"enum": ["accept", "accept-encoding", "user-agent"]},
           "additionalProperties": {"type": "string", "minLength": 1}
         }
       }
@@ -41,7 +41,7 @@
         "status_code": {"type": "integer", "minimum": 100, "maximum": 599},
         "headers": {
           "type": "object",
-          "propertyNames": {"enum": ["content-type", "content-length", "date", "etag", "last-modified"]},
+          "propertyNames": {"enum": ["content-type", "content-length", "content-encoding", "date", "etag", "last-modified"]},
           "additionalProperties": {"type": "string"}
         },
         "exact_response_sha256": {"$ref": "#/$defs/sha256"},

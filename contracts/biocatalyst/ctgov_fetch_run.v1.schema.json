@@ -23,6 +23,19 @@
       "additionalProperties": false,
       "required": ["configured_nct_ids", "query_sha256", "hash_scope", "page_size", "overlap_seconds", "page_cap"],
       "properties": {
+        "api_root": {"const": "https://clinicaltrials.gov/api/v2"},
+        "request_path": {"const": "/studies"},
+        "base_query_params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["query.id", "format", "pageSize", "countTotal"],
+          "properties": {
+            "query.id": {"type": "string", "minLength": 11},
+            "format": {"const": "json"},
+            "pageSize": {"type": "string", "pattern": "^[1-9][0-9]{0,3}$"},
+            "countTotal": {"const": "true"}
+          }
+        },
         "configured_nct_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nctId"}},
         "query_sha256": {"$ref": "#/$defs/sha256"},
         "hash_scope": {"const": "canonical_manifest_excluding_query_sha256"},
@@ -36,6 +49,18 @@
     "source_dataset_timestamp_before_raw": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sourceDataTimestamp"}]},
     "source_dataset_timestamp_after_raw": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sourceDataTimestamp"}]},
     "source_api_version": {"type": ["string", "null"]},
+    "source_api_version_after": {"type": ["string", "null"]},
+    "version_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash_scope", "version_receipt_payloads_sha256", "before", "after"],
+      "properties": {
+        "hash_scope": {"const": "canonical_version_receipts_before_after"},
+        "version_receipt_payloads_sha256": {"$ref": "#/$defs/sha256"},
+        "before": {"$ref": "#/$defs/versionReceipt"},
+        "after": {"$ref": "#/$defs/versionReceipt"}
+      }
+    },
     "receipt_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"}},
     "terminal_receipt_ref": {"type": ["string", "null"], "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"},
     "receipt_payloads_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
@@ -72,6 +97,69 @@
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
-    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"}
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_pagination_tokens_stored_in_receipt", "credentials_stored_in_receipt", "rejected_header_names"],
+      "properties": {
+        "raw_pagination_tokens_stored_in_receipt": {"const": false},
+        "credentials_stored_in_receipt": {"const": false},
+        "rejected_header_names": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["authorization", "cookie", "proxy-authorization", "set-cookie", "x-api-key"]}}
+      }
+    },
+    "versionReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "run_id", "source_id", "phase", "receipt_object_key", "request", "response", "source_dataset_timestamp_raw", "source_api_version", "sanitization", "transaction_from", "transaction_to"],
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^ctgov_version_receipt_[A-Za-z0-9_-]+_(before|after)$"},
+        "run_id": {"type": "string", "pattern": "^ctgov_run_[A-Za-z0-9_-]+$"},
+        "source_id": {"const": "clinicaltrials_gov_v2"},
+        "phase": {"type": "string", "enum": ["before", "after"]},
+        "receipt_object_key": {"type": "string", "pattern": "^biocatalyst/receipts/clinicaltrials/version/[0-9]{4}/[0-9]{2}/[A-Za-z0-9_-]+/(before|after)\\.json$"},
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "path", "headers"],
+          "properties": {
+            "method": {"const": "GET"},
+            "path": {"const": "/version"},
+            "headers": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accept", "accept-encoding", "user-agent"],
+              "properties": {
+                "accept": {"type": "string", "minLength": 1},
+                "accept-encoding": {"type": "string", "minLength": 1},
+                "user-agent": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        },
+        "response": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status_code", "headers", "exact_response_sha256", "raw_response_object_key", "byte_count", "received_at"],
+          "properties": {
+            "status_code": {"type": "integer", "minimum": 100, "maximum": 599},
+            "headers": {
+              "type": "object",
+              "propertyNames": {"enum": ["content-type", "content-length", "content-encoding", "date", "etag", "last-modified"]},
+              "additionalProperties": {"type": "string"}
+            },
+            "exact_response_sha256": {"$ref": "#/$defs/sha256"},
+            "raw_response_object_key": {"type": "string", "pattern": "^biocatalyst/raw/clinicaltrials/v2/version/[0-9]{4}/[0-9]{2}/[A-Za-z0-9_-]+/(before|after)/[a-f0-9]{64}\\.json$"},
+            "byte_count": {"type": "integer", "minimum": 0},
+            "received_at": {"type": "string", "format": "date-time"}
+          }
+        },
+        "source_dataset_timestamp_raw": {"$ref": "#/$defs/sourceDataTimestamp"},
+        "source_api_version": {"type": "string", "minLength": 1},
+        "sanitization": {"$ref": "#/$defs/sanitization"},
+        "transaction_from": {"type": "string", "format": "date-time"},
+        "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
   }
 }

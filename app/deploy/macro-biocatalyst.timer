@@ -1,0 +1,15 @@
+# B1 BioCatalyst source-canonical ClinicalTrials.gov collector.
+# This timer is installed disabled.  It is never enabled by update.sh; an
+# operator arms it only after the root-owned runtime environment is complete.
+[Unit]
+Description=Run BioCatalyst evidence canary hourly (operator-armed only)
+
+[Timer]
+OnCalendar=hourly
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=false
+Unit=macro-biocatalyst.service
+
+[Install]
+WantedBy=timers.target

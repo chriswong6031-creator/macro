@@ -80,8 +80,10 @@ sources:
     user_agent_env: BIOCATALYST_USER_AGENT
     request_headers_allowlist:
       - accept
+      - accept-encoding
       - user-agent
     receipt_response_headers_allowlist:
+      - content-encoding
       - content-type
       - content-length
       - date
