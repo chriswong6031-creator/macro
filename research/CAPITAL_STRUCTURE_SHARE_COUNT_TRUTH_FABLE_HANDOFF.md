@@ -98,6 +98,31 @@ has resolved or read a manifest. The future external collector/readback and
 reconciliation lane is the authority for manifest resolution and retention
 verification.
 
+The existing `collectors.fundamental_forensics_companyfacts` manifest is **not
+yet a direct receipt adapter**. It has a distinct `ffseccfm_` identity, archive
+paths and capture/readback contract, and deliberately declares
+`point_in_time_eligible=false`. A future adapter must verify that manifest and
+its capture through `read_verified_companyfacts`, retain the exact response
+bytes in the capital-structure source store, and then emit this wave's closed
+receipt. It must carry forward that current-snapshot / no-coverage limitation;
+it cannot promote the existing manifest into point-in-time coverage by relabeling
+its clocks.
+
+### Existing-ledger trust boundary
+
+Every update of an existing share-count ledger requires a caller-held,
+externally pinned `ledger_head_receipt_id`. The CLI therefore requires
+`--expected-existing-ledger-head-receipt-id` together with
+`--existing-ledger-json`. The compiler checks the supplied witness before
+extending a ledger; replaying a snapshot already present in that ledger returns
+the exact existing output rather than rewinding the current view.
+
+The internal receipt chain is still useful for structural integrity, but it is
+not itself an external witness. A writer able to replace the entire JSON file
+can recompute local hashes. Persist the pinned head in a durable commit/witness
+record outside the mutable ledger before trusting a prior history or invoking
+an update.
+
 ### Snapshot refreshes versus fact corrections
 
 A source snapshot may change because SEC refreshed root metadata, another

@@ -65,8 +65,11 @@ def _receipt(source_bytes: bytes | None = None, **overrides) -> dict:
 
 def _compile(source_bytes: bytes | None = None, *, existing=None, **receipt_overrides):
     raw = source_bytes or _source_bytes()
+    kwargs = {}
+    if existing is not None:
+        kwargs["expected_existing_ledger_head_receipt_id"] = existing["ledger_head_receipt_id"]
     return compile_share_count_observations(
-        raw, _receipt(raw, **receipt_overrides), existing_ledger=existing,
+        raw, _receipt(raw, **receipt_overrides), existing_ledger=existing, **kwargs,
     )
 
 
@@ -125,6 +128,32 @@ def _rebind_snapshot_and_ledger_receipts(ledger: dict, snapshot_index: int = -1)
         receipt["ledger_receipt_id"] = ledger_receipt_id_for(receipt)
         predecessor = receipt["ledger_receipt_id"]
     ledger["ledger_head_receipt_id"] = predecessor
+
+
+def _rechain_ledger_receipts(ledger: dict) -> None:
+    """Re-seal all local ledger receipts as a write-capable attacker could."""
+    predecessor = None
+    for sequence, receipt in enumerate(ledger["ledger_receipts"], start=1):
+        receipt["sequence"] = sequence
+        receipt["predecessor_ledger_receipt_id"] = predecessor
+        receipt["ledger_receipt_id"] = ledger_receipt_id_for(receipt)
+        predecessor = receipt["ledger_receipt_id"]
+    ledger["ledger_head_receipt_id"] = predecessor
+
+
+def _bind_current_to_tail(ledger: dict) -> None:
+    """Recompute the mutable current-view fields after an adversarial reorder."""
+    snapshot = ledger["source_snapshots"][-1]
+    ledger["source_acquisition"]["source_snapshot_id"] = snapshot["source_snapshot_id"]
+    ledger["source_acquisition"]["source_receipt_id"] = snapshot["source_receipt_id"]
+    facts = snapshot["snapshot_fact_observations"]
+    ledger["counts"]["current_snapshot"] = {
+        "snapshot_fact_observations": len(facts),
+        **{
+            disposition: sum(fact["state"]["disposition"] == disposition for fact in facts)
+            for disposition in ("observed", "deferred", "ambiguous")
+        },
+    }
 
 
 def test_contract_is_strict_and_three_named_sec_facts_are_preserved_separately():
@@ -436,6 +465,7 @@ def test_same_second_and_late_unrelated_issuer_receipts_append_a_bound_ordered_c
             source_url="https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
         ),
         existing_ledger=first,
+        expected_existing_ledger_head_receipt_id=first["ledger_head_receipt_id"],
     )
 
     receipts = second["ledger_receipts"]
@@ -464,6 +494,7 @@ def test_same_second_and_late_unrelated_issuer_receipts_append_a_bound_ordered_c
             system_available_at="2025-10-30T00:03:00Z",
         ),
         existing_ledger=second,
+        expected_existing_ledger_head_receipt_id=second["ledger_head_receipt_id"],
     )
     late_receipt = late["ledger_receipts"][-1]
     assert late_receipt["sequence"] == 3
@@ -483,6 +514,84 @@ def test_same_second_and_late_unrelated_issuer_receipts_append_a_bound_ordered_c
         validate_share_count_ledger(forged)
 
 
+def test_tail_current_view_and_existing_ledger_updates_require_a_pinned_head_witness():
+    early = _compile(
+        source_retrieved_at="2025-10-30T00:00:00Z",
+        system_available_at="2025-10-30T00:01:00Z",
+    )
+    later = _compile(
+        existing=early,
+        source_retrieved_at="2025-11-02T01:00:00Z",
+        system_available_at="2025-11-02T01:04:00Z",
+    )
+    stale_current = deepcopy(later)
+    stale_current["source_acquisition"]["source_snapshot_id"] = early["source_snapshots"][0]["source_snapshot_id"]
+    stale_current["source_acquisition"]["source_receipt_id"] = early["source_snapshots"][0]["source_receipt_id"]
+    stale_current["counts"]["current_snapshot"] = early["counts"]["current_snapshot"]
+    with pytest.raises(ShareCountTruthError, match="must be the ledger tail"):
+        validate_share_count_ledger(stale_current)
+
+    with pytest.raises(ShareCountTruthError, match="is required"):
+        compile_share_count_observations(
+            _source_bytes(), _receipt(), existing_ledger=early,
+        )
+    with pytest.raises(ShareCountTruthError, match="external witness"):
+        compile_share_count_observations(
+            _source_bytes(),
+            _receipt(),
+            existing_ledger=early,
+            expected_existing_ledger_head_receipt_id="share-count-ledger-receipt:cs:" + ("f" * 24),
+        )
+
+
+def test_resealed_prune_or_reorder_cannot_pass_a_pinned_history_witness():
+    early = _compile(
+        source_retrieved_at="2025-10-30T00:00:00Z",
+        system_available_at="2025-10-30T00:01:00Z",
+    )
+    later = _compile(
+        existing=early,
+        source_retrieved_at="2025-11-02T01:00:00Z",
+        system_available_at="2025-11-02T01:04:00Z",
+    )
+    pinned_head = later["ledger_head_receipt_id"]
+
+    pruned = deepcopy(later)
+    pruned["source_snapshots"] = pruned["source_snapshots"][1:]
+    pruned["ledger_receipts"] = pruned["ledger_receipts"][1:]
+    pruned["ledger_receipts"][0]["source_snapshot_ids"] = [
+        pruned["source_snapshots"][0]["source_snapshot_id"]
+    ]
+    pruned["counts"]["source_snapshots_total"] = 1
+    _rechain_ledger_receipts(pruned)
+    with pytest.raises(ShareCountTruthError, match="evidence source receipt"):
+        validate_share_count_ledger(pruned)
+
+    reordered = deepcopy(later)
+    reordered["source_snapshots"].reverse()
+    reordered_ids = [snapshot["source_snapshot_id"] for snapshot in reordered["source_snapshots"]]
+    reordered["ledger_receipts"][0]["source_snapshot_ids"] = [reordered_ids[0]]
+    reordered["ledger_receipts"][1]["source_snapshot_ids"] = reordered_ids
+    reordered["ledger_receipts"][0]["committed_at"] = reordered["ledger_receipts"][1]["committed_at"]
+    _rechain_ledger_receipts(reordered)
+    _bind_current_to_tail(reordered)
+    validate_share_count_ledger(reordered)
+    with pytest.raises(ShareCountTruthError, match="external witness"):
+        validate_share_count_ledger(
+            reordered, expected_ledger_head_receipt_id=pinned_head,
+        )
+    with pytest.raises(ShareCountTruthError, match="external witness"):
+        compile_share_count_observations(
+            _source_bytes(),
+            _receipt(
+                source_retrieved_at="2025-11-02T01:00:00Z",
+                system_available_at="2025-11-02T01:04:00Z",
+            ),
+            existing_ledger=reordered,
+            expected_existing_ledger_head_receipt_id=pinned_head,
+        )
+
+
 def test_p0_deferred_then_later_observed_is_snapshot_local_not_a_false_fact_correction():
     raw = _source_bytes()
     early = compile_share_count_observations(
@@ -498,6 +607,7 @@ def test_p0_deferred_then_later_observed_is_snapshot_local_not_a_false_fact_corr
         raw,
         _receipt(raw, source_retrieved_at="2025-11-02T01:00:00Z", system_available_at="2025-11-02T01:04:00Z"),
         existing_ledger=early,
+        expected_existing_ledger_head_receipt_id=early["ledger_head_receipt_id"],
     )
     # Same direct facts: the canonical correction chain is unchanged and keeps
     # its original deferred evidence, while the later source snapshot records
@@ -529,6 +639,7 @@ def test_p1_whole_snapshot_metadata_hash_and_receipt_clock_refresh_preserves_fac
             system_available_at="2025-11-02T01:04:00Z",
         ),
         existing_ledger=original,
+        expected_existing_ledger_head_receipt_id=original["ledger_head_receipt_id"],
     )
 
     assert refreshed["observations"] == original["observations"]
@@ -615,7 +726,46 @@ def test_explicit_no_source_result_and_cli_do_not_claim_collector_coverage(capsy
     reingested_path = tmp_path / "reingested-ledger.json"
     assert main([
         "--source-json", str(source_path), "--receipt-json", str(receipt_path),
-        "--existing-ledger-json", str(output_path), "--output", str(reingested_path),
+        "--existing-ledger-json", str(output_path),
+        "--expected-existing-ledger-head-receipt-id", compiled["ledger_head_receipt_id"],
+        "--output", str(reingested_path),
     ]) == 0
     reingested = json.loads(reingested_path.read_text(encoding="utf-8"))
     assert reingested == compiled
+
+
+def test_cli_historical_existing_snapshot_replay_is_an_exact_noop(tmp_path):
+    raw = _source_bytes()
+    early = _compile(
+        source_retrieved_at="2025-10-30T00:00:00Z",
+        system_available_at="2025-10-30T00:01:00Z",
+    )
+    advanced = _compile(
+        existing=early,
+        source_retrieved_at="2025-11-02T01:00:00Z",
+        system_available_at="2025-11-02T01:04:00Z",
+    )
+    source_path = tmp_path / "companyfacts.json"
+    receipt_path = tmp_path / "old-receipt.json"
+    existing_path = tmp_path / "advanced-ledger.json"
+    output_path = tmp_path / "replay-output.json"
+    source_path.write_bytes(raw)
+    receipt_path.write_text(json.dumps(_receipt(
+        raw,
+        source_retrieved_at="2025-10-30T00:00:00Z",
+        system_available_at="2025-10-30T00:01:00Z",
+    )), encoding="utf-8")
+    existing_path.write_text(json.dumps(advanced), encoding="utf-8")
+
+    assert main([
+        "--source-json", str(source_path), "--receipt-json", str(receipt_path),
+        "--existing-ledger-json", str(existing_path),
+        "--expected-existing-ledger-head-receipt-id", advanced["ledger_head_receipt_id"],
+        "--output", str(output_path),
+    ]) == 0
+    assert json.loads(output_path.read_text(encoding="utf-8")) == advanced
+
+    assert main([
+        "--source-json", str(source_path), "--receipt-json", str(receipt_path),
+        "--existing-ledger-json", str(existing_path), "--output", str(output_path),
+    ]) == 2

@@ -31,7 +31,7 @@ COMPANYFACTS_SOURCE_SNAPSHOT_SCHEMA = "capital_structure.companyfacts_source_sna
 SHARE_COUNT_SNAPSHOT_FACT_OBSERVATION_SCHEMA = "capital_structure.share_count_snapshot_fact_observation.v1"
 SHARE_COUNT_LEDGER_SCHEMA = "capital_structure.share_count_ledger.v1"
 SHARE_COUNT_LEDGER_RECEIPT_SCHEMA = "capital_structure.share_count_ledger_receipt.v1"
-COMPILER_VERSION = "capital-structure-share-count-truth/1.2.0"
+COMPILER_VERSION = "capital-structure-share-count-truth/1.3.0"
 
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _ISSUER_RE = re.compile(r"^issuer:([0-9]{10})$")
@@ -658,8 +658,26 @@ def _validate_ledger_receipt_chain(
         raise ShareCountTruthError("share-count ledger head receipt does not bind ordered source snapshots")
 
 
-def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
-    """Validate the self-contained immutable fact and append-only snapshot ledgers."""
+def _pinned_ledger_head_receipt_id(value: Any, *, field: str) -> str:
+    """Validate a caller-held, external reference to one ledger generation."""
+    pinned = str(value or "")
+    if not re.fullmatch(r"share-count-ledger-receipt:cs:[a-f0-9]{24}", pinned):
+        raise ShareCountTruthError(f"{field} must be a share-count ledger receipt ID")
+    return pinned
+
+
+def validate_share_count_ledger(
+    ledger: Mapping[str, Any], *, expected_ledger_head_receipt_id: str | None = None,
+) -> None:
+    """Validate a ledger, optionally against a caller-held external head witness.
+
+    The ledger-local receipt chain detects accidental edits and malformed
+    prefixes.  It cannot by itself distinguish a complete, re-sealed rewrite
+    from the original history: every local digest is reproducible by a writer
+    who can replace the entire file.  A caller that is about to trust or extend
+    an existing ledger must therefore supply the head it observed from its
+    durable witness/commit record through ``expected_ledger_head_receipt_id``.
+    """
     if not isinstance(ledger, Mapping):
         raise ShareCountTruthError("share-count ledger must be an object")
     required = {
@@ -683,14 +701,24 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
             raise ShareCountTruthError("duplicate source_snapshot_id in ledger")
         snapshot_ids.add(snapshot_id)
         validate_source_snapshot(snapshot, observations)
-    referenced_observation_ids = {
-        str(fact.get("observation_id") or "")
-        for snapshot in snapshots
-        for fact in snapshot.get("snapshot_fact_observations") or []
-    }
+    snapshot_receipts_by_observation_id: dict[str, set[str]] = defaultdict(set)
+    for snapshot in snapshots:
+        snapshot_receipt_id = str(snapshot.get("source_receipt_id") or "")
+        for fact in snapshot.get("snapshot_fact_observations") or []:
+            snapshot_receipts_by_observation_id[
+                str(fact.get("observation_id") or "")
+            ].add(snapshot_receipt_id)
     canonical_observation_ids = {str(row.get("observation_id") or "") for row in observations}
-    if referenced_observation_ids != canonical_observation_ids:
+    if set(snapshot_receipts_by_observation_id) != canonical_observation_ids:
         raise ShareCountTruthError("every canonical observation must be referenced by at least one snapshot fact")
+    for observation in observations:
+        observation_id = str(observation.get("observation_id") or "")
+        evidence = observation.get("evidence") or {}
+        canonical_receipt_id = str(evidence.get("source_receipt_id") or "")
+        if canonical_receipt_id not in snapshot_receipts_by_observation_id[observation_id]:
+            raise ShareCountTruthError(
+                "every canonical observation must be anchored by a snapshot carrying its evidence source receipt",
+            )
     _validate_ledger_receipt_chain(
         receipts, observations, snapshots, ledger.get("ledger_head_receipt_id"),
     )
@@ -714,14 +742,11 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
     ):
         raise ShareCountTruthError("share-count ledger source_acquisition is not a provided Company Facts snapshot")
     current_snapshot_id = str(source_acquisition.get("source_snapshot_id") or "")
-    current_snapshot = next(
-        (snapshot for snapshot in snapshots if snapshot.get("source_snapshot_id") == current_snapshot_id),
-        None,
-    )
-    if current_snapshot is None:
-        raise ShareCountTruthError("share-count ledger current source snapshot does not resolve")
+    current_snapshot = snapshots[-1]
+    if current_snapshot_id != current_snapshot.get("source_snapshot_id"):
+        raise ShareCountTruthError("share-count ledger current source snapshot must be the ledger tail")
     if source_acquisition.get("source_receipt_id") != current_snapshot.get("source_receipt_id"):
-        raise ShareCountTruthError("share-count ledger current receipt does not resolve current source snapshot")
+        raise ShareCountTruthError("share-count ledger current receipt must bind the ledger-tail source snapshot")
     snapshot_facts = current_snapshot.get("snapshot_fact_observations") or []
     expected_current_counts = {
         "snapshot_fact_observations": len(snapshot_facts),
@@ -735,6 +760,13 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
     }
     if counts.get("current_snapshot") != expected_current_counts:
         raise ShareCountTruthError("share-count ledger disposition counts do not describe current source snapshot")
+    if expected_ledger_head_receipt_id is not None:
+        expected_head = _pinned_ledger_head_receipt_id(
+            expected_ledger_head_receipt_id,
+            field="expected_ledger_head_receipt_id",
+        )
+        if expected_head != ledger.get("ledger_head_receipt_id"):
+            raise ShareCountTruthError("share-count ledger head does not match caller-supplied external witness")
 
 
 def _source_entry(
@@ -1220,6 +1252,7 @@ def compile_share_count_observations(
     source_receipt: Mapping[str, Any],
     *,
     existing_ledger: Mapping[str, Any] | None = None,
+    expected_existing_ledger_head_receipt_id: str | None = None,
 ) -> dict[str, Any]:
     """Purely normalize one exact Company Facts source snapshot.
 
@@ -1227,6 +1260,11 @@ def compile_share_count_observations(
     ``source_receipt``.  There is intentionally no HTTP fallback and no read of
     ``collectors.edgar_facts``: that cache is a fetch-time materialization rather
     than an immutable historical source ledger.
+
+    Supplying ``existing_ledger`` is an update operation, not a blind merge: the
+    caller must also supply the last externally witnessed head through
+    ``expected_existing_ledger_head_receipt_id``.  A snapshot already present in
+    a witnessed ledger is replay-safe and returns that ledger byte-for-byte.
     """
     if not isinstance(source_bytes, bytes):
         raise ShareCountTruthError("source_bytes must be bytes")
@@ -1244,11 +1282,22 @@ def compile_share_count_observations(
     if payload_cik != _issuer_cik(receipt["issuer_id"]):
         raise ShareCountTruthError("Company Facts payload CIK does not match receipt issuer_id")
     if existing_ledger is not None:
-        validate_share_count_ledger(existing_ledger)
+        if expected_existing_ledger_head_receipt_id is None:
+            raise ShareCountTruthError(
+                "expected_existing_ledger_head_receipt_id is required when existing_ledger is supplied",
+            )
+        validate_share_count_ledger(
+            existing_ledger,
+            expected_ledger_head_receipt_id=expected_existing_ledger_head_receipt_id,
+        )
         prior_observations = [deepcopy(dict(row)) for row in existing_ledger["observations"]]
         prior_snapshots = [deepcopy(dict(row)) for row in existing_ledger["source_snapshots"]]
         prior_ledger_receipts = [deepcopy(dict(row)) for row in existing_ledger["ledger_receipts"]]
     else:
+        if expected_existing_ledger_head_receipt_id is not None:
+            raise ShareCountTruthError(
+                "expected_existing_ledger_head_receipt_id requires existing_ledger",
+            )
         prior_observations: list[dict[str, Any]] = []
         prior_snapshots: list[dict[str, Any]] = []
         prior_ledger_receipts: list[dict[str, Any]] = []
@@ -1273,7 +1322,12 @@ def compile_share_count_observations(
     existing_snapshot_ids = {
         str(snapshot.get("source_snapshot_id") or "") for snapshot in prior_snapshots
     }
-    new_source_snapshots = [] if current_snapshot["source_snapshot_id"] in existing_snapshot_ids else [current_snapshot]
+    if current_snapshot["source_snapshot_id"] in existing_snapshot_ids:
+        # Replaying a retained snapshot is an exact no-op.  In particular it
+        # must not turn an old receipt into the ledger's current view while the
+        # head still binds a newer snapshot.
+        return deepcopy(dict(existing_ledger))
+    new_source_snapshots = [current_snapshot]
     source_snapshots = [*prior_snapshots, *new_source_snapshots]
     ledger_receipts = _append_ledger_receipt(
         prior_ledger_receipts,
