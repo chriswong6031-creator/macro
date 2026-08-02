@@ -32,7 +32,10 @@ quote-wrapped, i.e. ``json.dumps`` applied twice).  google-auth's
 ``from_service_account_file`` does ``json.load(f)`` then ``.keys()`` on the
 result, so a double-encoded blob crashes with the opaque
 ``'str' object has no attribute 'keys'``.  ``load_sa_info`` unwraps up to two
-layers of string encoding and, past that, says exactly what is wrong.
+layers of string encoding and, past that, says exactly what is wrong — including
+a content-free SHAPE fingerprint of the rejected payload (``_describe_shape``:
+category label + character count, never the payload) so the operator does not
+spend a 30-60 min CI cycle per guess about what they actually pasted.
 
 CLI:
   python -m engine.marketing.seo_search_console --root . [--days 28] [--dry-run]
@@ -222,6 +225,60 @@ def _one_line(text: str, limit: int = 300) -> str:
     return flat[:limit]
 
 
+#: A whole payload that matches this (after strip) is an ADDRESS, not a key file.
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
+#: A single-line ``*.json`` value carrying no brace is a PATH, not file contents.
+_JSON_PATH_RE = re.compile(r"^[^\n\r{}]{1,255}\.json$", re.IGNORECASE)
+
+
+def _describe_shape(text: str) -> str:
+    """Classify a REJECTED credential payload without ever echoing it.
+
+    Every failed operator guess costs a full CI cycle (run 30742044120 burned one
+    on ``the inner layer is not valid JSON: Expecting value: line 1 column 1``,
+    which says the paste was *a quoted string* but not WHAT string), so a parse
+    error has to name the SHAPE of what was actually pasted.
+
+    Returns a fixed category label plus the payload LENGTH in characters (a
+    40-char value is obviously not a key file; a real one is ~2300+).  First
+    match wins.
+
+    SECURITY: the return value is built from literals and ``len()`` only — it can
+    never contain the payload, a substring of it, or one byte of ``private_key``.
+    The payload is inspected, never logged.  Length is measured after stripping
+    surrounding whitespace, i.e. on the same text the parser saw.
+    """
+    s = str(text).strip()
+    n = len(s)
+    if not s:
+        return "empty / whitespace-only (0 chars)"
+    if _EMAIL_RE.match(s):
+        label = (
+            "looks like an email address — paste the CONTENTS of the downloaded "
+            ".json key file, not the service-account email"
+        )
+    elif s.startswith("-----BEGIN"):
+        label = (
+            "looks like a bare PEM private key — the secret must be the whole "
+            ".json key file, not just the private_key field"
+        )
+    elif s.startswith("/") or s.startswith("~/") or _JSON_PATH_RE.match(s):
+        label = (
+            "looks like a FILE PATH — GSC_SA_JSON must contain the file's "
+            "CONTENTS; use GOOGLE_APPLICATION_CREDENTIALS for a path"
+        )
+    elif s.startswith("{") and not s.endswith("}"):
+        label = (
+            "looks like TRUNCATED JSON (starts with '{' but does not end with "
+            "'}') — the paste was cut off"
+        )
+    elif s.startswith("{"):
+        label = "looks like a complete JSON object"
+    else:
+        label = "unrecognized text"
+    return f"{label} ({n} chars)"
+
+
 def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     """Parse a service-account JSON blob, tolerating a double-encoded secret.
 
@@ -231,6 +288,10 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     ``_MAX_JSON_UNWRAPS`` times, stopping as soon as the result is not a string.
     A double-encoded secret (the operator's actual failure) therefore just works;
     anything deeper is named rather than crashed on.
+
+    Every error string carries a ``_describe_shape`` fingerprint of the layer that
+    actually failed — the INNER layer past depth 0, because that is where a pasted
+    email address or file path lands once the outer quotes come off.
     """
     text = raw.strip().lstrip("﻿").strip()
     if not text:
@@ -241,19 +302,29 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
         try:
             obj = json.loads(obj)
         except (json.JSONDecodeError, TypeError, ValueError) as exc:
-            # Never echo the payload — JSONDecodeError only carries a position.
+            # Never echo the payload — JSONDecodeError only carries a position,
+            # and _describe_shape returns a category label + length, no content.
+            # `obj` still holds the layer that failed (the assignment never ran),
+            # so past depth 0 this fingerprints the INNER layer — where a pasted
+            # email or file path actually shows up.
+            layer = obj if isinstance(obj, str) else text
             if depth == 0:
-                return None, f"{source} is not valid JSON: {_one_line(exc, 120)}"
+                return None, (
+                    f"{source} is not valid JSON: {_one_line(exc, 120)} "
+                    f"[payload: {_describe_shape(layer)}]"
+                )
             return None, (
                 f"{source} is multiply-encoded and the inner layer is not valid "
-                f"JSON: {_one_line(exc, 120)}"
+                f"JSON: {_one_line(exc, 120)} "
+                f"[inner payload: {_describe_shape(layer)}]"
             )
         if not isinstance(obj, str):
             break
     else:
         return None, (
             f"{source} parsed to str after {_MAX_JSON_UNWRAPS} unwraps — "
-            f"the secret is multiply-encoded"
+            f"the secret is multiply-encoded "
+            f"[inner payload: {_describe_shape(obj)}]"
         )
 
     if not isinstance(obj, dict):
@@ -263,19 +334,30 @@ def _parse_sa_json(raw: str, source: str) -> tuple[dict | None, str | None]:
     return obj, None
 
 
-def _validate_sa_info(info: dict, source: str) -> str | None:
+def _validate_sa_info(
+    info: dict, source: str, raw: str | None = None
+) -> str | None:
     """Return a precise error string, or None when ``info`` is usable.
 
-    SECURITY: names the missing KEYS, never their values.
+    ``raw`` is the payload AS PASTED; when given, a content-free shape
+    fingerprint of it is appended so the operator sees the size and kind of what
+    landed in the secret alongside the field-level complaint.
+
+    SECURITY: names the missing KEYS, never their values; the fingerprint is a
+    category label plus a length (see ``_describe_shape``).
     """
+    hint = "" if raw is None else f" [payload: {_describe_shape(raw)}]"
     missing = [k for k in _SA_REQUIRED_KEYS if not str(info.get(k) or "").strip()]
     if missing:
-        return f"{source}: service-account JSON missing keys: {', '.join(missing)}"
+        return (
+            f"{source}: service-account JSON missing keys: "
+            f"{', '.join(missing)}{hint}"
+        )
     actual_type = str(info.get("type"))
     if actual_type != _SA_TYPE:
         return (
             f"{source}: service-account JSON has type={actual_type!r} — "
-            f"expected {_SA_TYPE!r}"
+            f"expected {_SA_TYPE!r}{hint}"
         )
     return None
 
@@ -340,7 +422,7 @@ def load_sa_info(
         return None, err
     assert info is not None  # narrowed by err is None
 
-    err = _validate_sa_info(info, source)
+    err = _validate_sa_info(info, source, raw=raw)
     if err is not None:
         return None, err
     return info, None
