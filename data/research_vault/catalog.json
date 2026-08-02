@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T03:47:02.900430+00:00",
-  "count": 569,
+  "generated_at": "2026-08-02T04:01:50.833995+00:00",
+  "count": 570,
   "institutions": [
     "Amova",
     "Apollo",
@@ -287,6 +287,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6zpekv6lj8o-d22451",
+      "title": "Taiwan Weekly Kickstart TAIEX closed down 1 (ex TSMC 5 ) after Friday’s 8 rebound",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:50Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
