@@ -71,16 +71,27 @@ def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_
 
 
 def _register_fixture_prior_parser(monkeypatch) -> str:
+    entrypoints = (
+        *document_terms._parser_semantic_entrypoints(_fixture_prior_unavailable_parser),
+        document_terms.SemanticEntrypoint(
+            "fixture_base_extractor", document_terms._records_for_manifest_v1_1_0,
+        ),
+    )
+    manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
+        entrypoints
+    )
     monkeypatch.setitem(
         document_terms._PARSER_REGISTRY,
         _FIXTURE_PRIOR_PARSER_VERSION,
         document_terms.ParserRegistration(
             version=_FIXTURE_PRIOR_PARSER_VERSION,
-            implementation_sha256=document_terms._implementation_sha256(
-                _fixture_prior_unavailable_parser, (),
-            ),
+            implementation_sha256=implementation_sha256,
             extractor=_fixture_prior_unavailable_parser,
-            semantic_symbols=(),
+            semantic_bundle=document_terms.ParserSemanticBundle(
+                entrypoints=entrypoints,
+                dependency_count=len(manifest),
+                dependency_manifest_sha256=manifest_sha256,
+            ),
         ),
     )
     return _FIXTURE_PRIOR_PARSER_VERSION

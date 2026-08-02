@@ -13,18 +13,22 @@ submission bytes and retains exact child/table/row/cell provenance here.
 """
 from __future__ import annotations
 
+import builtins
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass, fields as dataclass_fields, is_dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
+import dis
 import hashlib
 import hmac
 from html.parser import HTMLParser
 import inspect
 import json
 import re
+import sys
+from types import CodeType, ModuleType
 from typing import Any
 
 from engine.capital_structure.event_spine import make_stable_span
@@ -40,19 +44,36 @@ PARSER_VERSION = "capital-structure-document-terms/1.1.0"
 
 
 @dataclass(frozen=True)
+class SemanticEntrypoint:
+    """One named executable root in a released parser's semantic closure."""
+
+    role: str
+    implementation: Callable[..., Any]
+
+
+@dataclass(frozen=True)
+class ParserSemanticBundle:
+    """Executable roots plus a golden commitment to their exact dependency graph."""
+
+    entrypoints: tuple[SemanticEntrypoint, ...]
+    dependency_count: int
+    dependency_manifest_sha256: str
+
+
+@dataclass(frozen=True)
 class ParserRegistration:
     """One retained deterministic extractor implementation.
 
     Parser versions are evidence provenance, not free-form release labels. A
     historic direct row is trusted only when its declared version remains in
     this closed registry and the retained implementation matches its pinned
-    source digest.
+    transitive semantic-closure digest.
     """
 
     version: str
     implementation_sha256: str
     extractor: Callable[[Mapping[str, Any], bytes | None, str], list[dict[str, Any]]]
-    semantic_symbols: tuple[str, ...]
+    semantic_bundle: ParserSemanticBundle
 
 
 _PARSER_REGISTRY: dict[str, ParserRegistration] = {}
@@ -837,78 +858,17 @@ def _records_for_manifest_v1_1_0(
     return records
 
 
-# This digest pins the source text of the released implementation *and* its
-# closed helper bundle. Updating any semantic helper therefore requires a
-# deliberate new parser version rather than silently changing replay history.
-_PARSER_IMPLEMENTATION_DIGESTS = {
-    "capital-structure-document-terms/1.1.0": "497918cd42ccdb02a6efa2c7c814ecfc3c5967ac88747dd99a56ddf40dc696ab",
-}
-
-_PARSER_V1_1_0_SEMANTIC_SYMBOLS = (
-    "DOCUMENT_TERM_SCHEMA", "TERM_NAMES", "_DOCUMENT_RE", "_TEXT_RE", "_TABLE_RE",
-    "_ROW_RE", "_CELL_RE", "_COLSPAN_RE", "_TYPE_RE", "_SEQUENCE_RE", "_FILENAME_RE",
-    "_NUMBER_TOKEN_RE", "_SIMPLE_NUMBER_RE", "_DENOMINATED_RATE_RE", "_BYTE_LOCATOR_RE",
-    "SubmissionDocument", "TableCell", "TableRow", "FeeTable", "ParsedNumber", "_decode", "_tag_value",
-    "_normalized_form", "_eligible_documents", "_CellText", "_clean_text", "_label",
-    "_term_for_header", "_cell_text", "_table_rows", "_security_header", "_parse_fee_tables",
-    "_decimal_string", "_strip_footnote_markers", "_parse_number",
-    "_root_span", "_document_evidence", "_empty_value", "_direct_value", "_row_id",
-    "_logical_observation_id", "_classify_security", "_term_semantics", "_document_term_type",
-    "_empty_security", "_security_for_row", "_table_span", "_row_span", "_cell_span",
-    "_base_record", "make_stable_span",
-)
-
-
-def _implementation_sha256(
-    extractor: Callable[..., Any], semantic_symbols: Sequence[str],
-) -> str:
-    parts = ["extractor:\n" + inspect.getsource(extractor)]
-    for name in semantic_symbols:
-        value = globals().get(name)
-        if value is None:
-            raise ValueError(f"document-term parser semantic symbol is absent: {name}")
-        try:
-            encoded = inspect.getsource(value)
-        except (OSError, TypeError):
-            encoded = repr(value)
-        parts.append(f"{name}:\n{encoded}")
-    return hashlib.sha256("\n---\n".join(parts).encode("utf-8")).hexdigest()
-
-
-def _registered_parser(version: Any) -> ParserRegistration:
-    raw = str(version or "")
-    registration = _PARSER_REGISTRY.get(raw)
-    if registration is None:
-        raise ValueError(f"document-term parser_version is not registered: {raw!r}")
-    actual = _implementation_sha256(
-        registration.extractor, registration.semantic_symbols,
-    )
-    if not hmac.compare_digest(actual, registration.implementation_sha256):
-        raise ValueError(
-            f"document-term parser implementation digest mismatch for {registration.version}"
-        )
-    return registration
-
-
-def _records_for_manifest(
-    manifest: Mapping[str, Any], raw: bytes | None, *, parser_version: str | None = None,
-) -> list[dict[str, Any]]:
-    """Re-derive one source with a closed, version-pinned parser implementation."""
-    version = PARSER_VERSION if parser_version is None else parser_version
-    registration = _registered_parser(version)
-    return registration.extractor(manifest, raw, registration.version)
-
-
-_PARSER_REGISTRY.update({
-    "capital-structure-document-terms/1.1.0": ParserRegistration(
-        version="capital-structure-document-terms/1.1.0",
-        implementation_sha256=_PARSER_IMPLEMENTATION_DIGESTS[
-            "capital-structure-document-terms/1.1.0"
-        ],
-        extractor=_records_for_manifest_v1_1_0,
-        semantic_symbols=_PARSER_V1_1_0_SEMANTIC_SYMBOLS,
-    ),
-})
+def _clone_json_value(value: Any) -> Any:
+    """Copy only the immutable JSON value model admitted by observation contracts."""
+    if isinstance(value, Mapping):
+        return {key: _clone_json_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_clone_json_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_clone_json_value(item) for item in value)
+    if value is None or isinstance(value, (str, bool, int, float)):
+        return value
+    raise TypeError(f"unsupported document-term semantic value: {type(value).__name__}")
 
 
 def _semantic_body(record: Mapping[str, Any]) -> dict[str, Any]:
@@ -918,7 +878,7 @@ def _semantic_body(record: Mapping[str, Any]) -> dict[str, Any]:
     in this body prevents a rehashed phantom v2 from manufacturing a second
     point-in-time version of the same extraction.
     """
-    body = deepcopy(dict(record))
+    body = _clone_json_value(dict(record))
     body.pop("observation_id", None)
     body.pop("version", None)
     body.pop("point_in_time", None)
@@ -932,9 +892,527 @@ def _semantic_body(record: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def observation_id_for(record: Mapping[str, Any]) -> str:
-    body = deepcopy(dict(record))
+    body = _clone_json_value(dict(record))
     body.pop("observation_id", None)
     return _digest_id("document-term:cs:", body)
+
+
+def _materialize_observation(
+    candidate: dict[str, Any], prior: Mapping[str, Any] | None, generated_at: str,
+) -> dict[str, Any]:
+    """Attach immutable correction identity and the system-availability clock."""
+    if _parse_time(generated_at, "generated_at") < _parse_time(
+        (candidate.get("point_in_time") or {}).get("source_available_at"),
+        "source_available_at",
+    ):
+        raise ValueError("generated_at cannot precede retained source availability")
+    correction_version = (
+        1 if prior is None
+        else int((prior.get("version") or {}).get("correction_version") or 0) + 1
+    )
+    prior_id = None if prior is None else str(prior["observation_id"])
+    if prior is not None:
+        prior_time = _parse_time(
+            (prior.get("point_in_time") or {}).get("available_at"), "prior.available_at",
+        )
+        if _parse_time(generated_at, "generated_at") <= prior_time:
+            raise ValueError(
+                "generated_at must be later than a corrected document-term observation"
+            )
+    candidate["relationships"] = {
+        "amends": [],
+        "supersedes": [] if prior_id is None else [prior_id],
+        "contradiction_ids": [],
+    }
+    candidate["version"] = {
+        "immutable_record": True,
+        "correction_version": correction_version,
+        "correction_of": prior_id,
+    }
+    candidate["point_in_time"]["available_at"] = generated_at
+    candidate["observation_id"] = observation_id_for(candidate)
+    return candidate
+
+
+def _selected_registration_manifests(
+    manifests: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Select the exact immutable complete submissions eligible for this parser."""
+    selected = [
+        dict(row) for row in manifests
+        if str(row.get("source_system") or "") == "sec_edgar"
+        and str((row.get("document") or {}).get("document_role") or "")
+        == "complete_submission"
+        and _normalized_form(str((row.get("filing") or {}).get("form") or ""))
+        in REGISTRATION_FEE_FORMS
+    ]
+    selected.sort(key=lambda row: str(row.get("manifest_id") or ""))
+    return selected
+
+
+def _semantic_code_descriptor(code: CodeType) -> dict[str, Any]:
+    """Canonical executable material, excluding filenames and source line tables."""
+    constants = list(code.co_consts)
+    if constants and isinstance(constants[0], str):
+        # Function/class docstrings do not alter executable semantics.
+        constants[0] = None
+    return {
+        "argcount": code.co_argcount,
+        "posonlyargcount": code.co_posonlyargcount,
+        "kwonlyargcount": code.co_kwonlyargcount,
+        "nlocals": code.co_nlocals,
+        "stacksize": code.co_stacksize,
+        "flags": code.co_flags,
+        "bytecode": code.co_code.hex(),
+        "exceptiontable": code.co_exceptiontable.hex(),
+        "constants": [_semantic_code_constant(value) for value in constants],
+        "names": list(code.co_names),
+        "varnames": list(code.co_varnames),
+        "freevars": list(code.co_freevars),
+        "cellvars": list(code.co_cellvars),
+    }
+
+
+def _semantic_code_constant(value: Any) -> Any:
+    if isinstance(value, CodeType):
+        return {"code": _semantic_code_descriptor(value)}
+    if value is None or isinstance(value, (bool, int, str)):
+        return value
+    if isinstance(value, bytes):
+        return {"bytes": value.hex()}
+    if isinstance(value, (float, complex)):
+        return {type(value).__name__: repr(value)}
+    if value is Ellipsis:
+        return {"ellipsis": True}
+    if isinstance(value, tuple):
+        return {"tuple": [_semantic_code_constant(item) for item in value]}
+    if isinstance(value, frozenset):
+        encoded = [_semantic_code_constant(item) for item in value]
+        return {"frozenset": sorted(encoded, key=_semantic_sort_key)}
+    raise ValueError(
+        "document-term parser code contains unsupported constant "
+        f"{type(value).__name__}"
+    )
+
+
+def _semantic_sort_key(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def _callable_identity(value: Any) -> str:
+    module = str(getattr(value, "__module__", "") or "")
+    qualname = str(
+        getattr(value, "__qualname__", getattr(value, "__name__", type(value).__name__))
+    )
+    return f"{module}.{qualname}"
+
+
+def _loaded_global_names(code: CodeType) -> tuple[str, ...]:
+    names: set[str] = set()
+    stack = [code]
+    while stack:
+        current = stack.pop()
+        for instruction in dis.get_instructions(current):
+            if instruction.opname in {"LOAD_GLOBAL", "LOAD_NAME"}:
+                names.add(str(instruction.argval))
+        stack.extend(
+            constant for constant in current.co_consts if isinstance(constant, CodeType)
+        )
+    return tuple(sorted(names))
+
+
+def _loaded_global_attribute_paths(
+    code: CodeType,
+) -> dict[str, tuple[tuple[str, ...], ...]]:
+    """Discover static ``global.attr`` chains executed by a code object."""
+    paths: dict[str, set[tuple[str, ...]]] = defaultdict(set)
+    stack = [code]
+    while stack:
+        current = stack.pop()
+        instructions = list(dis.get_instructions(current))
+        for index, instruction in enumerate(instructions):
+            if instruction.opname not in {"LOAD_GLOBAL", "LOAD_NAME"}:
+                continue
+            path: list[str] = []
+            for following in instructions[index + 1:]:
+                if following.opname not in {"LOAD_ATTR", "LOAD_METHOD"}:
+                    break
+                path.append(str(following.argval))
+                paths[str(instruction.argval)].add(tuple(path))
+        stack.extend(
+            constant for constant in current.co_consts if isinstance(constant, CodeType)
+        )
+    return {
+        name: tuple(sorted(items))
+        for name, items in sorted(paths.items())
+    }
+
+
+def _is_expandable_project_value(value: Any) -> bool:
+    module = str(getattr(value, "__module__", "") or "")
+    return module == __name__ or module.startswith("engine.capital_structure.")
+
+
+def _is_stdlib_value(value: Any) -> bool:
+    module = str(getattr(value, "__module__", "") or "").split(".", 1)[0]
+    return module in sys.stdlib_module_names
+
+
+class _SemanticClosureBuilder:
+    """Discover and canonically encode every runtime global reachable from roots."""
+
+    def __init__(self) -> None:
+        self.nodes: dict[str, Any] = {}
+        self._expanded: set[str] = set()
+
+    def _put(self, key: str, descriptor: Any) -> None:
+        prior = self.nodes.get(key)
+        if prior is not None and prior != descriptor:
+            raise ValueError(f"document-term parser semantic node collision: {key}")
+        self.nodes[key] = descriptor
+
+    def _reference(self, value: Any) -> Any:
+        if value is None or isinstance(value, (bool, int, str)):
+            return {"kind": "literal", "value": value}
+        if isinstance(value, bytes):
+            return {"kind": "bytes", "hex": value.hex()}
+        if isinstance(value, (float, complex, Decimal)):
+            return {"kind": type(value).__name__, "value": str(value)}
+        if isinstance(value, re.Pattern):
+            pattern = value.pattern
+            return {
+                "kind": "regex",
+                "pattern": pattern.hex() if isinstance(pattern, bytes) else pattern,
+                "pattern_type": "bytes" if isinstance(pattern, bytes) else "str",
+                "flags": value.flags,
+            }
+        if isinstance(value, tuple):
+            return {"kind": "tuple", "items": [self._reference(item) for item in value]}
+        if isinstance(value, frozenset):
+            items = [self._reference(item) for item in value]
+            return {"kind": "frozenset", "items": sorted(items, key=_semantic_sort_key)}
+        if isinstance(value, ModuleType):
+            return {
+                "kind": "module",
+                "name": value.__name__,
+                "version": str(getattr(value, "__version__", "") or ""),
+            }
+        if inspect.isfunction(value):
+            return {"kind": "function", "identity": _callable_identity(value)}
+        if inspect.isbuiltin(value):
+            return {"kind": "builtin", "identity": _callable_identity(value)}
+        if inspect.isclass(value):
+            return {"kind": "class", "identity": _callable_identity(value)}
+        if isinstance(value, (list, dict, set, bytearray)):
+            raise ValueError(
+                "document-term parser semantic closure depends on mutable global "
+                f"{type(value).__name__}"
+            )
+        raise ValueError(
+            "document-term parser semantic closure cannot encode "
+            f"{type(value).__module__}.{type(value).__qualname__}"
+        )
+
+    def bind(self, key: str, value: Any, *, expand: bool) -> None:
+        self._put(f"binding:{key}", self._reference(value))
+        if inspect.isfunction(value):
+            self._walk_function(value, expand=expand)
+        elif inspect.isclass(value):
+            self._walk_class(value, expand=expand)
+
+    def _walk_function(self, function: Callable[..., Any], *, expand: bool) -> None:
+        identity = _callable_identity(function)
+        node_key = f"function:{identity}"
+        descriptor: dict[str, Any] = {
+            "identity": identity,
+            "default_count": len(function.__defaults__ or ()),
+            "kwdefault_names": sorted((function.__kwdefaults__ or {}).keys()),
+            "closure_names": list(function.__code__.co_freevars),
+            "stdlib_runtime_primitive": _is_stdlib_value(function) and not expand,
+        }
+        if not descriptor["stdlib_runtime_primitive"]:
+            descriptor["code"] = _semantic_code_descriptor(function.__code__)
+            descriptor["global_names"] = list(_loaded_global_names(function.__code__))
+            descriptor["global_attribute_paths"] = {
+                name: [list(path) for path in paths]
+                for name, paths in _loaded_global_attribute_paths(function.__code__).items()
+            }
+        self._put(node_key, descriptor)
+        if not expand or node_key in self._expanded:
+            return
+        self._expanded.add(node_key)
+
+        builtin_namespace = function.__globals__.get("__builtins__", builtins.__dict__)
+        if isinstance(builtin_namespace, ModuleType):
+            builtin_namespace = vars(builtin_namespace)
+        attribute_paths = _loaded_global_attribute_paths(function.__code__)
+        for name in _loaded_global_names(function.__code__):
+            if name in function.__globals__:
+                value = function.__globals__[name]
+                origin = "global"
+            elif name in builtin_namespace:
+                value = builtin_namespace[name]
+                origin = "builtin"
+            else:
+                raise ValueError(
+                    f"document-term parser executable has unresolved global {identity}:{name}"
+                )
+            self.bind(
+                f"{node_key}.{origin}.{name}", value,
+                expand=_is_expandable_project_value(value),
+            )
+            if isinstance(value, ModuleType):
+                for path in attribute_paths.get(name, ()):
+                    attribute_value: Any = value
+                    for attribute in path:
+                        if not hasattr(attribute_value, attribute):
+                            raise ValueError(
+                                "document-term parser module attribute is unresolved: "
+                                f"{identity}:{name}.{'.'.join(path)}"
+                            )
+                        attribute_value = getattr(attribute_value, attribute)
+                    self.bind(
+                        f"{node_key}.{origin}.{name}.attribute.{'.'.join(path)}",
+                        attribute_value,
+                        expand=_is_expandable_project_value(attribute_value),
+                    )
+
+        for index, value in enumerate(function.__defaults__ or ()):
+            self.bind(
+                f"{node_key}.default.{index}", value,
+                expand=expand and _is_expandable_project_value(value),
+            )
+        for name, value in sorted((function.__kwdefaults__ or {}).items()):
+            self.bind(
+                f"{node_key}.kwdefault.{name}", value,
+                expand=expand and _is_expandable_project_value(value),
+            )
+        closure = function.__closure__ or ()
+        if len(closure) != len(function.__code__.co_freevars):
+            raise ValueError(f"document-term parser closure arity mismatch for {identity}")
+        for name, cell in zip(function.__code__.co_freevars, closure, strict=True):
+            try:
+                value = cell.cell_contents
+            except ValueError as exc:
+                raise ValueError(
+                    f"document-term parser executable has empty closure cell {identity}:{name}"
+                ) from exc
+            self.bind(
+                f"{node_key}.closure.{name}", value,
+                expand=expand and _is_expandable_project_value(value),
+            )
+
+    def _walk_class(self, cls: type[Any], *, expand: bool) -> None:
+        identity = _callable_identity(cls)
+        node_key = f"class:{identity}"
+        descriptor: dict[str, Any] = {
+            "identity": identity,
+            "bases": [_callable_identity(base) for base in cls.__bases__],
+            "dataclass": None,
+        }
+        generated_dataclass_methods: set[str] = set()
+        if is_dataclass(cls):
+            generated_dataclass_methods = {
+                "__init__", "__repr__", "__eq__", "__hash__",
+                "__setattr__", "__delattr__",
+            }
+            params = cls.__dataclass_params__
+            descriptor["dataclass"] = {
+                name: bool(getattr(params, name))
+                for name in (
+                    "init", "repr", "eq", "order", "unsafe_hash", "frozen",
+                    "match_args", "kw_only", "slots", "weakref_slot",
+                )
+                if hasattr(params, name)
+            }
+            descriptor["fields"] = [
+                {
+                    "name": field.name,
+                    "init": field.init,
+                    "repr": field.repr,
+                    "hash": field.hash,
+                    "compare": field.compare,
+                    "kw_only": field.kw_only,
+                    "has_default": field.default is not MISSING,
+                    "has_default_factory": field.default_factory is not MISSING,
+                }
+                for field in dataclass_fields(cls)
+            ]
+        self._put(node_key, descriptor)
+        if not expand or node_key in self._expanded:
+            return
+        self._expanded.add(node_key)
+        for name, raw_value in sorted(vars(cls).items()):
+            value = raw_value
+            if isinstance(raw_value, (staticmethod, classmethod)):
+                value = raw_value.__func__
+            if inspect.isfunction(value):
+                if name in generated_dataclass_methods:
+                    continue
+                self.bind(f"{node_key}.attribute.{name}", value, expand=True)
+            elif isinstance(value, property):
+                for role, accessor in (
+                    ("get", value.fget), ("set", value.fset), ("delete", value.fdel),
+                ):
+                    if accessor is not None:
+                        self.bind(
+                            f"{node_key}.property.{name}.{role}", accessor, expand=True,
+                        )
+            elif not name.startswith("__"):
+                self.bind(
+                    f"{node_key}.attribute.{name}", value,
+                    expand=_is_expandable_project_value(value),
+                )
+
+
+def _entrypoint_is_still_bound(entrypoint: SemanticEntrypoint) -> bool:
+    implementation = entrypoint.implementation
+    module = sys.modules.get(str(getattr(implementation, "__module__", "") or ""))
+    name = str(getattr(implementation, "__name__", "") or "")
+    return module is not None and name and getattr(module, name, None) is implementation
+
+
+def _semantic_closure(
+    entrypoints: Sequence[SemanticEntrypoint],
+) -> tuple[tuple[str, ...], str, str]:
+    """Return the graph, graph digest, and implementation digest for parser roots."""
+    roles = [entrypoint.role for entrypoint in entrypoints]
+    if len(roles) != len(set(roles)) or not roles:
+        raise ValueError("document-term parser semantic entrypoint roles must be unique")
+    builder = _SemanticClosureBuilder()
+    builder._put("runtime:python", {
+        "implementation": sys.implementation.name,
+        "cache_tag": sys.implementation.cache_tag,
+        "version": [sys.version_info.major, sys.version_info.minor],
+    })
+    for entrypoint in sorted(entrypoints, key=lambda item: item.role):
+        if not inspect.isfunction(entrypoint.implementation):
+            raise ValueError(
+                f"document-term parser entrypoint {entrypoint.role!r} must be a function"
+            )
+        if not _entrypoint_is_still_bound(entrypoint):
+            raise ValueError(
+                f"document-term parser entrypoint binding changed: {entrypoint.role}"
+            )
+        builder.bind(
+            f"root.{entrypoint.role}", entrypoint.implementation, expand=True,
+        )
+    manifest = tuple(sorted(builder.nodes))
+    payload = [
+        {"node": node, "descriptor": builder.nodes[node]}
+        for node in manifest
+    ]
+    encoded = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    manifest_bytes = json.dumps(
+        manifest, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    return (
+        manifest,
+        hashlib.sha256(manifest_bytes).hexdigest(),
+        hashlib.sha256(encoded).hexdigest(),
+    )
+
+
+def _parser_semantic_entrypoints(
+    extractor: Callable[..., Any],
+) -> tuple[SemanticEntrypoint, ...]:
+    return (
+        SemanticEntrypoint("extractor", extractor),
+        SemanticEntrypoint("correction_identity", _semantic_body),
+        SemanticEntrypoint("observation_identity", observation_id_for),
+        SemanticEntrypoint("correction_materialization", _materialize_observation),
+        SemanticEntrypoint("source_selection", _selected_registration_manifests),
+    )
+
+
+# Released golden closure for the only actual parser version. The registry has
+# no synthetic historic parser; tests may inject one only via monkeypatch and
+# must provide its own fully discovered semantic bundle.
+_PARSER_V1_1_0_DEPENDENCY_COUNT = 245
+_PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256 = (
+    "959b70485d38b9787e1e3b617ab228534299e44d95ba1d0cf12cce201d75ffcd"
+)
+_PARSER_IMPLEMENTATION_DIGESTS = {
+    "capital-structure-document-terms/1.1.0": (
+        "33bf9280f6a4a85e86afae473e0711fcaa3a201fe1d38886d1dfacee1742b70f"
+    ),
+}
+
+_PARSER_REGISTRY.update({
+    "capital-structure-document-terms/1.1.0": ParserRegistration(
+        version="capital-structure-document-terms/1.1.0",
+        implementation_sha256=_PARSER_IMPLEMENTATION_DIGESTS[
+            "capital-structure-document-terms/1.1.0"
+        ],
+        extractor=_records_for_manifest_v1_1_0,
+        semantic_bundle=ParserSemanticBundle(
+            entrypoints=_parser_semantic_entrypoints(_records_for_manifest_v1_1_0),
+            dependency_count=_PARSER_V1_1_0_DEPENDENCY_COUNT,
+            dependency_manifest_sha256=_PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256,
+        ),
+    ),
+})
+
+
+def _registered_parser(version: Any) -> ParserRegistration:
+    raw = str(version or "")
+    registration = _PARSER_REGISTRY.get(raw)
+    if registration is None:
+        raise ValueError(f"document-term parser_version is not registered: {raw!r}")
+    try:
+        manifest, manifest_sha256, digest = _semantic_closure(
+            registration.semantic_bundle.entrypoints
+        )
+    except ValueError as exc:
+        raise ValueError(
+            f"document-term parser semantic closure mismatch for {registration.version}"
+        ) from exc
+    if (
+        len(manifest) != registration.semantic_bundle.dependency_count
+        or not hmac.compare_digest(
+            manifest_sha256, registration.semantic_bundle.dependency_manifest_sha256,
+        )
+        or not hmac.compare_digest(digest, registration.implementation_sha256)
+    ):
+        raise ValueError(
+            f"document-term parser semantic closure mismatch for {registration.version}"
+        )
+    extractor_roots = [
+        entrypoint.implementation
+        for entrypoint in registration.semantic_bundle.entrypoints
+        if entrypoint.role == "extractor"
+    ]
+    if extractor_roots != [registration.extractor]:
+        raise ValueError(
+            f"document-term parser extractor root mismatch for {registration.version}"
+        )
+    return registration
+
+
+def _records_for_manifest(
+    manifest: Mapping[str, Any], raw: bytes | None, *, parser_version: str | None = None,
+) -> list[dict[str, Any]]:
+    """Re-derive one source with a closed, version-pinned parser implementation."""
+    version = PARSER_VERSION if parser_version is None else parser_version
+    registration = _registered_parser(version)
+    return registration.extractor(manifest, raw, registration.version)
+
+
+def _self_check_parser_registry() -> None:
+    if tuple(_PARSER_REGISTRY) != tuple(_PARSER_IMPLEMENTATION_DIGESTS):
+        raise RuntimeError("document-term production parser registry is not release-exact")
+    for version in _PARSER_IMPLEMENTATION_DIGESTS:
+        try:
+            _registered_parser(version)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"document-term parser registry startup self-check failed for {version}"
+            ) from exc
+
+
+_self_check_parser_registry()
 
 
 def validate_observation_source_binding(
@@ -1187,6 +1665,7 @@ def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None
     """Validate immutable IDs, version chains, and non-retroactive corrections."""
     by_id: set[str] = set()
     by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    verified_parser_versions: set[str] = set()
     for index, raw in enumerate(records):
         record = dict(raw)
         observation_id = str(record.get("observation_id") or "")
@@ -1198,7 +1677,10 @@ def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None
         logical = str(record.get("logical_observation_id") or "")
         if not logical:
             raise ValueError(f"document term row {index} lacks logical_observation_id")
-        _registered_parser((record.get("extraction") or {}).get("parser_version"))
+        parser_version = str((record.get("extraction") or {}).get("parser_version") or "")
+        if parser_version not in verified_parser_versions:
+            _registered_parser(parser_version)
+            verified_parser_versions.add(parser_version)
         point_in_time = record.get("point_in_time") or {}
         if _parse_time(point_in_time.get("available_at"), "available_at") < _parse_time(
             point_in_time.get("source_available_at"), "source_available_at",
@@ -1283,13 +1765,7 @@ def compile_document_term_records(
         if prior is None or int((record.get("version") or {}).get("correction_version") or 0) > int((prior.get("version") or {}).get("correction_version") or 0):
             current_by_logical[logical] = record
 
-    selected = [
-        row for row in manifest_rows
-        if str(row.get("source_system") or "") == "sec_edgar"
-        and str((row.get("document") or {}).get("document_role") or "") == "complete_submission"
-        and _normalized_form(str((row.get("filing") or {}).get("form") or "")) in REGISTRATION_FEE_FORMS
-    ]
-    selected.sort(key=lambda row: str(row.get("manifest_id") or ""))
+    selected = _selected_registration_manifests(manifest_rows)
     current_by_manifest: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for prior in current_by_logical.values():
         current_by_manifest[str((prior.get("document") or {}).get("source_manifest_id") or "")].append(prior)
@@ -1331,32 +1807,12 @@ def compile_document_term_records(
             source_bytes[str(manifest["manifest_id"])],
             parser_version=active_parser_version,
         ):
-            if _parse_time(generated, "generated_at") < _parse_time(
-                (candidate.get("point_in_time") or {}).get("source_available_at"),
-                "source_available_at",
-            ):
-                raise ValueError("generated_at cannot precede retained source availability")
             logical = str(candidate["logical_observation_id"])
             prior = current_by_logical.get(logical)
             if prior is not None and _semantic_body(prior) == _semantic_body(candidate):
                 unchanged += 1
                 continue
-            correction_version = 1 if prior is None else int((prior.get("version") or {}).get("correction_version") or 0) + 1
-            if prior is not None:
-                prior_time = _parse_time((prior.get("point_in_time") or {}).get("available_at"), "prior.available_at")
-                if _parse_time(generated, "generated_at") <= prior_time:
-                    raise ValueError("generated_at must be later than a corrected document-term observation")
-            candidate["relationships"] = {
-                "amends": [],
-                "supersedes": [] if prior is None else [str(prior["observation_id"])],
-                "contradiction_ids": [],
-            }
-            candidate["version"] = {
-                "immutable_record": True, "correction_version": correction_version,
-                "correction_of": None if prior is None else str(prior["observation_id"]),
-            }
-            candidate["point_in_time"]["available_at"] = generated
-            candidate["observation_id"] = observation_id_for(candidate)
+            _materialize_observation(candidate, prior, generated)
             validate_observation_source_binding(
                 candidate, manifest, source_bytes[str(manifest["manifest_id"])],
             )

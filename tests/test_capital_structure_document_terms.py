@@ -103,16 +103,27 @@ def _fixture_prior_unavailable_parser(manifest: dict, raw: bytes | None, parser_
 
 def _register_fixture_prior_parser(monkeypatch) -> str:
     """Inject a historic parser only inside this semantic-correction fixture."""
+    entrypoints = (
+        *document_terms._parser_semantic_entrypoints(_fixture_prior_unavailable_parser),
+        document_terms.SemanticEntrypoint(
+            "fixture_base_extractor", document_terms._records_for_manifest_v1_1_0,
+        ),
+    )
+    manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
+        entrypoints
+    )
     monkeypatch.setitem(
         document_terms._PARSER_REGISTRY,
         _FIXTURE_PRIOR_PARSER_VERSION,
         document_terms.ParserRegistration(
             version=_FIXTURE_PRIOR_PARSER_VERSION,
-            implementation_sha256=document_terms._implementation_sha256(
-                _fixture_prior_unavailable_parser, (),
-            ),
+            implementation_sha256=implementation_sha256,
             extractor=_fixture_prior_unavailable_parser,
-            semantic_symbols=(),
+            semantic_bundle=document_terms.ParserSemanticBundle(
+                entrypoints=entrypoints,
+                dependency_count=len(manifest),
+                dependency_manifest_sha256=manifest_sha256,
+            ),
         ),
     )
     return _FIXTURE_PRIOR_PARSER_VERSION
@@ -264,19 +275,110 @@ def test_unknown_or_phantom_parser_correction_fails_closed_against_retained_byte
         )
 
 
-def test_registered_parser_digest_covers_mutated_semantic_helper(monkeypatch):
+@pytest.mark.parametrize(
+    "target",
+    [
+        "_canonical_json", "_digest_id", "_clone_json_value", "_parse_time", "_iso",
+        "_unique_spans", "make_stable_span", "_base_record",
+        "_records_for_manifest_v1_1_0",
+    ],
+)
+def test_registered_parser_closure_rejects_every_mutated_semantic_helper(
+    monkeypatch, target,
+):
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
-    original_base_record = document_terms._base_record
+    original_rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    original = getattr(document_terms, target)
 
-    def altered_base_record(*args, **kwargs):
-        return original_base_record(*args, **kwargs)
+    def altered_semantic_helper(*args, **kwargs):
+        return original(*args, **kwargs)
 
-    monkeypatch.setattr(document_terms, "_base_record", altered_base_record)
-    with pytest.raises(ValueError, match="parser implementation digest mismatch"):
+    monkeypatch.setattr(document_terms, target, altered_semantic_helper)
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
         )
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+        validate_document_term_source_authority(
+            original_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_registered_parser_closure_rejects_mutated_semantic_constant(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original_rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    monkeypatch.setattr(document_terms, "TERM_NAMES", (*document_terms.TERM_NAMES, "forged"))
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+        )
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+        validate_document_term_source_authority(
+            original_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+@pytest.mark.parametrize(
+    ("module_name", "attribute"),
+    [("hashlib", "sha256"), ("json", "dumps"), ("re", "sub")],
+)
+def test_registered_parser_closure_rejects_mutated_module_attribute(
+    monkeypatch, module_name, attribute,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original_rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    module = getattr(document_terms, module_name)
+    original = getattr(module, attribute)
+
+    def altered_module_attribute(*args, **kwargs):
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(module, attribute, altered_module_attribute)
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+        )
+    with pytest.raises(ValueError, match="parser semantic closure mismatch"):
+        validate_document_term_source_authority(
+            original_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_released_parser_registry_has_closed_golden_semantic_bundle():
+    assert tuple(document_terms._PARSER_REGISTRY) == (
+        "capital-structure-document-terms/1.1.0",
+    )
+    registration = document_terms._PARSER_REGISTRY[
+        "capital-structure-document-terms/1.1.0"
+    ]
+    manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
+        registration.semantic_bundle.entrypoints
+    )
+    assert len(manifest) == 245
+    assert manifest_sha256 == (
+        "959b70485d38b9787e1e3b617ab228534299e44d95ba1d0cf12cce201d75ffcd"
+    )
+    assert implementation_sha256 == (
+        "33bf9280f6a4a85e86afae473e0711fcaa3a201fe1d38886d1dfacee1742b70f"
+    )
+    assert len(manifest) == registration.semantic_bundle.dependency_count
+    assert manifest_sha256 == registration.semantic_bundle.dependency_manifest_sha256
+    assert implementation_sha256 == registration.implementation_sha256
+    for required in (
+        "._digest_id", "._parse_time", "._iso", "._unique_spans",
+        ".make_stable_span", "._materialize_observation", ".observation_id_for",
+        ".hashlib.attribute.sha256", ".json.attribute.dumps", "runtime:python",
+    ):
+        assert any(required in node for node in manifest), required
 
 
 def test_complete_submission_header_binds_exact_source_id_and_form():
@@ -295,25 +397,65 @@ def test_complete_submission_header_binds_exact_source_id_and_form():
         validate_manifest_retained_bytes_binding(rewritten_form, raw)
 
     absent_header = raw.replace(b"<SEC-HEADER>\n", b"")
-    with pytest.raises(ManifestIdentityError, match="exactly one SEC header"):
+    with pytest.raises(ManifestIdentityError, match="canonical SEC-HEADER opener"):
         validate_manifest_retained_bytes_binding(_manifest(absent_header), absent_header)
 
     multiple_headers = raw.replace(
         b"<SEC-HEADER>\n", b"<SEC-HEADER>\n<SEC-HEADER>\n",
     )
-    with pytest.raises(ManifestIdentityError, match="exactly one SEC header"):
+    with pytest.raises(ManifestIdentityError, match="canonical SEC-HEADER opener"):
         validate_manifest_retained_bytes_binding(_manifest(multiple_headers), multiple_headers)
 
     absent = raw.replace(b"CONFORMED SUBMISSION TYPE: S-3\n", b"")
-    with pytest.raises(ManifestIdentityError, match="exactly one CONFORMED"):
+    with pytest.raises(ManifestIdentityError, match="canonical CONFORMED"):
         validate_manifest_retained_bytes_binding(_manifest(absent), absent)
 
     multiple = raw.replace(
         b"CONFORMED SUBMISSION TYPE: S-3\n",
         b"CONFORMED SUBMISSION TYPE: S-3\nCONFORMED SUBMISSION TYPE: S-3\n",
     )
-    with pytest.raises(ManifestIdentityError, match="exactly one CONFORMED"):
+    with pytest.raises(ManifestIdentityError, match="canonical CONFORMED"):
         validate_manifest_retained_bytes_binding(_manifest(multiple), multiple)
+
+
+@pytest.mark.parametrize(
+    "mutation,error",
+    [
+        (lambda raw: raw.replace(b"<SEC-DOCUMENT>", b"junk<SEC-DOCUMENT>", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(b"<SEC-DOCUMENT>", b"<SEC-DOCUMENT evil>", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(raw.splitlines(keepends=True)[0], b"", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(b".txt\n", b".txt.evil\n", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(b".txt\n", b"0.txt\n", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(raw.splitlines(keepends=True)[0], raw.splitlines(keepends=True)[0] * 2, 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(raw.splitlines(keepends=True)[0], raw.splitlines(keepends=True)[0] + b"<SEC-DOCUMENT>0000000002-26-000002.txt\n", 1), "SEC-DOCUMENT"),
+        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"junk<SEC-HEADER>\n", 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"<SEC-HEADER>evil\n", 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(b"<SEC-HEADER>\n", b"<SEC-HEADER evil>\n", 1), "SEC-HEADER"),
+        (lambda raw: raw.replace(b"<DOCUMENT>\n", b"junk<DOCUMENT>evil\n", 1), "DOCUMENT opener"),
+        (lambda raw: raw.replace(b"<DOCUMENT>\n", b"<DOCUMENT evil>\n", 1), "DOCUMENT opener"),
+        (lambda raw: raw.replace(b"<DOCUMENT>\n", b"</SEC-HEADER>evil\n<DOCUMENT>\n", 1), "SEC-HEADER closer"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: ", b"NOT ACCESSION NUMBER: ", 1), "ACCESSION NUMBER"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: 0000000001-26-000001", b"ACCESSION NUMBER: 0000000001-26-000001.evil", 1), "ACCESSION NUMBER"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: 0000000001-26-000001\n", b"", 1), "ACCESSION NUMBER"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: 0000000001-26-000001\n", b"ACCESSION NUMBER: 0000000001-26-000001\nACCESSION NUMBER: 0000000001-26-000001\n", 1), "ACCESSION NUMBER"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: 0000000001-26-000001\n", b"ACCESSION NUMBER: 0000000001-26-000001\nACCESSION NUMBER: 0000000002-26-000002\n", 1), "ACCESSION NUMBER"),
+        (lambda raw: raw.replace(b"ACCESSION NUMBER: 0000000001-26-000001", b"ACCESSION NUMBER: 0000000002-26-000002", 1), "accession conflicts"),
+        (lambda raw: raw.replace(b"CONFORMED SUBMISSION TYPE", b"NOT CONFORMED SUBMISSION TYPE", 1), "CONFORMED"),
+        (lambda raw: raw.replace(b"CONFORMED SUBMISSION TYPE", b"CONFORMED\nSUBMISSION TYPE", 1), "CONFORMED"),
+        (lambda raw: raw.replace(b"CONFORMED SUBMISSION TYPE", b"CONFORMED SUBMISSION TYPE EXTRA", 1), "CONFORMED"),
+        (lambda raw: raw.replace(b"CONFORMED SUBMISSION TYPE: S-3\n", b"CONFORMED SUBMISSION TYPE: S-3\nCONFORMED SUBMISSION TYPE: S-1\n", 1), "CONFORMED"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY", b"NOT CENTRAL INDEX KEY", 1), "CENTRAL INDEX KEY"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1", b"CENTRAL INDEX KEY: 10000000001", 1), "CENTRAL INDEX KEY"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1", b"CENTRAL INDEX KEY: 1evil", 1), "CENTRAL INDEX KEY"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"", 1), "CENTRAL INDEX KEY"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 1\nCENTRAL INDEX KEY: 1\n", 1), "CENTRAL INDEX KEY"),
+        (lambda raw: raw.replace(b"CENTRAL INDEX KEY: 1\n", b"CENTRAL INDEX KEY: 1\nCENTRAL INDEX KEY: 2\n", 1), "CENTRAL INDEX KEY"),
+    ],
+)
+def test_complete_submission_rejects_structural_and_header_lookalikes(mutation, error):
+    raw = mutation(FIXTURE.read_bytes())
+    with pytest.raises(ManifestIdentityError, match=error):
+        validate_manifest_retained_bytes_binding(_manifest(raw), raw)
 
 
 def test_complete_submission_form_normalization_preserves_amendment_status():
@@ -325,6 +467,31 @@ def test_complete_submission_form_normalization_preserves_amendment_status():
     base_form = _manifest(raw, form="S-3")
     with pytest.raises(ManifestIdentityError, match="filing.form is detached"):
         validate_manifest_retained_bytes_binding(base_form, raw)
+
+
+def test_complete_submission_accepts_crlf_tabs_and_exact_amendment_form():
+    raw = FIXTURE.read_bytes().replace(
+        b"CONFORMED SUBMISSION TYPE: S-3",
+        b"\tCONFORMED\tSUBMISSION\tTYPE :\ts-3/a\t",
+    ).replace(b"CENTRAL INDEX KEY: 1", b"\tCENTRAL\tINDEX\tKEY :\t1\t")
+    raw = raw.replace(
+        b"ACCESSION NUMBER: 0000000001-26-000001",
+        b"\tACCESSION\tNUMBER :\t0000000001-26-000001\t",
+    ).replace(b"\n", b"\r\n")
+    validate_manifest_retained_bytes_binding(_manifest(raw, form="S-3/A"), raw)
+
+    closed = raw.replace(b"<DOCUMENT>\r\n", b"</SEC-HEADER>\r\n<DOCUMENT>\r\n", 1)
+    validate_manifest_retained_bytes_binding(_manifest(closed, form="S-3/A"), closed)
+
+    dated = raw.replace(b".txt\r\n", b".txt : 20260802\r\n", 1)
+    validate_manifest_retained_bytes_binding(_manifest(dated, form="S-3/A"), dated)
+
+
+@pytest.mark.parametrize("form", ["S-3/AJUNK", "S-3 EVIL"])
+def test_complete_submission_rejects_form_suffix_junk(form):
+    raw = FIXTURE.read_bytes().replace(b"TYPE: S-3", f"TYPE: {form}".encode("ascii"), 1)
+    with pytest.raises(ManifestIdentityError, match="form is malformed"):
+        validate_manifest_retained_bytes_binding(_manifest(raw, form=form), raw)
 
 
 def test_missing_or_wrong_source_bytes_abort_the_whole_generation():
@@ -519,8 +686,9 @@ def test_ex_filing_fees_child_is_selected_with_exact_child_provenance():
     )
     raw = (
         b"<SEC-DOCUMENT>0000000001-26-000001.txt\n<SEC-HEADER>\n"
-        b"CONFORMED SUBMISSION TYPE: S-3\nCENTRAL INDEX KEY: 1\n<DOCUMENT>" + primary
-        + b"</DOCUMENT>\n<DOCUMENT>" + fee_child + b"</DOCUMENT>\n</SEC-DOCUMENT>"
+        b"CONFORMED SUBMISSION TYPE: S-3\nCENTRAL INDEX KEY: 1\n"
+        b"ACCESSION NUMBER: 0000000001-26-000001\n<DOCUMENT>\n" + primary
+        + b"</DOCUMENT>\n<DOCUMENT>\n" + fee_child + b"</DOCUMENT>\n</SEC-DOCUMENT>"
     )
     manifest = _manifest(raw)
     rows = compile_document_term_records(

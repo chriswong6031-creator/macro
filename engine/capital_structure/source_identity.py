@@ -17,23 +17,54 @@ from typing import Any
 
 
 MANIFEST_ID_PREFIX = "manifest:cs:"
-_SEC_DOCUMENT_ACCESSION_RE = re.compile(
-    br"<SEC-DOCUMENT>\s*([0-9]{10}-[0-9]{2}-[0-9]{6})(?:\.txt)?",
-    re.IGNORECASE,
+_SEC_LINE_FLAGS = re.IGNORECASE | re.MULTILINE
+_SEC_DOCUMENT_LINE_RE = re.compile(
+    br"^<SEC-DOCUMENT>([0-9]{10}-[0-9]{2}-[0-9]{6})\.txt"
+    br"(?:[ \t]*:[ \t]*[0-9]{8})?[ \t]*\r?$",
+    _SEC_LINE_FLAGS,
 )
-_SEC_HEADER_BLOCK_RE = re.compile(
-    br"<SEC-HEADER>\s*(.*?)(?:</SEC-HEADER>|<DOCUMENT>)",
-    re.IGNORECASE | re.DOTALL,
+_SEC_HEADER_OPEN_LINE_RE = re.compile(br"^<SEC-HEADER>[ \t]*\r?$", _SEC_LINE_FLAGS)
+_SEC_HEADER_CLOSE_LINE_RE = re.compile(br"^</SEC-HEADER>[ \t]*\r?$", _SEC_LINE_FLAGS)
+_SEC_DOCUMENT_OPEN_LINE_RE = re.compile(br"^<DOCUMENT>[ \t]*\r?$", _SEC_LINE_FLAGS)
+_SEC_HEADER_ACCESSION_LINE_RE = re.compile(
+    br"^[ \t]*ACCESSION[ \t]+NUMBER[ \t]*:[ \t]*"
+    br"([0-9]{10}-[0-9]{2}-[0-9]{6})[ \t]*\r?$",
+    _SEC_LINE_FLAGS,
 )
-_SEC_HEADER_CIK_RE = re.compile(
-    br"CENTRAL\s+INDEX\s+KEY:\s*([0-9]{1,10})",
-    re.IGNORECASE,
+_SEC_HEADER_CIK_LINE_RE = re.compile(
+    br"^[ \t]*CENTRAL[ \t]+INDEX[ \t]+KEY[ \t]*:[ \t]*"
+    br"([0-9]{1,10})[ \t]*\r?$",
+    _SEC_LINE_FLAGS,
 )
-_SEC_HEADER_FORM_RE = re.compile(
-    br"CONFORMED\s+SUBMISSION\s+TYPE:\s*([^\r\n<]+)",
-    re.IGNORECASE,
+_SEC_HEADER_FORM_LINE_RE = re.compile(
+    br"^[ \t]*CONFORMED[ \t]+SUBMISSION[ \t]+TYPE[ \t]*:[ \t]*"
+    br"([^\r\n<]+?)[ \t]*\r?$",
+    _SEC_LINE_FLAGS,
 )
-_SEC_FORM_RE = re.compile(r"^[A-Z0-9]+(?:-[A-Z0-9]+)*(?: [A-Z0-9]+)*(?:/[A-Z0-9]+)?$")
+_SEC_SINGLE_TOKEN_FORM_RE = re.compile(r"^[A-Z0-9]+(?:-[A-Z0-9]+)*(?:/A)?$")
+_SEC_SPACED_FORMS = frozenset({
+    "1-A POS", "POS AM",
+    "PRE 14A", "PRE 14C", "DEF 14A", "DEF 14C",
+    "NT 10-K", "NT 10-Q", "NT 20-F", "NT N-CEN",
+    "SC 13D", "SC 13D/A", "SC 13G", "SC 13G/A",
+    "SC 13E3", "SC 13E3/A", "SC 14D9", "SC 14D9/A",
+    "SC 14F1", "SC 14F1/A", "SC TO-C", "SC TO-C/A",
+    "SC TO-I", "SC TO-I/A", "SC TO-T", "SC TO-T/A",
+})
+
+_SEC_DOCUMENT_TOKEN_RE = re.compile(br"<[ \t]*SEC-DOCUMENT\b", re.IGNORECASE)
+_SEC_HEADER_OPEN_TOKEN_RE = re.compile(br"<[ \t]*SEC-HEADER\b", re.IGNORECASE)
+_SEC_HEADER_CLOSE_TOKEN_RE = re.compile(br"<[ \t]*/[ \t]*SEC-HEADER\b", re.IGNORECASE)
+_SEC_DOCUMENT_OPEN_TOKEN_RE = re.compile(br"<[ \t]*DOCUMENT\b", re.IGNORECASE)
+_SEC_HEADER_ACCESSION_TOKEN_RE = re.compile(
+    br"ACCESSION\s+NUMBER", re.IGNORECASE,
+)
+_SEC_HEADER_CIK_TOKEN_RE = re.compile(
+    br"CENTRAL\s+INDEX\s+KEY", re.IGNORECASE,
+)
+_SEC_HEADER_FORM_TOKEN_RE = re.compile(
+    br"CONFORMED\s+SUBMISSION\s+TYPE", re.IGNORECASE,
+)
 
 
 class ManifestIdentityError(ValueError):
@@ -157,18 +188,67 @@ def _canonical_cik(value: Any) -> str:
 def _canonical_sec_form(value: Any) -> str:
     """Normalize only case and whitespace; never collapse amendment status."""
     raw = " ".join(str(value or "").strip().upper().split())
-    if not raw or _SEC_FORM_RE.fullmatch(raw) is None:
+    if (
+        not raw
+        or (
+            _SEC_SINGLE_TOKEN_FORM_RE.fullmatch(raw) is None
+            and raw not in _SEC_SPACED_FORMS
+        )
+    ):
         raise ManifestIdentityError("SEC submission form is malformed")
     return raw
 
 
+def _exact_protected_matches(
+    raw: bytes,
+    *,
+    token_pattern: re.Pattern[bytes],
+    line_pattern: re.Pattern[bytes],
+    label: str,
+    count: int = 1,
+) -> list[re.Match[bytes]]:
+    """Reject missing, duplicate, or substring/lookalike protected SEC lines."""
+    tokens = list(token_pattern.finditer(raw))
+    matches = list(line_pattern.finditer(raw))
+    if len(tokens) != count or len(matches) != count:
+        raise ManifestIdentityError(
+            f"SEC complete-submission must contain exactly {count} canonical {label} line(s)"
+        )
+    return matches
+
+
 def _complete_submission_header(raw: bytes) -> bytes:
-    if len(re.findall(br"<SEC-HEADER>", raw, re.IGNORECASE)) != 1:
-        raise ManifestIdentityError("SEC complete-submission must contain exactly one SEC header")
-    headers = _SEC_HEADER_BLOCK_RE.findall(raw)
-    if len(headers) != 1:
-        raise ManifestIdentityError("SEC complete-submission must contain exactly one SEC header")
-    return headers[0]
+    open_match = _exact_protected_matches(
+        raw,
+        token_pattern=_SEC_HEADER_OPEN_TOKEN_RE,
+        line_pattern=_SEC_HEADER_OPEN_LINE_RE,
+        label="SEC-HEADER opener",
+    )[0]
+    close_tokens = list(_SEC_HEADER_CLOSE_TOKEN_RE.finditer(raw))
+    close_matches = list(_SEC_HEADER_CLOSE_LINE_RE.finditer(raw))
+    if len(close_tokens) != len(close_matches) or len(close_matches) > 1:
+        raise ManifestIdentityError(
+            "SEC complete-submission contains a non-canonical or duplicate SEC-HEADER closer"
+        )
+    document_tokens = list(_SEC_DOCUMENT_OPEN_TOKEN_RE.finditer(raw))
+    document_matches = list(_SEC_DOCUMENT_OPEN_LINE_RE.finditer(raw))
+    if len(document_tokens) != len(document_matches) or not document_matches:
+        raise ManifestIdentityError(
+            "SEC complete-submission contains a non-canonical or missing DOCUMENT opener"
+        )
+    first_document = next(
+        (match for match in document_matches if match.start() >= open_match.end()), None,
+    )
+    if first_document is None:
+        raise ManifestIdentityError("SEC header is not followed by a canonical DOCUMENT opener")
+    if close_matches:
+        close_match = close_matches[0]
+        if not open_match.end() <= close_match.start() < first_document.start():
+            raise ManifestIdentityError("SEC-HEADER closer is outside the canonical header block")
+        end = close_match.start()
+    else:
+        end = first_document.start()
+    return raw[open_match.end():end]
 
 
 def validate_manifest_retained_bytes_binding(
@@ -178,8 +258,8 @@ def validate_manifest_retained_bytes_binding(
 
     A manifest ID is an immutable *commitment*, not a signature.  Rehashing a
     forged envelope must therefore still fail against the SEC submission header:
-    the accession embeds the filing CIK, and the optional SEC-header CIK (when
-    present) must agree.  This closes the otherwise self-consistent
+    the canonical top accession, header accession, required header CIK, form,
+    and manifest coordinates must all agree. This closes the otherwise self-consistent
     ``manifest -> direct observation -> candidate`` issuer rewrite path.
     """
     validate_manifest_content_binding(record)
@@ -195,9 +275,12 @@ def validate_manifest_retained_bytes_binding(
     ):
         return
 
-    accession_match = _SEC_DOCUMENT_ACCESSION_RE.search(raw)
-    if accession_match is None:
-        raise ManifestIdentityError("SEC complete-submission header lacks a canonical accession")
+    accession_match = _exact_protected_matches(
+        raw,
+        token_pattern=_SEC_DOCUMENT_TOKEN_RE,
+        line_pattern=_SEC_DOCUMENT_LINE_RE,
+        label="SEC-DOCUMENT accession",
+    )[0]
     source_accession = accession_match.group(1).decode("ascii")
     filing = record.get("filing") or {}
     if str(filing.get("accession") or "") != source_accession:
@@ -208,21 +291,36 @@ def validate_manifest_retained_bytes_binding(
         raise ManifestIdentityError("manifest source_id is detached from SEC submission header")
 
     header = _complete_submission_header(raw)
-    header_forms = _SEC_HEADER_FORM_RE.findall(header)
-    if len(header_forms) != 1:
-        raise ManifestIdentityError(
-            "SEC complete-submission header must contain exactly one CONFORMED SUBMISSION TYPE"
-        )
-    header_form = _canonical_sec_form(header_forms[0].decode("ascii", errors="strict"))
+    header_accession_match = _exact_protected_matches(
+        header,
+        token_pattern=_SEC_HEADER_ACCESSION_TOKEN_RE,
+        line_pattern=_SEC_HEADER_ACCESSION_LINE_RE,
+        label="ACCESSION NUMBER",
+    )[0]
+    header_accession = header_accession_match.group(1).decode("ascii")
+    if header_accession != source_accession:
+        raise ManifestIdentityError("SEC header accession conflicts with SEC-DOCUMENT accession")
+    header_form_match = _exact_protected_matches(
+        header,
+        token_pattern=_SEC_HEADER_FORM_TOKEN_RE,
+        line_pattern=_SEC_HEADER_FORM_LINE_RE,
+        label="CONFORMED SUBMISSION TYPE",
+    )[0]
+    header_form = _canonical_sec_form(
+        header_form_match.group(1).decode("ascii", errors="strict")
+    )
     if _canonical_sec_form(filing.get("form")) != header_form:
         raise ManifestIdentityError("manifest filing.form is detached from SEC submission header")
 
     accession_cik = _canonical_cik(source_accession.split("-", 1)[0])
-    header_ciks = {
-        _canonical_cik(match.group(1).decode("ascii"))
-        for match in _SEC_HEADER_CIK_RE.finditer(header)
-    }
-    if header_ciks and header_ciks != {accession_cik}:
+    header_cik_match = _exact_protected_matches(
+        header,
+        token_pattern=_SEC_HEADER_CIK_TOKEN_RE,
+        line_pattern=_SEC_HEADER_CIK_LINE_RE,
+        label="CENTRAL INDEX KEY",
+    )[0]
+    header_cik = _canonical_cik(header_cik_match.group(1).decode("ascii"))
+    if header_cik != accession_cik:
         raise ManifestIdentityError("SEC header CIK conflicts with SEC submission accession")
     issuer = record.get("issuer") or {}
     if _canonical_cik(issuer.get("cik")) != accession_cik:
