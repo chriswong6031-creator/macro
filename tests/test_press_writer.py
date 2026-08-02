@@ -220,6 +220,163 @@ def test_budget_accounting_is_monotonic():
     assert st.can_start(40) and not st.can_start(41)
 
 
+def test_admitted_cjk_prompt_over_cap_makes_no_provider_call(monkeypatch):
+    import engine.llm_auth as llm_auth
+
+    monkeypatch.setattr(W, "build_prompt", lambda *_a, **_kw: ("你" * 3000, ""))
+    monkeypatch.setattr(
+        llm_auth,
+        "build_providers",
+        lambda *_a, **_kw: (_ for _ in ()).throw(AssertionError("provider construction must not run")),
+    )
+    result = W.write(
+        F.slot(),
+        F.config(),
+        state=W.RunState(token_budget=12_000),
+        single_provider_attempt=True,
+        admitted_token_cap=True,
+    )
+    assert result["ok"] is False
+    assert result["reason"] == "admitted_token_cap_preflight"
+    assert result["token_cap"]["reserved_total_tokens"] > 12_000
+    assert result["state"]["calls"] == 0
+
+
+def _admitted_provider(monkeypatch, *, usage, text=None):
+    from types import SimpleNamespace
+    import engine.llm_auth as llm_auth
+
+    calls = []
+
+    class _Client:
+        def __init__(self):
+            self.messages = self
+
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            response = SimpleNamespace(
+                stop_reason=None,
+                content=[SimpleNamespace(type="text", text=text or _envelope())],
+            )
+            if usage is not None:
+                response.usage = usage
+            return response
+
+    provider = {
+        "name": "admitted-test",
+        "env_var": "ADMITTED_TEST_KEY",
+        "cred": "present",
+        "client": _Client(),
+        "model": "fake-model",
+    }
+    monkeypatch.setattr(llm_auth, "_capture_usage", lambda *_a, **_kw: None)
+    monkeypatch.setattr(llm_auth, "build_providers", lambda *_a, **_kw: [provider])
+    monkeypatch.setattr(W, "_model_id", lambda _key: "fake-model")
+    return calls
+
+
+def test_admitted_writer_reserves_total_and_records_provider_usage(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = _admitted_provider(
+        monkeypatch,
+        usage=SimpleNamespace(
+            input_tokens=600,
+            output_tokens=800,
+            cache_read_input_tokens=0,
+            cache_creation_input_tokens=0,
+        ),
+    )
+    state = W.RunState(token_budget=12_000)
+    result = W.write(
+        F.slot(),
+        F.config(),
+        state=state,
+        single_provider_attempt=True,
+        admitted_token_cap=True,
+    )
+    assert result["ok"] is True
+    assert len(calls) == 1 and calls[0]["max_tokens"] == 4000
+    assert result["token_cap"]["reserved_total_tokens"] <= 12_000
+    assert result["provider_usage"]["billable_total_tokens"] == 1400
+    assert result["provider_usage"]["within_requested_bounds"] is True
+    assert state.tokens_used == 1400
+
+
+def test_admitted_writer_quarantines_missing_provider_usage(monkeypatch):
+    calls = _admitted_provider(monkeypatch, usage=None)
+    state = W.RunState(token_budget=12_000)
+    result = W.write(
+        F.slot(),
+        F.config(),
+        state=state,
+        single_provider_attempt=True,
+        admitted_token_cap=True,
+    )
+    assert len(calls) == 1
+    assert result["ok"] is False and result["reason"] == "provider_usage_missing"
+    assert result["provider_usage"]["reported"] is False
+    assert state.tokens_used == result["token_cap"]["reserved_total_tokens"]
+
+
+def test_admitted_writer_rejects_malformed_cache_usage(monkeypatch):
+    from types import SimpleNamespace
+
+    _admitted_provider(
+        monkeypatch,
+        usage=SimpleNamespace(
+            input_tokens=600,
+            output_tokens=800,
+            cache_read_input_tokens=-1,
+            cache_creation_input_tokens=0,
+        ),
+    )
+    result = W.write(
+        F.slot(), F.config(), state=W.RunState(token_budget=12_000),
+        single_provider_attempt=True, admitted_token_cap=True,
+    )
+    assert result["ok"] is False and result["reason"] == "provider_usage_missing"
+    assert result["provider_usage"]["accounting"] == "reserved_upper_bound"
+
+
+def test_admitted_no_provider_retains_a_zero_call_cap_receipt(monkeypatch):
+    import engine.llm_auth as llm_auth
+
+    monkeypatch.setattr(llm_auth, "build_providers", lambda *_a, **_kw: [])
+    monkeypatch.setattr(W, "_model_id", lambda _key: "fake-model")
+    result = W.write(
+        F.slot(), F.config(), state=W.RunState(token_budget=12_000),
+        single_provider_attempt=True, admitted_token_cap=True,
+    )
+    assert result["ok"] is False and result["reason"] == "no_provider"
+    assert result["token_cap"]["hard_limit_tokens"] == 12_000
+    assert result["provider_usage"] == {
+        "reported": False,
+        "accounting": "no_provider_call",
+        "charged_tokens": 0,
+    }
+
+
+def test_admitted_writer_quarantines_usage_beyond_requested_output(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = _admitted_provider(
+        monkeypatch,
+        usage=SimpleNamespace(input_tokens=600, output_tokens=4001),
+    )
+    result = W.write(
+        F.slot(),
+        F.config(),
+        state=W.RunState(token_budget=12_000),
+        single_provider_attempt=True,
+        admitted_token_cap=True,
+    )
+    assert len(calls) == 1
+    assert result["ok"] is False
+    assert result["reason"] == "provider_usage_exceeds_admitted_cap"
+    assert result["provider_usage"]["within_requested_bounds"] is False
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # the mute path — the state every CI runner is in
 # ─────────────────────────────────────────────────────────────────────────────
@@ -292,6 +449,50 @@ def test_a_successful_call_returns_a_draft_and_charges_the_budget(monkeypatch):
     assert res["draft"]["slug"] == "risk-radar-moves-to-caution"
     assert res["provider"] == "stub"
     assert st.tokens_used > 0 and st.consecutive_failures == 0
+
+
+def test_default_writer_keeps_the_provider_waterfall(monkeypatch):
+    """The admission cap must not silently degrade the ordinary Press lane."""
+    import engine.llm_auth as llm_auth
+
+    calls = {"first": 0, "second": 0}
+    provider_cfg = {}
+
+    class _Client:
+        def __init__(self, name):
+            self.name = name
+            self.messages = self
+
+        def create(self, **_kwargs):
+            calls[self.name] += 1
+            if self.name == "first":
+                raise ConnectionError("first provider unavailable")
+            from types import SimpleNamespace
+            return SimpleNamespace(
+                stop_reason=None,
+                content=[SimpleNamespace(type="text", text=_envelope())],
+            )
+
+    providers = [
+        {"name": "generic-first", "env_var": "GENERIC_FIRST", "cred": "one",
+         "client": _Client("first"), "model": "fake-model"},
+        {"name": "generic-second", "env_var": "GENERIC_SECOND", "cred": "two",
+         "client": _Client("second"), "model": "fake-model"},
+    ]
+
+    def _build(cfg, *, opus_model=None, **_kwargs):
+        provider_cfg.update(cfg)
+        assert opus_model == "fake-model"
+        return providers
+
+    monkeypatch.setattr(llm_auth, "build_providers", _build)
+    monkeypatch.setattr(W, "_model_id", lambda _key: "fake-model")
+
+    result = W.write(F.slot(), F.config(), state=W.RunState(token_budget=10**6))
+
+    assert result["ok"] is True
+    assert calls == {"first": 1, "second": 1}
+    assert "client_max_retries" not in provider_cfg
 
 
 def test_an_unparsable_response_is_a_failure_that_feeds_the_breaker(monkeypatch):

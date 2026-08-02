@@ -3549,6 +3549,9 @@ jobs:
           tests/test_earnings_story_promotion.py
           tests/test_earnings_story_packets.py
           tests/test_earnings_story_press_workflow.py
+          tests/test_earnings_story_press_admission.py
+          tests/test_earnings_story_press_ingress.py
+          tests/test_earnings_story_press_stage_workflow.py
           tests/test_publish_earnings_story_packets_r2.py
           tests/test_refresh_earnings_story_packets.py -q -rs
 

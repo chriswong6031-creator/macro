@@ -43,10 +43,13 @@ def _good_draft(slot, n=0):
 
 
 def _stub_writer(monkeypatch, *, draft_fn=None, ok=True, reason="stubbed failure"):
-    calls = {"n": 0}
+    calls = {"n": 0, "single_provider_attempt": [], "admitted_token_cap": []}
 
-    def _write(slot, cfg, *, state=None, attempt=0, prior_failures=None):
+    def _write(slot, cfg, *, state=None, attempt=0, prior_failures=None,
+               single_provider_attempt=False, admitted_token_cap=False):
         calls["n"] += 1
+        calls["single_provider_attempt"].append(single_provider_attempt)
+        calls["admitted_token_cap"].append(admitted_token_cap)
         if not ok:
             (state or W.RunState()).record_failure()
             return {"ok": False, "draft": None, "reason": reason,
@@ -242,6 +245,239 @@ def test_staging_emits_a_line_start_annotation(tmp_path, monkeypatch, capsys):
     # House law: a "::notice" behind a logger prefix is not a line start and
     # GitHub silently drops it.
     assert all(l.startswith("::") for l in lines)
+
+
+def test_admitted_earnings_staging_isolated_and_receipt_bound(tmp_path, monkeypatch):
+    """A preverified candidate never reaches planner/reconciliation or generic stage."""
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-earnings-admitted-20260726")
+    receipt = {
+        "schema": "earnings.press_admission/v1",
+        "packet_id": "storypacket_" + "a" * 32,
+        "story_manifest_sha256": "b" * 64,
+    }
+    destination = tmp_path / "admitted-earnings-stage"
+    before = _snapshot(root)
+    calls = _stub_writer(
+        monkeypatch,
+        draft_fn=lambda candidate, n: F.draft_from_slot(candidate, n, extra_filler=-3),
+    )
+    monkeypatch.setenv("PRESS_RUN_TOKEN_BUDGET", "999999")
+
+    def _unexpected(*_args, **_kwargs):
+        raise AssertionError("admitted staging must not touch mutable discovery")
+
+    monkeypatch.setattr(R, "reconcile_earnings_call_revisions", _unexpected)
+    monkeypatch.setattr(R.desk_planner, "plan", _unexpected)
+    monkeypatch.setattr(R.desk_planner, "published_refs", _unexpected)
+    monkeypatch.setattr(R.desk_planner, "staged_refs", _unexpected)
+    monkeypatch.setattr(R.desk_planner, "taken_slugs", _unexpected)
+
+    summary = R.run_admitted_earnings_staging(
+        root,
+        cfg,
+        slot=slot,
+        admission_receipt=receipt,
+        staging_dir=destination,
+    )
+
+    assert calls["n"] == 1
+    assert calls["single_provider_attempt"] == [True]
+    assert calls["admitted_token_cap"] == [True]
+    assert summary["planned"] == 1
+    assert summary["passed"] == 1
+    assert summary["writer_state"]["token_budget"] == 12_000
+    assert _snapshot(root) == before
+    assert not list((root / "data" / "press" / "staging").glob("*.json"))
+
+    staged = json.loads((destination / f"{slot['id']}.json").read_text(encoding="utf-8"))
+    assert staged["provenance"] == {"admission_receipt": receipt}
+    assert staged["attempts"] and len(staged["attempts"]) == 1
+    assert (destination / "_run_summary.json").exists()
+
+
+def test_admitted_earnings_staging_never_retries_or_uses_generic_directory(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-earnings-admitted-no-retry")
+    receipt = {"schema": "earnings.press_admission/v1", "packet_id": "storypacket_" + "c" * 32}
+    calls = _stub_writer(monkeypatch, ok=False, reason="transient_writer_failure")
+    generic = root / "data" / "press" / "staging"
+
+    with pytest.raises(ValueError, match="dedicated non-generic"):
+        R.run_admitted_earnings_staging(
+            root,
+            cfg,
+            slot=slot,
+            admission_receipt=receipt,
+            staging_dir=generic,
+        )
+    assert calls["n"] == 0
+
+    destination = tmp_path / "admitted-no-retry"
+    summary = R.run_admitted_earnings_staging(
+        root,
+        cfg,
+        slot=slot,
+        admission_receipt=receipt,
+        staging_dir=destination,
+    )
+    assert calls["n"] == 1
+    assert summary["quarantined"] == 1
+    staged = json.loads((destination / f"{slot['id']}.json").read_text(encoding="utf-8"))
+    assert len(staged["attempts"]) == 1
+    assert staged["attempts"][0]["attempt"] == 0
+
+
+def test_admitted_earnings_staging_does_not_follow_the_provider_waterfall(tmp_path, monkeypatch):
+    """The envelope's one model-call cap reaches the actual provider rail."""
+    import engine.llm_auth as llm_auth
+
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-earnings-one-provider-only")
+    receipt = {"schema": "earnings.press_admission/v1", "packet_id": "storypacket_one"}
+    calls = {"first": 0, "second": 0}
+    built = {}
+
+    class _Client:
+        def __init__(self, name):
+            self.name = name
+            self.messages = self
+
+        def create(self, **_kwargs):
+            calls[self.name] += 1
+            if self.name == "first":
+                raise ConnectionError("first provider unavailable")
+            return None
+
+    providers = [
+        {"name": "admitted-first", "env_var": "ADMITTED_FIRST", "cred": "one",
+         "client": _Client("first"), "model": "fake-model"},
+        {"name": "admitted-second", "env_var": "ADMITTED_SECOND", "cred": "two",
+         "client": _Client("second"), "model": "fake-model"},
+    ]
+
+    def _build(provider_cfg, *, opus_model=None, **_kwargs):
+        built.update(provider_cfg)
+        assert opus_model == "fake-model"
+        return providers
+
+    monkeypatch.setattr(R.writer, "_model_id", lambda _key: "fake-model")
+    monkeypatch.setattr(llm_auth, "build_providers", _build)
+
+    summary = R.run_admitted_earnings_staging(
+        root,
+        cfg,
+        slot=slot,
+        admission_receipt=receipt,
+        staging_dir=tmp_path / "one-provider-stage",
+    )
+
+    assert built["client_max_retries"] == 0
+    assert calls == {"first": 1, "second": 0}
+    assert summary["quarantined"] == 1
+
+
+def test_admitted_failure_artifact_retains_cap_usage_and_provider(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-earnings-usage-receipt")
+    token_cap = {
+        "hard_limit_tokens": 12_000,
+        "effective_limit_tokens": 12_000,
+        "reserved_total_tokens": 9_000,
+    }
+    provider_usage = {
+        "reported": True,
+        "input_tokens": 600,
+        "output_tokens": 4001,
+        "billable_total_tokens": 4601,
+        "within_requested_bounds": False,
+    }
+
+    def _failed(*_args, **_kwargs):
+        return {
+            "ok": False,
+            "draft": None,
+            "reason": "provider_usage_exceeds_admitted_cap",
+            "provider": "deepseek",
+            "token_cap": token_cap,
+            "provider_usage": provider_usage,
+        }
+
+    monkeypatch.setattr(R.writer, "write", _failed)
+    destination = tmp_path / "usage-receipt-stage"
+    R.run_admitted_earnings_staging(
+        root,
+        cfg,
+        slot=slot,
+        admission_receipt={"schema": "earnings.press_admission/v1"},
+        staging_dir=destination,
+    )
+    staged = json.loads((destination / f"{slot['id']}.json").read_text(encoding="utf-8"))
+    assert staged["attempts"] == [{
+        "attempt": 0,
+        "ok": False,
+        "reason": "provider_usage_exceeds_admitted_cap",
+        "provider": "deepseek",
+        "token_cap": token_cap,
+        "provider_usage": provider_usage,
+    }]
+
+
+def test_generic_run_staging_keeps_planning_reconciliation_and_retry_contract(tmp_path, monkeypatch):
+    """The preplanned helper is an extraction, not a policy change to W1."""
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-brief-generic-contract")
+    seen = {"plan": 0, "reconcile": 0}
+
+    def _reconcile(*_args, **_kwargs):
+        seen["reconcile"] += 1
+        return {"current_sources": 0, "superseded": 0, "resolved": 0,
+                "correction_required": 0, "published_mismatches": 0}
+
+    def _plan(*_args, **_kwargs):
+        seen["plan"] += 1
+        return [slot]
+
+    calls = _stub_writer(monkeypatch, ok=False, reason="draft_failure")
+    monkeypatch.setattr(R, "reconcile_earnings_call_revisions", _reconcile)
+    monkeypatch.setattr(R.desk_planner, "plan", _plan)
+
+    summary = R.run_staging(root, cfg, as_of="2026-07-26")
+    assert seen == {"plan": 1, "reconcile": 1}
+    assert calls["n"] == cfg["quarantine"]["max_regenerations"] + 1
+    assert calls["single_provider_attempt"] == [False] * calls["n"]
+    assert calls["admitted_token_cap"] == [False] * calls["n"]
+    assert summary["revision_reconciliation"]["current_sources"] == 0
+    staged = json.loads((root / "data" / "press" / "staging" / f"{slot['id']}.json").read_text())
+    assert len(staged["attempts"]) == cfg["quarantine"]["max_regenerations"] + 1
+    assert all(set(row) == {"attempt", "ok", "reason"} for row in staged["attempts"])
+
+
+def test_emit_rejects_mutable_admission_allow_emit_claim(tmp_path):
+    """A receipt copied into mutable staging never becomes emit authority."""
+    root = F.fixture_root(tmp_path)
+    slot = F.slot(id="press-earnings-mutable-admission")
+    draft = dict(_good_draft(slot), slug="mutable-admission-claim")
+    stage_path = root / "data" / "press" / "staging" / "mutable-admission.json"
+    stage_path.write_text(json.dumps({
+        "id": slot["id"], "desk": slot["desk"],
+        "publication": slot["publication"], "status": "passed",
+        "sources": slot["sources"], "source_revisions": {}, "seed_refs": [],
+        "slug": draft["slug"], "draft": draft, "slot": slot,
+        "validator_report": {"ok": True},
+        "provenance": {"admission_receipt": {
+            "schema": "earnings.press_admission/v1", "allow_emit": True,
+        }},
+    }), encoding="utf-8")
+
+    result = R.run_emit(root, P.load_config(root))
+    assert result["emitted"] == 0
+    assert json.loads(stage_path.read_text(encoding="utf-8"))["status"] == "approval_required"
 
 
 def test_slug_collisions_are_resolved_before_validation(tmp_path):

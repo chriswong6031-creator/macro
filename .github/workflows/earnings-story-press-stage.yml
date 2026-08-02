@@ -1,0 +1,100 @@
+name: earnings-story-press-stage
+
+# Manual, artifact-only bridge from one immutable earnings story packet to the
+# existing Press writer/validator rail.  It cannot rank a candidate, choose a
+# tier, publish content, commit to git, or advance either R2 root.
+on:
+  workflow_dispatch:
+    inputs:
+      generation_id:
+        description: "Exact current earnings story root generation"
+        required: true
+        type: string
+      packet_id:
+        description: "Exact current Tier-B story packet id"
+        required: true
+        type: string
+      story_revision_id:
+        description: "Exact current story revision id"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: earnings-story-press-stage
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    # Both explicit kill switches AND the protected canonical ref are required
+    # before this job exists.  A feature branch can test the workflow contract,
+    # but it cannot receive R2/model credentials or create a staged draft.
+    if: >-
+      ${{ github.ref == 'refs/heads/main'
+          && vars.PRESS_PUBLISH_ENABLED == 'true'
+          && vars.EARNINGS_STORY_INGRESS_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: checkout read-only ingress closure
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            config.yml
+            config/press.yml
+            content/seo/blog
+            data/press/published.jsonl
+            engine
+            lib
+            scripts/publish_earnings_story_packets_r2.py
+            scripts/run_press.py
+            scripts/stage_earnings_story_press.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install bounded staging dependencies
+        run: python -m pip install --quiet boto3 pyyaml jinja2 anthropic
+
+      - name: full-audit and stage one exact packet
+        env:
+          # These are a distinct bucket-scoped GetObject + ListObjects R2
+          # credential with no Put/Delete authority.  Listing the immutable
+          # publication journal is required to reject a historical-root
+          # rollback; the publisher key is intentionally not exposed here.
+          R2_ENDPOINT: ${{ secrets.EARNINGS_R2_READ_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.EARNINGS_R2_READ_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.EARNINGS_R2_READ_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.EARNINGS_R2_READ_BUCKET }}
+          # This lane exposes one model credential only.  DeepSeek is the
+          # low-cost writer; Codex auto-discovery is disabled on this job, and
+          # no Claude OAuth/API secret is present.  SDK retries and provider
+          # fallback are independently disabled by admitted staging.
+          CODEX_PROVIDER_ENABLED: "false"
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          PRESS_RUN_TOKEN_BUDGET: "12000"
+          PRESS_CIRCUIT_BREAKER_FAILURES: "1"
+          # Dispatch values cross the expression boundary as data only.  Never
+          # interpolate an untrusted workflow input inside a shell program.
+          EARNINGS_STAGE_GENERATION_ID: ${{ inputs.generation_id }}
+          EARNINGS_STAGE_PACKET_ID: ${{ inputs.packet_id }}
+          EARNINGS_STAGE_STORY_REVISION_ID: ${{ inputs.story_revision_id }}
+        run: >-
+          python -m scripts.stage_earnings_story_press
+          --generation-id "$EARNINGS_STAGE_GENERATION_ID"
+          --packet-id "$EARNINGS_STAGE_PACKET_ID"
+          --story-revision-id "$EARNINGS_STAGE_STORY_REVISION_ID"
+
+      - name: upload isolated staging evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: earnings-story-press-stage-${{ github.run_id }}
+          path: ${{ runner.temp }}/earnings-story-press-stage/
+          if-no-files-found: warn
+          retention-days: 14

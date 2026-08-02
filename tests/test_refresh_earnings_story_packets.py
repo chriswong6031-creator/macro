@@ -42,6 +42,13 @@ class _FakeR2:
             "Metadata": self.metadata.get(Key, {}),
         }
 
+    def list_objects_v2(self, *, Bucket: str, Prefix: str, ContinuationToken: str | None = None):  # noqa: N803
+        assert ContinuationToken is None
+        return {
+            "IsTruncated": False,
+            "Contents": [{"Key": key} for key in sorted(self.objects) if key.startswith(Prefix)],
+        }
+
     def put_object(self, **kwargs):
         key = kwargs["Key"]
         body = kwargs["Body"]

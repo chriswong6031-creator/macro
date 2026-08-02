@@ -1,7 +1,7 @@
 """Deterministic story-packet projection workflow contract.
 
-Press staging deliberately has no workflow here.  The R2 projection can only
-move receipt-verified packet catalogs and must remain model-credential-free.
+The R2 projection remains model-credential-free and isolated from the separate
+manual, main-only Press staging workflow.
 """
 from __future__ import annotations
 
@@ -21,6 +21,11 @@ STORY_CI_PATHS = {
     "scripts/publish_earnings_evidence_graph_r2.py",
     "scripts/refresh_earnings_story_packets.py",
     "scripts/publish_earnings_story_packets_r2.py",
+    "scripts/stage_earnings_story_press.py",
+    ".github/workflows/earnings-story-press-stage.yml",
+    "tests/test_earnings_story_press_admission.py",
+    "tests/test_earnings_story_press_ingress.py",
+    "tests/test_earnings_story_press_stage_workflow.py",
     "tests/test_earnings_story_promotion.py",
     "tests/test_earnings_story_packets.py",
     "tests/test_earnings_story_press_workflow.py",
@@ -47,7 +52,7 @@ def test_story_packet_projection_workflow_is_scheduled_and_serialized() -> None:
     assert "cancel-in-progress: false" in body
     assert 'cron: "37 6 * * *"' in body
     assert "--audit-remote" in body
-    assert body.count("github.ref == 'refs/heads/main'") == 2
+    assert body.count("github.ref == 'refs/heads/main'") == 3
 
 
 def test_story_packet_projection_accepts_no_tier_and_uses_only_deterministic_transport() -> None:
@@ -74,6 +79,46 @@ def test_story_packet_projection_never_receives_model_credentials() -> None:
     assert "R2_BUCKET" in body
     for forbidden in ("OPENAI", "ANTHROPIC", "CLAUDE", "DEEPSEEK", "KIMI", "GEMINI", "MODEL_API"):
         assert forbidden not in body
+
+
+def test_journal_initialization_is_manual_main_only_and_receipt_bound() -> None:
+    workflow = yaml.load(WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    jobs = workflow["jobs"]
+    initialize = jobs["initialize-journal"]
+
+    condition = initialize["if"]
+    assert "github.event_name == 'workflow_dispatch'" in condition
+    assert "github.ref == 'refs/heads/main'" in condition
+    assert "inputs.initialize_journal" in condition
+
+    dispatch_inputs = workflow["on"]["workflow_dispatch"]["inputs"]
+    assert dispatch_inputs["initialize_journal"]["type"] == "boolean"
+    assert dispatch_inputs["expected_generation_id"]["type"] == "string"
+    assert dispatch_inputs["expected_manifest_sha256"]["type"] == "string"
+
+    initialize_run = next(
+        step["run"]
+        for step in initialize["steps"]
+        if step.get("name") == "full-replay and initialize exact journal anchor"
+    )
+    initialize_env = next(
+        step["env"]
+        for step in initialize["steps"]
+        if step.get("name") == "full-replay and initialize exact journal anchor"
+    )
+    assert initialize_env["EXPECTED_GENERATION_ID"] == "${{ inputs.expected_generation_id }}"
+    assert initialize_env["EXPECTED_MANIFEST_SHA256"] == "${{ inputs.expected_manifest_sha256 }}"
+    assert '--expected-generation-id "$EXPECTED_GENERATION_ID"' in initialize_run
+    assert '--expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"' in initialize_run
+    assert "${{ inputs." not in initialize_run
+
+    for forbidden in ("OPENAI", "ANTHROPIC", "CLAUDE", "DEEPSEEK", "KIMI", "GEMINI", "MODEL_API"):
+        assert forbidden not in str(initialize).upper()
+
+    project_condition = jobs["project"]["if"]
+    assert "github.event_name != 'workflow_dispatch'" in project_condition
+    assert "github.ref == 'refs/heads/main'" in project_condition
+    assert "!inputs.initialize_journal" in project_condition
 
 
 def test_story_packet_projection_paths_and_suites_are_ci_reachable() -> None:
