@@ -102,6 +102,7 @@ on:
       - "scripts/build_calibration.py"
       - "scripts/build_canada.py"
       - "scripts/build_canada_library.py"
+      - "scripts/build_capital_structure_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_china.py"
       - "scripts/build_china_allocation.py"
