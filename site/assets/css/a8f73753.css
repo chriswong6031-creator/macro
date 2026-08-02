@@ -107,33 +107,7 @@
   .ftr-tape-band { background:var(--panel2); border-bottom:2px solid var(--line); display:none; }
   .ftr-tape-band.visible { display:block; }
   .ftr-t1-help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:9.5px; font-weight:700; cursor:help; line-height:1; vertical-align:middle; }
-  /* ── FTR W3: per-card chip strip additions ──────────────────────────────── */
-  .ftr-disagree-chip { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.38); color:var(--amber,#fb923c); white-space:nowrap; }
-  .ftr-stale-chip    { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.28); color:var(--down); white-space:nowrap; }
-  .ftr-heat-chip { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:5px; white-space:nowrap; }
-  .ftr-heat-chip.hot     { background:rgba(35,192,138,.10); border:1px solid rgba(35,192,138,.30); color:var(--up); }
-  .ftr-heat-chip.heating { background:rgba(250,204,21,.08); border:1px solid rgba(250,204,21,.30); color:var(--warn); }
-  .ftr-heat-chip.cooling { background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.25); color:var(--down); }
-  .ftr-heat-chip.broken  { background:rgba(255,92,108,.07); border:1px solid rgba(255,92,108,.25); color:var(--down); opacity:.8; }
-  .ftr-live-chg { font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; }
-  .ftr-live-chg.up { color:var(--up); }
-  .ftr-live-chg.dn { color:var(--down); }
-  /* ── FTR W4: Turn-watch inline card ─────────────────────────────────────── */
-  .ftr-tw-card { border-radius:8px; border:1px solid rgba(249,115,22,.32); background:rgba(249,115,22,.05); overflow:hidden; margin:4px 0 0; }
-  .ftr-tw-card.watch { border-color:rgba(250,204,21,.32); background:rgba(250,204,21,.04); }
-  .ftr-tw-hd { display:flex; align-items:center; gap:7px; padding:6px 10px; border-bottom:1px solid rgba(249,115,22,.18); }
-  .ftr-tw-card.watch .ftr-tw-hd { border-bottom-color:rgba(250,204,21,.18); }
-  .ftr-tw-badge { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:5px; color:var(--orange,#f97316); background:rgba(249,115,22,.16); border:1px solid rgba(249,115,22,.38); }
-  .ftr-tw-badge.watch { color:var(--warn); background:rgba(250,204,21,.10); border-color:rgba(250,204,21,.32); }
-  .ftr-tw-k { font-size:11.5px; font-weight:600; color:var(--text); }
-  .ftr-tw-asof { font-size:10.5px; color:var(--muted); margin-left:auto; }
-  .ftr-tw-legs { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:rgba(249,115,22,.07); }
-  .ftr-tw-card.watch .ftr-tw-legs { background:rgba(250,204,21,.05); }
-  .ftr-tw-leg { padding:5px 9px; background:var(--bg); }
-  .ftr-tw-leg-nm { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; margin-bottom:1px; }
-  .ftr-tw-leg-val { font-size:11px; font-weight:700; color:var(--muted); }
-  .ftr-tw-leg.fired .ftr-tw-leg-val { color:var(--up); }
-  .ftr-tw-disc { font-size:10px; color:var(--muted); padding:4px 10px; border-top:1px solid var(--line); font-style:italic; }
+  
 
   /* ── Theme Context Hero — aurora living-glass ─────────────────────────── */
   #theme-context-hero { position:relative; overflow:hidden; border-radius:12px;

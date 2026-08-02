@@ -381,7 +381,7 @@
 
 
 <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--good)"></span><span class="l-en">The board</span><span class="l-zh">主题看板</span></div>
-<p class="sec-sub"><span class="l-en">Every theme sorted into one plain-word lane: what it's doing, and what to do about it. Tap a card for the full story, the setup, and what would break it.</span><span class="l-zh">每个主题归入一个直白的分组：它在做什么、你该怎么应对。点击卡片查看完整故事、结构与证伪条件。</span></p>
+<p class="sec-sub"><span class="l-en">Every theme sorted into one plain-word lane: what it's doing, and what to do about it. Tap a card for the full story, the setup, and what would break it.</span><span class="l-zh">每个主题归入一个直白的分组：它在做什么、你该怎么应对。点击卡片查看完整故事、结构与改判条件。</span></p>
 <div class="filter-row" id="filter-row">
   <button class="fchip on" data-filter="all" style="--fc:var(--link)"><span class="l-en">All</span><span class="l-zh">全部</span> <span class="fc-n">18</span></button>
   <button class="fchip" data-filter="lane:working" style="--fc:var(--good)"><span class="fc-sw"></span><span class="l-en">Working</span><span class="l-zh">正在奏效</span> <span class="fc-n">4</span></button>
@@ -425,7 +425,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.18, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.28. HAZARD framing only; not a directional read" data-tip-zh="拥挤风险 (low): 平均拥挤=0.18，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.28。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=1.8%, universe_avg_corr=0.07 → orthogonality=0.62. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (med): 平均60日相对收益=1.8%，全局平均相关性=0.07 → 正交性=0.62。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -506,8 +506,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -520,7 +520,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -612,7 +612,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=quadrant=hidden-opportunity → crowding_hazard=0.00. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): avg_60d_rel=9.0%, universe_avg_corr=0.07 → orthogonality=0.74. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (high): 平均60日相对收益=9.0%，全局平均相关性=0.07 → 正交性=0.74。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -693,8 +693,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -707,7 +707,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -800,7 +800,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.15, div_log=no_div_log_entry → crowding_hazard=0.15. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (low): 平均拥挤=0.15，背离日志=no_div_log_entry → 拥挤风险=0.15。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut" data-tip-en="Orthogonality vs market (low): avg_60d_rel=-16.3%, universe_avg_corr=0.07 → orthogonality=0.32. Per-basket-to-megacap corr not in spine; 60d relative r" data-tip-zh="市场正交性 (low): 平均60日相对收益=-16.3%，全局平均相关性=0.07 → 正交性=0.32。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -881,8 +881,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -895,7 +895,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -982,7 +982,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=no_div_log_entry → crowding_hazard=0.00. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=no_div_log_entry → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=-14.2%, universe_avg_corr=0.07 → orthogonality=0.36. Per-basket-to-megacap corr not in spine; 60d relative r" data-tip-zh="市场正交性 (med): 平均60日相对收益=-14.2%，全局平均相关性=0.07 → 正交性=0.36。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -1063,8 +1063,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1077,7 +1077,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -1175,7 +1175,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.36, div_log=quadrant=hidden-opportunity → crowding_hazard=0.36. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.36，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.36。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): avg_60d_rel=8.0%, universe_avg_corr=0.07 → orthogonality=0.73. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (high): 平均60日相对收益=8.0%，全局平均相关性=0.07 → 正交性=0.73。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -1253,8 +1253,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1267,7 +1267,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -1354,7 +1354,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=quadrant=hidden-opportunity → crowding_hazard=0.00. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=-0.4%, universe_avg_corr=0.07 → orthogonality=0.59. Per-basket-to-megacap corr not in spine; 60d relative re" data-tip-zh="市场正交性 (med): 平均60日相对收益=-0.4%，全局平均相关性=0.07 → 正交性=0.59。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -1435,8 +1435,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1449,7 +1449,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -1536,7 +1536,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=quadrant=hidden-opportunity → crowding_hazard=0.00. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=0.4%, universe_avg_corr=0.07 → orthogonality=0.60. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (med): 平均60日相对收益=0.4%，全局平均相关性=0.07 → 正交性=0.60。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -1614,8 +1614,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1628,7 +1628,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -1710,7 +1710,7 @@
           
           <span class="dot null" data-tip-en="Crowding hazard (null): no theme_intel records for this theme&#39;s baskets" data-tip-zh="拥挤风险 (null): 该主题篮子无 theme_intel 记录"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): universe avg_corr=0.07 → orthogonality (universe proxy)=0.93. Per-basket-to-megacap correlation not in spine; universe d" data-tip-zh="市场正交性 (high): 全局平均相关性=0.07 → 正交性（全局代理）=0.93。骨干中无逐篮子与大盘相关数据；以全局分散度代理。"></span>
           
@@ -1788,8 +1788,8 @@
               <span class="ctx-row-value"><span class="l-en">no data yet</span><span class="l-zh">暂无数据</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1802,7 +1802,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -1878,7 +1878,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=-8.5%, universe_avg_corr=0.07 → orthogonality=0.45. Per-basket-to-megacap corr not in spine; 60d relative re" data-tip-zh="市场正交性 (med): 平均60日相对收益=-8.5%，全局平均相关性=0.07 → 正交性=0.45。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -1956,8 +1956,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -1970,7 +1970,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2057,7 +2057,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.40. HAZARD framing only; not a directional read" data-tip-zh="拥挤风险 (low): 平均拥挤=0.30，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.40。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=0.1%, universe_avg_corr=0.07 → orthogonality=0.60. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (med): 平均60日相对收益=0.1%，全局平均相关性=0.07 → 正交性=0.60。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -2135,8 +2135,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -2149,7 +2149,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2242,7 +2242,7 @@
           
           <span class="dot caut" data-tip-en="Crowding hazard (high): avg_crowding=0.66, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.76. HAZARD framing only; not a directional read" data-tip-zh="拥挤风险 (high): 平均拥挤=0.66，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.76。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): avg_60d_rel=37.7%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re" data-tip-zh="市场正交性 (high): 平均60日相对收益=37.7%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -2320,8 +2320,8 @@
               <span class="ctx-row-value"><span class="l-en">crowded — caution</span><span class="l-zh">拥挤——需谨慎</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -2334,7 +2334,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2398,7 +2398,7 @@
   <div class="lane-head">
     <span class="lane-badge"><span class="em">🔴</span><span class="lb-t"><span class="l-en">Thesis in question</span><span class="l-zh">论点存疑</span></span><span class="lb-n">6</span></span>
     <span class="lane-stance"><span class="l-en">A break-rule tripped — stand aside</span><span class="l-zh">触发否定条件——暂避观望</span></span>
-    <span class="lane-guide"><span class="l-en">A rule that would break the story has tripped. Stand aside until it clears.</span><span class="l-zh">一条会证伪论点的规则已触发。在其解除前暂避。</span></span>
+    <span class="lane-guide"><span class="l-en">A rule that would break the story has tripped. Stand aside until it clears.</span><span class="l-zh">一条会改变论点的规则已触发。在其解除前暂避。</span></span>
   </div>
   <div class="lane-grid">
     
@@ -2427,7 +2427,7 @@
           
           <span class="dot null" data-tip-en="Crowding hazard (null): no theme_intel records for this theme&#39;s baskets" data-tip-zh="拥挤风险 (null): 该主题篮子无 theme_intel 记录"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): universe avg_corr=0.07 → orthogonality (universe proxy)=0.93. Per-basket-to-megacap correlation not in spine; universe d" data-tip-zh="市场正交性 (high): 全局平均相关性=0.07 → 正交性（全局代理）=0.93。骨干中无逐篮子与大盘相关数据；以全局分散度代理。"></span>
           
@@ -2505,8 +2505,8 @@
               <span class="ctx-row-value"><span class="l-en">no data yet</span><span class="l-zh">暂无数据</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -2519,7 +2519,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2594,7 +2594,7 @@
           
           <span class="dot null" data-tip-en="Crowding hazard (null): no theme_intel records for this theme&#39;s baskets" data-tip-zh="拥挤风险 (null): 该主题篮子无 theme_intel 记录"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): universe avg_corr=0.07 → orthogonality (universe proxy)=0.93. Per-basket-to-megacap correlation not in spine; universe d" data-tip-zh="市场正交性 (high): 全局平均相关性=0.07 → 正交性（全局代理）=0.93。骨干中无逐篮子与大盘相关数据；以全局分散度代理。"></span>
           
@@ -2675,8 +2675,8 @@
               <span class="ctx-row-value"><span class="l-en">no data yet</span><span class="l-zh">暂无数据</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -2689,7 +2689,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2759,7 +2759,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=no_div_log_entry → crowding_hazard=0.00. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=no_div_log_entry → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut" data-tip-en="Orthogonality vs market (low): avg_60d_rel=-25.9%, universe_avg_corr=0.07 → orthogonality=0.16. Per-basket-to-megacap corr not in spine; 60d relative r" data-tip-zh="市场正交性 (low): 平均60日相对收益=-25.9%，全局平均相关性=0.07 → 正交性=0.16。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -2840,8 +2840,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -2854,7 +2854,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -2941,7 +2941,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=quadrant=hidden-opportunity → crowding_hazard=0.00. HAZARD framing only; not a directional re" data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid" data-tip-en="Orthogonality vs market (med): avg_60d_rel=1.9%, universe_avg_corr=0.07 → orthogonality=0.62. Per-basket-to-megacap corr not in spine; 60d relative ret" data-tip-zh="市场正交性 (med): 平均60日相对收益=1.9%，全局平均相关性=0.07 → 正交性=0.62。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -3022,8 +3022,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -3036,7 +3036,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -3123,7 +3123,7 @@
           
           <span class="dot mid" data-tip-en="Crowding hazard (med): avg_crowding=0.68, div_log=no_div_log_entry → crowding_hazard=0.68. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (med): 平均拥挤=0.68，背离日志=no_div_log_entry → 拥挤风险=0.68。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav" data-tip-en="Orthogonality vs market (high): avg_60d_rel=15.1%, universe_avg_corr=0.07 → orthogonality=0.84. Per-basket-to-megacap corr not in spine; 60d relative re" data-tip-zh="市场正交性 (high): 平均60日相对收益=15.1%，全局平均相关性=0.07 → 正交性=0.84。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -3201,8 +3201,8 @@
               <span class="ctx-row-value"><span class="l-en">getting crowded</span><span class="l-zh">趋于拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -3215,7 +3215,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -3303,7 +3303,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=no_div_log_entry → crowding_hazard=0.00. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=no_div_log_entry → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut" data-tip-en="Orthogonality vs market (low): avg_60d_rel=-47.3%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r" data-tip-zh="市场正交性 (low): 平均60日相对收益=-47.3%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -3381,8 +3381,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -3395,7 +3395,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -3488,7 +3488,7 @@
           
           <span class="dot fav" data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=no_div_log_entry → crowding_hazard=0.30. HAZARD framing only; not a directional read." data-tip-zh="拥挤风险 (low): 平均拥挤=0.30，背离日志=no_div_log_entry → 拥挤风险=0.30。仅为风险识别，非方向性判断。"></span>
           
-          <span class="dot caut" data-tip-en="Falsifier clarity (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+          <span class="dot caut" data-tip-en="Testability (low): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut" data-tip-en="Orthogonality vs market (low): avg_60d_rel=-18.9%, universe_avg_corr=0.07 → orthogonality=0.28. Per-basket-to-megacap corr not in spine; 60d relative r" data-tip-zh="市场正交性 (low): 平均60日相对收益=-18.9%，全局平均相关性=0.07 → 正交性=0.28。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
@@ -3569,8 +3569,8 @@
               <span class="ctx-row-value"><span class="l-en">not crowded</span><span class="l-zh">不拥挤</span></span>
             </div>
             
-            <div class="ctx-row" data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
-              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Falsifier clarity</span><span class="l-zh">假证伪清晰度</span></span>
+            <div class="ctx-row" data-tip-en="Testability — hard to test — few clear tripwires (low level): n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00" data-tip-zh="可检验性 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+              <span class="ctx-row-label"><span class="dot caut"></span><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span>
               <span class="ctx-row-value"><span class="l-en">hard to test — few clear tripwires</span><span class="l-zh">难以检验——缺乏清晰触发线</span></span>
             </div>
             
@@ -3583,7 +3583,7 @@
           
           
           <div class="drawer-sec full">
-            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会证伪该论点</span></h4>
+            <h4><span class="l-en">What would break the story</span><span class="l-zh">什么会改变该论点</span></h4>
             <table class="fals-table">
               <thead><tr><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">Rule</span><span class="l-zh">规则</span></th></tr></thead>
               <tbody>
@@ -3653,7 +3653,7 @@
         <div class="leg-def"><span class="k"><span class="l-en">Cyclical dislocation</span><span class="l-zh">周期错位</span></span><span class="v"><span class="l-en">A long-term story trading at cycle-lows.</span><span class="l-zh">长期故事却处于周期低位。</span></span></div>
         <div class="leg-def"><span class="k"><span class="l-en">Entry cleanliness</span><span class="l-zh">入场质量</span></span><span class="v"><span class="l-en">Whether the entry looks clean or overheated.</span><span class="l-zh">入场点是否干净、还是过热。</span></span></div>
         <div class="leg-def"><span class="k"><span class="l-en">Crowding</span><span class="l-zh">拥挤风险</span></span><span class="v"><span class="l-en">How many are already positioned here.</span><span class="l-zh">已有多少人押注于此。</span></span></div>
-        <div class="leg-def"><span class="k"><span class="l-en">Testability</span><span class="l-zh">假证伪清晰度</span></span><span class="v"><span class="l-en">Are there clear tripwires that would disprove it?</span><span class="l-zh">是否有清晰的触发线可以证伪？</span></span></div>
+        <div class="leg-def"><span class="k"><span class="l-en">Testability</span><span class="l-zh">可检验性</span></span><span class="v"><span class="l-en">Are there clear tripwires that would disprove it?</span><span class="l-zh">是否有清晰的触发线会改变判断？</span></span></div>
         <div class="leg-def"><span class="k"><span class="l-en">Moves on its own</span><span class="l-zh">市场正交性</span></span><span class="v"><span class="l-en">Does it move on its story, not just the market?</span><span class="l-zh">它是否走自身逻辑、而非随大盘？</span></span></div>
       </div>
     </div>
