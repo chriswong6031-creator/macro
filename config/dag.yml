@@ -1969,6 +1969,11 @@ lanes:
           dead nightlies froze foresight.html at its pre-revamp render. ~11s
           measured on committed stores. Also rewrites
           site/basketdata/foresight_cascade.json in the same pass as its page.
+      - id: build_ticker_pages
+        module: scripts.build_ticker_pages
+        note: >
+          Ticker dossier pages v2 — declare the live post-builder, pre-publish
+          step in the engine-render scope=all lane.
       - id: publish_r2_stockdata
         module: scripts.publish_r2
         args: [--dirs, stockdata, --no-manifest]
@@ -2248,6 +2253,11 @@ lanes:
           Insider+ payload site/premiumdata/china_special_situations.json
           (docs/TIER_PREVIEW_PATTERN.md) — they must never be rebuilt apart.
           Display-only; CONST-ART2 authority: false.
+      - id: build_ticker_pages
+        module: scripts.build_ticker_pages
+        note: >
+          Ticker dossier pages v2 — declare the live post-builder, pre-publish
+          step in the render scope=all lane.
       - id: publish_r2_stockdata
         module: scripts.publish_r2
         args: [--dirs, stockdata, --no-manifest]
