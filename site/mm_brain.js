@@ -1281,6 +1281,21 @@
         pending += chunk; schedule();
       },
       raw: function () { return raw; },
+      /* Throw away everything shown so far and (optionally) stand `text` up in its place,
+         instantly and without the typing pace — the writer is not re-typing, it is being
+         corrected. Drives the `retract` event: the gateway streams the answer as it is
+         written, so when the final leak screen rejects that text (or a dead provider's
+         half-sentence has to be wiped before the retry writes over it) the only honest
+         move is to take the whole thing back. */
+      reset: function (text) {
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; }
+        raw = ''; pending = ''; revealed = ''; committedLen = 0; openText = null;
+        doneFlush = false; onDrained = null;
+        while (container.firstChild) container.removeChild(container.firstChild);
+        if (text) { raw = text; revealed = text; paint(false); }
+        stickAfter();
+      },
       // drain fast then run cb, then full re-render for correctness
       finalize: function (cb) {
         var done = false;
@@ -2447,6 +2462,17 @@
          hanging off the bottom of the strip. */
       if (!T.sawDelta) T.stream.startCaret();
       T.sawDelta = true; T.bub._raw = (T.bub._raw || '') + j.text; T.stream.push(j.text);
+    }
+    /* The answer streams as it is written, so the server needs a way to UNSAY it: the
+       final leak screen rejecting text that already shipped, or a provider dying
+       mid-sentence and the retry needing a clean sheet (empty text = wipe only). Nothing
+       to do with retractTurn(), which is the user taking their own prompt back. */
+    else if (j.type === 'retract') {
+      ensureBub(T); thinkCollapse(T.tl, T.bub);
+      var rt = j.text == null ? '' : String(j.text);
+      T.stream.reset(rt); T.bub._raw = rt; T.sawDelta = !!rt;
+      if (!T.sawDelta) T.stream.startCaret();   /* wiped for a retry — the writer is back */
+      stickAfter();
     }
     else if (j.type === 'suggest') { if (j.items && j.items.length) T.suggestions = j.items.slice(0, 3); }
     /* host bridges (Terminal): chart-command + annotate events are executed by the
