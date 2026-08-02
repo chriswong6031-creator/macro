@@ -18,19 +18,21 @@ from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import MISSING, dataclass, fields as dataclass_fields, is_dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 import dis
 import hashlib
 import hmac
 from html.parser import HTMLParser
 import inspect
+from importlib.metadata import version as distribution_version
 import json
 from pathlib import Path
 import re
 import sys
 from types import CodeType, MappingProxyType, ModuleType
 from typing import Any
+from urllib.parse import urlsplit
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -40,6 +42,13 @@ from engine.capital_structure.source_identity import (
     validate_manifest_ledger,
     validate_manifest_retained_bytes_binding,
 )
+
+
+_JSONSCHEMA_RELEASE = "4.26.0"
+if distribution_version("jsonschema") != _JSONSCHEMA_RELEASE:
+    raise RuntimeError(
+        f"document-term authority requires jsonschema {_JSONSCHEMA_RELEASE}"
+    )
 
 
 DOCUMENT_TERM_SCHEMA = "capital_structure.document_term_observation.v1"
@@ -61,16 +70,27 @@ class SemanticDispatchRoot:
     role: str
     receiver: type[Any]
     methods: tuple[str, ...]
+    data_attributes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ParserRuntimeBundle:
+    """Exact process-local dispatch snapshot, rechecked on every parser use."""
+
+    dependency_count: int
+    dependency_manifest_sha256: str
+    implementation_sha256: str
 
 
 @dataclass(frozen=True)
 class ParserSemanticBundle:
-    """Executable roots plus a golden commitment to their exact dependency graph."""
+    """Portable release golden plus an exact process-local dispatch seal."""
 
     entrypoints: tuple[SemanticEntrypoint, ...]
     dispatch_roots: tuple[SemanticDispatchRoot, ...]
     dependency_count: int
     dependency_manifest_sha256: str
+    runtime_dispatch: ParserRuntimeBundle
 
 
 @dataclass(frozen=True)
@@ -79,8 +99,9 @@ class ParserRegistration:
 
     Parser versions are evidence provenance, not free-form release labels. A
     historic direct row is trusted only when its declared version remains in
-    this closed registry and the retained implementation matches its pinned
-    transitive semantic-closure digest.
+    this closed registry, its project implementation matches the portable
+    release golden, and its inherited runtime still matches the process-local
+    snapshot sealed at import.
     """
 
     version: str
@@ -231,11 +252,69 @@ def _assert_zero_authority(value: Any, *, path: str = "<root>") -> None:
             _assert_zero_authority(item, path=f"{path}[{index}]")
 
 
+_SCHEMA_DATE_RE = re.compile(r"\A\d{4}-\d{2}-\d{2}\Z")
+_SCHEMA_DATETIME_RE = re.compile(
+    r"\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+    r"(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})\Z",
+)
+_SCHEMA_URI_SCHEME_RE = re.compile(r"\A[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def _schema_date_format(instance: Any) -> bool:
+    if not isinstance(instance, str):
+        return True
+    if _SCHEMA_DATE_RE.fullmatch(instance) is None:
+        return False
+    try:
+        date.fromisoformat(instance)
+    except ValueError:
+        return False
+    return True
+
+
+def _schema_datetime_format(instance: Any) -> bool:
+    if not isinstance(instance, str):
+        return True
+    if _SCHEMA_DATETIME_RE.fullmatch(instance) is None:
+        return False
+    try:
+        parsed = datetime.fromisoformat(
+            instance[:-1] + "+00:00" if instance.endswith("Z") else instance,
+        )
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None
+
+
+def _schema_uri_format(instance: Any) -> bool:
+    if not isinstance(instance, str):
+        return True
+    if (
+        _SCHEMA_URI_SCHEME_RE.match(instance) is None
+        or any(character.isspace() or ord(character) < 32 for character in instance)
+    ):
+        return False
+    try:
+        return bool(urlsplit(instance).scheme)
+    except ValueError:
+        return False
+
+
+_SCHEMA_FORMAT_BINDINGS = (
+    ("date", _schema_date_format, ()),
+    ("date-time", _schema_datetime_format, ()),
+    ("uri", _schema_uri_format, ()),
+)
+
+
 def _make_document_term_contract_validator(
     schema_path: Path,
     schema_sha256: str,
     validator_class: type[Any],
     format_checker_class: type[Any],
+    schema_format_bindings: tuple[
+        tuple[str, Callable[[Any], bool], tuple[type[BaseException], ...]], ...
+    ],
 ) -> Callable[[], Callable[[Mapping[str, Any]], Any]]:
     """Prebuild and seal the actually invoked schema-validation method."""
     def descriptor_functions(value: Any) -> tuple[Callable[..., Any], ...]:
@@ -350,9 +429,7 @@ def _make_document_term_contract_validator(
             getattr(implementation, "__code__", None),
             raises,
         )
-        for name, (implementation, raises) in sorted(
-            format_checker_class.checkers.items(),
-        )
+        for name, implementation, raises in schema_format_bindings
     )
     execution_surfaces = (
         (validator_class, execution_surface(validator_class)),
@@ -474,14 +551,16 @@ def _make_document_term_contract_validator(
                 raise ValueError(
                     "document-term schema validator executable binding changed"
                 )
-        current_format_checkers = format_checker_class.checkers
-        if set(current_format_checkers) != {
-            name
-            for name, _implementation, _code, _raises in format_checker_bindings
-        }:
+        format_checker = format_checker_class(formats=())
+        if format_checker.checkers:
             raise ValueError(
                 "document-term schema validator executable binding changed"
             )
+        current_format_checkers = MappingProxyType({
+            name: (implementation, raises)
+            for name, implementation, _code, raises in format_checker_bindings
+        })
+        format_checker.checkers = current_format_checkers
         for name, expected_implementation, expected_code, expected_raises in (
             format_checker_bindings
         ):
@@ -496,7 +575,7 @@ def _make_document_term_contract_validator(
                 )
         fresh_schema = json.loads(current.decode("utf-8"))
         validator = validator_class(
-            fresh_schema, format_checker=format_checker_class(),
+            fresh_schema, format_checker=format_checker,
         )
         return original_iter_errors.__get__(validator, validator_class)
 
@@ -506,7 +585,7 @@ def _make_document_term_contract_validator(
 _document_term_contract_validator = _make_document_term_contract_validator(
     _DOCUMENT_TERM_SCHEMA_PATH,
     _DOCUMENT_TERM_SCHEMA_SHA256,
-    Draft202012Validator, FormatChecker,
+    Draft202012Validator, FormatChecker, _SCHEMA_FORMAT_BINDINGS,
 )
 
 
@@ -1465,11 +1544,12 @@ def _is_stdlib_value(value: Any) -> bool:
 
 
 class _SemanticClosureBuilder:
-    """Discover and canonically encode every runtime global reachable from roots."""
+    """Encode portable release roots or an exact inherited-runtime snapshot."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, stable_stdlib_dispatch: bool = True) -> None:
         self.nodes: dict[str, Any] = {}
         self._expanded: set[str] = set()
+        self._stable_stdlib_dispatch = stable_stdlib_dispatch
 
     def _put(self, key: str, descriptor: Any) -> None:
         prior = self.nodes.get(key)
@@ -1761,11 +1841,12 @@ class _SemanticClosureBuilder:
         return None
 
     def bind_dispatch_root(self, root: SemanticDispatchRoot) -> None:
-        """Pin resolved descriptors plus recursively reached ``self`` dispatch.
+        """Bind declared dispatch ABI plus recursively reached runtime behavior.
 
-        Only methods reachable from the explicitly instantiated receiver are
-        walked. This binds inherited HTMLParser/ParserBase behavior and local
-        callbacks without treating the entire standard library as parser code.
+        Release mode records stable stdlib identities under the supported Python
+        major/minor ABI. Runtime mode recursively walks exact inherited methods,
+        helpers, subclass callbacks, globals, descriptors, and class data. The
+        latter is captured once per process and compared again on every use.
         """
         if not inspect.isclass(root.receiver) or not root.methods:
             raise ValueError(
@@ -1777,8 +1858,31 @@ class _SemanticClosureBuilder:
                 "receiver": _callable_identity(root.receiver),
                 "mro": [_callable_identity(base) for base in root.receiver.__mro__],
                 "methods": list(root.methods),
+                "data_attributes": list(root.data_attributes),
             },
         )
+        for name in root.data_attributes:
+            resolved = self._mro_descriptor(root.receiver, name)
+            if resolved is None:
+                raise ValueError(
+                    "document-term parser dispatch data is unresolved: "
+                    f"{_callable_identity(root.receiver)}.{name}"
+                )
+            owner, value = resolved
+            descriptor = {
+                "receiver": _callable_identity(root.receiver),
+                "implementing_class": _callable_identity(owner),
+                "name": name,
+                "descriptor_kind": type(value).__name__,
+                "process_local_seal": True,
+            }
+            if not self._stable_stdlib_dispatch:
+                descriptor["value"] = self._reference(value)
+            self._put(
+                f"dispatch_data:{_callable_identity(root.receiver)}."
+                f"{_callable_identity(owner)}.{name}",
+                descriptor,
+            )
         for method in root.methods:
             self._walk_dispatch_method(root.receiver, method)
 
@@ -1818,6 +1922,14 @@ class _SemanticClosureBuilder:
             function = value.fget
             descriptor["property_access"] = "get"
         if function is not None:
+            if self._stable_stdlib_dispatch and _is_stdlib_value(function):
+                descriptor["stdlib_contract"] = {
+                    "identity": _callable_identity(function),
+                    "runtime": [sys.version_info.major, sys.version_info.minor],
+                    "process_local_seal": True,
+                }
+                self._put(key, descriptor)
+                return
             descriptor.update({
                 "code": _semantic_code_descriptor(function.__code__),
                 "global_names": list(_loaded_global_names(function.__code__)),
@@ -2017,6 +2129,40 @@ def _semantic_closure(
     )
 
 
+def _runtime_dispatch_closure(
+    dispatch_roots: Sequence[SemanticDispatchRoot],
+) -> tuple[tuple[str, ...], str, str]:
+    """Capture exact inherited runtime objects outside micro-specific goldens."""
+    builder = _SemanticClosureBuilder(stable_stdlib_dispatch=False)
+    builder._put("runtime:python_process", {
+        "implementation": sys.implementation.name,
+        "cache_tag": sys.implementation.cache_tag,
+        "version": [
+            sys.version_info.major,
+            sys.version_info.minor,
+            sys.version_info.micro,
+        ],
+    })
+    for root in sorted(dispatch_roots, key=lambda item: item.role):
+        builder.bind_dispatch_root(root)
+    manifest = tuple(sorted(builder.nodes))
+    payload = [
+        {"node": node, "descriptor": builder.nodes[node]}
+        for node in manifest
+    ]
+    encoded = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    manifest_bytes = json.dumps(
+        manifest, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    return (
+        manifest,
+        hashlib.sha256(manifest_bytes).hexdigest(),
+        hashlib.sha256(encoded).hexdigest(),
+    )
+
+
 def _parser_semantic_entrypoints(
     extractor: Callable[..., Any],
 ) -> tuple[SemanticEntrypoint, ...]:
@@ -2041,23 +2187,48 @@ def _parser_semantic_dispatch_roots() -> tuple[SemanticDispatchRoot, ...]:
                 "__init__",
                 "feed",
                 "close",
+                "goahead",
+                "reset",
+                "updatepos",
+                "handle_starttag",
+                "handle_endtag",
+                "handle_data",
                 "text",
             ),
+            data_attributes=("CDATA_CONTENT_ELEMENTS",),
         ),
     )
 
 
 # Released golden closure for the only actual parser version. Production
-# authority consults two separately immutable maps: a released implementation
-# registry and its independently pinned digest ledger. Runtime insertion into a
-# mutable test dictionary can therefore never mint parser authority.
-_PARSER_V1_1_0_DEPENDENCY_COUNT = 358
+# authority consults separately immutable registry, portable-digest, and exact
+# process-runtime ledgers. Runtime insertion into a mutable test dictionary can
+# therefore never mint parser authority.
+_PARSER_V1_1_0_DEPENDENCY_COUNT = 263
 _PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256 = (
-    "bba07ba2b12560cd1f3959a80dc1876c3bedfd111ade14bd0fc9eb6221019962"
+    "4939a46ef7ca1a9583f869de398692e6a8736fc4566c6a5f3860b95c5f6e6f0d"
+)
+_PARSER_V1_1_0_DISPATCH_ROOTS = _parser_semantic_dispatch_roots()
+(
+    _parser_v1_1_0_runtime_manifest,
+    _parser_v1_1_0_runtime_manifest_sha256,
+    _parser_v1_1_0_runtime_implementation_sha256,
+) = _runtime_dispatch_closure(_PARSER_V1_1_0_DISPATCH_ROOTS)
+_PARSER_V1_1_0_RUNTIME_BUNDLE = ParserRuntimeBundle(
+    dependency_count=len(_parser_v1_1_0_runtime_manifest),
+    dependency_manifest_sha256=_parser_v1_1_0_runtime_manifest_sha256,
+    implementation_sha256=_parser_v1_1_0_runtime_implementation_sha256,
 )
 _RELEASED_PARSER_IMPLEMENTATION_DIGESTS = MappingProxyType({
     "capital-structure-document-terms/1.1.0": (
-        "cf9570823a889fbb1c75e21d274450e3002aa49e05079278e9ef3bb50761f2a4"
+        "943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08"
+    ),
+})
+_RELEASED_PARSER_RUNTIME_DIGESTS = MappingProxyType({
+    "capital-structure-document-terms/1.1.0": (
+        _PARSER_V1_1_0_RUNTIME_BUNDLE.dependency_count,
+        _PARSER_V1_1_0_RUNTIME_BUNDLE.dependency_manifest_sha256,
+        _PARSER_V1_1_0_RUNTIME_BUNDLE.implementation_sha256,
     ),
 })
 _RELEASED_PARSER_VERSIONS = ("capital-structure-document-terms/1.1.0",)
@@ -2071,9 +2242,10 @@ _RELEASED_PARSER_REGISTRY = MappingProxyType({
         extractor=_records_for_manifest_v1_1_0,
         semantic_bundle=ParserSemanticBundle(
             entrypoints=_parser_semantic_entrypoints(_records_for_manifest_v1_1_0),
-            dispatch_roots=_parser_semantic_dispatch_roots(),
+            dispatch_roots=_PARSER_V1_1_0_DISPATCH_ROOTS,
             dependency_count=_PARSER_V1_1_0_DEPENDENCY_COUNT,
             dependency_manifest_sha256=_PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256,
+            runtime_dispatch=_PARSER_V1_1_0_RUNTIME_BUNDLE,
         ),
     ),
 })
@@ -2083,10 +2255,17 @@ _RELEASED_PARSER_REGISTRY = MappingProxyType({
 _PARSER_REGISTRY = _RELEASED_PARSER_REGISTRY
 
 
-def _validate_parser_registration(registration: ParserRegistration) -> None:
+def _validate_parser_registration_core(
+    registration: ParserRegistration,
+    *,
+    semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
+    runtime_dispatch_closure: Callable[
+        [Sequence[SemanticDispatchRoot]], tuple[tuple[str, ...], str, str]
+    ],
+) -> None:
     """Recompute and compare one registration's full released semantic bundle."""
     try:
-        manifest, manifest_sha256, digest = _semantic_closure(
+        manifest, manifest_sha256, digest = semantic_closure(
             registration.semantic_bundle.entrypoints,
             registration.semantic_bundle.dispatch_roots,
         )
@@ -2104,6 +2283,23 @@ def _validate_parser_registration(registration: ParserRegistration) -> None:
         raise ValueError(
             f"document-term parser semantic closure mismatch for {registration.version}"
         )
+    runtime = registration.semantic_bundle.runtime_dispatch
+    runtime_manifest, runtime_manifest_sha256, runtime_digest = (
+        runtime_dispatch_closure(registration.semantic_bundle.dispatch_roots)
+    )
+    if (
+        len(runtime_manifest) != runtime.dependency_count
+        or not hmac.compare_digest(
+            runtime_manifest_sha256, runtime.dependency_manifest_sha256,
+        )
+        or not hmac.compare_digest(
+            runtime_digest, runtime.implementation_sha256,
+        )
+    ):
+        raise ValueError(
+            "document-term parser semantic closure mismatch for "
+            f"{registration.version}: runtime dispatch mismatch"
+        )
     extractor_roots = [
         entrypoint.implementation
         for entrypoint in registration.semantic_bundle.entrypoints
@@ -2115,9 +2311,50 @@ def _validate_parser_registration(registration: ParserRegistration) -> None:
         )
 
 
+def _make_validate_parser_registration(
+    registration_core: Callable[..., None],
+    semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
+    runtime_dispatch_closure: Callable[
+        [Sequence[SemanticDispatchRoot]], tuple[tuple[str, ...], str, str]
+    ],
+) -> Callable[[ParserRegistration], None]:
+    semantic_closure_code = semantic_closure.__code__
+    runtime_dispatch_closure_code = runtime_dispatch_closure.__code__
+
+    def _validate_parser_registration(registration: ParserRegistration) -> None:
+        if globals().get("_validate_parser_registration_core") is not registration_core:
+            raise ValueError("document-term parser registration core binding changed")
+        if (
+            globals().get("_semantic_closure") is not semantic_closure
+            or semantic_closure.__code__ is not semantic_closure_code
+        ):
+            raise ValueError("document-term parser semantic closure binding changed")
+        if (
+            globals().get("_runtime_dispatch_closure")
+            is not runtime_dispatch_closure
+            or runtime_dispatch_closure.__code__ is not runtime_dispatch_closure_code
+        ):
+            raise ValueError("document-term parser runtime closure binding changed")
+        registration_core(
+            registration,
+            semantic_closure=semantic_closure,
+            runtime_dispatch_closure=runtime_dispatch_closure,
+        )
+
+    return _validate_parser_registration
+
+
+_validate_parser_registration = _make_validate_parser_registration(
+    _validate_parser_registration_core,
+    _semantic_closure,
+    _runtime_dispatch_closure,
+)
+
+
 def _make_registered_parser(
     released_registry: Mapping[str, ParserRegistration],
     released_digests: Mapping[str, str],
+    released_runtime_digests: Mapping[str, tuple[int, str, str]],
     released_versions: tuple[str, ...],
     registration_validator: Callable[[ParserRegistration], None],
 ) -> Callable[[Any], ParserRegistration]:
@@ -2130,17 +2367,29 @@ def _make_registered_parser(
         if (
             tuple(released_registry) != released_versions
             or tuple(released_digests) != released_versions
+            or tuple(released_runtime_digests) != released_versions
         ):
             raise ValueError("document-term released parser registry keyset mismatch")
         expected_digest = released_digests.get(raw)
+        expected_runtime_digest = released_runtime_digests.get(raw)
         registration = released_registry.get(raw)
-        if registration is None or expected_digest is None:
+        if (
+            registration is None
+            or expected_digest is None
+            or expected_runtime_digest is None
+        ):
             raise ValueError(f"document-term parser_version is not registered: {raw!r}")
         if (
             registration.version != raw
             or not hmac.compare_digest(
                 registration.implementation_sha256, expected_digest,
             )
+            or (
+                registration.semantic_bundle.runtime_dispatch.dependency_count,
+                registration.semantic_bundle.runtime_dispatch.dependency_manifest_sha256,
+                registration.semantic_bundle.runtime_dispatch.implementation_sha256,
+            )
+            != expected_runtime_digest
         ):
             raise ValueError(
                 f"document-term released parser registry mismatch for {raw}"
@@ -2154,6 +2403,7 @@ def _make_registered_parser(
 _registered_parser = _make_registered_parser(
     _RELEASED_PARSER_REGISTRY,
     _RELEASED_PARSER_IMPLEMENTATION_DIGESTS,
+    _RELEASED_PARSER_RUNTIME_DIGESTS,
     _RELEASED_PARSER_VERSIONS,
     _validate_parser_registration,
 )
@@ -2236,6 +2486,8 @@ def _self_check_parser_registry() -> None:
     if (
         tuple(_RELEASED_PARSER_REGISTRY) != _RELEASED_PARSER_VERSIONS
         or tuple(_RELEASED_PARSER_IMPLEMENTATION_DIGESTS)
+        != _RELEASED_PARSER_VERSIONS
+        or tuple(_RELEASED_PARSER_RUNTIME_DIGESTS)
         != _RELEASED_PARSER_VERSIONS
     ):
         raise RuntimeError("document-term production parser registry is not release-exact")
@@ -3018,12 +3270,12 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 # Release goldens are recalculated only when the authority implementation or its
 # closed schema intentionally changes. They are independent of parser-version
 # goldens so a mutable parser registration can never rewrite trust policy.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 419
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 421
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "a4932a0f734dd14d5b53538ee762d767ad6de77c7d7efcabe3b64beed639ad0f"
+    "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "809ba010f6ae55ab0bd69949c94e49f8be0d978d62041a53e2d125c4eaa41d54"
+    "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(

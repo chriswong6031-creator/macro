@@ -22,7 +22,7 @@ import hmac
 import inspect
 import json
 from pathlib import Path
-from types import CodeType
+from types import CodeType, MappingProxyType
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -30,6 +30,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from engine.capital_structure.document_terms import (
     DOCUMENT_TERM_SCHEMA,
     SemanticEntrypoint,
+    _SCHEMA_FORMAT_BINDINGS,
     _semantic_closure,
     current_document_terms_as_of,
     validate_document_term_contract,
@@ -103,6 +104,9 @@ def _make_candidate_term_contract_validator(
     schema_sha256: str,
     validator_class: type[Any],
     format_checker_class: type[Any],
+    schema_format_bindings: tuple[
+        tuple[str, Callable[[Any], bool], tuple[type[BaseException], ...]], ...
+    ],
 ) -> Callable[[], Callable[[Mapping[str, Any]], Any]]:
     """Prebuild and seal the actually invoked candidate validation method."""
     def descriptor_functions(value: Any) -> tuple[Callable[..., Any], ...]:
@@ -217,9 +221,7 @@ def _make_candidate_term_contract_validator(
             getattr(implementation, "__code__", None),
             raises,
         )
-        for name, (implementation, raises) in sorted(
-            format_checker_class.checkers.items(),
-        )
+        for name, implementation, raises in schema_format_bindings
     )
     execution_surfaces = (
         (validator_class, execution_surface(validator_class)),
@@ -338,13 +340,16 @@ def _make_candidate_term_contract_validator(
                 raise ValueError(
                     "instrument candidate schema validator executable binding changed"
                 )
-        current_format_checkers = format_checker_class.checkers
-        if set(current_format_checkers) != {
-            name for name, _implementation, _code, _raises in format_checker_bindings
-        }:
+        format_checker = format_checker_class(formats=())
+        if format_checker.checkers:
             raise ValueError(
                 "instrument candidate schema validator executable binding changed"
             )
+        current_format_checkers = MappingProxyType({
+            name: (implementation, raises)
+            for name, implementation, _code, raises in format_checker_bindings
+        })
+        format_checker.checkers = current_format_checkers
         for name, expected_implementation, expected_code, expected_raises in (
             format_checker_bindings
         ):
@@ -359,7 +364,7 @@ def _make_candidate_term_contract_validator(
                 )
         fresh_schema = json.loads(current.decode("utf-8"))
         validator = validator_class(
-            fresh_schema, format_checker=format_checker_class(),
+            fresh_schema, format_checker=format_checker,
         )
         return original_iter_errors.__get__(validator, validator_class)
 
@@ -371,6 +376,7 @@ _candidate_term_contract_validator = _make_candidate_term_contract_validator(
     _CANDIDATE_SCHEMA_SHA256,
     Draft202012Validator,
     FormatChecker,
+    _SCHEMA_FORMAT_BINDINGS,
 )
 
 
@@ -1114,12 +1120,12 @@ def _candidate_authority_entrypoints() -> tuple[SemanticEntrypoint, ...]:
 
 # Release goldens are filled only when an intentional candidate authority
 # implementation or closed-schema change is reviewed.
-_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 192
+_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 194
 _CANDIDATE_AUTHORITY_DEPENDENCY_MANIFEST_SHA256 = (
-    "0d83f59ab85e2ab1b4ae40756384557fe42b90e2e7c572f75f884801442496cb"
+    "5c93c5790e103ebc82f9e7865e27bb9576370235ddd27c64ff57a84fbc1bb9eb"
 )
 _CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256 = (
-    "a6338671c6459dfd9420efb360aacd4cdd949afa163b22708c50e12098fc3c37"
+    "5e2add814e04bc32d88ac1b198023d2301b37085ed690a1e0f53daa22e7f1e6b"
 )
 _CANDIDATE_AUTHORITY_ENTRYPOINTS = _candidate_authority_entrypoints()
 _CANDIDATE_AUTHORITY_ALIAS_BINDINGS = (

@@ -253,12 +253,12 @@ def test_candidate_authority_policy_has_release_golden_closure():
             instrument_candidates._CANDIDATE_AUTHORITY_ENTRYPOINTS,
         )
     )
-    assert len(manifest) == 192
+    assert len(manifest) == 194
     assert manifest_sha256 == (
-        "0d83f59ab85e2ab1b4ae40756384557fe42b90e2e7c572f75f884801442496cb"
+        "5c93c5790e103ebc82f9e7865e27bb9576370235ddd27c64ff57a84fbc1bb9eb"
     )
     assert implementation_sha256 == (
-        "a6338671c6459dfd9420efb360aacd4cdd949afa163b22708c50e12098fc3c37"
+        "5e2add814e04bc32d88ac1b198023d2301b37085ed690a1e0f53daa22e7f1e6b"
     )
     for required in (
         "._validate_candidate_term_records_contract",
@@ -340,6 +340,16 @@ def test_candidate_source_binding_admits_both_rows_through_closed_contracts():
     with pytest.raises(ValueError, match="contract violation"):
         instrument_candidates.validate_candidate_source_binding(
             tampered_candidate, direct,
+        )
+
+    invalid_time_candidate = deepcopy(candidate)
+    invalid_time_candidate["point_in_time"]["available_at"] = "not-a-time"
+    invalid_time_candidate["candidate_term_id"] = candidate_term_id_for(
+        invalid_time_candidate,
+    )
+    with pytest.raises(ValueError, match="contract violation"):
+        instrument_candidates.validate_candidate_source_binding(
+            invalid_time_candidate, direct,
         )
 
     tampered_direct = deepcopy(direct)

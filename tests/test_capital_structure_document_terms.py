@@ -5,7 +5,11 @@ from copy import deepcopy
 from hashlib import sha256
 import inspect
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 
 import pandas as pd
 import pytest
@@ -115,6 +119,9 @@ def _fixture_prior_parser_lane() -> tuple[str, object, object]:
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         entrypoints, dispatch_roots,
     )
+    runtime_manifest, runtime_manifest_sha256, runtime_implementation_sha256 = (
+        document_terms._runtime_dispatch_closure(dispatch_roots)
+    )
     registration = document_terms.ParserRegistration(
         version=_FIXTURE_PRIOR_PARSER_VERSION,
         implementation_sha256=implementation_sha256,
@@ -124,6 +131,11 @@ def _fixture_prior_parser_lane() -> tuple[str, object, object]:
             dispatch_roots=dispatch_roots,
             dependency_count=len(manifest),
             dependency_manifest_sha256=manifest_sha256,
+            runtime_dispatch=document_terms.ParserRuntimeBundle(
+                dependency_count=len(runtime_manifest),
+                dependency_manifest_sha256=runtime_manifest_sha256,
+                implementation_sha256=runtime_implementation_sha256,
+            ),
         ),
     )
     capability = document_terms._PRIVATE_TEST_PARSER_CAPABILITY
@@ -375,25 +387,122 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         registration.semantic_bundle.entrypoints,
         registration.semantic_bundle.dispatch_roots,
     )
-    assert len(manifest) == 358
+    assert len(manifest) == 263
     assert manifest_sha256 == (
-        "bba07ba2b12560cd1f3959a80dc1876c3bedfd111ade14bd0fc9eb6221019962"
+        "4939a46ef7ca1a9583f869de398692e6a8736fc4566c6a5f3860b95c5f6e6f0d"
     )
     assert implementation_sha256 == (
-        "cf9570823a889fbb1c75e21d274450e3002aa49e05079278e9ef3bb50761f2a4"
+        "943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08"
     )
     assert len(manifest) == registration.semantic_bundle.dependency_count
     assert manifest_sha256 == registration.semantic_bundle.dependency_manifest_sha256
     assert implementation_sha256 == registration.implementation_sha256
+    runtime_manifest, runtime_manifest_sha256, runtime_implementation_sha256 = (
+        document_terms._runtime_dispatch_closure(
+            registration.semantic_bundle.dispatch_roots,
+        )
+    )
+    runtime = registration.semantic_bundle.runtime_dispatch
+    assert len(runtime_manifest) == runtime.dependency_count
+    assert runtime_manifest_sha256 == runtime.dependency_manifest_sha256
+    assert runtime_implementation_sha256 == runtime.implementation_sha256
+    assert any("_markupbase.ParserBase.reset" in node for node in runtime_manifest)
     for required in (
         "._digest_id", "._parse_time", "._iso", "._unique_spans",
         ".make_stable_span", "._materialize_observation", ".observation_id_for",
         ".hashlib.attribute.sha256", ".json.attribute.dumps", "runtime:python",
         "html.parser.HTMLParser.feed", "html.parser.HTMLParser.close",
         "html.parser.HTMLParser.goahead", "_markupbase.ParserBase.updatepos",
-        "_markupbase.ParserBase.reset", "CDATA_CONTENT_ELEMENTS",
+        "CDATA_CONTENT_ELEMENTS",
     ):
         assert any(required in node for node in manifest), required
+
+
+def test_parser_runtime_dispatch_seal_recovers_after_in_process_monkeypatch(monkeypatch):
+    original_code = document_terms.HTMLParser.feed.__code__
+
+    def altered_feed(self, data):
+        return None
+
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            document_terms.HTMLParser.feed,
+            "__code__",
+            altered_feed.__code__,
+        )
+        with pytest.raises(ValueError, match="runtime dispatch mismatch"):
+            document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+    assert document_terms.HTMLParser.feed.__code__ is original_code
+    registration = document_terms._registered_parser(document_terms.PARSER_VERSION)
+    assert registration.version == document_terms.PARSER_VERSION
+
+
+def test_parser_runtime_dispatch_helper_rebinding_fails_closed(monkeypatch):
+    registration = document_terms._PARSER_REGISTRY[document_terms.PARSER_VERSION]
+    runtime = registration.semantic_bundle.runtime_dispatch
+    monkeypatch.setattr(
+        document_terms,
+        "_runtime_dispatch_closure",
+        lambda _roots: (
+            tuple(range(runtime.dependency_count)),
+            runtime.dependency_manifest_sha256,
+            runtime.implementation_sha256,
+        ),
+    )
+    with pytest.raises(ValueError, match="runtime closure binding changed"):
+        document_terms._registered_parser(document_terms.PARSER_VERSION)
+
+
+def test_cold_tracked_source_export_import_is_repeatable_without_bytecode(tmp_path):
+    export_root = tmp_path / "cold-export"
+    export_root.mkdir()
+    tracked = subprocess.check_output(
+        ["git", "ls-files", "-z", "--", "engine", "contracts"],
+        cwd=ROOT,
+    ).split(b"\0")
+    for encoded in tracked:
+        if not encoded:
+            continue
+        relative = Path(os.fsdecode(encoded))
+        source = ROOT / relative
+        if not source.exists():
+            continue
+        destination = export_root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+    command = [
+        sys.executable,
+        "-B",
+        "-c",
+        (
+            "import engine.capital_structure.document_terms as d; "
+            "import engine.capital_structure.instrument_candidates as c; "
+            "r=d._PARSER_REGISTRY[d.PARSER_VERSION]; "
+            "print(r.semantic_bundle.dependency_count, r.implementation_sha256, "
+            "d._AUTHORITY_POLICY.implementation_sha256, "
+            "c._CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256)"
+        ),
+    ]
+    environment = {
+        **os.environ,
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": str(export_root),
+    }
+    outputs = [
+        subprocess.check_output(
+            command, cwd=export_root, env=environment, text=True,
+        ).strip()
+        for _run in range(3)
+    ]
+    assert outputs == [outputs[0]] * 3
+    assert outputs[0] == (
+        "263 943165cdaf44bf43449e2624c4a68967ddefc277c7383a3131d36a1f39ac6c08 "
+        "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039 "
+        "5e2add814e04bc32d88ac1b198023d2301b37085ed690a1e0f53daa22e7f1e6b"
+    )
+    assert not list(export_root.rglob("__pycache__"))
 
 
 def test_released_authority_policy_has_independent_golden_closure():
@@ -401,12 +510,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 419
+    assert len(manifest) == 421
     assert manifest_sha256 == (
-        "a4932a0f734dd14d5b53538ee762d767ad6de77c7d7efcabe3b64beed639ad0f"
+        "de327cf44e5e00e5a43e36f0f26ddc4ba71d3f2ea662a93c303d9af3a46142fa"
     )
     assert implementation_sha256 == (
-        "809ba010f6ae55ab0bd69949c94e49f8be0d978d62041a53e2d125c4eaa41d54"
+        "e6a84ac46a7bab77b8521d3fc70caf508f058abef2a14cbace69c719fecab039"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -699,6 +808,49 @@ def test_all_direct_record_trust_paths_enforce_closed_schema_and_zero_authority(
     for call in calls:
         with pytest.raises(ValueError, match=error):
             call()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda row: row["filing"].update({"filing_date": "2026-02-30"}),
+        lambda row: row["filing"].update(
+            {"accepted_at": "2026-08-01 11:00:00"},
+        ),
+        lambda row: row["document"].update({"canonical_url": "not a uri"}),
+    ],
+)
+def test_direct_contract_uses_only_pinned_strict_format_checkers(mutation):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    row = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"][0]
+    mutation(row)
+    row["observation_id"] = observation_id_for(row)
+    with pytest.raises(ValueError, match="contract violation"):
+        document_terms.validate_document_term_contract(row)
+
+
+def test_ambient_optional_format_registration_does_not_pollute_release_golden(
+    monkeypatch,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    row = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"][0]
+
+    with monkeypatch.context() as patch:
+        patch.setitem(
+            FormatChecker.checkers,
+            "audit-environment-only",
+            (lambda _instance: True, ()),
+        )
+        document_terms.validate_document_term_contract(row)
+
+    policy = document_terms._validated_authority_policy()
+    assert policy is document_terms._AUTHORITY_POLICY
 
 
 def test_public_admission_uses_captured_schema_validator_not_provider_alias(monkeypatch):
