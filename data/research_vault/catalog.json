@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T09:02:19.487002+00:00",
-  "count": 583,
+  "generated_at": "2026-08-02T09:17:23.018758+00:00",
+  "count": 584,
   "institutions": [
     "Amova",
     "Apollo",
@@ -237,7 +237,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:19Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Q3 Revenue Beat & Guidance Raise**: Q3 revenue of ¥109.7 bn (vs.",
+        "¥105.7 bn consensus) and FY3/27 revenue guidance raised to ¥465.0–470.3 bn, driven by 23% GMV growth, loan balance expansion (+25% revolving), and improved adjusted EBITDA margin (+2 bp qoq).",
+        "**Margin Efficiency & Profitability**: Active user ratio at 56%, take rate improved to 1.64%, cost/income ratio declining to 57.1% (from 72.4%), and ROE rising to 25.9% (from 19.5%), signaling strong operational scalability.",
+        "**Target Price Upside & Rating Catalyst**: $31.50 price target (95.8% upside) based on FY3/27 EV/GP 9.9x, with revised gross profit estimates (+2% YoY) and adjusted EBITDA (+8% YoY) supporting BUY rating.",
+        "**Critical Risk Factor**: Goldman Sachs downgraded PAYP target from $31.50 to $29.00 (Apr-26) and rating from \"A\" to \"B\", with price decline ($16.09 → $18.84), indicating deteriorating technicals despite fundamentals."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -252,7 +258,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:17Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Portugal Windfall Tax Exposure**: Repsol faces 12.0% tax impact on 2026E group EBIT (vs.",
+        "Eni/Galp at 2.4%, BP at 2.2%), driven by higher refining margins; unique vulnerability due to mixed refining/renewables business model.",
+        "**EU Policy Framework Context**: Windfall tax mirrors EU solidarity contribution (Italy 50% 2023, Austria 40% 2022-23, Spain 1.2% 2023), with Iran-driven energy surge as catalyst; Repsol’s exposure is highest among EU energy firms.",
+        "**Valuation Mispricing**: TotalEnergies (TEF.PA) and OMV (OMV.VI) trade above Goldman Sachs targets (TEF.PA: 78.00 vs 79.09; OMV.VI: 50.00 vs 58.55), signaling bearish sentiment, while Shell (SHEL) and BP (BP) trade below targets (SHEL: 116.00 vs 90.51; BP: 52.00 vs 36.15), indicating undervaluation.",
+        "**Equinor Target Trend**: Equinor (EQNR.OL) target prices decline sequentially (320.00 → 280.00 → 270.00), reflecting sustained bearish outlook amid energy transition policies, contrasting with ENI’s target price upside (25.00 vs 23.62)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -267,7 +279,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:12Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Semaglutide API Cost Barrier**: Market price stabilized at $200-300/g (vs.",
+        "$150/g base case), remaining too high for widespread oral generic adoption despite cost trajectory.",
+        "**Orforglipron Patent Expiry Delay**: Generic launch delayed until Sept 2037 (Foundayo patent expiry), with IP enforcement and supply constraints preventing traditional genericization dynamics before 2037.",
+        "**Target Price Overvaluation Risk**: Novo Nordisk (NOVOB.CO) target ($822) vs.",
+        "closing ($434) and Eli Lilly (LLY) target ($1,283) vs."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -282,7 +300,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:10Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Q2 Results & Demand Strength**: Strong revenue ($1.06bn), EBITDA ($644mn), and EPS ($3.92) beat driven by IEEPA tariff refunds (gross margins ~57% vs.",
+        "47% in Q2 2025) and robust demand (US bookings $0.36/w, pipeline deals).",
+        "**Valuation & Profitability**: P/E and EV/EBITDA declining (13.2→7.3, 8.4→4.8) amid expanding EBIT margin (47.0%) and no net debt; operating cash flow $2.6B supports growth despite slowing revenue growth (24.1%→14.9%).",
+        "**Policy Tailwinds & Demand Resilience**: Section 232 investigation uncertainty offset by utility-scale demand signals; ASPs stable (India volumes $0.20/w, US $0.36/w) with 2GW active discussions despite tariff pressures.",
+        "**EBITDA Trajectory & Cash Flow**: Revised 2026-2028 EBITDA ($2.5bn/$3.2bn/$3.8bn) and EPS ($18.46/$23.78/$28.08) with $310 target (11.5x P/E); EBITDA growth accelerating (17.0%→24.6%) despite revenue slowdown."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -297,7 +321,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-01T22:13:08Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Valuation Compression**: P/E declining 54% (26.9x → 11.6x) despite EBIT margin expansion (8.3% → 10.7%), signaling market pricing in growth expectations amid persistent end-of-cycle risks.",
+        "**Revenue & EBITDA Deceleration**: Total revenue growth slowing from 7.7% to 6.8% (12/25-12/28E), EBITDA growth decelerating from 38.5% to 9.1%, posing near-term earnings risk despite FY26E outperformance.",
+        "**FY26E Outperformance vs.",
+        "FY27E Growth Concerns**: GSe projects 1.6% higher FY26E net revenue (€27.133bn vs.",
+        "€26.708bn) and 59bps higher cFX sales growth, but FY27E cFX sales growth drops to 6.7% (70bps below consensus)."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -452,6 +482,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wvdiazlwiaz-e605ab",
+      "title": "Global Economics Wrap Up July 31, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:34Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
