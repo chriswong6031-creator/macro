@@ -340,6 +340,18 @@ Full copy blocks (subline, chips, illustration recipe) live beside the sources i
   (c) a **price-free arm** joins the flagship test: same creative, single button
   `7-DAY FREE TRIAL + 50% OFF` — price-anchor vs offer-only is a testable question,
   not a taste ruling.
+- **R3.5 operator feedback (2026-08-02, on the square deck + backgrounds)** — (a) the
+  square's stack is the **landing-hero fan**: full, identical Prophet cards in a
+  horizontal pyramid, center card front and elevated, flanks heavily overlapped
+  (3-card and 5-card versions ship as an A/B pair); vertical jitter piles are "messy";
+  (b) **no `demo` tags, no dates on ad cards** (dates read stale), truncated names die
+  ("Starbucks Co…" → "Starbucks"); (c) background tape = a **normal left-to-right
+  upslope chart with ups and downs** — no arcs, no columns, no cleverness; (d) the
+  square's title/description/composition are **centered**; (e) the campaign
+  description on every ad is **"Know before the crowd. Daily stock signals powered by
+  institutional-grade market intelligence."** Craft note from the build: overlap cut
+  points must land at element boundaries — a price range sliced mid-number reads as
+  wrong data; outer cards bleed off-canvas instead (deck idiom).
 - **R2 internal review (2026-07-28, caught before the operator saw them)** — the four
   defect classes that recur, now checked on every file: (a) **bottom clip** — vertical
   budget blown, offer/micro cut (risk 4:5, rotation 4:5, founding 628); (b) **auto-wrap
