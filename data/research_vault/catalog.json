@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T22:43:46.907195+00:00",
-  "count": 623,
+  "generated_at": "2026-08-02T23:03:51.512464+00:00",
+  "count": 624,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1438,6 +1438,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-askhyzfj41i-8d3284",
+      "title": "Lending Pulse Loans Aren't the Problem, Funding Them Is",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:08:22Z",
+      "summary_points": [
+        "**Lending Sustainability & Broadening Demand**: Sustainable lending cycle confirmed with broad demand (money centers → regions), CRE strength (PNC, M&T), and capex drivers (AI, infrastructure, data centers) fueling growth.",
+        "**Funding Costs as Key Differentiator**: Intensifying deposit competition creates critical dispersion; low-cost DDA franchises vs.",
+        "high-cost/wholesale funding separates 2H26 winners from laggards.",
+        "**Borrowings Decelerating**: Borrowings growth decelerating (QTD -0.43% vs historical -0.66%) signals easing funding costs and potential stabilization in bank funding demand.",
+        "**Geopolitical & Rate Risk Pressures**: Elevated risks from Middle East conflict (FHN), volatile deposit campaigns near wholesale rates (ZION), and irrational pricing (COLB), with exposure to volatility noted (WFC)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
