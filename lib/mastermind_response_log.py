@@ -231,6 +231,7 @@ def build_row(
     user_email: str = "",
     is_guest: bool = False,
     latency_ms: int | None = None,
+    latency: dict | None = None,
     input_tokens: int = 0,
     output_tokens: int = 0,
     context: dict | None = None,
@@ -262,6 +263,10 @@ def build_row(
         "input_tokens": int(input_tokens or 0),
         "output_tokens": int(output_tokens or 0),
         "latency_ms": int(latency_ms) if latency_ms is not None else None,
+        # W5 Contract M: the breakdown behind latency_ms — {route, ttfv_ms, rounds[],
+        # synthesis_ms, total_ms}. Additive: absent on every pre-W5 row, and a reader
+        # that does not know the key is unaffected.
+        "latency": dict(latency) if isinstance(latency, dict) else None,
         "context": _clean_context(context),
         "citations": list(citations) if isinstance(citations, list) else [],
         "tools": [str(t) for t in tools] if isinstance(tools, list) else [],
