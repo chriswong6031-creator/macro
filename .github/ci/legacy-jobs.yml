@@ -3044,6 +3044,7 @@ jobs:
       - name: BioCatalyst worker and ClinicalTrials current-record contracts
         run: >
           python -m pytest
+          tests/test_biocatalyst_activation.py
           tests/test_biocatalyst_worker.py
           tests/test_clinicaltrials_biocatalyst.py -q
 

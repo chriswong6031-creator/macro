@@ -1,10 +1,11 @@
 """Hermetic regression tests for the dark-by-default BioCatalyst B1 worker."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import os
 from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from typing import Callable
@@ -13,6 +14,7 @@ import fcntl
 import pytest
 
 from engine.biocatalyst.publication import PublicationError, PublicGenerationPublisher
+from engine.biocatalyst.activation import activation_target_binding_sha256
 from engine.biocatalyst.storage import (
     DedicatedR2Config,
     StorageError,
@@ -488,20 +490,87 @@ def config(
     history_enabled: bool = False,
     prospective_enabled: bool = True,
 ) -> worker.WorkerConfig:
+    account_id = "a" * 32
+    access_key_id = "b" * 32
+    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
+    activation_id = f"r2_activation_{'c' * 24}"
+    binding = activation_target_binding_sha256(
+        account_id,
+        "biocatalyst-private",
+        endpoint,
+        "default",
+        access_key_id,
+    )
+    activation_root = tmp_path / "activation"
+    activation_root.mkdir(mode=0o750, parents=True, exist_ok=True)
+    activation_root.chmod(0o750)
+    flags = {
+        "source_collection": False,
+        "ledger_accrual": False,
+        "public_pointer_advanced": False,
+    }
+    gate = {
+        "contract_id": "biocatalyst_activation_gate.v1",
+        "schema_version": "1.0.0",
+        "activation_id": activation_id,
+        "state": "ready",
+        "issued_at": "2026-08-01T15:00:00Z",
+        "valid_until": "2026-08-02T15:00:00Z",
+        "preflight_id": f"r2_preflight_{'d' * 24}",
+        "preflight_payload_sha256": "e" * 64,
+        "target_binding_sha256": binding,
+        "receipt_key": f"biocatalyst/activation-preflight/r2_preflight_{'d' * 24}.json",
+        "receipt_sha256": "f" * 64,
+        "activation": flags,
+        "hash_scope": "canonical_payload_excluding_gate_payload_sha256",
+    }
+    gate["gate_payload_sha256"] = canonical_json_sha256(gate)
+    heartbeat = {
+        "contract_id": "biocatalyst_activation_heartbeat.v1",
+        "schema_version": "1.0.0",
+        "heartbeat_id": f"r2_heartbeat_{'1' * 24}",
+        "activation_id": activation_id,
+        "checked_at": "2026-08-01T15:59:00Z",
+        "valid_until": "2026-08-01T17:59:00Z",
+        "state": "ready",
+        "target_binding_sha256": binding,
+        "receipt_sha256": "f" * 64,
+        "activation": flags,
+        "hash_scope": "canonical_payload_excluding_heartbeat_payload_sha256",
+    }
+    heartbeat["heartbeat_payload_sha256"] = canonical_json_sha256(heartbeat)
+    gate_path = activation_root / "gate.json"
+    heartbeat_path = activation_root / "heartbeat.json"
+    if prospective_enabled:
+        for path, document in (
+            (gate_path, gate),
+            (heartbeat_path, heartbeat),
+        ):
+            if path.exists():
+                path.chmod(0o600)
+            path.write_bytes(canonical_json_bytes(document))
+            path.chmod(0o440)
+
     return worker.WorkerConfig(
         state_root=tmp_path / "state",
         public_root=tmp_path / "public",
         nct_ids=("NCT00000001",),
         user_agent="MastermindX test contact@example.com",
         r2=DedicatedR2Config(
-            endpoint="https://r2.example.test",
+            endpoint=endpoint,
             bucket="biocatalyst-private",
-            access_key_id="test-access",
+            access_key_id=access_key_id,
             secret_access_key="test-secret",
         ),
         history_enabled=history_enabled,
         prospective_enabled=prospective_enabled,
         r2_retention_confirmed=prospective_enabled,
+        activation_id=activation_id if prospective_enabled else None,
+        activation_gate_path=gate_path if prospective_enabled else None,
+        activation_heartbeat_path=heartbeat_path if prospective_enabled else None,
+        r2_account_id=account_id if prospective_enabled else None,
+        activation_owner_uid=os.getuid(),
+        activation_group_gid=os.getgid(),
     )
 
 
@@ -647,7 +716,7 @@ def test_disabling_prospective_after_v13_fails_before_collection_or_downgrade(tm
             "collector", calls["collector"] + 1
         ),
         store_factory=lambda _: calls.__setitem__("store", calls["store"] + 1),
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert result.status == "failed"
@@ -687,7 +756,7 @@ def test_prospective_second_changed_poll_emits_bounded_event_and_private_exact_d
             study_mutator=mutate,
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "success", second
@@ -759,7 +828,7 @@ def test_prospective_unchanged_same_scope_poll_counts_observation_without_event_
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "success", second
@@ -806,13 +875,24 @@ def test_prospective_changed_then_reverted_poll_emits_second_legitimate_event(tm
             study_mutator=complete,
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
     assert second.status == "success", second
     second_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
     assert second_projection is not None
     second_model = second_projection.prospective_models_by_nct["NCT00000001"]
     assert len(second_model["events"]) == 1
+
+    assert cfg.activation_heartbeat_path is not None
+    _rewrite_activation_document(
+        cfg.activation_heartbeat_path,
+        lambda document: document.update(
+            {
+                "checked_at": "2026-08-01T19:59:00Z",
+                "valid_until": "2026-08-01T21:59:00Z",
+            }
+        ),
+    )
 
     third = worker.run_once(
         cfg,
@@ -907,7 +987,7 @@ def test_prospective_same_scope_missing_prior_private_evidence_fails_closed(tmp_
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "failed"
@@ -945,7 +1025,7 @@ def test_prospective_same_scope_corrupt_prior_source_evidence_fails_closed(tmp_p
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "failed"
@@ -979,7 +1059,7 @@ def test_prospective_malformed_local_mirror_receipt_has_bounded_failure_code(tmp
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "failed"
@@ -1010,6 +1090,13 @@ def test_prospective_scope_change_starts_new_inactive_superseding_epoch_without_
         history_enabled=False,
         prospective_enabled=True,
         r2_retention_confirmed=True,
+        activation_id=first_cfg.activation_id,
+        activation_gate_path=first_cfg.activation_gate_path,
+        activation_heartbeat_path=first_cfg.activation_heartbeat_path,
+        r2_account_id=first_cfg.r2_account_id,
+        r2_jurisdiction=first_cfg.r2_jurisdiction,
+        activation_owner_uid=first_cfg.activation_owner_uid,
+        activation_group_gid=first_cfg.activation_group_gid,
     )
     second = worker.run_once(
         second_cfg,
@@ -1018,7 +1105,7 @@ def test_prospective_scope_change_starts_new_inactive_superseding_epoch_without_
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.status == "success", second
@@ -1312,7 +1399,7 @@ def test_prospective_rehashed_local_derived_tamper_cannot_cross_remote_mirror(
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
@@ -1346,7 +1433,7 @@ def test_prospective_missing_or_tampered_remote_mirror_fails_closed(tmp_path, ta
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.error_code == "PROSPECTIVE_PRIOR_MIRROR_INVALID"
@@ -1396,7 +1483,7 @@ def test_prospective_rehashed_public_model_must_equal_private_mirrored_model(tmp
             watermark_after="2026-08-01T17:00:05Z",
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
 
     assert second.error_code == "PROSPECTIVE_MODEL_BINDING_INVALID"
@@ -1425,7 +1512,7 @@ def test_prospective_rehashed_prior_diff_cannot_cross_remote_mirror(tmp_path):
             study_mutator=mutate,
         ),
         store_factory=lambda _: store,
-        now_fn=lambda: NOW + timedelta(hours=2),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
     )
     assert second.status == "success"
     private_root = cfg.state_root / "committed" / second.generation_id / "private"
@@ -1437,6 +1524,17 @@ def test_prospective_rehashed_prior_diff_cannot_cross_remote_mirror(tmp_path):
     )
     diff_path.write_bytes(canonical_json_bytes(diff) + b"\n")
     pointer_before = (cfg.public_root / "current.json").read_bytes()
+
+    assert cfg.activation_heartbeat_path is not None
+    _rewrite_activation_document(
+        cfg.activation_heartbeat_path,
+        lambda document: document.update(
+            {
+                "checked_at": "2026-08-01T19:59:00Z",
+                "valid_until": "2026-08-01T21:59:00Z",
+            }
+        ),
+    )
 
     third = worker.run_once(
         cfg,
@@ -1666,7 +1764,8 @@ def test_disabled_and_misconfigured_environment_never_calls_collector_or_store(t
     assert invalid.status == "misconfigured"
     assert calls == {"collector": 0, "store": 0}
     health = json.loads((public_root / "health.json").read_text(encoding="utf-8"))
-    assert health["state"] == "disabled"
+    assert health["state"] == "quarantined"
+    assert health["enabled"] is True
     assert health["last_error_code"] == "BIOCATALYST_RUNTIME_PATH_INVALID" or health["last_error_code"] == "BIOCATALYST_CANARY_NCTS_INVALID"
 
 
@@ -1712,22 +1811,31 @@ def test_history_environment_flag_is_default_off_and_rejects_nonbinary_input(tmp
     assert invalid.error_code == "BIOCATALYST_HISTORY_ENABLED_INVALID"
 
 
-def test_prospective_environment_requires_binary_opt_in_and_retention_attestation(
+def test_prospective_environment_requires_root_sealed_activation_not_legacy_attestation(
     tmp_path, monkeypatch
 ):
     state_root = tmp_path / "macro-biocatalyst" / "state"
     public_root = tmp_path / "macro-biocatalyst" / "public"
+    activation_root = tmp_path / "macro-biocatalyst" / "activation"
+    gate_path = activation_root / "gate.json"
+    heartbeat_path = activation_root / "heartbeat.json"
     monkeypatch.setattr(worker, "_SERVICE_STATE_ROOT", state_root)
     monkeypatch.setattr(worker, "_SERVICE_PUBLIC_ROOT", public_root)
+    monkeypatch.setattr(worker, "_SERVICE_ACTIVATION_GATE_PATH", gate_path)
+    monkeypatch.setattr(
+        worker, "_SERVICE_ACTIVATION_HEARTBEAT_PATH", heartbeat_path
+    )
+    account_id = "a" * 32
+    access_key_id = "b" * 32
     base = {
         "BIOCATALYST_ENABLED": "1",
         "BIOCATALYST_STATE_ROOT": str(state_root),
         "BIOCATALYST_PUBLIC_ROOT": str(public_root),
         "BIOCATALYST_CANARY_NCTS": "NCT00000001",
         "BIOCATALYST_USER_AGENT": "MastermindX test contact@example.com",
-        "BIOCATALYST_R2_ENDPOINT": "https://r2.example.test",
+        "BIOCATALYST_R2_ENDPOINT": f"https://{account_id}.r2.cloudflarestorage.com",
         "BIOCATALYST_R2_BUCKET": "biocatalyst-private",
-        "BIOCATALYST_R2_ACCESS_KEY_ID": "test-access",
+        "BIOCATALYST_R2_ACCESS_KEY_ID": access_key_id,
         "BIOCATALYST_R2_SECRET_ACCESS_KEY": "test-secret",
     }
 
@@ -1737,27 +1845,43 @@ def test_prospective_environment_requires_binary_opt_in_and_retention_attestatio
     assert defaulted.config.prospective_enabled is False
     assert defaulted.config.r2_retention_confirmed is False
 
-    unattested = worker.load_environment(
+    missing_gate = worker.load_environment(
         {**base, "BIOCATALYST_PROSPECTIVE_ENABLED": "1"}
     )
-    assert unattested.state == "invalid"
-    assert unattested.error_code == "BIOCATALYST_R2_RETENTION_NOT_CONFIRMED"
+    assert missing_gate.state == "invalid"
+    assert missing_gate.error_code == "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"
 
-    enabled = worker.load_environment(
+    legacy_attested = worker.load_environment(
         {
             **base,
             "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
             "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
         }
     )
+    assert legacy_attested.state == "invalid"
+    assert legacy_attested.error_code == "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"
+
+    enabled = worker.load_environment(
+        {
+            **base,
+            "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
+            "BIOCATALYST_R2_ACTIVATION_ID": f"r2_activation_{'c' * 24}",
+            "BIOCATALYST_R2_ACTIVATION_GATE_PATH": str(gate_path),
+            "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH": str(heartbeat_path),
+            "BIOCATALYST_R2_ACCOUNT_ID": account_id,
+            "BIOCATALYST_R2_JURISDICTION": "default",
+        }
+    )
     assert enabled.state == "enabled"
     assert enabled.config is not None
     assert enabled.config.prospective_enabled is True
-    assert enabled.config.r2_retention_confirmed is True
+    assert enabled.config.r2_retention_confirmed is False
+    assert enabled.config.activation_gate_path == gate_path
+    assert enabled.config.activation_heartbeat_path == heartbeat_path
 
     with pytest.raises(
         worker.WorkerConfigError,
-        match="BIOCATALYST_R2_RETENTION_NOT_CONFIRMED",
+        match="BIOCATALYST_R2_ACTIVATION_GATE_INVALID",
     ):
         worker.WorkerConfig(
             state_root=state_root,
@@ -1766,7 +1890,6 @@ def test_prospective_environment_requires_binary_opt_in_and_retention_attestatio
             user_agent="MastermindX test contact@example.com",
             r2=enabled.config.r2,
             prospective_enabled=True,
-            r2_retention_confirmed=False,
         )
 
     invalid_enabled = worker.load_environment(
@@ -1783,6 +1906,139 @@ def test_prospective_environment_requires_binary_opt_in_and_retention_attestatio
         invalid_attestation.error_code
         == "BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID"
     )
+
+    with pytest.raises(
+        worker.WorkerConfigError,
+        match="BIOCATALYST_R2_ACTIVATION_GATE_INVALID",
+    ):
+        replace(enabled.config, activation_owner_uid=True)
+    with pytest.raises(
+        worker.WorkerConfigError,
+        match="BIOCATALYST_R2_ACTIVATION_GATE_INVALID",
+    ):
+        replace(enabled.config, activation_group_gid=False)
+
+
+def _rewrite_activation_document(path: Path, mutate: Callable[[dict], None]) -> None:
+    document = json.loads(path.read_text(encoding="utf-8"))
+    mutate(document)
+    hash_field = (
+        "gate_payload_sha256"
+        if document.get("contract_id") == "biocatalyst_activation_gate.v1"
+        else "heartbeat_payload_sha256"
+    )
+    document.pop(hash_field, None)
+    document[hash_field] = canonical_json_sha256(document)
+    path.chmod(0o600)
+    path.write_bytes(canonical_json_bytes(document))
+    path.chmod(0o440)
+
+
+@pytest.mark.parametrize(
+    ("fault", "expected_code"),
+    (
+        ("missing_gate", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("missing_heartbeat", "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_INVALID"),
+        ("stale_heartbeat", "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_STALE"),
+        ("forged_binding", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("writable_gate", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("hardlinked_gate", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("symlinked_gate", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("writable_activation_root", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("wrong_activation_id", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+        ("wrong_owner_contract", "BIOCATALYST_R2_ACTIVATION_GATE_INVALID"),
+    ),
+)
+def test_activation_faults_quarantine_before_collection_or_store_and_preserve_pointer(
+    tmp_path: Path,
+    fault: str,
+    expected_code: str,
+):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    initial = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert initial.status == "success"
+    pointer_before = (cfg.public_root / "current.json").read_bytes()
+
+    assert cfg.activation_gate_path is not None
+    assert cfg.activation_heartbeat_path is not None
+    if fault == "missing_gate":
+        cfg.activation_gate_path.unlink()
+    elif fault == "missing_heartbeat":
+        cfg.activation_heartbeat_path.unlink()
+    elif fault == "stale_heartbeat":
+        _rewrite_activation_document(
+            cfg.activation_heartbeat_path,
+            lambda document: document.update(
+                {
+                    "checked_at": "2026-08-01T15:58:00Z",
+                    "valid_until": "2026-08-01T15:59:00Z",
+                }
+            ),
+        )
+    elif fault == "forged_binding":
+        _rewrite_activation_document(
+            cfg.activation_gate_path,
+            lambda document: document.update({"target_binding_sha256": "0" * 64}),
+        )
+        _rewrite_activation_document(
+            cfg.activation_heartbeat_path,
+            lambda document: document.update({"target_binding_sha256": "0" * 64}),
+        )
+    elif fault == "writable_gate":
+        cfg.activation_gate_path.chmod(0o640)
+    elif fault == "hardlinked_gate":
+        os.link(cfg.activation_gate_path, tmp_path / "activation-gate-alias.json")
+    elif fault == "symlinked_gate":
+        protected_gate = tmp_path / "protected-activation-gate.json"
+        cfg.activation_gate_path.rename(protected_gate)
+        cfg.activation_gate_path.symlink_to(protected_gate)
+    elif fault == "writable_activation_root":
+        cfg.activation_gate_path.parent.chmod(0o770)
+    elif fault == "wrong_activation_id":
+        forged_id = f"r2_activation_{'2' * 24}"
+        _rewrite_activation_document(
+            cfg.activation_gate_path,
+            lambda document: document.update({"activation_id": forged_id}),
+        )
+        _rewrite_activation_document(
+            cfg.activation_heartbeat_path,
+            lambda document: document.update({"activation_id": forged_id}),
+        )
+    elif fault == "wrong_owner_contract":
+        cfg = replace(cfg, activation_owner_uid=os.getuid() + 10000)
+    else:  # pragma: no cover - parametrization guard
+        raise AssertionError(fault)
+
+    collector = FakeCollectorFactory()
+    store_calls = 0
+
+    def forbidden_store(_: DedicatedR2Config) -> MemoryStore:
+        nonlocal store_calls
+        store_calls += 1
+        return store
+
+    result = worker.run_once(
+        cfg,
+        collector_factory=collector,
+        store_factory=forbidden_store,
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
+    )
+
+    assert result.status == "failed"
+    assert result.error_code == expected_code
+    assert collector.calls == []
+    assert store_calls == 0
+    assert (cfg.public_root / "current.json").read_bytes() == pointer_before
+    assert not list((cfg.state_root / "staging").iterdir())
+    health = json.loads((cfg.public_root / "health.json").read_text(encoding="utf-8"))
+    assert health["state"] == "quarantined"
+    assert health["last_error_code"] == expected_code
 
 
 def test_nonblocking_lock_coalesces_a_second_timer_tick(tmp_path):
