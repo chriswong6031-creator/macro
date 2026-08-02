@@ -10,18 +10,19 @@
   var observer = null;
   var applying = false;
 
-  // `insider` is the WIRE value; `essential` is the display rename's alias of it
-  // (lib/tiers.py is the server's copy of the same table). Named here, not just resolved
-  // in setTier(), because a far-future-cached copy of this file must keep a paying
-  // visitor OUT of the 3-row free cap if /api/me starts answering with the new value.
-  var TIER_ALIAS = { essential: "insider" };
+  // `essential` is the WIRE value; `insider` is what the estate shipped before the
+  // rename (lib/tiers.py is the server's copy of the same table). Named here, not just
+  // resolved in setTier(), because a far-future-cached copy of this file must keep a
+  // paying visitor OUT of the 3-row free cap when /api/me answers with either value —
+  // rows written before the flip still say `insider` and are never back-filled.
+  var TIER_ALIAS = { insider: "essential" };
   function normTier(tier) {
     var t = String(tier == null ? "" : tier).trim().toLowerCase();
     return TIER_ALIAS[t] || t;
   }
   function isPaid(tier) {
     var t = normTier(tier);
-    return t === "insider" || t === "pro" || t === "unlimited";
+    return t === "essential" || t === "pro" || t === "unlimited";
   }
   function capFor(tier) { return isPaid(tier) ? Infinity : (tier === "free" ? 3 : 1); }
   function hasSessionCookie() {
@@ -58,7 +59,7 @@
   }
   function openUpgrade() {
     if (window.MMOnboard && typeof window.MMOnboard.open === "function") {
-      window.MMOnboard.open("upgrade", { plan: "insider", period: "annual" });
+      window.MMOnboard.open("upgrade", { plan: "essential", period: "annual" });
       return;
     }
     location.href = "/plans.html";

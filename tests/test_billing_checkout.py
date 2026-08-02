@@ -63,6 +63,6 @@ def test_regular_checkout_does_not_expose_manual_promotion_code_entry(monkeypatc
 
     args = fake.calls["create"]
     assert args["line_items"] == [
-        {"price": "price_insider_2026_v2_annual", "quantity": 1}]
+        {"price": "price_essential_2026_v2_annual", "quantity": 1}]
     assert "allow_promotion_codes" not in args
     assert "discounts" not in args

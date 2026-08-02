@@ -2436,6 +2436,13 @@ on:
       # needs an entry.
       # billing-offers
       - "tests/test_billing_offers.py"
+      # ── Stripe object bootstrap (tier rename, Phase 2) ──────────────────────
+      # scripts/stripe_bootstrap.py reaches this workflow by NO other path, and
+      # its renamed-product adoption is the step that decides whether a live
+      # Product is reused or duplicated. Both halves listed by name (#3509).
+      - "scripts/stripe_bootstrap.py"
+      - "tests/test_stripe_bootstrap_offers.py"
+      - "tests/test_stripe_bootstrap_products.py"
   workflow_dispatch:
 
 permissions:

@@ -349,7 +349,7 @@
     .mx thead th small { font-size:9.5px; line-height:1.25; }
     .mx th:nth-child(n+2), .mx td:nth-child(n+2) { display:none; }
     .matrix-card[data-plan="free"]    .mx th:nth-child(2), .matrix-card[data-plan="free"]    .mx td:nth-child(2),
-    .matrix-card[data-plan="insider"] .mx th:nth-child(3), .matrix-card[data-plan="insider"] .mx td:nth-child(3),
+    .matrix-card[data-plan="essential"] .mx th:nth-child(3), .matrix-card[data-plan="essential"] .mx td:nth-child(3),
     .matrix-card[data-plan="pro"]     .mx th:nth-child(4), .matrix-card[data-plan="pro"]     .mx td:nth-child(4) { display:table-cell; width:32%; }
     .mx .grp td { display:table-cell !important; width:auto !important; padding:10px 12px; }
     .mx .ok { font-size:16px; }
@@ -427,19 +427,19 @@
         <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
       </section>
 
-      {# ---- ESSENTIAL (internal key: insider) ---- #}
+      {# ---- ESSENTIAL (catalog key + entitlement tier: essential) ---- #}
       <section class="tier" aria-label="Essential plan"
-               data-tier="insider" data-m-cents="{{ insider.monthly_cents }}" data-a-cents="{{ insider.annual_cents }}"
-               data-m-pm="{{ insider.monthly_pm }}" data-a-pm="{{ insider.annual_pm }}"
-               data-a-total="{{ insider.annual_total }}" data-save="{{ insider.save_pct }}">
-        <h3>{{ insider.name }}</h3>
+               data-tier="essential" data-m-cents="{{ essential.monthly_cents }}" data-a-cents="{{ essential.annual_cents }}"
+               data-m-pm="{{ essential.monthly_pm }}" data-a-pm="{{ essential.annual_pm }}"
+               data-a-total="{{ essential.annual_total }}" data-save="{{ essential.save_pct }}">
+        <h3>{{ essential.name }}</h3>
         <p class="who">{{ t('The whole desk — every market, every heatmap, all the research.', '完整桌面——所有市场、所有热力图、全部研究。') }}</p>
         <div class="price">
-          <span class="cur">$</span><span class="amt" data-price>{{ insider.annual_pm }}</span>
+          <span class="cur">$</span><span class="amt" data-price>{{ essential.annual_pm }}</span>
           <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <p class="bill" data-billed><span class="l-en">Billed ${{ insider.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ insider.annual_total }}。</span></p>
-        <span class="save-badge" data-badge><span class="l-en">SAVE {{ insider.save_pct }}% VS MONTHLY</span><span class="l-zh">比月付省 {{ insider.save_pct }}%</span></span>
+        <p class="bill" data-billed><span class="l-en">Billed ${{ essential.annual_total }} a year.</span><span class="l-zh">每年结算 ${{ essential.annual_total }}。</span></p>
+        <span class="save-badge" data-badge><span class="l-en">SAVE {{ essential.save_pct }}% VS MONTHLY</span><span class="l-zh">比月付省 {{ essential.save_pct }}%</span></span>
         <ul class="tf">
           <li><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</li>
           <li><b>{{ t('Filing Forensics', '财报取证') }}</b> — {{ t('broad-universe review prompts, transparent calculations &amp; SEC source links', '广泛市场审阅提示、透明计算过程与 SEC 来源链接') }}</li>
@@ -448,10 +448,10 @@
           <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&amp;A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
           <li>{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></li>
-          <li><b>{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('Trend Engine, market structure &amp; oscillator signals', '趋势引擎、市场结构与振荡器信号') }}</li>
+          <li><b>{{ terminal_indicators.access.essential }} / {{ terminal_indicators.advanced_total }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('Trend Engine, market structure &amp; oscillator signals', '趋势引擎、市场结构与振荡器信号') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
-        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt">{{ t('Subscribe now', '立即订阅') }}</span></button>
+        <button class="btn primary" data-act="subscribe" data-tier="essential" type="button"><span class="btxt">{{ t('Subscribe now', '立即订阅') }}</span></button>
         <p class="cta-note"><span class="l-en">Billed today · cancel anytime.</span><span class="l-zh">今日扣款 · 随时可取消。</span></p>
       </section>
 
@@ -471,7 +471,7 @@
           <span class="was" data-offer-rack>${{ founding.regular_annual_pm }}</span><span class="cur">$</span><span class="amt" data-price>{{ founding.annual_pm }}</span>
           <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
         </div>
-        <p class="bill" data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year — the {{ insider.name }} annual price, for the {{ pro.name }} desk.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}——以 {{ insider.name }} 年付价格解锁 {{ pro.name }} 台席。</span></p>
+        <p class="bill" data-billed><span class="l-en">Billed ${{ founding.annual_total }} a year — the {{ essential.name }} annual price, for the {{ pro.name }} desk.</span><span class="l-zh">每年结算 ${{ founding.annual_total }}——以 {{ essential.name }} 年付价格解锁 {{ pro.name }} 台席。</span></p>
         <span class="save-badge" data-badge><span class="l-en">SAVE ${{ founding.discount_amount }} A YEAR</span><span class="l-zh">每年省 ${{ founding.discount_amount }}</span></span>
         <div class="founding" data-offer-meter>
           <div class="founding-line"><b>{{ t('FOUNDING MEMBERSHIPS', '创始名额') }}</b>
@@ -502,12 +502,12 @@
     {#- Rows carry THIS page's numbers, which are the ones config/brain.yml actually
         enforces at the gateway. The landing's matrix quotes a different AI allowance;
         the checkout surface must state what the account will really get. -#}
-    <div class="matrix-card" data-plan="insider">
+    <div class="matrix-card" data-plan="essential">
       <div class="mx-mobile-head">
         <p class="mx-mobile-label">{{ t('Choose a plan to compare every feature', '选择方案查看每项功能') }}</p>
         <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
           <button type="button" data-mx-plan="free" aria-pressed="false"><span>{{ t('Free', '免费') }}</span><small>$0</small></button>
-          <button type="button" data-mx-plan="insider" aria-pressed="true"><span>{{ insider.name }}</span><small data-mtx-mobile-price="insider">${{ insider.annual_pm }}/{{ t('mo', '月') }}</small></button>
+          <button type="button" data-mx-plan="essential" aria-pressed="true"><span>{{ essential.name }}</span><small data-mtx-mobile-price="essential">${{ essential.annual_pm }}/{{ t('mo', '月') }}</small></button>
           <button type="button" data-mx-plan="pro" aria-pressed="false"><span>{{ pro.name }}</span><small data-mtx-mobile-price="pro">${{ founding.annual_pm }}/{{ t('mo', '月') }}</small></button>
         </div>
         <p class="mx-mobile-hint">{{ t('Tap any feature marked ⓘ for a plain-language description.', '点击带 ⓘ 的功能查看说明。') }}</p>
@@ -517,7 +517,7 @@
           <tr>
             <th>{{ t('Compare every feature', '逐项对比') }}</th>
             <th>{{ t('Free', '免费') }}<small>$0</small></th>
-            <th>{{ insider.name }}<small data-mtx-price="insider">${{ insider.annual_pm }}/{{ t('mo', '月') }} {{ t('annual', '年付') }}</small></th>
+            <th>{{ essential.name }}<small data-mtx-price="essential">${{ essential.annual_pm }}/{{ t('mo', '月') }} {{ t('annual', '年付') }}</small></th>
             <th>{{ pro.name }}<small data-mtx-price="pro">${{ founding.annual_pm }}/{{ t('mo', '月') }} {{ t('annual', '年付') }}</small></th>
           </tr>
         </thead>
@@ -580,7 +580,7 @@
             <td class="val">{{ t('Unlimited', '无限量') }}</td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Deep Opus chat', '深度 Opus 对话') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox">{{ t('The heavyweight research lane — long answers with receipts.', '重量级研究通道——附出处的长篇分析。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Deep Opus chat', '深度 Opus 对话') }}</span><span class="mchip">{{ essential.name }}</span><span class="tipbox">{{ t('The heavyweight research lane — long answers with receipts.', '重量级研究通道——附出处的长篇分析。') }}</span></td>
             <td class="no">✗</td>
             <td class="val">10<small>/ {{ t('mo', '月') }}</small></td>
             <td class="val">150<small>/ {{ t('mo', '月') }}</small></td>
@@ -596,11 +596,11 @@
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Advanced indicator modules', '高级指标模块') }}</span><span class="tipbox up">{{ t('Every plan includes 21 core indicators. Free also includes Candle Painter; Essential unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.', '所有方案均含 21 个核心指标。Free 另含 K 线着色器；Essential 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。') }}</span></td>
             <td class="val">{{ terminal_indicators.access.free }} / {{ terminal_indicators.advanced_total }}<small>{{ t('Candle Painter', 'K 线着色器') }}</small></td>
-            <td class="val">{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }}<small>{{ t('core trend + signals', '核心趋势 + 信号') }}</small></td>
+            <td class="val">{{ terminal_indicators.access.essential }} / {{ terminal_indicators.advanced_total }}<small>{{ t('core trend + signals', '核心趋势 + 信号') }}</small></td>
             <td class="val">{{ t('All', '全部') }} {{ terminal_indicators.access.pro }}<small>{{ t('5 complete suites', '5 套完整工具组') }}</small></td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included on the Pro trial too.', '终端内的实时期权数据——Pro 试用期同样包含。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ essential.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included on the Pro trial too.', '终端内的实时期权数据——Pro 试用期同样包含。') }}</span></td>
             <td class="no">✗</td>
             <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>
             <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>

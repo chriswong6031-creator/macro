@@ -252,20 +252,22 @@ def test_upgrade_interval_override_switches_cadence(monkeypatch):
 def test_upgrade_insider_monthly_to_insider_annual(monkeypatch):
     # Same-tier interval bump (insider·m -> insider·a) — the pre-matrix endpoint blocked this as a
     # same-tier no-op; the matrix allows it (annual outranks monthly). tier defaults to 'pro' back-
-    # compat, so this lane MUST pass tier='insider' explicitly.
+    # compat, so this lane MUST pass the tier explicitly. It passes the PRE-RENAME spelling
+    # on purpose: a far-future-cached onboard.js keeps sending it, and the request must
+    # still resolve to the current price.
     fake = _FakeStripe(subs=[_sub("active", "insider_monthly")])
     monkeypatch.setattr(billing, "_stripe", lambda: fake)
     monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
     monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
     monkeypatch.setattr(billing, "_compute_entitlement",
-                        lambda cid: {"tier": "insider", "status": "active",
+                        lambda cid: {"tier": "essential", "status": "active",
                                      "current_period_end": None, "features": []})
     monkeypatch.setattr(billing, "_upsert_entitlement", lambda *a: None)
     monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
 
     out = billing.upgrade(billing.UpgradeRequest(tier="insider", interval="annual"), user=USER)
-    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_insider_2026_v2_annual"}]
-    assert out["tier"] == "insider" and out["interval"] == "annual"
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_essential_2026_v2_annual"}]
+    assert out["tier"] == "essential" and out["interval"] == "annual"
 
 
 def test_upgrade_insider_monthly_to_pro_annual(monkeypatch):

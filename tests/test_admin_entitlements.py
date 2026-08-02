@@ -82,7 +82,7 @@ def wired(monkeypatch):
     state = {
         "pg_rows": [],                                   # served for GET user_entitlements?...
         "upserts": [],                                   # captured POST bodies
-        "computed": {"tier": "insider", "features": ["site_full", "terminal_live_options"],
+        "computed": {"tier": "essential", "features": ["site_full", "terminal_live_options"],
                      "status": "trialing", "current_period_end": "2026-08-01T00:00:00+00:00"},
         "invalidated": [],
     }
@@ -169,7 +169,7 @@ def test_list_users_filters_and_search_are_sanitized(monkeypatch):
 
     entitlements.list_users(tier="pro", status="trialing", search="o'brien", page=2, page_size=25)
     rows_sql = _rows_query(sqls)
-    assert "coalesce(e.tier,'free') = 'pro'" in rows_sql and "coalesce(e.status,'none') = 'trialing'" in rows_sql
+    assert "coalesce(e.tier,'free') in ('pro')" in rows_sql and "coalesce(e.status,'none') = 'trialing'" in rows_sql
     # single quote doubled (no injection), wrapped in ILIKE against email + name
     assert "o''brien" in rows_sql and "ilike" in rows_sql
     # OFFSET reflects page 2 × page_size 25
@@ -229,7 +229,7 @@ def test_comp_over_active_stripe_blocked_without_force(wired):
     _set_row(state, stripe_customer_id="cus_live", tier="pro", status="active")
     fake.Subscription._subs = [_FakeSub("sub_live", "active")]
     payload, code = entitlements.act({"user_id": UID, "action": "change_tier",
-                                      "params": {"tier": "insider"}}, operator="operator")
+                                      "params": {"tier": "essential"}}, operator="operator")
     assert code == 409 and payload["ok"] is False and payload["code"] == "stripe_active"
     assert "sub_live" in payload["live_subscriptions"]
     # NOTHING was written and the sub was NOT cancelled
@@ -241,7 +241,7 @@ def test_force_without_cancel_still_blocked(wired):
     _set_row(state, stripe_customer_id="cus_live", tier="pro", status="active")
     fake.Subscription._subs = [_FakeSub("sub_live", "active")]
     payload, code = entitlements.act({"user_id": UID, "action": "change_tier",
-                                      "params": {"tier": "insider", "force": True}}, operator="operator")
+                                      "params": {"tier": "essential", "force": True}}, operator="operator")
     assert code == 409 and payload["code"] == "force_needs_cancel"
     assert state["upserts"] == [] and fake.Subscription.canceled == []
 
@@ -252,12 +252,12 @@ def test_force_comp_cancels_stripe_then_writes(wired):
     fake.Subscription._subs = [_FakeSub("sub_live", "active")]
     payload, code = entitlements.act(
         {"user_id": UID, "action": "change_tier",
-         "params": {"tier": "insider", "force": True, "cancel_stripe": True}}, operator="operator")
+         "params": {"tier": "essential", "force": True, "cancel_stripe": True}}, operator="operator")
     assert code == 200 and payload["ok"] is True
     # the live sub was cancelled FIRST, then the comp written (durable vs. reconciler)
     assert fake.Subscription.canceled == ["sub_live"]
     row = state["upserts"][-1]
-    assert row["tier"] == "insider" and row["source"] == "comp" and row["status"] == "active"
+    assert row["tier"] == "essential" and row["source"] == "comp" and row["status"] == "active"
 
 
 def test_comp_on_non_stripe_user_needs_no_force(wired):
@@ -278,10 +278,10 @@ def test_grant_monthly_pass_sets_30d_window(wired):
     state, _ = wired
     _set_row(state, stripe_customer_id=None)
     payload, code = entitlements.act({"user_id": UID, "action": "grant_pass",
-                                      "params": {"kind": "monthly", "tier": "insider"}}, operator="operator")
+                                      "params": {"kind": "monthly", "tier": "essential"}}, operator="operator")
     assert code == 200
     row = state["upserts"][-1]
-    assert row["tier"] == "insider" and row["status"] == "active" and row["source"] == "comp"
+    assert row["tier"] == "essential" and row["status"] == "active" and row["source"] == "comp"
     assert row["current_period_end"] is not None   # a real end date ~+30d
     assert row["current_period_end"][:4] in ("2026", "2027")
 
@@ -345,7 +345,7 @@ def test_remove_comp_over_live_stripe_blocked(wired):
 # ===========================================================================
 def test_extend_trial_on_real_stripe_sub_modifies_not_comps(wired):
     state, fake = wired
-    _set_row(state, stripe_customer_id="cus_live", tier="insider", status="trialing")
+    _set_row(state, stripe_customer_id="cus_live", tier="essential", status="trialing")
     fake.Subscription._subs = [_FakeSub("sub_trial", "trialing")]
     payload, code = entitlements.act({"user_id": UID, "action": "extend_trial",
                                       "params": {"days": 14}}, operator="operator")
@@ -362,7 +362,7 @@ def test_extend_trial_on_real_stripe_sub_modifies_not_comps(wired):
 
 def test_extend_trial_without_stripe_sub_writes_trialing_comp(wired):
     state, fake = wired
-    _set_row(state, stripe_customer_id=None, tier="insider", status="none")
+    _set_row(state, stripe_customer_id=None, tier="essential", status="none")
     fake.Subscription._subs = []
     payload, code = entitlements.act({"user_id": UID, "action": "extend_trial",
                                       "params": {"days": 10}}, operator="operator")
@@ -487,20 +487,21 @@ def test_roster_base_is_all_users(monkeypatch):
 
 
 # ===========================================================================
-# The 'essential' alias (rename migration, Phase 1)
+# The 'insider' alias (rename migration, Phase 2 — the direction REVERSED)
 #
 # The console is a WRITE plane, so tolerance here is normalise-then-validate, never a
 # widened tuple: whatever survives the check is the literal string _write_comp puts into
-# user_entitlements.tier, and Phase 1 must never EMIT 'essential'.
+# user_entitlements.tier, and an operator action must never write the RETIRED value back
+# onto a row the catalog has already moved.
 # ===========================================================================
 def test_change_tier_accepts_the_alias_and_writes_the_wire_value(wired):
     state, _ = wired
     _set_row(state, stripe_customer_id=None, tier="free", status="none")
     payload, code = entitlements.act({"user_id": UID, "action": "change_tier",
-                                      "params": {"tier": "essential"}}, operator="operator")
+                                      "params": {"tier": "insider"}}, operator="operator")
     assert code == 200 and payload["ok"] is True
     row = state["upserts"][-1]
-    assert row["tier"] == "insider", "an alias must never reach the entitlement row"
+    assert row["tier"] == "essential", "an alias must never reach the entitlement row"
     assert row["status"] == "active" and row["source"] == "comp"
     # features resolve off the CANONICAL tier, so the alias buys the same access
     assert "site_full" in row["features"] and "terminal_live_options" in row["features"]
@@ -517,17 +518,17 @@ def test_change_tier_alias_row_is_identical_to_the_canonical_one(wired):
         return {k: v for k, v in state["upserts"][-1].items() if k != "updated_at"}
 
     state, _ = wired
-    assert _write("essential") == _write("insider")
+    assert _write("insider") == _write("essential")
 
 
 def test_grant_pass_accepts_the_alias_and_writes_the_wire_value(wired):
     state, _ = wired
     _set_row(state, stripe_customer_id=None)
     _payload, code = entitlements.act({"user_id": UID, "action": "grant_pass",
-                                       "params": {"kind": "monthly", "tier": "ESSENTIAL "}},
+                                       "params": {"kind": "monthly", "tier": "INSIDER "}},
                                       operator="operator")
     assert code == 200
-    assert state["upserts"][-1]["tier"] == "insider"
+    assert state["upserts"][-1]["tier"] == "essential"
 
 
 def test_a_still_unknown_tier_is_still_rejected(wired):
@@ -543,8 +544,9 @@ def test_a_still_unknown_tier_is_still_rejected(wired):
 
 
 def test_roster_filter_maps_the_alias_onto_the_stored_value(monkeypatch):
-    """?tier=essential must find the rows that are stored as 'insider' — and the filter
-    token stays allow-listed, so the SQL interpolation is unchanged."""
+    """?tier=insider must resolve to the canonical filter — and ?tier=essential must ALSO
+    match the pre-rename rows, which are never back-filled. Tokens stay allow-listed, so
+    the SQL interpolation surface is unchanged."""
     sqls: list[str] = []
 
     def _query(sql):
@@ -556,14 +558,24 @@ def test_roster_filter_maps_the_alias_onto_the_stored_value(monkeypatch):
     monkeypatch.setattr(users, "status", lambda: {"configured": True})
     monkeypatch.setattr(users, "_query", _query)
 
-    entitlements.list_users(tier="essential")
+    entitlements.list_users(tier="insider")
     rows_sql = _rows_query(sqls)
-    assert "coalesce(e.tier,'free') = 'insider'" in rows_sql
-    assert "essential" not in rows_sql
+    assert "coalesce(e.tier,'free') in ('essential','insider')" in rows_sql, (
+        "the roster must match BOTH spellings or a pre-rename paying member vanishes "
+        "from the operator's view")
+
+    sqls.clear()
+    entitlements.list_users(tier="essential")
+    assert "coalesce(e.tier,'free') in ('essential','insider')" in _rows_query(sqls)
+
+    sqls.clear()
+    entitlements.list_users(tier="pro")
+    assert "coalesce(e.tier,'free') in ('pro')" in _rows_query(sqls), (
+        "an un-renamed tier must not pick up a stray alias")
 
 
 def test_the_grant_tuples_stay_canonical():
     """Named, so a future 'just add essential to the tuple' edit trips this instead of
     quietly re-arming the write path it was meant to protect."""
-    assert entitlements._GRANT_TIERS == ("insider", "pro")
-    assert entitlements._ALL_TIERS == ("free", "insider", "pro")
+    assert entitlements._GRANT_TIERS == ("essential", "pro")
+    assert entitlements._ALL_TIERS == ("free", "essential", "pro")

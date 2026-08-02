@@ -45,8 +45,18 @@ EXPECTED_ICON_FAMILIES = {
 # than staying in the emitted-minus set below (unlike allocation/bitcoin, which
 # are used elsewhere, just not in THIS rendered menu). Net count verified against
 # the real re-rendered template, not hand-counted: 61 -> 59.
+#
+# Sector Intelligence consolidation (2026-08, nav 4 -> 2): the Thematic Baskets,
+# Subsector Rotation and Confluence entries fold into the merged Sector
+# Intelligence page, and two merged entries replace them — 5 submenu-icon spans
+# removed, 2 added, net -3, so 59 -> 56. Counted off the diff of the real
+# _navlinks.html.j2, not by hand. EXPECTED_EMITTED_ICON_FAMILIES is unchanged on
+# purpose: submenu-icon-baskets / -rotation / -confluence each still have at
+# least one other user in this menu, so no FAMILY leaves the set — only the
+# per-span count moves. If a family ever does drop out, the families assertion
+# above fails first and this comment is the place to say why.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-EXPECTED_EMITTED_ICON_COUNT = 59
+EXPECTED_EMITTED_ICON_COUNT = 56
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
