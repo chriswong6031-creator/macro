@@ -405,6 +405,19 @@ def test_committed_wire_is_redacted_and_uses_dedicated_sitemap_only() -> None:
                 assert "utm_source=earnings_wire" in markup
 
 
+def test_wire_filter_hidden_state_wins_over_card_layout() -> None:
+    """Filtering must hide cards visually, not just update the result count."""
+    repo = Path(__file__).resolve().parents[1]
+    css = (repo / "templates" / "earnings_wire" / "earnings-wire.css").read_text(encoding="utf-8")
+    committed_css = (repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.css").read_text(
+        encoding="utf-8"
+    )
+    script = (repo / "templates" / "earnings_wire" / "earnings-wire.js").read_text(encoding="utf-8")
+    assert "card.hidden=!match" in script
+    assert ".ew-card[hidden]{display:none!important}" in css
+    assert ".ew-card[hidden]{display:none!important}" in committed_css
+
+
 def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None:
     repo = Path(__file__).resolve().parents[1]
     workflow = (repo / ".github" / "workflows" / "earnings-public-wire.yml").read_text(encoding="utf-8")
