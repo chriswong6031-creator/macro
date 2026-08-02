@@ -657,6 +657,13 @@ jobs:
           tests/test_fundamental_forensics_disclosure_projection.py
           tests/test_fundamental_forensics_source_sync.py
           tests/test_fundamental_forensics_wave2_operator.py
+          tests/test_fundamental_forensics_companyfacts.py
+          tests/test_fundamental_forensics_companyfacts_ledger.py
+          tests/test_fundamental_forensics_metric_registry.py
+          tests/test_fundamental_forensics_raw_ledger.py
+          tests/test_fundamental_forensics_periods.py
+          tests/test_fundamental_forensics_query.py
+          tests/test_fundamental_forensics_query_snapshots.py
           tests/test_sec_document_spine.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
@@ -2913,20 +2920,13 @@ jobs:
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
-  biocatalyst:
+  biocatalyst-serving:
     if: ${{ false }}
-    # BioCatalyst B1/B1b/B2: verified ClinicalTrials.gov ingestion, immutable
-    # current-generation publication, normalized trial source-fact projection,
-    # exact Record History replay, deployment isolation, and the authenticated workbench API. This deliberately
-    # exercises the security adversarial cases alongside the normal worker path:
-    # a rehashed promotion candidate must still replay against current private
-    # source-state evidence, never merely look structurally valid.
-    #
-    # The direct wildcard keeps every test_biocatalyst_*.py suite wired at birth
-    # without relying on a brittle manually-maintained list; shell expansion is
-    # deliberately bounded to the repository's top-level BioCatalyst test family.
-    # app/requirements.txt is an owned trigger above, while the deploy regression
-    # suite pins the serving-tier jsonschema/referencing closure used at import.
+    # BioCatalyst's authenticated workbench and deployment-isolation boundary.
+    # This is an intentionally bounded command, not part of a single aggregate
+    # B1/B1b/B2 command: the legacy pack runner applies timeout-minutes per
+    # logical job.  Eight minutes is generous versus the serial profile while
+    # still naming the responsible contract if this lane regresses.
     timeout-minutes: 8
     runs-on: ubuntu-latest
     steps:
@@ -2936,14 +2936,111 @@ jobs:
           python-version: "3.12"
       - name: install BioCatalyst test deps
         run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
-      - name: BioCatalyst evidence, projection, API, UI, and isolation contracts
+      - name: BioCatalyst serving, UI, and deployment-isolation contracts
         run: >
           python -m pytest
-          tests/test_biocatalyst_*.py
-          tests/test_clinicaltrials_biocatalyst.py
-          tests/test_clinicaltrials_history.py
+          tests/test_biocatalyst_api.py
+          tests/test_biocatalyst_deploy.py
+          tests/test_biocatalyst_page.py -q
+
+  biocatalyst-evidence:
+    if: ${{ false }}
+    # Security, source registry, immutable storage and normalized trial facts.
+    # Kept separate from worker/history replay so a slow adversarial replay has
+    # a bounded, attributable failure rather than consuming the whole suite.
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst evidence, projection, and security contracts
+        run: >
+          python -m pytest
+          tests/test_biocatalyst_security.py
+          tests/test_biocatalyst_source_registry.py
+          tests/test_biocatalyst_storage.py
+          tests/test_biocatalyst_trials.py -q
+
+  biocatalyst-worker:
+    if: ${{ false }}
+    # Full B1 collector → private evidence → public-generation worker replay.
+    # Twelve minutes preserves measured headroom without hiding a slow worker
+    # behind the former twenty-minute all-suite timeout.
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst worker and ClinicalTrials current-record contracts
+        run: >
+          python -m pytest
+          tests/test_biocatalyst_worker.py
+          tests/test_clinicaltrials_biocatalyst.py -q
+
+  biocatalyst-history:
+    if: ${{ false }}
+    # B1b/B2 Record History retrieval, exact-diff replay and public-safe model
+    # projection.  This is deliberately independently bounded because its
+    # repeated source-evidence verification is the heaviest validation family.
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst Record History replay contracts
+        run: >
+          python -m pytest
+          tests/test_biocatalyst_history.py
+          tests/test_clinicaltrials_history.py -q
+
+  biocatalyst-contracts:
+    if: ${{ false }}
+    # Schema, authority and ownership boundaries stay separately attributable.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst schema, authority, and ownership contracts
+        run: >
+          python -m pytest
           tests/test_sector_intelligence_contracts.py
-          tests/test_sector_intelligence_ownership.py
+          tests/test_sector_intelligence_ownership.py -q
+
+  biocatalyst-deploy-integration:
+    if: ${{ false }}
+    # The self-heal suite tests the BioCatalyst service update boundary together
+    # with the repository's deploy invariants.  It was previously co-run here;
+    # giving it its own bounded command keeps that coverage without borrowing
+    # time from evidence replay.
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install BioCatalyst test deps
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+      - name: BioCatalyst deployment self-heal integration contracts
+        run: >
+          python -m pytest
           tests/test_deploy_update_self_heal.py -q
 
   marketing-social-publisher:

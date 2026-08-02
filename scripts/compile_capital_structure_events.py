@@ -25,7 +25,7 @@ from typing import Any
 
 import pandas as pd
 
-from collectors.sec_capital_structure import FORM_POLICY
+from collectors.sec_capital_structure import FORM_POLICY, file_number_provenance_errors
 from engine.capital_structure import (
     append_event_versions_strict,
     build_event_version,
@@ -173,6 +173,7 @@ def _validate_manifest(record: Mapping[str, Any], schema: Mapping[str, Any]) -> 
     errors = _contract_errors(record, schema)
     if not errors:
         errors.extend(_semantic_manifest_errors(record))
+        errors.extend(file_number_provenance_errors(record.get("filing")))
     return errors
 
 
@@ -337,9 +338,31 @@ def event_from_manifest_group(
         [row.get("filing", {}).get("accepted_at") for row in rows],
         "accepted_at", nullable=True,
     )
-    file_number = _single(
+    observed_file_number = _single(
         [row.get("filing", {}).get("file_number") for row in rows],
         "file_number", nullable=True,
+    )
+    # Legacy manifests remain schema-valid and immutable, but their first-match
+    # SGML value predates conflict-aware provenance. Keep compiling the bundle
+    # while withholding that untrusted value from exact lifecycle linkage. The
+    # bounded collector queue will create a new provenance-bearing bundle version.
+    provenance_rows = [
+        dict((row.get("filing") or {}).get("file_number_provenance"))
+        for row in rows
+        if isinstance(
+            (row.get("filing") or {}).get("file_number_provenance"), Mapping
+        )
+    ]
+    has_hardened_file_number_provenance = len(provenance_rows) == len(rows)
+    if has_hardened_file_number_provenance and len({
+        _canonical_json(value) for value in provenance_rows
+    }) != 1:
+        raise ValueError("source group conflicts on file_number_provenance")
+    file_number_provenance = (
+        provenance_rows[0] if has_hardened_file_number_provenance else None
+    )
+    file_number = (
+        observed_file_number if has_hardened_file_number_provenance else None
     )
     cik = _single([row.get("issuer", {}).get("cik") for row in rows], "cik")
 
@@ -362,7 +385,10 @@ def event_from_manifest_group(
     first_seen = produced_at or source_first_seen
     exhibits = [
         row.get("document", {}).get("canonical_url")
-        for row in rows if row.get("document", {}).get("document_role") == "exhibit"
+        for row in rows
+        if row.get("document", {}).get("document_role") in {
+            "exhibit", "underwriting_exhibit", "filing_fee_exhibit",
+        }
     ]
     observation = {
         "source_system": "sec_edgar",
@@ -375,6 +401,7 @@ def event_from_manifest_group(
         "aliases": issuer.get("aliases") or [],
         "form": form,
         "file_number": file_number,
+        "file_number_provenance": file_number_provenance,
         "filing_date": filing_date,
         "accepted_at": accepted_at,
         "first_seen_at": first_seen,
@@ -638,6 +665,27 @@ def _append_edges_strict(
     return out
 
 
+def _trusted_event_file_number(event: Mapping[str, Any]) -> str | None:
+    """Admit only a provenance-bound event file number to exact graph keys."""
+    filing = event.get("filing") or {}
+    file_number = filing.get("file_number")
+    provenance = filing.get("file_number_provenance")
+    if not isinstance(file_number, str) or not isinstance(provenance, Mapping):
+        return None
+    value = provenance.get("value")
+    candidates = provenance.get("candidate_values")
+    sources = provenance.get("sources")
+    if (
+        provenance.get("state") != "observed"
+        or value != file_number
+        or candidates != [file_number]
+        or not isinstance(sources, list)
+        or not sources
+    ):
+        return None
+    return file_number
+
+
 def _linkage_metadata(events: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
     metadata: dict[str, dict[str, Any]] = {}
     families_by_key: dict[tuple[str, str], set[str]] = defaultdict(set)
@@ -645,7 +693,7 @@ def _linkage_metadata(events: Sequence[Mapping[str, Any]]) -> dict[str, dict[str
         filing = event.get("filing") or {}
         issuer = event.get("issuer") or {}
         route = route_form(filing.get("form"))
-        file_number = str(filing.get("file_number") or "")
+        file_number = _trusted_event_file_number(event) or ""
         cik = str(issuer.get("cik") or "")
         if route.registration_family and cik and file_number:
             families_by_key[(cik, file_number)].add(route.registration_family)
@@ -653,7 +701,7 @@ def _linkage_metadata(events: Sequence[Mapping[str, Any]]) -> dict[str, dict[str
         filing = event.get("filing") or {}
         issuer = event.get("issuer") or {}
         route = route_form(filing.get("form"))
-        file_number = str(filing.get("file_number") or "")
+        file_number = _trusted_event_file_number(event) or ""
         cik = str(issuer.get("cik") or "")
         family = route.registration_family
         if not family and cik and file_number:
@@ -787,9 +835,10 @@ def _build_telemetry(
             "prophet_authority": False,
         },
         "form_policy": FORM_POLICY,
-        "coverage_claim": "explicit_wave1_form_allowlist_only",
+        "coverage_claim": "registration_allowlist_plus_issuer_scoped_reconciliation",
+        # Reconciliation is scoped, not blanket market coverage.  It is therefore
+        # disclosed in ``form_policy`` but not mislabeled as an uncollected form.
         "known_exclusions": sorted({
-            *FORM_POLICY["wave2_declared_not_collected"],
             *FORM_POLICY["capital_relevant_declared_not_collected"],
         }),
         "counts": {key: int(value) for key, value in counts.items()},

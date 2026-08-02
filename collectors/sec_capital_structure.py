@@ -78,8 +78,14 @@ CAPITAL_RELEVANT_DECLARED_NOT_COLLECTED = {
 }
 
 FORM_POLICY = {
-    "policy_version": "capital-structure-sec-form-policy/1.1.0",
+    "policy_version": "capital-structure-sec-form-policy/1.2.0",
     "wave1_discovery": sorted(TARGET_FORMS),
+    # Reconciliation forms are never blanket-collected.  They are admitted only
+    # for an issuer that already has a retained/discovered in-policy registration
+    # or issuance filing (including a same-index registration).  Keeping the old
+    # field below preserves the explicit distinction between that scoped lane and
+    # a claim of market-wide coverage.
+    "issuer_scoped_reconciliation": sorted(DECLARED_WAVE2_RECONCILIATION_FORMS),
     "wave2_declared_not_collected": sorted(DECLARED_WAVE2_RECONCILIATION_FORMS),
     "capital_relevant_declared_not_collected": sorted(
         CAPITAL_RELEVANT_DECLARED_NOT_COLLECTED
@@ -94,9 +100,27 @@ INDEX_NOT_PUBLISHED_GRACE_DAYS = 7
 PACE_SECONDS = 0.12
 GROUP = "capital_structure"
 
+# The collector must make bounded progress across every evidence family rather
+# than repeatedly spending a whole run on the most numerous form type.  The
+# slots are a deterministic weighted round-robin schedule, rotated by UTC date
+# so a small run has no permanently privileged lane.  Within each lane, aged
+# filings are always considered before new filings.
+RETRIEVAL_LANE_WEIGHTS = {
+    "registration": 4,
+    "state": 2,
+    "prospectus": 2,
+    "reg_a": 1,
+    "issuer_current_report": 2,
+    "issuer_periodic": 2,
+    "issuer_proxy": 1,
+}
+RETRIEVAL_LANE_ORDER = tuple(RETRIEVAL_LANE_WEIGHTS)
+DISCOVERY_SCOPE_REGISTRATION = "registration_issuance"
+DISCOVERY_SCOPE_RECONCILIATION = "issuer_reconciliation"
+
 _DISCOVERY_COLUMNS = [
     "accession", "cik", "ticker", "company_name", "form", "filing_date",
-    "file_path", "canonical_url", "_first_seen",
+    "file_path", "canonical_url", "collection_scope", "_first_seen",
 ]
 _COVERAGE_COLUMNS = [
     "index_date", "status", "target_count", "attempt_count", "last_attempt_at",
@@ -104,7 +128,7 @@ _COVERAGE_COLUMNS = [
 ]
 _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
-    "state", "error", "content_sha256",
+    "state", "error", "content_sha256", "retrieval_lane", "collection_scope",
 ]
 _MANIFEST_COLUMNS = [
     "schema", "manifest_id", "source_system", "source_id", "issuer", "filing",
@@ -173,14 +197,46 @@ def _cik_map() -> dict[int, str]:
     return out
 
 
-def parse_form_index(text: str, *, target_forms: set[str] | None = None) -> list[dict]:
+def _normalized_cik(value: object) -> str | None:
+    raw = str(value or "").strip()
+    if not raw.isdigit() or len(raw) > 10:
+        return None
+    return raw.zfill(10)
+
+
+def _issuer_scope_ciks(discovery: pd.DataFrame) -> set[str]:
+    """Return only issuers anchored by the registration/issuance form policy."""
+    if discovery.empty or not {"form", "cik"}.issubset(discovery.columns):
+        return set()
+    return {
+        cik
+        for form, raw_cik in zip(discovery["form"], discovery["cik"])
+        if str(form or "").upper() in TARGET_FORMS
+        if (cik := _normalized_cik(raw_cik)) is not None
+    }
+
+
+def parse_form_index(
+    text: str,
+    *,
+    target_forms: set[str] | None = None,
+    reconciliation_ciks: Iterable[str] | None = None,
+    include_same_index_issuers: bool = False,
+) -> list[dict]:
     """Parse target rows from an EDGAR ``form.YYYYMMDD.idx`` file.
 
     The function is pure and retains the archive path so the exact source can be
     retrieved later. The response structure and every filing row are validated
     before an empty target result can be treated as a successful zero-target day.
     """
-    wanted = TARGET_FORMS if target_forms is None else target_forms
+    wanted = TARGET_FORMS if target_forms is None else {
+        str(form).upper() for form in target_forms
+    }
+    scoped_ciks = {
+        normalized
+        for raw_cik in (reconciliation_ciks or ())
+        if (normalized := _normalized_cik(raw_cik)) is not None
+    }
     lowered = text[:16384].lower()
     if any(marker in lowered for marker in ("<!doctype html", "<html", "<body")):
         raise ValueError("SEC form index response is HTML, not a daily index")
@@ -204,7 +260,7 @@ def parse_form_index(text: str, *, target_forms: set[str] | None = None) -> list
     ):
         raise ValueError("SEC form index has an invalid column header")
 
-    rows: list[dict] = []
+    parsed_rows: list[dict] = []
     data_row_count = 0
     for line_number, line in enumerate(lines[separator_index + 1:], separator_index + 2):
         if not line.strip():
@@ -233,10 +289,8 @@ def parse_form_index(text: str, *, target_forms: set[str] | None = None) -> list
         if not valid_shape:
             raise ValueError(f"SEC form index row {line_number} is malformed")
         data_row_count += 1
-        if form not in wanted:
-            continue
         accession = Path(file_path).stem
-        rows.append({
+        parsed_rows.append({
             "accession": accession,
             "cik": cik.zfill(10),
             "company_name": company_name,
@@ -247,6 +301,21 @@ def parse_form_index(text: str, *, target_forms: set[str] | None = None) -> list
         })
     if data_row_count == 0:
         raise ValueError("SEC form index contains no filing rows")
+    if include_same_index_issuers:
+        scoped_ciks.update(
+            row["cik"] for row in parsed_rows if row["form"] in wanted
+        )
+
+    rows: list[dict] = []
+    for row in parsed_rows:
+        form = row["form"]
+        if form in wanted:
+            rows.append(row | {"collection_scope": DISCOVERY_SCOPE_REGISTRATION})
+        elif (
+            form in DECLARED_WAVE2_RECONCILIATION_FORMS
+            and row["cik"] in scoped_ciks
+        ):
+            rows.append(row | {"collection_scope": DISCOVERY_SCOPE_RECONCILIATION})
     return rows
 
 
@@ -255,6 +324,17 @@ _HEADER_FIELD_RE = {
     "file_number": re.compile(br"<FILE-NUMBER>\s*([^\r\n<]+)", re.I),
 }
 _DOCUMENT_RE = re.compile(br"<DOCUMENT>(.*?)</DOCUMENT>", re.I | re.S)
+_SEC_HEADER_FILE_NUMBER_RE = re.compile(
+    br"(?:^|[\r\n])\s*SEC\s+FILE\s+NUMBER\s*:\s*([^\r\n<]+)",
+    re.I,
+)
+_EFFECT_XML_FILE_NUMBER_RE = re.compile(
+    br"<(?:[A-Za-z_][\w.-]*:)?fileNumber\b[^>]*>\s*([^<]+?)\s*</(?:[A-Za-z_][\w.-]*:)?fileNumber\s*>",
+    re.I,
+)
+_SEC_FILE_NUMBER_TOKEN_RE = re.compile(
+    r"(?<!\d)(\d{1,3}\s*-\s*\d{1,10}(?:\s*-\s*\d{1,6})?)(?!\d)"
+)
 
 
 @dataclass(frozen=True)
@@ -270,6 +350,7 @@ class SubmissionDocument:
 class SubmissionBundle:
     accepted_at: str | None
     file_number: str | None
+    file_number_provenance: dict[str, object]
     documents: tuple[SubmissionDocument, ...]
 
 
@@ -290,6 +371,115 @@ def _sgml_value(block: bytes, name: bytes) -> str | None:
     return match.group(1).decode("utf-8", errors="replace").strip() or None
 
 
+def _sec_file_number_candidates(value: bytes) -> tuple[str, ...]:
+    """Return every canonical SEC file number in a bounded header/tag value.
+
+    We accept the ordinary numeric SEC registration pattern only.  A document
+    can repeat the same number across legacy and modern encodings.  Preserving
+    every distinct token is load-bearing: a malformed field containing two
+    different valid numbers must make the whole observation ambiguous rather
+    than disappearing and allowing a different source to win silently.
+    """
+    text = value.decode("utf-8", errors="replace")
+    matches = _SEC_FILE_NUMBER_TOKEN_RE.findall(text)
+    return tuple(sorted({re.sub(r"\s+", "", match) for match in matches}))
+
+
+def _file_number_observation(raw: bytes) -> tuple[str | None, dict[str, object]]:
+    """Extract legacy, modern-header, and EFFECT XML file-number evidence.
+
+    The modern header search is intentionally constrained to the submission
+    header, before the first ``<DOCUMENT>`` block.  XML ``fileNumber`` is an
+    explicit EFFECT payload field and may live inside that document.  If those
+    authoritative encodings disagree, the graph key is null and provenance
+    records the ambiguity; no later phase may silently pick one.
+    """
+    header = raw.split(b"<DOCUMENT", 1)[0]
+    candidates: list[tuple[str, str]] = []
+    for source, pattern, payload in (
+        ("legacy_sgml_file_number", _HEADER_FIELD_RE["file_number"], header),
+        ("sec_header_file_number", _SEC_HEADER_FILE_NUMBER_RE, header),
+        ("effect_xml_file_number", _EFFECT_XML_FILE_NUMBER_RE, raw),
+    ):
+        for match in pattern.finditer(payload):
+            for value in _sec_file_number_candidates(match.group(1)):
+                candidates.append((source, value))
+
+    values = sorted({value for _, value in candidates})
+    sources = sorted({source for source, _ in candidates})
+    if len(values) == 1:
+        state = "observed"
+        value: str | None = values[0]
+    elif len(values) > 1:
+        state = "ambiguous"
+        value = None
+    else:
+        state = "unavailable"
+        value = None
+    return value, {
+        "state": state,
+        "value": value,
+        "candidate_values": values,
+        "sources": sources,
+    }
+
+
+def file_number_provenance_errors(filing: dict | object) -> list[str]:
+    """Return cross-field source-provenance violations for a manifest filing.
+
+    Older immutable rows predate this optional field and remain valid.  Every
+    new collector-produced row carries it and must satisfy the observed/null
+    law below before it can enter the append-only source ledger.
+    """
+    if not isinstance(filing, dict):
+        return ["filing must be an object"]
+    provenance = filing.get("file_number_provenance")
+    if provenance is None:
+        return []
+    if not isinstance(provenance, dict):
+        return ["filing.file_number_provenance must be an object"]
+    state = provenance.get("state")
+    filing_value = filing.get("file_number")
+    value = provenance.get("value")
+    candidates = provenance.get("candidate_values")
+    sources = provenance.get("sources")
+
+    def _array_values(value: object) -> list[object] | None:
+        """Normalize a JSON array after a Parquet nested-value round trip."""
+        if isinstance(value, list):
+            return value
+        if isinstance(value, tuple):
+            return list(value)
+        tolist = getattr(value, "tolist", None)
+        if callable(tolist):
+            converted = tolist()
+            if isinstance(converted, list):
+                return converted
+        return None
+
+    candidates = _array_values(candidates)
+    sources = _array_values(sources)
+    if candidates is None or sources is None:
+        return ["filing.file_number_provenance candidates/sources must be arrays"]
+    if candidates != sorted(set(candidates)) or sources != sorted(set(sources)):
+        return ["filing.file_number_provenance arrays must be sorted unique"]
+    if state == "observed":
+        if not isinstance(value, str) or value not in candidates or filing_value != value:
+            return ["observed file-number provenance must bind filing.file_number"]
+        if len(candidates) != 1 or not sources:
+            return ["observed file-number provenance requires one value and a source"]
+    elif state in {"unavailable", "ambiguous"}:
+        if value is not None or filing_value is not None:
+            return ["non-observed file-number provenance requires null filing.file_number"]
+        if state == "unavailable" and (candidates or sources):
+            return ["unavailable file-number provenance cannot contain candidates"]
+        if state == "ambiguous" and len(candidates) < 2:
+            return ["ambiguous file-number provenance requires multiple candidates"]
+    else:
+        return ["file-number provenance has an invalid state"]
+    return []
+
+
 def parse_submission(raw: bytes) -> SubmissionBundle:
     """Parse SEC submission header fields and raw ``<DOCUMENT>`` blocks."""
     accepted_at = None
@@ -305,11 +495,7 @@ def parse_submission(raw: bytes) -> SubmissionBundle:
             ).astimezone(timezone.utc).isoformat()
         except ValueError:
             accepted_at = None
-    file_number_match = _HEADER_FIELD_RE["file_number"].search(raw)
-    file_number = (
-        file_number_match.group(1).decode("utf-8", errors="replace").strip()
-        if file_number_match else None
-    )
+    file_number, file_number_provenance = _file_number_observation(raw)
     documents = tuple(
         SubmissionDocument(
             sequence=_sgml_value(block, b"SEQUENCE"),
@@ -323,6 +509,7 @@ def parse_submission(raw: bytes) -> SubmissionBundle:
     return SubmissionBundle(
         accepted_at=accepted_at,
         file_number=file_number,
+        file_number_provenance=file_number_provenance,
         documents=documents,
     )
 
@@ -346,6 +533,10 @@ def select_relevant_documents(
         role = None
         if index == primary_index:
             role = "primary"
+        elif re.match(r"^EX-1(\.|$)", doc_type):
+            role = "underwriting_exhibit"
+        elif re.match(r"^EX-FILING\s+FEES?(\.|$)", doc_type):
+            role = "filing_fee_exhibit"
         elif re.match(r"^EX-(3|4|10|99)(\.|$)", doc_type):
             role = "exhibit"
         if role:
@@ -520,6 +711,186 @@ def retrieval_priority(form: str) -> int:
     return 3
 
 
+RECONCILIATION_CURRENT_REPORT_FORMS = frozenset({"8-K", "8-K/A", "6-K", "6-K/A"})
+RECONCILIATION_PERIODIC_FORMS = frozenset({
+    "10-Q", "10-Q/A", "10-K", "10-K/A", "20-F", "20-F/A", "40-F", "40-F/A",
+})
+RECONCILIATION_PROXY_FORMS = frozenset({"PRE 14A", "DEF 14A", "PRE 14C", "DEF 14C"})
+
+
+def retrieval_lane(
+    form: object,
+    *,
+    collection_scope: object = None,
+    issuer_is_scoped: bool = False,
+) -> str | None:
+    """Return one bounded retrieval lane, denying broad forms by default."""
+    normalized = str(form or "").upper()
+    if normalized in REGISTRATION_FORMS:
+        return "registration"
+    if normalized in STATE_FORMS:
+        return "state"
+    if normalized in PROSPECTUS_FORMS:
+        return "prospectus"
+    if normalized in REG_A_FORMS:
+        return "reg_a"
+    if (
+        collection_scope != DISCOVERY_SCOPE_RECONCILIATION
+        or not issuer_is_scoped
+    ):
+        return None
+    if normalized in RECONCILIATION_CURRENT_REPORT_FORMS:
+        return "issuer_current_report"
+    if normalized in RECONCILIATION_PERIODIC_FORMS:
+        return "issuer_periodic"
+    if normalized in RECONCILIATION_PROXY_FORMS:
+        return "issuer_proxy"
+    return None
+
+
+def _lane_slot_order(*, slots: int, now: datetime) -> list[str]:
+    """Build the deterministic, UTC-date-rotated weighted quota schedule."""
+    if slots <= 0:
+        return []
+    cycle = [
+        lane
+        for lane in RETRIEVAL_LANE_ORDER
+        for _ in range(RETRIEVAL_LANE_WEIGHTS[lane])
+    ]
+    if not cycle:
+        return []
+    stamp = pd.Timestamp(now)
+    stamp = stamp.tz_localize("UTC") if stamp.tzinfo is None else stamp.tz_convert("UTC")
+    offset = stamp.date().toordinal() % len(cycle)
+    return [cycle[(offset + index) % len(cycle)] for index in range(slots)]
+
+
+def retrieval_lane_quotas(*, max_filings: int, now: datetime) -> dict[str, int]:
+    """Expose date-rotated quota slots for audit and deterministic tests."""
+    quotas = {lane: 0 for lane in RETRIEVAL_LANE_ORDER}
+    for lane in _lane_slot_order(slots=max_filings, now=now):
+        quotas[lane] += 1
+    return quotas
+
+
+def _fair_lane_rows(
+    frame: pd.DataFrame,
+    *,
+    slots: int,
+    now: datetime,
+) -> list[dict]:
+    """Take bounded, weighted-fair rows without wasting turns on empty lanes."""
+    if frame.empty or slots <= 0:
+        return []
+    by_lane = {
+        lane: frame.loc[frame["_retrieval_lane"].eq(lane)].to_dict(orient="records")
+        for lane in RETRIEVAL_LANE_ORDER
+    }
+    # Use a full rotation to locate the next non-empty lane even if this run has
+    # fewer slots than the number of lane weights.  ``slots`` still limits how
+    # many records are selected; it never truncates the search horizon.
+    schedule = _lane_slot_order(
+        slots=sum(RETRIEVAL_LANE_WEIGHTS.values()), now=now
+    )
+    selected: list[dict] = []
+    cursor = 0
+    while len(selected) < slots and any(by_lane.values()):
+        selected_lane = None
+        for offset in range(len(schedule)):
+            lane = schedule[(cursor + offset) % len(schedule)]
+            if by_lane[lane]:
+                selected_lane = lane
+                cursor = (cursor + offset + 1) % len(schedule)
+                break
+        if selected_lane is None:
+            break
+        selected.append(by_lane[selected_lane].pop(0))
+    return selected
+
+
+def _retrieval_queue_candidates(
+    discovery: pd.DataFrame, *, have_complete: set[str]
+) -> pd.DataFrame:
+    """Build fail-closed eligible candidates and their auditable lane labels."""
+    if not {"form", "accession"}.issubset(discovery.columns):
+        raise ValueError("discovery ledger is missing form/accession columns")
+    queue = discovery.copy()
+    if "collection_scope" not in queue:
+        queue["collection_scope"] = None
+    if "cik" not in queue:
+        queue["cik"] = None
+    scope_ciks = _issuer_scope_ciks(discovery)
+    queue["_issuer_is_scoped"] = queue["cik"].map(
+        lambda value: _normalized_cik(value) in scope_ciks
+    )
+    queue["_retrieval_lane"] = [
+        retrieval_lane(
+            form,
+            collection_scope=scope,
+            issuer_is_scoped=bool(issuer_is_scoped),
+        )
+        for form, scope, issuer_is_scoped in zip(
+            queue["form"], queue["collection_scope"], queue["_issuer_is_scoped"]
+        )
+    ]
+    return queue.loc[
+        queue["_retrieval_lane"].notna()
+        & ~queue["accession"].astype(str).isin(have_complete)
+    ].copy()
+
+
+def _queue_receipt(
+    candidates: pd.DataFrame,
+    selected: list[dict],
+    *,
+    max_filings: int,
+    now: datetime,
+) -> dict:
+    """Publish operational queue fairness without converting it into issuer truth."""
+    stamp = pd.Timestamp(now)
+    stamp = stamp.tz_localize("UTC") if stamp.tzinfo is None else stamp.tz_convert("UTC")
+    lanes: list[dict] = []
+    for lane in RETRIEVAL_LANE_ORDER:
+        lane_rows = candidates.loc[candidates["_retrieval_lane"].eq(lane)]
+        pending = len(lane_rows)
+        selected_count = sum(
+            1 for row in selected if row.get("_retrieval_lane") == lane
+        )
+        first_seen = pd.to_datetime(lane_rows.get("_first_seen"), errors="coerce", utc=True)
+        observed = first_seen.dropna()
+        oldest = observed.min() if not observed.empty else None
+        age_days = (
+            max(0, int((stamp - oldest).total_seconds() // 86400))
+            if oldest is not None else None
+        )
+        lanes.append({
+            "lane": lane,
+            "pending_count": pending,
+            "selected_count": selected_count,
+            "deferred_count": pending - selected_count,
+            "oldest_pending_first_seen": oldest.isoformat().replace("+00:00", "Z") if oldest is not None else None,
+            "oldest_pending_age_days": age_days,
+            "unknown_first_seen_count": int(first_seen.isna().sum()),
+        })
+    return {
+        "schema": "capital_structure.retrieval_queue_receipt.v1",
+        "as_of": stamp.isoformat().replace("+00:00", "Z"),
+        "policy_version": FORM_POLICY["policy_version"],
+        "max_filings": int(max_filings),
+        "selected_count": len(selected),
+        "deferred_count": len(candidates) - len(selected),
+        "lane_quota_slots": retrieval_lane_quotas(max_filings=max_filings, now=now),
+        "lanes": lanes,
+        "authority": {
+            "is_context_only": True,
+            "rank_authority": False,
+            "sizing_authority": False,
+            "entry_authority": False,
+            "prophet_authority": False,
+        },
+    }
+
+
 def due_index_dates(
     coverage: pd.DataFrame,
     *,
@@ -585,14 +956,22 @@ def select_retrieval_queue(
     max_filings: int,
     now: datetime,
 ) -> pd.DataFrame:
-    """Select a bounded queue with hard form priority and within-lane aging."""
+    """Select a bounded queue with auditable lane quotas and aging.
+
+    Aged candidates sort first *within their lane*, while every selected turn is
+    still allocated by the fair lane rotation.  Therefore a huge aged prospectus
+    backlog cannot continually displace fresh EFFECT, Reg-A, or issuer-scoped
+    current-report/periodic reconciliation evidence.
+    """
     columns = list(discovery.columns)
-    queue = discovery.loc[
-        discovery["form"].astype(str).isin(TARGET_FORMS)
-        & ~discovery["accession"].astype(str).isin(have_complete)
-    ].copy()
+    queue = _retrieval_queue_candidates(discovery, have_complete=have_complete)
     if queue.empty or max_filings <= 0:
-        return queue.head(0)[columns]
+        empty = queue.head(0)[columns]
+        empty.attrs["retrieval_queue_receipt"] = _queue_receipt(
+            queue, [], max_filings=max_filings, now=now
+        )
+        empty.attrs["retrieval_lanes_by_accession"] = {}
+        return empty
 
     now_stamp = pd.Timestamp(now)
     now_stamp = (
@@ -602,30 +981,49 @@ def select_retrieval_queue(
     )
     first_seen = pd.to_datetime(queue["_first_seen"], errors="coerce", utc=True)
     aging_cutoff = now_stamp - pd.Timedelta(days=RETRIEVAL_QUEUE_AGING_DAYS)
-    queue["_priority"] = queue["form"].map(retrieval_priority)
     queue["_aged"] = first_seen.isna() | first_seen.le(aging_cutoff)
-    queue["_aged_seen"] = first_seen.where(queue["_aged"], now_stamp).fillna(
+    queue["_first_seen_sort"] = first_seen.fillna(
         pd.Timestamp("1970-01-01", tz="UTC")
     )
     queue["_filing_date"] = pd.to_datetime(
         queue["filing_date"], errors="coerce", utc=True
     )
     queue = queue.sort_values(
-        ["_priority", "_aged", "_aged_seen", "_filing_date", "accession"],
-        ascending=[True, False, True, False, True],
+        ["_retrieval_lane", "_aged", "_first_seen_sort", "_filing_date", "accession"],
+        ascending=[True, False, True, True, True],
         na_position="last",
         kind="stable",
     )
-    return queue.head(max_filings)[columns].reset_index(drop=True)
+    # ``queue`` is already deterministically ordered by lane, age, first-seen,
+    # filing date, and accession.  Passing all candidates into the rotation
+    # makes aging a per-lane tie-break rather than allowing one old, saturated
+    # lane to consume every turn before fresh evidence families are considered.
+    selected = _fair_lane_rows(queue, slots=max_filings, now=now)
+    if not selected:
+        result = queue.head(0)[columns]
+    else:
+        result = pd.DataFrame(selected)[columns].reset_index(drop=True)
+    result.attrs["retrieval_queue_receipt"] = _queue_receipt(
+        queue, selected, max_filings=max_filings, now=now
+    )
+    result.attrs["retrieval_lanes_by_accession"] = {
+        str(row["accession"]): str(row["_retrieval_lane"])
+        for row in selected
+    }
+    return result
 
 
 def _read_table(path: Path, columns: list[str]) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=columns)
     try:
-        return pd.read_parquet(path)
+        frame = pd.read_parquet(path)
     except Exception as exc:  # noqa: BLE001
         raise RuntimeError(f"capital-structure store unreadable: {path}: {exc}") from exc
+    for column in columns:
+        if column not in frame.columns:
+            frame[column] = None
+    return frame[columns]
 
 
 def _atomic_write(df: pd.DataFrame, path: Path) -> None:
@@ -633,6 +1031,55 @@ def _atomic_write(df: pd.DataFrame, path: Path) -> None:
     tmp = path.with_suffix(".tmp.parquet")
     df.to_parquet(tmp, index=False)
     os.replace(tmp, path)
+
+
+def _atomic_write_json(record: dict, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp.json")
+    tmp.write_text(
+        json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(tmp, path)
+
+
+def _validate_retrieval_queue_receipt(record: dict) -> None:
+    """Fail closed before operational fairness evidence is published."""
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    schema_path = Path(__file__).resolve().parents[1] / "contracts" / (
+        "capital_structure_retrieval_queue_receipt.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    errors = sorted(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(record),
+        key=lambda error: list(error.path),
+    )
+    if errors:
+        raise ValueError(
+            "retrieval queue receipt contract violation: "
+            + "; ".join(error.message for error in errors[:5])
+        )
+    lanes = record.get("lanes") or []
+    lane_names = [row.get("lane") for row in lanes if isinstance(row, dict)]
+    if lane_names != list(RETRIEVAL_LANE_ORDER):
+        raise ValueError("retrieval queue receipt lanes must be complete and canonical")
+    if sum(int(value) for value in (record.get("lane_quota_slots") or {}).values()) != int(
+        record.get("max_filings") or 0
+    ):
+        raise ValueError("retrieval queue receipt quota slots must sum to max_filings")
+    selected_total = 0
+    deferred_total = 0
+    for row in lanes:
+        pending = int(row["pending_count"])
+        selected = int(row["selected_count"])
+        deferred = int(row["deferred_count"])
+        if selected > pending or deferred != pending - selected:
+            raise ValueError("retrieval queue receipt lane counts are inconsistent")
+        selected_total += selected
+        deferred_total += deferred
+    if selected_total != int(record["selected_count"]) or deferred_total != int(record["deferred_count"]):
+        raise ValueError("retrieval queue receipt totals are inconsistent")
 
 
 def _validate_source_manifest(record: dict) -> None:
@@ -647,8 +1094,11 @@ def _validate_source_manifest(record: dict) -> None:
         Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(record),
         key=lambda error: list(error.path),
     )
-    if errors:
-        joined = "; ".join(error.message for error in errors[:5])
+    semantic_errors = file_number_provenance_errors(record.get("filing"))
+    if errors or semantic_errors:
+        joined = "; ".join(
+            [error.message for error in errors[:5]] + semantic_errors[:5]
+        )
         raise ValueError(f"source manifest contract violation: {joined}")
     validate_manifest_identity(record)
 
@@ -690,7 +1140,16 @@ def _append_keep_first(
 
 
 def _eligible_complete_accessions(manifests: pd.DataFrame) -> set[str]:
-    """Return filings with retained, readable complete-submission evidence."""
+    """Return filings with readable roots and hardened file-number provenance.
+
+    A pre-Wave-2C complete submission remains valid immutable evidence, but it
+    cannot close the retrieval queue: the old first-match SGML extractor did not
+    record conflicts or modern/EFFECT encodings. Reusing the ordinary bounded
+    queue gives those accessions one versioned provenance backfill. Once a new
+    complete manifest carries a semantically valid provenance observation --
+    including an explicit ``unavailable`` state -- the accession closes normally
+    and cannot enter an infinite compatibility-refetch loop.
+    """
     required = {"filing", "document", "parser"}
     if manifests.empty or not required.issubset(manifests.columns):
         return set()
@@ -704,6 +1163,8 @@ def _eligible_complete_accessions(manifests: pd.DataFrame) -> set[str]:
             document.get("document_role") == "complete_submission"
             and parser.get("eligibility") == "eligible"
             and parser.get("corruption_state") == "clean"
+            and isinstance(filing.get("file_number_provenance"), dict)
+            and not file_number_provenance_errors(filing)
         ):
             complete.add(str(filing.get("accession")))
     return complete
@@ -828,6 +1289,8 @@ class SecCapitalStructureAdapter(Adapter):
                 "filing_date": discovery["filing_date"],
                 "accepted_at": bundle.accepted_at,
                 "file_number": bundle.file_number,
+                "file_number_provenance": bundle.file_number_provenance,
+                "collection_scope": discovery.get("collection_scope"),
             },
             "document": {
                 "canonical_url": canonical_url,
@@ -883,6 +1346,7 @@ class SecCapitalStructureAdapter(Adapter):
         coverage_path = root / "index_coverage.parquet"
         attempts_path = root / "retrieval_attempts.parquet"
         manifests_path = root / "source_manifest.parquet"
+        queue_receipt_path = root / "retrieval_queue_receipt.json"
 
         discovery = _read_table(discovery_path, _DISCOVERY_COLUMNS)
         coverage = _read_table(coverage_path, _COVERAGE_COLUMNS)
@@ -904,6 +1368,13 @@ class SecCapitalStructureAdapter(Adapter):
 
         new_discovery: list[dict] = []
         coverage_updates: list[dict] = []
+        # Keep successful daily-index bytes until the window's registration
+        # anchors are known.  ``due_index_dates`` deliberately visits the
+        # current day before older days, so admitting reconciliation rows
+        # immediately could discard a newer 8-K before an older S-3 for that
+        # issuer is encountered later in the same run.  Resolve all in-window
+        # anchors first, then make one issuer-scoped reconciliation pass.
+        successful_indexes: list[tuple[date, str, int]] = []
         for index_date in due_index_dates(
             coverage, today=now.date(), lookback_days=lookback, full_history=full_history
         ):
@@ -926,18 +1397,12 @@ class SecCapitalStructureAdapter(Adapter):
                 })
                 continue
             try:
-                rows = parse_form_index(self._fetch_index(index_date, ua))
-                for row in rows:
-                    cik_int = int(row["cik"])
-                    row["ticker"] = cik_tickers.get(cik_int)
-                    row["_first_seen"] = now_iso
-                    new_discovery.append(row)
-                coverage_updates.append({
-                    "index_date": index_date.isoformat(), "status": "complete",
-                    "target_count": len(rows), "attempt_count": prior_attempts + 1,
-                    "last_attempt_at": now_iso, "last_error": None,
-                    "policy_version": FORM_POLICY["policy_version"],
-                })
+                index_text = self._fetch_index(index_date, ua)
+                # Parse once now so malformed/HTML indexes stay retryable at
+                # the correct daily coverage row, rather than failing after
+                # other successful dates have been persisted.
+                parse_form_index(index_text)
+                successful_indexes.append((index_date, index_text, prior_attempts))
             except IndexNotPublished as exc:
                 is_aged = index_date <= (
                     now.date() - timedelta(days=INDEX_NOT_PUBLISHED_GRACE_DAYS)
@@ -967,6 +1432,28 @@ class SecCapitalStructureAdapter(Adapter):
                 })
             time.sleep(PACE_SECONDS)
 
+        in_window_scope_ciks = _issuer_scope_ciks(discovery)
+        for _, index_text, _ in successful_indexes:
+            in_window_scope_ciks.update(
+                row["cik"] for row in parse_form_index(index_text)
+            )
+        for index_date, index_text, prior_attempts in successful_indexes:
+            rows = parse_form_index(
+                index_text,
+                reconciliation_ciks=in_window_scope_ciks,
+            )
+            for row in rows:
+                cik_int = int(row["cik"])
+                row["ticker"] = cik_tickers.get(cik_int)
+                row["_first_seen"] = now_iso
+                new_discovery.append(row)
+            coverage_updates.append({
+                "index_date": index_date.isoformat(), "status": "complete",
+                "target_count": len(rows), "attempt_count": prior_attempts + 1,
+                "last_attempt_at": now_iso, "last_error": None,
+                "policy_version": FORM_POLICY["policy_version"],
+            })
+
         discovery = _append_keep_first(
             discovery, new_discovery, key="accession", columns=_DISCOVERY_COLUMNS
         )
@@ -988,6 +1475,10 @@ class SecCapitalStructureAdapter(Adapter):
             max_filings=self.max_filings_per_run,
             now=now,
         )
+        queue_receipt = queue.attrs["retrieval_queue_receipt"]
+        _validate_retrieval_queue_receipt(queue_receipt)
+        _atomic_write_json(queue_receipt, queue_receipt_path)
+        selected_lanes = queue.attrs["retrieval_lanes_by_accession"]
 
         source_store = self._source_store()
         new_manifests: list[dict] = []
@@ -995,6 +1486,9 @@ class SecCapitalStructureAdapter(Adapter):
         for _, series in queue.iterrows():
             row = series.to_dict()
             accession = str(row["accession"])
+            selected_lane = selected_lanes.get(accession)
+            if selected_lane not in RETRIEVAL_LANE_ORDER:
+                raise ValueError(f"{accession}: selected filing has no valid retrieval lane")
             url = str(row["canonical_url"])
             source_id = f"{accession}:0:complete-submission.txt"
             bundle_version = _next_bundle_document_version(manifests, accession)
@@ -1103,6 +1597,8 @@ class SecCapitalStructureAdapter(Adapter):
                 "attempt_id": attempt_id, "accession": accession, "source_id": source_id,
                 "canonical_url": url, "attempted_at": attempted_at, "state": state,
                 "error": error, "content_sha256": content_hash,
+                "retrieval_lane": selected_lane,
+                "collection_scope": row.get("collection_scope"),
             })
             time.sleep(PACE_SECONDS)
 
@@ -1115,10 +1611,9 @@ class SecCapitalStructureAdapter(Adapter):
 
         successful = sum(1 for attempt in new_attempts if attempt["state"] == "stored")
         retained_after_run = _eligible_complete_accessions(manifests)
-        pending_after_run = discovery.loc[
-            discovery["form"].astype(str).isin(TARGET_FORMS)
-            & ~discovery["accession"].astype(str).isin(retained_after_run)
-        ]
+        pending_after_run = _retrieval_queue_candidates(
+            discovery, have_complete=retained_after_run
+        )
         heartbeat = pd.DataFrame(
             {
                 "index_days_complete": [sum(1 for row in coverage_updates if row["status"] == "complete")],

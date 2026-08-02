@@ -37,6 +37,28 @@ def _biocatalyst_update_block() -> str:
     return update[start:end]
 
 
+def _legacy_job_body(legacy_jobs: str, job_id: str) -> str:
+    job = re.search(
+        rf"^  {re.escape(job_id)}:\n(?P<body>.*?)(?=^  [a-z0-9][a-z0-9-]*:|\Z)",
+        legacy_jobs,
+        re.MULTILINE | re.DOTALL,
+    )
+    assert job is not None, f"missing legacy CI job: {job_id}"
+    return job.group("body")
+
+
+def _lane_test_paths(job_body: str) -> set[str]:
+    """Extract only paths from the YAML folded pytest command, not comments."""
+
+    return set(
+        re.findall(
+            r"^          (tests/test_[a-z0-9_]+\.py)(?:\s+-q)?$",
+            job_body,
+            re.MULTILINE,
+        )
+    )
+
+
 def test_biocatalyst_deploy_shell_scripts_have_valid_syntax():
     for script in (RUNTIME_PATH, SETUP_PATH, UPDATE_PATH):
         subprocess.run(["bash", "-n", str(script)], check=True)
@@ -48,7 +70,55 @@ def test_record_history_collector_tests_are_owned_by_the_biocatalyst_ci_lane():
     legacy_jobs = _text(LEGACY_JOBS_PATH)
 
     assert '"tests/test_clinicaltrials_history.py"' in workflow
-    assert "tests/test_clinicaltrials_history.py" in legacy_jobs
+    assert "tests/test_clinicaltrials_history.py" in _legacy_job_body(
+        legacy_jobs, "biocatalyst-history"
+    )
+
+
+def test_biocatalyst_ci_uses_bounded_complete_lanes_with_no_unowned_test_file():
+    legacy_jobs = _text(LEGACY_JOBS_PATH)
+    # The former aggregate suite exceeded its 20-minute process cap.  The pack
+    # runner gives each logical job its own cap, so make ownership and both
+    # lower/upper timeout bounds explicit.  A new test_biocatalyst_*.py must
+    # therefore be assigned here before it can merge.
+    expected_lanes = {
+        "biocatalyst-serving": 8,
+        "biocatalyst-evidence": 8,
+        "biocatalyst-worker": 12,
+        "biocatalyst-history": 12,
+        "biocatalyst-contracts": 10,
+        "biocatalyst-deploy-integration": 12,
+    }
+    assert "\n  biocatalyst:\n" not in legacy_jobs
+    seen_paths: set[str] = set()
+    for job_id, expected_timeout in expected_lanes.items():
+        body = _legacy_job_body(legacy_jobs, job_id)
+        timeout = re.search(r"^    timeout-minutes: (\d+)$", body, re.MULTILINE)
+        assert timeout is not None
+        assert int(timeout.group(1)) == expected_timeout
+        # All subjobs remain intentionally bounded; an arbitrary timeout hike
+        # would conceal a regression instead of identifying its contract lane.
+        assert 5 <= int(timeout.group(1)) <= 12
+
+        paths = _lane_test_paths(body)
+        assert paths, f"{job_id} must run an explicit BioCatalyst test set"
+        assert not (seen_paths & paths), (
+            f"duplicate BioCatalyst CI ownership: {seen_paths & paths}"
+        )
+        seen_paths.update(paths)
+
+    expected_paths = {
+        str(path.relative_to(ROOT))
+        for path in (ROOT / "tests").glob("test_biocatalyst_*.py")
+    }
+    expected_paths |= {
+        "tests/test_clinicaltrials_biocatalyst.py",
+        "tests/test_clinicaltrials_history.py",
+        "tests/test_sector_intelligence_contracts.py",
+        "tests/test_sector_intelligence_ownership.py",
+        "tests/test_deploy_update_self_heal.py",
+    }
+    assert seen_paths == expected_paths
 
 
 def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():

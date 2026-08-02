@@ -20,7 +20,13 @@
     },
     "authority": {"$ref": "#/$defs/authority"},
     "form_policy": {"$ref": "#/$defs/form_policy"},
-    "coverage_claim": {"const": "explicit_wave1_form_allowlist_only"},
+    "coverage_claim": {
+      "type": "string",
+      "enum": [
+        "explicit_wave1_form_allowlist_only",
+        "registration_allowlist_plus_issuer_scoped_reconciliation"
+      ]
+    },
     "known_exclusions": {
       "type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true
     },
@@ -125,6 +131,7 @@
       "properties": {
         "policy_version": {"type": "string", "minLength": 1},
         "wave1_discovery": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "issuer_scoped_reconciliation": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
         "wave2_declared_not_collected": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
         "capital_relevant_declared_not_collected": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }

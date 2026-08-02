@@ -9,6 +9,10 @@ up under a green run — dropping the day's data (hk_regime stuck at 07-21).
 These tests build real git repos reproducing that exact stop and assert the
 resolver finishes the rebase keeping BOTH sides' files byte-pure
 (filename == sha256(content)[:8]), and refuses to touch anything else.
+
+Since PR #4247 externalize_css.py mints a second content-hashed tree,
+site/assets/js/<hash>.js (from <script data-externalize> blocks); the resolver
+covers it with the same posture: hashed filenames only, never real content.
 """
 from __future__ import annotations
 
@@ -59,12 +63,26 @@ def css_body(tag: str) -> str:
     return "body{margin:0}\n" + ".x{color:#111}\n" * 200 + tag + "\n"
 
 
-def write_hashed_css(root: Path, css: str) -> str:
-    h = hashlib.sha256(css.encode()).hexdigest()[:8]
-    p = root / "site" / "assets" / "css" / f"{h}.css"
+def js_body(tag: str) -> str:
+    # Same shape for the js tree; shares no lines with css_body, so rename
+    # detection can never pair a stylesheet with a script across kinds.
+    return "(function(){\n" + "  var n=0;n+=1;\n" * 200 + tag + "\n})();\n"
+
+
+def _write_hashed(root: Path, kind: str, body: str) -> str:
+    h = hashlib.sha256(body.encode()).hexdigest()[:8]
+    p = root / "site" / "assets" / kind / f"{h}.{kind}"
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(css)
+    p.write_text(body)
     return h
+
+
+def write_hashed_css(root: Path, css: str) -> str:
+    return _write_hashed(root, "css", css)
+
+
+def write_hashed_js(root: Path, js: str) -> str:
+    return _write_hashed(root, "js", js)
 
 
 def in_rebase(root: Path) -> bool:
@@ -72,9 +90,13 @@ def in_rebase(root: Path) -> bool:
 
 
 def assert_hash_pure(root: Path):
-    for f in (root / "site" / "assets" / "css").glob("*.css"):
-        h = hashlib.sha256(f.read_bytes()).hexdigest()[:8]
-        assert f.stem == h, f"{f.name} content hashes to {h} — filename==hash contract broken"
+    for kind in ("css", "js"):
+        tree = root / "site" / "assets" / kind
+        if not tree.is_dir():
+            continue
+        for f in tree.glob(f"*.{kind}"):
+            h = hashlib.sha256(f.read_bytes()).hexdigest()[:8]
+            assert f.stem == h, f"{f.name} content hashes to {h} — filename==hash contract broken"
 
 
 @pytest.fixture()
@@ -103,6 +125,11 @@ def rename_css(root: Path, base_hash: str, new_css: str, relink=True) -> str:
     if relink:
         (root / "site" / "page.html").write_text(f"<link href=assets/css/{h}.css>\n")
     return h
+
+
+def rename_js(root: Path, base_hash: str, new_js: str) -> str:
+    (root / "site" / "assets" / "js" / f"{base_hash}.js").unlink()
+    return write_hashed_js(root, new_js)
 
 
 def test_rename_rename_keeps_both_sides_and_completes(lanes):
@@ -136,6 +163,44 @@ def test_rename_rename_keeps_both_sides_and_completes(lanes):
     run(["git", "push", "-q", "origin", "main"], lane2, env)  # the day's outputs land
 
 
+def test_rename_rename_hashed_js_resolves_alongside_css(lanes):
+    """PR #4247's site/assets/js/<hash>.js tree auto-resolves like the css tree."""
+    env, origin, lane1, lane2, base_hash, base_css = lanes
+    # seed a hashed js asset present in both lanes
+    base_js_hash = write_hashed_js(lane1, js_body("var base=0;"))
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "seed hashed js"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+    run(["git", "pull", "-q", "--rebase", "origin", "main"], lane2, env)
+
+    # each lane renames BOTH hashed assets in one commit
+    h1c = rename_css(lane1, base_hash, css_body(".lane1{top:0}"))
+    h1j = rename_js(lane1, base_js_hash, js_body("var lane1=1;"))
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "render: lane1 both trees"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+
+    h2c = rename_css(lane2, base_hash, css_body(".lane2{left:0}"))
+    h2j = rename_js(lane2, base_js_hash, js_body("var lane2=2;"))
+    run(["git", "add", "-A"], lane2, env)
+    run(["git", "commit", "-qm", "render: lane2 both trees"], lane2, env)
+
+    pull = run(PULL, lane2, env, check=False)
+    assert pull.returncode != 0 and "rename/rename" in pull.stdout + pull.stderr
+    assert in_rebase(lane2)
+
+    r = resolver(lane2, env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not in_rebase(lane2)
+    css_names = {p.name for p in (lane2 / "site" / "assets" / "css").glob("*.css")}
+    js_names = {p.name for p in (lane2 / "site" / "assets" / "js").glob("*.js")}
+    assert css_names == {f"{h1c}.css", f"{h2c}.css"}
+    assert js_names == {f"{h1j}.js", f"{h2j}.js"}
+    assert_hash_pure(lane2)
+    assert not run(["git", "ls-files", "-u"], lane2, env).stdout.strip()
+    run(["git", "push", "-q", "origin", "main"], lane2, env)
+
+
 def test_refuses_conflicts_outside_hashed_css(lanes):
     env, origin, lane1, lane2, base_hash, base_css = lanes
     # same divergent css rename AND a non-derived rename/rename in data/
@@ -164,6 +229,41 @@ def test_refuses_conflicts_outside_hashed_css(lanes):
     assert r.returncode != 0
     assert "refusing" in r.stdout + r.stderr
     # rebase left in place for the caller's abort+retry path
+    assert in_rebase(lane2)
+    run(["git", "rebase", "--abort"], lane2, env)
+
+
+def test_refuses_non_hashed_js_inside_the_js_tree(lanes):
+    """The js allowance is hash-shaped, not tree-wide: a real, hand-named script
+    under site/assets/js/ must never be auto-resolved."""
+    env, origin, lane1, lane2, base_hash, base_css = lanes
+    seed = "console.log('seed');\n" * 200
+    (lane1 / "site" / "assets" / "js").mkdir(parents=True)
+    (lane1 / "site" / "assets" / "js" / "vendor.js").write_text(seed)
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "seed real js file"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+    run(["git", "pull", "-q", "--rebase", "origin", "main"], lane2, env)
+
+    (lane1 / "site" / "assets" / "js" / "vendor.js").rename(
+        lane1 / "site" / "assets" / "js" / "vendor-one.js"
+    )
+    run(["git", "add", "-A"], lane1, env)
+    run(["git", "commit", "-qm", "lane1 renames vendor"], lane1, env)
+    run(["git", "push", "-q", "origin", "main"], lane1, env)
+
+    (lane2 / "site" / "assets" / "js" / "vendor.js").rename(
+        lane2 / "site" / "assets" / "js" / "vendor-two.js"
+    )
+    run(["git", "add", "-A"], lane2, env)
+    run(["git", "commit", "-qm", "lane2 renames vendor"], lane2, env)
+
+    pull = run(PULL, lane2, env, check=False)
+    assert pull.returncode != 0 and in_rebase(lane2)
+
+    r = resolver(lane2, env)
+    assert r.returncode != 0
+    assert "refusing" in r.stdout + r.stderr
     assert in_rebase(lane2)
     run(["git", "rebase", "--abort"], lane2, env)
 
