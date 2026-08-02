@@ -7,12 +7,18 @@ Test coverage:
   - Pagination assembly: multiple pages combined correctly
   - State-file honesty: no creds -> available:false + reason, parquet NOT written, exit 0
   - API-error path -> available:false w/ reason (no traceback in artifact)
+  - Credential loading: a DOUBLE-encoded secret loads (the operator's real bug);
+    triple-encoded / garbage / missing-keys produce precise NAMED errors
+  - 403 / 404 produce their distinct actionable reasons + GitHub annotations
   - Parquet append-dedupe: two runs overlapping window -> no dup keys
   - 16-month trim: old rows dropped
   - Family scorecard joins via seo_director classifier
   - Brand split regex
   - Query-gap heuristics incl. boundary cases
-  - Secret hygiene: no 'private_key'/'token' substrings in artifacts
+  - Sitemap + URL-inspection parsing over real-shaped API payloads
+  - One URL failing mid-sweep does not abort the others
+  - Secret hygiene: the private key never appears in ANY emitted string
+  - Annotation compliance asserted via capsys with line.startswith("::")
   - Workflow YAML parses with new step + secret only via env
 """
 from __future__ import annotations
@@ -36,17 +42,27 @@ from engine.marketing.seo_search_console import (  # noqa: E402
     _build_parquet,
     _build_query_gaps,
     _build_scorecard,
+    _core_inspect_urls,
     _DEFAULT_PROPERTY,
     _DAILY_FILE,
+    _emit_index_annotations,
     _GAPS_FILE,
     _GAP_MAX_CTR,
     _GAP_MIN_IMPRESSIONS,
     _GAP_POS_HIGH,
     _GAP_POS_LOW,
+    _INDEX_STATUS_FILE,
+    _MAX_INSPECT_URLS,
     _PAGE_CAP_MONTHS,
+    _print_index_summary,
     _SCORECARD_FILE,
     _STATE_FILE,
+    collect_index_status,
     fetch_search_analytics,
+    fetch_sitemaps,
+    GscApiError,
+    inspect_urls,
+    load_sa_info,
     run,
 )
 
@@ -56,6 +72,42 @@ from engine.marketing.seo_search_console import (  # noqa: E402
 
 _AS_OF = date(2026, 7, 20)
 _WINDOW = {"start": "2026-06-23", "end": "2026-07-20"}  # 28-day default
+
+#: The exact private-key body that must never appear in ANY string this module
+#: emits — reason, artifact, stdout, log record.
+_PRIVATE_KEY = (
+    "-----BEGIN PRIVATE KEY-----\n"
+    "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjNEVER_LEAK_THIS_STRING\n"
+    "-----END PRIVATE KEY-----\n"
+)
+_CLIENT_EMAIL = "mastermindx@mastermindx-503122.iam.gserviceaccount.com"
+
+
+def _sa_info(**over) -> dict:
+    """A realistically shaped, valid service-account blob."""
+    info = {
+        "type": "service_account",
+        "project_id": "mastermindx-503122",
+        "private_key_id": "0123456789abcdef0123456789abcdef01234567",
+        "private_key": _PRIVATE_KEY,
+        "client_email": _CLIENT_EMAIL,
+        "client_id": "109876543210987654321",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url":
+            "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url":
+            "https://www.googleapis.com/robot/v1/metadata/x509/mastermindx",
+    }
+    info.update(over)
+    return info
+
+
+def _write_creds(tmp_path: Path, name: str = "key.json", **over) -> Path:
+    """Write a VALID service-account key file and return its path."""
+    p = tmp_path / name
+    p.write_text(json.dumps(_sa_info(**over)), encoding="utf-8")
+    return p
 
 
 def _make_api_row(
@@ -119,6 +171,13 @@ def _stub_google_auth(monkeypatch):
         def from_service_account_file(cls, path, scopes=None):
             return cls()
 
+        @classmethod
+        def from_service_account_info(cls, info, scopes=None):
+            # Mirror google-auth's real contract: it calls .keys() on the arg.
+            # A str here is exactly the operator's production crash.
+            info.keys()
+            return cls()
+
     sa_mod.Credentials = _FakeCreds
 
     class _FakeRequest:
@@ -141,6 +200,105 @@ def _stub_google_auth(monkeypatch):
         ("google.oauth2.service_account", sa_mod),
     ]:
         monkeypatch.setitem(sys.modules, name, mod)
+
+
+# ---------------------------------------------------------------------------
+# Network lockout + realistic API payload fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _no_live_calls(monkeypatch):
+    """No test in this module may reach the network.
+
+    The two index-diagnostics HTTP seams are replaced with hard failures by
+    default, so a test that forgets to stub them fails soft through the adapter
+    rather than quietly calling googleapis.com.  Pacing sleeps are neutralised
+    so the 12-URL sweep costs nothing.
+    """
+    def _blocked(*_a, **_kw):
+        raise GscApiError(503, "no network in tests")
+
+    monkeypatch.setattr(
+        "engine.marketing.seo_search_console._sitemaps_get", _blocked)
+    monkeypatch.setattr(
+        "engine.marketing.seo_search_console._inspect_post", _blocked)
+    monkeypatch.setattr("engine.marketing.seo_search_console.time.sleep",
+                        lambda *_a, **_kw: None)
+
+
+def _sitemaps_payload() -> dict:
+    """A real-shaped webmasters/v3 sitemaps.list response.
+
+    Counts arrive as STRINGS (int64 over JSON) — that is not a typo.
+    """
+    return {
+        "sitemap": [
+            {
+                "path": "https://www.mastermind-x.com/sitemap.xml",
+                "lastSubmitted": "2026-07-22T09:14:11.000Z",
+                "lastDownloaded": "2026-07-23T04:02:55.000Z",
+                "isPending": False,
+                "isSitemapsIndex": False,
+                "type": "sitemap",
+                "warnings": "3",
+                "errors": "0",
+                "contents": [
+                    {"type": "web", "submitted": "2219", "indexed": "0"},
+                ],
+            },
+            {
+                "path": "https://www.mastermind-x.com/news-sitemap.xml",
+                "lastSubmitted": "2026-07-22T09:14:12.000Z",
+                # No lastDownloaded at all — Google has NEVER fetched it.
+                "isPending": True,
+                "isSitemapsIndex": False,
+                "type": "sitemap",
+                "warnings": "0",
+                "errors": "0",
+                "contents": [
+                    {"type": "web", "submitted": "40", "indexed": "0"},
+                ],
+            },
+        ]
+    }
+
+
+def _inspect_payload(
+    *,
+    verdict="PASS",
+    coverage="Submitted and indexed",
+    last_crawl="2026-07-19T11:22:33Z",
+    fetch_state="SUCCESSFUL",
+    url="https://www.mastermind-x.com/",
+) -> dict:
+    """A real-shaped urlInspection/index:inspect response."""
+    return {
+        "inspectionResult": {
+            "inspectionResultLink": (
+                "https://search.google.com/search-console/inspect"
+                "?resource_id=sc-domain%3Amastermind-x.com&id=abc123"
+            ),
+            "indexStatusResult": {
+                "sitemap": ["https://www.mastermind-x.com/sitemap.xml"],
+                "verdict": verdict,
+                "coverageState": coverage,
+                "robotsTxtState": "ALLOWED",
+                "indexingState": "INDEXING_ALLOWED",
+                "lastCrawlTime": last_crawl,
+                "pageFetchState": fetch_state,
+                "googleCanonical": url,
+                "userCanonical": url,
+                "crawledAs": "MOBILE",
+            },
+            "mobileUsabilityResult": {"verdict": "VERDICT_UNSPECIFIED"},
+        }
+    }
+
+
+def _annotation_lines(captured: str) -> list[str]:
+    """Only the lines GitHub would actually parse: '::' at column 0."""
+    return [ln for ln in captured.splitlines() if ln.startswith("::")]
 
 
 # ---------------------------------------------------------------------------
@@ -213,8 +371,7 @@ class TestAPIError:
         _stub_google_auth(monkeypatch)
 
         # Create a fake creds file.
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         import requests as _requests
 
@@ -240,8 +397,7 @@ class TestAPIError:
     def test_api_error_no_secret_in_state(self, tmp_path, monkeypatch):
         """API error reason must never contain 'private_key' or 'token' text."""
         _stub_google_auth(monkeypatch)
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account", "private_key": "SHOULD_NOT_APPEAR"}')
+        creds_file = _write_creds(tmp_path)
 
         def _fail(*args, **kwargs):
             # Error message contains fake key-like content.
@@ -292,8 +448,7 @@ class TestPagination:
 
         self._mock_gsc_query(monkeypatch, [page1, page2])
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = fetch_search_analytics(
             str(creds_file), _DEFAULT_PROPERTY, "2026-07-01", "2026-07-20",
@@ -306,8 +461,7 @@ class TestPagination:
         page1 = [_make_api_row(query=f"q{i}") for i in range(3)]
         self._mock_gsc_query(monkeypatch, [page1])
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = fetch_search_analytics(
             str(creds_file), _DEFAULT_PROPERTY, "2026-07-01", "2026-07-20",
@@ -319,8 +473,7 @@ class TestPagination:
         """Empty rows list on first call -> zero rows returned."""
         self._mock_gsc_query(monkeypatch, [[]])
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = fetch_search_analytics(str(creds_file), _DEFAULT_PROPERTY, "2026-07-01", "2026-07-20")
         assert rows == []
@@ -330,8 +483,7 @@ class TestPagination:
         row = _make_api_row(date_str="2026-07-10", query="alpha", country="gbr", device="MOBILE")
         self._mock_gsc_query(monkeypatch, [[row]])
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = fetch_search_analytics(str(creds_file), _DEFAULT_PROPERTY, "2026-07-01", "2026-07-20")
         assert len(rows) == 1
@@ -438,8 +590,7 @@ class TestParquetAppendDedupe:
 
         monkeypatch.setattr("engine.marketing.seo_search_console._gsc_query", _fake_gsc_query)
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         # First run.
         run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF, write=True)
@@ -741,12 +892,7 @@ class TestSecretHygiene:
         monkeypatch.delenv("GSC_SA_JSON", raising=False)
 
         # Create a fake creds file with key material.
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text(json.dumps({
-            "type": "service_account",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMOCK\n-----END RSA PRIVATE KEY-----",
-            "client_email": "test@project.iam.gserviceaccount.com",
-        }))
+        creds_file = _write_creds(tmp_path)
 
         def _fake_gsc_query(*args, **kwargs):
             return {"rows": []}
@@ -756,12 +902,16 @@ class TestSecretHygiene:
         run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF, write=True)
 
         seo_dir = tmp_path / _ARTIFACTS_REL
-        for artifact_file in [_STATE_FILE, _SCORECARD_FILE, _GAPS_FILE]:
+        for artifact_file in [_STATE_FILE, _SCORECARD_FILE, _GAPS_FILE,
+                              _INDEX_STATUS_FILE]:
             path = seo_dir / artifact_file
             if path.exists():
                 text = path.read_text()
                 assert "private_key" not in text, f"{artifact_file} contains 'private_key'"
-                assert "MOCK" not in text, f"{artifact_file} contains raw key material"
+                assert _PRIVATE_KEY not in text, f"{artifact_file} contains the key"
+                assert "NEVER_LEAK_THIS_STRING" not in text, (
+                    f"{artifact_file} contains raw key material"
+                )
 
     def test_scorecard_no_token(self, tmp_path, monkeypatch):
         """Scorecard and gaps artifacts must not contain 'token'."""
@@ -769,8 +919,7 @@ class TestSecretHygiene:
         monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
         monkeypatch.delenv("GSC_SA_JSON", raising=False)
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = [_make_api_row(query="test", impressions=10, clicks=1, ctr=0.1, position=5.0)]
 
@@ -791,18 +940,16 @@ class TestSecretHygiene:
                 # but the stub token must not reach any artifact.
                 assert "FAKE_TOKEN" not in text
 
-    def test_gscsajson_tmp_file_deleted(self, tmp_path, monkeypatch):
-        """Tmp file written for GSC_SA_JSON must be deleted after use."""
+    def test_gscsajson_env_secret_never_reaches_an_artifact(self, tmp_path, monkeypatch):
+        """The GSC_SA_JSON secret is parsed in-process and never lands on disk.
+
+        (Replaces the old tmp-file-deletion test: there IS no tmp file any more —
+        ``load_sa_info`` hands the parsed dict straight to
+        ``from_service_account_info``, so key material never touches disk at all.)
+        """
         _stub_google_auth(monkeypatch)
         monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
-
-        raw_json = json.dumps({"type": "service_account", "private_key": "SECRET"})
-        monkeypatch.setenv("GSC_SA_JSON", raw_json)
-
-        created_tmp_files = []
-        original_resolve = __import__(
-            "engine.marketing.seo_search_console", fromlist=["_resolve_creds"]
-        )._resolve_creds
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info()))
 
         def _fake_gsc_query(*args, **kwargs):
             return {"rows": []}
@@ -810,16 +957,48 @@ class TestSecretHygiene:
         monkeypatch.setattr("engine.marketing.seo_search_console._gsc_query", _fake_gsc_query)
 
         state = run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+        assert state["available"] is True
 
-        # The tmp file should be gone after run() completes.
-        # We can't easily capture its path without patching tempfile, but
-        # we verify the secret isn't sitting in any artifact.
         seo_dir = tmp_path / _ARTIFACTS_REL
-        for artifact_file in [_STATE_FILE, _SCORECARD_FILE, _GAPS_FILE]:
+        for artifact_file in [_STATE_FILE, _SCORECARD_FILE, _GAPS_FILE,
+                              _INDEX_STATUS_FILE]:
             path = seo_dir / artifact_file
             if path.exists():
                 text = path.read_text()
-                assert "SECRET" not in text
+                assert "NEVER_LEAK_THIS_STRING" not in text
+                assert _PRIVATE_KEY not in text
+
+    def test_no_tmp_credential_file_is_created(self, tmp_path, monkeypatch):
+        """`tempfile.mkstemp` must never be used to stage key material.
+
+        The old code wrote GSC_SA_JSON to a chmod-600 tmp file so google-auth
+        could read it back; a crash between write and unlink left the key on
+        disk.  Artifact writes still use mkstemp, so the pin is on the SUFFIX
+        the credential path used.
+        """
+        import engine.marketing.seo_search_console as mod
+
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info()))
+
+        real_mkstemp = mod.tempfile.mkstemp
+        seen: list[dict] = []
+
+        def _spy(*args, **kwargs):
+            seen.append(dict(kwargs))
+            return real_mkstemp(*args, **kwargs)
+
+        monkeypatch.setattr(mod.tempfile, "mkstemp", _spy)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": []},
+        )
+
+        run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+
+        cred_tmps = [k for k in seen if str(k.get("prefix", "")).startswith(".gsc_sa")]
+        assert not cred_tmps, f"credential material staged on disk: {cred_tmps}"
 
 
 # ---------------------------------------------------------------------------
@@ -834,8 +1013,7 @@ class TestRunIntegration:
         monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
         monkeypatch.delenv("GSC_SA_JSON", raising=False)
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         rows = [
             _make_api_row(query="regime", impressions=100, clicks=5, ctr=0.05, position=8.0),
@@ -883,8 +1061,7 @@ class TestRunIntegration:
         monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
         monkeypatch.delenv("GSC_SA_JSON", raising=False)
 
-        creds_file = tmp_path / "key.json"
-        creds_file.write_text('{"type": "service_account"}')
+        creds_file = _write_creds(tmp_path)
 
         def _fake_gsc_query(*args, **kwargs):
             return _api_response([_make_api_row()])
@@ -977,3 +1154,1051 @@ class TestWorkflowYAMLWithGSC:
         env_block = gsc_step.get("env", {})
         assert "GSC_SA_JSON" in env_block
         assert "GSC_SERVICE_ACCOUNT_JSON" in env_block.get("GSC_SA_JSON", "")
+
+
+# ---------------------------------------------------------------------------
+# Tests: credential loading — the operator's actual production bug
+#
+# GH Actions run 30737705794 failed with
+#   gsc: fetch failed: 'str' object has no attribute 'keys'
+# because google-auth's from_service_account_file does json.load(f) then
+# from_service_account_info(data), and a DOUBLE-ENCODED secret makes json.load
+# return a str.  These tests pin: the double-encoded case now LOADS, and every
+# other malformation is NAMED rather than crashed on.
+# ---------------------------------------------------------------------------
+
+
+class TestLoadSaInfo:
+    def test_plain_object_loads(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info()))
+
+        info, err = load_sa_info()
+        assert err is None
+        assert info["client_email"] == _CLIENT_EMAIL
+
+    def test_double_encoded_secret_loads(self, monkeypatch):
+        """THE operator bug: json.dumps applied twice must still work.
+
+        json.loads(json.dumps(json.dumps(obj))) -> str, which is precisely what
+        google-auth then calls .keys() on.  We unwrap it instead of dying.
+        """
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(json.dumps(_sa_info())))
+
+        info, err = load_sa_info()
+        assert err is None, f"double-encoded secret rejected: {err}"
+        assert isinstance(info, dict)
+        assert info["client_email"] == _CLIENT_EMAIL
+        assert info["type"] == "service_account"
+
+    def test_double_encoded_reaches_a_real_token(self, tmp_path, monkeypatch):
+        """End-to-end: the unwrapped dict survives google-auth's .keys() call."""
+        import engine.marketing.seo_search_console as mod
+
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(json.dumps(_sa_info())))
+
+        info, err = load_sa_info()
+        assert err is None
+        # The stub calls info.keys() exactly as google-auth does.
+        assert mod._get_bearer_token(info) == "FAKE_TOKEN"
+
+    def test_triple_encoded_secret_named_error(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv(
+            "GSC_SA_JSON", json.dumps(json.dumps(json.dumps(_sa_info())))
+        )
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err == (
+            "GSC_SA_JSON parsed to str after 2 unwraps — "
+            "the secret is multiply-encoded"
+        ), err
+
+    def test_garbage_is_named_not_valid_json(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", "{not json at all")
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err.startswith("GSC_SA_JSON is not valid JSON:"), err
+
+    def test_json_array_is_not_an_object(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps([_sa_info()]))
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "parsed to list — expected a JSON object" in err, err
+
+    def test_missing_keys_are_named(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        blob = _sa_info()
+        blob.pop("private_key")
+        blob.pop("token_uri")
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(blob))
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "service-account JSON missing keys: private_key, token_uri" in err, err
+
+    def test_empty_string_value_counts_as_missing(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info(client_email="  ")))
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "missing keys: client_email" in err, err
+
+    def test_wrong_type_is_named(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv(
+            "GSC_SA_JSON", json.dumps(_sa_info(type="authorized_user"))
+        )
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "type='authorized_user'" in err, err
+        assert "expected 'service_account'" in err, err
+
+    def test_bom_and_whitespace_tolerated(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv(
+            "GSC_SA_JSON", "﻿  \n" + json.dumps(_sa_info()) + "\n  "
+        )
+
+        info, err = load_sa_info()
+        assert err is None, err
+        assert info["client_email"] == _CLIENT_EMAIL
+
+    def test_empty_env_reports_not_configured(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv("GSC_SA_JSON", "   ")
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err == "credentials not configured"
+
+    def test_no_source_reports_not_configured(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert err == "credentials not configured"
+
+    def test_explicit_path_read_as_file(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        p = _write_creds(tmp_path)
+
+        info, err = load_sa_info(creds_path=p)
+        assert err is None
+        assert info["project_id"] == "mastermindx-503122"
+
+    def test_explicit_path_takes_precedence_over_env(self, tmp_path, monkeypatch):
+        p = _write_creds(tmp_path, client_email="from-file@x.iam.gserviceaccount.com")
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(
+            _sa_info(client_email="from-env@x.iam.gserviceaccount.com")))
+
+        info, err = load_sa_info(creds_path=p)
+        assert err is None
+        assert info["client_email"] == "from-file@x.iam.gserviceaccount.com"
+
+    def test_gac_env_read_as_file_path(self, tmp_path, monkeypatch):
+        p = _write_creds(tmp_path, name="gac.json",
+                         client_email="gac@x.iam.gserviceaccount.com")
+        monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", str(p))
+        monkeypatch.setenv("GSC_SA_JSON", json.dumps(_sa_info()))
+
+        info, err = load_sa_info()
+        assert err is None
+        assert info["client_email"] == "gac@x.iam.gserviceaccount.com"
+
+    def test_gac_env_double_encoded_file_also_unwraps(self, tmp_path, monkeypatch):
+        p = tmp_path / "gac2.json"
+        p.write_text(json.dumps(json.dumps(_sa_info())), encoding="utf-8")
+        monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", str(p))
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        info, err = load_sa_info()
+        assert err is None, err
+        assert info["client_email"] == _CLIENT_EMAIL
+
+    def test_gac_missing_file_named(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", str(tmp_path / "nope.json"))
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        info, err = load_sa_info()
+        assert info is None
+        assert "GOOGLE_APPLICATION_CREDENTIALS points at a missing file" in err, err
+
+    def test_explicit_missing_path_named(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        info, err = load_sa_info(creds_path="/nonexistent/key.json")
+        assert info is None
+        assert err == "credentials file not found: /nonexistent/key.json"
+
+    def test_no_failure_mode_ever_emits_the_private_key(self, tmp_path, monkeypatch):
+        """SECURITY: sweep every branch; the key must not appear in ANY error."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        blob = _sa_info()
+        no_type = _sa_info(type="authorized_user")
+        no_email = _sa_info()
+        no_email.pop("client_email")
+
+        payloads = [
+            json.dumps(blob),                                   # valid
+            json.dumps(json.dumps(blob)),                       # double-encoded
+            json.dumps(json.dumps(json.dumps(blob))),           # triple-encoded
+            json.dumps(no_type),                                # wrong type
+            json.dumps(no_email),                               # missing key
+            json.dumps([blob]),                                 # not an object
+            json.dumps(blob)[:-4],                              # truncated JSON
+            '{"private_key": "' + _PRIVATE_KEY.replace("\n", "\\n") + '"}',
+        ]
+        for payload in payloads:
+            monkeypatch.setenv("GSC_SA_JSON", payload)
+            info, err = load_sa_info()
+            emitted = "" if err is None else err
+            assert "NEVER_LEAK_THIS_STRING" not in emitted, (payload[:40], err)
+            assert "BEGIN PRIVATE KEY" not in emitted, (payload[:40], err)
+
+
+class TestBearerTokenFromInfo:
+    def test_auth_failure_is_one_clean_scrubbed_line(self, monkeypatch):
+        """A google.auth blow-up becomes one line, with key material removed."""
+        import engine.marketing.seo_search_console as mod
+
+        _stub_google_auth(monkeypatch)
+        sa_mod = sys.modules["google.oauth2.service_account"]
+
+        def _boom(info, scopes=None):
+            raise ValueError(
+                "invalid JWT signature\ntraceback line 2\nkey=" + _PRIVATE_KEY
+            )
+
+        monkeypatch.setattr(sa_mod.Credentials, "from_service_account_info", _boom)
+
+        with pytest.raises(mod.GscAuthError) as exc:
+            mod._get_bearer_token(_sa_info())
+
+        msg = str(exc.value)
+        assert "\n" not in msg, "auth error must be ONE line"
+        assert _CLIENT_EMAIL in msg, "must name which SA failed"
+        assert "NEVER_LEAK_THIS_STRING" not in msg
+        assert "BEGIN PRIVATE KEY" not in msg
+
+
+# ---------------------------------------------------------------------------
+# Tests: HTTP status -> distinct, actionable operator reason + annotation
+# ---------------------------------------------------------------------------
+
+
+def _run_with_status(tmp_path, monkeypatch, status: int, message: str = "denied"):
+    _stub_google_auth(monkeypatch)
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+    monkeypatch.delenv("GSC_SA_JSON", raising=False)
+    creds_file = _write_creds(tmp_path)
+
+    def _fail(*args, **kwargs):
+        raise GscApiError(status, message)
+
+    monkeypatch.setattr("engine.marketing.seo_search_console._gsc_query", _fail)
+    return run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF, write=True)
+
+
+class TestStatusReasons:
+    def test_403_names_the_service_account_and_the_ui_action(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        state = _run_with_status(tmp_path, monkeypatch, 403)
+
+        assert state["available"] is False
+        reason = state["reason"]
+        assert _CLIENT_EMAIL in reason
+        assert _DEFAULT_PROPERTY in reason
+        assert "add it as a user in Search Console" in reason
+        assert "api error" not in reason.lower()
+
+        lines = _annotation_lines(capsys.readouterr().out)
+        hit = [ln for ln in lines if "gsc-no-access" in ln]
+        assert hit, f"no 403 annotation among {lines}"
+        assert hit[0].startswith("::warning title=gsc-no-access::")
+        assert _CLIENT_EMAIL in hit[0]
+
+    def test_404_names_the_domain_property(self, tmp_path, monkeypatch, capsys):
+        state = _run_with_status(tmp_path, monkeypatch, 404, "not found")
+
+        reason = state["reason"]
+        assert state["available"] is False
+        assert "not found" in reason
+        assert "DOMAIN property" in reason
+        assert _DEFAULT_PROPERTY in reason
+
+        lines = _annotation_lines(capsys.readouterr().out)
+        hit = [ln for ln in lines if "gsc-property-not-found" in ln]
+        assert hit, f"no 404 annotation among {lines}"
+        assert hit[0].startswith("::warning title=gsc-property-not-found::")
+
+    def test_500_stays_a_generic_api_error(self, tmp_path, monkeypatch, capsys):
+        state = _run_with_status(tmp_path, monkeypatch, 500, "backend error")
+
+        assert state["available"] is False
+        assert state["reason"].startswith("api error: ")
+        lines = _annotation_lines(capsys.readouterr().out)
+        assert not [ln for ln in lines if "gsc-no-access" in ln]
+        assert not [ln for ln in lines if "gsc-property-not-found" in ln]
+
+    def test_403_does_not_burn_quota_on_the_inspection_sweep(
+        self, tmp_path, monkeypatch
+    ):
+        """12 more copies of the same 403 buy nothing — and cost quota."""
+        calls = []
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda *a, **k: calls.append(a) or {},
+        )
+        _run_with_status(tmp_path, monkeypatch, 403)
+        assert calls == []
+
+    def test_malformed_credentials_reason_and_annotation(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.setenv(
+            "GSC_SA_JSON", json.dumps(json.dumps(json.dumps(_sa_info())))
+        )
+
+        state = run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+
+        assert state["available"] is False
+        assert state["reason"] == (
+            "GSC_SA_JSON parsed to str after 2 unwraps — "
+            "the secret is multiply-encoded"
+        )
+        lines = _annotation_lines(capsys.readouterr().out)
+        hit = [ln for ln in lines if "gsc-credentials-malformed" in ln]
+        assert hit, f"no malformed-credentials annotation among {lines}"
+        assert hit[0].startswith("::warning title=gsc-credentials-malformed::")
+
+    def test_absent_credentials_stay_quiet(self, tmp_path, monkeypatch, capsys):
+        """'not configured' is a state, not an alarm — no annotation for it."""
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        state = run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+        assert state["reason"] == "credentials not configured"
+        assert not [
+            ln for ln in _annotation_lines(capsys.readouterr().out)
+            if "gsc-credentials-malformed" in ln
+        ]
+
+
+# ---------------------------------------------------------------------------
+# Tests: sitemap diagnostics
+# ---------------------------------------------------------------------------
+
+
+class TestFetchSitemaps:
+    def test_real_shaped_payload_parsed(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._sitemaps_get",
+            lambda token, prop: _sitemaps_payload(),
+        )
+
+        doc = fetch_sitemaps(_sa_info(), _DEFAULT_PROPERTY)
+
+        assert doc["count"] == 2
+        first = doc["sitemaps"][0]
+        assert first["path"] == "https://www.mastermind-x.com/sitemap.xml"
+        assert first["lastSubmitted"] == "2026-07-22T09:14:11.000Z"
+        assert first["lastDownloaded"] == "2026-07-23T04:02:55.000Z"
+        assert first["isPending"] is False
+        # Counts arrive as strings over JSON; they must land as ints.
+        assert first["warnings"] == 3 and isinstance(first["warnings"], int)
+        assert first["errors"] == 0
+        assert first["submitted"] == 2219
+        assert first["indexed"] == 0
+        assert first["contents"] == [
+            {"type": "web", "submitted": 2219, "indexed": 0}
+        ]
+
+    def test_never_downloaded_is_flagged(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._sitemaps_get",
+            lambda token, prop: _sitemaps_payload(),
+        )
+
+        doc = fetch_sitemaps(_sa_info(), _DEFAULT_PROPERTY)
+        assert doc["never_downloaded"] == [
+            "https://www.mastermind-x.com/news-sitemap.xml"
+        ]
+        assert doc["sitemaps"][1]["lastDownloaded"] is None
+
+    def test_empty_property_has_no_sitemaps(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._sitemaps_get",
+            lambda token, prop: {},
+        )
+
+        doc = fetch_sitemaps(_sa_info(), _DEFAULT_PROPERTY)
+        assert doc == {"sitemaps": [], "never_downloaded": [], "count": 0}
+
+
+# ---------------------------------------------------------------------------
+# Tests: URL inspection
+# ---------------------------------------------------------------------------
+
+
+class TestInspectUrls:
+    def test_real_shaped_payload_projected(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: _inspect_payload(url=url),
+        )
+
+        recs = inspect_urls(
+            _sa_info(), _DEFAULT_PROPERTY,
+            ["https://www.mastermind-x.com/"], pace_s=0,
+        )
+        assert len(recs) == 1
+        r = recs[0]
+        assert r["url"] == "https://www.mastermind-x.com/"
+        assert r["verdict"] == "PASS"
+        assert r["coverageState"] == "Submitted and indexed"
+        assert r["robotsTxtState"] == "ALLOWED"
+        assert r["indexingState"] == "INDEXING_ALLOWED"
+        assert r["lastCrawlTime"] == "2026-07-19T11:22:33Z"
+        assert r["pageFetchState"] == "SUCCESSFUL"
+        assert r["googleCanonical"] == "https://www.mastermind-x.com/"
+        assert r["userCanonical"] == "https://www.mastermind-x.com/"
+        assert r["inspectionResultLink"].startswith(
+            "https://search.google.com/search-console/inspect")
+        assert r["indexed"] is True
+        assert r["error"] is None
+
+    def test_deindexed_verdict_is_not_indexed(self, monkeypatch):
+        """'URL is unknown to Google' — the mastermind-x.com situation."""
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: _inspect_payload(
+                verdict="FAIL",
+                coverage="URL is unknown to Google",
+                last_crawl=None,
+                fetch_state="PAGE_FETCH_STATE_UNSPECIFIED",
+                url=url,
+            ),
+        )
+
+        recs = inspect_urls(
+            _sa_info(), _DEFAULT_PROPERTY,
+            ["https://www.mastermind-x.com/"], pace_s=0,
+        )
+        assert recs[0]["indexed"] is False
+        assert recs[0]["coverageState"] == "URL is unknown to Google"
+        assert recs[0]["lastCrawlTime"] is None
+
+    def test_crawled_but_not_indexed_is_not_indexed(self, monkeypatch):
+        """coverageState contains the word 'indexed' — the verdict decides."""
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: _inspect_payload(
+                verdict="NEUTRAL",
+                coverage="Crawled - currently not indexed",
+                url=url,
+            ),
+        )
+
+        recs = inspect_urls(
+            _sa_info(), _DEFAULT_PROPERTY,
+            ["https://www.mastermind-x.com/macro.html"], pace_s=0,
+        )
+        assert recs[0]["indexed"] is False
+
+    def test_one_failure_mid_sweep_does_not_abort_the_others(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        urls = [f"https://www.mastermind-x.com/p{i}.html" for i in range(5)]
+
+        def _post(token, prop, url):
+            if url.endswith("p2.html"):
+                raise GscApiError(500, "backend error on p2")
+            return _inspect_payload(url=url)
+
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post", _post)
+
+        recs = inspect_urls(_sa_info(), _DEFAULT_PROPERTY, urls, pace_s=0)
+
+        assert len(recs) == len(urls), "sweep aborted early"
+        assert [r["url"] for r in recs] == urls, "order not preserved"
+        failed = [r for r in recs if r["error"]]
+        assert len(failed) == 1
+        assert failed[0]["url"].endswith("p2.html")
+        assert "backend error on p2" in failed[0]["error"]
+        assert failed[0]["indexed"] is False
+        assert sum(1 for r in recs if r["indexed"]) == 4
+
+    def test_per_url_error_never_leaks_key_material(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+
+        def _post(token, prop, url):
+            raise RuntimeError("boom private_key=" + _PRIVATE_KEY)
+
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post", _post)
+
+        recs = inspect_urls(
+            _sa_info(), _DEFAULT_PROPERTY,
+            ["https://www.mastermind-x.com/"], pace_s=0,
+        )
+        assert "NEVER_LEAK_THIS_STRING" not in recs[0]["error"]
+        assert "BEGIN PRIVATE KEY" not in recs[0]["error"]
+
+    def test_requests_are_paced_between_urls(self, monkeypatch):
+        """Quota is 600/min — a 12-URL burst must be spaced, not fired at once."""
+        import engine.marketing.seo_search_console as mod
+
+        _stub_google_auth(monkeypatch)
+        slept: list[float] = []
+        monkeypatch.setattr(mod.time, "sleep", lambda s: slept.append(s))
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: _inspect_payload(url=url),
+        )
+
+        urls = [f"https://www.mastermind-x.com/p{i}.html" for i in range(4)]
+        inspect_urls(_sa_info(), _DEFAULT_PROPERTY, urls, pace_s=0.25)
+
+        assert slept == [0.25, 0.25, 0.25], slept  # n-1 gaps, none before the first
+
+    def test_body_carries_the_property_and_language(self, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        seen: list[tuple] = []
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: seen.append((token, prop, url)) or {},
+        )
+
+        inspect_urls(
+            _sa_info(), _DEFAULT_PROPERTY,
+            ["https://www.mastermind-x.com/"], pace_s=0,
+        )
+        assert seen == [("FAKE_TOKEN", _DEFAULT_PROPERTY,
+                         "https://www.mastermind-x.com/")]
+
+
+# ---------------------------------------------------------------------------
+# Tests: the deterministic core URL set
+# ---------------------------------------------------------------------------
+
+
+def _write_sitemap(root: Path, blog: list[tuple[str, str | None]]) -> None:
+    """Write a site/sitemap.xml with the given (url, lastmod) blog entries."""
+    site = root / "site"
+    site.mkdir(parents=True, exist_ok=True)
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        "  <url><loc>https://www.mastermind-x.com/</loc></url>",
+    ]
+    for loc, lastmod in blog:
+        lm = f"<lastmod>{lastmod}</lastmod>" if lastmod else ""
+        parts.append(f"  <url><loc>{loc}</loc>{lm}</url>")
+    parts.append("</urlset>")
+    (site / "sitemap.xml").write_text("\n".join(parts), encoding="utf-8")
+
+
+class TestCoreUrlSet:
+    def test_capped_and_root_first(self, tmp_path):
+        urls = _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+        assert len(urls) <= _MAX_INSPECT_URLS
+        assert urls[0] == "https://www.mastermind-x.com/"
+        assert "https://www.mastermind-x.com/macro.html" in urls
+        assert "https://www.mastermind-x.com/plans.html" in urls
+
+    def test_deterministic_across_calls(self, tmp_path):
+        _write_sitemap(tmp_path, [
+            ("https://www.mastermind-x.com/blog/a.html", None),
+            ("https://www.mastermind-x.com/blog/b.html", None),
+            ("https://www.mastermind-x.com/blog/c.html", None),
+        ])
+        assert (_core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+                == _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY))
+
+    def test_two_most_recent_blog_posts_appended(self, tmp_path):
+        _write_sitemap(tmp_path, [
+            ("https://www.mastermind-x.com/blog/old.html", "2026-01-01"),
+            ("https://www.mastermind-x.com/blog/newest.html", "2026-07-30"),
+            ("https://www.mastermind-x.com/blog/second.html", "2026-07-15"),
+            ("https://www.mastermind-x.com/blog/index.html", "2026-07-31"),
+        ])
+        urls = _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+
+        assert len(urls) == _MAX_INSPECT_URLS
+        assert urls[-2:] == [
+            "https://www.mastermind-x.com/blog/newest.html",
+            "https://www.mastermind-x.com/blog/second.html",
+        ]
+        # blog/index.html is already in the core set; it is not a "post".
+        assert urls.count("https://www.mastermind-x.com/blog/index.html") == 1
+        assert "https://www.mastermind-x.com/blog/old.html" not in urls
+
+    def test_lastmod_free_blog_entries_still_deterministic(self, tmp_path):
+        """This repo's sitemap emits blog URLs with NO lastmod — sort must hold."""
+        _write_sitemap(tmp_path, [
+            ("https://www.mastermind-x.com/blog/aaa.html", None),
+            ("https://www.mastermind-x.com/blog/zzz.html", None),
+            ("https://www.mastermind-x.com/blog/mmm.html", None),
+        ])
+        urls = _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+        assert urls[-2:] == [
+            "https://www.mastermind-x.com/blog/zzz.html",
+            "https://www.mastermind-x.com/blog/mmm.html",
+        ]
+
+    def test_origin_taken_from_the_sitemap(self, tmp_path):
+        site = tmp_path / "site"
+        site.mkdir(parents=True, exist_ok=True)
+        (site / "sitemap.xml").write_text(
+            '<urlset><url><loc>https://example.test/</loc></url></urlset>',
+            encoding="utf-8",
+        )
+        urls = _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+        assert urls[0] == "https://example.test/"
+        assert all(u.startswith("https://example.test/") for u in urls)
+
+    def test_origin_falls_back_to_the_property(self, tmp_path):
+        urls = _core_inspect_urls(tmp_path, "sc-domain:other-site.example")
+        assert urls[0] == "https://www.other-site.example/"
+
+    def test_real_repo_sitemap_yields_twelve(self):
+        """Against the checked-in site/sitemap.xml, not a fixture."""
+        urls = _core_inspect_urls(REPO_ROOT, _DEFAULT_PROPERTY)
+        assert len(urls) == _MAX_INSPECT_URLS
+        assert urls[0] == "https://www.mastermind-x.com/"
+        assert len(set(urls)) == len(urls), "duplicate URL in the core set"
+
+
+# ---------------------------------------------------------------------------
+# Tests: index-status artifact + annotations
+# ---------------------------------------------------------------------------
+
+
+def _stub_index_endpoints(monkeypatch, *, indexed_urls=(), sitemaps=None):
+    """Stub both diagnostics seams; URLs in `indexed_urls` come back PASS."""
+    monkeypatch.setattr(
+        "engine.marketing.seo_search_console._sitemaps_get",
+        lambda token, prop: _sitemaps_payload() if sitemaps is None else sitemaps,
+    )
+
+    def _post(token, prop, url):
+        if url in indexed_urls:
+            return _inspect_payload(url=url)
+        return _inspect_payload(
+            verdict="FAIL", coverage="URL is unknown to Google",
+            last_crawl=None, fetch_state="PAGE_FETCH_STATE_UNSPECIFIED", url=url,
+        )
+
+    monkeypatch.setattr(
+        "engine.marketing.seo_search_console._inspect_post", _post)
+
+
+class TestIndexStatusArtifact:
+    def test_run_writes_the_index_status_artifact(self, tmp_path, monkeypatch):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        _stub_index_endpoints(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": []},
+        )
+        creds_file = _write_creds(tmp_path)
+
+        state = run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                    write=True, pace_s=0)
+
+        path = tmp_path / _ARTIFACTS_REL / _INDEX_STATUS_FILE
+        assert path.exists(), "index-status artifact not written"
+        doc = json.loads(path.read_text())
+
+        assert doc["schema"] == "gsc_index_status.v1"
+        assert doc["as_of"] == "2026-07-20"
+        assert doc["available"] is True
+        assert doc["property"] == _DEFAULT_PROPERTY
+        assert doc["service_account"]["client_email"] == _CLIENT_EMAIL
+        assert doc["sitemaps"]["count"] == 2
+        assert doc["sitemaps"]["never_downloaded"] == [
+            "https://www.mastermind-x.com/news-sitemap.xml"
+        ]
+        assert len(doc["urls"]) == 10   # no site/sitemap.xml in tmp_path
+        assert all("coverageState" in u for u in doc["urls"])
+        assert all(u["indexed"] is False for u in doc["urls"])
+
+        # The state file does NOT duplicate it (one fact, one writer).
+        on_disk_state = json.loads(
+            (tmp_path / _ARTIFACTS_REL / _STATE_FILE).read_text())
+        assert "index_status" not in on_disk_state
+        # ...but the returned dict carries it for callers.
+        assert state["index_status"]["schema"] == "gsc_index_status.v1"
+
+    def test_index_status_written_even_without_credentials(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+
+        run(tmp_path, creds_path=None, as_of=_AS_OF, write=True)
+
+        doc = json.loads(
+            (tmp_path / _ARTIFACTS_REL / _INDEX_STATUS_FILE).read_text())
+        assert doc["available"] is False
+        assert doc["reason"] == "credentials not configured"
+        assert doc["urls"] == []
+
+    def test_sitemap_leg_failure_keeps_the_url_leg(self, tmp_path, monkeypatch):
+        """Independent legs: a sitemaps 500 must not cost the inspections."""
+        _stub_google_auth(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._sitemaps_get",
+            lambda token, prop: (_ for _ in ()).throw(GscApiError(500, "sitemaps down")),
+        )
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post",
+            lambda token, prop, url: _inspect_payload(url=url),
+        )
+
+        doc = collect_index_status(
+            tmp_path, info=_sa_info(), prop=_DEFAULT_PROPERTY,
+            as_of_iso="2026-07-20", pace_s=0,
+        )
+        assert doc["available"] is True
+        assert len(doc["urls"]) == 10
+        assert "sitemaps down" in doc["sitemaps"]["error"]
+        assert "sitemaps:" in doc["reason"]
+
+    def test_summary_prints_counts_coverage_and_last_downloaded(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        _stub_google_auth(monkeypatch)
+        _stub_index_endpoints(
+            monkeypatch, indexed_urls={"https://www.mastermind-x.com/"})
+
+        doc = collect_index_status(
+            tmp_path, info=_sa_info(), prop=_DEFAULT_PROPERTY,
+            as_of_iso="2026-07-20", pace_s=0,
+        )
+        _print_index_summary(doc)
+        out = capsys.readouterr().out
+
+        assert "indexed   : 1 of 10 inspected" in out
+        assert "URL is unknown to Google" in out
+        assert "Submitted and indexed" in out
+        assert "2026-07-23T04:02:55.000Z" in out          # sitemap last download
+        assert "never downloaded by Google" in out
+        assert "last_crawl=2026-07-19T11:22:33Z" in out
+        assert "last_crawl=never" in out
+
+
+class TestIndexAnnotations:
+    def test_zero_indexed_warns_at_line_start(self, capsys):
+        doc = {
+            "available": True,
+            "property": _DEFAULT_PROPERTY,
+            "sitemaps": {"sitemaps": [
+                {"path": "s.xml", "lastDownloaded": "2026-07-23T04:02:55.000Z"}
+            ]},
+            "urls": [
+                {"url": "u1", "indexed": False, "error": None},
+                {"url": "u2", "indexed": False, "error": None},
+            ],
+        }
+        _emit_index_annotations(doc)
+        lines = _annotation_lines(capsys.readouterr().out)
+
+        assert len(lines) == 1, lines
+        assert lines[0].startswith("::warning title=gsc-index-status::")
+        assert "0 of 2 inspected URLs are indexed" in lines[0]
+        assert "2026-07-23T04:02:55.000Z" in lines[0]
+
+    def test_some_indexed_emits_a_notice(self, capsys):
+        doc = {
+            "available": True,
+            "property": _DEFAULT_PROPERTY,
+            "sitemaps": {"sitemaps": [
+                {"path": "s.xml", "lastDownloaded": "2026-07-23T04:02:55.000Z"}
+            ]},
+            "urls": [
+                {"url": "u1", "indexed": True, "error": None},
+                {"url": "u2", "indexed": False, "error": None},
+            ],
+        }
+        _emit_index_annotations(doc)
+        lines = _annotation_lines(capsys.readouterr().out)
+
+        assert len(lines) == 1, lines
+        assert lines[0].startswith("::notice title=gsc-index-status::")
+        assert "1 of 2 inspected URLs indexed" in lines[0]
+
+    def test_never_downloaded_sitemap_says_never(self, capsys):
+        doc = {
+            "available": True,
+            "property": _DEFAULT_PROPERTY,
+            "sitemaps": {"sitemaps": [{"path": "s.xml", "lastDownloaded": None}]},
+            "urls": [{"url": "u1", "indexed": False, "error": None}],
+        }
+        _emit_index_annotations(doc)
+        lines = _annotation_lines(capsys.readouterr().out)
+        assert lines[0].startswith("::warning title=gsc-index-status::")
+        assert "sitemap last downloaded: never" in lines[0]
+
+    def test_unavailable_warns_with_the_reason(self, capsys):
+        doc = {
+            "available": False, "property": _DEFAULT_PROPERTY,
+            "reason": "sitemaps: boom", "sitemaps": {"sitemaps": []}, "urls": [],
+        }
+        _emit_index_annotations(doc)
+        lines = _annotation_lines(capsys.readouterr().out)
+        assert len(lines) == 1
+        assert lines[0].startswith("::warning title=gsc-index-status::")
+        assert "sitemaps: boom" in lines[0]
+
+    def test_run_emits_the_annotation_end_to_end(self, tmp_path, monkeypatch, capsys):
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        _stub_index_endpoints(monkeypatch)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": []},
+        )
+        creds_file = _write_creds(tmp_path)
+
+        run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF, write=True,
+            pace_s=0)
+
+        lines = _annotation_lines(capsys.readouterr().out)
+        hit = [ln for ln in lines if "gsc-index-status" in ln]
+        assert hit, f"no index-status annotation among {lines}"
+        assert hit[0].startswith("::warning title=gsc-index-status::")
+        assert "0 of 10 inspected URLs are indexed" in hit[0]
+
+
+class TestIndexStatusSecretHygiene:
+    def test_nothing_the_sweep_emits_contains_the_private_key(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """Artifact + stdout + reason, all three, across a failing sweep."""
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        creds_file = _write_creds(tmp_path)
+
+        def _boom(*a, **k):
+            raise RuntimeError("upstream said: " + _PRIVATE_KEY)
+
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._sitemaps_get", _boom)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._inspect_post", _boom)
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._gsc_query",
+            lambda *a, **k: {"rows": []},
+        )
+
+        state = run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                    write=True, pace_s=0)
+        from engine.marketing.seo_search_console import _print_summary
+        _print_summary(state, tmp_path / _ARTIFACTS_REL)
+
+        blob = capsys.readouterr().out + json.dumps(state, default=str)
+        for name in [_STATE_FILE, _INDEX_STATUS_FILE, _SCORECARD_FILE, _GAPS_FILE]:
+            p = tmp_path / _ARTIFACTS_REL / name
+            if p.exists():
+                blob += p.read_text()
+
+        assert "NEVER_LEAK_THIS_STRING" not in blob
+        assert "BEGIN PRIVATE KEY" not in blob
+        # ...while the SAFE identity fields ARE surfaced, on purpose.
+        assert _CLIENT_EMAIL in blob
+
+
+# ---------------------------------------------------------------------------
+# Tests: the HTTP layer itself carries the status
+#
+# The TestStatusReasons cases above stub _gsc_query and raise GscApiError by
+# hand, so they say nothing about whether a REAL 403 response ever becomes one.
+# (Mutation check: replacing GscApiError with a bare RuntimeError in
+# _raise_for_status left all of TestStatusReasons green.)  These drive the
+# transport for real, with requests.get/post monkeypatched.
+# ---------------------------------------------------------------------------
+
+
+#: Bound at import time, BEFORE the _no_live_calls autouse fixture swaps the
+#: module attributes — these are the genuine transport functions.
+from engine.marketing.seo_search_console import (  # noqa: E402
+    _gsc_query as _REAL_GSC_QUERY,
+    _inspect_post as _REAL_INSPECT_POST,
+    _sitemaps_get as _REAL_SITEMAPS_GET,
+)
+
+
+class _FakeResponse:
+    def __init__(self, status_code, payload=None, reason="", raises=False):
+        self.status_code = status_code
+        self._payload = payload
+        self.reason = reason
+        self._raises = raises
+
+    def json(self):
+        if self._raises:
+            raise ValueError("not json")
+        return self._payload
+
+
+def _google_error(message: str, status: str = "PERMISSION_DENIED") -> dict:
+    return {"error": {"code": 403, "message": message, "status": status}}
+
+
+class TestTransportStatusMapping:
+    def test_403_response_becomes_a_gscapierror_with_status(self, monkeypatch):
+        import requests
+
+        body = _google_error(
+            "User does not have sufficient permission for site "
+            "'sc-domain:mastermind-x.com'."
+        )
+        monkeypatch.setattr(
+            requests, "post",
+            lambda *a, **k: _FakeResponse(403, body, reason="Forbidden"))
+
+        with pytest.raises(GscApiError) as exc:
+            _REAL_GSC_QUERY("TOK", _DEFAULT_PROPERTY, "2026-07-01", "2026-07-20",
+                            ("date",), "web", 0, 100)
+
+        assert exc.value.status == 403
+        assert "sufficient permission" in str(exc.value)
+
+    def test_404_response_becomes_a_gscapierror_with_status(self, monkeypatch):
+        import requests
+
+        monkeypatch.setattr(
+            requests, "get",
+            lambda *a, **k: _FakeResponse(
+                404, {"error": {"code": 404, "message": "Site not found."}}))
+
+        with pytest.raises(GscApiError) as exc:
+            _REAL_SITEMAPS_GET("TOK", _DEFAULT_PROPERTY)
+        assert exc.value.status == 404
+        assert "Site not found." in str(exc.value)
+
+    def test_unparseable_error_body_falls_back_to_reason(self, monkeypatch):
+        import requests
+
+        monkeypatch.setattr(
+            requests, "post",
+            lambda *a, **k: _FakeResponse(
+                500, raises=True, reason="Internal Server Error"))
+
+        with pytest.raises(GscApiError) as exc:
+            _REAL_INSPECT_POST("TOK", _DEFAULT_PROPERTY, "https://x.test/")
+        assert exc.value.status == 500
+        assert "Internal Server Error" in str(exc.value)
+
+    def test_2xx_passes_through(self, monkeypatch):
+        import requests
+
+        monkeypatch.setattr(
+            requests, "post",
+            lambda *a, **k: _FakeResponse(200, _inspect_payload()))
+
+        payload = _REAL_INSPECT_POST("TOK", _DEFAULT_PROPERTY,
+                                     "https://www.mastermind-x.com/")
+        assert payload["inspectionResult"]["indexStatusResult"]["verdict"] == "PASS"
+
+    def test_live_403_reaches_the_actionable_reason_end_to_end(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """The whole chain: HTTP 403 -> GscApiError(403) -> operator instruction."""
+        import requests
+
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        creds_file = _write_creds(tmp_path)
+
+        monkeypatch.setattr(
+            requests, "post",
+            lambda *a, **k: _FakeResponse(
+                403, _google_error("User does not have sufficient permission.")))
+
+        state = run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                    write=True, pace_s=0)
+
+        assert state["available"] is False
+        assert "add it as a user in Search Console" in state["reason"]
+        assert _CLIENT_EMAIL in state["reason"]
+        lines = _annotation_lines(capsys.readouterr().out)
+        assert any(ln.startswith("::warning title=gsc-no-access::") for ln in lines)
+
+    def test_live_404_reaches_the_property_reason_end_to_end(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        import requests
+
+        _stub_google_auth(monkeypatch)
+        monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+        monkeypatch.delenv("GSC_SA_JSON", raising=False)
+        creds_file = _write_creds(tmp_path)
+
+        monkeypatch.setattr(
+            requests, "post",
+            lambda *a, **k: _FakeResponse(
+                404, {"error": {"code": 404, "message": "Site not found."}}))
+
+        state = run(tmp_path, creds_path=str(creds_file), as_of=_AS_OF,
+                    write=True, pace_s=0)
+
+        assert "DOMAIN property" in state["reason"]
+        lines = _annotation_lines(capsys.readouterr().out)
+        assert any(
+            ln.startswith("::warning title=gsc-property-not-found::")
+            for ln in lines
+        )
+
+
+class TestInspectBudgetCap:
+    def test_cap_holds_when_the_core_set_grows(self, tmp_path, monkeypatch):
+        """The 12-URL cap must bind, not merely coincide with today's core set.
+
+        10 core paths + 2 blog posts == 12 exactly, so the slice is invisible
+        until someone adds an eleventh core page.  (Mutation check: deleting the
+        slice left every other TestCoreUrlSet case green.)
+        """
+        monkeypatch.setattr(
+            "engine.marketing.seo_search_console._CORE_INSPECT_PATHS",
+            tuple([""] + [f"p{i}.html" for i in range(25)]),
+        )
+        _write_sitemap(tmp_path, [
+            (f"https://www.mastermind-x.com/blog/b{i}.html", f"2026-07-0{i}")
+            for i in range(1, 4)
+        ])
+        urls = _core_inspect_urls(tmp_path, _DEFAULT_PROPERTY)
+        assert len(urls) == _MAX_INSPECT_URLS
+        assert urls[0] == "https://www.mastermind-x.com/"
+
+    def test_cap_never_exceeds_the_daily_quota_headroom(self):
+        """2000 inspections/day; one weekly run of 12 is ~0.6% of a single day."""
+        assert _MAX_INSPECT_URLS <= 12
