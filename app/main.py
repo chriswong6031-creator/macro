@@ -1828,8 +1828,10 @@ except ImportError:
 # BioCatalyst Intelligence serves only the worker's pointer-bound normalized
 # product projection. Its router performs early site_full enforcement before
 # touching the isolated read-only public generation root. This route is a paid
-# product contract, so import/configuration errors must fail startup loudly;
-# silently degrading to three 404s would make a healthy process look deployed.
+# product contract, so router wiring errors fail startup loudly. The route
+# module also probes its heavier validation runtime at startup whenever the
+# operator-provisioned public root exists; an intentionally dark absent lane
+# does not couple unrelated API consumers to those optional product packages.
 from app.biocatalyst import router as biocatalyst_router  # noqa: E402
 app.include_router(biocatalyst_router)
 

@@ -17,13 +17,6 @@ from typing import Any, Mapping, Sequence
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 
-from engine.biocatalyst.publication import (
-    CommittedTrialProjection,
-    PublicationError,
-    PublicGenerationPublisher,
-)
-
-
 router = APIRouter()
 log = logging.getLogger("macro.biocatalyst")
 
@@ -53,6 +46,31 @@ _AUTHORITY = {
 }
 
 
+def _publication_runtime() -> tuple[type[Exception], type[Any]]:
+    """Load the heavy projection validator only for this product surface."""
+
+    from engine.biocatalyst.publication import (  # noqa: PLC0415
+        PublicationError,
+        PublicGenerationPublisher,
+    )
+
+    return PublicationError, PublicGenerationPublisher
+
+
+def _verify_serving_runtime() -> None:
+    """Fail startup loudly once the operator-provisioned lane exists."""
+
+    _publication_runtime()
+
+
+# The unprovisioned product is intentionally dark and must not force every
+# unrelated app.main consumer to install the BioCatalyst validation stack.
+# Once setup creates the public root, a missing serving dependency is a startup
+# error rather than a silently absent or request-time-only product route.
+if _PUBLIC_ROOT.exists():
+    _verify_serving_runtime()
+
+
 def require_site_full_user(authorization: str | None = Header(default=None)) -> dict:
     """Authenticate first and enforce the paid payload even while staging."""
 
@@ -62,13 +80,14 @@ def require_site_full_user(authorization: str | None = Header(default=None)) -> 
     return enforce_site_full(_require_user(authorization), always=True)
 
 
-def _publisher() -> PublicGenerationPublisher:
-    return PublicGenerationPublisher(_PUBLIC_ROOT)
+def _publisher() -> Any:
+    _publication_error, publisher_type = _publication_runtime()
+    return publisher_type(_PUBLIC_ROOT)
 
 
 def _unavailable(exc: Exception | None = None) -> HTTPException:
     if exc is not None:
-        code = exc.code if isinstance(exc, PublicationError) else type(exc).__name__
+        code = getattr(exc, "code", type(exc).__name__)
         log.warning("BioCatalyst public projection unavailable (%s)", code)
     return HTTPException(
         status_code=503,
@@ -77,17 +96,18 @@ def _unavailable(exc: Exception | None = None) -> HTTPException:
     )
 
 
-def _read_bundle() -> tuple[CommittedTrialProjection, dict[str, Any]]:
-    publisher = _publisher()
+def _read_bundle() -> tuple[Any, dict[str, Any]]:
+    publication_error, publisher_type = _publication_runtime()
+    publisher = publisher_type(_PUBLIC_ROOT)
     try:
         projection = publisher.read_trial_projection()
-    except (OSError, PublicationError) as exc:
+    except (OSError, publication_error) as exc:
         raise _unavailable(exc) from None
     if projection is None:
         raise _unavailable()
     try:
         health = publisher.read_operational_health()
-    except (OSError, PublicationError) as exc:
+    except (OSError, publication_error) as exc:
         log.warning("BioCatalyst operational health unavailable (%s)", getattr(exc, "code", type(exc).__name__))
         health = {
             "state": "unavailable",
@@ -340,7 +360,7 @@ def _query_limit(value: str) -> int:
     return limit
 
 
-def _meta(projection: CommittedTrialProjection, health: Mapping[str, Any]) -> dict[str, Any]:
+def _meta(projection: Any, health: Mapping[str, Any]) -> dict[str, Any]:
     generation = projection.generation
     return {
         "schema_version": "biocatalyst_api.v1",

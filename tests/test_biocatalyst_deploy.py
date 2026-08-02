@@ -116,10 +116,57 @@ def test_macro_api_declares_projection_validation_dependencies():
 
 def test_biocatalyst_router_mount_is_not_silently_optional():
     main_source = _text(ROOT / "app" / "main.py")
+    route_source = _text(ROOT / "app" / "biocatalyst.py")
 
     mount = "from app.biocatalyst import router as biocatalyst_router"
     assert main_source.count(mount) == 1
     assert 'log.warning("BioCatalyst router not mounted:' not in main_source
+    assert "if _PUBLIC_ROOT.exists():" in route_source
+    assert "_verify_serving_runtime()" in route_source
+    assert "def _publication_runtime()" in route_source
+    assert "from engine.biocatalyst.publication import" not in route_source.split(
+        "router = APIRouter()", 1
+    )[0]
+
+
+def test_unprovisioned_app_import_defers_biocatalyst_contract_runtime(tmp_path: Path):
+    probe = """
+import builtins
+
+real_import = builtins.__import__
+def guarded_import(name, *args, **kwargs):
+    if name.split('.', 1)[0] in {'jsonschema', 'referencing'}:
+        raise ModuleNotFoundError(name)
+    return real_import(name, *args, **kwargs)
+
+builtins.__import__ = guarded_import
+import app.main
+"""
+    environment = os.environ.copy()
+    environment["BIOCATALYST_PUBLIC_ROOT"] = str(tmp_path / "not-provisioned")
+    unprovisioned = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert unprovisioned.returncode == 0, unprovisioned.stderr
+
+    provisioned_root = tmp_path / "provisioned"
+    provisioned_root.mkdir()
+    environment["BIOCATALYST_PUBLIC_ROOT"] = str(provisioned_root)
+    provisioned = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert provisioned.returncode != 0
+    assert "jsonschema" in provisioned.stderr
 
 
 def test_timer_is_hourly_jittered_and_operator_armable():
