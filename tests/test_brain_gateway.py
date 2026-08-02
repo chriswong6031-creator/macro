@@ -751,6 +751,101 @@ def test_get_quote_manifest_fallback(tmp_path):
     assert result.get("price") == 120.5
 
 
+#: Fixed instant in the quotes_full contract's per-quote ``ts`` (epoch ms) and the ISO
+#: the ladder must derive from it. Both literals — deriving the expectation with the
+#: same fromtimestamp call the source uses would make the assertion vacuous.
+_QF_TS_MS = 1785591900000
+_QF_TS_ISO = "2026-08-01T13:45:00+00:00"
+
+
+def _write_quotes_full(path, quotes: dict, meta: dict | None = None) -> None:
+    """A quotes_full.json in the shape scripts/build_live_quotes.py writes."""
+    path.write_text(json.dumps({
+        "ts": _QF_TS_MS,
+        "asof": "2026-08-01T13:44:30+00:00",
+        "source": "snapshot",
+        "quotes": quotes,
+        "meta": {**{"requested": 2100, "resolved": 2077, "polygon_status": "ok",
+                    "delayed_min": 15, "realtime": False}, **(meta or {})},
+    }), encoding="utf-8")
+
+
+def test_get_quote_live_plane_full(tmp_path, monkeypatch):
+    """The VPS's ~2,100-symbol state snapshot serves single-stock quotes the hub,
+    manifest, and 34-symbol display set all miss."""
+    qf = tmp_path / "quotes_full.json"
+    _write_quotes_full(qf, {"AAPL": {"price": 231.5, "ts": _QF_TS_MS, "source": "yahoo",
+                                     "basis": "regular", "prevClose": 229.0,
+                                     "changePct": 1.09}})
+    monkeypatch.setenv("MACRO_QUOTES_FULL_PATH", str(qf))
+
+    with patch("urllib.request.urlopen", side_effect=Exception("connection refused")):
+        result = gw._tool_get_quote({"symbol": "AAPL"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "live_plane_full"
+    assert result.get("price") == 231.5
+    assert result.get("as_of") == _QF_TS_ISO, "per-quote ts is the honest as-of"
+    assert result.get("prev_close") == 229.0
+    assert result.get("change_pct") == 1.09
+    assert result.get("delayed_min") == 15
+
+
+def test_get_quote_live_plane_outranks_manifest(tmp_path, monkeypatch):
+    """The live plane is minutes old; the manifest row is a nightly build artifact."""
+    qf = tmp_path / "quotes_full.json"
+    _write_quotes_full(qf, {"NVDA": {"price": 188.25, "ts": _QF_TS_MS, "prevClose": 185.0,
+                                     "changePct": 1.76}})
+    monkeypatch.setenv("MACRO_QUOTES_FULL_PATH", str(qf))
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-07-31",
+        "symbols": {"NVDA": {"price": 120.5, "verdict": "buy", "wr": 0.62}},
+    }))
+
+    with patch("urllib.request.urlopen", side_effect=Exception("connection refused")):
+        result = gw._tool_get_quote({"symbol": "NVDA"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "live_plane_full"
+    assert result.get("price") == 188.25, "the stale manifest price must not win"
+
+
+def test_get_quote_hub_error_payload_falls_through(tmp_path, monkeypatch):
+    """The VPS hub answers HTTP 200 with {'error': 'not found'} for single stocks.
+    Returning that short-circuited every local fallback below it."""
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"error":"not found"}'
+
+    qf = tmp_path / "quotes_full.json"
+    _write_quotes_full(qf, {"AAPL": {"price": 231.5, "ts": _QF_TS_MS, "prevClose": 229.0,
+                                     "changePct": 1.09}})
+    monkeypatch.setenv("MACRO_QUOTES_FULL_PATH", str(qf))
+
+    with patch("urllib.request.urlopen", return_value=_Resp()):
+        result = gw._tool_get_quote({"symbol": "AAPL"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("error") is None, "a 200-with-error hub reply is a miss, not a quote"
+    assert result.get("source") == "live_plane_full"
+    assert result.get("price") == 231.5
+
+
+def test_get_quote_row_without_price_skipped(tmp_path, monkeypatch):
+    """A priceless snapshot row must not shadow the rest of the ladder."""
+    qf = tmp_path / "quotes_full.json"
+    _write_quotes_full(qf, {"NVDA": {"ts": _QF_TS_MS, "source": "yahoo", "basis": "trade"}})
+    monkeypatch.setenv("MACRO_QUOTES_FULL_PATH", str(qf))
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "as_of": "2026-07-31",
+        "symbols": {"NVDA": {"price": 120.5, "verdict": "buy", "wr": 0.62}},
+    }))
+
+    with patch("urllib.request.urlopen", side_effect=Exception("connection refused")):
+        result = gw._tool_get_quote({"symbol": "NVDA"}, tmp_path, "http://localhost:3100", tmp_path)
+
+    assert result.get("source") == "manifest"
+    assert result.get("price") == 120.5
+
+
 def test_get_quote_symbol_sanitization(tmp_path):
     """_safe_symbol strips illegal characters and uppercases."""
     assert gw._safe_symbol("nvda") == "NVDA"

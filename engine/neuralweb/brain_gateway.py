@@ -807,9 +807,9 @@ def _brain_tool_schemas() -> list[dict]:
         {
             "name": "get_quote",
             "description": (
-                "Fetch a live quote for a symbol. Tries TERMINAL_HUB_URL first, "
-                "then manifest.json fallback, then site/live/quotes.json. "
-                "Always returns source and as_of."
+                "Fetch a live quote for a symbol. Tries TERMINAL_HUB_URL first, then the "
+                "VPS quotes_full state snapshot, then manifest.json fallback, then "
+                "site/live/quotes.json. Always returns source and as_of."
             ),
             "input_schema": {
                 "type": "object",
@@ -1658,7 +1658,8 @@ def _symbol_grounding_digest(
 
 
 def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str, root: Path) -> dict:
-    """Try TERMINAL_HUB_URL, then manifest row, then site/live/quotes.json."""
+    """Try TERMINAL_HUB_URL, then the VPS quotes_full state snapshot, then the manifest
+    row, then site/live/quotes.json."""
     symbol = _safe_symbol(params.get("symbol") or "")
     if not symbol:
         return {"error": "symbol required"}
@@ -1669,6 +1670,11 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
         req = urllib.request.Request(url, headers={"User-Agent": "brain-gateway/1.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read())
+        # A hub that answers HTTP 200 with {"error": "not found"} is a MISS, not a
+        # quote: returning it here would mask every local fallback below (the VPS hub
+        # carries no single-stock quotes at all, so this was the whole ladder).
+        if not isinstance(data, dict) or data.get("error"):
+            raise ValueError("hub miss")
         data["source"] = "terminal_hub"
         if "as_of" not in data:
             data["as_of"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -1676,7 +1682,48 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
     except Exception:  # noqa: BLE001
         pass
 
-    # 2. manifest.json fallback
+    # 2. VPS live-plane full snapshot (~2,100 symbols, refreshed ~every 5 min by the
+    #    macro-live snapshot lane via scripts/build_live_quotes.py).
+    #    WHY a local file read and not an HTTP fetch: the served site/live/quotes.json
+    #    at step 4 is the 34-symbol DISPLAY set; the full universe is deliberately NOT
+    #    web-addressable and lives root-side in the state dir. This gateway runs
+    #    root-side (macro-api.service), so it reads the file directly — that is what
+    #    gives the instant-fact lane and the deep loop single-stock coverage on the VPS.
+    full_env = os.environ.get("MACRO_QUOTES_FULL_PATH")
+    quotes_full_path = (
+        Path(full_env) if full_env
+        else Path(os.environ.get("MACRO_LIVE_STATE_DIR", "/var/lib/macro-live/state"))
+        / "quotes_full.json"
+    )
+    try:
+        if quotes_full_path.exists():
+            snap = json.loads(quotes_full_path.read_text(encoding="utf-8"))
+            row = (snap.get("quotes") or {}).get(symbol) or {}
+            if row.get("price") is not None:
+                # Per-quote ts (epoch ms) is the honest as-of; the snapshot's own asof
+                # only says when the batch was written.
+                as_of = None
+                ts_ms = row.get("ts")
+                if isinstance(ts_ms, (int, float)) and not isinstance(ts_ms, bool) and ts_ms > 0:
+                    as_of = datetime.fromtimestamp(
+                        ts_ms / 1000, tz=timezone.utc
+                    ).isoformat(timespec="seconds")
+                out = {
+                    "symbol": symbol,
+                    "price": row.get("price"),
+                    "prev_close": row.get("prevClose"),
+                    "change_pct": row.get("changePct"),
+                    "as_of": as_of or snap.get("asof"),
+                    "source": "live_plane_full",
+                }
+                delayed_min = (snap.get("meta") or {}).get("delayed_min")
+                if delayed_min:
+                    out["delayed_min"] = delayed_min
+                return {k: v for k, v in out.items() if v is not None}
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 3. manifest.json fallback
     manifest_path = terminal_data_dir / "manifest.json"
     try:
         if manifest_path.exists():
@@ -1695,7 +1742,7 @@ def _tool_get_quote(params: dict, terminal_data_dir: Path, terminal_hub_url: str
     except Exception:  # noqa: BLE001
         pass
 
-    # 3. site/live/quotes.json fallback
+    # 4. site/live/quotes.json fallback
     quotes_path = root / "site" / "live" / "quotes.json"
     try:
         if quotes_path.exists():
