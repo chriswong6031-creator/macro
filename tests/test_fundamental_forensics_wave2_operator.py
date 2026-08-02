@@ -223,6 +223,6 @@ def test_research_ingest_bootstrap_never_expands_an_empty_array_under_nounset():
     )
 
     assert "restore_args=()" not in workflow
-    assert "source_args=(--restore --acquire --require-complete-acquisition)" in workflow
-    assert "source_args=(--acquire --require-complete-acquisition)" in workflow
-    assert '"${targets[@]}" "${source_args[@]}"' in workflow
+    assert 'set -- "${targets[@]}"' in workflow
+    assert 'set -- "$@" --restore' in workflow
+    assert '"$@" --acquire --require-complete-acquisition' in workflow
