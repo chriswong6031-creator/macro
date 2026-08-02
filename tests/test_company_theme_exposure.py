@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from datetime import date
+from pathlib import Path
 
 import pytest
 import yaml
@@ -10,7 +12,7 @@ from engine.company_intelligence.views import write_generation as write_company_
 from engine.company_theme_exposure.contracts import ContractError, canonical_json_bytes, canonical_json_sha256, validate_exposure, validate_manifest
 from engine.company_theme_exposure.health import validate_generation
 from engine.company_theme_exposure.views import build_bundle, load_company_generation, write_generation
-from engine.company_theme_exposure.views import _crosswalk_index
+from engine.company_theme_exposure.views import _active_membership, _canonical_theme_ids, _crosswalk_index, _theme_state_receipt
 from scripts.build_company_theme_exposure import main as build_cli
 
 
@@ -145,6 +147,55 @@ def test_lossy_crosswalk_membership_carries_a_bounded_proxy_qualifier() -> None:
     index = _crosswalk_index(crosswalk, membership)
     assert index["managed_care"]["mapping_qualifier"] == "proxy"
     assert index["reshoring"]["mapping_qualifier"] == "proxy"
+
+
+def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
+    """Guard the exact production inputs, not only synthetic fixtures."""
+    root = Path(__file__).resolve().parents[1]
+    ci_workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    for live_input in (
+        "data/baskets/membership.json",
+        "config/theme_crosswalk.yml",
+        "data/neuralweb/theme_state.json",
+    ):
+        assert f'- "{live_input}"' in ci_workflow
+    membership = json.loads((root / "data/baskets/membership.json").read_text(encoding="utf-8"))
+    crosswalk = yaml.safe_load((root / "config/theme_crosswalk.yml").read_text(encoding="utf-8"))
+    theme_state = json.loads((root / "data/neuralweb/theme_state.json").read_text(encoding="utf-8"))
+
+    assert isinstance(membership, dict) and isinstance(crosswalk, dict) and isinstance(theme_state, dict)
+    curated = date.fromisoformat(membership["curated"])
+    theme_by_basket = _crosswalk_index(crosswalk, membership)
+    explicit_unmapped = {item["id"] for item in crosswalk["unmapped_baskets"]}
+    known_baskets = set(membership["baskets"])
+
+    assert len(known_baskets) == 47
+    assert len(theme_by_basket) == 18
+    assert len(explicit_unmapped) == 29
+    assert set(theme_by_basket).isdisjoint(explicit_unmapped)
+    assert set(theme_by_basket) | explicit_unmapped == known_baskets
+    assert {item["mapping_qualifier"] for item in theme_by_basket.values()} <= {"direct", "proxy", "curated"}
+    assert theme_by_basket["managed_care"]["mapping_qualifier"] == "proxy"
+    assert theme_by_basket["reshoring"]["mapping_qualifier"] == "proxy"
+
+    active = _active_membership(membership, as_of=curated)
+    active_count = sum(len(baskets) for baskets in active.values())
+    mapped_count = sum(len(baskets & set(theme_by_basket)) for baskets in active.values())
+    unmapped_count = active_count - mapped_count
+    assert (active_count, mapped_count, unmapped_count) == (1009, 246, 763)
+    assert len(active) == 691
+    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 489
+
+    assert theme_state["schema"] == "neuralweb.theme_state.v1"
+    state_as_of = date.fromisoformat(theme_state["as_of"])
+    receipt, warnings = _theme_state_receipt(
+        theme_state,
+        as_of=state_as_of,
+        canonical_theme_ids=_canonical_theme_ids(crosswalk),
+    )
+    expected_state = "stale" if theme_state.get("stale_legs") else "fresh"
+    assert receipt["status"] == expected_state
+    assert warnings == (["theme_state_stale"] if expected_state == "stale" else [])
 
 
 @pytest.mark.parametrize(
