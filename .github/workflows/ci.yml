@@ -2073,16 +2073,24 @@ on:
       # refresh tests run in the publish-r2-client pack; list every source and
       # test half so a workflow-only/test-only edit cannot evade that proof.
       - "engine/company_intelligence/**"
+      - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
       - "scripts/build_company_intelligence.py"
       - "scripts/publish_company_intelligence_r2.py"
       - "scripts/refresh_company_intelligence.py"
+      - "scripts/build_company_theme_exposure.py"
+      - "scripts/publish_company_theme_exposure_r2.py"
+      - "data/baskets/membership.json"
+      - "config/theme_crosswalk.yml"
+      - "data/neuralweb/theme_state.json"
       - ".github/workflows/company-intelligence.yml"
       - "tests/test_company_intelligence_contracts.py"
       - "tests/test_company_intelligence_views.py"
       - "tests/test_company_intelligence_health.py"
       - "tests/test_publish_company_intelligence_r2.py"
       - "tests/test_company_intelligence_refresh.py"
+      - "tests/test_company_theme_exposure.py"
+      - "tests/test_publish_company_theme_exposure_r2.py"
       # unrun-russell-breadth
       - "tests/test_russell_breadth.py"
       # unrun-brain-gateway
