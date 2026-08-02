@@ -1,4 +1,4 @@
-"""Flagship UI contracts for Government Revenue Foresight Wave 2."""
+"""Flagship UI contracts for Government Revenue Foresight."""
 from __future__ import annotations
 
 import json
@@ -78,7 +78,8 @@ def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: in
             process.stdout.write(JSON.stringify({initial:initial, afterRetry:{hidden:node('workspaceDegraded').hidden,
               copy:node('workspaceDegradedCopy').textContent, retryHidden:node('workspaceRetry').hidden},
               fetchCalls:fetchCalls, freshness:freshness,
-              bundlesMatch:runtime.workspaceBundleMatches(PAYLOAD.procurement_workspace, FULL_WORKSPACE)}));
+              bundlesMatch:runtime.workspaceBundleMatches(PAYLOAD.procurement_workspace, FULL_WORKSPACE),
+              rows:runtime.workspaceRows(), inspectorHtml:node('inspector').innerHTML}));
           }, 8);
         }, 8);
         """
@@ -106,13 +107,15 @@ def test_uses_one_shared_product_nav_and_one_elevated_workspace() -> None:
 def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert "grid-template-columns:216px minmax(520px,.95fr) minmax(410px,.75fr)" in TEMPLATE
     assert 'data-mode="changes"' in TEMPLATE
+    assert 'data-mode="awards"' in TEMPLATE
     assert 'data-mode="opportunities"' in TEMPLATE
     assert 'data-mode="recompetes"' in TEMPLATE
     assert "state.mode='companies'" in TEMPLATE
     assert "payload.opportunity_intelligence" not in TEMPLATE  # JSON is accessed as DATA.
     assert "DATA.opportunity_intelligence" in TEMPLATE
     assert "DATA.procurement_workspace" in TEMPLATE
-    assert "government_procurement_workspace.v1" in TEMPLATE
+    assert r"government_procurement_workspace\.v[12]" in TEMPLATE
+    assert "government_procurement_workspace.v2" in TEMPLATE
     assert "WORKSPACE_EVENTS.map" in TEMPLATE
     assert "workspaceEvent:e" in TEMPLATE
     assert "governed display order" in TEMPLATE
@@ -158,6 +161,11 @@ def test_workspace_event_semantics_are_rendered_from_the_governed_contract() -> 
         "ev.limitations",
         "w.authority",
         "Observed document bytes changed",
+        "Official USAspending change",
+        "Receipt-bound USAspending award or action observation",
+        "Official procurement change; public-company transmission remains unresolved",
+        "Reviewed issuer link",
+        "Resolve the recipient",
         "not reconstructed in the browser",
         "configured defense and technology acquisition universe",
         "government-revenue-data/workspace.json",
@@ -175,6 +183,8 @@ def test_workspace_event_semantics_are_rendered_from_the_governed_contract() -> 
         "observation_age_minutes",
         "events_available_before_cap",
         "facet_scope",
+        "Award tape warming or qualified",
+        "Award-event rail:",
     ):
         assert marker in TEMPLATE
 
@@ -192,6 +202,7 @@ def test_keyboard_url_mobile_and_zero_data_paths_are_first_class() -> None:
         "mobile-sheet",
         "prefers-reduced-motion",
         "No opportunities in this cut",
+        "Award tape is warming",
         "No expiry watches",
         "No qualifying changes",
         "No rows were invented",
@@ -216,7 +227,8 @@ def test_generated_shell_and_workspace_share_a_fail_closed_bundle_id() -> None:
     shell = json.loads(match.group(1).replace(r"<\/", "</"))
     workspace = json.loads(WORKSPACE_PATH.read_text(encoding="utf-8"))
 
-    assert re.fullmatch(r"grw1-[a-f0-9]{24}", workspace["bundle_id"])
+    prefix = "grw2" if workspace["schema_version"] == "government_procurement_workspace.v2" else "grw1"
+    assert re.fullmatch(rf"{prefix}-[a-f0-9]{{24}}", workspace["bundle_id"])
     assert shell["procurement_workspace"]["bundle_id"] == workspace["bundle_id"]
 
 
@@ -247,7 +259,14 @@ def test_runtime_ages_quiet_sources_and_exposes_retry_on_bundle_mismatch(tmp_pat
     payload = {
         "companies": [],
         "market": {},
-        "freshness": {"status": "ok"},
+        "freshness": {
+            "status": "ok",
+            "award_events": {
+                "status": "partial",
+                "observed_at": "2026-08-01T01:00:00Z",
+                "freshness_sla_days": 4,
+            },
+        },
         "opportunity_intelligence": {"market": {}},
         "procurement_workspace": shell_workspace,
     }
@@ -272,3 +291,76 @@ def test_runtime_ages_quiet_sources_and_exposes_retry_on_bundle_mismatch(tmp_pat
     assert out["fetchCalls"] == 2
     assert out["freshness"]["status"] == "stale"
     assert out["freshness"]["aged"] is True
+
+
+@needs_node
+def test_runtime_preserves_award_change_kind_and_renders_unmapped_truth(tmp_path: Path) -> None:
+    award = {
+        "contract": "government_procurement_event.v2",
+        "event_id": "govws-award-change-1",
+        "record_id": "award:CONT_AWD_001",
+        "kind": "award_change",
+        "title_original": "New obligation observed — FA1234",
+        "agency": {"name": "Department of the Air Force"},
+        "change": {
+            "type": "obligation",
+            "known_at": "2026-08-01T01:00:00Z",
+            "what_changed_en": "New obligation observed — FA1234",
+            "changed_fields": [{"field": "federal_action_obligation", "before": 0, "after": 12_500_000}],
+        },
+        "award_change": {
+            "award_key": "CONT_AWD_001",
+            "piid": "FA1234",
+            "action_id": "action-0001",
+            "recipient_name": "Acme Defense Systems",
+            "event_type": "obligation",
+            "source_rail": "usaspending_award_action",
+            "is_late_discovery": False,
+        },
+        "dates": [{"id": "action_date", "value": "2026-07-31", "semantic": "official_action_date"}],
+        "amounts": [{"id": "federal_action_obligation", "value": 12_500_000, "semantic": "obligated"}],
+        "listed_company_impacts": [],
+        "evidence": {"source_class": "official_fact", "receipts": []},
+        "authority": {"can_rank": False, "can_size": False},
+    }
+    workspace = {
+        "schema_version": "government_procurement_workspace.v2",
+        "event_contract": "government_procurement_event.v2",
+        "bundle_id": "grw2-" + "a" * 24,
+        "total": 1,
+        "next_cursor": None,
+        "events": [award],
+        "coverage": {"events_visible": 1, "open_opportunities": 0},
+        "freshness": {
+            "status": "ok",
+            "award_events": {
+                "status": "partial",
+                "observed_at": "2026-08-01T01:00:00Z",
+                "freshness_sla_days": 4,
+            },
+        },
+        "limitations": [],
+    }
+    payload = {
+        "companies": [],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+
+    out = _run_runtime(tmp_path, payload, workspace, 1_785_548_460_000)
+
+    assert out["bundlesMatch"] is True
+    assert out["freshness"]["status"] == "ok"
+    assert out["freshness"]["award_events"] == "partial"
+    assert out["rows"] == [{
+        "kind": "award_change",
+        "truth": "official",
+        "linked": False,
+        "defense": True,
+        "title": "New obligation observed — FA1234",
+    }]
+    assert "Official USAspending change" in out["inspectorHtml"]
+    assert "Resolve the recipient" in out["inspectorHtml"]
+    assert "public-company transmission remains unresolved" in out["inspectorHtml"]

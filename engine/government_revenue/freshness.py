@@ -21,7 +21,6 @@ _STATUS_RANK = {
     "unknown": 3,
 }
 
-
 def _instant(value: Any) -> datetime | None:
     if value is None:
         return None
@@ -72,6 +71,43 @@ def _aged_status(
     return "ok"
 
 
+def _award_event_contract_status(
+    payload: dict[str, Any],
+    rail: dict[str, Any],
+    status: str,
+) -> str:
+    """Keep the award-event rail fail-closed without conflating scope and age.
+
+    The collector deliberately distinguishes a complete *declared bounded
+    sample* from full USAspending corpus exhaustion.  A false
+    ``source_exhausted`` and a declared page-cap stop are normal coverage
+    metadata; a missing or false bounded-sample proof is not.  There is no
+    implicit legacy bypass: without a versioned migration receipt, an envelope
+    with every marker stripped is indistinguishable from corruption.
+    """
+
+    if status != "ok":
+        return status
+    bounded = rail.get("bounded_sample_complete")
+    exhausted = rail.get("source_exhausted")
+    truncated = rail.get("truncated_by_safety_cap")
+    manifest_id = rail.get("coverage_manifest_id")
+    manifest = rail.get("coverage_manifest")
+    if (
+        not isinstance(bounded, bool)
+        or not isinstance(exhausted, bool)
+        or not isinstance(truncated, bool)
+        or not isinstance(manifest_id, str)
+        or not manifest_id
+        or not isinstance(manifest, dict)
+        or not manifest
+    ):
+        return "partial"
+    if bounded is not True:
+        return "partial"
+    return "ok"
+
+
 def effective_freshness(payload: dict[str, Any], *, reference: Any | None = None) -> dict[str, Any]:
     """Return elapsed-time-aware overall and per-rail health.
 
@@ -100,6 +136,11 @@ def effective_freshness(payload: dict[str, Any], *, reference: Any | None = None
             "freshness_sla_minutes",
             60.0,
         ),
+        "award_events": (
+            ("observed_at", "known_at"),
+            "freshness_sla_days",
+            86_400.0,
+        ),
     }
     rails: dict[str, str] = {}
     for name, (observed_keys, sla_key, unit_seconds) in rail_specs.items():
@@ -107,12 +148,17 @@ def effective_freshness(payload: dict[str, Any], *, reference: Any | None = None
         if not isinstance(rail, dict):
             rails[name] = "unknown"
             continue
-        rails[name] = _aged_status(
+        status = _aged_status(
             rail,
             reference=reference_at,
             observed_keys=observed_keys,
             sla_key=sla_key,
             unit_seconds=unit_seconds,
+        )
+        rails[name] = (
+            _award_event_contract_status(payload, rail, status)
+            if name == "award_events"
+            else status
         )
 
     candidates = [serialized_status]
@@ -122,13 +168,14 @@ def effective_freshness(payload: dict[str, Any], *, reference: Any | None = None
         # stale/blocked SAM suppresses opportunity candidates, not official award
         # history. The same applies to explicitly unavailable aggregate/detail
         # rails whose serialized overall contract remains honest.
-        if name != "opportunities" and status != "unavailable":
+        if name not in {"opportunities", "award_events"} and status != "unavailable":
             candidates.append(status)
     overall = max(candidates, key=lambda status: _STATUS_RANK.get(status, 3))
     return {
         "status": overall,
         "serialized_status": serialized_status,
         "opportunities": rails["opportunities"],
+        "award_events": rails["award_events"],
         "rails": rails,
         "evaluated_at": reference_at.isoformat(),
     }

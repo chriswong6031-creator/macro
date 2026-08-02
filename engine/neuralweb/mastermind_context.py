@@ -65,6 +65,7 @@ from typing import Any
 
 import pandas as pd
 
+from engine.government_revenue.federation import reviewed_award_change_context
 from engine.government_revenue.freshness import effective_freshness
 from engine.neuralweb.options_plane import (
     options_structure_block as _options_structure_block,
@@ -1786,6 +1787,9 @@ def _summarize_government_revenue(
     if not _government_revenue_visible_at(payload, now):
         return {}, "data/government_revenue/latest.json newer than replay knowledge clock"
     overall_status, opportunity_status = _government_revenue_freshness(payload, now)
+    award_event_status = str(
+        effective_freshness(payload, reference=now).get("award_events") or "unknown"
+    )
     if overall_status != "ok":
         # Keep the lobe's health visible to operators, but suppress procurement
         # weather that could be mistaken for current context downstream.
@@ -1799,6 +1803,7 @@ def _summarize_government_revenue(
             "freshness": {
                 "status": overall_status,
                 "opportunities": opportunity_status,
+                "award_events": award_event_status,
             },
             "coverage": {},
             "market": {},
@@ -1828,6 +1833,7 @@ def _summarize_government_revenue(
         "freshness": {
             "status": overall_status,
             "opportunities": opportunity_status,
+            "award_events": award_event_status,
         },
         "coverage": _sparse({
             "companies": first_present(
@@ -1845,6 +1851,7 @@ def _summarize_government_revenue(
                 market.get("latest_complete_month"),
             ),
             "excluded_incomplete_months": coverage.get("excluded_incomplete_months"),
+            "award_event_records_visible": coverage.get("award_event_records_visible"),
         }),
         "market": _sparse({
             "ttm_obligations": first_present(
@@ -2055,6 +2062,9 @@ def _load_government_revenue_map(
         )
         return {}
     overall_status, opportunity_status = _government_revenue_freshness(payload, now)
+    award_event_status = str(
+        effective_freshness(payload, reference=now).get("award_events") or "unknown"
+    )
     if overall_status != "ok":
         gap_notes.append(
             "candidate_context.government_revenue: latest.json freshness "
@@ -2067,6 +2077,11 @@ def _load_government_revenue_map(
             "candidate_context.government_revenue: opportunity freshness "
             f"{opportunity_status} — opportunity candidates suppressed"
         )
+    if award_event_status != "ok":
+        gap_notes.append(
+            "candidate_context.government_revenue: award-event freshness "
+            f"{award_event_status} — reviewed award changes suppressed"
+        )
     out: dict[str, dict] = {}
     for company in payload.get("companies") or []:
         if not isinstance(company, dict) or not company.get("ticker"):
@@ -2078,6 +2093,7 @@ def _load_government_revenue_map(
             "freshness": {
                 "status": overall_status,
                 "opportunities": opportunity_status,
+                "award_events": award_event_status,
             },
             "metrics": _sparse({key: metrics.get(key) for key in _GOVERNMENT_REVENUE_METRICS}),
             "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
@@ -2087,6 +2103,9 @@ def _load_government_revenue_map(
                 else []
             ),
             "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
+            "award_change_events": reviewed_award_change_context(
+                payload, str(company["ticker"]), now
+            ),
             "confidence": company.get("confidence"),
             "provenance": (company.get("provenance") or [])[:3],
             "allowed_behavior": "annotate_only",

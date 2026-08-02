@@ -1,24 +1,45 @@
 """Backend-owned procurement workspace projection.
 
-This module turns official opportunity revisions and deterministic award-expiry
-watches into one UI-ready event grammar.  Display priority is auditable and is
-explicitly not an investment rank.  No browser-side calculation is required.
+This module turns official opportunity revisions, deterministic award-expiry
+watches, and receipt-bound USAspending award changes into one UI-ready event
+grammar.  Display priority is auditable and is explicitly not an investment
+rank.  No browser-side calculation is required.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
+import json
+import math
 import re
 from collections import Counter
 from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 
-SCHEMA_VERSION = "government_procurement_workspace.v1"
-EVENT_CONTRACT = "government_procurement_event.v1"
+SCHEMA_VERSION = "government_procurement_workspace.v2"
+EVENT_CONTRACT = "government_procurement_event.v2"
 PRIORITY_FORMULA = "govrev_display_priority.v1"
 MAX_WORKSPACE_EVENTS = 500
+_KIND_ORDER = ("opportunity", "recompete", "award_change")
+_AWARD_SOURCE_RAILS = (
+    "usaspending_award_snapshot",
+    "usaspending_award_action",
+)
+_MAPPING_CLASSES = (
+    "official",
+    "reviewed",
+    "deterministic_inference",
+    "model_estimate",
+    "unmapped",
+)
+_DEGRADED_FRESHNESS_STATES = {
+    "partial", "stale", "failed", "blocked", "unavailable",
+}
 _TERMINAL_OPPORTUNITY_STATES = {
     "cancelled", "archived", "closed", "deleted", "inactive",
 }
@@ -80,6 +101,261 @@ def _event_id(*parts: Any) -> str:
     return "govws-" + hashlib.sha256(raw).hexdigest()[:18]
 
 
+def _canonical_event(value: dict[str, Any]) -> str | None:
+    """Return a strict, content-addressable representation or fail closed."""
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+@lru_cache(maxsize=1)
+def _award_event_validator() -> Any:
+    """Load the public v2 event contract only when award events are supplied.
+
+    Opportunity and recompete rows are constructed locally.  Award rows arrive
+    from their dedicated receipt-bound projector, so this second contract gate
+    makes the boundary explicit before copying them into the workspace.
+    """
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    contract_path = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "government_revenue"
+        / "government_procurement_event.v2.schema.json"
+    )
+    return Draft202012Validator(
+        json.loads(contract_path.read_text(encoding="utf-8")),
+        format_checker=FormatChecker(),
+    )
+
+
+@lru_cache(maxsize=1)
+def _workspace_validator() -> Any:
+    """Return the complete v2 workspace validator with its local event registry."""
+
+    from jsonschema import Draft202012Validator, FormatChecker
+    from referencing import Registry, Resource
+
+    contract_dir = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "government_revenue"
+    )
+    event_schema = json.loads(
+        (contract_dir / "government_procurement_event.v2.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    workspace_schema = json.loads(
+        (contract_dir / "government_procurement_workspace.v2.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    registry = Registry().with_resource(
+        event_schema["$id"], Resource.from_contents(event_schema)
+    )
+    return Draft202012Validator(
+        workspace_schema,
+        registry=registry,
+        format_checker=FormatChecker(),
+    )
+
+
+def is_valid_procurement_workspace(value: Any) -> bool:
+    """Validate every nested public event before an API or static publication."""
+
+    if not isinstance(value, dict):
+        return False
+    try:
+        return not any(_workspace_validator().iter_errors(value))
+    except Exception:  # noqa: BLE001 - an unavailable validator is not a pass
+        return False
+
+
+def _is_valid_award_event(event: Any) -> bool:
+    """Accept only a complete, contract-valid receipt-bound award-change row."""
+    if not isinstance(event, dict):
+        return False
+    if (
+        event.get("contract") != EVENT_CONTRACT
+        or event.get("kind") != "award_change"
+        or event.get("opportunity") is not None
+        or event.get("recompete") is not None
+        or not isinstance(event.get("award_change"), dict)
+    ):
+        return False
+    # A schema-valid event can still be unusable as a deterministic identity if
+    # it cannot be represented as canonical JSON.  Never coerce it in place.
+    if _canonical_event(event) is None:
+        return False
+    return not any(_award_event_validator().iter_errors(event))
+
+
+def _event_rows(value: Any) -> list[Any]:
+    """Normalize a supplied event collection without treating text as rows."""
+    if value is None:
+        return []
+    if isinstance(value, dict):
+        return [value]
+    if isinstance(value, (str, bytes, bytearray)):
+        return []
+    try:
+        return list(value)
+    except TypeError:
+        return []
+
+
+def _dedupe_exact_event_ids(
+    events: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Deduplicate exact immutable IDs and reject contradictory same-ID rows.
+
+    An immutable event ID is not a fuzzy merge key.  Identical copies are safe
+    to collapse; two different payloads claiming the same ID are excluded
+    rather than letting collection order choose what a user sees.
+    """
+    grouped: dict[str, list[tuple[dict[str, Any], str]]] = {}
+    invalid_rows = 0
+    for event in events:
+        event_id = event.get("event_id")
+        canonical = _canonical_event(event)
+        if not isinstance(event_id, str) or not event_id or canonical is None:
+            invalid_rows += 1
+            continue
+        grouped.setdefault(event_id, []).append((event, canonical))
+
+    accepted: list[dict[str, Any]] = []
+    exact_duplicates = 0
+    conflicted_ids = 0
+    conflicted_rows = 0
+    for copies in grouped.values():
+        fingerprints = {canonical for _, canonical in copies}
+        if len(fingerprints) != 1:
+            conflicted_ids += 1
+            conflicted_rows += len(copies)
+            continue
+        accepted.append(copies[0][0])
+        exact_duplicates += len(copies) - 1
+    return accepted, {
+        "invalid_rows": invalid_rows,
+        "exact_duplicates": exact_duplicates,
+        "conflicted_ids": conflicted_ids,
+        "conflicted_rows": conflicted_rows,
+    }
+
+
+def _validated_award_events(value: Any) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Validate, deep-copy, and exact-ID-dedupe incoming award-change events."""
+    rows = _event_rows(value)
+    validated: list[dict[str, Any]] = []
+    rejected = 0
+    for row in rows:
+        if not _is_valid_award_event(row):
+            rejected += 1
+            continue
+        # The workspace never owns the source event object.  In particular, a
+        # later cap/sort/dedupe must not mutate the award-event projection that
+        # may be shared with another governed consumer.
+        validated.append(copy.deepcopy(row))
+    accepted, dedupe = _dedupe_exact_event_ids(validated)
+    return accepted, {
+        "input": len(rows),
+        "validated": len(validated),
+        "accepted_after_exact_id_dedupe": len(accepted),
+        "rejected": rejected + dedupe["invalid_rows"] + dedupe["conflicted_rows"],
+        "exact_id_duplicates": dedupe["exact_duplicates"],
+        "conflicted_ids": dedupe["conflicted_ids"],
+        "conflicted_rows": dedupe["conflicted_rows"],
+    }
+
+
+def _event_priority_score(event: dict[str, Any]) -> float:
+    try:
+        score = float((event.get("display_priority") or {}).get("score") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    return score if math.isfinite(score) else 0.0
+
+
+def _event_sort_key(event: dict[str, Any]) -> tuple[float, int, str]:
+    """One global stable order, applied only after all event lanes are merged."""
+    known_at = _stamp((event.get("change") or {}).get("known_at"))
+    known_value = int(known_at.value) if known_at is not None else -1
+    return (
+        -_event_priority_score(event),
+        -known_value,
+        str(event.get("event_id") or ""),
+    )
+
+
+def _freshness(value: Any, *, unavailable_reason: str) -> dict[str, Any]:
+    """Copy a source freshness envelope and make absence explicit."""
+    if isinstance(value, dict):
+        result = copy.deepcopy(value)
+        if isinstance(result.get("status"), str) and result["status"].strip():
+            return result
+        result["status"] = "unavailable"
+        result.setdefault("reason", unavailable_reason)
+        return result
+    return {"status": "unavailable", "reason": unavailable_reason}
+
+
+def _mapping_class(event: dict[str, Any]) -> str:
+    value = (event.get("evidence") or {}).get("mapping_class")
+    return str(value) if value in _MAPPING_CLASSES else "unmapped"
+
+
+def _award_source_rail(event: dict[str, Any]) -> str | None:
+    if event.get("kind") != "award_change":
+        return None
+    rail = (event.get("award_change") or {}).get("source_rail")
+    return str(rail) if rail in _AWARD_SOURCE_RAILS else None
+
+
+def _agency_name(event: dict[str, Any]) -> str | None:
+    """Read the shared workspace agency key and the award projector variant."""
+    agency = event.get("agency")
+    if not isinstance(agency, dict):
+        return None
+    value = agency.get("department_name") or agency.get("name")
+    return str(value) if value else None
+
+
+def _coverage_breakdown(
+    available: list[dict[str, Any]],
+    visible: list[dict[str, Any]],
+    classifier: Any,
+    *,
+    known_values: tuple[str, ...] = (),
+) -> dict[str, dict[str, int]]:
+    """Expose the pre-cap and visible population for a governed dimension."""
+    before = Counter(
+        value for event in available if (value := classifier(event)) is not None
+    )
+    after = Counter(
+        value for event in visible if (value := classifier(event)) is not None
+    )
+    identifiers = [
+        *known_values,
+        *sorted((set(before) | set(after)) - set(known_values)),
+    ]
+    return {
+        identifier: {
+            "available_before_cap": int(before.get(identifier, 0)),
+            "visible": int(after.get(identifier, 0)),
+        }
+        for identifier in identifiers
+    }
+
+
 def _changed_value(event: dict[str, Any], field: str) -> dict[str, Any] | None:
     return next(
         (
@@ -88,6 +364,45 @@ def _changed_value(event: dict[str, Any], field: str) -> dict[str, Any] | None:
         ),
         None,
     )
+
+
+def _public_change_scalar(value: Any) -> str | int | float | bool | None:
+    """Collapse source-shaped values into the bounded public change grammar."""
+    if value is None or isinstance(value, (bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, str):
+        return _text(value, 2_000)
+    try:
+        rendered = json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+            default=str,
+        )
+    except (TypeError, ValueError):
+        rendered = str(value)
+    return _text(rendered, 2_000)
+
+
+def _public_change_value(value: Any) -> str | int | float | bool | None | list[Any]:
+    if isinstance(value, (list, tuple)):
+        return [_public_change_scalar(item) for item in value[:40]]
+    return _public_change_scalar(value)
+
+
+def _public_place_of_performance(value: Any) -> dict[str, str | None] | str | None:
+    if not isinstance(value, dict):
+        return _text(value, 400)
+    allowed = {
+        key: _text(value.get(key), 160)
+        for key in ("city", "state", "zip", "country")
+        if value.get(key) is not None
+    }
+    return allowed or None
 
 
 def _opportunity_change(event: dict[str, Any]) -> tuple[str, str, str]:
@@ -304,8 +619,8 @@ def _opportunity_workspace_event(
     changed_fields = [
         {
             "field": row.get("field"),
-            "before": row.get("before"),
-            "after": row.get("after"),
+            "before": _public_change_value(row.get("before")),
+            "after": _public_change_value(row.get("after")),
             "semantic": (
                 "observed_document_revision"
                 if event.get("event_type") == "document_changed"
@@ -433,10 +748,13 @@ def _opportunity_workspace_event(
             "set_aside_code": None,
             "set_aside_label": record.get("set_aside"),
             "description_excerpt": _text(record.get("description"), 420),
-            "place_of_performance": record.get("place_of_performance"),
+            "place_of_performance": _public_place_of_performance(
+                record.get("place_of_performance")
+            ),
             "sam_url": notice_url,
         },
         "recompete": None,
+        "award_change": None,
         "dates": dates,
         "amounts": [],
         "primary_date_id": "response_deadline" if record.get("response_deadline") else "posted_at",
@@ -561,6 +879,7 @@ def _recompete_workspace_event(
             "basis_code": "pop_end_30_540d",
             "watch_entered_at": watch.get("known_at") or known_at,
         },
+        "award_change": None,
         "dates": [{
             "id": "current_end_date",
             "label_code": "period_of_performance_end",
@@ -640,11 +959,16 @@ def _recompete_workspace_event(
     }
 
 
+def _facet_rows(counter: Counter[str], *, labels: bool = False) -> list[dict[str, Any]]:
+    return [
+        ({"id": key, "label": key, "count": count} if labels else {"id": key, "count": count})
+        for key, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
+
 def _facets(events: list[dict[str, Any]]) -> dict[str, Any]:
     agencies = Counter(
-        str((event.get("agency") or {}).get("department_name"))
-        for event in events
-        if (event.get("agency") or {}).get("department_name")
+        agency for event in events if (agency := _agency_name(event)) is not None
     )
     notice_types = Counter(
         str((event.get("opportunity") or {}).get("notice_type"))
@@ -654,20 +978,31 @@ def _facets(events: list[dict[str, Any]]) -> dict[str, Any]:
     tickers = Counter(
         str(event.get("primary_ticker")) for event in events if event.get("primary_ticker")
     )
-    evidence_classes = Counter(
-        str((event.get("evidence") or {}).get("mapping_class") or "unmapped")
-        for event in events
-    )
     impact_bands = Counter(
         str(((event.get("listed_company_impacts") or [{}])[0].get("materiality") or {}).get("band") or "unknown")
         for event in events
     )
+    kinds = Counter(
+        str(event.get("kind"))
+        for event in events
+        if event.get("kind") in _KIND_ORDER
+    )
+    award_source_rails = Counter(
+        rail for event in events if (rail := _award_source_rail(event)) is not None
+    )
+    mapping_classes = Counter(_mapping_class(event) for event in events)
+    mapping_rows = _facet_rows(mapping_classes)
     return {
-        "agencies": [{"id": key, "label": key, "count": count} for key, count in agencies.most_common()],
-        "notice_types": [{"id": key, "count": count} for key, count in notice_types.most_common()],
-        "tickers": [{"id": key, "label": key, "count": count} for key, count in tickers.most_common()],
-        "evidence_classes": [{"id": key, "count": count} for key, count in evidence_classes.most_common()],
-        "impact_bands": [{"id": key, "count": count} for key, count in impact_bands.most_common()],
+        "agencies": _facet_rows(agencies, labels=True),
+        "notice_types": _facet_rows(notice_types),
+        "tickers": _facet_rows(tickers, labels=True),
+        # Retained for existing consumers.  v2 names the governed dimension
+        # directly so it can be shared by opportunity, recompete, and awards.
+        "evidence_classes": mapping_rows,
+        "mapping_classes": mapping_rows,
+        "impact_bands": _facet_rows(impact_bands),
+        "kinds": _facet_rows(kinds),
+        "award_source_rails": _facet_rows(award_source_rails),
     }
 
 
@@ -678,16 +1013,23 @@ def build_procurement_workspace(
     as_of: str,
     known_at: str | None,
     award_freshness: dict[str, Any] | None = None,
+    award_events: Any = None,
+    award_event_freshness: dict[str, Any] | None = None,
     vertical_links_by_ticker: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
-    """Compose a deterministic, UI-ready opportunity and recompete workspace."""
+    """Compose a deterministic v2 opportunity, recompete, and award workspace.
+
+    ``award_events`` is intentionally a pre-projected v2 ledger from the
+    receipt-bound award engine.  The workspace validates and copies it, then
+    applies one global exact-ID dedupe, sort, and cap across all three kinds.
+    """
     current = {
         str(row.get("notice_id")): row
         for row in opportunity_intelligence.get("opportunities") or []
         if isinstance(row, dict) and row.get("notice_id")
     }
     vertical_links_by_ticker = vertical_links_by_ticker or {}
-    events: list[dict[str, Any]] = []
+    legacy_events: list[dict[str, Any]] = []
     for event in opportunity_intelligence.get("events") or []:
         if not isinstance(event, dict):
             continue
@@ -695,7 +1037,7 @@ def build_procurement_workspace(
         if not isinstance(record, dict):
             record = current.get(str(event.get("notice_id")))
         if record:
-            events.append(_opportunity_workspace_event(
+            legacy_events.append(_opportunity_workspace_event(
                 event,
                 record,
                 vertical_links_by_ticker,
@@ -706,29 +1048,75 @@ def build_procurement_workspace(
             continue
         for watch in company.get("recompete_candidates") or []:
             if isinstance(watch, dict):
-                events.append(_recompete_workspace_event(
+                legacy_events.append(_recompete_workspace_event(
                     company,
                     watch,
                     known_at=known_at,
                     vertical_links_by_ticker=vertical_links_by_ticker,
                 ))
 
-    # Stable multi-pass sort keeps priority backend-owned while making newest
-    # evidence and the stable event id explicit tie breakers.
-    events.sort(key=lambda row: str(row.get("event_id") or ""))
-    events.sort(key=lambda row: str((row.get("change") or {}).get("known_at") or ""), reverse=True)
-    events.sort(
-        key=lambda row: float((row.get("display_priority") or {}).get("score") or 0),
-        reverse=True,
-    )
-    events_available_before_cap = len(events)
-    events = events[:MAX_WORKSPACE_EVENTS]
+    copied_award_events, award_event_stats = _validated_award_events(award_events)
+    merged_events, identity_stats = _dedupe_exact_event_ids([
+        *legacy_events,
+        *copied_award_events,
+    ])
+    # This is deliberately one global sort/cap, rather than independent lane
+    # slices.  A high-priority award action can therefore displace a lower-
+    # priority legacy watch transparently, with both populations disclosed.
+    merged_events.sort(key=_event_sort_key)
+    events_available_before_cap = len(merged_events)
+    events = merged_events[:MAX_WORKSPACE_EVENTS]
     events_truncated = max(0, events_available_before_cap - len(events))
-    mapped = sum(bool(event.get("listed_company_impacts")) for event in events)
-    opportunity_freshness = opportunity_intelligence.get("freshness") or {}
-    award_freshness = award_freshness or {}
-    statuses = {opportunity_freshness.get("status"), award_freshness.get("status")}
-    overall = "partial" if statuses & {"partial", "stale", "failed", "blocked", "unavailable"} else "ok"
+    mapped = sum(_mapping_class(event) != "unmapped" for event in events)
+    opportunity_freshness = _freshness(
+        opportunity_intelligence.get("freshness"),
+        unavailable_reason="opportunity freshness was not supplied",
+    )
+    recompete_freshness = _freshness(
+        award_freshness,
+        unavailable_reason="award-detail freshness for recompete watches was not supplied",
+    )
+    award_event_freshness = _freshness(
+        award_event_freshness,
+        unavailable_reason="award-event freshness was not supplied",
+    )
+    statuses = {
+        str(source.get("status") or "unavailable").lower()
+        for source in (opportunity_freshness, recompete_freshness, award_event_freshness)
+    }
+    overall = "partial" if statuses & _DEGRADED_FRESHNESS_STATES else "ok"
+    kind_coverage = _coverage_breakdown(
+        merged_events,
+        events,
+        lambda event: str(event.get("kind")) if event.get("kind") in _KIND_ORDER else None,
+        known_values=_KIND_ORDER,
+    )
+    rail_coverage = _coverage_breakdown(
+        merged_events,
+        events,
+        _award_source_rail,
+        known_values=_AWARD_SOURCE_RAILS,
+    )
+    mapping_coverage = _coverage_breakdown(
+        merged_events,
+        events,
+        _mapping_class,
+        known_values=_MAPPING_CLASSES,
+    )
+    award_available = kind_coverage["award_change"]["available_before_cap"]
+    award_visible = kind_coverage["award_change"]["visible"]
+    accepted_award_ids = {
+        str(event.get("event_id")) for event in copied_award_events
+    }
+    merged_ids = {str(event.get("event_id")) for event in merged_events}
+    award_event_stats["dropped_by_global_identity_conflict"] = len(
+        accepted_award_ids - merged_ids
+    )
+    award_event_stats.update({
+        "available_before_cap": award_available,
+        "visible": award_visible,
+        "truncated": max(0, award_available - award_visible),
+    })
     return {
         "schema_version": SCHEMA_VERSION,
         "event_contract": EVENT_CONTRACT,
@@ -739,7 +1127,8 @@ def build_procurement_workspace(
         "freshness": {
             "status": overall,
             "opportunities": opportunity_freshness,
-            "recompetes": award_freshness,
+            "recompetes": recompete_freshness,
+            "award_events": award_event_freshness,
             "mappings": {
                 "status": "partial" if mapped < len(events) else "ok",
                 "reviewed_at": None,
@@ -754,6 +1143,16 @@ def build_procurement_workspace(
             "events_truncated": events_truncated,
             "event_cap": MAX_WORKSPACE_EVENTS,
             "facet_scope": "visible bounded workspace events",
+            "by_kind": kind_coverage,
+            "by_award_source_rail": rail_coverage,
+            "by_mapping_class": mapping_coverage,
+            "award_events": award_event_stats,
+            "exact_id_deduplication": {
+                "exact_duplicates": identity_stats["exact_duplicates"],
+                "conflicted_ids": identity_stats["conflicted_ids"],
+                "conflicted_rows": identity_stats["conflicted_rows"],
+                "invalid_rows": identity_stats["invalid_rows"],
+            },
             "open_opportunities": int(
                 (opportunity_intelligence.get("market") or {}).get("active_opportunities") or 0
             ),
@@ -761,6 +1160,7 @@ def build_procurement_workspace(
                 event.get("kind") == "opportunity" for event in events
             ),
             "recompete_cases": sum(event.get("kind") == "recompete" for event in events),
+            "award_change_events": award_visible,
             "official_recompete_matches": 0,
             "derived_expiry_watches": sum(event.get("kind") == "recompete" for event in events),
             "listed_company_linked": mapped,
@@ -781,6 +1181,7 @@ def build_procurement_workspace(
             "First-seen revision history is not an official complete SAM amendment archive.",
             "Listed-company relationships are rule-based exposure candidates unless separately reviewed.",
             "Expiry watches are deterministic inferences, never official recompete dates.",
+            "Award-change events are copied only from receipt-bound v2 award-event projections.",
             "Workspace events and facets are capped; coverage discloses any records omitted by that cap.",
         ],
     }
@@ -792,4 +1193,5 @@ __all__ = [
     "PRIORITY_FORMULA",
     "SCHEMA_VERSION",
     "build_procurement_workspace",
+    "is_valid_procurement_workspace",
 ]

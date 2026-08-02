@@ -18,6 +18,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import logging
@@ -32,14 +33,18 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from engine.government_revenue import build_payload  # noqa: E402
+from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_government_revenue")
 
 # The HTML shell is intentionally a first page, not a duplicate of the full
-# workspace.  Fifteen governed events keeps the rendered page below the raw
-# 250 kB edge budget while still giving the desk a useful first paint.
-SHELL_EVENT_LIMIT = 15
+# workspace.
+# Keep a meaningful first paint while leaving headroom under the raw HTML
+# publication fence as live award records grow. The browser hydrates the full
+# governed workspace immediately after paint.
+SHELL_EVENT_LIMIT = 12
+SHELL_JSON_BUDGET_BYTES = 100_000
 RAW_HTML_BUDGET_BYTES = 250_000
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
@@ -52,6 +57,16 @@ SHELL_COMPANY_METRICS = (
 )
 
 
+def _workspace_cursor(offset: int, *, version: str = "v2") -> str:
+    """Emit the same opaque cursor contract as the read-only API."""
+
+    if version not in {"v1", "v2"} or offset < 0:
+        raise ValueError("invalid workspace cursor")
+    return base64.urlsafe_b64encode(
+        f"{version}:{int(offset)}".encode("ascii")
+    ).decode("ascii").rstrip("=")
+
+
 def _present_fields(record: object, fields: tuple[str, ...]) -> dict:
     """Pick only explicitly present, non-null fields from a JSON-like record."""
     if not isinstance(record, dict):
@@ -61,6 +76,20 @@ def _present_fields(record: object, fields: tuple[str, ...]) -> dict:
         for field in fields
         if field in record and record[field] is not None
     }
+
+
+def _bounded_text(value: object, limit: int) -> object:
+    """Keep a first-paint string inspectable without embedding source bodies."""
+    return value[:limit] if isinstance(value, str) else value
+
+
+def _compact_change_value(value: object) -> object:
+    """Bound legal source deltas so first paint cannot breach the HTML fence."""
+    if isinstance(value, str):
+        return value[:360]
+    if isinstance(value, list):
+        return [item[:160] if isinstance(item, str) else item for item in value[:8]]
+    return value
 
 
 def _compact_workspace_event(event: dict) -> dict:
@@ -87,7 +116,30 @@ def _compact_workspace_event(event: dict) -> dict:
     ))
     changed_fields = event.get("change", {}).get("changed_fields") if isinstance(event.get("change"), dict) else None
     if isinstance(changed_fields, list):
-        change["changed_fields"] = changed_fields[:8]
+        change["changed_fields"] = []
+        for raw in changed_fields[:6]:
+            if not isinstance(raw, dict):
+                continue
+            item = _present_fields(raw, (
+                "field", "before", "after", "semantic", "source_ref",
+                "before_source_ref", "after_source_ref", "before_receipt_ref",
+                "after_receipt_ref",
+            ))
+            for field in ("before", "after"):
+                if field in item:
+                    item[field] = _compact_change_value(item[field])
+            for field, limit in {
+                "field": 120,
+                "semantic": 80,
+                "source_ref": 360,
+                "before_source_ref": 360,
+                "after_source_ref": 360,
+                "before_receipt_ref": 180,
+                "after_receipt_ref": 180,
+            }.items():
+                if field in item:
+                    item[field] = _bounded_text(item[field], limit)
+            change["changed_fields"].append(item)
     compact["change"] = change
     compact["opportunity"] = _present_fields(event.get("opportunity"), (
         "notice_id", "solicitation_number", "title", "status", "notice_stage",
@@ -102,6 +154,45 @@ def _compact_workspace_event(event: dict) -> dict:
         "current_end_date", "potential_end_date", "days_to_current_end", "total_obligated",
         "current_award_amount", "potential_award_amount", "matched_notice_id", "source_url",
     )) or None
+    raw_award_change = (
+        event.get("award_change") if isinstance(event.get("award_change"), dict) else {}
+    )
+    award_change = _present_fields(raw_award_change, (
+        "award_key", "generated_award_id", "piid", "recipient_name", "event_type",
+        "secondary_types", "source_rail", "observation_kind", "coverage_scope",
+        "is_late_discovery", "action_id", "prior_source_identity",
+    ))
+    source_identity = _present_fields(
+        raw_award_change.get("source_identity"),
+        ("id", "version", "content_sha256"),
+    )
+    if source_identity:
+        award_change["source_identity"] = source_identity
+    for field, limit in {
+        "award_key": 180,
+        "generated_award_id": 180,
+        "piid": 180,
+        "recipient_name": 240,
+        "event_type": 80,
+        "source_rail": 80,
+        "observation_kind": 40,
+        "coverage_scope": 480,
+        "action_id": 180,
+        "prior_source_identity": 180,
+    }.items():
+        if field in award_change:
+            award_change[field] = _bounded_text(award_change[field], limit)
+    if isinstance(award_change.get("secondary_types"), list):
+        award_change["secondary_types"] = [
+            _bounded_text(value, 80) for value in award_change["secondary_types"][:8]
+        ]
+    if isinstance(award_change.get("source_identity"), dict):
+        for field, limit in {"id": 180, "version": 180, "content_sha256": 80}.items():
+            if field in award_change["source_identity"]:
+                award_change["source_identity"][field] = _bounded_text(
+                    award_change["source_identity"][field], limit
+                )
+    compact["award_change"] = award_change or None
     compact["dates"] = [
         _present_fields(row, ("id", "label_code", "value", "semantic", "known_at", "source_ref"))
         for row in event.get("dates") or []
@@ -209,8 +300,23 @@ def _display_payload(payload: dict) -> dict:
         shell["procurement_workspace"] = {
             **workspace,
             "events": visible,
-            "next_cursor": str(len(visible)) if len(events) > len(visible) else None,
+            "next_cursor": (
+                _workspace_cursor(len(visible), version="v2")
+                if len(events) > len(visible)
+                else None
+            ),
         }
+        # Long but contract-valid source deltas must not make publication
+        # depend on a lucky data mix. Adapt the first page to a deterministic
+        # JSON budget; the complete bundle hydrates from workspace.json.
+        while visible and len(json.dumps(
+            shell, ensure_ascii=False, separators=(",", ":"), default=str
+        ).encode("utf-8")) > SHELL_JSON_BUDGET_BYTES:
+            visible.pop()
+            shell["procurement_workspace"]["events"] = visible
+            shell["procurement_workspace"]["next_cursor"] = _workspace_cursor(
+                len(visible), version="v2"
+            )
     return shell
 
 
@@ -240,7 +346,7 @@ def _workspace_bundle_id(workspace: dict) -> str:
         if key not in {"bundle_id", "generated_at"}
     }
     digest = hashlib.sha256(_canonical_json(fingerprint).encode("utf-8")).hexdigest()
-    return f"grw1-{digest[:24]}"
+    return f"grw2-{digest[:24]}"
 
 
 def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
@@ -294,8 +400,20 @@ def _validate_payload(payload: object) -> dict:
     if not isinstance(payload, dict) or payload.get("schema_version") != "company_government_revenue.v1":
         raise ValueError("government revenue engine returned an invalid schema")
     workspace = payload.get("procurement_workspace")
-    if not isinstance(workspace, dict) or workspace.get("schema_version") != "government_procurement_workspace.v1":
+    if (
+        not isinstance(workspace, dict)
+        or workspace.get("schema_version") != "government_procurement_workspace.v2"
+        or workspace.get("event_contract") != "government_procurement_event.v2"
+        or not is_valid_procurement_workspace(workspace)
+    ):
         raise ValueError("government procurement workspace returned an invalid schema")
+    events = workspace.get("events")
+    if not isinstance(events, list) or any(
+        not isinstance(event, dict)
+        or event.get("contract") != "government_procurement_event.v2"
+        for event in events
+    ):
+        raise ValueError("government procurement workspace returned a non-v2 event")
     return payload
 
 
@@ -387,7 +505,12 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         workspace = json.loads(workspace_raw)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError("canonical government revenue generation is unavailable") from exc
-    if not isinstance(workspace, dict) or workspace.get("schema_version") != "government_procurement_workspace.v1":
+    if (
+        not isinstance(workspace, dict)
+        or workspace.get("schema_version") != "government_procurement_workspace.v2"
+        or workspace.get("event_contract") != "government_procurement_event.v2"
+        or not is_valid_procurement_workspace(workspace)
+    ):
         raise ValueError("canonical government procurement workspace is invalid")
     embedded = payload.get("procurement_workspace")
     if _canonical_json(embedded) != _canonical_json(workspace):
