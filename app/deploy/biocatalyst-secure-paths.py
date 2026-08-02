@@ -42,7 +42,15 @@ def _require_trusted_ancestor(
         raise SafetyError(f"managed ancestor is not a directory: {label}")
     if metadata.st_uid not in trusted_uids:
         raise SafetyError(f"managed ancestor has unsafe ownership: {label}")
-    if stat.S_IMODE(metadata.st_mode) & 0o022:
+    mode = stat.S_IMODE(metadata.st_mode)
+    # System temporary roots such as /tmp are intentionally world-writable,
+    # root-owned, and sticky.  The sticky bit prevents an unprivileged user
+    # from replacing another principal's child, while every descendant we
+    # traverse is still opened no-follow and independently ownership-checked.
+    # This permits secure test/runtime staging beneath a pre-created trusted
+    # child without weakening the rejection of ordinary writable ancestors.
+    trusted_sticky_root = metadata.st_uid == 0 and bool(mode & stat.S_ISVTX)
+    if mode & 0o022 and not trusted_sticky_root:
         raise SafetyError(f"managed ancestor is group/world writable: {label}")
 
 
@@ -99,6 +107,9 @@ def _secure_directory_at(
     if not stat.S_ISDIR(metadata.st_mode):
         os.close(directory_fd)
         raise SafetyError(f"{label} is not a directory")
+    if metadata.st_uid not in {0, uid}:
+        os.close(directory_fd)
+        raise SafetyError(f"{label} has unsafe ownership")
     os.fchown(directory_fd, uid, gid)
     os.fchmod(directory_fd, mode)
     return directory_fd
@@ -142,6 +153,8 @@ def _secure_regular_file(path: str, *, uid: int, gid: int, mode: int) -> None:
         metadata = os.fstat(file_fd)
         if not stat.S_ISREG(metadata.st_mode):
             raise SafetyError(f"{path} is not a regular file")
+        if metadata.st_uid not in {0, uid}:
+            raise SafetyError(f"{path} has unsafe ownership")
         if metadata.st_nlink != 1:
             raise SafetyError(f"{path} must not be hard-linked")
         os.fchown(file_fd, uid, gid)
