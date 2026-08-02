@@ -2734,10 +2734,89 @@ def earnings_intelligence_health(
     return health
 
 
+_EARNINGS_SURFACE_ARTIFACTS = {
+    "ec_industry": ("ec_industry.json", "ec_industry_heatmap"),
+    "ec_industry_grid": ("ec_industry_heatmap.json", "ec_industry_heatmap_grid"),
+    "earnings_season": ("earnings_season.json", "earnings_season"),
+    "earnings_compare": ("earnings_compare.json", "earnings_comparison"),
+    "earnings_table": ("earnings_table.json", "earnings_table"),
+}
+
+_FULL_HISTORY_SOURCE_TIERS = frozenset({
+    "r2_history",
+    "r2_history_plus_score_overlay",
+    "legacy_full_history",
+    "legacy_full_history_plus_score_overlay",
+})
+
+
+def _read_json_artifact(path: Path) -> dict | None:
+    """Return a prior JSON artifact only when it is a complete object."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    return raw if isinstance(raw, dict) else None
+
+
+def _is_recent_verified_full_history_surface(
+    artifact: dict | None,
+    *,
+    expected_surface: str,
+) -> bool:
+    """Whether an existing artifact is safe to retain during a transient outage.
+
+    A committed overview is deliberately a usable degraded fallback on a cold
+    start.  It must not, however, replace an already-published, recent R2/full
+    history generation merely because the transport is temporarily unavailable.
+    The freshness gate prevents this guard from concealing genuinely stale data.
+    """
+    if not isinstance(artifact, dict):
+        return False
+    if artifact.get("surface") != expected_surface:
+        return False
+    # ``stale`` here means the latest *call date* is older than 14 days.  That
+    # is normal between earnings seasons and is independent of whether this
+    # full-history artifact was rebuilt recently enough to be a safe fallback.
+    if artifact.get("data_status") not in {"ready", "stale"}:
+        return False
+    if artifact.get("data_source_tier") not in _FULL_HISTORY_SOURCE_TIERS:
+        return False
+    if not artifact.get("is_context_only") or not artifact.get("display_only"):
+        return False
+    try:
+        if int(artifact.get("source_rows") or 0) <= 0:
+            return False
+        generated_at = datetime.fromisoformat(
+            str(artifact["generated_at"]).replace("Z", "+00:00"),
+        )
+        if generated_at.tzinfo is None:
+            return False
+    except (KeyError, TypeError, ValueError):
+        return False
+    age = datetime.now(timezone.utc) - generated_at.astimezone(timezone.utc)
+    return 0 <= age.total_seconds() <= 14 * 24 * 60 * 60
+
+
+def _candidate_requires_last_good_guard(candidate: dict | None) -> bool:
+    """A missing, empty, or degraded candidate may not erase verified history."""
+    if not isinstance(candidate, dict):
+        return True
+    return candidate.get("data_status") in {"empty", "degraded"}
+
+
 def build_all_earnings_surfaces(root: Path | None = None) -> dict:
-    """Build + write all four Earnings-Calls surface artifacts.  Fail-open:
-    a failure in one surface logs ::warning:: and does not abort the others."""
+    """Build Earnings-Calls surface artifacts without downgrading last good data.
+
+    Individual surfaces remain fail-open.  During a temporary history transport
+    outage, a recent verified full-history artifact is retained instead of being
+    overwritten by the committed overview fallback.  Cold starts still publish
+    that fallback, so the UI never regresses to an empty/warming state.
+    """
+    r = Path(root) if root is not None else _REPO_ROOT
+    out_root = _sa_data_root(r)
     results: dict[str, Any] = {}
+    guarded_surfaces: list[str] = []
     for name, fn in (
         ("ec_industry", ec_industry_heatmap),
         ("ec_industry_grid", ec_industry_heatmap_grid),
@@ -2745,13 +2824,46 @@ def build_all_earnings_surfaces(root: Path | None = None) -> dict:
         ("earnings_compare", earnings_comparison),
         ("earnings_table", earnings_table),
     ):
+        filename, expected_surface = _EARNINGS_SURFACE_ARTIFACTS[name]
+        path = out_root / filename
+        previous = _read_json_artifact(path)
+        candidate: dict | None = None
         try:
-            results[name] = fn(root=root)  # type: ignore[operator]
+            candidate = fn(root=r, write=False)  # type: ignore[operator]
         except Exception as exc:  # noqa: BLE001
             print(f"::warning:: earnings_qual: surface {name} failed ({exc})", flush=True)
-            results[name] = {"error": str(exc)}
+
+        if (
+            _candidate_requires_last_good_guard(candidate)
+            and _is_recent_verified_full_history_surface(
+                previous, expected_surface=expected_surface,
+            )
+        ):
+            results[name] = previous
+            guarded_surfaces.append(name)
+            print(
+                "::warning:: earnings_qual: retaining recent verified "
+                f"{name} surface because this generation is unavailable or degraded",
+                flush=True,
+            )
+        elif candidate is not None:
+            _atomic_write_json(path, candidate)
+            results[name] = candidate
+        else:
+            results[name] = {"error": "surface generation failed"}
+
     try:
-        results["health"] = earnings_intelligence_health(root=root, write=True)
+        health = earnings_intelligence_health(root=r, write=True)
+        if guarded_surfaces:
+            health["surface_publish_guard"] = {
+                "status": "retained_recent_verified_full_history",
+                "surfaces": guarded_surfaces,
+                "reason": "current_generation_unavailable_or_degraded",
+            }
+            _atomic_write_json(
+                r / "data" / "quality" / "earnings_intelligence_health.json", health,
+            )
+        results["health"] = health
     except Exception as exc:  # noqa: BLE001
         print(f"::warning:: earnings_qual: health build failed ({exc})", flush=True)
         results["health"] = {"error": str(exc)}

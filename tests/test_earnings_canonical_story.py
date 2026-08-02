@@ -139,7 +139,10 @@ def test_digest_story_and_press_slot_are_deterministic_receipt_complete() -> Non
     assert slot["min_anchored_receipts"] == 5
     assert slot["sources"] == ["chronicle:defeatbeta:AAPL:2026Q1"]
     assert slot["source_revisions"][slot["sources"][0]] == f"sha256:{pack['source']['body_sha256']}"
-    assert slot["approved_claim_ids"] == digest["claims"]
+    assert slot["approved_claim_ids"] == sorted({
+        claim_id for fact in slot["facts"] for claim_id in fact["claim_ids"]
+    })
+    assert set(slot["approved_claim_ids"]) < set(digest["claims"])
     assert slot["article_derivative_id"] == story["derivatives"]["article_id"]
 
 

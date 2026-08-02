@@ -76,6 +76,10 @@ def story_to_press_slot(
     facts: list[dict[str, Any]] = []
     distinct_numeric_values: set[str] = set()
     for item in digest["facts"]:
+        # Analyst questions remain available to the ticker dossier, but Press
+        # may only treat issuer-management statements as first-party facts.
+        if "management_role" not in item["selection_reasons"]:
+            continue
         text = str(item["text"])
         if len(text) > 2_000:
             raise ContractError("canonical story contains an overlong Press source fact")
@@ -105,6 +109,11 @@ def story_to_press_slot(
         )
     if not facts:
         raise ContractError("canonical story has no press-safe source facts")
+    press_claim_ids = sorted({
+        str(claim_id)
+        for fact in facts
+        for claim_id in fact["claim_ids"]
+    })
 
     context = dict(chronicle_context or {})
     if not context:
@@ -156,7 +165,7 @@ def story_to_press_slot(
         "facts": facts,
         "raw_documents": [{
             "ref": source_ref,
-            "text": " ".join(str(item["text"]) for item in digest["facts"]),
+            "text": " ".join(str(fact["text"]) for fact in facts),
         }],
         "chronicle_context": context,
         "slug_hint": str(story["seo"]["slug"]),
@@ -166,6 +175,8 @@ def story_to_press_slot(
         # Source-ready packets may be staged and inspected, never emitted.  A
         # later verified approval compiler must produce a new approved slot.
         "canonical_emit_allowed": False,
-        "approved_claim_ids": list(story["approved_claim_ids"]),
+        # Press receives the management-attributed subset of the canonical
+        # dossier claims. Analyst questions remain cited in the dossier only.
+        "approved_claim_ids": press_claim_ids,
         "article_derivative_id": story["derivatives"]["article_id"],
     }

@@ -1,0 +1,115 @@
+name: earnings-story-packets
+
+# This is a deterministic R2 projection of receipt-complete story packets.
+# It does not generate prose, accept promotion tiers, or receive model keys.
+on:
+  schedule:
+    - cron: "17 * * * *"
+    # Full source/provenance replay is intentionally once daily rather than on
+    # every no-change projection: it downloads the complete packet + evidence
+    # closure and is the expensive integrity lane.
+    - cron: "37 6 * * *"
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: "Advance the verified immutable packet root"
+        required: false
+        default: true
+        type: boolean
+      full_audit:
+        description: "Replay the public packet root against every bound evidence object"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: earnings-story-packets-projection
+  cancel-in-progress: false
+
+jobs:
+  project:
+    # Scheduled runs always execute from the default branch.  Manual dispatches
+    # must do the same: a feature branch may validate this workflow, but it may
+    # never advance the canonical R2 root with branch-local code or policy.
+    if: ${{ github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            config/earnings_story_promotion.yml
+            engine/earnings_narrative
+            engine/press
+            scripts/refresh_earnings_story_packets.py
+            scripts/publish_earnings_evidence_graph_r2.py
+            scripts/publish_earnings_story_packets_r2.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install R2 client only
+        run: python -m pip install --quiet boto3 pyyaml
+
+      - name: project verified deterministic story packets
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          SHOULD_PROMOTE: ${{ github.event_name == 'schedule' || inputs.promote }}
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --work-dir "$RUNNER_TEMP/earnings-story-packets"
+            --out-dir "$RUNNER_TEMP/earnings-story-packets/output"
+          )
+          if [ "${SHOULD_PROMOTE}" = "true" ]; then
+            ARGS+=(--promote)
+          fi
+          set +e
+          python -m scripts.refresh_earnings_story_packets "${ARGS[@]}"
+          rc=$?
+          set -e
+          if [ "$rc" -eq 2 ]; then
+            echo "::notice title=earnings-story-packets::root manifest promotion lost a safe compare-and-swap race"
+            exit 0
+          fi
+          exit "$rc"
+
+  audit:
+    needs: project
+    if: ${{ (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') && (github.event.schedule == '37 6 * * *' || inputs.full_audit) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            config/earnings_story_promotion.yml
+            engine/earnings_narrative
+            engine/press
+            scripts/publish_earnings_story_packets_r2.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install R2 audit client
+        run: python -m pip install --quiet boto3 pyyaml
+
+      - name: replay public packets against immutable evidence
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_earnings_story_packets_r2 --audit-remote
