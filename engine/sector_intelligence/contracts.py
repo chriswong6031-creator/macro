@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
 from decimal import Decimal, InvalidOperation
+import copy
 import hashlib
 import json
 import math
@@ -807,6 +808,67 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
     configured_ids = (
         manifest.get("configured_nct_ids") if isinstance(manifest, Mapping) else None
     )
+    version_evidence = document.get("version_evidence")
+    # B0 fixtures intentionally predate immutable /version receipts.  Keep the
+    # contract parseable for historical/replay fixtures, but when B1 evidence is
+    # present bind both probes to the exact run state and to one ordered content
+    # hash.  The live worker additionally requires this object and verifies the
+    # referenced raw bytes before it can mirror or advance a pointer.
+    if version_evidence is not None and isinstance(version_evidence, Mapping):
+        before = version_evidence.get("before")
+        after = version_evidence.get("after")
+        if isinstance(before, Mapping) and isinstance(after, Mapping):
+            expected_hash = version_receipt_payloads_sha256((before, after))
+            if version_evidence.get("version_receipt_payloads_sha256") != expected_hash:
+                issues.append(
+                    ValidationIssue(
+                        "$.version_evidence.version_receipt_payloads_sha256",
+                        "fetch_run.version_receipt_hash",
+                        "version-receipt payload hash must bind the ordered before/after receipts",
+                    )
+                )
+            for phase, receipt in (("before", before), ("after", after)):
+                prefix = f"$.version_evidence.{phase}"
+                if receipt.get("phase") != phase:
+                    issues.append(
+                        ValidationIssue(
+                            f"{prefix}.phase",
+                            "fetch_run.version_receipt_binding",
+                            "version receipt phase must match its before/after slot",
+                        )
+                    )
+                if receipt.get("run_id") != document.get("run_id") or receipt.get("source_id") != document.get("source_id"):
+                    issues.append(
+                        ValidationIssue(
+                            prefix,
+                            "fetch_run.version_receipt_binding",
+                            "version receipt must bind to the enclosing fetch run and source",
+                        )
+                    )
+                expected_timestamp = document.get(
+                    "source_dataset_timestamp_before_raw"
+                    if phase == "before"
+                    else "source_dataset_timestamp_after_raw"
+                )
+                if receipt.get("source_dataset_timestamp_raw") != expected_timestamp:
+                    issues.append(
+                        ValidationIssue(
+                            f"{prefix}.source_dataset_timestamp_raw",
+                            "fetch_run.source_version_binding",
+                            "version receipt timestamp must match the stable run timestamp",
+                        )
+                    )
+                expected_api_version = document.get("source_api_version")
+                if phase == "after" and "source_api_version_after" in document:
+                    expected_api_version = document.get("source_api_version_after")
+                if receipt.get("source_api_version") != expected_api_version:
+                    issues.append(
+                        ValidationIssue(
+                            f"{prefix}.source_api_version",
+                            "fetch_run.source_version_binding",
+                            "version receipt API version must match the fetch run",
+                        )
+                    )
     if isinstance(manifest, Mapping) and isinstance(counts, Mapping):
         if isinstance(configured_ids, list) and counts.get("configured") != len(configured_ids):
             issues.append(
@@ -827,6 +889,32 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
                     "query hash must bind the complete canonical query manifest",
                 )
             )
+        base_query_params = manifest.get("base_query_params")
+        wire_keys = ("api_root", "request_path", "base_query_params")
+        present_wire_keys = [key for key in wire_keys if key in manifest]
+        if present_wire_keys and len(present_wire_keys) != len(wire_keys):
+            issues.append(
+                ValidationIssue(
+                    "$.query_manifest",
+                    "fetch_run.query_wire_binding",
+                    "API root, request path, and base query parameters must appear together",
+                )
+            )
+        if isinstance(base_query_params, Mapping) and isinstance(configured_ids, list):
+            expected_params = {
+                "query.id": ",".join(configured_ids),
+                "format": "json",
+                "pageSize": str(manifest.get("page_size")),
+                "countTotal": "true",
+            }
+            if dict(base_query_params) != expected_params:
+                issues.append(
+                    ValidationIssue(
+                        "$.query_manifest.base_query_params",
+                        "fetch_run.query_wire_binding",
+                        "base query parameters must be derived from configured IDs and page size",
+                    )
+                )
         page_cap = manifest.get("page_cap")
         pages_attempted = counts.get("pages_attempted")
         if (
@@ -1882,6 +1970,22 @@ def receipt_payloads_sha256(receipts: Sequence[Mapping[str, Any]]) -> str:
     return canonical_json_sha256(list(receipts))
 
 
+def version_receipt_payloads_sha256(
+    receipts: Sequence[Mapping[str, Any]],
+) -> str:
+    """Hash the immutable CT.gov ``/version`` before/after receipt pair.
+
+    The ordered pair is deliberately separate from page receipts: a source may
+    serve perfectly parseable pages while changing the version metadata during
+    a poll.  Recording the exact pair makes that race auditable rather than an
+    unrepeatable boolean assertion.
+    """
+
+    if len(receipts) != 2:
+        raise ValueError("version receipts must contain exactly before and after entries")
+    return canonical_json_sha256(list(receipts))
+
+
 class _DuplicateJSONKeyError(ValueError):
     """Raised when an archived source response contains an ambiguous object."""
 
@@ -2171,6 +2275,19 @@ def validate_ctgov_fetch_run_against_receipts(
                     "receipt query hash must match the run query manifest",
                 )
             )
+        if (
+            isinstance(request, Mapping)
+            and isinstance(manifest, Mapping)
+            and manifest.get("request_path") is not None
+            and request.get("path") != manifest.get("request_path")
+        ):
+            issues.append(
+                ValidationIssue(
+                    f"$.receipt_refs[{index}]",
+                    "fetch_run.query_wire_binding",
+                    "receipt request path must match the run query manifest",
+                )
+            )
         if receipt.get("source_dataset_timestamp_raw") != source_timestamp:
             issues.append(
                 ValidationIssue(
@@ -2412,7 +2529,53 @@ def _validate_ctgov_raw_run_evidence(
     issues: list[ValidationIssue] = []
     hashes_by_nct: dict[str, set[str]] = {}
     derived_fetched = 0
-    for receipt_id, page in parsed_pages.items():
+    manifest = run.get("query_manifest")
+    base_query_params = (
+        manifest.get("base_query_params") if isinstance(manifest, Mapping) else None
+    )
+    total_count_requested = (
+        isinstance(base_query_params, Mapping)
+        and base_query_params.get("countTotal") == "true"
+    )
+    declared_total_count: int | None = None
+    for page_index, (receipt_id, page) in enumerate(parsed_pages.items()):
+        total_count = page.get("totalCount")
+        total_count_valid = (
+            isinstance(total_count, int)
+            and not isinstance(total_count, bool)
+            and total_count >= 0
+        )
+        if page_index == 0 and total_count_requested:
+            if not total_count_valid:
+                issues.append(
+                    ValidationIssue(
+                        f"$.raw_pages.{receipt_id}.totalCount",
+                        "raw_run.total_count",
+                        "the first page must carry a nonnegative integer totalCount when countTotal=true",
+                    )
+                )
+            else:
+                declared_total_count = total_count
+        elif "totalCount" in page:
+            if not total_count_valid:
+                issues.append(
+                    ValidationIssue(
+                        f"$.raw_pages.{receipt_id}.totalCount",
+                        "raw_run.total_count",
+                        "totalCount must be a nonnegative integer when supplied",
+                    )
+                )
+            elif (
+                declared_total_count is not None
+                and total_count != declared_total_count
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.raw_pages.{receipt_id}.totalCount",
+                        "raw_run.total_count",
+                        "later-page totalCount must equal the first-page declaration",
+                    )
+                )
         studies = page["studies"]
         for study_index, study in enumerate(studies):
             derived_fetched += 1
@@ -2469,6 +2632,14 @@ def _validate_ctgov_raw_run_evidence(
 
     derived_unique = len(hashes_by_nct)
     derived_duplicate = derived_fetched - derived_unique
+    if declared_total_count is not None and declared_total_count != derived_unique:
+        issues.append(
+            ValidationIssue(
+                "$.raw_pages.totalCount",
+                "raw_run.total_count",
+                "declared totalCount must equal the unique NCT count derived from all terminal pages",
+            )
+        )
     counts = run["counts"]
     for field, expected in (
         ("studies_fetched", derived_fetched),
@@ -2511,6 +2682,10 @@ def _validate_trial_source_snapshot_against_validated_pages(
     run: Mapping[str, Any],
     receipts: Sequence[Mapping[str, Any]],
     parsed_pages: Mapping[str, Mapping[str, Any]],
+    *,
+    receipt_by_id: Mapping[Any, Mapping[str, Any]] | None = None,
+    published_ref_set: frozenset[Any] | None = None,
+    configured_nct_id_set: frozenset[Any] | None = None,
 ) -> None:
     """Bind one schema-valid snapshot to an already validated raw page set."""
 
@@ -2524,7 +2699,8 @@ def _validate_trial_source_snapshot_against_validated_pages(
             )
         )
 
-    receipt_by_id = {receipt.get("receipt_id"): receipt for receipt in receipts}
+    if receipt_by_id is None:
+        receipt_by_id = {receipt.get("receipt_id"): receipt for receipt in receipts}
     receipt_ref = source_snapshot.get("page_receipt_ref")
     selected_receipt = receipt_by_id.get(receipt_ref)
     if source_snapshot.get("run_ref") != run.get("run_id"):
@@ -2536,9 +2712,11 @@ def _validate_trial_source_snapshot_against_validated_pages(
             )
         )
     published_refs = run.get("published_source_record_refs")
+    if published_ref_set is None and isinstance(published_refs, list):
+        published_ref_set = frozenset(published_refs)
     if (
-        not isinstance(published_refs, list)
-        or source_snapshot.get("source_record_ref") not in published_refs
+        published_ref_set is None
+        or source_snapshot.get("source_record_ref") not in published_ref_set
     ):
         issues.append(
             ValidationIssue(
@@ -2552,9 +2730,11 @@ def _validate_trial_source_snapshot_against_validated_pages(
     configured_nct_ids = (
         manifest.get("configured_nct_ids") if isinstance(manifest, Mapping) else None
     )
+    if configured_nct_id_set is None and isinstance(configured_nct_ids, list):
+        configured_nct_id_set = frozenset(configured_nct_ids)
     if (
-        not isinstance(configured_nct_ids, list)
-        or source_snapshot.get("nct_id") not in configured_nct_ids
+        configured_nct_id_set is None
+        or source_snapshot.get("nct_id") not in configured_nct_id_set
     ):
         issues.append(
             ValidationIssue(
@@ -2666,47 +2846,68 @@ def _validate_trial_source_snapshot_against_validated_pages(
         raise ContractValidationError(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, issues)
 
 
-def validate_trial_source_snapshot_against_fetch_evidence(
-    source_snapshot: Mapping[str, Any],
+@dataclass(frozen=True)
+class ValidatedCtgovPublicationContext:
+    """Validated, reusable CT.gov raw-page context for one publication batch.
+
+    Constructing the context performs the expensive byte parsing and complete-run
+    reconciliation exactly once.  Batch publishers can then enumerate studies and
+    validate every source snapshot without re-reading all pages for each record.
+    """
+
+    _run: Mapping[str, Any]
+    _receipts: tuple[Mapping[str, Any], ...]
+    _parsed_pages: Mapping[str, Mapping[str, Any]]
+    _receipt_by_id: Mapping[Any, Mapping[str, Any]]
+    _published_ref_set: frozenset[Any]
+    _configured_nct_id_set: frozenset[Any]
+    derived_source_record_refs: tuple[str, ...]
+    repo_root: Path | str | None = None
+
+    @property
+    def run(self) -> Mapping[str, Any]:
+        """Return a defensive copy of the validated run."""
+
+        return copy.deepcopy(self._run)
+
+    @property
+    def receipts(self) -> tuple[Mapping[str, Any], ...]:
+        """Return defensive copies of the validated ordered receipts."""
+
+        return tuple(copy.deepcopy(self._receipts))
+
+    @property
+    def parsed_pages(self) -> Mapping[str, Mapping[str, Any]]:
+        """Return a defensive copy; internal validators retain the owned cache."""
+
+        return copy.deepcopy(self._parsed_pages)
+
+    def indexed_studies(self) -> Iterable[tuple[str, int, Mapping[str, Any]]]:
+        """Yield ``(receipt_id, study_index, canonical_study)`` in page order."""
+
+        for receipt in self._receipts:
+            receipt_id = receipt["receipt_id"]
+            for study_index, study in enumerate(self._parsed_pages[receipt_id]["studies"]):
+                assert isinstance(study, Mapping)
+                yield receipt_id, study_index, copy.deepcopy(study)
+
+    def validate_source_snapshots(
+        self, source_snapshots: Sequence[Mapping[str, Any]]
+    ) -> None:
+        """Validate complete one-to-one snapshot coverage using cached pages."""
+
+        _validate_ctgov_source_snapshots_against_context(self, source_snapshots)
+
+
+def build_ctgov_publication_context(
     run: Mapping[str, Any],
     receipts: Sequence[Mapping[str, Any]],
-    *,
-    raw_page_bodies_by_receipt: Mapping[
-        str, bytes | bytearray | memoryview
-    ],
-    repo_root: Path | str | None = None,
-) -> None:
-    """Bind a snapshot to a published study inside exact archived page bytes."""
-
-    registry = ContractRegistry(repo_root)
-    registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
-    parsed_pages, _ = _validate_ctgov_raw_run_evidence(
-        run,
-        receipts,
-        raw_page_bodies_by_receipt,
-        repo_root=repo_root,
-    )
-    _validate_trial_source_snapshot_against_validated_pages(
-        source_snapshot,
-        run,
-        receipts,
-        parsed_pages,
-    )
-
-
-def validate_ctgov_publication_bundle(
-    run: Mapping[str, Any],
-    receipts: Sequence[Mapping[str, Any]],
-    raw_page_bodies_by_receipt: Mapping[
-        str, bytes | bytearray | memoryview
-    ],
-    source_snapshots: Sequence[Mapping[str, Any]],
+    raw_page_bodies_by_receipt: Mapping[str, bytes | bytearray | memoryview],
     *,
     repo_root: Path | str | None = None,
-) -> None:
-    """Prove complete-run coverage from every raw page through every snapshot."""
+) -> ValidatedCtgovPublicationContext:
+    """Validate raw run evidence once and return a reusable batch context."""
 
-    registry = ContractRegistry(repo_root)
     parsed_pages, derived_refs = _validate_ctgov_raw_run_evidence(
         run,
         receipts,
@@ -2724,6 +2925,31 @@ def validate_ctgov_publication_bundle(
                 ),
             ),
         )
+    return ValidatedCtgovPublicationContext(
+        _run=copy.deepcopy(run),
+        _receipts=tuple(copy.deepcopy(receipts)),
+        _parsed_pages=copy.deepcopy(parsed_pages),
+        _receipt_by_id={
+            receipt.get("receipt_id"): copy.deepcopy(receipt) for receipt in receipts
+        },
+        _published_ref_set=frozenset(run.get("published_source_record_refs", ())),
+        _configured_nct_id_set=frozenset(
+            run.get("query_manifest", {}).get("configured_nct_ids", ())
+        ),
+        derived_source_record_refs=derived_refs,
+        repo_root=repo_root,
+    )
+
+
+def _validate_ctgov_source_snapshots_against_context(
+    context: ValidatedCtgovPublicationContext,
+    source_snapshots: Sequence[Mapping[str, Any]],
+) -> None:
+    """Validate snapshot coverage and bindings against prevalidated raw pages."""
+
+    run = context._run
+    receipts = context._receipts
+    registry = ContractRegistry(context.repo_root)
     for source_snapshot in source_snapshots:
         registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
 
@@ -2736,9 +2962,9 @@ def validate_ctgov_publication_bundle(
     snapshot_receipt_refs = [
         snapshot["page_receipt_ref"] for snapshot in source_snapshots
     ]
-    if tuple(sorted(snapshot_refs)) != derived_refs or len(snapshot_refs) != len(
-        set(snapshot_refs)
-    ):
+    if tuple(sorted(snapshot_refs)) != context.derived_source_record_refs or len(
+        snapshot_refs
+    ) != len(set(snapshot_refs)):
         issues.append(
             ValidationIssue(
                 "$.published_source_record_refs",
@@ -2789,8 +3015,60 @@ def validate_ctgov_publication_bundle(
             source_snapshot,
             run,
             receipts,
-            parsed_pages,
+            context._parsed_pages,
+            receipt_by_id=context._receipt_by_id,
+            published_ref_set=context._published_ref_set,
+            configured_nct_id_set=context._configured_nct_id_set,
         )
+
+
+def validate_trial_source_snapshot_against_fetch_evidence(
+    source_snapshot: Mapping[str, Any],
+    run: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    *,
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
+    repo_root: Path | str | None = None,
+) -> None:
+    """Bind a snapshot to a published study inside exact archived page bytes."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
+    parsed_pages, _ = _validate_ctgov_raw_run_evidence(
+        run,
+        receipts,
+        raw_page_bodies_by_receipt,
+        repo_root=repo_root,
+    )
+    _validate_trial_source_snapshot_against_validated_pages(
+        source_snapshot,
+        run,
+        receipts,
+        parsed_pages,
+    )
+
+
+def validate_ctgov_publication_bundle(
+    run: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
+    source_snapshots: Sequence[Mapping[str, Any]],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Prove complete-run coverage from every raw page through every snapshot."""
+
+    context = build_ctgov_publication_context(
+        run,
+        receipts,
+        raw_page_bodies_by_receipt,
+        repo_root=repo_root,
+    )
+    context.validate_source_snapshots(source_snapshots)
 
 
 def validate_trial_observation_against_source_evidence(

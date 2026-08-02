@@ -351,6 +351,76 @@ if [ -f /etc/systemd/system/marketing-press-feeds.service ] && \
 	fi
 fi
 
+# BioCatalyst B1 is a separate source-canonical lane.  A routine production
+# pull must never install, enable, or start it: doing so could turn a partially
+# configured evidence collector live.  Reconcile only a fully operator-installed
+# pair of units and a dedicated runtime. Dependencies are built in a versioned
+# staging virtualenv and verified before one atomic current-symlink swap. No
+# live runtime is ever pip-mutated, and a failed candidate leaves the previous
+# runtime and timer arming state untouched.
+BIOCATALYST_UNITS_INSTALLED=0
+if [ -f /etc/systemd/system/macro-biocatalyst.service ] && \
+   [ -f /etc/systemd/system/macro-biocatalyst.timer ]; then
+	BIOCATALYST_UNITS_INSTALLED=1
+fi
+
+BIOCATALYST_RUNTIME_UPDATED=0
+BIOCATALYST_RUNTIME_READY=0
+if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
+   [ -d /opt/macro-biocatalyst ] && \
+   { [ -L /opt/macro-biocatalyst/current ] || \
+     [ -x /opt/macro-biocatalyst/.venv/bin/python ]; } && \
+   [ -f "$APP_DIR/app/deploy/biocatalyst-requirements.txt" ] && \
+   [ -f "$APP_DIR/app/deploy/biocatalyst-runtime.sh" ]; then
+	BIOCATALYST_REQUIREMENTS_HASH="$(sha256sum "$APP_DIR/app/deploy/biocatalyst-requirements.txt" | awk '{print $1}')"
+	BIOCATALYST_INSTALLED_HASH=""
+	if bash "$APP_DIR/app/deploy/biocatalyst-runtime.sh" --verify; then
+		BIOCATALYST_INSTALLED_HASH="$(awk 'NR == 1 { print $1 }' /opt/macro-biocatalyst/current/.requirements.sha256)"
+		if [ "$BIOCATALYST_REQUIREMENTS_HASH" = "$BIOCATALYST_INSTALLED_HASH" ]; then
+			BIOCATALYST_RUNTIME_READY=1
+		fi
+	fi
+	if [ "$BIOCATALYST_RUNTIME_READY" -ne 1 ]; then
+		if bash "$APP_DIR/app/deploy/biocatalyst-runtime.sh" --install \
+			"$APP_DIR/app/deploy/biocatalyst-requirements.txt"; then
+			BIOCATALYST_RUNTIME_READY=1
+			BIOCATALYST_RUNTIME_UPDATED=1
+			RECONCILED=1
+			echo "macro-update: BioCatalyst isolated runtime atomically reconciled without changing arming state"
+		else
+			echo "macro-update: BioCatalyst staged runtime failed; previous runtime remains selected" >&2
+		fi
+	fi
+fi
+
+# Reconcile unit files only after the runtime referenced by the reviewed service
+# has passed verification. Preserve the timer's operator-controlled arming state.
+BIOCATALYST_UNIT_UPDATED=0
+if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
+   { ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service || \
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; }; then
+	if [ "$BIOCATALYST_RUNTIME_READY" -ne 1 ]; then
+		echo "macro-update: refusing BioCatalyst unit update — verified dedicated runtime unavailable" >&2
+	elif systemd-analyze verify "$APP_DIR/app/deploy/macro-biocatalyst.service" \
+		"$APP_DIR/app/deploy/macro-biocatalyst.timer"; then
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service
+		fi
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer
+		fi
+		systemctl daemon-reload
+		BIOCATALYST_UNIT_UPDATED=1
+		RECONCILED=1
+		echo "macro-update: BioCatalyst systemd lane updated without changing its arming state"
+		if systemctl is-enabled --quiet macro-biocatalyst.timer; then
+			systemctl restart macro-biocatalyst.timer
+		fi
+	else
+		echo "macro-update: refusing BioCatalyst unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # The daemon imports these modules into one persistent interpreter. Config YAML
 # is deliberately absent: it is re-read on every 75-second tick and needs no
 # restart. Keep the engine/marketing pattern broad because every submodule import

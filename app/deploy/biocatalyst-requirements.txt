@@ -1,0 +1,7 @@
+# Isolated B1 runtime only.  Do not replace this with the shared /opt/macro venv:
+# the BioCatalyst lane needs a botocore model that exposes PutObject.IfNoneMatch
+# for immutable, cross-host conditional object creation.
+requests>=2.31,<3.0
+jsonschema>=4.20,<5.0
+referencing>=0.30,<1.0
+boto3>=1.37.32,<2.0

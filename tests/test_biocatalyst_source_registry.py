@@ -50,6 +50,12 @@ def test_only_clinicaltrials_is_enabled_for_bounded_beta() -> None:
         "collection_pipeline_after_observed_source_refresh"
     )
     assert clinical["freshness_slo_seconds"] == 7200
+    assert clinical["request_headers_allowlist"] == [
+        "accept",
+        "accept-encoding",
+        "user-agent",
+    ]
+    assert "content-encoding" in clinical["receipt_response_headers_allowlist"]
 
 
 def test_clinicaltrials_distribution_obligations_are_explicit() -> None:
