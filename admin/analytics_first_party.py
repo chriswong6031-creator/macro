@@ -141,8 +141,9 @@ _LOOPBACK_IPS = ("'::1'", "'127.0.0.1'", "'localhost'")
 # ── Crawler / bot detection (default-on; config can extend the patterns) ────────
 # A visitor is a bot if ANY holds: its user-agent matches _DEFAULT_BOT_UA, its IP sits in a
 # datacenter that is NOT a consumer VPN (is_hosting and not is_vpn — keeps real VPN users),
-# the IP's network org matches _DEFAULT_BOT_ORG, the IP is in the config bots.ips list, or its
-# device fingerprint is a FARM fingerprint (see _FP_FANOUT).
+# the IP's network org matches _DEFAULT_BOT_ORG, the IP's ASN matches _DEFAULT_BOT_ASN, the IP
+# is in the config bots.ips list, or its device fingerprint is a FARM fingerprint (see
+# _FP_FANOUT).
 # Bots are hidden from every surface by default but stay REVEALABLE (include_bots=1) and are
 # counted, so detection is transparent and false positives are catchable. Behavioural signals
 # (short dwell / bounce) are deliberately NOT used — real humans bounce too.
@@ -158,6 +159,14 @@ _DEFAULT_BOT_ORG = (
     r"microsoft|azure|openai|anthropic|bytedance|censys|shodan|internet.?archive|"
     r"digitalocean|linode|hetzner|ovh|scaleway"
 )
+# ASN match is a belt-and-braces companion to _DEFAULT_BOT_ORG: some crawler/hosting IPs geolocate
+# with an org string that doesn't literally contain the vendor name (proxy resellers, regional
+# RIR records, etc.), but the ASN never lies. 15169 = Google LLC (Googlebot's home network),
+# 396982 = Google Cloud Platform (GCP-hosted crawlers/services — confirmed against a batch of
+# "visitor" IPs that were plain GCP traffic recurring in the admin Visitors list, 2026-08-02).
+# `g.asn` is stored as returned by IPLocate (e.g. "AS396982" or "396982" depending on vendor
+# response shape) so this matches on substring, not an exact cast, to be robust to either.
+_DEFAULT_BOT_ASN = r"15169|396982"
 # ── Fingerprint-farm detection ─────────────────────────────────────────────────
 # A residential-proxy scraper defeats every signal above: it rotates through real consumer
 # ISPs (Comcast, BT, Cox — is_hosting false, org clean) and sends an ordinary Chrome UA. What
@@ -205,9 +214,9 @@ def _load_exclusions() -> dict:
     """Read the analytics-filter config. Missing/malformed → empty (nothing hidden/relabelled).
 
     Keys: emails[], locations[{city,region,country_code}], ips[], visitor_ids[] (operator
-    self-exclusion); bots{ips[],ua_pattern,org_pattern} (crawler filter — patterns EXTEND the
-    baked-in defaults); geo_overrides[{ip_prefix,city,region,country_code,country}] (display
-    relabel by IP prefix)."""
+    self-exclusion); bots{ips[],ua_pattern,org_pattern,asn_pattern} (crawler filter — patterns
+    EXTEND the baked-in defaults); geo_overrides[{ip_prefix,city,region,country_code,country}]
+    (display relabel by IP prefix)."""
     empty = {"emails": [], "locations": [], "ips": [], "visitor_ids": [],
              "bots": {}, "geo_overrides": []}
     try:
@@ -281,12 +290,14 @@ def _excluded_cte() -> str:
 def _bot_cte() -> str:
     """CTE bodies (bot_ips, fp_farm, bots) — the visitor_ids that look like crawlers/automation.
     Signals: config bot IPs, a bot user-agent, a datacenter-but-not-VPN IP, a known crawler
-    network org, or a farm fingerprint. Patterns come from the baked-in defaults, EXTENDED by
-    config; the farm threshold is `bots.fp_fanout` (default _FP_FANOUT, <2 disables)."""
+    network org, a known crawler network ASN, or a farm fingerprint. Patterns come from the
+    baked-in defaults, EXTENDED by config; the farm threshold is `bots.fp_fanout` (default
+    _FP_FANOUT, <2 disables)."""
     cfg = _load_exclusions()
     bots_cfg = cfg["bots"]
     ua = _DEFAULT_BOT_UA + (f"|{bots_cfg['ua_pattern']}" if bots_cfg.get("ua_pattern") else "")
     org = _DEFAULT_BOT_ORG + (f"|{bots_cfg['org_pattern']}" if bots_cfg.get("org_pattern") else "")
+    asn = _DEFAULT_BOT_ASN + (f"|{bots_cfg['asn_pattern']}" if bots_cfg.get("asn_pattern") else "")
     bot_ips = _clean_ips(bots_cfg.get("ips"))
     ips_body = (f"select unnest(array[{','.join(_sql_str(i) for i in bot_ips)}]::text[]) as ip"
                 if bot_ips else "select null::text as ip where false")
@@ -314,6 +325,7 @@ def _bot_cte() -> str:
         f"    or (e.ua is not null and e.ua ~* {_sql_str(ua)}) "
         "    or (g.is_hosting is true and coalesce(g.is_vpn, false) = false) "
         f"    or (g.org is not null and g.org ~* {_sql_str(org)}) "
+        f"    or (g.asn is not null and g.asn::text ~* {_sql_str(asn)}) "
         "    or (e.fp is not null and e.fp in (select fp from fp_farm)))"
         f"{keep_clause})"
     )

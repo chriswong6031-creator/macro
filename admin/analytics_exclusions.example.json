@@ -3,7 +3,7 @@
   "_keys": {
     "emails/locations/ips/visitor_ids": "OPERATOR SELF-EXCLUSION — any visitor matching a registered email, a location (ip_geo city/region/country match), one of these exact IPs, or one of these exact mm_aid cookie ids is hidden from every analytics surface, along with cookies linked by device fingerprint or routable IP. Loopback IPs are never used for linking.",
     "_loopback_always_on": "Visitors seen on 127.0.0.1 / ::1 / localhost are ALWAYS hidden (plus their fingerprint-linked cookies) with no config entry. Every public request reaches the collectors through Caddy with X-Forwarded-For set, so a loopback IP can only be a request made ON the box: a local `npm run dev` browser, a curl, an agent driving the app. See _LOOPBACK_IPS in analytics_first_party.py.",
-    "bots": "CRAWLER FILTER — crawlers/automation are hidden by default and shown separately via the 'show bots' toggle. Detection = bot user-agent OR datacenter-not-VPN IP OR known crawler network org OR one of bots.ips OR a farm fingerprint. ua_pattern/org_pattern EXTEND the baked-in defaults (Postgres regex, case-insensitive). fp_fanout = how many distinct cookies AND distinct IPs one device fingerprint must span before it is treated as a residential-proxy scraper farm (default 12; set below 2 to disable) — real visitors are wide on at most one of those axes, never both.",
+    "bots": "CRAWLER FILTER — crawlers/automation are hidden by default and shown separately via the 'show bots' toggle. Detection = bot user-agent OR datacenter-not-VPN IP OR known crawler network org OR known crawler network ASN OR one of bots.ips OR a farm fingerprint. ua_pattern/org_pattern/asn_pattern EXTEND the baked-in defaults (Postgres regex, case-insensitive; asn_pattern matches against ip_geo.asn as text, e.g. '15169' also matches 'AS15169'). Google's own ASNs (15169 = Google LLC, 396982 = Google Cloud) are already baked in by default, so most Googlebot/GCP traffic needs no config at all — asn_pattern is for OTHER crawler networks. fp_fanout = how many distinct cookies AND distinct IPs one device fingerprint must span before it is treated as a residential-proxy scraper farm (default 12; set below 2 to disable) — real visitors are wide on at most one of those axes, never both.",
     "geo_overrides": "DISPLAY RELABEL — force the shown city/region/country for any IP starting with ip_prefix (fixes IPs geolocated to the wrong place, e.g. an HK VPN read as Frankfurt)."
   },
   "emails": [
@@ -24,6 +24,7 @@
     ],
     "ua_pattern": "",
     "org_pattern": "",
+    "asn_pattern": "",
     "fp_fanout": 12
   },
   "geo_overrides": [
