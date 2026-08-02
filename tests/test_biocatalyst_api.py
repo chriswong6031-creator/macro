@@ -7,9 +7,11 @@ boundaries without reaching private worker state or external services.
 """
 from __future__ import annotations
 
+import base64
 from hashlib import sha256
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Iterator
 
 import pytest
@@ -171,6 +173,12 @@ def _assert_private_headers(response) -> None:
     assert response.headers["content-type"].startswith("application/json")
 
 
+def _assert_private_exception(exc: HTTPException) -> None:
+    headers = {name.casefold(): value for name, value in (exc.headers or {}).items()}
+    for name, expected in _PRIVATE_HEADERS.items():
+        assert headers[name] == expected
+
+
 def _walk_keys(value: Any) -> Iterator[str]:
     if isinstance(value, dict):
         for key, nested in value.items():
@@ -207,6 +215,75 @@ def entitled_client(promoted_config, monkeypatch) -> Iterator[TestClient]:
     }
     with TestClient(app) as client:
         yield client
+
+
+def _observed(value: Any) -> dict[str, Any]:
+    return {"state": "observed", "value": value}
+
+
+def _milestone_snapshot(
+    nct_id: str,
+    *,
+    primary_completion: tuple[str, str | None] | None = None,
+    completion: tuple[str, str | None] | None = None,
+    title: str | None = None,
+    phases: list[str] | None = None,
+    status: str = "RECRUITING",
+    conditions: list[str] | None = None,
+) -> dict[str, Any]:
+    """Small public-shaped projection fixture for registry-date monitor tests."""
+
+    def registry_date(value: tuple[str, str | None] | None) -> dict[str, Any]:
+        if value is None:
+            return {"state": "source_missing", "value": None}
+        raw_date, date_type = value
+        return _observed({"date": raw_date, "type": date_type})
+
+    rendered_title = title or f"Registry study {nct_id}"
+    return {
+        "nct_id": nct_id,
+        "facts": {
+            "official_title": _observed(rendered_title),
+            "brief_title": _observed(rendered_title),
+            "overall_status": _observed(status),
+            "phases": _observed(phases or ["PHASE2"]),
+            "conditions": _observed(conditions or ["Oncology"]),
+            "primary_completion_date": registry_date(primary_completion),
+            "completion_date": registry_date(completion),
+        },
+        "source_attribution": {
+            "source_uri": f"https://clinicaltrials.gov/study/{nct_id}",
+            "source_last_update_posted_at": "2026-02-28",
+        },
+        "coverage_class": "current_only",
+        "retrieved_at": "2026-02-28T12:00:00.000000Z",
+    }
+
+
+def _milestone_projection(
+    snapshots: list[dict[str, Any]],
+    *,
+    as_of: str = "2026-02-28T23:30:00Z",
+    generation_id: str = "ctgov_run_20260228_fixture",
+):
+    generation = SimpleNamespace(
+        generation_id=generation_id,
+        last_success_at=as_of,
+        source_dataset_timestamp_raw="2026-02-28T23:00:00",
+        configured_nct_count=len(snapshots),
+        observed_nct_count=len(snapshots),
+        last_attempt_at=as_of,
+    )
+    return SimpleNamespace(generation=generation, trials=tuple(snapshots))
+
+
+def _milestone_operational(as_of: str = "2026-02-28T23:30:00Z") -> dict[str, Any]:
+    return {
+        "state": "fresh",
+        "last_attempt_at": as_of,
+        "last_success_at": as_of,
+        "last_error_code": None,
+    }
 
 
 def test_entitled_health_list_and_detail_read_a_real_v11_projection(entitled_client) -> None:
@@ -320,6 +397,388 @@ def test_list_filters_sorting_cursor_and_bounds_are_deterministic(entitled_clien
     # a paid, private data route and must not lose the response privacy policy.
     _assert_private_headers(invalid_sort)
     _assert_private_headers(invalid_limit)
+
+
+def test_registry_milestones_are_paid_private_and_generation_anchored(
+    entitled_client, monkeypatch
+) -> None:
+    projection = _milestone_projection(
+        [
+            _milestone_snapshot(
+                "NCT00000001",
+                primary_completion=("2026-02-28", "ACTUAL"),
+                completion=("2026-03-01", "ESTIMATED"),
+            ),
+            _milestone_snapshot(
+                "NCT00000002",
+                primary_completion=("2026-03", "ESTIMATED"),
+            ),
+            _milestone_snapshot(
+                "NCT00000003",
+                primary_completion=("2026", None),
+            ),
+            _milestone_snapshot(
+                "NCT00000004",
+                primary_completion=("2026-05-28", "ACTUAL"),
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?"
+        "q=registry%20study&phase=phase2&status=recruiting&condition=onco"
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["query"] == {
+        "milestone_kind": "primary_completion",
+        "window": "next_90d",
+        "from_date": None,
+        "to_date": None,
+        "q": "registry study",
+        "phase": "phase2",
+        "status": "recruiting",
+        "condition": "onco",
+    }
+    # The committed cut is February 28, and a next_90d window is exactly 90
+    # inclusive civil days.  No wall-clock date participates in this result.
+    assert payload["effective_window"] == {
+        "from_date": "2026-02-28",
+        "to_date": "2026-05-28",
+        "anchor_date": "2026-02-28",
+    }
+    assert [row["trial"]["nct_id"] for row in payload["milestones"]] == [
+        "NCT00000001",
+        "NCT00000002",
+        "NCT00000004",
+    ]
+    first = payload["milestones"][0]
+    assert first["registry_milestone"] == {
+        "kind": "primary_completion",
+        "date": "2026-02-28",
+        "type": "ACTUAL",
+        "precision": "day",
+    }
+    assert first["evidence"] == {
+        "provider": "ClinicalTrials.gov",
+        "record_id": "NCT00000001",
+        "url": "https://clinicaltrials.gov/study/NCT00000001",
+        "coverage": "current_only",
+    }
+    # A source year is not a point on January 1: it cannot fit inside this
+    # short window and must not be silently shown as an invented daily date.
+    assert "NCT00000003" not in {row["trial"]["nct_id"] for row in payload["milestones"]}
+
+    completion = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?milestone_kind=completion&window=next_30d"
+    )
+    assert completion.status_code == 200
+    assert completion.json()["milestones"][0]["registry_milestone"] == {
+        "kind": "completion",
+        "date": "2026-03-01",
+        "type": "ESTIMATED",
+        "precision": "day",
+    }
+
+
+def test_registry_milestones_respect_partial_precision_and_leap_day_boundaries(
+    entitled_client, monkeypatch
+) -> None:
+    projection = _milestone_projection(
+        [
+            _milestone_snapshot(
+                "NCT00000001",
+                primary_completion=("2024-02-29", "ACTUAL"),
+            ),
+            _milestone_snapshot(
+                "NCT00000002",
+                primary_completion=("2024-02", "ESTIMATED"),
+            ),
+            _milestone_snapshot(
+                "NCT00000003",
+                primary_completion=("2024", None),
+            ),
+            _milestone_snapshot(
+                "NCT00000004",
+                primary_completion=("2024-03-29", "mystery"),
+            ),
+        ],
+        as_of="2024-02-29T23:30:00Z",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational("2024-02-29T23:30:00Z")),
+    )
+
+    leap_day = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=all&from_date=2024-02-29&to_date=2024-02-29"
+    )
+    assert leap_day.status_code == 200
+    assert [row["registry_milestone"] for row in leap_day.json()["milestones"]] == [
+        {
+            "kind": "primary_completion",
+            "date": "2024-02-29",
+            "type": "ACTUAL",
+            "precision": "day",
+        }
+    ]
+
+    full_leap_month = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=all&from_date=2024-02-01&to_date=2024-02-29"
+    )
+    assert [row["registry_milestone"] for row in full_leap_month.json()["milestones"]] == [
+        {
+            "kind": "primary_completion",
+            "date": "2024-02",
+            "type": "ESTIMATED",
+            "precision": "month",
+        },
+        {
+            "kind": "primary_completion",
+            "date": "2024-02-29",
+            "type": "ACTUAL",
+            "precision": "day",
+        },
+    ]
+
+    next_30 = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=next_30d"
+    )
+    assert next_30.json()["effective_window"] == {
+        "from_date": "2024-02-29",
+        "to_date": "2024-03-29",
+        "anchor_date": "2024-02-29",
+    }
+    # The unknown source type stays unknown, and the monthly partial does not
+    # enter a window that holds only part of March.
+    assert [row["registry_milestone"] for row in next_30.json()["milestones"]] == [
+        {
+            "kind": "primary_completion",
+            "date": "2024-02-29",
+            "type": "ACTUAL",
+            "precision": "day",
+        },
+        {
+            "kind": "primary_completion",
+            "date": "2024-03-29",
+            "type": "UNKNOWN",
+            "precision": "day",
+        },
+    ]
+
+
+def test_registry_milestones_order_by_interval_then_nct_not_date_type_and_bind_cursor(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _milestone_snapshot(
+            "NCT00000012", primary_completion=("2026-03-01", "ESTIMATED")
+        ),
+        _milestone_snapshot("NCT00000010", primary_completion=("2026-03-01", "ACTUAL")),
+        _milestone_snapshot("NCT00000011", primary_completion=("2026-03-01", None)),
+        _milestone_snapshot("NCT00000013", primary_completion=("2026-03-02", "ACTUAL")),
+    ]
+    projection = _milestone_projection(snapshots)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    first_page = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=all&limit=2"
+    )
+    assert first_page.status_code == 200
+    first_payload = first_page.json()
+    assert [row["trial"]["nct_id"] for row in first_payload["milestones"]] == [
+        "NCT00000010",
+        "NCT00000011",
+    ]
+    assert [row["registry_milestone"]["type"] for row in first_payload["milestones"]] == [
+        "ACTUAL",
+        "UNKNOWN",
+    ]
+    cursor = first_payload["pagination"]["next_cursor"]
+    assert isinstance(cursor, str)
+    assert "NCT00000010" not in cursor
+    assert "ctgov_run_20260228_fixture" not in cursor
+
+    second_page = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/milestones?window=all&limit=2&cursor={cursor}"
+    )
+    assert [row["trial"]["nct_id"] for row in second_page.json()["milestones"]] == [
+        "NCT00000012",
+        "NCT00000013",
+    ]
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("signed query mismatch must be rejected before disk access")
+        ),
+    )
+    changed_query = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/milestones?window=all&limit=2&q=registry&cursor={cursor}"
+    )
+    assert changed_query.status_code == 400
+    assert changed_query.json() == {"detail": "cursor query mismatch"}
+    _assert_private_headers(changed_query)
+
+    changed_generation = _milestone_projection(
+        snapshots,
+        generation_id="ctgov_run_20260301_fixture",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (changed_generation, _milestone_operational()),
+    )
+    restarted = entitled_client.get(
+        f"/api/biocatalyst/v1/trials/milestones?window=all&limit=2&cursor={cursor}"
+    )
+    assert restarted.status_code == 409
+    assert restarted.json() == {"detail": "trial data changed; restart pagination"}
+    _assert_private_headers(restarted)
+
+
+def test_registry_milestone_cursor_signature_rejects_offset_and_query_forgery_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    binding = biocatalyst_api._milestone_query_binding(
+        milestone_kind="primary_completion",
+        window="all",
+        from_date=None,
+        to_date=None,
+        q=None,
+        phase=None,
+        status=None,
+        condition=None,
+        limit=2,
+    )
+    cursor = biocatalyst_api._encode_milestone_cursor(
+        2,
+        generation_id="ctgov_run_20260228_fixture",
+        query_binding=binding,
+    )
+
+    def rewrite_cursor(*, offset: str | None = None, query: str | None = None) -> str:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        parts = raw.decode("ascii").split(":")
+        assert parts[0] == "m2"
+        if offset is not None:
+            parts[1] = offset
+        if query is not None:
+            forged_binding = dict(binding)
+            forged_binding["q"] = query
+            parts[3] = biocatalyst_api._opaque_digest(forged_binding)
+        return base64.urlsafe_b64encode(":".join(parts).encode("ascii")).decode(
+            "ascii"
+        ).rstrip("=")
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("unauthenticated cursor payload must fail before disk access")
+        ),
+    )
+    forged_offset = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=all&limit=2&cursor="
+        + rewrite_cursor(offset="100001")
+    )
+    assert forged_offset.status_code == 400
+    assert forged_offset.json() == {"detail": "invalid cursor"}
+    _assert_private_headers(forged_offset)
+
+    forged_query = entitled_client.get(
+        "/api/biocatalyst/v1/trials/milestones?window=all&limit=2&q=registry&cursor="
+        + rewrite_cursor(query="registry")
+    )
+    assert forged_query.status_code == 400
+    assert forged_query.json() == {"detail": "invalid cursor"}
+    _assert_private_headers(forged_query)
+
+
+def test_registry_milestone_signed_cursor_round_trips_above_legacy_100k_boundary() -> None:
+    binding = biocatalyst_api._milestone_query_binding(
+        milestone_kind="primary_completion",
+        window="all",
+        from_date=None,
+        to_date=None,
+        q=None,
+        phase=None,
+        status=None,
+        condition=None,
+        limit=250,
+    )
+    cursor_key = b"k" * 32
+    cursor = biocatalyst_api._encode_milestone_cursor(
+        100_250,
+        generation_id="ctgov_run_20260228_fixture",
+        query_binding=binding,
+        cursor_key=cursor_key,
+    )
+    offset, generation_digest, query_digest = biocatalyst_api._decode_milestone_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    assert offset == 100_250
+    assert generation_digest == biocatalyst_api._opaque_digest(
+        {"generation_id": "ctgov_run_20260228_fixture"}
+    )
+    assert query_digest == biocatalyst_api._opaque_digest(binding)
+
+
+def test_registry_milestone_short_configured_cursor_secret_fails_closed_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    monkeypatch.setenv("BIOCATALYST_CURSOR_SECRET", "x" * 31)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid cursor-key configuration must fail before disk access")
+        ),
+    )
+    response = entitled_client.get("/api/biocatalyst/v1/trials/milestones?window=all")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    _assert_private_headers(response)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    (
+        "milestone_kind=pdufa",
+        "window=NEXT_90D",
+        "window=next_90d&from_date=2026-02-28",
+        "window=all&from_date=2026-02",
+        "window=all&from_date=2026-03-01&to_date=2026-02-28",
+        "window=all&limit=251",
+        "window=all&cursor=not-a-valid-cursor",
+    ),
+)
+def test_registry_milestone_invalid_queries_fail_before_any_public_read(
+    entitled_client, monkeypatch, suffix: str
+) -> None:
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid milestone queries must be rejected before disk access")
+        ),
+    )
+    response = entitled_client.get(f"/api/biocatalyst/v1/trials/milestones?{suffix}")
+    assert response.status_code == 400
+    _assert_private_headers(response)
 
 
 def test_v12_detail_serves_only_the_pointer_bound_public_history_model(
@@ -465,6 +924,7 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
     payloads = [
         entitled_client.get("/api/biocatalyst/v1/health").json(),
         entitled_client.get("/api/biocatalyst/v1/trials").json(),
+        entitled_client.get("/api/biocatalyst/v1/trials/milestones").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001").json(),
     ]
     for payload in payloads:
@@ -561,6 +1021,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     for path in (
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/{nct_id}",
     ):
         assert biocatalyst_api.require_site_full_user in route_dependencies[path]
@@ -571,6 +1032,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     assert {
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/{nct_id}",
     }.issubset(public_paths)
 
@@ -608,12 +1070,18 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
         main_mod,
         "require_user",
         lambda _authorization: (_ for _ in ()).throw(
-            HTTPException(401, "missing credentials")
+            HTTPException(
+                401,
+                "missing credentials",
+                headers={"WWW-Authenticate": "Bearer realm=mastermind"},
+            )
         ),
     )
     with pytest.raises(HTTPException) as anonymous:
         biocatalyst_api.require_site_full_user(None)
     assert anonymous.value.status_code == 401
+    _assert_private_exception(anonymous.value)
+    assert anonymous.value.headers["WWW-Authenticate"] == "Bearer realm=mastermind"
 
     monkeypatch.setenv("PAYWALL_ENABLED", "0")
     monkeypatch.setattr(main_mod, "require_user", lambda _authorization: {"id": "u-free"})
@@ -622,10 +1090,11 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
         biocatalyst_api.require_site_full_user("Bearer signed-in-free-user")
     assert free.value.status_code == 403
     assert free.value.detail["required_feature"] == "site_full"
+    _assert_private_exception(free.value)
 
     def deny(_user, *, always=False):
         assert always is True
-        raise HTTPException(402, "site_full required")
+        raise HTTPException(402, "site_full required", headers={"Retry-After": "60"})
 
     monkeypatch.setattr(paywall_mod, "enforce_site_full", deny)
     monkeypatch.setattr(
@@ -642,5 +1111,15 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
             "/api/biocatalyst/v1/trials",
             headers={"Authorization": "Bearer free-token"},
         )
+        milestone_denied = client.get(
+            "/api/biocatalyst/v1/trials/milestones",
+            headers={"Authorization": "Bearer free-token"},
+        )
     assert denied.status_code == 402
     assert denied.json() == {"detail": "site_full required"}
+    _assert_private_headers(denied)
+    assert denied.headers["retry-after"] == "60"
+    assert milestone_denied.status_code == 402
+    assert milestone_denied.json() == {"detail": "site_full required"}
+    _assert_private_headers(milestone_denied)
+    assert milestone_denied.headers["retry-after"] == "60"
