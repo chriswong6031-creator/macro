@@ -482,7 +482,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -499,9 +499,18 @@
                   
                   
                   
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -4412,13 +4421,13 @@
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">USO</span>
-        
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
         <span class="mx5-ai-ticker-pill">META</span>
         
-        <span class="mx5-ai-ticker-pill">XLF</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
+        
+        <span class="mx5-ai-ticker-pill">XHB</span>
         
       </div>
       
@@ -4426,14 +4435,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          6 high-impact signals across channels
+          8 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          6 条高影响信号
+          8 条高影响信号
         </span>
         
       </div>
@@ -4494,8 +4503,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; siz…</span>
-              <span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; siz…</span>
+              <span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4509,8 +4518,8 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Data center power boom in focus as 12 of 16 utility stocks beat EPS estimates th…</span>
-              <span class="l-zh">数据中心电力需求热潮成焦点，本周16只公用事业股中有12只每股收益超预期：财报记分卡</span>
+              <span class="l-en">Earnings Scoreboard: Apple slumps after Tim Cook&#39;s final earnings; Microsoft ral…</span>
+              <span class="l-zh">财报记分板：蒂姆·库克最后一次财报后苹果大跌；大科技财报周微软走高</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4526,8 +4535,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5123,9 +5132,9 @@
       </div>
       
       <div class="fbm-bench-arrow neg"
-           data-tip-en="Odds moved -0.4 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 -0.4 个百分点。">
-        ▼ -0.4
+           data-tip-en="Odds moved -0.3 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -0.3 个百分点。">
+        ▼ -0.3
       </div>
       
     </div>
@@ -7885,7 +7894,28 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
+        
+        
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
             </div>
           </div>
           
@@ -7894,11 +7924,27 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         
-        
-        
         <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></span><div class="isle-head-line"></div></div>
         
         <div class="nbx-list">
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4623049-earnings-scoreboard-apple-slumps-after-tim-cooks-final-earnings-microsoft-rallies-in-big-tech-results-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Earnings Scoreboard: Apple slumps after Tim Cook&#39;s final earnings; Microsoft rallies in big-tech results week</span><span class="l-zh">财报记分板：蒂姆·库克最后一次财报后苹果大跌；大科技财报周微软走高</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 1</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
           
           
           
@@ -7948,7 +7994,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 2</span>
+              <span class="nbx-date">Aug 1</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7994,15 +8040,33 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/don-t-buy-stock-spacex-183446848.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-spacex-amd-sandisk-eli-lilly-earnings-loom/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nbx-title"><span class="l-en">Don’t Buy Stock in That SpaceX-Tesla Merger Just Yet, Says CEO Elon Musk — ‘Absurdly Fake News’</span><span class="l-zh">马斯克表示，先别急着买SpaceX与特斯拉合并的股票——“荒谬的假新闻”</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Dow Jones Futures: Market Rebounds, Now Watch For This; SpaceX, AMD, Sandisk, Eli Lilly Earnings Loom</span><span class="l-zh">道琼斯期货：市场反弹，接下来关注这些；SpaceX、AMD、Sandisk、礼来财报在即</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 31</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.npr.org/2026/07/29/nx-s1-5910558/federal-reserve-interest-rates-inflation" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nbx-title"><span class="l-en">A divided Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储意见分歧，尽管通胀高企仍维持利率不变</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 29</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8021,42 +8085,6 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 30</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/28/meta-q2-earnings-call-mentions-kalshi-market-odds-.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Kalshi交易员称Meta即将到来的财报电话会议料将聚焦智能眼镜，回避社交媒体政策</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 28</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4623011-utilities-sector-slips-in-july-constellation-energy-leads-gainers-alliant-energy-leads-decliners?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Utilities sector slips in July; Constellation Energy leads gainers, Alliant Energy leads decliners</span><span class="l-zh">公用事业板块7月下滑；Constellation Energy领涨，Alliant Energy领跌</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 1</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -10238,7 +10266,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today&#39;s fetch broke (yesterday&#39;s data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">11 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 181 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">12 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 181 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -10249,7 +10277,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10258,7 +10286,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>18</td><td>2026-07-31</td>
+        <td>12</td><td>2026-08-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10690,7 +10718,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10699,7 +10727,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10708,7 +10736,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>27</td><td>2026-08-01</td>
+        <td>24</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10716,9 +10744,9 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         <td class="l">coingecko</td>
         
         
-        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">circuit open (4 consecutive failures)</td>
+        <td class="l muted">HTTPError: 403 Client Error: Forbidden for url: https://api.coingecko.com/api/v3/global</td>
       </tr>
       
       <tr>
@@ -10726,7 +10754,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>60</td><td>2026-07-31</td>
+        <td>61</td><td>2026-08-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10753,7 +10781,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>50</td><td>2026-08-01</td>
+        <td>50</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10771,7 +10799,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-08-01</td>
+        <td>5</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10789,7 +10817,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10798,7 +10826,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10807,7 +10835,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10843,7 +10871,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3100</td><td>2026-08-01</td>
+        <td>3101</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10861,7 +10889,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10869,9 +10897,9 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         <td class="l">finnhub_altdata</td>
         
         
-        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">circuit open (15 consecutive failures)</td>
+        <td class="l muted">RuntimeError: finnhub_altdata: no rows from 120 tickers (errors=120)</td>
       </tr>
       
       <tr>
@@ -10879,7 +10907,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10996,7 +11024,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11005,7 +11033,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11257,7 +11285,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>26375</td><td>2026-08-01</td>
+        <td>26376</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11266,7 +11294,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>33151</td><td>2026-08-01</td>
+        <td>459</td><td>2026-08-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11302,7 +11330,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11310,18 +11338,18 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         <td class="l">lbnl_queue</td>
         
         
-        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">circuit open (24 consecutive failures)</td>
+        <td class="l muted">RuntimeError: lbnl_queue: emp.lbl.gov unreachable (Cloudflare WAF); the committed seed JSO</td>
       </tr>
       
       <tr>
         <td class="l">massive_stock_day</td>
         
         
-        <td class="l"><span class="pill pill-dead"><span class="l-en">dead</span><span class="l-zh">已停用</span></span></td>
+        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">circuit open (24 consecutive failures)</td>
+        <td class="l muted">RuntimeError: massive_stock_day: no_creds</td>
       </tr>
       
       <tr>
@@ -11329,7 +11357,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>34</td><td>2026-08-01</td>
+        <td>33</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11374,7 +11402,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1393</td><td>2026-08-01</td>
+        <td>1393</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11392,7 +11420,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11419,7 +11447,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11437,7 +11465,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11446,7 +11474,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11455,7 +11483,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11464,7 +11492,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11473,7 +11501,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11482,7 +11510,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11500,7 +11528,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11509,7 +11537,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11518,7 +11546,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11527,7 +11555,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11536,7 +11564,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11545,7 +11573,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11554,7 +11582,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11563,7 +11591,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11572,7 +11600,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11581,7 +11609,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11599,7 +11627,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11617,7 +11645,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11626,7 +11654,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11662,7 +11690,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11734,7 +11762,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>49969</td><td>2026-07-31</td>
+        <td>4840</td><td>2026-07-31</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11743,7 +11771,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11752,7 +11780,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-01</td>
+        <td>1</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11805,7 +11833,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         <td class="l">tsa</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
         <td>2768</td><td>2026-07-30</td>
         <td class="l muted"></td>
       </tr>
@@ -11815,7 +11843,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>30370</td><td>2026-07-31</td>
+        <td>30371</td><td>2026-08-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11869,15 +11897,15 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>164029</td><td>2026-08-01</td>
+        <td>34274</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-02 01:14 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-02 01:31 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-02 01:14 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-02 01:31 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -12130,5 +12158,6 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

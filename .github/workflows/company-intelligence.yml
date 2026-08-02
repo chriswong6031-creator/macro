@@ -28,7 +28,10 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The CI immutable tree is currently ~227 MB / 3.6k objects. The dependent
+    # sidecar re-verifies that exact tree after root promotion, so leave enough
+    # headroom for both deterministic publication steps.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +45,12 @@ jobs:
             scripts/fetch_earnings_scores.py
             scripts/publish_company_intelligence_r2.py
             scripts/refresh_company_intelligence.py
+            engine/company_theme_exposure
+            scripts/build_company_theme_exposure.py
+            scripts/publish_company_theme_exposure_r2.py
+            data/baskets/membership.json
+            config/theme_crosswalk.yml
+            data/neuralweb/theme_state.json
 
       - uses: actions/setup-python@v5
         with:
@@ -50,7 +59,7 @@ jobs:
       - name: install only the data-plane dependencies
         run: python -m pip install --quiet pandas pyarrow boto3 pyyaml requests
 
-      - name: fetch, validate, and conditionally promote Company Intelligence
+      - name: publish Company Intelligence, then build its exact sidecar
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -60,7 +69,8 @@ jobs:
           TERMINAL_TX_INDEX_URL: https://app.mastermind-x.com/data/tx/index.json
         run: |
           set -uo pipefail
-          ARGS=(--work-dir "$RUNNER_TEMP/company-intelligence" --terminal-tx-index-url "$TERMINAL_TX_INDEX_URL")
+          OUTPUT_DIR="$RUNNER_TEMP/company-intelligence/output"
+          ARGS=(--work-dir "$RUNNER_TEMP/company-intelligence" --out-dir "$OUTPUT_DIR" --terminal-tx-index-url "$TERMINAL_TX_INDEX_URL")
           if [ "${DRY_RUN:-false}" = "true" ]; then
             ARGS+=(--dry-run)
           fi
@@ -75,4 +85,33 @@ jobs:
             echo "::notice title=company-intelligence::root manifest promotion lost a safe compare-and-swap race"
             exit 0
           fi
-          exit "$rc"
+          if [ "$rc" -ne 0 ]; then
+            exit "$rc"
+          fi
+          # This runs only after Company Intelligence returned a true success
+          # (never after its safe lost-CAS race). The sidecar reads the exact
+          # persistent marker/tree that CIE has just verified and promoted.
+          SIDE_ARGS=(
+            --company-intelligence-dir "$OUTPUT_DIR"
+            --membership data/baskets/membership.json
+            --crosswalk config/theme_crosswalk.yml
+            --theme-state data/neuralweb/theme_state.json
+            --out-dir "$RUNNER_TEMP/company-theme-exposure"
+          )
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            SIDE_ARGS+=(--as-of "$(date -u +%F)")
+          fi
+          python -m scripts.build_company_theme_exposure "${SIDE_ARGS[@]}"
+          PUBLISH_ARGS=(--out-dir "$RUNNER_TEMP/company-theme-exposure")
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            PUBLISH_ARGS+=(--dry-run)
+          fi
+          set +e
+          python -m scripts.publish_company_theme_exposure_r2 "${PUBLISH_ARGS[@]}"
+          side_rc=$?
+          set -e
+          if [ "$side_rc" -eq 2 ]; then
+            echo "::notice title=company-theme-exposure::root manifest promotion lost a safe compare-and-swap race"
+            exit 0
+          fi
+          exit "$side_rc"

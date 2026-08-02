@@ -45,6 +45,7 @@ def _artifact_freshness(
     *,
     status: str = "ok",
     opportunity_status: str = "ok",
+    award_event_status: str = "ok",
     observed_at: str = "2026-08-01T23:00:00Z",
 ) -> dict:
     return {
@@ -68,6 +69,16 @@ def _artifact_freshness(
             "status": opportunity_status,
             "observed_at": observed_at,
             "freshness_sla_minutes": 90,
+        },
+        "award_events": {
+            "status": award_event_status,
+            "observed_at": observed_at,
+            "freshness_sla_days": 4,
+            "bounded_sample_complete": True,
+            "source_exhausted": False,
+            "truncated_by_safety_cap": True,
+            "coverage_manifest_id": "award-coverage-" + "a" * 64,
+            "coverage_manifest": {"schema_version": "test", "entities": []},
         },
     }
 
@@ -152,6 +163,115 @@ def test_loader_projects_official_context_without_authority(tmp_path: Path) -> N
     assert result["LMT"]["allowed_behavior"] == "annotate_only"
     assert result["LMT"]["opportunity_candidates"][0]["notice_id"] == "opp-1"
     assert not any(result["LMT"]["authority"].values())
+
+
+def test_loader_federates_only_receipt_bound_reviewed_award_changes(tmp_path: Path) -> None:
+    standouts_path = _write_standouts(tmp_path)
+    artifact = tmp_path / "data" / "government_revenue" / "latest.json"
+    artifact.parent.mkdir(parents=True)
+
+    def event(event_id: str, *, mapping: str, known_at: str) -> dict:
+        reviewed = mapping == "reviewed"
+        return {
+            "contract": "government_procurement_event.v2",
+            "event_id": event_id,
+            "kind": "award_change",
+            "title_original": "New obligation observed — FA1234",
+            "change": {
+                "type": "obligation",
+                "known_at": known_at,
+                "effective_at": "2026-08-01T12:00:00Z",
+            },
+            "award_change": {
+                "award_key": "CONT_AWD_001",
+                "piid": "FA1234",
+                "action_id": "action-0001",
+                "recipient_name": "Acme Defense Systems",
+                "event_type": "obligation",
+                "source_rail": "usaspending_award_action",
+            },
+            "amounts": [{"id": "federal_action_obligation", "value": 12_500_000}],
+            "primary_amount_id": "federal_action_obligation",
+            "listed_company_impacts": ([{
+                "ticker": "LMT",
+                "relation_semantic": "reviewed",
+                "resolution_state": "confirmed",
+                "confidence": "high",
+                "materiality": {"band": "low"},
+                "evidence_refs": ["recipient:UEI123", "ownership:edge-1"],
+                "ownership_path": [{"from": "UEI123", "to": "LMT"}],
+            }] if reviewed else []),
+            "evidence": {
+                "mapping_class": mapping,
+                "receipts": [{"ref_id": "receipt-1"}],
+            },
+            "authority": {
+                "tier": "display",
+                "context_only": True,
+                "can_rank": False,
+                "can_size": False,
+                "can_gate": False,
+                "can_originate_signal": False,
+                "can_add_candidates": False,
+                "can_escalate": False,
+            },
+        }
+
+    artifact.write_text(
+        json.dumps({
+            "schema_version": "company_government_revenue.v1",
+            "as_of": "2026-08-01",
+            "known_at": "2026-08-01T23:00:00Z",
+            "freshness": _artifact_freshness(),
+            "companies": [{"ticker": "LMT", "metrics": {"award_velocity_yoy_pct": 4.0}}],
+            "procurement_workspace": {
+                "schema_version": "government_procurement_workspace.v2",
+                "events": [
+                    event("reviewed", mapping="reviewed", known_at="2026-08-01T20:00:00Z"),
+                    event("unmapped", mapping="unmapped", known_at="2026-08-01T19:00:00Z"),
+                    event("future", mapping="reviewed", known_at="2026-08-02T01:00:00Z"),
+                ],
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    context = pb._load_government_revenue_context(standouts_path, "2026-08-01")["LMT"]
+
+    assert [row["event_id"] for row in context["award_change_events"]] == ["reviewed"]
+    assert context["award_change_events"][0]["issuer_link"]["relation_semantic"] == "reviewed"
+    assert context["award_change_events"][0]["allowed_behavior"] == "annotate_only"
+    sentence = pb._government_revenue_sentence(context)
+    assert sentence is not None
+    assert "USAspending recorded obligation" in sentence[0]
+    assert "not recognized revenue" in sentence[0]
+
+    payload = json.loads(artifact.read_text())
+    payload["freshness"]["award_events"]["status"] = "partial"
+    artifact.write_text(json.dumps(payload), encoding="utf-8")
+    degraded = pb._load_government_revenue_context(standouts_path, "2026-08-01")["LMT"]
+    assert degraded["award_change_events"] == []
+
+    payload["freshness"]["award_events"]["status"] = "ok"
+    for malformed_authority in (
+        {},
+        {
+            "tier": "display",
+            "context_only": True,
+            "can_rank": 1,
+            "can_size": False,
+            "can_gate": False,
+            "can_originate_signal": False,
+            "can_add_candidates": False,
+            "can_escalate": False,
+        },
+    ):
+        payload["procurement_workspace"]["events"][0]["authority"] = malformed_authority
+        artifact.write_text(json.dumps(payload), encoding="utf-8")
+        context = pb._load_government_revenue_context(
+            standouts_path, "2026-08-01"
+        )["LMT"]
+        assert context["award_change_events"] == []
 
 
 def test_loader_fails_closed_when_overall_procurement_freshness_is_degraded(

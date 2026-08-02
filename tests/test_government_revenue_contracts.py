@@ -68,11 +68,13 @@ def test_opportunity_contract_rejects_missing_point_in_time_clocks(tmp_path):
 
 def test_workspace_and_each_event_satisfy_contract(tmp_path):
     _, workspace = _artifacts(tmp_path)
-    event_schema = _schema("government_procurement_event.v1.schema.json")
-    workspace_schema = _schema("government_procurement_workspace.v1.schema.json")
+    event_schema = _schema("government_procurement_event.v2.schema.json")
+    workspace_schema = _schema("government_procurement_workspace.v2.schema.json")
     event_validator = Draft202012Validator(event_schema, format_checker=FormatChecker())
     for event in workspace["events"]:
         event_validator.validate(event)
+        if event["kind"] in {"opportunity", "recompete"}:
+            assert event["award_change"] is None
 
     registry = Registry().with_resource(
         event_schema["$id"], Resource.from_contents(event_schema)
@@ -87,7 +89,7 @@ def test_workspace_and_each_event_satisfy_contract(tmp_path):
 def test_contract_rejects_any_attempt_to_promote_display_authority(tmp_path):
     _, workspace = _artifacts(tmp_path)
     workspace["events"][0]["authority"]["can_rank"] = True
-    validator = Draft202012Validator(_schema("government_procurement_event.v1.schema.json"))
+    validator = Draft202012Validator(_schema("government_procurement_event.v2.schema.json"))
     errors = list(validator.iter_errors(workspace["events"][0]))
     assert errors
     assert any("False was expected" in error.message for error in errors)

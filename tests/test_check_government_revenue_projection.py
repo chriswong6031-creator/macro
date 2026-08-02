@@ -12,6 +12,7 @@ from scripts.check_government_revenue_projection import (
     ProjectionDriftError,
     validate_projection,
 )
+from engine.government_revenue.workspace import build_procurement_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,13 +32,34 @@ def _generation(root: Path) -> tuple[Path, Path, Path]:
 """,
         encoding="utf-8",
     )
-    workspace = {
-        "schema_version": "government_procurement_workspace.v1",
-        "as_of": "2026-08-02",
-        "generated_at": "2026-08-02T00:00:00Z",
-        "events": [{"event_id": "evt-1"}],
-        "total": 1,
-    }
+    workspace = build_procurement_workspace(
+        {
+            "events": [],
+            "opportunities": [],
+            "freshness": {"status": "unavailable"},
+            "market": {"active_opportunities": 0},
+        },
+        [{
+            "ticker": "TEST",
+            "name": "Test Systems",
+            "metrics": {"ttm_obligations": 100.0},
+            "confidence": {"level": "medium"},
+            "entity_match": {"method": "exact_uei"},
+            "recompete_candidates": [{
+                "award_id": "TEST-PIID",
+                "generated_award_id": "CONT_AWD_TEST",
+                "award_key": "CONT_AWD_TEST",
+                "end_date": "2027-01-01",
+                "days_to_end": 152,
+                "total_obligated": 25.0,
+                "known_at": "2026-08-02T00:00:00Z",
+                "effective_at": "2026-08-01T00:00:00Z",
+                "source_url": "https://www.usaspending.gov/award/CONT_AWD_TEST/",
+            }],
+        }],
+        as_of="2026-08-02",
+        known_at="2026-08-02T00:00:00Z",
+    )
     workspace["bundle_id"] = build_government_revenue._workspace_bundle_id(workspace)
     payload = {
         "schema_version": "company_government_revenue.v1",
@@ -63,7 +85,7 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     result = validate_projection(tmp_path)
 
     assert result["events"] == 1
-    assert result["bundle_id"].startswith("grw1-")
+    assert result["bundle_id"].startswith("grw2-")
     assert result["html_bytes"] < 250_000
 
 
@@ -113,8 +135,8 @@ def test_projection_fence_rejects_shell_bundle_mismatch(tmp_path: Path) -> None:
     html = html_path.read_text(encoding="utf-8")
     html_path.write_text(
         html.replace(
-            '"bundle_id":"grw1-',
-            '"bundle_id":"grw1-ffffffffffffffffffffffff',
+            '"bundle_id":"grw2-',
+            '"bundle_id":"grw2-ffffffffffffffffffffffff',
             1,
         ),
         encoding="utf-8",

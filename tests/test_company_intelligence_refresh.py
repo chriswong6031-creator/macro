@@ -59,6 +59,39 @@ def test_refresh_fails_closed_when_fail_soft_earnings_fetch_materializes_nothing
         refresh.refresh(tmp_path, fetch_scores=lambda **_kwargs: 0)
 
 
+def test_refresh_can_preserve_a_validated_output_tree_for_a_post_ci_sidecar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The sidecar must read CIE before TemporaryDirectory cleanup occurs."""
+    output = tmp_path / "persistent-output"
+    seen: dict[str, Path] = {}
+    monkeypatch.setattr(refresh, "ensure_earnings_inputs", lambda _source: {})
+    monkeypatch.setattr(refresh, "fetch_transcript_index", lambda _url, destination: destination.write_text("{}"))
+
+    def build(argv: list[str]) -> int:
+        target = Path(argv[argv.index("--out-dir") + 1])
+        target.mkdir(parents=True)
+        (target / "manifest.json").write_text("{}")
+        seen["build"] = target
+        return 0
+
+    monkeypatch.setattr(refresh, "build_company_intelligence", build)
+    monkeypatch.setattr(refresh, "validate_generation", lambda path: {"status": "ready", "generation_id": "a" * 24, "company_count": 1, "event_count": 1, "warnings": []})
+
+    def publish(path: Path, **_kwargs) -> int:
+        seen["publish"] = path
+        assert (path / "manifest.json").is_file()
+        return 0
+
+    assert refresh.refresh(
+        tmp_path / "work",
+        out_dir=output,
+        fetch_scores=lambda **_kwargs: 0,
+        publish_generation=publish,
+    ) == 0
+    assert seen == {"build": output, "publish": output}
+
+
 def test_workflow_is_scheduled_off_render_and_handles_only_safe_cas_conflict() -> None:
     workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/company-intelligence.yml").read_text(encoding="utf-8")
     assert 'cron: "17 */3 * * *"' in workflow
@@ -66,6 +99,11 @@ def test_workflow_is_scheduled_off_render_and_handles_only_safe_cas_conflict() -
     assert "python -m scripts.refresh_company_intelligence" in workflow
     assert 'if [ "$rc" -eq 2 ]' in workflow
     assert "R2_SECRET_ACCESS_KEY" in workflow
+    assert "--out-dir \"$OUTPUT_DIR\"" in workflow
+    assert "python -m scripts.build_company_theme_exposure" in workflow
+    assert "python -m scripts.publish_company_theme_exposure_r2" in workflow
+    assert 'if [ "$side_rc" -eq 2 ]' in workflow
+    assert "timeout-minutes: 25" in workflow
 
 
 def test_scheduled_workflow_contains_its_sparse_import_closure() -> None:
@@ -74,3 +112,12 @@ def test_scheduled_workflow_contains_its_sparse_import_closure() -> None:
     install_line = next(line for line in workflow.splitlines() if "pip install --quiet" in line)
     assert "pyyaml" in install_line
     assert "requests" in install_line
+    for path in (
+        "engine/company_theme_exposure",
+        "scripts/build_company_theme_exposure.py",
+        "scripts/publish_company_theme_exposure_r2.py",
+        "data/baskets/membership.json",
+        "config/theme_crosswalk.yml",
+        "data/neuralweb/theme_state.json",
+    ):
+        assert path in workflow

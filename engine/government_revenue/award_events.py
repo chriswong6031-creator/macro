@@ -22,7 +22,6 @@ from .point_in_time import (
     analysis_clock,
     filter_dual_clock,
     iso_instant,
-    is_true,
     timestamp,
     with_award_identity,
 )
@@ -139,6 +138,8 @@ _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _ALLOWED_RECEIPT_HOSTS = {"api.usaspending.gov", "usaspending.gov"}
 _LEDGER_RECEIPT_BOUND = object()
 _LEDGER_RECEIPT_MARKER = "_award_event_ledger_receipt_marker"
+_LEDGER_RECEIPT_REQUIRED = object()
+_LEDGER_RECEIPT_REQUIRED_MARKER = "_award_event_ledger_receipt_required_marker"
 _STRUCTURED_ACTION_FIELDS = (
     "action_semantic",
     "source_semantic",
@@ -153,6 +154,28 @@ _STRUCTURED_ACTION_FIELDS = (
 )
 _RETRACTION_SEMANTICS = {"retraction", "retracted", "retract", "rescission", "rescinded", "rescind", "voided"}
 _CORRECTION_SEMANTICS = {"correction", "corrected", "correct", "administrative_correction", "amended_correction"}
+_EXACT_IDENTIFIER_FIELDS: dict[str, tuple[str, ...]] = {
+    "sam_uei": ("recipient_uei", "uei"),
+    "cage": ("recipient_cage", "cage", "cage_code"),
+    "usaspending_recipient_id": (
+        "recipient_source_id",
+        "source_recipient_id",
+        "usaspending_recipient_id",
+        "recipient_id",
+    ),
+}
+_EXACT_IDENTIFIER_NAMESPACE_ALIASES = {
+    "uei": "sam_uei",
+    "recipient_uei": "sam_uei",
+    "sam_uei": "sam_uei",
+    "cage": "cage",
+    "cage_code": "cage",
+    "recipient_cage": "cage",
+    "recipient_source_id": "usaspending_recipient_id",
+    "source_recipient_id": "usaspending_recipient_id",
+    "recipient_id": "usaspending_recipient_id",
+    "usaspending_recipient_id": "usaspending_recipient_id",
+}
 
 
 def _missing(value: Any) -> bool:
@@ -236,8 +259,8 @@ def _state_hash(row: Mapping[str, Any], *, mode: str) -> str:
     # source may provide a purpose-built mapping-independent semantic hash.
     configured = _first(row, ("event_state_sha256", "projector_state_sha256"))
     rendered = _text(configured)
-    if rendered:
-        return rendered
+    if _SHA256_RE.fullmatch(rendered):
+        return rendered.lower()
     fields = SNAPSHOT_STATE_FIELDS if mode == "snapshot" else ACTION_STATE_FIELDS
     return _hash({field: _clean(row.get(field)) for field in fields})
 
@@ -250,6 +273,12 @@ def _action_identity(row: Mapping[str, Any]) -> str | None:
     context, but cannot become a public transition event.
     """
 
+    if _strict_true(row.get("action_id_synthetic")):
+        return None
+    if "source_action_id_native" in row and not _strict_true(
+        row.get("source_action_id_native")
+    ):
+        return None
     explicit = _text(
         _first(
             row,
@@ -259,16 +288,135 @@ def _action_identity(row: Mapping[str, Any]) -> str | None:
     return f"action:{explicit}" if explicit else None
 
 
-def _is_event_eligible(row: Mapping[str, Any]) -> bool:
-    """Events are opt-in; a legacy/raw observation is baseline-only by default."""
+def _stable_award_identity(row: Mapping[str, Any]) -> bool:
+    """Require a generated/source award key, never a bare PIID fallback."""
 
-    return is_true(row.get("event_eligible"))
+    if any(_text(row.get(field)) for field in ("generated_unique_award_id", "generated_award_id")):
+        return True
+    for field in ("source_award_key", "award_key"):
+        key = _text(row.get(field))
+        if key and not key.lower().startswith("piid:"):
+            return True
+    return False
+
+
+def _stable_source_identity(row: Mapping[str, Any], *, mode: str) -> bool:
+    """Honor an explicit false stability flag and otherwise derive conservatively."""
+
+    if "source_identity_stable" in row and not _strict_true(
+        row.get("source_identity_stable")
+    ):
+        return False
+    if not _stable_award_identity(row):
+        return False
+    return mode != "action" or _action_identity(row) is not None
+
+
+def _is_event_eligible(row: Mapping[str, Any]) -> bool:
+    """Events are opt-in; a legacy/raw observation is baseline-only by default.
+
+    The dedicated forward ledgers use native booleans.  In particular, Parquet
+    round-trips may surface ``numpy.bool_`` rather than Python's ``bool``.  We
+    accept both, but never a truthy string imported from an older/raw rail.
+    Optional ``*_present`` / ``*_asserted`` sentinels make an explicit false
+    assertion stronger than a stale non-null value.
+    """
+
+    return _strict_true(row.get("event_eligible")) and _field_is_asserted_present(
+        row, "event_eligible"
+    )
 
 
 def _strict_true(value: Any) -> bool:
-    """Accept a real boolean flag, not a truthy imported string."""
+    """Accept Python/numpy booleans, never truthy imported strings."""
 
-    return isinstance(value, bool) and value
+    return bool(pd.api.types.is_bool(value) and value)
+
+
+def _source_field_manifest(row: Mapping[str, Any]) -> set[str] | None:
+    """Decode a parquet-safe direct-source field manifest, if one was supplied."""
+
+    presence = row.get("source_field_presence")
+    if isinstance(presence, Mapping):
+        return {
+            str(field)
+            for field, value in presence.items()
+            if _strict_true(value)
+        }
+    if isinstance(presence, (list, tuple, set, frozenset)):
+        return {str(item) for item in presence if _text(item)}
+    if isinstance(presence, str):
+        try:
+            decoded = json.loads(presence)
+        except (TypeError, ValueError):
+            return set()
+        if isinstance(decoded, list):
+            return {str(item) for item in decoded if _text(item)}
+        if isinstance(decoded, Mapping):
+            return {
+                str(field)
+                for field, value in decoded.items()
+                if _strict_true(value)
+            }
+        return set()
+    return None
+
+
+def _field_presence_value(row: Mapping[str, Any], field: str) -> bool | None:
+    """Tell whether an actual source response explicitly carried ``field``."""
+
+    manifest = _source_field_manifest(row)
+    return field in manifest if manifest is not None else None
+
+
+def _field_is_asserted_present(
+    row: Mapping[str, Any],
+    field: str,
+    *,
+    source_asserted: bool = False,
+) -> bool:
+    """Require an actual value and honor explicit presence/assertion sentinels.
+
+    ``source_asserted`` is for mutable business fields that must come from the
+    source response itself.  Receipt envelope fields and runtime control flags
+    are deterministic collector assertions, so they intentionally do not live
+    in ``source_field_presence``.
+    """
+
+    if field not in row or _missing(row.get(field)):
+        return False
+    declared_presence = _field_presence_value(row, field) if source_asserted else None
+    if declared_presence is False:
+        return False
+    for suffix in ("_present", "_asserted"):
+        assertion = f"{field}{suffix}"
+        if assertion in row and not _strict_true(row.get(assertion)):
+            return False
+    return True
+
+
+def _any_field_is_asserted_present(
+    row: Mapping[str, Any],
+    fields: Sequence[str],
+    *,
+    source_asserted: bool = False,
+) -> bool:
+    """Return true when one source alias is explicitly present."""
+
+    return any(
+        _field_is_asserted_present(row, field, source_asserted=source_asserted)
+        for field in fields
+    )
+
+
+def _assertion_allows(row: Mapping[str, Any], field: str) -> bool:
+    """Honor an optional assertion flag for a derived/control field."""
+
+    for suffix in ("_present", "_asserted"):
+        assertion = f"{field}{suffix}"
+        if assertion in row and not _strict_true(row.get(assertion)):
+            return False
+    return True
 
 
 def _valid_receipt_url(value: Any) -> str | None:
@@ -287,6 +435,10 @@ def _is_ledger_bound(row: Mapping[str, Any]) -> bool:
     return row.get(_LEDGER_RECEIPT_MARKER) is _LEDGER_RECEIPT_BOUND
 
 
+def _ledger_receipt_required(row: Mapping[str, Any]) -> bool:
+    return row.get(_LEDGER_RECEIPT_REQUIRED_MARKER) is _LEDGER_RECEIPT_REQUIRED
+
+
 def _receipt(row: Mapping[str, Any], *, mode: str) -> dict[str, Any] | None:
     """Return only a receipt that is cryptographically and procedurally bound.
 
@@ -296,7 +448,16 @@ def _receipt(row: Mapping[str, Any], *, mode: str) -> dict[str, Any] | None:
     verifier.  Both paths still require the same cryptographic and clock facts.
     """
 
-    if not (_is_ledger_bound(row) or _strict_true(row.get("receipt_verified"))):
+    ledger_bound = _is_ledger_bound(row)
+    if _ledger_receipt_required(row) and not ledger_bound:
+        return None
+    if not (
+        ledger_bound
+        or (
+            _strict_true(row.get("receipt_verified"))
+            and _assertion_allows(row, "receipt_verified")
+        )
+    ):
         return None
     receipt_id = _first(
         row,
@@ -308,7 +469,7 @@ def _receipt(row: Mapping[str, Any], *, mode: str) -> dict[str, Any] | None:
         ),
     )
     receipt_id = _text(receipt_id)
-    if not receipt_id:
+    if not receipt_id or not _field_is_asserted_present(row, "source_receipt_id"):
         return None
     known_at = iso_instant(row.get("_pit_known_at") or row.get("known_at") or row.get("first_seen_at"))
     effective_at = iso_instant(
@@ -325,7 +486,16 @@ def _receipt(row: Mapping[str, Any], *, mode: str) -> dict[str, Any] | None:
     )
     content_hash = _text(content_hash)
     url = _valid_receipt_url(_first(row, ("source_url", "receipt_url", "usaspending_url", "award_url")))
-    if not known_at or not effective_at or not url or not _SHA256_RE.fullmatch(content_hash):
+    if not (
+        known_at
+        and effective_at
+        and url
+        and _SHA256_RE.fullmatch(content_hash)
+        and _field_is_asserted_present(row, "source_response_sha256")
+        and _field_is_asserted_present(row, "source_url")
+        and _field_is_asserted_present(row, "known_at")
+        and _any_field_is_asserted_present(row, ("effective_at", "action_date"))
+    ):
         return None
     return {
         "ref_id": receipt_id,
@@ -353,6 +523,95 @@ def _receipt_rows(source_receipts: Any) -> list[dict[str, Any]]:
     return [dict(value) for value in source_receipts if isinstance(value, Mapping)]
 
 
+def _row_receipt_id(row: Mapping[str, Any], *, mode: str) -> str | None:
+    return _text(
+        _first(
+            row,
+            (
+                "source_receipt_id",
+                "action_receipt_id" if mode == "action" else "award_detail_receipt_id",
+                "award_search_receipt_id",
+                "receipt_id",
+            ),
+        )
+    )
+
+
+def _ledger_receipt(receipt: Mapping[str, Any], *, expected_rail: str) -> dict[str, Any] | None:
+    """Return a minimally normalized immutable receipt, or reject it.
+
+    The collection receipt is the authoritative provenance row.  We index the
+    exact immutable facts required to prove that an event-ledger row belongs to
+    it; source-looking row fields never supersede this ledger.
+    """
+
+    if _text(receipt.get("rail")) != expected_rail:
+        return None
+    subject = receipt.get("subject") if isinstance(receipt.get("subject"), Mapping) else {}
+    award_key = _text(subject.get("award_key") or receipt.get("award_key"))
+    observed_at = iso_instant(receipt.get("observed_at") or receipt.get("known_at"))
+    receipt_id = _text(receipt.get("receipt_id") or receipt.get("source_receipt_id"))
+    endpoint = _valid_receipt_url(receipt.get("endpoint") or receipt.get("url"))
+    response_hash = _text(receipt.get("response_sha256") or receipt.get("source_response_sha256"))
+    if not (
+        award_key
+        and observed_at
+        and receipt_id
+        and endpoint
+        and _SHA256_RE.fullmatch(response_hash)
+    ):
+        return None
+    return {
+        "award_key": award_key,
+        "observed_at": observed_at,
+        "receipt_id": receipt_id,
+        "endpoint": endpoint,
+        "response_sha256": response_hash,
+    }
+
+
+def _receipt_matches_row(
+    row: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+    *,
+    mode: str,
+) -> bool:
+    """Check every row assertion against its canonical receipt ledger row."""
+
+    row_receipt_id = _row_receipt_id(row, mode=mode)
+    if row_receipt_id and row_receipt_id != receipt["receipt_id"]:
+        return False
+    award_key = _text(row.get("_award_identity") or row.get("award_key"))
+    observed_at = iso_instant(
+        row.get("_pit_known_at") or row.get("known_at") or row.get("first_seen_at")
+    )
+    if award_key != receipt["award_key"] or observed_at != receipt["observed_at"]:
+        return False
+    row_hash = _text(
+        _first(
+            row,
+            (
+                "source_response_sha256",
+                "response_sha256",
+                "action_response_sha256" if mode == "action" else "award_response_sha256",
+            ),
+        )
+    )
+    row_url = _valid_receipt_url(
+        _first(row, ("source_url", "receipt_url", "usaspending_url", "award_url"))
+    )
+    # A forward row that already claims a receipt must carry the matching page
+    # hash and URL itself. Only an older snapshot with no receipt claim may be
+    # repaired from a single uniquely attributable ledger entry.
+    if row_receipt_id and (not row_hash or row_url is None):
+        return False
+    if row_hash and row_hash.lower() != str(receipt["response_sha256"]).lower():
+        return False
+    if row_url and row_url != receipt["endpoint"]:
+        return False
+    return True
+
+
 def _bind_source_receipts(
     frame: pd.DataFrame,
     source_receipts: Any,
@@ -371,36 +630,49 @@ def _bind_source_receipts(
     if frame.empty or source_receipts is None:
         return frame.copy()
     expected_rail = "award_detail" if mode == "snapshot" else "actions"
-    index: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-    for receipt in _receipt_rows(source_receipts):
-        if _text(receipt.get("rail")) != expected_rail:
-            continue
-        subject = receipt.get("subject") if isinstance(receipt.get("subject"), Mapping) else {}
-        award_key = _text(subject.get("award_key") or receipt.get("award_key"))
-        observed_at = iso_instant(receipt.get("observed_at") or receipt.get("known_at"))
-        receipt_id = _text(receipt.get("receipt_id") or receipt.get("source_receipt_id"))
-        endpoint = _valid_receipt_url(receipt.get("endpoint") or receipt.get("url"))
-        response_hash = _text(receipt.get("response_sha256") or receipt.get("source_response_sha256"))
-        if award_key and observed_at and receipt_id and endpoint and _SHA256_RE.fullmatch(response_hash):
-            index[(award_key, observed_at)].append(receipt)
-    if not index:
-        return frame.copy()
-
     bound = frame.copy()
+    # Supplying a ledger opts into direct ledger cross-checking.  A row that
+    # claims a receipt but cannot be matched to exactly one canonical receipt
+    # is never rescued by its own ``receipt_verified`` flag.
+    bound[_LEDGER_RECEIPT_REQUIRED_MARKER] = _LEDGER_RECEIPT_REQUIRED
+    by_award_and_observed: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    by_receipt_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for raw_receipt in _receipt_rows(source_receipts):
+        receipt = _ledger_receipt(raw_receipt, expected_rail=expected_rail)
+        if receipt is None:
+            continue
+        by_award_and_observed[(receipt["award_key"], receipt["observed_at"])].append(receipt)
+        by_receipt_id[receipt["receipt_id"]].append(receipt)
+
     for position, row in bound.iterrows():
-        award_key = _text(row.get("award_key") or row.get("_award_identity"))
-        observed_at = iso_instant(row.get("_pit_known_at") or row.get("known_at") or row.get("first_seen_at"))
-        candidates = index.get((award_key, observed_at), []) if award_key and observed_at else []
-        # One page is enough to bind an action page.  More than one cannot prove
-        # which page contained a particular normalized action, so do not bind it.
+        row_receipt_id = _row_receipt_id(row, mode=mode)
+        if row_receipt_id:
+            candidates = by_receipt_id.get(row_receipt_id, [])
+        elif mode == "snapshot":
+            award_key = _text(row.get("_award_identity") or row.get("award_key"))
+            observed_at = iso_instant(
+                row.get("_pit_known_at") or row.get("known_at") or row.get("first_seen_at")
+            )
+            candidates = (
+                by_award_and_observed.get((award_key, observed_at), [])
+                if award_key and observed_at
+                else []
+            )
+        else:
+            # An action page can contain several source actions.  New forward
+            # rows must carry their direct receipt id; page-level inference is
+            # deliberately not enough for a public action event.
+            candidates = []
         if len(candidates) != 1:
             continue
         receipt = candidates[0]
-        bound.at[position, "source_receipt_id"] = _text(receipt.get("receipt_id") or receipt.get("source_receipt_id"))
+        if not _receipt_matches_row(row, receipt, mode=mode):
+            continue
         # The bound ledger endpoint/hash supersede raw row metadata.  Otherwise
         # a generic search URL could masquerade as the exact receipt page.
-        bound.at[position, "source_url"] = _valid_receipt_url(receipt.get("endpoint") or receipt.get("url"))
-        bound.at[position, "source_response_sha256"] = _text(receipt.get("response_sha256") or receipt.get("source_response_sha256"))
+        bound.at[position, "source_receipt_id"] = receipt["receipt_id"]
+        bound.at[position, "source_url"] = receipt["endpoint"]
+        bound.at[position, "source_response_sha256"] = receipt["response_sha256"]
         bound.at[position, _LEDGER_RECEIPT_MARKER] = _LEDGER_RECEIPT_BOUND
     return bound
 
@@ -428,6 +700,13 @@ def _value(row: Mapping[str, Any], aliases: Sequence[str]) -> Any:
     return _clean(_first(row, aliases))
 
 
+def _source_alias_is_asserted(row: Mapping[str, Any], aliases: Sequence[str]) -> bool:
+    """Whether one semantic alias was present in the direct source response."""
+
+    manifest = _source_field_manifest(row)
+    return True if manifest is None else any(alias in manifest for alias in aliases)
+
+
 def _snapshot_value(row: Mapping[str, Any], canonical_field: str) -> Any:
     aliases = dict(SNAPSHOT_DIFF_FIELDS)[canonical_field]
     return _value(row, aliases)
@@ -452,11 +731,20 @@ def _changed_fields(
     for canonical, aliases in configured:
         if wanted is not None and canonical not in wanted:
             continue
+        # A later source response that simply omitted a field is not an
+        # official clear/reset.  Only an asserted direct-source field can
+        # create a visible semantic delta.
+        if not _source_alias_is_asserted(after, aliases):
+            continue
         after_value = _value(after, aliases)
         before_value = _value(before or {}, aliases)
         if before is None:
             if after_value is None:
                 continue
+        elif not _source_alias_is_asserted(before, aliases):
+            # The source first supplied the field on this revision.  Preserve
+            # that fact without manufacturing a numeric before/after delta.
+            before_value = None
         elif _same(before_value, after_value):
             continue
         changes.append(
@@ -642,9 +930,170 @@ def _company_rows(companies: pd.DataFrame | Sequence[Mapping[str, Any]] | None) 
     return result
 
 
-def _ticker(row: Mapping[str, Any]) -> str | None:
-    ticker = _text(_first(row, ("ticker", "issuer_ticker", "mapped_ticker"))).upper()
+def _asserted_issuer_ticker(row: Mapping[str, Any]) -> str | None:
+    """Read only an explicit resolver assertion, never discovery provenance.
+
+    ``ticker`` and ``discovery_query_ticker`` identify how a USAspending search
+    found a row.  They are not issuer proof and are intentionally ignored here.
+    The strict resolution artifact below remains the source of a company impact.
+    """
+
+    ticker = _text(_first(row, ("issuer_ticker", "resolved_issuer_ticker"))).upper()
     return ticker or None
+
+
+def _identifier_value(namespace: str, value: Any) -> str | None:
+    rendered = _text(value)
+    if not rendered:
+        return None
+    # USAspending recipient identifiers are case-insensitive strings in the
+    # source APIs.  Normalizing only comparison keys preserves raw IDs in the
+    # evidence ledger while avoiding an accidental case-only conflict.
+    return rendered.upper()
+
+
+def _row_exact_identifiers(row: Mapping[str, Any]) -> dict[str, set[str]]:
+    result: dict[str, set[str]] = {}
+    for namespace, fields in _EXACT_IDENTIFIER_FIELDS.items():
+        values: set[str] = set()
+        for field in fields:
+            if _field_presence_value(row, field) is False:
+                continue
+            raw = row.get(field)
+            candidates = raw if isinstance(raw, (list, tuple, set, frozenset)) else [raw]
+            for candidate in candidates:
+                normalized = _identifier_value(namespace, candidate)
+                if normalized:
+                    values.add(normalized)
+        if values:
+            result[namespace] = values
+    return result
+
+
+def _resolution_exact_identifiers(resolution: Mapping[str, Any]) -> dict[str, set[str]]:
+    source_recipient = resolution.get("source_recipient")
+    if not isinstance(source_recipient, Mapping):
+        return {}
+    external_ids = source_recipient.get("external_ids")
+    if not isinstance(external_ids, Iterable) or isinstance(external_ids, (str, bytes, Mapping)):
+        return {}
+    result: dict[str, set[str]] = {}
+    for item in external_ids:
+        if not isinstance(item, Mapping):
+            continue
+        namespace = _EXACT_IDENTIFIER_NAMESPACE_ALIASES.get(
+            _text(item.get("namespace")).lower() if _text(item.get("namespace")) else ""
+        )
+        if not namespace:
+            continue
+        value = _identifier_value(namespace, item.get("value"))
+        if value:
+            result.setdefault(namespace, set()).add(value)
+    return result
+
+
+def _identifier_conflicts(
+    row: Mapping[str, Any], resolution: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """Return exact-ID disagreements; names and query tickers are excluded."""
+
+    source = _row_exact_identifiers(row)
+    resolved = _resolution_exact_identifiers(resolution)
+    conflicts: list[dict[str, Any]] = []
+    for namespace, values in sorted(source.items()):
+        if len(values) > 1:
+            conflicts.append({
+                "code": "source_exact_identifier_conflict",
+                "namespace": namespace,
+                "values": sorted(values),
+            })
+    for namespace, values in sorted(resolved.items()):
+        if len(values) > 1:
+            conflicts.append({
+                "code": "resolution_exact_identifier_conflict",
+                "namespace": namespace,
+                "values": sorted(values),
+            })
+    shared = sorted(set(source) & set(resolved))
+    for namespace in shared:
+        if source[namespace] != resolved[namespace]:
+            conflicts.append({
+                "code": "source_resolution_identifier_mismatch",
+                "namespace": namespace,
+                "source_values": sorted(source[namespace]),
+                "resolution_values": sorted(resolved[namespace]),
+            })
+    if not source:
+        conflicts.append({"code": "missing_source_exact_identifier"})
+    if not resolved:
+        conflicts.append({"code": "missing_resolution_exact_identifier"})
+    if source and resolved and not shared:
+        conflicts.append({"code": "resolution_identifier_no_source_overlap"})
+    return conflicts
+
+
+def _semantic_conflicts(impact_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Detect incompatible exact recipient/issuer meanings inside one event.
+
+    Duplicate discovery queries must collapse into one observation, but two
+    incompatible recipient identities or two public issuers for the same exact
+    recipient cannot be silently unioned.  The source event remains visible;
+    listed-company impact fails closed.
+    """
+
+    source_values: dict[str, set[str]] = defaultdict(set)
+    recipient_entities: dict[tuple[str, str], set[str]] = defaultdict(set)
+    issuers: dict[tuple[str, str], set[str]] = defaultdict(set)
+    conflicts: list[dict[str, Any]] = []
+    for row in impact_rows:
+        resolution = _recipient_resolution(row)
+        if resolution is None:
+            continue
+        source = _row_exact_identifiers(row)
+        for namespace, values in source.items():
+            source_values[namespace].update(values)
+        for conflict in _identifier_conflicts(row, resolution):
+            if conflict not in conflicts:
+                conflicts.append(conflict)
+        recipient_entity_id = _text(resolution.get("recipient_entity_id"))
+        issuer = resolution.get("issuer")
+        issuer_key = None
+        if isinstance(issuer, Mapping):
+            issuer_ticker = _text(issuer.get("ticker"))
+            issuer_key = _text(issuer.get("company_id")) or (
+                issuer_ticker.upper() if issuer_ticker else None
+            )
+        for namespace, values in source.items():
+            for value in values:
+                key = (namespace, value)
+                if recipient_entity_id:
+                    recipient_entities[key].add(recipient_entity_id)
+                if issuer_key:
+                    issuers[key].add(issuer_key)
+    for namespace, values in sorted(source_values.items()):
+        if len(values) > 1:
+            conflicts.append({
+                "code": "event_source_identifier_conflict",
+                "namespace": namespace,
+                "values": sorted(values),
+            })
+    for (namespace, value), entities in sorted(recipient_entities.items()):
+        if len(entities) > 1:
+            conflicts.append({
+                "code": "event_recipient_entity_conflict",
+                "namespace": namespace,
+                "value": value,
+                "recipient_entity_ids": sorted(entities),
+            })
+    for (namespace, value), issuer_values in sorted(issuers.items()):
+        if len(issuer_values) > 1:
+            conflicts.append({
+                "code": "event_issuer_identifier_conflict",
+                "namespace": namespace,
+                "value": value,
+                "issuer_ids": sorted(issuer_values),
+            })
+    return conflicts
 
 
 def _refs(value: Any) -> list[str]:
@@ -660,7 +1109,7 @@ def _recipient_resolution(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
 
     for field in ("recipient_resolution", "issuer_resolution", "resolution"):
         candidate = row.get(field)
-        if isinstance(candidate, Mapping):
+        if isinstance(candidate, Mapping) and _assertion_allows(row, field):
             return candidate
     return None
 
@@ -674,18 +1123,20 @@ def _resolved_issuer_impact(
     resolution = _recipient_resolution(row)
     if resolution is None:
         return None
-    state = _text(resolution.get("resolution_state")).lower()
+    state = (_text(resolution.get("resolution_state")) or "").lower()
     issuer = resolution.get("issuer")
     ownership_path = resolution.get("ownership_path")
     if state not in {"confirmed", "reviewed"} or not isinstance(issuer, Mapping):
+        return None
+    if not _strict_true(resolution.get("source_identity_stable")):
         return None
     if not isinstance(ownership_path, list) or not ownership_path or not all(isinstance(edge, Mapping) for edge in ownership_path):
         return None
     ticker = _text(issuer.get("ticker")).upper()
     if not ticker:
         return None
-    raw_ticker = _ticker(row)
-    if raw_ticker is not None and raw_ticker != ticker:
+    asserted_ticker = _asserted_issuer_ticker(row)
+    if asserted_ticker is not None and asserted_ticker != ticker:
         return None
     company = company_index.get(ticker)
     if not isinstance(company, Mapping):
@@ -707,7 +1158,7 @@ def _resolved_issuer_impact(
     )
     # A state label alone is not attribution evidence.  Require proof both for
     # the resolution and for at least one ownership edge to the public issuer.
-    if not resolution_refs or not path_refs:
+    if not resolution_refs or not path_refs or _identifier_conflicts(row, resolution):
         return None
     return ticker, company, resolution, ownership_path, sorted(set(resolution_refs + path_refs))
 
@@ -892,7 +1343,16 @@ def _make_event(
     facts, primary_amount_id, material_amount = _amount_facts(
         row, changed_fields, mode=mode, source_ref=source_ref
     )
-    impacts = _impacts(impact_rows, company_index, amount=material_amount, source_ref=source_ref)
+    semantic_conflicts = [
+        _clean(conflict)
+        for conflict in row.get("_semantic_conflicts", [])
+        if isinstance(conflict, Mapping)
+    ]
+    impacts = (
+        []
+        if semantic_conflicts
+        else _impacts(impact_rows, company_index, amount=material_amount, source_ref=source_ref)
+    )
     known_at, effective_at = _known_at(row), _effective_at(row)
     source_rail = "usaspending_award_snapshot" if mode == "snapshot" else "usaspending_award_action"
     state_hash = _text(row.get("_source_state_hash"))
@@ -987,10 +1447,15 @@ def _make_event(
                     "detail": "Event emitted only from explicitly eligible, receipt-bound observations visible under both clocks.",
                 }
             ],
-            "conflicts": [],
+            "conflicts": semantic_conflicts,
             "limitations": [
                 "Display-only context; cannot rank, size, gate, originate, or escalate a signal.",
                 COVERAGE_SCOPE,
+                *(
+                    ["Listed-company impact withheld because exact recipient identifiers conflict."]
+                    if semantic_conflicts
+                    else []
+                ),
             ],
         },
         "authority": dict(AUTHORITY),
@@ -1007,6 +1472,11 @@ def _consolidate(frame: pd.DataFrame, *, mode: str) -> list[dict[str, Any]]:
     if frame.empty:
         return []
     prepared = frame.copy()
+    prepared = prepared.loc[
+        prepared.apply(lambda row: _stable_source_identity(row, mode=mode), axis=1)
+    ].copy()
+    if prepared.empty:
+        return []
     prepared["_source_state_hash"] = prepared.apply(lambda row: _state_hash(row, mode=mode), axis=1)
     if mode == "action":
         prepared["_action_identity"] = prepared.apply(_action_identity, axis=1)
@@ -1033,6 +1503,7 @@ def _consolidate(frame: pd.DataFrame, *, mode: str) -> list[dict[str, Any]]:
         )
         selected["_event_eligible"] = bool(eligible)
         selected["_impact_rows"] = records
+        selected["_semantic_conflicts"] = _semantic_conflicts(records)
         result.append(selected)
     sort_keys = (lambda row: (str(row.get("_award_identity")), str(row.get("_action_identity", "")), str(row.get("_pit_known_at"))))
     return sorted(result, key=sort_keys)
@@ -1101,7 +1572,12 @@ def _project_snapshots(
     return events
 
 
-def _project_actions(actions: pd.DataFrame, *, company_index: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _project_actions(
+    actions: pd.DataFrame,
+    *,
+    company_index: Mapping[str, Mapping[str, Any]],
+    late_discovery_days: int,
+) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     by_action: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for observation in _consolidate(actions, mode="action"):
@@ -1116,6 +1592,17 @@ def _project_actions(actions: pd.DataFrame, *, company_index: Mapping[str, Mappi
                 if prior is None:
                     event_type, secondary = _action_classification(current)
                     if event_type is not None:
+                        # A sampled award can first enter the bounded action
+                        # history long after an otherwise-valid modification
+                        # occurred.  It remains an auditable official action
+                        # with its native ID, but must carry the same
+                        # discovery-lag warning as a newly discovered award so
+                        # the presentation layer cannot imply it is a fresh
+                        # catalyst merely because it was first observed now.
+                        late = _is_late_discovery(
+                            current,
+                            late_discovery_days=late_discovery_days,
+                        )
                         changes = _changed_fields(None, current, mode="action", source_ref=source_ref)
                         event = _make_event(
                             row=current,
@@ -1127,7 +1614,7 @@ def _project_actions(actions: pd.DataFrame, *, company_index: Mapping[str, Mappi
                             impact_rows=current["_impact_rows"],
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
-                            is_late_discovery=False,
+                            is_late_discovery=late,
                         )
                         if event:
                             events.append(event)
@@ -1185,7 +1672,7 @@ def _merge(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         )
         receipts = _all_receipts(*existing["evidence"]["receipts"], *event["evidence"]["receipts"])
         existing["evidence"]["receipts"] = receipts
-        existing["evidence"]["mapping_class"] = "deterministic_inference" if impacts else "unmapped"
+        existing["evidence"]["mapping_class"] = "reviewed" if impacts else "unmapped"
     return sorted(
         merged.values(),
         key=lambda event: (
@@ -1251,7 +1738,11 @@ def build_award_change_events(
                 company_index=company_index,
                 late_discovery_days=late_discovery_days,
             ),
-            *_project_actions(actions_visible, company_index=company_index),
+            *_project_actions(
+                actions_visible,
+                company_index=company_index,
+                late_discovery_days=late_discovery_days,
+            ),
         ]
     )
 

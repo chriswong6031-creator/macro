@@ -48,14 +48,14 @@
     "lean": "fragile",
     "confidence": "medium",
     "checks": {
-      "catalyst": "Headlines show no structural catalyst (no signed deal, actual policy shift, or hard data surprise). The dovish repricing is likely verbal/speculative, driven by a mixed liquidity impulse with low confidence. No legible structural driver, making this likely easily reversed.",
-      "premium": "Fear built at 0.368 and only 3 of 7 legs flipped up amid extreme velocity, suggesting partial but incomplete unwinding. VIX/term have flipped, but residual fear premium likely remains. Not all premium is exhausted.",
-      "washout": "cap_recent true and 35 days since last snap indicate a real washout with capitulation present. This gives some ballast, but alone cannot offset a weak catalyst.",
-      "follow_through": "Confidence in today's driver is low; without a clear catalyst, cross-asset confirmation (VIX, VIX term, copper/gold) is vulnerable to fizzling. The snap's legs may not hold the next session if no structural follow-up emerges."
+      "catalyst": "No structural catalyst; dovish repricing is driven by rate-path adjustment without a signed deal, policy shift, or hard data surprise. The Fed merely held steady, making this a verbal/technical move.",
+      "premium": "Fear built to 0.368 with VIX term inverted at 0.841. The snap is fast but relief magnitude is still null, so only a small portion of the fear premium appears unwound.",
+      "washout": "cap_recent true and 35 days since last snap suggest a genuine capitulation, not a shallow dip.",
+      "follow_through": "Cross-asset flips are fragile without a catalyst; the dovish repricing relies on no new hawkish cues and could reverse quickly, making a next-session fade likely."
     },
-    "read": "Relief is built on a speculative dovish repricing with no legible structural catalyst. Despite a genuine washout, the absence of a signed deal or hard data surprise makes this move prone to reversal, leaning fragile.",
+    "read": "The bounce lacks a structural anchor\u2014just a mechanical snap from a washed-out market repricing Fed expectations without fresh news. With no deal or data-driven catalyst, this relief feels more like a dead-cat bounce vulnerable to a sharp fade.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-08-01T19:39:39.885500+00:00",
+    "generated_at": "2026-08-02T01:33:59.756900+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }

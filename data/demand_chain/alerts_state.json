@@ -14,7 +14,6 @@
   "ITRI": "ahead_of_consensus",
   "LDOS": "ahead_of_consensus",
   "LEU": "ahead_of_consensus",
-  "LII": "consensus_at_risk",
   "MAS": "consensus_at_risk",
   "MDT": "ahead_of_consensus",
   "MTRN": "consensus_at_risk",

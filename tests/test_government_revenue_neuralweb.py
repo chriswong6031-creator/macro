@@ -43,6 +43,16 @@ def _write_latest(
                     "observed_at": "2026-08-01T11:00:00Z",
                     "freshness_sla_minutes": 90,
                 },
+                "award_events": {
+                    "status": "ok",
+                    "observed_at": "2026-08-01T11:00:00Z",
+                    "freshness_sla_days": 4,
+                    "bounded_sample_complete": True,
+                    "source_exhausted": False,
+                    "truncated_by_safety_cap": True,
+                    "coverage_manifest_id": "award-coverage-" + "a" * 64,
+                    "coverage_manifest": {"schema_version": "test", "entities": []},
+                },
             },
             "workbench": {"id": "government_revenue", "desk": "procurement"},
             "coverage": {"entities_mapped": 1},
@@ -91,6 +101,7 @@ def test_lobe_is_display_context_with_all_authority_disabled(tmp_path: Path) -> 
     assert lobe["coverage"]["companies"] == 1
     assert lobe["coverage"]["detailed_companies"] == 0
     assert lobe["market"]["accelerating_companies"] == 1
+    assert lobe["freshness"]["award_events"] == "ok"
 
 
 def test_procurement_data_cannot_create_neural_web_candidate(tmp_path: Path) -> None:
@@ -128,6 +139,76 @@ def test_procurement_context_attaches_only_to_existing_candidate(tmp_path: Path)
     assert not any(context["LMT"]["government_revenue"]["authority"].values())
     assert context["LMT"]["government_revenue"]["opportunity_candidates"][0]["notice_id"] == "opp-1"
     assert "government_revenue" not in context["NOC"]
+
+
+def test_neural_web_receives_only_reviewed_award_changes_for_existing_name(
+    tmp_path: Path,
+) -> None:
+    _write_latest(tmp_path)
+    latest = tmp_path / "data" / "government_revenue" / "latest.json"
+    payload = json.loads(latest.read_text())
+    payload["procurement_workspace"] = {
+        "schema_version": "government_procurement_workspace.v2",
+        "events": [{
+            "contract": "government_procurement_event.v2",
+            "event_id": "govws-reviewed-award",
+            "kind": "award_change",
+            "title_original": "New obligation observed — FA1234",
+            "change": {
+                "type": "obligation",
+                "known_at": "2026-08-01T11:00:00Z",
+                "effective_at": "2026-08-01T10:00:00Z",
+            },
+            "award_change": {
+                "award_key": "CONT_AWD_001",
+                "piid": "FA1234",
+                "recipient_name": "Acme Defense Systems",
+                "event_type": "obligation",
+                "source_rail": "usaspending_award_action",
+            },
+            "amounts": [],
+            "listed_company_impacts": [{
+                "ticker": "LMT",
+                "relation_semantic": "reviewed",
+                "resolution_state": "confirmed",
+                "confidence": "high",
+                "evidence_refs": ["recipient:UEI123", "ownership:edge-1"],
+                "ownership_path": [{"from": "UEI123", "to": "LMT"}],
+            }],
+            "evidence": {
+                "mapping_class": "reviewed",
+                "receipts": [{"ref_id": "receipt-1"}],
+            },
+            "authority": {
+                "tier": "display",
+                "context_only": True,
+                "can_rank": False,
+                "can_size": False,
+                "can_gate": False,
+                "can_originate_signal": False,
+                "can_add_candidates": False,
+                "can_escalate": False,
+            },
+        }],
+    }
+    latest.write_text(json.dumps(payload), encoding="utf-8")
+    standouts = tmp_path / "site" / "factordata" / "us_standouts.json"
+    standouts.parent.mkdir(parents=True)
+    standouts.write_text(
+        json.dumps({"buy": [{"ticker": "LMT"}], "watch": [], "laggards": []}),
+        encoding="utf-8",
+    )
+
+    context = mc._build_candidate_context(
+        tmp_path,
+        [],
+        now=datetime(2026, 8, 1, 12, tzinfo=timezone.utc),
+    )
+
+    award_rows = context["LMT"]["government_revenue"]["award_change_events"]
+    assert [row["event_id"] for row in award_rows] == ["govws-reviewed-award"]
+    assert award_rows[0]["allowed_behavior"] == "annotate_only"
+    assert context["LMT"]["government_revenue"]["authority"]["can_rank"] is False
 
 
 def test_full_context_registers_procurement_source_and_freshness(tmp_path: Path) -> None:

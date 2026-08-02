@@ -19,6 +19,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi import APIRouter, HTTPException, Query
 
+from engine.government_revenue.workspace import is_valid_procurement_workspace
+
 router = APIRouter()
 
 _REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
@@ -102,6 +104,16 @@ def _load() -> dict:
             raise HTTPException(status_code=503, detail="government revenue artifact unreadable") from exc
         if not isinstance(payload, dict) or payload.get("schema_version") != "company_government_revenue.v1":
             raise HTTPException(status_code=503, detail="government revenue artifact schema mismatch")
+        workspace = payload.get("procurement_workspace")
+        if (
+            isinstance(workspace, dict)
+            and workspace.get("schema_version") == "government_procurement_workspace.v2"
+            and not is_valid_procurement_workspace(workspace)
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government procurement workspace contract mismatch",
+            )
         _CACHE.update(path=str(path), mtime_ns=mtime_ns, payload=payload)
         return payload
 
@@ -123,7 +135,10 @@ def _opportunity_intelligence(payload: dict) -> dict:
 
 def _procurement_workspace(payload: dict) -> dict:
     value = payload.get("procurement_workspace")
-    if not isinstance(value, dict) or value.get("schema_version") != "government_procurement_workspace.v1":
+    if not isinstance(value, dict) or value.get("schema_version") not in {
+        "government_procurement_workspace.v1",
+        "government_procurement_workspace.v2",
+    }:
         raise HTTPException(status_code=503, detail="government procurement workspace unavailable")
     return value
 
@@ -132,18 +147,24 @@ def _public_workspace_event(row: dict) -> dict:
     allowed = {
         "contract", "event_id", "record_id", "version", "kind", "state",
         "title_original", "title_zh", "translation_status", "agency", "change",
-        "opportunity", "recompete", "dates", "amounts", "primary_date_id",
+        "opportunity", "recompete", "award_change", "dates", "amounts", "primary_date_id",
         "primary_amount_id", "listed_company_impacts", "primary_ticker",
         "display_priority", "evidence", "authority",
     }
     return _scrub_public({key: row[key] for key in allowed if key in row})
 
 
-def _encode_cursor(offset: int) -> str:
-    return base64.urlsafe_b64encode(f"v1:{offset}".encode("ascii")).decode("ascii").rstrip("=")
+def _workspace_cursor_version(workspace: dict) -> str:
+    return "v2" if workspace.get("schema_version") == "government_procurement_workspace.v2" else "v1"
 
 
-def _decode_cursor(cursor: str | None) -> int:
+def _encode_cursor(offset: int, *, version: str = "v1") -> str:
+    if version not in {"v1", "v2"}:
+        raise ValueError("unsupported cursor version")
+    return base64.urlsafe_b64encode(f"{version}:{offset}".encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_cursor(cursor: str | None, *, expected_version: str = "v1") -> int:
     if not cursor:
         return 0
     if len(cursor) > 32 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
@@ -155,7 +176,7 @@ def _decode_cursor(cursor: str | None) -> int:
         value = int(offset)
     except (ValueError, UnicodeError, binascii.Error) as exc:
         raise HTTPException(status_code=400, detail="invalid cursor") from exc
-    if version != "v1" or value < 0 or value > 10_000:
+    if version != expected_version or value < 0 or value > 10_000:
         raise HTTPException(status_code=400, detail="invalid cursor")
     return value
 
@@ -418,7 +439,8 @@ def workspace(
 ) -> dict:
     """Return a stable cursor page in the backend-prioritized workspace order."""
     source = _procurement_workspace(_load())
-    offset = _decode_cursor(cursor)
+    cursor_version = _workspace_cursor_version(source)
+    offset = _decode_cursor(cursor, expected_version=cursor_version)
     events = [
         _public_workspace_event(row)
         for row in (source.get("events") or [])[offset:offset + limit]
@@ -437,7 +459,7 @@ def workspace(
     }
     return _scrub_public(metadata | {
         "events": events,
-        "next_cursor": _encode_cursor(next_offset) if next_offset < total else None,
+        "next_cursor": _encode_cursor(next_offset, version=cursor_version) if next_offset < total else None,
     })
 
 
@@ -463,7 +485,7 @@ def _event_primary_amount(row: dict) -> float:
 
 @router.get("/api/government-revenue/events")
 def events(
-    mode: str = Query(default="changes", pattern=r"^(changes|opportunities|recompetes)$"),
+    mode: str = Query(default="changes", pattern=r"^(changes|awards|opportunities|recompetes)$"),
     q: str | None = Query(default=None, min_length=1, max_length=120),
     ticker: str | None = Query(default=None),
     agency_id: str | None = Query(default=None, min_length=1, max_length=120),
@@ -471,13 +493,15 @@ def events(
     evidence_class: str | None = Query(default=None, min_length=1, max_length=60),
     impact: str | None = Query(default=None, pattern=r"^(high|medium|low|unknown)$"),
     deadline: str = Query(default="all", pattern=r"^(7d|30d|90d|540d|all)$"),
-    scope: str = Query(default="mapped", pattern=r"^(mapped|all)$"),
+    scope: str | None = Query(default=None, pattern=r"^(mapped|all)$"),
     sort: str = Query(default="priority", pattern=r"^(priority|newest|critical_date|largest_official_amount)$"),
     cursor: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> dict:
     """Filter the prebuilt event ledger without recalculating intelligence."""
     source = _procurement_workspace(_load())
+    cursor_version = _workspace_cursor_version(source)
+    effective_scope = scope or ("all" if mode == "awards" else "mapped")
     ticker = _validated_ticker(ticker)
     needle = q.casefold().strip() if q else None
     agency_needle = agency_id.casefold().strip() if agency_id else None
@@ -507,16 +531,19 @@ def events(
             continue
         if mode == "opportunities" and raw.get("kind") != "opportunity":
             continue
+        if mode == "awards" and raw.get("kind") != "award_change":
+            continue
         if mode == "recompetes" and raw.get("kind") != "recompete":
             continue
         impacts = raw.get("listed_company_impacts") or []
-        if scope == "mapped" and not impacts:
+        if effective_scope == "mapped" and not impacts:
             continue
         if ticker and raw.get("primary_ticker") != ticker and not any(
             item.get("ticker") == ticker for item in impacts if isinstance(item, dict)
         ):
             continue
-        agency_name = str((raw.get("agency") or {}).get("department_name") or "")
+        agency = raw.get("agency") or {}
+        agency_name = str(agency.get("department_name") or agency.get("name") or "")
         if agency_needle and agency_needle not in agency_name.casefold():
             continue
         raw_notice_type = str((raw.get("opportunity") or {}).get("notice_type") or "")
@@ -549,6 +576,7 @@ def events(
             if not isinstance(days, int) or days < 0 or days > deadline_days:
                 continue
         if needle:
+            award_change = raw.get("award_change") or {}
             haystack = " ".join([
                 str(raw.get("event_id") or ""),
                 str(raw.get("record_id") or ""),
@@ -556,6 +584,13 @@ def events(
                 agency_name,
                 str(raw.get("primary_ticker") or ""),
                 str((raw.get("change") or {}).get("what_changed_en") or ""),
+                str(award_change.get("award_key") or ""),
+                str(award_change.get("generated_award_id") or ""),
+                str(award_change.get("piid") or ""),
+                str(award_change.get("action_id") or ""),
+                str(award_change.get("recipient_name") or ""),
+                str(award_change.get("event_type") or ""),
+                str(award_change.get("source_rail") or ""),
             ]).casefold()
             if needle not in haystack:
                 continue
@@ -569,7 +604,7 @@ def events(
         rows.sort(key=_event_primary_amount, reverse=True)
     # priority retains the audited order already serialized by the engine.
 
-    offset = _decode_cursor(cursor)
+    offset = _decode_cursor(cursor, expected_version=cursor_version)
     total = len(rows)
     page = rows[offset:offset + limit]
     next_offset = offset + len(page)
@@ -583,10 +618,10 @@ def events(
         "query": {
             "mode": mode, "q": q, "ticker": ticker, "agency_id": agency_id,
             "notice_type": notice_type, "evidence_class": evidence_class,
-            "impact": impact, "deadline": deadline, "scope": scope, "sort": sort,
+            "impact": impact, "deadline": deadline, "scope": effective_scope, "sort": sort,
         },
         "events": [_public_workspace_event(row) for row in page],
-        "next_cursor": _encode_cursor(next_offset) if next_offset < total else None,
+        "next_cursor": _encode_cursor(next_offset, version=cursor_version) if next_offset < total else None,
         "total": total,
     }
 

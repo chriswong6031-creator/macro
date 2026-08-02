@@ -15469,6 +15469,81 @@ artifacts:
       and funding changes across collection runs. It is the revision tape behind the
       workbench's what-changed view and is not an alpha surface.
 
+  government-revenue-award-event-snapshots:
+    path: data/government_revenue/award_event_snapshots.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.award_event_snapshot.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/metrics.py, engine/government_revenue/award_events.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Immutable direct award-detail observation versions for the forward award-event
+      projector. Every row carries an exact canonical retrieval receipt reference and
+      response hash; discovery-query tickers are coverage metadata, never issuer proof.
+      The collector writes this ledger before the activation state and only a complete
+      committed bundle may be folded by the live projection lane. Infrastructure/context
+      only: no score, rank, sizing, gating, candidate origination, or Prophet authority.
+
+  government-revenue-award-action-versions:
+    path: data/government_revenue/award_action_versions.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.award_action_version.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/metrics.py, engine/government_revenue/award_events.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Immutable direct USAspending transaction/action versions for the receipt-bound
+      forward event projector. Corrections, retractions, and deobligations remain
+      separately observed rather than being silently merged into legacy context tables.
+      The collector writes this ledger before the activation state and the live lane
+      accepts only a complete committed bundle. Infrastructure/context only: no score,
+      rank, sizing, gating, candidate origination, or Prophet authority.
+
+  government-revenue-award-event-projection-state:
+    path: data/government_revenue/award_event_projection_state.json
+    format: json
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: last_observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.award_event_projection_state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/metrics.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Forward-only activation receipt for the award-event spine. It remains baseline
+      until a complete configured-universe, receipt-bound collection succeeds; the
+      collector writes it only after both immutable event ledgers. Missing, corrupt, or
+      incomplete state withholds events rather than falling back to mutable award data.
+      Operational infrastructure/context only, never an authority, score, rank, size,
+      gate, candidate originator, or Prophet signal source.
+
   government-revenue-ingest-status:
     path: data/government_revenue/ingest_status.json
     format: json
@@ -15529,7 +15604,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [collectors/usaspending_awards.py]
+    consumers: [collectors/usaspending_awards.py, engine/government_revenue/metrics.py, engine/government_revenue/award_events.py, scripts/build_government_revenue.py]
     external_consumers: []
     notes: >
       Append-only, hash-only USAspending retrieval-provenance receipt ledger for
@@ -15697,7 +15772,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 36
-    schema: government_procurement_workspace.v1
+    schema: government_procurement_workspace.v2
     tier: display
     horizon_role: context
     weights: none
@@ -15741,7 +15816,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 36
-    schema: government_procurement_workspace.v1
+    schema: government_procurement_workspace.v2
     tier: display
     horizon_role: context
     weights: none

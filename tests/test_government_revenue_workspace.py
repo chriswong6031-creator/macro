@@ -1,10 +1,17 @@
 """Contract tests for the delta-first procurement workspace."""
 from __future__ import annotations
 
+import copy
+
 import pandas as pd
 
+import engine.government_revenue.workspace as workspace_module
+from engine.government_revenue.award_events import build_award_change_events
 from engine.government_revenue.opportunities import build_opportunity_intelligence
-from engine.government_revenue.workspace import build_procurement_workspace
+from engine.government_revenue.workspace import (
+    build_procurement_workspace,
+    is_valid_procurement_workspace,
+)
 from tests.test_government_revenue_opportunities import _company_payloads, _write_fixture
 
 
@@ -40,6 +47,34 @@ def _workspace(tmp_path):
     )
 
 
+def _award_change_event() -> dict:
+    events = build_award_change_events(
+        pd.DataFrame([{
+            "generated_unique_award_id": "WORKSPACE-AWARD-1",
+            "award_id": "WORKSPACE-PIID-1",
+            "recipient_name": "Workspace Defense Systems",
+            "awarding_agency": "Department of Test",
+            "known_at": "2026-07-30T12:00:00Z",
+            "effective_at": "2026-07-29T00:00:00Z",
+            "event_eligible": True,
+            "source_receipt_id": "workspace-award-receipt-1",
+            "source_url": "https://api.usaspending.gov/api/v2/awards/WORKSPACE-AWARD-1/",
+            "source_response_sha256": "a" * 64,
+            "receipt_verified": True,
+            "snapshot_content_sha256": "b" * 64,
+            "current_award_amount": 100.0,
+            "potential_award_amount": 250.0,
+            "total_obligated_amount": 20.0,
+            "start_date": "2026-07-29T00:00:00Z",
+            "end_date": "2027-07-29T00:00:00Z",
+        }]),
+        pd.DataFrame(),
+        as_of="2026-07-31",
+    )
+    assert len(events) == 1
+    return events[0]
+
+
 def test_workspace_exposes_exact_deadline_diff_and_official_receipt(tmp_path):
     workspace = _workspace(tmp_path)
     event = next(
@@ -49,7 +84,9 @@ def test_workspace_exposes_exact_deadline_diff_and_official_receipt(tmp_path):
         and row["change"]["type"] == "deadline_changed"
     )
 
-    assert workspace["schema_version"] == "government_procurement_workspace.v1"
+    assert workspace["schema_version"] == "government_procurement_workspace.v2"
+    assert workspace["event_contract"] == "government_procurement_event.v2"
+    assert event["award_change"] is None
     assert event["change"]["changed_fields"] == [
         {
             "field": "notice_type",
@@ -67,8 +104,8 @@ def test_workspace_exposes_exact_deadline_diff_and_official_receipt(tmp_path):
         },
         {
             "field": "resource_links",
-            "before": [{"url": "https://sam.gov/file/one"}],
-            "after": [{"url": "https://sam.gov/file/two"}],
+            "before": ['{"url":"https://sam.gov/file/one"}'],
+            "after": ['{"url":"https://sam.gov/file/two"}'],
             "semantic": "official",
             "source_ref": "https://sam.gov/opp/opp-1/view",
         },
@@ -84,6 +121,36 @@ def test_workspace_exposes_exact_deadline_diff_and_official_receipt(tmp_path):
     )
     assert posted["opportunity"]["notice_type"] == "Presolicitation"
     assert event["opportunity"]["notice_type"] == "Solicitation"
+    assert is_valid_procurement_workspace(workspace)
+
+
+def test_workspace_contract_rejects_uncontracted_opportunity_and_recompete_fields(tmp_path):
+    workspace = _workspace(tmp_path)
+    opportunity = next(row for row in workspace["events"] if row["kind"] == "opportunity")
+    recompete = next(row for row in workspace["events"] if row["kind"] == "recompete")
+
+    poisoned_opportunity = copy.deepcopy(workspace)
+    target = next(
+        row for row in poisoned_opportunity["events"]
+        if row["event_id"] == opportunity["event_id"]
+    )
+    target["opportunity"]["raw_response"] = {"private": "must-not-publish"}
+    assert is_valid_procurement_workspace(poisoned_opportunity) is False
+
+    poisoned_recompete = copy.deepcopy(workspace)
+    target = next(
+        row for row in poisoned_recompete["events"]
+        if row["event_id"] == recompete["event_id"]
+    )
+    target["recompete"]["model_prediction"] = 0.99
+    assert is_valid_procurement_workspace(poisoned_recompete) is False
+
+    for section in ("freshness", "coverage", "facets"):
+        poisoned_metadata = copy.deepcopy(workspace)
+        poisoned_metadata[section]["source_response_json"] = {
+            "recipient_uei": "UEI-MUST-NOT-PUBLISH",
+        }
+        assert is_valid_procurement_workspace(poisoned_metadata) is False
 
 
 def test_workspace_open_flag_requires_verified_current_active_notice():
@@ -256,6 +323,168 @@ def test_display_priority_is_deterministic_and_cannot_create_authority(tmp_path)
     }
     assert first["coverage"]["derived_expiry_watches"] == 1
     assert first["coverage"]["official_recompete_matches"] == 0
+
+
+def test_workspace_copies_validated_award_events_and_dedupes_exact_ids():
+    award_event = _award_change_event()
+    original = copy.deepcopy(award_event)
+    contradictory = copy.deepcopy(award_event)
+    contradictory["award_change"]["source_rail"] = "usaspending_award_action"
+
+    workspace = build_procurement_workspace(
+        {
+            "events": [],
+            "opportunities": [],
+            "freshness": {"status": "ok"},
+            "market": {"active_opportunities": 0},
+        },
+        [],
+        as_of="2026-07-31",
+        known_at="2026-07-31T23:59:59Z",
+        award_freshness={"status": "ok"},
+        award_events=[award_event, copy.deepcopy(award_event), contradictory],
+        award_event_freshness={"status": "ok", "records_visible": 1},
+    )
+
+    assert award_event == original
+    award_rows = [row for row in workspace["events"] if row["kind"] == "award_change"]
+    assert len(award_rows) == 1
+    assert award_rows[0] == original
+    assert award_rows[0] is not award_event
+    assert workspace["freshness"]["award_events"] == {"status": "ok", "records_visible": 1}
+    assert workspace["coverage"]["award_events"] == {
+        "input": 3,
+        "validated": 2,
+        "accepted_after_exact_id_dedupe": 1,
+        "rejected": 1,
+        "exact_id_duplicates": 1,
+        "conflicted_ids": 0,
+        "conflicted_rows": 0,
+        "dropped_by_global_identity_conflict": 0,
+        "available_before_cap": 1,
+        "visible": 1,
+        "truncated": 0,
+    }
+    assert workspace["coverage"]["by_kind"]["award_change"] == {
+        "available_before_cap": 1,
+        "visible": 1,
+    }
+    assert workspace["coverage"]["by_award_source_rail"]["usaspending_award_snapshot"] == {
+        "available_before_cap": 1,
+        "visible": 1,
+    }
+    assert workspace["coverage"]["by_mapping_class"]["unmapped"] == {
+        "available_before_cap": 1,
+        "visible": 1,
+    }
+    assert workspace["facets"]["kinds"] == [{"id": "award_change", "count": 1}]
+    assert workspace["facets"]["award_source_rails"] == [
+        {"id": "usaspending_award_snapshot", "count": 1}
+    ]
+    assert workspace["facets"]["agencies"] == [
+        {"id": "Department of Test", "label": "Department of Test", "count": 1}
+    ]
+
+
+def test_workspace_rejects_conflicting_payloads_claiming_the_same_award_event_id():
+    first = _award_change_event()
+    contradictory = copy.deepcopy(first)
+    contradictory["title_original"] = "A conflicting source payload"
+
+    workspace = build_procurement_workspace(
+        {
+            "events": [],
+            "opportunities": [],
+            "freshness": {"status": "ok"},
+            "market": {"active_opportunities": 0},
+        },
+        [],
+        as_of="2026-07-31",
+        known_at="2026-07-31T23:59:59Z",
+        award_freshness={"status": "ok"},
+        award_events=[first, contradictory],
+        award_event_freshness={"status": "ok"},
+    )
+
+    assert workspace["events"] == []
+    assert workspace["coverage"]["award_events"] == {
+        "input": 2,
+        "validated": 2,
+        "accepted_after_exact_id_dedupe": 0,
+        "rejected": 2,
+        "exact_id_duplicates": 0,
+        "conflicted_ids": 1,
+        "conflicted_rows": 2,
+        "dropped_by_global_identity_conflict": 0,
+        "available_before_cap": 0,
+        "visible": 0,
+        "truncated": 0,
+    }
+
+
+def test_workspace_rejects_nested_uncontracted_award_receipt_fields():
+    poisoned = _award_change_event()
+    poisoned["evidence"]["receipts"][0]["raw_response"] = "must-not-publish"
+
+    workspace = build_procurement_workspace(
+        {"events": [], "opportunities": [], "freshness": {"status": "ok"}},
+        [],
+        as_of="2026-07-31",
+        known_at="2026-07-31T23:59:59Z",
+        award_freshness={"status": "ok"},
+        award_events=[poisoned],
+        award_event_freshness={"status": "ok"},
+    )
+
+    assert workspace["events"] == []
+    assert workspace["coverage"]["award_events"]["validated"] == 0
+    assert workspace["coverage"]["award_events"]["rejected"] == 1
+
+
+def test_workspace_applies_one_global_cap_after_award_merge(monkeypatch):
+    award_event = _award_change_event()
+    award_event["display_priority"]["score"] = 100.0
+    award_event["display_priority"]["new_information"] = 1.0
+    award_event["display_priority"]["company_materiality"] = 1.0
+    award_event["display_priority"]["evidence_quality"] = 1.0
+    company = _company_payloads()[0]
+    company["metrics"] = {"ttm_obligations": 1_000_000}
+    company["confidence"] = {"level": "medium"}
+    company["recompete_candidates"] = [{
+        "award_id": "PIID-ONE",
+        "generated_award_id": "CONT-AWD-ONE",
+        "award_key": "CONT-AWD-ONE",
+        "end_date": "2026-12-31",
+        "days_to_end": 153,
+        "total_obligated": 10,
+        "known_at": "2026-07-30T12:00:00Z",
+        "source_url": "https://www.usaspending.gov/award/CONT-AWD-ONE/",
+    }]
+    monkeypatch.setattr(workspace_module, "MAX_WORKSPACE_EVENTS", 1)
+
+    workspace = build_procurement_workspace(
+        {
+            "events": [],
+            "opportunities": [],
+            "freshness": {"status": "ok"},
+            "market": {"active_opportunities": 0},
+        },
+        [company],
+        as_of="2026-07-31",
+        known_at="2026-07-31T23:59:59Z",
+        award_freshness={"status": "ok"},
+        award_events=[award_event],
+        award_event_freshness={"status": "ok"},
+    )
+
+    assert [row["kind"] for row in workspace["events"]] == ["award_change"]
+    assert workspace["coverage"]["events_available_before_cap"] == 2
+    assert workspace["coverage"]["events_visible"] == 1
+    assert workspace["coverage"]["events_truncated"] == 1
+    assert workspace["coverage"]["by_kind"]["recompete"] == {
+        "available_before_cap": 1,
+        "visible": 0,
+    }
 
 
 def test_document_revision_stays_distinct_from_official_amendment(tmp_path):

@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 553, (
-        f"Expected 553 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 556, (
+        f"Expected 556 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Government Revenue Foresight Wave 4 added receipt-bound award-event snapshot,"
+        " action-version, and activation-state artifacts = 553->556;"
         " (Capital Structure Wave 2A added canonical and public observed-filing-state"
         " projections = 551->553;"
         " (Government Revenue Foresight W2 added USAspending hash-only collection receipt = 550->551;"

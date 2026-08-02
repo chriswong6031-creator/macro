@@ -62,6 +62,24 @@ DEFAULT_USER_AGENT = "MastermindX Government Revenue Foresight contact@mastermin
 INGEST_STATUS_SCHEMA = "government_revenue.ingest_status.v2"
 COLLECTION_RECEIPT_SCHEMA = "government_revenue.collection_receipt.v1"
 COLLECTION_RECEIPTS_FILENAME = "collection_receipts.jsonl"
+AWARD_EVENT_PROJECTION_STATE_SCHEMA = "government_revenue.award_event_projection_state.v1"
+AWARD_EVENT_PROJECTION_STATE_FILENAME = "award_event_projection_state.json"
+AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA = "government_revenue.award_event_coverage_manifest.v1"
+AWARD_EVENT_PROJECTION_GENERATION_SCHEMA = (
+    "government_revenue.award_event_projection_generation.v1"
+)
+AWARD_EVENT_PROJECTION_GENERATION_FIELDS = (
+    "projection_generation_id",
+    "award_event_snapshots_semantic_sha256",
+    "award_event_snapshots_row_count",
+    "award_action_versions_semantic_sha256",
+    "award_action_versions_row_count",
+    "projection_semantic_sha256",
+)
+AWARD_EVENT_COVERAGE_SCOPE = (
+    "USAspending award-detail and transaction observations collected from bounded "
+    "recipient-query discovery; not a complete federal procurement corpus or issuer attribution."
+)
 log = logging.getLogger(__name__)
 
 AWARD_COLUMNS = [
@@ -159,6 +177,146 @@ SNAPSHOT_COLUMNS = [
     "detail_source_url",
 ]
 
+# These ledgers are deliberately separate from the long-lived metrics tables
+# above.  The regular award state merges search/detail fields and actions retain
+# only their first observation, both of which are useful for company context but
+# unsafe as a public before/after event source.  Event rows are direct-source,
+# receipt-bound versions only; the discovery query is kept as coverage metadata
+# and can never masquerade as a listed-company mapping.
+AWARD_EVENT_SNAPSHOT_COLUMNS = [
+    "discovery_query_ticker",
+    "generated_unique_award_id",
+    "generated_award_id",
+    "award_key",
+    "award_id",
+    "piid",
+    "recipient_name",
+    "recipient_uei",
+    "description",
+    "start_date",
+    "end_date",
+    "base_obligation_date",
+    "last_modified_date",
+    "total_obligation",
+    "total_outlay",
+    "current_award_amount",
+    "potential_award_amount",
+    "awarding_agency",
+    "awarding_sub_agency",
+    "funding_agency",
+    "funding_sub_agency",
+    "award_type",
+    "naics",
+    "psc",
+    "program",
+    "dod_acquisition_program",
+    "dod_claimant_program",
+    "major_program",
+    "program_acronym",
+    "source_field_presence",
+    "event_state_sha256",
+    "known_at",
+    "effective_at",
+    "first_seen_at",
+    "source_url",
+    "source_receipt_id",
+    "source_response_sha256",
+    "receipt_verified",
+    "event_eligible",
+    "coverage_scope",
+]
+AWARD_ACTION_VERSION_COLUMNS = [
+    "discovery_query_ticker",
+    "generated_unique_award_id",
+    "generated_award_id",
+    "award_key",
+    "award_id",
+    "piid",
+    "recipient_name",
+    "recipient_uei",
+    "action_id",
+    "source_action_id",
+    "action_date",
+    "effective_at",
+    "action_type",
+    "action_type_description",
+    "modification_number",
+    "federal_action_obligation",
+    "description",
+    "period_of_performance_start_date",
+    "period_of_performance_current_end_date",
+    "end_date",
+    "awarding_agency",
+    "awarding_sub_agency",
+    "action_semantic",
+    "source_semantic",
+    "action_status",
+    "transaction_status",
+    "action_relationship",
+    "transaction_relationship",
+    "modification_relationship",
+    "revision_type",
+    "correction_status",
+    "retraction_status",
+    "is_retraction",
+    "action_retracted",
+    "retracted",
+    "rescinded",
+    "is_correction",
+    "action_corrected",
+    "corrected",
+    "source_field_presence",
+    "event_state_sha256",
+    "known_at",
+    "first_seen_at",
+    "source_url",
+    "source_receipt_id",
+    "source_response_sha256",
+    "receipt_verified",
+    "event_eligible",
+    "coverage_scope",
+]
+
+# Only these fields make a version distinct.  Receipt/retrieval metadata and
+# fuzzy discovery-query labels must never manufacture a source-state revision.
+AWARD_EVENT_SNAPSHOT_STATE_FIELDS = tuple(
+    column
+    for column in AWARD_EVENT_SNAPSHOT_COLUMNS
+    if column
+    not in {
+        "discovery_query_ticker",
+        "source_field_presence",
+        "event_state_sha256",
+        "known_at",
+        "effective_at",
+        "first_seen_at",
+        "source_url",
+        "source_receipt_id",
+        "source_response_sha256",
+        "receipt_verified",
+        "event_eligible",
+        "coverage_scope",
+    }
+)
+AWARD_ACTION_VERSION_STATE_FIELDS = tuple(
+    column
+    for column in AWARD_ACTION_VERSION_COLUMNS
+    if column
+    not in {
+        "discovery_query_ticker",
+        "source_field_presence",
+        "event_state_sha256",
+        "known_at",
+        "first_seen_at",
+        "source_url",
+        "source_receipt_id",
+        "source_response_sha256",
+        "receipt_verified",
+        "event_eligible",
+        "coverage_scope",
+    }
+)
+
 
 def _canonical_json_bytes(value: Any) -> bytes:
     """Canonical bytes for receipt binding; request headers/body never persist raw."""
@@ -198,6 +356,74 @@ def _bool_or_none(value: Any) -> bool | None:
     return None
 
 
+def award_event_coverage_manifest(
+    entities: dict[str, Any],
+    *,
+    lookback_days: int,
+    page_size: int,
+    max_pages: int,
+    max_action_awards_per_entity: int,
+    action_page_size: int,
+    max_action_pages: int,
+) -> dict[str, Any]:
+    """Describe the fixed *declared* coverage contract for forward events.
+
+    This is deliberately a configuration manifest rather than a run manifest:
+    it records the rolling-window rule, not today's concrete start/end dates.
+    Including those dates would force a full rebaseline every day even when the
+    eligible universe and collection contract had not changed.
+    """
+
+    entity_queries: list[dict[str, str]] = []
+    for raw_ticker, raw_entity in sorted(entities.items(), key=lambda item: str(item[0]).upper()):
+        ticker = str(raw_ticker).upper()
+        entity = raw_entity if isinstance(raw_entity, dict) else {}
+        query = _text(
+            entity.get("recipient_search_text")
+            or entity.get("name")
+            or ticker
+        ) or ticker
+        entity_queries.append({
+            "ticker": ticker,
+            "recipient_search_text": query,
+        })
+    return {
+        "schema_version": AWARD_EVENT_COVERAGE_MANIFEST_SCHEMA,
+        "coverage_scope": AWARD_EVENT_COVERAGE_SCOPE,
+        "entities": entity_queries,
+        "award_discovery": {
+            "endpoint": AWARDS_URL,
+            "subawards": False,
+            "award_type_codes": list(CONTRACT_TYPES),
+            "time_window": {
+                "kind": "rolling_as_of_minus_lookback_days_to_as_of",
+                "lookback_days": int(lookback_days),
+            },
+            "fields": list(AWARD_FIELDS),
+            "order": "desc",
+            "sort": "Award Amount",
+            "page_size": int(page_size),
+            "max_pages": int(max_pages),
+        },
+        "award_detail_sample": {
+            "endpoint_template": AWARD_DETAIL_URL,
+            "selection": "unique_award_key_desc_total_obligated_within_discovery_sample",
+            "max_awards_per_entity": int(max_action_awards_per_entity),
+        },
+        "action_history_sample": {
+            "endpoint": TRANSACTIONS_URL,
+            "page_size": int(action_page_size),
+            "max_pages_per_award": int(max_action_pages),
+        },
+    }
+
+
+def award_event_coverage_manifest_id(manifest: dict[str, Any]) -> str:
+    """Return the content-addressed ID used to bind an activation state."""
+
+    return "award-coverage-" + _sha256_json(manifest)
+
+
 def _as_int(value: Any, default: int = 0) -> int:
     try:
         return int(value)
@@ -222,6 +448,516 @@ def _text(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text if text and text.lower() not in {"none", "nan", "nat"} else None
+
+
+def _event_clean(value: Any) -> Any:
+    """Return a deterministic scalar for event state hashing/persistence."""
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    if isinstance(value, datetime):
+        return _utc_iso(value)
+    if isinstance(value, float):
+        return value if pd.notna(value) else None
+    if isinstance(value, (str, int, bool)):
+        return value
+    if hasattr(value, "item"):
+        try:
+            return _event_clean(value.item())
+        except (TypeError, ValueError):
+            pass
+    return str(value)
+
+
+def _present(mapping: dict | None, *names: str) -> tuple[bool, Any]:
+    """Return whether an official source explicitly carried one of ``names``.
+
+    Explicit ``null`` is a source statement and differs from a field omitted by
+    the endpoint.  The caller records this distinction in ``source_field_presence``
+    before later state-versioning carries omitted values forward.
+    """
+    if not isinstance(mapping, dict):
+        return False, None
+    for name in names:
+        if name in mapping:
+            return True, mapping[name]
+    return False, None
+
+
+def _event_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    return _text(value)
+
+
+def _event_number(value: Any) -> float | None:
+    if value is None:
+        return None
+    return _float(value)
+
+
+def _assign_event_text(
+    row: dict[str, Any],
+    present: set[str],
+    field: str,
+    mapping: dict | None,
+    *names: str,
+) -> None:
+    exists, value = _present(mapping, *names)
+    if not exists:
+        return
+    cleaned = _event_text(value)
+    # A blank string is not a reliable field-clear signal.  A real JSON null is.
+    if value is not None and cleaned is None:
+        return
+    row[field] = cleaned
+    present.add(field)
+
+
+def _assign_event_number(
+    row: dict[str, Any],
+    present: set[str],
+    field: str,
+    mapping: dict | None,
+    *names: str,
+) -> None:
+    exists, value = _present(mapping, *names)
+    if not exists:
+        return
+    cleaned = _event_number(value)
+    # Malformed numeric text is not evidence of a reset to null.
+    if value is not None and cleaned is None:
+        return
+    row[field] = cleaned
+    present.add(field)
+
+
+def _assign_event_classification(
+    row: dict[str, Any],
+    present: set[str],
+    field: str,
+    mapping: dict | None,
+    *names: str,
+) -> None:
+    """Keep official NAICS/PSC codes rather than serializing source objects."""
+    exists, value = _present(mapping, *names)
+    if not exists:
+        return
+    if value is None:
+        row[field] = None
+        present.add(field)
+        return
+    code, _description = _classification_parts(value)
+    if code is None:
+        return
+    row[field] = code
+    present.add(field)
+
+
+def _assign_event_raw(
+    row: dict[str, Any],
+    present: set[str],
+    field: str,
+    mapping: dict | None,
+    *names: str,
+) -> None:
+    exists, value = _present(mapping, *names)
+    if not exists:
+        return
+    row[field] = _event_clean(value)
+    present.add(field)
+
+
+def _source_field_presence(fields: set[str]) -> str:
+    """Persist a stable, parquet-safe manifest of directly observed fields."""
+    return json.dumps(sorted(fields), separators=(",", ":"))
+
+
+def _source_presence_set(row: dict | pd.Series) -> set[str]:
+    value = row.get("source_field_presence")
+    if isinstance(value, (list, tuple, set)):
+        return {str(item) for item in value if _text(item)}
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+        except ValueError:
+            return set()
+        if isinstance(decoded, list):
+            return {str(item) for item in decoded if _text(item)}
+    return set()
+
+
+def _event_state_sha256(row: dict | pd.Series, fields: Iterable[str]) -> str:
+    """Hash only semantic direct-source state, never a receipt or retrieval clock."""
+    payload = {field: _event_clean(row.get(field)) for field in fields}
+    return _sha256_json(payload)
+
+
+def _projection_generation_value(value: Any) -> Any:
+    """Canonicalize one persisted event cell for a cross-artifact digest.
+
+    This deliberately handles the full persisted event schema, not only fields
+    that happen to be projected today.  That way a row's receipt binding,
+    eligibility, source-presence declaration, and every other persisted
+    projection input are part of the generation contract.  Containers are
+    normalized recursively because some official action semantic fields can be
+    structured values.
+    """
+    if value is None:
+        return None
+    # Check missingness before datetime handling: ``pd.NaT`` is a datetime
+    # subclass but cannot safely be converted through ``astimezone``.
+    try:
+        if bool(pd.isna(value)):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, dict):
+        return {
+            str(key): _projection_generation_value(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_projection_generation_value(item) for item in value]
+    if isinstance(value, set):
+        normalized = [_projection_generation_value(item) for item in value]
+        return sorted(normalized, key=_canonical_json_bytes)
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
+    if isinstance(value, datetime):
+        return _utc_iso(value)
+    if isinstance(value, float):
+        # A non-finite number cannot be represented by canonical JSON and is
+        # not a valid numeric projection value.  Keep its textual identity so
+        # a tampered/corrupt artifact still changes the digest deterministically.
+        return value if value not in {float("inf"), float("-inf")} else str(value)
+    if isinstance(value, (str, int, bool)):
+        return value
+    if hasattr(value, "item"):
+        try:
+            return _projection_generation_value(value.item())
+        except (TypeError, ValueError):
+            pass
+    return str(value)
+
+
+def _award_event_ledger_generation(
+    frame: pd.DataFrame,
+    *,
+    ledger: str,
+    columns: list[str],
+) -> tuple[int, str]:
+    """Return an order-independent semantic count/digest for one event ledger.
+
+    A ledger row is represented by every canonical persisted column.  Canonical
+    JSON record bytes are sorted before hashing, so harmless parquet row order
+    changes do not create a false generation while duplicated rows still count
+    as distinct records.  Missing canonical columns are a verification error;
+    they must never be silently treated as nulls by a downstream projector.
+    """
+    if not isinstance(frame, pd.DataFrame):
+        raise TypeError(f"{ledger} must be a pandas DataFrame")
+    missing = [column for column in columns if column not in frame.columns]
+    if missing:
+        raise ValueError(f"{ledger} is missing canonical projection columns: {', '.join(missing)}")
+
+    records = [
+        _canonical_json_bytes({
+            column: _projection_generation_value(row.get(column))
+            for column in columns
+        })
+        for _, row in frame.loc[:, columns].iterrows()
+    ]
+    records.sort()
+    hasher = hashlib.sha256()
+    hasher.update(_canonical_json_bytes({
+        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
+        "ledger": ledger,
+        "columns": columns,
+        "row_count": len(records),
+    }))
+    for record in records:
+        hasher.update(b"\n")
+        hasher.update(record)
+    return len(records), hasher.hexdigest()
+
+
+def award_event_projection_generation(
+    award_event_snapshots: pd.DataFrame,
+    award_action_versions: pd.DataFrame,
+) -> dict[str, str | int]:
+    """Build the deterministic binding for the two forward event ledgers.
+
+    Consumers must recompute this exact helper over their full, unfiltered
+    parquet frames and compare every returned field with
+    ``award_event_projection_state.json`` before filtering to an ``as_of``.
+    The two individual semantic digests catch a partial write; the combined
+    digest makes the pair a single immutable projection generation.
+    """
+    snapshot_count, snapshot_digest = _award_event_ledger_generation(
+        award_event_snapshots,
+        ledger="award_event_snapshots",
+        columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+    )
+    action_count, action_digest = _award_event_ledger_generation(
+        award_action_versions,
+        ledger="award_action_versions",
+        columns=AWARD_ACTION_VERSION_COLUMNS,
+    )
+    combined_payload = {
+        "schema_version": AWARD_EVENT_PROJECTION_GENERATION_SCHEMA,
+        "award_event_snapshots": {
+            "columns": AWARD_EVENT_SNAPSHOT_COLUMNS,
+            "row_count": snapshot_count,
+            "semantic_sha256": snapshot_digest,
+        },
+        "award_action_versions": {
+            "columns": AWARD_ACTION_VERSION_COLUMNS,
+            "row_count": action_count,
+            "semantic_sha256": action_digest,
+        },
+    }
+    combined_digest = _sha256_json(combined_payload)
+    return {
+        "projection_generation_id": f"award-event-{combined_digest[:24]}",
+        "award_event_snapshots_semantic_sha256": snapshot_digest,
+        "award_event_snapshots_row_count": snapshot_count,
+        "award_action_versions_semantic_sha256": action_digest,
+        "award_action_versions_row_count": action_count,
+        "projection_semantic_sha256": combined_digest,
+    }
+
+
+def award_event_projection_generation_matches(
+    state: dict | None,
+    award_event_snapshots: pd.DataFrame,
+    award_action_versions: pd.DataFrame,
+) -> bool:
+    """Return whether a loaded ledger pair exactly matches its state binding."""
+    if not isinstance(state, dict):
+        return False
+    try:
+        generation = award_event_projection_generation(
+            award_event_snapshots,
+            award_action_versions,
+        )
+    except (TypeError, ValueError):
+        return False
+    return all(state.get(field) == generation[field] for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS)
+
+
+def _receipt_binding(receipt: dict | None, *, rail: str) -> tuple[str, str, str]:
+    """Extract the exact receipt values an event row must carry."""
+    if not isinstance(receipt, dict):
+        raise ValueError("award event source row is missing its collection receipt")
+    receipt_id = _text(receipt.get("receipt_id"))
+    response_sha = _text(receipt.get("response_sha256"))
+    endpoint = _text(receipt.get("endpoint"))
+    if (
+        _text(receipt.get("rail")) != rail
+        or not receipt_id
+        or not response_sha
+        or not re.fullmatch(r"[0-9a-fA-F]{64}", response_sha)
+        or not endpoint
+    ):
+        raise ValueError("award event source row has an invalid collection receipt")
+    return receipt_id, response_sha.lower(), endpoint
+
+
+def _event_identity_from_award(award: dict) -> dict[str, Any]:
+    """Keep procedure-bound award identity without importing fuzzy recipient data."""
+    generated = _text(award.get("generated_award_id"))
+    award_id = _text(award.get("award_id"))
+    award_key = _text(award.get("award_key")) or _award_key(generated, award_id)
+    return {
+        "discovery_query_ticker": _text(award.get("ticker")),
+        "generated_unique_award_id": generated,
+        "generated_award_id": generated,
+        "award_key": award_key,
+        "award_id": award_id,
+        "piid": award_id,
+    }
+
+
+def normalize_award_event_snapshot(
+    detail: dict,
+    award: dict,
+    receipt: dict,
+    observed_at: str,
+    *,
+    event_eligible: bool,
+) -> dict:
+    """Normalize one direct award-detail observation for the event projector.
+
+    Search results remain an acquisition mechanism only.  Apart from the queried
+    award identity and discovery label, the event source is populated solely from
+    the exact award-detail response represented by ``receipt``.
+    """
+    receipt_id, response_sha, endpoint = _receipt_binding(receipt, rail="award_detail")
+    if not isinstance(detail, dict):
+        raise ValueError("award-detail event source must be an object")
+    row = {column: None for column in AWARD_EVENT_SNAPSHOT_COLUMNS}
+    row.update(_event_identity_from_award(award))
+    present: set[str] = set()
+    pop = detail.get("period_of_performance")
+    recipient = detail.get("recipient")
+    contract = detail.get("latest_transaction_contract_data")
+
+    _assign_event_text(row, present, "generated_unique_award_id", detail, "generated_unique_award_id")
+    _assign_event_text(row, present, "generated_award_id", detail, "generated_unique_award_id", "generated_award_id")
+    _assign_event_text(row, present, "award_id", detail, "piid", "award_id")
+    _assign_event_text(row, present, "piid", detail, "piid", "award_id")
+    _assign_event_text(row, present, "recipient_name", recipient, "recipient_name", "name")
+    _assign_event_text(row, present, "recipient_uei", recipient, "recipient_uei", "uei")
+    _assign_event_text(row, present, "description", detail, "description")
+    _assign_event_text(row, present, "start_date", pop, "start_date")
+    _assign_event_text(row, present, "end_date", pop, "end_date")
+    _assign_event_text(row, present, "last_modified_date", pop, "last_modified_date")
+    _assign_event_text(row, present, "base_obligation_date", detail, "base_obligation_date")
+    _assign_event_number(row, present, "total_obligation", detail, "total_obligation")
+    _assign_event_number(row, present, "total_outlay", detail, "total_outlay")
+    _assign_event_number(row, present, "current_award_amount", detail, "base_exercised_options")
+    _assign_event_number(row, present, "potential_award_amount", detail, "base_and_all_options")
+    _assign_event_text(row, present, "awarding_agency", detail, "awarding_agency")
+    _assign_event_text(row, present, "awarding_sub_agency", detail, "awarding_sub_agency")
+    _assign_event_text(row, present, "funding_agency", detail, "funding_agency")
+    _assign_event_text(row, present, "funding_sub_agency", detail, "funding_sub_agency")
+    _assign_event_text(row, present, "award_type", detail, "award_type", "contract_award_type")
+    _assign_event_classification(row, present, "naics", contract, "naics")
+    _assign_event_classification(row, present, "psc", contract, "product_or_service_code")
+    _assign_event_text(row, present, "dod_acquisition_program", contract, "dod_acquisition_program_description", "dod_acquisition_program")
+    _assign_event_text(row, present, "dod_claimant_program", contract, "dod_claimant_program_description", "dod_claimant_program")
+    _assign_event_text(row, present, "major_program", contract, "major_program")
+    _assign_event_text(row, present, "program_acronym", contract, "program_acronym")
+    row["program"] = next(
+        (
+            row.get(field)
+            for field in (
+                "dod_acquisition_program",
+                "major_program",
+                "program_acronym",
+                "dod_claimant_program",
+                "psc",
+            )
+            if row.get(field) is not None
+        ),
+        None,
+    )
+    if any(field in present for field in ("dod_acquisition_program", "major_program", "program_acronym", "dod_claimant_program", "psc")):
+        present.add("program")
+
+    generated = _text(row.get("generated_award_id")) or _text(row.get("generated_unique_award_id"))
+    award_id = _text(row.get("award_id")) or _text(row.get("piid"))
+    row["award_key"] = _award_key(generated, award_id) or row.get("award_key")
+    row["known_at"] = observed_at
+    row["effective_at"] = (
+        row.get("last_modified_date")
+        or row.get("base_obligation_date")
+        or row.get("start_date")
+    )
+    row["first_seen_at"] = observed_at
+    row["source_url"] = endpoint
+    row["source_receipt_id"] = receipt_id
+    row["source_response_sha256"] = response_sha
+    row["receipt_verified"] = True
+    row["event_eligible"] = bool(event_eligible)
+    row["coverage_scope"] = AWARD_EVENT_COVERAGE_SCOPE
+    row["source_field_presence"] = _source_field_presence(present)
+    row["event_state_sha256"] = _event_state_sha256(row, AWARD_EVENT_SNAPSHOT_STATE_FIELDS)
+    return {column: row.get(column) for column in AWARD_EVENT_SNAPSHOT_COLUMNS}
+
+
+def normalize_award_event_action(
+    raw: dict,
+    award: dict,
+    receipt: dict,
+    observed_at: str,
+    *,
+    event_eligible: bool,
+) -> dict | None:
+    """Normalize a receipt-bound native USAspending action version.
+
+    Rows without a source-issued action/transaction ID remain available to the
+    legacy context table but are intentionally excluded from the event spine.
+    """
+    if not isinstance(raw, dict):
+        return None
+    action_id = _text(raw.get("id") or raw.get("action_id"))
+    if not action_id:
+        return None
+    receipt_id, response_sha, endpoint = _receipt_binding(receipt, rail="actions")
+    row = {column: None for column in AWARD_ACTION_VERSION_COLUMNS}
+    row.update(_event_identity_from_award(award))
+    present: set[str] = {"action_id", "source_action_id"}
+    row["action_id"] = action_id
+    row["source_action_id"] = action_id
+    recipient = raw.get("recipient")
+
+    _assign_event_text(row, present, "award_id", raw, "award_id", "piid")
+    _assign_event_text(row, present, "piid", raw, "piid", "award_id")
+    _assign_event_text(row, present, "recipient_name", raw, "recipient_name")
+    _assign_event_text(row, present, "recipient_uei", raw, "recipient_uei")
+    _assign_event_text(row, present, "recipient_name", recipient, "recipient_name", "name")
+    _assign_event_text(row, present, "recipient_uei", recipient, "recipient_uei", "uei")
+    _assign_event_text(row, present, "action_date", raw, "action_date")
+    _assign_event_text(row, present, "action_type", raw, "action_type")
+    _assign_event_text(row, present, "action_type_description", raw, "action_type_description")
+    _assign_event_text(row, present, "modification_number", raw, "modification_number")
+    _assign_event_number(row, present, "federal_action_obligation", raw, "federal_action_obligation")
+    _assign_event_text(row, present, "description", raw, "description", "action_description")
+    _assign_event_text(row, present, "period_of_performance_start_date", raw, "period_of_performance_start_date")
+    _assign_event_text(row, present, "period_of_performance_current_end_date", raw, "period_of_performance_current_end_date")
+    _assign_event_text(row, present, "end_date", raw, "end_date")
+    _assign_event_text(row, present, "awarding_agency", raw, "awarding_agency")
+    _assign_event_text(row, present, "awarding_sub_agency", raw, "awarding_sub_agency")
+    for field in (
+        "action_semantic",
+        "source_semantic",
+        "action_status",
+        "transaction_status",
+        "action_relationship",
+        "transaction_relationship",
+        "modification_relationship",
+        "revision_type",
+        "correction_status",
+        "retraction_status",
+        "is_retraction",
+        "action_retracted",
+        "retracted",
+        "rescinded",
+        "is_correction",
+        "action_corrected",
+        "corrected",
+    ):
+        _assign_event_raw(row, present, field, raw, field)
+
+    generated = _text(raw.get("generated_unique_award_id") or raw.get("generated_award_id"))
+    if generated:
+        row["generated_unique_award_id"] = generated
+        row["generated_award_id"] = generated
+        present.update({"generated_unique_award_id", "generated_award_id"})
+    award_id = _text(row.get("award_id")) or _text(row.get("piid"))
+    row["award_key"] = _award_key(row.get("generated_award_id"), award_id) or row.get("award_key")
+    row["effective_at"] = row.get("action_date")
+    if "action_date" in present:
+        present.add("effective_at")
+    row["known_at"] = observed_at
+    row["first_seen_at"] = observed_at
+    row["source_url"] = endpoint
+    row["source_receipt_id"] = receipt_id
+    row["source_response_sha256"] = response_sha
+    row["receipt_verified"] = True
+    row["event_eligible"] = bool(event_eligible)
+    row["coverage_scope"] = AWARD_EVENT_COVERAGE_SCOPE
+    row["source_field_presence"] = _source_field_presence(present)
+    row["event_state_sha256"] = _event_state_sha256(row, AWARD_ACTION_VERSION_STATE_FIELDS)
+    return {column: row.get(column) for column in AWARD_ACTION_VERSION_COLUMNS}
 
 
 def _float(value: Any) -> float | None:
@@ -646,6 +1382,221 @@ def append_snapshot_versions(existing: pd.DataFrame, incoming: pd.DataFrame) -> 
     ).reindex(columns=SNAPSHOT_COLUMNS)
 
 
+def _event_key(row: dict | pd.Series, columns: Iterable[str]) -> tuple[str, ...] | None:
+    key = tuple(_text(row.get(column)) or "" for column in columns)
+    return key if all(key) else None
+
+
+def _event_known_sort(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+    return frame.assign(
+        _known=pd.to_datetime(frame.get("known_at"), utc=True, errors="coerce")
+    ).sort_values("_known", kind="stable")
+
+
+def _append_event_versions(
+    existing: pd.DataFrame,
+    incoming: pd.DataFrame,
+    *,
+    columns: list[str],
+    key_columns: tuple[str, ...],
+    state_fields: tuple[str, ...],
+) -> pd.DataFrame:
+    """Append direct-source state transitions without treating an omission as null.
+
+    Each incoming row carries the set of fields explicitly supplied by its
+    response.  For source omissions we carry the last asserted value forward
+    before hashing.  This means a quiet partial response cannot emit a fake
+    deletion, while a source-provided ``null`` remains a real version change.
+    """
+    accrued = existing.reindex(columns=columns).copy()
+    fresh = incoming.reindex(columns=columns).copy()
+    if fresh.empty:
+        return accrued.reset_index(drop=True)
+
+    latest: dict[tuple[str, ...], dict[str, Any]] = {}
+    retained: list[dict[str, Any]] = []
+    for _, prior in _event_known_sort(accrued).iterrows():
+        normalized = {column: _event_clean(prior.get(column)) for column in columns}
+        key = _event_key(normalized, key_columns)
+        if key is None:
+            # Do not silently make an unkeyed historical source record a public
+            # transition, but retain it as an accrued diagnostic row.
+            retained.append(normalized)
+            continue
+        normalized["event_state_sha256"] = _event_state_sha256(normalized, state_fields)
+        latest[key] = normalized
+        retained.append(normalized)
+
+    additions: list[dict[str, Any]] = []
+    for _, row in _event_known_sort(fresh).drop(columns=["_known"]).iterrows():
+        candidate = {column: _event_clean(row.get(column)) for column in columns}
+        key = _event_key(candidate, key_columns)
+        if key is None:
+            continue
+        prior = latest.get(key)
+        if prior is not None:
+            present = _source_presence_set(candidate)
+            for field in state_fields:
+                if field not in present:
+                    candidate[field] = prior.get(field)
+            candidate["first_seen_at"] = prior.get("first_seen_at") or candidate.get("first_seen_at")
+        candidate["event_state_sha256"] = _event_state_sha256(candidate, state_fields)
+        if prior is not None and prior.get("event_state_sha256") == candidate["event_state_sha256"]:
+            continue
+        additions.append(candidate)
+        latest[key] = candidate
+
+    if not additions:
+        return pd.DataFrame(retained, columns=columns).reindex(columns=columns).reset_index(drop=True)
+    return pd.DataFrame([*retained, *additions], columns=columns).reindex(columns=columns).reset_index(drop=True)
+
+
+def append_award_event_snapshots(
+    existing: pd.DataFrame,
+    incoming: pd.DataFrame,
+) -> pd.DataFrame:
+    """Append receipt-bound award-detail versions, preserving A -> B -> A."""
+    return _append_event_versions(
+        existing,
+        incoming,
+        columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        key_columns=("award_key",),
+        state_fields=AWARD_EVENT_SNAPSHOT_STATE_FIELDS,
+    )
+
+
+def append_award_action_versions(
+    existing: pd.DataFrame,
+    incoming: pd.DataFrame,
+) -> pd.DataFrame:
+    """Append native action revisions; id-less source rows are rejected upstream."""
+    return _append_event_versions(
+        existing,
+        incoming,
+        columns=AWARD_ACTION_VERSION_COLUMNS,
+        key_columns=("award_key", "action_id"),
+        state_fields=AWARD_ACTION_VERSION_STATE_FIELDS,
+    )
+
+
+def _validate_event_receipt_rows(
+    frame: pd.DataFrame,
+    receipts: Iterable[dict],
+    *,
+    rail: str,
+) -> None:
+    """Require every newly persisted event row to match one exact source receipt."""
+    if frame.empty:
+        return
+    indexed: dict[str, dict] = {}
+    for receipt in receipts:
+        if not isinstance(receipt, dict) or _text(receipt.get("rail")) != rail:
+            continue
+        receipt_id = _text(receipt.get("receipt_id"))
+        if receipt_id:
+            indexed[receipt_id] = receipt
+    for _, row in frame.iterrows():
+        receipt_id = _text(row.get("source_receipt_id"))
+        expected = indexed.get(receipt_id or "")
+        verified = row.get("receipt_verified")
+        if hasattr(verified, "item"):
+            try:
+                verified = verified.item()
+            except (TypeError, ValueError):
+                pass
+        if expected is None:
+            raise ValueError("award event row references a receipt outside this collection run")
+        if (
+            verified is not True
+            or _text(row.get("source_response_sha256")) != _text(expected.get("response_sha256"))
+            or _text(row.get("source_url")) != _text(expected.get("endpoint"))
+        ):
+            raise ValueError("award event row receipt binding did not match its exact source page")
+
+
+def _load_award_event_projection_state(path: Path) -> dict[str, Any]:
+    """Read the forward-only activation state, failing closed on corruption."""
+    payload = _read_json(path)
+    if not payload:
+        return {
+            "schema_version": AWARD_EVENT_PROJECTION_STATE_SCHEMA,
+            "activation_state": "baseline",
+            "coverage_scope": AWARD_EVENT_COVERAGE_SCOPE,
+            "baseline_started_at": None,
+            "baseline_completed_at": None,
+            "baseline_run_id": None,
+            "last_run_id": None,
+            "last_observed_at": None,
+        }
+    if payload.get("schema_version") != AWARD_EVENT_PROJECTION_STATE_SCHEMA:
+        raise RuntimeError("refusing to overwrite an unknown award event projection state schema")
+    if payload.get("activation_state") not in {"baseline", "live"}:
+        raise RuntimeError("refusing to overwrite an invalid award event projection state")
+    return payload
+
+
+def _next_award_event_projection_state(
+    previous: dict[str, Any],
+    *,
+    observed_at: str,
+    run_id: str,
+    full_receipt_bound_baseline: bool,
+    bounded_sample_complete: bool,
+    source_exhausted: bool,
+    truncated_by_safety_cap: bool,
+    coverage_manifest_id: str,
+    coverage_manifest: dict[str, Any],
+) -> dict[str, Any]:
+    """Advance activation only after a bounded, receipt-bound full baseline.
+
+    A live marker is meaningful only for the exact declared coverage contract
+    that established it.  Any entity/query/filter/cap manifest change starts a
+    new global baseline; rows fetched during that transition are intentionally
+    ineligible even if the same run is healthy enough to activate at its end.
+    """
+
+    coverage_changed = _text(previous.get("coverage_manifest_id")) != coverage_manifest_id
+    was_live = previous.get("activation_state") == "live" and not coverage_changed
+    activation_state = "live" if was_live or full_receipt_bound_baseline else "baseline"
+    baseline_started = (
+        observed_at
+        if coverage_changed
+        else previous.get("baseline_started_at") or observed_at
+    )
+    transitioned_live = not was_live and activation_state == "live"
+    return {
+        "schema_version": AWARD_EVENT_PROJECTION_STATE_SCHEMA,
+        "activation_state": activation_state,
+        "coverage_scope": AWARD_EVENT_COVERAGE_SCOPE,
+        "baseline_started_at": baseline_started,
+        "baseline_completed_at": (
+            observed_at
+            if transitioned_live
+            else None
+            if coverage_changed
+            else previous.get("baseline_completed_at")
+        ),
+        "baseline_run_id": (
+            run_id
+            if transitioned_live
+            else None
+            if coverage_changed
+            else previous.get("baseline_run_id")
+        ),
+        "last_run_id": run_id,
+        "last_observed_at": observed_at,
+        "last_run_was_full_receipt_bound_baseline": bool(full_receipt_bound_baseline),
+        "bounded_sample_complete": bool(bounded_sample_complete),
+        "source_exhausted": bool(source_exhausted),
+        "truncated_by_safety_cap": bool(truncated_by_safety_cap),
+        "coverage_manifest_id": coverage_manifest_id,
+        "coverage_manifest": coverage_manifest,
+        "coverage_manifest_changed_this_run": bool(coverage_changed),
+    }
+
+
 def _read_existing(path: Path, columns: list[str]) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=columns)
@@ -876,12 +1827,15 @@ class UsaspendingAwardsCollector:
         observed_at: str,
         run_id: str,
     ) -> tuple[list[dict], dict, list[dict]]:
-        """Fetch every declared page, or return an auditable incomplete outcome.
+        """Fetch the declared bounded page window with separate source semantics.
 
-        We only call a rail complete after the upstream explicitly returns
-        ``page_metadata.hasNext == false``.  A missing flag, a request failure,
-        or an explicit safety-cap hit remains partial even when earlier pages
-        yielded useful append-only records.
+        ``state`` remains the upstream-corpus state: only an explicit
+        ``page_metadata.hasNext == false`` is source-complete.  A successful
+        final page at the declared safety cap with ``hasNext == true`` is still
+        a *complete bounded sample*—all pages promised by this collection
+        contract were observed and receipt-bound—but it is never represented as
+        source exhaustion.  Missing pagination metadata and request failures do
+        not complete either contract.
         """
         rows: list[dict] = []
         receipts: list[dict] = []
@@ -914,11 +1868,10 @@ class UsaspendingAwardsCollector:
             raw_records += len(results)
             accepted = [row for row in results if isinstance(row, dict)]
             accepted_records += len(accepted)
-            rows.extend(accepted)
             metadata = payload.get("page_metadata")
             metadata = metadata if isinstance(metadata, dict) else {}
             last_has_next = _bool_or_none(metadata.get("hasNext"))
-            receipts.append(self._response_receipt(
+            receipt = self._response_receipt(
                 rail=rail,
                 endpoint=endpoint,
                 request=body,
@@ -929,7 +1882,21 @@ class UsaspendingAwardsCollector:
                 page=page,
                 record_count=len(results),
                 has_next=last_has_next,
-            ))
+            )
+            receipts.append(receipt)
+            if rail == "actions":
+                # Every transaction row retains the receipt for the *exact page*
+                # that contained it.  Binding later only by award/run would be
+                # ambiguous as soon as history spans multiple pages.
+                rows.extend(
+                    {
+                        **row,
+                        "_award_event_page_receipt": dict(receipt),
+                    }
+                    for row in accepted
+                )
+            else:
+                rows.extend(accepted)
 
             if last_has_next is False:
                 complete = True
@@ -947,6 +1914,16 @@ class UsaspendingAwardsCollector:
             if self.request_pacing_seconds:
                 time.sleep(self.request_pacing_seconds)
 
+        bounded_sample_complete = bool(
+            complete
+            or (
+                unresolved_has_next
+                and pages_requested == max_pages
+                and pages_succeeded == max_pages
+                and not missing_has_next
+                and error is None
+            )
+        )
         state = "complete" if complete else ("failed" if pages_succeeded == 0 else "partial")
         return rows, {
             "state": state,
@@ -960,6 +1937,9 @@ class UsaspendingAwardsCollector:
             "has_next": last_has_next,
             "unresolved_has_next": unresolved_has_next,
             "missing_has_next": missing_has_next,
+            "bounded_sample_complete": bounded_sample_complete,
+            "source_exhausted": bool(complete),
+            "truncated_by_safety_cap": bool(unresolved_has_next),
             "error": error,
         }, receipts
 
@@ -1028,6 +2008,9 @@ class UsaspendingAwardsCollector:
                 "has_next": None,
                 "unresolved_has_next": False,
                 "missing_has_next": False,
+                "bounded_sample_complete": False,
+                "source_exhausted": False,
+                "truncated_by_safety_cap": False,
                 "error": None,
             }, []
 
@@ -1103,9 +2086,11 @@ class UsaspendingAwardsCollector:
         entities = self._entities()
         data_dir = self.root / "data" / "government_revenue"
         status_path = data_dir / "ingest_status.json"
+        event_state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
         # Status itself carries the last-good clocks.  Refuse to replace an unreadable
         # status document with a fresh-looking, less informative result.
         previous_status = _read_json(status_path)
+        previous_event_state = _load_award_event_projection_state(event_state_path)
         entity_items = [
             (ticker, entity)
             for ticker, entity in entities.items()
@@ -1117,6 +2102,27 @@ class UsaspendingAwardsCollector:
             selected is None
             or (not unknown_tickers and selected == {str(ticker).upper() for ticker in entities})
         )
+        coverage_manifest = award_event_coverage_manifest(
+            entities,
+            lookback_days=int(lookback_days),
+            page_size=self.page_size,
+            max_pages=self.max_pages,
+            max_action_awards_per_entity=self.max_action_awards_per_entity,
+            action_page_size=self.action_page_size,
+            max_action_pages=self.max_action_pages,
+        )
+        coverage_manifest_id = award_event_coverage_manifest_id(coverage_manifest)
+        coverage_manifest_changed = (
+            _text(previous_event_state.get("coverage_manifest_id"))
+            != coverage_manifest_id
+        )
+        # A changed coverage contract is a global rebaseline.  The healthy run
+        # that establishes it may turn state live at the end, but none of its
+        # first observations can masquerade as a new forward change.
+        event_spine_live = (
+            previous_event_state.get("activation_state") == "live"
+            and not coverage_manifest_changed
+        )
         run_id = "usaspending-" + _sha256_json({
             "observed_at": observed_at,
             "as_of": end.isoformat(),
@@ -1125,6 +2131,8 @@ class UsaspendingAwardsCollector:
         })[:24]
         award_rows: list[dict] = []
         action_rows: list[dict] = []
+        award_event_rows: list[dict] = []
+        action_version_rows: list[dict] = []
         receipts: list[dict] = []
         errors: list[dict] = []
         entities_with_awards = 0
@@ -1135,6 +2143,9 @@ class UsaspendingAwardsCollector:
         award_complete_entities = 0
         award_partial_entities = 0
         award_failed_entities = 0
+        award_bounded_complete_entities = 0
+        award_source_exhausted_entities = 0
+        award_truncated_entities = 0
         award_unresolved_has_next = 0
         award_missing_has_next = 0
         award_normalization_failures = 0
@@ -1148,12 +2159,19 @@ class UsaspendingAwardsCollector:
         action_awards_partial = 0
         action_awards_failed = 0
         action_awards_not_requested = 0
+        action_awards_bounded_complete = 0
+        action_awards_source_exhausted = 0
+        action_awards_truncated = 0
         action_pages_requested = 0
         action_pages_succeeded = 0
         action_raw_records = 0
         action_accepted_records = 0
         action_unresolved_has_next = 0
         action_missing_has_next = 0
+        action_normalization_failures = 0
+        event_snapshot_failures = 0
+        event_action_failures = 0
+        event_action_identity_failures = 0
 
         for ticker in unknown_tickers:
             errors.append({
@@ -1182,6 +2200,12 @@ class UsaspendingAwardsCollector:
                     award_unresolved_has_next += 1
                 if award_meta.get("missing_has_next"):
                     award_missing_has_next += 1
+                if award_meta.get("bounded_sample_complete") is True:
+                    award_bounded_complete_entities += 1
+                if award_meta.get("source_exhausted") is True:
+                    award_source_exhausted_entities += 1
+                if award_meta.get("truncated_by_safety_cap") is True:
+                    award_truncated_entities += 1
                 award_state = str(award_meta.get("state") or "failed")
                 if award_state == "complete":
                     award_complete_entities += 1
@@ -1259,6 +2283,34 @@ class UsaspendingAwardsCollector:
                         )
                         if detail_receipt is not None:
                             receipts.append(detail_receipt)
+                            try:
+                                award_event_rows.append(normalize_award_event_snapshot(
+                                    detail,
+                                    candidate,
+                                    detail_receipt,
+                                    observed_at,
+                                    event_eligible=event_spine_live,
+                                ))
+                            except Exception as exc:  # noqa: BLE001 - legacy detail context remains usable
+                                event_snapshot_failures += 1
+                                errors.append({
+                                    "ticker": ticker,
+                                    "stage": "award_event_snapshot",
+                                    "award_id": candidate.get("award_id"),
+                                    "reason": "normalization_failed",
+                                    "error": _safe_error(exc),
+                                })
+                        else:
+                            # A direct detail payload without a receipt may inform no
+                            # event transition and cannot complete the first baseline.
+                            event_snapshot_failures += 1
+                            errors.append({
+                                "ticker": ticker,
+                                "stage": "award_event_snapshot",
+                                "award_id": candidate.get("award_id"),
+                                "reason": "missing_receipt",
+                                "error": "award-detail source returned without a collection receipt",
+                            })
                         enriched_by_key[award_key] = enrich_award(candidate, detail)
                         detail_succeeded += 1
                     except Exception as exc:  # noqa: BLE001 - detail is additive per award
@@ -1293,6 +2345,12 @@ class UsaspendingAwardsCollector:
                         action_unresolved_has_next += 1
                     if action_meta.get("missing_has_next"):
                         action_missing_has_next += 1
+                    if action_meta.get("bounded_sample_complete") is True:
+                        action_awards_bounded_complete += 1
+                    if action_meta.get("source_exhausted") is True:
+                        action_awards_source_exhausted += 1
+                    if action_meta.get("truncated_by_safety_cap") is True:
+                        action_awards_truncated += 1
                     action_state = str(action_meta.get("state") or "failed")
                     if action_state == "complete":
                         action_awards_attempted += 1
@@ -1317,9 +2375,42 @@ class UsaspendingAwardsCollector:
                         try:
                             action_rows.append(normalize_action(raw_action, award, observed_at))
                         except Exception as exc:  # noqa: BLE001 - record every unreconciled source action
+                            action_normalization_failures += 1
                             errors.append({
                                 "ticker": ticker,
                                 "stage": "actions",
+                                "award_id": award.get("award_id"),
+                                "reason": "normalization_failed",
+                            "error": _safe_error(exc),
+                        })
+                        try:
+                            action_version = normalize_award_event_action(
+                                raw_action,
+                                award,
+                                raw_action.get("_award_event_page_receipt"),
+                                observed_at,
+                                event_eligible=event_spine_live,
+                            )
+                            if action_version is not None:
+                                action_version_rows.append(action_version)
+                            else:
+                                # Native source action identity is mandatory for
+                                # a forward transition. Keep the legacy row, but
+                                # do not let an untrackable action bless a first
+                                # receipt-bound bounded baseline.
+                                event_action_identity_failures += 1
+                                errors.append({
+                                    "ticker": ticker,
+                                    "stage": "award_event_action",
+                                    "award_id": award.get("award_id"),
+                                    "reason": "missing_source_action_id",
+                                    "error": "USAspending action lacks a native action/transaction identifier",
+                                })
+                        except Exception as exc:  # noqa: BLE001 - no public action event without exact page receipt
+                            event_action_failures += 1
+                            errors.append({
+                                "ticker": ticker,
+                                "stage": "award_event_action",
                                 "award_id": award.get("award_id"),
                                 "reason": "normalization_failed",
                                 "error": _safe_error(exc),
@@ -1339,6 +2430,14 @@ class UsaspendingAwardsCollector:
 
         incoming_awards = pd.DataFrame(award_rows, columns=AWARD_COLUMNS)
         incoming_actions = pd.DataFrame(action_rows, columns=ACTION_COLUMNS)
+        incoming_award_events = pd.DataFrame(
+            award_event_rows,
+            columns=AWARD_EVENT_SNAPSHOT_COLUMNS,
+        )
+        incoming_action_versions = pd.DataFrame(
+            action_version_rows,
+            columns=AWARD_ACTION_VERSION_COLUMNS,
+        )
         if (
             requested_entities > 0
             and award_complete_entities == requested_entities
@@ -1352,6 +2451,17 @@ class UsaspendingAwardsCollector:
             awards_state = "partial"
         else:
             awards_state = "failed"
+
+        awards_bounded_sample_complete = (
+            requested_entities > 0
+            and award_bounded_complete_entities == requested_entities
+            and not unknown_tickers
+            and award_normalization_failures == 0
+            and award_rejected_without_key == 0
+            and full_configured_universe
+        )
+        awards_source_exhausted = awards_state == "complete"
+        awards_truncated_by_safety_cap = bool(award_unresolved_has_next)
 
         if self.max_action_awards_per_entity <= 0:
             detail_state = "not_requested"
@@ -1380,6 +2490,62 @@ class UsaspendingAwardsCollector:
                 )
                 else "partial"
             )
+
+        detail_bounded_sample_complete = (
+            awards_bounded_sample_complete
+            and (
+                self.max_action_awards_per_entity <= 0
+                or (
+                    detail_succeeded == detail_candidates
+                    and detail_skipped_missing_identifier == 0
+                )
+            )
+        )
+        actions_bounded_sample_complete = (
+            awards_bounded_sample_complete
+            and (
+                self.max_action_awards_per_entity <= 0
+                or (
+                    action_awards_bounded_complete == detail_candidates
+                    and action_awards_not_requested == 0
+                )
+            )
+        )
+        actions_source_exhausted = actions_state in {"complete", "not_requested"}
+        actions_truncated_by_safety_cap = bool(action_unresolved_has_next)
+        bounded_sample_complete = (
+            awards_bounded_sample_complete
+            and detail_bounded_sample_complete
+            and actions_bounded_sample_complete
+            and event_snapshot_failures == 0
+            and event_action_failures == 0
+            and event_action_identity_failures == 0
+            and action_normalization_failures == 0
+            and full_configured_universe
+        )
+        source_exhausted = bool(
+            awards_source_exhausted
+            and detail_state in {"complete", "not_requested"}
+            and actions_source_exhausted
+        )
+        truncated_by_safety_cap = bool(
+            awards_truncated_by_safety_cap or actions_truncated_by_safety_cap
+        )
+
+        full_receipt_bound_baseline = (
+            bounded_sample_complete
+        )
+        next_event_state = _next_award_event_projection_state(
+            previous_event_state,
+            observed_at=observed_at,
+            run_id=run_id,
+            full_receipt_bound_baseline=full_receipt_bound_baseline,
+            bounded_sample_complete=bounded_sample_complete,
+            source_exhausted=source_exhausted,
+            truncated_by_safety_cap=truncated_by_safety_cap,
+            coverage_manifest_id=coverage_manifest_id,
+            coverage_manifest=coverage_manifest,
+        )
 
         prior_rails = previous_status.get("rails") if isinstance(previous_status.get("rails"), dict) else {}
 
@@ -1411,21 +2577,60 @@ class UsaspendingAwardsCollector:
                 "error": _safe_error(exc),
             })
 
+        if not receipt_failure:
+            try:
+                _validate_event_receipt_rows(
+                    incoming_award_events,
+                    receipts,
+                    rail="award_detail",
+                )
+                _validate_event_receipt_rows(
+                    incoming_action_versions,
+                    receipts,
+                    rail="actions",
+                )
+            except Exception as exc:  # noqa: BLE001 - receipt-first means no event/legacy mutation after a bad bind
+                receipt_failure = True
+                receipt_summary["event_binding_error"] = _safe_error(exc)
+                errors.append({
+                    "stage": "award_event_receipt",
+                    "reason": "binding_failed",
+                    "error": _safe_error(exc),
+                })
+
         persisted = False
+        previous_event_spine = (
+            previous_status.get("award_event_spine")
+            if isinstance(previous_status.get("award_event_spine"), dict)
+            else {}
+        )
         totals: dict[str, int] = {
             "awards_seen": int(len(incoming_awards)),
             "awards_total": _as_int(previous_status.get("awards_total")),
             "actions_seen": int(len(incoming_actions)),
             "actions_total": _as_int(previous_status.get("actions_total")),
             "snapshots_total": _as_int(previous_status.get("snapshots_total")),
+            "award_event_snapshots_total": _as_int(
+                previous_event_spine.get("snapshots_total")
+            ),
+            "award_action_versions_total": _as_int(
+                previous_event_spine.get("action_versions_total")
+            ),
         }
         # A partial source run can accrue successfully read rows, but its last-good
         # clock stays fixed.  A total award-query failure does not touch any ledger.
         if not receipt_failure and award_pages_succeeded > 0:
             try:
-                totals = self.persist(incoming_awards, incoming_actions, observed_at)
+                totals = self.persist(
+                    incoming_awards,
+                    incoming_actions,
+                    observed_at,
+                    incoming_award_events=incoming_award_events,
+                    incoming_action_versions=incoming_action_versions,
+                    event_projection_state=next_event_state,
+                )
                 persisted = True
-            except Exception as exc:  # noqa: BLE001 - atomic writes retain old artifacts on failure
+            except Exception as exc:  # noqa: BLE001 - state binding makes partial replacements fail closed
                 errors.append({
                     "stage": "persist",
                     "reason": "ledger_write_failed",
@@ -1455,6 +2660,39 @@ class UsaspendingAwardsCollector:
             if actions_state != "not_requested":
                 actions_state = "failed"
 
+        active_event_state = next_event_state if persisted else previous_event_state
+        event_spine = {
+            "schema_version": AWARD_EVENT_PROJECTION_STATE_SCHEMA,
+            "activation_state": active_event_state.get("activation_state", "baseline"),
+            "coverage_scope": AWARD_EVENT_COVERAGE_SCOPE,
+            "baseline_started_at": active_event_state.get("baseline_started_at"),
+            "baseline_completed_at": active_event_state.get("baseline_completed_at"),
+            "last_observed_at": active_event_state.get("last_observed_at"),
+            "bounded_sample_complete": bool(active_event_state.get("bounded_sample_complete")),
+            "source_exhausted": bool(active_event_state.get("source_exhausted")),
+            "truncated_by_safety_cap": bool(active_event_state.get("truncated_by_safety_cap")),
+            "coverage_manifest_id": active_event_state.get("coverage_manifest_id"),
+            "coverage_manifest": active_event_state.get("coverage_manifest"),
+            "coverage_manifest_changed_this_run": bool(
+                active_event_state.get("coverage_manifest_changed_this_run")
+            ),
+            "snapshots_seen": int(len(incoming_award_events)),
+            "action_versions_seen": int(len(incoming_action_versions)),
+            "snapshots_total": _as_int(totals.get("award_event_snapshots_total")),
+            "action_versions_total": _as_int(totals.get("award_action_versions_total")),
+            "event_eligible_snapshots_seen": int(
+                incoming_award_events.get("event_eligible", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()
+            ),
+            "event_eligible_action_versions_seen": int(
+                incoming_action_versions.get("event_eligible", pd.Series(dtype=bool)).fillna(False).astype(bool).sum()
+            ),
+            "full_receipt_bound_baseline_this_run": bool(full_receipt_bound_baseline and persisted),
+        }
+        event_spine.update({
+            field: active_event_state.get(field)
+            for field in AWARD_EVENT_PROJECTION_GENERATION_FIELDS
+        })
+
         rails = {
             "awards": {
                 "state": awards_state,
@@ -1482,14 +2720,20 @@ class UsaspendingAwardsCollector:
                     "queries_complete": award_complete_entities,
                     "queries_partial": award_partial_entities,
                     "queries_failed": award_failed_entities,
+                    "queries_bounded_sample_complete": award_bounded_complete_entities,
+                    "queries_source_exhausted": award_source_exhausted_entities,
+                    "queries_truncated_by_safety_cap": award_truncated_entities,
                     "normalization_failures": award_normalization_failures,
                     "records_rejected_without_identity": award_rejected_without_key,
                 },
                 "completeness": {
                     "state": awards_state,
                     "full_usaspending_corpus": False,
+                    "bounded_sample_complete": bool(awards_bounded_sample_complete and persisted),
+                    "source_exhausted": bool(awards_source_exhausted and persisted),
+                    "truncated_by_safety_cap": bool(awards_truncated_by_safety_cap),
                     "scope": "recipient-query contract awards in the configured time window only",
-                    "claim": "complete only when every mapped recipient query returned explicit hasNext=false before its safety cap",
+                    "claim": "source exhausted only when every mapped recipient query returned explicit hasNext=false; a fully retrieved declared page cap is a complete bounded sample, not corpus completion",
                 },
                 "response_receipts": len([row for row in receipts if row.get("rail") == "awards"]),
             },
@@ -1517,9 +2761,14 @@ class UsaspendingAwardsCollector:
                 "completeness": {
                     "state": detail_state,
                     "full_usaspending_corpus": False,
+                    "bounded_sample_complete": bool(detail_bounded_sample_complete and persisted),
+                    "source_exhausted": bool(
+                        detail_state in {"complete", "not_requested"} and persisted
+                    ),
+                    "truncated_by_safety_cap": False,
                     "scope": "top reported-obligation awards among source rows returned for each entity",
                     "claim": "bounded award-detail sample; never a full award-detail corpus",
-                    "sample_is_globally_ranked": awards_state == "complete",
+                    "sample_is_globally_ranked": awards_source_exhausted,
                 },
                 "response_receipts": len([row for row in receipts if row.get("rail") == "award_detail"]),
             },
@@ -1548,12 +2797,20 @@ class UsaspendingAwardsCollector:
                     "queries_partial": action_awards_partial,
                     "queries_failed": action_awards_failed,
                     "queries_not_requested": action_awards_not_requested,
+                    "queries_bounded_sample_complete": action_awards_bounded_complete,
+                    "queries_source_exhausted": action_awards_source_exhausted,
+                    "queries_truncated_by_safety_cap": action_awards_truncated,
+                    "normalization_failures": action_normalization_failures,
+                    "identity_failures": event_action_identity_failures,
                 },
                 "completeness": {
                     "state": actions_state,
                     "full_usaspending_corpus": False,
+                    "bounded_sample_complete": bool(actions_bounded_sample_complete and persisted),
+                    "source_exhausted": bool(actions_source_exhausted and persisted),
+                    "truncated_by_safety_cap": bool(actions_truncated_by_safety_cap),
                     "scope": "complete transaction history only for the bounded award-detail sample",
-                    "claim": "actions paginate until explicit hasNext=false; an unresolved safety-cap hit is partial",
+                    "claim": "actions reach source exhaustion only at explicit hasNext=false; an otherwise complete declared page cap is a bounded sample, not complete source history",
                 },
                 "response_receipts": len([row for row in receipts if row.get("rail") == "actions"]),
             },
@@ -1594,6 +2851,7 @@ class UsaspendingAwardsCollector:
             "actions_seen": _as_int(totals.get("actions_seen")),
             "actions_total": _as_int(totals.get("actions_total")),
             "snapshots_total": _as_int(totals.get("snapshots_total")),
+            "award_event_spine": event_spine,
             "rails": rails,
             "collection_receipts": receipt_summary,
             "errors": errors,
@@ -1607,11 +2865,18 @@ class UsaspendingAwardsCollector:
         incoming_awards: pd.DataFrame,
         incoming_actions: pd.DataFrame,
         observed_at: str,
+        *,
+        incoming_award_events: pd.DataFrame | None = None,
+        incoming_action_versions: pd.DataFrame | None = None,
+        event_projection_state: dict[str, Any] | None = None,
     ) -> dict:
         data_dir = self.root / "data" / "government_revenue"
         award_path = data_dir / "awards.parquet"
         action_path = data_dir / "award_actions.parquet"
         snapshot_path = data_dir / "award_snapshots.parquet"
+        event_snapshot_path = data_dir / "award_event_snapshots.parquet"
+        action_version_path = data_dir / "award_action_versions.parquet"
+        event_state_path = data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME
         existing_awards = _read_existing(award_path, AWARD_COLUMNS)
         existing_actions = _read_existing(action_path, ACTION_COLUMNS)
         existing_snapshots = _ensure_snapshot_hashes(_ensure_award_keys(
@@ -1622,7 +2887,7 @@ class UsaspendingAwardsCollector:
             merge_awards(existing_awards, incoming_awards)
         )
         merged_actions = append_first_seen(
-            existing_actions, incoming_actions, ["ticker", "action_id"], ACTION_COLUMNS
+            existing_actions, incoming_actions, ["ticker", "award_key", "action_id"], ACTION_COLUMNS
         )
         incoming_keys = _ensure_award_keys(incoming_awards).reindex(
             columns=["ticker", "award_key"]
@@ -1636,16 +2901,93 @@ class UsaspendingAwardsCollector:
         merged_snapshots = _normalize_classification_cells(
             append_snapshot_versions(existing_snapshots, daily)
         )
+
+        write_event_spine = any(
+            value is not None
+            for value in (
+                incoming_award_events,
+                incoming_action_versions,
+                event_projection_state,
+            )
+        )
+        if write_event_spine and event_projection_state is None:
+            raise ValueError("award event ledgers require an activation-state write")
+        if write_event_spine:
+            existing_event_snapshots = _read_existing(
+                event_snapshot_path,
+                AWARD_EVENT_SNAPSHOT_COLUMNS,
+            )
+            existing_action_versions = _read_existing(
+                action_version_path,
+                AWARD_ACTION_VERSION_COLUMNS,
+            )
+            existing_event_state = _load_award_event_projection_state(event_state_path)
+            # Do not let a later partial run "bless" a pair left mixed by a
+            # prior interrupted write.  A full receipt-bound reconciliation may
+            # repair the pair; anything weaker leaves the last good generation
+            # in force for readers and fails this write before any ledger moves.
+            if (
+                existing_event_state.get("activation_state") == "live"
+                and not award_event_projection_generation_matches(
+                    existing_event_state,
+                    existing_event_snapshots,
+                    existing_action_versions,
+                )
+                and not bool(event_projection_state.get("last_run_was_full_receipt_bound_baseline"))
+            ):
+                raise RuntimeError(
+                    "refusing to replace a live award-event projection generation "
+                    "without a full receipt-bound reconciliation"
+                )
+            event_snapshots = (
+                incoming_award_events
+                if isinstance(incoming_award_events, pd.DataFrame)
+                else pd.DataFrame(columns=AWARD_EVENT_SNAPSHOT_COLUMNS)
+            )
+            action_versions = (
+                incoming_action_versions
+                if isinstance(incoming_action_versions, pd.DataFrame)
+                else pd.DataFrame(columns=AWARD_ACTION_VERSION_COLUMNS)
+            )
+            merged_event_snapshots = append_award_event_snapshots(
+                existing_event_snapshots,
+                event_snapshots,
+            )
+            merged_action_versions = append_award_action_versions(
+                existing_action_versions,
+                action_versions,
+            )
+            # The state is committed after both event ledgers, but a process can
+            # still fail between their individual atomic replacements.  Bind the
+            # full merged pair into the state so a reader can reject a mixed
+            # generation rather than projecting whatever happens to be on disk.
+            event_projection_state.update(award_event_projection_generation(
+                merged_event_snapshots,
+                merged_action_versions,
+            ))
         _atomic_parquet(merged_awards, award_path)
         _atomic_parquet(merged_actions, action_path)
         _atomic_parquet(merged_snapshots, snapshot_path)
-        return {
+        if write_event_spine:
+            # Receipt persistence occurred before this method.  Write the two
+            # immutable event ledgers before activation state so a live marker
+            # can never appear without its baseline rows.
+            _atomic_parquet(merged_event_snapshots, event_snapshot_path)
+            _atomic_parquet(merged_action_versions, action_version_path)
+            _atomic_json(event_projection_state, event_state_path)
+        totals = {
             "awards_seen": int(len(incoming_awards)),
             "awards_total": int(len(merged_awards)),
             "actions_seen": int(len(incoming_actions)),
             "actions_total": int(len(merged_actions)),
             "snapshots_total": int(len(merged_snapshots)),
         }
+        if write_event_spine:
+            totals.update({
+                "award_event_snapshots_total": int(len(merged_event_snapshots)),
+                "award_action_versions_total": int(len(merged_action_versions)),
+            })
+        return totals
 
 
 class UsaspendingAwardsAdapter(Adapter):

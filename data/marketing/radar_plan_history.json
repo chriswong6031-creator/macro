@@ -2,6 +2,32 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-02",
+      "tickers": [
+        "ARES",
+        "ARLO",
+        "AVNT",
+        "BDC",
+        "CBOE",
+        "CDW",
+        "CSR",
+        "CUBI",
+        "HSY",
+        "JBLU",
+        "KMT",
+        "KWR",
+        "LKFN",
+        "LPG",
+        "MSFT",
+        "NSSC",
+        "PI",
+        "ROST",
+        "SHOO",
+        "TEAM",
+        "TPR"
+      ]
+    },
+    {
       "as_of": "2026-08-01",
       "tickers": [
         "AMZN",
@@ -116,21 +142,6 @@
         "SW",
         "VST",
         "WMT"
-      ]
-    },
-    {
-      "as_of": "2026-07-26",
-      "tickers": [
-        "CBOE",
-        "GPI",
-        "IBM",
-        "INTU",
-        "IP",
-        "ROST",
-        "SW",
-        "VST",
-        "WMT",
-        "XEL"
       ]
     }
   ]

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from engine.government_revenue.workspace import build_procurement_workspace
 from scripts import build_baskets, build_government_revenue
 
 
@@ -18,11 +19,14 @@ def _payload() -> dict:
         "authority": {"tier": "display", "can_rank": False},
         "coverage": {"entities_mapped": 1},
         "market": {},
-        "procurement_workspace": {
-            "schema_version": "government_procurement_workspace.v1",
-            "events": [],
-            "total": 0,
-        },
+        "procurement_workspace": build_procurement_workspace(
+            {"freshness": {"status": "ok"}},
+            [],
+            as_of="2026-08-01",
+            known_at="2026-08-01T08:00:00Z",
+            award_freshness={"status": "ok"},
+            award_event_freshness={"status": "unavailable"},
+        ),
         "companies": [{"ticker": "LMT", "name": "Lockheed Martin", "metrics": {}}],
     }
 
@@ -45,15 +49,15 @@ def test_builder_writes_canonical_site_twin_and_page(tmp_path: Path, monkeypatch
     workspace_site = tmp_path / "site" / "government-revenue-data" / "workspace.json"
     assert workspace.exists() and workspace.read_bytes() == workspace_site.read_bytes()
     workspace_payload = json.loads(workspace.read_text())
-    assert workspace_payload["schema_version"] == "government_procurement_workspace.v1"
-    assert workspace_payload["bundle_id"].startswith("grw1-")
-    assert len(workspace_payload["bundle_id"]) == len("grw1-") + 24
+    assert workspace_payload["schema_version"] == "government_procurement_workspace.v2"
+    assert workspace_payload["bundle_id"].startswith("grw2-")
+    assert len(workspace_payload["bundle_id"]) == len("grw2-") + 24
     assert "Government Revenue" in html.read_text()
 
 
 def test_workspace_bundle_id_is_content_derived_not_assembly_clock() -> None:
     workspace = {
-        "schema_version": "government_procurement_workspace.v1",
+        "schema_version": "government_procurement_workspace.v2",
         "as_of": "2026-08-01",
         "generated_at": "2026-08-01T08:00:00Z",
         "events": [{"event_id": "evt-1"}],
@@ -157,8 +161,11 @@ def test_display_payload_is_first_page_only_while_canonical_workspace_stays_comp
     shell = build_government_revenue._display_payload(payload)
 
     assert len(shell["procurement_workspace"]["events"]) == build_government_revenue.SHELL_EVENT_LIMIT
-    assert shell["procurement_workspace"]["next_cursor"] == str(
-        build_government_revenue.SHELL_EVENT_LIMIT
+    assert shell["procurement_workspace"]["next_cursor"] == (
+        build_government_revenue._workspace_cursor(
+            build_government_revenue.SHELL_EVENT_LIMIT,
+            version="v2",
+        )
     )
     assert len(payload["procurement_workspace"]["events"]) == build_government_revenue.SHELL_EVENT_LIMIT + 5
     assert shell["opportunity_intelligence"]["opportunities"] == []
@@ -224,6 +231,128 @@ def test_compact_shell_keeps_current_state_truth_without_full_receipt_duplicatio
     assert "unneeded_description" not in event["opportunity"]
     assert "raw_body" not in event["evidence"]["receipts"][0]
     assert event["listed_company_impacts"][0]["materiality"] == {"band": "high"}
+
+
+def test_compact_shell_keeps_safe_award_change_identity_without_raw_source_payload() -> None:
+    compact = build_government_revenue._compact_workspace_event({
+        "contract": "government_procurement_event.v2",
+        "event_id": "govws-award-shell-1",
+        "record_id": "award:generated:AWARD-1",
+        "version": 1,
+        "kind": "award_change",
+        "state": "updated",
+        "title_original": "Award value changed",
+        "award_change": {
+            "award_key": "generated:AWARD-1",
+            "generated_award_id": "AWARD-1",
+            "piid": "PIID-1",
+            "recipient_name": "Example Defense Systems",
+            "event_type": "award_value_changed",
+            "secondary_types": [],
+            "source_rail": "usaspending_award_snapshot",
+            "observation_kind": "snapshot",
+            "coverage_scope": "receipt-bound award snapshots",
+            "is_late_discovery": False,
+            "source_identity": {
+                "id": "generated:AWARD-1",
+                "version": "state-v1",
+                "content_sha256": "a" * 64,
+                "raw_response": "x" * 10_000,
+            },
+            "raw_source_response": "x" * 10_000,
+        },
+    })
+
+    assert compact["award_change"] == {
+        "award_key": "generated:AWARD-1",
+        "generated_award_id": "AWARD-1",
+        "piid": "PIID-1",
+        "recipient_name": "Example Defense Systems",
+        "event_type": "award_value_changed",
+        "secondary_types": [],
+        "source_rail": "usaspending_award_snapshot",
+        "observation_kind": "snapshot",
+        "coverage_scope": "receipt-bound award snapshots",
+        "is_late_discovery": False,
+        "source_identity": {
+            "id": "generated:AWARD-1",
+            "version": "state-v1",
+            "content_sha256": "a" * 64,
+        },
+    }
+    oversized = build_government_revenue._compact_workspace_event({
+        "award_change": {
+            "award_key": "k" * 500,
+            "recipient_name": "r" * 500,
+            "coverage_scope": "c" * 2_000,
+            "secondary_types": ["s" * 120 for _ in range(12)],
+            "source_identity": {
+                "id": "i" * 500,
+                "version": "v" * 500,
+                "content_sha256": "h" * 500,
+            },
+        },
+    })
+    assert len(oversized["award_change"]["award_key"]) == 180
+    assert len(oversized["award_change"]["recipient_name"]) == 240
+    assert len(oversized["award_change"]["coverage_scope"]) == 480
+    assert len(oversized["award_change"]["secondary_types"]) == 8
+    assert all(len(value) == 80 for value in oversized["award_change"]["secondary_types"])
+    assert len(oversized["award_change"]["source_identity"]["id"]) == 180
+    assert len(oversized["award_change"]["source_identity"]["version"]) == 180
+    assert len(oversized["award_change"]["source_identity"]["content_sha256"]) == 80
+
+
+def test_compact_shell_bounds_long_legal_description_deltas() -> None:
+    compact = build_government_revenue._compact_workspace_event({
+        "change": {
+            "type": "action_revised",
+            "changed_fields": [{
+                "field": "description",
+                "before": "b" * 7_000,
+                "after": "a" * 7_000,
+                "semantic": "official",
+                "source_ref": "https://api.usaspending.gov/" + "x" * 2_000,
+            } for _ in range(8)],
+        },
+    })
+
+    changes = compact["change"]["changed_fields"]
+    assert len(changes) == 6
+    assert all(len(row["before"]) == 360 for row in changes)
+    assert all(len(row["after"]) == 360 for row in changes)
+    assert all(len(row["source_ref"]) == 360 for row in changes)
+
+
+def test_display_payload_adapts_first_page_to_json_budget() -> None:
+    payload = _payload()
+    payload["market"] = {"bounded_context": "x" * 50_000}
+    payload["procurement_workspace"]["events"] = [
+        {
+            "event_id": f"evt-{index}",
+            "change": {"changed_fields": [{
+                "field": "description",
+                "before": "b" * 7_000,
+                "after": "a" * 7_000,
+                "semantic": "official",
+                "source_ref": "https://api.usaspending.gov/" + "x" * 2_000,
+            } for _ in range(8)]},
+        }
+        for index in range(build_government_revenue.SHELL_EVENT_LIMIT)
+    ]
+    payload["procurement_workspace"]["total"] = len(
+        payload["procurement_workspace"]["events"]
+    )
+
+    shell = build_government_revenue._display_payload(payload)
+    raw = json.dumps(shell, ensure_ascii=False, separators=(",", ":"), default=str)
+    visible = shell["procurement_workspace"]["events"]
+
+    assert len(raw.encode("utf-8")) <= build_government_revenue.SHELL_JSON_BUDGET_BYTES
+    assert len(visible) < build_government_revenue.SHELL_EVENT_LIMIT
+    assert shell["procurement_workspace"]["next_cursor"] == (
+        build_government_revenue._workspace_cursor(len(visible), version="v2")
+    )
 
 
 def test_generic_baskets_builder_cannot_write_government_projection() -> None:

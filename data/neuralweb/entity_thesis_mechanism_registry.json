@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "authority": {
     "allowed_actions": [
       "display",
@@ -290,16 +290,16 @@
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
-        "hit_gradeable_share": 0.944844,
+        "hit_gradeable_share": 0.944976,
         "maturity_mix": {
           "graded_5d_count": 914,
-          "graded_5d_share": 0.547962,
+          "graded_5d_share": 0.546651,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 1668,
-        "n_hit_gradeable": 1576,
+        "n_claims": 1672,
+        "n_hit_gradeable": 1580,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
@@ -516,9 +516,9 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.013596,
+      "falsifier_coverage": 0.013594,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 29642,
+      "n_claims": 29646,
       "n_grades": 34928,
       "n_with_falsifier": 403
     }
@@ -1017,7 +1017,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-08-01T21:35:13.686496+00:00",
+  "generated_utc": "2026-08-02T03:31:37.609987+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -3354,7 +3354,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 54,
+      "n": 55,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {

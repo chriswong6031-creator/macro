@@ -17,9 +17,65 @@
     "generated_at": {"type": "string", "format": "date-time"},
     "bundle_id": {"type": "string", "pattern": "^grw2-[a-f0-9]{24}$"},
     "authority": {"$ref": "#/$defs/authority"},
-    "freshness": {"type": "object", "additionalProperties": true, "required": ["status", "opportunities", "recompetes", "mappings"]},
-    "coverage": {"type": "object", "additionalProperties": true},
-    "facets": {"type": "object", "additionalProperties": true},
+    "freshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "opportunities", "recompetes", "award_events", "mappings"],
+      "properties": {
+        "status": {"type": "string"},
+        "opportunities": {"$ref": "#/$defs/opportunityFreshness"},
+        "recompetes": {"$ref": "#/$defs/detailFreshness"},
+        "award_events": {"$ref": "#/$defs/awardEventFreshness"},
+        "mappings": {"$ref": "#/$defs/mappingFreshness"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "events_visible", "events_available_before_cap", "events_truncated", "event_cap",
+        "facet_scope", "open_opportunities", "opportunity_events_visible", "recompete_cases",
+        "award_change_events", "official_recompete_matches", "derived_expiry_watches",
+        "listed_company_linked", "unmapped", "conflicted", "by_kind",
+        "by_award_source_rail", "by_mapping_class", "award_events", "exact_id_deduplication"
+      ],
+      "properties": {
+        "events_visible": {"type": "integer", "minimum": 0, "maximum": 500},
+        "events_available_before_cap": {"type": "integer", "minimum": 0},
+        "events_truncated": {"type": "integer", "minimum": 0},
+        "event_cap": {"const": 500},
+        "facet_scope": {"type": "string"},
+        "open_opportunities": {"type": "integer", "minimum": 0},
+        "opportunity_events_visible": {"type": "integer", "minimum": 0},
+        "recompete_cases": {"type": "integer", "minimum": 0},
+        "award_change_events": {"type": "integer", "minimum": 0},
+        "official_recompete_matches": {"type": "integer", "minimum": 0},
+        "derived_expiry_watches": {"type": "integer", "minimum": 0},
+        "listed_company_linked": {"type": "integer", "minimum": 0},
+        "unmapped": {"type": "integer", "minimum": 0},
+        "conflicted": {"type": "integer", "minimum": 0},
+        "by_kind": {"$ref": "#/$defs/kindCoverage"},
+        "by_award_source_rail": {"$ref": "#/$defs/awardRailCoverage"},
+        "by_mapping_class": {"$ref": "#/$defs/mappingCoverage"},
+        "award_events": {"$ref": "#/$defs/awardEventCoverage"},
+        "exact_id_deduplication": {"$ref": "#/$defs/exactIdDedupe"}
+      }
+    },
+    "facets": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "agencies", "notice_types", "tickers", "impact_bands", "kinds",
+        "award_source_rails", "mapping_classes", "evidence_classes"
+      ],
+      "properties": {
+        "agencies": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "notice_types": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "tickers": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "impact_bands": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "kinds": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "award_source_rails": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "mapping_classes": {"type": "array", "items": {"$ref": "#/$defs/facet"}},
+        "evidence_classes": {"type": "array", "items": {"$ref": "#/$defs/facet"}}
+      }
+    },
     "events": {
       "type": "array", "maxItems": 500,
       "items": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_procurement_event.v2.schema.json"}
@@ -38,6 +94,306 @@
     "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
   },
   "$defs": {
+    "facet": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "count"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "label": {"type": "string"},
+        "count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "metadataScalar": {"type": ["string", "number", "boolean", "null"]},
+    "opportunityFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string"},
+        "reason": {"type": ["string", "null"]},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "age_minutes": {"type": ["number", "null"], "minimum": 0},
+        "freshness_sla_minutes": {"type": ["number", "null"], "minimum": 0},
+        "current_state_verification_sla_minutes": {"type": ["number", "null"], "minimum": 0},
+        "error_count": {"type": "integer", "minimum": 0},
+        "records_visible": {"type": "integer", "minimum": 0},
+        "source_status": {"type": ["string", "null"]},
+        "latest_active_version_only": {"type": "boolean"},
+        "revision_history_basis": {"type": "string"}
+      }
+    },
+    "railMetadata": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "requested": {"$ref": "#/$defs/metadataScalar"},
+        "succeeded": {"$ref": "#/$defs/metadataScalar"},
+        "safety_cap_per_entity": {"$ref": "#/$defs/metadataScalar"},
+        "safety_cap_per_award": {"$ref": "#/$defs/metadataScalar"},
+        "unresolved_has_next_entities": {"$ref": "#/$defs/metadataScalar"},
+        "missing_has_next_entities": {"$ref": "#/$defs/metadataScalar"},
+        "unresolved_has_next_awards": {"$ref": "#/$defs/metadataScalar"},
+        "missing_has_next_awards": {"$ref": "#/$defs/metadataScalar"},
+        "entities_requested": {"$ref": "#/$defs/metadataScalar"},
+        "entities_mapped": {"$ref": "#/$defs/metadataScalar"},
+        "entities_configured_total": {"$ref": "#/$defs/metadataScalar"},
+        "full_configured_universe": {"$ref": "#/$defs/metadataScalar"},
+        "queries_complete": {"$ref": "#/$defs/metadataScalar"},
+        "queries_partial": {"$ref": "#/$defs/metadataScalar"},
+        "queries_failed": {"$ref": "#/$defs/metadataScalar"},
+        "queries_not_requested": {"$ref": "#/$defs/metadataScalar"},
+        "queries_bounded_sample_complete": {"$ref": "#/$defs/metadataScalar"},
+        "queries_source_exhausted": {"$ref": "#/$defs/metadataScalar"},
+        "queries_truncated_by_safety_cap": {"$ref": "#/$defs/metadataScalar"},
+        "normalization_failures": {"$ref": "#/$defs/metadataScalar"},
+        "records_rejected_without_identity": {"$ref": "#/$defs/metadataScalar"},
+        "candidate_awards": {"$ref": "#/$defs/metadataScalar"},
+        "attempted": {"$ref": "#/$defs/metadataScalar"},
+        "skipped_missing_generated_award_id": {"$ref": "#/$defs/metadataScalar"},
+        "sampled_awards": {"$ref": "#/$defs/metadataScalar"},
+        "identity_failures": {"$ref": "#/$defs/metadataScalar"},
+        "state": {"$ref": "#/$defs/metadataScalar"},
+        "full_usaspending_corpus": {"$ref": "#/$defs/metadataScalar"},
+        "bounded_sample_complete": {"$ref": "#/$defs/metadataScalar"},
+        "source_exhausted": {"$ref": "#/$defs/metadataScalar"},
+        "truncated_by_safety_cap": {"$ref": "#/$defs/metadataScalar"},
+        "scope": {"$ref": "#/$defs/metadataScalar"},
+        "claim": {"$ref": "#/$defs/metadataScalar"},
+        "sample_is_globally_ranked": {"$ref": "#/$defs/metadataScalar"}
+      }
+    },
+    "railMetadataMap": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "awards": {"$ref": "#/$defs/railMetadata"},
+        "award_detail": {"$ref": "#/$defs/railMetadata"},
+        "actions": {"$ref": "#/$defs/railMetadata"}
+      }
+    },
+    "railStateMap": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "awards": {"type": "string"},
+        "award_detail": {"type": "string"},
+        "actions": {"type": "string"}
+      }
+    },
+    "corpusCoverage": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "bounded_sample_complete": {"type": ["boolean", "null"]},
+        "source_exhausted": {"type": ["boolean", "null"]},
+        "truncated_by_safety_cap": {"type": ["boolean", "null"]}
+      }
+    },
+    "corpusCoverageMap": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "awards": {"$ref": "#/$defs/corpusCoverage"},
+        "award_detail": {"$ref": "#/$defs/corpusCoverage"},
+        "actions": {"$ref": "#/$defs/corpusCoverage"}
+      }
+    },
+    "detailFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string"},
+        "reason": {"type": ["string", "null"]},
+        "scope": {"type": ["string", "null"]},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "last_successful_observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "visible_at_as_of": {"type": "boolean"},
+        "freshness_sla_days": {"type": ["number", "null"], "minimum": 0},
+        "age_days": {"type": ["number", "null"], "minimum": 0},
+        "error_count": {"type": "integer", "minimum": 0},
+        "entities_total": {"type": ["integer", "null"], "minimum": 0},
+        "entities_requested": {"type": ["integer", "null"], "minimum": 0},
+        "records_total": {"type": ["integer", "null"], "minimum": 0},
+        "records_seen": {"type": ["integer", "null"], "minimum": 0},
+        "records_visible": {"type": ["integer", "null"], "minimum": 0},
+        "response_receipts": {"type": ["integer", "null"], "minimum": 0},
+        "lookback_days": {"type": ["integer", "null"], "minimum": 0},
+        "search_limit_per_entity": {"type": ["integer", "null"], "minimum": 0},
+        "detail_limit_per_entity": {"type": ["integer", "null"], "minimum": 0},
+        "full_usaspending_corpus": {"type": "boolean"},
+        "collection_state": {"$ref": "#/$defs/railStateMap"},
+        "collection_freshness": {"$ref": "#/$defs/railStateMap"},
+        "pages": {"$ref": "#/$defs/railMetadataMap"},
+        "denominators": {"$ref": "#/$defs/railMetadataMap"},
+        "completeness": {"$ref": "#/$defs/railMetadataMap"},
+        "corpus_coverage": {"$ref": "#/$defs/corpusCoverageMap"}
+      }
+    },
+    "coverageManifest": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "schema_version", "coverage_scope", "entities", "award_discovery",
+        "award_detail_sample", "action_history_sample"
+      ],
+      "properties": {
+        "schema_version": {"const": "government_revenue.award_event_coverage_manifest.v1"},
+        "coverage_scope": {"type": "string"},
+        "entities": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["ticker", "recipient_search_text"],
+            "properties": {
+              "ticker": {"type": "string"},
+              "recipient_search_text": {"type": "string"}
+            }
+          }
+        },
+        "award_discovery": {
+          "type": "object", "additionalProperties": false,
+          "required": ["endpoint", "subawards", "award_type_codes", "time_window", "fields", "order", "sort", "page_size", "max_pages"],
+          "properties": {
+            "endpoint": {"type": "string"}, "subawards": {"type": "boolean"},
+            "award_type_codes": {"type": "array", "items": {"type": "string"}},
+            "time_window": {
+              "type": "object", "additionalProperties": false,
+              "required": ["kind", "lookback_days"],
+              "properties": {"kind": {"type": "string"}, "lookback_days": {"type": "integer", "minimum": 0}}
+            },
+            "fields": {"type": "array", "items": {"type": "string"}},
+            "order": {"type": "string"}, "sort": {"type": "string"},
+            "page_size": {"type": "integer", "minimum": 1},
+            "max_pages": {"type": "integer", "minimum": 1}
+          }
+        },
+        "award_detail_sample": {
+          "type": "object", "additionalProperties": false,
+          "required": ["endpoint_template", "selection", "max_awards_per_entity"],
+          "properties": {
+            "endpoint_template": {"type": "string"}, "selection": {"type": "string"},
+            "max_awards_per_entity": {"type": "integer", "minimum": 1}
+          }
+        },
+        "action_history_sample": {
+          "type": "object", "additionalProperties": false,
+          "required": ["endpoint", "page_size", "max_pages_per_award"],
+          "properties": {
+            "endpoint": {"type": "string"}, "page_size": {"type": "integer", "minimum": 1},
+            "max_pages_per_award": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "awardEventIngest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "reason", "observed_at", "visible_at_as_of"],
+      "properties": {
+        "status": {"type": "string"}, "reason": {"type": "string"},
+        "collector_run_status": {"type": ["string", "null"]},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "visible_at_as_of": {"type": "boolean"},
+        "contract_mode": {"type": ["string", "null"]},
+        "bounded_sample_complete": {"type": ["boolean", "null"]},
+        "source_exhausted": {"type": ["boolean", "null"]},
+        "truncated_by_safety_cap": {"type": ["boolean", "null"]},
+        "coverage_manifest_id": {"type": ["string", "null"]},
+        "coverage_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/coverageManifest"}]}
+      }
+    },
+    "awardEventFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string"}, "availability": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}, "activation_state": {"type": ["string", "null"]},
+        "known_at": {"type": ["string", "null"], "format": "date-time"},
+        "observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "visible_at_as_of": {"type": "boolean"},
+        "freshness_sla_days": {"type": ["number", "null"], "minimum": 0},
+        "coverage_scope": {"type": ["string", "null"]}, "scope": {"type": ["string", "null"]},
+        "snapshot_versions_visible": {"type": "integer", "minimum": 0},
+        "action_versions_visible": {"type": "integer", "minimum": 0},
+        "receipt_claims_visible": {"type": "integer", "minimum": 0},
+        "collection_receipts_available": {"type": "integer", "minimum": 0},
+        "events_visible": {"type": "integer", "minimum": 0},
+        "records_visible": {"type": "integer", "minimum": 0},
+        "artifacts": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "projection_state": {"type": "string"}, "award_event_snapshots": {"type": "string"},
+            "award_action_versions": {"type": "string"}, "collection_receipts": {"type": "string"},
+            "projection_generation": {"type": "string"}
+          }
+        },
+        "ingest": {"$ref": "#/$defs/awardEventIngest"},
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "bounded_sample_complete": {"type": ["boolean", "null"]},
+        "source_exhausted": {"type": ["boolean", "null"]},
+        "truncated_by_safety_cap": {"type": ["boolean", "null"]},
+        "coverage_manifest_id": {"type": ["string", "null"]},
+        "coverage_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/coverageManifest"}]}
+      }
+    },
+    "mappingFreshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "linked_records", "unmapped_records", "conflicted_records", "reviewed_at"],
+      "properties": {
+        "status": {"type": "string"}, "linked_records": {"type": "integer", "minimum": 0},
+        "unmapped_records": {"type": "integer", "minimum": 0},
+        "conflicted_records": {"type": "integer", "minimum": 0},
+        "reviewed_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "countPair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["available_before_cap", "visible"],
+      "properties": {
+        "available_before_cap": {"type": "integer", "minimum": 0},
+        "visible": {"type": "integer", "minimum": 0}
+      }
+    },
+    "kindCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["opportunity", "recompete", "award_change"],
+      "properties": {
+        "opportunity": {"$ref": "#/$defs/countPair"},
+        "recompete": {"$ref": "#/$defs/countPair"},
+        "award_change": {"$ref": "#/$defs/countPair"}
+      }
+    },
+    "awardRailCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["usaspending_award_snapshot", "usaspending_award_action"],
+      "properties": {
+        "usaspending_award_snapshot": {"$ref": "#/$defs/countPair"},
+        "usaspending_award_action": {"$ref": "#/$defs/countPair"}
+      }
+    },
+    "mappingCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["official", "reviewed", "deterministic_inference", "model_estimate", "unmapped"],
+      "properties": {
+        "official": {"$ref": "#/$defs/countPair"}, "reviewed": {"$ref": "#/$defs/countPair"},
+        "deterministic_inference": {"$ref": "#/$defs/countPair"},
+        "model_estimate": {"$ref": "#/$defs/countPair"}, "unmapped": {"$ref": "#/$defs/countPair"}
+      }
+    },
+    "awardEventCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["input", "validated", "accepted_after_exact_id_dedupe", "rejected", "exact_id_duplicates", "conflicted_ids", "conflicted_rows", "dropped_by_global_identity_conflict", "available_before_cap", "visible", "truncated"],
+      "properties": {
+        "input": {"type": "integer", "minimum": 0}, "validated": {"type": "integer", "minimum": 0},
+        "accepted_after_exact_id_dedupe": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0}, "exact_id_duplicates": {"type": "integer", "minimum": 0},
+        "conflicted_ids": {"type": "integer", "minimum": 0}, "conflicted_rows": {"type": "integer", "minimum": 0},
+        "dropped_by_global_identity_conflict": {"type": "integer", "minimum": 0},
+        "available_before_cap": {"type": "integer", "minimum": 0},
+        "visible": {"type": "integer", "minimum": 0}, "truncated": {"type": "integer", "minimum": 0}
+      }
+    },
+    "exactIdDedupe": {
+      "type": "object", "additionalProperties": false,
+      "required": ["exact_duplicates", "conflicted_ids", "conflicted_rows", "invalid_rows"],
+      "properties": {
+        "exact_duplicates": {"type": "integer", "minimum": 0},
+        "conflicted_ids": {"type": "integer", "minimum": 0},
+        "conflicted_rows": {"type": "integer", "minimum": 0},
+        "invalid_rows": {"type": "integer", "minimum": 0}
+      }
+    },
     "authority": {
       "type": "object", "additionalProperties": false,
       "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],

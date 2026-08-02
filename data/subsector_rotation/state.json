@@ -333,7 +333,7 @@
     "name": "DevOps",
     "quadrant": "weakening",
     "theme": "Cloud Computing",
-    "turn_state": "trending_up"
+    "turn_state": "range"
   },
   "cloudedge": {
     "emerging": false,
@@ -725,7 +725,7 @@
     "name": "Curriculum",
     "quadrant": "leading",
     "theme": "Education Technology",
-    "turn_state": "turn_up"
+    "turn_state": "range"
   },
   "educationinfrastructure": {
     "emerging": true,
@@ -739,7 +739,7 @@
     "name": "Platforms",
     "quadrant": "improving",
     "theme": "Education Technology",
-    "turn_state": "turn_up"
+    "turn_state": "range"
   },
   "educationworkforce": {
     "emerging": false,
@@ -1159,7 +1159,7 @@
     "name": "Oncology",
     "quadrant": "weakening",
     "theme": "Healthcare & Biotech",
-    "turn_state": "range"
+    "turn_state": "trending_up"
   },
   "healthcaretelemedicine": {
     "emerging": false,
@@ -1341,7 +1341,7 @@
     "name": "Enabling Tech",
     "quadrant": "lagging",
     "theme": "Quantum Computing",
-    "turn_state": "range"
+    "turn_state": "trending_up"
   },
   "quantumhardware": {
     "emerging": true,

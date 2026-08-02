@@ -6,6 +6,7 @@ import copy
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
@@ -13,6 +14,7 @@ from referencing import Registry, Resource
 
 from engine.government_revenue.award_events import AUTHORITY, build_award_change_events
 from engine.government_revenue.point_in_time import analysis_clock
+from engine.government_revenue.workspace import build_procurement_workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,9 +22,21 @@ EVENT_SCHEMA_PATH = ROOT / "contracts/government_revenue/government_procurement_
 WORKSPACE_SCHEMA_PATH = ROOT / "contracts/government_revenue/government_procurement_workspace.v2.schema.json"
 
 
-def _resolution(ticker, *, company_id=None, state="confirmed", include_path_evidence=True):
+def _resolution(
+    ticker,
+    *,
+    company_id=None,
+    state="confirmed",
+    include_path_evidence=True,
+    recipient_uei="UEI-001",
+):
     return {
         "resolution_state": state,
+        "source_identity_stable": True,
+        "recipient_entity_id": f"legal:{ticker}",
+        "source_recipient": {
+            "external_ids": [{"namespace": "sam_uei", "value": recipient_uei}],
+        },
         "issuer": {"company_id": company_id or f"central:{ticker}", "ticker": ticker},
         "ownership_path": [
             {
@@ -39,6 +53,7 @@ def _snapshot(**overrides):
         "generated_unique_award_id": "CONT_A_001",
         "award_id": "PIID-001",
         "recipient_name": "Example Defense Systems",
+        "recipient_uei": "UEI-001",
         "awarding_agency": "Department of Test",
         "awarding_sub_agency": "Test Command",
         "known_at": "2026-01-10T12:00:00Z",
@@ -76,6 +91,7 @@ def _action(**overrides):
         "action_type_description": "NEW AWARD",
         "description": "Initial award action",
         "recipient_name": "Example Defense Systems",
+        "recipient_uei": "UEI-001",
         "awarding_agency": "Department of Test",
     }
     row.update(overrides)
@@ -147,6 +163,18 @@ def test_date_only_as_of_uses_nanosecond_day_end_but_timestamp_as_of_is_exact():
 def test_idless_actions_never_receive_a_derived_identity_or_emit():
     idless = _action(action_id=None, transaction_id=None, action_uid=None, action_content_sha256="1" * 64)
     assert _events(actions=[idless]) == []
+
+
+def test_bare_piid_identity_cannot_become_a_public_award_event():
+    piid_only = _snapshot(
+        generated_unique_award_id=None,
+        generated_award_id=None,
+        award_key="piid:PIID-ONLY",
+        award_id="PIID-ONLY",
+        snapshot_content_sha256="1" * 64,
+    )
+
+    assert _events([piid_only]) == []
 
 
 def test_baseline_rows_do_not_emit_and_new_awards_are_timely_or_late():
@@ -227,6 +255,28 @@ def test_action_classification_covers_obligation_deobligation_option_and_ignores
     assert event_by_action["OPTION"]["award_change"]["secondary_types"] == ["obligation"]
 
 
+def test_first_seen_historical_action_is_marked_late_without_losing_native_identity():
+    """A later bounded-sample entrant cannot pose an old modification as fresh."""
+
+    old_action = _action(
+        action_id="NATIVE-HISTORICAL-ACTION",
+        known_at="2026-03-30T12:00:00Z",
+        action_date="2026-01-01T00:00:00Z",
+        action_content_sha256="9" * 64,
+        federal_action_obligation=25_000_000,
+        action_type_description="SUPPLEMENTAL AGREEMENT",
+    )
+
+    events = _events(actions=[old_action])
+
+    assert len(events) == 1
+    event = events[0]
+    assert event["award_change"]["action_id"] == "NATIVE-HISTORICAL-ACTION"
+    assert event["award_change"]["source_identity"]["id"] == "action:NATIVE-HISTORICAL-ACTION"
+    assert event["change"]["type"] == "obligation"
+    assert event["award_change"]["is_late_discovery"] is True
+
+
 def test_snapshot_a_b_a_keeps_immutable_distinct_event_ids_and_exact_before_after():
     snapshots = [
         _snapshot(known_at="2026-01-01T00:00:00Z", effective_at="2026-01-01T00:00:00Z", source_receipt_id="a", snapshot_content_sha256="a" * 64, current_award_amount=100),
@@ -266,27 +316,26 @@ def test_action_corrections_and_explicit_retractions_never_mislabel_deobligation
     assert (amount_change["before"], amount_change["after"]) == (20, 25)
 
 
-def test_duplicate_ticker_rows_merge_but_same_piid_different_generated_awards_do_not():
+def test_duplicate_discovery_rows_merge_but_same_piid_different_generated_awards_do_not():
     shared = _snapshot(
         generated_unique_award_id="GEN-SHARED",
         award_id="SAME-PIID",
         source_receipt_id="shared",
         snapshot_content_sha256="1" * 64,
-        ticker="AAA",
+        discovery_query_ticker="AAA",
         recipient_resolution=_resolution("AAA"),
     )
-    shared_second_ticker = copy.deepcopy(shared)
-    shared_second_ticker["ticker"] = "BBB"
-    shared_second_ticker["recipient_resolution"] = _resolution("BBB")
+    shared_second_discovery_query = copy.deepcopy(shared)
+    shared_second_discovery_query["discovery_query_ticker"] = "BBB"
     # The collector's source hash can include a ticker.  It is receipt evidence,
     # not a semantic reason to duplicate a single underlying award event.
-    shared_second_ticker["snapshot_content_sha256"] = "9" * 64
+    shared_second_discovery_query["snapshot_content_sha256"] = "9" * 64
     different_generated = _snapshot(
         generated_unique_award_id="GEN-DIFFERENT",
         award_id="SAME-PIID",
         source_receipt_id="different",
         snapshot_content_sha256="2" * 64,
-        ticker="CCC",
+        discovery_query_ticker="CCC",
         recipient_resolution=_resolution("CCC"),
     )
     companies = pd.DataFrame(
@@ -296,11 +345,11 @@ def test_duplicate_ticker_rows_merge_but_same_piid_different_generated_awards_do
             {"ticker": "CCC", "company_id": "central:CCC", "company_name": "C", "ttm_government_obligations": 1000},
         ]
     )
-    events = _events([shared, shared_second_ticker, different_generated], companies=companies)
+    events = _events([shared, shared_second_discovery_query, different_generated], companies=companies)
 
     assert len(events) == 2
     shared_event = next(event for event in events if event["record_id"] == "award:generated:GEN-SHARED")
-    assert [impact["ticker"] for impact in shared_event["listed_company_impacts"]] == ["AAA", "BBB"]
+    assert [impact["ticker"] for impact in shared_event["listed_company_impacts"]] == ["AAA"]
     assert {event["record_id"] for event in events} == {"award:generated:GEN-SHARED", "award:generated:GEN-DIFFERENT"}
 
 
@@ -310,6 +359,7 @@ def test_receipt_ledger_binding_is_exact_and_fails_closed_when_page_evidence_is_
         award_id="RECEIPT",
         source_receipt_id=None,
         source_url=None,
+        source_response_sha256=None,
         snapshot_content_sha256="8" * 64,
     )
     receipt = {
@@ -327,6 +377,54 @@ def test_receipt_ledger_binding_is_exact_and_fails_closed_when_page_evidence_is_
     assert bound[0]["evidence"]["receipts"][0]["ref_id"] == "detail-receipt"
     assert bound[0]["evidence"]["receipts"][0]["url"] == receipt["endpoint"]
     assert ambiguous == []
+
+
+def test_direct_receipt_claim_is_cross_checked_against_the_canonical_ledger():
+    receipt = {
+        "receipt_id": "detail-receipt",
+        "rail": "award_detail",
+        "observed_at": "2026-01-10T12:00:00Z",
+        "endpoint": "https://api.usaspending.gov/api/v2/awards/DIRECT/",
+        "response_sha256": "a" * 64,
+        "subject": {"award_key": "generated:DIRECT"},
+    }
+    direct = _snapshot(
+        generated_unique_award_id="DIRECT",
+        award_id="DIRECT",
+        source_receipt_id="detail-receipt",
+        source_url=receipt["endpoint"],
+        source_response_sha256="a" * 64,
+    )
+    wrong_hash = copy.deepcopy(direct)
+    wrong_hash["source_response_sha256"] = "b" * 64
+
+    assert len(_events([direct], source_receipts=[receipt])) == 1
+    assert _events([wrong_hash], source_receipts=[receipt]) == []
+
+
+def test_direct_receipt_claim_cannot_be_repaired_when_its_hash_or_url_is_omitted():
+    receipt = {
+        "receipt_id": "detail-receipt",
+        "rail": "award_detail",
+        "observed_at": "2026-01-10T12:00:00Z",
+        "endpoint": "https://api.usaspending.gov/api/v2/awards/DIRECT-INCOMPLETE/",
+        "response_sha256": "a" * 64,
+        "subject": {"award_key": "generated:DIRECT-INCOMPLETE"},
+    }
+    direct = _snapshot(
+        generated_unique_award_id="DIRECT-INCOMPLETE",
+        award_id="DIRECT-INCOMPLETE",
+        source_receipt_id="detail-receipt",
+        source_url=receipt["endpoint"],
+        source_response_sha256="a" * 64,
+    )
+    missing_hash = copy.deepcopy(direct)
+    missing_hash["source_response_sha256"] = None
+    missing_url = copy.deepcopy(direct)
+    missing_url["source_url"] = None
+
+    assert _events([missing_hash], source_receipts=[receipt]) == []
+    assert _events([missing_url], source_receipts=[receipt]) == []
 
 
 def test_raw_row_receipts_are_rejected_without_verified_complete_allowlisted_provenance():
@@ -365,6 +463,51 @@ def test_raw_row_receipts_are_rejected_without_verified_complete_allowlisted_pro
     assert _events([ledger_row], source_receipts=[bad_ledger]) == []
 
 
+def test_numpy_boolean_eligibility_and_receipt_assertions_are_supported():
+    row = _snapshot(
+        generated_unique_award_id="NUMPY-BOOL",
+        award_id="NUMPY-BOOL",
+        event_eligible=np.bool_(True),
+        receipt_verified=np.bool_(True),
+    )
+
+    assert len(_events([row])) == 1
+
+
+def test_unasserted_source_fields_do_not_manufacture_snapshot_deltas():
+    baseline = _snapshot(
+        generated_unique_award_id="PRESENCE",
+        award_id="PRESENCE",
+        event_eligible=False,
+        known_at="2026-01-01T00:00:00Z",
+        effective_at="2026-01-01T00:00:00Z",
+        source_receipt_id="presence-a",
+        current_award_amount=100,
+        potential_award_amount=200,
+        source_field_presence='["current_award_amount","potential_award_amount"]',
+    )
+    later = _snapshot(
+        generated_unique_award_id="PRESENCE",
+        award_id="PRESENCE",
+        known_at="2026-01-02T00:00:00Z",
+        effective_at="2026-01-02T00:00:00Z",
+        source_receipt_id="presence-b",
+        # A stale merged value must not read as an official change when the
+        # direct-source manifest says the field was omitted.
+        current_award_amount=999,
+        potential_award_amount=300,
+        source_field_presence='["potential_award_amount"]',
+    )
+
+    events = _events([baseline, later])
+
+    assert [event["change"]["type"] for event in events] == ["ceiling_changed"]
+    changed = events[0]["change"]["changed_fields"]
+    assert [(item["field"], item["before"], item["after"]) for item in changed] == [
+        ("potential_award_amount", 200, 300)
+    ]
+
+
 def test_company_impacts_require_confirmed_or_reviewed_resolution_and_ownership_evidence():
     companies = [{"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000}]
     raw_ticker = _snapshot(generated_unique_award_id="RAW", award_id="RAW", ticker="AAA")
@@ -377,7 +520,7 @@ def test_company_impacts_require_confirmed_or_reviewed_resolution_and_ownership_
     disagreement = _snapshot(
         generated_unique_award_id="MISMATCH",
         award_id="MISMATCH",
-        ticker="AAA",
+        issuer_ticker="AAA",
         recipient_resolution=_resolution("BBB"),
     )
     no_path_evidence = _snapshot(
@@ -389,7 +532,8 @@ def test_company_impacts_require_confirmed_or_reviewed_resolution_and_ownership_
     confirmed = _snapshot(
         generated_unique_award_id="CONFIRMED",
         award_id="CONFIRMED",
-        ticker="AAA",
+        ticker="BBB",
+        discovery_query_ticker="BBB",
         recipient_resolution=_resolution("AAA"),
     )
     events = _events([raw_ticker, candidate, disagreement, no_path_evidence, confirmed], companies=companies)
@@ -403,6 +547,29 @@ def test_company_impacts_require_confirmed_or_reviewed_resolution_and_ownership_
     assert [item["ticker"] for item in impact] == ["AAA"]
     assert impact[0]["resolution_state"] == "confirmed"
     assert impact[0]["ownership_path"][0]["edge_id"] == "ownership:AAA"
+
+
+def test_exact_identifier_issuer_conflict_withholds_all_company_impacts():
+    first = _snapshot(
+        generated_unique_award_id="EXACT-CONFLICT",
+        award_id="EXACT-CONFLICT",
+        recipient_resolution=_resolution("AAA"),
+    )
+    conflicting = copy.deepcopy(first)
+    conflicting["recipient_resolution"] = _resolution("BBB")
+    companies = [
+        {"ticker": "AAA", "company_id": "central:AAA", "ttm_government_obligations": 1_000},
+        {"ticker": "BBB", "company_id": "central:BBB", "ttm_government_obligations": 1_000},
+    ]
+
+    events = _events([first, conflicting], companies=companies)
+
+    assert len(events) == 1
+    assert events[0]["listed_company_impacts"] == []
+    assert events[0]["evidence"]["mapping_class"] == "unmapped"
+    assert "event_issuer_identifier_conflict" in {
+        conflict["code"] for conflict in events[0]["evidence"]["conflicts"]
+    }
 
 
 def test_unflagged_action_version_is_revised_not_corrected_and_text_is_only_annotation():
@@ -453,21 +620,15 @@ def test_v2_event_and_workspace_contracts_validate_and_authority_is_display_only
     with pytest.raises(ValidationError):
         event_validator.validate(invalid_receipt_event)
 
-    workspace = {
-        "schema_version": "government_procurement_workspace.v2",
-        "event_contract": "government_procurement_event.v2",
-        "as_of": "2026-03-31",
-        "known_at": "2026-03-31T23:59:59+00:00",
-        "generated_at": "2026-04-01T00:00:00+00:00",
-        "authority": AUTHORITY,
-        "freshness": {"status": "fresh", "opportunities": {}, "recompetes": {}, "mappings": {}},
-        "coverage": {"award_events": "P0 projector"},
-        "facets": {},
-        "events": events,
-        "next_cursor": None,
-        "total": len(events),
-        "display_sort": {"formula_version": "govrev_display_priority.v1", "formula": "display only", "is_investment_rank": False},
-        "federation_contract": "vertical_link.v1",
-        "limitations": ["Display-only context."],
-    }
+    workspace = build_procurement_workspace(
+        {
+            "events": [], "opportunities": [], "freshness": {"status": "unavailable"},
+            "market": {"active_opportunities": 0},
+        },
+        [],
+        as_of="2026-03-31",
+        known_at="2026-03-31T23:59:59+00:00",
+        award_events=events,
+        award_event_freshness={"status": "ok", "records_visible": len(events)},
+    )
     workspace_validator.validate(workspace)

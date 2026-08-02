@@ -128,6 +128,7 @@ def refresh(
     tx_index_url: str = DEFAULT_TX_INDEX_URL,
     as_of: str | None = None,
     dry_run: bool = False,
+    out_dir: Path | None = None,
     fetch_scores: Callable[..., int] = fetch_earnings_scores,
     publish_generation: Callable[..., int] = publish,
 ) -> int:
@@ -142,7 +143,11 @@ def refresh(
     with tempfile.TemporaryDirectory(prefix="company-intelligence-", dir=root) as temporary:
         scratch = Path(temporary)
         source_dir = scratch / "source"
-        output_dir = scratch / "output"
+        # The normal producer owns a disposable output tree. A dependent,
+        # post-publication sidecar may request an explicit handoff directory so
+        # it can verify the *same* immutable CIE marker/tree after this refresh
+        # has promoted it. Source inputs remain temporary in every mode.
+        output_dir = Path(out_dir) if out_dir is not None else scratch / "output"
         rc = fetch_scores(data_dir=source_dir, dry_run=False)
         if rc != 0:
             raise RefreshError(f"earnings fetch failed with exit code {rc}")
@@ -187,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--work-dir", type=Path, required=True, help="Scratch parent; only a temporary child is written")
     parser.add_argument("--terminal-tx-index-url", default=DEFAULT_TX_INDEX_URL)
     parser.add_argument("--as-of", default=None, help="ISO date used only for freshness status (default: current UTC date)")
+    parser.add_argument("--out-dir", type=Path, default=None, help="Optional persistent validated generation handoff directory")
     parser.add_argument("--dry-run", action="store_true", help="Fetch/build/validate but do not promote the root marker")
     args = parser.parse_args(argv)
     try:
@@ -195,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             tx_index_url=args.terminal_tx_index_url,
             as_of=args.as_of,
             dry_run=args.dry_run,
+            out_dir=args.out_dir,
         )
     except RefreshError as exc:
         print(f"company intelligence: refresh refused: {exc}", file=sys.stderr)
