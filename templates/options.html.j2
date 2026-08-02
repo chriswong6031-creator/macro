@@ -1477,28 +1477,50 @@ function flDrawSpark(){
   cv.width = W * dpr; cv.height = H * dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
   var up = cssVar('--up','#45b873'), dn = cssVar('--down','#e06464'), line = cssVar('--line','#2a2f3a');
-  var vals = spark.map(function(d){ return num(d.net_premium_mn) || 0; });
-  var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+  /* null = the store has NO observation for that session (pre-history, or a gap).
+     Those slots draw as absences — the 30-slot x-axis keeps its width so the
+     window stays honest, but no line, fill or dot is invented across them. A
+     real measured 0.0 is an observation and draws on the zero line. */
+  var vals = spark.map(function(d){ return num(d.net_premium_mn); });
+  var real = vals.filter(function(v){ return v !== null; });
+  if(real.length < 2) return;                    // the labelled flat track stays
+  var mx = Math.max.apply(null, real), mn = Math.min.apply(null, real);
   var top = Math.max(mx, 0), bot = Math.min(mn, 0), rng = (top - bot) || 1, pad = 5;
   function X(i){ return (i / (vals.length - 1)) * W; }
   function Y(v){ return H - pad - ((v - bot) / rng) * (H - pad * 2); }
   var zeroY = Y(0);
-  [true,false].forEach(function(above){
-    ctx.save(); ctx.beginPath();
-    if(above) ctx.rect(0,0,W,zeroY); else ctx.rect(0,zeroY,W,H-zeroY);
-    ctx.clip(); ctx.beginPath(); ctx.moveTo(X(0), zeroY);
-    vals.forEach(function(v,i){ ctx.lineTo(X(i), Y(v)); });
-    ctx.lineTo(X(vals.length-1), zeroY); ctx.closePath();
-    ctx.globalAlpha = .20; ctx.fillStyle = above ? up : dn; ctx.fill(); ctx.restore();
+  /* contiguous non-null runs; each ≥2-point run gets its own fills + stroke */
+  var runs = [], cur = null;
+  vals.forEach(function(v, i){
+    if(v === null){ cur = null; return; }
+    if(!cur){ cur = { s:i, e:i }; runs.push(cur); } else { cur.e = i; }
   });
   ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(W, zeroY);
   ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
-  var last = vals[vals.length-1];
-  ctx.beginPath();
-  vals.forEach(function(v,i){ i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v)); });
-  ctx.strokeStyle = last >= 0 ? up : dn; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
-  ctx.beginPath(); ctx.arc(X(vals.length-1), Y(last), 2.6, 0, Math.PI*2);
-  ctx.fillStyle = last >= 0 ? up : dn; ctx.fill();
+  runs.forEach(function(run){
+    if(run.e === run.s){                          // singleton observation → dot only
+      ctx.beginPath(); ctx.arc(X(run.s), Y(vals[run.s]), 2.2, 0, Math.PI*2);
+      ctx.fillStyle = vals[run.s] >= 0 ? up : dn; ctx.fill();
+      return;
+    }
+    [true,false].forEach(function(above){
+      ctx.save(); ctx.beginPath();
+      if(above) ctx.rect(0,0,W,zeroY); else ctx.rect(0,zeroY,W,H-zeroY);
+      ctx.clip(); ctx.beginPath(); ctx.moveTo(X(run.s), zeroY);
+      for(var i=run.s; i<=run.e; i++) ctx.lineTo(X(i), Y(vals[i]));
+      ctx.lineTo(X(run.e), zeroY); ctx.closePath();
+      ctx.globalAlpha = .20; ctx.fillStyle = above ? up : dn; ctx.fill(); ctx.restore();
+    });
+    ctx.beginPath();
+    for(var i=run.s; i<=run.e; i++) i === run.s ? ctx.moveTo(X(i), Y(vals[i])) : ctx.lineTo(X(i), Y(vals[i]));
+    ctx.strokeStyle = vals[run.e] >= 0 ? up : dn; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
+  });
+  var lastRun = runs[runs.length - 1];
+  if(lastRun){
+    var li = lastRun.e;
+    ctx.beginPath(); ctx.arc(X(li), Y(vals[li]), 2.6, 0, Math.PI*2);
+    ctx.fillStyle = vals[li] >= 0 ? up : dn; ctx.fill();
+  }
 }
 function flDrawUnfold(){
   var cv = document.getElementById('oew-fl-curve');
@@ -1574,7 +1596,13 @@ function renderFlow(host, desk, cohorts){
     return;
   }
   flDesk = desk;
-  host.innerHTML = flSectorPanel(desk) + flThemePanel(desk, cohorts) + flEtfPanel(desk) + flTidePanel(desk);
+  /* Section bands use the same .oew-sec-h idiom as Brief's baked sections —
+     uppercase tracking in EN, dropped in zh by the existing CSS rule. */
+  var flSecH = function(en, zh){ return '<div class="oew-sec-h"><h2>' + bi(en, zh) + '</h2></div>'; };
+  host.innerHTML = flSecH('Where the money went', '资金去向') + flSectorPanel(desk)
+    + flSecH('Who moved together', '谁在同步移动') + flThemePanel(desk, cohorts)
+    + flSecH('The passive tape', '被动资金') + flEtfPanel(desk)
+    + flSecH("The day's arc", '当日轨迹') + flTidePanel(desk);
   flDrawSpark();
   var url = r2Url('live_flow/tide_current.json');
   if(!url) return;                                   // no store configured — stay flat
@@ -2919,7 +2947,6 @@ function renderLeaders(host, L){
     + '<div class="oew-phead">'
       + '<h2 class="oew-ph-title">' + bi('Money keeps showing up','资金反复出现') + '</h2>'
       + '<span class="oew-ph-sub">' + bi('top 12 of ' + aTotal + ', by recurrence', '按出现频率排序，前12（共 ' + aTotal + '）') + '</span>'
-      + '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
       + '<div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button"'
         + ' data-tip-en="Each bar in the row is one sign we check. A filled bar means that sign is confirming right now; an empty bar means it is not; a dotted bar means the data for it has not arrived. Hover the bars to see which is which. More filled bars means more agreement — it does not mean a stronger expected return."'
         + ' data-tip-zh="每行中的每个方块代表我们检查的一项信号。实心表示该信号当前确认，空心表示尚未确认，虚线边框表示数据尚未到位。将鼠标悬停在方块上可查看具体项目。实心越多表示信号越一致 — 但并不代表预期收益更高。">?</span></div>'
@@ -2945,7 +2972,6 @@ function renderLeaders(host, L){
     + '<div class="oew-phead">'
       + '<h2 class="oew-ph-title">' + bi('Turned back up after a washout','洗盘后重新转强') + '</h2>'
       + '<span class="oew-ph-sub">' + bi('top 12 of ' + bTotal + ', most recent first', '最新转向在前，前12（共 ' + bTotal + '）') + '</span>'
-      + '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
     + '</div>'
     + (bTotal ? '<div class="oew-pbody" style="padding:0"><div class="oew-ld" id="oew-ld-b">'
         + ldRows(boardBFiltered, B_LEGS, 'fire_b', function(r){

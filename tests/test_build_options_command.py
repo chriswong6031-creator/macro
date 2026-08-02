@@ -1371,8 +1371,12 @@ def test_leaders_declares_both_board_caps_derived_not_hardcoded(page):
     assert "var boardBFiltered = (L.board_b || []).filter" in page
     assert "top 12 of ' + aTotal + ', by recurrence'" in page
     assert "top 12 of ' + bTotal + ', most recent first'" in page
-    assert page.count('class="oew-ph-more" href="flow_leaders.html"') == 2
-    assert page.count("Open the full boards") >= 2
+    # W1.6-A close-out: the "Open the full boards" links to flow_leaders.html are
+    # GONE — with the expander showing every row nothing is withheld, and in
+    # W1.6-B that URL becomes a redirect stub pointing back at #leaders, which
+    # would have made the links circular.
+    assert 'href="flow_leaders.html"' not in page
+    assert "Open the full boards" not in page
     # W1.6-A: the same derived total is now ALSO the expander's label, so the
     # subtitle's "of N" and the button's "show all N" can never disagree.
     assert "ldExpander('oew-ld-a', aTotal)" in page
@@ -2661,3 +2665,60 @@ if __name__ == "__main__":
     for _name, _fn in sorted(globals().items()):
         if _name.startswith("test_") and callable(_fn):
             pass  # this module is pytest-only (fixtures required)
+
+
+@_needs_node
+def test_spark_null_sessions_draw_as_gaps_not_zeros(page):
+    """W1.6-A item C: a null spark entry is a session with NO observation
+    (pre-history or a store gap). The 30-slot x-axis keeps its width, but no
+    line vertex, fill or dot may be invented at a null slot — while a REAL
+    measured 0.0 is an observation and must draw on the zero line. Executes
+    flDrawSpark against a recording 2D context; a fabricated-zero regression
+    (null coerced with `|| 0`) puts vertices at the null slots and fails."""
+    driver = _DOM_STUB + _extract_workspace_script(page) + """
+    var calls = [];
+    function rec(m){ return function(){ calls.push([m].concat([].slice.call(arguments))); }; }
+    var ctx = { setTransform: rec('setTransform'), clearRect: rec('clearRect'),
+                beginPath: rec('beginPath'), moveTo: rec('moveTo'), lineTo: rec('lineTo'),
+                closePath: rec('closePath'), fill: rec('fill'), stroke: rec('stroke'),
+                clip: rec('clip'), save: rec('save'), restore: rec('restore'),
+                rect: rec('rect'), arc: rec('arc'), setLineDash: rec('setLineDash'),
+                createLinearGradient: function(){ return { addColorStop: function(){} }; } };
+    var canvas = { offsetWidth: 250, offsetHeight: 40, getContext: function(){ return ctx; } };
+    document.getElementById = function(id){ return id === 'oew-fl-spark' ? canvas : null; };
+    var getComputedStyle = function(){ return { getPropertyValue: function(){ return ''; } }; };
+    var host = { innerHTML: '' };
+    /* 6 slots: 3 pre-history nulls, then 5.0, a REAL 0.0, -3.0.
+       X(i) = i/5 * 250 -> 0, 50, 100, 150, 200, 250. */
+    renderFlow(host, { sector_heatmap: [ { sector: 'Technology', gross_premium_mn: 10, net_premium_mn: 4 } ],
+                       market_tide: { spark: [
+                         { date: '2026-06-01', net_premium_mn: null },
+                         { date: '2026-06-02', net_premium_mn: null },
+                         { date: '2026-06-03', net_premium_mn: null },
+                         { date: '2026-06-04', net_premium_mn: 5.0 },
+                         { date: '2026-06-05', net_premium_mn: 0.0 },
+                         { date: '2026-06-08', net_premium_mn: -3.0 } ] } }, null);
+    var xs = [];
+    calls.forEach(function(c){
+      if(c[0] === 'moveTo' || c[0] === 'lineTo' || c[0] === 'arc') xs.push(c[1]);
+    });
+    function near(x, t){ return Math.abs(x - t) < 0.01; }
+    /* null slots 1 and 2 (x=50,100) must never be touched. Slot 0 shares x=0
+       with the full-width zero baseline, so it is excluded from the check. */
+    var nullHit = xs.some(function(x){ return near(x, 50) || near(x, 100); });
+    /* the real 0.0 at slot 4 (x=200) must be drawn */
+    var zeroDrawn = xs.some(function(x){ return near(x, 200); });
+    /* the last dot sits on the last REAL point (x=250) */
+    var arcs = calls.filter(function(c){ return c[0] === 'arc'; });
+    var lastDotOk = arcs.length > 0 && near(arcs[arcs.length - 1][1], 250);
+    console.log(JSON.stringify({ nullHit: nullHit, zeroDrawn: zeroDrawn,
+      lastDotOk: lastDotOk, drew: calls.length > 0 }));
+    })();
+    """
+    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr[-2000:]
+    res = _json.loads(out.stdout.strip().splitlines()[-1])
+    assert res["drew"], "flDrawSpark drew nothing at all"
+    assert not res["nullHit"], "a null (no-observation) slot received a drawn vertex — fabricated zero regression"
+    assert res["zeroDrawn"], "the REAL measured 0.0 was not drawn — nulls and zeros conflated in the other direction"
+    assert res["lastDotOk"], "the last-value dot is not on the last real observation"
