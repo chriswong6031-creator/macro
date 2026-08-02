@@ -57,7 +57,7 @@ def _tree(tmp_path: Path):
         "dates": {"AAPL/2026Q1": "2026-01-30"}, "body_count": 1, "symbol_count": 1,
     }
     pack, graph = build_evidence_pair(body, index_payload=index, indexed_body_sha256=digest, index_generated_at=index["generated_at"])
-    _dir, manifest = write_generation(tmp_path, [EvidencePair(pack, graph)])
+    _dir, manifest = write_generation(tmp_path, [EvidencePair(pack, graph, body)])
     return manifest
 
 

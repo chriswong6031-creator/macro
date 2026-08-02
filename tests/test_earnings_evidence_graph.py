@@ -12,8 +12,10 @@ from engine.earnings_narrative.contracts import (
     ContractError,
     canonical_transcript_body_sha256,
     derived_claim_id,
+    receipt_for_span,
     validate_claim_graph,
     validate_fact_pack,
+    verify_fact_pack_against_transcript,
 )
 from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
@@ -76,6 +78,7 @@ def test_exact_utf8_span_receipt_reconstructs_quote_and_numeric_bytes() -> None:
     assert quote["receipt"]["span_start_byte"] == 0
     assert numeric["numeric_value"] == 12.5
     assert numeric["numeric_unit"] == "percent"
+    assert pack["source"]["locator"] == "/data/tx/AAPL/2026Q1.json.gz"
 
 
 def test_closed_schema_and_numeric_integrity_reject_unsafe_mutations() -> None:
@@ -109,25 +112,33 @@ def test_receipt_mismatch_and_future_chronology_fail_closed() -> None:
 
 
 def test_revision_correction_supersedes_prior_source_without_second_logical_event(tmp_path: Path) -> None:
-    first, first_graph = _pair(_body(text="Revenue was 100 million."))
-    _first_dir, first_manifest = write_generation(tmp_path, [EvidencePair(first, first_graph)])
-    corrected, corrected_graph = _pair(_body(text="Revenue was 101 million."))
-    _second_dir, second_manifest = write_generation(tmp_path, [EvidencePair(corrected, corrected_graph)])
+    first_body = _body(text="Revenue was 100 million.")
+    first, first_graph = _pair(first_body)
+    _first_dir, first_manifest = write_generation(tmp_path, [EvidencePair(first, first_graph, first_body)])
+    corrected_body = _body(text="Revenue was 101 million.")
+    corrected, corrected_graph = _pair(corrected_body)
+    _second_dir, second_manifest = write_generation(tmp_path, [EvidencePair(corrected, corrected_graph, corrected_body)])
     event = second_manifest["events"]["AAPL/2026Q1"]
     assert second_manifest["generation_id"] != first_manifest["generation_id"]
     assert event["source_sha256"] == corrected["source"]["body_sha256"]
     assert event["supersedes_source_sha256"] == first["source"]["body_sha256"]
     assert list(second_manifest["events"]) == ["AAPL/2026Q1"]
+    old_source_path = _first_dir / first_manifest["events"]["AAPL/2026Q1"]["source_body"]
+    assert json.loads(old_source_path.read_text(encoding="utf-8"))["segments"][0]["text"] == "Revenue was 100 million."
+    assert first["source"]["locator"] == corrected["source"]["locator"]
 
 
 def test_one_weak_transcript_keeps_healthy_peer_publishable(tmp_path: Path) -> None:
-    healthy, healthy_graph = _pair(_body(ticker="AAPL"))
-    weak, weak_graph = _pair(_body(ticker="MSFT", text="Management discussed priorities."))
-    _directory, manifest = write_generation(tmp_path, [EvidencePair(healthy, healthy_graph), EvidencePair(weak, weak_graph)])
+    healthy_body = _body(ticker="AAPL")
+    weak_body = _body(ticker="MSFT", text="Management discussed priorities.")
+    healthy, healthy_graph = _pair(healthy_body)
+    weak, weak_graph = _pair(weak_body)
+    _directory, manifest = write_generation(tmp_path, [EvidencePair(healthy, healthy_graph, healthy_body), EvidencePair(weak, weak_graph, weak_body)])
     assert manifest["status"] == "ready"
     assert manifest["warnings"] == []
     assert weak["insufficiency"] == ["no_numeric_statements"]
     assert validate_generation(tmp_path)["status"] == "ready"
+    assert (_directory / manifest["events"]["AAPL/2026Q1"]["source_body"]).is_file()
 
 
 def test_derived_contract_requires_formula_and_parent_claims_but_v1_does_not_publish_telemetry() -> None:
@@ -152,14 +163,35 @@ def test_derived_contract_requires_formula_and_parent_claims_but_v1_does_not_pub
 
 
 def test_local_writer_health_verifies_every_file_and_detects_tampering(tmp_path: Path) -> None:
-    pack, graph = _pair(_body())
-    generation, manifest = write_generation(tmp_path, [EvidencePair(pack, graph)])
+    body = _body()
+    pack, graph = _pair(body)
+    generation, manifest = write_generation(tmp_path, [EvidencePair(pack, graph, body)])
     assert validate_generation(tmp_path)["status"] == "ready"
     path = generation / manifest["events"]["AAPL/2026Q1"]["fact_pack"]
     path.write_bytes(path.read_bytes() + b" ")
     health = validate_generation(tmp_path)
     assert health["status"] == "invalid"
     assert any(item.startswith("bytes:") or item.startswith("sha256:") for item in health["warnings"])
+
+
+def test_source_replay_rejects_a_self_consistent_claim_receipt_from_other_raw_bytes() -> None:
+    body = _body()
+    pack, _graph = _pair(body)
+    forged = deepcopy(pack)
+    fact = next(item for item in forged["facts"] if item["kind"] == "quote")
+    forged_text = "Bogus transcript statement."
+    fact["text"] = forged_text
+    fact["receipt"] = receipt_for_span(
+        source_sha256=forged["source"]["body_sha256"],
+        segment_index=0,
+        segment_text=forged_text,
+        start_byte=0,
+        end_byte=len(forged_text.encode("utf-8")),
+        text=forged_text,
+    )
+    validate_fact_pack(forged)
+    with pytest.raises(ContractError, match="does not replay"):
+        verify_fact_pack_against_transcript(forged, body)
 
 
 def test_build_cli_contract_is_bounded_and_does_not_require_company_intelligence(tmp_path: Path) -> None:
@@ -209,3 +241,64 @@ def test_incremental_refresh_defers_marker_then_rebuilds_complete_cached_corpus(
     assert len(promoted) == 1
     assert promoted[0]["status"] == "ready"
     assert set(promoted[0]["events"]) == {"AAPL/2026Q1", "MSFT/2026Q1"}
+
+
+def test_refresh_cutoff_excludes_uncached_old_index_rows_but_promotes_retained_cohort(monkeypatch, tmp_path: Path) -> None:
+    old = _body(ticker="OLD", text="Historic revenue grew 1%.")
+    old["date"] = "2025-01-30"
+    aapl = _body(ticker="AAPL", text="Revenue grew 10%.")
+    msft = _body(ticker="MSFT", text="Revenue grew 20%.")
+    index = _index(old, aapl, msft)
+    bodies = {(body["ticker"], body["id"]): body for body in (old, aapl, msft)}
+    fetched: list[str] = []
+    promoted: list[dict] = []
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_global_index", lambda _url: index)
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_body", lambda _url, ref: fetched.append(ref.pair) or bodies[(ref.ticker, ref.transcript_id)])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.publish", lambda out: promoted.append(json.loads((out / "manifest.json").read_text(encoding="utf-8"))) or 0)
+    worker = tmp_path / "worker"
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, promote=True) == 0
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, promote=True) == 0
+    assert "OLD/2026Q1" not in fetched
+    assert set(promoted[-1]["events"]) == {"AAPL/2026Q1", "MSFT/2026Q1"}
+    assert promoted[-1]["warnings"] == ["selection_bounded"]
+
+
+def test_intermediate_slice_preserves_prior_public_marker_and_final_correction_supersedes(monkeypatch, tmp_path: Path) -> None:
+    original = _body(ticker="AAPL", text="Revenue was 100 million.")
+    corrected = _body(ticker="AAPL", text="Revenue was 101 million.")
+    msft = _body(ticker="MSFT", text="Revenue was 200 million.")
+    current = {"index": _index(original), "bodies": {("AAPL", "2026Q1"): original}}
+    published: list[dict] = []
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_global_index", lambda _url: current["index"])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_body", lambda _url, ref: current["bodies"][(ref.ticker, ref.transcript_id)])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.publish", lambda out: published.append(json.loads((out / "manifest.json").read_text(encoding="utf-8"))) or 0)
+    worker, public = tmp_path / "worker", tmp_path / "public"
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, out_dir=public, promote=True) == 0
+    prior = json.loads((public / "manifest.json").read_text(encoding="utf-8"))
+    current["index"] = _index(corrected, msft)
+    current["bodies"] = {("AAPL", "2026Q1"): corrected, ("MSFT", "2026Q1"): msft}
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, out_dir=public, promote=True) == 0
+    assert json.loads((public / "manifest.json").read_text(encoding="utf-8")) == prior
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=5, out_dir=public, promote=True) == 0
+    final = json.loads((public / "manifest.json").read_text(encoding="utf-8"))
+    assert final["events"]["AAPL/2026Q1"]["supersedes_source_sha256"] == prior["events"]["AAPL/2026Q1"]["source_sha256"]
+    assert set(final["events"]) == {"AAPL/2026Q1", "MSFT/2026Q1"}
+
+
+def test_cohort_rollover_never_shrinks_healthy_public_peer_count(monkeypatch, tmp_path: Path) -> None:
+    aapl = _body(ticker="AAPL", text="Revenue was 100 million.")
+    msft = _body(ticker="MSFT", text="Revenue was 200 million.")
+    goog = _body(ticker="GOOG", text="Revenue was 300 million.")
+    current = {"index": _index(aapl, msft), "bodies": {("AAPL", "2026Q1"): aapl, ("MSFT", "2026Q1"): msft}}
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_global_index", lambda _url: current["index"])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.fetch_body", lambda _url, ref: current["bodies"][(ref.ticker, ref.transcript_id)])
+    monkeypatch.setattr("scripts.refresh_earnings_evidence_graph.publish", lambda _out: 0)
+    worker, public = tmp_path / "worker", tmp_path / "public"
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=2, cohort_limit=2, out_dir=public, promote=True) == 0
+    first = json.loads((public / "manifest.json").read_text(encoding="utf-8"))
+    current["index"] = _index(aapl, msft, goog)
+    current["bodies"][("GOOG", "2026Q1")] = goog
+    assert refresh(worker, bootstrap_since="2026-01-01", max_bodies=1, cohort_limit=2, out_dir=public, promote=True) == 0
+    second = json.loads((public / "manifest.json").read_text(encoding="utf-8"))
+    assert len(second["events"]) >= len(first["events"])
+    assert len(second["events"]) == 2
