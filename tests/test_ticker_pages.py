@@ -910,6 +910,171 @@ class TestContextOnlyMode:
 
 
 class TestRunFunction:
+    def test_manifest_exposes_context_only_fallback_as_no_html(self, tmp_path, monkeypatch):
+        tickers = ["AAPL"]
+        site = _make_site(tmp_path, tickers)
+        _make_membership(tmp_path, tickers)
+
+        import scripts.build_ticker_pages as btp
+
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        monkeypatch.setattr(btp, "_SHARE_CARDS", None)
+        manifest_path = tmp_path / "receipt" / "ticker-pages-context-only.json"
+
+        rc = btp.run(
+            out=tmp_path / "out_context_only",
+            site=site,
+            context_only=True,
+            dump_context=tmp_path / "contexts",
+            manifest_out=manifest_path,
+        )
+
+        assert rc == 0
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["rendered_count"] == 0
+        assert manifest["tickers"] == []
+        assert manifest["failure_count"] == 0
+        assert manifest["failed_tickers"] == []
+        assert manifest["index_written"] is False
+        assert not (tmp_path / "out_context_only" / "AAPL.html").exists()
+
+    def test_manifest_exposes_missing_index_template(self, tmp_path, monkeypatch):
+        tickers = ["AAPL"]
+        site = _make_site(tmp_path, tickers)
+        _make_membership(tmp_path, tickers)
+
+        import scripts.build_ticker_pages as btp
+
+        templates = tmp_path / "templates"
+        templates.mkdir()
+        (templates / "ticker.html.j2").write_text(
+            '<main data-company-intelligence>{{ ticker }}</main>'
+            '<script src="company-intelligence-dossier.js"></script>',
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        monkeypatch.setattr(btp, "_SHARE_CARDS", None)
+        monkeypatch.setattr(btp, "TEMPLATES_DIR", templates)
+        manifest_path = tmp_path / "receipt" / "ticker-pages-no-index.json"
+
+        rc = btp.run(
+            out=tmp_path / "out_no_index",
+            site=site,
+            manifest_out=manifest_path,
+        )
+
+        assert rc == 0
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["rendered_count"] == 1
+        assert manifest["tickers"] == ["AAPL"]
+        assert manifest["failure_count"] == 0
+        assert manifest["failed_tickers"] == []
+        assert manifest["index_written"] is False
+
+    def test_manifest_receipts_only_pages_rendered_in_this_invocation(self, tmp_path, monkeypatch):
+        tickers = ["AAPL"]
+        site = _make_site(tmp_path, tickers)
+        _make_membership(tmp_path, tickers)
+
+        import scripts.build_ticker_pages as btp
+
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        monkeypatch.setattr(btp, "_SHARE_CARDS", None)
+        out_dir = tmp_path / "out_manifest"
+        out_dir.mkdir()
+        (out_dir / "RETIRED.html").write_text("legacy page", encoding="utf-8")
+        manifest_path = tmp_path / "receipt" / "ticker-pages.json"
+
+        rc = btp.run(
+            out=out_dir,
+            site=site,
+            only_tickers={"AAPL"},
+            manifest_out=manifest_path,
+        )
+
+        assert rc == 0
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["schema"] == "ticker-page-render-manifest.v1"
+        assert manifest["rendered_count"] == 1
+        assert manifest["tickers"] == ["AAPL"]
+        assert manifest["failure_count"] == 0
+        assert manifest["failed_tickers"] == []
+        assert manifest["index_written"] is True
+        assert (out_dir / "RETIRED.html").read_text(encoding="utf-8") == "legacy page"
+
+    def test_manifest_receipts_admitted_page_render_failures(self, tmp_path, monkeypatch):
+        tickers = ["AAPL", "MSFT"]
+        site = _make_site(tmp_path, tickers)
+        _make_membership(tmp_path, tickers)
+
+        import scripts.build_ticker_pages as btp
+
+        original = btp.build_page_context
+
+        def fail_one(ticker, *args, **kwargs):
+            if ticker == "AAPL":
+                raise RuntimeError("synthetic render failure")
+            return original(ticker, *args, **kwargs)
+
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        monkeypatch.setattr(btp, "_SHARE_CARDS", None)
+        monkeypatch.setattr(btp, "build_page_context", fail_one)
+        out_dir = tmp_path / "out_failure_receipt"
+        manifest_path = tmp_path / "receipt" / "ticker-pages-failed.json"
+
+        rc = btp.run(out=out_dir, site=site, manifest_out=manifest_path)
+
+        assert rc == 0
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["rendered_count"] == 1
+        assert manifest["tickers"] == ["MSFT"]
+        assert manifest["failure_count"] == 1
+        assert manifest["failed_tickers"] == ["AAPL"]
+        assert manifest["index_written"] is True
+
+    def test_render_only_lane_never_fetches_missing_logos(self, tmp_path, monkeypatch):
+        tickers = ["AAPL"]
+        site = _make_site(tmp_path, tickers)
+        _make_membership(tmp_path, tickers)
+
+        import scripts.build_ticker_pages as btp
+
+        class StubCards:
+            saves = 0
+
+            @classmethod
+            def save_card_if_changed(cls, **_kwargs):
+                cls.saves += 1
+                return False
+
+        class StubLogoCache:
+            calls: list[str] = []
+
+            @classmethod
+            def white_logo_datauri(cls, ticker, *_args, **_kwargs):
+                cls.calls.append(ticker)
+                return None
+
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        monkeypatch.setattr(btp, "_SHARE_CARDS", StubCards())
+        monkeypatch.setattr(btp, "_LOGO_CACHE", StubLogoCache())
+        monkeypatch.setenv("RENDER_NO_DRIP", "1")
+
+        out_dir = tmp_path / "out_no_drip"
+        rc = btp.run(out=out_dir, site=site, only_tickers={"AAPL"})
+
+        assert rc == 0
+        assert StubCards.saves == 1, "the share-card/logo branch must execute in this test"
+        assert StubLogoCache.calls == []
+        html = (out_dir / "AAPL.html").read_text(encoding="utf-8")
+        assert "data-company-intelligence" in html
+        assert "company-intelligence-dossier.js" in html
+
+        monkeypatch.delenv("RENDER_NO_DRIP")
+        rc = btp.run(out=tmp_path / "out_nightly", site=site, only_tickers={"AAPL"})
+        assert rc == 0
+        assert StubLogoCache.calls == ["AAPL"], "nightly logo-cache fill must remain enabled"
+
     def test_run_context_only_no_html(self, tmp_path):
         tickers = ["AAPL"]
         site = _make_site(tmp_path, tickers)

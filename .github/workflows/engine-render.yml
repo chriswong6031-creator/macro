@@ -632,6 +632,77 @@ jobs:
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac
           exit 0
+      - name: render ticker dossiers from rebuilt US stockdata
+        env:
+          # Keep the express lane network-free. Cached logos still render; cache misses
+          # wait for the nightly instead of reaching the logo CDN from this job.
+          RENDER_NO_DRIP: "1"
+        run: |
+          set -euo pipefail
+          SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"
+          case "$SCOPE" in
+            all|macro) ;;
+            *) echo "::notice title=ticker_dossiers::scope=$SCOPE does not run the full dossier pass — skipped"; exit 0 ;;
+          esac
+
+          LOG="$RUNNER_TEMP/ticker-pages.log"
+          MANIFEST="$RUNNER_TEMP/ticker-pages-manifest.json"
+          python -m scripts.build_ticker_pages --manifest-out "$MANIFEST" 2>&1 | tee "$LOG"
+          COUNT=$(sed -nE 's/.*ticker_pages::rendered=([0-9]+).*/\1/p' "$LOG" | tail -n 1)
+          if [ -z "$COUNT" ] || [ "$COUNT" -eq 0 ]; then
+            echo "::error title=ticker_dossiers::builder emitted no ticker pages"
+            exit 1
+          fi
+
+          python - "$MANIFEST" "$COUNT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          root = Path("site/stocks")
+          manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          logged_count = int(sys.argv[2])
+          tickers = manifest.get("tickers") or []
+          pages = [root / f"{ticker}.html" for ticker in tickers]
+          markers = ("data-company-intelligence", "company-intelligence-dossier.js")
+          missing = [
+              path.name
+              for path in pages
+              if not path.is_file()
+              or any(marker not in path.read_text(encoding="utf-8") for marker in markers)
+          ]
+          if manifest.get("schema") != "ticker-page-render-manifest.v1":
+              print("::error title=ticker_dossiers::render manifest schema is invalid", flush=True)
+              raise SystemExit(1)
+          if manifest.get("failure_count") or manifest.get("failed_tickers"):
+              failures = manifest.get("failed_tickers") or []
+              sample = ", ".join(str(ticker) for ticker in failures[:20])
+              print(
+                  f"::error title=ticker_dossiers::{len(failures)} admitted ticker pages failed to render; "
+                  f"sample: {sample}",
+                  flush=True,
+              )
+              raise SystemExit(1)
+          if manifest.get("index_written") is not True:
+              print("::error title=ticker_dossiers::ticker index did not render", flush=True)
+              raise SystemExit(1)
+          if (not tickers or manifest.get("rendered_count") != len(tickers)
+                  or manifest.get("rendered_count") != logged_count):
+              print("::error title=ticker_dossiers::render manifest is empty or inconsistent", flush=True)
+              raise SystemExit(1)
+          if missing:
+              sample = ", ".join(missing[:20])
+              print(
+                  f"::error title=ticker_dossiers::{len(missing)} of {len(tickers)} rendered ticker pages "
+                  f"lack the Company Intelligence shell; sample: {sample}",
+                  flush=True,
+              )
+              raise SystemExit(1)
+          print(
+              f"::notice title=ticker_dossiers::{len(tickers)} rendered ticker pages carry the Company Intelligence shell",
+              flush=True,
+          )
+          PY
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
         # WITHOUT node, so this guard failed on every render there 07-18; the historical
