@@ -1295,11 +1295,14 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 <script>
 /* Payload externalized (consolidation gate 5): fetched from chinabasketdata/baskets.json —
    the single envelope carrying baskets + chart + story + theme_intel (W1 pins inline≡fetched). */
-var BASKETS = null, CHART = null;
+/* BASKETS/CHART/THEME are cross-script globals: baskets_desk.js reads all three from the
+   shared global scope (the old page declared them as top-level consts). Keep them var +
+   assigned, never re-declared inside the wrapper, or the desk silently renders nothing. */
+var BASKETS = null, CHART = null, THEME = null;
 function __csiInitPage(payload){
   BASKETS = payload; CHART = payload.chart || {};
 
-const THEME   = BASKETS.theme_intel || null;
+THEME = BASKETS.theme_intel || null;
 window.BASKET_BASE = '{{ basket_base }}';
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
