@@ -183,6 +183,44 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ui.admin_js_no_undef
+    summary: >
+      Every bare identifier in admin/static/*.js must resolve to something in
+      scope. app.js is a flat top-level browser script, so a `let` declared in
+      one function and read from another parses clean, reviews clean, and throws
+      a ReferenceError only when the code path runs. PR #3693 shipped exactly
+      that ("rejBox is not defined") and the admin Outbox panel rendered BLANK in
+      production for ~2 days until #3871 module-scoped it as OBX_REJ. node
+      --check cannot see it — an undefined identifier is valid syntax — so this
+      runs eslint with a single rule, no-undef.
+    source_ref:
+      - scripts/check_admin_js.py
+      - "PRs #3693 #3871"
+    severity: hard
+    check_script: scripts/check_admin_js.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: admin-js-no-undef
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Thin eslint wrapper with no logic of its own to verify; the detection
+      guarantee is covered by tests/test_admin_js_no_undef.py, which plants the
+      #3693 defect shape in a temp file and asserts the guard flags it.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Only the no-undef rule runs. Typos that resolve to a real global
+        (e.g. `name`, `status`, `length` on window) are legal references and
+        stay invisible.
+      - Assumes admin/static/index.html keeps injecting no extra globals; a
+        future vendor <script> would need its names added to the eslint env.
+      - Needs node + npx on the runner. The pytest lane fails RED rather than
+        skipping when the tooling is missing under CI, so an unrunnable guard
+        can never read green.
+    owner_program: engine-fix-masterplan
+    notes: null
+
   - law_id: ui.nav_gap
     summary: >
       Every page's shared nav menu must maintain a top gap (body top padding).

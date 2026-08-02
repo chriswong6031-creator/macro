@@ -83,6 +83,15 @@ on:
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
       # CI-cost call for the operator (it would run the whole pack on most PRs).
       - "tests/test_gh_annotation_line_start.py"
+      # admin-js no-undef guard: admin/static/app.js is a flat top-level script, so a
+      # name declared in one function and read from another parses clean and throws
+      # only on click (#3693 blanked the Outbox panel for ~2 days; fixed in #3871).
+      # The glob is listed alongside app.js (already here via the SEE W1 block below)
+      # because the checker itself globs admin/static/*.js — a SECOND admin bundle
+      # would otherwise be guarded by a job its own edits could never trigger.
+      - "admin/static/*.js"
+      - "scripts/check_admin_js.py"
+      - "tests/test_admin_js_no_undef.py"
       # Absolute-path prune guard (#3802): a walk excluding ".claude"/"worktrees"
       # via `path.parts` also matches the checkout's own path and scans nothing.
       # Named so a test-only edit still triggers the lane that runs it.
