@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T17:51:34.783916+00:00",
-  "count": 609,
+  "generated_at": "2026-08-02T18:18:29.398940+00:00",
+  "count": 610,
   "institutions": [
     "Amova",
     "Apollo",
@@ -205,6 +205,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 35,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-splv8sstvnw-4d16a7",
+      "title": "Global Insights 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T14:46:35Z",
+      "summary_points": [
+        "**Japan Fiscal Catalyst**: $2.3T capex plan driving 14.3% YTD MSCI Japan gain, with yen depreciation (4.3% YTD) as key policy-driven growth engine.",
+        "**Korea Tech Concentration Risk**: MSCI Korea dominated by tech (74% weighting), exports surging 48% YoY, but extreme concentration (two firms hold ~2/3 market cap) and liquidity issues sustain EM classification.",
+        "**EM Equity Outperformance**: MSCI Emerging Markets up 31.4% YTD vs.",
+        "US Russell 2000 (18.8% YTD), signaling EM as primary growth driver amid nine positive US equity sectors.",
+        "**US Policy & Market Dynamics**: S&P 500 near record high (9% YTD), Fed hawkishness lifting USD index 3.2% YTD, and CPI cooling to 2.69% amid tech profit-taking."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
