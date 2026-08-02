@@ -300,6 +300,8 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
     for key in (
         "BIOCATALYST_ENABLED",
         "BIOCATALYST_HISTORY_ENABLED=0",
+        "BIOCATALYST_PROSPECTIVE_ENABLED=0",
+        "BIOCATALYST_R2_RETENTION_CONFIRMED=0",
         "BIOCATALYST_CANARY_NCTS",
         "BIOCATALYST_USER_AGENT",
         "BIOCATALYST_R2_ENDPOINT",
@@ -308,6 +310,10 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
         "BIOCATALYST_R2_SECRET_ACCESS_KEY",
     ):
         assert key in setup
+
+    assert "BIOCATALYST_R2_RETENTION_CONFIRMED must equal 1 when prospective collection is enabled" in setup
+    assert "BIOCATALYST_PROSPECTIVE_ENABLED must equal 0 or 1" in setup
+    assert "BIOCATALYST_R2_RETENTION_CONFIRMED must equal 0 or 1" in setup
 
     executable_lines = [
         line.strip() for line in setup.splitlines()

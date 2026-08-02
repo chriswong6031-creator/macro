@@ -42,15 +42,27 @@ def test_biocatalyst_owns_only_declared_source_canonical_and_dark_regulatory_lan
         "drugs_at_fda_release_archive",
         "drugs_at_fda_private_query_index",
     }
-    for name in {
-        "clinicaltrials_source_record",
-        "trial_snapshot_and_exact_diff",
-        "biocatalyst_read_projection",
-    }:
+    for name, expected_state in {
+        "clinicaltrials_source_record": "frozen_for_b0a",
+        "trial_snapshot_and_exact_diff": "implemented_b4d_retention_gated",
+        "biocatalyst_read_projection": "implemented_b4d_retention_gated",
+    }.items():
         registration = registrations[name]
-        assert registration["implementation_state"] == "frozen_for_b0a"
+        assert registration["implementation_state"] == expected_state
         assert registration["writer"] is not None
         assert registration["operational_owner"] == "mastermindx_platform_ops"
+
+    prospective_writer = registrations["trial_snapshot_and_exact_diff"]["writer"]
+    assert prospective_writer["module"] == "engine.biocatalyst.prospective"
+    assert {
+        "trial_snapshot_observation.v1",
+        "trial_version_diff.v1",
+        "trial_coverage_epoch.v1",
+    } <= set(prospective_writer["schemas"])
+
+    public_writer = registrations["biocatalyst_read_projection"]["writer"]
+    assert public_writer["module"] == "engine.biocatalyst.publication"
+    assert "trial_prospective_change_read_model.v1" in public_writer["schemas"]
     for name in {
         "drugs_at_fda_release_archive",
         "drugs_at_fda_private_query_index",
@@ -118,4 +130,25 @@ def test_full_b0_remains_explicitly_open() -> None:
         "capital_structure_projection_executable_contract",
     } == set(closure["blockers"])
     assert "source_canonical_nct_identity" in closure["unblocked_scope"]
-    assert "exact_registry_record_diffs" in closure["unblocked_scope"]
+    assert "prospective_trial_observations" not in closure["unblocked_scope"]
+    assert "exact_registry_record_diffs" not in closure["unblocked_scope"]
+    assert closure["conditional_schema_scope"] == {
+        "prospective_trial_observations": {
+            "canonical_registration": "trial_snapshot_and_exact_diff",
+            "schema": "trial_snapshot_observation.v1",
+            "availability": "dark_until_runtime_retention_gate",
+            "required_environment": {
+                "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
+                "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
+            },
+        },
+        "exact_registry_record_diffs": {
+            "canonical_registration": "trial_snapshot_and_exact_diff",
+            "schema": "trial_version_diff.v1",
+            "availability": "dark_until_runtime_retention_gate",
+            "required_environment": {
+                "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
+                "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
+            },
+        },
+    }

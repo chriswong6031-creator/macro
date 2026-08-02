@@ -214,7 +214,17 @@ def _install_rehashed_v12_history_artifact(
     artifact_path.parent.mkdir(exist_ok=True)
     artifact_bytes = canonical_json_bytes(model) + b"\n"
     artifact_path.write_bytes(artifact_bytes)
+    prospective_dir = generation / "prospective"
+    if prospective_dir.exists():
+        for prospective_artifact in prospective_dir.iterdir():
+            prospective_artifact.unlink()
+        prospective_dir.rmdir()
     manifest["schema_version"] = "1.2.0"
+    manifest["artifacts"] = [
+        item
+        for item in manifest["artifacts"]
+        if not item["name"].startswith("prospective/")
+    ]
     artifact_entry = {
         "name": "history/NCT00000001.json",
         "sha256": sha256(artifact_bytes).hexdigest(),

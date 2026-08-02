@@ -56,6 +56,24 @@ _CHANGE_WINDOWS = frozenset(("last_30d", "last_90d", "last_180d", "all"))
 _CHANGE_CURSOR_VERSION = "c1"
 _CHANGE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-registry-changes:cursor-key:v1"
 _CHANGE_CURSOR_PROCESS_KEY = os.urandom(32)
+_PROSPECTIVE_CURSOR_VERSION = "p1"
+_PROSPECTIVE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-prospective-changes:cursor-key:v1"
+_PROSPECTIVE_CURSOR_PROCESS_KEY = os.urandom(32)
+_PROSPECTIVE_ACCRUAL_STATES = frozenset(("baseline_established", "accruing"))
+_PROSPECTIVE_CHANGE_KINDS = frozenset(
+    (
+        "registry_status",
+        "enrollment_target",
+        "enrollment_actual",
+        "enrollment_count",
+        "enrollment_type",
+        "primary_completion_date",
+        "completion_date",
+        "site_set",
+        "endpoint_record",
+    )
+)
+_PROSPECTIVE_OBSERVATION_BASIS = "first_observed_between_successful_polls"
 _PUBLIC_ROOT = Path(
     os.environ.get("BIOCATALYST_PUBLIC_ROOT", "/var/lib/macro-biocatalyst/public")
 )
@@ -89,6 +107,36 @@ _HISTORY_PRIVATE_KEY_FRAGMENTS = (
     "json_path",
     "provenance",
 )
+
+
+def _prospective_value_key_is_private(key: str) -> bool:
+    """Reject source/integrity machinery without blocking clinical ``reference``."""
+
+    normalized = re.sub(r"(?<!^)(?=[A-Z])", "_", key)
+    normalized = re.sub(r"[^a-zA-Z0-9]+", "_", normalized).strip("_").casefold()
+    compact = normalized.replace("_", "")
+    if normalized in {"reference", "references"}:
+        return False
+    return (
+        normalized.endswith(("_ref", "_refs", "_sha256", "_hash"))
+        or normalized.startswith(("raw_", "receipt", "transaction_"))
+        or normalized
+        in {
+            "canonical_study",
+            "hash",
+            "raw",
+            "ref",
+            "refs",
+            "sha256",
+            "transaction",
+            "object_key",
+            "json_path",
+            "hash_scope",
+            "provenance",
+        }
+        or compact in {"ref", "refs", "sha256", "objectkey", "jsonpath", "hashscope"}
+        or compact.endswith("hash")
+    )
 
 
 def _publication_runtime() -> tuple[type[Exception], type[Any]]:
@@ -928,6 +976,126 @@ def _decode_change_cursor(
     return offset, generation_digest, query_digest
 
 
+def _prospective_query_binding(
+    *,
+    change_kind: str,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+    q: str | None,
+    phase: str | None,
+    status: str | None,
+    condition: str | None,
+    limit: int,
+) -> dict[str, Any]:
+    """Bind the normalized public selection to a prospective-feed cursor."""
+
+    return {
+        "change_kind": change_kind,
+        "window": window,
+        "from_date": from_date.isoformat() if from_date else None,
+        "to_date": to_date.isoformat() if to_date else None,
+        "q": q.casefold() if q else None,
+        "phase": phase.casefold() if phase else None,
+        "status": status.casefold() if status else None,
+        "condition": condition.casefold() if condition else None,
+        "limit": limit,
+    }
+
+
+def _prospective_cursor_key() -> bytes:
+    """Return an endpoint-separated HMAC key for prospective pagination."""
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _PROSPECTIVE_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _PROSPECTIVE_CURSOR_DOMAIN, sha256).digest()
+
+
+def _prospective_cursor_payload(
+    offset: int,
+    *,
+    generation_digest: str,
+    query_digest: str,
+) -> bytes:
+    return ":".join(
+        (
+            _PROSPECTIVE_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_prospective_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode a signed opaque cursor without query or generation disclosure."""
+
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _prospective_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _prospective_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    raw = payload + b":" + signature.encode("ascii")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_prospective_cursor(
+    cursor: str | None,
+    *,
+    cursor_key: bytes | None = None,
+) -> tuple[int, str | None, str | None]:
+    """Authenticate a prospective cursor before reading any public artifact."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _PROSPECTIVE_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _prospective_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _prospective_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
 def _change_window(
     *,
     anchor: date,
@@ -1132,6 +1300,383 @@ def _history_change_groups(
             }
         )
     return rendered, retrieved_time.astimezone(timezone.utc), retrieved_at
+
+
+def _prospective_utc_time(value: object) -> tuple[datetime, str]:
+    """Parse one exact ``Z``-suffixed observation instant without rewriting it."""
+
+    if not isinstance(value, str) or not value or len(value) > 64 or not value.endswith("Z"):
+        raise _unavailable()
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise _unavailable() from None
+    if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
+        raise _unavailable()
+    return parsed, value
+
+
+def _prospective_current_study_url(snapshot: Mapping[str, Any], *, nct_id: str) -> str:
+    """Return the only evidence URL the prospective tape may disclose."""
+
+    attribution = snapshot.get("source_attribution")
+    expected = f"https://clinicaltrials.gov/study/{nct_id}"
+    if not isinstance(attribution, Mapping) or attribution.get("source_uri") != expected:
+        raise _unavailable()
+    return expected
+
+
+def _prospective_json_value(value: object, *, depth: int = 0) -> Any:
+    """Copy one display-safe prospective value using the model's public bounds.
+
+    The prospective model is already a purpose-built public projection.  We
+    therefore mirror its typed value bounds instead of substring-blocking
+    ordinary clinical field names such as ``reference``.  Provenance stays out
+    through the closed event and evidence envelopes below.
+    """
+
+    if depth > 6:
+        raise _unavailable()
+    if value is None or isinstance(value, (bool, int)):
+        return value
+    if isinstance(value, float):
+        if not isfinite(value):
+            raise _unavailable()
+        return value
+    if isinstance(value, str):
+        if len(value) > 2_000:
+            raise _unavailable()
+        return value
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        if len(value) > 32:
+            raise _unavailable()
+        copied: Any = [_prospective_json_value(item, depth=depth + 1) for item in value]
+    elif isinstance(value, Mapping):
+        if len(value) > 32:
+            raise _unavailable()
+        copied = {}
+        for key, nested in value.items():
+            if (
+                not isinstance(key, str)
+                or len(key) > 128
+                or _prospective_value_key_is_private(key)
+            ):
+                raise _unavailable()
+            copied[key] = _prospective_json_value(nested, depth=depth + 1)
+    else:
+        raise _unavailable()
+    try:
+        serialized = json.dumps(
+            copied,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError):
+        raise _unavailable() from None
+    if len(serialized) > 16_384:
+        raise _unavailable()
+    return copied
+
+
+def _prospective_model_events(
+    model: Mapping[str, Any],
+    *,
+    snapshot: Mapping[str, Any],
+    nct_id: str,
+    change_kind: str,
+) -> tuple[str, list[dict[str, Any]], datetime | None, datetime | None]:
+    """Serve the closed public prospective model, never raw diff artifacts.
+
+    The product may say a current registry record was first observed changed
+    between two successful observations.  It must not invent an effective
+    change time, expose private source bindings, or translate an exact JSON
+    operation into a protocol, issuer, catalyst, or trading conclusion.
+    """
+
+    # B1/B2 pointer generations predate the prospective public artifact.  The
+    # publisher maps only those old, validated generations to this exact small
+    # placeholder.  It is an explicit coverage absence, not a malformed B4D
+    # model and never a license to synthesize an event from earlier records.
+    if model == {
+        "available": False,
+        "unavailable_reason": "baseline_not_established",
+    }:
+        return "unavailable", [], None, None
+    if (
+        model.get("contract_id") != "trial_prospective_change_read_model.v1"
+        or model.get("schema_version") != "1.0.0"
+        or model.get("nct_id") != nct_id
+        or model.get("available") is not True
+        or model.get("unavailable_reason") is not None
+        or model.get("coverage_class") != "current_only"
+        or model.get("coverage_method") != "prospective_api_polling"
+        or model.get("interpretation") != "registry_record_changed"
+        or model.get("protocol_change_asserted") is not False
+        or model.get("materiality_assessed") is not False
+    ):
+        raise _unavailable()
+    accrual_state = model.get("accrual_state")
+    if accrual_state not in _PROSPECTIVE_ACCRUAL_STATES:
+        raise _unavailable()
+    authority = _history_authority_for_tape(model)
+    coverage_epoch_id = model.get("coverage_epoch_id")
+    if not isinstance(coverage_epoch_id, str) or not re.fullmatch(
+        r"ctgov_coverage_[A-Za-z0-9_-]{1,240}", coverage_epoch_id
+    ):
+        raise _unavailable()
+    coverage_started_at, _coverage_started_literal = _prospective_utc_time(
+        model.get("coverage_started_at")
+    )
+    baseline_established_at, _baseline_established_literal = _prospective_utc_time(
+        model.get("baseline_established_at")
+    )
+    last_observed_at, _last_observed_literal = _prospective_utc_time(
+        model.get("last_observed_at")
+    )
+    if not coverage_started_at <= baseline_established_at <= last_observed_at:
+        raise _unavailable()
+    observation_count = model.get("observation_count")
+    events = model.get("events")
+    if (
+        not isinstance(observation_count, int)
+        or isinstance(observation_count, bool)
+        or observation_count < 1
+        or not isinstance(events, Sequence)
+        or isinstance(events, (str, bytes))
+        or len(events) > 2_048
+    ):
+        raise _unavailable()
+    if accrual_state == "baseline_established" and (observation_count != 1 or events):
+        raise _unavailable()
+    if accrual_state == "accruing" and observation_count < 2:
+        raise _unavailable()
+
+    official_url = _prospective_current_study_url(snapshot, nct_id=nct_id)
+    rendered: list[dict[str, Any]] = []
+    seen_change_ids: set[str] = set()
+    latest_observation = last_observed_at
+    previous_upper: datetime | None = None
+    for event in events:
+        if not isinstance(event, Mapping) or set(event) != {
+            "change_id",
+            "first_observed_at",
+            "observed_interval",
+            "total_exact_operation_count",
+            "display_change_count",
+            "omitted_operation_count",
+            "changes",
+            "evidence",
+            "interpretation",
+            "protocol_change_asserted",
+            "materiality_assessed",
+            "authority",
+        }:
+            raise _unavailable()
+        change_id = event.get("change_id")
+        if (
+            not isinstance(change_id, str)
+            or not re.fullmatch(rf"prospective_change_{nct_id}_[0-9a-f]{{24}}", change_id)
+            or change_id in seen_change_ids
+        ):
+            raise _unavailable()
+        seen_change_ids.add(change_id)
+        interval = event.get("observed_interval")
+        if not isinstance(interval, Mapping) or set(interval) != {"after", "at_or_before"}:
+            raise _unavailable()
+        after_time, after_literal = _prospective_utc_time(interval.get("after"))
+        observed_time, observed_literal = _prospective_utc_time(interval.get("at_or_before"))
+        first_time, first_literal = _prospective_utc_time(event.get("first_observed_at"))
+        if (
+            after_time >= observed_time
+            or first_time != observed_time
+            or observed_time > last_observed_at
+            or (previous_upper is not None and after_time < previous_upper)
+        ):
+            raise _unavailable()
+        previous_upper = observed_time
+        exact_count = event.get("total_exact_operation_count")
+        display_count = event.get("display_change_count")
+        omitted_count = event.get("omitted_operation_count")
+        changes = event.get("changes")
+        if (
+            not isinstance(exact_count, int)
+            or isinstance(exact_count, bool)
+            or not isinstance(display_count, int)
+            or isinstance(display_count, bool)
+            or not isinstance(omitted_count, int)
+            or isinstance(omitted_count, bool)
+            or not 1 <= exact_count <= 1_000_000
+            or not 0 <= display_count <= 128
+            or not 0 <= omitted_count <= 1_000_000
+            or exact_count != display_count + omitted_count
+            or not isinstance(changes, Sequence)
+            or isinstance(changes, (str, bytes))
+            or len(changes) != display_count
+        ):
+            raise _unavailable()
+        if (
+            event.get("interpretation") != "registry_record_changed"
+            or event.get("protocol_change_asserted") is not False
+            or event.get("materiality_assessed") is not False
+        ):
+            raise _unavailable()
+        evidence = event.get("evidence")
+        if not isinstance(evidence, Mapping) or set(evidence) != {
+            "source_name",
+            "source_uri",
+            "retrieved_at",
+        }:
+            raise _unavailable()
+        evidence_time, evidence_literal = _prospective_utc_time(evidence.get("retrieved_at"))
+        if (
+            evidence.get("source_name") != "ClinicalTrials.gov"
+            or evidence.get("source_uri") != official_url
+            or evidence_time != observed_time
+            or evidence_literal != observed_literal
+        ):
+            raise _unavailable()
+        if _history_authority_for_tape(event) != authority:
+            raise _unavailable()
+        display_changes: list[dict[str, Any]] = []
+        for change in changes:
+            if not isinstance(change, Mapping) or set(change) != {
+                "kind",
+                "op",
+                "before_state",
+                "before_value",
+                "after_state",
+                "after_value",
+            }:
+                raise _unavailable()
+            kind = change.get("kind")
+            op = change.get("op")
+            before_state = change.get("before_state")
+            after_state = change.get("after_state")
+            expected_states = {
+                "add": ("missing", "present"),
+                "remove": ("present", "missing"),
+                "replace": ("present", "present"),
+            }.get(op)
+            if (
+                kind not in _PROSPECTIVE_CHANGE_KINDS
+                or expected_states is None
+                or (before_state, after_state) != expected_states
+                or (before_state == "missing" and change.get("before_value") is not None)
+                or (after_state == "missing" and change.get("after_value") is not None)
+            ):
+                raise _unavailable()
+            display_changes.append(
+                {
+                    "kind": kind,
+                    "op": op,
+                    "before_state": before_state,
+                    "before_value": _prospective_json_value(change.get("before_value")),
+                    "after_state": after_state,
+                    "after_value": _prospective_json_value(change.get("after_value")),
+                }
+            )
+        selected = (
+            display_changes
+            if change_kind == "all"
+            else [item for item in display_changes if item["kind"] == change_kind]
+        )
+        # An all-omitted event remains a public prospective observation.  A
+        # caller's explicit category filter is the only reason to omit it.
+        if change_kind != "all" and not selected:
+            continue
+        rendered.append(
+            {
+                "trial": _public_trial(snapshot, detail=False),
+                "prospective_change": {
+                    "change_id": change_id,
+                    "first_observed_at": first_literal,
+                    "observed_interval": {
+                        "after": after_literal,
+                        "at_or_before": observed_literal,
+                    },
+                    "observation_basis": _PROSPECTIVE_OBSERVATION_BASIS,
+                    "interpretation": "registry_record_changed",
+                    "protocol_change_asserted": False,
+                    "materiality_assessed": False,
+                    "total_exact_operation_count": exact_count,
+                    "display_change_count": display_count,
+                    "omitted_operation_count": omitted_count,
+                    # ``change_kind`` selects matching events; it must not
+                    # rewrite a selected event's immutable exact/display/
+                    # omitted count contract or return a partial `changes`
+                    # array under the original display_change_count.
+                    "changes": display_changes,
+                },
+                "evidence": {
+                    "provider": "ClinicalTrials.gov",
+                    "record_id": nct_id,
+                    "url": official_url,
+                    "retrieved_at": evidence_literal,
+                    "coverage": "current_only",
+                },
+                "authority": authority,
+                "_observed_time": observed_time,
+                "_sort": (
+                    -observed_time.toordinal(),
+                    -(
+                        observed_time.hour * 3_600_000_000
+                        + observed_time.minute * 60_000_000
+                        + observed_time.second * 1_000_000
+                        + observed_time.microsecond
+                    ),
+                    nct_id,
+                    change_id,
+                ),
+            }
+        )
+    return (
+        "pre_baseline" if accrual_state == "baseline_established" else "active",
+        rendered,
+        latest_observation,
+        coverage_started_at,
+    )
+
+
+def _prospective_window(
+    *,
+    anchor: datetime,
+    window: str,
+    from_date: date | None,
+    to_date: date | None,
+) -> tuple[date, date, dict[str, str | None]]:
+    """Resolve inclusive UTC civil windows from observation upper bounds."""
+
+    anchor_date = anchor.date()
+    if window == "all":
+        return (
+            from_date or date.min,
+            to_date or date.max,
+            {
+                "from_date": from_date.isoformat() if from_date else None,
+                "to_date": to_date.isoformat() if to_date else None,
+                "anchor_at": anchor.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+                "anchor_date": anchor_date.isoformat(),
+                "date_basis": "observation_at_or_before_utc",
+            },
+        )
+    days = {"last_30d": 30, "last_90d": 90, "last_180d": 180}[window]
+    try:
+        start = anchor_date - timedelta(days=days - 1)
+    except OverflowError:
+        raise _unavailable() from None
+    return (
+        start,
+        anchor_date,
+        {
+            "from_date": start.isoformat(),
+            "to_date": anchor_date.isoformat(),
+            "anchor_at": anchor.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+            "anchor_date": anchor_date.isoformat(),
+            "date_basis": "observation_at_or_before_utc",
+        },
+    )
 
 
 def _milestone_window(
@@ -1731,6 +2276,266 @@ def trial_registry_changes(
                 ),
             },
             "changes": page,
+        }
+    )
+    return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/trials/prospective-changes")
+def trial_prospective_changes(
+    change_kind: str = "all",
+    window: str = "last_90d",
+    from_date: str | None = None,
+    to_date: str | None = None,
+    q: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List prospective registry changes first observed between successful polls.
+
+    This is a prospective, current-record product surface.  A row is not a
+    reconstruction of Registry Record History and does not establish a
+    protocol amendment, clinical outcome, issuer relationship, catalyst, or
+    trading conclusion.
+    """
+
+    q = _query_text(q, name="query", maximum=100)
+    phase = _query_text(phase, name="phase", maximum=40)
+    status = _query_text(status, name="status", maximum=40)
+    condition = _query_text(condition, name="condition", maximum=100)
+    if change_kind != "all" and change_kind not in _PROSPECTIVE_CHANGE_KINDS:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid change_kind",
+            headers=_PRIVATE_HEADERS,
+        )
+    if window not in _CHANGE_WINDOWS:
+        raise HTTPException(status_code=400, detail="invalid window", headers=_PRIVATE_HEADERS)
+    parsed_from = _query_iso_date(from_date, name="from_date")
+    parsed_to = _query_iso_date(to_date, name="to_date")
+    if window != "all" and (parsed_from is not None or parsed_to is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="from_date and to_date require window=all",
+            headers=_PRIVATE_HEADERS,
+        )
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(status_code=400, detail="invalid date range", headers=_PRIVATE_HEADERS)
+    page_limit = _query_limit(limit)
+
+    query = q.casefold() if q else None
+    phase_value = phase.casefold() if phase else None
+    status_value = status.casefold() if status else None
+    condition_value = condition.casefold() if condition else None
+    query_binding = _prospective_query_binding(
+        change_kind=change_kind,
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+        q=query,
+        phase=phase_value,
+        status=status_value,
+        condition=condition_value,
+        limit=page_limit,
+    )
+    # Authenticate all cursor syntax and its query binding before opening the
+    # pointer-bound generation.  The endpoint's p1 HMAC domain is deliberately
+    # independent from milestone and retrospective-history pagination.
+    cursor_key = _prospective_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = _decode_prospective_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest,
+        expected_query_digest,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    projection, operational = _read_bundle()
+    generation_id = getattr(projection.generation, "generation_id", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        _opaque_digest({"generation_id": generation_id}),
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    trials = getattr(projection, "trials", None)
+    prospective_models = getattr(projection, "prospective_models_by_nct", None)
+    if not isinstance(trials, Sequence):
+        raise _unavailable()
+    # A pre-B4D pointer contains no prospective artifact at all.  It is still
+    # a valid current-record generation, but must produce an explicit empty,
+    # unavailable prospective surface rather than guessed historical rows.
+    legacy_generation = prospective_models is None
+    if prospective_models is not None and not isinstance(prospective_models, Mapping):
+        raise _unavailable()
+
+    prospective_changes: list[dict[str, Any]] = []
+    active_trials = 0
+    pre_baseline_trials = 0
+    unavailable_trials = 0
+    # Keep the window clock global and stable across filters.  Coverage uses a
+    # separate selected clock so an excluded current trial cannot overstate
+    # the freshness of the caller's actual selection.
+    latest_observation: datetime | None = None
+    selected_latest_observation: datetime | None = None
+    earliest_coverage_started_at: datetime | None = None
+    seen_nct_ids: set[str] = set()
+    for snapshot in trials:
+        if not isinstance(snapshot, Mapping):
+            raise _unavailable()
+        nct_id = snapshot.get("nct_id")
+        if not isinstance(nct_id, str) or not _NCT_ID.fullmatch(nct_id) or nct_id in seen_nct_ids:
+            raise _unavailable()
+        seen_nct_ids.add(nct_id)
+        trial = _public_trial(snapshot, detail=False)
+        selected = _matches_trial_filters(
+            trial,
+            query=query,
+            phase=phase_value,
+            status=status_value,
+            condition=condition_value,
+        )
+        if legacy_generation:
+            if selected:
+                unavailable_trials += 1
+            continue
+        model = prospective_models.get(nct_id)
+        if not isinstance(model, Mapping):
+            raise _unavailable()
+        (
+            coverage_state,
+            model_rows,
+            model_latest_observation,
+            model_coverage_started_at,
+        ) = _prospective_model_events(
+            model,
+            snapshot=snapshot,
+            nct_id=nct_id,
+            change_kind=change_kind,
+        )
+        if model_latest_observation is not None and (
+            latest_observation is None or model_latest_observation > latest_observation
+        ):
+            latest_observation = model_latest_observation
+        if not selected:
+            continue
+        if model_latest_observation is not None and (
+            selected_latest_observation is None
+            or model_latest_observation > selected_latest_observation
+        ):
+            selected_latest_observation = model_latest_observation
+        if coverage_state == "active":
+            active_trials += 1
+        elif coverage_state == "pre_baseline":
+            pre_baseline_trials += 1
+        else:
+            unavailable_trials += 1
+        if model_coverage_started_at is not None and (
+            earliest_coverage_started_at is None
+            or model_coverage_started_at < earliest_coverage_started_at
+        ):
+            earliest_coverage_started_at = model_coverage_started_at
+        prospective_changes.extend(model_rows)
+    if not legacy_generation and set(prospective_models) != seen_nct_ids:
+        # The public projection must bind exactly one prospective model to each
+        # current NCT.  Never turn a partial or extra artifact set into an
+        # apparently complete coverage count.
+        raise _unavailable()
+
+    # No prospective event may be fabricated for a pre-baseline or old
+    # generation.  A normal committed-generation clock still gives the empty
+    # response a deterministic user-visible window anchor.
+    window_anchor = latest_observation or _generation_as_of_time(projection)
+    range_start, range_end, effective_window = _prospective_window(
+        anchor=window_anchor,
+        window=window,
+        from_date=parsed_from,
+        to_date=parsed_to,
+    )
+    prospective_changes = [
+        item
+        for item in prospective_changes
+        if range_start <= item["_observed_time"].date() <= range_end
+    ]
+    prospective_changes.sort(key=lambda item: item["_sort"])
+    total = len(prospective_changes)
+    page = prospective_changes[offset : offset + page_limit]
+    for item in page:
+        item.pop("_observed_time", None)
+        item.pop("_sort", None)
+    next_offset = offset + len(page)
+    coverage_state = (
+        "active"
+        if active_trials
+        else ("pre_baseline" if pre_baseline_trials else "unavailable")
+    )
+    payload = _meta(projection, operational)
+    payload.update(
+        {
+            "query": {
+                "change_kind": change_kind,
+                "window": window,
+                "from_date": parsed_from.isoformat() if parsed_from else None,
+                "to_date": parsed_to.isoformat() if parsed_to else None,
+                "q": q,
+                "phase": phase,
+                "status": status,
+                "condition": condition,
+            },
+            "effective_window": effective_window,
+            "prospective_coverage": {
+                "class": "prospective_current_only",
+                "selection_basis": "current_trial_record",
+                "coverage_state": coverage_state,
+                "coverage_started_at": (
+                    earliest_coverage_started_at.isoformat(timespec="microseconds").replace(
+                        "+00:00", "Z"
+                    )
+                    if earliest_coverage_started_at is not None
+                    else None
+                ),
+                "last_observed_at": (
+                    selected_latest_observation.isoformat(timespec="microseconds").replace(
+                        "+00:00", "Z"
+                    )
+                    if selected_latest_observation is not None
+                    else None
+                ),
+                "active_trials": active_trials,
+                "pre_baseline_trials": pre_baseline_trials,
+                "unavailable_trials": unavailable_trials,
+            },
+            "pagination": {
+                "limit": page_limit,
+                "total": total,
+                "next_cursor": (
+                    _encode_prospective_cursor(
+                        next_offset,
+                        generation_id=generation_id,
+                        query_binding=query_binding,
+                        cursor_key=cursor_key,
+                    )
+                    if next_offset < total
+                    else None
+                ),
+            },
+            "prospective_changes": page,
         }
     )
     return _response(payload)

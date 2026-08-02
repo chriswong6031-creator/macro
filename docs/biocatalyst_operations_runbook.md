@@ -1,9 +1,10 @@
 # BioCatalyst Operations Runbook
 
-Status: the B1 source-state lane, authenticated B1b read surface, and bounded B2
-Record History adapter are implemented but **dark by default**. API/UI presence
-does not imply that live evidence exists. No Prophet signal, ranking, trade
-authority, or Neural Web decision authority is asserted by this document.
+Status: the B1 source-state lane, authenticated B1b read surface, bounded B2
+Record History adapter, and B4D prospective ledger are implemented but **dark
+by default**. API/UI presence does not imply that live evidence exists. No
+Prophet signal, ranking, trade authority, or Neural Web decision authority is
+asserted by this document.
 
 ## 1. Scope and ownership
 
@@ -56,6 +57,15 @@ review to allow production ingestion, the undocumented source-shape canary
 passes, and an exact canary run survives private replay. Arming B1 does not arm
 B2. The Record History adapter must stay disabled while its source-registry
 entry says `production_ingest_allowed: false`.
+
+`BIOCATALYST_PROSPECTIVE_ENABLED` is also separate and defaults to `0`.
+Setting it to `1` additionally requires
+`BIOCATALYST_R2_RETENTION_CONFIRMED=1`, which is an operator attestation that
+the BioCatalyst bucket has an independently administered retention rule and a
+worker principal that cannot delete, overwrite, shorten, or recreate prior
+objects or mirror receipts. Conditional-create support alone does not satisfy
+this gate. Removing the switch after a v1.3 generation exists fails closed
+rather than silently dropping or resetting its ledger.
 
 Before the lane is provisioned, the macro API's BioCatalyst sandbox paths use
 systemd's optional-path prefix so their absence cannot prevent the serving API
@@ -373,6 +383,11 @@ Runtime configuration is held outside git. The worker receives only:
 - `BIOCATALYST_USER_AGENT`;
 - optional `BIOCATALYST_HISTORY_ENABLED`, which accepts only `0` or `1` and
   defaults to `0`;
+- optional `BIOCATALYST_PROSPECTIVE_ENABLED`, which accepts only `0` or `1` and
+  defaults to `0`;
+- `BIOCATALYST_R2_RETENTION_CONFIRMED`, which must be exactly `1` whenever the
+  prospective lane is enabled and records the external no-delete/no-overwrite
+  policy review;
 - `BIOCATALYST_R2_ENDPOINT`, `BIOCATALYST_R2_BUCKET`,
   `BIOCATALYST_R2_ACCESS_KEY_ID`, and `BIOCATALYST_R2_SECRET_ACCESS_KEY`; and
 - the service-injected fixed state/public roots
@@ -584,3 +599,74 @@ consume that seam when it is available rather than create a parallel store.
 Issuer/security, asset, economic-rights, FDA-application, and ticker joins stay
 absent until the Corporate Intelligence-owned, point-in-time identity bridge
 has cleared its separate abstention and evidence gates.
+
+## 13. B4D official-v2 prospective change ledger
+
+B4D creates a prospective, first-observed change ledger from successful polls
+of the official ClinicalTrials.gov v2 API. It is independent of the
+operator-gated Record History adapter. The first successful run in a coverage
+epoch establishes a baseline observation and publishes zero change events. It
+does not mine older B1 archives, Record History submission dates, source update
+metadata, or any other retrospective record to manufacture an earlier clock.
+The code path and entitled read surface can be deployed while dark, but the
+worker must not create its first v1.3 baseline until both prospective and R2
+retention gates above are explicitly satisfied.
+
+For every later successful observation, `observed_interval.after` is the prior
+successful observation's `retrieved_at` and
+`observed_interval.at_or_before` is the current source snapshot's
+`retrieved_at`. The public `first_observed_at` is the latter bound. This means
+only that the registry record first appeared changed to BioCatalyst somewhere
+inside that interval. It is not the time a protocol, enrollment event, company
+decision, clinical outcome, or market event occurred.
+
+The worker revalidates both the prior committed private evidence and the
+current run's private evidence before it computes a diff. Exact observations,
+canonical snapshots, full JSON operations, content hashes, receipts, and
+object references remain private and immutable. The public v1.3 generation
+contains a separate `prospective/{nct_id}.json` read model with only bounded,
+display-safe operations from a closed family allowlist. Unsupported `other`
+operations and recursively unsafe or oversized values are omitted, and their
+counts remain visible. Private source/object references, source-content hashes,
+receipt hashes, and object hashes never enter the public artifact or API DTO.
+The public artifact intentionally carries only its own `hash_scope` and
+`model_payload_sha256` self-integrity fields; the entitled API validates and
+redacts those fields rather than returning them to clients.
+
+The prospective ledger is cumulative within one coverage epoch. If the
+configured NCT scope changes, the new generation supersedes the old epoch and
+starts a new baseline with zero cross-epoch events. The superseded epoch stays
+immutable in its committed private archive and is inactive because the public
+pointer no longer binds it; the worker does not rewrite it with a synthetic
+closure time. Within an unchanged scope, missing, corrupt, or inconsistent
+prior evidence fails the run closed: the worker must not silently reset the
+baseline, skip the interval, advance the public pointer, or infer a replacement
+observation. Failed collection, private archive, remote mirror, or pointer
+installation similarly leaves the last-good generation intact.
+
+`GET /api/biocatalyst/v1/trials/prospective-changes` is an entitled,
+`private, no-store` read surface. Its window basis is
+`observation_at_or_before_utc`, and its `p1` cursor domain is distinct from the
+Record History endpoint. Current title, sponsor, phase, status, and condition
+filters select current trial records only; they do not rewrite the identity or
+timing of a prospective event. Before a v1.3 baseline exists, the endpoint
+returns explicit unavailable or pre-baseline coverage and no synthesized rows.
+
+The First-seen Tape may describe only `registry_record_changed`.
+`protocol_change_asserted` and `materiality_assessed` remain false. The lane has
+source-fact display, context, and explanation authority only: it cannot
+originate, rank, select, size, gate, execute, or escalate a Prophet or Neural
+Web decision. NCT ID is its sole entity identity. Company, asset, ticker,
+economic-rights, FDA-application, valuation, and user-state joins remain with
+their registered owners.
+
+No data-generation garbage collector currently prunes the exact private
+ledger or the public epoch history. Compaction or retention must be introduced
+as a separately reviewed, provenance-preserving policy; it cannot be smuggled
+in as routine staging cleanup. A single per-NCT read model currently stops at
+2,048 events and fails closed rather than trimming; segmented, hash-linked
+rollover and a capacity alert are required before broad long-lived coverage.
+The current canary also rechecks the complete prior mirrored object inventory
+on each same-scope poll. Before enabling large B2 history collections, replace
+that bounded safety-first replay with a receipt-rooted verification plan that
+reads only the B4D evidence required for continuation.
