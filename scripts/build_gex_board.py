@@ -283,12 +283,28 @@ def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
         log.warning("gex: archive snapshot skipped: %s", e)
 
 
-def _write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> None:
-    """Derive, validate, and write options_structure.gex_state/<KEY>.json.
+def _compute_and_write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> dict | None:
+    """Derive, validate, and write options_structure.gex_state/<KEY>.json; return
+    the computed (already-validated) state dict, or None on any failure.
 
     Package C emitter — zero new network calls; derived entirely from the model
     already computed by _build_one.  A failure here is NEVER fatal to the board
     build (additive side-effect, logged and swallowed).
+
+    OIP W1: the return value lets the caller fold this SAME computation's
+    oi_delta_clusters / wall_persistence / net_gex_pctile fields into
+    site/gex/<KEY>.json — the payload Ticker mode (and gex.html) already fetch —
+    without a second compute_gex_state() call and without a second client-side
+    fetch. W1_DESIGN_SPEC.md's own template code reads these as
+    `gx.wall_persistence` / `gx.oi_delta_clusters` (`gx` being that same payload,
+    site/gex.js's own variable name for it), which only resolves correctly if
+    they live there; compute_gex_state's OWN write target is
+    options_structure/gex_state/<KEY>.json, a separate file no client-side
+    fetch in this estate reads. This function's rename (from _write_gex_state)
+    and its new return value are that reconciliation — one compute, two
+    consumers of its output (the standalone gex_state artifact other tooling
+    may read, and the enriched board payload the workspace reads), never a
+    second derivation.
     """
     from engine.gex_state import compute_gex_state
     from engine.options_structure import validate_gex_state
@@ -298,19 +314,49 @@ def _write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> None:
         state = compute_gex_state(model, key, asof=asof)
         if state is None:
             log.debug("gex_state: %s skipped (thin/no options)", key)
-            return
+            return None
 
         errors = validate_gex_state(state)
         if errors:
             log.warning("gex_state: %s schema errors: %s", key, errors)
-            return
+            return None
 
         gex_state_dir.mkdir(parents=True, exist_ok=True)
         out_path = gex_state_dir / f"{key}.json"
         out_path.write_text(json.dumps(state, default=float, allow_nan=False, separators=(",", ":")))
         log.debug("gex_state: wrote %s", out_path)
+        return state
     except Exception as e:  # noqa: BLE001 — never abort the board for a gex_state failure
         log.warning("gex_state: %s failed: %s", key, e)
+        return None
+
+
+def _merge_gex_state_fields(model: dict, state: dict | None) -> dict:
+    """Fold state's three OIP W1 fields into model IN PLACE; return model.
+
+    A no-op (model unchanged) when state is None (compute_gex_state itself
+    failed/skipped) — never fakes a key that has no computed value behind it.
+    wall_persistence and net_gex_pctile are copied only when state itself
+    carries them (they are additive/coverage-gated at the source, PR #3976);
+    oi_delta_clusters is BACK-COMPAT on the gex_state side (always present,
+    empty lists when the source has no coverage) so it is copied unconditionally
+    whenever state exists at all.
+    """
+    if state is None:
+        return model
+    # Minor fix: this was an unconditional state["oi_delta_clusters"] outside
+    # its own try — the docstring above promises the merge is "never fatal",
+    # but a state that (contrary to the back-compat assumption) omits the key
+    # raised KeyError here, and work()'s try/except wraps the board file WRITE
+    # too, so the whole symbol's site/gex/<KEY>.json silently never got
+    # written. Guard it exactly like the two conditional fields below it.
+    if "oi_delta_clusters" in state:
+        model["oi_delta_clusters"] = state["oi_delta_clusters"]
+    if "wall_persistence" in state:
+        model["wall_persistence"] = state["wall_persistence"]
+    if "net_gex_pctile" in state:
+        model["net_gex_pctile"] = state["net_gex_pctile"]
+    return model
 
 
 def main() -> int:
@@ -342,10 +388,20 @@ def main() -> int:
             if not res:
                 return None
             model, mrow = res
+            # Package C: compute + write gex_state BEFORE the board payload now —
+            # OIP W1 folds its three additive, coverage-gated fields into model
+            # itself (site/gex/<KEY>.json), the payload the workspace's Ticker
+            # mode and gex.html already fetch, so `gx.wall_persistence` /
+            # `gx.oi_delta_clusters` / `gx.net_gex_pctile` resolve where the W1
+            # design spec's own template code reads them — one compute_gex_state
+            # call, two consumers of its output. Absent (None state, or a state
+            # that itself omits wall_persistence/net_gex_pctile — both fields
+            # are the source's own additive/coverage-gated omission, PR #3976)
+            # means model is written completely unchanged: no key is ever faked.
+            state = _compute_and_write_gex_state(model, mrow["key"], gex_state_dir)
+            _merge_gex_state_fields(model, state)
             (out_dir / f"{mrow['key']}.json").write_text(
                 json.dumps(model, default=float, allow_nan=False, separators=(",", ":")))
-            # Package C: emit gex_state after board payload — zero new network calls
-            _write_gex_state(model, mrow["key"], gex_state_dir)
             return mrow
         except Exception as e:  # noqa: BLE001 — one bad symbol never aborts the board
             log.warning("gex: %s errored: %s", row["key"], e)

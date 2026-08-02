@@ -95,7 +95,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import session_digest as sd                     # noqa: E402
 from engine.ledger_lane import nightly_advance_enabled      # noqa: E402
-from lib import config, nyse_calendar                       # noqa: E402
+from lib import config, illus, nyse_calendar                # noqa: E402
 
 log = logging.getLogger("build_session_digest")
 
@@ -633,6 +633,15 @@ def digest_root(
     )
     if open_source:
         record["walls"]["open"]["source"] = open_source
+    # RULING (adversarial review, OIP W1): filmstrip_html does NOT belong on this
+    # record. engine/session_digest.py's module docstring describes this shape as a
+    # settled, replayable record — rendered SVG markup drifts from CSS and can never
+    # be replayed. The SSR fragment (research/options_estate/W1_DESIGN_SPEC.md §3)
+    # is display-tier only: run() (below) computes it fresh, on a COPY of this
+    # record, immediately before write_latest() writes site/session/<ROOT>.json.
+    # write_record() — the dated data/options_session/<date>/<root>.json ledger —
+    # gets this exact record, unmodified, so the ledger keeps only the fields the
+    # fragment is derived from (arc, coverage, events, flip), never the fragment.
     return record
 
 
@@ -948,7 +957,13 @@ def run(
         for rec in records:
             if nightly and write_record(data, sess, rec) is not None:
                 data_written.append(rec["root"])
-            if write_latest(site, rec) is not None:
+            # RULING: filmstrip_html is display-tier only (see digest_root's own
+            # note above) — computed here, on a shallow copy, so the ledger write
+            # above never sees it. One render per record either way (same cost
+            # as before, just relocated to the write that actually needs it).
+            display_rec = dict(rec)
+            display_rec["filmstrip_html"] = illus.session_filmstrip(rec)
+            if write_latest(site, display_rec) is not None:
                 written.append(rec["root"])
         if not nightly:
             log.info("session_digest: data/ writes skipped for %d root(s) "

@@ -871,6 +871,35 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
         if isinstance(stores.get("flow_desk"), dict) else None,
         "direction_reliable": (stores.get("flow_desk") or {}).get("direction_reliable")
         if isinstance(stores.get("flow_desk"), dict) else None,
+        # OIP W1 §2.3: Ticker-mode search/typeahead reuses gex.html's own manifest
+        # rather than growing a second, possibly-drifting universe. That array is
+        # ALREADY on disk — scripts.build_gex_board writes it, unconditionally,
+        # every run, as site/gex/index.json (which load_stores() above already
+        # reads into stores["gex_index"] for the Brief's index cards) — so this is
+        # a second consumer of an existing artifact, not a new derivation, and no
+        # new site/gex/_manifest.json side-file is needed (build_gex_board.py is
+        # unchanged). One producer, one array, two consumers.
+        #
+        # Addition-2 fix (PR #4123 adversarial review round 2): embed a SLIM
+        # key/en/zh projection, not the full manifest row. setupTickerSearch()
+        # (this page's own client JS, below) reads only m.key/m.en/m.zh — the
+        # other 23 fields on a real gex_index row (spot, iv30, gamma_flip,
+        # call_wall, put_wall, max_pain, asof, ...) are build-time-frozen prices
+        # that nothing in this workspace reads, yet were shipping in full: 649
+        # rows x 26 fields grew this page 123,775 -> 544,320 bytes, ~26.8KB
+        # gzipped of dead weight on every load, and worse, looked live (a future
+        # reader could plausibly reach for `m.spot` from this manifest and get a
+        # stale, build-time number on a page whose Ticker mode otherwise only
+        # ever shows live-fetched prices). The full stores["gex_index"] list
+        # itself is untouched — the Brief's index cards above still consume it
+        # whole; only this second, JS-search-only consumer's own copy is slimmed.
+        "ticker_manifest_json": json.dumps(
+            [
+                {"key": m.get("key"), "en": m.get("en"), "zh": m.get("zh")}
+                for m in (stores.get("gex_index") or [])
+            ],
+            default=float,
+        ),
     }
 
 

@@ -177,10 +177,17 @@ from the base spec)**
     clusters lit on **302 of 555** modeled names; `net_gex_pctile` present on only **10 of
     555** (it needs ≥5 rows in a store that exists for 10 roots) — treat it as a rare bonus
     fact, never a panel of its own (§5.2).
-19. `board_a_total` / `board_b_total` already exist in `site/flowleaders/leaders.json`
-    (verified: `board_a_total: 130`, `board_b_total: 24` on 2026-07-30) — the declared-cap
-    copy for Leaders (§6) needs **zero** new engine work, just reading fields the payload
-    already carries.
+19. **Corrected post-build (adversarial review round 2 on PR #4123):** `board_a_total` /
+    `board_b_total` exist in `site/flowleaders/leaders.json`, but they are **pre-cap**
+    counts — `scripts/build_flow_leaders.py`'s `_BOARD_CAP = 25` slice runs AFTER they are
+    captured (verified: `board_a_total: 130`, `board_b_total: 24` on 2026-07-30, while
+    `board_a`/`board_b` themselves ship at most 25 rows each). The declared-cap copy for
+    Leaders (§6) must NOT read these two fields — the denominator has to equal what
+    `site/flow_leaders.html` actually renders, which is `L.board_a`'s own length for board A
+    and the `B5_flow_inflect`-filtered length of `L.board_b` for board B (that page applies
+    the identical filter, `templates/flow_leaders.html.j2:37-38`). Deriving both from the
+    arrays already in hand needs **zero** new engine work either — just a different read of
+    the same payload, and one that cannot drift the way a separately-tracked total can.
 20. Scanner's subtitle today (`options.html.j2` client JS, `renderScanner`) reads `rows.length
     + ' names, sorted by premium'` using the **unsliced** payload length while the table
     itself renders `.slice(0, 200)` — the exact undeclared-cap defect the masterplan
@@ -862,21 +869,42 @@ literal would drift):
 Word budget check: subtitle "Top 200 by premium, sorted" = 5 words ≤ 14; link text scales
 with the live count but stays a single short clause.
 
-### 6.2 Leaders — declare both board caps using fields the payload already carries (§0.19)
+### 6.2 Leaders — declare both board caps from the rendered arrays' own length (§0.19)
 
-Board A subtitle changes from the current unconditional sentence to include the cap, using
-`L.board_a_total` (verified present, `130` today):
+**Corrected post-build (adversarial review round 2 on PR #4123)** — the worked example
+below originally read `L.board_a_total || A.length`, which is wrong: `board_a_total` is a
+pre-cap count (verified `130` against a 25-row `board_a`) and would have told a reader the
+full board held 130 names when only 25 were ever reachable at `flow_leaders.html`.
+
+Board A subtitle changes from the current unconditional sentence to include the cap. The
+denominator must equal what `flow_leaders.html` actually renders for board A —
+`L.board_a`'s own length (the builder's post-`_BOARD_CAP` array), never the pre-cap
+`L.board_a_total`:
 
 ```js
+var boardAAll = L.board_a || [];
 '<span class="oew-ph-sub">' + bi(
-  'top 12 of ' + (L.board_a_total || A.length) + ', by recurrence',
-  '按出现频率排序，前12（共 ' + (L.board_a_total || A.length) + '）') + '</span>'
+  'top 12 of ' + boardAAll.length + ', by recurrence',
+  '按出现频率排序，前12（共 ' + boardAAll.length + '）') + '</span>'
 '<a class="oew-ph-more" href="flow_leaders.html">' + bi('Open the full boards', '打开完整榜单') + ' ↗</a>'
 ```
 
-Board B subtitle, same pattern with `L.board_b_total`. The ETF strip carries no cap (it
-already shows every row it has — `etf.length` is not truncated anywhere in
-`renderLeaders()`), so it gets no declared-cap addendum.
+Board B subtitle, same pattern — but its own numerator is already filtered by
+`B5_flow_inflect` (the corrected #3496 admission rule), and `flow_leaders.html` applies the
+identical filter before rendering, so the denominator must be the FILTERED length, never
+`L.board_b`'s raw length and never `L.board_b_total` (which is both unfiltered AND pre-cap):
+
+```js
+var boardBFiltered = (L.board_b || []).filter(function(r){ return r.B5_flow_inflect; });
+// ... 'top 12 of ' + boardBFiltered.length + ', most recent first' ...
+```
+
+The two totals coincide today (`24`/`24`) only because every `board_b` row on file
+currently passes the filter — they diverge the moment it doesn't, which is exactly why the
+raw `L.board_b_total` field must never be read for this sentence.
+
+The ETF strip carries no cap (it already shows every row it has — `etf.length` is not
+truncated anywhere in `renderLeaders()`), so it gets no declared-cap addendum.
 
 ### 6.3 LEX stances — current, verified state (no build action — §0.2)
 
