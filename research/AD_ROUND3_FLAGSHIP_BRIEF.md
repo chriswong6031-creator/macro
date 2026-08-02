@@ -7,6 +7,10 @@ broken, and all over the place. truthfully we just want 1–2 really good ads."*
 **Owner:** studio (creative) × operator (taste gate). Nothing here runs without
 `ad_review.record(...)` approval (H-1 / AG-7).
 
+**Amended 2026-08-02 (same day, operator corrections before build):** copy re-locked
+for retail simplicity — see the five rulings at the end of §3. Round-3 mockups are
+built against the amended copy in §4/§5/§7, not the original draft.
+
 **The ask, verbatim reduced:** one primary ad on **Prophet + macro dashboard + sector
 rotation**, positioned as an **institutional-grade intelligence platform**; a supporting
 **post** with hook, core features, the **launch discount (up to 50% off)** and a
@@ -116,6 +120,25 @@ just ethics.
   Mastermind. Ads say "daily graded stock signals" / "intelligent stock signals" +
   "AI analyst included" — never "AI-generated signals."
 
+**Operator rulings, 2026-08-02 (retail-simplicity pass — all copy below is post-ruling):**
+
+1. **No builder jargon for freshness.** "Rebuilt nightly" / "every night" assumes the
+   reader knows the site runs on a nightly build — they don't. Signals freshness is
+   said as **"updated every trading day"** / "daily"; the word **"live"** is used only
+   where it is literally true (live options flow, live charting) — signals themselves
+   are daily, and we don't claim otherwise.
+2. **The 50% goes upfront.** The launch discount is a hook, not a footer — it appears
+   in the first line of post copy and as a flag at the top of the canvas, not only in
+   the bottom offer bar.
+3. **No geography.** US-only targeting for now — no "US · China · HK · Canada" lists,
+   no language/coverage talk.
+4. **No "public record / graded in public / forward ledger" talk in ads.** Users don't
+   care, and it has become the house style of vibe-coded finance SaaS — it reads AI.
+   (The track record stays a *product* surface; it just isn't ad copy.)
+5. **No "13F".** Retail doesn't know the form number — say **"institutional flow"** /
+   "what institutions are buying." General rule behind all five: customers are retail;
+   reduce complexity, keep every word plain.
+
 ---
 
 ## §4 Ad A — "THE CALL" (flagship — build this)
@@ -127,19 +150,20 @@ field** (§4.5) · canvases: **1200×628** (X website card, primary) + **1080×1
 
 ```
 ┌────────────────────────────────────────────────┬───────────────────────────┐
-│ ◆ MASTERMIND X · MARKET INTELLIGENCE DESK      │            SBUX  · demo   │
-│                                                │   Starbucks Corp          │
-│  Your edge,                                    │  ┌─────────────────────┐  │
-│  rebuilt nightly.                              │  │  BUY   ·  EDGE 89   │  │
-│                                                │  │  ▂▃▅▆█ sparkline    │  │
-│  Prophet re-grades the tape's standouts        │  │  ZONE $102.60–104.30│  │
-│  nightly — buy, wait or avoid, with a          │  │  ●●●○ stage 3 of 4  │  │
-│  0–100 edge and exact entry zone.              │  └─────────────────────┘  │
-│                                                │   ⌈lane sliver⌉⌈gauge⌉    │
-│  [Daily stock signals][Sector rotation]        │   (10–14% opacity)        │
-│  [Macro dashboards][AI analyst]                │                           │
+│ ◆ MASTERMINDX                 ⟨LAUNCH — 50% OFF⟩│           SBUX  · demo   │
+│   MARKET INTELLIGENCE DESK                     │   Starbucks Corp          │
+│                                                │  ┌─────────────────────┐  │
+│  Daily stock signals.                          │  │  BUY   ·  EDGE 89   │  │
+│  Institutional grade.                          │  │  ▂▃▅▆█ sparkline    │  │
+│                                                │  │  ZONE $102.60–104.30│  │
+│  Buy, wait or avoid — every stock graded       │  │  ●●●○ stage: Ready  │  │
+│  0–100, with an exact entry zone.              │  └─────────────────────┘  │
+│  Updated every trading day.                    │      ⌈gauge sliver⌉       │
+│                                                │      (behind, tilted)     │
+│  [Sector rotation][Macro dashboards]           │                           │
+│  [Advanced charting][AI analyst]               │                           │
 ├────────────────────────────────────────────────┴───────────────────────────┤
-│ 7-DAY FREE TRIAL · LAUNCH — UP TO 50% OFF · $75/mo   [ Try Pro free ]      │
+│ 7-DAY FREE TRIAL · $149→$75/mo 50% OFF · [ Try Pro free ]                  │
 │ 2,000 founding memberships · Research tools — not investment advice ·      │
 │ mastermind-x.com                                                           │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -157,14 +181,17 @@ field** (§4.5) · canvases: **1200×628** (X website card, primary) + **1080×1
   behind the hero, identity atoms only (taste corpus: no amputated pills, nothing
   half-covered). This is how the ad touches all three commissioned pillars — Prophet
   dominant, rotation + macro present — without becoming a collage.
-- **Headline:** `Your edge, rebuilt nightly.` — Inter 900, ~100px, explicit `<br>`
-  after the comma. The single gradient allowance (§4.2) goes on the word **edge**,
-  which the card answers with `EDGE 89` — the headline's one abstract word is resolved
-  by the picture *within the same glance* (§3 esoteric rule, satisfied structurally).
-- **Subline:** `Prophet re-grades the tape's standouts nightly — buy, wait or avoid,
-  with a 0–100 edge and exact entry zone.` (18 words — at cap.)
-- **Chips (4):** `Daily stock signals` · `Sector rotation` · `Macro dashboards` ·
-  `AI analyst` — one balanced 2×2, no widow (§3 chip law).
+- **Headline:** `Daily stock signals.` / `Institutional grade.` — two explicit lines,
+  Inter 800. The single gradient allowance (§4.2) goes on **Institutional grade.**
+  (2-word payoff). Post-ruling: zero jargon — it is the commission said back verbatim,
+  and the card proves it.
+- **Launch flag (new element, ruling 2):** violet pill `LAUNCH — 50% OFF` top-right in
+  the brand bar — the discount is visible before the fold of the first glance.
+- **Subline:** `Buy, wait or avoid — every stock graded 0–100, with an exact entry
+  zone. Updated every trading day.` (17 words.)
+- **Chips (4):** `Sector rotation` · `Macro dashboards` · `Advanced charting` ·
+  `AI analyst` — one balanced 2×2, no widow (§3 chip law); signals need no chip, they
+  are the headline.
 - **Offer bar:** standard AG-6 block. Because the hero quotes an actionable entry zone,
   **AG-8 fires**: the micro-line swaps "allotment shrinks daily" for **"Research tools —
   not investment advice."** while keeping the availability-framed founding count — both
@@ -175,9 +202,9 @@ field** (§4.5) · canvases: **1200×628** (X website card, primary) + **1080×1
 
 1. **The card is the pain's answer made visible.** Directionless → here is a ticker, a
    verb, a price zone, a grade. No copy could say it faster than the UI does.
-2. **Headline sells the ritual, not a promise.** "Rebuilt nightly" gives the reader a
-   *reason to return daily* — the retention-compatible expectation (§2), and it is the
-   operator's "daily updated intelligent signals" ask in four words.
+2. **Headline sells the category and the cadence, plainly.** "Daily" gives the reader
+   a *reason to return every day* — the retention-compatible expectation (§2) — in a
+   word any stranger parses; "institutional grade" is the positioning ask verbatim.
 3. **One focal point.** The direct composition-level fix for "all over the place."
 4. **Product-true everything** — tokens, Inter, real widget idioms, demo-tagged data:
    the click lands on a site that looks exactly like the ad (message match = lower
@@ -206,9 +233,11 @@ stays; no advice line needed).
   rejected shape was thirteen-at-once. Salvaging the best single line into a focused
   flight is what learning from the corpus looks like. (Alternative if the operator
   wants breadth explicit: `Macro to sector to stock. One nightly read.` — 8 words.)
-- **Subline:** `Four plain-word lanes — Buy now, Almost ready, Take profits, Stand
-  aside — plus the macro regime behind them.` (17 words.)
-- **Chips:** `34 themes` · `Macro dashboards` · `13F flows` · `Daily signals`.
+- **Subline:** `Buy now, Almost ready, Take profits, Stand aside — every theme sorted
+  into four plain-word lanes, every day.` (17 words; "macro regime" cut per ruling 5.)
+- **Chips:** `34 themes` · `Macro dashboards` · `Institutional flow` · `Daily signals`
+  (ruling 5: never "13F" on a retail surface).
+- **Launch flag:** same violet `LAUNCH — 50% OFF` pill top-right (ruling 2).
 
 ### Why it exists (and why paper mode)
 
@@ -245,40 +274,41 @@ the image dominates the card; a website-card creative makes the whole image the 
 the post text's job is *priming*, not navigation. No hashtags (they date the ad and leak
 taps); one CTA; the domain appears once.
 
-### V1 — "Vibes vs signals" (pairs with Ad A · flight-1 primary)
+### V1 — "The hook is the offer" (pairs with Ad A · flight-1 primary)
 
-> Retail trades on vibes. Institutions trade on signals.
+> Institutional-grade stock signals — 50% off at launch.
 >
-> Every night our engines re-read the whole tape and grade the standouts — buy, wait
-> or avoid, with a 0–100 edge score and an exact entry zone. By morning, your
-> watchlist is already read.
+> Our engines scan the entire market and grade every standout stock: buy, wait or
+> avoid, with an exact entry zone. Updated every trading day — you open the app, the
+> work is already done.
 >
-> · Daily graded stock signals — wins and losses on the public record
+> · Daily graded stock signals
 > · Sector rotation in four plain-word lanes
-> · Macro dashboards: US · China · HK · Canada
-> · Mastermind AI analyst + institutional-grade charting
-> · Insider, Congress & 13F desks · intraday options flow
+> · Macro dashboards + advanced charting
+> · Mastermind AI — your personal analyst
+> · What institutions are buying + live options flow
 >
-> Launch offer: up to 50% off, locked in for as long as you stay.
+> Founding rate: $75/mo (was $149), locked in for as long as you stay.
 > Start your 7-day free trial → mastermind-x.com
 
-*Why:* line 1 is an identity challenge — it names the reader's camp and the camp they
-want to join, in eight words, before the fold. The feature block is scannable proof of
-breadth (the operator's full requested list), and the offer line carries the launch
-discount + lock-in in one sentence. "Engines," not "AI," per §3.
+*Why:* line 1 = category + discount in eight words (rulings 1–2: the 50% is the hook,
+freshness is "daily," not "nightly"). "You open the app, the work is already done" is
+the pain answered in plain words. Feature bullets are the operator's requested list
+with zero jargon; "live" appears only on options flow, where it is true.
 
 ### V2 — "The visibility problem" (pairs with either · storytelling, cold audiences)
 
 > Most retail investors don't have a discipline problem. They have a visibility problem.
 >
-> The patterns are there — in the flows, the filings, the rotation, the regime.
-> Institutions pay $24,000 a year for desks that surface them. Retail gets a news feed.
+> The patterns are there — in the money flows, the sector moves, the setups forming
+> before the breakout. Institutions pay $24,000 a year for desks that surface them.
+> Retail gets a news feed.
 >
-> So we built the desk: nightly-graded stock signals with exact entry zones, sector
-> rotation in plain words, macro dashboards, an AI analyst that reads the boards with
-> you. Our job is simple — light up what you can't see.
+> So we built the desk: daily graded stock signals with exact entry zones, sector
+> rotation in plain words, macro dashboards, advanced charting, and an AI analyst that
+> reads it all with you. Our job is simple — light up what you can't see.
 >
-> Up to 50% off at launch · 7-day free trial → mastermind-x.com
+> 50% off at launch · 7-day free trial → mastermind-x.com
 
 *Why:* empathy-first for cold audiences; diagnosis before product. The $24k comparative
 does the "institutional" work with a passported number. The operator's "shed light on
@@ -286,19 +316,19 @@ what is dark" lives here, where it costs nothing and lands hard.
 
 ### V3 — "The launch" (pairs with Ad A · retargeting/warm audiences)
 
-> Founding launch: the full institutional-grade market desk, up to 50% off — and the
-> rate is locked for as long as you stay.
+> Launch offer: 50% off the full desk — and the rate is locked in for as long as you
+> stay.
 >
-> All 31 advanced modules. Daily graded signals. Sector rotation. Macro dashboards.
-> Mastermind AI. Intraday options flow.
+> Daily stock signals. Sector rotation. Macro dashboards. Advanced charting.
+> Mastermind AI. Live options flow.
 >
-> 2,000 founding memberships, first come first served. When they're gone, the price
-> rises.
+> 2,000 founding memberships, first come, first served. When they're gone, the price
+> goes up.
 >
 > Try Pro free for 7 days → mastermind-x.com
 
 *Why:* pure offer + scarcity for people who already know us (site visitors, engagers).
-Availability-framed scarcity only ("first come first served / price rises"), never
+Availability-framed scarcity only ("first come first served / price goes up"), never
 "claimed" counts — founding-allotment law.
 
 ---

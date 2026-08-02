@@ -1,0 +1,29 @@
+/* ============================================================
+   MASTERMINDX AD SYSTEM — round 3
+   Imports the round-2 system verbatim (tokens = landing's own;
+   Inter only; canvases + AG-3 floors unchanged) and adds ONLY
+   what round 3 introduces. Governed by research/AD_MASTER_PAPER.md
+   + research/AD_ROUND3_FLAGSHIP_BRIEF.md (operator rulings §3).
+   ============================================================ */
+
+@import "../round2/_ads.css";
+
+/* ── Launch flag — the upfront discount (R3 operator ruling 2:
+     "say the 50% off right upfront") ─────────────────────── */
+.offer-flag{display:inline-flex;align-items:center;gap:10px;font-size:var(--kick);
+  font-weight:800;letter-spacing:.06em;color:#fff;white-space:nowrap;
+  background:linear-gradient(94deg,var(--violet),#5b46c9);
+  border-radius:999px;padding:14px 26px;
+  box-shadow:0 8px 20px -8px rgba(120,98,224,.6)}
+.ad--s628 .offer-flag{padding:11px 20px}
+
+/* ── Category line (AG-1 brand + category, freed from the pill
+     so the flag can own the brandbar's right edge) ────────── */
+.catline{position:relative;z-index:3;padding:16px var(--pad) 0;font-size:var(--kick);
+  font-weight:700;letter-spacing:.09em;color:var(--faint)}
+.ad--dark .catline{color:#7f8da8}
+
+/* ── Prophet hero variants (round-3 flagship card) ─────────── */
+.pill--buy{background:var(--q-green);color:#fff;border:1.5px solid var(--q-green)}
+.w-prophet .pill--buy{font-size:24px;padding:8px 18px;letter-spacing:.05em}
+.w-prophet .px{margin-left:auto;font-size:26px;font-weight:800;color:var(--ink)}
