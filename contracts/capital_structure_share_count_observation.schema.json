@@ -188,10 +188,18 @@
     "factEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["json_pointer", "entry_sha256", "value", "unit", "period_end", "fiscal_year", "fiscal_period", "frame", "filed", "accession", "form"],
+      "required": ["json_pointer", "entry_sha256", "source_issue", "value", "unit", "period_end", "fiscal_year", "fiscal_period", "frame", "filed", "accession", "form"],
       "properties": {
         "json_pointer": {"type": "string", "pattern": "^/facts/(?:us-gaap|dei)/[^/]+/units/[^/]+/[0-9]+$"},
         "entry_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_issue": {
+          "type": ["string", "null"],
+          "enum": [
+            "unexpected_unit", "missing_value", "negative_value", "missing_period_end",
+            "missing_filing_provenance", "malformed_fact_entry", null
+          ],
+          "description": "Receipt-independent issue derived from the retained fact entry. PIT-only temporal deferral is recomputed from the receipt clock and is never stored here."
+        },
         "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
         "unit": {"type": "string", "minLength": 1},
         "period_end": {"type": ["string", "null"], "format": "date"},

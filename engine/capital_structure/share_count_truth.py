@@ -30,7 +30,8 @@ COMPANYFACTS_SOURCE_RECEIPT_SCHEMA = "capital_structure.companyfacts_source_rece
 COMPANYFACTS_SOURCE_SNAPSHOT_SCHEMA = "capital_structure.companyfacts_source_snapshot.v1"
 SHARE_COUNT_SNAPSHOT_FACT_OBSERVATION_SCHEMA = "capital_structure.share_count_snapshot_fact_observation.v1"
 SHARE_COUNT_LEDGER_SCHEMA = "capital_structure.share_count_ledger.v1"
-COMPILER_VERSION = "capital-structure-share-count-truth/1.1.0"
+SHARE_COUNT_LEDGER_RECEIPT_SCHEMA = "capital_structure.share_count_ledger_receipt.v1"
+COMPILER_VERSION = "capital-structure-share-count-truth/1.2.0"
 
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _ISSUER_RE = re.compile(r"^issuer:([0-9]{10})$")
@@ -183,6 +184,16 @@ def _snapshot_fact_observation_schema() -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@lru_cache(maxsize=1)
+def _ledger_receipt_schema() -> dict[str, Any]:
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "capital_structure_share_count_ledger_receipt.schema.json"
+    )
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _receipt_material(receipt: Mapping[str, Any]) -> dict[str, str | int]:
     """Normalize one closed, externally retained Company Facts receipt.
 
@@ -316,6 +327,18 @@ def source_snapshot_id_for(snapshot: Mapping[str, Any]) -> str:
     return _digest_id("companyfacts-snapshot:cs:", material)
 
 
+def ledger_receipt_id_for(receipt: Mapping[str, Any]) -> str:
+    """Digest one ordered internal-ledger receipt, excluding its self ID.
+
+    This closes the repository-local append-only chain.  It is deliberately
+    not a signature, external timestamp, or non-repudiation witness: a future
+    collector/witness lane must provide that boundary if it is needed.
+    """
+    material = deepcopy(dict(receipt))
+    material.pop("ledger_receipt_id", None)
+    return _digest_id("share-count-ledger-receipt:cs:", material)
+
+
 @lru_cache(maxsize=1)
 def _observation_schema() -> dict[str, Any]:
     path = (
@@ -383,6 +406,124 @@ def validate_snapshot_fact_observation(record: Mapping[str, Any]) -> None:
         raise ShareCountTruthError("snapshot-fact observation system_available_at cannot precede source_retrieved_at")
 
 
+def _snapshot_semantics_from_canonical(
+    canonical: Mapping[str, Any], receipt: Mapping[str, str | int],
+) -> dict[str, Any]:
+    """Re-derive receipt-local state and values from canonical direct evidence."""
+    evidence = canonical.get("evidence") or {}
+    entries = sorted(
+        [dict(entry) for entry in evidence.get("fact_entries") or [] if isinstance(entry, Mapping)],
+        key=lambda entry: str(entry.get("json_pointer") or ""),
+    )
+    if not entries:
+        raise ShareCountTruthError("canonical observation lacks fact entries for snapshot semantics")
+    fact = canonical.get("fact") or {}
+    definition = SUPPORTED_FACTS.get((str(fact.get("namespace") or ""), str(fact.get("name") or "")))
+    if definition is None:
+        raise ShareCountTruthError("canonical observation names unsupported fact semantics")
+    _validate_canonical_fact_evidence(canonical, entries, definition)
+    values = {str(entry["value"]) for entry in entries if entry.get("value") is not None}
+    contexts = {
+        (entry.get("fiscal_year"), entry.get("fiscal_period"), entry.get("frame"))
+        for entry in entries
+    }
+    if len(values) > 1:
+        disposition, reason = "ambiguous", "multiple_distinct_values_for_fact_slot"
+    elif len(contexts) > 1:
+        disposition, reason = "ambiguous", "multiple_distinct_contexts_for_fact_slot"
+    else:
+        issues: set[str] = set()
+        for entry in entries:
+            source_issue = entry.get("source_issue")
+            if source_issue is not None:
+                issues.add(str(source_issue))
+                continue
+            filed = _valid_date(entry.get("filed"))
+            if filed is None:
+                issues.add("missing_filing_provenance")
+            elif _timestamp(str(receipt["system_available_at"])).date() < date.fromisoformat(filed):
+                issues.add("system_availability_precedes_filed_date")
+        if issues:
+            disposition, reason = "deferred", sorted(issues)[0]
+        else:
+            disposition, reason = "observed", "direct_sec_companyfacts_fact"
+
+    raw_value = entries[0].get("value")
+    unit = str(fact.get("unit") or "")
+    if disposition == "observed":
+        reported = {"value": raw_value, "unit": unit, "scale": "1"}
+        normalized = {
+            "value": raw_value, "unit": definition.expected_unit, "scale": "1", "state": "observed",
+        }
+    elif disposition == "ambiguous":
+        reported = {"value": None, "unit": unit, "scale": "1"}
+        normalized = {"value": None, "unit": None, "scale": None, "state": "ambiguous"}
+    else:
+        reported = {"value": raw_value, "unit": unit, "scale": "1"}
+        normalized = {"value": None, "unit": None, "scale": None, "state": "deferred"}
+    return {
+        "state": {"disposition": disposition, "reason": reason},
+        "reported": reported,
+        "normalized": normalized,
+    }
+
+
+def _evidence_source_issue(
+    entry: Mapping[str, Any], definition: _Definition,
+) -> str | None:
+    """Re-derive every source-level issue expressible from retained evidence."""
+    raw_value = entry.get("value")
+    if raw_value is None:
+        return "missing_value"
+    if Decimal(str(raw_value)) < 0:
+        return "negative_value"
+    if entry.get("unit") != definition.expected_unit:
+        return "unexpected_unit"
+    if entry.get("period_end") is None:
+        return "missing_period_end"
+    if (
+        entry.get("accession") is None
+        or entry.get("form") is None
+        or entry.get("filed") is None
+    ):
+        return "missing_filing_provenance"
+    return None
+
+
+def _validate_canonical_fact_evidence(
+    canonical: Mapping[str, Any], entries: Sequence[Mapping[str, Any]], definition: _Definition,
+) -> None:
+    """Fence canonical direct evidence before deriving a snapshot-local claim.
+
+    A raw non-object Company Facts entry cannot be reconstructed from its hash,
+    so its recorded ``malformed_fact_entry`` classification remains a retained
+    evidence fact.  All other source issues are exactly re-derived here from
+    the closed canonical entry fields.
+    """
+    fact = canonical.get("fact") or {}
+    period = canonical.get("period") or {}
+    filing = canonical.get("filing") or {}
+    namespace = str(fact.get("namespace") or "")
+    name = str(fact.get("name") or "")
+    unit = str(fact.get("unit") or "")
+    expected_pointer_prefix = f"/facts/{namespace}/{name}/units/{unit}/"
+    for entry in entries:
+        if not str(entry.get("json_pointer") or "").startswith(expected_pointer_prefix):
+            raise ShareCountTruthError("canonical fact entry pointer does not resolve canonical fact")
+        if entry.get("unit") != unit:
+            raise ShareCountTruthError("canonical fact entry unit does not match canonical fact")
+        for field in ("period_end",):
+            if entry.get(field) != period.get(field):
+                raise ShareCountTruthError(f"canonical fact entry {field} does not match canonical period")
+        for field in ("accession", "form", "filed"):
+            if entry.get(field) != filing.get(field):
+                raise ShareCountTruthError(f"canonical fact entry {field} does not match canonical filing")
+        declared_issue = entry.get("source_issue")
+        rederived_issue = _evidence_source_issue(entry, definition)
+        if declared_issue != "malformed_fact_entry" and declared_issue != rederived_issue:
+            raise ShareCountTruthError("canonical fact entry source_issue is not re-derived from direct evidence")
+
+
 def _validate_snapshot_fact_semantics(
     snapshot_fact: Mapping[str, Any], canonical: Mapping[str, Any], receipt: Mapping[str, str | int],
 ) -> None:
@@ -403,31 +544,12 @@ def _validate_snapshot_fact_semantics(
         if point_in_time.get(field) != receipt.get(field):
             raise ShareCountTruthError(f"snapshot-fact observation {field} does not match source receipt")
 
-    state = snapshot_fact.get("state") or {}
-    reported = snapshot_fact.get("reported") or {}
-    normalized = snapshot_fact.get("normalized") or {}
-    disposition = state.get("disposition")
-    if normalized.get("state") != disposition:
-        raise ShareCountTruthError("snapshot-fact normalized state does not match snapshot-local disposition")
-    if disposition == "observed":
-        definition = SUPPORTED_FACTS.get((
-            str((canonical.get("fact") or {}).get("namespace") or ""),
-            str((canonical.get("fact") or {}).get("name") or ""),
-        ))
-        if definition is None:
-            raise ShareCountTruthError("snapshot-fact canonical observation names an unsupported fact")
-        if reported.get("unit") != (canonical.get("fact") or {}).get("unit") or reported.get("scale") != "1":
-            raise ShareCountTruthError("snapshot-fact observed reported unit/scale does not match canonical fact")
-        if reported.get("value") is None or normalized.get("value") != reported.get("value"):
-            raise ShareCountTruthError("snapshot-fact observed values are detached from direct fact value")
-        if normalized.get("unit") != definition.expected_unit or normalized.get("scale") != "1":
-            raise ShareCountTruthError("snapshot-fact observed normalized unit/scale is invalid")
-    elif disposition == "deferred":
-        if any(normalized.get(field) is not None for field in ("value", "unit", "scale")):
-            raise ShareCountTruthError("deferred snapshot-fact observation carries normalized value")
-    elif disposition == "ambiguous":
-        if reported.get("value") is not None or any(normalized.get(field) is not None for field in ("value", "unit", "scale")):
-            raise ShareCountTruthError("ambiguous snapshot-fact observation carries a selected value")
+    expected = _snapshot_semantics_from_canonical(canonical, receipt)
+    for field in ("state", "reported", "normalized"):
+        if snapshot_fact.get(field) != expected[field]:
+            raise ShareCountTruthError(
+                f"snapshot-fact observation {field} does not match re-derived receipt-local semantics",
+            )
 
 
 def validate_source_snapshot(
@@ -484,13 +606,65 @@ def validate_source_snapshot(
         raise ShareCountTruthError("source snapshot links must cover exactly one snapshot-fact observation per logical slot")
 
 
+def validate_ledger_receipt(receipt: Mapping[str, Any]) -> None:
+    """Validate one canonical ordered-ledger commit receipt."""
+    if not isinstance(receipt, Mapping):
+        raise ShareCountTruthError("share-count ledger receipt must be an object")
+    errors = _schema_errors(_ledger_receipt_schema(), receipt)
+    if errors:
+        raise ShareCountTruthError(f"share-count ledger receipt contract violation: {'; '.join(errors[:5])}")
+    if receipt.get("ledger_receipt_id") != ledger_receipt_id_for(receipt):
+        raise ShareCountTruthError("share-count ledger receipt ID digest mismatch")
+
+
+def _validate_ledger_receipt_chain(
+    receipts: Sequence[Mapping[str, Any]], observations: Sequence[Mapping[str, Any]],
+    snapshots: Sequence[Mapping[str, Any]], head_receipt_id: Any,
+) -> None:
+    if not receipts:
+        raise ShareCountTruthError("share-count ledger requires at least one ledger receipt")
+    prior: Mapping[str, Any] | None = None
+    receipt_ids: set[str] = set()
+    for expected_sequence, receipt in enumerate(receipts, start=1):
+        validate_ledger_receipt(receipt)
+        receipt_id = str(receipt["ledger_receipt_id"])
+        if receipt_id in receipt_ids:
+            raise ShareCountTruthError("duplicate share-count ledger receipt ID")
+        receipt_ids.add(receipt_id)
+        if receipt.get("sequence") != expected_sequence:
+            raise ShareCountTruthError("share-count ledger receipt sequence must be contiguous from 1")
+        expected_predecessor = None if prior is None else prior["ledger_receipt_id"]
+        if receipt.get("predecessor_ledger_receipt_id") != expected_predecessor:
+            raise ShareCountTruthError("share-count ledger receipt predecessor chain is broken")
+        if prior is not None:
+            if _timestamp(str(receipt["committed_at"])) < _timestamp(str(prior["committed_at"])):
+                raise ShareCountTruthError("share-count ledger receipt committed_at cannot move backward")
+            prior_observations = list(prior["observation_ids"])
+            prior_snapshots = list(prior["source_snapshot_ids"])
+            if list(receipt["observation_ids"][:len(prior_observations)]) != prior_observations:
+                raise ShareCountTruthError("share-count ledger receipt observation history is not append-only")
+            if list(receipt["source_snapshot_ids"][:len(prior_snapshots)]) != prior_snapshots:
+                raise ShareCountTruthError("share-count ledger receipt snapshot history is not append-only")
+            if len(receipt["source_snapshot_ids"]) != len(prior_snapshots) + 1:
+                raise ShareCountTruthError("each share-count ledger receipt must append exactly one source snapshot")
+        prior = receipt
+
+    head = receipts[-1]
+    if head_receipt_id != head.get("ledger_receipt_id"):
+        raise ShareCountTruthError("share-count ledger head receipt does not resolve receipt chain")
+    if list(head["observation_ids"]) != [row.get("observation_id") for row in observations]:
+        raise ShareCountTruthError("share-count ledger head receipt does not bind ordered observations")
+    if list(head["source_snapshot_ids"]) != [snapshot.get("source_snapshot_id") for snapshot in snapshots]:
+        raise ShareCountTruthError("share-count ledger head receipt does not bind ordered source snapshots")
+
+
 def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
     """Validate the self-contained immutable fact and append-only snapshot ledgers."""
     if not isinstance(ledger, Mapping):
         raise ShareCountTruthError("share-count ledger must be an object")
     required = {
         "schema", "status", "compiler_version", "source_acquisition", "observations",
-        "source_snapshots", "counts",
+        "source_snapshots", "ledger_receipts", "ledger_head_receipt_id", "counts",
     }
     if set(ledger) != required:
         raise ShareCountTruthError("share-count ledger has unexpected or missing top-level fields")
@@ -498,8 +672,9 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
         raise ShareCountTruthError("share-count ledger has wrong schema or status")
     observations = ledger.get("observations")
     snapshots = ledger.get("source_snapshots")
-    if not isinstance(observations, list) or not isinstance(snapshots, list):
-        raise ShareCountTruthError("share-count ledger observations and source_snapshots must be arrays")
+    receipts = ledger.get("ledger_receipts")
+    if not isinstance(observations, list) or not isinstance(snapshots, list) or not isinstance(receipts, list):
+        raise ShareCountTruthError("share-count ledger observations, source_snapshots and ledger_receipts must be arrays")
     validate_share_count_history(observations)
     snapshot_ids: set[str] = set()
     for snapshot in snapshots:
@@ -508,6 +683,17 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
             raise ShareCountTruthError("duplicate source_snapshot_id in ledger")
         snapshot_ids.add(snapshot_id)
         validate_source_snapshot(snapshot, observations)
+    referenced_observation_ids = {
+        str(fact.get("observation_id") or "")
+        for snapshot in snapshots
+        for fact in snapshot.get("snapshot_fact_observations") or []
+    }
+    canonical_observation_ids = {str(row.get("observation_id") or "") for row in observations}
+    if referenced_observation_ids != canonical_observation_ids:
+        raise ShareCountTruthError("every canonical observation must be referenced by at least one snapshot fact")
+    _validate_ledger_receipt_chain(
+        receipts, observations, snapshots, ledger.get("ledger_head_receipt_id"),
+    )
     counts = ledger.get("counts") or {}
     expected_count_fields = {"observations_total", "source_snapshots_total", "current_snapshot"}
     if set(counts) != expected_count_fields:
@@ -552,13 +738,14 @@ def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
 
 
 def _source_entry(
-    *, pointer: str, entry: Any, unit: str
+    *, pointer: str, entry: Any, unit: str, source_issue: str | None
 ) -> dict[str, Any]:
     raw = dict(entry) if isinstance(entry, Mapping) else entry
     mapping = entry if isinstance(entry, Mapping) else {}
     return {
         "json_pointer": pointer,
         "entry_sha256": hashlib.sha256(_canonical_json(raw)).hexdigest(),
+        "source_issue": source_issue,
         "value": _decimal_text(mapping.get("val")),
         "unit": unit,
         "period_end": _valid_date(mapping.get("end")),
@@ -585,8 +772,8 @@ def _string_or_none(value: Any, *, max_length: int) -> str | None:
     return raw if raw and len(raw) <= max_length else None
 
 
-def _candidate_issue(
-    entry: Any, unit: str, definition: _Definition, *, system_available_at: str
+def _candidate_source_issue(
+    entry: Any, unit: str, definition: _Definition,
 ) -> str | None:
     if not isinstance(entry, Mapping):
         return "malformed_fact_entry"
@@ -605,6 +792,18 @@ def _candidate_issue(
         or _string_or_none(entry.get("form"), max_length=32) is None
         or filed is None
     ):
+        return "missing_filing_provenance"
+    return None
+
+
+def _candidate_issue(
+    entry: Any, unit: str, definition: _Definition, *, system_available_at: str
+) -> str | None:
+    source_issue = _candidate_source_issue(entry, unit, definition)
+    if source_issue is not None:
+        return source_issue
+    filed = _valid_date((entry if isinstance(entry, Mapping) else {}).get("filed"))
+    if filed is None:
         return "missing_filing_provenance"
     # Company Facts carries a filed *date*, not an accepted timestamp.  We do
     # not pretend otherwise, but an internal availability date before that
@@ -654,13 +853,16 @@ def _fact_candidates(
             entries: Sequence[Any] = raw_entries if isinstance(raw_entries, list) else [raw_entries]
             for index, entry in enumerate(entries):
                 pointer = f"/facts/{namespace}/{name}/units/{unit}/{index}"
+                source_issue = _candidate_source_issue(entry, unit, definition)
                 candidates.append({
                     "definition": definition,
                     "namespace": namespace,
                     "name": name,
                     "unit": unit,
                     "entry": entry,
-                    "entry_evidence": _source_entry(pointer=pointer, entry=entry, unit=unit),
+                    "entry_evidence": _source_entry(
+                        pointer=pointer, entry=entry, unit=unit, source_issue=source_issue,
+                    ),
                     "issue": _candidate_issue(
                         entry, unit, definition, system_available_at=system_available_at,
                     ),
@@ -810,6 +1012,25 @@ def validate_share_count_history(observations: Sequence[Mapping[str, Any]]) -> N
             raise ShareCountTruthError(f"history row {index} fact_revision_id digest mismatch")
         if observation_id != observation_id_for(record):
             raise ShareCountTruthError(f"history row {index} observation_id digest mismatch")
+        point_in_time = record.get("point_in_time") or {}
+        retrieved_at = _parse_timestamp(point_in_time.get("source_retrieved_at"), "source_retrieved_at")
+        system_available_at = _parse_timestamp(point_in_time.get("system_available_at"), "system_available_at")
+        if _timestamp(system_available_at) < _timestamp(retrieved_at):
+            raise ShareCountTruthError(f"history row {index} system_available_at precedes source_retrieved_at")
+        if point_in_time.get("available_at") != system_available_at:
+            raise ShareCountTruthError(f"history row {index} available_at must equal system_available_at")
+        expected_semantics = _snapshot_semantics_from_canonical(
+            record,
+            {
+                "source_retrieved_at": retrieved_at,
+                "system_available_at": system_available_at,
+            },
+        )
+        for field in ("state", "reported", "normalized"):
+            if record.get(field) != expected_semantics[field]:
+                raise ShareCountTruthError(
+                    f"history row {index} {field} does not match re-derived canonical semantics",
+                )
         by_slot[str(record["logical_observation_id"])].append(record)
     for logical_id, versions in by_slot.items():
         versions.sort(key=lambda row: int((row.get("version") or {}).get("correction_version") or 0))
@@ -828,14 +1049,26 @@ def validate_share_count_history(observations: Sequence[Mapping[str, Any]]) -> N
                     raise ShareCountTruthError(f"{logical_id} v{expected} must supersede exactly v{expected - 1}")
                 if row.get("fact_revision_id") == versions[expected - 2].get("fact_revision_id"):
                     raise ShareCountTruthError(f"{logical_id} cannot correct unchanged fact revision")
+                prior_pit = versions[expected - 2].get("point_in_time") or {}
+                current_pit = row.get("point_in_time") or {}
+                for field in ("source_retrieved_at", "system_available_at"):
+                    prior_time = _timestamp(_parse_timestamp(prior_pit.get(field), f"prior.{field}"))
+                    current_time = _timestamp(_parse_timestamp(current_pit.get(field), field))
+                    if current_time <= prior_time:
+                        raise ShareCountTruthError(
+                            f"{logical_id} correction {field} must be strictly later than predecessor",
+                        )
 
 
 def _apply_correction_history(
-    candidate: Mapping[str, Any], existing_observations: Sequence[Mapping[str, Any]]
+    candidate: Mapping[str, Any], canonical_observations: Sequence[Mapping[str, Any]]
 ) -> tuple[dict[str, Any], bool]:
     """Return latest existing version if byte-equivalent, else append one correction."""
     logical_id = str(candidate["logical_observation_id"])
-    prior = [dict(row) for row in existing_observations if row.get("logical_observation_id") == logical_id]
+    prior = [
+        dict(row) for row in canonical_observations
+        if row.get("logical_observation_id") == logical_id
+    ]
     if not prior:
         return dict(candidate), True
     prior.sort(key=lambda row: int((row.get("version") or {}).get("correction_version") or 0))
@@ -919,6 +1152,41 @@ def _source_snapshot(
     return snapshot
 
 
+def _append_ledger_receipt(
+    prior_receipts: Sequence[Mapping[str, Any]], observations: Sequence[Mapping[str, Any]],
+    snapshots: Sequence[Mapping[str, Any]], *, committed_at: str,
+) -> list[dict[str, Any]]:
+    """Append a predecessor-bound ordered ledger receipt when content advances.
+
+    ``committed_at`` is a deterministic logical-chain clock, not a claim that
+    unrelated issuer snapshots arrived in source-clock order.  Late backfills
+    therefore inherit the current head clock, while sequence + predecessor +
+    ordered body keep same-second commits distinct.
+    """
+    existing = [deepcopy(dict(receipt)) for receipt in prior_receipts]
+    observation_ids = [str(row["observation_id"]) for row in observations]
+    snapshot_ids = [str(snapshot["source_snapshot_id"]) for snapshot in snapshots]
+    logical_committed_at = committed_at
+    if existing:
+        head = existing[-1]
+        if head.get("observation_ids") == observation_ids and head.get("source_snapshot_ids") == snapshot_ids:
+            return existing
+        if _timestamp(logical_committed_at) < _timestamp(str(head["committed_at"])):
+            logical_committed_at = str(head["committed_at"])
+    record: dict[str, Any] = {
+        "schema": SHARE_COUNT_LEDGER_RECEIPT_SCHEMA,
+        "ledger_receipt_id": "",
+        "sequence": len(existing) + 1,
+        "predecessor_ledger_receipt_id": None if not existing else existing[-1]["ledger_receipt_id"],
+        "committed_at": logical_committed_at,
+        "observation_ids": observation_ids,
+        "source_snapshot_ids": snapshot_ids,
+    }
+    record["ledger_receipt_id"] = ledger_receipt_id_for(record)
+    validate_ledger_receipt(record)
+    return [*existing, record]
+
+
 def source_acquisition_unavailable_result(*, reason: str = "no_retained_companyfacts_snapshot_supplied") -> dict[str, Any]:
     """Explicitly represent the deliberate absence of a collector in this wave."""
     return {
@@ -932,6 +1200,8 @@ def source_acquisition_unavailable_result(*, reason: str = "no_retained_companyf
         },
         "observations": [],
         "source_snapshots": [],
+        "ledger_receipts": [],
+        "ledger_head_receipt_id": None,
         "counts": {
             "observations_total": 0,
             "source_snapshots_total": 0,
@@ -950,7 +1220,6 @@ def compile_share_count_observations(
     source_receipt: Mapping[str, Any],
     *,
     existing_ledger: Mapping[str, Any] | None = None,
-    existing_observations: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Purely normalize one exact Company Facts source snapshot.
 
@@ -975,15 +1244,14 @@ def compile_share_count_observations(
     if payload_cik != _issuer_cik(receipt["issuer_id"]):
         raise ShareCountTruthError("Company Facts payload CIK does not match receipt issuer_id")
     if existing_ledger is not None:
-        if existing_observations:
-            raise ShareCountTruthError("supply existing_ledger or existing_observations, not both")
         validate_share_count_ledger(existing_ledger)
         prior_observations = [deepcopy(dict(row)) for row in existing_ledger["observations"]]
         prior_snapshots = [deepcopy(dict(row)) for row in existing_ledger["source_snapshots"]]
+        prior_ledger_receipts = [deepcopy(dict(row)) for row in existing_ledger["ledger_receipts"]]
     else:
-        prior_observations = [deepcopy(dict(row)) for row in existing_observations]
+        prior_observations: list[dict[str, Any]] = []
         prior_snapshots: list[dict[str, Any]] = []
-        validate_share_count_history(prior_observations)
+        prior_ledger_receipts: list[dict[str, Any]] = []
 
     grouped: dict[tuple[str | None, ...], list[dict[str, Any]]] = defaultdict(list)
     for candidate in _fact_candidates(
@@ -1001,16 +1269,18 @@ def compile_share_count_observations(
 
     output = [*prior_observations, *new_rows]
     validate_share_count_history(output)
-    output.sort(key=lambda row: (
-        str(row.get("issuer_id") or ""), str(row.get("logical_observation_id") or ""),
-        int((row.get("version") or {}).get("correction_version") or 0),
-    ))
     current_snapshot = _source_snapshot(receipt, snapshot_facts, output)
     existing_snapshot_ids = {
         str(snapshot.get("source_snapshot_id") or "") for snapshot in prior_snapshots
     }
     new_source_snapshots = [] if current_snapshot["source_snapshot_id"] in existing_snapshot_ids else [current_snapshot]
     source_snapshots = [*prior_snapshots, *new_source_snapshots]
+    ledger_receipts = _append_ledger_receipt(
+        prior_ledger_receipts,
+        output,
+        source_snapshots,
+        committed_at=str(receipt["system_available_at"]),
+    )
     current_dispositions = {
         disposition: sum(
             fact["state"]["disposition"] == disposition
@@ -1031,6 +1301,8 @@ def compile_share_count_observations(
         },
         "observations": output,
         "source_snapshots": source_snapshots,
+        "ledger_receipts": ledger_receipts,
+        "ledger_head_receipt_id": ledger_receipts[-1]["ledger_receipt_id"],
         "counts": {
             "observations_total": len(output),
             "source_snapshots_total": len(source_snapshots),
