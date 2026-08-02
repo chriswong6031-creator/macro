@@ -1,7 +1,7 @@
 """Adversarial contract tests for the bitemporal metric query kernel."""
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 import csv
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
@@ -10,6 +10,7 @@ import hashlib
 from itertools import repeat
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -23,11 +24,9 @@ import engine.fundamental_forensics.query as query_module
 from engine.fundamental_forensics.query import (
     BitemporalMetricQueryEngine,
     BitemporalPolicy,
-    CellNode,
     CellProvenance,
     CellState,
     EvaluationPolicy,
-    FilingMetadata,
     HARD_MAX_RECEIPT_NODES,
     MetricCell,
     MetricMatrix,
@@ -121,6 +120,7 @@ def _fact(
 
 
 def _engine(*facts, bounds: QueryBounds | None = None, registry=None, **kwargs):
+    entities = kwargs.pop("entities", {"AAA": ENTITY_A, "BBB": ENTITY_B})
     if "filing_metadata" not in kwargs:
         kwargs["filing_metadata"] = {
             fact.occurrence_id: {
@@ -135,7 +135,7 @@ def _engine(*facts, bounds: QueryBounds | None = None, registry=None, **kwargs):
     return BitemporalMetricQueryEngine(
         RawFactLedger(tuple(facts)),
         registry or load_core_metric_registry(ROOT),
-        entities={"AAA": ENTITY_A, "BBB": ENTITY_B},
+        entities=entities,
         bounds=bounds,
         **kwargs,
     )
@@ -385,17 +385,17 @@ def test_governed_formula_propagates_dependency_clocks_and_receipts() -> None:
     assert cell.provenance.recorded_at is None
     assert cell.provenance.computed_at is None
     assert cell.provenance.published_at is None
+    dependency_by_id = {node.cell_id: node for node in cell.dependency_nodes}
     direct_dependencies = tuple(
-        node
-        for node in cell.dependency_nodes
-        if node.cell_id in cell.provenance.dependency_cell_ids
+        dependency_by_id[cell_id]
+        for cell_id in cell.provenance.dependency_cell_ids
     )
     assert len(direct_dependencies) == 2
-    assert cell.provenance.dependency_cell_ids == tuple(
-        item.cell_id
-        for metric_id in ("revenue", "gross_profit")
-        for item in direct_dependencies
-        if item.metric_id == metric_id
+    # The governed formula definition is the authority for pointer order, not
+    # the canonical cell-ID ordering used by the flat node table.
+    assert tuple(item.metric_id for item in direct_dependencies) == (
+        "gross_profit",
+        "revenue",
     )
     assert {
         item.provenance.accepted_at for item in direct_dependencies
@@ -560,7 +560,7 @@ def test_temporally_ineligible_raw_facts_are_opaque_before_all_structure_checks(
     assert after.provenance.mapping_digest
 
 
-def test_future_mapping_and_formula_governance_are_opaque_and_do_not_evaluate_dependencies() -> None:
+def test_future_mapping_is_append_only_and_future_formula_stays_opaque() -> None:
     registry = load_core_metric_registry(ROOT)
     revenue = registry.metric("revenue")
     base_mapping = revenue.mappings[0]
@@ -572,28 +572,30 @@ def test_future_mapping_and_formula_governance_are_opaque_and_do_not_evaluate_de
     future_mapping_registry = _replace_contract(
         registry,
         "revenue",
-        mappings=(replace(base_mapping, rule=future_rule),),
+        # New governance is append-only.  Replacing the visible mapping would
+        # make an old formula invalid rather than demonstrate cutoff opacity.
+        mappings=revenue.mappings + (replace(base_mapping, rule=future_rule),),
     )
     fact = _fact()
     direct = _engine(fact, registry=future_mapping_registry).query_cell(
         "AAA", "revenue", PERIOD, _policy()
     )
 
-    assert direct.state is CellState.MISSING
-    assert direct.reason == "governance unavailable at recorded_at cutoff"
-    assert direct.provenance.mapping_rule_id is None
-    assert direct.provenance.mapping_digest is None
-    assert direct.provenance.source_occurrence_ids == ()
-    assert direct.provenance.concept_qname is None
-    assert fact.occurrence_id not in direct.to_dict().__repr__()
+    assert direct.state is CellState.VALUE
+    assert direct.provenance.mapping_rule_id == "mapping.revenue/v1"
+    assert direct.provenance.mapping_digest
+    assert direct.provenance.source_occurrence_ids == (fact.occurrence_id,)
+    assert direct.provenance.concept_qname == fact.concept_qname
 
-    # Mapping availability is checked before request semantics too; otherwise
-    # an invalid request becomes a side channel for a future rule's presence.
+    # The visible mapping set is projected before request semantics, but an
+    # invalid period never claims a selected alias or raw occurrence.
     direct_invalid_period = _engine(fact, registry=future_mapping_registry).query_cell(
         "AAA", "revenue", PeriodRequest.instant("2025-12-31"), _policy()
     )
-    assert direct_invalid_period.state is CellState.MISSING
-    assert direct_invalid_period.reason == "governance unavailable at recorded_at cutoff"
+    assert direct_invalid_period.state is CellState.NOT_EVALUABLE
+    assert direct_invalid_period.reason == (
+        "outside_period_constraint: metric requires duration, requested instant"
+    )
     assert direct_invalid_period.provenance.mapping_rule_id is None
 
     gross_margin = registry.metric("gross_margin")
@@ -826,6 +828,7 @@ def test_receipts_and_cells_reject_forged_identity_future_clocks_and_matrix_mism
     base_provenance = good.provenance
     with pytest.raises(QueryValidationError, match="cell_id"):
         MetricCell(
+            governance_bundle=good.governance_bundle,
             ticker="AAA",
             entity_id=ENTITY_A,
             metric_id="revenue",
@@ -838,6 +841,7 @@ def test_receipts_and_cells_reject_forged_identity_future_clocks_and_matrix_mism
         )
     with pytest.raises(QueryValidationError, match="binary float"):
         MetricCell(
+            governance_bundle=good.governance_bundle,
             ticker="AAA",
             entity_id=ENTITY_A,
             metric_id="revenue",
@@ -866,6 +870,22 @@ def test_receipts_and_cells_reject_forged_identity_future_clocks_and_matrix_mism
             source="invented-source-detail",
             reason="opaque result",
         )
+    with pytest.raises(QueryValidationError, match="opaque provenance cannot expose"):
+        CellProvenance(
+            kind=ProvenanceKind.OPAQUE,
+            evaluation_policy=None,
+            policy=policy.selection,
+            source_snapshot_at=policy.source_snapshot_at,
+            recorded_cutoff_at=policy.recorded_at,
+            source_entity_id=ENTITY_A,
+            reason="opaque result",
+        )
+    with pytest.raises(QueryValidationError, match="direct source entity does not match"):
+        replace(
+            good,
+            provenance=replace(base_provenance, source_entity_id=ENTITY_B),
+            cell_id=None,
+        )
     with pytest.raises(QueryValidationError, match="direct provenance is incomplete"):
         replace(
             base_provenance,
@@ -877,23 +897,145 @@ def test_receipts_and_cells_reject_forged_identity_future_clocks_and_matrix_mism
             mapping_digests=(),
         )
     with pytest.raises(QueryValidationError, match="membership"):
+        other_good = _engine(
+            _fact(entity_id=ENTITY_B), entities={"AAA": ENTITY_B}
+        ).query_cell("AAA", "revenue", PERIOD, policy)
         MetricMatrix(
+            governance_bundle=good.governance_bundle,
             policy=policy,
             entities=(QueryEntity("AAA", ENTITY_A),),
             metric_ids=("revenue",),
             periods=(PERIOD,),
-            cells=(replace(good, entity_id=ENTITY_B, cell_id=None),),
-            registry_receipt={},
+            cells=(other_good,),
         )
     with pytest.raises(QueryValidationError, match="unique entity_ids"):
         MetricMatrix(
+            governance_bundle=good.governance_bundle,
             policy=policy,
             entities=(QueryEntity("AAA", ENTITY_A), QueryEntity("BBB", ENTITY_A)),
             metric_ids=("revenue",),
             periods=(PERIOD,),
             cells=(),
-            registry_receipt={},
         )
+
+
+def test_direct_value_receipts_reject_withdrawn_and_policy_inconsistent_raw_evidence() -> None:
+    good = _engine(_fact(value="1")).query_cell("AAA", "revenue", PERIOD, _policy())
+    selected = good.provenance.selected_raw_fact
+    assert selected is not None
+
+    withdrawn = _fact(
+        value=None,
+        is_nil=True,
+        event_type=FactEventType.WITHDRAWN,
+        revision_of=selected.occurrence_id,
+    )
+    withdrawn_provenance = replace(
+        good.provenance,
+        selected_raw_fact=withdrawn,
+        source_occurrence_ids=(withdrawn.occurrence_id,),
+    )
+    with pytest.raises(QueryValidationError, match="cannot select a withdrawn raw fact"):
+        replace(good, provenance=withdrawn_provenance, cell_id=None)
+
+    # The same semantic guard must run when a receipt arrives over the wire,
+    # after the forged raw occurrence and node identity are made canonical.
+    withdrawn_node = replace(
+        good.root_node,
+        provenance=withdrawn_provenance,
+        cell_id=None,
+    )
+    forged_wire = good.to_dict()
+    forged_wire["root_cell_id"] = withdrawn_node.cell_id
+    forged_wire["nodes"] = [withdrawn_node.to_dict()]
+    with pytest.raises(QueryValidationError, match="cannot select a withdrawn raw fact"):
+        MetricCell.from_dict(forged_wire)
+
+    amendment = _fact(
+        value="1",
+        event_type=FactEventType.AMENDMENT,
+        revision_of=selected.occurrence_id,
+    )
+    with pytest.raises(QueryValidationError, match="as_reported value must select"):
+        replace(
+            good,
+            provenance=replace(
+                good.provenance,
+                policy=BitemporalPolicy.AS_REPORTED,
+                selected_raw_fact=amendment,
+                source_occurrence_ids=(amendment.occurrence_id,),
+            ),
+            cell_id=None,
+        )
+    with pytest.raises(QueryValidationError, match="latest_restated value must select"):
+        replace(
+            good,
+            provenance=replace(
+                good.provenance,
+                policy=BitemporalPolicy.LATEST_RESTATED,
+            ),
+            cell_id=None,
+        )
+
+
+def test_period_rejection_receipts_cannot_invent_source_evidence() -> None:
+    engine = _engine(
+        _fact(value="100"),
+        _fact(concept="GrossProfit", value="40"),
+    )
+    invalid_period = PeriodRequest.instant("2025-12-31")
+    for metric_id in ("revenue", "gross_margin"):
+        cell = engine.query_cell("AAA", metric_id, invalid_period, _policy())
+        assert cell.state is CellState.NOT_EVALUABLE
+        forged_provenance = replace(
+            cell.provenance,
+            source="invented-source",
+            accession="invented-accession",
+            document_id="invented-document",
+            source_url="https://example.invalid/invented",
+            source_body_sha256="1" * 64,
+            source_ready_at="2026-08-02T01:00:00Z",
+            system_ready_at="2026-08-02T02:00:00Z",
+            source_occurrence_ids=(
+                ("rawfact_invented",)
+                if cell.provenance.kind is ProvenanceKind.DIRECT
+                else ()
+            ),
+        )
+        with pytest.raises(
+            QueryValidationError,
+            match="period rejection provenance must be governance-only",
+        ):
+            replace(cell, provenance=forged_provenance, cell_id=None)
+
+        forged_node = replace(
+            cell.root_node,
+            provenance=forged_provenance,
+            cell_id=None,
+        )
+        forged_wire = cell.to_dict()
+        forged_wire["root_cell_id"] = forged_node.cell_id
+        forged_wire["nodes"] = [forged_node.to_dict()]
+        with pytest.raises(
+            QueryValidationError,
+            match="period rejection provenance must be governance-only",
+        ):
+            MetricCell.from_dict(forged_wire)
+
+
+def test_period_rejection_precedes_taxonomy_alias_year_applicability() -> None:
+    cell = _engine().query_cell(
+        "AAA",
+        "revenue",
+        PeriodRequest.instant("2030-12-31"),
+        _policy(),
+    )
+
+    assert cell.state is CellState.NOT_EVALUABLE
+    assert cell.reason == (
+        "outside_period_constraint: metric requires duration, requested instant"
+    )
+    assert MetricCell.from_dict(cell.to_dict()).to_dict() == cell.to_dict()
 
 
 def test_matrix_receipt_projects_future_registry_content_and_csv_escapes_text_only() -> None:
@@ -919,7 +1061,7 @@ def test_matrix_receipt_projects_future_registry_content_and_csv_escapes_text_on
     matrix = _engine(fact, registry=registry_with_future_catalog_member).query_matrix(
         tickers=("AAA",), metrics=("revenue",), periods=(PERIOD,), policy=_policy()
     )
-    assert matrix.registry_receipt == baseline.registry_receipt
+    assert matrix.governance_bundle.to_dict() == baseline.governance_bundle.to_dict()
     assert matrix.query_hash == baseline.query_hash
     for metric_id in ("future_private_metric", "truly_unknown_metric"):
         with pytest.raises(UnsupportedMetricError, match="unsupported metric"):
@@ -928,48 +1070,20 @@ def test_matrix_receipt_projects_future_registry_content_and_csv_escapes_text_on
             )
 
     policy = _policy()
-    base_matrix = _engine(_fact(value="-42")).query_matrix(
+    escaped_fact = _fact(entity_id="=2+2", accession="@evil", value="-42")
+    escaped_matrix = _engine(
+        escaped_fact, entities={"AAA": "=2+2"}
+    ).query_matrix(
         tickers=("AAA",),
         metrics=("revenue",),
         periods=(PERIOD,),
         policy=policy,
     )
-    base_cell = base_matrix.cells[0]
-    provenance_metadata = FilingMetadata(
-        accession="@evil",
-        document_id=base_cell.provenance.document_id,
-        source_body_sha256=base_cell.provenance.source_body_sha256,
-        available_at=base_cell.provenance.filing_metadata_available_at,
-        form=base_cell.provenance.form,
-        filed_at=base_cell.provenance.filed_at,
-    )
-    provenance = replace(
-        base_cell.provenance,
-        accession="@evil",
-        filing_metadata_content_sha256=provenance_metadata.content_sha256,
-    )
-    cell = MetricCell(
-        ticker="AAA",
-        entity_id="=2+2",
-        metric_id="revenue",
-        period=PERIOD,
-        state=CellState.VALUE,
-        value=Decimal("-42"),
-        unit="USD",
-        provenance=provenance,
-    )
-    export = MetricMatrix(
-        policy=policy,
-        entities=(QueryEntity("AAA", "=2+2"),),
-        metric_ids=("revenue",),
-        periods=(PERIOD,),
-        cells=(cell,),
-        registry_receipt=base_matrix.registry_receipt,
-    ).export_csv()
-    row = list(csv.reader(export.payload.decode("utf-8").splitlines()))[1]
-    assert row[2] == "'=2+2"
-    assert row[10] == "-42"
-    assert row[13] == "'@evil"
+    row = next(csv.DictReader(escaped_matrix.export_csv().payload.decode("utf-8").splitlines()))
+    assert row["receipt_authority"] == "json_sidecar_required"
+    assert row["entity_id"] == "'=2+2"
+    assert row["value"] == "-42"
+    assert row["accession"] == "'@evil"
 
 
 def test_query_bounds_are_checked_before_sequence_materialization_and_engine_uses_period_index() -> None:
@@ -1087,7 +1201,10 @@ def test_cutoff_projection_is_stable_under_unrelated_future_pack_extensions() ->
         periods=(PERIOD,),
         policy=_policy(),
     )
-    assert extended_matrix.registry_receipt == baseline_matrix.registry_receipt
+    assert (
+        extended_matrix.governance_bundle.to_dict()
+        == baseline_matrix.governance_bundle.to_dict()
+    )
     assert extended_matrix.query_hash == baseline_matrix.query_hash
     revenue_cell = next(
         item for item in extended_matrix.cells if item.metric_id == "revenue"
@@ -1141,13 +1258,16 @@ def test_equal_priorities_across_distinct_visible_mappings_fail_closed() -> None
             confidence="A",
         ),
         taxonomy_concept_aliases=(
-            ConceptAlias("us-gaap", "DistinctRevenueConcept", 10, 2009, 2026),
+            # The governed allowlist remains closed-world even in a conflict
+            # fixture; use a known duration/USD concept at the tied priority.
+            ConceptAlias("us-gaap", "GrossProfit", 10, 2009, 2026),
         ),
     )
-    custom = _replace_contract(
+    # A bundle rejects duplicate aliases across all visible contracts.  Keep
+    # this fixture minimal so the distinct, known alias is only governed here.
+    custom = replace(
         registry,
-        "revenue",
-        mappings=revenue.mappings + (second_mapping,),
+        contracts=(replace(revenue, mappings=revenue.mappings + (second_mapping,)),),
     )
     cell = _engine(_fact(), registry=custom).query_cell(
         "AAA", "revenue", PERIOD, _policy()
@@ -1161,6 +1281,77 @@ def test_equal_priorities_across_distinct_visible_mappings_fail_closed() -> None
         "mapping.revenue.second_visible/v1",
     }
     assert len(cell.provenance.mapping_digests) == 2
+
+    for forged_state, forged_reason in (
+        (
+            CellState.MISSING,
+            "missing_standard_fact: no governed concept alias supplied an exact eligible source interval",
+        ),
+        (
+            CellState.NOT_EVALUABLE,
+            "visible source history exceeds the synchronous per-cell bound",
+        ),
+    ):
+        with pytest.raises(
+            QueryValidationError,
+            match="alias-priority precedence",
+        ):
+            replace(
+                cell,
+                state=forged_state,
+                reason=forged_reason,
+                provenance=replace(cell.provenance, reason=forged_reason),
+                cell_id=None,
+            )
+
+    restated_cell = _engine(_fact(), registry=custom).query_cell(
+        "AAA",
+        "revenue",
+        PERIOD,
+        _policy(selection=BitemporalPolicy.LATEST_RESTATED),
+    )
+    with pytest.raises(
+        QueryValidationError,
+        match="alias-priority precedence",
+    ):
+        replace(
+            restated_cell,
+            state=CellState.MISSING,
+            reason="no eligible explicitly typed reported revision vintage",
+            provenance=replace(
+                restated_cell.provenance,
+                reason="no eligible explicitly typed reported revision vintage",
+            ),
+            cell_id=None,
+        )
+
+    selected_nil = _engine(_fact(value=None, is_nil=True)).query_cell(
+        "AAA", "revenue", PERIOD, _policy()
+    )
+    with pytest.raises(
+        QueryValidationError,
+        match="alias-priority precedence",
+    ):
+        replace(
+            cell,
+            state=CellState.MISSING,
+            reason="selected source fact has no numeric value",
+            provenance=replace(
+                cell.provenance,
+                reason="selected source fact has no numeric value",
+                mapping_rule_id=selected_nil.provenance.mapping_rule_id,
+                mapping_rule_version=selected_nil.provenance.mapping_rule_version,
+                mapping_digest=selected_nil.provenance.mapping_digest,
+                concept_qname=selected_nil.provenance.concept_qname,
+                taxonomy=selected_nil.provenance.taxonomy,
+                concept=selected_nil.provenance.concept,
+                alias_priority=selected_nil.provenance.alias_priority,
+                source_ready_at=selected_nil.provenance.source_ready_at,
+                system_ready_at=selected_nil.provenance.system_ready_at,
+                source_occurrence_ids=("rawfact_invented",),
+            ),
+            cell_id=None,
+        )
 
 
 def test_absent_and_cutoff_hidden_metadata_are_receipt_identical() -> None:
@@ -1287,7 +1478,7 @@ def test_metadata_rejects_wrong_binding_digest_clock_and_late_resolver() -> None
         replace(good.provenance, filing_metadata_content_sha256="0" * 64)
 
 
-def test_formula_cell_identity_and_exports_embed_complete_dependency_receipts() -> None:
+def test_formula_cell_identity_and_exports_embed_complete_flat_dependency_dag() -> None:
     first_engine = _engine(
         _fact(value="100"),
         _fact(concept="GrossProfit", value="40"),
@@ -1308,38 +1499,175 @@ def test_formula_cell_identity_and_exports_embed_complete_dependency_receipts() 
         periods=(PERIOD,),
         policy=_policy(),
     )
-    csv_rows = list(csv.DictReader(matrix.export_csv().payload.decode("utf-8").splitlines()))
-    csv_receipt = json.loads(csv_rows[0]["provenance_receipt"])
-    assert csv_receipt == matrix.cells[0].provenance.to_dict()
-    assert len(csv_receipt["dependency_receipts"]) == 2
-    assert json.loads(matrix.export_json().payload)["cells"][0]["provenance"][
-        "dependency_receipts"
-    ] == csv_receipt["dependency_receipts"]
+    csv_row = next(csv.DictReader(matrix.export_csv().payload.decode("utf-8").splitlines()))
+    json_receipt = json.loads(matrix.export_json().payload)
+    root_id = matrix.cells[0].cell_id
+
+    # CSV is deliberately a flat, human-readable projection.  The canonical
+    # proof is the JSON sidecar: one bundle plus one flat DAG shared by roots.
+    assert csv_row["receipt_authority"] == "json_sidecar_required"
+    assert csv_row["root_cell_id"] == root_id
+    assert json_receipt["root_cell_ids"] == [root_id]
+    assert json_receipt["governance_bundle"]["content_id"] == matrix.governance_bundle.content_id
+    assert {node["cell_id"] for node in json_receipt["nodes"]} == {
+        node.cell_id for node in matrix.cells[0].nodes
+    }
+    root_wire = next(node for node in json_receipt["nodes"] if node["cell_id"] == root_id)
+    assert root_wire["provenance"]["dependency_cell_ids"] == list(
+        matrix.cells[0].provenance.dependency_cell_ids
+    )
+    assert "dependency_receipts" not in root_wire["provenance"]
+    assert MetricMatrix.from_dict(json_receipt).to_dict() == json_receipt
 
 
-def test_formula_receipts_reject_forged_ids_entities_cutoffs_and_duplicate_metrics() -> None:
+def test_matrix_constructor_and_parser_share_the_exact_wire_budget(monkeypatch) -> None:
+    matrix = _engine(_fact()).query_matrix(
+        tickers=("AAA",),
+        metrics=("revenue",),
+        periods=(PERIOD,),
+        policy=_policy(),
+    )
+    receipt = matrix.to_dict()
+    exact_cost = query_module._json_wire_cost(
+        receipt,
+        field_name="metric_matrix_receipt",
+    )
+
+    monkeypatch.setattr(query_module, "HARD_MAX_RECEIPT_WIRE_BYTES", exact_cost)
+    assert replace(matrix).query_hash == matrix.query_hash
+    assert MetricMatrix.from_dict(receipt).query_hash == matrix.query_hash
+
+    monkeypatch.setattr(
+        query_module,
+        "HARD_MAX_RECEIPT_WIRE_BYTES",
+        exact_cost - 1,
+    )
+    with pytest.raises(QueryBoundsError, match="receipt byte safety limit"):
+        replace(matrix)
+    with pytest.raises(QueryBoundsError, match="receipt byte safety limit"):
+        MetricMatrix.from_dict(receipt)
+
+
+def test_matrix_wire_budget_counts_canonical_json_escape_expansion(monkeypatch) -> None:
+    escaped_fact = replace(
+        _fact(),
+        raw_token=("\x00\"\\" * 5_000),
+        parsed_value="100",
+        occurrence_id=None,
+    )
+    matrix = _engine(escaped_fact).query_matrix(
+        tickers=("AAA",),
+        metrics=("revenue",),
+        periods=(PERIOD,),
+        policy=_policy(),
+    )
+    receipt = matrix.to_dict()
+    actual_wire_bytes = len(query_module.canonical_json(receipt).encode("utf-8"))
+    admitted_wire_bytes = query_module._json_wire_cost(
+        receipt,
+        field_name="metric_matrix_receipt",
+    )
+
+    assert admitted_wire_bytes >= actual_wire_bytes
+    assert len(query_module.canonical_json(escaped_fact.raw_token).encode("utf-8")) > (
+        len(escaped_fact.raw_token.encode("utf-8")) * 2
+    )
+
+    monkeypatch.setattr(
+        query_module,
+        "HARD_MAX_RECEIPT_WIRE_BYTES",
+        actual_wire_bytes - 1,
+    )
+    with pytest.raises(QueryBoundsError, match="receipt byte safety limit"):
+        replace(matrix)
+    with pytest.raises(QueryBoundsError, match="receipt byte safety limit"):
+        MetricMatrix.from_dict(receipt)
+
+
+def test_receipt_count_limits_precede_aggregate_byte_walk(monkeypatch) -> None:
+    cell = _engine(_fact()).query_cell("AAA", "revenue", PERIOD, _policy())
+    cell_wire = cell.to_dict()
+    cell_wire["nodes"] = [None] * (HARD_MAX_RECEIPT_NODES + 1)
+
+    def byte_walk_must_not_run(*args, **kwargs):
+        raise AssertionError("aggregate byte walk ran before limit+1 admission")
+
+    monkeypatch.setattr(query_module, "_admit_json_wire", byte_walk_must_not_run)
+    with pytest.raises(QueryBoundsError, match="item safety limit"):
+        MetricCell.from_dict(cell_wire)
+
+    matrix = _engine(_fact()).query_matrix(
+        tickers=("AAA",),
+        metrics=("revenue",),
+        periods=(PERIOD,),
+        policy=_policy(),
+    )
+    matrix_wire = matrix.to_dict()
+    matrix_wire["nodes"] = [None] * (query_module.HARD_MAX_MATRIX_NODES + 1)
+    with pytest.raises(QueryBoundsError, match="item safety limit"):
+        MetricMatrix.from_dict(matrix_wire)
+
+
+def test_shared_receipt_subgraph_cannot_bypass_depth_limit() -> None:
+    def node(identifier: str, dependencies: tuple[str, ...] = ()):
+        return SimpleNamespace(
+            cell_id=identifier,
+            provenance=SimpleNamespace(dependency_cell_ids=dependencies),
+        )
+
+    nodes = {
+        "root": node("root", ("X", "A")),
+        "X": node("X", ("Y",)),
+        "Y": node("Y"),
+        "A": node("A", ("B",)),
+        "B": node("B", ("X",)),
+    }
+    with pytest.raises(QueryBoundsError, match="depth safety limit 4"):
+        query_module._validate_receipt_graph(
+            root_cell_ids=("root",),
+            nodes=nodes,
+            maximum_nodes=10,
+            maximum_edges=10,
+            maximum_depth=4,
+        )
+
+
+def test_formula_flat_receipts_reject_forged_ids_entities_cutoffs_and_dependency_order() -> None:
     formula = _engine(
         _fact(value="100"),
         _fact(concept="GrossProfit", value="40"),
     ).query_cell("AAA", "gross_margin", PERIOD, _policy())
-    first, second = formula.provenance.dependency_cells
-
-    with pytest.raises(QueryValidationError, match="dependency_cell_ids do not match"):
-        replace(formula.provenance, dependency_cell_ids=("metric_cell_forged",))
-
-    wrong_entity = replace(
-        first,
-        ticker="BBB",
-        entity_id=ENTITY_B,
-        cell_id=None,
+    dependency_by_id = {node.cell_id: node for node in formula.dependency_nodes}
+    first, second = (
+        dependency_by_id[cell_id] for cell_id in formula.provenance.dependency_cell_ids
     )
+
+    with pytest.raises(QueryValidationError, match="dependency_cell_id does not identify a node"):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance, dependency_cell_ids=("metric_cell_forged",)
+            ),
+            cell_id=None,
+        )
+
+    # Use a separately valid direct node; changing a node's entity in-place
+    # would only prove the direct raw-fact binding, not formula join safety.
+    wrong_entity = _engine(
+        _fact(entity_id=ENTITY_B, concept="GrossProfit", value="40"),
+        entities={"AAA": ENTITY_B},
+    ).query_cell("AAA", "gross_profit", PERIOD, _policy()).root_node
     wrong_entity_provenance = replace(
         formula.provenance,
-        dependency_cell_ids=(),
-        dependency_cells=(wrong_entity, second),
+        dependency_cell_ids=(wrong_entity.cell_id, second.cell_id),
     )
-    with pytest.raises(QueryValidationError, match="match the formula cell entity"):
-        replace(formula, provenance=wrong_entity_provenance, cell_id=None)
+    with pytest.raises(QueryValidationError, match="formula dependency entity does not match"):
+        replace(
+            formula,
+            provenance=wrong_entity_provenance,
+            dependency_nodes=(wrong_entity, second),
+            cell_id=None,
+        )
 
     later_dependency_provenance = replace(
         first.provenance,
@@ -1350,57 +1678,372 @@ def test_formula_receipts_reject_forged_ids_entities_cutoffs_and_duplicate_metri
         provenance=later_dependency_provenance,
         cell_id=None,
     )
-    with pytest.raises(QueryValidationError, match="policy/cutoffs"):
+    with pytest.raises(QueryValidationError, match="cutoff does not match governance bundle"):
         replace(
-            formula.provenance,
-            dependency_cell_ids=(),
-            dependency_cells=(later_dependency, second),
+            formula,
+            provenance=replace(
+                formula.provenance,
+                dependency_cell_ids=(later_dependency.cell_id, second.cell_id),
+            ),
+            dependency_nodes=(later_dependency, second),
+            cell_id=None,
         )
 
-    duplicate_metric = replace(second, metric_id=first.metric_id, cell_id=None)
-    duplicate_metric_provenance = replace(
-        formula.provenance,
-        dependency_cell_ids=(),
-        dependency_cells=(first, duplicate_metric),
-    )
-    with pytest.raises(QueryValidationError, match="unique metric_ids"):
-        replace(formula, provenance=duplicate_metric_provenance, cell_id=None)
-
-    missing_reason = "forged_missing_dependency"
-    missing_dependency = replace(
+    different_policy_dependency = replace(
         first,
-        state=CellState.MISSING,
-        value=None,
-        provenance=replace(first.provenance, reason=missing_reason),
-        reason=missing_reason,
+        provenance=replace(
+            first.provenance,
+            source_snapshot_at="2026-08-04T00:00:00Z",
+        ),
         cell_id=None,
     )
-    missing_dependency_provenance = replace(
-        formula.provenance,
-        dependency_cell_ids=(),
-        dependency_cells=(missing_dependency, second),
+    with pytest.raises(QueryValidationError, match="formula dependency policy/cutoffs"):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance,
+                dependency_cell_ids=(different_policy_dependency.cell_id, second.cell_id),
+            ),
+            dependency_nodes=(different_policy_dependency, second),
+            cell_id=None,
+        )
+
+    duplicate_metric = _engine(
+        _fact(concept="GrossProfit", value="41", source_span=(9, 17))
+    ).query_cell("AAA", "gross_profit", PERIOD, _policy()).root_node
+    with pytest.raises(QueryValidationError, match="dependency metric IDs/order"):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance,
+                dependency_cell_ids=(first.cell_id, duplicate_metric.cell_id),
+            ),
+            dependency_nodes=(first, duplicate_metric),
+            cell_id=None,
+        )
+
+    # A parent cannot suppress a governed value result while retaining its
+    # otherwise valid dependency graph and exact source summaries.
+    with pytest.raises(QueryValidationError, match="formula cell result does not recompute"):
+        replace(
+            formula,
+            state=CellState.MISSING,
+            value=None,
+            reason="forged_missing_dependency",
+            provenance=replace(
+                formula.provenance, reason="forged_missing_dependency"
+            ),
+            cell_id=None,
+        )
+
+
+def test_formula_receipt_binds_selected_mapping_and_rejects_direct_only_fields() -> None:
+    formula = _engine(
+        _fact(value="100"),
+        _fact(concept="GrossProfit", value="40"),
+    ).query_cell("AAA", "gross_margin", PERIOD, _policy())
+    dependencies = {
+        node.metric_id: node for node in formula.dependency_nodes
+    }
+    revenue = dependencies["revenue"].provenance
+    gross_profit = dependencies["gross_profit"].provenance
+
+    assert formula.provenance.mapping_rule_id is None
+    assert formula.provenance.mapping_rule_version == "1.0.0"
+    assert formula.provenance.mapping_digest is None
+
+    with pytest.raises(
+        QueryValidationError,
+        match="formula selected mapping summary does not match dependencies",
+    ):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance,
+                mapping_rule_id=revenue.mapping_rule_id,
+                mapping_digest=gross_profit.mapping_digest,
+            ),
+            cell_id=None,
+        )
+
+    with pytest.raises(
+        QueryValidationError,
+        match="formula selected mapping summary does not match dependencies",
+    ):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance,
+                mapping_rule_version=None,
+            ),
+            cell_id=None,
+        )
+
+    for forged_field, forged_value in (
+        ("accepted_at", "2026-07-01T01:00:00Z"),
+        ("recorded_at", "2026-07-01T02:00:00Z"),
+        ("mapping_available_at", "2026-07-01T03:00:00Z"),
+        ("concept_qname", "us-gaap:GrossProfit"),
+        ("taxonomy", "us-gaap"),
+        ("concept", "GrossProfit"),
+        ("alias_priority", 1),
+        ("source_occurrence_ids", ("rawfact_invented",)),
+    ):
+        with pytest.raises(
+            QueryValidationError,
+            match="formula provenance cannot contain direct source receipts",
+        ):
+            replace(formula.provenance, **{forged_field: forged_value})
+
+
+def test_normalized_receipts_cannot_omit_visible_governance_pack_lanes() -> None:
+    direct = _engine(_fact()).query_cell("AAA", "revenue", PERIOD, _policy())
+    assert direct.provenance.formula_pack_version is not None
+    assert direct.provenance.formula_pack_digest is not None
+    with pytest.raises(
+        QueryValidationError,
+        match="formula pack receipt does not match governance bundle",
+    ):
+        replace(
+            direct,
+            provenance=replace(
+                direct.provenance,
+                formula_pack_version=None,
+                formula_pack_digest=None,
+            ),
+            cell_id=None,
+        )
+
+    formula = _engine(
+        _fact(value="100"),
+        _fact(concept="GrossProfit", value="40"),
+    ).query_cell("AAA", "gross_margin", PERIOD, _policy())
+    assert formula.provenance.mapping_pack_version is not None
+    assert formula.provenance.mapping_pack_digest is not None
+    with pytest.raises(
+        QueryValidationError,
+        match="mapping pack receipt does not match governance bundle",
+    ):
+        replace(
+            formula,
+            provenance=replace(
+                formula.provenance,
+                mapping_pack_version=None,
+                mapping_pack_digest=None,
+            ),
+            cell_id=None,
+        )
+
+
+def test_non_value_receipts_bind_kernel_outcome_and_provenance_units() -> None:
+    direct = _engine().query_cell("AAA", "revenue", PERIOD, _policy())
+    assert direct.state is CellState.MISSING
+    assert direct.unit == "USD"
+    assert direct.provenance.unit is None
+
+    with pytest.raises(
+        QueryValidationError,
+        match="direct non-value state/reason does not match a governed kernel outcome",
+    ):
+        replace(
+            direct,
+            state=CellState.NOT_EVALUABLE,
+            reason="invented_failure",
+            provenance=replace(direct.provenance, reason="invented_failure"),
+            cell_id=None,
+        )
+    with pytest.raises(
+        QueryValidationError,
+        match="direct non-opaque cell unit does not match metric contract",
+    ):
+        replace(direct, unit="shares", cell_id=None)
+    with pytest.raises(
+        QueryValidationError,
+        match="direct provenance unit does not match cell unit",
+    ):
+        replace(
+            direct,
+            provenance=replace(direct.provenance, unit="FORGED_UNIT"),
+            cell_id=None,
+        )
+    with pytest.raises(
+        QueryValidationError,
+        match="direct alias-evidence outcome has an invalid provenance shape",
+    ):
+        replace(
+            direct,
+            reason="selected source vintage is withdrawn",
+            provenance=replace(
+                direct.provenance,
+                reason="selected source vintage is withdrawn",
+            ),
+            cell_id=None,
+        )
+
+    formula = _engine(_fact()).query_cell(
+        "AAA", "gross_margin", PERIOD, _policy()
     )
-    with pytest.raises(QueryValidationError, match="value dependency receipts"):
-        replace(formula, provenance=missing_dependency_provenance, cell_id=None)
+    assert formula.state is CellState.MISSING
+    assert formula.unit == formula.provenance.unit == "ratio"
+    with pytest.raises(
+        QueryValidationError,
+        match="formula provenance unit does not match output unit",
+    ):
+        replace(
+            formula,
+            provenance=replace(formula.provenance, unit="FORGED_UNIT"),
+            cell_id=None,
+        )
 
 
-def test_matrix_rejects_absent_mismatched_and_nested_registry_receipts() -> None:
+def test_direct_non_value_receipts_bind_policy_and_alias_year() -> None:
+    latest_restated = _engine().query_cell(
+        "AAA",
+        "revenue",
+        PERIOD,
+        _policy(selection=BitemporalPolicy.LATEST_RESTATED),
+    )
+    generic_missing = (
+        "missing_standard_fact: no governed concept alias supplied an exact eligible source interval"
+    )
+    with pytest.raises(
+        QueryValidationError,
+        match="generic source absence contradicts latest_restated policy",
+    ):
+        replace(
+            latest_restated,
+            reason=generic_missing,
+            provenance=replace(latest_restated.provenance, reason=generic_missing),
+            cell_id=None,
+        )
+
+    future_period = PeriodRequest.duration("2030-01-01", "2030-12-31")
+    future_missing = _engine().query_cell(
+        "AAA", "revenue", future_period, _policy()
+    )
+    assert future_missing.reason == (
+        "no governed concept alias applies to the requested taxonomy period"
+    )
+    for forged_state, forged_reason in (
+        (CellState.MISSING, generic_missing),
+        (
+            CellState.NOT_EVALUABLE,
+            "visible source history exceeds the synchronous per-cell bound",
+        ),
+    ):
+        with pytest.raises(
+            QueryValidationError,
+            match="requires an applicable governed alias",
+        ):
+            replace(
+                future_missing,
+                state=forged_state,
+                reason=forged_reason,
+                provenance=replace(
+                    future_missing.provenance,
+                    reason=forged_reason,
+                ),
+                cell_id=None,
+            )
+    future_restated = _engine().query_cell(
+        "AAA",
+        "revenue",
+        future_period,
+        _policy(selection=BitemporalPolicy.LATEST_RESTATED),
+    )
+    with pytest.raises(
+        QueryValidationError,
+        match="requires an applicable governed alias",
+    ):
+        replace(
+            future_restated,
+            reason="no eligible explicitly typed reported revision vintage",
+            provenance=replace(
+                future_restated.provenance,
+                reason="no eligible explicitly typed reported revision vintage",
+            ),
+            cell_id=None,
+        )
+
+    original = _fact(value="100")
+    amended = _fact(
+        value="105",
+        accession="0000000001-26-000004",
+        document_id="fixture-10ka.htm",
+        accepted_at="2026-08-03T01:00:00Z",
+        recorded_at="2026-08-03T02:00:00Z",
+        event_type=FactEventType.AMENDMENT,
+        revision_of=original.occurrence_id,
+    )
+    withdrawn = _fact(
+        value=None,
+        accession="0000000001-26-000005",
+        document_id="fixture-10ka.htm",
+        accepted_at="2026-08-04T01:00:00Z",
+        recorded_at="2026-08-04T02:00:00Z",
+        event_type=FactEventType.WITHDRAWN,
+        revision_of=amended.occurrence_id,
+        is_nil=True,
+    )
+    withdrawn_cell = _engine(original, amended, withdrawn).query_cell(
+        "AAA", "revenue", PERIOD, _policy()
+    )
+    assert withdrawn_cell.reason == "selected source vintage is withdrawn"
+    with pytest.raises(
+        QueryValidationError,
+        match="withdrawn source outcome contradicts as_reported policy",
+    ):
+        replace(
+            withdrawn_cell,
+            provenance=replace(
+                withdrawn_cell.provenance,
+                policy=BitemporalPolicy.AS_REPORTED,
+            ),
+            cell_id=None,
+        )
+
+    nil_cell = _engine(_fact(value=None, is_nil=True)).query_cell(
+        "AAA", "revenue", PERIOD, _policy()
+    )
+    assert nil_cell.reason == "selected source fact has no numeric value"
+    with pytest.raises(
+        QueryValidationError,
+        match="outside its governed taxonomy-year range",
+    ):
+        replace(
+            nil_cell,
+            provenance=replace(
+                nil_cell.provenance,
+                concept_qname="us-gaap:SalesRevenueNet",
+                taxonomy="us-gaap",
+                concept="SalesRevenueNet",
+                alias_priority=20,
+            ),
+            cell_id=None,
+        )
+
+
+def test_matrix_rejects_absent_mismatched_and_nested_governance_receipts() -> None:
     direct_matrix = _engine(_fact()).query_matrix(
         tickers=("AAA",),
         metrics=("revenue",),
         periods=(PERIOD,),
         policy=_policy(),
     )
-    with pytest.raises(QueryValidationError, match="catalog receipt"):
-        replace(direct_matrix, registry_receipt={})
-    wrong_catalog_receipt = dict(direct_matrix.registry_receipt)
-    wrong_catalog_receipt["catalog_id"] = "different_catalog"
-    with pytest.raises(QueryValidationError, match="catalog receipt"):
-        replace(direct_matrix, registry_receipt=wrong_catalog_receipt)
-    wrong_direct_receipt = dict(direct_matrix.registry_receipt)
-    wrong_direct_receipt["mapping_pack_content_sha256"] = "0" * 64
-    with pytest.raises(QueryValidationError, match="mapping pack receipt"):
-        replace(direct_matrix, registry_receipt=wrong_direct_receipt)
+    missing_bundle = json.loads(json.dumps(direct_matrix.to_dict()))
+    del missing_bundle["governance_bundle"]
+    with pytest.raises(QueryValidationError, match="missing required field"):
+        MetricMatrix.from_dict(missing_bundle)
+
+    wrong_catalog = json.loads(json.dumps(direct_matrix.to_dict()))
+    wrong_catalog["governance_bundle"]["catalog"]["identifier"] = "different_catalog"
+    with pytest.raises(QueryValidationError, match="invalid governance bundle"):
+        MetricMatrix.from_dict(wrong_catalog)
+
+    wrong_mapping_pack = json.loads(json.dumps(direct_matrix.to_dict()))
+    wrong_mapping_pack["governance_bundle"]["mapping_pack"]["version"] = "9.9.9"
+    with pytest.raises(QueryValidationError, match="invalid governance bundle"):
+        MetricMatrix.from_dict(wrong_mapping_pack)
 
     formula_matrix = _engine(
         _fact(value="100"),
@@ -1411,22 +2054,15 @@ def test_matrix_rejects_absent_mismatched_and_nested_registry_receipts() -> None
         periods=(PERIOD,),
         policy=_policy(),
     )
-    wrong_nested_receipt = dict(formula_matrix.registry_receipt)
-    wrong_nested_receipt["mapping_pack_content_sha256"] = "0" * 64
     formula_cell = formula_matrix.cells[0]
-    forged_top = replace(
-        formula_cell,
-        provenance=replace(
-            formula_cell.provenance,
-            mapping_pack_digest="0" * 64,
-        ),
-        cell_id=None,
-    )
     with pytest.raises(QueryValidationError, match="mapping pack receipt"):
         replace(
-            formula_matrix,
-            cells=(forged_top,),
-            registry_receipt=wrong_nested_receipt,
+            formula_cell,
+            provenance=replace(
+                formula_cell.provenance,
+                mapping_pack_digest="0" * 64,
+            ),
+            cell_id=None,
         )
 
 
@@ -1481,10 +2117,64 @@ def test_public_iterables_text_and_provenance_receipts_are_strictly_bounded() ->
     ).query_cell("AAA", "gross_margin", PERIOD, _policy())
     with pytest.raises(QueryBoundsError, match="item safety limit"):
         replace(
-            formula.provenance,
-            dependency_cell_ids=(),
-            dependency_cells=repeat(formula.provenance.dependency_cells[0]),
+            formula,
+            dependency_nodes=repeat(formula.dependency_nodes[0]),
+            cell_id=None,
         )
+
+
+def test_public_mapping_adapters_stop_at_limit_plus_one() -> None:
+    class LyingMapping(Mapping):
+        def __init__(self, pairs):
+            self.pairs = tuple(pairs)
+            self.reads = 0
+
+        def __len__(self) -> int:
+            return 0
+
+        def __iter__(self):
+            for key, _ in self.pairs:
+                self.reads += 1
+                yield key
+
+        def __getitem__(self, key):
+            return dict(self.pairs)[key]
+
+    fact = _fact()
+    policy = LyingMapping(
+        (
+            ("source_snapshot_at", "2026-08-05T00:00:00Z"),
+            ("recorded_at", "2026-08-05T00:00:00Z"),
+            ("selection", "latest_known_as_of"),
+            ("invented", "must-not-be-read-past"),
+        )
+    )
+    with pytest.raises(QueryBoundsError, match="item safety limit 3"):
+        _engine(fact).query_cell("AAA", "revenue", PERIOD, policy)
+    assert policy.reads == 4
+
+    entity = LyingMapping(
+        (("ticker", "AAA"), ("entity_id", ENTITY_A), ("invented", "x"))
+    )
+    with pytest.raises(QueryBoundsError, match="item safety limit 2"):
+        _engine(fact, entities=(entity,))
+    assert entity.reads == 3
+
+    period = LyingMapping(
+        (("kind", "duration"), ("end", "2025-12-31"))
+        + tuple((f"invented_{index}", index) for index in range(8))
+    )
+    with pytest.raises(QueryBoundsError, match="item safety limit 9"):
+        _engine(fact).query_cell("AAA", "revenue", period, _policy())
+    assert period.reads == 10
+
+    metadata = LyingMapping(
+        (("available_at", fact.recorded_at),)
+        + tuple((f"invented_{index}", index) for index in range(8))
+    )
+    with pytest.raises(QueryBoundsError, match="item safety limit 8"):
+        _engine(fact, filing_metadata={fact.occurrence_id: metadata})
+    assert metadata.reads == 9
 
 
 def test_visible_source_history_bound_is_post_cutoff_and_never_truncates() -> None:
@@ -1562,7 +2252,11 @@ def test_all_noninstant_typed_periods_use_raw_duration_index_and_keep_exact_kind
     cell = _engine(_fact()).query_cell("AAA", "revenue", period, _policy())
     assert cell.state is CellState.VALUE
     assert cell.period.kind is kind
-    assert cell.to_dict()["period"]["kind"] == kind.value
+    receipt = cell.to_dict()
+    root_wire = next(
+        node for node in receipt["nodes"] if node["cell_id"] == receipt["root_cell_id"]
+    )
+    assert root_wire["period"]["kind"] == kind.value
 
 
 def test_unit_trust_is_exact_and_mapping_before_recording_is_valid() -> None:

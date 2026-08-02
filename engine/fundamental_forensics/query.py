@@ -59,6 +59,7 @@ from .raw_ledger import (
     FactEventType,
     FactContext,
     FactUnit,
+    HARD_MAX_RAW_LEDGER_EVENTS,
     MAX_DECIMAL_SOURCE_CHARS,
     MAX_XBRL_ACCURACY_MAGNITUDE,
     RawFactLedger,
@@ -96,6 +97,7 @@ HARD_MAX_RECEIPT_DEPTH = HARD_MAX_DEPENDENCY_RECEIPTS
 HARD_MAX_MATRIX_NODES = 50_000
 HARD_MAX_MATRIX_EDGES = 200_000
 HARD_MAX_RECEIPT_WIRE_BYTES = 128 * 1024 * 1024
+HARD_MAX_RECEIPT_CONTAINER_ITEMS = HARD_MAX_MATRIX_NODES
 MAX_QUERY_TEXT_CHARS = 4096
 
 # A selected occurrence can prove that the normalized value is internally
@@ -428,52 +430,136 @@ def _wire_list(
     return _bounded_collection(value, field_name=field_name, maximum=maximum)
 
 
-def _admit_json_wire(
+def _bounded_json_string_wire_size(
+    value: str,
+    *,
+    remaining: int,
+    field_name: str,
+) -> int:
+    """Count canonical JSON string bytes without materializing escaped text.
+
+    ``canonical_json`` uses ``ensure_ascii=False``.  Quotes, backslashes, and
+    control characters can therefore expand far beyond the raw UTF-8 length;
+    counting only decoded text bytes would let an attacker evade the receipt
+    ceiling.  This is the exact byte cost of Python's canonical encoding for a
+    valid Unicode scalar string, including the surrounding quotes.
+    """
+    if remaining < 2 or len(value) > remaining - 2:
+        raise QueryBoundsError(
+            f"{field_name} exceeds the receipt byte safety limit"
+        )
+    consumed = 2
+    for character in value:
+        codepoint = ord(character)
+        if character in {'"', "\\"}:
+            consumed += 2
+        elif codepoint <= 0x1F:
+            consumed += 2 if character in "\b\t\n\f\r" else 6
+        elif codepoint <= 0x7F:
+            consumed += 1
+        elif codepoint <= 0x7FF:
+            consumed += 2
+        elif 0xD800 <= codepoint <= 0xDFFF:
+            raise QueryValidationError(
+                f"{field_name} contains a non-encodable Unicode surrogate"
+            )
+        elif codepoint <= 0xFFFF:
+            consumed += 3
+        else:
+            consumed += 4
+        if consumed > remaining:
+            raise QueryBoundsError(
+                f"{field_name} exceeds the receipt byte safety limit"
+            )
+    return consumed
+
+
+def _json_integer_wire_size(value: int) -> int:
+    """Return a safe decimal-literal upper bound without allocating ``str``."""
+    if value == 0:
+        return 1
+    # log10(2) < 30103 / 100000, so this never undercounts decimal digits.
+    digits = (abs(value).bit_length() * 30_103 + 99_999) // 100_000
+    return digits + (1 if value < 0 else 0)
+
+
+def _json_wire_cost(
     value: Any,
     *,
     field_name: str,
-    maximum_bytes: int = HARD_MAX_RECEIPT_WIRE_BYTES,
-) -> None:
+    maximum_bytes: int | None = None,
+) -> int:
     """Bound an already-decoded JSON tree before semantic reconstruction.
 
     Exact built-in containers make iteration terminating; the byte counter is
     deliberately conservative and prevents a bounded node count from hiding
     an enormous aggregate of maximum-sized raw tokens.
     """
+    limit = HARD_MAX_RECEIPT_WIRE_BYTES if maximum_bytes is None else maximum_bytes
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise QueryValidationError("receipt byte safety limit must be a positive integer")
     stack = [value]
     consumed = 0
     while stack:
         item = stack.pop()
-        if item is None or isinstance(item, (bool, int)):
-            consumed += 8
+        if item is None:
+            consumed += 4
+        elif isinstance(item, bool):
+            consumed += 4 if item else 5
+        elif isinstance(item, int):
+            consumed += _json_integer_wire_size(item)
         elif isinstance(item, str):
-            if len(item) > maximum_bytes - consumed:
-                raise QueryBoundsError(
-                    f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
-                )
-            consumed += len(item.encode("utf-8")) + 8
+            consumed += _bounded_json_string_wire_size(
+                item,
+                remaining=limit - consumed,
+                field_name=field_name,
+            )
         elif type(item) is list:
-            consumed += 2 + len(item)
+            if len(item) > HARD_MAX_RECEIPT_CONTAINER_ITEMS:
+                raise QueryBoundsError(
+                    f"{field_name} exceeds the JSON container item safety limit "
+                    f"{HARD_MAX_RECEIPT_CONTAINER_ITEMS}"
+                )
+            consumed += 2 + max(0, len(item) - 1)
             stack.extend(item)
         elif type(item) is dict:
-            consumed += 2 + len(item)
+            if len(item) > HARD_MAX_RECEIPT_CONTAINER_ITEMS:
+                raise QueryBoundsError(
+                    f"{field_name} exceeds the JSON container item safety limit "
+                    f"{HARD_MAX_RECEIPT_CONTAINER_ITEMS}"
+                )
+            consumed += 2 + (2 * len(item)) - (1 if item else 0)
             for key, nested in item.items():
                 if not isinstance(key, str):
                     raise QueryValidationError(f"{field_name} object keys must be strings")
-                if len(key) > maximum_bytes - consumed:
-                    raise QueryBoundsError(
-                        f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
-                    )
-                consumed += len(key.encode("utf-8")) + 4
+                consumed += _bounded_json_string_wire_size(
+                    key,
+                    remaining=limit - consumed,
+                    field_name=field_name,
+                )
                 stack.append(nested)
         else:
             raise QueryValidationError(
                 f"{field_name} must contain only decoded JSON values"
             )
-        if consumed > maximum_bytes:
+        if consumed > limit:
             raise QueryBoundsError(
-                f"{field_name} exceeds the receipt byte safety limit {maximum_bytes}"
+                f"{field_name} exceeds the receipt byte safety limit {limit}"
             )
+    return consumed
+
+
+def _admit_json_wire(
+    value: Any,
+    *,
+    field_name: str,
+    maximum_bytes: int | None = None,
+) -> None:
+    _json_wire_cost(
+        value,
+        field_name=field_name,
+        maximum_bytes=maximum_bytes,
+    )
 
 
 def _optional_digest(value: Any, *, field_name: str) -> str | None:
@@ -1093,6 +1179,7 @@ class CellProvenance:
             if self.reason is None:
                 raise QueryValidationError("opaque provenance requires a generic reason")
             excluded = (
+                self.source_entity_id,
                 self.source,
                 self.evaluation_policy,
                 self.accession,
@@ -1199,6 +1286,10 @@ class CellProvenance:
                     "direct raw evidence requires provenance.source_entity_id"
                 )
             return
+        if self.source_entity_id is not None:
+            raise QueryValidationError(
+                "formula provenance cannot claim a direct source entity"
+            )
         if self.formula_rule_id is None or self.formula_rule_version is None:
             raise QueryValidationError("formula provenance requires its immutable formula rule")
         if self.formula_digest is None:
@@ -1208,6 +1299,26 @@ class CellProvenance:
         if self.computed_at is not None or self.published_at is not None:
             raise QueryValidationError(
                 "on-demand formula provenance cannot claim computed_at or published_at"
+            )
+        if any(
+            value not in (None, (), [])
+            for value in (
+                self.form,
+                self.filed_at,
+                self.filing_metadata_available_at,
+                self.filing_metadata_content_sha256,
+                self.accepted_at,
+                self.recorded_at,
+                self.mapping_available_at,
+                self.concept_qname,
+                self.taxonomy,
+                self.concept,
+                self.alias_priority,
+                self.source_occurrence_ids,
+            )
+        ):
+            raise QueryValidationError(
+                "formula provenance cannot contain direct source receipts"
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -1895,7 +2006,6 @@ class MetricCell:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "MetricCell":
-        _admit_json_wire(value, field_name="metric_cell_receipt")
         raw = _strict_wire_mapping(
             value,
             field_name="metric_cell_receipt",
@@ -1935,6 +2045,10 @@ class MetricCell:
             field_name="metric_cell_receipt.nodes",
             maximum=HARD_MAX_RECEIPT_NODES,
         )
+        # Cheap schema and limit+1 admission must precede an aggregate byte
+        # walk; otherwise a many-million-item decoded list can consume CPU
+        # before its O(1) length violation is reported.
+        _admit_json_wire(raw, field_name="metric_cell_receipt")
         nodes = tuple(CellNode.from_dict(item) for item in node_values)
         root_id = _require_text(raw["root_cell_id"], field_name="root_cell_id")
         matches = tuple(item for item in nodes if item.cell_id == root_id)
@@ -2002,6 +2116,7 @@ def _validate_receipt_graph(
                 )
 
     color: dict[str, int] = {}
+    subtree_height: dict[str, int] = {}
     postorder: list[str] = []
     for root in roots:
         if color.get(root) == 2:
@@ -2016,6 +2131,16 @@ def _validate_receipt_graph(
             state = color.get(node_id, 0)
             if exiting:
                 if state == 1:
+                    dependencies = nodes[node_id].provenance.dependency_cell_ids
+                    height = 1 + max(
+                        (subtree_height[dependency_id] for dependency_id in dependencies),
+                        default=0,
+                    )
+                    if height > maximum_depth:
+                        raise QueryBoundsError(
+                            f"receipt DAG exceeds the depth safety limit {maximum_depth}"
+                        )
+                    subtree_height[node_id] = height
                     color[node_id] = 2
                     postorder.append(node_id)
                 continue
@@ -2091,20 +2216,29 @@ def _enforce_matrix_wire_budget(
         "nodes": [],
         "query_hash": "0" * 64,
     }
-    encoded = canonical_json(base)
-    if len(encoded) > HARD_MAX_RECEIPT_WIRE_BYTES:
-        raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
-    consumed = len(encoded.encode("utf-8")) + len(nodes)
+    # Use the exact same conservative decoded-tree accounting as from_dict().
+    # The empty list already contributes its two delimiters; replacing it with
+    # N nodes adds N list-entry units plus each node's independent tree cost.
+    consumed = _json_wire_cost(
+        base,
+        field_name="metric_matrix_receipt",
+        maximum_bytes=HARD_MAX_RECEIPT_WIRE_BYTES,
+    ) + max(0, len(nodes) - 1)
     if consumed > HARD_MAX_RECEIPT_WIRE_BYTES:
-        raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+        raise QueryBoundsError(
+            "metric_matrix_receipt exceeds the receipt byte safety limit"
+        )
     for node in nodes:
         remaining = HARD_MAX_RECEIPT_WIRE_BYTES - consumed
-        node_text = canonical_json(node.to_dict())
-        if len(node_text) > remaining:
-            raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
-        consumed += len(node_text.encode("utf-8"))
+        consumed += _json_wire_cost(
+            node.to_dict(),
+            field_name="metric_matrix_receipt",
+            maximum_bytes=remaining,
+        )
         if consumed > HARD_MAX_RECEIPT_WIRE_BYTES:
-            raise QueryBoundsError("matrix exceeds the receipt byte safety limit")
+            raise QueryBoundsError(
+                "metric_matrix_receipt exceeds the receipt byte safety limit"
+            )
 
 
 def _period_contract_error_for(
@@ -2358,9 +2492,8 @@ def _validate_node_governance(
         provenance.mapping_pack_version,
         provenance.mapping_pack_digest,
     )
-    if any(item is not None for item in actual_mapping_pack):
-        if actual_mapping_pack != expected_mapping_pack:
-            raise QueryValidationError("cell mapping pack receipt does not match governance bundle")
+    if actual_mapping_pack != expected_mapping_pack:
+        raise QueryValidationError("cell mapping pack receipt does not match governance bundle")
     expected_formula_pack = (
         receipt.get("formula_pack_version"),
         receipt.get("formula_pack_content_sha256"),
@@ -2369,9 +2502,8 @@ def _validate_node_governance(
         provenance.formula_pack_version,
         provenance.formula_pack_digest,
     )
-    if any(item is not None for item in actual_formula_pack):
-        if actual_formula_pack != expected_formula_pack:
-            raise QueryValidationError("cell formula pack receipt does not match governance bundle")
+    if actual_formula_pack != expected_formula_pack:
+        raise QueryValidationError("cell formula pack receipt does not match governance bundle")
     if provenance.governance_available_at != _governance_available_at(bundle, contract):
         raise QueryValidationError("cell governance availability does not match governance bundle")
 
@@ -2462,11 +2594,285 @@ def _selected_mapping_alias(
     return aliases[0]
 
 
+def _validate_period_rejection_provenance(
+    provenance: CellProvenance,
+    *,
+    allow_mapping_inventory: bool,
+) -> None:
+    """A request-shape rejection occurs before any source evidence is read."""
+    forbidden = (
+        provenance.source_entity_id,
+        provenance.source,
+        provenance.accession,
+        provenance.document_id,
+        provenance.source_url,
+        provenance.source_body_sha256,
+        provenance.form,
+        provenance.filed_at,
+        provenance.filing_metadata_available_at,
+        provenance.filing_metadata_content_sha256,
+        provenance.accepted_at,
+        provenance.recorded_at,
+        provenance.mapping_available_at,
+        provenance.computed_at,
+        provenance.published_at,
+        provenance.source_ready_at,
+        provenance.system_ready_at,
+        provenance.concept_qname,
+        provenance.taxonomy,
+        provenance.concept,
+        provenance.unit,
+        provenance.mapping_rule_id,
+        provenance.mapping_rule_version,
+        provenance.mapping_digest,
+        provenance.alias_priority,
+        provenance.source_occurrence_ids,
+        provenance.dependency_cell_ids,
+        provenance.selected_raw_fact,
+    )
+    if any(value not in (None, (), []) for value in forbidden):
+        raise QueryValidationError(
+            "period rejection provenance must be governance-only"
+        )
+    if not allow_mapping_inventory and any(
+        value
+        for value in (
+            provenance.mapping_rule_ids,
+            provenance.mapping_rule_versions,
+            provenance.mapping_digests,
+        )
+    ):
+        raise QueryValidationError(
+            "period rejection provenance must be governance-only"
+        )
+
+
+_DIRECT_SOURCELESS_NON_VALUE_OUTCOMES = {
+    "no governed concept alias applies to the requested taxonomy period": CellState.MISSING,
+    "missing_standard_fact: no governed concept alias supplied an exact eligible source interval": CellState.MISSING,
+    "no eligible explicitly typed reported revision vintage": CellState.MISSING,
+    "ambiguous governed alias priorities across visible mapping rules": CellState.NOT_EVALUABLE,
+    "visible source history exceeds the synchronous per-cell bound": CellState.NOT_EVALUABLE,
+}
+_DIRECT_ALIAS_EVIDENCE_NON_VALUE_OUTCOMES = {
+    "selected source vintage is withdrawn": CellState.MISSING,
+    "selected source fact has no numeric value": CellState.MISSING,
+    "multiple raw economic identities require an explicit governed source-fusion rule": CellState.NOT_EVALUABLE,
+    "unlinked source vintages require an explicit typed revision lineage": CellState.NOT_EVALUABLE,
+    "ambiguous equal-precedence source vintages cannot be selected": CellState.NOT_EVALUABLE,
+    "conflicting duplicate raw facts cannot be selected": CellState.NOT_EVALUABLE,
+    "unknown_dimension_scope: source does not expose dimensions, so consolidated-only eligibility cannot be established": CellState.NOT_EVALUABLE,
+    "disallowed_dimension: governed metric requires consolidated dimensionless fact": CellState.NOT_EVALUABLE,
+    "unexpected_unit: source unit is outside the governed metric contract": CellState.NOT_EVALUABLE,
+}
+_DIRECT_SOURCE_WITNESS_NON_VALUE_OUTCOMES = {
+    "filing form is unavailable or outside the governed metric contract": CellState.NOT_EVALUABLE,
+    "source numeric value is outside the query decimal contract": CellState.NOT_EVALUABLE,
+}
+
+
+def _applicable_direct_alias_identities(
+    contract: MetricContract,
+    period: PeriodRequest,
+) -> tuple[tuple[str, str, str, str, int], ...]:
+    tax_year = period.normalized.end.year
+    return tuple(
+        (
+            mapping.rule.rule_id,
+            mapping.rule.version,
+            alias.taxonomy,
+            alias.concept,
+            alias.priority,
+        )
+        for mapping in contract.mappings
+        for alias in mapping.taxonomy_concept_aliases
+        if alias.taxonomy_version_start <= tax_year <= alias.taxonomy_version_end
+    )
+
+
+def _has_ambiguous_direct_alias_priorities(
+    identities: Sequence[tuple[str, str, str, str, int]],
+) -> bool:
+    identities_by_priority: dict[int, set[tuple[str, str, str, str]]] = {}
+    for rule_id, version, taxonomy, concept, priority in identities:
+        identities_by_priority.setdefault(priority, set()).add(
+            (taxonomy, concept, rule_id, version)
+        )
+    return any(len(values) > 1 for values in identities_by_priority.values())
+
+
+def _validate_direct_non_value_shape(
+    node: CellNode,
+    contract: MetricContract,
+    alias: ConceptAlias | None,
+) -> None:
+    """Bind non-value receipts to one finite query-kernel branch shape.
+
+    Ledger-wide absence and selection optimality still require the immutable
+    external ledger under this receipt's declared proof scope.  This validator
+    prevents a canonical receipt from inventing a state, reason, unit, or
+    source-witness shape that the kernel itself never emits.
+    """
+    provenance = node.provenance
+    reason = node.reason or ""
+    expected_state = (
+        _DIRECT_SOURCELESS_NON_VALUE_OUTCOMES.get(reason)
+        or _DIRECT_ALIAS_EVIDENCE_NON_VALUE_OUTCOMES.get(reason)
+        or _DIRECT_SOURCE_WITNESS_NON_VALUE_OUTCOMES.get(reason)
+    )
+    if expected_state is None or node.state is not expected_state:
+        raise QueryValidationError(
+            "direct non-value state/reason does not match a governed kernel outcome"
+        )
+
+    direct_source_fields = (
+        provenance.source_entity_id,
+        provenance.source,
+        provenance.accession,
+        provenance.document_id,
+        provenance.source_url,
+        provenance.source_body_sha256,
+        provenance.form,
+        provenance.filed_at,
+        provenance.filing_metadata_available_at,
+        provenance.filing_metadata_content_sha256,
+        provenance.accepted_at,
+        provenance.recorded_at,
+        provenance.mapping_available_at,
+        provenance.computed_at,
+        provenance.published_at,
+        provenance.unit,
+    )
+    if reason in _DIRECT_SOURCELESS_NON_VALUE_OUTCOMES:
+        if (
+            alias is not None
+            or any(value is not None for value in direct_source_fields)
+            or provenance.source_ready_at is not None
+            or provenance.system_ready_at is not None
+            or provenance.source_occurrence_ids
+        ):
+            raise QueryValidationError(
+                "source-less direct outcome cannot contain source evidence"
+            )
+        applicable_aliases = _applicable_direct_alias_identities(
+            contract,
+            node.period,
+        )
+        if (
+            reason
+            == "no governed concept alias applies to the requested taxonomy period"
+            and applicable_aliases
+        ):
+            raise QueryValidationError(
+                "no-alias outcome contradicts applicable governed aliases"
+            )
+        if (
+            reason
+            != "no governed concept alias applies to the requested taxonomy period"
+            and not applicable_aliases
+        ):
+            raise QueryValidationError(
+                "direct source-less outcome requires an applicable governed alias"
+            )
+        has_ambiguous_priorities = _has_ambiguous_direct_alias_priorities(
+            applicable_aliases
+        )
+        if reason == "ambiguous governed alias priorities across visible mapping rules":
+            if not has_ambiguous_priorities:
+                raise QueryValidationError(
+                    "ambiguous-alias outcome contradicts governed alias priorities"
+                )
+        elif has_ambiguous_priorities:
+            raise QueryValidationError(
+                "direct source-less outcome bypasses governed alias ambiguity"
+            )
+        if (
+            reason == "no eligible explicitly typed reported revision vintage"
+            and provenance.policy is not BitemporalPolicy.LATEST_RESTATED
+        ):
+            raise QueryValidationError(
+                "reported-revision absence requires latest_restated policy"
+            )
+        if (
+            reason
+            == "missing_standard_fact: no governed concept alias supplied an exact eligible source interval"
+            and provenance.policy is BitemporalPolicy.LATEST_RESTATED
+        ):
+            raise QueryValidationError(
+                "generic source absence contradicts latest_restated policy"
+            )
+        return
+
+    if reason in _DIRECT_ALIAS_EVIDENCE_NON_VALUE_OUTCOMES:
+        if (
+            alias is None
+            or any(value is not None for value in direct_source_fields)
+            or provenance.source_ready_at is None
+            or provenance.system_ready_at is None
+            or not provenance.source_occurrence_ids
+        ):
+            raise QueryValidationError(
+                "direct alias-evidence outcome has an invalid provenance shape"
+            )
+        if (
+            reason == "selected source vintage is withdrawn"
+            and provenance.policy is BitemporalPolicy.AS_REPORTED
+        ):
+            raise QueryValidationError(
+                "withdrawn source outcome contradicts as_reported policy"
+            )
+        return
+
+    core_witness = (
+        provenance.source_entity_id,
+        provenance.source,
+        provenance.accession,
+        provenance.document_id,
+        provenance.source_body_sha256,
+        provenance.accepted_at,
+        provenance.recorded_at,
+        provenance.source_ready_at,
+        provenance.system_ready_at,
+        provenance.source_occurrence_ids,
+    )
+    if alias is None or any(value in (None, (), []) for value in core_witness):
+        raise QueryValidationError(
+            "direct source-witness outcome has an incomplete provenance shape"
+        )
+    if provenance.unit != node.unit:
+        raise QueryValidationError(
+            "direct source-witness unit does not match cell unit"
+        )
+    if (
+        reason == "source numeric value is outside the query decimal contract"
+        and provenance.form not in contract.period_constraints.allowed_forms
+    ):
+        raise QueryValidationError(
+            "numeric source rejection requires an allowed filing form"
+        )
+    if (
+        reason == "filing form is unavailable or outside the governed metric contract"
+        and provenance.form in contract.period_constraints.allowed_forms
+    ):
+        raise QueryValidationError(
+            "filing-form rejection contradicts an allowed filing form"
+        )
+
+
 def _validate_direct_node(node: CellNode, contract: MetricContract) -> None:
     provenance = node.provenance
+    if (
+        provenance.source_entity_id is not None
+        and provenance.source_entity_id != node.entity_id
+    ):
+        raise QueryValidationError("direct source entity does not match cell entity")
     alias = _selected_mapping_alias(provenance, contract)
     period_error = _period_contract_error_for(contract, node.period)
     if period_error is not None:
+        _validate_period_rejection_provenance(
+            provenance,
+            allow_mapping_inventory=True,
+        )
         if (
             node.state is not CellState.NOT_EVALUABLE
             or node.value is not None
@@ -2476,18 +2882,63 @@ def _validate_direct_node(node: CellNode, contract: MetricContract) -> None:
         ):
             raise QueryValidationError("direct period rejection does not match governance")
         return
+    applicable_aliases = _applicable_direct_alias_identities(contract, node.period)
+    has_ambiguous_priorities = _has_ambiguous_direct_alias_priorities(
+        applicable_aliases
+    )
+    claims_ambiguous_priorities = (
+        node.state is CellState.NOT_EVALUABLE
+        and node.reason
+        == "ambiguous governed alias priorities across visible mapping rules"
+        and alias is None
+    )
+    if has_ambiguous_priorities != claims_ambiguous_priorities:
+        raise QueryValidationError(
+            "direct outcome does not honor governed alias-priority precedence"
+        )
+    if alias is not None:
+        tax_year = node.period.normalized.end.year
+        if not alias.taxonomy_version_start <= tax_year <= alias.taxonomy_version_end:
+            raise QueryValidationError(
+                "selected alias is outside its governed taxonomy-year range"
+            )
+    expected_unit = contract.units[0] if contract.units else None
+    if node.unit != expected_unit:
+        raise QueryValidationError(
+            "direct non-opaque cell unit does not match metric contract"
+        )
+    if provenance.unit is not None and provenance.unit != node.unit:
+        raise QueryValidationError("direct provenance unit does not match cell unit")
     if node.state is not CellState.VALUE:
         if provenance.selected_raw_fact is not None:
             raise QueryValidationError("non-value direct cell cannot claim selected raw evidence")
+        _validate_direct_non_value_shape(node, contract, alias)
         return
     fact = provenance.selected_raw_fact
     if fact is None or alias is None:
         raise QueryValidationError("direct value cell requires selected raw fact and alias")
+    if fact.is_withdrawn:
+        raise QueryValidationError("direct value cell cannot select a withdrawn raw fact")
+    if fact.is_nil or fact.parsed_value is None:
+        raise QueryValidationError("direct value cell requires non-nil numeric raw evidence")
+    if provenance.policy is BitemporalPolicy.AS_REPORTED and (
+        fact.revision_of is not None or fact.event_type is not FactEventType.FILED
+    ):
+        raise QueryValidationError(
+            "as_reported value must select an unrevised filed root occurrence"
+        )
+    if (
+        provenance.policy is BitemporalPolicy.LATEST_RESTATED
+        and fact.event_type not in _REPORTED_REVISION_EVENT_TYPES
+    ):
+        raise QueryValidationError(
+            "latest_restated value must select an explicitly typed reported revision"
+        )
     if provenance.form not in contract.period_constraints.allowed_forms:
         raise QueryValidationError("direct value filing form violates metric contract")
     if provenance.source_entity_id != node.entity_id or fact.source.entity_id != node.entity_id:
         raise QueryValidationError("selected raw fact entity does not match cell entity")
-    if fact.parsed_value is None or _bounded_decimal(fact.parsed_value, field_name="raw fact value") != node.value:
+    if _bounded_decimal(fact.parsed_value, field_name="raw fact value") != node.value:
         raise QueryValidationError("selected raw fact value does not match cell value")
     if _canonical_raw_unit(fact) != node.unit or node.unit not in contract.units:
         raise QueryValidationError("selected raw fact unit does not match governed cell unit")
@@ -2612,8 +3063,10 @@ def _validate_formula_node(
         raise QueryValidationError("formula node has no governed formula")
     period_error = _period_contract_error_for(contract, node.period)
     if period_error is not None:
-        if node.provenance.dependency_cell_ids:
-            raise QueryValidationError("period-invalid formula cell cannot claim dependencies")
+        _validate_period_rejection_provenance(
+            node.provenance,
+            allow_mapping_inventory=False,
+        )
         if (
             node.state is not CellState.NOT_EVALUABLE
             or node.value is not None
@@ -2622,20 +3075,26 @@ def _validate_formula_node(
         ):
             raise QueryValidationError("formula period rejection does not match governance")
         return
+    provenance = node.provenance
+    if provenance.unit != formula.output_unit:
+        raise QueryValidationError("formula provenance unit does not match output unit")
     dependency_ids = node.provenance.dependency_cell_ids
     dependencies = tuple(nodes[item] for item in dependency_ids)
     if tuple(item.metric_id for item in dependencies) != formula.dependencies:
         raise QueryValidationError("formula dependency metric IDs/order do not match governance")
     for dependency, dependency_id in zip(dependencies, formula.dependencies):
-        dependency_contract = None
-        try:
-            # Every dependency was already validated against the same bundle;
-            # its contract is resolved again by the caller's closure below.
-            dependency_contract = node  # type-narrowing placeholder
-        finally:
-            del dependency_contract
         if dependency.ticker != node.ticker or dependency.entity_id != node.entity_id:
             raise QueryValidationError("formula dependency entity does not match parent cell")
+        if (
+            dependency.provenance.policy is not provenance.policy
+            or dependency.provenance.source_snapshot_at
+            != provenance.source_snapshot_at
+            or dependency.provenance.recorded_cutoff_at
+            != provenance.recorded_cutoff_at
+        ):
+            raise QueryValidationError(
+                "formula dependency policy/cutoffs do not match parent cell"
+            )
     # Contract resolution needs the bundle, but period alignment can be checked
     # by the outer semantic validator before calling this helper.
     expected_mapping_ids = tuple(
@@ -2665,13 +3124,26 @@ def _validate_formula_node(
             }
         )
     )
-    provenance = node.provenance
     if provenance.mapping_rule_ids != expected_mapping_ids:
         raise QueryValidationError("formula mapping rule ID summary does not match dependencies")
     if provenance.mapping_rule_versions != expected_mapping_versions:
         raise QueryValidationError("formula mapping rule version summary does not match dependencies")
     if provenance.mapping_digests != expected_mapping_digests:
         raise QueryValidationError("formula mapping digest summary does not match dependencies")
+    expected_selected_mapping = (
+        expected_mapping_ids[0] if len(expected_mapping_ids) == 1 else None,
+        expected_mapping_versions[0] if len(expected_mapping_versions) == 1 else None,
+        expected_mapping_digests[0] if len(expected_mapping_digests) == 1 else None,
+    )
+    actual_selected_mapping = (
+        provenance.mapping_rule_id,
+        provenance.mapping_rule_version,
+        provenance.mapping_digest,
+    )
+    if actual_selected_mapping != expected_selected_mapping:
+        raise QueryValidationError(
+            "formula selected mapping summary does not match dependencies"
+        )
     for field_name in ("source", "accession", "document_id", "source_body_sha256", "source_url"):
         values = {getattr(item.provenance, field_name) for item in dependencies}
         expected = next(iter(values)) if len(values) == 1 else None
@@ -2778,48 +3250,6 @@ class DeterministicExport:
 
 def _cell_sort_key(cell: MetricCell) -> tuple[Any, ...]:
     return cell.ticker, cell.metric_id, *cell.period.key, cell.entity_id
-
-
-_REGISTRY_RECEIPT_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("catalog", ("catalog_id", "catalog_version", "catalog_content_sha256")),
-    ("mapping", ("mapping_pack_version", "mapping_pack_content_sha256")),
-    ("formula", ("formula_pack_version", "formula_pack_content_sha256")),
-)
-_REGISTRY_RECEIPT_FIELDS = frozenset(
-    field_name for _, fields in _REGISTRY_RECEIPT_GROUPS for field_name in fields
-)
-
-
-def _canonical_registry_receipt(value: Mapping[str, Any]) -> dict[str, str]:
-    if not isinstance(value, Mapping):
-        raise TypeError("registry_receipt must be a mapping")
-    raw = dict(value)
-    unknown = set(raw) - _REGISTRY_RECEIPT_FIELDS
-    if unknown:
-        raise QueryValidationError(
-            f"registry_receipt contains unsupported field(s): {', '.join(sorted(map(str, unknown)))}"
-        )
-    normalized: dict[str, str] = {}
-    for _, fields in _REGISTRY_RECEIPT_GROUPS:
-        present = [field_name in raw for field_name in fields]
-        if any(present) and not all(present):
-            raise QueryValidationError(
-                "registry_receipt groups must be complete or absent at the requested cutoff"
-            )
-        if not all(present):
-            continue
-        for field_name in fields:
-            if field_name.endswith("sha256"):
-                digest = _optional_digest(raw[field_name], field_name=f"registry_receipt.{field_name}")
-                if digest is None:  # pragma: no cover - complete-group guard above.
-                    raise QueryValidationError(f"registry_receipt.{field_name} is required")
-                normalized[field_name] = digest
-            else:
-                text = _optional_text(raw[field_name], field_name=f"registry_receipt.{field_name}")
-                if text is None:  # pragma: no cover - complete-group guard above.
-                    raise QueryValidationError(f"registry_receipt.{field_name} is required")
-                normalized[field_name] = text
-    return dict(sorted(normalized.items()))
 
 
 @dataclass(frozen=True)
@@ -3002,7 +3432,6 @@ class MetricMatrix:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "MetricMatrix":
-        _admit_json_wire(value, field_name="metric_matrix_receipt")
         allowed = frozenset(
             {
                 "schema",
@@ -3036,7 +3465,6 @@ class MetricMatrix:
             allowed=frozenset({"selection", "source_snapshot_at", "recorded_at"}),
             required=frozenset({"selection", "source_snapshot_at", "recorded_at"}),
         )
-        policy = QueryPolicy(**policy_raw)
         try:
             bundle = GovernanceBundle.from_dict(raw["governance_bundle"])
         except (TypeError, ValueError) as exc:
@@ -3046,6 +3474,31 @@ class MetricMatrix:
             field_name="matrix.entities",
             maximum=HARD_MAX_TICKERS,
         )
+        metric_values = _wire_list(
+            raw["metric_ids"],
+            field_name="matrix.metric_ids",
+            maximum=HARD_MAX_METRICS,
+        )
+        period_values = _wire_list(
+            raw["periods"],
+            field_name="matrix.periods",
+            maximum=HARD_MAX_PERIODS,
+        )
+        node_values = _wire_list(
+            raw["nodes"],
+            field_name="matrix.nodes",
+            maximum=HARD_MAX_MATRIX_NODES,
+        )
+        root_values = _wire_list(
+            raw["root_cell_ids"],
+            field_name="matrix.root_cell_ids",
+            maximum=HARD_MAX_CELLS,
+        )
+        # Enforce all cheap top-level limit+1 contracts before the aggregate
+        # byte walk. GovernanceBundle performs the same staged admission for
+        # its nested lanes.
+        _admit_json_wire(raw, field_name="metric_matrix_receipt")
+        policy = QueryPolicy(**policy_raw)
         entities: list[QueryEntity] = []
         for item in entity_values:
             entity_raw = _strict_wire_mapping(
@@ -3057,24 +3510,11 @@ class MetricMatrix:
             entities.append(QueryEntity(**entity_raw))
         metric_ids = tuple(
             _require_text(item, field_name="matrix.metric_id")
-            for item in _wire_list(
-                raw["metric_ids"],
-                field_name="matrix.metric_ids",
-                maximum=HARD_MAX_METRICS,
-            )
+            for item in metric_values
         )
         periods = tuple(
             _period_request_from_dict(item)
-            for item in _wire_list(
-                raw["periods"],
-                field_name="matrix.periods",
-                maximum=HARD_MAX_PERIODS,
-            )
-        )
-        node_values = _wire_list(
-            raw["nodes"],
-            field_name="matrix.nodes",
-            maximum=HARD_MAX_MATRIX_NODES,
+            for item in period_values
         )
         node_by_id: dict[str, CellNode] = {}
         for item in node_values:
@@ -3083,11 +3523,7 @@ class MetricMatrix:
                 raise QueryValidationError("matrix wire contains duplicate cell_id nodes")
             node_by_id[node.cell_id] = node
         root_ids = _ordered_text_tuple(
-            _wire_list(
-                raw["root_cell_ids"],
-                field_name="matrix.root_cell_ids",
-                maximum=HARD_MAX_CELLS,
-            ),
+            root_values,
             field_name="matrix.root_cell_ids",
             maximum=HARD_MAX_CELLS,
         )
@@ -3245,7 +3681,7 @@ class MetricMatrix:
                 canonical_json(list(provenance.dependency_cell_ids)),
             )
             writer.writerow(
-                tuple(value if index == 16 else _csv_safe(value) for index, value in enumerate(row))
+                tuple(value if index == 15 else _csv_safe(value) for index, value in enumerate(row))
             )
         return output.getvalue().encode("utf-8")
 
@@ -3644,7 +4080,21 @@ class BitemporalMetricQueryEngine:
             )
         out: dict[str, QueryEntity] = {}
         for item in raw:
-            entity = item if isinstance(item, QueryEntity) else QueryEntity(**item)  # type: ignore[arg-type]
+            if isinstance(item, QueryEntity):
+                entity = item
+            elif isinstance(item, Mapping):
+                entity = QueryEntity(
+                    **_strict_wire_mapping(
+                        item,
+                        field_name="entity",
+                        allowed=frozenset({"ticker", "entity_id"}),
+                        required=frozenset({"ticker", "entity_id"}),
+                    )
+                )
+            else:
+                raise QueryValidationError(
+                    "entities must contain QueryEntity values or exact entity mappings"
+                )
             if entity.ticker in out and out[entity.ticker] != entity:
                 raise QueryValidationError(f"ticker maps to multiple entity_ids: {entity.ticker}")
             out[entity.ticker] = entity
@@ -3815,23 +4265,24 @@ class BitemporalMetricQueryEngine:
         if isinstance(value, FilingMetadata):
             metadata = value
         elif isinstance(value, Mapping):
-            raw = dict(value)
-            allowed = {
-                "schema",
-                "accession",
-                "document_id",
-                "source_body_sha256",
-                "available_at",
-                "form",
-                "filed_at",
-                "content_sha256",
-            }
-            unknown = set(raw) - allowed
-            if unknown:
-                raise QueryValidationError(
-                    "filing metadata contains unsupported field(s): "
-                    + ", ".join(sorted(map(str, unknown)))
-                )
+            allowed = frozenset(
+                {
+                    "schema",
+                    "accession",
+                    "document_id",
+                    "source_body_sha256",
+                    "available_at",
+                    "form",
+                    "filed_at",
+                    "content_sha256",
+                }
+            )
+            raw = _strict_wire_mapping(
+                value,
+                field_name="filing metadata",
+                allowed=allowed,
+                required=frozenset({"available_at"}),
+            )
             metadata = FilingMetadata(
                 schema=raw.get("schema", FILING_METADATA_SCHEMA),
                 accession=raw.get("accession", binding[0]),
@@ -3861,7 +4312,12 @@ class BitemporalMetricQueryEngine:
                 "filing_metadata must be a construction-time mapping; mutable late resolvers are unsupported"
             )
         frozen: dict[str, FilingMetadata] = {}
-        for raw_key, raw_metadata in tuple(value.items()):
+        bindings = _bounded_collection(
+            value.items(),
+            field_name="filing_metadata",
+            maximum=HARD_MAX_RAW_LEDGER_EVENTS,
+        )
+        for raw_key, raw_metadata in bindings:
             key = _require_text(raw_key, field_name="filing_metadata key")
             occurrence = self._event_by_occurrence_id.get(key)
             candidates = (
@@ -3916,7 +4372,27 @@ class BitemporalMetricQueryEngine:
             return PeriodRequest.from_typed(value)
         if isinstance(value, Mapping):
             try:
-                return PeriodRequest(**dict(value))
+                raw = _strict_wire_mapping(
+                    value,
+                    field_name="period selector",
+                    allowed=frozenset(
+                        {
+                            "kind",
+                            "end",
+                            "start",
+                            "fiscal_year",
+                            "fiscal_quarter",
+                            "calendar_kind",
+                            "fiscal_year_weeks",
+                            "week_count",
+                            "label",
+                        }
+                    ),
+                    required=frozenset({"kind", "end"}),
+                )
+                return PeriodRequest(**raw)
+            except QueryError:
+                raise
             except (TypeError, ValueError) as exc:
                 raise QueryValidationError(f"invalid period selector: {exc}") from exc
         raise QueryValidationError("period must be PeriodRequest, TypedPeriod, or mapping")
@@ -3927,7 +4403,17 @@ class BitemporalMetricQueryEngine:
             return value
         if isinstance(value, Mapping):
             try:
-                return QueryPolicy(**dict(value))
+                raw = _strict_wire_mapping(
+                    value,
+                    field_name="query policy",
+                    allowed=frozenset(
+                        {"source_snapshot_at", "recorded_at", "selection"}
+                    ),
+                    required=frozenset({"source_snapshot_at", "recorded_at"}),
+                )
+                return QueryPolicy(**raw)
+            except QueryError:
+                raise
             except (TypeError, ValueError) as exc:
                 raise QueryValidationError(f"invalid query policy: {exc}") from exc
         raise QueryValidationError("policy must be QueryPolicy")
@@ -4719,28 +5205,6 @@ class BitemporalMetricQueryEngine:
                 provenance=self._opaque_provenance(policy, reason=reason),
                 reason=reason,
             )
-        all_candidates = self._aliases_for_period(contract, period, projection)
-        # A mapping/rule unknown at the recorded cutoff cannot even suppress a
-        # lower-priority governed alias. It also cannot contribute its future
-        # ID, digest, or alias-specific reason to a historical cell. Do this
-        # before period semantics, matching formula-rule treatment: an
-        # otherwise invalid request must not become a side channel for a
-        # future mapping's existence.
-        candidates = all_candidates
-        if not candidates:
-            reason = "no governed concept alias applies to the requested taxonomy period"
-            return self._new_cell(
-                entity=entity,
-                metric_id=contract.metric_id,
-                period=period,
-                state=CellState.MISSING,
-                value=None,
-                unit=contract.units[0] if contract.units else None,
-                provenance=self._base_provenance(
-                    projection, policy, contract, reason=reason
-                ),
-                reason=reason,
-            )
         contract_error = self._period_contract_error(contract, period)
         if contract_error:
             return self._new_cell(
@@ -4754,6 +5218,25 @@ class BitemporalMetricQueryEngine:
                     projection, policy, contract, reason=contract_error
                 ),
                 reason=contract_error,
+            )
+        # Invisible future mappings were already removed by the cutoff
+        # projection above.  Once a mapping lane is visible, request-shape
+        # validity precedes taxonomy-year applicability, matching formula
+        # evaluation and receipt reconstruction.
+        candidates = self._aliases_for_period(contract, period, projection)
+        if not candidates:
+            reason = "no governed concept alias applies to the requested taxonomy period"
+            return self._new_cell(
+                entity=entity,
+                metric_id=contract.metric_id,
+                period=period,
+                state=CellState.MISSING,
+                value=None,
+                unit=contract.units[0] if contract.units else None,
+                provenance=self._base_provenance(
+                    projection, policy, contract, reason=reason
+                ),
+                reason=reason,
             )
         ambiguous_priorities = self._ambiguous_alias_priorities(candidates)
         if ambiguous_priorities:

@@ -486,6 +486,11 @@ def test_governance_bundle_rejects_tampering_hidden_children_and_absent_dependen
         GovernanceBundle.from_dict(wire)
 
     wire = deepcopy(bundle.to_dict())
+    wire["content_id"] = "0" * 64
+    with pytest.raises(ValueError, match="content_id"):
+        GovernanceBundle.from_dict(wire)
+
+    wire = deepcopy(bundle.to_dict())
     formula = next(item for item in wire["formulas"] if item["metric_id"] == "gross_margin")
     formula["dependencies"] = ["not_a_visible_metric"]
     formula["expression"] = "not_a_visible_metric"
@@ -510,6 +515,14 @@ def test_governance_bundle_wire_admission_bounds_text_before_schema_parsing(path
     target[path[-1]] = replacement
 
     with pytest.raises(ValueError, match="governance text limit"):
+        GovernanceBundle.from_dict(wire)
+
+
+def test_governance_bundle_wire_admission_bounds_top_level_metrics_before_reconstruction() -> None:
+    wire = load_core_metric_registry(ROOT).governance_bundle_at("2026-08-02T00:00:00Z").to_dict()
+    wire["metrics"].append(deepcopy(wire["metrics"][0]))
+
+    with pytest.raises(ValueError, match="bounded governance receipt limit"):
         GovernanceBundle.from_dict(wire)
 
 

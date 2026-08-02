@@ -4,7 +4,8 @@
 
 **Date:** 2026-08-02
 
-**Status:** implementation slice; not a full-parity claim
+**Status:** receipt-acceptance baseline complete; release state is external to
+this memo and this is not a full-parity claim
 
 ## Verdict
 
@@ -73,7 +74,7 @@ claim them as public query-engine controls.
 An unavailable input returns `not_available`. An ambiguous, incompatible, or
 unsafe derivation returns `not_evaluable`. Neither state may be coerced to zero.
 
-## Wave 3A delivered foundation
+## Wave 3A implemented acceptance foundation
 
 ### A. Bounded Company Facts source lane
 
@@ -152,10 +153,19 @@ coordinated when the lane is added to scheduled production.
 - filing metadata is frozen and bound to the exact source accession, document,
   body digest, availability clock, and recomputed metadata content digest;
   absent metadata and cutoff-hidden metadata are receipt-identical;
-- direct cells expose the exact source, mapping rule, period, unit, clock, and
-  confidence receipt; formula cells embed immutable dependency cells and retain
-  their exact mapping receipts without inventing formula-level compute or
-  publication clocks;
+- a receipt carries one cutoff-projected `GovernanceBundle` and a flat,
+  deduplicated, bounded `CellNode` DAG; recursive dependency-cell serialization
+  is not an accepted format;
+- direct value cells expose the selected immutable raw occurrence with exact
+  source, mapping rule, period, unit, clock, and confidence evidence; formula
+  cells recompute from their referenced flat dependency nodes without inventing
+  formula-level compute or publication clocks;
+- structural non-value cells have finite branch shapes and cannot introduce raw
+  or formula evidence; accepted receipt validation reconstructs the applicable
+  governance, formula, direct-fact, or non-value contract;
+- JSON is the authoritative matrix receipt sidecar. CSV is a deterministic
+  projection that points to that JSON evidence rather than a competing receipt
+  representation;
 - public provenance kinds distinguish direct-source, formula, and
   opaque-governance outcomes; structural no-results retain their bounded direct
   evidence, while matrix construction revalidates every cell against the
@@ -165,6 +175,26 @@ coordinated when the lane is added to scheduled production.
 - bounded cross-company matrices export deterministic JSON and CSV with a stable
   query hash;
 - value, missing, and not-evaluable states are distinct and never collapse to zero.
+
+### Wave 3A proof scope
+
+An accepted receipt proves **selected-occurrence consistency**: the returned
+direct value and its selected raw fact agree on identity, entity, concept, unit,
+period, mapping, policy, source lineage, and cutoff-visible clocks. It does not
+prove that no eligible fact was omitted or that the selected fact was globally
+optimal. Those absence and selection-optimality claims require the external
+immutable ledger; a durable `ffqs_*` query snapshot is the planned standalone
+evidence layer in Wave 3B.
+
+### Acceptance state
+
+The active worktree is
+`/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/calcbench-wave3a-acceptance-20260801`
+on branch `codex/calcbench-wave3a-acceptance-20260801`. Focused registry + query
+acceptance passed 93 tests and the nine-file integration suite passed 303 tests.
+Two independent receipt/DAG reviews reported no open P0/P1 correctness issue
+within the declared proof scope; `py_compile` and `git diff --check` also passed.
+These are acceptance evidence, not standalone deployment evidence.
 
 ## Wave 3B next build
 
@@ -239,8 +269,10 @@ rules, schemas, calculations, and workflows are independently designed and teste
 
 ## Exit statement
 
-Wave 3A exits when its source, temporal, period, and metric contracts are merged,
-replay-safe, and independently validated. It does **not** claim Calcbench parity.
-It is the minimum trustworthy foundation on which the peer, bulk-query, API,
-Excel, and specialist-data surfaces can be built without later rewriting the
-meaning of every historical cell.
+Wave 3A acceptance exits when its source, temporal, period, and metric contracts
+have a clean independent audit and final focused/full-suite evidence. Release
+exit additionally requires the repository's rebase, PR, squash-merge, and
+production-verification contract. It does **not** claim Calcbench parity. It is
+the minimum trustworthy foundation on which the peer, bulk-query, API, Excel,
+and specialist-data surfaces can be built without later rewriting the meaning of
+every historical cell.
