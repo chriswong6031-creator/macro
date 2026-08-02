@@ -1,15 +1,15 @@
 {
   "date": "2026-07-31",
-  "generated_utc": "2026-08-01 23:40",
+  "generated_utc": "2026-08-01 23:49",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.76789860321732,
+        "index": 94.7678986032173,
         "mom6": 0.3272239880686669,
-        "trend": 0.578229103435966,
+        "trend": 0.5782291034359678,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -1138,7 +1138,7 @@
       },
       "coincident": {
         "asof": "2026-06-30",
-        "index": 35.55988880342643,
+        "index": 35.559888803426404,
         "mom6": -0.1853034047449853,
         "trend": -0.37425912018952023,
         "diffusion": 66.66666666666667,
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08862432878894,
+        "index": 93.08862432878897,
         "mom6": 0.6895405510982613,
-        "trend": 0.014849205830394842,
+        "trend": 0.014849205830394367,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4165,7 +4165,7 @@
       "initial_claims_4wk": 202750.0,
       "continued_claims": 1782000.0,
       "claims_yoy_pct": -8.568207440811726,
-      "claims_z": -1.8937247791653002,
+      "claims_z": -1.8937247791655172,
       "claims_trend": "falling",
       "indeed_postings": 102.09,
       "indeed_chg_3m_pct": -0.6520046710782434,
@@ -4183,10 +4183,10 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 3.618505983063839,
+      "vrp": 3.6185059830638426,
       "vrp_pctile": 0.36507936507936506,
       "vrp_state": "normal",
-      "realized_vol": 12.371493788054325,
+      "realized_vol": 12.371493788054321,
       "vix_term": 0.8406939740420086,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
@@ -4196,9 +4196,9 @@
       "stock_bond_regime": "breakdown (bonds not hedging)",
       "roro": 1.041478732008555,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.9699717920552947,
+      "vol_target_scalar": 0.969971792055295,
       "news_sentiment": 0.015339049510657787,
-      "news_sentiment_z": 0.653144234935035,
+      "news_sentiment_z": 0.6531442349350338,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
