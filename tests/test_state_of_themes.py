@@ -57,9 +57,15 @@ def _render(root: Path) -> str:
     return sot.render(root)
 
 
-# Partials the template {% include %}s — every synthetic root must mirror them
-# (neither has transitive includes of its own).
-_SUPPORT_PARTIALS = ("_navlinks.html.j2", "_seo_head.html.j2")
+# Partials the template {% include %}s — every synthetic root must mirror them.
+# _site_nav.html.j2 (the whole product header, adopted 2026-08-01) is the one
+# entry here WITH a transitive include: it pulls in _navlinks.html.j2, which is
+# why both must be present even though the page template names only the former.
+_SUPPORT_PARTIALS = (
+    "_site_nav.html.j2",
+    "_navlinks.html.j2",
+    "_seo_head.html.j2",
+)
 
 
 def _copy_support_partials(templates_dir: Path) -> None:

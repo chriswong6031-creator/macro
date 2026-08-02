@@ -545,9 +545,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 </style>
 </head>
 <body class="{% if regime.label == 'narrow_leadership' %}rg-narrow{% elif regime.label == 'broad_thrust' %}rg-broad{% else %}rg-mixed{% endif %}">
-<nav class="site-nav">
-  {% include '_navlinks.html.j2' %}
-</nav>
+{% include "_site_nav.html.j2" %}
 
 {# ── Coverage popover ── #}
 <div class="popover-backdrop" id="coverage-popover" onclick="closePopover('coverage-popover')">

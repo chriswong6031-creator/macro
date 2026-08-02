@@ -1673,6 +1673,7 @@ lanes:
             - scripts.build_china_altdata
             - scripts.build_china_radar
             - scripts.build_china_synthesis
+            - scripts.build_narrative_radar
       # ── parallel band B: cross-cluster consumers, after the band-A barrier ──
       #   cl_state (CN-SYS Batch-2, non-fatal, CN-SYS-R11/R13): cycle_phase (W3 phase
       #     tape + falsifier ledger) → market_state (W6 sovereign spine,

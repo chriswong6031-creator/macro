@@ -262,9 +262,7 @@
 </style>
 </head>
 <body class="page-fl">
-<nav class="site-nav">
-  {% include '_navlinks.html.j2' %}
-</nav>
+{% include "_site_nav.html.j2" %}
 
 {# OEU M-CMD — these boards are now Leaders mode of the Options workspace. #}
 {% set oew_mode = 'leaders' %}{% include "_options_workspace_banner.html.j2" %}

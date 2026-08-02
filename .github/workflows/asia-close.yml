@@ -436,13 +436,19 @@ jobs:
             brun altdata          "china alt-data desk (build_china_altdata)"            scripts.build_china_altdata
             brun radar            "china divergence radar (build_china_radar)"           scripts.build_china_radar
             brun synthesis        "china central analysis (build_china_synthesis)"       scripts.build_china_synthesis
+            # Orphaned builder adopted 2026-08-01: build_narrative_radar was invoked from
+            # NOWHERE (no workflow, no dag.yml, no caller), so site/narrative_radar.html
+            # froze on the pre-#3235 nav and its JSON on 2026-07-05 while every other page
+            # moved on. Standalone (reads no other China build) and fail-soft by contract,
+            # so it appends at the tail of cl_intel — no existing step shifts position.
+            brun narrative_radar  "china narrative basket radar (build_narrative_radar)"  scripts.build_narrative_radar
           }
           # launch every cluster concurrently, then barrier before band B (cross-cluster consumers)
           cl_sector & cl_flowconf & cl_cn_baskets & cl_hk & cl_intel &
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="sector_desk sector_cycles cycles_scorecard policy_transmission masterminds strategies flow_velocity subsector_conf_cn microstructure participation analogs special_sits baskets_cn baskets_ths ths_snapshot reversal_sleeve subsector_rot subsector_rot_pages rotation_events_cn hk baskets_hk rotation_events_hk validation news policy_watch altdata radar synthesis"
+          ORDER="sector_desk sector_cycles cycles_scorecard policy_transmission masterminds strategies flow_velocity subsector_conf_cn microstructure participation analogs special_sits baskets_cn baskets_ths ths_snapshot reversal_sleeve subsector_rot subsector_rot_pages rotation_events_cn hk baskets_hk rotation_events_hk validation news policy_watch altdata radar synthesis narrative_radar"
           echo "### ⏱ asia band A — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
