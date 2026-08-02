@@ -14,7 +14,7 @@ prevents a later W3A deployment from silently backdating its own knowledge.
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
@@ -26,6 +26,11 @@ from engine.capital_structure.document_terms import (
     DOCUMENT_TERM_SCHEMA,
     current_document_terms_as_of,
     validate_document_term_history,
+    validate_observation_source_binding,
+)
+from engine.capital_structure.source_identity import (
+    validate_manifest_content_binding,
+    validate_manifest_ledger,
 )
 
 
@@ -278,8 +283,15 @@ def validate_candidate_source_binding(record: Mapping[str, Any], source: Mapping
         raise ValueError("instrument candidate-term mapping is detached from its direct observation")
 
 
-def validate_candidate_term_history(records: Sequence[Mapping[str, Any]]) -> None:
-    """Validate immutable candidate IDs, closed authority, and PIT correction chains."""
+def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
+    """Validate candidate-local shape, IDs, and correction chains only.
+
+    This is intentionally private: a candidate record duplicates direct-term
+    fields, and a recomputed candidate ID can make an altered duplicate look
+    structurally self-consistent.  It is therefore not proof of issuer,
+    evidence, direct-value, or source-receipt authority.  Public validation and
+    all PIT reads bind these rows to verified direct observations below.
+    """
     schema = _load_schema(_CANDIDATE_SCHEMA_PATH)
     by_id: set[str] = set()
     by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
@@ -345,9 +357,68 @@ def validate_candidate_term_history(records: Sequence[Mapping[str, Any]]) -> Non
                 raise ValueError(f"instrument candidate-term {logical} correction is retroactive")
 
 
-def current_candidate_terms_as_of(records: Sequence[Mapping[str, Any]], as_of: str) -> list[dict[str, Any]]:
-    """Return latest candidate versions visible strictly at the requested system time."""
-    validate_candidate_term_history(records)
+def validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
+    """Run untrusted candidate-local integrity checks without source authority.
+
+    This helper is suitable only for safely decoding a ledger before the caller
+    supplies the direct-term authority needed for trusted validation.  It must
+    never be used to authorize semantic or PIT reads.
+    """
+    _validate_candidate_term_structure(records)
+
+
+def _validate_candidate_term_history_against_sources(
+    records: Sequence[Mapping[str, Any]], direct_sources: Sequence[Mapping[str, Any]],
+) -> None:
+    _validate_candidate_term_structure(records)
+    sources_by_id = {str(row["observation_id"]): row for row in direct_sources}
+    for index, record in enumerate(records):
+        source_id = str((record.get("source_term") or {}).get("observation_id") or "")
+        source = sources_by_id.get(source_id)
+        if source is None:
+            raise ValueError(
+                f"instrument candidate-term row {index} source observation is absent from verified direct ledger"
+            )
+        validate_candidate_source_binding(record, source)
+
+
+def validate_candidate_term_history(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    document_term_observations: Sequence[Mapping[str, Any]],
+    source_manifests: Sequence[Mapping[str, Any]],
+    source_reader: Callable[[Mapping[str, Any]], bytes | None],
+) -> None:
+    """Validate candidates against the verified direct-term source authority.
+
+    Candidate-local IDs detect accidental corruption but are not an authority
+    boundary.  A trusted read must prove each copied issuer, evidence span, and
+    direct fact against the validated direct ledger and its retained source
+    bytes.
+    """
+    direct_sources = validate_document_term_authority(
+        document_term_observations,
+        source_manifests=source_manifests,
+        source_reader=source_reader,
+    )
+    _validate_candidate_term_history_against_sources(records, direct_sources)
+
+
+def current_candidate_terms_as_of(
+    records: Sequence[Mapping[str, Any]],
+    as_of: str,
+    *,
+    document_term_observations: Sequence[Mapping[str, Any]],
+    source_manifests: Sequence[Mapping[str, Any]],
+    source_reader: Callable[[Mapping[str, Any]], bytes | None],
+) -> list[dict[str, Any]]:
+    """Return verified candidate versions visible strictly at system time."""
+    validate_candidate_term_history(
+        records,
+        document_term_observations=document_term_observations,
+        source_manifests=source_manifests,
+        source_reader=source_reader,
+    )
     cutoff = _parse_time(as_of, "as_of")
     visible: dict[str, Mapping[str, Any]] = {}
     for raw in records:
@@ -362,12 +433,44 @@ def current_candidate_terms_as_of(records: Sequence[Mapping[str, Any]], as_of: s
     return [dict(visible[key]) for key in sorted(visible)]
 
 
-def _validate_direct_sources(records: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def validate_document_term_authority(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    source_manifests: Sequence[Mapping[str, Any]],
+    source_reader: Callable[[Mapping[str, Any]], bytes | None],
+) -> list[dict[str, Any]]:
+    """Verify direct-term rows against immutable manifests and retained bytes.
+
+    Candidate receipts name a direct observation, but no digest alone can prove
+    that the candidate's copied issuer/evidence/value came from that observation.
+    Reuse the direct-term source validator before a candidate ledger is compiled
+    or read, so a self-consistent edit to either Parquet file fails closed.
+    """
     schema = _load_schema(_DIRECT_SCHEMA_PATH)
     sources = [deepcopy(dict(raw)) for raw in records]
+    manifests = [deepcopy(dict(raw)) for raw in source_manifests]
+    validate_manifest_ledger(manifests)
+    for index, manifest in enumerate(manifests):
+        validate_manifest_content_binding(manifest)
     for index, source in enumerate(sources):
         _validate_schema(source, schema, f"document-term input row {index}")
     validate_document_term_history(sources)
+
+    manifests_by_id = {str(manifest["manifest_id"]): manifest for manifest in manifests}
+    source_cache: dict[str, bytes] = {}
+    for index, source in enumerate(sources):
+        manifest_id = str((source.get("document") or {}).get("source_manifest_id") or "")
+        manifest = manifests_by_id.get(manifest_id)
+        if manifest is None:
+            raise ValueError(f"document-term input row {index} source manifest is absent")
+        raw = source_cache.get(manifest_id)
+        if raw is None:
+            loaded = source_reader(manifest)
+            if not isinstance(loaded, bytes):
+                raise ValueError(f"document-term input row {index} retained source bytes are unavailable")
+            source_cache[manifest_id] = loaded
+            raw = loaded
+        validate_observation_source_binding(source, manifest, raw)
     return sources
 
 
@@ -436,6 +539,8 @@ def _project_record(
 def compile_candidate_term_records(
     document_term_observations: Sequence[Mapping[str, Any]],
     *,
+    source_manifests: Sequence[Mapping[str, Any]],
+    source_reader: Callable[[Mapping[str, Any]], bytes | None],
     existing_candidate_terms: Sequence[Mapping[str, Any]] = (),
     generated_at: str,
     source_as_of: str | None = None,
@@ -449,18 +554,13 @@ def compile_candidate_term_records(
     this compiler observes them.
     """
     generated = _iso(generated_at, "generated_at")
-    direct_sources = _validate_direct_sources(document_term_observations)
+    direct_sources = validate_document_term_authority(
+        document_term_observations,
+        source_manifests=source_manifests,
+        source_reader=source_reader,
+    )
     existing = [deepcopy(dict(raw)) for raw in existing_candidate_terms]
-    validate_candidate_term_history(existing)
-    sources_by_id = {str(row["observation_id"]): row for row in direct_sources}
-    for index, record in enumerate(existing):
-        source_id = str((record.get("source_term") or {}).get("observation_id") or "")
-        source = sources_by_id.get(source_id)
-        if source is None:
-            raise ValueError(
-                f"existing instrument candidate-term row {index} source observation is absent from direct ledger"
-            )
-        validate_candidate_source_binding(record, source)
+    _validate_candidate_term_history_against_sources(existing, direct_sources)
 
     if source_as_of is None:
         source_cutoff = max(
@@ -469,6 +569,15 @@ def compile_candidate_term_records(
         ).isoformat().replace("+00:00", "Z")
     else:
         source_cutoff = _iso(source_as_of, "source_as_of")
+        latest_direct = max(
+            (_parse_time((row.get("point_in_time") or {}).get("available_at"), "source.available_at") for row in direct_sources),
+            default=_parse_time(generated, "generated_at"),
+        )
+        if _parse_time(source_cutoff, "source_as_of") < latest_direct:
+            raise ValueError(
+                "historical source_as_of cannot write the canonical candidate ledger; "
+                "use a read-only isolated replay instead"
+            )
     selected = current_document_terms_as_of(direct_sources, source_cutoff) if direct_sources else []
     for source in selected:
         direct_available = _parse_time((source.get("point_in_time") or {}).get("available_at"), "source.available_at")
@@ -506,9 +615,7 @@ def compile_candidate_term_records(
         ))
 
     observations = existing + additions
-    validate_candidate_term_history(observations)
-    for record in additions:
-        validate_candidate_source_binding(record, sources_by_id[str((record.get("source_term") or {})["observation_id"])])
+    _validate_candidate_term_history_against_sources(observations, direct_sources)
     return {
         "observations": sorted(
             observations,

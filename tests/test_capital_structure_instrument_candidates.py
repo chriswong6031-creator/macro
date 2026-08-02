@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
+import engine.capital_structure.document_terms as document_terms
 from engine.capital_structure.document_terms import (
     compile_document_term_records,
     observation_id_for,
@@ -58,11 +59,29 @@ def _manifest(raw: bytes) -> dict:
 
 
 def _direct_rows() -> list[dict]:
+    return _direct_authority()[0]
+
+
+def _direct_authority() -> tuple[list[dict], list[dict], object]:
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
-    return compile_document_term_records(
+    rows = compile_document_term_records(
         [manifest], source_reader=lambda _: raw, generated_at="2026-08-03T00:00:00Z",
     )["observations"]
+    return rows, [manifest], lambda _: raw
+
+
+class _FixtureStore:
+    store_id = "r2_shared"
+
+    def __init__(self, manifest: dict, raw: bytes) -> None:
+        self.manifest = manifest
+        self.raw = raw
+
+    def get_verified(self, object_key: str, expected_sha256: str) -> bytes | None:
+        assert object_key == self.manifest["storage"]["object_key"]
+        assert expected_sha256 == self.manifest["document"]["content_sha256"]
+        return self.raw
 
 
 def _candidate_contract() -> dict:
@@ -89,9 +108,28 @@ def _direct_frame(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(materialized, columns=DOCUMENT_TERM_COLUMNS)
 
 
+def _compile(
+    rows: list[dict],
+    *,
+    manifests: list[dict],
+    reader,
+    generated_at: str = "2026-08-04T00:00:00Z",
+    existing: list[dict] | None = None,
+    source_as_of: str | None = None,
+) -> dict:
+    return compile_candidate_term_records(
+        rows,
+        source_manifests=manifests,
+        source_reader=reader,
+        existing_candidate_terms=existing or [],
+        generated_at=generated_at,
+        source_as_of=source_as_of,
+    )
+
+
 def test_candidate_projection_is_one_to_one_and_preserves_direct_evidence_without_creating_an_instrument():
-    source = _direct_rows()
-    result = compile_candidate_term_records(source, generated_at="2026-08-04T00:00:00Z")
+    source, manifests, reader = _direct_authority()
+    result = _compile(source, manifests=manifests, reader=reader)
     rows = result["observations"]
     _schema_validate(rows)
     assert result["counts"] == {
@@ -124,7 +162,8 @@ def test_candidate_projection_is_one_to_one_and_preserves_direct_evidence_withou
 
 
 def test_rate_and_fee_rows_remain_evidence_only_not_an_implied_supply_or_capacity():
-    rows = compile_candidate_term_records(_direct_rows(), generated_at="2026-08-04T00:00:00Z")["observations"]
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
     rate = next(row for row in rows if row["term"]["name"] == "filing_fee_rate")
     assert rate["candidate"]["family"] == "common_stock"
     assert rate["candidate"]["supply_role"] == "not_applicable"
@@ -134,9 +173,8 @@ def test_rate_and_fee_rows_remain_evidence_only_not_an_implied_supply_or_capacit
 
 
 def test_candidate_contract_rejects_legacy_or_partial_authority_vocabulary():
-    row = compile_candidate_term_records(
-        _direct_rows(), generated_at="2026-08-04T00:00:00Z",
-    )["observations"][0]
+    source, manifests, reader = _direct_authority()
+    row = _compile(source, manifests=manifests, reader=reader)["observations"][0]
     validator = Draft202012Validator(_candidate_contract(), format_checker=FormatChecker())
 
     legacy = deepcopy(row)
@@ -157,9 +195,9 @@ def test_candidate_contract_rejects_legacy_or_partial_authority_vocabulary():
 def test_unknown_direct_security_and_unsupported_term_type_stay_explicitly_deferred():
     source = deepcopy(next(row for row in _direct_rows() if row["term"]["name"] == "registration_fee"))
     source["security"]["classification"] = "unknown"
-    source["observation_id"] = observation_id_for(source)
-    projected = compile_candidate_term_records([source], generated_at="2026-08-04T00:00:00Z")["observations"][0]
-    assert projected["candidate"]["state"] == {"disposition": "deferred", "reason": "security_classification_unknown"}
+    assert candidate_mapping_for_document_term(source)["state"] == {
+        "disposition": "deferred", "reason": "security_classification_unknown",
+    }
     unsupported = deepcopy(source)
     unsupported["term"]["term_type"] = "banana"
     assert candidate_mapping_for_document_term(unsupported)["state"] == {
@@ -172,67 +210,115 @@ def test_ambiguous_upstream_direct_term_cannot_be_promoted_to_a_candidate_family
     source["state"] = {"disposition": "ambiguous", "reason": "multiple_numeric_tokens"}
     source["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
     source["normalized"] = deepcopy(source["reported"])
-    source["observation_id"] = observation_id_for(source)
-    projected = compile_candidate_term_records([source], generated_at="2026-08-04T00:00:00Z")["observations"][0]
-    assert projected["candidate"]["state"] == {"disposition": "ambiguous", "reason": "upstream_document_term_ambiguous"}
-    assert projected["candidate"]["family"] == "unknown"
-    assert projected["candidate"]["supply_role"] == "unknown"
+    projected = candidate_mapping_for_document_term(source)
+    assert projected["state"] == {"disposition": "ambiguous", "reason": "upstream_document_term_ambiguous"}
+    assert projected["family"] == "unknown"
+    assert projected["supply_role"] == "unknown"
 
 
-def test_candidate_correction_is_not_visible_until_this_projection_compiles():
-    direct_v1 = _direct_rows()
-    baseline = compile_candidate_term_records(direct_v1, generated_at="2026-08-04T00:00:00Z")["observations"]
-    # Simulate an append-only upstream parser correction after W3A already
-    # established a baseline. Both source versions remain in the direct ledger.
-    original = next(row for row in direct_v1 if row["term"]["name"] == "registration_fee")
-    corrected_source = deepcopy(original)
-    corrected_source["state"] = {"disposition": "unavailable", "reason": "header_without_direct_value"}
-    corrected_source["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
-    corrected_source["normalized"] = deepcopy(corrected_source["reported"])
-    corrected_source["relationships"] = {"amends": [], "supersedes": [original["observation_id"]], "contradiction_ids": []}
-    corrected_source["version"] = {"immutable_record": True, "correction_version": 2, "correction_of": original["observation_id"]}
-    corrected_source["point_in_time"]["available_at"] = "2026-08-05T00:00:00Z"
-    corrected_source["observation_id"] = observation_id_for(corrected_source)
-    upstream_corrected = direct_v1 + [corrected_source]
-    result = compile_candidate_term_records(
-        upstream_corrected, existing_candidate_terms=baseline, generated_at="2026-08-06T00:00:00Z",
+def test_candidate_correction_is_not_visible_until_this_projection_compiles(monkeypatch):
+    direct_v1, manifests, reader = _direct_authority()
+    baseline = _compile(direct_v1, manifests=manifests, reader=reader)["observations"]
+    # A parser-version correction retains the exact same source bytes and remains
+    # fully source-valid.  It is enough to prove the candidate correction clock.
+    monkeypatch.setattr(document_terms, "PARSER_VERSION", "capital-structure-document-terms/1.1.1")
+    direct_v2 = compile_document_term_records(
+        manifests,
+        source_reader=reader,
+        existing_observations=direct_v1,
+        generated_at="2026-08-05T00:00:00Z",
+    )["observations"]
+    result = _compile(
+        direct_v2,
+        manifests=manifests,
+        reader=reader,
+        existing=baseline,
+        generated_at="2026-08-06T00:00:00Z",
     )
     corrected = [row for row in result["observations"] if row["term"]["name"] == "registration_fee"]
     assert len(corrected) == 2
     prior, later = sorted(corrected, key=lambda row: row["version"]["correction_version"])
     assert later["version"] == {"immutable_record": True, "correction_version": 2, "correction_of": prior["candidate_term_id"]}
     assert later["point_in_time"]["available_at"] == "2026-08-06T00:00:00Z"
-    before = current_candidate_terms_as_of(result["observations"], "2026-08-05T23:59:59Z")
-    after = current_candidate_terms_as_of(result["observations"], "2026-08-06T00:00:00Z")
+    before = current_candidate_terms_as_of(
+        result["observations"], "2026-08-05T23:59:59Z",
+        document_term_observations=direct_v2, source_manifests=manifests, source_reader=reader,
+    )
+    after = current_candidate_terms_as_of(
+        result["observations"], "2026-08-06T00:00:00Z",
+        document_term_observations=direct_v2, source_manifests=manifests, source_reader=reader,
+    )
     assert next(row for row in before if row["term"]["name"] == "registration_fee")["source_term"]["observation_id"] == prior["source_term"]["observation_id"]
     assert next(row for row in after if row["term"]["name"] == "registration_fee")["source_term"]["observation_id"] == later["source_term"]["observation_id"]
 
+    with pytest.raises(ValueError, match="historical source_as_of cannot write"):
+        _compile(
+            direct_v2,
+            manifests=manifests,
+            reader=reader,
+            existing=result["observations"],
+            generated_at="2026-08-07T00:00:00Z",
+            source_as_of="2026-08-04T00:00:00Z",
+        )
 
-def test_candidate_history_rejects_id_body_mutation_duplicate_ids_and_missing_evidence():
-    source = _direct_rows()
-    rows = compile_candidate_term_records(source, generated_at="2026-08-04T00:00:00Z")["observations"]
+
+def test_candidate_history_rejects_rehashed_issuer_evidence_and_null_value_mutations():
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
     mutated = deepcopy(rows)
     mutated[0]["candidate"]["family"] = "other"
     with pytest.raises(ValueError, match="digest mismatch"):
-        validate_candidate_term_history(mutated)
+        validate_candidate_term_history(
+            mutated,
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
+        )
     recomputed = deepcopy(mutated)
     recomputed[0]["candidate_term_id"] = candidate_term_id_for(recomputed[0])
     with pytest.raises(ValueError, match="candidate mapping is detached from embedded source fields"):
-        validate_candidate_term_history(recomputed)
+        validate_candidate_term_history(
+            recomputed,
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
+        )
+
+    rebound_issuer = deepcopy(rows)
+    rebound_issuer[0]["issuer_id"] = "sec:cik:9999999999"
+    rebound_issuer[0]["candidate_term_id"] = candidate_term_id_for(rebound_issuer[0])
+    with pytest.raises(ValueError, match="issuer_id is detached"):
+        current_candidate_terms_as_of(
+            rebound_issuer, "2026-08-04T00:00:00Z",
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
+        )
+
     rebound_evidence = deepcopy(rows)
     rebound_evidence[0]["evidence"]["spans"][0]["locator"] = "tampered:locator"
     rebound_evidence[0]["candidate_term_id"] = candidate_term_id_for(rebound_evidence[0])
     with pytest.raises(ValueError, match="evidence is detached from its direct observation"):
-        compile_candidate_term_records(
-            source, existing_candidate_terms=rebound_evidence, generated_at="2026-08-05T00:00:00Z",
+        current_candidate_terms_as_of(
+            rebound_evidence, "2026-08-04T00:00:00Z",
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
         )
+
+    null_value = deepcopy(rows)
+    amount = next(row for row in null_value if row["term"]["name"] == "amount_to_be_registered")
+    amount["reported"] = {"raw_text": None, "value": None, "unit": None, "currency": None, "scale": None}
+    amount["normalized"] = deepcopy(amount["reported"])
+    amount["candidate_term_id"] = candidate_term_id_for(amount)
+    with pytest.raises(ValueError, match="reported is detached from its direct observation"):
+        current_candidate_terms_as_of(
+            null_value, "2026-08-04T00:00:00Z",
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
+        )
+
     with pytest.raises(ValueError, match="duplicate"):
-        validate_candidate_term_history(rows + [deepcopy(rows[0])])
+        validate_candidate_term_history(
+            rows + [deepcopy(rows[0])],
+            document_term_observations=source, source_manifests=manifests, source_reader=reader,
+        )
     no_evidence = deepcopy(source[0])
     no_evidence["evidence"]["spans"] = []
     no_evidence["observation_id"] = observation_id_for(no_evidence)
     with pytest.raises(ValueError, match="contract violation"):
-        compile_candidate_term_records([no_evidence], generated_at="2026-08-04T00:00:00Z")
+        _compile([no_evidence], manifests=manifests, reader=reader)
 
 
 def test_no_fuzzy_join_exists_when_two_identical_family_rows_share_an_issuer():
@@ -242,7 +328,7 @@ def test_no_fuzzy_join_exists_when_two_identical_family_rows_share_an_issuer():
     )
     manifest = _manifest(raw)
     source = compile_document_term_records([manifest], source_reader=lambda _: raw, generated_at="2026-08-03T00:00:00Z")["observations"]
-    rows = compile_candidate_term_records(source, generated_at="2026-08-04T00:00:00Z")["observations"]
+    rows = _compile(source, manifests=[manifest], reader=lambda _: raw)["observations"]
     amounts = [row for row in rows if row["term"]["name"] == "amount_to_be_registered"]
     assert len(amounts) == 2
     assert len({row["logical_candidate_term_id"] for row in amounts}) == 2
@@ -251,9 +337,16 @@ def test_no_fuzzy_join_exists_when_two_identical_family_rows_share_an_issuer():
 
 
 def test_offline_compiler_requires_the_exact_direct_ledger_and_writes_canonical_candidate_ledger(tmp_path):
-    direct = _direct_rows()
+    direct, manifests, _ = _direct_authority()
+    raw = FIXTURE.read_bytes()
+    manifest = manifests[0]
+    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
     _direct_frame(direct).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
-    result = compile_from_disk(root=tmp_path, generated_at="2026-08-04T00:00:00Z")
+    result = compile_from_disk(
+        root=tmp_path,
+        generated_at="2026-08-04T00:00:00Z",
+        source_store=_FixtureStore(manifest, raw),
+    )
     assert result["status"] == "ok"
     assert result["created"] == 5
     ledger = pd.read_parquet(tmp_path / "instrument_candidate_terms.parquet")
@@ -262,3 +355,21 @@ def test_offline_compiler_requires_the_exact_direct_ledger_and_writes_canonical_
     absent = compile_from_disk(root=tmp_path / "missing", generated_at="2026-08-04T00:00:00Z")
     assert absent["status"] == "unavailable"
     assert absent["reason"] == "document_term_ledger_absent"
+
+
+def test_offline_compiler_rejects_a_self_consistent_direct_issuer_mutation(tmp_path):
+    direct, manifests, _ = _direct_authority()
+    raw = FIXTURE.read_bytes()
+    manifest = manifests[0]
+    tampered = deepcopy(direct)
+    tampered[0]["issuer_id"] = "sec:cik:9999999999"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _direct_frame(tampered).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
+
+    with pytest.raises(ValueError, match="issuer_id is detached from source manifest"):
+        compile_from_disk(
+            root=tmp_path,
+            generated_at="2026-08-04T00:00:00Z",
+            source_store=_FixtureStore(manifest, raw),
+        )

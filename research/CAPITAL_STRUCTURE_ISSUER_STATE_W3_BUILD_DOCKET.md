@@ -152,17 +152,24 @@ sets every other authority lane false (`instrument`, `capacity`, `risk`,
 | Component | Purpose | Explicitly excluded |
 | --- | --- | --- |
 | `contracts/capital_structure_instrument_candidate_term.schema.json` | Immutable candidate-term contract and authority boundary | instrument ID, capacity, risk, probability, Prophet authority |
-| `engine/capital_structure/instrument_candidates.py` | Pure direct-term to candidate-term projection, PIT reads, correction validation | network access, joins, arithmetic, UI/DAG/Synapse work |
-| `scripts/compile_capital_structure_instrument_candidate_terms.py` | Offline canonical Parquet compiler | source fetches, SEC parsing, source-store mutation |
+| `engine/capital_structure/instrument_candidates.py` | Verified direct-term to candidate-term projection, PIT reads, correction validation | network access, joins, arithmetic, UI/DAG/Synapse work |
+| `scripts/compile_capital_structure_instrument_candidate_terms.py` | Offline canonical Parquet compiler with manifest/retained-byte validation | source fetches, SEC parsing, source-store mutation |
 | `tests/test_capital_structure_instrument_candidates.py` | Contract, PIT, mutation, collision, evidence, and no-fuzzy-join tests | economics backtest or signal validation |
 
 The candidate output belongs in:
 
 `data/capital_structure/instrument_candidate_terms.parquet`
 
-Its only accepted source is:
+Its only semantic source is:
 
 `data/capital_structure/document_term_observations.parquet`
+
+The candidate compiler and every trusted PIT read must re-bind that ledger to
+`source_manifest.parquet` and the manifest-addressed, hash-verified retained
+bytes. Candidate-local hashes are an envelope-integrity check only; they cannot
+on their own authorize copied issuer, value, or evidence fields. A historical
+`source_as_of` is rejected for the canonical ledger so it cannot append a
+newer candidate correction sourced from an older direct-term version.
 
 ## Immediate next build order
 

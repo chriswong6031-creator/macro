@@ -22,11 +22,12 @@ from typing import Any
 import pandas as pd
 
 from engine.capital_structure.instrument_candidates import (
-    INSTRUMENT_CANDIDATE_TERM_SCHEMA,
     candidate_term_id_for,
     compile_candidate_term_records,
-    validate_candidate_term_history,
+    validate_candidate_term_structure,
 )
+from engine.capital_structure.source_store import build_source_stores
+from scripts.compile_capital_structure_document_terms import _source_reader_for_store
 
 
 DOCUMENT_TERM_COLUMNS = [
@@ -201,7 +202,10 @@ def _load_existing_candidates(path: Path, schema: Mapping[str, Any]) -> list[dic
         if raw != _canonical_json(record):
             raise ValueError(f"candidate-term ledger row {index} candidate_term_json is not canonical")
         records.append(dict(record))
-    validate_candidate_term_history(records)
+    # Source binding is deliberately deferred until compile_from_disk has loaded
+    # the direct ledger's manifests and retained-byte reader.  This local pass
+    # only protects safe decoding of the candidate Parquet envelope.
+    validate_candidate_term_structure(records)
     return records
 
 
@@ -246,10 +250,15 @@ def _atomic_write(frame: pd.DataFrame, target: Path) -> None:
 
 
 def compile_from_disk(
-    *, root: Path | None = None, generated_at: str | None = None, source_as_of: str | None = None,
+    *,
+    root: Path | None = None,
+    generated_at: str | None = None,
+    source_as_of: str | None = None,
+    source_store=None,
 ) -> dict[str, Any]:
-    """Compile directly from an already-validated append-only document-term ledger."""
+    """Compile from a direct ledger after re-verifying its source authority."""
     root = root or _data_root()
+    manifest_path = root / "source_manifest.parquet"
     source_path = root / "document_term_observations.parquet"
     target_path = root / "instrument_candidate_terms.parquet"
     if not source_path.exists():
@@ -261,10 +270,16 @@ def compile_from_disk(
         }
     direct_schema = _load_contract("capital_structure_document_term_observation.schema.json")
     candidate_schema = _load_contract("capital_structure_instrument_candidate_term.schema.json")
+    if not manifest_path.exists():
+        raise ValueError("source-manifest ledger is required to verify document-term authority")
+    manifests = dataframe_records(pd.read_parquet(manifest_path))
     direct_terms = _load_document_terms(source_path, direct_schema)
     existing = _load_existing_candidates(target_path, candidate_schema)
+    store = source_store if source_store is not None else build_source_stores()
     result = compile_candidate_term_records(
         direct_terms,
+        source_manifests=manifests,
+        source_reader=_source_reader_for_store(store),
         existing_candidate_terms=existing,
         generated_at=generated_at or _now_iso(),
         source_as_of=source_as_of,
