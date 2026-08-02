@@ -219,6 +219,24 @@ def test_fact_anchor_rejects_an_originated_number():
     assert any("23.4" in u for u in row["metrics"]["unanchored"])
 
 
+def test_fact_anchor_parses_explicit_unit_spelled_numbers_and_rejects_invention():
+    """``twelve percent`` cannot become an invisible numeric-origin bypass."""
+    slot = F.slot(facts=[{
+        "id": "revenue", "ref": "chronicle:fixture", "tier": "first_party",
+        "values": [12], "text": "Revenue grew 12% in the quarter.",
+        "dated": "2026-07-24", "url": None, "source_name": "fixture",
+    }])
+    assert V.check_fact_anchor(
+        F.draft("Revenue grew twelve percent in the quarter.", fold=False), slot, F.config(),
+    )["ok"] is True
+    invented = V.check_fact_anchor(
+        F.draft("Revenue grew thirteen percent in the quarter.", fold=False), slot, F.config(),
+    )
+    assert invented["ok"] is False
+    assert any("thirteen percent" in value.lower()
+               for value in invented["metrics"]["unanchored"])
+
+
 def test_fact_anchor_allows_rounding_down_in_precision():
     """65.7 -> "66" is a correct rounding and must pass."""
     row = V.check_fact_anchor(
@@ -707,7 +725,7 @@ def test_self_similarity_ignores_posts_outside_the_window(tmp_path):
 def test_validate_records_every_check_pass_or_fail():
     report = V.validate(F.draft(_OURS), F.slot(), F.config(), root=_REPO)
     assert [c["name"] for c in report["checks"]] == list(V.CHECK_NAMES)
-    assert len(V.CHECK_NAMES) == 16
+    assert len(V.CHECK_NAMES) == 17
 
 
 def test_a_crashing_check_reads_as_a_failure_not_a_pass(monkeypatch):

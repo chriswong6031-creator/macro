@@ -3837,7 +3837,7 @@ jobs:
       - name: press validator suite (paraphrase, fact-anchor, our-value, lexicons)
         run: python -m pytest tests/test_press_validators.py -q
       - name: press planner + writer + orchestrator suites
-        run: python -m pytest tests/test_press_planner.py tests/test_press_writer.py tests/test_press_run.py -q
+        run: python -m pytest tests/test_press_planner.py tests/test_press_writer.py tests/test_press_run.py tests/test_earnings_canonical_story.py -q
       - name: press admin panel + workflow shape
         run: python -m pytest tests/test_press_admin.py tests/test_press_workflow.py -q
       # W1.5 property trees + the cutover sync guard. Same lane on purpose: the

@@ -360,14 +360,22 @@ def test_emit_rechecks_receipt_and_refuses_stale_passing_draft(tmp_path):
     assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
 
 
-def test_emit_persists_revision_receipt_for_future_correction_detection(
+def test_emit_persists_generic_source_revision_receipt_in_ledger(
     tmp_path, monkeypatch,
 ):
+    """The earnings hold must not erase the generic receipt-ledger contract."""
     root = F.fixture_root(tmp_path, cutover=False)
-    ref = _write_earnings_event(root, "a")
+    ref = "chronicle:risk_radar_forward_log#2026-07-26"
     stage = _revision_stage(ref, "a")
     (root / "data" / "press" / "staging" / "current.json").write_text(
         json.dumps(stage), encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        R, "reconcile_earnings_call_revisions",
+        lambda _root, _cfg: {
+            "superseded": 0, "resolved": 0, "correction_required": 0,
+            "published_mismatches": 0,
+        },
     )
     monkeypatch.setattr(R, "_render_blog_subtree", lambda _root: ([], []))
 
@@ -462,6 +470,120 @@ def test_emit_ignores_quarantined_items(tmp_path):
 def test_emit_with_an_empty_staging_dir_is_a_clean_no_op(tmp_path):
     root = F.fixture_root(tmp_path)
     assert R.run_emit(root, P.load_config(root))["emitted"] == 0
+
+
+def test_emit_refuses_source_ready_canonical_story(tmp_path):
+    root = F.fixture_root(tmp_path)
+    slot = F.slot(
+        canonical_story_id="story_" + "a" * 32,
+        canonical_story_revision_id="storyrev_" + "b" * 32,
+        canonical_story_status="source_ready",
+        canonical_emit_allowed=False,
+    )
+    draft = dict(_good_draft(slot), slug="canonical-source-ready")
+    stage_path = root / "data" / "press" / "staging" / "canonical.json"
+    stage_path.write_text(json.dumps({
+        "id": slot["id"], "desk": slot["desk"],
+        "publication": slot["publication"], "status": "passed",
+        "sources": slot["sources"], "source_revisions": {}, "seed_refs": [],
+        "slug": draft["slug"], "draft": draft, "slot": slot,
+        "validator_report": {"ok": True},
+    }), encoding="utf-8")
+    result = R.run_emit(root, P.load_config(root))
+    assert result["emitted"] == 0
+    staged = json.loads(stage_path.read_text(encoding="utf-8"))
+    assert staged["status"] == "approval_required"
+    assert "verified-approval compiler" in staged["quarantine_reason"]
+    assert not list((root / "content" / "seo" / "blog").glob("*.md"))
+
+
+def test_emit_refuses_a_canonical_stage_that_self_attests_approval(tmp_path):
+    """Mutable status/allowed flags cannot downgrade source-ready evidence."""
+    root = F.fixture_root(tmp_path)
+    slot = F.slot(
+        id="press-earnings-" + "a" * 32,
+        canonical_story_id="story_" + "b" * 32,
+        canonical_story_revision_id="storyrev_" + "c" * 32,
+        canonical_story_status="approved",
+        canonical_emit_allowed=True,
+        approved_claim_ids=["claim_" + "d" * 32],
+        article_derivative_id="der_" + "e" * 32,
+    )
+    draft = dict(_good_draft(slot), slug="canonical-self-attested")
+    stage_path = root / "data" / "press" / "staging" / "canonical-self-attested.json"
+    stage_path.write_text(json.dumps({
+        "id": slot["id"], "desk": slot["desk"],
+        "publication": slot["publication"], "status": "passed",
+        "sources": ["chronicle:defeatbeta:AAPL:2026Q1"],
+        "source_revisions": {}, "seed_refs": ["earnings-evidence:claim_" + "d" * 32],
+        "slug": draft["slug"], "draft": draft, "slot": slot,
+        "validator_report": {"ok": True},
+    }), encoding="utf-8")
+
+    result = R.run_emit(root, P.load_config(root))
+    assert result["emitted"] == 0
+    staged = json.loads(stage_path.read_text(encoding="utf-8"))
+    assert staged["status"] == "approval_required"
+    assert "verified-approval compiler" in staged["quarantine_reason"]
+    assert not list((root / "content" / "seo" / "blog").glob("*.md"))
+
+
+def test_emit_canonical_detection_survives_stripped_slot_flags(tmp_path):
+    """Outer id and source/evidence trails independently preserve the block."""
+    root = F.fixture_root(tmp_path)
+    slot = F.slot(id="press-earnings-" + "f" * 32)
+    draft = dict(_good_draft(slot), slug="canonical-identity-trail")
+    stage_path = root / "data" / "press" / "staging" / "canonical-identity-trail.json"
+    stage_path.write_text(json.dumps({
+        "id": slot["id"], "desk": slot["desk"],
+        "publication": slot["publication"], "status": "passed",
+        "sources": ["chronicle:defeatbeta:AAPL:2026Q1"],
+        "source_revisions": {}, "seed_refs": ["earnings-evidence:claim_" + "a" * 32],
+        "slug": draft["slug"], "draft": draft,
+        # All nested canonical markers have been stripped from the staged JSON.
+        "slot": F.slot(id="press-brief-lookalike"),
+        "validator_report": {"ok": True},
+    }), encoding="utf-8")
+
+    result = R.run_emit(root, P.load_config(root))
+    assert result["emitted"] == 0
+    assert json.loads(stage_path.read_text(encoding="utf-8"))["status"] == "approval_required"
+
+
+@pytest.mark.parametrize(
+    ("sources", "seed_refs"),
+    [
+        ([], ["earnings-evidence:claim_" + "a" * 32]),
+        (["chronicle:defeatbeta:AAPL:2026Q1"], []),
+    ],
+)
+def test_emit_earnings_detection_survives_either_remaining_identity_trail(
+    tmp_path, sources, seed_refs,
+):
+    """Neither half of mutable provenance may be removed to regain emit.
+
+    A bare DefeatBeta receipt is indistinguishable from the legacy earnings
+    planner, so that older article lane is held too until immutable approval
+    ingress exists.  Earnings evidence remains available to product surfaces.
+    """
+    root = F.fixture_root(tmp_path)
+    slot = F.slot(id="press-brief-lookalike")
+    draft = dict(_good_draft(slot), slug="earnings-single-trail")
+    stage_path = root / "data" / "press" / "staging" / "earnings-single-trail.json"
+    stage_path.write_text(json.dumps({
+        "id": slot["id"], "desk": slot["desk"],
+        "publication": slot["publication"], "status": "passed",
+        "sources": sources, "source_revisions": {}, "seed_refs": seed_refs,
+        "slug": draft["slug"], "draft": draft, "slot": slot,
+        "validator_report": {"ok": True},
+    }), encoding="utf-8")
+
+    result = R.run_emit(root, P.load_config(root))
+    assert result["emitted"] == 0
+    staged = json.loads(stage_path.read_text(encoding="utf-8"))
+    assert staged["status"] == "approval_required"
+    assert "immutable ingress" in staged["quarantine_reason"]
+    assert not list((root / "content" / "seo" / "blog").glob("*.md"))
 
 
 def test_frontmatter_written_by_emit_matches_the_estate_contract(tmp_path):

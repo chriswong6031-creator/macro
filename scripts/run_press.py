@@ -84,6 +84,67 @@ log = logging.getLogger("run_press")
 
 _SITE_BASE = "https://www.mastermind-x.com"
 
+# ``canonical_story.v1`` packets are deliberately source-ready only.  This
+# writer/emit rail has no verified-approval compiler, so no value written into
+# a mutable staging JSON file can turn one into publishable copy.  Keep the
+# marker list broad: callers may supply an incomplete canonical slot after a
+# failed/interrupted stage, and that ambiguity must block rather than fall back
+# to generic-Press behaviour.
+_CANONICAL_SLOT_MARKERS = frozenset({
+    "canonical_story_id",
+    "canonical_story_revision_id",
+    "canonical_story_status",
+    "canonical_emit_allowed",
+    "approved_claim_ids",
+    "article_derivative_id",
+})
+
+
+def _is_canonical_story_slot(slot: object) -> bool:
+    """Whether a staged slot belongs to the currently non-emittable rail."""
+    if not isinstance(slot, dict):
+        return False
+    if any(key in slot for key in _CANONICAL_SLOT_MARKERS):
+        return True
+    story = slot.get("story")
+    if isinstance(story, dict) and any(
+        key in story for key in ("canonical_story_id", "canonical_story_revision_id")
+    ):
+        return True
+    return str(slot.get("id") or "").startswith("press-earnings-")
+
+
+def _is_unverified_earnings_story_stage(item: object) -> bool:
+    """Detect any earnings article that lacks immutable approval provenance.
+
+    The staging file is an audit artifact, not an approval credential.  Looking
+    only at ``slot.canonical_emit_allowed`` made a one-field JSON edit enough
+    to downgrade a canonical item into generic Press.  Preserve independent
+    identity trails from the outer envelope (id / evidence seed / Chronicle
+    source) so stripping a slot marker or its nested id still fails closed.
+
+    Legacy and canonical earnings slots deliberately share the
+    ``chronicle:defeatbeta`` namespace.  Once every canonical marker has been
+    stripped, a mutable staging file cannot prove which producer created it.
+    Therefore the safe boundary is broader: *all* DefeatBeta earnings articles
+    remain non-emittable until the future immutable approval ingress can attest
+    an exact packet.  Other Press desks are unaffected.
+    """
+    if not isinstance(item, dict):
+        return False
+    if any(key in item for key in _CANONICAL_SLOT_MARKERS):
+        return True
+    if str(item.get("id") or "").startswith("press-earnings-"):
+        return True
+    if _is_canonical_story_slot(item.get("slot")):
+        return True
+    source_refs = {str(ref) for ref in (item.get("sources") or []) if isinstance(ref, str)}
+    seed_refs = {str(ref) for ref in (item.get("seed_refs") or []) if isinstance(ref, str)}
+    return (
+        any(ref.startswith("chronicle:defeatbeta:") for ref in source_refs)
+        or any(ref.startswith("earnings-evidence:") for ref in seed_refs)
+    )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Paths
@@ -718,6 +779,22 @@ def run_emit(root: Path, cfg: dict) -> dict:
             log.warning("press emit: unreadable staging file %s: %s", path, exc)
             continue
         if isinstance(obj, dict) and obj.get("status") == "passed" and obj.get("draft"):
+            slot = obj.get("slot") if isinstance(obj.get("slot"), dict) else {}
+            if _is_unverified_earnings_story_stage(obj):
+                obj["status"] = "approval_required"
+                obj["quarantine_reason"] = (
+                    "earnings story publishing is disabled until a separate "
+                    "verified-approval compiler and immutable ingress exist"
+                )
+                path.write_text(
+                    json.dumps(obj, ensure_ascii=False, indent=2, default=str) + "\n",
+                    encoding="utf-8",
+                )
+                _annotate(
+                    "warning", "press_emit_canonical_approval",
+                    f"press emit: canonical slot {obj.get('id')} requires verified approval",
+                )
+                continue
             items.append((path, obj))
 
     if not items:
