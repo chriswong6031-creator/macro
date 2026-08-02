@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T14:47:59.464742+00:00",
-  "count": 600,
+  "generated_at": "2026-08-02T15:03:03.289610+00:00",
+  "count": 601,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hx5lyp97g3j-c866ba",
+      "title": "Article bmfimultisectorplaybookincreasingdispersion ltr",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:33:35Z",
+      "summary_points": [
+        "**Structural Dispersion**: Central bank divergence structural (not cyclical), credit markets show widening dispersion between AI-driven capital needs and disrupted business models, requiring active management across countries/industries.",
+        "**Securitized Credit Overweight**: Agency MBS, non-agency RMBS, CMBS, and select ABS favored for attractive valuations, strong collateral, resilient cash flows, and technical demand.",
+        "**Corporate Credit Caution**: Underweight investment grade (later-cycle capex pressures), prefer Europe over U.S., selective high-yield opportunities amid M&A/infrastructure capex dynamics.",
+        "**Inflation Hedge Strategy**: Maintain long-duration positioning in developed markets, long U.S.",
+        "TIPS, and U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-x4qc2sq4pis-da65cb",
       "title": "ING Think asia week ahead",
