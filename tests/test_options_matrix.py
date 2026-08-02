@@ -909,3 +909,28 @@ def test_plain_iso_expiry_serialization(tmp_path):
         assert ISO_DATE_RE.match(str(exp)), (
             f"heat_seeker expiry is not plain ISO: {exp!r}"
         )
+
+
+def test_levels_flip_is_never_derived_from_strike_aggregates():
+    """The cumulative-by-strike flip is RETIRED in _compute_levels (measured live
+    2026-08-01: 594.28 against spot 741.69). A by_strike whose cumulative walk
+    crosses zero must yield None unless the caller supplies the grid-method flip."""
+    from engine.options_matrix import _compute_levels
+
+    by_strike = {
+        # put-dominated low strikes, call-dominated high strikes — the shape the
+        # old walk happily "solved" far from any plausible zero-gamma spot
+        90.0: {"call_oi": 10, "put_oi": 5000, "call_gex": 1e4, "put_gex": 9e6},
+        95.0: {"call_oi": 10, "put_oi": 5000, "call_gex": 1e4, "put_gex": 9e6},
+        100.0: {"call_oi": 2000, "put_oi": 2000, "call_gex": 5e6, "put_gex": 5e6},
+        105.0: {"call_oi": 5000, "put_oi": 10, "call_gex": 9e6, "put_gex": 1e4},
+        110.0: {"call_oi": 5000, "put_oi": 10, "call_gex": 9e6, "put_gex": 1e4},
+    }
+    levels = _compute_levels(by_strike, spot=100.0, asof_date="2025-01-10", median_iv=0.2)
+    assert levels["gamma_flip"] is None
+
+    threaded = _compute_levels(
+        by_strike, spot=100.0, asof_date="2025-01-10", median_iv=0.2,
+        precomputed_flip=101.25,
+    )
+    assert threaded["gamma_flip"] == 101.25

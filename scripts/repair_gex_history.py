@@ -66,7 +66,7 @@ R2_PREFIX = "options_hub/gex_history/"
 #: notably `history`, which a separate nightly step attaches and this script cannot
 #: reproduce.
 _RECOMPUTED = (
-    "spot_ref", "net_gex_bn", "gamma_flip", "call_wall", "put_wall",
+    "spot_ref", "net_gex_bn", "gamma_flip", "profile", "call_wall", "put_wall",
     "by_strike", "by_strike_full_n", "by_delta", "by_delta_full_n",
     "by_expiry", "convention", "coverage", "schema",
 )

@@ -985,3 +985,82 @@ class TestVexWiring:
         assert vex_payload["schema"] == "options_hub.vex/v1"
         assert vex_payload["by_strike"] == []
         assert vex_payload["spot_ref"] is None
+
+
+# --------------------------------------------------------------------------- #
+# GEX profile block (masterplan §4.2) — the flip's own grid, published as a curve
+# --------------------------------------------------------------------------- #
+
+class TestGexProfileBlock:
+    """`profile` rides compute_gex from the SAME grid evaluation as gamma_flip
+    (engine.gex_engine.gamma_profile) — arrays aligned, crossings consistent,
+    honest None on a chain too thin to re-price."""
+
+    def _big_fixture(self, call_oi=2000.0, put_oi=2000.0):
+        asof = "2025-01-10"
+        spot = 500.0
+        greeks_rows = []
+        oi_rows = []
+        for k in range(470, 531, 4):
+            for right in ("C", "P"):
+                greeks_rows.append(_make_greeks_row(
+                    expiration="2025-03-21", strike=float(k), right=right, date=asof,
+                    implied_vol=0.2, underlying_price=spot,
+                    delta=0.5 if right == "C" else -0.5, gamma=0.01,
+                ))
+                oi_rows.append({
+                    "expiration": "2025-03-21", "strike": float(k), "right": right,
+                    "open_interest": call_oi if right == "C" else put_oi, "date": asof,
+                })
+        return pd.DataFrame(greeks_rows), pd.DataFrame(oi_rows), asof, spot
+
+    def test_profile_arrays_align_and_center_on_spot(self):
+        greeks, oi, asof, spot = self._big_fixture()
+        result = compute_gex(greeks, oi, asof, "SPY")
+        p = result["profile"]
+        assert p is not None
+        assert p["method"] == "spot_grid_reprice"
+        assert len(p["grid"]) == 101
+        assert len(p["gamma_bn"]) == 101
+        assert p["grid"][50] == pytest.approx(spot, abs=0.01)
+
+    def test_flip_is_a_published_crossing(self):
+        # Put-heavy below / call-heavy above → a flip the grid must find, and the
+        # scalar must be one of the curve's own crossings.
+        asof = "2025-01-10"
+        spot = 500.0
+        greeks_rows, oi_rows = [], []
+        for k in range(470, 531, 4):
+            for right in ("C", "P"):
+                heavy = (right == "C" and k >= 500) or (right == "P" and k < 500)
+                greeks_rows.append(_make_greeks_row(
+                    expiration="2025-03-21", strike=float(k), right=right, date=asof,
+                    implied_vol=0.2, underlying_price=spot,
+                    delta=0.5 if right == "C" else -0.5, gamma=0.01,
+                ))
+                oi_rows.append({
+                    "expiration": "2025-03-21", "strike": float(k), "right": right,
+                    "open_interest": 5000.0 if heavy else 50.0, "date": asof,
+                })
+        result = compute_gex(pd.DataFrame(greeks_rows), pd.DataFrame(oi_rows), asof, "SPY")
+        p = result["profile"]
+        assert p is not None
+        if result["gamma_flip"] is not None:
+            assert any(abs(c - result["gamma_flip"]) < 0.05 for c in p["crossings"])
+
+    def test_profile_sign_at_spot_matches_book_side(self):
+        greeks, oi, asof, _ = self._big_fixture(call_oi=5000.0, put_oi=50.0)
+        call_heavy = compute_gex(greeks, oi, asof, "SPY")
+        greeks2, oi2, _, _ = self._big_fixture(call_oi=50.0, put_oi=5000.0)
+        put_heavy = compute_gex(greeks2, oi2, asof, "SPY")
+        assert call_heavy["profile"]["gamma_bn"][50] > 0
+        assert put_heavy["profile"]["gamma_bn"][50] < 0
+
+    def test_profile_none_on_thin_chain(self):
+        # The 2-contract dealer-sign fixture is far below the ≥20-row re-pricing gate.
+        fixture = TestGexDealerSign()._fixture()
+        greeks, oi, spot = fixture
+        result = compute_gex(greeks, oi, "2025-01-10", "SPY")
+        assert result["profile"] is None
+        # and the payload still carries the key, so consumers never KeyError
+        assert "profile" in result

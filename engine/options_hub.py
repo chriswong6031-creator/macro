@@ -551,8 +551,8 @@ def compute_gex(
     # ── headline ──────────────────────────────────────────────────────────────
     net_gex_bn = float(g["_net_gex"].sum() / 1e9)
 
-    # ── gamma flip (nearest zero-crossing of cumulative net_gex across strikes) ──
-    gamma_flip = _find_gamma_flip(g, spot)
+    # ── gamma flip + exposure profile (ONE ±25% spot-grid evaluation) ─────────
+    gamma_flip, profile = _flip_and_profile(g, spot)
 
     # ── walls: max |call_gex| above spot / max |put_gex| below ────────────────
     by_k = g.groupby("K").agg(
@@ -648,6 +648,9 @@ def compute_gex(
         "spot_ref": _f(spot),
         "net_gex_bn": _f(net_gex_bn, 4),
         "gamma_flip": _f(gamma_flip),
+        # The §4.2 profile block — the flip's own grid, published as a curve.
+        # None when the chain is too iv-sparse to re-price (same gate as the flip).
+        "profile": profile,
         "call_wall": _f(call_wall),
         "put_wall": _f(put_wall),
         "by_strike": by_strike_rows,
@@ -787,8 +790,25 @@ def _find_gamma_flip(g: pd.DataFrame, spot: float) -> float | None:
     CURRENT spot is meaningless at a hypothetical one). An iv-sparse root therefore
     moves from a confidently-wrong number to an honest ``None``.
     """
+    flip, _profile = _flip_and_profile(g, spot)
+    return flip
+
+
+def _flip_and_profile(g: pd.DataFrame, spot: float) -> tuple[float | None, dict | None]:
+    """One grid evaluation → (flip, payload `profile` block).
+
+    The profile is the masterplan §4.2 flagship object — net dealer gamma as a
+    FUNCTION of spot, on the SAME ±25% grid that produces the flip, via
+    ``gex_engine.gamma_profile``. Publishing them from one evaluation means the
+    curve a reader sees and the crossing the desk quotes cannot disagree.
+
+    Units: ``gamma_bn`` is $bn of dealer delta to transact per +1% spot, at each
+    trial spot — the same quantity (and sign convention) as ``net_gex_bn``, which
+    is this curve evaluated at the current spot (modulo the re-derived-from-iv
+    gamma; the feed's gamma column is meaningless at a hypothetical spot).
+    """
     if not (spot and spot > 0):
-        return None
+        return None, None
     c = pd.DataFrame({
         "K": pd.to_numeric(g["K"], errors="coerce"),
         "T": pd.to_numeric(g["T"], errors="coerce"),
@@ -801,9 +821,19 @@ def _find_gamma_flip(g: pd.DataFrame, spot: float) -> float | None:
     # input, so the flip is computed over the population the engine expects.
     c = _gex_engine._window(c, float(spot), cfg)
     if c.empty:
-        return None
-    flip, _dist_pct, _regime = _gex_engine._gamma_flip(c, float(spot), cfg)
-    return flip
+        return None, None
+    grid, net, flips = _gex_engine.gamma_profile(c, float(spot), cfg)
+    if grid is None:
+        return None, None
+    flip = min(flips, key=lambda f: abs(f - float(spot))) if flips else None
+    profile = {
+        "method": "spot_grid_reprice",
+        "span_pct": 25,
+        "grid": [round(float(x), 2) for x in grid],
+        "gamma_bn": [round(float(v) / 1e9, 4) for v in net],
+        "crossings": [round(float(f), 2) for f in flips],
+    }
+    return flip, profile
 
 
 # --------------------------------------------------------------------------- #

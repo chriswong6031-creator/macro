@@ -378,3 +378,18 @@ def test_a_non_finite_value_is_omitted_not_zeroed():
     p = build_trend_payload(df, "SPY", "2026-01-15")
     assert "g" not in p["series"][3]
     assert "g" in p["series"][4]
+
+
+def test_stats_pctile_uses_midrank_on_ties():
+    """Strict-less rank read a value tying the minimum as '0th percentile' — an
+    extreme-low claim about an unexceptional value. Midrank: flat series ≈ 50th,
+    max of five = 90th, min of five = 10th. One definition with the Terminal's
+    lib/aggTrend.windowStats."""
+    from engine.agg_trend import _stats
+
+    flat = _stats(np.array([5.0, 5.0, 5.0, 5.0]))
+    assert flat["pctile"] == pytest.approx(50.0)
+    hi = _stats(np.array([1.0, 2.0, 3.0, 4.0, 10.0]))
+    assert hi["pctile"] == pytest.approx(90.0)
+    lo = _stats(np.array([10.0, 4.0, 3.0, 2.0, 1.0]))
+    assert lo["pctile"] == pytest.approx(10.0)

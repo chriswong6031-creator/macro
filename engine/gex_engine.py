@@ -40,14 +40,22 @@ def _window(chain: pd.DataFrame, S: float, cfg: dict) -> pd.DataFrame:
                  & (chain["iv"] > 0) & (chain["oi"] > 0)].copy()
 
 
-def _gamma_flip(c: pd.DataFrame, S: float, cfg: dict):
-    """Zero-gamma spot via a ±25% spot grid reevaluation (clone of
-    collectors/deribit._gamma_flip, with the equity multiplier + r/q). ABOVE flip =
-    net long gamma (dealers dampen / pin); BELOW = net short (dealers amplify).
-    Returns (flip, signed dist-to-flip %, regime)."""
+def gamma_profile(c: pd.DataFrame, S: float, cfg: dict):
+    """Net dealer gamma RE-PRICED across a ±25% spot grid — the exposure PROFILE.
+
+    This is the category's flagship object (masterplan §4.2 `profile`): exposure as a
+    FUNCTION of spot, not merely at it. It is also the single source for the flip —
+    ``_gamma_flip`` delegates here so the published curve and the published crossing
+    can never disagree (the 2026-08-01 defect family was exactly two derivations of
+    one quantity drifting apart).
+
+    Returns ``(grid, net, flips)`` — numpy arrays of trial spots and net dealer gamma
+    in dollars per ``pct_move`` at each, plus every zero-crossing (interpolated) —
+    or ``(None, None, [])`` when the chain is too thin to re-price.
+    """
     g = c.dropna(subset=["K", "T", "iv"])
     if len(g) < 20 or not (S > 0):
-        return None, None, None
+        return None, None, []
     K = g["K"].to_numpy(float); T = g["T"].to_numpy(float)
     sig = g["iv"].to_numpy(float); oi = g["oi"].to_numpy(float)
     sgn = np.where(g["is_call"].to_numpy(bool), 1.0, -1.0)
@@ -63,7 +71,19 @@ def _gamma_flip(c: pd.DataFrame, S: float, cfg: dict):
     for i in range(len(grid) - 1):
         if net[i] == 0.0 or (net[i] < 0) != (net[i + 1] < 0):
             x0, x1, y0, y1 = grid[i], grid[i + 1], net[i], net[i + 1]
-            flips.append(x0 - y0 * (x1 - x0) / (y1 - y0) if y1 != y0 else x0)
+            flips.append(float(x0 - y0 * (x1 - x0) / (y1 - y0) if y1 != y0 else x0))
+    return grid, net, flips
+
+
+def _gamma_flip(c: pd.DataFrame, S: float, cfg: dict):
+    """Zero-gamma spot via a ±25% spot grid reevaluation (clone of
+    collectors/deribit._gamma_flip, with the equity multiplier + r/q). ABOVE flip =
+    net long gamma (dealers dampen / pin); BELOW = net short (dealers amplify).
+    Returns (flip, signed dist-to-flip %, regime). Thin wrapper over
+    ``gamma_profile`` — one grid evaluation, one definition."""
+    grid, net, flips = gamma_profile(c, S, cfg)
+    if grid is None:
+        return None, None, None
     if not flips:
         return None, None, ("long" if net[len(grid) // 2] >= 0 else "short")
     flip = min(flips, key=lambda f: abs(f - S))
