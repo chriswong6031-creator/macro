@@ -211,6 +211,14 @@ def test_earnings_no_call_honest_null():
     assert "No earnings" in html  # honest plain-word empty state for the earnings surface
 
 
+def test_earnings_reader_links_to_terminal_company_intelligence():
+    """The cross-sectional Stage reader hands a selected ticker to the full Terminal dossier."""
+    html = _render_with_fixture()
+    assert 'id="reader-terminal"' in html
+    assert "https://app.mastermind-x.com/analysis?symbol=" in html
+    assert "&page=intelligence" in html
+
+
 def test_no_css_width_over_100pct():
     """FIX 2 — no rendered `width: N%` exceeds 100%. Guards against the sector
     weather double-×100 unit bug (pct_stage2 is already 0-100)."""

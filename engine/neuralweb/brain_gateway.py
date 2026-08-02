@@ -259,6 +259,7 @@ _BRAIN_TOOLS = frozenset({
     "read_theme_clinical",
     "read_theme_trade_flows",
     "read_special_situations",
+    "read_company_intelligence",
     # Brain-gateway-specific tools (W6a)
     "get_quote",
     "get_symbol_context",
@@ -5580,6 +5581,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "read_china_flows":           ("Tracking A-share money flow",   "追踪A股资金流向"),
     "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
     "read_stage_analysis":        ("Checking the stage analysis",   "查看阶段分析"),
+    "read_company_intelligence":  ("Reading the latest company events", "查看公司最新事件"),
 }
 
 # Unknown tool name (a new tool shipped before this table) → a truthful generic line.
