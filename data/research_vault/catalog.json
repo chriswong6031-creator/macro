@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T01:01:28.680460+00:00",
-  "count": 562,
+  "generated_at": "2026-08-02T01:17:07.015930+00:00",
+  "count": 563,
   "institutions": [
     "Amova",
     "Apollo",
@@ -206,6 +206,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 25,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-semp3aegwqw-6caf0e",
+      "title": "PayPay Corp. (PAYP) 1Q Beat and Raise on back of GMV loan growth and margin improvement",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:19Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
