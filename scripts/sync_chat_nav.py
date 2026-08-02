@@ -137,6 +137,30 @@ def check(root: Path, fix: bool = False) -> bool:
 
     # Splice, preserving everything outside the wrapper byte-for-byte.
     updated = page_text.replace(current, canonical, 1)
+
+    # These writes are raw write_text, not lib.pages.write_page, and are listed in
+    # tests/test_site_shim._ALLOW for it. That is deliberate and it is the same
+    # call scripts/optimize_assets.py makes on this exact pair: write_page INJECTS
+    # the data-base shim, which would (a) write generated markup into a SOURCE file
+    # and (b) make templates/chat.html differ from site/chat.html, breaking the
+    # byte-match law that makes this a plain-copy page at all.
+    #
+    # An allowlist entry is a hole unless something still checks the thing it
+    # excuses, so check it here: the splice replaces only the <nav> element, so the
+    # shim (which lives in <head>) must survive untouched. If it ever does not,
+    # this refuses to write rather than shipping a page whose per-ticker fetches
+    # silently miss the R2 reroute.
+    from lib.pages import DBASE_MARKER
+
+    if page_text.count(DBASE_MARKER) != updated.count(DBASE_MARKER):
+        print(
+            f"::error title=chat-nav-sync shim lost::splicing the header changed the "
+            f"number of {DBASE_MARKER!r} shim tags in {PAGE} "
+            f"({page_text.count(DBASE_MARKER)} -> {updated.count(DBASE_MARKER)}). "
+            f"Refusing to write. The header splice must not touch <head>."
+        )
+        raise SystemExit(1)
+
     tpl_path.write_text(updated, encoding="utf-8")
     print(f"FIXED: templates/{PAGE} header re-rendered from {CANONICAL}")
     # Mirror to the site copy so the pair stays byte-identical (the sync law).

@@ -133,6 +133,23 @@ def test_the_header_is_the_whole_shared_chrome() -> None:
         assert needle in nav, f"site/chat.html's header lost {what}"
 
 
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_the_data_base_shim_survives_the_splice(page: Path) -> None:
+    """chat.html is exempt from the write_page guard, so check what it protects.
+
+    scripts/sync_chat_nav.py is listed in tests/test_site_shim._ALLOW because
+    write_page would inject the shim into a source file and break the pair's
+    byte-match. That exemption is only safe while the shim is actually still
+    there — without the R2 reroute the page's per-ticker fetches hit the
+    protected HTML origin and 401.
+    """
+    text = page.read_text(encoding="utf-8")
+    assert text.count("data-dbase") == 1, (
+        f"{page.parent.name}/{page.name} should carry exactly one data-base shim "
+        f"tag, found {text.count('data-dbase')}"
+    )
+
+
 def test_rendered_header_is_bilingual() -> None:
     """The generator must not ship the English-only t() stub.
 
