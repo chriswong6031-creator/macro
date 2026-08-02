@@ -372,7 +372,8 @@ fi
 # BioCatalyst B1 is a separate source-canonical lane.  A routine production
 # pull must never install, enable, or start it: doing so could turn a partially
 # configured evidence collector live.  Reconcile only a fully operator-installed
-# pair of units and a dedicated runtime. Dependencies are built in a versioned
+# worker pair and dedicated runtime. The root-only retention heartbeat units are
+# copied beside that pair but remain dormant unless separately armed. Dependencies are built in a versioned
 # staging virtualenv and verified before one atomic current-symlink swap. No
 # live runtime is ever pip-mutated, and a failed candidate leaves the previous
 # runtime and timer arming state untouched.
@@ -412,27 +413,53 @@ if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
 fi
 
 # Reconcile unit files only after the runtime referenced by the reviewed service
-# has passed verification. Preserve the timer's operator-controlled arming state.
+# has passed verification. Preserve both timers' operator-controlled arming state.
 BIOCATALYST_UNIT_UPDATED=0
 if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
    { ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service || \
-     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; }; then
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer || \
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service || \
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer; }; then
+	# Capture arming before copying a new unit. In particular, a newly introduced
+	# heartbeat timer must remain absent/disabled after reconciliation rather than
+	# becoming an accidental activation path merely because its source now exists.
+	BIOCATALYST_TIMER_WAS_ENABLED=0
+	BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=0
+	if [ -f /etc/systemd/system/macro-biocatalyst.timer ] && \
+		systemctl is-enabled --quiet macro-biocatalyst.timer; then
+		BIOCATALYST_TIMER_WAS_ENABLED=1
+	fi
+	if [ -f /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer ] && \
+		systemctl is-enabled --quiet macro-biocatalyst-activation-heartbeat.timer; then
+		BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=1
+	fi
 	if [ "$BIOCATALYST_RUNTIME_READY" -ne 1 ]; then
 		echo "macro-update: refusing BioCatalyst unit update — verified dedicated runtime unavailable" >&2
 	elif systemd-analyze verify "$APP_DIR/app/deploy/macro-biocatalyst.service" \
-		"$APP_DIR/app/deploy/macro-biocatalyst.timer"; then
+		"$APP_DIR/app/deploy/macro-biocatalyst.timer" \
+		"$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" \
+		"$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer"; then
 		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service; then
 			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service
 		fi
 		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; then
 			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer
 		fi
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service
+		fi
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer
+		fi
 		systemctl daemon-reload
 		BIOCATALYST_UNIT_UPDATED=1
 		RECONCILED=1
 		echo "macro-update: BioCatalyst systemd lane updated without changing its arming state"
-		if systemctl is-enabled --quiet macro-biocatalyst.timer; then
+		if [ "$BIOCATALYST_TIMER_WAS_ENABLED" -eq 1 ]; then
 			systemctl restart macro-biocatalyst.timer
+		fi
+		if [ "$BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED" -eq 1 ]; then
+			systemctl restart macro-biocatalyst-activation-heartbeat.timer
 		fi
 	else
 		echo "macro-update: refusing BioCatalyst unit update — systemd-analyze verify failed" >&2

@@ -26,6 +26,19 @@ def test_ownership_policy_is_one_writer_and_fail_closed() -> None:
     assert policy["unresolved_owner_behavior"] == "block_or_degrade"
     assert policy["duplicate_writer_behavior"] == "hard_fail"
 
+    activation = registry["runtime_controls"]["biocatalyst_prospective_accrual"]
+    assert activation["operational_owner"] == "mastermindx_platform_ops"
+    assert activation["implementation_state"] == "implemented_b4e_dark_until_external_seal"
+    assert activation["worker_gate"]["access"] == "root_write_worker_read_only"
+    assert (
+        activation["worker_gate"]["failure_behavior"]
+        == "quarantine_before_collection_store_or_pointer_mutation"
+    )
+    assert activation["credential_planes"]["control_token_visible_to_worker"] is False
+    assert activation["deprecated_non_authority"] == {
+        "BIOCATALYST_R2_RETENTION_CONFIRMED": "cannot authorize prospective collection"
+    }
+
 
 def test_biocatalyst_owns_only_declared_source_canonical_and_dark_regulatory_lanes() -> None:
     registrations = _registry()["registrations"]
@@ -139,8 +152,13 @@ def test_full_b0_remains_explicitly_open() -> None:
             "availability": "dark_until_runtime_retention_gate",
             "required_environment": {
                 "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
-                "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
+                "BIOCATALYST_R2_ACTIVATION_ID": "r2_activation_<24-hex>",
+                "BIOCATALYST_R2_ACCOUNT_ID": "<32-hex-cloudflare-account>",
             },
+            "required_root_artifacts": [
+                "/var/lib/macro-biocatalyst/activation/gate.json",
+                "/var/lib/macro-biocatalyst/activation/heartbeat.json",
+            ],
         },
         "exact_registry_record_diffs": {
             "canonical_registration": "trial_snapshot_and_exact_diff",
@@ -148,7 +166,12 @@ def test_full_b0_remains_explicitly_open() -> None:
             "availability": "dark_until_runtime_retention_gate",
             "required_environment": {
                 "BIOCATALYST_PROSPECTIVE_ENABLED": "1",
-                "BIOCATALYST_R2_RETENTION_CONFIRMED": "1",
+                "BIOCATALYST_R2_ACTIVATION_ID": "r2_activation_<24-hex>",
+                "BIOCATALYST_R2_ACCOUNT_ID": "<32-hex-cloudflare-account>",
             },
+            "required_root_artifacts": [
+                "/var/lib/macro-biocatalyst/activation/gate.json",
+                "/var/lib/macro-biocatalyst/activation/heartbeat.json",
+            ],
         },
     }

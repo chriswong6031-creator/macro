@@ -74,7 +74,9 @@ UMask=0077
 # provisioned. Once these paths exist, the same mounts are enforced at restart.
 ReadOnlyPaths=-/var/lib/macro-biocatalyst/public
 InaccessiblePaths=-/var/lib/macro-biocatalyst/state
+InaccessiblePaths=-/var/lib/macro-biocatalyst/activation
 InaccessiblePaths=-/etc/macro-biocatalyst.env
+InaccessiblePaths=-/etc/macro-biocatalyst-control.env
 
 [Install]
 WantedBy=multi-user.target
