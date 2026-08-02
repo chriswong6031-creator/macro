@@ -1970,6 +1970,13 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_government_revenue_projection
+        module: scripts.check_government_revenue_projection
+        note: >
+          Fail-closed publication fence over canonical/public JSON byte twins,
+          content-derived workspace identity, compact-shell semantic equality,
+          required UI markers, and the raw first-paint byte budget. Repeated
+          immediately before every render commit or push after any rebase/heal.
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]
@@ -2241,6 +2248,13 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_government_revenue_projection
+        module: scripts.check_government_revenue_projection
+        note: >
+          Fail-closed publication fence over canonical/public JSON byte twins,
+          content-derived workspace identity, compact-shell semantic equality,
+          required UI markers, and the raw first-paint byte budget. Repeated
+          immediately before every render commit or push after any rebase/heal.
       - id: check_template_site_sync_fix
         module: scripts.check_template_site_sync
         args: [--fix]

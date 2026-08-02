@@ -723,7 +723,9 @@ jobs:
         # externalize_css can create and prune content-addressed stylesheets. Validate the
         # exact post-normalization tree that would be committed, not only the pre-pass.
         if: ${{ success() }}
-        run: python3 scripts/check_site_asset_refs.py site
+        run: |
+          python3 scripts/check_site_asset_refs.py site
+          python -m scripts.check_government_revenue_projection
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
         # Fail closed: no cancelled run or failed guard is allowed to mutate main.
         if: ${{ success() }}
@@ -775,6 +777,7 @@ jobs:
           # The sync/runtime/marker heals above can replace pages after the standalone
           # finalized-tree step. Validate the exact healed tree represented by the index.
           python3 scripts/check_site_asset_refs.py site
+          python -m scripts.check_government_revenue_projection
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
           # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes
           # unstaged; a plain `pull --rebase` refuses on a dirty tree and silently failed
@@ -848,6 +851,7 @@ jobs:
               # its content-addressed asset (2026-08-01 crypto.html -> 94a4f2e3.css).
               # Recheck the actual post-rebase tree before creating a heal commit or push.
               python3 scripts/check_site_asset_refs.py site
+              python -m scripts.check_government_revenue_projection
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the
@@ -865,6 +869,14 @@ jobs:
                   echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded render commit only"
                 fi
               fi
+              if ! git diff --quiet HEAD -- \
+                site/government_revenue.html \
+                site/government-revenue-data/latest.json \
+                site/government-revenue-data/workspace.json; then
+                echo "::error title=government-revenue projection uncommitted::refusing to push a HEAD older than the validated procurement projection"
+                exit 1
+              fi
+              python -m scripts.check_government_revenue_projection
               if push_do; then echo "pushed engine-rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_procurement_workspace.v2.schema.json",
+  "title": "Government Procurement Workspace v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_contract", "as_of", "known_at", "generated_at",
+    "authority", "freshness", "coverage", "facets", "events", "next_cursor",
+    "total", "display_sort", "federation_contract", "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "government_procurement_workspace.v2"},
+    "event_contract": {"const": "government_procurement_event.v2"},
+    "as_of": {"type": "string", "format": "date"},
+    "known_at": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "bundle_id": {"type": "string", "pattern": "^grw2-[a-f0-9]{24}$"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "freshness": {"type": "object", "additionalProperties": true, "required": ["status", "opportunities", "recompetes", "mappings"]},
+    "coverage": {"type": "object", "additionalProperties": true},
+    "facets": {"type": "object", "additionalProperties": true},
+    "events": {
+      "type": "array", "maxItems": 500,
+      "items": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_procurement_event.v2.schema.json"}
+    },
+    "next_cursor": {"type": ["string", "null"]},
+    "total": {"type": "integer", "minimum": 0, "maximum": 500},
+    "display_sort": {
+      "type": "object", "additionalProperties": false,
+      "required": ["formula_version", "formula", "is_investment_rank"],
+      "properties": {
+        "formula_version": {"const": "govrev_display_priority.v1"},
+        "formula": {"type": "string"}, "is_investment_rank": {"const": false}
+      }
+    },
+    "federation_contract": {"const": "vertical_link.v1"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  },
+  "$defs": {
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true},
+        "can_rank": {"const": false}, "can_size": {"const": false},
+        "can_gate": {"const": false}, "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    }
+  }
+}
