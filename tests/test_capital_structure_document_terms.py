@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from hashlib import sha256
+import inspect
 import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
+import jsonschema
 from jsonschema import Draft202012Validator, FormatChecker
 
 import engine.capital_structure.document_terms as document_terms
@@ -373,12 +375,12 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         registration.semantic_bundle.entrypoints,
         registration.semantic_bundle.dispatch_roots,
     )
-    assert len(manifest) == 309
+    assert len(manifest) == 358
     assert manifest_sha256 == (
-        "20f55c5101bdea5e746090b77ba29f5e4272837070c6b631a8b73f9db65afc8b"
+        "bba07ba2b12560cd1f3959a80dc1876c3bedfd111ade14bd0fc9eb6221019962"
     )
     assert implementation_sha256 == (
-        "c8e7e225a9bdeabdb5292204c55c07cbc7bb42d2a7dec9081acebea901cfa05b"
+        "cf9570823a889fbb1c75e21d274450e3002aa49e05079278e9ef3bb50761f2a4"
     )
     assert len(manifest) == registration.semantic_bundle.dependency_count
     assert manifest_sha256 == registration.semantic_bundle.dependency_manifest_sha256
@@ -389,6 +391,7 @@ def test_released_parser_registry_has_closed_golden_semantic_bundle():
         ".hashlib.attribute.sha256", ".json.attribute.dumps", "runtime:python",
         "html.parser.HTMLParser.feed", "html.parser.HTMLParser.close",
         "html.parser.HTMLParser.goahead", "_markupbase.ParserBase.updatepos",
+        "_markupbase.ParserBase.reset", "CDATA_CONTENT_ELEMENTS",
     ):
         assert any(required in node for node in manifest), required
 
@@ -398,12 +401,12 @@ def test_released_authority_policy_has_independent_golden_closure():
     manifest, manifest_sha256, implementation_sha256 = document_terms._semantic_closure(
         policy.entrypoints,
     )
-    assert len(manifest) == 335
+    assert len(manifest) == 388
     assert manifest_sha256 == (
-        "e3a0ed6c8737bb43ef608bb4a45a94a3906c871ed2a98f6fa8eebaf4fb4e67c2"
+        "05ee20c56aba76a047feb45f60c49e560063d880c01685520766b600020eb8b4"
     )
     assert implementation_sha256 == (
-        "f874881551e7b6708be352cf09ec59c7ed2b5fe4a3be91ca94abb85c5f3ce5bf"
+        "6f583de17d77a9b0d3e59267d5ee4f8dc59bf30274acae9413d1f25182bb0c83"
     )
     assert len(manifest) == policy.dependency_count
     assert manifest_sha256 == policy.dependency_manifest_sha256
@@ -417,6 +420,12 @@ def test_released_authority_policy_has_independent_golden_closure():
         "._validate_document_term_source_authority_core",
     ):
         assert any(required in node for node in manifest), required
+    assert document_terms._SemanticClosureBuilder()._reference(
+        document_terms._DOCUMENT_TERM_SCHEMA_PATH
+    ) == {
+        "kind": "repo_path",
+        "value": "contracts/capital_structure_document_term_observation.schema.json",
+    }
 
 
 @pytest.mark.parametrize(
@@ -425,6 +434,10 @@ def test_released_authority_policy_has_independent_golden_closure():
         (document_terms.HTMLParser, "feed"),
         (document_terms.HTMLParser, "close"),
         (document_terms.HTMLParser, "goahead"),
+        (document_terms.HTMLParser, "__new__"),
+        (document_terms.HTMLParser, "__getattribute__"),
+        (document_terms.HTMLParser, "__setattr__"),
+        (document_terms.HTMLParser.__mro__[1], "reset"),
         (document_terms.HTMLParser.__mro__[1], "updatepos"),
         (document_terms._CellText, "handle_data"),
     ],
@@ -443,6 +456,28 @@ def test_parser_closure_rejects_mutated_inherited_dispatch_and_callbacks(
         return original(*args, **kwargs)
 
     monkeypatch.setattr(owner, method, altered_dispatch)
+    with pytest.raises(ValueError, match="closure mismatch"):
+        compile_document_term_records(
+            [manifest], source_reader=_reader(raw),
+            generated_at="2026-08-03T00:00:00Z",
+        )
+    with pytest.raises(ValueError, match="closure mismatch"):
+        validate_document_term_source_authority(
+            original_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_parser_closure_rejects_mutated_inherited_class_data(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    original_rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    monkeypatch.setattr(
+        document_terms.HTMLParser,
+        "CDATA_CONTENT_ELEMENTS",
+        (*document_terms.HTMLParser.CDATA_CONTENT_ELEMENTS, "audit-unused-element"),
+    )
     with pytest.raises(ValueError, match="closure mismatch"):
         compile_document_term_records(
             [manifest], source_reader=_reader(raw),
@@ -482,12 +517,128 @@ def test_post_import_self_consistent_registry_insertion_cannot_grant_authority(m
     for row in forged_rows:
         row["extraction"]["parser_version"] = forged_version
         row["observation_id"] = observation_id_for(row)
+
+    # Rebinding both apparent release globals still cannot alter the original
+    # mapping proxies captured by the production resolver.
+    monkeypatch.setattr(
+        document_terms,
+        "_RELEASED_PARSER_REGISTRY",
+        document_terms.MappingProxyType({
+            **dict(document_terms._RELEASED_PARSER_REGISTRY),
+            forged_version: forged,
+        }),
+    )
+    monkeypatch.setattr(
+        document_terms,
+        "_RELEASED_PARSER_IMPLEMENTATION_DIGESTS",
+        document_terms.MappingProxyType({
+            **dict(document_terms._RELEASED_PARSER_IMPLEMENTATION_DIGESTS),
+            forged_version: forged.implementation_sha256,
+        }),
+    )
     with pytest.raises(ValueError, match="parser_version is not registered"):
         validate_document_term_history(forged_rows)
     with pytest.raises(ValueError, match="parser_version is not registered"):
         validate_document_term_source_authority(
             forged_rows, source_manifests=[manifest], source_reader=_reader(raw),
         )
+
+
+def test_public_authority_rejects_rebound_released_parser_resolver(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    released = document_terms._PARSER_REGISTRY[
+        "capital-structure-document-terms/1.1.0"
+    ]
+    forged_version = "forged-document-terms/99.0.0"
+    forged = document_terms.ParserRegistration(
+        version=forged_version,
+        implementation_sha256=released.implementation_sha256,
+        extractor=released.extractor,
+        semantic_bundle=released.semantic_bundle,
+    )
+    forged_rows = deepcopy(rows)
+    for row in forged_rows:
+        row["extraction"]["parser_version"] = forged_version
+        row["observation_id"] = observation_id_for(row)
+
+    monkeypatch.setattr(document_terms, "_registered_parser", lambda _version: forged)
+    with pytest.raises(ValueError, match="resolver binding changed"):
+        validate_document_term_history(forged_rows)
+    with pytest.raises(ValueError, match="resolver binding changed"):
+        validate_document_term_source_authority(
+            forged_rows, source_manifests=[manifest], source_reader=_reader(raw),
+        )
+
+
+def test_public_document_trust_surfaces_expose_no_injectable_trust_parameters():
+    surfaces = (
+        document_terms.validate_observation_source_binding,
+        document_terms.validate_document_term_source_authority,
+        document_terms.validate_document_term_history,
+        document_terms.current_document_terms_as_of,
+        document_terms.compile_document_term_records,
+    )
+    forbidden = {
+        "_released_parser_resolver",
+        "_source_binding_core",
+        "_source_authority_core",
+        "_history_core",
+        "_current_core",
+        "_compiler_core",
+    }
+    for surface in surfaces:
+        assert forbidden.isdisjoint(inspect.signature(surface).parameters)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        document_terms.validate_document_term_history(
+            [], _released_parser_resolver=lambda _version: None,
+        )
+
+
+@pytest.mark.parametrize(
+    ("target", "surface"),
+    [
+        ("_validate_observation_source_binding_core", "source_binding"),
+        ("_validate_document_term_source_authority_core", "source_authority"),
+        ("_validate_document_term_history_core", "history"),
+        ("_current_document_terms_as_of_core", "current"),
+        ("_compile_document_term_records_core", "compile"),
+    ],
+)
+def test_public_trust_wrappers_reject_rebound_core_callables(
+    monkeypatch, target, surface,
+):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    monkeypatch.setattr(document_terms, target, lambda *args, **kwargs: rows)
+    calls = {
+        "source_binding": lambda: validate_observation_source_binding(
+            rows[0], manifest, raw,
+        ),
+        "source_authority": lambda: validate_document_term_source_authority(
+            rows, source_manifests=[manifest], source_reader=_reader(raw),
+        ),
+        "history": lambda: validate_document_term_history(rows),
+        "current": lambda: current_document_terms_as_of(
+            rows, "2026-08-04T00:00:00Z",
+        ),
+        "compile": lambda: compile_document_term_records(
+            [manifest], source_reader=_reader(raw),
+            generated_at="2026-08-03T00:00:00Z",
+        ),
+    }
+    with pytest.raises(
+        ValueError,
+        match="core binding changed|closure mismatch|authority policy binding changed",
+    ):
+        calls[surface]()
 
 
 def test_noop_retained_source_validator_cannot_bypass_sealed_authority_policy(monkeypatch):
@@ -545,6 +696,40 @@ def test_all_direct_record_trust_paths_enforce_closed_schema_and_zero_authority(
     )
     for call in calls:
         with pytest.raises(ValueError, match=error):
+            call()
+
+
+def test_public_admission_uses_captured_schema_validator_not_provider_alias(monkeypatch):
+    raw = FIXTURE.read_bytes()
+    manifest = _manifest(raw)
+    rows = compile_document_term_records(
+        [manifest], source_reader=_reader(raw), generated_at="2026-08-03T00:00:00Z",
+    )["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["observation_id"] = observation_id_for(tampered[0])
+
+    class NoopValidator:
+        @classmethod
+        def check_schema(cls, schema):
+            return None
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def iter_errors(self, record):
+            return iter(())
+
+    monkeypatch.setattr(jsonschema, "Draft202012Validator", NoopValidator)
+    calls = (
+        lambda: validate_document_term_history(tampered),
+        lambda: current_document_terms_as_of(tampered, "2026-08-04T00:00:00Z"),
+        lambda: validate_document_term_source_authority(
+            tampered, source_manifests=[manifest], source_reader=_reader(raw),
+        ),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="contract violation"):
             call()
 
 
@@ -638,6 +823,13 @@ def _move_outer_close_before_first_document(raw: bytes) -> bytes:
     )
 
 
+def _move_child_close_before_first_document(raw: bytes) -> bytes:
+    without_first_close = raw.replace(b"</DOCUMENT>\n", b"", 1)
+    return without_first_close.replace(
+        b"<DOCUMENT>\n", b"</DOCUMENT>\n<DOCUMENT>\n", 1,
+    )
+
+
 @pytest.mark.parametrize(
     ("mutation", "error"),
     [
@@ -656,6 +848,10 @@ def _move_outer_close_before_first_document(raw: bytes) -> bytes:
         (_move_header_before_sec_document, "canonical first line"),
         (_move_outer_close_before_first_document, "must terminate"),
         (lambda raw: raw.replace(b"<SEC-DOCUMENT>", b"<sec-document>", 1), "canonical SEC-DOCUMENT"),
+        (lambda raw: raw.replace(b"</DOCUMENT>\n", b"", 1), "DOCUMENT closer"),
+        (lambda raw: raw.replace(b"</DOCUMENT>\n", b"</DOCUMENT>\n</DOCUMENT>\n", 1), "DOCUMENT closer"),
+        (_move_child_close_before_first_document, "closer precedes"),
+        (lambda raw: raw.replace(b"</DOCUMENT>\n", b"</document>\n", 1), "DOCUMENT closer"),
     ],
 )
 def test_outer_sec_envelope_exploits_fail_before_observed_rows_can_compile(

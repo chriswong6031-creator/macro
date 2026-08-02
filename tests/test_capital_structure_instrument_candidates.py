@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from hashlib import sha256
+import inspect
 import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
+import jsonschema
 from jsonschema import Draft202012Validator, FormatChecker
 
 import engine.capital_structure.document_terms as document_terms
@@ -245,14 +247,107 @@ def test_candidate_authority_rejects_post_import_synthetic_parser_registration(m
         _compile(tampered, manifests=manifests, reader=reader)
 
 
+def test_candidate_authority_policy_has_release_golden_closure():
+    manifest, manifest_sha256, implementation_sha256 = (
+        instrument_candidates._semantic_closure(
+            instrument_candidates._CANDIDATE_AUTHORITY_ENTRYPOINTS,
+        )
+    )
+    assert len(manifest) == 150
+    assert manifest_sha256 == (
+        "33357e304f22bb5eec30cf1e735baf620f0acc196e02bcf75926f394ed957d0c"
+    )
+    assert implementation_sha256 == (
+        "f0433c13949146550368354504185544849bb63b3abd58f25f43c15588299e32"
+    )
+    for required in (
+        "._validate_candidate_term_structure",
+        "._validate_candidate_source_binding_core",
+        "._validate_candidate_term_history_core",
+        "._current_candidate_terms_as_of_core",
+        "._validate_document_term_authority_core",
+        "._compile_candidate_term_records_core",
+        "._candidate_term_contract_validator",
+    ):
+        assert any(required in node for node in manifest), required
+
+
+def test_public_candidate_trust_surfaces_expose_no_injectable_trust_parameters():
+    surfaces = (
+        instrument_candidates.validate_candidate_source_binding,
+        instrument_candidates.validate_candidate_term_structure,
+        instrument_candidates.validate_candidate_term_history,
+        instrument_candidates.current_candidate_terms_as_of,
+        instrument_candidates.validate_document_term_authority,
+        instrument_candidates.compile_candidate_term_records,
+    )
+    forbidden = {
+        "_trusted_source_authority",
+        "_document_term_authority_validator",
+        "_candidate_history_validator",
+        "_current_document_terms_selector",
+    }
+    for surface in surfaces:
+        assert forbidden.isdisjoint(inspect.signature(surface).parameters)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        instrument_candidates.validate_document_term_authority(
+            [], source_manifests=[], source_reader=lambda _manifest: b"",
+            _trusted_source_authority=lambda *args, **kwargs: [],
+        )
+
+
+def test_candidate_schema_provider_monkeypatch_cannot_admit_unknown_fields(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    rows = _compile(source, manifests=manifests, reader=reader)["observations"]
+    tampered = deepcopy(rows)
+    tampered[0]["unexpected_top_level"] = "smuggled"
+    tampered[0]["candidate_term_id"] = candidate_term_id_for(tampered[0])
+
+    class NoopValidator:
+        @classmethod
+        def check_schema(cls, schema):
+            return None
+
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def iter_errors(self, record):
+            return iter(())
+
+    monkeypatch.setattr(jsonschema, "Draft202012Validator", NoopValidator)
+    with pytest.raises(ValueError, match="contract violation"):
+        instrument_candidates.validate_candidate_term_structure(tampered)
+
+
 def test_candidate_compile_rejects_noop_imported_direct_authority(monkeypatch):
     source, manifests, reader = _direct_authority()
+
+    def noop(*args, **kwargs):
+        return [deepcopy(row) for row in source]
+
     monkeypatch.setattr(
         instrument_candidates,
         "validate_document_term_source_authority",
-        lambda *args, **kwargs: [deepcopy(row) for row in source],
+        noop,
+    )
+    monkeypatch.setattr(
+        instrument_candidates,
+        "_RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY",
+        noop,
     )
     with pytest.raises(ValueError, match="document-term authority binding changed"):
+        _compile(source, manifests=manifests, reader=reader)
+
+
+def test_candidate_compile_rejects_rebound_candidate_authority_gate(monkeypatch):
+    source, manifests, reader = _direct_authority()
+    monkeypatch.setattr(
+        instrument_candidates,
+        "validate_document_term_authority",
+        lambda *args, **kwargs: [deepcopy(row) for row in source],
+    )
+    with pytest.raises(ValueError, match="document-term gate binding changed"):
         _compile(source, manifests=manifests, reader=reader)
 
 

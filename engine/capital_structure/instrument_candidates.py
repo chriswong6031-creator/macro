@@ -18,12 +18,17 @@ from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import json
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 from engine.capital_structure.document_terms import (
     DOCUMENT_TERM_SCHEMA,
+    SemanticEntrypoint,
+    _semantic_closure,
     current_document_terms_as_of,
     validate_document_term_source_authority,
 )
@@ -35,24 +40,29 @@ _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY = validate_document_term_source_authori
 
 INSTRUMENT_CANDIDATE_TERM_SCHEMA = "capital_structure.instrument_candidate_term.v1"
 MAPPING_VERSION = "capital-structure-instrument-candidate-terms/1.0.0"
-_DIRECT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "capital_structure_document_term_observation.schema.json"
 _CANDIDATE_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "capital_structure_instrument_candidate_term.schema.json"
+_CANDIDATE_SCHEMA_SHA256 = (
+    "139401d9d0f24569363a9ea8198acffa4fd295cab89c150b69827a718a97cd7d"
+)
 
-_FAMILY_BY_DIRECT_CLASSIFICATION = {
-    "common_stock": "common_stock",
-    "preferred_stock": "preferred_stock",
-    "debt": "debt",
-    "units": "units",
-    "warrants": "warrant",
-    "other": "other",
-}
-_SUPPORTED_TERM_TYPES = {
-    "amount_to_be_registered": {"share_count", "principal_amount", "quantity"},
-    "proposed_maximum_offering_price_per_unit": {"price"},
-    "proposed_maximum_aggregate_offering_price": {"amount"},
-    "registration_fee": {"amount"},
-    "filing_fee_rate": {"rate"},
-}
+_FAMILY_BY_DIRECT_CLASSIFICATION = (
+    ("common_stock", "common_stock"),
+    ("preferred_stock", "preferred_stock"),
+    ("debt", "debt"),
+    ("units", "units"),
+    ("warrants", "warrant"),
+    ("other", "other"),
+)
+_SUPPORTED_TERM_TYPES = (
+    (
+        "amount_to_be_registered",
+        frozenset({"share_count", "principal_amount", "quantity"}),
+    ),
+    ("proposed_maximum_offering_price_per_unit", frozenset({"price"})),
+    ("proposed_maximum_aggregate_offering_price", frozenset({"amount"})),
+    ("registration_fee", frozenset({"amount"})),
+    ("filing_fee_rate", frozenset({"rate"})),
+)
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -84,20 +94,30 @@ def _iso(value: Any, field: str) -> str:
     return _parse_time(value, field).isoformat().replace("+00:00", "Z")
 
 
-def _load_schema(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+def _make_candidate_term_contract_validator(
+    schema_path: Path,
+    schema_sha256: str,
+    validator_class: type[Any],
+    format_checker_class: type[Any],
+) -> Callable[[], Any]:
+    """Capture the candidate schema and providers outside caller arguments."""
+    def _candidate_term_contract_validator() -> Any:
+        encoded = schema_path.read_bytes()
+        if not hmac.compare_digest(hashlib.sha256(encoded).hexdigest(), schema_sha256):
+            raise ValueError("instrument candidate-term schema release digest mismatch")
+        schema = json.loads(encoded.decode("utf-8"))
+        validator_class.check_schema(schema)
+        return validator_class(schema, format_checker=format_checker_class())
+
+    return _candidate_term_contract_validator
 
 
-def _validate_schema(record: Mapping[str, Any], schema: Mapping[str, Any], label: str) -> None:
-    from jsonschema import Draft202012Validator, FormatChecker
-
-    errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(record))
-    if errors:
-        joined = "; ".join(
-            f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
-            for error in errors[:5]
-        )
-        raise ValueError(f"{label} contract violation: {joined}")
+_candidate_term_contract_validator = _make_candidate_term_contract_validator(
+    _CANDIDATE_SCHEMA_PATH,
+    _CANDIDATE_SCHEMA_SHA256,
+    Draft202012Validator,
+    FormatChecker,
+)
 
 
 def direct_observation_sha256(record: Mapping[str, Any]) -> str:
@@ -165,7 +185,7 @@ def candidate_mapping_for_document_term(source: Mapping[str, Any]) -> dict[str, 
     term = source.get("term") or {}
     name = str(term.get("name") or "")
     term_type = str(term.get("term_type") or "")
-    if term_type not in _SUPPORTED_TERM_TYPES.get(name, set()):
+    if term_type not in dict(_SUPPORTED_TERM_TYPES).get(name, frozenset()):
         return {
             "mapping_version": MAPPING_VERSION,
             "family": "unknown",
@@ -183,7 +203,7 @@ def candidate_mapping_for_document_term(source: Mapping[str, Any]) -> dict[str, 
             "supply_role": "unknown",
             "state": {"disposition": "deferred", "reason": "missing_security_row"},
         }
-    family = _FAMILY_BY_DIRECT_CLASSIFICATION.get(classification)
+    family = dict(_FAMILY_BY_DIRECT_CLASSIFICATION).get(classification)
     if family is None:
         return {
             "mapping_version": MAPPING_VERSION,
@@ -234,7 +254,9 @@ def _embedded_mapping_source(record: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_candidate_source_binding(record: Mapping[str, Any], source: Mapping[str, Any]) -> None:
+def _validate_candidate_source_binding_core(
+    record: Mapping[str, Any], source: Mapping[str, Any],
+) -> None:
     """Prove a candidate remains an exact projection of one direct source row.
 
     The candidate ledger keeps copied evidence for queryability, but that copy is
@@ -282,6 +304,27 @@ def validate_candidate_source_binding(record: Mapping[str, Any], source: Mapping
         raise ValueError("instrument candidate-term mapping is detached from its direct observation")
 
 
+def _make_validate_candidate_source_binding(
+    policy_validator: Callable[[], None],
+    source_binding_core: Callable[[Mapping[str, Any], Mapping[str, Any]], None],
+) -> Callable[[Mapping[str, Any], Mapping[str, Any]], None]:
+    def validate_candidate_source_binding(
+        record: Mapping[str, Any], source: Mapping[str, Any],
+    ) -> None:
+        """Prove a candidate remains an exact projection of one direct row."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if (
+            globals().get("_validate_candidate_source_binding_core")
+            is not source_binding_core
+        ):
+            raise ValueError("instrument candidate source-binding core changed")
+        policy_validator()
+        source_binding_core(record, source)
+
+    return validate_candidate_source_binding
+
+
 def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
     """Validate candidate-local shape, IDs, and correction chains only.
 
@@ -291,12 +334,24 @@ def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> 
     evidence, direct-value, or source-receipt authority.  Public validation and
     all PIT reads bind these rows to verified direct observations below.
     """
-    schema = _load_schema(_CANDIDATE_SCHEMA_PATH)
+    validator = _candidate_term_contract_validator()
     by_id: set[str] = set()
     by_logical: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for index, raw in enumerate(records):
         record = dict(raw)
-        _validate_schema(record, schema, f"instrument candidate-term row {index}")
+        errors = sorted(
+            validator.iter_errors(record),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+        if errors:
+            joined = "; ".join(
+                f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: "
+                f"{error.message}"
+                for error in errors[:5]
+            )
+            raise ValueError(
+                f"instrument candidate-term row {index} contract violation: {joined}"
+            )
         candidate_id = str(record.get("candidate_term_id") or "")
         if candidate_id != candidate_term_id_for(record):
             raise ValueError(f"instrument candidate-term row {index} candidate_term_id digest mismatch")
@@ -356,14 +411,22 @@ def _validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> 
                 raise ValueError(f"instrument candidate-term {logical} correction is retroactive")
 
 
-def validate_candidate_term_structure(records: Sequence[Mapping[str, Any]]) -> None:
-    """Run untrusted candidate-local integrity checks without source authority.
+def _make_validate_candidate_term_structure(
+    policy_validator: Callable[[], None],
+    structure_core: Callable[[Sequence[Mapping[str, Any]]], None],
+) -> Callable[[Sequence[Mapping[str, Any]]], None]:
+    def validate_candidate_term_structure(
+        records: Sequence[Mapping[str, Any]],
+    ) -> None:
+        """Run sealed candidate-local integrity checks without source authority."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if globals().get("_validate_candidate_term_structure") is not structure_core:
+            raise ValueError("instrument candidate structure core binding changed")
+        policy_validator()
+        structure_core(records)
 
-    This helper is suitable only for safely decoding a ledger before the caller
-    supplies the direct-term authority needed for trusted validation.  It must
-    never be used to authorize semantic or PIT reads.
-    """
-    _validate_candidate_term_structure(records)
+    return validate_candidate_term_structure
 
 
 def _validate_candidate_term_history_against_sources(
@@ -378,15 +441,16 @@ def _validate_candidate_term_history_against_sources(
             raise ValueError(
                 f"instrument candidate-term row {index} source observation is absent from verified direct ledger"
             )
-        validate_candidate_source_binding(record, source)
+        _validate_candidate_source_binding_core(record, source)
 
 
-def validate_candidate_term_history(
+def _validate_candidate_term_history_core(
     records: Sequence[Mapping[str, Any]],
     *,
     document_term_observations: Sequence[Mapping[str, Any]],
     source_manifests: Sequence[Mapping[str, Any]],
     source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    document_term_authority_validator: Callable[..., list[dict[str, Any]]],
 ) -> None:
     """Validate candidates against the verified direct-term source authority.
 
@@ -395,7 +459,7 @@ def validate_candidate_term_history(
     direct fact against the validated direct ledger and its retained source
     bytes.
     """
-    direct_sources = validate_document_term_authority(
+    direct_sources = document_term_authority_validator(
         document_term_observations,
         source_manifests=source_manifests,
         source_reader=source_reader,
@@ -403,21 +467,44 @@ def validate_candidate_term_history(
     _validate_candidate_term_history_against_sources(records, direct_sources)
 
 
-def current_candidate_terms_as_of(
+def _make_validate_candidate_term_history(
+    policy_validator: Callable[[], None],
+    history_core: Callable[..., None],
+    document_term_authority_validator: Callable[..., list[dict[str, Any]]],
+) -> Callable[..., None]:
+    def validate_candidate_term_history(
+        records: Sequence[Mapping[str, Any]],
+        *,
+        document_term_observations: Sequence[Mapping[str, Any]],
+        source_manifests: Sequence[Mapping[str, Any]],
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    ) -> None:
+        """Validate candidates against sealed direct-term source authority."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if globals().get("_validate_candidate_term_history_core") is not history_core:
+            raise ValueError("instrument candidate history core binding changed")
+        if (
+            globals().get("validate_document_term_authority")
+            is not document_term_authority_validator
+        ):
+            raise ValueError("instrument candidate document-term gate binding changed")
+        policy_validator()
+        history_core(
+            records,
+            document_term_observations=document_term_observations,
+            source_manifests=source_manifests,
+            source_reader=source_reader,
+            document_term_authority_validator=document_term_authority_validator,
+        )
+
+    return validate_candidate_term_history
+
+
+def _current_candidate_terms_as_of_core(
     records: Sequence[Mapping[str, Any]],
     as_of: str,
-    *,
-    document_term_observations: Sequence[Mapping[str, Any]],
-    source_manifests: Sequence[Mapping[str, Any]],
-    source_reader: Callable[[Mapping[str, Any]], bytes | None],
 ) -> list[dict[str, Any]]:
-    """Return verified candidate versions visible strictly at system time."""
-    validate_candidate_term_history(
-        records,
-        document_term_observations=document_term_observations,
-        source_manifests=source_manifests,
-        source_reader=source_reader,
-    )
     cutoff = _parse_time(as_of, "as_of")
     visible: dict[str, Mapping[str, Any]] = {}
     for raw in records:
@@ -432,11 +519,47 @@ def current_candidate_terms_as_of(
     return [dict(visible[key]) for key in sorted(visible)]
 
 
-def validate_document_term_authority(
+def _make_current_candidate_terms_as_of(
+    policy_validator: Callable[[], None],
+    current_core: Callable[..., list[dict[str, Any]]],
+    candidate_history_validator: Callable[..., None],
+) -> Callable[..., list[dict[str, Any]]]:
+    def current_candidate_terms_as_of(
+        records: Sequence[Mapping[str, Any]],
+        as_of: str,
+        *,
+        document_term_observations: Sequence[Mapping[str, Any]],
+        source_manifests: Sequence[Mapping[str, Any]],
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    ) -> list[dict[str, Any]]:
+        """Return verified candidate versions visible strictly at system time."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if globals().get("_current_candidate_terms_as_of_core") is not current_core:
+            raise ValueError("instrument candidate current core binding changed")
+        if (
+            globals().get("validate_candidate_term_history")
+            is not candidate_history_validator
+        ):
+            raise ValueError("instrument candidate history gate binding changed")
+        policy_validator()
+        candidate_history_validator(
+            records,
+            document_term_observations=document_term_observations,
+            source_manifests=source_manifests,
+            source_reader=source_reader,
+        )
+        return current_core(records, as_of)
+
+    return current_candidate_terms_as_of
+
+
+def _validate_document_term_authority_core(
     records: Sequence[Mapping[str, Any]],
     *,
     source_manifests: Sequence[Mapping[str, Any]],
     source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    trusted_source_authority: Callable[..., list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
     """Verify direct-term rows against immutable manifests and retained bytes.
 
@@ -445,20 +568,44 @@ def validate_document_term_authority(
     Reuse the direct-term source validator before a candidate ledger is compiled
     or read, so a self-consistent edit to either Parquet file fails closed.
     """
-    if (
-        globals().get("validate_document_term_source_authority")
-        is not _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY
-    ):
-        raise ValueError("instrument candidate document-term authority binding changed")
-    schema = _load_schema(_DIRECT_SCHEMA_PATH)
     sources = [deepcopy(dict(raw)) for raw in records]
-    for index, source in enumerate(sources):
-        _validate_schema(source, schema, f"document-term input row {index}")
-    return _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY(
+    return trusted_source_authority(
         sources,
         source_manifests=source_manifests,
         source_reader=source_reader,
     )
+
+
+def _make_validate_document_term_authority(
+    policy_validator: Callable[[], None],
+    authority_core: Callable[..., list[dict[str, Any]]],
+    trusted_source_authority: Callable[..., list[dict[str, Any]]],
+) -> Callable[..., list[dict[str, Any]]]:
+    def validate_document_term_authority(
+        records: Sequence[Mapping[str, Any]],
+        *,
+        source_manifests: Sequence[Mapping[str, Any]],
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    ) -> list[dict[str, Any]]:
+        """Verify direct rows through the sealed document-term source gate."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if globals().get("_validate_document_term_authority_core") is not authority_core:
+            raise ValueError("instrument candidate document authority core changed")
+        if (
+            globals().get("validate_document_term_source_authority")
+            is not trusted_source_authority
+        ):
+            raise ValueError("instrument candidate document-term authority binding changed")
+        policy_validator()
+        return authority_core(
+            records,
+            source_manifests=source_manifests,
+            source_reader=source_reader,
+            trusted_source_authority=trusted_source_authority,
+        )
+
+    return validate_document_term_authority
 
 
 def _project_record(
@@ -523,7 +670,7 @@ def _project_record(
     return record
 
 
-def compile_candidate_term_records(
+def _compile_candidate_term_records_core(
     document_term_observations: Sequence[Mapping[str, Any]],
     *,
     source_manifests: Sequence[Mapping[str, Any]],
@@ -531,6 +678,8 @@ def compile_candidate_term_records(
     existing_candidate_terms: Sequence[Mapping[str, Any]] = (),
     generated_at: str,
     source_as_of: str | None = None,
+    document_term_authority_validator: Callable[..., list[dict[str, Any]]],
+    current_document_terms_selector: Callable[..., list[dict[str, Any]]],
 ) -> dict[str, Any]:
     """Project current direct terms into an append-only candidate-term ledger.
 
@@ -541,7 +690,7 @@ def compile_candidate_term_records(
     this compiler observes them.
     """
     generated = _iso(generated_at, "generated_at")
-    direct_sources = validate_document_term_authority(
+    direct_sources = document_term_authority_validator(
         document_term_observations,
         source_manifests=source_manifests,
         source_reader=source_reader,
@@ -565,13 +714,8 @@ def compile_candidate_term_records(
                 "historical source_as_of cannot write the canonical candidate ledger; "
                 "use a read-only isolated replay instead"
             )
-    if (
-        globals().get("current_document_terms_as_of")
-        is not _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF
-    ):
-        raise ValueError("instrument candidate current document-term binding changed")
     selected = (
-        _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF(direct_sources, source_cutoff)
+        current_document_terms_selector(direct_sources, source_cutoff)
         if direct_sources
         else []
     )
@@ -626,3 +770,168 @@ def compile_candidate_term_records(
         },
         "source_as_of": source_cutoff,
     }
+
+
+def _make_compile_candidate_term_records(
+    policy_validator: Callable[[], None],
+    compiler_core: Callable[..., dict[str, Any]],
+    document_term_authority_validator: Callable[..., list[dict[str, Any]]],
+    current_document_terms_selector: Callable[..., list[dict[str, Any]]],
+) -> Callable[..., dict[str, Any]]:
+    def compile_candidate_term_records(
+        document_term_observations: Sequence[Mapping[str, Any]],
+        *,
+        source_manifests: Sequence[Mapping[str, Any]],
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+        existing_candidate_terms: Sequence[Mapping[str, Any]] = (),
+        generated_at: str,
+        source_as_of: str | None = None,
+    ) -> dict[str, Any]:
+        """Project direct terms through sealed candidate and document gates."""
+        if globals().get("_validated_candidate_authority_policy") is not policy_validator:
+            raise ValueError("instrument candidate authority policy binding changed")
+        if globals().get("_compile_candidate_term_records_core") is not compiler_core:
+            raise ValueError("instrument candidate compiler core binding changed")
+        if (
+            globals().get("validate_document_term_authority")
+            is not document_term_authority_validator
+        ):
+            raise ValueError("instrument candidate document-term gate binding changed")
+        if (
+            globals().get("current_document_terms_as_of")
+            is not current_document_terms_selector
+        ):
+            raise ValueError("instrument candidate current document-term binding changed")
+        policy_validator()
+        return compiler_core(
+            document_term_observations,
+            source_manifests=source_manifests,
+            source_reader=source_reader,
+            existing_candidate_terms=existing_candidate_terms,
+            generated_at=generated_at,
+            source_as_of=source_as_of,
+            document_term_authority_validator=document_term_authority_validator,
+            current_document_terms_selector=current_document_terms_selector,
+        )
+
+    return compile_candidate_term_records
+
+
+def _candidate_authority_entrypoints() -> tuple[SemanticEntrypoint, ...]:
+    return (
+        SemanticEntrypoint("source_binding", _validate_candidate_source_binding_core),
+        SemanticEntrypoint("structure", _validate_candidate_term_structure),
+        SemanticEntrypoint("history", _validate_candidate_term_history_core),
+        SemanticEntrypoint("current_as_of", _current_candidate_terms_as_of_core),
+        SemanticEntrypoint(
+            "document_authority", _validate_document_term_authority_core,
+        ),
+        SemanticEntrypoint("compiler", _compile_candidate_term_records_core),
+    )
+
+
+# Release goldens are filled only when an intentional candidate authority
+# implementation or closed-schema change is reviewed.
+_CANDIDATE_AUTHORITY_DEPENDENCY_COUNT = 150
+_CANDIDATE_AUTHORITY_DEPENDENCY_MANIFEST_SHA256 = (
+    "33357e304f22bb5eec30cf1e735baf620f0acc196e02bcf75926f394ed957d0c"
+)
+_CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256 = (
+    "f0433c13949146550368354504185544849bb63b3abd58f25f43c15588299e32"
+)
+_CANDIDATE_AUTHORITY_ENTRYPOINTS = _candidate_authority_entrypoints()
+_CANDIDATE_AUTHORITY_ALIAS_BINDINGS = (
+    ("_validate_candidate_source_binding_core", _validate_candidate_source_binding_core),
+    ("_validate_candidate_term_structure", _validate_candidate_term_structure),
+    ("_validate_candidate_term_history_core", _validate_candidate_term_history_core),
+    ("_current_candidate_terms_as_of_core", _current_candidate_terms_as_of_core),
+    ("_validate_document_term_authority_core", _validate_document_term_authority_core),
+    ("_compile_candidate_term_records_core", _compile_candidate_term_records_core),
+)
+
+
+def _make_validated_candidate_authority_policy(
+    entrypoints: tuple[SemanticEntrypoint, ...],
+    alias_bindings: tuple[tuple[str, Callable[..., Any]], ...],
+    dependency_count: int,
+    dependency_manifest_sha256: str,
+    implementation_sha256: str,
+    semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
+    digest_comparator: Callable[[str, str], bool],
+) -> Callable[[], None]:
+    """Seal candidate trust roots and revalidate their closure on every use."""
+    def _validated_candidate_authority_policy() -> None:
+        if globals().get("_semantic_closure") is not semantic_closure:
+            raise ValueError("instrument candidate semantic-closure binding changed")
+        for name, expected in alias_bindings:
+            if globals().get(name) is not expected:
+                raise ValueError(
+                    f"instrument candidate authority policy binding changed: {name}"
+                )
+        try:
+            manifest, manifest_sha256, digest = semantic_closure(entrypoints)
+        except ValueError as exc:
+            raise ValueError("instrument candidate authority closure mismatch") from exc
+        if (
+            len(manifest) != dependency_count
+            or not digest_comparator(
+                manifest_sha256, dependency_manifest_sha256,
+            )
+            or not digest_comparator(digest, implementation_sha256)
+        ):
+            raise ValueError("instrument candidate authority closure mismatch")
+
+    return _validated_candidate_authority_policy
+
+
+_validated_candidate_authority_policy = _make_validated_candidate_authority_policy(
+    _CANDIDATE_AUTHORITY_ENTRYPOINTS,
+    _CANDIDATE_AUTHORITY_ALIAS_BINDINGS,
+    _CANDIDATE_AUTHORITY_DEPENDENCY_COUNT,
+    _CANDIDATE_AUTHORITY_DEPENDENCY_MANIFEST_SHA256,
+    _CANDIDATE_AUTHORITY_IMPLEMENTATION_SHA256,
+    _semantic_closure,
+    hmac.compare_digest,
+)
+
+validate_candidate_source_binding = _make_validate_candidate_source_binding(
+    _validated_candidate_authority_policy,
+    _validate_candidate_source_binding_core,
+)
+validate_candidate_term_structure = _make_validate_candidate_term_structure(
+    _validated_candidate_authority_policy,
+    _validate_candidate_term_structure,
+)
+validate_document_term_authority = _make_validate_document_term_authority(
+    _validated_candidate_authority_policy,
+    _validate_document_term_authority_core,
+    _RELEASED_DOCUMENT_TERM_SOURCE_AUTHORITY,
+)
+validate_candidate_term_history = _make_validate_candidate_term_history(
+    _validated_candidate_authority_policy,
+    _validate_candidate_term_history_core,
+    validate_document_term_authority,
+)
+current_candidate_terms_as_of = _make_current_candidate_terms_as_of(
+    _validated_candidate_authority_policy,
+    _current_candidate_terms_as_of_core,
+    validate_candidate_term_history,
+)
+compile_candidate_term_records = _make_compile_candidate_term_records(
+    _validated_candidate_authority_policy,
+    _compile_candidate_term_records_core,
+    validate_document_term_authority,
+    _RELEASED_CURRENT_DOCUMENT_TERMS_AS_OF,
+)
+
+
+def _self_check_candidate_authority_policy() -> None:
+    try:
+        _validated_candidate_authority_policy()
+    except ValueError as exc:
+        raise RuntimeError(
+            "instrument candidate authority policy startup self-check failed"
+        ) from exc
+
+
+_self_check_candidate_authority_policy()

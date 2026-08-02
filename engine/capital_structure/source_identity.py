@@ -33,6 +33,7 @@ _SEC_HEADER_CLOSE_LINE_RE = re.compile(
 _SEC_DOCUMENT_OPEN_LINE_RE = re.compile(
     br"^<DOCUMENT>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
 )
+_SEC_DOCUMENT_CHILD_CLOSE_RE = re.compile(br"</DOCUMENT>")
 _SEC_DOCUMENT_CLOSE_LINE_RE = re.compile(
     br"^</SEC-DOCUMENT>[ \t]*\r?$", _SEC_STRUCTURAL_LINE_FLAGS,
 )
@@ -66,6 +67,9 @@ _SEC_DOCUMENT_TOKEN_RE = re.compile(br"<[ \t]*SEC-DOCUMENT\b", re.IGNORECASE)
 _SEC_HEADER_OPEN_TOKEN_RE = re.compile(br"<[ \t]*SEC-HEADER\b", re.IGNORECASE)
 _SEC_HEADER_CLOSE_TOKEN_RE = re.compile(br"<[ \t]*/[ \t]*SEC-HEADER\b", re.IGNORECASE)
 _SEC_DOCUMENT_OPEN_TOKEN_RE = re.compile(br"<[ \t]*DOCUMENT\b", re.IGNORECASE)
+_SEC_DOCUMENT_CHILD_CLOSE_TOKEN_RE = re.compile(
+    br"<[ \t]*/[ \t]*DOCUMENT\b", re.IGNORECASE,
+)
 _SEC_DOCUMENT_CLOSE_TOKEN_RE = re.compile(
     br"<[ \t]*/[ \t]*SEC-DOCUMENT\b", re.IGNORECASE,
 )
@@ -252,6 +256,19 @@ def _complete_submission_header(
         raise ManifestIdentityError(
             "SEC complete-submission contains a non-canonical or missing DOCUMENT opener"
         )
+    document_close_tokens = list(_SEC_DOCUMENT_CHILD_CLOSE_TOKEN_RE.finditer(raw))
+    # EDGAR commonly appends ``</DOCUMENT>`` directly after ``</TEXT>`` rather
+    # than placing it on its own line. The structural token itself must still be
+    # exact uppercase ASCII, one-for-one with each canonical line opener.
+    document_close_matches = list(_SEC_DOCUMENT_CHILD_CLOSE_RE.finditer(raw))
+    if (
+        len(document_close_tokens) != len(document_close_matches)
+        or len(document_close_matches) != len(document_matches)
+    ):
+        raise ManifestIdentityError(
+            "SEC complete-submission must contain one canonical DOCUMENT closer "
+            "for each opener"
+        )
     first_document = document_matches[0]
     if any(match.start() < open_match.end() for match in document_matches):
         raise ManifestIdentityError("SEC DOCUMENT opener precedes the canonical SEC header")
@@ -259,6 +276,33 @@ def _complete_submission_header(
         raise ManifestIdentityError("SEC header is not followed by a canonical DOCUMENT opener")
     if any(match.start() >= outer_close.start() for match in document_matches):
         raise ManifestIdentityError("SEC DOCUMENT opener is outside the outer SEC-DOCUMENT envelope")
+    if any(
+        match.start() <= open_match.end() or match.start() >= outer_close.start()
+        for match in document_close_matches
+    ):
+        raise ManifestIdentityError(
+            "SEC DOCUMENT closer is outside the outer/header envelope"
+        )
+    document_events = sorted(
+        [(match.start(), "open") for match in document_matches]
+        + [(match.start(), "close") for match in document_close_matches]
+    )
+    document_depth = 0
+    for _position, event in document_events:
+        if event == "open":
+            if document_depth != 0:
+                raise ManifestIdentityError(
+                    "SEC DOCUMENT openers/closers are nested or out of order"
+                )
+            document_depth = 1
+        else:
+            if document_depth != 1:
+                raise ManifestIdentityError(
+                    "SEC DOCUMENT closer precedes its opener"
+                )
+            document_depth = 0
+    if document_depth != 0:
+        raise ManifestIdentityError("SEC DOCUMENT opener lacks its ordered closer")
     if close_matches:
         close_match = close_matches[0]
         if not open_match.end() <= close_match.start() < first_document.start():

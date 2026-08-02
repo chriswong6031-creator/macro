@@ -32,6 +32,8 @@ import sys
 from types import CodeType, MappingProxyType, ModuleType
 from typing import Any
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 from engine.capital_structure.event_spine import make_stable_span
 from engine.capital_structure.source_identity import (
     validate_manifest_content_binding,
@@ -146,8 +148,9 @@ _DENOMINATED_RATE_RE = re.compile(
     re.IGNORECASE,
 )
 _BYTE_LOCATOR_RE = re.compile(r"bytes:(\d+)-(\d+)$")
+_SEMANTIC_REPO_ROOT = Path(__file__).resolve().parents[2]
 _DOCUMENT_TERM_SCHEMA_PATH = (
-    Path(__file__).resolve().parents[2]
+    _SEMANTIC_REPO_ROOT
     / "contracts"
     / "capital_structure_document_term_observation.schema.json"
 )
@@ -228,17 +231,26 @@ def _assert_zero_authority(value: Any, *, path: str = "<root>") -> None:
             _assert_zero_authority(item, path=f"{path}[{index}]")
 
 
-def _document_term_contract_validator() -> Any:
-    """Load only the release-pinned closed schema used at trust boundaries."""
-    from jsonschema import Draft202012Validator, FormatChecker
+def _make_document_term_contract_validator(
+    validator_class: type[Any], format_checker_class: type[Any],
+) -> Callable[[], Any]:
+    """Capture validator providers in cells callers cannot override by keyword."""
+    def _document_term_contract_validator() -> Any:
+        """Load only the release-pinned closed schema used at trust boundaries."""
+        encoded = _DOCUMENT_TERM_SCHEMA_PATH.read_bytes()
+        digest = hashlib.sha256(encoded).hexdigest()
+        if not hmac.compare_digest(digest, _DOCUMENT_TERM_SCHEMA_SHA256):
+            raise ValueError("document-term observation schema release digest mismatch")
+        schema = json.loads(encoded.decode("utf-8"))
+        validator_class.check_schema(schema)
+        return validator_class(schema, format_checker=format_checker_class())
 
-    encoded = _DOCUMENT_TERM_SCHEMA_PATH.read_bytes()
-    digest = hashlib.sha256(encoded).hexdigest()
-    if not hmac.compare_digest(digest, _DOCUMENT_TERM_SCHEMA_SHA256):
-        raise ValueError("document-term observation schema release digest mismatch")
-    schema = json.loads(encoded.decode("utf-8"))
-    Draft202012Validator.check_schema(schema)
-    return Draft202012Validator(schema, format_checker=FormatChecker())
+    return _document_term_contract_validator
+
+
+_document_term_contract_validator = _make_document_term_contract_validator(
+    Draft202012Validator, FormatChecker,
+)
 
 
 def _validate_document_term_records_contract(
@@ -1194,7 +1206,13 @@ class _SemanticClosureBuilder:
         if isinstance(value, (float, complex, Decimal)):
             return {"kind": type(value).__name__, "value": str(value)}
         if isinstance(value, Path):
-            return {"kind": "path", "value": str(value)}
+            try:
+                relative = value.resolve().relative_to(_SEMANTIC_REPO_ROOT)
+            except ValueError as exc:
+                raise ValueError(
+                    "document-term parser semantic closure path is outside repo root"
+                ) from exc
+            return {"kind": "repo_path", "value": relative.as_posix()}
         if isinstance(value, re.Pattern):
             pattern = value.pattern
             return {
@@ -1222,6 +1240,27 @@ class _SemanticClosureBuilder:
             if bound_self is not None and not isinstance(bound_self, ModuleType):
                 descriptor["bound_self"] = self._reference(bound_self)
             return descriptor
+        if inspect.ismethoddescriptor(value):
+            owner = getattr(value, "__objclass__", None)
+            return {
+                "kind": "method_descriptor",
+                "identity": _callable_identity(value),
+                "owner": _callable_identity(owner) if inspect.isclass(owner) else None,
+            }
+        if isinstance(value, property):
+            return {
+                "kind": "property",
+                "get": _callable_identity(value.fget) if value.fget else None,
+                "set": _callable_identity(value.fset) if value.fset else None,
+                "delete": _callable_identity(value.fdel) if value.fdel else None,
+            }
+        if inspect.isdatadescriptor(value):
+            owner = getattr(value, "__objclass__", None)
+            return {
+                "kind": "data_descriptor",
+                "identity": _callable_identity(value),
+                "owner": _callable_identity(owner) if inspect.isclass(owner) else None,
+            }
         if inspect.isclass(value):
             return {"kind": "class", "identity": _callable_identity(value)}
         if isinstance(value, (list, dict, set, bytearray)):
@@ -1484,13 +1523,65 @@ class _SemanticClosureBuilder:
             dynamic = self._mro_descriptor(receiver, dynamic_name)
             if dynamic is None:
                 continue
-            dynamic_value = dynamic[1]
+            dynamic_owner, dynamic_raw_value = dynamic
+            dynamic_value = (
+                dynamic_raw_value.__func__
+                if isinstance(dynamic_raw_value, (staticmethod, classmethod))
+                else dynamic_raw_value
+            )
+            self._put(
+                f"{key}.receiver_attribute.{dynamic_name}",
+                {
+                    "implementing_class": _callable_identity(dynamic_owner),
+                    "descriptor_kind": type(dynamic_raw_value).__name__,
+                    "value": self._reference(dynamic_value),
+                },
+            )
             if not (
-                inspect.isfunction(dynamic_value)
-                or isinstance(dynamic_value, (staticmethod, classmethod, property))
+                callable(dynamic_value) or isinstance(dynamic_value, property)
             ):
                 continue
             self._walk_dispatch_method(receiver, dynamic_name)
+
+        # Resolve zero-argument ``super()`` calls against the concrete receiver
+        # MRO. A same-named method may already have been visited through
+        # ordinary ``self`` dispatch, but the next implementation is distinct
+        # executable authority (for example HTMLParser.reset ->
+        # ParserBase.reset) and must be pinned separately.
+        if "super" in _loaded_global_names(function.__code__):
+            receiver_mro = receiver.__mro__
+            try:
+                next_owner_index = receiver_mro.index(implementing_class) + 1
+            except ValueError as exc:
+                raise ValueError(
+                    "document-term parser dispatch owner is outside receiver MRO: "
+                    f"{_callable_identity(implementing_class)}"
+                ) from exc
+            for super_name in sorted(set(function.__code__.co_names)):
+                for base in receiver_mro[next_owner_index:]:
+                    if super_name not in vars(base):
+                        continue
+                    super_raw_value = vars(base)[super_name]
+                    super_value = (
+                        super_raw_value.__func__
+                        if isinstance(super_raw_value, (staticmethod, classmethod))
+                        else super_raw_value
+                    )
+                    self._put(
+                        f"{key}.super_attribute.{_callable_identity(base)}.{super_name}",
+                        {
+                            "implementing_class": _callable_identity(base),
+                            "descriptor_kind": type(super_raw_value).__name__,
+                            "value": self._reference(super_value),
+                        },
+                    )
+                    if callable(super_value) or isinstance(
+                        super_value, property,
+                    ):
+                        self._walk_dispatch_method(
+                            receiver, super_name, owner=base,
+                        )
+                    break
 
         builtin_namespace = function.__globals__.get("__builtins__", builtins.__dict__)
         if isinstance(builtin_namespace, ModuleType):
@@ -1617,7 +1708,15 @@ def _parser_semantic_dispatch_roots() -> tuple[SemanticDispatchRoot, ...]:
         SemanticDispatchRoot(
             role="cell_html_runtime",
             receiver=_CellText,
-            methods=("__init__", "feed", "close", "text"),
+            methods=(
+                "__new__",
+                "__getattribute__",
+                "__setattr__",
+                "__init__",
+                "feed",
+                "close",
+                "text",
+            ),
         ),
     )
 
@@ -1626,15 +1725,16 @@ def _parser_semantic_dispatch_roots() -> tuple[SemanticDispatchRoot, ...]:
 # authority consults two separately immutable maps: a released implementation
 # registry and its independently pinned digest ledger. Runtime insertion into a
 # mutable test dictionary can therefore never mint parser authority.
-_PARSER_V1_1_0_DEPENDENCY_COUNT = 309
+_PARSER_V1_1_0_DEPENDENCY_COUNT = 358
 _PARSER_V1_1_0_DEPENDENCY_MANIFEST_SHA256 = (
-    "20f55c5101bdea5e746090b77ba29f5e4272837070c6b631a8b73f9db65afc8b"
+    "bba07ba2b12560cd1f3959a80dc1876c3bedfd111ade14bd0fc9eb6221019962"
 )
 _RELEASED_PARSER_IMPLEMENTATION_DIGESTS = MappingProxyType({
     "capital-structure-document-terms/1.1.0": (
-        "c8e7e225a9bdeabdb5292204c55c07cbc7bb42d2a7dec9081acebea901cfa05b"
+        "cf9570823a889fbb1c75e21d274450e3002aa49e05079278e9ef3bb50761f2a4"
     ),
 })
+_RELEASED_PARSER_VERSIONS = ("capital-structure-document-terms/1.1.0",)
 
 _RELEASED_PARSER_REGISTRY = MappingProxyType({
     "capital-structure-document-terms/1.1.0": ParserRegistration(
@@ -1689,21 +1789,48 @@ def _validate_parser_registration(registration: ParserRegistration) -> None:
         )
 
 
-def _registered_parser(version: Any) -> ParserRegistration:
-    raw = str(version or "")
-    expected_digest = _RELEASED_PARSER_IMPLEMENTATION_DIGESTS.get(raw)
-    registration = _RELEASED_PARSER_REGISTRY.get(raw)
-    if registration is None or expected_digest is None:
-        raise ValueError(f"document-term parser_version is not registered: {raw!r}")
-    if (
-        registration.version != raw
-        or not hmac.compare_digest(registration.implementation_sha256, expected_digest)
-    ):
-        raise ValueError(
-            f"document-term released parser registry mismatch for {raw}"
-        )
-    _validate_parser_registration(registration)
-    return registration
+def _make_registered_parser(
+    released_registry: Mapping[str, ParserRegistration],
+    released_digests: Mapping[str, str],
+    released_versions: tuple[str, ...],
+    registration_validator: Callable[[ParserRegistration], None],
+) -> Callable[[Any], ParserRegistration]:
+    """Seal release maps in lexical cells, outside caller-controlled arguments."""
+    def _registered_parser(version: Any) -> ParserRegistration:
+        """Resolve only the separately pinned immutable production release maps."""
+        if globals().get("_validate_parser_registration") is not registration_validator:
+            raise ValueError("document-term parser validator binding changed")
+        raw = str(version or "")
+        if (
+            tuple(released_registry) != released_versions
+            or tuple(released_digests) != released_versions
+        ):
+            raise ValueError("document-term released parser registry keyset mismatch")
+        expected_digest = released_digests.get(raw)
+        registration = released_registry.get(raw)
+        if registration is None or expected_digest is None:
+            raise ValueError(f"document-term parser_version is not registered: {raw!r}")
+        if (
+            registration.version != raw
+            or not hmac.compare_digest(
+                registration.implementation_sha256, expected_digest,
+            )
+        ):
+            raise ValueError(
+                f"document-term released parser registry mismatch for {raw}"
+            )
+        registration_validator(registration)
+        return registration
+
+    return _registered_parser
+
+
+_registered_parser = _make_registered_parser(
+    _RELEASED_PARSER_REGISTRY,
+    _RELEASED_PARSER_IMPLEMENTATION_DIGESTS,
+    _RELEASED_PARSER_VERSIONS,
+    _validate_parser_registration,
+)
 
 
 def _make_test_parser_lane(
@@ -1714,7 +1841,7 @@ def _make_test_parser_lane(
         raise ValueError("document-term test parser capability is invalid")
     by_version: dict[str, ParserRegistration] = {}
     for registration in registrations:
-        if registration.version in _RELEASED_PARSER_REGISTRY:
+        if registration.version in _RELEASED_PARSER_VERSIONS:
             raise ValueError("test parser lane cannot shadow a released parser")
         if registration.version in by_version:
             raise ValueError("test parser lane contains a duplicate parser version")
@@ -1752,24 +1879,41 @@ def _records_for_manifest_with_resolver(
     return registration.extractor(manifest, raw, registration.version)
 
 
-def _records_for_manifest(
-    manifest: Mapping[str, Any], raw: bytes | None, *, parser_version: str | None = None,
-) -> list[dict[str, Any]]:
-    """Re-derive one source with a released, version-pinned parser only."""
-    return _records_for_manifest_with_resolver(
-        manifest,
-        raw,
-        parser_version=PARSER_VERSION if parser_version is None else parser_version,
-        parser_resolver=_registered_parser,
-    )
+def _make_records_for_manifest(
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+) -> Callable[..., list[dict[str, Any]]]:
+    def _records_for_manifest(
+        manifest: Mapping[str, Any],
+        raw: bytes | None,
+        *,
+        parser_version: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Re-derive one source with a released, version-pinned parser only."""
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        return _records_for_manifest_with_resolver(
+            manifest,
+            raw,
+            parser_version=(
+                PARSER_VERSION if parser_version is None else parser_version
+            ),
+            parser_resolver=released_parser_resolver,
+        )
+
+    return _records_for_manifest
+
+
+_records_for_manifest = _make_records_for_manifest(_registered_parser)
 
 
 def _self_check_parser_registry() -> None:
-    if tuple(_RELEASED_PARSER_REGISTRY) != tuple(
-        _RELEASED_PARSER_IMPLEMENTATION_DIGESTS
+    if (
+        tuple(_RELEASED_PARSER_REGISTRY) != _RELEASED_PARSER_VERSIONS
+        or tuple(_RELEASED_PARSER_IMPLEMENTATION_DIGESTS)
+        != _RELEASED_PARSER_VERSIONS
     ):
         raise RuntimeError("document-term production parser registry is not release-exact")
-    for version in _RELEASED_PARSER_IMPLEMENTATION_DIGESTS:
+    for version in _RELEASED_PARSER_VERSIONS:
         try:
             _registered_parser(version)
         except ValueError as exc:
@@ -2008,17 +2152,43 @@ def _validate_observation_source_binding_core(
         )
 
 
-def validate_observation_source_binding(
-    record: Mapping[str, Any], manifest: Mapping[str, Any], raw: bytes | None,
-) -> None:
-    """Public released-parser source binding with per-use policy revalidation."""
-    policy = _validated_authority_policy()
-    _validate_document_term_records_contract(
-        [record], label="document-term source binding",
-    )
-    _validate_observation_source_binding_core(
-        record, manifest, raw, parser_resolver=_registered_parser, policy=policy,
-    )
+def _make_validate_observation_source_binding(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+    source_binding_core: Callable[..., None],
+    records_contract_validator: Callable[..., None],
+) -> Callable[..., None]:
+    """Build the public gate with trust dependencies sealed in closure cells."""
+    def validate_observation_source_binding(
+        record: Mapping[str, Any],
+        manifest: Mapping[str, Any],
+        raw: bytes | None,
+    ) -> None:
+        """Validate one row through the sealed released-parser source gate."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        if (
+            globals().get("_validate_observation_source_binding_core")
+            is not source_binding_core
+        ):
+            raise ValueError("document-term source-binding core binding changed")
+        if (
+            globals().get("_validate_document_term_records_contract")
+            is not records_contract_validator
+        ):
+            raise ValueError("document-term closed-contract binding changed")
+        policy = policy_validator()
+        records_contract_validator(
+            [record], label="document-term source binding",
+        )
+        source_binding_core(
+            record, manifest, raw,
+            parser_resolver=released_parser_resolver, policy=policy,
+        )
+
+    return validate_observation_source_binding
 
 
 def _validate_document_term_source_authority_core(
@@ -2067,24 +2237,47 @@ def _validate_document_term_source_authority_core(
     return sources
 
 
-def validate_document_term_source_authority(
-    records: Sequence[Mapping[str, Any]],
-    *,
-    source_manifests: Sequence[Mapping[str, Any]],
-    source_reader: Callable[[Mapping[str, Any]], bytes | None],
-) -> list[dict[str, Any]]:
-    """Validate a direct ledger through sealed released authority only."""
-    policy = _validated_authority_policy()
-    _validate_document_term_records_contract(
-        records, label="document-term source authority",
-    )
-    return _validate_document_term_source_authority_core(
-        records,
-        source_manifests=source_manifests,
-        source_reader=source_reader,
-        parser_resolver=_registered_parser,
-        policy=policy,
-    )
+def _make_validate_document_term_source_authority(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+    source_authority_core: Callable[..., list[dict[str, Any]]],
+    records_contract_validator: Callable[..., None],
+) -> Callable[..., list[dict[str, Any]]]:
+    """Build the public source authority without injectable trust arguments."""
+    def validate_document_term_source_authority(
+        records: Sequence[Mapping[str, Any]],
+        *,
+        source_manifests: Sequence[Mapping[str, Any]],
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+    ) -> list[dict[str, Any]]:
+        """Validate a direct ledger through sealed released authority only."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        if (
+            globals().get("_validate_document_term_source_authority_core")
+            is not source_authority_core
+        ):
+            raise ValueError("document-term source-authority core binding changed")
+        if (
+            globals().get("_validate_document_term_records_contract")
+            is not records_contract_validator
+        ):
+            raise ValueError("document-term closed-contract binding changed")
+        policy = policy_validator()
+        records_contract_validator(
+            records, label="document-term source authority",
+        )
+        return source_authority_core(
+            records,
+            source_manifests=source_manifests,
+            source_reader=source_reader,
+            parser_resolver=released_parser_resolver,
+            policy=policy,
+        )
+
+    return validate_document_term_source_authority
 
 
 def _validate_document_term_history_core(
@@ -2146,15 +2339,33 @@ def _validate_document_term_history_core(
                     )
 
 
-def validate_document_term_history(records: Sequence[Mapping[str, Any]]) -> None:
-    """Validate only closed-schema rows from immutable released parsers."""
-    _validated_authority_policy()
-    _validate_document_term_records_contract(
-        records, label="document-term history",
-    )
-    _validate_document_term_history_core(
-        records, parser_resolver=_registered_parser,
-    )
+def _make_validate_document_term_history(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+    history_core: Callable[..., None],
+    records_contract_validator: Callable[..., None],
+) -> Callable[..., None]:
+    """Build the public history gate without injectable trust arguments."""
+    def validate_document_term_history(
+        records: Sequence[Mapping[str, Any]],
+    ) -> None:
+        """Validate only closed-schema rows from immutable released parsers."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        if globals().get("_validate_document_term_history_core") is not history_core:
+            raise ValueError("document-term history core binding changed")
+        if (
+            globals().get("_validate_document_term_records_contract")
+            is not records_contract_validator
+        ):
+            raise ValueError("document-term closed-contract binding changed")
+        policy_validator()
+        records_contract_validator(records, label="document-term history")
+        history_core(records, parser_resolver=released_parser_resolver)
+
+    return validate_document_term_history
 
 
 def _current_document_terms_as_of_core(
@@ -2177,17 +2388,38 @@ def _current_document_terms_as_of_core(
     return [dict(visible[key]) for key in sorted(visible)]
 
 
-def current_document_terms_as_of(
-    records: Sequence[Mapping[str, Any]], as_of: str,
-) -> list[dict[str, Any]]:
-    """Return current released-parser facts after closed contract admission."""
-    _validated_authority_policy()
-    _validate_document_term_records_contract(
-        records, label="document-term current-as-of",
-    )
-    return _current_document_terms_as_of_core(
-        records, as_of, parser_resolver=_registered_parser,
-    )
+def _make_current_document_terms_as_of(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+    current_core: Callable[..., list[dict[str, Any]]],
+    records_contract_validator: Callable[..., None],
+) -> Callable[..., list[dict[str, Any]]]:
+    """Build the public PIT gate without injectable trust arguments."""
+    def current_document_terms_as_of(
+        records: Sequence[Mapping[str, Any]],
+        as_of: str,
+    ) -> list[dict[str, Any]]:
+        """Return current released-parser facts after closed contract admission."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        if globals().get("_current_document_terms_as_of_core") is not current_core:
+            raise ValueError("document-term current-as-of core binding changed")
+        if (
+            globals().get("_validate_document_term_records_contract")
+            is not records_contract_validator
+        ):
+            raise ValueError("document-term closed-contract binding changed")
+        policy_validator()
+        records_contract_validator(
+            records, label="document-term current-as-of",
+        )
+        return current_core(
+            records, as_of, parser_resolver=released_parser_resolver,
+        )
+
+    return current_document_terms_as_of
 
 
 def _compile_document_term_records_core(
@@ -2317,26 +2549,40 @@ def _compile_document_term_records_core(
     }
 
 
-def compile_document_term_records(
-    manifests: Sequence[Mapping[str, Any]],
-    *,
-    source_reader: Callable[[Mapping[str, Any]], bytes | None],
-    existing_observations: Sequence[Mapping[str, Any]] = (),
-    generated_at: str,
-    rebuild: bool = False,
-) -> dict[str, Any]:
-    """Compile with only the immutable released parser/policy registries."""
-    policy = _validated_authority_policy()
-    return _compile_document_term_records_core(
-        manifests,
-        source_reader=source_reader,
-        existing_observations=existing_observations,
-        generated_at=generated_at,
-        rebuild=rebuild,
-        parser_resolver=_registered_parser,
-        active_parser_version=PARSER_VERSION,
-        policy=policy,
-    )
+def _make_compile_document_term_records(
+    policy_validator: Callable[[], _AuthorityPolicy],
+    released_parser_resolver: Callable[[Any], ParserRegistration],
+    compiler_core: Callable[..., dict[str, Any]],
+) -> Callable[..., dict[str, Any]]:
+    """Build the public compiler without injectable trust arguments."""
+    def compile_document_term_records(
+        manifests: Sequence[Mapping[str, Any]],
+        *,
+        source_reader: Callable[[Mapping[str, Any]], bytes | None],
+        existing_observations: Sequence[Mapping[str, Any]] = (),
+        generated_at: str,
+        rebuild: bool = False,
+    ) -> dict[str, Any]:
+        """Compile with only the immutable released parser/policy registries."""
+        if globals().get("_validated_authority_policy") is not policy_validator:
+            raise ValueError("document-term authority policy validator binding changed")
+        if globals().get("_registered_parser") is not released_parser_resolver:
+            raise ValueError("document-term released parser resolver binding changed")
+        if globals().get("_compile_document_term_records_core") is not compiler_core:
+            raise ValueError("document-term compiler core binding changed")
+        policy = policy_validator()
+        return compiler_core(
+            manifests,
+            source_reader=source_reader,
+            existing_observations=existing_observations,
+            generated_at=generated_at,
+            rebuild=rebuild,
+            parser_resolver=released_parser_resolver,
+            active_parser_version=PARSER_VERSION,
+            policy=policy,
+        )
+
+    return compile_document_term_records
 
 
 def _test_lane_resolver(
@@ -2439,18 +2685,19 @@ def _authority_policy_entrypoints() -> tuple[SemanticEntrypoint, ...]:
             "source_authority", _validate_document_term_source_authority_core,
         ),
         SemanticEntrypoint("current_as_of", _current_document_terms_as_of_core),
+        SemanticEntrypoint("compiler", _compile_document_term_records_core),
     )
 
 
 # Release goldens are recalculated only when the authority implementation or its
 # closed schema intentionally changes. They are independent of parser-version
 # goldens so a mutable parser registration can never rewrite trust policy.
-_AUTHORITY_POLICY_DEPENDENCY_COUNT = 335
+_AUTHORITY_POLICY_DEPENDENCY_COUNT = 388
 _AUTHORITY_POLICY_DEPENDENCY_MANIFEST_SHA256 = (
-    "e3a0ed6c8737bb43ef608bb4a45a94a3906c871ed2a98f6fa8eebaf4fb4e67c2"
+    "05ee20c56aba76a047feb45f60c49e560063d880c01685520766b600020eb8b4"
 )
 _AUTHORITY_POLICY_IMPLEMENTATION_SHA256 = (
-    "f874881551e7b6708be352cf09ec59c7ed2b5fe4a3be91ca94abb85c5f3ce5bf"
+    "6f583de17d77a9b0d3e59267d5ee4f8dc59bf30274acae9413d1f25182bb0c83"
 )
 
 _AUTHORITY_POLICY = _AuthorityPolicy(
@@ -2478,6 +2725,8 @@ _AUTHORITY_POLICY = _AuthorityPolicy(
             "_validate_document_term_source_authority_core",
             _validate_document_term_source_authority_core,
         ),
+        ("_current_document_terms_as_of_core", _current_document_terms_as_of_core),
+        ("_compile_document_term_records_core", _compile_document_term_records_core),
     ),
     manifest_ledger_validator=validate_manifest_ledger,
     manifest_content_validator=validate_manifest_content_binding,
@@ -2485,32 +2734,77 @@ _AUTHORITY_POLICY = _AuthorityPolicy(
 )
 
 
-def _validated_authority_policy(
-    policy: _AuthorityPolicy = _AUTHORITY_POLICY,
-) -> _AuthorityPolicy:
-    """Recheck the sealed trust policy and all imported aliases before each use."""
-    for name, expected in policy.alias_bindings:
-        if globals().get(name) is not expected:
-            raise ValueError(
-                f"document-term authority policy binding changed: {name}"
+def _make_validated_authority_policy(
+    policy: _AuthorityPolicy,
+    semantic_closure: Callable[..., tuple[tuple[str, ...], str, str]],
+    digest_comparator: Callable[[str, str], bool],
+) -> Callable[[], _AuthorityPolicy]:
+    """Seal the policy object and integrity primitives outside call arguments."""
+    def _validated_authority_policy() -> _AuthorityPolicy:
+        """Recheck the sealed trust policy and imported aliases before each use."""
+        if globals().get("_semantic_closure") is not semantic_closure:
+            raise ValueError("document-term authority closure binding changed")
+        for name, expected in policy.alias_bindings:
+            if globals().get(name) is not expected:
+                raise ValueError(
+                    f"document-term authority policy binding changed: {name}"
+                )
+        try:
+            manifest, manifest_sha256, implementation_sha256 = semantic_closure(
+                policy.entrypoints,
             )
-    try:
-        manifest, manifest_sha256, implementation_sha256 = _semantic_closure(
-            policy.entrypoints,
-        )
-    except ValueError as exc:
-        raise ValueError("document-term authority policy closure mismatch") from exc
-    if (
-        len(manifest) != policy.dependency_count
-        or not hmac.compare_digest(
-            manifest_sha256, policy.dependency_manifest_sha256,
-        )
-        or not hmac.compare_digest(
-            implementation_sha256, policy.implementation_sha256,
-        )
-    ):
-        raise ValueError("document-term authority policy closure mismatch")
-    return policy
+        except ValueError as exc:
+            raise ValueError("document-term authority policy closure mismatch") from exc
+        if (
+            len(manifest) != policy.dependency_count
+            or not digest_comparator(
+                manifest_sha256, policy.dependency_manifest_sha256,
+            )
+            or not digest_comparator(
+                implementation_sha256, policy.implementation_sha256,
+            )
+        ):
+            raise ValueError("document-term authority policy closure mismatch")
+        return policy
+
+    return _validated_authority_policy
+
+
+_validated_authority_policy = _make_validated_authority_policy(
+    _AUTHORITY_POLICY, _semantic_closure, hmac.compare_digest,
+)
+
+validate_observation_source_binding = _make_validate_observation_source_binding(
+    _validated_authority_policy,
+    _registered_parser,
+    _validate_observation_source_binding_core,
+    _validate_document_term_records_contract,
+)
+validate_document_term_source_authority = (
+    _make_validate_document_term_source_authority(
+        _validated_authority_policy,
+        _registered_parser,
+        _validate_document_term_source_authority_core,
+        _validate_document_term_records_contract,
+    )
+)
+validate_document_term_history = _make_validate_document_term_history(
+    _validated_authority_policy,
+    _registered_parser,
+    _validate_document_term_history_core,
+    _validate_document_term_records_contract,
+)
+current_document_terms_as_of = _make_current_document_terms_as_of(
+    _validated_authority_policy,
+    _registered_parser,
+    _current_document_terms_as_of_core,
+    _validate_document_term_records_contract,
+)
+compile_document_term_records = _make_compile_document_term_records(
+    _validated_authority_policy,
+    _registered_parser,
+    _compile_document_term_records_core,
+)
 
 
 def _self_check_authority_policy() -> None:
