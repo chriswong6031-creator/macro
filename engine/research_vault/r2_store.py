@@ -1,7 +1,7 @@
 """research_vault.r2_store — object store for the PRIVATE research bucket.
 
 Two interchangeable backends behind one small interface
-(``get_bytes / put_bytes / list_prefix / exists / upload_time``):
+(``get_bytes / get_bytes_strict / put_bytes / list_prefix / exists / upload_time``):
 
   - :class:`R2Store` — boto3 wrapper on the private bucket ``R2_RESEARCH_BUCKET``.
     Reuses the account access key (env ``R2_ENDPOINT / R2_ACCESS_KEY_ID /
@@ -18,7 +18,11 @@ The masterplan (§4) keeps these keys in the private bucket:
     research_vault/<id>.pdf                    (promoted canonical PDF)
     research_vault/catalog.json, research_vault/corpus.sqlite
 
-Never raises on a missing object — get/exists return None/False. Fail-open.
+``get_bytes`` never raises on a missing object — get/exists return None/False.
+It remains deliberately fail-open for the existing ingest/read paths.
+``get_bytes_strict`` is the separate fail-closed primitive used where an
+immutable publication must not confuse an unavailable store with a genuinely
+absent object: it returns ``None`` only for an authoritative not-found result.
 """
 from __future__ import annotations
 
@@ -40,6 +44,18 @@ class Store(Protocol):
     def list_prefix(self, prefix: str) -> list[str]: ...
     def exists(self, key: str) -> bool: ...
     def upload_time(self, key: str) -> str | None: ...
+
+
+@runtime_checkable
+class StrictReadStore(Store, Protocol):
+    """An object store that supports fail-closed immutable-object reads.
+
+    Kept separate from :class:`Store` because the legacy protocol is used as a
+    runtime structural check by fail-open callers with deliberately smaller
+    custom store implementations.
+    """
+
+    def get_bytes_strict(self, key: str) -> bytes | None: ...
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +90,30 @@ def _r2_client():
                         aws_secret_access_key=sk, config=cfg)
 
 
+def _is_authoritative_r2_not_found(error: Exception) -> bool:
+    """Whether *error* is the S3/R2 not-found response we may safely soften.
+
+    The strict read path must not infer absence from a generic exception.  In
+    particular, a 403, timeout, malformed response, or credential failure is
+    operationally distinct from a key that R2 authoritatively says is absent.
+    ``ClientError`` is imported lazily so the local-only test/runtime path does
+    not acquire a boto3 dependency.
+    """
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        return False
+    if not isinstance(error, ClientError):
+        return False
+    response = getattr(error, "response", None)
+    if not isinstance(response, dict):
+        return False
+    details = response.get("Error")
+    if not isinstance(details, dict):
+        return False
+    return str(details.get("Code", "")) in {"404", "NoSuchKey", "NotFound"}
+
+
 class R2Store:
     """boto3-backed store for the private research bucket."""
 
@@ -94,6 +134,25 @@ class R2Store:
         except Exception as e:  # noqa: BLE001 — missing key / transient error
             log.debug("r2 get miss %s: %s", key, e)
             return None
+
+    def get_bytes_strict(self, key: str) -> bytes | None:
+        """Read an immutable object without converting operational failure to a miss.
+
+        ``None`` means R2 returned one of its explicit not-found ``ClientError``
+        codes (404, ``NoSuchKey``, or ``NotFound``).  Missing credentials, a
+        permission error, network/service failure, or body read failure all
+        propagate so snapshot publication cannot silently publish from an
+        incomplete view of the object store.
+        """
+        if not self.available:
+            raise RuntimeError("R2 store unavailable: missing bucket or credentials")
+        try:
+            response = self._s3.get_object(Bucket=self.bucket, Key=key)
+            return response["Body"].read()
+        except Exception as error:
+            if _is_authoritative_r2_not_found(error):
+                return None
+            raise
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
@@ -179,6 +238,20 @@ class LocalStore:
             return p.read_bytes() if p.is_file() else None
         except Exception as e:  # noqa: BLE001
             log.debug("local get miss %s: %s", key, e)
+            return None
+
+    def get_bytes_strict(self, key: str) -> bytes | None:
+        """Read a local object, softening only an actual missing-path result.
+
+        Unlike ``get_bytes``, unsafe keys and filesystem/read failures are not
+        folded into ``None``.  That preserves the lexical traversal guard in
+        :meth:`_p` and lets immutable snapshot callers fail closed when a local
+        backing volume becomes unreadable.
+        """
+        p = self._p(key)
+        try:
+            return p.read_bytes()
+        except FileNotFoundError:
             return None
 
     def put_bytes(self, key: str, data: bytes,

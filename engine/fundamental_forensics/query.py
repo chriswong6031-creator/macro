@@ -3985,7 +3985,7 @@ class BitemporalMetricQueryEngine:
     def __init__(
         self,
         ledger: RawFactLedger | Iterable[RawFactOccurrence],
-        registry: MetricRegistry,
+        registry: MetricRegistry | GovernanceBundle,
         *,
         entities: Mapping[str, str] | Iterable[QueryEntity] = (),
         filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]] | None = None,
@@ -3997,13 +3997,20 @@ class BitemporalMetricQueryEngine:
             # RawFactLedger owns the hard ``limit + 1`` materialization.  Do
             # not eagerly tuple an adversarial/non-terminating iterable first.
             self.ledger = RawFactLedger(ledger)
-        if not isinstance(registry, MetricRegistry):
-            raise TypeError("registry must be a MetricRegistry")
-        self.registry = registry
+        if isinstance(registry, MetricRegistry):
+            self.registry: MetricRegistry | None = registry
+            self._frozen_governance_bundle: GovernanceBundle | None = None
+        elif isinstance(registry, GovernanceBundle):
+            # A durable query snapshot owns the exact governance receipt it
+            # was materialized under. It must be replayable even when the
+            # live registry is unavailable or has subsequently changed.
+            self.registry = None
+            self._frozen_governance_bundle = registry
+        else:
+            raise TypeError("registry must be a MetricRegistry or GovernanceBundle")
         self.bounds = bounds or QueryBounds()
         if not isinstance(self.bounds, QueryBounds):
             raise TypeError("bounds must be QueryBounds")
-        self._governance_bundle_by_recorded_at: dict[datetime, GovernanceBundle] = {}
         self._entities = self._normalize_entities(entities)
         # Immutable indexes make a matrix query proportional to the requested
         # cells and their matching fact groups, not to all ledger events for
@@ -4109,11 +4116,69 @@ class BitemporalMetricQueryEngine:
         projection therefore derives every catalog/pack and per-rule digest
         exclusively from definitions whose own availability clock is visible.
         """
+        frozen = self._frozen_governance_bundle
+        if frozen is not None:
+            return self._frozen_governance_projection(policy, frozen)
+        if self.registry is None:  # pragma: no cover - constructor invariant.
+            raise QueryValidationError("live governance registry is unavailable")
         try:
             bundle = self.registry.governance_bundle_at(policy.recorded_at)
         except (TypeError, ValueError) as exc:
             raise QueryValidationError(f"cannot construct governance bundle: {exc}") from exc
-        self._governance_bundle_by_recorded_at[policy.recorded_at] = bundle
+        return self._projection_from_governance_bundle(policy, bundle)
+
+    def _frozen_governance_projection(
+        self,
+        policy: QueryPolicy,
+        governance_bundle: GovernanceBundle,
+    ) -> _RegistryProjection:
+        """Project an already materialized governance receipt without live lookup.
+
+        Durable query snapshots persist the exact ``GovernanceBundle`` that
+        governed their matrix.  Replaying one must not consult the engine's
+        current registry: a later catalog/mapping/formula change is not part of
+        an older snapshot.  The bundle's own constructor verifies its complete
+        internal lane/contract graph and content ID; this boundary additionally
+        binds it to the query's system cutoff.
+        """
+        if not isinstance(governance_bundle, GovernanceBundle):
+            raise QueryValidationError("frozen governance_bundle must be a GovernanceBundle")
+        if governance_bundle.recorded_at != policy.recorded_at:
+            raise QueryValidationError(
+                "frozen governance bundle recorded_at must equal query policy.recorded_at"
+            )
+        return self._projection_from_governance_bundle(policy, governance_bundle)
+
+    def _projection_for(
+        self,
+        policy: QueryPolicy,
+        *,
+        governance_bundle: GovernanceBundle | None = None,
+    ) -> _RegistryProjection:
+        """Choose live cutoff governance or an explicitly frozen snapshot bundle."""
+        if governance_bundle is not None and not isinstance(governance_bundle, GovernanceBundle):
+            raise QueryValidationError("governance_bundle must be a GovernanceBundle")
+        frozen = self._frozen_governance_bundle
+        if frozen is not None:
+            if governance_bundle is not None and governance_bundle.content_id != frozen.content_id:
+                raise QueryValidationError(
+                    "query governance_bundle conflicts with the engine's frozen governance bundle"
+                )
+            return self._frozen_governance_projection(policy, frozen)
+        if governance_bundle is None:
+            return self._registry_projection(policy)
+        return self._frozen_governance_projection(policy, governance_bundle)
+
+    def _projection_from_governance_bundle(
+        self,
+        policy: QueryPolicy,
+        bundle: GovernanceBundle,
+    ) -> _RegistryProjection:
+        """Compile one validated bundle into the kernel's immutable lookup maps."""
+        if bundle.recorded_at != policy.recorded_at:
+            raise QueryValidationError(
+                "governance bundle recorded_at must equal query policy.recorded_at"
+            )
         catalog_visible = bundle.catalog is not None
         mapping_pack_visible = bundle.mapping_pack is not None
         formula_pack_visible = bundle.formula_pack is not None
@@ -4422,12 +4487,22 @@ class BitemporalMetricQueryEngine:
         self,
         concept_qname: str,
         policy: QueryPolicy | Mapping[str, Any],
+        *,
+        governance_bundle: GovernanceBundle | None = None,
     ) -> str:
-        """Return the sole cutoff-visible governed metric for a standard concept."""
+        """Return the sole governed metric for a concept under active governance.
+
+        Supplying a frozen bundle gives source-ingestion adapters the same
+        no-live-registry replay boundary as ``query_cell`` and
+        ``query_matrix``.
+        """
         parts = _qname_parts(_require_text(concept_qname, field_name="concept_qname"))
         if parts is None:
             raise UnsupportedConceptError("concept_qname must have taxonomy:concept form")
-        projection = self._registry_projection(self._policy_for(policy))
+        projection = self._projection_for(
+            self._policy_for(policy),
+            governance_bundle=governance_bundle,
+        )
         matches = sorted(
             {
                 metric_id
@@ -4450,11 +4525,24 @@ class BitemporalMetricQueryEngine:
         metric_id: str,
         period: PeriodRequest | TypedPeriod | Mapping[str, Any],
         policy: QueryPolicy | Mapping[str, Any],
+        *,
+        governance_bundle: GovernanceBundle | None = None,
     ) -> MetricCell:
+        """Evaluate one cell under live or explicitly frozen governance.
+
+        Passing ``GovernanceBundle`` makes that receipt authoritative for this
+        query and never looks up the live registry. Constructing the engine
+        with a bundle instead of a registry establishes the same frozen mode
+        for every query. In either case its ``recorded_at`` must exactly equal
+        the policy cutoff.
+        """
         entity = self._entity_for(ticker)
         selector = self._period_for(period)
         query_policy = self._policy_for(policy)
-        projection = self._registry_projection(query_policy)
+        projection = self._projection_for(
+            query_policy,
+            governance_bundle=governance_bundle,
+        )
         metric = _require_text(metric_id, field_name="metric_id")
         if metric not in projection.contracts_by_metric:
             raise UnsupportedMetricError(f"unsupported metric: {metric}")
@@ -4481,7 +4569,9 @@ class BitemporalMetricQueryEngine:
         metrics: Sequence[str],
         periods: Sequence[PeriodRequest | TypedPeriod | Mapping[str, Any]],
         policy: QueryPolicy | Mapping[str, Any],
+        governance_bundle: GovernanceBundle | None = None,
     ) -> MetricMatrix:
+        """Evaluate a bounded matrix under live or explicitly frozen governance."""
         raw_tickers = self._bounded_materialize(
             tickers, maximum=self.bounds.max_tickers, field_name="max_tickers"
         )
@@ -4495,7 +4585,10 @@ class BitemporalMetricQueryEngine:
         metric_ids = tuple(_require_text(item, field_name="metric_id") for item in raw_metrics)
         selectors = tuple(self._period_for(item) for item in raw_periods)
         query_policy = self._policy_for(policy)
-        projection = self._registry_projection(query_policy)
+        projection = self._projection_for(
+            query_policy,
+            governance_bundle=governance_bundle,
+        )
         self._validate_matrix_shape(entities, metric_ids, selectors)
         unsupported = sorted(set(metric_ids) - set(projection.contracts_by_metric))
         if unsupported:
@@ -4685,7 +4778,7 @@ class BitemporalMetricQueryEngine:
         unit: str | None,
         provenance: CellProvenance,
         dependency_cells: Sequence[MetricCell] = (),
-        governance_bundle: GovernanceBundle | None = None,
+        governance_bundle: GovernanceBundle,
         reason: str | None = None,
     ) -> MetricCell:
         dependencies = _bounded_collection(
@@ -4695,15 +4788,9 @@ class BitemporalMetricQueryEngine:
         )
         if any(not isinstance(item, MetricCell) for item in dependencies):
             raise QueryValidationError("formula dependency cells must be MetricCell receipts")
+        if not isinstance(governance_bundle, GovernanceBundle):  # pragma: no cover - private caller invariant.
+            raise QueryValidationError("cell construction requires a GovernanceBundle")
         bundle = governance_bundle
-        if bundle is None:
-            bundle = self._governance_bundle_by_recorded_at.get(
-                provenance.recorded_cutoff_at
-            )
-            if bundle is None:  # pragma: no cover - private caller invariant.
-                raise QueryValidationError(
-                    "cell construction requires an established cutoff governance bundle"
-                )
         node_by_id: dict[str, CellNode] = {}
         for dependency in dependencies:
             if dependency.governance_bundle.content_id != bundle.content_id:
@@ -4758,6 +4845,7 @@ class BitemporalMetricQueryEngine:
             reason = "governance unavailable at recorded_at cutoff"
             result = self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=metric_id,
                 period=period,
                 state=CellState.MISSING,
@@ -4774,6 +4862,7 @@ class BitemporalMetricQueryEngine:
             reason = f"formula dependency cycle at {metric_id}"
             result = self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5197,6 +5286,7 @@ class BitemporalMetricQueryEngine:
             reason = "governance unavailable at recorded_at cutoff"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.MISSING,
@@ -5209,6 +5299,7 @@ class BitemporalMetricQueryEngine:
         if contract_error:
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5228,6 +5319,7 @@ class BitemporalMetricQueryEngine:
             reason = "no governed concept alias applies to the requested taxonomy period"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.MISSING,
@@ -5243,6 +5335,7 @@ class BitemporalMetricQueryEngine:
             reason = "ambiguous governed alias priorities across visible mapping rules"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5275,6 +5368,7 @@ class BitemporalMetricQueryEngine:
                 reason = "visible source history exceeds the synchronous per-cell bound"
                 return self._new_cell(
                     entity=entity,
+                    governance_bundle=projection.governance_bundle,
                     metric_id=contract.metric_id,
                     period=period,
                     state=CellState.NOT_EVALUABLE,
@@ -5344,6 +5438,7 @@ class BitemporalMetricQueryEngine:
                     continue
                 return self._new_cell(
                     entity=entity,
+                    governance_bundle=projection.governance_bundle,
                     metric_id=contract.metric_id,
                     period=period,
                     state=selection.state,
@@ -5421,6 +5516,7 @@ class BitemporalMetricQueryEngine:
                 reason = "filing form is unavailable or outside the governed metric contract"
                 return self._new_cell(
                     entity=entity,
+                    governance_bundle=projection.governance_bundle,
                     metric_id=contract.metric_id,
                     period=period,
                     state=CellState.NOT_EVALUABLE,
@@ -5441,6 +5537,7 @@ class BitemporalMetricQueryEngine:
                 reason = "source numeric value is outside the query decimal contract"
                 return self._new_cell(
                     entity=entity,
+                    governance_bundle=projection.governance_bundle,
                     metric_id=contract.metric_id,
                     period=period,
                     state=CellState.NOT_EVALUABLE,
@@ -5457,6 +5554,7 @@ class BitemporalMetricQueryEngine:
                 )
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.VALUE,
@@ -5479,6 +5577,7 @@ class BitemporalMetricQueryEngine:
             source_ready_at, evidence_system_ready_at, evidence_ids = self._group_clocks(evidence)
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5514,6 +5613,7 @@ class BitemporalMetricQueryEngine:
         )
         return self._new_cell(
             entity=entity,
+            governance_bundle=projection.governance_bundle,
             metric_id=contract.metric_id,
             period=period,
             state=CellState.MISSING,
@@ -5613,6 +5713,7 @@ class BitemporalMetricQueryEngine:
             reason = "governance unavailable at recorded_at cutoff"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.MISSING,
@@ -5625,6 +5726,7 @@ class BitemporalMetricQueryEngine:
         if contract_error:
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5646,6 +5748,7 @@ class BitemporalMetricQueryEngine:
                 reason = "governance unavailable at recorded_at cutoff"
                 return self._new_cell(
                     entity=entity,
+                    governance_bundle=projection.governance_bundle,
                     metric_id=contract.metric_id,
                     period=period,
                     state=CellState.MISSING,
@@ -5673,6 +5776,7 @@ class BitemporalMetricQueryEngine:
             )
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5691,6 +5795,7 @@ class BitemporalMetricQueryEngine:
             )
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.MISSING,
@@ -5721,6 +5826,7 @@ class BitemporalMetricQueryEngine:
             reason = "incompatible_revision_basis: formula dependencies require one shared source accession/document"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5741,6 +5847,7 @@ class BitemporalMetricQueryEngine:
             reason = "division_by_zero"
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5756,6 +5863,7 @@ class BitemporalMetricQueryEngine:
             reason = str(exc)
             return self._new_cell(
                 entity=entity,
+                governance_bundle=projection.governance_bundle,
                 metric_id=contract.metric_id,
                 period=period,
                 state=CellState.NOT_EVALUABLE,
@@ -5769,6 +5877,7 @@ class BitemporalMetricQueryEngine:
             )
         return self._new_cell(
             entity=entity,
+            governance_bundle=projection.governance_bundle,
             metric_id=contract.metric_id,
             period=period,
             state=CellState.VALUE,

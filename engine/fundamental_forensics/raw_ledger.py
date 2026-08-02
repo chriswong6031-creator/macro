@@ -47,6 +47,13 @@ MAX_XBRL_ACCURACY_MAGNITUDE = 10_000
 MAX_DECIMAL_SOURCE_CHARS = 100_000
 MAX_DECIMAL_CANONICAL_CHARS = 100_000
 HARD_MAX_RAW_LEDGER_EVENTS = 1_000_000
+# Snapshot restores accept only the canonical JSON representation emitted by
+# this module.  Keep a per-fact ceiling as well as a ledger ceiling so a valid
+# event count cannot still turn an untrusted restore into a multi-gigabyte
+# allocation.
+HARD_MAX_RAW_FACT_WIRE_BYTES = 2 * 1024 * 1024
+HARD_MAX_RAW_LEDGER_WIRE_BYTES = 512 * 1024 * 1024
+MAX_SOURCE_SPAN_OFFSET = (1 << 63) - 1
 # Raw-ledger identities are retained rather than displayed verbatim, so they
 # need hard admission bounds even though their normal SEC/XBRL values are much
 # smaller.  The typed-member allowance deliberately remains generous: typed
@@ -332,6 +339,156 @@ def canonical_json(value: Any) -> str:
         ensure_ascii=False,
         allow_nan=False,
     )
+
+
+def _strict_wire_mapping(
+    value: Any,
+    *,
+    field_name: str,
+    expected_fields: frozenset[str],
+) -> dict[str, Any]:
+    """Read an untrusted JSON object once, with a finite key budget.
+
+    A normal decoded JSON object is a ``dict``, but accepting ``Mapping``
+    keeps the public decoder convenient for callers while preventing a custom
+    mapping from yielding an unbounded or duplicate field stream.
+    """
+    if not isinstance(value, Mapping):
+        raise TypeError(f"{field_name} must be a JSON object")
+    try:
+        iterator = iter(value.items())
+    except Exception as exc:
+        raise ValueError(f"{field_name} items cannot be iterated") from exc
+    admitted: dict[str, Any] = {}
+    while len(admitted) < len(expected_fields):
+        try:
+            pair = next(iterator)
+        except StopIteration:
+            break
+        except Exception as exc:
+            raise ValueError(f"{field_name} items failed during bounded read") from exc
+        try:
+            key, item = pair
+        except Exception as exc:
+            raise ValueError(f"{field_name} items must contain key/value pairs") from exc
+        if type(key) is not str or key not in expected_fields:
+            raise ValueError(f"{field_name} has an unsupported field")
+        if key in admitted:
+            raise ValueError(f"{field_name} has a duplicate field: {key}")
+        admitted[key] = item
+    try:
+        next(iterator)
+    except StopIteration:
+        pass
+    except Exception as exc:
+        raise ValueError(f"{field_name} items failed during bounded read") from exc
+    else:
+        raise ValueError(f"{field_name} has too many fields")
+    missing = expected_fields.difference(admitted)
+    if missing:
+        raise ValueError(f"{field_name} is missing canonical fields: {sorted(missing)!r}")
+    return admitted
+
+
+def _strict_wire_list(
+    value: Any,
+    *,
+    field_name: str,
+    maximum: int,
+) -> list[Any]:
+    """Admit a JSON array without trusting a sequence subclass iterator."""
+    if type(value) is not list:
+        raise TypeError(f"{field_name} must be a JSON array")
+    if len(value) > maximum:
+        raise ValueError(f"{field_name} exceeds bounded item count {maximum}")
+    return value
+
+
+def _strict_wire_required_text(
+    value: Any,
+    *,
+    field_name: str,
+    maximum_bytes: int = MAX_TEXT_CHARS,
+    strip: bool = True,
+) -> str:
+    if type(value) is not str:
+        raise TypeError(f"{field_name} must be a JSON string")
+    return _bounded_text(
+        value,
+        field_name=field_name,
+        maximum_bytes=maximum_bytes,
+        required=True,
+        strip=strip,
+    )
+
+
+def _strict_wire_optional_text(
+    value: Any,
+    *,
+    field_name: str,
+    maximum_bytes: int = MAX_TEXT_CHARS,
+    strip: bool = True,
+    allow_empty: bool = False,
+) -> str | None:
+    if value is None:
+        return None
+    if type(value) is not str:
+        raise TypeError(f"{field_name} must be a JSON string or null")
+    return _bounded_text(
+        value,
+        field_name=field_name,
+        maximum_bytes=maximum_bytes,
+        required=not allow_empty,
+        strip=strip,
+    )
+
+
+def _strict_wire_bool(value: Any, *, field_name: str) -> bool:
+    if type(value) is not bool:
+        raise TypeError(f"{field_name} must be a JSON boolean")
+    return value
+
+
+def _strict_wire_integer(value: Any, *, field_name: str) -> int:
+    if type(value) is not int:
+        raise TypeError(f"{field_name} must be a JSON integer")
+    return value
+
+
+def _strict_wire_dimension_mapping(
+    value: Any,
+    *,
+    field_name: str,
+    maximum_member_bytes: int,
+) -> dict[str, str]:
+    """Admit only the exact string-to-string shape emitted by FactContext."""
+    if type(value) is not dict:
+        raise TypeError(f"{field_name} must be a JSON object")
+    if len(value) > MAX_DIMENSION_PAIRS:
+        raise ValueError(f"{field_name} exceeds bounded dimension count")
+    for axis, member in value.items():
+        if type(axis) is not str:
+            raise TypeError(f"{field_name} axes must be canonical JSON strings")
+        if type(member) is not str:
+            raise TypeError(f"{field_name} members must be canonical JSON strings")
+        _strict_wire_required_text(axis, field_name=f"{field_name} axis")
+        _strict_wire_required_text(
+            member,
+            field_name=f"{field_name} member",
+            maximum_bytes=maximum_member_bytes,
+        )
+    return value
+
+
+def _canonical_wire_bytes(value: Any, *, field_name: str, maximum: int) -> bytes:
+    """Serialize a validated wire fragment with a precise byte admission cap."""
+    try:
+        encoded = canonical_json(value).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError) as exc:
+        raise ValueError(f"{field_name} is not canonical JSON") from exc
+    if len(encoded) > maximum:
+        raise ValueError(f"{field_name} exceeds bounded wire size {maximum}")
+    return encoded
 
 
 def stable_id(prefix: str, *parts: Any) -> str:
@@ -949,8 +1106,15 @@ class RawFactOccurrence:
                 start, end = self.source_span
             except (TypeError, ValueError) as exc:
                 raise ValueError("source_span must be a (start, end) pair") from exc
-            if not isinstance(start, int) or not isinstance(end, int) or start < 0 or end < start:
+            if (
+                type(start) is not int
+                or type(end) is not int
+                or start < 0
+                or end < start
+            ):
                 raise ValueError("source_span must be a non-negative increasing byte/DOM span")
+            if start > MAX_SOURCE_SPAN_OFFSET or end > MAX_SOURCE_SPAN_OFFSET:
+                raise ValueError("source_span exceeds bounded signed 64-bit offset")
             object.__setattr__(self, "source_span", (start, end))
         inline_sign = self.inline_sign
         if inline_sign is not None and (
@@ -1121,6 +1285,281 @@ class RawFactOccurrence:
             "revision_of": self.revision_of,
             "clocks": self.clocks.to_dict(),
         }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "RawFactOccurrence":
+        """Restore one occurrence from an already-decoded canonical mapping.
+
+        The raw ledger is an evidence boundary.  Derived identifiers, context
+        and unit semantic keys, source spans, and every availability clock are
+        verified by reconstructing the immutable occurrence.  Mapping inputs
+        cannot preserve duplicate JSON keys or original byte spelling; external
+        payloads must enter through :meth:`RawFactLedger.from_json_bytes`.
+        """
+        raw = _strict_wire_mapping(
+            value,
+            field_name="raw fact occurrence",
+            expected_fields=frozenset(
+                {
+                    "occurrence_id",
+                    "logical_key",
+                    "duplicate_group_key",
+                    "source",
+                    "concept_qname",
+                    "context",
+                    "unit",
+                    "dimensions_known",
+                    "source_occurrence_key",
+                    "raw_token",
+                    "parsed_value",
+                    "is_nil",
+                    "xml_lang",
+                    "decimals",
+                    "precision",
+                    "inline_format",
+                    "inline_sign",
+                    "inline_scale",
+                    "hidden",
+                    "source_span",
+                    "event_type",
+                    "revision_of",
+                    "clocks",
+                }
+            ),
+        )
+        source_raw = _strict_wire_mapping(
+            raw["source"],
+            field_name="raw fact source",
+            expected_fields=frozenset(
+                {
+                    "source",
+                    "entity_id",
+                    "accession",
+                    "document_id",
+                    "body_sha256",
+                    "source_url",
+                }
+            ),
+        )
+        source = SourceIdentity(
+            source=_strict_wire_required_text(source_raw["source"], field_name="source.source"),
+            entity_id=_strict_wire_required_text(source_raw["entity_id"], field_name="source.entity_id"),
+            accession=_strict_wire_required_text(source_raw["accession"], field_name="source.accession"),
+            document_id=_strict_wire_required_text(source_raw["document_id"], field_name="source.document_id"),
+            body_sha256=_strict_wire_required_text(source_raw["body_sha256"], field_name="source.body_sha256"),
+            source_url=_strict_wire_optional_text(source_raw["source_url"], field_name="source.source_url"),
+        )
+
+        context_raw = _strict_wire_mapping(
+            raw["context"],
+            field_name="raw fact context",
+            expected_fields=frozenset(
+                {
+                    "context_id",
+                    "entity_scheme",
+                    "entity_identifier",
+                    "instant",
+                    "start",
+                    "end",
+                    "explicit_dimensions",
+                    "typed_dimensions",
+                    "semantic_key",
+                }
+            ),
+        )
+        explicit_dimensions = _strict_wire_dimension_mapping(
+            context_raw["explicit_dimensions"],
+            field_name="context.explicit_dimensions",
+            maximum_member_bytes=MAX_TEXT_CHARS,
+        )
+        typed_dimensions = _strict_wire_dimension_mapping(
+            context_raw["typed_dimensions"],
+            field_name="context.typed_dimensions",
+            maximum_member_bytes=MAX_TYPED_DIMENSION_MEMBER_BYTES,
+        )
+        context = FactContext(
+            context_id=_strict_wire_required_text(context_raw["context_id"], field_name="context.context_id"),
+            entity_scheme=_strict_wire_required_text(context_raw["entity_scheme"], field_name="context.entity_scheme"),
+            entity_identifier=_strict_wire_required_text(
+                context_raw["entity_identifier"], field_name="context.entity_identifier"
+            ),
+            instant=_strict_wire_optional_text(context_raw["instant"], field_name="context.instant", strip=False),
+            start=_strict_wire_optional_text(context_raw["start"], field_name="context.start", strip=False),
+            end=_strict_wire_optional_text(context_raw["end"], field_name="context.end", strip=False),
+            explicit_dimensions=explicit_dimensions,
+            typed_dimensions=typed_dimensions,
+        )
+        if (
+            _strict_wire_required_text(context_raw["semantic_key"], field_name="context.semantic_key")
+            != context.semantic_key
+        ):
+            raise ValueError("context.semantic_key does not match canonical context identity")
+
+        unit_raw = raw["unit"]
+        unit: FactUnit | None
+        if unit_raw is None:
+            unit = None
+        else:
+            unit_fields = _strict_wire_mapping(
+                unit_raw,
+                field_name="raw fact unit",
+                expected_fields=frozenset(
+                    {
+                        "unit_id",
+                        "measures",
+                        "denominator_measures",
+                        "semantic_key",
+                    }
+                ),
+            )
+            measures = _strict_wire_list(
+                unit_fields["measures"],
+                field_name="unit.measures",
+                maximum=MAX_UNIT_MEASURES,
+            )
+            denominator_measures = _strict_wire_list(
+                unit_fields["denominator_measures"],
+                field_name="unit.denominator_measures",
+                maximum=MAX_UNIT_MEASURES,
+            )
+            for index, measure in enumerate(measures):
+                _strict_wire_required_text(measure, field_name=f"unit.measures[{index}]")
+            for index, measure in enumerate(denominator_measures):
+                _strict_wire_required_text(
+                    measure,
+                    field_name=f"unit.denominator_measures[{index}]",
+                )
+            unit = FactUnit(
+                unit_id=_strict_wire_required_text(unit_fields["unit_id"], field_name="unit.unit_id"),
+                measures=measures,
+                denominator_measures=denominator_measures,
+            )
+            if (
+                _strict_wire_required_text(unit_fields["semantic_key"], field_name="unit.semantic_key")
+                != unit.semantic_key
+            ):
+                raise ValueError("unit.semantic_key does not match canonical unit identity")
+
+        clocks_raw = _strict_wire_mapping(
+            raw["clocks"],
+            field_name="raw fact clocks",
+            expected_fields=frozenset(
+                {
+                    "accepted_at",
+                    "recorded_at",
+                    "mapping_available_at",
+                    "computed_at",
+                    "published_at",
+                }
+            ),
+        )
+        clocks = TemporalClocks(
+            accepted_at=_strict_wire_optional_text(clocks_raw["accepted_at"], field_name="clocks.accepted_at"),
+            recorded_at=_strict_wire_required_text(clocks_raw["recorded_at"], field_name="clocks.recorded_at"),
+            mapping_available_at=_strict_wire_optional_text(
+                clocks_raw["mapping_available_at"], field_name="clocks.mapping_available_at"
+            ),
+            computed_at=_strict_wire_optional_text(clocks_raw["computed_at"], field_name="clocks.computed_at"),
+            published_at=_strict_wire_optional_text(clocks_raw["published_at"], field_name="clocks.published_at"),
+        )
+
+        source_span_raw = raw["source_span"]
+        source_span: tuple[int, int] | None
+        if source_span_raw is None:
+            source_span = None
+        else:
+            source_span_parts = _strict_wire_list(
+                source_span_raw,
+                field_name="source_span",
+                maximum=2,
+            )
+            if len(source_span_parts) != 2:
+                raise ValueError("source_span must contain exactly two integers")
+            start = _strict_wire_integer(source_span_parts[0], field_name="source_span[0]")
+            end = _strict_wire_integer(source_span_parts[1], field_name="source_span[1]")
+            if start < 0 or end < start:
+                raise ValueError("source_span must be a non-negative increasing byte/DOM span")
+            if start > MAX_SOURCE_SPAN_OFFSET or end > MAX_SOURCE_SPAN_OFFSET:
+                raise ValueError("source_span exceeds bounded signed 64-bit offset")
+            source_span = (
+                start,
+                end,
+            )
+
+        result = cls(
+            source=source,
+            concept_qname=_strict_wire_required_text(raw["concept_qname"], field_name="concept_qname"),
+            context=context,
+            clocks=clocks,
+            unit=unit,
+            dimensions_known=_strict_wire_bool(raw["dimensions_known"], field_name="dimensions_known"),
+            source_occurrence_key=_strict_wire_optional_text(
+                raw["source_occurrence_key"], field_name="source_occurrence_key"
+            ),
+            raw_token=_strict_wire_optional_text(
+                raw["raw_token"],
+                field_name="raw_token",
+                maximum_bytes=MAX_RAW_TOKEN_BYTES,
+                strip=False,
+                allow_empty=True,
+            ),
+            parsed_value=_strict_wire_optional_text(
+                raw["parsed_value"],
+                field_name="parsed_value",
+                maximum_bytes=MAX_DECIMAL_SOURCE_CHARS,
+                strip=False,
+            ),
+            is_nil=_strict_wire_bool(raw["is_nil"], field_name="is_nil"),
+            xml_lang=_strict_wire_optional_text(
+                raw["xml_lang"],
+                field_name="xml_lang",
+                strip=False,
+                allow_empty=True,
+            ),
+            decimals=_strict_wire_optional_text(raw["decimals"], field_name="decimals"),
+            precision=_strict_wire_optional_text(raw["precision"], field_name="precision"),
+            inline_format=_strict_wire_optional_text(
+                raw["inline_format"],
+                field_name="inline_format",
+                strip=False,
+                allow_empty=True,
+            ),
+            inline_sign=_strict_wire_optional_text(raw["inline_sign"], field_name="inline_sign", strip=False),
+            inline_scale=(
+                _strict_wire_integer(raw["inline_scale"], field_name="inline_scale")
+                if raw["inline_scale"] is not None
+                else None
+            ),
+            hidden=_strict_wire_bool(raw["hidden"], field_name="hidden"),
+            source_span=source_span,
+            event_type=_strict_wire_required_text(raw["event_type"], field_name="event_type"),
+            revision_of=_strict_wire_optional_text(raw["revision_of"], field_name="revision_of"),
+            occurrence_id=_strict_wire_required_text(raw["occurrence_id"], field_name="occurrence_id"),
+        )
+        if (
+            _strict_wire_required_text(raw["logical_key"], field_name="logical_key")
+            != result.logical_key
+        ):
+            raise ValueError("logical_key does not match canonical raw fact identity")
+        if (
+            _strict_wire_required_text(raw["duplicate_group_key"], field_name="duplicate_group_key")
+            != result.duplicate_group_key
+        ):
+            raise ValueError("duplicate_group_key does not match canonical raw fact identity")
+
+        canonical_raw = _canonical_wire_bytes(
+            raw,
+            field_name="raw fact occurrence",
+            maximum=HARD_MAX_RAW_FACT_WIRE_BYTES,
+        )
+        canonical_result = _canonical_wire_bytes(
+            result.to_dict(),
+            field_name="canonical raw fact occurrence",
+            maximum=HARD_MAX_RAW_FACT_WIRE_BYTES,
+        )
+        if canonical_raw != canonical_result:
+            raise ValueError("raw fact occurrence is not canonical JSON wire data")
+        return result
 
 
 def _raw_duplicate_decimal_context() -> Context:
@@ -1860,6 +2299,113 @@ class RawFactLedger:
             "schema": self.schema,
             "events": [item.to_dict() for item in self.events],
         }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "RawFactLedger":
+        """Restore from an already-decoded canonical raw-ledger mapping.
+
+        This validates the exact value shape emitted by :meth:`to_dict`, but a
+        Python mapping cannot prove that the original JSON had unique keys or
+        canonical byte spelling.  Use :meth:`from_json_bytes` at every external
+        snapshot boundary.
+        """
+        raw = _strict_wire_mapping(
+            value,
+            field_name="raw fact ledger",
+            expected_fields=frozenset({"schema", "events"}),
+        )
+        schema = _strict_wire_required_text(
+            raw["schema"],
+            field_name="schema",
+            strip=False,
+        )
+        event_wires = _strict_wire_list(
+            raw["events"],
+            field_name="raw ledger events",
+            maximum=HARD_MAX_RAW_LEDGER_EVENTS,
+        )
+
+        # Start with the exact compact representation of an empty canonical
+        # ledger.  Each additional array member contributes its canonical
+        # bytes plus one comma after the first item, so no whole-ledger JSON
+        # string needs to be materialized before the aggregate size is known.
+        wire_bytes = len(canonical_json({"schema": schema, "events": []}).encode("utf-8"))
+        if wire_bytes > HARD_MAX_RAW_LEDGER_WIRE_BYTES:
+            raise ValueError(
+                "raw fact ledger exceeds bounded wire size "
+                f"{HARD_MAX_RAW_LEDGER_WIRE_BYTES}"
+            )
+        events: list[RawFactOccurrence] = []
+        for index, event_wire in enumerate(event_wires):
+            event = RawFactOccurrence.from_dict(event_wire)
+            wire_bytes += len(canonical_json(event.to_dict()).encode("utf-8"))
+            if index:
+                wire_bytes += 1
+            if wire_bytes > HARD_MAX_RAW_LEDGER_WIRE_BYTES:
+                raise ValueError(
+                    "raw fact ledger exceeds bounded wire size "
+                    f"{HARD_MAX_RAW_LEDGER_WIRE_BYTES}"
+                )
+            events.append(event)
+
+        # Constructor validation is deliberately retained: it checks ID
+        # uniqueness, revision parent order, economic-key preservation, and
+        # source-event lineage chronology after every event has passed its own
+        # canonical decoder.
+        return cls(events=tuple(events), schema=schema)
+
+    @classmethod
+    def from_json_bytes(cls, value: bytes) -> "RawFactLedger":
+        """Restore an external canonical JSON payload without lossy pre-decoding.
+
+        The byte ceiling is enforced before UTF-8 decoding or JSON parsing.
+        Every object is parsed with duplicate-key rejection, then the restored
+        ledger must serialize to the exact same canonical bytes.
+        """
+        if type(value) is not bytes:
+            raise TypeError("raw fact ledger payload must be bytes")
+        if len(value) > HARD_MAX_RAW_LEDGER_WIRE_BYTES:
+            raise ValueError(
+                "raw fact ledger exceeds bounded wire size "
+                f"{HARD_MAX_RAW_LEDGER_WIRE_BYTES} before parsing"
+            )
+        try:
+            text = value.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError("raw fact ledger payload is not valid UTF-8") from exc
+
+        def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            parsed: dict[str, Any] = {}
+            for key, item in pairs:
+                if key in parsed:
+                    raise ValueError(
+                        f"raw fact ledger JSON contains duplicate object key: {key}"
+                    )
+                parsed[key] = item
+            return parsed
+
+        def reject_nonfinite_constant(constant: str) -> Any:
+            raise ValueError(
+                f"raw fact ledger JSON contains non-finite number: {constant}"
+            )
+
+        try:
+            decoded = json.loads(
+                text,
+                object_pairs_hook=reject_duplicate_keys,
+                parse_constant=reject_nonfinite_constant,
+            )
+        except (json.JSONDecodeError, ValueError, RecursionError) as exc:
+            raise ValueError(f"raw fact ledger payload is invalid JSON: {exc}") from exc
+        ledger = cls.from_dict(decoded)
+        canonical = _canonical_wire_bytes(
+            ledger.to_dict(),
+            field_name="raw fact ledger",
+            maximum=HARD_MAX_RAW_LEDGER_WIRE_BYTES,
+        )
+        if value != canonical:
+            raise ValueError("raw fact ledger payload is not the exact canonical JSON bytes")
+        return ledger
 
 
 def select_vintage(
