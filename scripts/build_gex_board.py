@@ -448,6 +448,14 @@ def main() -> int:
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
     _write_archive_snapshot(manifest, config.data_dir())
 
+    # MSC R3.2/R3.3 — the cross-root positioning aggregate. Globs the gex_state dir
+    # (the exact file set the launchd R2 mirror serves per-root) into _index.json,
+    # which rides `git add site/` and the mirror's *.json glob with zero new
+    # transport. Non-fatal by contract: a failed aggregation leaves any prior
+    # index in place rather than blanking the screener/watchlist consumers.
+    from lib.gex_state_index import write_index as _write_gex_state_index
+    _write_gex_state_index(gex_state_dir)
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
