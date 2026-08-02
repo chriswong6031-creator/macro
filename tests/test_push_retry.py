@@ -289,6 +289,71 @@ def _git_output(repo: Path, *args: str, input_text: str | None = None) -> str:
     ).stdout.strip()
 
 
+def _untracked_collision_fixture(tmp_path: Path, *, collision: bool) -> tuple[Path, str]:
+    """A lane behind origin/main with either an exact local collision or a no-op."""
+    bare = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+    seed = tmp_path / "seed"
+    _init_repo(seed)
+    (seed / "README").write_text("seed")
+    _git_output(seed, "add", ".")
+    _git_output(seed, "commit", "-m", "seed")
+    _git_output(seed, "push", "-q", str(bare), "main")
+    lane, other = tmp_path / "lane", tmp_path / "other"
+    for repo in (lane, other):
+        subprocess.run(["git", "clone", "-q", str(bare), str(repo)], check=True)
+        _git_output(repo, "config", "user.email", "t@t")
+        _git_output(repo, "config", "user.name", "t")
+    path = "data/generated/cache name.json"
+    if collision:
+        target = other / path
+        target.parent.mkdir(parents=True)
+        target.write_text("main")
+        _git_output(other, "add", path)
+        _git_output(other, "commit", "-m", "track cache")
+        _git_output(other, "push", "-q", "origin", "main")
+        target = lane / path
+        target.parent.mkdir(parents=True)
+        target.write_text("local")
+    else:
+        (lane / "untracked only.txt").write_text("keep")
+    (lane / "site").mkdir()
+    (lane / "site" / "staged.html").write_text("staged render")
+    _git_output(lane, "add", "site/staged.html")
+    _git_output(lane, "fetch", "origin", "+refs/heads/main:refs/remotes/origin/main")
+    return lane, path
+
+
+def test_untracked_collision_helper_is_local_noop_without_a_collision(tmp_path):
+    lane, _ = _untracked_collision_fixture(tmp_path, collision=False)
+    runner_temp = tmp_path / "runner-temp"; runner_temp.mkdir()
+    r = run_sh(
+        'push_quarantine_untracked_collisions origin/main; echo "count=$PUSH_QUARANTINE_COUNT"',
+        env={"RUNNER_TEMP": str(runner_temp)},
+        cwd=lane,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "count=0" in r.stdout
+    assert (lane / "untracked only.txt").read_text() == "keep"
+    assert _git_output(lane, "diff", "--cached", "--name-only") == "site/staged.html"
+    assert list(runner_temp.iterdir()) == []
+
+
+def test_untracked_collision_helper_fails_closed_outside_actions(tmp_path):
+    lane, path = _untracked_collision_fixture(tmp_path, collision=True)
+    runner_temp = tmp_path / "runner-temp"; runner_temp.mkdir()
+    r = run_sh(
+        "push_quarantine_untracked_collisions origin/main",
+        env={"RUNNER_TEMP": str(runner_temp)},
+        cwd=lane,
+    )
+    assert r.returncode != 0
+    assert "refusing to relocate local work outside GitHub Actions" in r.stdout
+    assert (lane / path).read_text() == "local"
+    assert _git_output(lane, "diff", "--cached", "--name-only") == "site/staged.html"
+    assert list(runner_temp.iterdir()) == []
+
+
 def _object_is_local(repo: Path, oid: str) -> bool:
     loose = repo / ".git" / "objects" / oid[:2] / oid[2:]
     if loose.exists():
@@ -780,7 +845,7 @@ def _lane_block(lane: str, step_name: str, subs: dict) -> str:
     raise AssertionError(f"{lane}: step {step_name!r} not found")
 
 
-def _lane_fixture(tmp_path: Path, rejects: int = 0):
+def _lane_fixture(tmp_path: Path, rejects: int = 0, collision: bool = False):
     """A bare origin + a lane clone holding a fresh render + a racing lane that has
     already landed on main, so the lane's first push is stale."""
     bare = tmp_path / "origin.git"
@@ -794,6 +859,10 @@ def _lane_fixture(tmp_path: Path, rejects: int = 0):
     _init_repo(seed)
     (seed / "site").mkdir()
     (seed / "site" / "index.html").write_text("<html>old</html>")
+    if collision:
+        (seed / "site" / "upstream.html").write_text("<html>upstream old</html>")
+    (seed / "data").mkdir()
+    (seed / "data" / "ledger.json").write_text('{"canonical": true}')
     git(seed, "add", "."); git(seed, "commit", "-qm", "seed")
     git(seed, "push", "-q", str(bare), "main")
 
@@ -808,12 +877,27 @@ def _lane_fixture(tmp_path: Path, rejects: int = 0):
     (lane / "site" / "index.html").write_text("<html>FRESH RENDER</html>")
     (lane / "site" / "premiumdata").mkdir(parents=True, exist_ok=True)
     (lane / "site" / "premiumdata" / "special_situations.json").write_text('{"rows": 1121}')
-    # a throwaway data/ write — the step commits site/ ONLY (the nightly owns ledgers)
-    (lane / "data").mkdir(exist_ok=True)
+    # a tracked dirty ledger write — the step commits site/ ONLY, and the rebase must
+    # preserve it through autostash without ever staging it.
     (lane / "data" / "ledger.json").write_text('{"lane": "throwaway"}')
+    collision_paths = (
+        "data/news_translation/cache/6f6c96a40e19f66dde08026f960ff729b5aeef1a.json",
+        "data/news_translation/cache/name with spaces.json",
+    )
+    if collision:
+        for path in collision_paths:
+            target = lane / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(f"render-local:{path}")
 
     # a racing lane lands on main first
     (other / "other.txt").write_text("marketing-publish outbox run")
+    if collision:
+        (other / "site" / "upstream.html").write_text("<html>upstream newer</html>")
+        for path in collision_paths:
+            target = other / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(f"main-authoritative:{path}")
     git(other, "add", "."); git(other, "commit", "-qm", "other lane")
     git(other, "push", "-q", "origin", "main")
 
@@ -838,7 +922,7 @@ def _lane_fixture(tmp_path: Path, rejects: int = 0):
             exec {real_git} "$@"
             """))
         (stub / "git").chmod(0o755)
-    return bare, lane, stub
+    return bare, lane, stub, collision_paths
 
 
 def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool):
@@ -846,6 +930,7 @@ def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool
     runner_temp.mkdir(exist_ok=True)
     env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}",
            "GITHUB_WORKSPACE": str(REPO_ROOT), "GITHUB_STEP_SUMMARY": str(summary),
+           "GITHUB_ACTIONS": "true",
            "RUNNER_TEMP": str(runner_temp), "GITHUB_RUN_ID": "123",
            "GITHUB_RUN_ATTEMPT": "1"}
     if render_ok:
@@ -861,7 +946,7 @@ def test_render_lane_block_lands_the_render_over_a_racing_commit(tmp_path):
     block = _lane_block("render.yml", RENDER_STEP,
                         {"steps.pick.outputs.scope": "all",
                          "steps.pick.outputs.rendered_from": "deadbeef"})
-    bare, lane, stub = _lane_fixture(tmp_path)
+    bare, lane, stub, _ = _lane_fixture(tmp_path)
     summary = tmp_path / "summary.md"; summary.touch()
     r = _run_lane(block, lane, stub, summary, render_ok=True)
     assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
@@ -873,7 +958,9 @@ def test_render_lane_block_lands_the_render_over_a_racing_commit(tmp_path):
 
     assert "site/premiumdata/special_situations.json" in files, "the render never landed"
     assert "other.txt" in files, "the racing lane's commit was clobbered"
-    assert "data/ledger.json" not in files, "the step committed data/ — must be site/ ONLY"
+    assert _git_output(bare, "show", "main:data/ledger.json") == '{"canonical": true}', (
+        "the step committed its dirty ledger write — only the pre-existing canonical data may remain"
+    )
     assert "from=deadbeef" in log, "RENDER_OK=1 run did not stamp the from= watermark"
     assert summary.read_text() == "", "a first-attempt win should stay out of the summary"
 
@@ -884,7 +971,7 @@ def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
     block = _lane_block("render.yml", RENDER_STEP,
                         {"steps.pick.outputs.scope": "all",
                          "steps.pick.outputs.rendered_from": "deadbeef"})
-    bare, lane, stub = _lane_fixture(tmp_path, rejects=7)
+    bare, lane, stub, _ = _lane_fixture(tmp_path, rejects=7)
     summary = tmp_path / "summary.md"; summary.touch()
     r = _run_lane(block, lane, stub, summary, render_ok=True)
     assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
@@ -899,6 +986,39 @@ def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
     text = summary.read_text()
     assert "attempts=8/20" in text and "ref-lock losses=7" in text, text
     assert "rebase conflicts=0" in text, text
+
+
+def test_render_lane_quarantines_exact_untracked_collisions_before_porcelain_rebase(tmp_path):
+    """Regression for run 30727439896: fetched main must be the tree both the
+    quarantine and rebase use.  Two generated files (including a space) move to
+    RUNNER_TEMP, current main wins, the render lands, and a dirty ledger stays
+    local/unstaged."""
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub, collision_paths = _lane_fixture(tmp_path, collision=True)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=True)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    assert "untracked checkout collision quarantined" in r.stdout
+
+    for path in collision_paths:
+        remote = _git_output(bare, "show", f"main:{path}")
+        assert remote == f"main-authoritative:{path}"
+        assert (lane / path).read_text() == f"main-authoritative:{path}"
+    quarantines = list((tmp_path / "runner-temp").glob("push-untracked-collision.*"))
+    assert len(quarantines) == 1
+    for path in collision_paths:
+        assert (quarantines[0] / "files" / path).read_text() == f"render-local:{path}"
+    assert (quarantines[0] / "paths.nul").read_bytes() == (
+        "\0".join(collision_paths).encode() + b"\0"
+    )
+
+    assert _git_output(bare, "show", "main:data/ledger.json") == '{"canonical": true}'
+    assert (lane / "data" / "ledger.json").read_text() == '{"lane": "throwaway"}'
+    assert _git_output(lane, "diff", "--cached", "--name-only") == ""
+    assert _git_output(lane, "status", "--porcelain") == "M data/ledger.json"
+    assert _git_output(bare, "show", "main:site/index.html") == "<html>FRESH RENDER</html>"
 
 
 def test_render_lane_never_invokes_publish_on_a_partial_render():
