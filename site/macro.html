@@ -316,6 +316,7 @@
           <a class="rail-link nav-rail-item" href="government_revenue.html"><span><span class="l-en">Government Revenue</span><span class="l-zh">政府收入前瞻</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="capital_structure.html"><span><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
             <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
               <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
@@ -482,7 +483,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">1</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -499,18 +500,9 @@
                   
                   
                   
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
-                  </a>
-                  
-                  
-                  
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -4421,11 +4413,13 @@
       
       <div class="mx5-ai-ticker-pills">
         
+        <span class="mx5-ai-ticker-pill">CVX</span>
+        
+        <span class="mx5-ai-ticker-pill">USO</span>
+        
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">XOM</span>
-        
-        <span class="mx5-ai-ticker-pill">CVX</span>
+        <span class="mx5-ai-ticker-pill">META</span>
         
       </div>
       
@@ -4433,14 +4427,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          8 high-impact signals across channels
+          6 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          8 条高影响信号
+          6 条高影响信号
         </span>
         
       </div>
@@ -4501,8 +4495,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; siz…</span>
-              <span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; siz…</span>
+              <span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4516,8 +4510,8 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Earnings Scoreboard: Apple slumps after Tim Cook&#39;s final earnings; Microsoft ral…</span>
-              <span class="l-zh">财报记分板：蒂姆·库克最后一次财报后苹果大跌；大科技财报周微软走高</span>
+              <span class="l-en">Data center power boom in focus as 12 of 16 utility stocks beat EPS estimates th…</span>
+              <span class="l-zh">数据中心电力需求热潮成焦点，本周16只公用事业股中有12只每股收益超预期：财报记分卡</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4533,8 +4527,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 in feed</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -7766,10 +7760,10 @@
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>Growth fading</b>: Reflation edges toward Stagflation as expansion cools.</span><span class="l-zh"><b>增长放缓</b>：随着扩张降温，再通胀滑向滞胀。</span></li><li><span class="l-en"><b>Markets split</b>: Stocks rally, but bonds and dollar flash late‑cycle caution.</span><span class="l-zh"><b>市场分化</b>：股市上涨，但债券和美元闪现周期末期的谨慎信号。</span></li><li><span class="l-en"><b>Narrow rally</b>: Only 4 in 10 new buys pass filters — leadership is thin.</span><span class="l-zh"><b>窄幅上涨</b>：仅有四成新买入通过筛选——领涨股稀少。</span></li><li><span class="l-en"><b>Crypto risk</b>: Bitcoin is distributing, not a place to chase.</span><span class="l-zh"><b>加密风险</b>：比特币处于派发阶段，不宜追涨。</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Dovish Fed repricing</b>: Rate market bets on cuts, pushing front-end yields lower — but the Fed holds firm.</span><span class="l-zh"><b>鸽派美联储重新定价</b>：利率市场押注降息，推动前端收益率走低——但美联储立场坚定。</span></li><li><span class="l-en"><b>Growth cooling</b>: Reflation regime is transitioning, drifting toward Stagflation as growth weakens quickly.</span><span class="l-zh"><b>增长降温</b>：再通胀机制正在转变，增长快速走弱，正滑向滞胀。</span></li><li><span class="l-en"><b>Dollar headwind</b>: A strengthening dollar is leaning on US stocks, emerging markets, gold, and Bitcoin.</span><span class="l-zh"><b>美元逆风</b>：美元走强压制美股、新兴市场、黄金和比特币。</span></li><li><span class="l-en"><b>Credit caution</b>: Bond market signals worry ahead, though the stock tape hasn’t caught up.</span><span class="l-zh"><b>信用谨慎</b>：债券市场信号预示担忧，尽管股市行情尚未跟上。</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
-        <span class="l-en"><b>What to do</b>: Watch — don&#39;t chase.</span>
+        <span class="l-en"><b>What to do</b>: Watch — don’t chase.</span>
         <span class="l-zh"><b>该怎么做</b>：观望——不要追涨。</span>
       </span>
     </div>
@@ -7804,50 +7798,56 @@
     <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-31</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">The US economy is still in Reflation, but growth has cooled to just 0.13 — the lowest in weeks. The regime is drifting toward Stagflation, with the copper‑gold ratio closest to flipping the map. Inflation remains warm, though it has eased from its spike, so a growth stumble would tip the balance.
-Today&#39;s dominant driver is a split: the bond market has repriced dovishly, with short‑term yields falling, while equities stay risk‑on. Credit spreads are widening — a leading caution signal that equities have not yet absorbed. Add a strengthening dollar and draining liquidity, and the picture demands restraint.</span>
-    <span class="l-zh">美国经济仍处于再通胀阶段，但增长已降温至仅0.13——为数周来最低。体制正滑向滞胀，铜金比最接近触发格局翻转。通胀仍偏热，尽管已从峰值回落，因此一旦增长失速，天平将倾斜。今日的主导驱动因素是分裂：债券市场已重新定价为鸽派，短期收益率下行，而股市仍维持风险偏好。信用利差正在走阔——这是一个领先的警示信号，股市尚未消化。再加上美元走强和流动性收紧，整体图景要求保持克制。</span>
+    <span class="l-en">The US macro map shows Reflation, but we’re at the edge. Growth has cooled from strong readings twenty days ago to near the borderline today, while inflation remains elevated. The regime is transitioning, with odds shifting toward Stagflation — low growth, high inflation — and the next jobs report could tip it. Today’s dominant driver is a dovish repricing by the rate market, betting on cuts even as the Fed stays hawkish and on hold.</span>
+    <span class="l-zh">美国宏观图景显示再通胀，但我们正处于边缘。增长已从二十天前的强劲读数降至今日接近临界点，而通胀仍处高位。体制正在转变，概率向滞胀——低增长高通胀——倾斜，下一份就业报告可能成为转折点。今日主导因素是利率市场的鸽派重新定价，即便美联储保持鹰派且按兵不动，市场仍在押注降息。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Bond caution vs stock calm</b>: Credit spreads are widening (a warning) while equities remain risk‑on — this gap often precedes equity wobbles.</span><span class="l-zh"><b>债券的谨慎 vs 股票的平静</b>：信用利差在走阔（一个警告），而股市仍维持风险偏好——这一背离往往先于股市波动出现。</span></li><li><span class="l-en"><b>Strong dollar vs risk assets</b>: The dollar&#39;s rise presses on stocks, gold and bitcoin, yet those assets stay bid; the friction is unresolved.</span><span class="l-zh"><b>强势美元 vs 风险资产</b>：美元走强施压股市、黄金和比特币，但这些资产仍获买盘；摩擦尚未解决。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Bonds vs equities</b>: Credit spreads are widening slightly — a leading caution flag the stock market’s risk-on mood hasn’t acknowledged.</span><span class="l-zh"><b>债券对股票</b>：信用利差略有扩大——这是一个领先的警示信号，而股市的风险偏好情绪尚未察觉。</span></li><li><span class="l-en"><b>Narrow leadership</b>: Three-quarters of stocks are above their 200-day line, but only a third of fresh setups pass the buy filter — the rally is concentrated, not broad.</span><span class="l-zh"><b>领导板块收窄</b>：四分之三的股票位于200日线上方，但只有三分之一的新交易设置通过买入筛选——这轮上涨是集中的，而非广泛的。</span></li><li><span class="l-en"><b>Dollar strength</b>: The dollar’s rise is a known headwind for stocks, gold, and emerging markets, yet risk appetite remains optimistic.</span><span class="l-zh"><b>美元强势</b>：美元走高对股票、黄金和新兴市场是已知逆风，但市场风险偏好依然乐观。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If copper‑gold breaks below the flip threshold → the regime shifts to Stagflation, pressuring equities and favouring bonds.</span><span class="l-zh">若铜金比跌破翻转阈值 → 体制转向滞胀，施压股市，利好债券。</span></li><li><span class="l-en">If credit spreads keep widening → equity investors may lose confidence, triggering a sell‑off.</span><span class="l-zh">若信用利差持续走阔 → 股市投资者可能丧失信心，引发抛售。</span></li></ul>
-    </div></div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+      <ul class="aib2-items"><li><span class="l-en">If growth continues to cool → the regime tips into Stagflation, pressuring equities and commodities.</span><span class="l-zh">如果增长继续降温 → 市场格局转为滞胀，打压股市和大宗商品。</span></li><li><span class="l-en">If the dollar keeps strengthening → continued headwinds for US stocks, gold, and emerging markets.</span><span class="l-zh">如果美元持续走强 → 美股、黄金和新兴市场将继续面临逆风。</span></li></ul>
+    </div></div>
+  <div class="aib2-card aib2-card--full aib2-card--playbook">
+    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
+    <div class="aib2-prose">
+      <span class="l-en">The rotation sequence is running backwards: the stronger dollar and contracting global liquidity are pressing the later legs — China, Hong Kong, and Bitcoin — consistent with the unwind pattern.</span>
+      <span class="l-zh">轮动顺序正在逆转：美元走强和全球流动性收缩正给轮动后段——中国、香港和比特币——带来压力，这与解除交易的模式一致。</span>
+    </div>
+  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Copper‑gold ratio dips further</b>: Stagflation shift confirmed.</span>
-          <span class="l-zh"><b>铜金比进一步下行</b>：滞胀转变得到确认。</span>
+          <span class="l-en"><b>Aug 7 payrolls</b>: A weak number could flip the growth axis and tip the regime.</span>
+          <span class="l-zh"><b>8月7日非农</b>：若数据疲软，可能扭转增长轴心并改变格局。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Aug 7 jobs report</b>: Weak payrolls would stoke recession fears and rate‑cut hopes.</span>
-          <span class="l-zh"><b>8月7日就业报告</b>：就业数据疲软将引发衰退担忧和降息预期。</span>
+          <span class="l-en"><b>Aug 12 CPI</b>: Will show if inflation cooling sustains or reverses.</span>
+          <span class="l-zh"><b>8月12日CPI</b>：将显示通胀降温是持续还是逆转。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Aug 12 CPI</b>: A cool print cements dovish bets; a hot print revives hawkish risk.</span>
-          <span class="l-zh"><b>8月12日CPI</b>：数据温和将巩固鸽派押注；数据火热则重燃鹰派风险。</span>
+          <span class="l-en"><b>Dollar trend</b>: If the dollar breaks to new highs, expect deeper pressure on risk assets.</span>
+          <span class="l-zh"><b>美元趋势</b>：若美元创新高，风险资产将面临更大压力。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Credit spreads keep rising</b>: Equity caution deepens.</span>
-          <span class="l-zh"><b>信用利差持续走阔</b>：股市谨慎情绪加深。</span>
+          <span class="l-en"><b>Credit spreads</b>: Further widening turns quiet caution into a louder warning.</span>
+          <span class="l-zh"><b>信用利差</b>：进一步走阔将把悄然的谨慎转为更响亮的警告。</span>
         </span>
       </li></ul>
   </div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></span></div>
   <div class="aib2-card aib2-card--full">
-    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">08-07</span> Jobs report (nonfarm payrolls)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-07</span> Nonfarm payrolls projection</span><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI (consumer prices)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI projection</span><span class="aib2-cat"><span class="aib2-cat-d num">08-01</span> European stocks (VGK) peak hazard</span></div>
+    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">08-07</span> Jobs report (nonfarm payrolls)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI (consumer prices)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-13</span> PPI (producer prices)</span></div>
     <div class="aib2-cat-read">
-      <span class="l-en">The coming week&#39;s jobs report is the first major test; a weak number would restart recession talk and force a rates rethink. Mid‑month CPI offers a chance to confirm cooling inflation, with the model leaning cold, which would support a dovish view. Meanwhile, European equities face a peak‑cycle hazard, adding a downside worry abroad.</span>
-      <span class="l-zh">The coming week&#39;s jobs report is the first major test; a weak number would restart recession talk and force a rates rethink. Mid‑month CPI offers a chance to confirm cooling inflation, with the model leaning cold, which would support a dovish view. Meanwhile, European equities face a peak‑cycle hazard, adding a downside worry abroad.</span>
+      <span class="l-en">The coming week carries a heavy data load. The jobs report on August 7 is the immediate focus: the prior report missed badly and growth is already cooling. Then CPI on August 12 will test whether inflation’s downward trend is intact — the surprise odds lean cold (75% probability of a downside surprise), which could reinforce the dovish rate-market move.</span>
+      <span class="l-zh">The coming week carries a heavy data load. The jobs report on August 7 is the immediate focus: the prior report missed badly and growth is already cooling. Then CPI on August 12 will test whether inflation’s downward trend is intact — the surprise odds lean cold (75% probability of a downside surprise), which could reinforce the dovish rate-market move.</span>
     </div></div>
         <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full brief page (China &amp; Bitcoin lenses) →</span><span class="l-zh">完整简报页（中国与比特币视角）→</span></a></div>
         
@@ -7892,7 +7892,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 6 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（6 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 5 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（5 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
@@ -7900,68 +7900,12 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
         
-        
-        
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
         
         
         <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></span><div class="isle-head-line"></div></div>
         
         <div class="nbx-list">
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4623049-earnings-scoreboard-apple-slumps-after-tim-cooks-final-earnings-microsoft-rallies-in-big-tech-results-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Earnings Scoreboard: Apple slumps after Tim Cook&#39;s final earnings; Microsoft rallies in big-tech results week</span><span class="l-zh">财报记分板：蒂姆·库克最后一次财报后苹果大跌；大科技财报周微软走高</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 1</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
           
           
           
@@ -8003,15 +7947,15 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
           
           
           
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/31/eaton-jumps-as-its-earnings-and-outlook-signal-hope-for-the-ai-buildout.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4623120-high-fuel-prices-likely-to-linger-with-or-without-continued-iran-war-exxon-and-chevron-say?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Eaton shares jump as its earnings and outlook show resilience of the AI buildout</span><span class="l-zh">伊顿股价大涨，因其盈利和展望显示AI基础设施建设的韧性</span></span>
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">High fuel prices likely to linger with or without continued Iran war, Exxon and Chevron say</span><span class="l-zh">埃克森美孚和雪佛龙表示，无论伊朗战争是否持续，高油价都可能持续存在。</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 31</span>
+              <span class="nbx-date">Aug 2</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8021,15 +7965,15 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4623120-high-fuel-prices-likely-to-linger-with-or-without-continued-iran-war-exxon-and-chevron-say?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/31/eaton-jumps-as-its-earnings-and-outlook-signal-hope-for-the-ai-buildout.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">High fuel prices likely to linger with or without continued Iran war, Exxon and Chevron say</span><span class="l-zh">埃克森美孚和雪佛龙称，高油价或将持续，无论伊朗战争是否继续</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Eaton shares jump as its earnings and outlook show resilience of the AI buildout</span><span class="l-zh">伊顿股价大涨，因其盈利和展望显示AI基础设施建设的韧性</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 2</span>
+              <span class="nbx-date">Jul 31</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8057,33 +8001,15 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/much-traders-see-amd-stock-202331752.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/analyst-just-downgraded-apple-stock-211106772.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Here’s How Much Traders See AMD Stock Moving After Earnings</span><span class="l-zh">财报后交易员预期AMD股价波动幅度一览</span></span>
+              <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nbx-title"><span class="l-en">This Analyst Just Downgraded Apple Stock. Here&#39;s Why.</span><span class="l-zh">这位分析师刚刚下调了苹果股票评级，原因如下。</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 31</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.npr.org/2026/07/29/nx-s1-5910558/federal-reserve-interest-rates-inflation" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">A divided Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储意见分歧，尽管通胀高企仍维持利率不变</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 29</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8150,7 +8076,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
           <a class="nbx-item" href="https://seekingalpha.com/news/4623011-utilities-sector-slips-in-july-constellation-energy-leads-gainers-alliant-energy-leads-decliners?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Utilities sector slips in July; Constellation Energy leads gainers, Alliant Energy leads decliners</span><span class="l-zh">7月公用事业板块下滑；Constellation Energy领涨，Alliant Energy领跌</span></span>
+              <span class="nbx-title"><span class="l-en">Utilities sector slips in July; Constellation Energy leads gainers, Alliant Energy leads decliners</span><span class="l-zh">公用事业板块7月下滑；星座能源领涨，艾联能源领跌。</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8574,10 +8500,10 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <span class="fbm-chip"
-          data-tip-en="Policy intel is 19 days old (as of 2026-07-13)."
-          data-tip-zh="政策情报为 19 天前（截至 2026-07-13）。">
+          data-tip-en="Policy intel is 20 days old (as of 2026-07-13)."
+          data-tip-zh="政策情报为 20 天前（截至 2026-07-13）。">
           <span class="fbm-chip-k"><span class="l-en">Intel</span><span class="l-zh">情报</span></span>
-          <span><span class="l-en">19d old</span><span class="l-zh">19天前</span></span>
+          <span><span class="l-en">20d old</span><span class="l-zh">20天前</span></span>
         </span>
         
       </div>
@@ -8586,8 +8512,8 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
       
       <div class="fbm-chips">
         <span class="fbm-chip warn"
-          data-tip-en="Intel as of 2026-07-13 (19d old) — Conditions only, no direction or probability assigned."
-          data-tip-zh="情报截至2026-07-13（19天前） — 条件性观察，不赋予方向或概率。">
+          data-tip-en="Intel as of 2026-07-13 (20d old) — Conditions only, no direction or probability assigned."
+          data-tip-zh="情报截至2026-07-13（20天前） — 条件性观察，不赋予方向或概率。">
           <span class="fbm-chip-k"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
           <span><span class="l-en">Iran / Middle East -- ceasefire COLLAPSED (as of 7/8)</span><span class="l-zh">伊朗/中东 —— 停火已崩溃（截至7/8）</span></span>
         </span>
@@ -8680,9 +8606,9 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
       </div>
       
       <div class="fbm-bench-arrow neg"
-           data-tip-en="Odds moved -0.4 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 -0.4 个百分点。">
-        ▼ -0.4
+           data-tip-en="Odds moved -0.3 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -0.3 个百分点。">
+        ▼ -0.3
       </div>
       
     </div>
@@ -8722,7 +8648,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
       <div style="font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.4));line-height:1.6;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span class="l-en">As of 2026-07-31 — a read on conditions, not a forecast. Some inputs are display-only or a few days stale.</span>
         <span class="l-zh">截至 2026-07-31 — 对条件的解读，非预测。部分输入仅供展示或略有滞后。</span>
-        <span class="fbm-tip" data-tip-en="Data notes: futures-implied path reflects risk premium not stripped — not a forecast · All legs are display-tier context only; no scoring or authority. · commodity/shock_state.json oil entry is 30d old (&gt;7d threshold) — H3 leg judged on trend+cause_badge only · policy/intel.json is 19d old — policy row quotes as-of 2026-07-13" data-tip-zh="数据说明：futures-implied path reflects risk premium not stripped — not a forecast · All legs are display-tier context only; no scoring or authority. · commodity/shock_state.json oil entry is 30d old (&gt;7d threshold) — H3 leg judged on trend+cause_badge only · policy/intel.json is 19d old — policy row quotes as-of 2026-07-13" style="width:14px;height:14px;font-size:9px">?</span>
+        <span class="fbm-tip" data-tip-en="Data notes: futures-implied path reflects risk premium not stripped — not a forecast · All legs are display-tier context only; no scoring or authority. · commodity/shock_state.json oil entry is 30d old (&gt;7d threshold) — H3 leg judged on trend+cause_badge only · policy/intel.json is 20d old — policy row quotes as-of 2026-07-13" data-tip-zh="数据说明：futures-implied path reflects risk premium not stripped — not a forecast · All legs are display-tier context only; no scoring or authority. · commodity/shock_state.json oil entry is 30d old (&gt;7d threshold) — H3 leg judged on trend+cause_badge only · policy/intel.json is 20d old — policy row quotes as-of 2026-07-13" style="width:14px;height:14px;font-size:9px">?</span>
       </div>
       
 
@@ -10996,7 +10922,7 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>0</td><td>2026-08-01</td>
+        <td>0</td><td>2026-08-02</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11956,9 +11882,9 @@ Today&#39;s dominant driver is a split: the bond market has repriced dovishly, w
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-02 02:51 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-02 04:30 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-02 02:51 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-02 04:30 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -12211,6 +12137,5 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

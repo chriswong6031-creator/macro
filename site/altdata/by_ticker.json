@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-02",
-  "generated_utc": "2026-08-02T02:50:08.333119+00:00",
-  "n_tickers": 2584,
+  "generated_utc": "2026-08-02T04:28:56.388181+00:00",
+  "n_tickers": 2594,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -4214,10 +4214,12 @@
     },
     "ICE": {
       "ticker": "ICE",
-      "channels": [],
-      "weighted_score": 0,
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
       "congress_position_usd": 1813113000.0,
-      "convergence_score": 0,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
