@@ -1,0 +1,18 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
+      xmlns:xbrli="http://www.xbrl.org/2003/instance"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:ex="https://example.test/taxonomy"
+      xmlns:ixt="http://www.xbrl.org/inlineXBRL/transformation/2015-02-26">
+<head></head><body><ix:header>
+  <ix:hidden><ix:nonFraction id="scaled" name="ex:Revenue" contextRef="c" unitRef="usd" decimals="0" format="ixt:numdotdecimal" sign="-" scale="3">1,234.5</ix:nonFraction></ix:hidden>
+  <ix:resources>
+    <xbrli:context id="c"><xbrli:entity><xbrli:identifier scheme="https://www.sec.gov/CIK">1</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2025-12-31</xbrli:instant></xbrli:period></xbrli:context>
+    <xbrli:unit id="usd"><xbrli:measure>ex:USD</xbrli:measure></xbrli:unit>
+  </ix:resources>
+</ix:header>
+  <ix:nonNumeric id="label" name="ex:Label" contextRef="c" xml:lang="en">Café</ix:nonNumeric>
+  <ix:nonFraction id="nil" name="ex:Assets" contextRef="c" unitRef="usd" xsi:nil="true" />
+  <ix:fraction id="ratio" name="ex:Ratio" contextRef="c" unitRef="usd"><ix:numerator>1</ix:numerator><ix:denominator>3</ix:denominator></ix:fraction>
+  <ix:nonFraction id="unknown" name="ex:Unknown" contextRef="c" unitRef="usd" decimals="0" format="ex:mystery">7</ix:nonFraction>
+</body></html>
