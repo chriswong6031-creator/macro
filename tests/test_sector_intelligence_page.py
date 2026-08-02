@@ -61,7 +61,8 @@ def test_payload_externalized_not_embedded() -> None:
     assert "chart_json|safe" not in s, "inline CHART embed came back"
     assert "theme_alerts_json|safe" not in s, "inline THEME_ALERTS embed came back"
     assert "basketdata/baskets.json" in s, "payload fetch missing"
-    assert "basketdata/theme_alerts.json" in s, "alerts fetch missing"
+    # bell + theme_alerts payload removed sitewide (#4232, re-applied on rebase)
+    assert "theme_alerts" not in s, "bell alerts plumbing resurfacing"
 
 
 def test_dead_v1_desk_stays_dead() -> None:
