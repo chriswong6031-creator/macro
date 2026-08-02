@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T16:48:16.827544+00:00",
-  "count": 606,
+  "generated_at": "2026-08-02T17:03:19.907829+00:00",
+  "count": 607,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-viqbfc2ds47-a12f56",
+      "title": "Quantum",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:35:33Z",
+      "summary_points": [
+        "**Quantum Threat Timeline & Bitcoin Exposure**: Q-day (cryptographic break) has 28-49% probability within 10-20 years, exposing $400bn in Bitcoin supply (30% by 2026) to immediate decryption; \"harvest now, decrypt later\" attacks enable future breaches without migration plans.",
+        "**Policy Divergence & Systemic Risk**: US leads with $11.4bn public quantum commitments (Usher order, post-quantum migration), while EU lacks cohesive strategy (fragmented, no unified market), risking crypto-agile readiness; BIS estimates 0.1% GDP loss in 5y from confidence erosion (not IT failure).",
+        "**NIST Deadline & Institutional Gap**: NIST finalized post-quantum standards (Aug 2024); regulators deprecate legacy crypto by 2030, disallowing after 2035.",
+        "Only 35% of large orgs have credible migration roadmaps, creating asymmetric risk vs.",
+        "US federal coordination."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-yhzxfhxz5lp-bd7bf2",
       "title": "India Equity Update July 2026",
