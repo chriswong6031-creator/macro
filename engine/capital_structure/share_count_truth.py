@@ -28,7 +28,9 @@ from typing import Any
 SHARE_COUNT_OBSERVATION_SCHEMA = "capital_structure.share_count_observation.v1"
 COMPANYFACTS_SOURCE_RECEIPT_SCHEMA = "capital_structure.companyfacts_source_receipt.v1"
 COMPANYFACTS_SOURCE_SNAPSHOT_SCHEMA = "capital_structure.companyfacts_source_snapshot.v1"
-COMPILER_VERSION = "capital-structure-share-count-truth/1.0.0"
+SHARE_COUNT_SNAPSHOT_FACT_OBSERVATION_SCHEMA = "capital_structure.share_count_snapshot_fact_observation.v1"
+SHARE_COUNT_LEDGER_SCHEMA = "capital_structure.share_count_ledger.v1"
+COMPILER_VERSION = "capital-structure-share-count-truth/1.1.0"
 
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _ISSUER_RE = re.compile(r"^issuer:([0-9]{10})$")
@@ -171,6 +173,16 @@ def _source_snapshot_schema() -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@lru_cache(maxsize=1)
+def _snapshot_fact_observation_schema() -> dict[str, Any]:
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "capital_structure_share_count_snapshot_fact_observation.schema.json"
+    )
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _receipt_material(receipt: Mapping[str, Any]) -> dict[str, str | int]:
     """Normalize one closed, externally retained Company Facts receipt.
 
@@ -204,6 +216,12 @@ def _receipt_material(receipt: Mapping[str, Any]) -> dict[str, str | int]:
     raw_object_locator = str(receipt["raw_object_locator"])
     if not raw_object_locator.endswith(payload_hash):
         raise ShareCountTruthError("source receipt raw_object_locator must end with source_payload_sha256")
+    manifest_locator = str(receipt["manifest_locator"])
+    # This wave has no collector/readback path. The locator is therefore
+    # explicitly only a raw-payload-hash-bound handle; a future collector must
+    # verify actual manifest resolution before relying on it operationally.
+    if not manifest_locator.endswith(payload_hash):
+        raise ShareCountTruthError("source receipt manifest_locator must end with source_payload_sha256")
     retrieved = _parse_timestamp(receipt["source_retrieved_at"], "source_retrieved_at")
     available = _parse_timestamp(receipt["system_available_at"], "system_available_at")
     if _timestamp(available) < _timestamp(retrieved):
@@ -217,7 +235,7 @@ def _receipt_material(receipt: Mapping[str, Any]) -> dict[str, str | int]:
         "source_url": source_url,
         "source_payload_sha256": payload_hash,
         "raw_object_locator": raw_object_locator,
-        "manifest_locator": str(receipt["manifest_locator"]),
+        "manifest_locator": manifest_locator,
         "source_retrieved_at": retrieved,
         "system_available_at": available,
     }
@@ -284,6 +302,20 @@ def observation_id_for(record: Mapping[str, Any]) -> str:
     return _digest_id("share-count:cs:", material)
 
 
+def snapshot_fact_observation_id_for(record: Mapping[str, Any]) -> str:
+    """Digest a receipt-bound snapshot-local fact observation body."""
+    material = deepcopy(dict(record))
+    material.pop("snapshot_fact_observation_id", None)
+    return _digest_id("share-count-snapshot-fact:cs:", material)
+
+
+def source_snapshot_id_for(snapshot: Mapping[str, Any]) -> str:
+    """Digest the full normalized snapshot body, excluding its self ID only."""
+    material = deepcopy(dict(snapshot))
+    material.pop("source_snapshot_id", None)
+    return _digest_id("companyfacts-snapshot:cs:", material)
+
+
 @lru_cache(maxsize=1)
 def _observation_schema() -> dict[str, Any]:
     path = (
@@ -308,31 +340,215 @@ def validate_share_count_observation(record: Mapping[str, Any]) -> None:
         raise ShareCountTruthError(f"share-count observation contract violation: {joined}")
 
 
-def validate_source_snapshot(snapshot: Mapping[str, Any]) -> None:
-    """Fail closed for the separate immutable source-snapshot linkage row."""
+def _schema_errors(schema: Mapping[str, Any], record: Mapping[str, Any]) -> list[str]:
     from jsonschema import Draft202012Validator, FormatChecker
 
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    return [
+        f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
+        for error in validator.iter_errors(dict(record))
+    ]
+
+
+def _canonical_entry_hashes(record: Mapping[str, Any]) -> list[str]:
+    evidence = record.get("evidence") or {}
+    entries = evidence.get("fact_entries") or []
+    hashes = sorted({
+        str(entry.get("entry_sha256") or "")
+        for entry in entries if isinstance(entry, Mapping)
+    })
+    if not hashes or any(not re.fullmatch(r"[a-f0-9]{64}", value) for value in hashes):
+        raise ShareCountTruthError("canonical observation lacks nonempty valid fact-entry hashes")
+    return hashes
+
+
+def validate_snapshot_fact_observation(record: Mapping[str, Any]) -> None:
+    """Validate one receipt-bound, snapshot-local fact observation."""
+    if not isinstance(record, Mapping):
+        raise ShareCountTruthError("snapshot-fact observation must be an object")
+    errors = _schema_errors(_snapshot_fact_observation_schema(), record)
+    if errors:
+        raise ShareCountTruthError(f"snapshot-fact observation contract violation: {'; '.join(errors[:5])}")
+    if record.get("snapshot_fact_observation_id") != snapshot_fact_observation_id_for(record):
+        raise ShareCountTruthError("snapshot-fact observation ID digest mismatch")
+    hashes = list(record.get("fact_entry_sha256s") or [])
+    if hashes != sorted(hashes) or len(hashes) != len(set(hashes)):
+        raise ShareCountTruthError("snapshot-fact observation hashes must be sorted and unique")
+    point_in_time = record.get("point_in_time") or {}
+    if point_in_time.get("available_at") != point_in_time.get("system_available_at"):
+        raise ShareCountTruthError("snapshot-fact observation available_at must equal system_available_at")
+    if _timestamp(str(point_in_time["system_available_at"])) < _timestamp(
+        str(point_in_time["source_retrieved_at"]),
+    ):
+        raise ShareCountTruthError("snapshot-fact observation system_available_at cannot precede source_retrieved_at")
+
+
+def _validate_snapshot_fact_semantics(
+    snapshot_fact: Mapping[str, Any], canonical: Mapping[str, Any], receipt: Mapping[str, str | int],
+) -> None:
+    """Resolve every snapshot-fact reference against the canonical fact ledger."""
+    if snapshot_fact.get("source_receipt_id") != _digest_id("companyfacts-receipt:cs:", receipt):
+        raise ShareCountTruthError("snapshot-fact observation receipt does not match source snapshot")
+    if snapshot_fact.get("logical_observation_id") != canonical.get("logical_observation_id"):
+        raise ShareCountTruthError("snapshot-fact observation logical ID does not resolve canonical observation")
+    if snapshot_fact.get("fact_revision_id") != canonical.get("fact_revision_id"):
+        raise ShareCountTruthError("snapshot-fact observation revision ID does not resolve canonical observation")
+    if snapshot_fact.get("observation_id") != canonical.get("observation_id"):
+        raise ShareCountTruthError("snapshot-fact observation ID does not resolve canonical observation")
+    if list(snapshot_fact.get("fact_entry_sha256s") or []) != _canonical_entry_hashes(canonical):
+        raise ShareCountTruthError("snapshot-fact observation hashes do not match canonical fact evidence")
+
+    point_in_time = snapshot_fact.get("point_in_time") or {}
+    for field in ("source_retrieved_at", "system_available_at"):
+        if point_in_time.get(field) != receipt.get(field):
+            raise ShareCountTruthError(f"snapshot-fact observation {field} does not match source receipt")
+
+    state = snapshot_fact.get("state") or {}
+    reported = snapshot_fact.get("reported") or {}
+    normalized = snapshot_fact.get("normalized") or {}
+    disposition = state.get("disposition")
+    if normalized.get("state") != disposition:
+        raise ShareCountTruthError("snapshot-fact normalized state does not match snapshot-local disposition")
+    if disposition == "observed":
+        definition = SUPPORTED_FACTS.get((
+            str((canonical.get("fact") or {}).get("namespace") or ""),
+            str((canonical.get("fact") or {}).get("name") or ""),
+        ))
+        if definition is None:
+            raise ShareCountTruthError("snapshot-fact canonical observation names an unsupported fact")
+        if reported.get("unit") != (canonical.get("fact") or {}).get("unit") or reported.get("scale") != "1":
+            raise ShareCountTruthError("snapshot-fact observed reported unit/scale does not match canonical fact")
+        if reported.get("value") is None or normalized.get("value") != reported.get("value"):
+            raise ShareCountTruthError("snapshot-fact observed values are detached from direct fact value")
+        if normalized.get("unit") != definition.expected_unit or normalized.get("scale") != "1":
+            raise ShareCountTruthError("snapshot-fact observed normalized unit/scale is invalid")
+    elif disposition == "deferred":
+        if any(normalized.get(field) is not None for field in ("value", "unit", "scale")):
+            raise ShareCountTruthError("deferred snapshot-fact observation carries normalized value")
+    elif disposition == "ambiguous":
+        if reported.get("value") is not None or any(normalized.get(field) is not None for field in ("value", "unit", "scale")):
+            raise ShareCountTruthError("ambiguous snapshot-fact observation carries a selected value")
+
+
+def validate_source_snapshot(
+    snapshot: Mapping[str, Any], observations: Sequence[Mapping[str, Any]],
+) -> None:
+    """Validate source snapshot body and every cross-ledger fact linkage."""
     if not isinstance(snapshot, Mapping):
         raise ShareCountTruthError("source snapshot must be an object")
-    validator = Draft202012Validator(_source_snapshot_schema(), format_checker=FormatChecker())
-    errors = list(validator.iter_errors(dict(snapshot)))
+    errors = _schema_errors(_source_snapshot_schema(), snapshot)
     if errors:
-        joined = "; ".join(
-            f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
-            for error in errors[:5]
-        )
-        raise ShareCountTruthError(f"source snapshot contract violation: {joined}")
+        raise ShareCountTruthError(f"source snapshot contract violation: {'; '.join(errors[:5])}")
     receipt = _receipt_material(snapshot.get("source_receipt") or {})
-    if snapshot.get("source_receipt_id") != _digest_id("companyfacts-receipt:cs:", receipt):
+    receipt_id = _digest_id("companyfacts-receipt:cs:", receipt)
+    if snapshot.get("source_receipt_id") != receipt_id:
         raise ShareCountTruthError("source snapshot receipt ID is detached from its receipt")
-    for link in snapshot.get("fact_links") or []:
-        point_in_time = link.get("point_in_time") or {}
-        if point_in_time.get("available_at") != point_in_time.get("system_available_at"):
-            raise ShareCountTruthError("source snapshot link available_at must equal system_available_at")
-        if _timestamp(str(point_in_time["system_available_at"])) < _timestamp(
-            str(point_in_time["source_retrieved_at"]),
-        ):
-            raise ShareCountTruthError("source snapshot link system_available_at cannot precede source_retrieved_at")
+    if snapshot.get("source_snapshot_id") != source_snapshot_id_for(snapshot):
+        raise ShareCountTruthError("source snapshot ID digest mismatch")
+
+    canonical_by_id = {str(row.get("observation_id") or ""): row for row in observations}
+    snapshot_facts = list(snapshot.get("snapshot_fact_observations") or [])
+    links = list(snapshot.get("fact_links") or [])
+    by_snapshot_fact_id: dict[str, Mapping[str, Any]] = {}
+    logical_snapshot_facts: set[str] = set()
+    for fact in snapshot_facts:
+        validate_snapshot_fact_observation(fact)
+        fact_id = str(fact.get("snapshot_fact_observation_id") or "")
+        logical_id = str(fact.get("logical_observation_id") or "")
+        if fact_id in by_snapshot_fact_id:
+            raise ShareCountTruthError("source snapshot repeats snapshot-fact observation ID")
+        if logical_id in logical_snapshot_facts:
+            raise ShareCountTruthError("source snapshot has multiple snapshot-fact observations for one logical slot")
+        canonical = canonical_by_id.get(str(fact.get("observation_id") or ""))
+        if canonical is None:
+            raise ShareCountTruthError("snapshot-fact observation references missing canonical observation")
+        _validate_snapshot_fact_semantics(fact, canonical, receipt)
+        by_snapshot_fact_id[fact_id] = fact
+        logical_snapshot_facts.add(logical_id)
+
+    linked_ids: set[str] = set()
+    linked_logical_ids: set[str] = set()
+    for link in links:
+        logical_id = str(link.get("logical_observation_id") or "")
+        fact_id = str(link.get("snapshot_fact_observation_id") or "")
+        if logical_id in linked_logical_ids:
+            raise ShareCountTruthError("source snapshot has multiple links for one logical slot")
+        if fact_id in linked_ids:
+            raise ShareCountTruthError("source snapshot has multiple links to one snapshot-fact observation")
+        fact = by_snapshot_fact_id.get(fact_id)
+        if fact is None or fact.get("logical_observation_id") != logical_id:
+            raise ShareCountTruthError("source snapshot link does not resolve its snapshot-fact observation")
+        linked_logical_ids.add(logical_id)
+        linked_ids.add(fact_id)
+    if linked_ids != set(by_snapshot_fact_id) or linked_logical_ids != logical_snapshot_facts:
+        raise ShareCountTruthError("source snapshot links must cover exactly one snapshot-fact observation per logical slot")
+
+
+def validate_share_count_ledger(ledger: Mapping[str, Any]) -> None:
+    """Validate the self-contained immutable fact and append-only snapshot ledgers."""
+    if not isinstance(ledger, Mapping):
+        raise ShareCountTruthError("share-count ledger must be an object")
+    required = {
+        "schema", "status", "compiler_version", "source_acquisition", "observations",
+        "source_snapshots", "counts",
+    }
+    if set(ledger) != required:
+        raise ShareCountTruthError("share-count ledger has unexpected or missing top-level fields")
+    if ledger.get("schema") != SHARE_COUNT_LEDGER_SCHEMA or ledger.get("status") != "ok":
+        raise ShareCountTruthError("share-count ledger has wrong schema or status")
+    observations = ledger.get("observations")
+    snapshots = ledger.get("source_snapshots")
+    if not isinstance(observations, list) or not isinstance(snapshots, list):
+        raise ShareCountTruthError("share-count ledger observations and source_snapshots must be arrays")
+    validate_share_count_history(observations)
+    snapshot_ids: set[str] = set()
+    for snapshot in snapshots:
+        snapshot_id = str((snapshot or {}).get("source_snapshot_id") or "")
+        if snapshot_id in snapshot_ids:
+            raise ShareCountTruthError("duplicate source_snapshot_id in ledger")
+        snapshot_ids.add(snapshot_id)
+        validate_source_snapshot(snapshot, observations)
+    counts = ledger.get("counts") or {}
+    expected_count_fields = {"observations_total", "source_snapshots_total", "current_snapshot"}
+    if set(counts) != expected_count_fields:
+        raise ShareCountTruthError("share-count ledger counts must describe totals and the current snapshot only")
+    if counts.get("observations_total") != len(observations):
+        raise ShareCountTruthError("share-count ledger observations_total does not match observations")
+    if counts.get("source_snapshots_total") != len(snapshots):
+        raise ShareCountTruthError("share-count ledger source_snapshots_total does not match source_snapshots")
+    source_acquisition = ledger.get("source_acquisition") or {}
+    if set(source_acquisition) != {
+        "state", "collector_state", "source_receipt_id", "source_receipt_schema", "source_snapshot_id",
+    }:
+        raise ShareCountTruthError("share-count ledger source_acquisition has unexpected or missing fields")
+    if (
+        source_acquisition.get("state") != "provided_snapshot"
+        or source_acquisition.get("collector_state") != "not_implemented_in_share_count_truth_wave"
+        or source_acquisition.get("source_receipt_schema") != COMPANYFACTS_SOURCE_RECEIPT_SCHEMA
+    ):
+        raise ShareCountTruthError("share-count ledger source_acquisition is not a provided Company Facts snapshot")
+    current_snapshot_id = str(source_acquisition.get("source_snapshot_id") or "")
+    current_snapshot = next(
+        (snapshot for snapshot in snapshots if snapshot.get("source_snapshot_id") == current_snapshot_id),
+        None,
+    )
+    if current_snapshot is None:
+        raise ShareCountTruthError("share-count ledger current source snapshot does not resolve")
+    if source_acquisition.get("source_receipt_id") != current_snapshot.get("source_receipt_id"):
+        raise ShareCountTruthError("share-count ledger current receipt does not resolve current source snapshot")
+    snapshot_facts = current_snapshot.get("snapshot_fact_observations") or []
+    expected_current_counts = {
+        "snapshot_fact_observations": len(snapshot_facts),
+        **{
+            disposition: sum(
+                fact.get("state", {}).get("disposition") == disposition
+                for fact in snapshot_facts
+            )
+            for disposition in ("observed", "deferred", "ambiguous")
+        },
+    }
+    if counts.get("current_snapshot") != expected_current_counts:
+        raise ShareCountTruthError("share-count ledger disposition counts do not describe current source snapshot")
 
 
 def _source_entry(
@@ -638,64 +854,94 @@ def _apply_correction_history(
     return corrected, True
 
 
-def _snapshot_link(
+def _snapshot_fact_observation(
     candidate: Mapping[str, Any], applied: Mapping[str, Any], *, receipt: Mapping[str, str | int],
 ) -> dict[str, Any]:
-    """Bind one incoming source snapshot to a fact revision without versioning it.
+    """Materialize one receipt-local state/PIT observation for a fact revision.
 
-    This is intentionally outside the observation correction chain.  It lets a
-    source ledger retain every payload/receipt clock that independently
-    re-observed the same fact revision, while preserving the rule that only a
-    changed direct fact can create ``correction_version + 1``.
+    This row is intentionally distinct from the canonical fact observation.
+    For example, an early retained receipt can defer a fact because the system
+    clock predates its filing date, while a later receipt of unchanged bytes can
+    truthfully observe it.  That is a new snapshot-local observation, never a
+    fabricated fact correction.
     """
-    evidence = candidate.get("evidence") or {}
-    entries = evidence.get("fact_entries") or []
-    return {
+    record: dict[str, Any] = {
+        "schema": SHARE_COUNT_SNAPSHOT_FACT_OBSERVATION_SCHEMA,
+        "snapshot_fact_observation_id": "",
+        "source_receipt_id": _digest_id("companyfacts-receipt:cs:", receipt),
         "logical_observation_id": str(candidate["logical_observation_id"]),
         "fact_revision_id": str(candidate["fact_revision_id"]),
         "observation_id": str(applied["observation_id"]),
         "state": deepcopy(dict(candidate["state"])),
+        "reported": deepcopy(dict(candidate["reported"])),
+        "normalized": deepcopy(dict(candidate["normalized"])),
         "point_in_time": {
             "source_retrieved_at": receipt["source_retrieved_at"],
             "system_available_at": receipt["system_available_at"],
             "available_at": receipt["system_available_at"],
         },
-        "fact_entry_sha256s": sorted(
-            str(entry.get("entry_sha256") or "")
-            for entry in entries if isinstance(entry, Mapping)
-        ),
+        "fact_entry_sha256s": _canonical_entry_hashes(candidate),
+        "authority": {
+            "is_context_only": True, "rank_authority": False, "sizing_authority": False,
+            "entry_authority": False, "trade_authority": False, "prophet_authority": False,
+        },
     }
+    record["snapshot_fact_observation_id"] = snapshot_fact_observation_id_for(record)
+    validate_snapshot_fact_observation(record)
+    return record
 
 
 def _source_snapshot(
-    receipt: Mapping[str, str | int], links: Sequence[Mapping[str, Any]],
+    receipt: Mapping[str, str | int], snapshot_facts: Sequence[Mapping[str, Any]],
+    observations: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    """Emit the receipt-bound snapshot ledger row for caller-side retention."""
-    snapshot = {
+    """Create the canonical receipt-bound snapshot body and its fact links."""
+    ordered_facts = sorted(
+        [deepcopy(dict(fact)) for fact in snapshot_facts],
+        key=lambda fact: str(fact["logical_observation_id"]),
+    )
+    snapshot: dict[str, Any] = {
         "schema": COMPANYFACTS_SOURCE_SNAPSHOT_SCHEMA,
+        "source_snapshot_id": "",
         "source_receipt_id": _digest_id("companyfacts-receipt:cs:", receipt),
         "source_receipt": dict(receipt),
-        "fact_links": sorted(
-            [dict(link) for link in links],
-            key=lambda link: (str(link["logical_observation_id"]), str(link["fact_revision_id"])),
-        ),
+        "snapshot_fact_observations": ordered_facts,
+        "fact_links": [
+            {
+                "logical_observation_id": fact["logical_observation_id"],
+                "snapshot_fact_observation_id": fact["snapshot_fact_observation_id"],
+            }
+            for fact in ordered_facts
+        ],
     }
-    validate_source_snapshot(snapshot)
+    snapshot["source_snapshot_id"] = source_snapshot_id_for(snapshot)
+    validate_source_snapshot(snapshot, observations)
     return snapshot
 
 
 def source_acquisition_unavailable_result(*, reason: str = "no_retained_companyfacts_snapshot_supplied") -> dict[str, Any]:
     """Explicitly represent the deliberate absence of a collector in this wave."""
     return {
-        "schema": "capital_structure.share_count_compile_result.v1",
+        "schema": SHARE_COUNT_LEDGER_SCHEMA,
         "status": "unavailable",
+        "compiler_version": COMPILER_VERSION,
         "source_acquisition": {
             "state": "unavailable",
             "collector_state": "not_implemented_in_share_count_truth_wave",
             "reason": reason,
         },
         "observations": [],
-        "counts": {"observations": 0, "new_observations": 0, "deferred": 0, "ambiguous": 0},
+        "source_snapshots": [],
+        "counts": {
+            "observations_total": 0,
+            "source_snapshots_total": 0,
+            "current_snapshot": {
+                "snapshot_fact_observations": 0,
+                "observed": 0,
+                "deferred": 0,
+                "ambiguous": 0,
+            },
+        },
     }
 
 
@@ -703,6 +949,7 @@ def compile_share_count_observations(
     source_bytes: bytes,
     source_receipt: Mapping[str, Any],
     *,
+    existing_ledger: Mapping[str, Any] | None = None,
     existing_observations: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Purely normalize one exact Company Facts source snapshot.
@@ -727,7 +974,16 @@ def compile_share_count_observations(
     payload_cik = str(payload.get("cik") or "").zfill(10)
     if payload_cik != _issuer_cik(receipt["issuer_id"]):
         raise ShareCountTruthError("Company Facts payload CIK does not match receipt issuer_id")
-    validate_share_count_history(existing_observations)
+    if existing_ledger is not None:
+        if existing_observations:
+            raise ShareCountTruthError("supply existing_ledger or existing_observations, not both")
+        validate_share_count_ledger(existing_ledger)
+        prior_observations = [deepcopy(dict(row)) for row in existing_ledger["observations"]]
+        prior_snapshots = [deepcopy(dict(row)) for row in existing_ledger["source_snapshots"]]
+    else:
+        prior_observations = [deepcopy(dict(row)) for row in existing_observations]
+        prior_snapshots: list[dict[str, Any]] = []
+        validate_share_count_history(prior_observations)
 
     grouped: dict[tuple[str | None, ...], list[dict[str, Any]]] = defaultdict(list)
     for candidate in _fact_candidates(
@@ -735,23 +991,35 @@ def compile_share_count_observations(
     ):
         grouped[candidate["slot_key"]].append(candidate)
     new_rows: list[dict[str, Any]] = []
-    snapshot_links: list[dict[str, Any]] = []
+    snapshot_facts: list[dict[str, Any]] = []
     for _slot, group in sorted(grouped.items(), key=lambda item: repr(item[0])):
         row = _record_from_group(group, receipt=receipt)
-        applied, is_new = _apply_correction_history(row, existing_observations)
+        applied, is_new = _apply_correction_history(row, prior_observations)
         if is_new:
             new_rows.append(applied)
-        snapshot_links.append(_snapshot_link(row, applied, receipt=receipt))
+        snapshot_facts.append(_snapshot_fact_observation(row, applied, receipt=receipt))
 
-    output = [dict(row) for row in existing_observations] + new_rows
+    output = [*prior_observations, *new_rows]
     validate_share_count_history(output)
     output.sort(key=lambda row: (
         str(row.get("issuer_id") or ""), str(row.get("logical_observation_id") or ""),
         int((row.get("version") or {}).get("correction_version") or 0),
     ))
-    current_rows = [row for row in output if row in new_rows]
-    return {
-        "schema": "capital_structure.share_count_compile_result.v1",
+    current_snapshot = _source_snapshot(receipt, snapshot_facts, output)
+    existing_snapshot_ids = {
+        str(snapshot.get("source_snapshot_id") or "") for snapshot in prior_snapshots
+    }
+    new_source_snapshots = [] if current_snapshot["source_snapshot_id"] in existing_snapshot_ids else [current_snapshot]
+    source_snapshots = [*prior_snapshots, *new_source_snapshots]
+    current_dispositions = {
+        disposition: sum(
+            fact["state"]["disposition"] == disposition
+            for fact in current_snapshot["snapshot_fact_observations"]
+        )
+        for disposition in ("observed", "deferred", "ambiguous")
+    }
+    result = {
+        "schema": SHARE_COUNT_LEDGER_SCHEMA,
         "status": "ok",
         "compiler_version": COMPILER_VERSION,
         "source_acquisition": {
@@ -759,16 +1027,18 @@ def compile_share_count_observations(
             "collector_state": "not_implemented_in_share_count_truth_wave",
             "source_receipt_id": source_receipt_id_for(source_receipt),
             "source_receipt_schema": COMPANYFACTS_SOURCE_RECEIPT_SCHEMA,
+            "source_snapshot_id": current_snapshot["source_snapshot_id"],
         },
-        # Persist this beside the immutable observation ledger.  A refresh that
-        # only changes whole-payload provenance belongs here, not in a fact
-        # correction chain.
-        "source_snapshot": _source_snapshot(receipt, snapshot_links),
         "observations": output,
+        "source_snapshots": source_snapshots,
         "counts": {
-            "observations": len(output),
-            "new_observations": len(new_rows),
-            "deferred": sum(row["state"]["disposition"] == "deferred" for row in current_rows),
-            "ambiguous": sum(row["state"]["disposition"] == "ambiguous" for row in current_rows),
+            "observations_total": len(output),
+            "source_snapshots_total": len(source_snapshots),
+            "current_snapshot": {
+                "snapshot_fact_observations": len(current_snapshot["snapshot_fact_observations"]),
+                **current_dispositions,
+            },
         },
     }
+    validate_share_count_ledger(result)
+    return result

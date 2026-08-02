@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_snapshot_fact_observation.schema.json",
+  "title": "Capital Structure Company Facts snapshot-fact observation",
+  "description": "An immutable receipt-bound observation of one share-count fact revision in one retained Company Facts snapshot. It is not a canonical fact correction, source collector, coverage statement, selector, forecast, risk score, rank, sizing, trade, or Prophet record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "snapshot_fact_observation_id", "source_receipt_id",
+    "logical_observation_id", "fact_revision_id", "observation_id", "state",
+    "reported", "normalized", "point_in_time", "fact_entry_sha256s", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_snapshot_fact_observation.v1"},
+    "snapshot_fact_observation_id": {"type": "string", "pattern": "^share-count-snapshot-fact:cs:[a-f0-9]{24}$"},
+    "source_receipt_id": {"type": "string", "pattern": "^companyfacts-receipt:cs:[a-f0-9]{24}$"},
+    "logical_observation_id": {"type": "string", "pattern": "^share-count-slot:cs:[a-f0-9]{24}$"},
+    "fact_revision_id": {"type": "string", "pattern": "^share-count-revision:cs:[a-f0-9]{24}$"},
+    "observation_id": {"type": "string", "pattern": "^share-count:cs:[a-f0-9]{24}$"},
+    "state": {"$ref": "#/$defs/state"},
+    "reported": {"$ref": "#/$defs/reported"},
+    "normalized": {"$ref": "#/$defs/normalized"},
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_retrieved_at", "system_available_at", "available_at"],
+      "properties": {
+        "source_retrieved_at": {"type": "string", "format": "date-time"},
+        "system_available_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "fact_entry_sha256s": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "decimal": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "reason"],
+      "properties": {
+        "disposition": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "direct_sec_companyfacts_fact", "unexpected_unit", "missing_value",
+            "negative_value", "missing_period_end", "missing_filing_provenance",
+            "missing_system_availability", "system_availability_precedes_filed_date",
+            "multiple_distinct_values_for_fact_slot", "multiple_distinct_contexts_for_fact_slot",
+            "malformed_fact_entry"
+          ]
+        }
+      }
+    },
+    "reported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "scale"],
+      "properties": {
+        "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+        "unit": {"type": ["string", "null"], "minLength": 1},
+        "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"}
+      }
+    },
+    "normalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "scale", "state"],
+      "properties": {
+        "value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+        "unit": {"type": ["string", "null"], "enum": ["shares", "USD", null]},
+        "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"},
+        "state": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"reported": {"properties": {"value": {"type": "string"}, "unit": {"type": "string"}, "scale": {"const": "1"}}}, "normalized": {"properties": {"value": {"type": "string"}, "unit": {"type": "string"}, "scale": {"const": "1"}, "state": {"const": "observed"}}}}}
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "deferred"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"normalized": {"properties": {"value": {"type": "null"}, "unit": {"type": "null"}, "scale": {"type": "null"}, "state": {"const": "deferred"}}}}}
+    },
+    {
+      "if": {"properties": {"state": {"properties": {"disposition": {"const": "ambiguous"}}, "required": ["disposition"]}}, "required": ["state"]},
+      "then": {"properties": {"reported": {"properties": {"value": {"type": "null"}}}, "normalized": {"properties": {"value": {"type": "null"}, "unit": {"type": "null"}, "scale": {"type": "null"}, "state": {"const": "ambiguous"}}}}}
+    }
+  ]
+}

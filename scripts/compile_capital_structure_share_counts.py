@@ -10,7 +10,7 @@ prints an explicit unavailable result rather than inventing coverage.
 Usage:
   python -m scripts.compile_capital_structure_share_counts \
       --source-json retained-companyfacts.json --receipt-json receipt.json \
-      --output observations.json
+      --existing-ledger-json prior-ledger.json --output ledger.json
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from engine.capital_structure.share_count_truth import (
     ShareCountTruthError,
     compile_share_count_observations,
     source_acquisition_unavailable_result,
+    validate_share_count_ledger,
 )
 
 
@@ -36,15 +37,16 @@ def _load_object(path: Path, *, label: str) -> dict[str, Any]:
     return decoded
 
 
-def _load_observations(path: Path | None) -> list[dict[str, Any]]:
+def _load_ledger(path: Path | None) -> dict[str, Any] | None:
     if path is None:
-        return []
+        return None
     try:
         decoded = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ShareCountTruthError(f"cannot load existing observations: {path}") from exc
-    if not isinstance(decoded, list) or not all(isinstance(row, dict) for row in decoded):
-        raise ShareCountTruthError("existing observations must be a JSON array of objects")
+        raise ShareCountTruthError(f"cannot load existing share-count ledger: {path}") from exc
+    if not isinstance(decoded, dict):
+        raise ShareCountTruthError("existing share-count ledger must be a JSON object")
+    validate_share_count_ledger(decoded)
     return decoded
 
 
@@ -56,7 +58,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-json", type=Path, help="retained raw Company Facts JSON bytes")
     parser.add_argument("--receipt-json", type=Path, help="hash-bound source receipt JSON")
-    parser.add_argument("--existing-observations-json", type=Path, help="immutable prior observation ledger JSON")
+    parser.add_argument("--existing-ledger-json", type=Path, help="prior self-contained immutable share-count ledger JSON")
     parser.add_argument("--output", type=Path, help="optional result JSON path; stdout when omitted")
     args = parser.parse_args(argv)
     if (args.source_json is None) != (args.receipt_json is None):
@@ -67,9 +69,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             receipt = _load_object(args.receipt_json, label="source receipt")
             source_bytes = args.source_json.read_bytes()
-            existing = _load_observations(args.existing_observations_json)
+            existing = _load_ledger(args.existing_ledger_json)
             result = compile_share_count_observations(
-                source_bytes, receipt, existing_observations=existing,
+                source_bytes, receipt, existing_ledger=existing,
             )
     except (OSError, ShareCountTruthError) as exc:
         print(_canonical_json({"status": "error", "error": str(exc)}))

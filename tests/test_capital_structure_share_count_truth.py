@@ -14,7 +14,11 @@ from engine.capital_structure.share_count_truth import (
     compile_share_count_observations,
     observation_id_for,
     source_acquisition_unavailable_result,
+    snapshot_fact_observation_id_for,
+    source_snapshot_id_for,
+    validate_share_count_ledger,
     validate_source_snapshot,
+    validate_snapshot_fact_observation,
     validate_share_count_history,
 )
 from scripts.compile_capital_structure_share_counts import main
@@ -25,6 +29,7 @@ FIXTURE = ROOT / "tests" / "fixtures" / "capital_structure" / "share_count_truth
 SCHEMA_PATH = ROOT / "contracts" / "capital_structure_share_count_observation.schema.json"
 RECEIPT_SCHEMA_PATH = ROOT / "contracts" / "capital_structure_companyfacts_source_receipt.schema.json"
 SNAPSHOT_SCHEMA_PATH = ROOT / "contracts" / "capital_structure_companyfacts_source_snapshot.schema.json"
+SNAPSHOT_FACT_SCHEMA_PATH = ROOT / "contracts" / "capital_structure_share_count_snapshot_fact_observation.schema.json"
 
 
 def _source_bytes() -> bytes:
@@ -70,6 +75,10 @@ def _receipt_schema() -> dict:
 
 def _snapshot_schema() -> dict:
     return json.loads(SNAPSHOT_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _snapshot_fact_schema() -> dict:
+    return json.loads(SNAPSHOT_FACT_SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def _validate(record: dict) -> list[str]:
@@ -169,6 +178,7 @@ def test_invalid_source_hash_and_temporal_receipt_fail_closed():
             raw,
             source_payload_sha256=wrong_hash,
             raw_object_locator=f"capital_structure/sec/companyfacts/sha256/{wrong_hash[:2]}/{wrong_hash}",
+            manifest_locator=f"companyfacts-manifest:cs:{wrong_hash}",
         ))
     with pytest.raises(ShareCountTruthError, match="cannot precede"):
         compile_share_count_observations(
@@ -180,6 +190,7 @@ def test_invalid_source_hash_and_temporal_receipt_fail_closed():
 def test_closed_receipt_requires_version_and_durable_raw_object_manifest_locators():
     Draft202012Validator.check_schema(_receipt_schema())
     Draft202012Validator.check_schema(_snapshot_schema())
+    Draft202012Validator.check_schema(_snapshot_fact_schema())
     raw = _source_bytes()
     receipt = _receipt(raw)
     receipt["unexpected"] = True
@@ -194,6 +205,10 @@ def test_closed_receipt_requires_version_and_durable_raw_object_manifest_locator
     non_content_addressed = _receipt(raw, raw_object_locator="capital_structure/sec/companyfacts/latest")
     with pytest.raises(ShareCountTruthError, match="raw_object_locator"):
         compile_share_count_observations(raw, non_content_addressed)
+
+    detached_manifest = _receipt(raw, manifest_locator="companyfacts-manifest:cs:" + ("a" * 64))
+    with pytest.raises(ShareCountTruthError, match="manifest_locator"):
+        compile_share_count_observations(raw, detached_manifest)
 
 
 def test_source_available_before_a_fact_was_filed_is_deferred_not_backdated():
@@ -248,13 +263,44 @@ def test_changed_snapshot_creates_a_nonbranching_immutable_correction_lineage():
         validate_share_count_history(broken)
 
     idempotent = _compile(_with_payload(payload), existing=changed)
-    assert idempotent["counts"]["new_observations"] == 0
     assert idempotent["observations"] == changed
 
 
-def test_unrelated_snapshot_metadata_hash_and_receipt_clock_do_not_create_fact_corrections():
-    original_result = _compile()
-    original = original_result["observations"]
+def test_p0_deferred_then_later_observed_is_snapshot_local_not_a_false_fact_correction():
+    raw = _source_bytes()
+    early = compile_share_count_observations(
+        raw,
+        _receipt(raw, source_retrieved_at="2025-10-30T00:00:00Z", system_available_at="2025-10-30T00:01:00Z"),
+    )
+    assert early["counts"]["current_snapshot"] == {
+        "snapshot_fact_observations": 3, "observed": 0, "deferred": 3, "ambiguous": 0,
+    }
+    assert all(row["state"]["disposition"] == "deferred" for row in early["observations"])
+
+    later = compile_share_count_observations(
+        raw,
+        _receipt(raw, source_retrieved_at="2025-11-02T01:00:00Z", system_available_at="2025-11-02T01:04:00Z"),
+        existing_ledger=early,
+    )
+    # Same direct facts: the canonical correction chain is unchanged and keeps
+    # its original deferred evidence, while the later source snapshot records
+    # independently observed availability and normalized values.
+    assert len(later["observations"]) == 3
+    assert len(later["source_snapshots"]) == 2
+    assert all(row["state"]["disposition"] == "deferred" for row in later["observations"])
+    current = later["source_snapshots"][-1]
+    facts = current["snapshot_fact_observations"]
+    assert all(fact["state"]["disposition"] == "observed" for fact in facts)
+    assert all(fact["normalized"]["state"] == "observed" for fact in facts)
+    assert {fact["observation_id"] for fact in facts} == {row["observation_id"] for row in later["observations"]}
+    assert later["counts"]["current_snapshot"] == {
+        "snapshot_fact_observations": 3, "observed": 3, "deferred": 0, "ambiguous": 0,
+    }
+    validate_share_count_ledger(later)
+
+
+def test_p1_whole_snapshot_metadata_hash_and_receipt_clock_refresh_preserves_fact_history_and_links_snapshot_facts():
+    original = _compile()
     payload = _payload()
     payload["entityName"] = "Example Issuer (issuer-root metadata refreshed)"
     refreshed_raw = _with_payload(payload)
@@ -265,35 +311,61 @@ def test_unrelated_snapshot_metadata_hash_and_receipt_clock_do_not_create_fact_c
             source_retrieved_at="2025-11-02T01:00:00Z",
             system_available_at="2025-11-02T01:04:00Z",
         ),
-        existing_observations=original,
+        existing_ledger=original,
     )
 
-    # Whole-snapshot provenance changed, but none of the direct fact entries
-    # did. The fact ledger remains immutable and correction-free.
-    assert refreshed["counts"]["new_observations"] == 0
-    assert refreshed["observations"] == original
-    validate_share_count_history(refreshed["observations"])
-
-    # The refreshed snapshot is still retained as an explicit receipt-bound
-    # linkage, so the system never loses its newer raw-payload/PIT provenance.
-    snapshot = refreshed["source_snapshot"]
+    assert refreshed["observations"] == original["observations"]
+    assert len(refreshed["source_snapshots"]) == 2
+    snapshot = refreshed["source_snapshots"][-1]
     assert snapshot["source_receipt"]["source_payload_sha256"] == hashlib.sha256(refreshed_raw).hexdigest()
-    assert snapshot["source_receipt_id"] != original_result["source_snapshot"]["source_receipt_id"]
-    assert {link["observation_id"] for link in snapshot["fact_links"]} == {
-        row["observation_id"] for row in original
+    assert snapshot["source_snapshot_id"] != original["source_snapshots"][0]["source_snapshot_id"]
+    assert len(snapshot["fact_links"]) == len(snapshot["snapshot_fact_observations"]) == 3
+    assert {link["snapshot_fact_observation_id"] for link in snapshot["fact_links"]} == {
+        fact["snapshot_fact_observation_id"] for fact in snapshot["snapshot_fact_observations"]
     }
-    assert {link["fact_revision_id"] for link in snapshot["fact_links"]} == {
-        row["fact_revision_id"] for row in original
+    assert {fact["observation_id"] for fact in snapshot["snapshot_fact_observations"]} == {
+        row["observation_id"] for row in refreshed["observations"]
     }
-    assert {link["point_in_time"]["available_at"] for link in snapshot["fact_links"]} == {
-        "2025-11-02T01:04:00Z"
-    }
-    validate_source_snapshot(snapshot)
+    for fact in snapshot["snapshot_fact_observations"]:
+        validate_snapshot_fact_observation(fact)
+        assert fact["fact_entry_sha256s"] == sorted(set(fact["fact_entry_sha256s"]))
+    validate_source_snapshot(snapshot, refreshed["observations"])
+    validate_share_count_ledger(refreshed)
 
-    tampered = deepcopy(snapshot)
-    tampered["fact_links"][0]["point_in_time"]["available_at"] = "2025-11-02T01:05:00Z"
-    with pytest.raises(ShareCountTruthError, match="available_at"):
-        validate_source_snapshot(tampered)
+
+def test_p2_cross_ledger_tampering_cannot_rebind_snapshot_facts_or_links():
+    ledger = _compile()
+    tampered = deepcopy(ledger)
+    snapshot = tampered["source_snapshots"][0]
+    fact = snapshot["snapshot_fact_observations"][0]
+    fact["fact_entry_sha256s"] = ["b" * 64]
+    fact["snapshot_fact_observation_id"] = snapshot_fact_observation_id_for(fact)
+    snapshot["source_snapshot_id"] = source_snapshot_id_for(snapshot)
+    with pytest.raises(ShareCountTruthError, match="hashes do not match"):
+        validate_share_count_ledger(tampered)
+
+    duplicated = deepcopy(ledger)
+    snapshot = duplicated["source_snapshots"][0]
+    snapshot["fact_links"].append(deepcopy(snapshot["fact_links"][0]))
+    snapshot["source_snapshot_id"] = source_snapshot_id_for(snapshot)
+    with pytest.raises(ShareCountTruthError, match="multiple links"):
+        validate_share_count_ledger(duplicated)
+
+    receipt_rebound = deepcopy(ledger)
+    snapshot = receipt_rebound["source_snapshots"][0]
+    fact = snapshot["snapshot_fact_observations"][0]
+    fact["source_receipt_id"] = "companyfacts-receipt:cs:" + ("f" * 24)
+    fact["snapshot_fact_observation_id"] = snapshot_fact_observation_id_for(fact)
+    snapshot["fact_links"][0]["snapshot_fact_observation_id"] = fact["snapshot_fact_observation_id"]
+    snapshot["source_snapshot_id"] = source_snapshot_id_for(snapshot)
+    with pytest.raises(ShareCountTruthError, match="receipt does not match"):
+        validate_share_count_ledger(receipt_rebound)
+
+    detached = deepcopy(ledger)
+    snapshot = detached["source_snapshots"][0]
+    snapshot["source_snapshot_id"] = "companyfacts-snapshot:cs:" + ("0" * 24)
+    with pytest.raises(ShareCountTruthError, match="ID digest"):
+        validate_share_count_ledger(detached)
 
 
 def test_explicit_no_source_result_and_cli_do_not_claim_collector_coverage(capsys, tmp_path):
@@ -320,3 +392,13 @@ def test_explicit_no_source_result_and_cli_do_not_claim_collector_coverage(capsy
     compiled = json.loads(output_path.read_text(encoding="utf-8"))
     assert compiled["status"] == "ok"
     assert len(compiled["observations"]) == 3
+    assert len(compiled["source_snapshots"]) == 1
+    validate_share_count_ledger(compiled)
+
+    reingested_path = tmp_path / "reingested-ledger.json"
+    assert main([
+        "--source-json", str(source_path), "--receipt-json", str(receipt_path),
+        "--existing-ledger-json", str(output_path), "--output", str(reingested_path),
+    ]) == 0
+    reingested = json.loads(reingested_path.read_text(encoding="utf-8"))
+    assert reingested == compiled

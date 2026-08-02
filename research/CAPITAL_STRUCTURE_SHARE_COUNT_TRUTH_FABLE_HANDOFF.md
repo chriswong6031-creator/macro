@@ -20,6 +20,7 @@ The canonical implementation files are:
 - `contracts/capital_structure_share_count_observation.schema.json`
 - `contracts/capital_structure_companyfacts_source_receipt.schema.json`
 - `contracts/capital_structure_companyfacts_source_snapshot.schema.json`
+- `contracts/capital_structure_share_count_snapshot_fact_observation.schema.json`
 - `engine/capital_structure/share_count_truth.py`
 - `scripts/compile_capital_structure_share_counts.py`
 - `tests/test_capital_structure_share_count_truth.py`
@@ -49,9 +50,10 @@ The row retains:
   SHA-256 of every raw fact entry used;
 - an upstream source-receipt clock and `system_available_at`, which is the only
   `available_at` exposed by this plane;
-- a separate `source_snapshot` result row that links every supplied receipt to
-  its fact revisions and snapshot-local availability state without advancing a
-  fact correction chain;
+- an append-only `source_snapshots` ledger that links every supplied receipt to
+  receipt-bound snapshot-fact observations, each of which holds its own state,
+  reported/normalized values, exact entry hashes and PIT clocks, without
+  advancing a fact correction chain;
 - concept-semantic security classification (`common_stock`) for both share
   concepts, while public float is honestly marked `not_security_specific`;
 - closed state (`observed`, `deferred`, `ambiguous`) and immutable correction
@@ -90,16 +92,32 @@ The current acquisition limitation is real: this wave supplies the kernel and
 contract only. A future intake lane must retain raw Company Facts bytes and its
 receipt before this can claim issuer or market coverage.
 
+The manifest locator is deliberately constrained to the raw-payload SHA-256 in
+this pure kernel. It is a hash-bound handle, **not** evidence that this kernel
+has resolved or read a manifest. The future external collector/readback and
+reconciliation lane is the authority for manifest resolution and retention
+verification.
+
 ### Snapshot refreshes versus fact corrections
 
 A source snapshot may change because SEC refreshed root metadata, another
 uninvolved concept changed, the whole-payload hash changed, or Mastermind
-received it later. The compiler retains that receipt in its `source_snapshot`
-result row with links to stable `fact_revision_id`s. It does **not** create
+received it later. The compiler retains that receipt in an append-only
+`source_snapshots` ledger. Each source snapshot has a canonical
+`source_snapshot_id` over its full normalized body, a unique link per logical
+slot, and a closed snapshot-fact observation keyed by receipt + fact revision +
+snapshot-local state/PIT. Links target the snapshot-fact observation—not the
+possibly deferred state of a canonical fact row. It does **not** create
 `correction_version + 1`. Only a change in a direct in-scope fact revision may
-advance a correction chain. Caller-side persistence must retain immutable
-observations and every `source_snapshot` result; future as-of selection must
-use receipt clocks from the snapshot links, never invent a synthetic correction.
+advance a correction chain.
+
+The CLI emits and accepts a self-contained
+`capital_structure.share_count_ledger.v1` envelope with immutable
+`observations` and append-only `source_snapshots`. Re-ingesting that envelope
+with the same raw bytes/receipt is idempotent. It retains the existing history,
+does not append a duplicate snapshot, and reports disposition counts only for
+the current source snapshot. Future as-of selection must consume these
+receipt-bound snapshot facts and clocks, never invent a synthetic correction.
 
 ## 3. Failure behavior
 
@@ -151,7 +169,11 @@ the correction chain.
 - filing-date versus system-availability PIT refusal; and
 - contiguous, non-branching correction lineage; and
 - root-metadata/payload-hash/receipt-clock refreshes that remain receipt-linked
-  but create zero false fact corrections.
+  but create zero false fact corrections;
+- deferred-then-later-observed snapshot transitions without false corrections;
+- self-contained CLI envelope re-ingestion/idempotence; and
+- cross-ledger tamper refusal for IDs, receipt/PIT bindings, exact entry hashes
+  and one-link/one-snapshot-fact-per-logical-slot invariants.
 
 This is a solid substrate for parity work, but not parity itself: it adds a
 truthful denominator evidence layer rather than cosmetic “dilution risk” cards.

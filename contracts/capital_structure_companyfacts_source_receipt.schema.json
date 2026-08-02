@@ -26,7 +26,7 @@
     "manifest_locator": {
       "type": "string",
       "pattern": "^companyfacts-manifest:cs:[a-f0-9]{64}$",
-      "description": "Durable manifest/ledger locator resolving the retained raw object without embedding a storage credential."
+      "description": "A raw-payload-hash-bound manifest locator. This pure kernel verifies only the suffix invariant; future collector readback/reconciliation is the authority for manifest resolution."
     },
     "source_retrieved_at": {"type": "string", "format": "date-time"},
     "system_available_at": {"type": "string", "format": "date-time"}
