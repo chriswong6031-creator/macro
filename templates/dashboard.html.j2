@@ -15556,7 +15556,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if n.get('antichase_shadow_blocked') %}{% set _fl.rows = _fl.rows + [('Parabolic tail. Treat any entry here as a chase.', '处于抛物线尾部。此处入场应视同追高。')] %}{% endif %}
         {% set _es_chip = n.get('earnings_soon') %}
         {% if _es_chip and _es_chip.get('days_to') is not none %}{% set _fl.rows = _fl.rows + [(_es_chip.get('chip_en') or ('Earnings in ' ~ _es_chip.days_to ~ 'd'), _es_chip.get('chip_zh') or ('财报还有' ~ _es_chip.days_to ~ '天'))] %}{% endif %}
-        {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a call on the sector.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。这是个股信号，并非对板块的判断。')] %}{% endif %}
+        {% if n.get('sector_stance') and n.sector_stance in ('Reduce','Cautious') %}{% set _fl.rows = _fl.rows + [('Sector stance is ' ~ n.sector_stance|lower ~ '. This is a single-stock trigger, not a sector call.', '板块态度为' ~ (n.sector_stance_zh or n.sector_stance) ~ '。个股信号，非板块判断。')] %}{% endif %}
         {% if n.get('hold') and n.hold.get('state') == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken: price hit the level that voids the thesis.', '筑底破位：价格已触及使论点失效的水平。')] %}{% endif %}
         {# OEU M-PRO: display-tier options context, folded into the SAME ⚠ popover as every
            other caution (no new chip, no layout change). Rows are pre-derived (en, zh) pairs
