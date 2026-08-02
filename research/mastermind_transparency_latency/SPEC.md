@@ -307,3 +307,51 @@ safety in particular is *stricter* here, not looser. Tests: `tests/test_brain_st
 Unchanged by this amendment: the non-streaming `chat()`, `/api/ask`, Phase-1 tool rounds,
 quota paths, and the `status` contract (the `writing` beat now speaks only in the gaps
 where no text is flowing, which is what it always meant).
+
+---
+
+## §F AMENDMENT (W5.1) — the ROUNDS stream too, behind a commitment horizon
+
+§E's closing line "Phase-1 tool rounds [unchanged]" is SUPERSEDED. The post-merge VPS
+bench of W5 (PR #4220) measured `ttfv_ms == total_ms` with `n_deltas: 1` on the live
+lane — 42.7s buffered on a broad probe, 18.5s native. Cause: Phase-2 synthesis fires
+only when the tool budget runs out mid-investigation, and the dominant turn never gets
+there. The model writes its final answer INSIDE a tool round, and that round's model
+call was the blocking `_create_failover`. W5 streamed the rare path.
+
+### What changed
+
+Every round's model call in `_run_brain_loop_stream` is now a `messages.stream()` over
+the same candidate walk (same per-candidate `_pmk`, dead-credential marking, pool
+cooling, failover-worthy-errors-only contract), forwarding text through the SAME
+machinery Phase 2 uses. That machinery is now ONE object, `_StreamGate` — flush policy,
+leak holdback, chunk-overlapped sentinel sweep, `[NEXT]` seal — shared by both paths, so
+they cannot fork. Tool_use blocks reach the parallel executor from
+`get_final_message()`, which is where the SDK assembles them: same objects, same ids,
+same inputs as a blocking `create()`.
+
+### The commitment horizon
+
+A round's text is AMBIGUOUS in a way synthesis text is not: it may be the answer, or a
+sentence of narration before a tool call. So a round forwards nothing until it has
+written `_STREAM_COMMIT_CHARS` (default 200, overridable as `streaming.commit_chars`)
+with no tool_use block open. On the fast lane DeepSeek's "let me check" reasoning rides
+thinking blocks, so pre-tool display text is rare and short.
+
+| Case | Wire |
+|---|---|
+| tool_use before the horizon | nothing shown — byte-identical to pre-W5.1 |
+| tool_use in the live message snapshot | display freezes there; nothing shown |
+| round ends `end_turn` past the horizon | streamed; the §E reconciliation ships the tail |
+| narration crosses the horizon, then tools | ONE empty `retract` wipes it; the tool round proceeds; `filtered` stays FALSE (a wipe is not a screening event) |
+| candidate dies mid-round after showing text | empty `retract`, next candidate streams into a clean bubble |
+| sentinel caught mid-round | stream abandoned, refusal `retract`, `filtered` TRUE — §E's leak law verbatim |
+| one-chunk provider (codex `_Stream`) | never flushes mid-round: one buffered delta, exactly as before |
+
+Safety net: if every candidate's STREAM attempt fails and nothing was shown, the round
+retries once through the blocking `_create_failover` before degrading. `stream` + `tools`
+is a request shape this loop never sent before; a provider whose compat endpoint rejects
+it must not black out the lane (cf. the 2026-07-25 deepseek-chat retirement).
+
+Unchanged: Phase-2 synthesis behaviour, `_run_brain_loop` (non-streaming), the instant
+lane, prescreen, quota, and every §0 gate. Tests: `tests/test_brain_streaming.py`.
