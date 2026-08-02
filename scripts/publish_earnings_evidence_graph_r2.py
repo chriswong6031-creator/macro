@@ -87,8 +87,11 @@ def _is_precondition_failed(exc: Exception) -> bool:
 def _remote_marker(s3: Any, bucket: str) -> tuple[dict[str, Any] | None, str | None]:
     try:
         response = s3.get_object(Bucket=bucket, Key=f"{PREFIX}/manifest.json")
-        payload = json.loads(response["Body"].read())
-        return (payload if isinstance(payload, dict) else None, str(response.get("ETag") or "") or None)
+        raw = response["Body"].read()
+        payload = json.loads(raw)
+        if not isinstance(payload, dict) or raw != canonical_json_bytes(payload):
+            raise ImmutableAddressIntegrityError("current earnings evidence marker is not canonical")
+        return payload, str(response.get("ETag") or "") or None
     except Exception as exc:  # noqa: BLE001
         if _is_not_found(exc):
             return None, None
