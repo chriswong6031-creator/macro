@@ -1,0 +1,39 @@
+{
+  "amount_semantics": "reported subaward amount is self-reported subrecipient context; never federal obligation, outlay, backlog, revenue, cash, or additive prime award value",
+  "bounded": true,
+  "bounds": {
+    "description_utf8_bytes": 2000,
+    "max_detail_rows_per_parent": 500,
+    "max_detail_rows_per_run": 2000,
+    "max_pages_per_parent": 5,
+    "max_parents": 160,
+    "page_size": 100,
+    "public_downstream_row_cap": 2000,
+    "selected_parent_limit": 160
+  },
+  "collection_complete": true,
+  "contract": "government_revenue.subaward_ingest_status.v1",
+  "daily_lane": true,
+  "detail_parents_collected": 21,
+  "detail_rows_seen": 1949,
+  "errors": [],
+  "high_count_parents": 66,
+  "last_successful_observed_at": "2026-08-02T09:46:01.217060+00:00",
+  "observed_at": "2026-08-02T09:46:01.217060+00:00",
+  "parents_counted": 160,
+  "parents_selected": 160,
+  "partial": false,
+  "projection_eligible": true,
+  "projection_generation_id": "subaward-61cf42853879556a966b1589",
+  "receipts_this_run": 192,
+  "run_cap_count_only_parents": 10,
+  "run_id": "usaspending-subaward-ba4dad983f30227ef36ab32e",
+  "schema_version": "1.0.0",
+  "snapshot_versions_total": 1949,
+  "source_only": true,
+  "source_urls": [
+    "https://api.usaspending.gov/api/v2/awards/count/subaward/{award_id}/",
+    "https://api.usaspending.gov/api/v2/subawards/"
+  ],
+  "status": "ok"
+}
