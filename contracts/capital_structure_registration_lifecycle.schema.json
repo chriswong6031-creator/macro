@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_registration_lifecycle.schema.json",
+  "title": "Capital Structure registration lifecycle truth plane",
+  "description": "A deterministic point-in-time compilation of observed SEC registration lifecycle events. It records filed, amended, effective, and withdrawn observations only. Effectiveness is not evidence of executable or active offering ability, and this contract contains no financing terms, estimates, scores, probabilities, or trading authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+  "required": [
+    "schema", "compiler_version", "generation_id", "generated_at", "as_of",
+    "source_receipt", "coverage", "records", "deferred", "scope",
+    "unavailable", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.registration_lifecycle_bundle.v1"},
+    "compiler_version": {"type": "string", "minLength": 1},
+    "generation_id": {"type": "string", "pattern": "^registration-lifecycle:cs:[A-Fa-f0-9]{24}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "source_receipt": {"$ref": "#/$defs/source_receipt"},
+    "coverage": {"$ref": "#/$defs/bundle_coverage"},
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/lifecycle_record"},
+      "uniqueItems": true
+    },
+    "deferred": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/deferred_item"},
+      "uniqueItems": true
+    },
+    "scope": {"$ref": "#/$defs/scope"},
+    "unavailable": {"$ref": "#/$defs/unavailable"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "safe_property_name": {
+      "not": {
+        "pattern": "^(?:active_?capacity|executable_?capacity|remaining_?dollars?|primary_?resale|pricing|instruments?|risks?|scores?|probabilit(?:y|ies)|prophet_?signal)$"
+      }
+    },
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "nullable_string_array": {
+      "type": "array",
+      "items": {"type": ["string", "null"]},
+      "uniqueItems": true
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "is_context_only", "rank_authority", "sizing_authority",
+        "entry_authority", "prophet_authority"
+      ],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "unavailable": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "prefixItems": [
+        {"const": "active_or_executable_offering_capacity"},
+        {"const": "financing_probability"},
+        {"const": "instrument_terms"},
+        {"const": "offering_pricing"},
+        {"const": "primary_or_resale_classification"},
+        {"const": "remaining_offering_dollars"},
+        {"const": "risk_assessment"}
+      ],
+      "items": false
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["fact_type", "grouping_rule", "does_not_establish"],
+      "properties": {
+        "fact_type": {"const": "observed_sec_registration_lifecycle"},
+        "grouping_rule": {"const": "issuer_id_plus_provenance_trusted_explicit_sec_file_number_plus_registration_family"},
+        "does_not_establish": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "prefixItems": [
+            {"const": "active_or_executable_offering_capacity"},
+            {"const": "financing_probability"},
+            {"const": "instrument_terms"},
+            {"const": "offering_pricing"},
+            {"const": "primary_or_resale_classification"},
+            {"const": "remaining_offering_dollars"},
+            {"const": "risk_assessment"},
+            {"const": "trade_decision"}
+          ],
+          "items": false
+        }
+      }
+    },
+    "source_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "receipt_id", "verification_state", "upstream_status",
+        "visible_event_version_count", "visible_edge_count", "visible_event_ids",
+        "visible_edge_ids", "event_set_sha256", "edge_set_sha256"
+      ],
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^receipt:registration-lifecycle:cs:[A-Fa-f0-9]{24}$"},
+        "verification_state": {
+          "type": "string",
+          "enum": [
+            "verified_telemetry_last_generation",
+            "unbound_engine_input",
+            "upstream_unavailable"
+          ]
+        },
+        "upstream_status": {
+          "type": "string",
+          "enum": ["ok", "unbound", "missing", "degraded", "no_source_manifest"]
+        },
+        "visible_event_version_count": {"type": "integer", "minimum": 0},
+        "visible_edge_count": {"type": "integer", "minimum": 0},
+        "visible_event_ids": {"$ref": "#/$defs/string_array"},
+        "visible_edge_ids": {"$ref": "#/$defs/string_array"},
+        "event_set_sha256": {"$ref": "#/$defs/sha256"},
+        "edge_set_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "bundle_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "state", "reason", "candidate_event_count", "lifecycle_count",
+        "timeline_event_count", "deferred_count"
+      ],
+      "properties": {
+        "state": {"type": "string", "enum": ["observed", "partial", "unavailable"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "linked_observed_registration_lifecycles_only",
+            "deferred_registration_lifecycle_observations_present",
+            "no_visible_registration_lifecycle_observations",
+            "upstream_generation_unavailable"
+          ]
+        },
+        "candidate_event_count": {"type": "integer", "minimum": 0},
+        "lifecycle_count": {"type": "integer", "minimum": 0},
+        "timeline_event_count": {"type": "integer", "minimum": 0},
+        "deferred_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "registration_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["issuer_id", "file_number", "registration_family"],
+      "properties": {
+        "issuer_id": {"type": ["string", "null"], "minLength": 1},
+        "file_number": {"type": ["string", "null"], "minLength": 1},
+        "registration_family": {
+          "type": ["string", "null"],
+          "enum": [
+            "registration_s1", "registration_f1", "registration_s3",
+            "registration_f3", "registration_f10", "registration_reg_a", null
+          ]
+        }
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["issuer_id", "cik", "ticker", "observed_tickers"],
+      "properties": {
+        "issuer_id": {"type": "string", "minLength": 1},
+        "cik": {"type": ["string", "null"], "pattern": "^[0-9]{1,10}$"},
+        "ticker": {"type": ["string", "null"], "pattern": "^[A-Z0-9.\\-]+$"},
+        "observed_tickers": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["file_number", "file_number_provenance", "registration_family"],
+      "properties": {
+        "file_number": {"type": "string", "minLength": 1},
+        "file_number_provenance": {"$ref": "#/$defs/file_number_provenance"},
+        "registration_family": {
+          "type": "string",
+          "enum": [
+            "registration_s1", "registration_f1", "registration_s3",
+            "registration_f3", "registration_f10", "registration_reg_a"
+          ]
+        }
+      }
+    },
+    "file_number_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["state", "value", "candidate_values", "sources"],
+      "properties": {
+        "state": {"const": "observed"},
+        "value": {"type": "string", "minLength": 1},
+        "candidate_values": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "legacy_sgml_file_number",
+              "sec_header_file_number",
+              "effect_xml_file_number"
+            ]
+          }
+        }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "edge_id", "relationship", "to_event_id", "resolved_to_event_id",
+        "observed_at"
+      ],
+      "properties": {
+        "edge_id": {"type": "string", "minLength": 1},
+        "relationship": {
+          "type": "string",
+          "enum": ["amendment_of", "effectuates", "withdraws"]
+        },
+        "to_event_id": {"type": "string", "minLength": 1},
+        "resolved_to_event_id": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "timeline_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "event_id", "accession", "form", "transition", "state_after_event",
+        "sec_accepted_at", "mastermind_available_at", "correction_version",
+        "relationship", "manifest_ids"
+      ],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "accession": {"type": ["string", "null"]},
+        "form": {"type": "string", "minLength": 1},
+        "transition": {"type": "string", "enum": ["filed", "amended", "effective", "withdrawn"]},
+        "state_after_event": {"type": "string", "enum": ["filed", "amended", "effective", "withdrawn"]},
+        "sec_accepted_at": {"type": "string", "format": "date-time"},
+        "mastermind_available_at": {"type": "string", "format": "date-time"},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "relationship": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/relationship"}]},
+        "manifest_ids": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "derivation_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "receipt_id", "event_ids", "edge_ids", "manifest_ids",
+        "event_set_sha256", "edge_set_sha256"
+      ],
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^receipt:lifecycle:cs:[A-Fa-f0-9]{24}$"},
+        "event_ids": {"$ref": "#/$defs/string_array"},
+        "edge_ids": {"$ref": "#/$defs/string_array"},
+        "manifest_ids": {"$ref": "#/$defs/string_array"},
+        "event_set_sha256": {"$ref": "#/$defs/sha256"},
+        "edge_set_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "record_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["state", "reason", "deferred_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["observed", "partial"]},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "linked_observed_registration_events_only",
+            "one_or_more_registration_events_deferred"
+          ]
+        },
+        "deferred_ids": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "lifecycle_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "schema", "lifecycle_id", "issuer", "registration", "as_of",
+        "observed_registration_state", "latest_observed_event_id", "timeline",
+        "derivation_receipt", "coverage", "scope", "unavailable", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.registration_lifecycle.v1"},
+        "lifecycle_id": {"type": "string", "pattern": "^lifecycle:registration:cs:[A-Fa-f0-9]{24}$"},
+        "issuer": {"$ref": "#/$defs/issuer"},
+        "registration": {"$ref": "#/$defs/registration"},
+        "as_of": {"type": "string", "format": "date-time"},
+        "observed_registration_state": {"type": "string", "enum": ["filed", "amended", "effective", "withdrawn"]},
+        "latest_observed_event_id": {"type": "string", "minLength": 1},
+        "timeline": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/timeline_event"},
+          "uniqueItems": true
+        },
+        "derivation_receipt": {"$ref": "#/$defs/derivation_receipt"},
+        "coverage": {"$ref": "#/$defs/record_coverage"},
+        "scope": {"$ref": "#/$defs/scope"},
+        "unavailable": {"$ref": "#/$defs/unavailable"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "deferred_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "schema", "defer_id", "as_of", "reason", "registration_key",
+        "event_ids", "edge_ids", "candidate_event_ids", "detail"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.registration_lifecycle_defer.v1"},
+        "defer_id": {"type": "string", "pattern": "^defer:registration-lifecycle:cs:[A-Fa-f0-9]{24}$"},
+        "as_of": {"type": "string", "format": "date-time"},
+        "reason": {
+          "type": "string",
+          "enum": [
+            "ambiguous_correction_link",
+            "ambiguous_current_event_version",
+            "ambiguous_lifecycle_edge",
+            "ambiguous_sec_chronology",
+            "conflicting_issuer_cik",
+            "correction_group_changed",
+            "correction_history_mismatch",
+            "correction_link_missing",
+            "cross_issuer_link",
+            "disconnected_registration_graph",
+            "edge_target_not_registration",
+            "file_number_mismatch",
+            "form_lifecycle_state_mismatch",
+            "missing_file_number",
+            "missing_issuer_id",
+            "missing_lifecycle_edge",
+            "missing_registration_root",
+            "missing_sec_accepted_at",
+            "multiple_registration_roots",
+            "noncausal_event_clock",
+            "noncausal_linkage",
+            "post_withdrawal_transition",
+            "registration_family_mismatch",
+            "registration_observation_not_classified",
+            "untrusted_file_number_provenance",
+            "unexpected_lifecycle_edge"
+          ]
+        },
+        "registration_key": {"$ref": "#/$defs/registration_key"},
+        "event_ids": {"$ref": "#/$defs/string_array"},
+        "edge_ids": {"$ref": "#/$defs/string_array"},
+        "candidate_event_ids": {"$ref": "#/$defs/string_array"},
+        "detail": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
