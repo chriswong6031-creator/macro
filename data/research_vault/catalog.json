@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T08:02:29.726329+00:00",
-  "count": 580,
+  "generated_at": "2026-08-02T08:32:16.656823+00:00",
+  "count": 582,
   "institutions": [
     "Amova",
     "Apollo",
@@ -321,6 +321,21 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-4n03zvkjyr9-c3efb8",
+      "title": "Global FX Trader Policy Pushback",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:01Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-axxnjdcrpex-52c38c",
       "title": "Mexico Private Sector Credit Growth Firmed in June (Ramos)",
       "institution": "Goldman Sachs",
@@ -347,6 +362,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-137wdxnfcnx-4de4d1",
+      "title": "China Trade Dashboard 2026Q2 Higher Prices Drive Strong Import and Export Growth",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:12:55Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
