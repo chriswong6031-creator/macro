@@ -1,6 +1,6 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-08-01 16:02 UTC",
+"as_of":"2026-08-02 00:39 UTC",
 "n":1954,
 "total_reported":1954,
 "unmapped_industries":[],
@@ -6214,14 +6214,6 @@
 "market_cap_b":1.63
 },
 {
-"ticker":"TIC",
-"company":"TIC Solutions Inc",
-"industry":"Specialty Business Services",
-"sector":"Industrials",
-"country":"USA",
-"market_cap_b":1.62
-},
-{
 "ticker":"GCT",
 "company":"GigaCloud Technology Inc",
 "industry":"Software - Infrastructure",
@@ -8764,6 +8756,14 @@
 "sector":"Financial",
 "country":"USA",
 "market_cap_b":0.896
+},
+{
+"ticker":"TIC",
+"company":"TIC Solutions Inc",
+"industry":"Specialty Business Services",
+"sector":"Industrials",
+"country":"United Kingdom",
+"market_cap_b":0.8948
 },
 {
 "ticker":"CVLG",

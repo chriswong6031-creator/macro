@@ -16,7 +16,7 @@
   "errors": [],
   "lookback_days": 1826,
   "max_pages_per_entity": 2,
-  "observed_at": "2026-08-01T15:07:17.812194+00:00",
+  "observed_at": "2026-08-01T23:54:08.659841+00:00",
   "page_size": 50,
   "schema_version": "government_revenue.ingest_status.v1",
   "snapshots_total": 1936,

@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-08-01",
+ "as_of": "2026-08-02",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -7070,10 +7070,6 @@
      "name": "Cimpress plc"
     },
     {
-     "ticker": "TIC",
-     "name": "TIC Solutions Inc"
-    },
-    {
      "ticker": "TH",
      "name": "Target Hospitality Corp"
     },
@@ -7092,6 +7088,10 @@
     {
      "ticker": "BKSY",
      "name": "BlackSky Technology Inc"
+    },
+    {
+     "ticker": "TIC",
+     "name": "TIC Solutions Inc"
     },
     {
      "ticker": "KODK",
@@ -13246,10 +13246,6 @@
      "name": "Willis Lease Finance Corp"
     },
     {
-     "ticker": "TIC",
-     "name": "TIC Solutions Inc"
-    },
-    {
      "ticker": "ARLO",
      "name": "Arlo Technologies Inc"
     },
@@ -13420,6 +13416,10 @@
     {
      "ticker": "BKSY",
      "name": "BlackSky Technology Inc"
+    },
+    {
+     "ticker": "TIC",
+     "name": "TIC Solutions Inc"
     },
     {
      "ticker": "CVLG",

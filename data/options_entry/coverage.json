@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-01T16:14:11.028906+00:00",
-  "as_of": "2026-08-01",
+  "generated_at": "2026-08-02T00:50:45.402316+00:00",
+  "as_of": "2026-08-02",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 415,
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 343,
+        "n_nonnull": 337,
         "n_total": 415,
-        "share_nonnull": 0.8265
+        "share_nonnull": 0.812
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 322,
+        "n_nonnull": 317,
         "n_total": 415,
-        "share_nonnull": 0.7759
+        "share_nonnull": 0.7639
       },
       {
         "feature": "zerodte_share",
@@ -349,7 +349,7 @@
       "cond_hit_share": 0.8206,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-01",
+        "forecast_date": "2026-08-02",
         "basis": "n_cond=27/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=1.000 \u2192 0 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -373,7 +373,7 @@
       "cond_hit_share": 0.9809,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-04",
+        "forecast_date": "2026-08-05",
         "basis": "n_cond=0/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=0.994 \u2192 3 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -470,26 +470,26 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-31",
-          "age_days_from_today": 1,
+          "age_days_from_today": 2,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-01 03:14 UTC",
-          "age_days_from_today": 0,
+          "latest_as_of": "2026-08-01 21:14 UTC",
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-21",
-          "age_days_from_today": 11,
+          "age_days_from_today": 12,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-01T16:14:10.984772+00:00",
+      "generated_at": "2026-08-02T00:50:45.360270+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -499,8 +499,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-01T16:14:11.028899+00:00",
-    "as_of": "2026-08-01",
+    "generated_at_utc": "2026-08-02T00:50:45.402307+00:00",
+    "as_of": "2026-08-02",
     "absent_stores": []
   }
 }

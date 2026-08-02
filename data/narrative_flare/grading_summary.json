@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-01T16:34:37.919815+00:00",
+  "generated_at": "2026-08-02T01:10:38.573585+00:00",
   "families": {
     "narrative_source_call": {
-      "n_claims": 311,
+      "n_claims": 322,
       "n_resolved": 281,
       "hit_rate": null,
       "accruing": true,
