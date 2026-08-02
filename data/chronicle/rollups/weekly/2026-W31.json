@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "coverage": {
-    "end": "2026-08-01",
+    "end": "2026-08-02",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 8 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-02"
+    "start": "2026-05-03"
   },
   "iso_week": "2026-W31",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 378,
+          "n_events": 395,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -68,7 +68,7 @@
           ]
         },
         {
-          "n_events": 91,
+          "n_events": 103,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -77,69 +77,13 @@
           "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
-          "top_events": [
-            {
-              "date": "2026-07-31",
-              "id": "cev-risk_band-5f63770b7eb0",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-31",
-              "tickers": [],
-              "title": "Risk radar: caution → watch",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-27",
-              "id": "cev-risk_band-8489299a6c95",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-27",
-              "tickers": [],
-              "title": "Risk radar: caution → watch",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-28",
-              "id": "cev-risk_band-c0c1fbc1d50d",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-28",
-              "tickers": [],
-              "title": "Risk radar: watch → caution",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 2,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-29",
-              "id": "cev-prophet_ledger-3c460da0528e",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "FBRT-BULL-20260713",
-              "tickers": [
-                "FBRT"
-              ],
-              "title": "Prophet close: FBRT BULL → INVALIDATED (-7.7% in 16d)",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-31",
-              "id": "cev-prophet_ledger-f3a46ac4ce2c",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "COIN-BULL-20260702",
-              "tickers": [
-                "COIN"
-              ],
-              "title": "Prophet close: COIN BULL → INVALIDATED (-11.6% in 29d)",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 2,
@@ -172,18 +116,7 @@
           "n_events": 1,
           "source": "macro_release",
           "theme": "claims",
-          "top_events": [
-            {
-              "date": "2026-07-30",
-              "id": "cev-macro_release-7ac656fa4a6f",
-              "kind": "print",
-              "source": "macro_release",
-              "source_ref": "claims#2026-07-30",
-              "tickers": [],
-              "title": "Macro print: claims = +197 (2026-07-30)",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W31"
@@ -191,7 +124,7 @@
     {
       "clusters": [
         {
-          "n_events": 166,
+          "n_events": 167,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -226,101 +159,40 @@
               "weight_hint": 3
             },
             {
-              "date": "2026-07-24",
-              "id": "cev-research_vault-0202e801a349",
+              "date": "2026-07-20",
+              "id": "cev-research_vault-b4ff102eff0a",
               "kind": "report",
               "source": "research_vault",
-              "source_ref": "marketdesk-hougqtlxf0n-b07afe",
+              "source_ref": "marketdesk-xynjuyjmmnl-a733fd",
               "tickers": [],
-              "title": "Goldman Sachs: EM Weekly Kickstart MSCI EM closed 1 higher in a volatile week",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-research_vault-033cccade4eb",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-rbcqtukaida-6028e6",
-              "tickers": [],
-              "title": "Goldman Sachs: Americas Healthcare REITs 2Q26 Preview Life Science funding greenshoots, leasing remains subdued",
-              "weight_hint": 2
+              "title": "Morgan Stanley: Michael Wilson Weekly Warm up Broadening Continues as Index Struggles",
+              "weight_hint": 3
             }
           ]
+        },
+        {
+          "n_events": 6,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
         },
         {
           "n_events": 5,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-20",
-              "id": "cev-prophet_ledger-3faec3db6c86",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "MS-BULL-20260709",
-              "tickers": [
-                "MS"
-              ],
-              "title": "Prophet close: MS BULL → INVALIDATED (-5.0% in 11d)",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-prophet_ledger-d614541af8ae",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "UBER-BULL-20260623",
-              "tickers": [
-                "UBER"
-              ],
-              "title": "Prophet close: UBER BULL → INVALIDATED (-11.4% in 31d)",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 2,
           "source": "risk_band",
           "theme": "risk",
-          "top_events": [
-            {
-              "date": "2026-07-24",
-              "id": "cev-risk_band-40f76052712a",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-24",
-              "tickers": [],
-              "title": "Risk radar: watch → caution",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-21",
-              "id": "cev-risk_band-f80f93297f8c",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-21",
-              "tickers": [],
-              "title": "Risk radar: caution → watch",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 1,
           "source": "macro_release",
           "theme": "claims",
-          "top_events": [
-            {
-              "date": "2026-07-23",
-              "id": "cev-macro_release-2b0a7c2c0b86",
-              "kind": "print",
-              "source": "macro_release",
-              "source_ref": "claims#2026-07-23",
-              "tickers": [],
-              "title": "Macro print: claims = +187 (2026-07-23)",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W30"
@@ -331,48 +203,13 @@
           "n_events": 3,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-16",
-              "id": "cev-prophet_ledger-095ee3b88468",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "QCOM-BULL-20260709",
-              "tickers": [
-                "QCOM"
-              ],
-              "title": "Prophet close: QCOM BULL → INVALIDATED (-10.7% in 7d)",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-16",
-              "id": "cev-prophet_ledger-0d4cbc63fe3d",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "QCOM-BULL-20260710",
-              "tickers": [
-                "QCOM"
-              ],
-              "title": "Prophet close: QCOM BULL → INVALIDATED (-9.8% in 6d)",
-              "weight_hint": 2
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
           "top_events": [
-            {
-              "date": "2026-07-13",
-              "id": "cev-risk_band-3cbf5ff03fc3",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-13",
-              "tickers": [],
-              "title": "Risk radar: watch → caution",
-              "weight_hint": 2
-            },
             {
               "date": "2026-07-15",
               "id": "cev-risk_band-8bb15e0f6550",
@@ -470,6 +307,61 @@
     {
       "clusters": [
         {
+          "n_events": 4,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-18",
+              "id": "cev-earnings_call-824336ad9a6d",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:BKYI:2026Q1",
+              "tickers": [
+                "BKYI"
+              ],
+              "title": "Earnings call: BKYI Q1 FY2026 — upbeat",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-19",
+              "id": "cev-earnings_call-c891005b8cc5",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:FIRY:2026Q1",
+              "tickers": [
+                "FIRY"
+              ],
+              "title": "Earnings call: FIRY Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-19",
+              "id": "cev-earnings_call-e5c766890126",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:RDCM:2026Q1",
+              "tickers": [
+                "RDCM"
+              ],
+              "title": "Earnings call: RDCM Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-18",
+              "id": "cev-earnings_call-ec36ef5270b4",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:CISS:2026Q1",
+              "tickers": [
+                "CISS"
+              ],
+              "title": "Earnings call: CISS Q1 FY2026 — confident",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
           "n_events": 1,
           "source": "earnings",
           "theme": "earnings",
@@ -494,6 +386,73 @@
     {
       "clusters": [
         {
+          "n_events": 8,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-12",
+              "id": "cev-earnings_call-3b00804de95c",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:SMTI:2026Q1",
+              "tickers": [
+                "SMTI"
+              ],
+              "title": "Earnings call: SMTI Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-14",
+              "id": "cev-earnings_call-4ce85d7315e5",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:CCAP:2026Q1",
+              "tickers": [
+                "CCAP"
+              ],
+              "title": "Earnings call: CCAP Q1 FY2026 — guarded",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-12",
+              "id": "cev-earnings_call-6751b599a3af",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:AVIR:2026Q1",
+              "tickers": [
+                "AVIR"
+              ],
+              "title": "Earnings call: AVIR Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-14",
+              "id": "cev-earnings_call-8fa958948e36",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:INVZ:2026Q1",
+              "tickers": [
+                "INVZ"
+              ],
+              "title": "Earnings call: INVZ Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-11",
+              "id": "cev-earnings_call-a3b1b91be307",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:DSP:2026Q1",
+              "tickers": [
+                "DSP"
+              ],
+              "title": "Earnings call: DSP Q1 FY2026 — confident",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
@@ -504,6 +463,73 @@
     },
     {
       "clusters": [
+        {
+          "n_events": 14,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": [
+            {
+              "date": "2026-05-06",
+              "id": "cev-earnings_call-22904a25bb6a",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:NDLS:2026Q1",
+              "tickers": [
+                "NDLS"
+              ],
+              "title": "Earnings call: NDLS Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-05",
+              "id": "cev-earnings_call-3cdea20772cb",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:LVWR:2026Q1",
+              "tickers": [
+                "LVWR"
+              ],
+              "title": "Earnings call: LVWR Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-06",
+              "id": "cev-earnings_call-3f1b3685fa4a",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:HY:2026Q1",
+              "tickers": [
+                "HY"
+              ],
+              "title": "Earnings call: HY Q1 FY2026 — mixed",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-05",
+              "id": "cev-earnings_call-40e9983aec2b",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:LDI:2026Q1",
+              "tickers": [
+                "LDI"
+              ],
+              "title": "Earnings call: LDI Q1 FY2026 — confident",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-05-08",
+              "id": "cev-earnings_call-4fe10e3e3baa",
+              "kind": "earnings",
+              "source": "earnings_call",
+              "source_ref": "defeatbeta:MBI:2026Q1",
+              "tickers": [
+                "MBI"
+              ],
+              "title": "Earnings call: MBI Q1 FY2026 — downbeat",
+              "weight_hint": 2
+            }
+          ]
+        },
         {
           "n_events": 1,
           "source": "prophet_ledger",
