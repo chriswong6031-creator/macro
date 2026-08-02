@@ -148,20 +148,7 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
 </head>
 <link rel="stylesheet" href="product-nav-icons.css">
 <body>
-<nav class="site-nav">
-  {% include "_navlinks.html.j2" %}
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span>{{ t('Mastermind', '操盘大脑') }}</a>
-    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span>{{ t('Terminal', '终端') }}</a>
-    <a class="ai-brief-link" href="china.html"><span class="menu-icon menu-icon-flag menu-icon-cn" aria-hidden="true"></span>{{ t('China Regime','中国体制') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 <div class="wrap">
 
   <div class="h1">🇨🇳 {{ t('China Sector Desk','中国行业桌面') }}</div>

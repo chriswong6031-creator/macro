@@ -190,18 +190,7 @@ a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(-
 </style>
 </head>
 <body>
-<nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
-  {% include "_navlinks.html.j2" %}
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="mastermind.html"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span>{{ t('Mastermind', '操盘大脑') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 
 <div class="wrap">
   <div class="pg-brand">📊 <span class="l-en">Signals <span class="gn">Lining Up</span></span><span class="l-zh">信号<span class="gn">共振</span></span></div>
