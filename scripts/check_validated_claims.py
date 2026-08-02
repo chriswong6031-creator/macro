@@ -160,6 +160,12 @@ _STRUCTURAL = [
 # which case it is cheap to word it accurately — or it is a claim like any other.
 _IDENT_MASK = re.compile(r"\.(?=[A-Za-z_])[\w-]*validated[\w-]*")
 
+# JSON payloads may expose a field named ``validated`` whose value is a count or
+# machine state. Mask only the quoted key token, not the whole line: generated
+# application/json payloads are commonly one line, and platform-authored prose in
+# sibling values must remain visible to the claim gate.
+_JSON_KEY_MASK = re.compile(r"([\"'])validated\1(?=\s*:)", re.IGNORECASE)
+
 # ── QUOTED THIRD-PARTY RESEARCH — structural non-claims, same family as _STRUCTURAL ──
 #
 # The research vault mirrors syndicated institutional notes (Goldman, BofA, …) into three
@@ -469,7 +475,8 @@ def _scan_line(line: str, allow: list[dict],
         return 0, []                                    # structural non-claim line
     # Selector / dotted-identifier tokens are excised, not whole-line skipped, so copy
     # sharing a line with one is still gated (see the _IDENT_MASK block comment).
-    norm = _IDENT_MASK.sub(_TP_CUT, html.unescape(line))
+    norm = _JSON_KEY_MASK.sub(_TP_CUT, html.unescape(line))
+    norm = _IDENT_MASK.sub(_TP_CUT, norm)
     n_negated = 0
     hits: list[tuple[bool, dict | None]] = []
     for m in TOKEN.finditer(norm):
@@ -802,6 +809,11 @@ def selftest() -> int:
          "    val: {{ ('validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0)", False, allow, S),
         ("rendered factors val payload is a data value, not a claim",
          '    val: "validated",', False, allow, S),
+        ("numeric validated JSON key is a data field, not a claim",
+         '<script type="application/json">{"validated":0}</script>', False, allow, S),
+        ("prose beside a numeric validated JSON key still fires",
+         '<script type="application/json">{"validated":0,"copy":"This signal is validated."}</script>',
+         True, allow, S),
         # ── selector / identifier vs hyphenated PROSE (the _IDENT_MASK narrowing) ────
         ("CSS class selector is not a claim",
          "  .nbb-validated { color: var(--up); }", False, allow, S),

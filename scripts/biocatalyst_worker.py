@@ -133,6 +133,8 @@ _SAFE_ERROR_CODES = frozenset(
         "SOURCE_TIMESTAMP_INCONSISTENT",
         "SOURCE_TIMESTAMP_INVALID",
         "SOURCE_TIMESTAMP_REGRESSION",
+        "TRIAL_PROJECTION_BINDING_MISMATCH",
+        "TRIAL_PROJECTION_INVALID",
         "UNEXPECTED_HTTP_STATUS",
         "UNSAFE_OBJECT_KEY",
         "UNSAFE_PRIVATE_ARTIFACT",
@@ -288,6 +290,15 @@ class WorkerResult:
     status: str
     error_code: str | None = None
     generation_id: str | None = None
+
+
+@dataclass(frozen=True)
+class ValidatedPrivateEvidence:
+    """In-memory evidence bundle proven against the exact private run tree."""
+
+    snapshots_by_nct: dict[str, dict[str, Any]]
+    receipts: tuple[dict[str, Any], ...]
+    raw_page_bodies_by_receipt: dict[str, bytes]
 
 
 class CollectorResult(Protocol):
@@ -636,7 +647,7 @@ def _validate_private_raw_evidence(
     *,
     run_path: Path,
     config: WorkerConfig,
-) -> dict[str, dict[str, Any]]:
+) -> ValidatedPrivateEvidence:
     """Independently prove B1 run -> exact probes/pages -> canonical snapshots.
 
     The worker treats every collector write as hostile until this boundary has
@@ -794,7 +805,11 @@ def _validate_private_raw_evidence(
                     expected_directories.add(parent.as_posix())
         if actual_files != expected_files or actual_directories != expected_directories:
             raise PublicationError("RAW_EVIDENCE_INVALID")
-        return snapshots_by_nct
+        return ValidatedPrivateEvidence(
+            snapshots_by_nct=snapshots_by_nct,
+            receipts=tuple(receipts),
+            raw_page_bodies_by_receipt=raw_by_receipt,
+        )
     except PublicationError as exc:
         if exc.code == "RAW_EVIDENCE_INVALID":
             raise
@@ -1028,7 +1043,7 @@ def run_once(
                 now=now_fn(),
             )
 
-            validated_snapshots_by_nct = _validate_private_raw_evidence(
+            validated_evidence = _validate_private_raw_evidence(
                 private_stage,
                 run,
                 run_path=run_path,
@@ -1046,7 +1061,11 @@ def run_once(
                 run=run,
                 expected_watermark=expected_watermark,
                 health=health,
-                validated_snapshots_by_nct=validated_snapshots_by_nct,
+                validated_snapshots_by_nct=validated_evidence.snapshots_by_nct,
+                source_receipts=validated_evidence.receipts,
+                raw_page_bodies_by_receipt=(
+                    validated_evidence.raw_page_bodies_by_receipt
+                ),
             )
 
             # Construct the dedicated client only after every local source,

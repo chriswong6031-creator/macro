@@ -14,11 +14,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
 SERVICE_PATH = DEPLOY / "macro-biocatalyst.service"
+MACRO_API_SERVICE_PATH = DEPLOY / "macro-api.service"
 TIMER_PATH = DEPLOY / "macro-biocatalyst.timer"
 SETUP_PATH = DEPLOY / "biocatalyst-setup.sh"
 RUNTIME_PATH = DEPLOY / "biocatalyst-runtime.sh"
 SECURE_PATHS_PATH = DEPLOY / "biocatalyst-secure-paths.py"
 REQUIREMENTS_PATH = DEPLOY / "biocatalyst-requirements.txt"
+API_REQUIREMENTS_PATH = ROOT / "app" / "requirements.txt"
 UPDATE_PATH = DEPLOY / "update.sh"
 
 
@@ -92,6 +94,79 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "worker owns its non-blocking lock" in service
     assert "flock" not in service
     assert "Restart=always" not in service
+
+
+def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_state():
+    service = _text(MACRO_API_SERVICE_PATH)
+
+    assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
+    assert "ReadOnlyPaths=-/var/lib/macro-biocatalyst/public" in service
+    assert "InaccessiblePaths=-/var/lib/macro-biocatalyst/state" in service
+    assert "InaccessiblePaths=-/etc/macro-biocatalyst.env" in service
+    assert "BIOCATALYST_R2_" not in service
+    assert "ReadWritePaths=/var/lib/macro-biocatalyst" not in service
+
+
+def test_macro_api_declares_projection_validation_dependencies():
+    requirements = _text(API_REQUIREMENTS_PATH)
+
+    assert re.search(r"^jsonschema>=4\.23,<5\.0$", requirements, re.MULTILINE)
+    assert re.search(r"^referencing>=0\.30,<1\.0$", requirements, re.MULTILINE)
+
+
+def test_biocatalyst_router_mount_is_not_silently_optional():
+    main_source = _text(ROOT / "app" / "main.py")
+    route_source = _text(ROOT / "app" / "biocatalyst.py")
+
+    mount = "from app.biocatalyst import router as biocatalyst_router"
+    assert main_source.count(mount) == 1
+    assert 'log.warning("BioCatalyst router not mounted:' not in main_source
+    assert "if _PUBLIC_ROOT.exists():" in route_source
+    assert "_verify_serving_runtime()" in route_source
+    assert "def _publication_runtime()" in route_source
+    assert "from engine.biocatalyst.publication import" not in route_source.split(
+        "router = APIRouter()", 1
+    )[0]
+
+
+def test_unprovisioned_app_import_defers_biocatalyst_contract_runtime(tmp_path: Path):
+    probe = """
+import builtins
+
+real_import = builtins.__import__
+def guarded_import(name, *args, **kwargs):
+    if name.split('.', 1)[0] in {'jsonschema', 'referencing'}:
+        raise ModuleNotFoundError(name)
+    return real_import(name, *args, **kwargs)
+
+builtins.__import__ = guarded_import
+import app.main
+"""
+    environment = os.environ.copy()
+    environment["BIOCATALYST_PUBLIC_ROOT"] = str(tmp_path / "not-provisioned")
+    unprovisioned = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert unprovisioned.returncode == 0, unprovisioned.stderr
+
+    provisioned_root = tmp_path / "provisioned"
+    provisioned_root.mkdir()
+    environment["BIOCATALYST_PUBLIC_ROOT"] = str(provisioned_root)
+    provisioned = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert provisioned.returncode != 0
+    assert "jsonschema" in provisioned.stderr
 
 
 def test_timer_is_hourly_jittered_and_operator_armable():

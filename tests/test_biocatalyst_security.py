@@ -21,6 +21,7 @@ from collectors.biocatalyst.clinicaltrials_v2 import (
     ClinicalTrialsV2Config,
     CollectionError,
 )
+import engine.biocatalyst.publication as publication_module
 from engine.biocatalyst.publication import (
     PreparedGeneration,
     PublicationError,
@@ -99,6 +100,46 @@ def _rehash_generation(
         if artifact["name"] == "health.json":
             artifact["sha256"] = sha256(health_bytes).hexdigest()
             artifact["byte_count"] = len(health_bytes)
+    manifest["manifest_sha256"] = canonical_json_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_sha256"}
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+
+
+def _rehash_trial_projection(
+    *,
+    pointer_path: Path,
+    generation: Path,
+    mutate: Callable[[dict[str, Any]], None],
+) -> None:
+    """Model a full-chain rehash attempt against one normalized trial DTO.
+
+    This deliberately recomputes the projection's self-hash, its manifest
+    artifact entry, the manifest hash, and the current-pointer manifest hash.
+    The reader must therefore reject provenance rebinding on semantic grounds,
+    not merely because an outer hash was left stale.
+    """
+
+    snapshot_path = generation / "trial_snapshots" / "NCT00000001.json"
+    manifest_path = generation / "manifest.json"
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mutate(snapshot)
+    snapshot["projection_sha256"] = canonical_json_sha256(
+        {key: value for key, value in snapshot.items() if key != "projection_sha256"}
+    )
+    snapshot_bytes = canonical_json_bytes(snapshot) + b"\n"
+    snapshot_path.write_bytes(snapshot_bytes)
+    for artifact in manifest["artifacts"]:
+        if artifact["name"] == "trial_snapshots/NCT00000001.json":
+            artifact["sha256"] = sha256(snapshot_bytes).hexdigest()
+            artifact["byte_count"] = len(snapshot_bytes)
+            break
+    else:  # A worker-promoted B1b generation must have this exact artifact.
+        raise AssertionError("normalized trial projection artifact missing")
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
     )
@@ -188,6 +229,126 @@ def test_rehashed_immutable_generation_rejects_time_not_equal_to_publication(
 
     with pytest.raises(PublicationError):
         publisher.read_committed()
+
+
+@pytest.mark.parametrize(
+    ("attack", "mutate", "expected_code"),
+    (
+        (
+            "source_snapshot_ref",
+            lambda snapshot: snapshot.__setitem__(
+                "source_snapshot_ref", "ctgov_snapshot_NCT00000001_rebound"
+            ),
+            "TRIAL_PROJECTION_BINDING_MISMATCH",
+        ),
+        (
+            "source_record_ref",
+            lambda snapshot: snapshot.__setitem__(
+                "source_record_ref", "src:ctgov:NCT00000001:sha256:" + "0" * 64
+            ),
+            "TRIAL_PROJECTION_BINDING_MISMATCH",
+        ),
+        (
+            "canonical_content_sha256",
+            lambda snapshot: snapshot.__setitem__("canonical_content_sha256", "0" * 64),
+            "TRIAL_PROJECTION_BINDING_MISMATCH",
+        ),
+        (
+            "source_uri",
+            lambda snapshot: snapshot["source_attribution"].__setitem__(
+                "source_uri", "https://clinicaltrials.gov/study/NCT00000002"
+            ),
+            "TRIAL_PROJECTION_INVALID",
+        ),
+        (
+            "source_version_ordinal",
+            lambda snapshot: snapshot.__setitem__("source_version_ordinal", 2),
+            "TRIAL_PROJECTION_BINDING_MISMATCH",
+        ),
+    ),
+)
+def test_rehashed_trial_projection_cannot_rebind_to_a_different_source_state(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+    attack: str,
+    mutate: Callable[[dict[str, Any]], None],
+    expected_code: str,
+) -> None:
+    """A matching hash chain cannot bless a product DTO bound to another source."""
+
+    _, publisher = committed_generation
+    pointer_path, generation, _ = _generation_paths(publisher)
+    _rehash_trial_projection(
+        pointer_path=pointer_path,
+        generation=generation,
+        mutate=mutate,
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_trial_projection()
+
+    assert raised.value.code == expected_code, attack
+
+
+def test_rehashed_trial_projection_cannot_smuggle_private_provenance(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    """The product contract rejects private archive/object-store references."""
+
+    _, publisher = committed_generation
+    pointer_path, generation, _ = _generation_paths(publisher)
+    _rehash_trial_projection(
+        pointer_path=pointer_path,
+        generation=generation,
+        mutate=lambda snapshot: snapshot.__setitem__(
+            "raw_object_key", "biocatalyst/raw/clinicaltrials/v2/NCT00000001/" + "0" * 64 + ".json"
+        ),
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_trial_projection()
+
+    assert raised.value.code == "TRIAL_PROJECTION_INVALID"
+
+
+def test_worker_quarantines_a_rehashed_projection_that_disagrees_with_replayed_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The worker independently binds product facts to exact receipt/page evidence."""
+
+    real_builder = publication_module.build_trial_snapshot
+
+    def forged_builder(
+        source_snapshot: dict[str, Any], *, source_version_ordinal: int = 1
+    ) -> dict[str, Any]:
+        projection = real_builder(
+            source_snapshot, source_version_ordinal=source_version_ordinal
+        )
+        projection["facts"]["overall_status"]["value"] = "COMPLETED"
+        projection["projection_sha256"] = canonical_json_sha256(
+            {
+                key: value
+                for key, value in projection.items()
+                if key != "projection_sha256"
+            }
+        )
+        return projection
+
+    monkeypatch.setattr(publication_module, "build_trial_snapshot", forged_builder)
+    config = worker_config(tmp_path)
+    result = worker.run_once(
+        config,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: MemoryStore(),
+        now_fn=lambda: NOW,
+    )
+
+    assert result.status == "failed"
+    assert result.error_code == "TRIAL_PROJECTION_INVALID"
+    assert not (config.public_root / "current.json").exists()
+    health = json.loads((config.public_root / "health.json").read_text(encoding="utf-8"))
+    assert health["state"] == "quarantined"
+    assert health["last_error_code"] == "TRIAL_PROJECTION_INVALID"
 
 
 @pytest.mark.parametrize(

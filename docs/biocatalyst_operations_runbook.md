@@ -41,6 +41,12 @@ The worker is disabled by default. Explicit operator arming requires:
 7. an initial complete run whose raw pages, receipts, snapshots, and counts
    reconcile.
 
+Before the lane is provisioned, the macro API's BioCatalyst sandbox paths use
+systemd's optional-path prefix so their absence cannot prevent the serving API
+from starting. After setup creates the state, public, and environment paths,
+the next macro API restart enforces the read-only public mount and hides worker
+state and credentials exactly as specified.
+
 The worker is not attached to the nightly GitHub Actions collector, render lane, or intraday forward-ledger jobs. Those lanes cannot satisfy the two-hour source freshness target and must not become a second scheduler.
 
 ### B1 deployment and arming boundary
@@ -159,6 +165,7 @@ snapshot, private object key, absolute filesystem path, or credential):
 /var/lib/macro-biocatalyst/public/generations/{run_id}/manifest.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/source_manifest.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trials/{nct_id}.json
+/var/lib/macro-biocatalyst/public/generations/{run_id}/trial_snapshots/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/health.json
 /var/lib/macro-biocatalyst/public/health.json
 ```
@@ -178,6 +185,15 @@ and source snapshot. It rejects missing or extra private files, validates byte
 counts/hashes, pagination, raw-derived counts, snapshot coverage, and the exact
 allowlisted public-state fields before any private R2 write or public pointer
 advance. Fact-state taxonomies, observations, and diffs are B2 work, not B1.
+
+Generation schema `1.1.0` adds a separately versioned `trial_snapshot.v1`
+product projection under `trial_snapshots/`. It is built only after the private
+source snapshot has passed the evidence replay, copies the contract's exact
+allowlisted ClinicalTrials.gov paths with explicit missingness, and remains
+`current_only` source fact with no decision authority. The serving API exposes
+an even narrower response DTO and strips opaque snapshot/content identifiers.
+Historical observations, semantic change interpretation, issuer identity,
+probability, valuation, and signal authority remain outside this projection.
 
 ## 4. Source and version semantics
 

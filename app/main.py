@@ -1825,6 +1825,16 @@ try:
 except ImportError:
     pass  # additive route remains unavailable if its module is absent
 
+# BioCatalyst Intelligence serves only the worker's pointer-bound normalized
+# product projection. Its router performs early site_full enforcement before
+# touching the isolated read-only public generation root. This route is a paid
+# product contract, so router wiring errors fail startup loudly. The route
+# module also probes its heavier validation runtime at startup whenever the
+# operator-provisioned public root exists; an intentionally dark absent lane
+# does not couple unrelated API consumers to those optional product packages.
+from app.biocatalyst import router as biocatalyst_router  # noqa: E402
+app.include_router(biocatalyst_router)
+
 # Capital Structure observed filing-state desk.  This is an authenticated
 # artifact-serving boundary: it reads the verified projection only and does not
 # calculate financing terms, capacity, runway, or probability in the API tier.
