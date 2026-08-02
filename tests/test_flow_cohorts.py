@@ -875,3 +875,148 @@ class TestCohortBackfill:
         mag7 = next(r for r in rows if r["key"] == "mag7")
         assert len(mag7["spark_gross"]) == SPARKLINE_SESSIONS, mag7["spark_gross"]
         assert None not in mag7["spark_gross"], mag7["spark_gross"]
+
+
+# ── Test 14: a zero-coverage day must not ship a stance ───────────────────────
+#
+# Regression pin for the 2026-07-29 stamping defect.  build_flow_desk passes the
+# market-tide asof into build_cohorts (scripts/build_flow_desk.py:803), so a run
+# whose tide has advanced past the per-ticker summary coverage aggregates to
+# n_members_covered=0 with every headline None.  _pc_tone(None) returned
+# "balanced" and _net_soft_tone(None) returned "neutral~" — publishing those
+# verbatim turned "we have no observations" into an affirmative claim about
+# positioning.  19 committed cohorts.json vintages (2026-07-11 → 07-21) carried
+# that stance on all-null days; they predate the Theme groups panel rendering
+# (first shipped 07-22, when coverage was already full), so the contradiction
+# never reached a live page — but the panel renders daily now, so the next
+# uncovered session would have printed "balanced / 均衡" beside "no data today /
+# 今日无数据" in one tile.  Nulls are printed, not spun.
+
+class TestZeroCoverageEmitsNoStance:
+    """A cohort day with no covered members carries no tone chip, in JSON or HTML."""
+
+    ASOF_COVERED = date(2026, 7, 6)
+    ASOF_BARE = date(2026, 7, 7)  # one day past the only summary row
+
+    def _build(self, tmp_path: Path, asof: date, site: Path | None = None) -> list[dict]:
+        """Build against a tmp data root.
+
+        lib.config.data_dir MUST be patched (the idiom TestNightlyGate uses):
+        build_cohorts takes data_dir for its summary reads, but lib.store resolves
+        the cohort parquets through config, and tests/conftest.py arms
+        COLLECT_LANE=nightly for every test — so an unpatched call upserts into the
+        repo's committed stores.  Caught by the data guard while writing this test.
+        """
+        import unittest.mock as mock
+        import lib.config as cfg_mod
+
+        tmp_data = tmp_path / "data"
+        _make_membership(tmp_data, "mag7", ["X1"])
+        _make_summary(tmp_data, "X1", [{
+            "date": self.ASOF_COVERED.isoformat(), "premium_mn": 100.0,
+            "net_premium_mn": 50.0, "pc_ratio": 0.9, "volume": 1000,
+            "zerodte_share": 0.4, "net_doi": 10.0,
+        }])
+        with mock.patch.object(cfg_mod, "data_dir", lambda: tmp_data):
+            return build_cohorts(tmp_data, asof=asof, site_flowdata_dir=site)
+
+    def _mag7(self, rows: list[dict]) -> dict:
+        return next(r for r in rows if r["key"] == "mag7")
+
+    def test_no_coverage_emits_null_tones(self, tmp_path):
+        row = self._mag7(self._build(tmp_path, self.ASOF_BARE))
+        assert row["n_members_covered"] == 0
+        assert row["pc_ratio"] is None
+        # The defect: these were "balanced" / "neutral~" — a read with nothing read.
+        assert row["pc_tone"] is None, f"stance invented from a null: {row['pc_tone']!r}"
+        assert row["net_tone"] is None, f"stance invented from a null: {row['net_tone']!r}"
+
+    def test_covered_day_still_emits_tones(self, tmp_path):
+        """Control — pins against suppressing the tone on a real day."""
+        row = self._mag7(self._build(tmp_path, self.ASOF_COVERED))
+        assert row["n_members_covered"] == 1
+        assert row["pc_tone"] == "balanced"  # pc_ratio 0.9 is genuinely balanced
+        assert row["net_tone"] == "pos~"
+
+    def test_tone_fields_remain_present_in_json(self, tmp_path):
+        """Schema contract holds: the keys stay, the values go null."""
+        tmp_site = tmp_path / "site" / "flowdata"
+        self._build(tmp_path, self.ASOF_BARE, site=tmp_site)
+        payload = json.loads((tmp_site / "cohorts.json").read_text())
+        assert payload["asof"] == self.ASOF_BARE.isoformat()
+        for c in payload["cohorts"]:
+            assert "pc_tone" in c and "net_tone" in c
+            assert c["pc_tone"] is None and c["net_tone"] is None
+
+
+class TestZeroCoverageRendersNoStanceWord:
+    """flow_desk.html.j2 must not print a tilt word for a cohort with no data."""
+
+    @staticmethod
+    def _panel(html: str) -> str:
+        """Slice out the Theme groups panel (stance words legitimately appear elsewhere)."""
+        i = html.find("Theme groups")
+        j = html.find("Biggest bets today")
+        assert i >= 0 and j > i, "Theme groups panel not found in rendered page"
+        return html[i:j]
+
+    @staticmethod
+    def _render(cohorts: list[dict]) -> str:
+        from jinja2 import Environment, FileSystemLoader
+        root = Path(__file__).resolve().parent.parent
+        env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=False)
+        return env.get_template("flow_desk.html.j2").render(flow_desk={"cohorts": cohorts})
+
+    @staticmethod
+    def _row(**over) -> dict:
+        base = {
+            "key": "mag7", "name_en": "Mag 7", "name_zh": "七巨头",
+            "gross_premium_mn": None, "net_premium_mn": None, "pc_ratio": None,
+            "zerodte_share": None, "net_doi": None, "n_members": 7,
+            "n_members_covered": 0, "pc_tone": None, "net_tone": None,
+            "coverage_label": "0 of 7 members covered", "raw_fallback": True,
+            "spark_gross": [], "spark_net": [],
+        }
+        base.update(over)
+        return base
+
+    def test_no_stance_word_when_nothing_covered(self):
+        panel = self._panel(self._render([self._row()]))
+        assert "balanced" not in panel, "printed a tilt for a cohort with no observations"
+        assert "均衡" not in panel, "printed a tilt (ZH) for a cohort with no observations"
+        assert "net buy~" not in panel and "净买~" not in panel
+        assert "flat~" not in panel and "持平~" not in panel
+
+    def test_whole_panel_null_states_it_plainly(self):
+        """Plain-word disclosure in both languages, not four tiles of dashes."""
+        panel = self._panel(self._render([self._row()]))
+        assert "No theme-group data yet" in panel
+        assert "暂无主题群组数据" in panel
+        assert 'class="coh-tile"' not in panel, "dead tiles shipped instead of the null line"
+
+    def test_covered_cohort_still_renders_its_chip(self):
+        """Control — a real day keeps its tilt chip and its tile."""
+        panel = self._panel(self._render([self._row(
+            gross_premium_mn=4893.9, net_premium_mn=304.1, pc_ratio=0.674,
+            zerodte_share=0.514, n_members_covered=7, pc_tone="call-tilted",
+            net_tone="pos~", coverage_label="7 of 7 members covered",
+        )]))
+        assert 'class="coh-tile"' in panel
+        assert "偏看涨" in panel and "calls" in panel
+        assert "$4.9B" in panel
+        assert "No theme-group data yet" not in panel
+
+    def test_partial_coverage_keeps_the_strip(self):
+        """One covered group among four nulls still shows the strip, not the null line."""
+        rows = [
+            self._row(key="mag7"),
+            self._row(key="ai_software", name_en="Software", name_zh="软件",
+                      gross_premium_mn=1878.7, net_premium_mn=116.0, pc_ratio=0.462,
+                      n_members=17, n_members_covered=17, pc_tone="call-tilted",
+                      net_tone="pos~"),
+        ]
+        panel = self._panel(self._render(rows))
+        assert "No theme-group data yet" not in panel
+        assert 'class="coh-tile"' in panel
+        # the uncovered group says so in words and carries no tilt
+        assert "no data today" in panel or "今日无数据" in panel

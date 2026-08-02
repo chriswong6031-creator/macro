@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T00:01:17.165474+00:00",
-  "count": 559,
+  "generated_at": "2026-08-02T00:16:23.395388+00:00",
+  "count": 560,
   "institutions": [
     "Amova",
     "Apollo",
@@ -143,6 +143,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dvlkj9lb2fi-0ca973",
+      "title": "Mortgage & Structured Products Trader Powering Up",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:27Z",
+      "summary_points": [
+        "**15-Year MBS Cheapness**: Historical spread differentials (nominal and OAS) indicate 15-year MBS is slightly cheaper than recent periods, offering pricing value amid elevated Treasury yields and basis widening risk.",
+        "**Datacenter ABS/CMBS Growth**: Datacenter ABS/CMBS balances to reach $130B by 2027 (current $70B), driven by AI demand; $38B/$49B issuance forecasts for 2026/2027, with corporate JV refinancing as key upside.",
+        "**Insurers Dominate Non-QM RMBS**: Insurance companies’ non-QM RMBS holdings doubled Q1 2026 vs 2024, dominating AA/A/BBB tranches (50%+ share), fueled by annuity sales and structural features.",
+        "**GSE MBS Holdings Constrained**: Fannie/Freddie MBS holdings at $177.4B/$159.8B (vs $225B cap), creating duration gap convexity risk and limiting future purchases amid cap constraints.",
+        "**Refinancing Dynamics Shift**: Hyperscalers’ IG corporate bonds have lower spreads than datacenter ABS/CMBS, reducing traditional refinancing likelihood; $35B JV structures may refinance into structured credit."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 25,
       "language": "en",
       "needs_metadata": false
     },

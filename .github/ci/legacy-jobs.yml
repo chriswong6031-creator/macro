@@ -148,6 +148,34 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  admin-js-no-undef:
+    if: ${{ false }}
+    # admin/static/app.js is a flat top-level browser script and NOTHING in CI
+    # read its scopes, so a reference to a name declared in another function
+    # parsed clean and threw only on click. PR #3693 shipped exactly that
+    # ("ReferenceError: rejBox is not defined") and the admin Outbox panel
+    # rendered BLANK in production for ~2 days until #3871 module-scoped it.
+    # node --check cannot catch it (an undefined identifier is valid syntax),
+    # so this runs eslint with the single rule no-undef over admin/static/*.js.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Provided once by the ci-pack wrapper; declared here so this job stays
+      # readable as the standalone job it used to be (see wri-risk-core).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install test deps
+        run: pip install pytest
+      - name: admin JS must have no out-of-scope references (eslint no-undef)
+        run: python3 scripts/check_admin_js.py
+      - name: guard tests (real tree + planted #3693 offender, fail-closed in CI)
+        run: python -m pytest tests/test_admin_js_no_undef.py -q
+
   path-prune-lint:
     if: ${{ false }}
     # A tree-walk that prunes on the ABSOLUTE path also matches anything ABOVE
@@ -1385,7 +1413,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2: TestZeroCoverageRendersNoStanceWord renders templates/flow_desk.html.j2
+        # to assert the panel prints no stance word on a zero-coverage day.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: flow-cohorts unit tests
         run: python -m pytest tests/test_flow_cohorts.py -q
 

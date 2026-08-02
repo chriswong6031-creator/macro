@@ -32,10 +32,11 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
 from datetime import date, datetime
 from html import escape
 
-__all__ = ["illus", "regime_tape"]
+__all__ = ["illus", "regime_tape", "session_filmstrip"]
 
 # viewBox is fixed; the container stretches it horizontally (preserveAspectRatio=none).
 _VBW = 560.0
@@ -727,4 +728,192 @@ def illus(series, *, kind="line", accent=None, height=190, unit_en="", unit_zh=N
     return (
         f'<figure class="ilx ilx-{escape(kind)}" style="{style}" '
         f'role="img" aria-label="{aria}">{svg}{band_html}{ref_html}{corners}{end}</figure>'
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Session filmstrip — OIP W1 estate-wide signature (research/options_estate/
+# W1_DESIGN_SPEC.md §3). One session's net-premium path across the session
+# window, with tick marks where structure events fired.
+#
+# WHY THIS IS AN SSR FRAGMENT, NOT A CLIENT FETCH-AND-DRAW: the figure is
+# rendered ONCE, here, at nightly build time (scripts/build_session_digest.py,
+# per (record) it just built), and shipped as a field inside
+# site/session/<ROOT>.json. Every client-side home (Ticker mode, gex.html,
+# eventually Brief mode) fetches that JSON and drops the ready-made HTML string
+# in via innerHTML — never recomputing geometry in JS. Same "SSR SVG, never
+# Plotly, never re-derived client-side" law as every other ilx chart.
+#
+# Ink is ALWAYS --oew-accent (structure), hardcoded — never a caller-supplied
+# accent. The arc's sign (call-heavy vs put-heavy premium) is not one of the
+# two sanctioned direction instruments (tape_flow, ΔOI), so it may never be
+# colored --up/--down; making the accent a fixed constant here, rather than a
+# parameter, makes that law impossible for a call site to violate by accident.
+# --------------------------------------------------------------------------- #
+_FILM_H = 64.0        # the two W1 client-rendered homes both pin height:64px
+_FILM_Y_TOP = 10.0     # ink/tick vertical bounds, pinned by W1_DESIGN_SPEC §3.3
+_FILM_Y_BOT = 54.0     # (NOT the generic _PAD_T/_PAD_B — this is its own contract)
+_FILM_ACCENT = "var(--oew-accent)"
+_FILM_TIME_RE = re.compile(r"(\d{1,2}):(\d{2})")
+
+
+def _film_hhmm_window(window_label):
+    """'09:30–16:00 ET' -> (open_min, close_min) minutes-since-midnight, or None.
+
+    Reads whatever two HH:MM tokens are in the label (session_digest.session_window_
+    label's own format, en-dash separated) rather than assuming a literal '09:30' /
+    '16:00' — early-close sessions (13:00 ET) must degrade honestly too, not draw a
+    normal day's geometry against an abbreviated one.
+    """
+    m = _FILM_TIME_RE.findall(str(window_label or ""))
+    if len(m) < 2:
+        return None
+    try:
+        open_min = int(m[0][0]) * 60 + int(m[0][1])
+        close_min = int(m[1][0]) * 60 + int(m[1][1])
+    except ValueError:
+        return None
+    if close_min <= open_min:
+        return None
+    return open_min, close_min
+
+
+def _film_corner_labels(window_label):
+    m = _FILM_TIME_RE.findall(str(window_label or ""))
+    if len(m) < 2:
+        return "", ""
+    return f"{int(m[0][0]):02d}:{m[0][1]}", f"{int(m[1][0]):02d}:{m[1][1]}"
+
+
+def _film_x(t_label, open_min, close_min):
+    """Elapsed-session-time x, [0, 560] — NEVER array-index spacing (index spacing
+    would silently misrepresent a mid-session gap as compressed time)."""
+    m = _FILM_TIME_RE.search(str(t_label or ""))
+    if not m:
+        return None
+    total = int(m.group(1)) * 60 + int(m.group(2))
+    frac = (total - open_min) / (close_min - open_min)
+    return round(max(0.0, min(1.0, frac)) * _VBW, 2)
+
+
+def _film_y(v, vmin, vmax):
+    """`net` scaled to its own min/max within [_FILM_Y_TOP, _FILM_Y_BOT] — a SHAPE,
+    never an absolute value axis (no gridlines, no y-axis labels)."""
+    if vmax == vmin:
+        return round((_FILM_Y_TOP + _FILM_Y_BOT) / 2.0, 2)
+    frac = (v - vmin) / (vmax - vmin)
+    return round(_FILM_Y_BOT - frac * (_FILM_Y_BOT - _FILM_Y_TOP), 2)
+
+
+def _film_null(coverage: dict) -> str:
+    """Honest-null variant: no ink, no ticks, no dot — only the flat track and the
+    session's own composed absence sentence (coverage.quality_en/zh, verbatim)."""
+    coverage = coverage if isinstance(coverage, dict) else {}
+    en = escape(str(coverage.get("quality_en") or "No intraday record for this session"))
+    zh = escape(str(coverage.get("quality_zh") or "本交易日没有盘中记录"))
+    vb = int(_VBW)
+    return (
+        f'<figure class="ilx oew-film oew-film-null" role="img" aria-label="{en}" '
+        f'style="color:{_FILM_ACCENT};--ilx-h:{int(_FILM_H)}px">'
+        f'<svg viewBox="0 0 {vb} {int(_FILM_H)}" preserveAspectRatio="none" aria-hidden="true">'
+        f'<line class="oew-film-track" x1="0" y1="32" x2="{vb}" y2="32"/>'
+        f'<line class="oew-film-closecap" x1="{vb}" y1="14" x2="{vb}" y2="50"/>'
+        f"</svg>"
+        f'<span class="oew-film-empty"><span class="l-en">{en}</span>'
+        f'<span class="l-zh">{zh}</span></span>'
+        f"</figure>"
+    )
+
+
+def session_filmstrip(record: dict) -> str:
+    """Render the OIP W1 session filmstrip figure for one `options_session.v1`
+    record (engine/session_digest.py). Returns the `<figure>` markup ONLY — the
+    surrounding panel chrome (title, footer sentence, as-of) is the caller's job;
+    this function draws the figure and nothing else (W1_DESIGN_SPEC.md §3.3).
+
+    Pure function, never raises: degrades to the honest-null variant whenever
+    `coverage.minutes` is 0, the session window can't be parsed, or the arc is too
+    short to draw a shape (defensive beyond the spec's literal minutes==0 check —
+    a malformed non-empty arc must not emit a broken SVG path).
+    """
+    record = record if isinstance(record, dict) else {}
+    coverage = record.get("coverage")
+    coverage = coverage if isinstance(coverage, dict) else {}
+    try:
+        minutes = int(coverage.get("minutes") or 0)
+    except (TypeError, ValueError):
+        minutes = 0
+    if minutes <= 0:
+        return _film_null(coverage)
+
+    window = _film_hhmm_window(coverage.get("session_window_et"))
+    raw_arc = record.get("arc")
+    arc = ([row for row in raw_arc if isinstance(row, dict)]
+           if isinstance(raw_arc, (list, tuple)) else [])
+    if window is None or len(arc) < 2:
+        return _film_null(coverage)
+    open_min, close_min = window
+
+    pts = []
+    for row in arc:
+        x = _film_x(row.get("t"), open_min, close_min)
+        v = row.get("net")
+        if x is None or v is None:
+            continue
+        try:
+            pts.append((x, float(v)))
+        except (TypeError, ValueError):
+            continue
+    if len(pts) < 2:
+        return _film_null(coverage)
+
+    vmin = min(v for _x, v in pts)
+    vmax = max(v for _x, v in pts)
+    xy = [(x, _film_y(v, vmin, vmax)) for x, v in pts]
+    dot_x, dot_y = xy[-1]
+
+    raw_events = record.get("events")
+    events = raw_events if isinstance(raw_events, (list, tuple)) else []
+    tick_svg, ev_html = [], []
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
+        x = _film_x(ev.get("t"), open_min, close_min)
+        en = str(ev.get("label_en") or "")
+        if x is None or not en:
+            continue
+        zh = str(ev.get("label_zh") or en)
+        en_e, zh_e = escape(en), escape(zh)
+        pct = round(x / _VBW * 100, 2)
+        tick_svg.append(
+            f'<line class="ilx-event-tick oew-film-tick" x1="{x}" y1="{_FILM_Y_TOP:g}" '
+            f'x2="{x}" y2="{_FILM_Y_BOT:g}"/>'
+        )
+        ev_html.append(
+            f'<span class="ilx-event oew-film-ev" style="--x:{pct}%" tabindex="0" role="note" '
+            f'data-tip-en="{en_e}" data-tip-zh="{zh_e}" aria-label="{en_e}"><i></i></span>'
+        )
+
+    open_lbl, close_lbl = _film_corner_labels(coverage.get("session_window_et"))
+    n_ev = len(ev_html)
+    aria = escape(f"Session premium arrival, {n_ev} event{'' if n_ev == 1 else 's'}")
+    vb = int(_VBW)
+
+    svg = (
+        f'<svg viewBox="0 0 {vb} {int(_FILM_H)}" preserveAspectRatio="none" aria-hidden="true">'
+        f'<line class="oew-film-track" x1="0" y1="32" x2="{vb}" y2="32"/>'
+        f'<line class="oew-film-closecap" x1="{vb}" y1="14" x2="{vb}" y2="50"/>'
+        f'<path class="ilx-path oew-film-ink" d="{_d_line(xy)}"/>'
+        f'<circle class="ilx-dot oew-film-dot" cx="{dot_x}" cy="{dot_y}" r="3.2"/>'
+        + "".join(tick_svg)
+        + "</svg>"
+    )
+    return (
+        f'<figure class="ilx oew-film" role="img" aria-label="{aria}" '
+        f'style="color:{_FILM_ACCENT};--ilx-len:{_path_len(xy)};--ilx-h:{int(_FILM_H)}px">'
+        f"{svg}"
+        f'<span class="oew-film-d oew-film-d0 mono">{escape(open_lbl)}</span>'
+        f'<span class="oew-film-d oew-film-d1 mono">{escape(close_lbl)}</span>'
+        + "".join(ev_html)
+        + "</figure>"
     )

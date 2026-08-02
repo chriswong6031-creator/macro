@@ -20,7 +20,6 @@ EXPECTED_ICON_FAMILIES = {
     "forex",
     "heatmap",
     "intelligence",
-    "leader",
     "narrative",
     "news",
     "options",
@@ -34,8 +33,20 @@ EXPECTED_ICON_FAMILIES = {
     "strategy",
     "structure",
 }
+# OIP W1 nav regroup (research/options_estate/W1_DESIGN_SPEC.md §1.2): Options &
+# Flow's flyout shrinks from 9 rows (trigger + gex + options_screener + movers +
+# flow_desk + intraday_flow + flow_leaders + darkpool + market_structure) to 6
+# (trigger + options.html + gex.html [now carrying the freed submenu-icon-dashboard]
+# + intraday_flow + darkpool + market_structure) — options_screener/flow_desk/
+# flow_leaders leave the flyout (URLs stay live forever with their own banner) and
+# Daily Movers relocates into the United States group (same submenu-icon-stocks,
+# net zero on that family). submenu-icon-leader was flow_leaders' ONLY user
+# anywhere in this menu, so it drops out of EXPECTED_ICON_FAMILIES entirely rather
+# than staying in the emitted-minus set below (unlike allocation/bitcoin, which
+# are used elsewhere, just not in THIS rendered menu). Net count verified against
+# the real re-rendered template, not hand-counted: 61 -> 59.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-EXPECTED_EMITTED_ICON_COUNT = 61
+EXPECTED_EMITTED_ICON_COUNT = 59
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",

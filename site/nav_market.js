@@ -185,6 +185,10 @@
         ['Market overview', [
           ['Market Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard'],
           ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks'],
+          // OIP W1 §1.3: Daily Movers sits beside the Stock Dashboard (stock-level
+          // content), verbatim copy from _navlinks.html.j2's own relocated row.
+          ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
+            'movers.html', 'stocks', '每日异动', '免费 · 今日涨跌最大 · 联动主题'],
           ['Sector Central', 'Every sector in one view', 'sector_central.html', 'sectors'],
           ['Theme Baskets', 'Themes, leaders and rotation', 'baskets.html', 'baskets']
         ]],
@@ -194,11 +198,27 @@
           ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert'],
           ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news']
         ]],
+        // OIP W1 §1 nav regroup (masterplan §4), mirrored from _navlinks.html.j2's
+        // Options & Flow flyout (B1 fix): options.html is now the workspace entry,
+        // gex.html is the instrument bench (freed 'dashboard' icon, reused — same
+        // reassignment the template makes), Intraday Flow Tracker/Dark Pool Desk
+        // stay guarded exactly like their template rows (8th element = the href
+        // gate), Market Structure is new here. The three absorbed pages
+        // (Options Screener, Group Flow Heatmap, Flow Leaders) leave this menu —
+        // their URLs stay live, unlinked from navigation only.
         ['Market structure', [
-          ['Options Desk', 'Gamma, walls and volatility', 'gex.html', 'options'],
-          ['Group Flow Heatmap', 'Follow sector capital flows', 'flow_desk.html', 'flow'],
-          ['Options Screener', 'Find liquid volatility setups', 'options_screener.html', 'scanner', null, null, ''],
-          ['Dark Pool Desk', 'Track off-exchange positioning', 'darkpool.html', 'darkpool']
+          ['Options — the workspace', 'Daily Brief · Scanner · Ticker · Leaders',
+            'options.html', 'options', '期权工作台', '每日简报 · 筛选 · 个股 · 领头股'],
+          ['Options Desk', 'Instrument bench — charts, walls, vol surface',
+            'gex.html', 'dashboard', '期权台', '工具台 — 图表、墙位、波动率曲面'],
+          ['Intraday Flow Tracker', 'Volume durability · RVOL · VWAP · ~options flow · K/7 confluence',
+            'intraday_flow.html', 'dashboard', '盘中资金流追踪', '量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚',
+            null, 'intraday_flow.html'],
+          ['Dark Pool Desk', 'Off-exchange volume · short ratio · ATS venues',
+            'darkpool.html', 'darkpool', '场外暗池台', '场外成交量 · 融券比率 · ATS场所',
+            null, 'darkpool.html'],
+          ['Market Structure', 'GEX regime · machine flows · dispersion · weekly range',
+            'market_structure.html', 'structure', '市场结构', '做市商制度 · 机器资金 · 离散度 · 周度区间']
         ]]
       ],
       rail: [
@@ -415,12 +435,33 @@
       '<span class="item-desc d">' + langText(item[1], item[5]) + '</span></span></a>';
   }
 
-  function marketMarkup(key, prefix) {
-    var data = MARKET_MENU[key], main = '', rail = '';
+  /* OIP W1 §1 nav regroup, extended to this JS mega-menu (adversarial review B1):
+     enhanceMarketMenus below replaces the ENTIRE United States .nav-dd-menu, so
+     the server-rendered Options & Flow flyout (_navlinks.html.j2) never reaches
+     a JS-enabled user unless this table is regrouped to match. Two of its rows
+     (Intraday Flow Tracker, Dark Pool Desk) are conditionally rendered server-
+     side ({% if intraday_flow_enabled/darkpool_enabled is not defined or ... %})
+     — an item's OPTIONAL 8th element names the href its row requires to already
+     exist in the source dd's pre-replacement DOM (the same source of truth
+     intlCountryHref reads from, just scoped to presence rather than an href
+     value); absent that href, the flag was false for this page and the row is
+     skipped here too. Items with no 8th element are unconditional and always
+     render — matching every unguarded row in the template. */
+  function hrefPresent(scope, file) {
+    return !!(scope && scope.querySelector && scope.querySelector('a[href$="' + file + '"]'));
+  }
+
+  function marketMarkup(key, prefix, sourceScope) {
+    var data = MARKET_MENU[key], main = '', rail = '', total = 0;
     if (!data) return '';
     for (var i = 0; i < data.sections.length; i++) {
       var section = data.sections[i], items = '';
-      for (var j = 0; j < section[1].length; j++) items += destinationMarkup(section[1][j], prefix, false);
+      for (var j = 0; j < section[1].length; j++) {
+        var item = section[1][j];
+        if (item[7] && !hrefPresent(sourceScope, item[7])) continue;
+        items += destinationMarkup(item, prefix, false);
+        total++;
+      }
       main += '<section class="mega-section nav-market-section"><div class="section-label nav-market-heading">' +
         langText(section[0]) + '</div><div class="item-grid nav-market-grid">' + items + '</div></section>';
     }
@@ -432,7 +473,7 @@
     return '<div class="mega-main nav-market-main"><header class="menu-intro nav-market-intro">' +
       '<div><h2 class="nav-market-name">' + langText(data.title) + '</h2>' +
       '<p class="nav-market-subtitle">' + langText(data.subtitle) + '</p></div>' +
-      '<span class="menu-count nav-market-count">' + data.sections.reduce(function (n, s) { return n + s[1].length; }, 0) +
+      '<span class="menu-count nav-market-count">' + total +
       ' destinations</span></header>' + main + '</div>' +
       '<aside class="mega-rail nav-market-rail"><div class="section-label nav-market-heading">' +
       langText(data.railTitle || 'Explore') +
@@ -451,7 +492,11 @@
       dd.classList.add('nav-market-dd');
       menu.className = 'nav-dd-menu mega-menu nav-market-menu';
       menu.setAttribute('data-nav-market-key', key);
-      menu.innerHTML = marketMarkup(key, prefixOf(dd));
+      // marketMarkup's item[7] gate reads conditional-row presence from `menu`
+      // — this argument is evaluated (and hrefPresent's queries run) BEFORE
+      // the assignment below replaces menu's own content, so it still sees
+      // the server-rendered source DOM, never its own freshly-built markup.
+      menu.innerHTML = marketMarkup(key, prefixOf(dd), menu);
     }
   }
 

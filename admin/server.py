@@ -1178,6 +1178,37 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": "unknown item id or write failed"}, 400)
                 return self._json({"ok": True, "id": item_id, "decision": decision})
 
+            # EDIT — dry-run half. Runs the real copy gates over proposed text
+            # and writes NOTHING, so the modal can show every objection before
+            # the operator commits. The save route below re-runs all of them:
+            # this endpoint is a courtesy, never the gate.
+            if path == "/api/marketing/outbox/validate":
+                item_id = b.get("id") or b.get("item_id")
+                text = b.get("text")
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                if not isinstance(text, str):
+                    return self._json({"ok": False, "error": "text must be a string"}, 400)
+                res = marketing.validate_outbox_text(item_id, text)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # EDIT — the write. Supersedes the queued post with the operator's
+            # copy (original quarantined, replacement queued, one operation) and
+            # approves the replacement. Refusals carry `reason` + `detail`, and
+            # `violations` verbatim from the copy gates when that is why.
+            if path == "/api/marketing/outbox/edit":
+                item_id = b.get("id") or b.get("item_id")
+                text = b.get("text")
+                note = b.get("note") or None
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                if not isinstance(text, str):
+                    return self._json({"ok": False, "error": "text must be a string"}, 400)
+                if note is not None and not isinstance(note, str):
+                    return self._json({"ok": False, "error": "note must be a string"}, 400)
+                res = marketing.edit_outbox_item(item_id, text, note=note)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             # Publisher DRY-RUN: compute the "would post" report in-process. This
             # NEVER touches the network and NEVER writes the ledger (dry_run_report
             # calls no transition() / _append_activity()). An optional "account"

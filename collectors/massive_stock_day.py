@@ -12,13 +12,16 @@ This module builds and maintains a DERIVED per-ticker store:
   data/massive_stock_day/<TICKER>.parquet  — append-only, index=date (UTC midnight)
   data/massive_stock_day/_manifest.json   — freshness anchor (committed; rest gitignored)
 
-The store is published to Cloudflare R2 under the key prefix `massive_stock_day/`
-via scripts/publish_r2 --dirs massive_stock_day (publish_r2 falls back to data/<dir>
-when site/<dir> is absent — see the data-dir fallback added in that module).  The
-R2 _manifest.json is the audit_r2 freshness anchor.  NOTE: publishing requires the
-FULL store on local disk (publish_r2 refuses data-dir trees with under ~100 files),
-so it can only run on the store host (the Mac main checkout) — a CI runner checkout
-holds just the two committed JSON files and must never sync this dir.
+R2 IS THE CANONICAL HOME (2026-07-29).  The store lives under the Cloudflare R2 key
+prefix `massive_stock_day/` (~617 MB, ~20k parquets); a git checkout holds only the
+two committed JSON sidecars.  The nightly collect job therefore runs the whole round
+trip in ONE place: scripts/fetch_r2 --dirs massive_stock_day RESTORES the store,
+run_incremental() UPSERTS the new trading days on top of it, and scripts/publish_r2
+--dirs massive_stock_day publishes the delta back — that publish GATED on the
+restore's outcome so a partial tree can never overwrite the deep copy (publish_r2
+independently refuses data-dir trees under ~100 files).  The R2 _manifest.json is the
+audit_r2 freshness anchor, and a STRICT one as of 2026-07-29: a dead feed, a failed
+restore, or a skipped publish turns the engine job red within 26h.
 
 URGENCY / BACKFILL DESIGN
 --------------------------
@@ -66,6 +69,12 @@ Capped at `max_days` per run (default 40) so a large discovered hole chips away
 across nights without blowing the collect lane's time budget; the remainder is
 logged loudly and the audit (scripts/audit_massive_store.py) trips on the hole.
 
+Targets are ordered TIP-FIRST (2026-07-29): days above the high-water mark lead,
+interior-hole days follow, both ascending.  Every consumer rides the tip, and a
+capped run must never spend all 40 slots on a multi-week hole while today's bar goes
+unfetched — earliest-first WITHIN each half keeps the aging-out rescue property for
+the hole itself.
+
 STORE CONTRACT
 --------------
 Schema per-ticker parquet:
@@ -81,9 +90,18 @@ massive_store audit guard.
 
 GIT / R2 BOUNDARY
 -----------------
-data/massive_stock_day/*.parquet  → gitignored (multi-GB total)
+data/massive_stock_day/*.parquet  → gitignored (multi-GB total), R2-canonical
 data/massive_stock_day/_manifest.json → COMMITTED (freshness anchor for audit_r2)
 data/massive_stock_day/_backfill_state.json → COMMITTED (resume state, v2)
+
+A runner checkout holds the parquets only TRANSIENTLY — between the collect job's
+restore and its publish-back.  _store_absent() fences everything else: when the local
+tree carries fewer than _MIN_STORE_FILES parquets while the committed state CLAIMS
+coverage, backfill()/run_incremental() refuse BEFORE any network call or state write.
+Running there would fetch days into a tree the next actions/checkout wipes and record
+them in the state file that DOES get committed — permanent silent loss, the
+2026-07-03 v1-state incident one layer down.  Bootstrap is therefore always "restore
+from R2", never "start from scratch".
 
 The manifest is written by _write_manifest() after every successful batch and now
 carries `coverage` (derived from processed_days) plus an independent `anchor` block
@@ -92,14 +110,20 @@ actual store is detectable (scripts/audit_massive_store.py checks exactly that).
 
 CREDENTIALS
 -----------
-Uses MASSIVE_S3_* credentials (same as collectors/massive_flatfiles.py), NOT R2_*.
-The store is hosted on R2 (R2_* creds for upload) but downloaded from Massive S3.
-See scripts/publish_r2.py for the R2 upload path.
+Uses MASSIVE_S3_* credentials (same as collectors/massive_flatfiles.py), NOT R2_* —
+the store is HOSTED on R2 (R2_* creds drive the restore/publish legs) but DOWNLOADED
+from Massive S3.  The four MASSIVE_S3_* secrets are wired into the collect job's
+"run collectors" step env as of 2026-07-29.  They were only ever set on the ENGINE
+job's builder step before that, so run_incremental() returned {"blocked": "no_creds"}
+every night from 2026-07-04 to 2026-07-29 — 21 consecutive breaker increments, each
+swallowed by the collect lane's graceful degradation under a green run.  See
+scripts/publish_r2.py for the R2 upload path.
 """
 from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -123,6 +147,12 @@ EARLIEST_ENTITLED = date(2021, 7, 6)
 _ANCHOR_TICKER = "SPY"
 
 STATE_VERSION = 2
+
+# A populated store is ~19-20k per-ticker parquets; a checkout that never restored
+# from R2 holds the two committed JSON sidecars and nothing else.  Mirrors config
+# quality.massive_min_files and publish_r2._DATA_DIR_MIN_FILES — the same floor
+# fences the write side here and the upload side there.
+_MIN_STORE_FILES = 100
 
 
 # ── store paths ─────────────────────────────────────────────────────────────
@@ -178,9 +208,17 @@ def _upsert_ticker(ticker: str, new_rows: pd.DataFrame) -> None:
     if path.exists():
         try:
             existing = pd.read_parquet(path)
-            combined = pd.concat([existing, new_rows])
-        except Exception:   # noqa: BLE001 — corrupt parquet: overwrite
-            combined = new_rows
+        except Exception as e:   # noqa: BLE001
+            # NEVER clobber.  Under the R2 round trip an unreadable local file is a
+            # transport artifact (truncated download, interrupted restore), not an
+            # empty history — overwriting it with today's single row would shrink a
+            # 5-year series to one bar and then PUBLISH that over the deep store.
+            # Leave the file exactly as it is: the audit's unreadable-anchor fail and
+            # the next fetch_r2 restore own the heal.
+            log.warning("massive_stock_day: %s.parquet unreadable (%s) — left untouched "
+                        "rather than overwritten with this day's rows", ticker, e)
+            return
+        combined = pd.concat([existing, new_rows])
     else:
         combined = new_rows
     combined = combined[~combined.index.duplicated(keep="last")].sort_index()
@@ -204,6 +242,33 @@ def _max_missing_run(processed: set[date]) -> tuple[int, list[str]]:
         run = run + 1 if adjacent else 1
         longest = max(longest, run)
     return longest, [d.isoformat() for d in missing[:10]]
+
+
+def _recent_missing_run(processed: set[date], window_bdays: int) -> int:
+    """Longest missing-weekday run over ONLY the trailing `window_bdays` weekdays
+    ending at max(processed) — the OPERATIONAL continuity signal.
+
+    The full-history figure stays in the manifest as descriptive detail, but it makes a
+    poor tripwire: any state file that is a MID-BACKFILL snapshot reports an enormous
+    missing run that says nothing about tonight's feed (2026-07-29 diagnosis — the
+    committed sidecar carried 471 of the store's 1,302 actual processed days, because
+    the finished backfill published its parquets and final state to R2 and the sidecars
+    were never re-committed).  A genuine hole being chipped incrementally has the same
+    property: it would red the plane every night for the run it is still closing.  What
+    must alarm is a NEW TIP-ADJACENT gap — the 2026-07-03 incident class, and the thing
+    consumers actually break on.  scripts/audit_r2.py's coverage probe fails on this key
+    when the manifest carries it.
+    """
+    if len(processed) < 2:
+        return 0
+    start = max(processed)
+    steps = 0
+    while steps < window_bdays:
+        start -= timedelta(days=1)
+        if start.weekday() < 5:
+            steps += 1
+    run, _ = _max_missing_run({d for d in processed if d >= start})
+    return run
 
 
 def _anchor_summary() -> dict | None:
@@ -239,11 +304,19 @@ def _write_manifest(n_tickers: int, latest_date: date | None,
     }
     if processed:
         max_run, missing_sample = _max_missing_run(processed)
+        window_bd = int((config.load().get("quality") or {})
+                        .get("massive_recent_window_bdays", 90))
         manifest["coverage"] = {
             "first_day": min(processed).isoformat(),
             "last_day": max(processed).isoformat(),
             "n_processed_days": len(processed),
             "max_missing_run_weekdays": max_run,
+            # ADDITIVE (2026-07-29), never a replacement: the full-history figure above
+            # is the honest total and stays; this trailing-window one is what audit_r2's
+            # coverage probe fails on, so a mid-chip backlog (or a run started from a
+            # stale state snapshot) cannot red the nightly heartbeat for days on end.
+            "max_missing_run_weekdays_recent": _recent_missing_run(processed, window_bd),
+            "recent_window_bdays": window_bd,
             "missing_sample": missing_sample,
         }
     anchor = _anchor_summary()
@@ -314,6 +387,37 @@ def _processed_days(state: dict | None = None) -> set[date]:
     return set()
 
 
+def _store_absent() -> str | None:
+    """Human reason when this tree lacks the store its committed state CLAIMS, else None.
+
+    THE data-loss fence.  The store is R2-canonical and the nightly collect job
+    restores it before the collectors run; if that restore failed or never ran, the
+    checkout holds the two committed JSON sidecars and nothing else.  Fetching there
+    would write parquets into a tree the next actions/checkout wipes AND record those
+    days in _backfill_state.json — which IS committed.  The days then sit permanently
+    inside processed_days, below the incremental's set difference, and are never
+    fetched again: silent, unrecoverable loss.  Refusing is always recoverable — the
+    night self-heals as soon as the restore works.
+
+    Reads the raw state rather than _processed_days() on purpose: the v1 migration
+    path inside that function SCANS and SAVES, and the fence must not write anything.
+    An empty/virgin state is not fenced — that is a legitimate first bootstrap.
+    """
+    n = len(list(_store_dir().glob("*.parquet")))
+    if n >= _MIN_STORE_FILES:
+        return None
+    state = _load_backfill_state()
+    days = state.get("processed_days")
+    # A v1 state's scalar last_captured_date claims coverage just as loudly.
+    claimed = len(days) if days else (1 if state.get("last_captured_date") else 0)
+    if not claimed:
+        return None
+    return (f"{n} parquet(s) on disk (< {_MIN_STORE_FILES}) while the committed resume "
+            f"state claims {claimed} processed day(s) — this is a partial/throwaway "
+            "checkout (the R2 restore failed or did not run), and days fetched here "
+            "would be marked processed in a store that is about to be discarded")
+
+
 # ── public API ───────────────────────────────────────────────────────────────
 def backfill(
     start: date | None = None,
@@ -335,6 +439,13 @@ def backfill(
     Returns dict with keys: days_fetched, days_skipped, days_failed, days_remaining,
     tickers_written, earliest_date, latest_date, store_tickers.
     """
+    # Fence FIRST — ahead of the creds check, so even a fully credentialed throwaway
+    # checkout refuses rather than fetching into a tree that is about to be wiped.
+    absent = _store_absent()
+    if absent:
+        log.warning("massive_stock_day backfill: refusing to run — %s", absent)
+        return {"blocked": "store_absent"}
+
     if not enabled():
         log.warning("massive_stock_day backfill: MASSIVE_S3_* creds absent — skipping")
         return {"blocked": "no_creds"}
@@ -344,7 +455,19 @@ def backfill(
         end = latest_available("stock_day", lookback=7) or date.today()
 
     processed = _processed_days()
-    targets = [d for d in _trading_days(start, end) if d not in processed]
+    missing = [d for d in _trading_days(start, end) if d not in processed]
+    # TIP-FIRST ORDER: days above the high-water mark lead, interior-hole days follow,
+    # both ascending.  Every consumer (hot-tape pack, chart tails, oracle) rides the
+    # tip, and max_days caps the run — so under strict earliest-first any interior
+    # backlog larger than the cap starves the current day's bar for as many nights as
+    # the backlog takes to drain.  A stale or mid-backfill resume state manufactures
+    # exactly that backlog out of nothing (2026-07-29: the committed sidecar claimed 471
+    # days against 1,302 actually in the store), which is precisely when the tip must
+    # not be held hostage.  Earliest-first WITHIN each half preserves the rolling-window
+    # rescue property: the days closest to aging out of the entitlement still go first.
+    tip = max(processed) if processed else None
+    targets = (missing if tip is None
+               else [d for d in missing if d > tip] + [d for d in missing if d <= tip])
     log.info("massive_stock_day backfill: %s → %s — %d missing day(s) to fetch "
              "(max_days=%s, %d already processed)",
              start, end, len(targets), max_days, len(processed))
@@ -430,6 +553,13 @@ def run_incremental(lookback_days: int = 5, pace_s: float = 0.05,
     nights instead of blowing the collect lane's time budget; the remainder is logged
     loudly and scripts/audit_massive_store.py trips on the hole until it closes.
     """
+    # Same fence as backfill(), applied before the creds check and before ANY state
+    # read that could migrate/rewrite the committed resume file.
+    absent = _store_absent()
+    if absent:
+        log.warning("massive_stock_day incremental: refusing to run — %s", absent)
+        return {"blocked": "store_absent"}
+
     if not enabled():
         log.info("massive_stock_day incremental: MASSIVE_S3_* absent — skip")
         return {"blocked": "no_creds"}
@@ -492,6 +622,16 @@ class MassiveStockDayAdapter(Adapter):
             result = run_incremental()
 
         if result.get("blocked"):
+            # Nightly is the only lane that owns this store; asia/weekly/manual lanes
+            # legitimately run without MASSIVE_S3_* and must not cry wolf.  The
+            # RuntimeError below is real but INVISIBLE — the collect lane's graceful
+            # degradation swallows it into run_status.json, which is how 07-04→07-29
+            # froze for 21 nights under a green run.  Put it where eyes are.
+            if os.environ.get("COLLECT_LANE") == "nightly":
+                print(f"::warning title=massive_stock_day feed blocked::{result['blocked']}"
+                      " — the whole-market daily store did not advance tonight (last "
+                      "committed manifest tells the real tip); see "
+                      "collectors/massive_stock_day.py + data/run_status.json", flush=True)
             raise RuntimeError(f"massive_stock_day: {result['blocked']}")
 
         n = result.get("days_fetched", 0)

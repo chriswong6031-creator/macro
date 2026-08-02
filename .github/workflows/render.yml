@@ -602,6 +602,63 @@ jobs:
       # must read THIS run's manifest. Mirrors daily.yml's cl_gex order exactly. The narrow
       # `gex)` case gets it in the same position.
       # Anti-rot: tests/test_render_flow_desk_scope.py.
+      # ---- leader radar: page-only rebake from committed stores (LR-EXP) ----
+      # Admitted to this lane 2026-07-26 (#3612), once #3578 landed the bake-side
+      # fixes. Pure function of committed data (~40s measured): no network, no LLM;
+      # every data/ write is COLLECT_LANE=nightly-gated in code (HOUSE-U5, CI-pinned
+      # by tests/test_build_leader_radar.py), so this lane's site/-only commit is
+      # doubly safe. WHY (2026-07-25): daily-lane-only membership + 3 dead nightlies
+      # (07-22..24) froze the baked page while express lanes refreshed everything
+      # around it — same class + heal as flow_leaders/research_vault (#3487).
+      # MUST run AFTER spine(): _load_stockdata reads the gitignored
+      # site/stockdata/*.json that spine's build_site writes in-lane. Serial
+      # post-band, never inside band(): cl_gex's build_options_skew rewrites
+      # data/options_skew/snapshots.parquet non-atomically — a concurrent read drops
+      # every call_skew_rich chip. Byte-stable on unchanged inputs (built_at carried
+      # from the committed artifact off-nightly), so an untouched radar commits
+      # nothing and the nightly dead-man reading of built_at stays honest. pick_lab
+      # gates radar.json on as_of == tonight's price-through (#3578), so an express
+      # commit can never advance the forward pick ledger.
+      # SCOPE: called from `all` only (below) — but region_of maps BOTH
+      # scripts/build_leader_radar.py and templates/leader_radar.html.j2 to `all`, and
+      # one `all`-mapped dirty file forces scope=all, so a leader-radar change always
+      # carries its own rebake here. An unrelated narrow scope does not re-bake it.
+      # (This block was collateral damage in #3834's stale-base clobber, which deleted
+      # it without mentioning it; restored 2026-07-30.)
+      # ---- Canada / S&P-TSX dashboard: first-class step (was a build_vector hook) ----
+      # WHY: build_canada was invoked ONLY as a swallowed try/except inside build_vector,
+      # so (a) it had no scope of its own — a canada-only template fix fell through
+      # region_of()'s catch-all to scope=all (a 40-85m render for a ~10m builder), and a
+      # DISPATCHED narrow scope that happens not to call hub() (intl, sits) shipped a
+      # STALE canada.html from a green run; and (b) the hook logged its failure through
+      # log.error, so a dead builder was invisible in the Actions summary. Both halves
+      # were found shipping macro#3820 (the HK/Canada rebuild), whose recovery needed a
+      # hand-dispatched scope=hk purely because that scope calls hub().
+      # MUST run BEFORE hub(): build_vector's _canada_state() reads the
+      # data/canada_regime/latest.json this builder writes. SKIP_CANADA_HOOK=1 exported
+      # here makes build_vector's surviving fallback hook a no-op for the rest of this
+      # step, so scope=all does not pay for the ~10m builder twice.
+      # (Restored 2026-07-30: #3834's stale-base clobber deleted this block one day
+      #  after #3826 added it, along with the leaderradar/foresight/omission blocks.)
+      # ---- thematic foresight desk: page-only re-render from committed stores ----
+      # Express-safe via two sentinels this step already arms: RENDER_NO_DRIP=1 skips
+      # the three keyless collector drips (EDGAR guidance/emergence, openFDA — the FDA
+      # one fetched on EVERY run) AND the analyst LLM call — this step's env carries
+      # DEEPSEEK_API_KEY for the news-title exception, so env starvation alone would
+      # NOT stop a real model call; the page replays the last COMMITTED theses instead
+      # (marked from_ledger, disclosed PARTIAL by foresight_health). And with
+      # COLLECT_LANE unset, every foresight ledger appender self-gates
+      # (engine.ledger_lane, the #2598 sweep gap closed 2026-07-25), so the baked
+      # track/grade/monitor/ENB numbers derive from COMMITTED rows only — the nightly
+      # stays the sole forward-ledger advancer, and this lane's `git add site/` has
+      # nothing to discard. WHY: the builder ran ONLY in daily.yml as the LAST of 22
+      # serial builders; the 07-22..24 dead nightlies froze foresight.html at its
+      # pre-revamp render while express lanes refreshed everything around it (same
+      # class + heal as research_vault #3487 / flow_leaders #3515). ~11s measured on
+      # committed stores (was ~83s with the drips). Serial post-band: same slot and
+      # race posture as flowleaders above; also rewrites
+      # site/basketdata/foresight_cascade.json in the same pass as the page it pairs
+      # with. (Also restored 2026-07-30 after #3834's stale-base clobber.)
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         id: render_pages
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
@@ -678,6 +735,8 @@ jobs:
           crypto() { [ -n "$CRYPTO_DONE" ] && return 0; CRYPTO_DONE=1; run_py "crypto intelligence cockpit (build_crypto)" scripts.build_crypto; }
           intl() { [ -n "$INTL_DONE" ] && return 0; INTL_DONE=1; run_py "international macro dashboard (build_intl)" scripts.build_intl; }
 
+          # Canada / S&P-TSX: rationale + restore provenance in the comment block above
+          # this step (moved out of the run script 2026-08-01: 21,000-char run limit).
           canada() { [ -n "$CANADA_DONE" ] && return 0; CANADA_DONE=1; export SKIP_CANADA_HOOK=1; run_py "canada / S&P-TSX dashboard (build_canada)" scripts.build_canada; }
 
           # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
@@ -699,9 +758,33 @@ jobs:
           # Rationale + ordering law: the OIP E8 comment block above this step.
           optionscmd() { [ -n "$OPTIONSCMD_DONE" ] && return 0; OPTIONSCMD_DONE=1; run_py "options workspace (build_options_command)" scripts.build_options_command; }
 
+          # leader radar (LR-EXP): full rationale, ordering law and SCOPE note live in
+          # the leader-radar comment block above this step (moved out of the run script
+          # 2026-08-01: GitHub hard-fails a run expression over 21,000 chars).
           leaderradar() { [ -n "$LEADERRADAR_DONE" ] && return 0; LEADERRADAR_DONE=1; run_py "leader radar desk (build_leader_radar)" scripts.build_leader_radar; }
 
+          # thematic foresight desk: rationale + express-safety sentinels in the comment
+          # block above this step (moved out 2026-08-01: 21,000-char run limit).
           foresightpage() { [ -n "$FORESIGHT_DONE" ] && return 0; FORESIGHT_DONE=1; run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
+
+          # DELIBERATELY omitted from this lane (vetted 2026-07-25):
+          #  • build_odds — a collector wearing a builder's name: refetches all 119
+          #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
+          #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
+          #    this job's clean checkout, so every express run would COLD-START a
+          #    full-history backfill (5-15+ min of third-party network on the render
+          #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
+          #    and R2-published by daily.yml only, so advancing catalog.json here would
+          #    silence the page's staleness banner over stale R2 matrices. Same class as
+          #    the gex_board omission in engine-render; odds.html keeps the last
+          #    nightly's values. (daily.yml's build_odds step points at this bullet.)
+          #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its
+          #   three named bake-side blockers — the unguarded pick_lab as_of consumption,
+          #   the built_at/elapsed_s churn, and the undisclosed rs_series vintage skew —
+          #   were fixed in #3578, so the builder is now admitted above (#3612) as a
+          #   serial post-band step.)
+          # (This block was collateral damage in #3834's stale-base clobber; restored
+          #  2026-07-30 — daily.yml's build_odds comment had been pointing at nothing.)
 
           # ---- special situations: page-only rebake, NO EDGAR sweep ----
           # The nightly owns the ~28m filing sweep; this lane re-renders the desk

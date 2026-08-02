@@ -604,9 +604,16 @@ def build_arc(frame: dict, *, max_points: int = ARC_MAX_POINTS,
 
 #: Shape tag → plain-word EN/ZH twin.  The tag is a machine key; a surface prints the twin.
 #: No tag names a direction, an outcome, or a study.
+#:
+#: Every twin is a bare PREDICATE, never its own subject: every caller composes these by
+#: prefixing "Premium " / "权利金" (e.g. templates/options.html.j2's filmstripSentence()).
+#: "flat" and "insufficient" used to embed "premium"/"权利金" themselves, which produced a
+#: doubled subject once composed ("Premium premium barely moved all day.",
+#: "权利金全天权利金几乎没有变化。") — the OIP W1 B3 regression. Keep this invariant when
+#: editing: no twin may itself contain "premium" (EN, case-insensitive) or "权利金" (ZH).
 SHAPE_WORDS: dict[str, tuple[str, str]] = {
-    "insufficient": ("too little tape to describe the day", "当日成交记录过少，无法描述"),
-    "flat": ("premium barely moved all day", "全天权利金几乎没有变化"),
+    "insufficient": ("left too little tape to describe the day", "当日记录过少，无法描述走势"),
+    "flat": ("barely moved all day", "全天几乎没有变化"),
     "one_way": ("built steadily in one direction and stayed", "全天单向累积并维持"),
     "reversal": ("built one way, then gave most of it back", "先单向累积，之后大部分回吐"),
     "two_sided": ("pushed back and forth more than once", "多次来回推动"),
@@ -635,6 +642,27 @@ def classify_arc(nets: Sequence[float], gross_close: float | None = None) -> Arc
     churn is the only honest denominator available in the same document at the same stamp.
     Omit it and the flat test is simply skipped (nulls, not guesses).
     """
+    # Minor, flagged not fixed (PR #4123 adversarial review round 2): this gate is
+    # intentionally independent of coverage.minutes — `nets` (this function's own
+    # input) and the minute-stamp index behind coverage_block()'s `minutes` are
+    # two different axes of the same session (the M9 doctrine two screens up in
+    # this file: "which axis each figure was measured on... both numbers are
+    # printed rather than one standing in for the other"), so a session with
+    # decently-covered minutes can still land here if its net-premium ARC
+    # specifically carried too few usable points. That combination can render a
+    # coverage sentence ("covers most of the session") beside this tag's own
+    # words ("left too little tape to describe the day") without one gating the
+    # other. The receipt that explains the apparent contradiction already ships
+    # on the very next line (`{"points": n}`, in `arc_receipts` on the record,
+    # unslimmed all the way to site/session/<T>.json per
+    # scripts/build_session_digest.py's write_record/write_latest) — a surface
+    # that wants to reconcile the two sentences for a reader should read
+    # `arc_receipts.points` rather than treat coverage.minutes as a stand-in for
+    # arc density. Not reconciled here: doing so by gating this tag on
+    # coverage.minutes would change behavior for real (already shipped, already
+    # byte-pinned by tests/test_session_digest.py and the filmstrip sentence
+    # tests in tests/test_build_options_command.py) sessions without a
+    # measurement of how often the two axes actually diverge in practice.
     vals = [float(v) for v in nets if v is not None and math.isfinite(float(v))]
     n = len(vals)
     if n < ARC_MIN_POINTS_FOR_SHAPE:
@@ -1337,17 +1365,23 @@ def coverage_block(
             gaps = max(0, span_slots - minutes)
     absent = max(0, len(promised) - minutes)
     ratio = (minutes / expected) if expected else None
+    # Sentence-case at the source: this is a standalone, sentence-initial disclosure
+    # everywhere it is consumed (filmstripSentence's minutes===0 branch, its own
+    # `cov.quality_en || '<fallback>'` ternary, lib/illus.py's null figure). The
+    # fallback constants those call sites carry are already capitalized ("No intraday
+    # record for this session"); leaving the real, common-case string lowercase made
+    # the SAME sentence render two different ways depending on which path fired.
     if minutes == 0:
-        en = "no intraday record for this session"
+        en = "No intraday record for this session"
         zh = "本交易日没有盘中记录"
     elif ratio is not None and ratio >= 0.95 and gaps == 0:
-        en = "the intraday record covers the whole session"
+        en = "The intraday record covers the whole session"
         zh = "盘中记录覆盖了整个交易时段"
     elif ratio is not None and ratio >= 0.70:
-        en = "the intraday record covers most of the session"
+        en = "The intraday record covers most of the session"
         zh = "盘中记录覆盖了大部分交易时段"
     else:
-        en = "the intraday record covers only part of the session"
+        en = "The intraday record covers only part of the session"
         zh = "盘中记录仅覆盖部分交易时段"
     out = {
         "minutes": minutes,

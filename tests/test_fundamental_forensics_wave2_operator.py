@@ -9,6 +9,9 @@ from engine.research_vault.r2_store import LocalStore
 from scripts import run_fundamental_forensics_wave2 as operator
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
 def test_operator_flow_uses_fixed_restore_acquire_project_sync_order(monkeypatch, tmp_path: Path):
     events: list[str] = []
     local_store = tmp_path / "private-store"
@@ -211,3 +214,15 @@ def test_operator_validates_every_explicit_clock_even_for_sync_only(tmp_path: Pa
             sync=True,
             store=LocalStore(tmp_path / "private-store"),
         )
+
+
+def test_research_ingest_bootstrap_never_expands_an_empty_array_under_nounset():
+    """Regression for run 30724508043 on the macOS Bash 3.2 runner."""
+    workflow = (ROOT / ".github" / "workflows" / "research-ingest.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "restore_args=()" not in workflow
+    assert 'set -- "${targets[@]}"' in workflow
+    assert 'set -- "$@" --restore' in workflow
+    assert '"$@" --acquire --require-complete-acquisition' in workflow

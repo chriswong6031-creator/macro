@@ -845,6 +845,21 @@ def main() -> int:
         results, status.get("circuit_breaker_probe"))
     store.write_status(status)
 
+    # Consecutive-failure streaks (2026-07 massive_stock_day freeze). Graceful degradation
+    # is the point of this lane, but it makes a DEAD feed read exactly like a flaky one:
+    # that store sat at 21 straight failures — MASSIVE_S3_* were simply absent from this
+    # job's step env — while every run stayed green and nobody looked at run_status.json.
+    # A week-long streak is not a bad night. Scoped to THIS run's sources: the breaker
+    # dict carries every source ever tracked, so a partial lane must not report on
+    # sources it never touched.
+    _ran = {r.source for r in results}
+    _streaks = sorted(((s, n) for s, n in status["circuit_breaker"].items()
+                       if s in _ran and n >= 7), key=lambda sn: -sn[1])
+    if _streaks:
+        print(f"::warning title=collector breaker streaks::"
+              f"{', '.join(f'{s}×{n}' for s, n in _streaks)} — failing every nightly for "
+              "a week+; see data/run_status.json sources.<name>.error", flush=True)
+
     # VSB W1a: store-level freshness/row-floor tripwire for the CBOE cor/vol family.
     # Catches the failure mode detect_stale_series cannot see — an expected series that
     # never lands in the store at all (the yahoo ^COR1M/^COR3M silent 1-row stub).

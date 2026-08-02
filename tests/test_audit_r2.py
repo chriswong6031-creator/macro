@@ -130,22 +130,29 @@ def test_asof_probe_skipped_when_stockdata_not_anchored():
 
 # --- data-dir coverage probe (2026-07-03 massive_stock_day incident) ---------
 
-def _msd_manifest(max_run: int, latest_days_ago: int) -> bytes:
-    """A publish_r2 file-list manifest with the embedded collector manifest."""
+def _msd_manifest(max_run: int, latest_days_ago: int,
+                  recent_run: int | None = None) -> bytes:
+    """A publish_r2 file-list manifest with the embedded collector manifest.
+    `recent_run=None` omits max_missing_run_weekdays_recent — a LEGACY manifest,
+    written before 2026-07-29, whose only continuity figure is the full-history one."""
     latest = (NOW.date() - timedelta(days=latest_days_ago)).isoformat()
+    cov = {"first_day": "2021-07-06", "last_day": latest,
+           "max_missing_run_weekdays": max_run}
+    if recent_run is not None:
+        cov["max_missing_run_weekdays_recent"] = recent_run
+        cov["recent_window_bdays"] = 90
     return json.dumps({
         "dir": "massive_stock_day", "count": 14906, "files": ["SPY.parquet"],
         "store": {"store": "massive_stock_day", "latest_date": latest,
-                  "coverage": {"first_day": "2021-07-06", "last_day": latest,
-                               "max_missing_run_weekdays": max_run},
+                  "coverage": cov,
                   "anchor": {"ticker": "SPY", "last": latest}},
     }).encode()
 
 
-def _msd(objects=None, max_run=0, latest_days_ago=1, **kw):
+def _msd(objects=None, max_run=0, latest_days_ago=1, recent_run=None, **kw):
     objs = {**FRESH,
             "massive_stock_day/_manifest.json":
-                (200, _lm(4), _msd_manifest(max_run, latest_days_ago))}
+                (200, _lm(4), _msd_manifest(max_run, latest_days_ago, recent_run))}
     objs.update(objects or {})
     kw.setdefault("anchors", ["stockdata", "chinastockdata", "massive_stock_day"])
     return _probe(objs, **kw)
@@ -180,8 +187,9 @@ def test_pre_coverage_manifest_warns_only():
 
 
 def test_coverage_probe_skipped_when_not_anchored():
-    # Default anchors exclude massive_stock_day (never published as of 2026-07-03):
-    # the probe must not fire, so an unpublished store cannot red-flag the heartbeat.
+    # The probe fires only for dirs in the ACTIVE anchor list (config r2_data_plane.
+    # anchors is the live lever), so pulling a store out of the anchors pulls its
+    # content check with it — a de-anchored store can never red-flag the heartbeat.
     r = _probe(FRESH)
     assert r["ok"] is True and not r["warnings"]
     assert "massive_stock_day/coverage" not in r["anchors"]
@@ -457,3 +465,36 @@ def test_accrual_lag_skips_the_not_yet_due_weekday():
     assert r["ok"] is True and not r["warnings"]
     assert r["anchors"]["options_hub/gex_history/accrual"]["checked"] == \
         ["2026-06-30", "2026-06-29"]
+# --- recent-window continuity figure (2026-07-29) ----------------------------
+
+
+def test_recent_window_figure_decides_the_fail():
+    # Big full-history run, clean recent window: the store's tip is healthy, so the
+    # plane stays green. A full-history run can be the artifact of a stale/mid-backfill
+    # state snapshot or a remainder the capped incremental is still chipping — failing
+    # on it would red the heartbeat (and daily.yml's strict engine anchor) for days
+    # while saying nothing about tonight's feed. Both figures are still recorded.
+    r = _msd(max_run=832, recent_run=0)
+    assert r["ok"] is True and not r["fail_reasons"]
+    rec = r["anchors"]["massive_stock_day/coverage"]
+    assert rec["max_missing_run_weekdays"] == 832
+    assert rec["max_missing_run_weekdays_recent"] == 0
+    assert rec["recent_window_bdays"] == 90
+
+
+def test_recent_window_hole_fails():
+    # A NEW tip-adjacent gap — the 2026-07-03 incident class — fails regardless of what
+    # the full-history figure says.
+    r = _msd(max_run=832, recent_run=12)
+    assert r["ok"] is False
+    assert any("R2 COVERAGE HOLE" in f for f in r["fail_reasons"])
+
+
+def test_legacy_manifest_without_recent_key_keeps_full_history_behaviour():
+    # A manifest published before the recent key existed must not silently stop being
+    # checked: with no windowed figure to prefer, the full-history run is the gate.
+    r = _msd(max_run=832)
+    assert r["ok"] is False
+    assert any("R2 COVERAGE HOLE" in f for f in r["fail_reasons"])
+    rec = r["anchors"]["massive_stock_day/coverage"]
+    assert "max_missing_run_weekdays_recent" not in rec

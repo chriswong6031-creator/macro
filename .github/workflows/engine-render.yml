@@ -418,6 +418,10 @@ jobs:
           # untouched radar commits nothing and the nightly dead-man reading of built_at stays
           # honest. pick_lab gates radar.json on as_of == tonight's price-through (#3578), so
           # an express commit can never advance the forward pick ledger.
+          # SCOPE: called from `all` only (below). This lane has no scope picker — a push to
+          # engine/** carries no inputs.scope, so SCOPE falls back to `all` and an engine
+          # change (e.g. engine/leader_lifecycle.py) always re-bakes the radar. Only a
+          # HAND-DISPATCHED narrow scope skips it.
           leaderradar() { run_py "leader radar desk (build_leader_radar)" scripts.build_leader_radar; }
 
           # Thematic Foresight desk — page-only re-render from COMMITTED stores. Express-safe

@@ -45,6 +45,64 @@ The module also stays clear of desk-machinery vocabulary in fact TEXT: no
 screen, board, graded, plan, model, system, or "universe" (a word for our
 ticker list, not for anything the reader can see). `tests/test_market_facts.py`
 scans this module's string literals to keep it that way.
+
+ANCHOR LAW (operator kill, 2026-08-01)
+--------------------------------------
+Three macro/event posts were pulled off the queue on the same morning:
+
+    "4 of 11 sectors green on a day growth data firmed and inflation stayed
+     warm. Not a clean enough read to lean on yet."
+    "Not a clearcut tape. Growth firming a bit, inflation still warm, and only
+     4 of 11 sectors managed green. I'm watching, not deciding."
+    "growth data firmed a touch while inflation stayed warm. 4 of 11 sectors
+     closed green. steady liquidity is the part i'm watching..."
+
+The operator's verdict: "too bland, too weak, no real value, so esoteric no one
+knows what it's talking about, zero engagement, people might even report us cuz
+only bots/llm write garbage like this."
+
+THE DEFECT IS IN THIS MODULE, NOT IN THE WRITER. Each of those posts is an
+honest, in-register rendering of the fact packet it was handed, because the
+packet's headline fact was a PRE-BAKED ABSTRACTION. ``_growth_words`` and
+``_inflation_words`` turn ``growth_score`` / ``inflation_score`` into "growth
+data firmed" and "inflation readings are still warm" — phrases that name no
+release, carry no number, and cannot be checked, agreed with, or argued against.
+A reader cannot picture "growth data". The denominator law fixed counts that
+lacked a universe; this fixes claims that lack a PRINT.
+
+WHAT REPLACES IT. ``data/regime/latest.json`` already carries the actual prints
+behind those scores, each with its number and its publisher:
+
+    conditions.labor_nowcast.initial_claims_4wk / claims_yoy_pct  (DOL claims)
+    conditions.growth_nowcast.gdpnow                              (Atlanta Fed)
+    conditions.inflation_nowcast.median_cpi                       (Cleveland Fed)
+    conditions.inflation_nowcast.umich_1y_exp                     (UMich survey)
+    liquidity_quality.stress_overlay.hy_oas_pct                   (HY spreads)
+    conditions.style_tilt.yield_chg_1m_bp                         (10y, 1m)
+    fed_path.policy_rate / fed_path.implied.m12                   (funds futures)
+    yield_curve.shape.slope_2s10s.value                           (2s10s)
+
+Those become :func:`named_print_facts`, and the highest-ranked one is FOLDED
+into the growth/inflation read (macro) and the driver read (event) so the
+packet's own top fact names a print. The abstraction is still allowed to carry
+the STANCE ("growth data's firming up a little") — it just may no longer be the
+whole claim.
+
+NOTHING IS INVENTED. Every sentence below quotes a field that exists in the
+artifact, with the units the producing engine documents (checked against
+engine/conditions.py, engine/pit.py's FRED map, engine/yield_curve.py). A field
+that is absent, unparseable or degenerate produces NO fact — the honest
+degradation is a packet with one fewer anchor, and
+``copywriter.anchorless_macro_violations`` then refuses the abstraction-only
+post that would have been built from it.
+
+UNITS ARE THE WHOLE GAME HERE, so the two traps found while writing this:
+  * ``yield_curve.shape.level`` is the AVERAGE yield across the whole curve
+    (engine/yield_curve.py: "parallel height"), NOT the 10-year. It is not used.
+  * ``conditions.inflation_nowcast.sticky_ann`` did not read as an annual rate
+    on the live artifact (0.23 where the series runs 2-6), so it is not used
+    either. ``median_cpi`` is FRED MEDCPIM158SFRBCLE, published as percent
+    change at an ANNUAL RATE, and is described as exactly that.
 """
 from __future__ import annotations
 
@@ -296,6 +354,308 @@ def _count_block(n_moving: object, n_tracked: object, noun: str) -> dict:
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Named prints — the anchor a macro/event read is built on (see ANCHOR LAW)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _num(v: object) -> float | None:
+    """Finite float or None. NaN and inf are absences, not values."""
+    try:
+        f = float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    if f != f or f in (float("inf"), float("-inf")):
+        return None
+    return f
+
+
+def _dig(node: object, *path: str) -> object:
+    """Walk a nested dict by key path; None the moment the path stops existing."""
+    cur = node
+    for key in path:
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(key)
+    return cur
+
+
+def _pct1(v: float) -> str:
+    """One-decimal unsigned percent.
+
+    ONE decimal is not a style choice: ``copywriter.fake_precision_violations``
+    rejects any percent carrying two, at every magnitude, so a "2.84%" written
+    here would be minted by the packet and then refused by the validator that
+    reads it — the gate-rejects-obedience failure this house has already paid
+    for once.
+    """
+    return f"{v:.1f}%"
+
+
+def _claims_level_words(lvl: float) -> tuple[str, str]:
+    """(display phrase, whitelist token) for a claims level.
+
+    "203 thousand", NOT "203,000". A comma-grouped integer is TWO tokens to
+    ``copywriter._NUMBER_RE`` ("203" and "000"), so the whitelist would refuse
+    the fact this module wrote — caught by
+    ``test_market_facts.test_no_invented_numbers_in_macro_posts``, which is
+    exactly the gate-rejects-obedience failure the number budget already cost
+    this house once. "203k" is the natural X register but goes the other way:
+    the whitelist tokenizer cannot see it AT ALL (no word boundary before the
+    "k"), so an invented "213k" would sail through. A bare 3-6 digit integer is
+    the one form the invention gate actually screens.
+
+    The million arm is not hypothetical padding: the 4-week average of initial
+    claims peaked near 5.8 MILLION in 2020, and the day this print matters most
+    is the day "5800 thousand" would be the sentence.
+    """
+    if lvl >= 1_000_000:
+        tok = f"{lvl / 1e6:.1f}"
+        return f"{tok} million", tok
+    tok = f"{int(round(lvl / 1000.0))}"
+    return f"{tok} thousand", tok
+
+
+def _print_jobless_claims(regime: dict) -> dict | None:
+    """DOL weekly initial claims, 4-week moving average (FRED IC4WSA)."""
+    lvl = _num(_dig(regime, "conditions", "labor_nowcast", "initial_claims_4wk"))
+    if lvl is None or lvl <= 0:
+        return None
+    level_words, level_tok = _claims_level_words(lvl)
+    yoy = _num(_dig(regime, "conditions", "labor_nowcast", "claims_yoy_pct"))
+    if yoy is None or abs(yoy) < 0.05:
+        return {
+            "id": "print_jobless_claims",
+            "text": f"Jobless claims are averaging {level_words} a week this month.",
+            "numbers": [level_tok],
+        }
+    yoy_str = _pct1(abs(yoy))
+    side = "below" if yoy < 0 else "above"
+    return {
+        "id": "print_jobless_claims",
+        "text": (f"Jobless claims are averaging {level_words} a week this "
+                 f"month, {yoy_str} {side} a year ago."),
+        "numbers": [level_tok, yoy_str],
+    }
+
+
+def _print_gdpnow(regime: dict) -> dict | None:
+    """Atlanta Fed GDPNow, the current-quarter real GDP nowcast (FRED GDPNOW)."""
+    v = _num(_dig(regime, "conditions", "growth_nowcast", "gdpnow"))
+    if v is None:
+        return None
+    s = _pct1(abs(v))
+    verb = "growing" if v >= 0 else "shrinking"
+    return {
+        "id": "print_gdpnow",
+        "text": (f"The Atlanta Fed's GDPNow has the economy {verb} at a {s} "
+                 f"annual rate this quarter."),
+        "numbers": [s],
+    }
+
+
+def _print_median_cpi(regime: dict) -> dict | None:
+    """Cleveland Fed median CPI (FRED MEDCPIM158SFRBCLE), percent change at an
+    annual rate — named as an annual rate because that is what it is."""
+    v = _num(_dig(regime, "conditions", "inflation_nowcast", "median_cpi"))
+    if v is None:
+        return None
+    s = _pct1(abs(v))
+    # The series CAN print negative, and the month it does is the month this
+    # post matters most. "running at a -1.2% annual rate" is the sentence a
+    # signed format would have shipped on that day.
+    verb = "falling" if v < 0 else "running"
+    return {
+        "id": "print_median_cpi",
+        "text": f"The Cleveland Fed's median CPI is {verb} at a {s} annual rate.",
+        "numbers": [s],
+    }
+
+
+def _print_umich_infl_exp(regime: dict) -> dict | None:
+    """University of Michigan 1-year-ahead inflation expectations (FRED MICH)."""
+    v = _num(_dig(regime, "conditions", "inflation_nowcast", "umich_1y_exp"))
+    if v is None:
+        return None
+    s = _pct1(v)
+    return {
+        "id": "print_umich_infl_exp",
+        "text": (f"The Michigan survey has households expecting {s} inflation "
+                 f"a year out."),
+        "numbers": [s],
+    }
+
+
+def _print_hy_spread(regime: dict) -> dict | None:
+    """High-yield option-adjusted spread, in percent (engine/regime.py rounds to 2dp).
+
+    Only the LEVEL carries a digit. ``hy_oas_chg_20d`` is itself rounded to one
+    decimal in the artifact, so converting it to basis points would manufacture
+    precision the source never had; the change ships as a direction word.
+    """
+    v = _num(_dig(regime, "liquidity_quality", "stress_overlay", "hy_oas_pct"))
+    if v is None or v <= 0:
+        return None
+    s = _pct1(v)
+    chg = _num(_dig(regime, "liquidity_quality", "stress_overlay", "hy_oas_chg_20d"))
+    if chg is None or abs(chg) < 0.05:
+        tail = " and roughly flat over the past month"
+    elif chg > 0:
+        tail = ", wider than a month ago"
+    else:
+        tail = ", tighter than a month ago"
+    return {
+        "id": "print_hy_spread",
+        "text": f"High-yield credit spreads are at {s}{tail}.",
+        "numbers": [s],
+    }
+
+
+def _print_10y_move(regime: dict) -> dict | None:
+    """10-year Treasury yield change over ~1 month, in basis points.
+
+    ``conditions.style_tilt.yield_chg_1m_bp`` is ``us10y.diff(21) * 100``
+    (engine/conditions.py) — the 10-year specifically, not the curve average.
+    """
+    bp = _num(_dig(regime, "conditions", "style_tilt", "yield_chg_1m_bp"))
+    if bp is None or abs(bp) < 1:
+        return None
+    n = f"{abs(bp):.0f}"
+    direction = "up" if bp > 0 else "down"
+    return {
+        "id": "print_10y_move",
+        "text": (f"The 10-year Treasury yield is {direction} {n} basis points "
+                 f"over the past month."),
+        "numbers": [n],
+    }
+
+
+def _print_fed_pricing(regime: dict) -> dict | None:
+    """What fed funds futures price for the policy rate 12 months out.
+
+    A market price, not a house view: ``fed_path.implied`` is built from ZQ
+    futures (``implied_source_en``). The ``fed_stance`` LABEL beside it is
+    display-only in the artifact and is deliberately not read here.
+    """
+    now = _num(_dig(regime, "fed_path", "policy_rate"))
+    m12 = _num(_dig(regime, "fed_path", "implied", "m12"))
+    if now is None or m12 is None or now <= 0 or m12 <= 0:
+        return None
+    now_s = _pct1(now)
+    if abs(m12 - now) < 0.05:
+        return {
+            "id": "print_fed_pricing",
+            "text": (f"Fed funds futures still put the policy rate at {now_s} "
+                     f"a year out."),
+            "numbers": [now_s],
+        }
+    m12_s = _pct1(m12)
+    direction = "up" if m12 > now else "down"
+    return {
+        "id": "print_fed_pricing",
+        "text": (f"Fed funds futures put the policy rate at {m12_s} a year "
+                 f"out, {direction} from {now_s} today."),
+        "numbers": [m12_s, now_s],
+    }
+
+
+def _print_curve_2s10s(regime: dict) -> dict | None:
+    """The 2s10s Treasury spread, in basis points (yield_curve.shape, pp -> bp)."""
+    v = _num(_dig(regime, "yield_curve", "shape", "slope_2s10s", "value"))
+    if v is None:
+        return None
+    bp = int(round(v * 100))
+    if bp == 0:
+        return None
+    n = f"{abs(bp)}"
+    side = "above" if bp > 0 else "below"
+    return {
+        "id": "print_curve_2s10s",
+        "text": f"The 10-year Treasury yield sits {n} basis points {side} the 2-year.",
+        "numbers": [n],
+    }
+
+
+#: RANK ORDER, and it is the whole editorial judgement in this section: the
+#: prints a general reader can picture and argue with come first (how many
+#: people lost a job this week, how fast the economy is growing, what prices
+#: are doing), the plumbing reads come last. Fixed rather than data-driven on
+#: purpose — a rotation keyed on the day would make the packet non-reproducible
+#: from the artifact alone, and the variant rotation that keeps posts from
+#: repeating already lives one layer up (content_studio seeds it on `as_of`).
+_NAMED_PRINT_BUILDERS: tuple = (
+    _print_jobless_claims,
+    _print_gdpnow,
+    _print_median_cpi,
+    _print_umich_infl_exp,
+    _print_hy_spread,
+    _print_10y_move,
+    _print_fed_pricing,
+    _print_curve_2s10s,
+)
+
+#: How many named prints one packet carries. THREE, because
+#: ``copywriter.build_context`` hands the writer ``all_facts[:3]`` — a fourth
+#: would never be seen by the writer but WOULD enter the numbers whitelist,
+#: licensing a digit nobody showed it. The whitelist is the invented-number
+#: gate; widening it for facts the prompt omits is how that gate goes soft.
+_NAMED_PRINT_MAX = 3
+
+#: Salience for the prints that ship STANDALONE. The top-ranked print is folded
+#: into the packet's lead fact instead (see :func:`macro_facts`), which is what
+#: guarantees the lead fact names a print; these two sit directly beneath it.
+_NAMED_PRINT_SALIENCE: tuple[int, ...] = (11, 10)
+
+#: Salience of a lead fact that has a print folded into it. Above every legacy
+#: fact so the anchored read is one of the three the writer actually sees.
+_ANCHORED_LEAD_SALIENCE = 12
+
+
+def _named_prints(regime: object) -> list[dict]:
+    """Ranked, de-duplicated named prints available from a regime artifact.
+
+    Returns at most :data:`_NAMED_PRINT_MAX` entries, each
+    ``{"id", "text", "numbers"}``. Empty when the artifact carries none — which
+    is a real state (an empty root, a degraded build) and not an error.
+    A builder that raises is skipped rather than allowed to take the packet
+    down: one missing anchor costs a post its digit, a traceback costs the
+    plan every non-ticker post it had.
+    """
+    if not isinstance(regime, dict):
+        return []
+    out: list[dict] = []
+    for build in _NAMED_PRINT_BUILDERS:
+        if len(out) >= _NAMED_PRINT_MAX:
+            break
+        try:
+            p = build(regime)
+        except Exception:  # noqa: BLE001
+            p = None
+        if p and p.get("text"):
+            out.append(p)
+    return out
+
+
+def named_print_facts(root: PathLike) -> dict:
+    """The named prints from ``data/regime/latest.json``, in the standard shape.
+
+    Public because the anchor inventory is worth reading on its own (the admin
+    Floor's supply view, tests, and any future lane that needs a checkable macro
+    digit). ``macro_facts``/``event_facts`` fold and rank these themselves.
+    """
+    regime = _load_json(Path(root) / "data" / "regime" / "latest.json")
+    prints = _named_prints(regime)
+    facts = [
+        {
+            "id": p["id"],
+            "text": p["text"],
+            "salience": _ANCHORED_LEAD_SALIENCE - i,
+            "numbers": list(p.get("numbers") or []),
+        }
+        for i, p in enumerate(prints)
+    ]
+    return _build(facts)
+
+
 def _build(facts: list[dict]) -> dict:
     """Build the return shape from a list of fact dicts."""
     seen_ids: set[str] = set()
@@ -342,6 +702,16 @@ def macro_facts(root: PathLike) -> dict:
         return dict(_EMPTY)
 
     facts: list[dict] = []
+
+    # ── The ANCHOR: a named print with its number (operator kill 2026-08-01) ──
+    # See the module docstring's ANCHOR LAW. The top-ranked print is FOLDED into
+    # the growth/inflation read below rather than shipped beside it, because the
+    # writer sees only the top three facts and the defect being fixed is that
+    # the LEAD fact named nothing. Folding is what makes an anchorless macro
+    # post hard to write; the remaining prints ship as siblings.
+    _prints = _named_prints(regime)
+    _anchor = _prints[0] if _prints else None
+    _anchor_folded = False
 
     # ── The concrete digit a macro read carries (Content Studio W1) ───────────
     # WHAT USED TO BE HERE. `brief.thematic_line.n_themes` was folded into the
@@ -407,7 +777,25 @@ def macro_facts(root: PathLike) -> dict:
                     "salience": 10,
                     "numbers": [],
                 }
-                if _breadth_clause:
+                # ANCHOR FIRST, breadth second. Both are concrete, but only the
+                # print answers the operator's actual complaint ("names no
+                # print"): "4 of 11 sectors green" was IN the killed post and
+                # did not save it, because a sector count is our arithmetic over
+                # a board while a claims print is a release with a publisher and
+                # a number a reader can look up. The breadth clause stays as the
+                # fallback for the day the regime artifact carries no print at
+                # all — a concrete observable beats an abstraction, which is
+                # exactly what the pre-2026-08-01 fold was for.
+                # PRINT FIRST, STANCE SECOND. The order is the fix, not a
+                # cosmetic: the killed posts opened on the abstraction and a
+                # reader bounced before reaching anything checkable. Lead with
+                # the release and its number, then say what it means.
+                if _anchor:
+                    _gi["text"] = f"{_anchor['text']} {text}"
+                    _gi["numbers"] = list(_anchor.get("numbers") or [])
+                    _gi["salience"] = _ANCHORED_LEAD_SALIENCE
+                    _anchor_folded = True
+                elif _breadth_clause:
                     _gi["text"] = f"{text} {_breadth_clause}"
                     _gi["numbers"] = list(_breadth_numbers)
                     _gi["count"] = dict(_breadth_count or {})
@@ -476,6 +864,28 @@ def macro_facts(root: PathLike) -> dict:
             "salience": 7,
             "numbers": list(_breadth_numbers),
             "count": dict(_breadth_count or {}),
+        })
+
+    # ── The named prints (ANCHOR LAW) ─────────────────────────────────────────
+    # The top-ranked print ships standalone ONLY when the growth/inflation read
+    # it was meant to anchor never got built (scores missing or unparseable).
+    # Otherwise it lives inside that fact and saying it twice would burn a
+    # writer-visible slot on a sentence already in the packet.
+    _sibling_prints = _prints[1:] if _anchor_folded else _prints
+    if _anchor and not _anchor_folded:
+        facts.append({
+            "id": _anchor["id"],
+            "text": _anchor["text"],
+            "salience": _ANCHORED_LEAD_SALIENCE,
+            "numbers": list(_anchor.get("numbers") or []),
+        })
+        _sibling_prints = _prints[1:]
+    for _i, _p in enumerate(_sibling_prints[:len(_NAMED_PRINT_SALIENCE)]):
+        facts.append({
+            "id": _p["id"],
+            "text": _p["text"],
+            "salience": _NAMED_PRINT_SALIENCE[_i],
+            "numbers": list(_p.get("numbers") or []),
         })
 
     # Sort salience-DESC, id-ASC for determinism
@@ -754,6 +1164,13 @@ def event_facts(root: PathLike) -> dict:
     brief_path = root / "site" / "neuralwebdata" / "daily_brief.json"
     brief = _load_json(brief_path)
 
+    # ANCHOR LAW. The driver read says WHAT moved and in which direction; it
+    # carries no number and several of its translations lean on exactly the
+    # vocabulary the operator killed ("carrying the tape", "liquidity is doing
+    # the lifting"). Folding a named print onto it is what turns "credit is the
+    # story today" into a claim a reader can check.
+    _prints = _named_prints(_load_json(root / "data" / "regime" / "latest.json"))
+
     facts: list[dict] = []
 
     if isinstance(brief, dict):
@@ -763,16 +1180,32 @@ def event_facts(root: PathLike) -> dict:
             coherence = str(primary.get("coherence") or "").lower()
             plain = _plain_driver_read(primary.get("direction"))
             if plain:
+                _text = plain + _COHERENCE_PLAIN.get(coherence, "")
+                _nums: list[str] = []
+                _sal = 10
+                if _prints:
+                    _text = f"{_text} {_prints[0]['text']}"
+                    _nums = list(_prints[0].get("numbers") or [])
+                    _sal = _ANCHORED_LEAD_SALIENCE
                 facts.append({
                     "id": "event_catalyst",
-                    "text": plain + _COHERENCE_PLAIN.get(coherence, ""),
-                    "salience": 10,
-                    "numbers": [],
+                    "text": _text,
+                    "salience": _sal,
+                    "numbers": _nums,
                 })
 
     if not facts:
-        # Fall back to macro facts as best available context
+        # Fall back to macro facts as best available context. macro_facts runs
+        # the same anchor fold, so the fallback is anchored too.
         return macro_facts(root)
+
+    for _i, _p in enumerate(_prints[1:1 + len(_NAMED_PRINT_SALIENCE)]):
+        facts.append({
+            "id": _p["id"],
+            "text": _p["text"],
+            "salience": _NAMED_PRINT_SALIENCE[_i],
+            "numbers": list(_p.get("numbers") or []),
+        })
 
     facts.sort(key=lambda x: (-x["salience"], x["id"]))
     return _build(facts)
