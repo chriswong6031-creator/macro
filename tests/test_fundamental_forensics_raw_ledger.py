@@ -1,9 +1,11 @@
 """Bitemporal source-fact ledger contracts."""
 from __future__ import annotations
 
+from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import replace
-from datetime import datetime, timezone
-from decimal import localcontext
+from datetime import date, datetime, timezone
+from decimal import Decimal, localcontext
 from hashlib import sha256
 
 import pytest
@@ -1344,3 +1346,264 @@ def test_rejects_binary_floats_numeric_facts_without_units_and_nondeterministic_
     right = canonical_json({"members": {"beta", "gamma", "alpha"}})
 
     assert left == right == '{"members":["alpha","beta","gamma"]}'
+
+
+def test_raw_fact_and_ledger_from_dict_restore_the_exact_canonical_wire() -> None:
+    root = _fact(
+        accession="0001",
+        body="a" * 64,
+        value="100",
+        accepted_at="2025-02-01T12:00:00Z",
+        recorded_at="2025-02-02T12:00:00Z",
+    )
+    amendment = _fact(
+        accession="0002",
+        body="b" * 64,
+        value="110",
+        accepted_at="2025-03-01T12:00:00Z",
+        recorded_at="2025-03-02T12:00:00Z",
+        event_type=FactEventType.AMENDMENT,
+        revision_of=root.occurrence_id,
+    )
+    ledger = RawFactLedger((root, amendment))
+
+    restored_fact = RawFactOccurrence.from_dict(root.to_dict())
+    restored_ledger = RawFactLedger.from_dict(ledger.to_dict())
+    restored_from_bytes = RawFactLedger.from_json_bytes(
+        canonical_json(ledger.to_dict()).encode("utf-8")
+    )
+
+    assert restored_fact == root
+    assert restored_fact.to_dict() == root.to_dict()
+    assert restored_ledger.events == (root, amendment)
+    assert restored_ledger.to_dict() == ledger.to_dict()
+    assert restored_ledger.revision_chain(amendment.occurrence_id) == (root, amendment)
+    assert restored_from_bytes == restored_ledger
+
+
+def test_raw_fact_from_dict_preserves_permitted_empty_evidence_text() -> None:
+    fact = replace(
+        _fact(),
+        raw_token="",
+        xml_lang="",
+        inline_format="",
+        occurrence_id=None,
+    )
+
+    restored = RawFactOccurrence.from_dict(fact.to_dict())
+
+    assert restored == fact
+    assert restored.to_dict() == fact.to_dict()
+
+
+def test_raw_ledger_from_dict_rejects_whitespace_padded_schema() -> None:
+    wire = RawFactLedger((_fact(),)).to_dict()
+    wire["schema"] = f" {wire['schema']} "
+
+    with pytest.raises(ValueError, match="unsupported raw ledger schema"):
+        RawFactLedger.from_dict(wire)
+
+
+class _DimensionConvertible:
+    def to_dict(self) -> dict[str, str]:
+        return {"member": "collapsed"}
+
+
+@pytest.mark.parametrize(
+    "member",
+    [
+        date(2025, 1, 1),
+        Decimal("100"),
+        _DimensionConvertible(),
+        {"member": "structured"},
+    ],
+)
+def test_raw_fact_from_dict_requires_dimension_members_to_be_wire_strings(
+    member: object,
+) -> None:
+    wire = deepcopy(_fact().to_dict())
+    wire["context"]["typed_dimensions"]["example:ContractAxis"] = member
+
+    with pytest.raises(TypeError, match="members must be canonical JSON strings"):
+        RawFactOccurrence.from_dict(wire)
+
+
+def test_raw_fact_from_dict_bounds_source_span_before_identity_construction() -> None:
+    huge_offset = 1 << 1_000_000
+    wire = deepcopy(_fact().to_dict())
+    wire["source_span"] = [0, huge_offset]
+
+    with pytest.raises(ValueError, match="bounded signed 64-bit offset"):
+        RawFactOccurrence.from_dict(wire)
+    with pytest.raises(ValueError, match="bounded signed 64-bit offset"):
+        replace(
+            _fact(),
+            source_span=(0, raw_ledger_module.MAX_SOURCE_SPAN_OFFSET + 1),
+            occurrence_id=None,
+        )
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement", "match"),
+    [
+        (("logical_key",), "rawfact_lineage_forged", "logical_key"),
+        (("duplicate_group_key",), "rawfact_duplicate_forged", "duplicate_group_key"),
+        (("context", "semantic_key"), "context_forged", "context.semantic_key"),
+        (("unit", "semantic_key"), "unit_forged", "unit.semantic_key"),
+        (("occurrence_id",), "rawfact_forged", "occurrence_id"),
+    ],
+)
+def test_raw_fact_from_dict_rejects_forged_derived_or_immutable_ids(
+    path: tuple[str, ...],
+    replacement: str,
+    match: str,
+) -> None:
+    wire = deepcopy(_fact().to_dict())
+    target: dict[str, object] = wire
+    for key in path[:-1]:
+        nested = target[key]
+        assert isinstance(nested, dict)
+        target = nested
+    target[path[-1]] = replacement
+
+    with pytest.raises(ValueError, match=match):
+        RawFactOccurrence.from_dict(wire)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "exception", "match"),
+    [
+        (
+            lambda wire: wire["context"].__setitem__("explicit_dimensions", []),
+            TypeError,
+            "explicit_dimensions.*JSON object",
+        ),
+        (
+            lambda wire: wire["unit"].__setitem__("measures", ("iso4217:USD",)),
+            TypeError,
+            "unit.measures.*JSON array",
+        ),
+        (
+            lambda wire: wire.__setitem__("source_span", (20, 23)),
+            TypeError,
+            "source_span.*JSON array",
+        ),
+        (
+            lambda wire: wire["clocks"].pop("recorded_at"),
+            ValueError,
+            "missing canonical fields",
+        ),
+        (
+            lambda wire: wire.__setitem__("dimensions_known", 1),
+            TypeError,
+            "dimensions_known.*JSON boolean",
+        ),
+    ],
+)
+def test_raw_fact_from_dict_rejects_malformed_nested_wire_shapes(
+    mutate: object,
+    exception: type[Exception],
+    match: str,
+) -> None:
+    wire = deepcopy(_fact().to_dict())
+    mutate(wire)  # type: ignore[operator]
+
+    with pytest.raises(exception, match=match):
+        RawFactOccurrence.from_dict(wire)
+
+
+class _UnboundedExtraFields(Mapping[str, object]):
+    """A mapping whose field iterator must be rejected without full traversal."""
+
+    def __init__(self, fields: dict[str, object]) -> None:
+        self._fields = fields
+        self.yielded = 0
+
+    def __getitem__(self, key: str) -> object:
+        return self._fields[key]
+
+    def __iter__(self):
+        return iter(self._fields)
+
+    def __len__(self) -> int:
+        return len(self._fields)
+
+    def items(self):
+        yield from self._fields.items()
+        while True:
+            self.yielded += 1
+            yield "unexpected", None
+
+
+def test_raw_fact_from_dict_boundedly_rejects_an_unbounded_field_stream() -> None:
+    hostile = _UnboundedExtraFields(_fact().to_dict())
+
+    with pytest.raises(ValueError, match="too many fields"):
+        RawFactOccurrence.from_dict(hostile)
+
+    assert hostile.yielded == 1
+
+
+def test_raw_ledger_from_dict_rechecks_revision_append_order() -> None:
+    root = _fact(accession="0001", body="a" * 64, value="100")
+    amendment = _fact(
+        accession="0002",
+        body="b" * 64,
+        value="110",
+        accepted_at="2025-03-01T12:00:00Z",
+        recorded_at="2025-03-02T12:00:00Z",
+        event_type=FactEventType.AMENDMENT,
+        revision_of=root.occurrence_id,
+    )
+    wire = RawFactLedger((root, amendment)).to_dict()
+    wire["events"] = list(reversed(wire["events"]))
+
+    with pytest.raises(ValueError, match="must be appended after parent"):
+        RawFactLedger.from_dict(wire)
+
+
+def test_raw_ledger_from_dict_enforces_event_count_and_wire_byte_ceilings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = _fact(accession="0001", body="a" * 64)
+    second = _fact(accession="0002", body="b" * 64)
+    wire = RawFactLedger((first, second)).to_dict()
+
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_LEDGER_EVENTS", 1)
+    with pytest.raises(ValueError, match="bounded item count 1"):
+        RawFactLedger.from_dict(wire)
+
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_LEDGER_EVENTS", 1_000_000)
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_FACT_WIRE_BYTES", 1)
+    with pytest.raises(ValueError, match="raw fact occurrence exceeds bounded wire size 1"):
+        RawFactOccurrence.from_dict(first.to_dict())
+
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_FACT_WIRE_BYTES", 2 * 1024 * 1024)
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_LEDGER_WIRE_BYTES", 1)
+    with pytest.raises(ValueError, match="raw fact ledger exceeds bounded wire size 1"):
+        RawFactLedger.from_dict({"schema": raw_ledger_module.RAW_LEDGER_SCHEMA, "events": []})
+
+
+def test_raw_ledger_from_json_bytes_rejects_duplicate_keys_and_noncanonical_bytes() -> None:
+    ledger = RawFactLedger((_fact(),))
+    canonical = canonical_json(ledger.to_dict()).encode("utf-8")
+    duplicate_schema = (
+        '{"events":[],"schema":"fundamental_forensics.raw_ledger/v1",'
+        '"schema":"fundamental_forensics.raw_ledger/v1"}'
+    ).encode("utf-8")
+
+    with pytest.raises(ValueError, match="duplicate object key: schema"):
+        RawFactLedger.from_json_bytes(duplicate_schema)
+    with pytest.raises(ValueError, match="exact canonical JSON bytes"):
+        RawFactLedger.from_json_bytes(b" " + canonical)
+    with pytest.raises(TypeError, match="payload must be bytes"):
+        RawFactLedger.from_json_bytes(bytearray(canonical))  # type: ignore[arg-type]
+
+
+def test_raw_ledger_from_json_bytes_applies_size_cap_before_parse(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(raw_ledger_module, "HARD_MAX_RAW_LEDGER_WIRE_BYTES", 3)
+
+    with pytest.raises(ValueError, match="bounded wire size 3 before parsing"):
+        RawFactLedger.from_json_bytes(b"not-json")

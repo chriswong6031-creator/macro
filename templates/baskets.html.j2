@@ -505,6 +505,9 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 .rvx-trow .tret{font-family:var(--rvx-num);font-size:12px;font-weight:600}
 .rvx-trow .tick{color:var(--rvx-lead);font-size:11px}
 .rvx-trow .ern{color:var(--warn);font-weight:600}
+.rvx-trow .tnm .mlcchip{display:inline-block;margin-left:6px;padding:0 5px;font-size:9.5px;line-height:15px;font-weight:700;letter-spacing:.02em;color:var(--warn);border:1px solid var(--warn);border-radius:5px;opacity:.85;vertical-align:1px;white-space:nowrap}
+.rvx-actfoot{font-size:11px;color:var(--muted);margin:8px 2px 0}
+.rvx-actfoot:empty{display:none}
 .rvx-lane .more{display:block;padding-top:8px;border-top:1px solid var(--rvx-hair);font-size:11.5px;color:var(--muted);text-decoration:none}
 
 /* ── ROTATION MAP ── */
@@ -1273,6 +1276,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     </div>
     <p class="rvx-sec-sub">{{ t('Every theme sorts into one action. When the honest answer is “wait,” it says so. Click a theme to see its stocks.', '每个主题归入一个操作。若答案是「等待」，也会如实标注。点击主题查看成分股。') }}</p>
     <div id="actnow" class="rvx-lanes"></div>
+    <div id="actnow-footnote" class="rvx-actfoot"></div>
   </section>
 
   {# ══ ROTATION MAP (revamp signature) — strength × momentum quadrant + linked board ══ #}
@@ -1420,20 +1424,6 @@ function rankTrajectory(t){
   const fmt20 = r20!=null ? ' · 20d '+(r20>0?'▲':'▼')+Math.abs(r20) : '';
   return fmt5 + fmt20;
 }
-function actNowPulseBar(themes){
-  const sizePill = renderRegimeSizing();
-  const byHeat = h => (themes||[]).filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
-  const heating = byHeat('heating'), cooling = byHeat('cooling');
-  const BASE = window.BASKET_BASE||'basket/';
-  const links = arr => arr.map(t=>`<a href="${BASE}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
-  const parts = [];
-  if(sizePill) parts.push(sizePill);
-  if(heating.length) parts.push(`<span class="pulse-grp">🔥 ${L('Heating','加热')}: ${links(heating)}</span>`);
-  if(cooling.length) parts.push(`<span class="pulse-grp">❄ ${L('Cooling','降温')}: ${links(cooling)}</span>`);
-  if(!parts.length) return '';
-  return `<div class="pulse-bar">${parts.join('')}</div>`;
-}
-
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
 const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
 const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
@@ -1926,103 +1916,6 @@ function renderRotation(){
   const rotEl=document.getElementById('rotation');
   rotEl.innerHTML=`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`+subtitle;
 }
-function renderActNow(){
-  const sec=document.getElementById('actnow-section');
-  if(!THEME||!THEME.act_now){
-    const pulseOnly=actNowPulseBar(THEME&&THEME.themes||[]);
-    if(!pulseOnly){ if(sec) sec.style.display='none'; return; }
-    const el=document.getElementById('actnow'); if(el) el.innerHTML=pulseOnly;
-    return;
-  }
-  const a=THEME.act_now;
-  const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
-  function actColor(c){if(!isZh())return c;if(c==='#16a34a'||c==='#22c55e')return'#ef4444';if(c==='#ef4444')return'#22c55e';return c;}
-  // Act-now rows: reason text moved to hover data-tip (act-pop-src idiom); row stays tight.
-  const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];const clr=actColor(ac[2]);
-    const earnChip=x.near_earnings_chip_en
-      ?` · 📅 ${L(esc(x.near_earnings_chip_en),esc(x.near_earnings_chip_zh||x.near_earnings_chip_en))}`:'';
-    const tipEn=esc((x.reasons||[]).join(' · ')+(x.near_earnings_chip_en?' · '+x.near_earnings_chip_en:''));
-    const tipZh=tipEn; // reasons are plain-text already bilingual-joined upstream
-    return `<a class="anrow" href="basket/${x.id}.html" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">
-      <span class="anverb" style="color:${clr};border-color:${clr}">${L(ac[0],ac[1])}</span>
-      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="ansc">${x.score}</span></a>`;};
-  // wait-for-a-pullback rows
-  const rowWait=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];const clr=actColor(ac[2]);
-    const tipEn=esc(x.reason_en||(x.reasons||[]).join(' · '));
-    const tipZh=esc(x.reason_zh||x.reason_en||(x.reasons||[]).join(' · '));
-    return `<a class="anrow" href="basket/${x.id}.html" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">
-      <span class="anverb" style="color:${clr};border-color:${clr};opacity:.72">${L(ac[0],ac[1])}</span>
-      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="ansc">${x.score}</span></a>`;};
-  const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
-  // MLC-W2b: conflicted shelf — in favour on own read, but sector view says Reduce.
-  const conflicted=a.conflicted||[];
-  // rowConflicted mirrors rowWait shape: muted verb + honest reason (de-escalation only).
-  const rowConflicted=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];const clr=actColor(ac[2]);
-    const tipEn=esc(x.reason_en||(x.reasons||[]).join(' · '));
-    const tipZh=esc(x.reason_zh||x.reason_en||(x.reasons||[]).join(' · '));
-    return `<a class="anrow" href="basket/${x.id}.html" data-tip-en="${tipEn}" data-tip-zh="${tipZh}">
-      <span class="anverb" style="color:${clr};border-color:${clr};opacity:.72">${L(ac[0],ac[1])}</span>
-      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="ansc">${x.score}</span></a>`;};
-  const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
-  const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
-  const pulseBar = actNowPulseBar(THEME.themes||[]);
-  // MLC-W2b: 4 columns when conflicted list is non-empty; otherwise stay at 3.
-  const wrapCls=conflicted.length?'four':'three';
-  const conflictedCol=conflicted.length?anCol('wait',`⚠ ${L('Conflicted','观点冲突')}`,conflicted,L('none','无'),rowConflicted):'';
-  document.getElementById('actnow').innerHTML=pulseBar+`<div class="anwrap ${wrapCls}">
-    ${anCol('buy',`✅ ${L('Buy now (clean entry)','立即买入（干净入场）')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
-    ${anCol('wait',`⏳ ${L('In favour — no clean entry, wait for a pullback','看好 — 无干净入场点，等待回调')}`,wait,L('none','无'),rowWait)}
-    ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
-    ${conflictedCol}
-  </div>`;
-  // MLC-W2b footnote: merge one sentence into the existing footnote (never stack a new one).
-  try{
-    const fn=document.getElementById('actnow-footnote');
-    if(fn&&conflicted.length){
-      const note=L(
-        'Conflicted = in favour on its own read, but its sector view says Reduce.',
-        '观点冲突 = 自身信号看好，但所属板块评级为减配。'
-      );
-      if(!fn.innerHTML.includes('actnow-conflict-note')){
-        fn.insertAdjacentHTML('beforeend',`<span class="actnow-conflict-note">${note}</span>`);
-      }
-    }
-  }catch(e){}
-}
-// MLC-W2b: inject split-view / mixed-reads chips on theme-desk tcards.
-// Fetches stance_matrix.json once (client-side, after render); fail-silent on any error.
-// Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law.
-function renderStanceChips(){
-  fetch('mlcdata/stance_matrix.json').then(r=>r.ok?r.json():null).then(data=>{
-    if(!data||!data.rows) return;
-    const byId={};
-    data.rows.forEach(r=>{ if(r&&r.id) byId[r.id]=r; });
-    document.querySelectorAll('.tcard').forEach(card=>{
-      const id=card.id.replace(/^theme-/,'');
-      const row=byId[id];
-      if(!row||!row.agreement) return;
-      const ag=row.agreement;
-      if(ag!=='mixed'&&ag!=='split') return;
-      // reuse .m7-split-chip idiom (existing CSS; data-tip-en/zh for Tier-2 receipt)
-      if(card.querySelector('.mlc-stance-chip')) return; // already injected
-      const chipEn=ag==='split'?'split view':'mixed reads';
-      const chipZh=ag==='split'?'严重分歧':'观点分歧';
-      const tipEn=esc(row.tip_en||'');
-      const tipZh=esc(row.tip_zh||'');
-      const chip=document.createElement('div');
-      chip.className='m7-split-chip mlc-stance-chip';
-      chip.setAttribute('data-tip-en',tipEn);
-      chip.setAttribute('data-tip-zh',tipZh);
-      chip.innerHTML=`<span class="l-en">${esc(chipEn)}</span><span class="l-zh">${esc(chipZh)}</span>`;
-      const top=card.querySelector('.top');
-      if(top&&top.nextSibling) card.insertBefore(chip,top.nextSibling);
-      else card.appendChild(chip);
-    });
-  }).catch(function(){/* absent file or fetch error — no chip, no console spam */});
-}
 // Honest TRANSPARENCY: returns the sizing pill HTML string (empty string when calm).
 // Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
 // drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
@@ -2238,9 +2131,10 @@ function actRow(x){
   else { const mo=(x.reasons&&x.reasons[1])||''; const m=RVX_MOMO[mo];
     sub=(r20!=null?'<span class="rvx-num">'+fmtPct(r20)+'</span> '+L('20d vs S&P','20日相对标普'):'')+(m?' · '+L(m[0],m[1]):(mo?' · '+esc(mo):'')); }
   const ern=x.near_earnings_count?' <span class="ern">· '+L(x.near_earnings_count+' report soon',x.near_earnings_count+'家将公布')+'</span>':'';
+  const conf=x._conflicted?'<span class="mlcchip">'+L('conflicted','观点冲突')+'</span>':'';
   const tick=x.clean_entry?'<span class="tick">✓</span>':'';
   const ret=r20!=null?'<span class="tret '+(r20>=0?'rvx-up':'rvx-dn')+'">'+fmtPct(r20)+'</span>':'';
-  return '<a class="rvx-trow" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
+  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+conf+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
 }
 function actLane(cls,ic,head,desc,arr){
   const CAP=5, shown=arr.slice(0,CAP);
@@ -2251,7 +2145,10 @@ function actLane(cls,ic,head,desc,arr){
 function renderActBoard(){
   const el=document.getElementById('actnow'); if(!el) return;
   const a=(THEME&&THEME.act_now)||{};
-  const buy=a.buy||[], wait=(a.add_on_pullback||[]).concat(a.conflicted||[]);
+  // MLC-W2b: engine-demoted conflicted items ride the wait lane, tagged so actRow
+  // can mark them — their .rsn subline already carries the engine's reason text.
+  const conflicted=(a.conflicted||[]).map(x=>Object.assign({},x,{_conflicted:true}));
+  const buy=a.buy||[], wait=(a.add_on_pullback||[]).concat(conflicted);
   const reduce=a.reduce||[];
   const isTrim=x=>(x.action==='trim'||x.action_en==='TRIM');
   const trim=reduce.filter(isTrim), avoid=reduce.filter(x=>!isTrim(x));
@@ -2259,6 +2156,38 @@ function renderActBoard(){
     +actLane('wait','🔵',L('Wait for a pullback','等待回调'),L('In favour, but stretched — no clean entry yet.','看好但已拉伸 — 暂无干净入场点。'),wait)
     +actLane('trim','🟠',L('Take profits','止盈'),L('Was leading — momentum now rolling over.','曾领涨 — 动能正在回落。'),trim)
     +actLane('avoid','⚪',L('Reduce / avoid','减仓 / 回避'),L('Weak and getting weaker — stand aside.','弱且转弱 — 观望。'),avoid);
+  const fn=document.getElementById('actnow-footnote');
+  if(fn){ fn.textContent=conflicted.some(x=>x.sector_stance)
+    ?L('Conflicted = in favour on its own read, but its sector view says Reduce.','观点冲突 = 自身信号看好，但所属板块评级为减配。'):''; }
+  try{ renderStanceChips(); }catch(e){}
+}
+// MLC-W2b: cross-surface stance chips on act-board rows. Fetches mlcdata/stance_matrix.json
+// once (cached so langchange re-renders re-chip without refetching); rows whose four reads
+// disagree get a "mixed reads" / "split view" chip with the matrix tip as the hover receipt.
+// Rows already carrying the conflicted marker keep it (one chip per row). Fail-silent.
+let MLC_MX=null, MLC_MX_REQ=null;
+function renderStanceChips(){
+  const apply=()=>{ if(!MLC_MX||!MLC_MX.rows) return;
+    const byId={}; MLC_MX.rows.forEach(r=>{ if(r&&r.id) byId[r.id]=r; });
+    document.querySelectorAll('#actnow .rvx-trow[data-mlc-bid]').forEach(row=>{
+      if(row.querySelector('.mlcchip')) return;
+      const m=byId[row.getAttribute('data-mlc-bid')];
+      if(!m||!m.agreement||(m.agreement!=='mixed'&&m.agreement!=='split')) return;
+      const chip=document.createElement('span');
+      chip.className='mlcchip';
+      chip.setAttribute('data-tip-en',m.tip_en||'');
+      chip.setAttribute('data-tip-zh',m.tip_zh||'');
+      chip.textContent=m.agreement==='split'?L('split view','严重分歧'):L('mixed reads','观点分歧');
+      const nm=row.querySelector('.tnm');
+      if(nm){ nm.insertBefore(chip,nm.querySelector('.rsn')); } else row.appendChild(chip);
+    });
+  };
+  if(MLC_MX){ apply(); return; }
+  if(!MLC_MX_REQ){
+    MLC_MX_REQ=fetch('mlcdata/stance_matrix.json').then(r=>r.ok?r.json():null)
+      .then(d=>{ MLC_MX=d; }).catch(function(){/* absent file or fetch error — no chip */});
+  }
+  MLC_MX_REQ.then(apply).catch(function(){});
 }
 
 // ── Rotation map (signature) + linked board — one source, many views ──

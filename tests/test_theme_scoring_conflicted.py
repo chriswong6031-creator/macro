@@ -504,19 +504,36 @@ class TestBasketTemplateParses:
         assert len(html) > 100
 
     def test_baskets_has_actnow_footnote_element(self):
-        """The actnow-footnote element must exist in baskets.html.j2 source."""
-        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert "actnow-footnote" in src
+        """The actnow-footnote ELEMENT must exist in baskets.html.j2 markup.
 
-    def test_baskets_has_renderStanceChips_call(self):
-        """renderStanceChips() must be called in baskets.html.j2."""
+        Pins the element (id="..."), not merely the string appearing somewhere:
+        the #3282 rvx revamp deleted the element while JS kept referencing it, and
+        the old bare-substring assertion stayed green on the dead surface.
+        """
         src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
-        assert "renderStanceChips" in src
+        assert 'id="actnow-footnote"' in src
+
+    def test_baskets_invokes_renderStanceChips(self):
+        """renderStanceChips must be INVOKED, not merely defined (#3282 regression).
+
+        The V1 fork left the function defined with no caller — dead in production.
+        The call statement `renderStanceChips();` only appears at a live call site.
+        """
+        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
+        assert "function renderStanceChips" in src
+        assert "renderStanceChips();" in src
 
     def test_baskets_has_mlcdata_stance_matrix_url(self):
         """baskets.html.j2 must reference mlcdata/stance_matrix.json for the fetch."""
         src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
         assert "stance_matrix.json" in src
+
+    def test_baskets_v1_actnow_fork_stays_deleted(self):
+        """The dead V1 renderActNow fork must not return; the live rvx act board owns
+        the conflicted display (fold into the wait lane + _conflicted row tag)."""
+        src = (TEMPLATE_DIR / "baskets.html.j2").read_text(encoding="utf-8")
+        assert "function renderActNow(" not in src
+        assert "_conflicted" in src
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")

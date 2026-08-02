@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 import csv
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
@@ -10,12 +11,14 @@ import hashlib
 from itertools import repeat
 import json
 from pathlib import Path
+from threading import Barrier
 from types import SimpleNamespace
 
 import pytest
 
 from engine.fundamental_forensics.metric_registry import (
     ConceptAlias,
+    GovernanceBundle,
     ImmutableRule,
     MappingRule,
     load_core_metric_registry,
@@ -223,6 +226,185 @@ def test_as_reported_latest_known_and_latest_restated_are_cutoff_safe() -> None:
     assert as_reported.value == 100
     assert latest.provenance.accession == restated.source.accession
     assert as_reported.provenance.accession == original.source.accession
+
+
+def test_frozen_governance_constructor_replays_byte_identically_after_live_registry_changes(
+    monkeypatch,
+) -> None:
+    fact = _fact()
+    policy = _policy()
+    live = _engine(fact)
+    original = live.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+    )
+    frozen = GovernanceBundle.from_dict(original.governance_bundle.to_dict())
+    replay = _engine(fact, registry=frozen)
+
+    # A snapshot replay has no live registry at all. Simulate a later registry
+    # replacement becoming unusable: frozen replay must not consult it.
+    assert live.registry is not None
+
+    def live_lookup_must_not_run(*_args, **_kwargs):
+        raise AssertionError("frozen replay consulted the live MetricRegistry")
+
+    monkeypatch.setattr(
+        type(live.registry),
+        "governance_bundle_at",
+        live_lookup_must_not_run,
+    )
+    replayed = replay.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+    )
+    per_query_replay = live.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+        governance_bundle=frozen,
+    )
+
+    assert replay.registry is None
+    assert replayed.governance_bundle.content_id == frozen.content_id
+    assert replayed.query_hash == original.query_hash
+    assert replayed.to_json_bytes() == original.to_json_bytes()
+    assert per_query_replay.to_json_bytes() == original.to_json_bytes()
+
+
+def test_frozen_governance_replay_requires_matching_system_cutoff_and_bundle_type() -> None:
+    fact = _fact()
+    source_policy = _policy()
+    live = _engine(fact)
+    frozen = live.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=source_policy,
+    ).governance_bundle
+    replay = _engine(fact, registry=frozen)
+    changed_cutoff = _policy(recorded="2026-08-06T00:00:00Z")
+
+    with pytest.raises(QueryValidationError, match="frozen governance bundle recorded_at"):
+        replay.query_cell("AAA", "revenue", PERIOD, changed_cutoff)
+    with pytest.raises(QueryValidationError, match="governance_bundle must be a GovernanceBundle"):
+        live.query_cell(
+            "AAA",
+            "revenue",
+            PERIOD,
+            source_policy,
+            governance_bundle=object(),  # type: ignore[arg-type]
+        )
+
+
+def test_frozen_governance_concept_lookup_never_uses_live_registry(monkeypatch) -> None:
+    fact = _fact()
+    policy = _policy()
+    live = _engine(fact)
+    frozen = live.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+    ).governance_bundle
+    assert live.registry is not None
+
+    def live_lookup_must_not_run(*_args, **_kwargs):
+        raise AssertionError("frozen concept lookup consulted the live MetricRegistry")
+
+    monkeypatch.setattr(
+        type(live.registry),
+        "governance_bundle_at",
+        live_lookup_must_not_run,
+    )
+    concept = "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax"
+    assert live.governed_metric_for_concept(
+        concept,
+        policy,
+        governance_bundle=frozen,
+    ) == "revenue"
+    assert live.query_concept(
+        concept,
+        policy,
+        governance_bundle=frozen,
+    ) == "revenue"
+
+
+def test_same_cutoff_frozen_bundle_queries_cannot_overwrite_each_other(monkeypatch) -> None:
+    fact = _fact()
+    policy = _policy()
+    engine = _engine(fact)
+    bundle_a = engine.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+    ).governance_bundle
+    bundle_b = replace(
+        bundle_a,
+        content_id="",
+        contracts=tuple(
+            replace(contract, label="Changed frozen label")
+            if contract.metric_id == "revenue"
+            else contract
+            for contract in bundle_a.contracts
+        ),
+    )
+    assert bundle_a.recorded_at == bundle_b.recorded_at
+    assert bundle_a.content_id != bundle_b.content_id
+    expected_a = engine.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+        governance_bundle=bundle_a,
+    ).to_json_bytes()
+    expected_b = engine.query_matrix(
+        tickers=["AAA"],
+        metrics=["revenue"],
+        periods=[PERIOD],
+        policy=policy,
+        governance_bundle=bundle_b,
+    ).to_json_bytes()
+
+    original_evaluate = engine._evaluate
+    projection_a_entered = Barrier(2)
+    allow_projection_a_to_finish = Barrier(2)
+
+    def interleaved_evaluate(*args, **kwargs):
+        projection = args[4]
+        if projection.governance_bundle.content_id == bundle_a.content_id:
+            projection_a_entered.wait(timeout=5)
+            allow_projection_a_to_finish.wait(timeout=5)
+        return original_evaluate(*args, **kwargs)
+
+    monkeypatch.setattr(engine, "_evaluate", interleaved_evaluate)
+
+    def query(bundle: GovernanceBundle):
+        return engine.query_matrix(
+            tickers=["AAA"],
+            metrics=["revenue"],
+            periods=[PERIOD],
+            policy=policy,
+            governance_bundle=bundle,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_a = executor.submit(query, bundle_a)
+        projection_a_entered.wait(timeout=5)
+        future_b = executor.submit(query, bundle_b)
+        result_b = future_b.result(timeout=10)
+        allow_projection_a_to_finish.wait(timeout=5)
+        result_a = future_a.result(timeout=10)
+
+    assert result_a.governance_bundle.content_id == bundle_a.content_id
+    assert result_b.governance_bundle.content_id == bundle_b.content_id
+    assert result_a.to_json_bytes() == expected_a
+    assert result_b.to_json_bytes() == expected_b
 
 
 def test_system_cutoff_gates_mapping_compute_and_publication_clocks() -> None:
