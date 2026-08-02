@@ -1,0 +1,423 @@
+schema: fundamental_forensics.metric_catalog/v1
+catalog_id: fundamental_forensics_core_gaap_metrics
+catalog_version: 1.0.0
+available_at: "2026-08-02T00:00:00Z"
+content_sha256: 0271e126568f2a9cd6f29f4fe0a1d8d0e66ff757ec18223b6dc9bc6bb7d80bad
+
+duration_consolidated: &duration_consolidated
+  period_constraints:
+    kind: duration
+    allowed_forms: [10-K, 10-K/A, 10-Q, 10-Q/A]
+    min_duration_days: 1
+    max_duration_days: 400
+  dimensional_profile:
+    mode: consolidated_only
+    allowed_axes: []
+    require_dimensions: false
+    allow_member_selection: false
+
+instant_consolidated: &instant_consolidated
+  period_constraints:
+    kind: instant
+    allowed_forms: [10-K, 10-K/A, 10-Q, 10-Q/A]
+  dimensional_profile:
+    mode: consolidated_only
+    allowed_axes: []
+    require_dimensions: false
+    allow_member_selection: false
+
+income_statement: &income_statement
+  presentation_constraints:
+    statement: income_statement
+    sign_convention: as_reported
+    display_scale: native
+    comparability: same_unit_same_period
+
+cash_flow_statement: &cash_flow_statement
+  presentation_constraints:
+    statement: cash_flow_statement
+    sign_convention: as_reported
+    display_scale: native
+    comparability: same_unit_same_period
+
+balance_sheet: &balance_sheet
+  presentation_constraints:
+    statement: balance_sheet
+    sign_convention: as_reported
+    display_scale: native
+    comparability: same_unit_same_period
+
+derived_presentation: &derived_presentation
+  presentation_constraints:
+    statement: derived
+    sign_convention: formula_defined
+    display_scale: native
+    comparability: same_unit_same_period
+
+direct_review: &direct_review
+  review:
+    required: false
+    triggers: [alias_disagreement, unexpected_unit, unexpected_dimension]
+  no_result:
+    mode: withhold
+    codes: [missing_standard_fact, outside_period_constraint, disallowed_dimension]
+
+derived_review: &derived_review
+  review:
+    required: true
+    triggers: [missing_dependency, dependency_unit_mismatch, dependency_period_mismatch]
+  no_result:
+    mode: withhold
+    codes: [missing_dependency, incompatible_dependencies, division_by_zero]
+
+metrics:
+  - metric_id: revenue
+    label: Revenue
+    category: income_statement
+    rule: {rule_id: metric.revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: cost_of_revenue
+    label: Cost of revenue
+    category: income_statement
+    rule: {rule_id: metric.cost_of_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: gross_profit
+    label: Gross profit
+    category: income_statement
+    rule: {rule_id: metric.gross_profit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: gross_margin
+    label: Gross margin
+    category: derived
+    rule: {rule_id: metric.gross_margin/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [gross_profit, revenue]
+    <<: [*duration_consolidated, *derived_presentation, *derived_review]
+  - metric_id: operating_expenses
+    label: Operating expenses
+    category: income_statement
+    rule: {rule_id: metric.operating_expenses/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: operating_income_loss
+    label: Operating income or loss
+    category: income_statement
+    rule: {rule_id: metric.operating_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: pretax_income_loss
+    label: Pretax income or loss
+    category: income_statement
+    rule: {rule_id: metric.pretax_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: income_tax_expense_benefit
+    label: Income tax expense or benefit
+    category: income_statement
+    rule: {rule_id: metric.income_tax_expense_benefit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: net_income_loss
+    label: Net income or loss
+    category: income_statement
+    rule: {rule_id: metric.net_income_loss/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: research_and_development_expense
+    label: Research and development expense
+    category: income_statement
+    rule: {rule_id: metric.research_and_development_expense/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: share_based_compensation_expense
+    label: Share-based compensation expense
+    category: income_statement
+    rule: {rule_id: metric.share_based_compensation_expense/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: depreciation_depletion_amortization
+    label: Depreciation depletion and amortization
+    category: cash_flow
+    rule: {rule_id: metric.depreciation_depletion_amortization/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: net_cash_from_operating_activities
+    label: Net cash from operating activities
+    category: cash_flow
+    rule: {rule_id: metric.net_cash_from_operating_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: net_cash_from_investing_activities
+    label: Net cash from investing activities
+    category: cash_flow
+    rule: {rule_id: metric.net_cash_from_investing_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: net_cash_from_financing_activities
+    label: Net cash from financing activities
+    category: cash_flow
+    rule: {rule_id: metric.net_cash_from_financing_activities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: capital_expenditures
+    label: Capital expenditures
+    category: cash_flow
+    rule: {rule_id: metric.capital_expenditures/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: cash_dividends_paid
+    label: Cash dividends paid
+    category: cash_flow
+    rule: {rule_id: metric.cash_dividends_paid/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: common_stock_repurchases
+    label: Common stock repurchases
+    category: cash_flow
+    rule: {rule_id: metric.common_stock_repurchases/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *cash_flow_statement, *direct_review]
+  - metric_id: cash_and_cash_equivalents
+    label: Cash and cash equivalents
+    category: balance_sheet
+    rule: {rule_id: metric.cash_and_cash_equivalents/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: short_term_investments
+    label: Short-term investments
+    category: balance_sheet
+    rule: {rule_id: metric.short_term_investments/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: accounts_receivable_net
+    label: Accounts receivable net
+    category: working_capital
+    rule: {rule_id: metric.accounts_receivable_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: inventory_net
+    label: Inventory net
+    category: working_capital
+    rule: {rule_id: metric.inventory_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: accounts_payable
+    label: Accounts payable
+    category: working_capital
+    rule: {rule_id: metric.accounts_payable/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: current_assets
+    label: Current assets
+    category: working_capital
+    rule: {rule_id: metric.current_assets/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: current_liabilities
+    label: Current liabilities
+    category: working_capital
+    rule: {rule_id: metric.current_liabilities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: working_capital
+    label: Working capital
+    category: working_capital
+    rule: {rule_id: metric.working_capital/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [USD]
+    formula_dependencies: [current_assets, current_liabilities]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: property_plant_equipment_net
+    label: Property plant and equipment net
+    category: balance_sheet
+    rule: {rule_id: metric.property_plant_equipment_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: operating_lease_right_of_use_asset
+    label: Operating lease right-of-use asset
+    category: balance_sheet
+    rule: {rule_id: metric.operating_lease_right_of_use_asset/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: goodwill
+    label: Goodwill
+    category: balance_sheet
+    rule: {rule_id: metric.goodwill/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: intangible_assets_net
+    label: Intangible assets net
+    category: balance_sheet
+    rule: {rule_id: metric.intangible_assets_net/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: total_assets
+    label: Total assets
+    category: balance_sheet
+    rule: {rule_id: metric.total_assets/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: short_term_debt
+    label: Short-term debt
+    category: debt_cash
+    rule: {rule_id: metric.short_term_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: B}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: long_term_debt_current
+    label: Current portion of long-term debt
+    category: debt_cash
+    rule: {rule_id: metric.long_term_debt_current/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: long_term_debt
+    label: Long-term debt
+    category: debt_cash
+    rule: {rule_id: metric.long_term_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: total_debt
+    label: Total debt
+    category: debt_cash
+    rule: {rule_id: metric.total_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [USD]
+    formula_dependencies: [short_term_debt, long_term_debt_current, long_term_debt]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: total_liabilities
+    label: Total liabilities
+    category: balance_sheet
+    rule: {rule_id: metric.total_liabilities/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: stockholders_equity
+    label: Stockholders equity
+    category: balance_sheet
+    rule: {rule_id: metric.stockholders_equity/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: retained_earnings_accumulated_deficit
+    label: Retained earnings accumulated deficit
+    category: balance_sheet
+    rule: {rule_id: metric.retained_earnings_accumulated_deficit/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: basic_weighted_average_shares
+    label: Basic weighted average shares
+    category: shares
+    rule: {rule_id: metric.basic_weighted_average_shares/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [shares]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: diluted_weighted_average_shares
+    label: Diluted weighted average shares
+    category: shares
+    rule: {rule_id: metric.diluted_weighted_average_shares/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [shares]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: common_shares_outstanding
+    label: Common shares outstanding
+    category: shares
+    rule: {rule_id: metric.common_shares_outstanding/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [shares]
+    formula_dependencies: []
+    <<: [*instant_consolidated, *balance_sheet, *direct_review]
+  - metric_id: basic_earnings_per_share
+    label: Basic earnings per share
+    category: shares
+    rule: {rule_id: metric.basic_earnings_per_share/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD/shares]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: diluted_earnings_per_share
+    label: Diluted earnings per share
+    category: shares
+    rule: {rule_id: metric.diluted_earnings_per_share/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: A}
+    units: [USD/shares]
+    formula_dependencies: []
+    <<: [*duration_consolidated, *income_statement, *direct_review]
+  - metric_id: current_ratio
+    label: Current ratio
+    category: working_capital
+    rule: {rule_id: metric.current_ratio/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [current_assets, current_liabilities]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: cash_to_total_debt
+    label: Cash to total debt
+    category: debt_cash
+    rule: {rule_id: metric.cash_to_total_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [cash_and_cash_equivalents, total_debt]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: net_debt
+    label: Net debt
+    category: debt_cash
+    rule: {rule_id: metric.net_debt/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [USD]
+    formula_dependencies: [total_debt, cash_and_cash_equivalents]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: free_cash_flow
+    label: Free cash flow
+    category: cash_flow
+    rule: {rule_id: metric.free_cash_flow/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [USD]
+    formula_dependencies: [net_cash_from_operating_activities, capital_expenditures]
+    <<: [*duration_consolidated, *derived_presentation, *derived_review]
+  - metric_id: debt_to_equity
+    label: Debt to equity
+    category: debt_cash
+    rule: {rule_id: metric.debt_to_equity/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [total_debt, stockholders_equity]
+    <<: [*instant_consolidated, *derived_presentation, *derived_review]
+  - metric_id: receivables_to_revenue
+    label: Receivables to revenue
+    category: working_capital
+    rule: {rule_id: metric.receivables_to_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [accounts_receivable_net, revenue]
+    <<: [*duration_consolidated, *derived_presentation, *derived_review]
+  - metric_id: inventory_to_revenue
+    label: Inventory to revenue
+    category: working_capital
+    rule: {rule_id: metric.inventory_to_revenue/v1, version: 1.0.0, available_at: "2026-08-02T00:00:00Z", confidence: C}
+    units: [ratio]
+    formula_dependencies: [inventory_net, revenue]
+    <<: [*duration_consolidated, *derived_presentation, *derived_review]

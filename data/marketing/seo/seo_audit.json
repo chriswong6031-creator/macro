@@ -1,15 +1,15 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-08-01T04:09:03Z",
+  "as_of": "2026-08-02T07:23:15Z",
   "health_score": 86,
   "census": {
-    "total_pages": 1932,
+    "total_pages": 1955,
     "by_family": {
       "core": {
-        "pages": 143,
-        "with_canonical": 128,
-        "with_desc": 127,
-        "with_og": 127,
+        "pages": 147,
+        "with_canonical": 132,
+        "with_desc": 131,
+        "with_og": 131,
         "with_jsonld": 6,
         "in_sitemap": 10
       },
@@ -54,7 +54,7 @@
         "in_sitemap": 0
       },
       "stocks": {
-        "pages": 1676,
+        "pages": 1695,
         "sampled": 25,
         "with_canonical": 25,
         "with_title": 25,
@@ -66,10 +66,10 @@
     }
   },
   "sitemap": {
-    "total_urls": 2127,
-    "core": 557,
+    "total_urls": 2219,
+    "core": 633,
     "products": 5,
-    "stocks": 1565,
+    "stocks": 1581,
     "host_ok": true,
     "bad_host_count": 0,
     "apex_host_count": 0,
@@ -92,6 +92,7 @@
       "baskets_china_ths.html",
       "baskets_hk.html",
       "baskets_intl.html",
+      "biocatalyst.html",
       "bonds.html",
       "btc_strategy.html",
       "canada.html",
@@ -99,6 +100,7 @@
       "canada_history.html",
       "canada_stock.html",
       "canada_stocks.html",
+      "capital_structure.html",
       "china.html",
       "china_allocation.html",
       "china_altdata.html",
@@ -122,11 +124,9 @@
       "commodity_strategies.html",
       "congress_trades.html",
       "country_cycles.html",
-      "crossasset.html",
-      "crypto.html",
-      "cycle.html"
+      "crossasset.html"
     ],
-    "missing_from_sitemap_count": 237,
+    "missing_from_sitemap_count": 241,
     "duplicates": []
   },
   "crawl_infra": {
@@ -134,7 +134,7 @@
     "robots_sitemap_host_ok": true,
     "llms_txt_present": true,
     "brand_facts_present": true,
-    "brand_facts_age_days": 5
+    "brand_facts_age_days": 6
   },
   "issues": [
     {
@@ -149,7 +149,7 @@
       "severity": "low",
       "class": "page_weight",
       "page": "baskets_china_ths.html",
-      "detail": "HTML size 3.3 MB exceeds 2.5 MB"
+      "detail": "HTML size 3.4 MB exceeds 2.5 MB"
     },
     {
       "id": "missing_description_btc_strategy_html",
@@ -1034,6 +1034,13 @@
       "detail": "Public page not in sitemap: baskets_intl.html"
     },
     {
+      "id": "missing_from_sitemap_biocatalyst_html",
+      "severity": "medium",
+      "class": "missing_from_sitemap",
+      "page": "biocatalyst.html",
+      "detail": "Public page not in sitemap: biocatalyst.html"
+    },
+    {
       "id": "missing_from_sitemap_bonds_html",
       "severity": "medium",
       "class": "missing_from_sitemap",
@@ -1081,6 +1088,13 @@
       "class": "missing_from_sitemap",
       "page": "canada_stocks.html",
       "detail": "Public page not in sitemap: canada_stocks.html"
+    },
+    {
+      "id": "missing_from_sitemap_capital_structure_html",
+      "severity": "medium",
+      "class": "missing_from_sitemap",
+      "page": "capital_structure.html",
+      "detail": "Public page not in sitemap: capital_structure.html"
     },
     {
       "id": "missing_from_sitemap_china_html",
@@ -1342,11 +1356,25 @@
       "detail": "Public page not in sitemap: forex.html"
     },
     {
+      "id": "missing_from_sitemap_fundamental_forensics_html",
+      "severity": "medium",
+      "class": "missing_from_sitemap",
+      "page": "fundamental_forensics.html",
+      "detail": "Public page not in sitemap: fundamental_forensics.html"
+    },
+    {
       "id": "missing_from_sitemap_gex_html",
       "severity": "medium",
       "class": "missing_from_sitemap",
       "page": "gex.html",
       "detail": "Public page not in sitemap: gex.html"
+    },
+    {
+      "id": "missing_from_sitemap_government_revenue_html",
+      "severity": "medium",
+      "class": "missing_from_sitemap",
+      "page": "government_revenue.html",
+      "detail": "Public page not in sitemap: government_revenue.html"
     },
     {
       "id": "missing_from_sitemap_history_html",
@@ -1508,34 +1536,6 @@
       "class": "missing_from_sitemap",
       "page": "markets.html",
       "detail": "Public page not in sitemap: markets.html"
-    },
-    {
-      "id": "missing_from_sitemap_mastermind_html",
-      "severity": "medium",
-      "class": "missing_from_sitemap",
-      "page": "mastermind.html",
-      "detail": "Public page not in sitemap: mastermind.html"
-    },
-    {
-      "id": "missing_from_sitemap_masterminds_html",
-      "severity": "medium",
-      "class": "missing_from_sitemap",
-      "page": "masterminds.html",
-      "detail": "Public page not in sitemap: masterminds.html"
-    },
-    {
-      "id": "missing_from_sitemap_measurement_html",
-      "severity": "medium",
-      "class": "missing_from_sitemap",
-      "page": "measurement.html",
-      "detail": "Public page not in sitemap: measurement.html"
-    },
-    {
-      "id": "missing_from_sitemap_methodology_html",
-      "severity": "medium",
-      "class": "missing_from_sitemap",
-      "page": "methodology.html",
-      "detail": "Public page not in sitemap: methodology.html"
     }
   ],
   "issue_counts_by_class": {
@@ -1550,12 +1550,12 @@
     "missing_title": 1,
     "duplicate_title": 2,
     "duplicate_description": 2,
-    "missing_from_sitemap": 237
+    "missing_from_sitemap": 241
   },
   "issue_counts_by_severity": {
     "critical": 0,
     "high": 47,
-    "medium": 300,
+    "medium": 304,
     "low": 1
   }
 }

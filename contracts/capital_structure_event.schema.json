@@ -32,6 +32,24 @@
         "accession": {"type": ["string", "null"]},
         "form": {"type": ["string", "null"]},
         "file_number": {"type": ["string", "null"]},
+        "file_number_provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "value", "candidate_values", "sources"],
+          "properties": {
+            "state": {"type": "string", "enum": ["observed", "unavailable", "ambiguous"]},
+            "value": {"type": ["string", "null"]},
+            "candidate_values": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["legacy_sgml_file_number", "sec_header_file_number", "effect_xml_file_number"]
+              },
+              "uniqueItems": true
+            }
+          }
+        },
         "filing_date": {"type": ["string", "null"], "format": "date"},
         "accepted_at": {"type": ["string", "null"], "format": "date-time"},
         "primary_document_url": {"type": ["string", "null"], "format": "uri"},

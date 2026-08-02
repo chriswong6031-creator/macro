@@ -190,7 +190,10 @@ specific-signal widgets keep the site's small `demo` as-of tag.
 - Banned: `validated` (CI), competitor proper nouns, "hundreds of …" without a source,
   "signed up/claimed" for founding counts, guaranteed/riskless/perfect-return framing,
   internal state names (IGNITION, UPTURN_CONFIRMED …), untranslated stats on the glance
-  layer (an EDGE number may appear inside a widget — never in a headline).
+  layer (an EDGE number may appear inside a widget — never in a headline), and
+  institutional-**usage** claims — "used by quant firms / trusted by institutions" is an
+  adoption claim no surface can back (round-3 ruling, 2026-08-02); the compliant form is
+  the comparative ("institutions pay $24,000 a year for desks like this").
 - Numbers in copy only when §6 backs them. Rot-resistant phrasing preferred ("2,000
   founding memberships" is stable; "1,754 left" is not).
 - Voice: confident, plain, a little dry. The product says "windows, not certainties" —
@@ -204,7 +207,11 @@ specific-signal widgets keep the site's small `demo` as-of tag.
 | "Founding 50% off — $75/mo" | pricing: `data-annual="$75"` vs `data-monthly="$149"` |
 | "Billed $900 a year" / "locked in for as long as you stay" | pricing founding terms |
 | "2,000 founding memberships · allotment shrinks daily" | pricing founding block (enforced, #3856) |
-| "SAVE $408 A YEAR" | landing founding badge — regular annual $109/mo ×12 = $1,308 vs $900 |
+| "SAVE $888 A YEAR" (Pro) | landing founding badge as of 2026-08-02 — $149/mo monthly ×12 = $1,788 vs $900 annual (supersedes the retired "SAVE $408" $109-anchor badge) |
+| "SAVE $288 A YEAR" (Essential) | landing Essential badge — $99/mo monthly ×12 = $1,188 vs $900 annual |
+| "Launch offer: up to 50% off" | platform-level: Pro $149→$75 = 49.7%; Essential $99→$75 = 24% — "up to" is load-bearing |
+| Buy · Near · Wait · Hold · Avoid / 0–100 edge / four-stage lifecycle / exact entry zones | landing Prophet section (`#f-prophet`) |
+| "2,700+ stock dossiers" | landing pricing matrix, dossiers row |
 | "356 tracked funds" (13F) | landing Smart Money section |
 | "34 themes, four lanes" | landing Theme Rotations section |
 | "Terminal free forever / nothing to install" | landing Terminal section |

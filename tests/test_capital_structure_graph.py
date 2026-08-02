@@ -234,6 +234,38 @@ def test_missing_linkage_keys_flow_into_review_queue():
     assert queue[0]["defer_reason"] == "missing_exact_linkage_keys"
 
 
+def test_null_file_number_never_falls_back_to_another_registration_value():
+    original = _event(
+        "0000000001-26-000001", "S-3", "2026-08-01T10:00:00Z",
+        file_number="333-111111",
+    )
+    effect_with_ambiguous_source_header = _event(
+        "0000000001-26-000002", "EFFECT", "2026-08-02T10:00:00Z",
+        file_number=None,
+    )
+    graph = link_registration_graph(
+        [original, effect_with_ambiguous_source_header],
+        {
+            original["event_id"]: {
+                "file_number": "333-111111", "registration_family": "registration_s3",
+            },
+            # A collector conflict is intentionally represented as null; no
+            # graph fallback may select the lone registration above.
+            effect_with_ambiguous_source_header["event_id"]: {
+                "file_number": None, "registration_family": "registration_s3",
+            },
+        },
+    )
+
+    assert graph["edges"] == []
+    assert graph["unresolved"] == [{
+        "event_id": effect_with_ambiguous_source_header["event_id"],
+        "classification_state": DEFERRED_LINKAGE,
+        "defer_reason": "missing_exact_linkage_keys",
+        "candidate_event_ids": [],
+    }]
+
+
 def test_correction_uses_separate_supersedes_edge():
     original = _event("0000000001-26-000001", "S-3", "2026-08-01T10:00:00Z")
     observation = {

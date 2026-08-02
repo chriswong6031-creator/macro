@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_retrieval_queue_receipt.schema.json",
+  "title": "Capital Structure retrieval queue receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "as_of", "policy_version", "max_filings", "selected_count",
+    "deferred_count", "lane_quota_slots", "lanes", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.retrieval_queue_receipt.v1"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "max_filings": {"type": "integer", "minimum": 0},
+    "selected_count": {"type": "integer", "minimum": 0},
+    "deferred_count": {"type": "integer", "minimum": 0},
+    "lane_quota_slots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registration", "state", "prospectus", "reg_a", "issuer_current_report",
+        "issuer_periodic", "issuer_proxy"
+      ],
+      "properties": {
+        "registration": {"type": "integer", "minimum": 0},
+        "state": {"type": "integer", "minimum": 0},
+        "prospectus": {"type": "integer", "minimum": 0},
+        "reg_a": {"type": "integer", "minimum": 0},
+        "issuer_current_report": {"type": "integer", "minimum": 0},
+        "issuer_periodic": {"type": "integer", "minimum": 0},
+        "issuer_proxy": {"type": "integer", "minimum": 0}
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {"$ref": "#/$defs/lane"}
+    },
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane", "pending_count", "selected_count", "deferred_count",
+        "oldest_pending_first_seen", "oldest_pending_age_days", "unknown_first_seen_count"
+      ],
+      "properties": {
+        "lane": {
+          "type": "string",
+          "enum": [
+            "registration", "state", "prospectus", "reg_a", "issuer_current_report",
+            "issuer_periodic", "issuer_proxy"
+          ]
+        },
+        "pending_count": {"type": "integer", "minimum": 0},
+        "selected_count": {"type": "integer", "minimum": 0},
+        "deferred_count": {"type": "integer", "minimum": 0},
+        "oldest_pending_first_seen": {"type": ["string", "null"], "format": "date-time"},
+        "oldest_pending_age_days": {"type": ["integer", "null"], "minimum": 0},
+        "unknown_first_seen_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  }
+}
