@@ -190,6 +190,60 @@ def test_controls_removed_by_operator_stay_removed() -> None:
     )
 
 
+def test_context_link_slot_works() -> None:
+    """The sanctioned way to add a page-specific link to the header row.
+
+    Rendered, not grepped: if someone "simplifies" the loop away, pages that
+    pass nav_context_links would silently render nothing and their links would
+    vanish — which is precisely how the back-links below got lost mid-sweep.
+    """
+    env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=False)
+    html = env.get_template(CANONICAL).render(
+        t=_t,
+        nav_context_links=[
+            {"href": "../baskets.html", "icon": "🧺", "en": "All themes", "zh": "全部主题"},
+            {
+                "href": "china.html",
+                "icon_class": "menu-icon menu-icon-flag menu-icon-cn",
+                "en": "China",
+                "zh": "中国",
+            },
+        ],
+    )
+    assert 'href="../baskets.html"' in html and "All themes" in html
+    assert 'href="china.html"' in html
+    assert 'class="menu-icon menu-icon-flag menu-icon-cn"' in html
+    # and it must stay optional — pages that pass nothing render no extras
+    bare = env.get_template(CANONICAL).render(t=_t)
+    assert "nav-context-link" not in bare
+
+
+def test_drilldown_pages_keep_a_way_back() -> None:
+    """Detail pages must retain the link back to their index.
+
+    basket_detail and subsector_detail each carried an "All themes" /
+    "All subsectors" back-link inside their hand-rolled header. A sweep that
+    replaces hand-rolled headers wholesale silently deletes real navigation
+    along with the duplicated chrome — this pin is what catches that.
+    """
+    for name, target in (
+        ("basket_detail.html.j2", "baskets.html"),
+        ("subsector_detail.html.j2", "subsectors.html"),
+    ):
+        s = (TEMPLATES / name).read_text(encoding="utf-8")
+        # Match the assignment exactly and read only INSIDE its list, so neither
+        # renaming the variable nor the target merely appearing elsewhere in the
+        # page can satisfy this.
+        m = re.search(
+            r"{%\s*set\s+nav_context_links\s*=\s*\[(.*?)\]\s*%}", s, re.DOTALL
+        )
+        assert m, f"{name} lost its nav_context_links back-link slot"
+        assert target in m.group(1), (
+            f"{name}'s back-link no longer points at {target}; slot contains: "
+            f"{m.group(1).strip()[:120]}"
+        )
+
+
 def test_shared_header_always_has_its_base_styling() -> None:
     """A page taking the shared header must also load CSS that styles it.
 

@@ -43,6 +43,9 @@
 </style>
 </head>
 <body>
+{% set nav_context_links = [
+  {'href': back_href | default('../subsectors.html'), 'icon': '💫', 'en': 'All subsectors', 'zh': '全部子行业'},
+] %}
 {% include "_site_nav.html.j2" %}
 
 <div class="wrap">

@@ -148,6 +148,9 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
 </head>
 <link rel="stylesheet" href="product-nav-icons.css">
 <body>
+{% set nav_context_links = [
+  {'href': 'china.html', 'icon_class': 'menu-icon menu-icon-flag menu-icon-cn', 'en': 'China Regime', 'zh': '中国体制'},
+] %}
 {% include "_site_nav.html.j2" %}
 <div class="wrap">
 

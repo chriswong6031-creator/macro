@@ -34,9 +34,18 @@ def test_page_has_chrome_and_mount_and_assets():
     assert '<script src="theme.js">' in html and '<script src="ai_desk.js">' in html
     # bilingual: the t() macro must emit the zh label alongside the en one
     assert "AI交易台" in html and 'class="l-zh"' in html
-    # cross-links to the sibling AI pages both exist (the "Mastermind" nav entry
-    # points to the external bot; the AI Desk link stays local)
-    assert 'href="https://bot.mastermind-x.com"' in html and 'href="ai_desk.html"' in html
+    # The header is now the shared one (_site_nav.html.j2), whose only external
+    # entry is Terminal. Two per-page pills were removed here on 2026-08-01:
+    #   · "Mastermind" — theme.js injects mm_brain.js sitewide, which mounts its
+    #     own bottom-right launcher, so the nav pill was a duplicate entry point.
+    #   · "🖥️ AI Desk" — a self-link marked .active on the page it points at.
+    # NOTE: dropping the self-link orphans nothing. ai_desk.html is absent from
+    # _navlinks.html.j2 and site-wide exactly ONE page links to it — itself. It
+    # was already unreachable from the navigation; the pill only ever said "you
+    # are here". Giving it a real home in the menu is a product decision, not a
+    # chrome fix.
+    assert 'href="https://app.mastermind-x.com"' in html
+    assert 'href="https://bot.mastermind-x.com"' not in html
 
 
 def test_renderer_covers_the_key_surfaces():

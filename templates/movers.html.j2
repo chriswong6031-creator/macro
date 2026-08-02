@@ -134,6 +134,9 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
 </style>
 </head>
 <body>
+{% set nav_context_links = [
+  {'href': 'mastermind.html', 'icon_class': 'product-icon product-icon-mastermind', 'en': 'Mastermind', 'zh': '操盘大脑'},
+] %}
 {% include "_site_nav.html.j2" %}
 
 <div class="wrap">

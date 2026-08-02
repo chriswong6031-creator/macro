@@ -120,7 +120,11 @@ def test_page_does_not_link_old_brief_pages():
     assert 'href="brief.html"' not in html
     assert 'href="china_brief.html"' not in html
     assert 'href="hk_brief.html"' not in html
-    assert 'href="https://bot.mastermind-x.com"' in html  # the nav AI entry points to the external Mastermind bot
+    # The header's external entry is Terminal. The old "Mastermind" nav pill was
+    # removed 2026-08-01 — theme.js injects mm_brain.js sitewide, which mounts its
+    # own bottom-right launcher, so the pill was a duplicate entry point.
+    assert 'href="https://app.mastermind-x.com"' in html
+    assert 'href="https://bot.mastermind-x.com"' not in html
 
 
 def test_no_template_links_deleted_brief_pages():

@@ -405,6 +405,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
 </head>
 <link rel="stylesheet" href="product-nav-icons.css">
 <body>
+{% set nav_context_links = [
+  {'href': 'china.html', 'icon_class': 'menu-icon menu-icon-flag menu-icon-cn', 'en': 'China', 'zh': '中国'},
+] %}
 {% include "_site_nav.html.j2" %}
 <div class="wrap">
 

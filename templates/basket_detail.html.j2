@@ -182,6 +182,9 @@
 </style>
 </head>
 <body>
+{% set nav_context_links = [
+  {'href': back_href | default('../baskets.html'), 'icon': '🧺', 'en': 'All themes', 'zh': '全部主题'},
+] %}
 {% include "_site_nav.html.j2" %}
 
 <a class="back" href="{{ back_href | default('../baskets.html') }}">← {{ t('Theme Rotation Desk', '主题轮动台') }}</a>
