@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -117,8 +117,13 @@ _CONTENT_ACCRUING_NOTE = (
 # Content Studio payload was ~363KB, most of it internal underscore-prefixed
 # post keys the browser render never reads (the full Prophet ``_plan`` alone is
 # ~80KB across the queue).  We strip underscore keys per post before shipping,
-# keeping only the small flags the render surfaces as plain-word badges
-# (``_live_gate_fail`` → "signal demoted", ``_copy_violations`` → caution chip).
+# keeping only these two flags.
+#
+# HONEST COMMENT (2026-08-01 audit, defect C8): the old wording here claimed the
+# render "surfaces these as plain-word badges". It does not — grep of app.js
+# finds ZERO readers of either key. They are kept because they are cheap and a
+# per-post gate/violation receipt is the natural home for a future Tier-3
+# disclosure, not because anything draws them today.
 _CONTENT_POST_KEEP = frozenset({"_live_gate_fail", "_copy_violations"})
 
 
@@ -1025,6 +1030,89 @@ def _intelligence_snapshot(repo: Path, *, allow_live: bool) -> dict | None:
     return None
 
 
+_CONTENT_ITEMS_REL = "data/marketing/outbox/items.jsonl"
+
+
+def _content_funnel(repo: Path, cp: dict, plan_as_of: Any,
+                    planned: int, written_stamped: int) -> dict:
+    """Tonight's supply funnel: planned → written → kept by audit → emitted.
+
+    WHY THIS EXISTS (2026-08-01 audit, defect C5): ``content_plan.json`` has
+    carried a ``content.copy`` block with ``written``, ``auditor``, ``dropped``
+    and 63 free-text ``dropped_reasons`` since 2026-07-31, and ``content()``
+    never read ``cp["content"]`` at all. The operator's standing question "is the
+    machine healthy — planned → written → validated → emitted, with drop reasons
+    ranked" was answerable from bytes already parsed into memory.
+
+    NONE MEANS *NOT MEASURED* AND MUST RENDER AS AN EM DASH, NEVER AS 0. A zero
+    reads as "we checked, nothing there"; a null is "no pass wrote this number".
+
+    THESE COUNTERS DO NOT ALL NEST, AND THIS FUNCTION DOES NOT PRETEND THEY DO.
+    They are written by different passes over different post sets — live
+    2026-08-01 has ``copy.written = 6`` under an auditor that kept 7 and an
+    outbox that took 9. So no loss is computed here: the UI computes it per
+    station and refuses to print one wherever out exceeds in (spec §C7's honesty
+    guard). Never clamp a negative loss into existence — that is the same defect
+    the Floor's production line shipped for a week (marketing_floor._station).
+
+    ``emitted`` deliberately reuses the Floor's own measure (outbox items whose
+    ``as_of`` equals the plan's) so the two pages can never disagree about how
+    many posts reached the rail.
+    """
+    copy = ((cp.get("content") or {}).get("copy") or {}) if isinstance(cp, dict) else {}
+    if not isinstance(copy, dict):
+        copy = {}
+    auditor = copy.get("auditor") if isinstance(copy.get("auditor"), dict) else {}
+    audit_ran = bool(auditor.get("ran"))
+
+    emitted: int | None = None
+    # AN ABSENT RAIL IS NOT AN EMPTY RAIL. _read_jsonl fail-softs a missing file
+    # to [], which would make `emitted` a confident 0 — "we checked, nothing was
+    # queued" — when the truth is that nothing on this host ever wrote the rail.
+    # Only a rail file that EXISTS can report a count; anything else is None and
+    # renders as an em dash.
+    if plan_as_of and (repo / _CONTENT_ITEMS_REL).exists():
+        try:
+            rows = _read_jsonl(repo / _CONTENT_ITEMS_REL)
+            emitted = sum(1 for r in rows
+                          if isinstance(r, dict) and r.get("as_of") == plan_as_of)
+        except Exception:  # noqa: BLE001
+            emitted = None
+
+    def _int(v: Any) -> int | None:
+        return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+    return {
+        "planned": planned or None,
+        # The plan file's own header has been drifting from its queue length for
+        # weeks (155 claimed vs 156 real today). The queue is the truth; the
+        # claim ships beside it so the drift is visible, not silently authoritative.
+        "claimed": _int(((cp.get("summary") or {}).get("total_posts"))
+                        if isinstance(cp, dict) else None),
+        "written": _int(copy.get("written")),
+        # The Floor's measure of the same station: plan posts carrying a
+        # _copy_mode stamp. Shipped so the UI can print the drift rather than
+        # letting two pages quietly report different "written" numbers.
+        "written_stamped": written_stamped,
+        "audit_kept": _int(auditor.get("kept")) if audit_ran else None,
+        "audit_cut": _int(auditor.get("cut")) if audit_ran else None,
+        "audit_unaudited": _int(auditor.get("unaudited")) if audit_ran else None,
+        "emitted": emitted,
+        # Free text, verbatim, never rewritten here: the UI groups these into
+        # reader-word families and MUST still print every unmatched string.
+        "drop_reasons": (copy.get("dropped_reasons")
+                         if isinstance(copy.get("dropped_reasons"), dict) else {}),
+        "dropped": (copy.get("dropped")
+                    if isinstance(copy.get("dropped"), dict) else {}),
+        "n_validated": _int(copy.get("n_validated")),
+        "n_fallback": _int(copy.get("n_fallback")),
+        "violations_fixed": _int(copy.get("violations_fixed")),
+        "signals_killed_by_gate": _int(copy.get("signals_killed_by_gate")),
+        "modes": copy.get("modes") if isinstance(copy.get("modes"), dict) else {},
+        "note": copy.get("note") if isinstance(copy.get("note"), str) else None,
+    }
+
+
 def content(root=None) -> dict:
     """Content Studio panel: reads data/marketing/content_plan.json.
 
@@ -1058,6 +1146,7 @@ def content(root=None) -> dict:
                 "featured_charts": [],
                 "distinctness": None,
                 "summary": None,
+                "funnel": None,
                 "intelligence": intelligence,
             }
         plan_as_of = cp.get("as_of")
@@ -1162,28 +1251,63 @@ def content(root=None) -> dict:
         # display_time (its real advisory post datetime) for the UI.
         accounts = []
         _posted_7d = 0
+        _planned = 0
+        _written_stamped = 0
+        _chart_ids: set[str] = set()
         for acct in (cp.get("accounts") or []):
             if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
                 _acct_id = str(acct.get("id") or acct.get("name") or "")
                 _q = [_stamp(p, _acct_id) for p in acct["queue"]]
                 _posted_7d += sum(
                     1 for p in _q if isinstance(p, dict) and p.get("usage") == "posted")
+                _planned += len(_q)
+                for _raw, _p in zip(acct["queue"], _q):
+                    if isinstance(_raw, dict) and _raw.get("_copy_mode"):
+                        _written_stamped += 1
+                    cid = isinstance(_p, dict) and _p.get("chart_id")
+                    if cid:
+                        _chart_ids.add(str(cid))
                 acct = {**acct, "queue": _q}
             accounts.append(acct)
+
+        # SHIP ONLY THE CHARTS THE QUEUE ACTUALLY REFERENCES (2026-08-01 audit,
+        # defect C2). featured_charts was passed through whole: 9 inline SVGs
+        # totalling ~686 KB on a 830 KB payload, while exactly 4 of 156 posts
+        # carried a chart_id and the render only ever looks a chart up BY id
+        # (chartById[post.chart_id]). Five SVGs including a 191 KB one were
+        # downloaded on every page mount and never mounted into the DOM.
+        # Fail-open: a chart row with no readable id survives, because dropping
+        # a chart the render might key differently is worse than a big payload.
+        _all_charts = cp.get("featured_charts") or []
+        featured_charts = [
+            fc for fc in _all_charts
+            if not (isinstance(fc, dict) and fc.get("id"))
+            or str(fc.get("id")) in _chart_ids
+        ] if isinstance(_all_charts, list) else _all_charts
+        _charts_dropped = (len(_all_charts) - len(featured_charts)
+                           if isinstance(_all_charts, list) else 0)
 
         return {
             "ok": True,
             "content_types": cp.get("content_types") or [],
             "accounts": accounts,
-            "featured_charts": cp.get("featured_charts") or [],
+            "featured_charts": featured_charts,
+            "featured_charts_dropped": _charts_dropped,
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
+            # The supply funnel (2026-08-01 audit, defect C5). Every one of these
+            # numbers was already on disk in content_plan.json's ``content.copy``
+            # block and this builder never touched it, so the operator's "is the
+            # machine healthy" question had no answer anywhere in the console.
+            "funnel": _content_funnel(repo, cp, plan_as_of, _planned,
+                                      _written_stamped),
             # Intraday event → evidence → draft queue. Separate from the nightly
             # plan and from the publisher; every draft remains review-gated.
             "intelligence": intelligence,
-            # Count of plan posts that were actually posted in the last 7 days —
-            # feeds the "posted (7d)" summary tile so an operator can see at a
-            # glance that content is being used, not stale.
+            # Plan posts from THIS plan day that were actually posted. The name is
+            # historical and wrong — there is no 7-day window here, only today's
+            # queue (defect C4) — so no surface labels it "7d" any more. Kept
+            # under the old key for callers that already read it.
             "posted_7d": _posted_7d,
             "as_of": plan_as_of,
             "produced_at": cp.get("produced_at"),
@@ -1540,12 +1664,21 @@ def sentinel(root=None) -> dict:
     repo = Path(root) if root is not None else _default_root()
     try:
         rpt = _read_json(repo / _SENTINEL_REL)
+        # LIVE arm state, not last night's baked boolean. `publish_enabled` in the
+        # report is what the kill-switch read at ~03:51 UTC when the gate ran; the
+        # hero used it to tell the operator "nothing leaves the building" while
+        # posts were going out that morning. The report field stays (it is the
+        # honest record of what the GATE saw), but the page's live claim now
+        # comes from arm_state() — the same GitHub repo-variable read the
+        # Publisher uses, so the two pages can never disagree again.
+        arm = arm_state()
         if rpt is None:
             return {
                 "ok": True,
                 "note": _SENTINEL_ACCRUING_NOTE,
                 "plan_status": None,
                 "publish_enabled": None,
+                "arm_state": arm,
                 "counts": None,
                 "top_reasons": [],
                 "quarantined": [],
@@ -1562,7 +1695,10 @@ def sentinel(root=None) -> dict:
         return {
             "ok": True,
             "plan_status": rpt.get("plan_status"),
+            # What the GATE saw when it ran (a historical fact, kept verbatim).
             "publish_enabled": rpt.get("publish_enabled"),
+            # What is true NOW (enabled: True/False/None-for-unknown).
+            "arm_state": arm,
             "auditor_strict": rpt.get("auditor_strict"),
             "as_of": rpt.get("as_of"),
             "produced_at": rpt.get("produced_at"),
@@ -1808,6 +1944,7 @@ def outbox(root=None) -> dict:
                 "summary": _zero_counts() | {"total": 0},
                 "accounts": [],
                 "history": [],
+                "history_total": 0,
                 "activity": activity,
                 "decision_log": [],
             }
@@ -1900,6 +2037,12 @@ def outbox(root=None) -> dict:
             key=lambda x: (x.get("last_transition_at") or ""),
             reverse=True,
         )
+        # `note` is the ledger's own reason line ("account_disabled",
+        # "http_error 429", "operator batch rejection") and it is what the
+        # console groups dead posts BY — without it the operator gets a wall of
+        # ids with no answer to "why did this one die". `attempts` distinguishes
+        # a spent failure from a re-armable one, which is the difference between
+        # a corpse and a post still waiting on him.
         history_out = [
             {
                 "id": e["id"],
@@ -1909,9 +2052,15 @@ def outbox(root=None) -> dict:
                 "status": e["status"],
                 "at": e["last_transition_at"],
                 "receipt": e["receipt"],
+                "note": (state["last"].get(e["id"]) or {}).get("note"),
+                "attempts": e["attempts"],
             }
             for e in terminal[:50]
         ]
+        # The count the panel prints must be the count that EXISTS, not the
+        # length of the window: "50 recorded" over 242 terminal items is a lie
+        # the operator has no way to catch.
+        history_total = len(terminal)
 
         # Per-item decision log — the operator's audit trail (holds/approvals +
         # actuator transitions), which the pipeline `activity` (run tallies) does
@@ -1930,6 +2079,7 @@ def outbox(root=None) -> dict:
             "summary": summary,
             "accounts": accounts_out,
             "history": history_out,
+            "history_total": history_total,
             "activity": activity,
             "decision_log": decision_log,
         }
@@ -2018,6 +2168,35 @@ def _latest_metrics_by_remote_id(repo: Path) -> dict[str, dict]:
 
 _PUBLISHER_RECENT_N = 10
 
+# "Next dispatches" window — the approved items the operator is about to send.
+# Capped because the panel's job is "what goes out next", not "the whole shelf";
+# the honest total ships alongside as next_dispatch_total.
+_PUBLISHER_NEXT_N = 20
+
+# Terminal-row ceiling for the triage list. The live ledger holds ~190
+# quarantined corpses and every one of them is needed for an HONEST group count
+# (a triage header that says "29 desk switched off" must have counted all 29),
+# so the list is NOT windowed by date — it is slimmed instead (_dead_row drops
+# the post body, which is what made this section 114 KB) and hard-capped far
+# above the live volume so a runaway ledger can never blow the payload.
+_PUBLISHER_DEAD_N = 400
+
+
+def _publish_slot_dt(now=None):
+    """Next publish slot as a datetime (the parsed twin of _next_publish_slot_utc).
+
+    Returns None when the math fails — every caller treats None as "cannot say",
+    never as "nothing is due".
+    """
+    from datetime import datetime, timezone  # noqa: PLC0415
+    iso = _next_publish_slot_utc(now)
+    if not iso:
+        return None
+    try:
+        return datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except Exception:  # noqa: BLE001
+        return None
+
 
 def publisher(root=None) -> dict:
     """Publisher control-plane panel — the live-publish half of the desk network.
@@ -2103,7 +2282,14 @@ def publisher(root=None) -> dict:
                 "status_counts": {k: 0 for k in _STATUS_KEYS if k != "held"},
                 "recent_posted": [],
                 "stuck_posting": [],
+                "stuck_posting_total": 0,
                 "quarantined": [],
+                "quarantined_total": 0,
+                "failed_dead": [],
+                "failed_dead_total": 0,
+                "next_dispatch": [],
+                "next_dispatch_total": 0,
+                "next_slot_utc": _next_publish_slot_utc(),
                 "activity": [],
             }
 
@@ -2145,15 +2331,103 @@ def publisher(root=None) -> dict:
                 row["metrics"] = met["metrics"]
             return row
 
+        def _dead_row(iid: str) -> dict:
+            """A TERMINAL row — quarantined/failed. Deliberately NOT _row().
+
+            These render as one struck line in the triage list: a reason group,
+            an id, a desk, a time, and an excerpt. The full post body is never
+            drawn for them, and shipping it is what made this section 114 KB of
+            the publisher payload for ~190 corpses. `excerpt` keeps the row
+            identifiable without paying for the whole artifact.
+            """
+            it = items.get(iid, {})
+            lr = last.get(iid) or {}
+            txt = str(it.get("text") or "")
+            return {
+                "id": iid,
+                "account": it.get("account", ""),
+                "kind": it.get("kind"),
+                "at": lr.get("at"),
+                # The plan day the copy was written FOR. A failed post that is
+                # still re-armable is only safe to retry while its market claim
+                # is current, so the age has to travel with the row.
+                "as_of": it.get("as_of"),
+                "attempts": state["attempts"].get(iid, 0),
+                "note": lr.get("note"),
+                "excerpt": (txt[:110] + "…") if len(txt) > 110 else txt,
+            }
+
         posted = [_row(i) for i in order if statuses.get(i) == "posted"]
         posted.sort(key=lambda r: (r.get("at") or ""), reverse=True)
         recent_posted = posted[:_PUBLISHER_RECENT_N]
 
-        stuck_posting = [_row(i) for i in order if statuses.get(i) == "posting"]
-        stuck_posting.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        # Stuck-in-flight items keep the FULL row: they are the one terminal-ish
+        # class that still needs a human decision, so the operator reads the copy
+        # to confirm it on X before resolving it by hand.
+        stuck_all = [_row(i) for i in order if statuses.get(i) == "posting"]
+        stuck_all.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        stuck_posting = stuck_all[:_PUBLISHER_DEAD_N]
 
-        quarantined = [_row(i) for i in order if statuses.get(i) == "quarantined"]
-        quarantined.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        quar_all = [_dead_row(i) for i in order if statuses.get(i) == "quarantined"]
+        quar_all.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        quarantined = quar_all[:_PUBLISHER_DEAD_N]
+
+        # Failed-and-terminal: attempts spent, so the next run quarantines them.
+        # They belong with the dead, not in a review rail (they read as pending
+        # work there and they are not).
+        failed_all = [_dead_row(i) for i in order if statuses.get(i) == "failed"]
+        failed_all.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        failed_dead = failed_all[:_PUBLISHER_DEAD_N]
+
+        # ---- Next dispatches: WHAT IS ABOUT TO GO OUT (operator question 1) ---
+        # The page had no view of this at all — only a dry-run button that
+        # computed it on demand, so the one thing the operator wanted to see
+        # first was the one thing the page never drew. Approved items, ordered by
+        # their slot, with everything the card preview needs (text, chars, media,
+        # whether the desk even has a channel). `due_at_next_slot` is a plain
+        # boolean the render uses to separate "goes at the next slot" from
+        # "booked for later" — it is never used to HIDE a row.
+        slot_dt = _publish_slot_dt()
+
+        def _due_by_slot(sched: str | None) -> bool | None:
+            if slot_dt is None:
+                return None            # cannot say — the render prints "—"
+            if not sched or str(sched) == "immediate":
+                return True            # send-when-approved: due the moment it is
+            try:
+                from datetime import datetime  # noqa: PLC0415
+                s = str(sched).replace("Z", "+00:00")
+                return datetime.fromisoformat(s) <= slot_dt
+            except Exception:  # noqa: BLE001
+                return None
+
+        def _next_row(iid: str) -> dict:
+            it = items.get(iid, {})
+            txt = str(it.get("text") or "")
+            media = [m for m in (it.get("media") or []) if isinstance(m, dict) and m.get("path")]
+            acct = str(it.get("account", ""))
+            first = media[0] if media else {}
+            return {
+                "id": iid,
+                "account": acct,
+                "kind": it.get("kind"),
+                "text": txt,
+                "chars": len(txt),
+                "scheduled_at": it.get("scheduled_at"),
+                "slot": it.get("slot"),
+                "media_n": len(media),
+                "media_path": first.get("path"),
+                "media_label": first.get("ticker") or first.get("chart_id"),
+                # A desk with no Buffer channel id cannot post no matter what the
+                # operator approves — surfaced per row so the reason travels with
+                # the item instead of hiding in the config strip.
+                "channel_ok": bool(channel_set.get(acct, False)),
+                "due_at_next_slot": _due_by_slot(it.get("scheduled_at")),
+            }
+
+        next_all = [_next_row(i) for i in order if statuses.get(i) == "approved"]
+        next_all.sort(key=lambda r: (r.get("scheduled_at") or "", r.get("id") or ""))
+        next_dispatch = next_all[:_PUBLISHER_NEXT_N]
 
         # Publisher activity rows only (publisher_live / publisher_dry_run),
         # newest first. Read a wider window then filter to keep the last few.
@@ -2173,7 +2447,16 @@ def publisher(root=None) -> dict:
             "status_counts": status_counts,
             "recent_posted": recent_posted,
             "stuck_posting": stuck_posting,
+            "stuck_posting_total": len(stuck_all),
             "quarantined": quarantined,
+            # The count the header reads. A capped list must never be able to
+            # under-report the wall it is summarising.
+            "quarantined_total": len(quar_all),
+            "failed_dead": failed_dead,
+            "failed_dead_total": len(failed_all),
+            "next_dispatch": next_dispatch,
+            "next_dispatch_total": len(next_all),
+            "next_slot_utc": _next_publish_slot_utc(),
             "activity": activity,
         }
     except Exception as exc:  # noqa: BLE001
@@ -2199,15 +2482,45 @@ def publisher_dryrun(root=None, account=None) -> dict:
 
 
 def decide_outbox(item_id: str, decision: str, note: str | None = None, root=None) -> bool:
-    """Thin wrapper: record an operator approve/hold decision via engine outbox API.
+    """Record an operator approve/hold decision AND apply it, via the engine API.
 
     Returns True on success, False on unknown id or invalid decision.
     Never raises.
+
+    WHY THE SECOND HALF EXISTS (2026-08-01). Recording was the whole of this
+    function, and the recorded row went nowhere: `outbox.apply_decisions` — the
+    one function that turns an approve row into a `queued → approved`
+    transition — had NO production caller anywhere in the repo (grep: tests and
+    one config comment). The approval desk deliberately defers to a human
+    decision (`approval_desk._human_has_spoken`), so an operator approve did not
+    just fail to advance the post, it also took the post off the desk's list.
+    The operator's yes was a dead letter in both directions: the post sat
+    `queued` until it went stale and got reaped.
+
+    SCOPED TO THIS ONE ID, deliberately. `apply_decisions()` with no `ids`
+    sweeps every pending approve row in the ledger, which after months of dead
+    letters means one click could re-arm a pile of days-old market copy nobody
+    re-read. One click, one post.
+
+    A `hold` writes no transition and needs none — held is the queued status
+    plus a hold decision, which is exactly what `fold_state` overlays.
     """
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
         repo = Path(root) if root is not None else _default_root()
-        return _ob.record_decision(item_id, decision, actor="admin", root=repo, note=note)
+        ok = _ob.record_decision(item_id, decision, actor="admin", root=repo, note=note)
+        if ok and decision == "approve":
+            # Fail-soft on the apply half: the decision row is the durable
+            # record, and the actuator's own sweep is still the backstop. A
+            # transition that cannot be written must not turn a recorded
+            # approval into a reported failure.
+            try:
+                _ob.apply_decisions(repo, actor="admin", ids=[item_id],
+                                    note=note or "operator approval (admin panel)")
+            except Exception as exc:  # noqa: BLE001
+                log.warning("marketing.decide_outbox: approval recorded but not "
+                            "applied for %r: %s", item_id, exc)
+        return ok
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.decide_outbox failed: %s", exc)
         return False
@@ -2306,6 +2619,12 @@ def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
     Returns {"decided": n, "results": {id: bool}}. Order preserved; each id is
     validated independently so one unknown id never blocks the rest.
     Never raises.
+
+    Applies the batch through the same scoped `apply_decisions` call
+    `decide_outbox` uses (see the dead-letter note there) — ONE call for the
+    whole batch rather than one per id, because the sweep folds the ledger once
+    and the ids are already known. Only the ids that actually recorded are
+    passed, so a rejected id never rides along.
     """
     results: dict[str, bool] = {}
     try:
@@ -2316,9 +2635,364 @@ def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
                 continue
             results[item_id] = _ob.record_decision(
                 item_id, decision, actor="admin", root=repo, note=note)
+        recorded = [i for i, v in results.items() if v]
+        if recorded and decision == "approve":
+            try:
+                _ob.apply_decisions(repo, actor="admin", ids=recorded,
+                                    note=note or "operator approval (admin panel, bulk)")
+            except Exception as exc:  # noqa: BLE001
+                log.warning("marketing.decide_outbox_batch: %d approvals recorded "
+                            "but not applied: %s", len(recorded), exc)
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.decide_outbox_batch failed: %s", exc)
     return {"decided": sum(1 for v in results.values() if v), "results": results}
+
+
+# ---------------------------------------------------------------------------
+# EDIT A QUEUED POST (operator ask, 2026-08-01: "allow for the ability for me to
+# edit the text of posts awaiting approval")
+#
+# The console has shown the operator the exact copy and a live 275-character
+# meter since D02 and offered him no way to change one word of it: the only
+# verbs were approve, hold, reject, retry, post-now. A post with one bad phrase
+# was therefore a post to kill, and the rejection ledger is full of exactly that
+# ("template voice", "filler", "one clause too many") — whole slots spent because
+# the fix was not reachable.
+#
+# AN EDIT IS A SUPERSESSION, NOT AN OVERWRITE. `outbox._item_id` hashes
+# account|kind|normalized_text|as_of, so a row whose text changed under a kept id
+# is a row whose id no longer describes its content — and `dead_item_ids`,
+# `decided_source_keys` and the near-dup corpus all key off that id. The repo
+# already owns the correct primitive for "the same post said better":
+# `engine.marketing.rewrite.apply_rewrite`, which quarantines the original FIRST
+# (freeing its own replacement from the near-dup guard) and enqueues the
+# replacement second, never leaving both live. This path is that primitive with
+# an operator on the other end of it.
+# ---------------------------------------------------------------------------
+
+#: One X post. Same number the card meter draws against (app.js OBX_CHAR_CAP).
+_OBX_CHAR_CAP = 275
+
+#: Actor stamped on every ledger/decision row an operator edit writes. One
+#: string so "what did the edit button do" is an exact ledger query.
+_EDIT_ACTOR = "operator-edit"
+
+#: A cashtag as the copy laws recognise one. Deliberately loose on the tail
+#: (dots and hyphens appear in real tickers) and anchored on the "$" + a letter,
+#: so "$5bn" is money and "$AVGO" is a ticker.
+_CASHTAG_RE = re.compile(r"\$[A-Za-z][A-Za-z0-9.\-]{0,9}")
+
+
+def _outbox_cashtags(text: str) -> set[str]:
+    """Uppercased cashtags in *text*. Case-folded because "$avgo" and "$AVGO"
+    are the same claim on the same company to every reader and every gate."""
+    return {m.group(0).upper() for m in _CASHTAG_RE.finditer(str(text or ""))}
+
+
+def _outbox_edit_findings(item: dict, text: str) -> dict:
+    """Run the REAL validators over edited copy. Raises on an unimportable gate.
+
+    Returns {"violations": [...], "warnings": [...]}, both verbatim from the
+    engine — a reason the operator reads must be the reason the machine gave, or
+    the modal teaches him a vocabulary the pipeline does not use.
+
+    PUBLISH-ADJACENT POLARITY: this function does NOT swallow an ImportError.
+    Every other read in this module fails soft because a dark panel is better
+    than a 500; this one is a gate in front of a post going to X, and a gate
+    that cannot run must refuse, not wave copy through (same call
+    `intelligence_approve` makes).
+
+    The three gates, and why each one:
+      * `banned_language`  — the house dash/vocabulary lists. THE QUEUE IS A
+        BYPASS AROUND EVERY GENERATION LAW, and an operator edit is a second
+        writer with no validator behind it unless this runs.
+      * `queued_voice_violations` — the voice laws, run with the item's own
+        `kind` AND its recorded `source.shape`. Passing the shape is not
+        optional: the per-shape number budget landed in the writer first, so
+        screening a `stack` under the flat default of two numbers would reject
+        copy the writer was ordered to produce.
+      * chart-law coherence — see below. Not a copy rule; a picture rule.
+    """
+    from engine.marketing.approval_desk import (  # noqa: PLC0415
+        _chart_bearing_kinds, _hosted_media_url,
+    )
+    from engine.marketing.copywriter import (  # noqa: PLC0415
+        banned_language, queued_voice_violations,
+    )
+
+    kind = str(item.get("kind") or "")
+    shape = str(((item.get("source") or {}) if isinstance(item.get("source"), dict)
+                 else {}).get("shape") or "") or None
+
+    violations: list[str] = list(banned_language(text))
+    violations += list(queued_voice_violations(text, kind=kind, shape=shape))
+
+    # CHART LAW, THE EDIT-SHAPED HALF. The standing law is that a ticker-bearing
+    # post owes a hosted picture, and the publisher enforces it at dispatch by
+    # DEFERRING the post — so an operator who types "$AVGO" into a text-only
+    # post does not get an error, he gets a post that silently never goes out.
+    # Refusing here is the only place he finds out while he can still undo it.
+    # Scoped to cashtags the edit ADDED: a post that already carried its ticker
+    # is in whatever state it was already in, and this edit did not cause it.
+    added = _outbox_cashtags(text) - _outbox_cashtags(item.get("text") or "")
+    if added and kind in _chart_bearing_kinds() and not _hosted_media_url(item):
+        violations.append(
+            "chart law: this post has no hosted chart, and the edit adds "
+            + ", ".join(sorted(added))
+            + " — a post naming a ticker owes a picture, so the publisher "
+              "would hold it back instead of sending it"
+        )
+
+    warnings: list[str] = []
+    n = len(list(text))
+    if _OBX_CHAR_CAP * 0.9 < n <= _OBX_CHAR_CAP:
+        warnings.append(f"{n} of {_OBX_CHAR_CAP} characters — close to the limit")
+    return {"violations": violations, "warnings": warnings}
+
+
+def _outbox_live_item(repo: Path, item_id: str) -> tuple[dict | None, str, dict]:
+    """(item, folded status, folded state) for one id. ({} state on any error)."""
+    from engine.marketing import outbox as _ob  # noqa: PLC0415
+    state = _ob.fold_state(repo)
+    item = (state.get("items") or {}).get(item_id)
+    status = str((state.get("status") or {}).get(item_id) or "queued")
+    return item, status, state
+
+
+def _outbox_edit_collision(repo: Path, item: dict, item_id: str,
+                           text: str) -> str | None:
+    """Would the edited copy be refused as a duplicate of some OTHER live post?
+
+    WHY THIS RUNS BEFORE `apply_rewrite` AND NOT INSIDE IT. `apply_rewrite`
+    quarantines the original first — on purpose, because a rewrite is by
+    construction a near-duplicate of the post it replaces and the enqueue guard
+    would otherwise refuse every one. The cost of that ordering is that a
+    replacement refused for ANY OTHER reason leaves an empty slot and a terminal
+    original: the operator fixes a typo and his post disappears. So the one
+    refusal that is genuinely about a different post gets checked while the
+    original is still alive and nothing has been written.
+
+    Returns a plain-word reason, or None when the copy is clear.
+    """
+    from engine.marketing import outbox as _ob  # noqa: PLC0415
+
+    account = str(item.get("account") or "")
+    as_of = str(item.get("as_of") or "")
+    try:
+        ref = date.fromisoformat(as_of)
+    except Exception:  # noqa: BLE001 — an unparseable day windows to "all"
+        ref = None
+    dead = _ob.dead_item_ids(repo)
+    for other in _ob.read_items_all(repo):
+        oid = str(other.get("id") or "")
+        if oid == item_id or oid in dead:
+            continue
+        if str(other.get("account") or "") != account:
+            continue
+        if ref is not None:
+            try:
+                if abs((date.fromisoformat(str(other.get("as_of") or "")) - ref).days) > 7:
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+        if _ob.near_duplicate(text, str(other.get("text") or "")):
+            return (f"this reads the same as {oid}, which is already in the "
+                    f"queue for {other.get('account')} — the desk would refuse "
+                    f"it as a repeat")
+    return None
+
+
+def validate_outbox_text(item_id, text, root=None) -> dict:
+    """Dry-run the edit gates over proposed copy. NO WRITES, ever.
+
+    What the modal's "Check it" button calls, so the operator sees every
+    objection before he commits to one. The save path re-runs every one of
+    these server-side — a client that skipped this step is refused anyway.
+    """
+    try:
+        repo = Path(root) if root is not None else _default_root()
+        iid = str(item_id or "").strip()
+        new_text = str(text if text is not None else "")
+        if not iid:
+            return {"ok": False, "error": "id required"}
+
+        item, status, _state = _outbox_live_item(repo, iid)
+        if item is None:
+            return {"ok": False, "error": "unknown item id"}
+
+        n = len(list(new_text))
+        over = n > _OBX_CHAR_CAP
+        if not new_text.strip():
+            return {"ok": True, "id": iid, "chars": n, "over": over, "clean": False,
+                    "violations": ["the post is empty"], "warnings": [],
+                    "editable": status == "queued"}
+
+        found = _outbox_edit_findings(item, new_text)
+        violations = list(found["violations"])
+        collision = _outbox_edit_collision(repo, item, iid, new_text)
+        if collision:
+            violations.append(collision)
+        return {
+            "ok": True, "id": iid, "chars": n, "over": over,
+            "clean": (not violations) and (not over),
+            "violations": violations, "warnings": found["warnings"],
+            "editable": status == "queued",
+        }
+    except Exception as exc:  # noqa: BLE001 — a gate that cannot run REFUSES
+        log.warning("marketing.validate_outbox_text failed: %s", exc)
+        return {"ok": False, "error": f"the copy checks could not run: {exc}"}
+
+
+def edit_outbox_item(item_id, text, note=None, root=None) -> dict:
+    """Replace a queued post's copy with the operator's, then approve it.
+
+    ok:  {"ok": True, "id": <new id>, "original_id", "chars", "approved": bool}
+    bad: {"ok": False, "reason": <slug>, "detail": <sentence>,
+          "violations": [...]}
+
+    Refusal order is fixed and each rung answers a different question:
+      not_found     — no such post
+      not_editable  — it is already cleared, sent or dead. An edit here would be
+                      a second version of something the queue has moved past.
+      empty/too_long— shape
+      rejected      — the real copy gates said no; `violations` verbatim
+      duplicate     — it now reads as another live post
+      write_failed  — the supersession itself could not be completed, and the
+                      detail says whether the slot survived
+
+    On success the successor carries the original's account, kind, as_of, media,
+    slot, scheduled_at, priority and provenance — an edit changes the words and
+    nothing else — plus `source.text_original` (the reconciliation key for any
+    reader that assumed id == hash(text)) and `source.supersedes`.
+    """
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        from engine.marketing.rewrite import apply_rewrite  # noqa: PLC0415
+
+        repo = Path(root) if root is not None else _default_root()
+        iid = str(item_id or "").strip()
+        new_text = str(text if text is not None else "")
+        if not iid:
+            return {"ok": False, "reason": "not_found", "detail": "id required"}
+
+        item, status, state = _outbox_live_item(repo, iid)
+        if item is None:
+            return {"ok": False, "reason": "not_found",
+                    "detail": "no post with that id is in the queue"}
+        if status != "queued":
+            return {"ok": False, "reason": "not_editable",
+                    "detail": f"this post is {status} — it can only be edited "
+                              f"while it is still awaiting a decision"}
+
+        stripped = new_text.strip()
+        if not stripped:
+            return {"ok": False, "reason": "empty",
+                    "detail": "a post needs words"}
+        n = len(list(new_text))
+        if n > _OBX_CHAR_CAP:
+            return {"ok": False, "reason": "too_long",
+                    "detail": f"{n} characters — {n - _OBX_CHAR_CAP} over the "
+                              f"{_OBX_CHAR_CAP} X allows"}
+        # NORMALIZED comparison, not raw. `_item_id` hashes the NORMALIZED text,
+        # so an edit that only moves whitespace produces a successor with the
+        # SAME id as the original — which `enqueue` would refuse as a duplicate
+        # AFTER `apply_rewrite` had already retired the original, costing the
+        # slot for a change nobody can see. Catching it here is the difference
+        # between an honest refusal and a deleted post.
+        if _ob._normalize_text(new_text) == _ob._normalize_text(str(item.get("text") or "")):
+            return {"ok": False, "reason": "unchanged",
+                    "detail": "the copy is the same as what is already queued"}
+
+        findings = _outbox_edit_findings(item, new_text)
+        if findings["violations"]:
+            return {"ok": False, "reason": "rejected",
+                    "detail": "the copy checks refused this edit",
+                    "violations": findings["violations"]}
+
+        collision = _outbox_edit_collision(repo, item, iid, new_text)
+        if collision:
+            return {"ok": False, "reason": "duplicate", "detail": collision,
+                    "violations": [collision]}
+
+        # Build the successor. `make_item` re-derives the id from the NEW text,
+        # which is the point — the id keeps describing its own content.
+        src = dict(item.get("source") or {}) if isinstance(item.get("source"), dict) else {}
+        src["text_original"] = str(item.get("text") or "")
+        src["edited_by"] = _EDIT_ACTOR
+        src["edited_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if note:
+            src["edit_note"] = str(note)[:300]
+        try:
+            successor = _ob.make_item(
+                account=str(item.get("account") or ""),
+                kind=str(item.get("kind") or ""),
+                text=new_text,
+                as_of=str(item.get("as_of") or ""),
+                media=list(item.get("media") or []),
+                scheduled_at=str(item.get("scheduled_at") or "immediate"),
+                slot=item.get("slot"),
+                priority=int(item.get("priority") or 5),
+                provenance=str(item.get("provenance") or "operator_edit"),
+                source=src,
+            )
+        except ValueError as exc:
+            return {"ok": False, "reason": "write_failed",
+                    "detail": f"the replacement could not be built: {exc}"}
+
+        # CAP: an edit is a ONE-FOR-ONE SWAP, so it must never be refused for
+        # volume. The original row stays in items.jsonl after it is quarantined
+        # (a transition is a ledger row, not a deletion) and still counts toward
+        # the day, so a desk sitting exactly on its ceiling would otherwise lose
+        # the slot to `cap_exceeded` — the post deleted by the act of fixing it.
+        # Handing apply_rewrite a cap of "today's count + 1" admits this one
+        # replacement and nothing else.
+        day_n = sum(1 for i in _ob.read_items_all(repo)
+                    if str(i.get("account") or "") == str(item.get("account") or "")
+                    and str(i.get("as_of") or "") == str(item.get("as_of") or ""))
+
+        res = apply_rewrite(
+            iid, successor, root=repo, actor=_EDIT_ACTOR,
+            note=f"edited by the operator; superseded by {successor['id']}",
+            max_per_account_day=day_n + 1,
+        )
+        if not res.get("ok"):
+            outcome = str(res.get("outcome") or "")
+            slot_lost = outcome.startswith("enqueue_failed")
+            return {
+                "ok": False, "reason": "write_failed",
+                "detail": ("the edit could not be saved: " + outcome
+                           + ("; the original post was already retired and its "
+                              "slot is now empty — re-emit it" if slot_lost
+                              else "; the original post is untouched")),
+            }
+
+        new_id = str(successor["id"])
+        # THE EDIT IS ALSO THE APPROVAL. The operator just read every word of
+        # this post and typed some of them; sending him back to hunt the new
+        # card and click Approve would be the console asking him to re-decide
+        # what he decided. Recorded as a decision row (the durable operator
+        # record) and applied through the same scoped path the Approve button
+        # uses, with its own actor so the audit trail says which hand it was.
+        approved = False
+        try:
+            if _ob.record_decision(new_id, "approve", actor=_EDIT_ACTOR, root=repo,
+                                   note="approved as part of the operator edit"):
+                applied = _ob.apply_decisions(
+                    repo, actor=_EDIT_ACTOR, ids=[new_id],
+                    note="operator edit approved")
+                approved = new_id in (applied.get("approved") or [])
+        except Exception as exc:  # noqa: BLE001 — the edit itself already landed
+            log.warning("marketing.edit_outbox_item: %s saved but not approved: %s",
+                        new_id, exc)
+
+        return {"ok": True, "id": new_id, "original_id": iid, "chars": n,
+                "approved": approved, "edited_at": src["edited_at"],
+                "warnings": findings["warnings"],
+                "note": None if approved else
+                        "saved, but it still needs an approval click"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.edit_outbox_item failed: %s", exc)
+        return {"ok": False, "reason": "write_failed", "detail": str(exc)}
 
 
 # ---------------------------------------------------------------------------

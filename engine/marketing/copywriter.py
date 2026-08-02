@@ -2405,6 +2405,12 @@ def queued_voice_violations(text: str, kind: str = "",
     out += number_soup_violations(text, kind=kind, shape=str(shape or ""))
     out += no_reaction_violations(text)
     out += lecture_violations(text)
+    # The anchor law (2026-08-01). DUAL-WIRED for the same reason the number
+    # budget is: the queue is a bypass. The three posts the operator killed were
+    # already queued and approved when the rule was written, so a
+    # generation-only gate would have shipped them tomorrow night regardless.
+    # Needs no ctx — the kind travels with the outbox row.
+    out += anchorless_macro_violations(text, kind)
     # batch_texts is empty on purpose: at publish time there is no batch, so
     # only the RETIRED house closers are reachable, never the repeat rule.
     out += stock_closer_violations(text, [])
@@ -2432,6 +2438,181 @@ def jargon_violations(text: str) -> list[str]:
                 f"internal jargon '{label}': desk machinery the reader cannot see"
             )
     return out
+
+
+"""The anchorless macro read (operator kill, 2026-08-01).
+
+Three posts were pulled off the queue in one morning:
+
+    "4 of 11 sectors green on a day growth data firmed and inflation stayed
+     warm. Not a clean enough read to lean on yet."
+    "Not a clearcut tape. Growth firming a bit, inflation still warm, and only
+     4 of 11 sectors managed green. I'm watching, not deciding."
+    "growth data firmed a touch while inflation stayed warm. 4 of 11 sectors
+     closed green. steady liquidity is the part i'm watching..."
+
+Operator: "too bland, too weak, no real value, so esoteric no one knows what
+it's talking about, zero engagement, people might even report us cuz only
+bots/llm write garbage like this."
+
+EVERY EXISTING GATE PASSED ALL THREE, and correctly: the copy is honest,
+in-register, non-stale, denominated, and carries a stance that costs the writer
+something. What it does NOT carry is a PRINT. "Growth data firmed" is a claim
+about nothing a reader can look up — no release, no number, no publisher.
+It is the last enumerable defect class in this file's family: the denominator
+law fixed counts with no universe, the jargon gate fixed vocabulary the reader
+cannot see, and this fixes CLAIMS THE READER CANNOT CHECK.
+
+Note what is deliberately NOT the rule: "a macro post must contain a number."
+All three corpses contain "4 of 11", and it did not save them. A sector count
+is our own arithmetic over a board; a print is a release somebody published.
+The gate asks for the second kind.
+
+THE RULE IS CONDITIONAL, WHICH IS WHY IT CAN BE THIS BROAD. An abstraction is
+only a violation when the post has no anchor anywhere in it. "The tape" is
+house voice and stays legal in a post that also says "jobless claims at
+203,000"; it is a violation in a post that says nothing else. So the list may
+name the phrases the operator actually reads as filler without banning the
+register, and a post that does the work keeps every word it had.
+"""
+
+#: The abstractions. Every entry is either quoted from one of the three corpses
+#: or named in the operator's brief for the fix ("growth data", "inflation
+#: readings", "the data firmed", "liquidity conditions", "the tape").
+_MACRO_ABSTRACTIONS: tuple[tuple[str, str], ...] = (
+    ("growth data", r"\bgrowth\s+data\b"),
+    # "Growth firming a bit" (corpse 2) — the bare axis word plus a state verb.
+    ("growth firmed/softened",
+     r"\bgrowth\s+(?:is\s+|was\s+|has\s+been\s+|keeps\s+)?"
+     r"(?:firm(?:ing|ed|s)?|soften(?:ing|ed|s)?|cool(?:ing|ed|s)?|"
+     r"weaken(?:ing|ed|s)?|holding\s+up|steady|solid)\b"),
+    # The ADJECTIVE-FIRST form of the same non-claim, found by running this rule
+    # over the live queue: "soft growth, warm inflation and looser liquidity
+    # aren't giving me much to chase" (ob-2026-07-30-6003875d0e). The verb
+    # patterns above read "growth firming"; this reads "soft growth". One
+    # direction of a symmetric construction is half a gate.
+    ("soft growth / warm inflation",
+     r"\b(?:soft(?:er)?|warm(?:er)?|hot(?:ter)?|steady|firm(?:er)?|weak(?:er)?|"
+     r"cool(?:er)?|sticky|benign)\s+(?:growth|inflation)\b"),
+    ("inflation readings", r"\binflation\s+(?:readings?|data|prints?|picture)\b"),
+    # "inflation stayed warm" / "inflation still warm" (all three corpses).
+    ("inflation stayed warm",
+     r"\binflation\s+(?:is\s+|was\s+|has\s+|stay(?:ed|ing|s)?\s+|"
+     r"remain(?:ed|s|ing)?\s+|ran\s+|run(?:ning|s)?\s+|still\s+)*"
+     r"(?:still\s+)?(?:warm|hot|sticky|elevated|contained|cooler|cooling)\b"),
+    ("the data firmed",
+     r"\bthe\s+data\s+(?:firm(?:ed|ing)?|soften(?:ed|ing)?|cool(?:ed|ing)?|"
+     r"held|came\s+in|is\s+|was\s+)"),
+    # Bare, because corpse 3's was bare: "steady liquidity is the part i'm
+    # watching". "liquidity conditions" is the same word wearing a noun.
+    ("liquidity", r"\bliquidity\b"),
+    ("the tape", r"\bthe\s+tape\b"),
+    ("financial conditions", r"\bfinancial\s+conditions\b"),
+    ("the macro picture", r"\bthe\s+(?:macro|bigger|big)\s+picture\b"),
+)
+
+#: The anchors. A NAMED PRINT is a release, a survey or a market rate that a
+#: reader could go and look up — it has a publisher and a number. Ours are the
+#: ones `market_facts.named_print_facts` mints; the rest are the standard US
+#: macro calendar, because the wire and fast lanes write about prints this
+#: module's own packets do not carry.
+_NAMED_PRINT_TERMS: tuple[tuple[str, str], ...] = (
+    ("jobless claims", r"\b(?:jobless|unemployment|initial|continuing)\s+claims\b"),
+    ("payrolls", r"\b(?:payrolls?|nonfarm|non-farm|nfp)\b"),
+    ("unemployment rate", r"\bunemployment\s+rate\b"),
+    ("CPI", r"\bcpi\b"),
+    ("PCE", r"\bpce\b"),
+    ("PPI", r"\bppi\b"),
+    ("GDP / GDPNow", r"\bgdp(?:now)?\b"),
+    ("ISM", r"\bism\b"),
+    ("PMI", r"\bpmi\b"),
+    ("Michigan survey", r"\b(?:michigan|umich)\b"),
+    ("retail sales", r"\bretail\s+sales\b"),
+    ("housing starts", r"\bhousing\s+starts\b"),
+    ("job openings", r"\b(?:jolts|job\s+openings)\b"),
+    ("consumer confidence", r"\bconsumer\s+confidence\b"),
+    ("durable goods", r"\bdurable\s+goods\b"),
+    ("wage growth", r"\b(?:average\s+hourly\s+earnings|employment\s+cost\s+index|eci)\b"),
+    ("policy rate", r"\b(?:fed\s+funds|policy\s+rate|fomc|fed\s+(?:cut|hike)s?)\b"),
+    ("Treasury yield",
+     r"\b(?:2-year|5-year|10-year|30-year|2s10s|treasury\s+yield|10y|2y)\b"),
+    ("credit spreads",
+     r"\b(?:high-yield|high\s+yield|investment-grade|investment\s+grade)\s+"
+     r"(?:credit\s+)?spreads?\b"),
+    ("breakevens", r"\bbreakevens?\b"),
+    ("VIX", r"\bvix\b"),
+)
+
+#: What counts as the print's NUMBER. Not `_NUMBER_TOKEN_RE`: that admits bare
+#: one- and two-digit integers, so "4 of 11 sectors" would license a sentence
+#: about "the tape" and the gate would pass the exact copy it was built from.
+#: A print's number is a percent, a decimal, a magnitude (203,000 / 203k /
+#: 19bp), or a three-digit-plus integer.
+_ANCHOR_NUMBER_RE = re.compile(
+    r"""(?<![\w.])[+-]?\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*
+        (?:%|k\b|m\b|bn\b|bp\b|bps\b|basis\s+points?\b|points?\b)
+     |  (?<![\w.])[+-]?\d{1,3}(?:,\d{3})*\.\d+
+     |  (?<![\w.])[+-]?\d{3,}(?:,\d{3})*
+    """,
+    re.VERBOSE | re.IGNORECASE,
+)
+
+#: Post kinds this rule judges. A ticker post is anchored by construction (its
+#: cashtag and its levels come from a packet), and an education post is about a
+#: concept rather than a print, so neither is in scope.
+ANCHORLESS_KINDS: frozenset[str] = frozenset({"macro", "event"})
+
+
+def _has_named_print_anchor(text: str) -> bool:
+    """True when some SENTENCE pairs a named print with its number.
+
+    Sentence-scoped, not post-scoped: "name the print" means the number belongs
+    to the print, and a post-wide test would credit "the tape" with a digit that
+    came from a sector count three sentences away. The anchor only has to exist
+    ONCE — a post that says "jobless claims printed 203,000" in one line is free
+    to talk about the tape in the next.
+
+    Splits with the module's own :func:`_sentences`, NOT a local ``[.!?\\n]+``.
+    That naive split cuts "5.0%" into "5" and "0%" and "55.2" into "55" and "2",
+    which deletes the anchor from every sentence that has one and turns this
+    gate into a blanket ban on the word "liquidity". ``_SENTENCE_SPLIT_RE``
+    already guards decimals on both sides; reimplementing it here is how that
+    bug got written the first time.
+    """
+    low = str(text or "").lower()
+    for sentence in _sentences(low):
+        if not _ANCHOR_NUMBER_RE.search(sentence):
+            continue
+        for _label, pattern in _NAMED_PRINT_TERMS:
+            if re.search(pattern, sentence):
+                return True
+    return False
+
+
+def anchorless_macro_violations(text: str, kind: str = "") -> list[str]:
+    """A macro/event post that gestures instead of naming a print. [] = clean.
+
+    Fires only on :data:`ANCHORLESS_KINDS`, only when an abstraction from
+    :data:`_MACRO_ABSTRACTIONS` is present, and only when the post carries no
+    named print with a number anywhere in it.
+    """
+    if str(kind or "").strip().lower() not in ANCHORLESS_KINDS:
+        return []
+    low = str(text or "").lower()
+    hits: list[str] = []
+    for label, pattern in _MACRO_ABSTRACTIONS:
+        if label not in hits and re.search(pattern, low):
+            hits.append(label)
+    if not hits:
+        return []
+    if _has_named_print_anchor(text):
+        return []
+    return [
+        f"anchorless macro '{hits[0]}': the post gestures at macro without "
+        f"naming a single print. Quote the release and its number in one "
+        f"breath (\"jobless claims at 203,000, 8.6% below a year ago\"), not "
+        f"'{hits[0]}'. Name the print or drop the claim."
+    ]
 
 
 #: Gate 3(i) — the repeated opener. Measured on the TEXT, not the headline: four
@@ -2851,6 +3032,7 @@ def validate_copy_v2(
       batch body duplication     gate 3(i) — same sentence, different opener
       invented level             autopsy 5 — "toward 190, then 228" off-packet
       repeated closer            autopsy 6 — the same tail 5x in 7 days
+      anchorless macro           2026-08-01 — "growth data firmed", no print
 
     `text` is the SHAPED post (it may contain newlines). `headline` is optional
     and only for callers that already split: passing a non-empty one on any
@@ -2894,6 +3076,10 @@ def validate_copy_v2(
     violations.extend(number_soup_violations(
         text, kind=str(ctx.get("type") or ""), shape=shape))
     violations.extend(no_reaction_violations(text))
+    # Anchor law (2026-08-01): a macro/event read that names no print. Same
+    # `ctx["type"]` the number budget reads, so the two gates agree on kind.
+    violations.extend(anchorless_macro_violations(
+        text, str(ctx.get("type") or "")))
     # Autopsy defect 5: a target that came from nowhere in the packet.
     violations.extend(invented_level_violations(text, ctx))
     # Autopsy defect 6: the same final sentence this account used inside the

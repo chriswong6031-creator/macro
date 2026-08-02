@@ -283,6 +283,9 @@ const TAB_PREFETCH_PATHS = {
   marketing_ads: ["/api/marketing/ad-central"],
   marketing_experiments: ["/api/marketing/experiments"],
   marketing_lobes: ["/api/marketing/lobes"],
+  /* The group's LEAD page had no prefetch entry while every sibling did, so the
+     front door was the one page that always cold-loaded (defect F7). */
+  marketing_floor: ["/api/marketing/floor"],
   marketing_content: ["/api/marketing/content"],
   marketing_lab: ["/api/marketing/lab"],
   marketing_reply_queue: ["/api/marketing/reply-queue"],
@@ -4454,6 +4457,10 @@ function flrStation(st, breakAt, cold) {
     "flr-stn",
     cold ? "is-cold" : "",
     st.id === breakAt ? "is-break" : "",
+    /* THE HONESTY GUARD (2026-08-01 audit, defect F1). A station whose out
+       exceeds its in is not a leak with a hidden number — it is two counters
+       written by different passes stacked as one funnel. It prints NO loss. */
+    st.odd ? "is-odd" : "",
   ].filter(Boolean).join(" ");
 
   /* Inverted yield bar: the filled portion is what died here. */
@@ -4463,12 +4470,15 @@ function flrStation(st, breakAt, cold) {
     ? `<div class="flr-yield" role="img" aria-label="${flrPct(lossShare)} of arriving posts stopped here"><i style="width:${(lossShare * 100).toFixed(1)}%"></i></div>`
     : `<div class="flr-yield" aria-hidden="true"></div>`;
 
-  const loss = (st.lost == null)
-    ? `<div class="flr-stn-loss-none">start of the line</div>`
-    : (st.lost === 0
-      ? `<div class="flr-stn-loss-none">nothing lost here</div>`
-      : `<div class="flr-stn-loss">−${flrN(st.lost)}</div>
-         <div class="flr-stn-loss-word">${esc(st.loss_word || "lost here")}</div>`);
+  const loss = st.odd
+    ? `<div class="fn-odd-word">${flrN(st.out)} out of ${flrN(st.in)} in — these
+       two counters don't nest. No loss figure is honest here.</div>`
+    : (st.lost == null)
+      ? `<div class="flr-stn-loss-none">${st.in == null ? "start of the line" : "not measured"}</div>`
+      : (st.lost === 0
+        ? `<div class="flr-stn-loss-none">nothing lost here</div>`
+        : `<div class="flr-stn-loss">−${flrN(st.lost)}</div>
+           <div class="flr-stn-loss-word">${esc(st.loss_word || "lost here")}</div>`);
 
   const tag = (st.id === breakAt)
     ? `<div class="flr-break-tag">biggest leak</div>` : "";
@@ -4517,9 +4527,19 @@ function flrLine(d) {
     ? ` <span class="faint">The plan file's own header claims ${flrN(d.plan_claimed_total)} posts; the queue actually holds ${flrN(first.out)}. The queue is the truth.</span>`
     : "";
 
+  /* Never let the chain verdict stand unqualified when the chain is broken
+     (defect F1). The old page printed "N of M planned posts reached X" over a
+     line containing a station that took 7 in and emitted 137 out. */
+  const odd = (d.line_odd || []).length
+    ? ` <span style="color:var(--warn)">Two of these counters were written by
+        different passes and don't nest — read
+        ${esc((d.line_odd || []).map(id => (line.find(s => s.id === id) || {}).name || id).join(", "))}
+        and everything after it on its own, not as a chain.</span>`
+    : "";
+
   return `<div class="flr-line-card">
     <div class="flr-line">${cells}</div>
-    <div class="flr-line-foot">${verdict}${drift}</div>
+    <div class="flr-line-foot">${verdict}${drift}${odd}</div>
   </div>`;
 }
 
@@ -4563,21 +4583,49 @@ function flrAuthorship(a) {
   const modes = a.by_mode || {};
   const tmpl = (modes.deterministic || 0) + (modes.template || 0);
   const none = modes["no writer reached"] || 0;
-  const model = a.total - tmpl - none;
+  /* WHITELIST, NOT SUBTRACTION (2026-08-01 audit, defect F4). The old body did
+     `model = total - tmpl - none`, so every mode this view did not recognise —
+     including the deterministic `movers_desk` lane — was counted as
+     model-written and then had its RAW SLUG printed to the operator as a model
+     name ("4 written by a model (llm_repair, llm, movers_desk)"), under a stance
+     line reading "that is the law holding". The server now names the model modes
+     and the house lanes separately; this render trusts that and falls back to
+     the old arithmetic only for a payload built before the fix. */
+  const model = (a.llm_posts != null) ? a.llm_posts : (a.total - tmpl - none);
+  const house = a.house_lane_posts || 0;
   const seg = (n, cls, label) => {
     if (!n) return "";
     const w = (n / a.total) * 100;
     return `<div class="flr-auth-seg ${cls}" style="width:${w.toFixed(2)}%" title="${esc(label)}: ${flrN(n)}">${w > 9 ? flrN(n) : ""}</div>`;
   };
 
-  const modelNames = Object.keys(modes).filter(
-    m => m !== "deterministic" && m !== "template" && m !== "no writer reached");
+  /* Plain words on the glance tier; the machine slug stays available on hover.
+     `llm:sol` etc. prettify rather than printing a tier name nobody outside the
+     building can read. */
+  const modeWord = (m) => String(m || "").replace(/_/g, " ");
+  const modelNames = (a.model_modes != null)
+    ? a.model_modes
+    : Object.keys(modes).filter(
+      m => m !== "deterministic" && m !== "template" && m !== "no writer reached");
+  const houseNames = a.house_lane_modes || [];
+  /* "a model" is the whole plain word for every llm* mode — listing them reads
+     as "written by a model (a model, a model after a repair pass)". The only
+     distinction worth a glance-tier word is the repair pass, and it renders as
+     a COUNT, not as a slug list. Exact modes stay on the hover. */
+  const repaired = Object.keys(modes)
+    .filter(m => /^llm[_:-]/i.test(m))
+    .reduce((s, m) => s + (modes[m] || 0), 0);
+  const modelQual = repaired
+    ? ` (${flrN(repaired)} after a repair pass)` : "";
 
+  /* Defect branches lead; the house-lane disclosure is a fact, not an alarm. */
   let stance;
   if (model === 0 && tmpl > 0) {
     stance = `<span style="color:var(--loss)">No model wrote anything tonight.</span> Every post carries house-template copy — the word-salad shape the operator called out. The model desk is where to look.`;
   } else if (a.template_on_planned_kind) {
     stance = `<span style="color:var(--loss)">${flrN(a.template_on_planned_kind)} planned posts were written by a template, not a model.</span> That is a defect, not a fallback.`;
+  } else if (house > 0) {
+    stance = `Every planned post was written by a model. ${flrN(house)} more came from a house lane (${esc(houseNames.map(modeWord).join(", "))}) — deterministic desks, allowed, and no longer counted in the model-written share.`;
   } else {
     stance = `Every planned post was written by a model. That is the law holding.`;
   }
@@ -4585,12 +4633,14 @@ function flrAuthorship(a) {
   return `<div class="card">
     <h3>Who wrote tonight's words</h3>
     <div class="flr-auth-bar">
-      ${seg(model, "is-model", modelNames.join(", ") || "model")}
+      ${seg(model, "is-model", "a model")}
+      ${seg(house, "is-tmpl", "house lane")}
       ${seg(tmpl, "is-tmpl", "house template")}
       ${seg(none, "is-none", "never reached a writer")}
     </div>
     <div class="flr-auth-key">
-      <span><i style="background:var(--accent-cyan)"></i>${flrN(model)} written by a model${modelNames.length ? " (" + esc(modelNames.join(", ")) + ")" : ""}</span>
+      <span title="${esc(modelNames.join(", "))}"><i style="background:var(--accent-cyan)"></i>${flrN(model)} written by a model${modelQual}</span>
+      ${house ? `<span title="${esc(houseNames.join(", "))}"><i style="background:var(--loss)"></i>${flrN(house)} written by a house lane (${esc(houseNames.map(modeWord).join(", "))})</span>` : ""}
       <span><i style="background:var(--loss)"></i>${flrN(tmpl)} written by a house template</span>
       <span><i style="background:var(--faint)"></i>${flrN(none)} never reached a writer</span>
     </div>
@@ -4730,14 +4780,16 @@ function flrAuditor(a) {
     <div class="flr-led-w">${esc(r.word)}</div>
   </div>`).join("");
 
-  const cuts = (a.cuts || []).slice(0, 12).map(c => `<tr>
+  /* Bounded (suite law C4): the auditor can cut a whole desk-day and this table
+     had a hard slice of 12 with no disclosure that the rest existed. */
+  const cutRows = (a.cuts || []).map(c => `<tr>
     <td class="sub" style="white-space:nowrap"><b>${esc(c.account || "?")}</b>
       <div class="note muted">${esc(c.kind || "")}</div></td>
     <td class="sub">${esc(c.text || "")}</td>
     <td class="sub" style="white-space:nowrap">
       ${(c.codes || []).map(x => `<span class="statpill s-warn">${esc(x)}</span>`).join(" ")}
       ${c.note ? `<div class="note muted">${esc(c.note)}</div>` : ""}</td>
-  </tr>`).join("");
+  </tr>`);
 
   const notes = Object.entries(a.notes || {}).map(([desk, n]) =>
     `<div class="note muted"><b>${esc(desk)}:</b> ${esc(n)}</div>`).join("");
@@ -4752,14 +4804,101 @@ function flrAuditor(a) {
     <div class="note muted" style="margin-bottom:10px">Reads each desk's whole day at once — the only gate that can see one post repeating another. It can cut a post and must say why; it can never rewrite one.</div>
     ${reasons ? `<div class="flr-led" style="margin-bottom:12px">${reasons}</div>` : ""}
     ${notes ? `<div style="margin-bottom:10px">${notes}</div>` : ""}
-    ${cuts ? `<table><thead><tr><th>Desk</th><th>The post it pulled</th><th>Why</th></tr></thead>
-      <tbody>${cuts}</tbody></table>` : `<div class="note muted">Nothing cut.</div>`}
+    ${cutRows.length ? `<div class="table-wrap"><table><thead><tr><th>Desk</th><th>The post it pulled</th><th>Why</th></tr></thead>
+      <tbody>${cutRows.slice(0, 6).join("")}</tbody></table></div>
+      ${cutRows.length > 6 ? `<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">the other ${cutRows.length - 6} it pulled</summary>
+        <div class="table-wrap" style="margin-top:6px"><table><tbody>${cutRows.slice(6, 6 + 45).join("")}</tbody></table></div>
+        ${cutRows.length > 51 ? `<div class="bl-tail">and ${cutRows.length - 51} older ones, not loaded</div>` : ""}</details>` : ""}`
+      : `<div class="note muted">Nothing cut.</div>`}
     ${unaud}
     <div class="note" style="margin-top:9px">${esc(a.verdict || "")}</div>
   </div>`;
 }
 
+/* ===== FLOOR SUITE — shared operator components ==========================
+   Used by the five Marketing·Floor pages (Floor, Content Studio, Outbox,
+   Sentinel, Publisher). Styles live in the matching block at the end of
+   styles.css.
+
+   CANONICAL DEFINITIONS LIVE IN THE OUTBOX/PUBLISHER BLOCK BELOW (stMeta /
+   stChip / stLive / blExpand / blList, ~line 7800). Four lanes built these five
+   pages concurrently in one shared worktree and each needed the same helpers;
+   both copies were written from the same spec and were byte-equivalent in
+   behaviour, so the duplicates were removed rather than left to drift. Function
+   declarations hoist, so definition ORDER does not matter to any caller here.
+
+   `blEmpty` stays in this block because it is the one helper the other copy
+   does not define, and both lanes call it.
+   ======================================================================== */
+
+/* C9 · Empty state. Formula is law: what is TRUE + when that CHANGES.
+   No blank panels, ever. */
+function blEmpty(text, sub) {
+  return `<div class="empty"><div class="empty-icon">◍</div>
+    <div class="empty-text">${esc(text)}</div>
+    <div class="empty-sub">${esc(sub)}</div></div>`;
+}
+
 /* ---- THE FLOOR PAGE --------------------------------------------------- */
+/* THE ANSWER BAR. Five cells, one per standing operator question, above the
+   line:
+     1 what is about to go out    2 what went out today    3 what is blocked
+     4 what needs MY decision     5 is the machine healthy
+   These figures were being COMPUTED AND THROWN AWAY (defect F6): floor()
+   returned `publisher` and `awaiting_review` with zero readers in this file,
+   and `awaiting_review` is literally the operator's question-4 datum.
+
+   A MISSING DATUM PRINTS AN EM DASH AND "not measured", NEVER A 0. A zero reads
+   as "we checked, there is nothing there" and would quietly claim the console
+   knows something it does not. */
+function flrAnsCell(q, n, stance, goWord, goTo, tone) {
+  const isNull = (n == null);
+  const cls = ["flr-ans-n", isNull ? "is-null" : (tone ? "is-" + tone : "")]
+    .filter(Boolean).join(" ");
+  const act = goTo
+    ? `onclick="go('${esc(goTo)}')"`
+    : `onclick="document.querySelector('.flr-line-card') && document.querySelector('.flr-line-card').scrollIntoView({block:'start'})"`;
+  return `<button class="flr-ans-cell" ${act}>
+    <div class="flr-ans-q">${esc(q)}</div>
+    <div class="${cls}">${isNull ? "—" : flrN(n)}</div>
+    <div class="flr-ans-s">${esc(isNull ? "not measured tonight" : stance)}</div>
+    <div class="flr-ans-go">${esc(goWord)}</div>
+  </button>`;
+}
+
+function flrAnswers(d) {
+  const t = d.today || {};
+  const line = d.line || [];
+  const first = line[0] || {};
+  const last = line[line.length - 1] || {};
+
+  const lastPost = t.last_post_at ? conLocalTime(t.last_post_at) : null;
+  const blockedToday = t.blocked_today;
+  const machine = (last.out != null && first.out != null)
+    ? `${flrN(last.out)} of ${flrN(first.out)}` : null;
+
+  return `<div class="flr-ans">
+    ${flrAnsCell("Going out next", t.going_out,
+      "cleared and holding for the next slot", "→ Publisher", "marketing_publish",
+      (t.going_out ? "you" : null))}
+    ${flrAnsCell("Went out today", t.went_out_today,
+      lastPost ? `last one ${lastPost}` : "no receipt yet", "→ Publisher", "marketing_publish")}
+    ${flrAnsCell("Blocked", t.blocked_total,
+      blockedToday ? `${flrN(blockedToday)} of them today; the rest are closed`
+        : "all of them closed — none from today", "→ Publisher", "marketing_publish",
+      (t.blocked_total ? "loss" : null))}
+    ${flrAnsCell("Needs you", t.awaiting_review,
+      t.awaiting_review ? "waiting on a call from you" : "every post has a decision",
+      "→ Outbox", "marketing_outbox", (t.awaiting_review ? "you" : null))}
+    <button class="flr-ans-cell" onclick="document.querySelector('.flr-line-card') && document.querySelector('.flr-line-card').scrollIntoView({block:'start'})">
+      <div class="flr-ans-q">Machine</div>
+      <div class="flr-ans-n ${machine == null ? "is-null" : (last.out ? "" : "is-loss")}">${machine == null ? "—" : esc(machine)}</div>
+      <div class="flr-ans-s">${machine == null ? "not measured tonight" : "planned posts reached X"}</div>
+      <div class="flr-ans-go">↓ the line</div>
+    </button>
+  </div>`;
+}
+
 RENDER.marketing_floor = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -4777,17 +4916,22 @@ RENDER.marketing_floor = async () => {
   const stops = blockers.filter(b => b.severity === "stop" || b.severity === "high");
   const watch = blockers.filter(b => b.severity === "watch");
 
+  /* Bounded, like every list in this suite: the blocker ranker is unbounded by
+     construction and a 20-row wall of "worth watching" is a wall the operator
+     cannot act on. Stops lead uncapped (there are never many, and each one is
+     an emergency); the watch list caps at 5 behind one button. */
   const blockHtml = blockers.length
     ? `<div class="section">What is stopping the line
          <span class="cnt">${stops.length} blocking · ${watch.length} to watch</span></div>
        ${stops.map(flrBlocker).join("")}
        ${watch.length ? `<details style="margin-top:4px"><summary class="sub" style="cursor:pointer;padding:6px 0">${watch.length} more worth watching</summary>
-         <div style="margin-top:8px">${watch.map(flrBlocker).join("")}</div></details>` : ""}`
+         <div style="margin-top:8px">${blList(watch.map(flrBlocker), 5)}</div></details>` : ""}`
     : `<div class="section">What is stopping the line</div>
        <div class="card"><div class="note">Nothing is blocking the line. Posts are flowing from plan to X.</div></div>`;
 
   v.innerHTML = `<div class="section">Tonight's line ${stale}
       <span class="cnt">built ${esc(d.produced_at || "—")}</span></div>
+    ${flrAnswers(d)}
     ${flrLine(d)}
     ${blockHtml}
     <div class="section">Authorship &amp; dispatch</div>
@@ -5621,6 +5765,294 @@ async function renderMktDept(id) {
 }
 
 /* ---- CONTENT STUDIO ------------------------------------------------------- */
+
+/* Internal lane slugs never reach the glance tier (defect X3). `neural_web`,
+   `movers_desk`, `claude_rewrite` — the last of which leaks the model vendor —
+   were printed verbatim on every post card. Unknown slugs prettify; the machine
+   string stays in the hover, never swallowed. `var` for lane-collision safety
+   (see the FLOOR SUITE shared block). */
+var PROVENANCE_LABEL = {
+  neural_web: "signal bus",
+  movers_desk: "movers desk",
+  house_picks: "house picks",
+  content_studio: "the nightly plan",
+  hot_tape: "hot tape",
+  weekend_levels: "weekend levels",
+  press_lane: "press wire",
+  publisher_live_movers: "live movers",
+  claude_rewrite: "rewritten by a model",
+};
+function provWord(slug) {
+  const s = String(slug || "").trim();
+  if (!s) return "";
+  return PROVENANCE_LABEL[s] || s.replace(/_/g, " ");
+}
+
+/* §C7 · THE SUPPLY FUNNEL — the operator's "is the machine healthy" question.
+   Four stations only, and only the four with a real in/out relation.
+   n_validated, n_fallback, violations_fixed and modes are loss ACCOUNTING, not
+   stations: they live beside the funnel in the drop panel.
+
+   THE HONESTY GUARD IS MANDATORY. These counters were written by different
+   passes and do NOT all nest — live 2026-08-01 has written=6 under an auditor
+   that kept 7 under an outbox that took 9. A funnel that silently clamps a
+   non-monotone pair is a lie in layout form, so a station whose out exceeds its
+   in renders .is-odd, prints NO loss figure, and adds a sentence to the footer.
+   Never clamp. Never Math.max(0, …) a loss into existence. */
+function csFunnel(d) {
+  const c = d.funnel || null;
+  const s = d.summary || {};
+  /* Degrade honestly on an older payload: stations 1-3 from what is there,
+     station 4 as "not measured". A null station NEVER renders 0. */
+  const planned = c ? c.planned : (s.total_posts != null ? s.total_posts : null);
+  const stations = [
+    { id: "planned",  name: "Planned",       out: planned,
+      what: "slots the allocator opened", lossWord: null,
+      go: "csScroll('cs-queue')" },
+    { id: "written",  name: "Written",       out: c ? c.written : null,
+      what: "posts that got words", lossWord: "never reached a writer",
+      go: "csScroll('cs-drops')" },
+    { id: "kept",     name: "Kept by audit", out: c ? c.audit_kept : null,
+      what: "survived the batch read", lossWord: "cut by the batch read",
+      go: "go('marketing_floor')" },
+    { id: "emitted",  name: "Emitted",       out: c ? c.emitted : null,
+      what: "reached the outbox rail", lossWord: "cleared but never queued",
+      go: "go('marketing_outbox')" },
+  ];
+
+  /* Losses, chain-aware. Everything from the first odd station down inherits a
+     denominator that means something else, so it can neither show a loss nor be
+     crowned the biggest leak. */
+  let prev = null, chainOk = true;
+  const oddNames = [];
+  stations.forEach(st => {
+    const inn = prev;
+    st.in = inn;
+    st.odd = (typeof st.out === "number" && typeof inn === "number" && st.out > inn);
+    st.lost = (!st.odd && typeof st.out === "number" && typeof inn === "number")
+      ? inn - st.out : null;
+    if (st.odd) { chainOk = false; oddNames.push(st.name); }
+    st.chainOk = chainOk;
+    if (typeof st.out === "number") prev = st.out;
+  });
+
+  let breakAt = null, worst = -1;
+  stations.forEach(st => {
+    if (!st.chainOk || st.lost == null || st.lost <= 0) return;
+    if (st.lost > worst) { worst = st.lost; breakAt = st.id; }
+  });
+
+  let seenBreak = false;
+  const cells = stations.map((st, i) => {
+    const cold = seenBreak;
+    if (st.id === breakAt) seenBreak = true;
+    const isNull = (st.out == null);
+    const cls = ["fn-cell", cold ? "is-cold" : "", st.odd ? "is-odd" : ""]
+      .filter(Boolean).join(" ");
+    const share = (st.in && st.lost != null && st.in > 0)
+      ? Math.min(1, st.lost / st.in) : 0;
+    const bar = (st.lost != null)
+      ? `<div class="fn-yield" role="img" aria-label="${(share * 100).toFixed(0)}% stopped here"><i style="width:${(share * 100).toFixed(1)}%"></i></div>`
+      : `<div class="fn-yield" aria-hidden="true"></div>`;
+    let loss;
+    if (st.odd) {
+      loss = `<div class="fn-odd-word">${flrN(st.out)} out of ${flrN(st.in)} in — these two counters don't nest, so no loss figure is honest here.</div>`;
+    } else if (isNull) {
+      loss = `<div class="fn-lost-none">not measured on this payload</div>`;
+    } else if (st.in == null) {
+      loss = `<div class="fn-lost-none">start of the line</div>`;
+    } else if (st.lost === 0) {
+      loss = `<div class="fn-lost-none">nothing lost here</div>`;
+    } else {
+      loss = `<div class="fn-lost">−${flrN(st.lost)}</div>
+        <div class="fn-lost-word">${esc(st.lossWord || "lost here")}</div>`;
+    }
+    return `<button class="${cls}" onclick="${st.go}">
+      <span class="fn-ord">${i + 1}</span>
+      <div class="fn-name">${esc(st.name)}</div>
+      <div class="fn-n${st.out === 0 ? " is-zero" : ""}">${isNull ? "—" : flrN(st.out)}</div>
+      <div class="fn-what">${esc(st.what)}</div>
+      ${bar}
+      ${loss}
+      ${st.id === breakAt ? `<div class="fn-break">biggest leak</div>` : ""}
+    </button>`;
+  }).join("");
+
+  /* Footer: one verdict, then every honesty caveat that actually applies. */
+  const first = stations[0], last = stations[stations.length - 1];
+  let verdict;
+  if (last.out === 0 && first.out) {
+    verdict = `<b>Nothing from tonight's plan reached the rail.</b> ${flrN(first.out)} slots were opened and every one of them stopped somewhere above.`;
+  } else if (typeof last.out === "number" && first.out) {
+    verdict = `<b>${flrN(last.out)} of ${flrN(first.out)} planned posts reached the outbox rail.</b> Each station's second number is what stopped there.`;
+  } else {
+    verdict = `The funnel is still filling in. Stations without a number were not measured on this payload.`;
+  }
+  const caveats = [];
+  if (oddNames.length) {
+    caveats.push(`Two of these counters were written by different passes and don't nest — read ${esc(oddNames.join(" and "))} on their own, not as a chain.`);
+  }
+  if (c && c.claimed != null && c.planned != null && c.claimed !== c.planned) {
+    caveats.push(`The plan file's own header claims ${flrN(c.claimed)}; the queue holds ${flrN(c.planned)}. The queue is the truth.`);
+  }
+  if (c && c.written != null && c.written_stamped != null && c.written !== c.written_stamped) {
+    caveats.push(`The copywriter logged ${flrN(c.written)} written while ${flrN(c.written_stamped)} posts carry a writer stamp. Two passes, two counts — the Floor's line reads the stamp.`);
+  }
+
+  return `<div class="section" id="cs-funnel">Tonight's supply
+      <span class="cnt">planned → written → kept → emitted</span></div>
+    <div class="fn">
+      <div class="fn-rail">${cells}</div>
+      <div class="fn-foot">${verdict}
+        ${caveats.map(x => `<br><span style="color:var(--warn)">${x}</span>`).join("")}</div>
+    </div>`;
+}
+
+/* §C8 · Ranked drop-reason families. FIRST MATCH WINS — order is significant.
+   Source: content.copy.dropped_reasons, 63 distinct free-text keys → count.
+   Every family gets a plain title, one plain sentence, and either ONE action or
+   an honest dead-label. Never invent an action. */
+var CS_DROP_FAMILIES = [
+  { re: /^provider returned no text/i, title: "The writer returned nothing",
+    what: "The model was called and sent back no text, so these slots produced no post at all.",
+    goto: "marketing_models", cta: "Open the Model Desk" },
+  { re: /^number soup/i, title: "Too many loose numbers",
+    what: "Every number after the first has to be what the one before it is measured against. These stacked new claims instead.",
+    dead: "The writer's rule — nothing to change here." },
+  { re: /not in whitelist|not in the whitelist|is not in whitelist/i, title: "A number the data doesn't back",
+    what: "The post used a level or figure that isn't in the packet it was written from.",
+    dead: "Caught before it shipped. That is the gate working." },
+  { re: /^missing cashtag/i, title: "Missing the ticker tag",
+    what: "The post named a company without its cashtag.",
+    dead: "The writer's rule — nothing to change here." },
+  { re: /^shape /i, title: "Wrong post shape",
+    what: "Line count, spacing, or caption length missed the format this kind of post uses.",
+    dead: "The writer's rule — nothing to change here." },
+  { re: /^too long|chars \(max/i, title: "Over the length budget",
+    what: "Longer than a post can be.",
+    dead: "The writer's rule — nothing to change here." },
+  { re: /em dash|en dash|horizontal bar/i, title: "Banned dash",
+    what: "House style bans the long dashes — they read as machine-written.",
+    dead: "The writer's rule — nothing to change here." },
+  { re: /^banned vocab|internal jargon|internal shorthand/i, title: "House language law",
+    what: "Desk vocabulary a reader outside this building can't see.",
+    goto: "marketing_models", cta: "Open the Model Desk" },
+  { re: /headless count|headline fragment|refers to|is undefined|no price given/i,
+    title: "The sentence doesn't say what it means",
+    what: "A pronoun, count, or level with no noun or number attached to it.",
+    dead: "Caught before it shipped." },
+  { re: /expression dial/i, title: "Wrong voice for this kind",
+    what: "A playful line landed on a post kind that doesn't take one.",
+    dead: "The writer's rule — nothing to change here." },
+];
+/* Default bucket. MUST render every unmatched key verbatim in .dz-raw — a new
+   engine gate has to be readable here before anyone remembers to map it. */
+var CS_DROP_OTHER = { title: "Other writing rules",
+  what: "These didn't group. The exact message is on each one.",
+  dead: "Read the messages below." };
+
+function csDropPanel(d) {
+  const c = d.funnel || null;
+  const reasons = (c && c.drop_reasons) || {};
+  const keys = Object.keys(reasons);
+  if (!keys.length) {
+    return `<div class="section" id="cs-drops">Why posts died</div>
+      <div class="card">${blEmpty("Nothing was dropped tonight",
+        "Every planned post got words and survived the read.")}</div>`;
+  }
+
+  /* Bucket. First match wins; unmatched fall to CS_DROP_OTHER, never swallowed. */
+  const buckets = new Map();
+  const put = (fam, key, n) => {
+    if (!buckets.has(fam)) buckets.set(fam, { fam, n: 0, raw: [] });
+    const b = buckets.get(fam);
+    b.n += n; b.raw.push({ key, n });
+  };
+  keys.forEach(key => {
+    const n = Number(reasons[key]) || 0;
+    const fam = CS_DROP_FAMILIES.find(f => f.re.test(key)) || CS_DROP_OTHER;
+    put(fam, key, n);
+  });
+  const groups = [...buckets.values()].sort((a, b) => b.n - a.n);
+  const total = groups.reduce((s, g) => s + g.n, 0);
+
+  const rows = groups.map(g => {
+    const f = g.fam;
+    const act = f.goto
+      ? `<button class="flr-blk-go" onclick="go('${esc(f.goto)}')">${esc(f.cta || "Open")} →</button>`
+      : `<div class="dz-dead">${esc(f.dead || "Nothing to do — this one is closed.")}</div>`;
+    /* Tier-3 receipt: the raw engine strings, verbatim, bounded. */
+    const raw = g.raw.sort((a, b) => b.n - a.n).slice(0, 24)
+      .map(r => `<code>${esc(r.key)}${r.n > 1 ? ` ×${r.n}` : ""}</code>`).join("");
+    const more = g.raw.length > 24 ? `<div class="bl-tail">and ${g.raw.length - 24} more messages, not loaded</div>` : "";
+    return `<div class="dz-row">
+      <div class="dz-n">${flrN(g.n)}</div>
+      <div class="dz-main">
+        <div class="dz-title">${esc(f.title)}</div>
+        <div class="dz-what">${esc(f.what)}</div>
+        <details class="dz-raw"><summary>the ${g.raw.length === 1 ? "exact message" : `${g.raw.length} exact messages`}</summary>
+          <div class="dz-raw-body">${raw}${more}</div></details>
+      </div>
+      ${act}
+    </div>`;
+  });
+
+  /* Loss accounting that is NOT a station — it belongs here, beside the funnel,
+     not stacked into a chain it does not belong to. */
+  const acct = [];
+  if (c) {
+    const dropped = c.dropped || {};
+    const bits = Object.keys(dropped).map(k => `${flrN(dropped[k])} at the ${esc(k === "provider" ? "writer" : k === "validate" ? "copy check" : k === "critic" ? "critic" : k.replace(/_/g, " "))}`);
+    if (bits.length) acct.push(`Dropped ${bits.join(", ")}.`);
+    if (c.n_fallback) acct.push(`${flrN(c.n_fallback)} fell back to a template.`);
+    if (c.violations_fixed) acct.push(`${flrN(c.violations_fixed)} copy violations were repaired rather than dropped.`);
+    if (c.signals_killed_by_gate) acct.push(`${flrN(c.signals_killed_by_gate)} signals were killed by the live gate before a writer saw them.`);
+  }
+
+  return `<div class="section" id="cs-drops">Why posts died
+      <span class="cnt">${flrN(total)} drops · ${groups.length} reason${groups.length === 1 ? "" : "s"}</span></div>
+    <div class="card">
+      <div class="note muted" style="margin-bottom:8px">Ranked by how many posts each one killed. Every exact message the engine wrote is under its group.</div>
+      <div class="dz">${blList(rows, 6)}</div>
+      ${acct.length ? `<div class="note muted" style="margin-top:10px">${acct.map(esc).join(" ")}</div>` : ""}
+    </div>`;
+}
+
+/* Scroll helper for the funnel cells — a count you cannot open is a count you
+   cannot verify, so every station goes somewhere. */
+function csScroll(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ block: "start" });
+}
+
+/* §3.2 · The intraday rail, DEMOTED. It used to be concatenated FIRST —
+   `v.innerHTML = intelHtml + headerHtml + …` — so up to 12 full-text cards with
+   source links and buttons rendered above the page's own title and above the
+   plan the page exists to show. Now it is last and closed.
+   THE ONE HONEST EXCEPTION: a story at stage `high_impact` opens the rail and
+   flags its summary. That is the difference between a rail and a burial. */
+function csIntelRail(stories, health, cardsHtml) {
+  if (!stories.length) {
+    return `<div class="section">Breaking now</div>
+      <div class="card">${blEmpty("Nothing breaking",
+        "Intraday stories appear here as they land.")}</div>`;
+  }
+  const hot = stories.filter(s => s && s.stage === "high_impact").length;
+  const ready = health.draft_ready || 0;
+  return `<div class="section" id="cs-intel">Breaking now</div>
+    <details class="cs-intel"${hot ? " open" : ""}>
+      <summary>Breaking now
+        <span class="cnt">${flrN(stories.length)} ${stories.length === 1 ? "story" : "stories"} · ${flrN(ready)} draft${ready === 1 ? "" : "s"} ready</span>
+        ${hot ? `<span class="st st-held">Hot <i>· ${flrN(hot)} moving now</i></span>`
+              : `<span class="st st-expired">Quiet <i>· nothing urgent</i></span>`}
+      </summary>
+      <div class="cs-intel-body">
+        <div class="note muted" style="margin-bottom:8px">Repeated reports are merged into one story. Every candidate keeps its source receipts and stays separate from approval and publishing.</div>
+        ${blList(cardsHtml, 4)}
+      </div>
+    </details>`;
+}
+
 RENDER.marketing_content = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -5635,6 +6067,19 @@ RENDER.marketing_content = async () => {
         <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
         <div class="note muted">Content plans accrue after the first nightly governor run that has Prophet plans + stock closes available.</div>
       </div>`;
+    return;
+  }
+  /* A plan whose desks all hold EMPTY queues used to slip past the guard above
+     (defect C9) and render a header, a filter row, a switcher with only "All
+     desks", and a silent empty gallery. No blank panels, ever — say what is true
+     and when it changes. */
+  const anyQueued = (d.accounts || []).some(a => (a && a.queue || []).length > 0);
+  if (!anyQueued && !liveIntelStories.length) {
+    v.innerHTML = `<div class="section">Content Studio</div>
+      <div class="card">${blEmpty("Tonight's plan has no posts",
+        "Every desk came back empty. The supply funnel below says where they died; the next nightly run rebuilds the plan.")}</div>
+      ${csFunnel(d)}
+      ${csDropPanel(d)}`;
     return;
   }
 
@@ -5665,7 +6110,7 @@ RENDER.marketing_content = async () => {
         ? `<a href="${esc(url)}" target="_blank" rel="noopener">${name}</a>`
         : `<span>${name}</span>`;
     }).join(" · ");
-    return `<div class="card cs-intel-item" data-story-id="${esc(story.id || "")}" data-draft-id="${esc((draft && draft.id) || "")}" style="margin-bottom:8px;border-left:3px solid ${story.stage === "high_impact" ? "var(--warn)" : "var(--info)"}">
+    return `<div class="card cs-intel-item lv ${story.stage === "high_impact" ? "lv-you" : "lv-mach"}" data-story-id="${esc(story.id || "")}" data-draft-id="${esc((draft && draft.id) || "")}" style="margin-bottom:8px">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
         <span class="statpill ${story.stage === "high_impact" ? "s-warn" : story.stage === "confirmed" ? "s-ok" : "s-mut"}">${esc(stage)}</span>
         <span class="statpill s-mut">${esc(String(story.source_count || evidence.length || 1))} sources</span>
@@ -5673,7 +6118,7 @@ RENDER.marketing_content = async () => {
       </div>
       <div style="font-size:14px;font-weight:700;line-height:1.35;margin-bottom:5px">${esc(story.headline || "Untitled development")}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:${draft ? "9px" : "0"}">${sourceLinks || "Source receipt pending"}</div>
-      ${draft ? `<div class="cs-intel-copy" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:9px;border-radius:8px;background:var(--panel2)">${esc(draft.text)}</div>
+      ${draft ? `<div class="cs-intel-copy" style="white-space:pre-wrap;font-size:12px;line-height:1.5;padding:9px;border-radius:8px;background:var(--surface2)">${esc(draft.text)}</div>
         <div style="display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap">
           <span class="statpill ${draft.status === "review" ? "s-ok" : "s-warn"}">${draft.status === "review" ? "ready for review" : "needs editing"} · ${esc(String(draft.characters || String(draft.text).length))}/280</span>
           <button class="btn sm" style="margin-left:auto" onclick="csCopyIntel(this)">Copy draft</button>
@@ -5684,16 +6129,10 @@ RENDER.marketing_content = async () => {
         <div class="cs-intel-outcome note muted" style="display:none;margin-top:6px;font-size:11px;line-height:1.45"></div>`
         : `<div class="note muted">Evidence retained; waiting for the next copy pass.</div>`}
     </div>`;
-  }).join("");
-  const intelHtml = liveIntelStories.length ? `<div class="section">Live Intelligence Queue
-      <span class="cnt">intraday · review-gated</span>
-      <span class="statpill s-mut">${esc(String(intelHealth.active_stories || liveIntelStories.length))} active</span>
-      <span class="statpill s-ok">${esc(String(intelHealth.draft_ready || 0))} draft-ready</span>
-    </div>
-    <div class="card" style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.5">
-      Repeated reports are merged into one story. Every candidate keeps its source receipts and remains separate from approval and publishing.
-    </div>
-    <div style="margin-bottom:20px">${intelCards}</div>` : "";
+  });
+  /* Rail markup is built by csIntelRail (collapsed, last on the page). The card
+     bodies above are unchanged — csCopyIntel/csQueueIntel keep working verbatim. */
+  const intelHtml = csIntelRail(liveIntelStories, intelHealth, intelCards);
 
   /* Split desks that are generating (have a queue) from planned/off desks (empty
      queue). Non-enabled desks collapse into a muted strip instead of full,
@@ -5716,35 +6155,35 @@ RENDER.marketing_content = async () => {
     ${stale ? `<span class="cs-fresh-fix">tonight's run refreshes this plan.</span>` : ""}
   </div>`;
 
-  /* Header stats */
+  /* Header. THE FOUR SUMMARY TILES ARE GONE (defect C3): they read
+     `155 / 0 / 111 / 13` beside a 156-post queue, a gallery holding 4 charts,
+     and a desk roster where 7 of the 13 are switched off — every one of them
+     wrong or meaningless, and one of them (`posted (7d)`, defect C4) had no
+     7-day window at all and contradicted the Publisher's own count. The supply
+     funnel below answers the same question with numbers that are measured.
+
+     THE SHADOW CLAIM IS GONE TOO (defect X1). "shadow · drafted plan" and "not
+     yet posted" were STATIC STRING LITERALS with no read of arm state, printed
+     while posts were going out daily with real receipts. This page cannot see
+     the publish switch — the Publisher can — so it now says what it does know:
+     what this plan is, and where its posts go next.
+
+     ONE AS-OF STAMP FOR THE WHOLE PAGE (Doctrine Law 4): the freshness bar. */
+  const emitted = (d.funnel && d.funnel.emitted != null) ? d.funnel.emitted : null;
   const headerHtml = `<div class="section">Content Studio
-    <span class="cnt">shadow · drafted plan</span>
-    <span class="statpill s-mut">not yet posted</span>
+    <span class="cnt">tonight's plan · ${emitted == null ? "rail count not measured" : `${flrN(emitted)} already on the outbox rail`}</span>
   </div>
   ${freshHtml}
-  <div class="metric-tiles-row">
-    ${["total_posts", "signal_posts", "charts", "accounts"].map(k => `
-      <div class="metric-tile">
-        <div class="eyebrow">${esc(k.replace(/_/g, " "))}</div>
-        <div class="tile-value">${summary[k] != null ? summary[k] : "—"}</div>
-      </div>`).join("")}
-    ${distinctness.max_similarity != null ? `
-      <div class="metric-tile">
-        <div class="eyebrow">Max similarity</div>
-        <div class="tile-value" style="color:${(distinctness.max_similarity || 0) > 0.7 ? "var(--bad)" : "var(--ok)"}">${((distinctness.max_similarity || 0) * 100).toFixed(0)}%</div>
-        <div class="tile-sub">cross-desk Jaccard</div>
-      </div>` : ""}
-    ${d.posted_7d != null ? `
-      <div class="metric-tile">
-        <div class="eyebrow">posted (7d)</div>
-        <div class="tile-value" style="color:${d.posted_7d > 0 ? "var(--ok)" : "var(--muted)"}">${d.posted_7d}</div>
-        <div class="tile-sub">plan posts sent</div>
-      </div>` : ""}
-  </div>
-  <div class="card" style="margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.55">
+  `;
+
+  /* The explainer moves to the BOTTOM of the page (spec §3.2 row 8). Its
+     shadow-mode sentence is deleted, not softened: it asserted a global fact
+     ("not posted externally") this page has no way to read and that the ledger
+     contradicts. What replaces it is what this page can actually vouch for. */
+  const tiltExplainer = `<div class="card" style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.55">
     <b style="color:var(--text)">Mixed-tilt model:</b> every desk posts all content types — signal alerts, charts, explainers, macro notes, receipts, watchlists, and event reactions.
     The tilt shifts emphasis so each desk feels distinct. The same Prophet signal is rendered with different copy per desk so cross-posting stays safe under platform rules.
-    <b style="color:var(--warn)">This is a drafted plan (shadow mode — not yet posted externally).</b>
+    Nothing on this page has been sent. A post leaves here for the Outbox, waits for your decision there, and the Publisher sends it — that page is the one that knows whether sending is switched on.
   </div>`;
 
   /* Content-type filter chips */
@@ -5762,11 +6201,70 @@ RENDER.marketing_content = async () => {
     ${accounts.map(a => `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="mktSwitchAcct('${esc(a.id)}',this)">${esc(a.id)}</button>`).join("")}
   </div>`;
 
-  /* Per-account section with donut + tilt + post gallery */
+  /* §4 · NEXT TO WRITE — every desk merged into ONE list ordered by the time the
+     post actually goes out, because "what is going out next" is not a per-desk
+     question. Desk becomes a chip on the card; the desk pills above stay as a
+     FILTER over this list. Bounded at 12 (suite law C4): this used to render 156
+     uncapped cards under a plan header that has claimed 1184 before. */
+  const allPosts = [];
+  accounts.forEach(acct => {
+    (acct.queue || []).forEach(p => allPosts.push({ post: p, acctId: acct.id }));
+  });
+  allPosts.sort((a, b) => {
+    const x = String(a.post.display_time || a.post.slot || "~");
+    const y = String(b.post.display_time || b.post.slot || "~");
+    return x < y ? -1 : x > y ? 1 : 0;
+  });
+
+  const postCardHtml = ({ post, acctId }) => {
+    const featured = post.chart_id ? chartById[post.chart_id] : null;
+    const typeColor = mktTypeColor(post.type);
+    const typeLabel = (contentTypes.find(ct => ct.id === post.type) || {}).name || post.type;
+    const chipHtml = `<span class="mkt-type-chip" style="background:${typeColor}22;border-color:${typeColor}44;color:${typeColor}">${esc(typeLabel)}</span>`;
+    /* A TIME, NOT A SLOT CODE. display_time is ISO-UTC and renders in the
+       operator's local time; the raw `D1-S1` slot is a banned slug on the
+       glance tier and never prints. */
+    const whenBadge = post.display_time
+      ? `<span class="pc-when">${esc(conLocalTime(post.display_time))}</span>`
+      : `<span class="pc-when">time not set</span>`;
+    const tickerBadge = (post.ticker && !post.cashtag) ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.ticker)}</span>` : "";
+    const statusBadge = csUsageBadge(post);
+    const chartEmbed = (featured && featured.svg) ? `<div class="mkt-chart-embed">${featured.svg}</div>` : "";
+    const cashtag = post.cashtag ? `<span class="mkt-cashtag">${esc(post.cashtag)}</span>` : "";
+    /* Liveness: a post already blocked or posted is DEAD on this page — nothing
+       the operator does here changes it. Everything else is the machine's turn:
+       this page has no decision controls, the Outbox does. */
+    const live = (post.usage === "quarantined" || post.usage === "posted"
+      || post.usage === "recalled") ? "dead" : "mach";
+    /* Provenance in reader words, machine slug on hover (defect X3). */
+    const prov = post.provenance
+      ? `<span class="pc-desk" title="${esc(post.provenance)}">${esc(provWord(post.provenance))}</span>` : "";
+    return `<div class="pc mkt-post-card lv lv-${live}" data-type="${esc(post.type)}" data-acct="${esc(post.account || acctId)}">
+      <div class="pc-top">
+        ${chipHtml}${cashtag}${tickerBadge}${whenBadge}
+        <span class="pc-desk">${esc(post.account || acctId)}</span>
+        ${prov}
+        <span class="pc-state">${statusBadge}</span>
+      </div>
+      ${chartEmbed}
+      ${post.headline ? `<div style="font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.4">${esc(post.headline)}</div>` : ""}
+      ${post.body ? `<div class="pc-excerpt" style="line-height:1.6">${esc(post.body)}</div>` : ""}
+    </div>`;
+  };
+
+  const queueHtml = `<div class="section" id="cs-queue">Next to write
+      <span class="cnt">${flrN(allPosts.length)} planned · earliest first</span></div>
+    ${filterHtml}${acctPills}
+    <div id="mkt-post-gallery">${allPosts.length
+      ? blList(allPosts.map(postCardHtml), 12)
+      : blEmpty("Nothing planned for tonight",
+          "Posts appear here after the nightly governor writes a plan.")}</div>`;
+
+  /* §5 · DESK MIX — the donuts stay, ALL COLLAPSED. They answer "how is each
+     desk tilted", which is a once-a-week question, not a daily one. */
   let acctSections = "";
   accounts.forEach(acct => {
     const tilt = acct.tilt || {};
-    const mixObs = acct.mix_observed || {};
     const queue = acct.queue || [];
 
     const donutSvg = mktDonutSVG(tilt, contentTypes);
@@ -5795,46 +6293,13 @@ RENDER.marketing_content = async () => {
       ${tiltBar}
     </div>`;
 
-    /* Post cards */
-    const postCards = queue.map(post => {
-      const featured = post.chart_id ? chartById[post.chart_id] : null;
-      const typeColor = mktTypeColor(post.type);
-      const typeLabel = (contentTypes.find(ct => ct.id === post.type) || {}).name || post.type;
-      const chipHtml = `<span class="mkt-type-chip" style="background:${typeColor}22;border-color:${typeColor}44;color:${typeColor}">${esc(typeLabel)}</span>`;
-      /* Real post time — display_time (added by the sibling engine PR) falls back
-         to the slot code when absent. */
-      const whenTxt = post.display_time || post.slot || "";
-      const whenBadge = whenTxt ? `<span class="cs-post-time">${esc(whenTxt)}</span>` : "";
-      const tickerBadge = (post.ticker && !post.cashtag) ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.ticker)}</span>` : "";
-      /* Usage badge — when the engine folded outbox status onto this plan post,
-         show what actually happened to it instead of the forever-"drafted" tag.
-         posted → green; queued/approved → neutral "in outbox" chip; quarantined
-         → warn. Absent usage → the legacy drafted/status badge. */
-      const statusBadge = csUsageBadge(post);
-
-      let chartEmbed = "";
-      if (featured && featured.svg) {
-        chartEmbed = `<div class="mkt-chart-embed">${featured.svg}</div>`;
-      }
-
-      const cashtag = post.cashtag ? `<span class="mkt-cashtag">${esc(post.cashtag)}</span>` : "";
-
-      return `<div class="mkt-post-card" data-type="${esc(post.type)}" data-acct="${esc(post.account || acct.id)}">
-        <div class="mkt-post-card-header">
-          ${chipHtml}${cashtag}${tickerBadge}${whenBadge}${statusBadge}
-          <span class="sub" style="margin-left:auto;font-size:10px;color:var(--faint)">${esc(post.provenance || "")}</span>
-        </div>
-        ${chartEmbed}
-        ${post.headline ? `<div style="font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.4">${esc(post.headline)}</div>` : ""}
-        ${post.body ? `<div style="font-size:12px;color:var(--muted);line-height:1.6">${esc(post.body)}</div>` : ""}
-      </div>`;
-    }).join("");
-
-    acctSections += `<div class="mkt-acct-section" data-acct="${esc(acct.id)}" style="margin-bottom:24px">
-      <div class="section" style="margin-bottom:8px">${esc(acct.id)} <span class="cnt">${queue.length} posts</span></div>
+    /* The post cards themselves now live in §4's merged, time-ordered queue —
+       this section is the desk's shape, not its inventory. */
+    acctSections += `<details class="mkt-acct-section" data-acct="${esc(acct.id)}" style="margin-bottom:8px">
+      <summary style="cursor:pointer;padding:6px 0;font-size:13px;font-weight:600">${esc(acct.id)}
+        <span class="cnt">${flrN(queue.length)} planned</span></summary>
       ${acctMeta}
-      ${postCards || `<div class="note muted">No posts queued for this desk yet.</div>`}
-    </div>`;
+    </details>`;
   });
 
   /* Planned desks (empty queue) collapse into one muted strip — not full empty
@@ -5846,7 +6311,21 @@ RENDER.marketing_content = async () => {
       </div>`
     : "";
 
-  v.innerHTML = intelHtml + headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
+  /* THE PAGE ORDER IS THE FIX (operator, 2026-08-01: the Live Intelligence Queue
+     "placed right smack first thing on the page for some reason … ruins the
+     entire page's UX"). It was `intelHtml + headerHtml + …` — the intraday
+     stream concatenated ABOVE the page's own title. Every section below now
+     serves one of the operator's five standing questions, in the order he asks
+     them: what is the machine doing (funnel) → why did things die (drops) →
+     what is going out (queue) → the reference material → the intraday rail. */
+  v.innerHTML = headerHtml
+    + csFunnel(d)
+    + csDropPanel(d)
+    + queueHtml
+    + `<div class="section">Desk mix <span class="cnt">${flrN(accounts.length)} generating</span></div>${acctSections}`
+    + plannedHtml
+    + intelHtml
+    + tiltExplainer;
 };
 
 /* Is the content plan stale? Prefer the engine's own flag; else compare as_of to
@@ -5986,11 +6465,19 @@ function mktFilterPosts(type, btn) {
     el.classList.toggle("hidden", type !== "all" && el.dataset.type !== type);
   });
 }
+/* The desk pills are now a FILTER over one merged, time-ordered queue rather
+   than a section selector: "what goes out next" is not a per-desk question, so
+   the per-desk post sections were merged (spec §3.2/§3.3). The pills still work
+   exactly as the operator expects — click one and you get that desk alone — and
+   they also scope the Desk mix accordion, so nothing he had is taken away. */
 function mktSwitchAcct(acct, btn) {
   document.querySelectorAll("#mkt-acct-sw .mkt-acct-pill").forEach(el => el.classList.remove("active"));
   if (btn) btn.classList.add("active");
   document.querySelectorAll(".mkt-acct-section").forEach(el => {
     el.style.display = (acct === "all" || el.dataset.acct === acct) ? "" : "none";
+  });
+  document.querySelectorAll("#mkt-post-gallery .mkt-post-card").forEach(el => {
+    el.classList.toggle("hidden", acct !== "all" && el.dataset.acct !== acct);
   });
 }
 
@@ -6168,19 +6655,11 @@ const OBX_CHAR_CAP = 275;
 /* Attempt ceiling — the actuator quarantines (never re-arms) at this many fails. */
 const OBX_MAX_ATTEMPTS = 2;
 
-/* Plain-word stance for each review/ledger state. state token IS the label.
-   The two "queued" variants below carry the operator's recorded decision:
-   an item stays ledger-queued until the actuator applies the decision, so an
-   approved-decision item is honestly "cleared, not yet sent". */
-const OBX_STATE = {
-  held:         { cls: "obx-held",     label: "Held",       stance: "Won't post" },
-  queued:       { cls: "obx-ready",    label: "Ready",      stance: "Awaiting your call" },
-  approve_ok:   { cls: "obx-approved", label: "Cleared",    stance: "Actuator will post" },
-  approved:     { cls: "obx-approved", label: "Approved",   stance: "Actuator will post" },
-  posted:       { cls: "obx-posted",   label: "Posted",     stance: "Went out" },
-  failed:       { cls: "obx-failed",   label: "Failed",     stance: "Did not send" },
-  quarantined:  { cls: "obx-quar",     label: "Quarantined",stance: "Blocked" },
-};
+/* The per-state label/stance table that used to live here (OBX_STATE) is gone:
+   it was one of four divergent chip vocabularies across these five pages, so the
+   same fact rendered four ways. `stChip()` / `stLive()` from the Floor-suite
+   shared block are the one vocabulary now. */
+
 /* Effective review-state of an item. The operator's recorded decision overlays
    the ledger-folded status while the item is still queued. */
 function obxEffState(it) {
@@ -6199,11 +6678,29 @@ function obxIsDecidable(it) { return it.status === "queued"; }
 function obxIsFailedRearmable(it) {
   return it.status === "failed" && (it.attempts || 0) < OBX_MAX_ATTEMPTS;
 }
-/* Which items belong in the account review rail: undecided/held (queued) +
-   cleared (approved, awaiting the actuator) + failed (actionable — re-arm or a
-   spent-attempts warning). Posted/quarantined are terminal → history only. */
+/* An item the publisher is mid-send on. Alive, but it is the MACHINE's turn —
+   there is no operator verb for it. It was invisible before: `posting` was in
+   no tile, no rail and no history block, so a post stuck in flight from a
+   crashed run existed only on the Publisher page. */
+function obxIsInFlight(it) { return it.status === "posting"; }
+
+/* Which items belong in the account review rail. THE CORPSE FIX (operator,
+   2026-08-01 — the rail read as "pending garbage").
+
+   This used to admit every `failed` item, so the three 07-30 http_error 429
+   corpses rendered as full review cards, in the same rail, with the same visual
+   weight as work genuinely awaiting a decision. On the live payload that made
+   the "awaiting your approval" zone 100% dead posts.
+
+   A failure with retries left IS alive — it carries a real verb (Approve retry)
+   and a fresh approval re-arms it. A failure with its attempts spent is dead:
+   the next actuator run quarantines it and nothing the operator clicks changes
+   that. Dead leaves the rail entirely and renders under "Didn't make it", struck
+   and collapsed, with the reason on it. If a row has an enabled action it is
+   alive; if it has none it is dead. There is no third case. */
 function obxInRail(it) {
-  return ["queued", "approved", "failed"].includes(it.status);
+  if (it.status === "failed") return obxIsFailedRearmable(it);
+  return ["queued", "approved", "posting"].includes(it.status);
 }
 /* Items an "approve all ready" control should COUNT and act on — approving these
    actually changes something. Excludes no-ops: a queued item already carrying an
@@ -6215,13 +6712,28 @@ function obxIsBulkApprovable(it) {
   if (obxIsFailedRearmable(it)) return it.decision !== "approve";
   return obxIsDecidable(it) && obxEffState(it) !== "approve_ok";
 }
+
+/* THE STALENESS GUARD ON BULK APPROVE. A re-armable failure is days old by
+   construction — the actuator only marks one after a send attempt — and its copy
+   quotes the tape of the day it was written. "Approve all ready (3)" over the
+   live payload meant re-booking Thursday's move on Saturday, which is exactly
+   the class the quarantine ledger keeps recording ("'ripping +1.9% avg today' is
+   Friday's session posting on Saturday — stale"). One button must not do that
+   silently. A stale item keeps its OWN Approve retry button: the operator can
+   still send it, he just has to look at that post while he does it. */
+function obxIsStale(it, refAsOf) {
+  return !!(refAsOf && it && it.as_of && it.as_of !== refAsOf);
+}
+function obxBulkRefAsOf() { return (OBX_LAST && OBX_LAST.as_of) || null; }
+
 /* A "cleared" item has the operator's yes and is now waiting on the publisher —
-   either still ledger-queued carrying an approve decision (approve_ok) or already
-   folded to 'approved' by the actuator. Cleared items leave the awaiting-approval
-   zone and drop into the collapsed "awaiting publish" shelf; they show no Approve
-   button (see obxItemCard). */
+   either still ledger-queued carrying an approve decision (approve_ok), already
+   folded to 'approved' by the actuator, or mid-send (`posting`). Cleared items
+   leave the awaiting-approval zone and drop into the collapsed "going out"
+   shelf; they show no Approve button (see obxItemCard). */
 function obxIsCleared(it) {
-  return obxEffState(it) === "approve_ok" || it.status === "approved";
+  return obxEffState(it) === "approve_ok" || it.status === "approved"
+      || obxIsInFlight(it);
 }
 /* Total posts genuinely awaiting the operator across all desks — undecided
    (ready) + held — for the nav dot and desk badges. Uses effective state so an
@@ -6719,12 +7231,32 @@ RENDER.marketing_outbox = async () => {
     }
   } catch (_e) { /* sentinel optional — ignore */ }
 
-  /* Header — honest shadow-mode state pill carries the stance in plain words. */
+  /* Header. THE PILL USED TO BE A STRING LITERAL reading "Review only — nothing
+     posts externally", with the lede underneath promising "in this shadow phase
+     nothing leaves the building". Neither read any state. The ledger says posts
+     went out on 07-25, 26, 27, 28, 30, 31 and today, with live Buffer receipts
+     carrying x.com status urls. The operator was approving posts believing they
+     could not send, and they sent.
+
+     The truth is derived from the payload already in hand rather than from an
+     arm-state probe: a receipted `posted` transition in the last 24 hours is
+     ground truth that this machine posts, and it cannot come back null the way
+     `arm_state()` does on a host with no GitHub token (which is how the
+     Publisher page ends up answering "unknown" on the same question). */
+  const dayAgo = Date.now() - 24 * 3600 * 1000;
+  const postedRecently = (d.history || []).filter(h =>
+    h.status === "posted" && h.at && Date.parse(String(h.at)) >= dayAgo);
+  const liveN = postedRecently.length;
+  const statePill = liveN
+    ? `<span class="obx-shadow-pill obx-live-pill"><span class="obx-shadow-dot"></span>Live — ${liveN} post${liveN === 1 ? "" : "s"} went out in the last 24 hours</span>`
+    : `<span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Nothing has gone out in the last 24 hours</span>`;
   const asOfChip = asOf ? `<span class="cnt">reviewing ${esc(asOf)}</span>` : "";
   const header = `<div class="section">Outbox ${asOfChip}${sentinelChip}
-    <span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Review only — nothing posts externally</span>
+    ${statePill}
   </div>
-  <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent.</div>`;
+  <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve, edit or hold. ${liveN
+      ? "Approving is real: an approved post goes out at its slot."
+      : "Nothing has sent in the last day — approving still books the post, and the publisher sends it when it is armed."}</div>`;
 
   /* Day-0 empty state — a friendly explainer that says WHEN drafts arrive and
      what to do next, with the three posting slots in the operator's local time. */
@@ -6772,33 +7304,52 @@ function obxRenderLive(d) {
      can't separate "ready to review" from "cleared, awaiting publish" —
      recompute here so the tiles agree with the two review zones below.
      approve_ok (queued + approve decision) counts as Cleared, not Ready. */
-  const effSummary = { queued: 0, held: 0, approved: 0, posted: 0, failed: 0, quarantined: 0 };
+  /* `posting` and `recalled` are seeded because they were silently DROPPED:
+     the increment is guarded by `!= null`, so an in-flight post counted nowhere
+     while the tile row happily rendered a Recalled tile that could only ever
+     read 0. A state the payload carries and the page cannot show is a state the
+     operator cannot act on. */
+  const effSummary = { queued: 0, held: 0, approved: 0, posting: 0, posted: 0,
+                       failed: 0, quarantined: 0, recalled: 0 };
   accounts.forEach(a => (a.items || []).forEach(it => {
     const s = obxEffState(it);
     const key = (s === "approve_ok") ? "approved" : s;
     if (effSummary[key] != null) effSummary[key] += 1;
   }));
 
-  /* Global work count — how many undecided/re-armable items across all desks. */
+  /* Global work count — undecided/re-armable items across all desks, minus
+     anything from an older plan day (see obxIsStale). */
+  const refAsOf = d.as_of || null;
   let globalReady = 0;
-  accounts.forEach(a => (a.items || []).forEach(it => { if (obxIsBulkApprovable(it) && obxEffState(it) !== "held") globalReady++; }));
+  accounts.forEach(a => (a.items || []).forEach(it => {
+    if (obxIsBulkApprovable(it) && obxEffState(it) !== "held" && !obxIsStale(it, refAsOf)) globalReady++;
+  }));
+  let globalStale = 0;
+  accounts.forEach(a => (a.items || []).forEach(it => {
+    if (obxIsBulkApprovable(it) && obxEffState(it) !== "held" && obxIsStale(it, refAsOf)) globalStale++;
+  }));
 
   /* Command bar — the one global action (confirm-flow) + the honest work count. */
   const commandBar = `<div class="obx-command">
     <button class="btn primary obx-gbtn" id="obx-approve-all" ${globalReady ? "" : "disabled"}
       data-n="${globalReady}" onclick="obxApproveAllGlobal(this)">Approve all ready${globalReady ? ` (${globalReady})` : ""}</button>
+    ${globalStale ? `<span class="obx-gstale">${globalStale} older post${globalStale === 1 ? "" : "s"} left out — ${globalStale === 1 ? "it quotes" : "they quote"} an earlier day's tape, so approve ${globalStale === 1 ? "it" : "them"} one at a time</span>` : ""}
     <span class="obx-gmsg" id="obx-gmsg"></span>
   </div>`;
 
-  /* Summary tiles — approved reads ok-ish, held warn, failed/quarantined bad. */
+  /* Summary tiles. "Quarantined" is the ledger's word, not a reader's — the
+     tile says Blocked, and the ledger word survives in each row's receipt line.
+     Sending/Pulled back are here because the payload has always carried them
+     and the page never drew them. */
   const tileDefs = [
     ["queued",      "Ready",       null],
     ["held",        "Held",        "var(--warn)"],
     ["approved",    "Cleared",     "var(--ok)"],
+    ["posting",     "Sending",     "var(--warn)"],
     ["posted",      "Posted",      "var(--muted)"],
     ["failed",      "Failed",      "var(--bad)"],
-    ["quarantined", "Quarantined", "var(--bad)"],
-    ["recalled",    "Recalled",    "var(--warn)"],
+    ["quarantined", "Blocked",     "var(--bad)"],
+    ["recalled",    "Pulled back", "var(--warn)"],
   ];
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
@@ -6835,98 +7386,89 @@ function obxRenderLive(d) {
     }).join("")}
   </div>`;
 
-  /* Per-account review sections. Each desk splits into two zones: posts still
-     AWAITING the operator's approval (undecided / held / failed — the action
-     list) and posts already CLEARED and awaiting publish (approved — no longer
-     needing a decision). Approving a post moves it out of the action list into
-     the collapsed "awaiting publish" shelf, and its Approve button disappears. */
-  let sections = "";
-  accounts.forEach(acct => {
-    const items = acct.items || [];
-    const rail = items.filter(obxInRail);
-    /* Split the rail: awaiting a decision vs cleared (approved) awaiting publish. */
-    const awaiting = rail.filter(it => !obxIsCleared(it));
-    const cleared  = rail.filter(obxIsCleared);
-    /* Awaiting order: undecided first, then held, then failed; each by scheduled_at.
-       Cleared: by scheduled_at (post order). */
-    const awRank = it => obxEffState(it) === "held" ? 1 : (it.status === "failed" ? 2 : 0);
-    awaiting.sort((a, b) => (awRank(a) - awRank(b)) || (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
-    cleared.sort((a, b) => (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
+  /* ONE MERGED, TIME-ORDERED REVIEW LIST — not one section per desk.
 
-    /* Counts from effective state — the server folds an approved-but-not-yet-posted
-       item as 'queued', so acct.counts can't tell "awaiting" from "cleared". */
-    const undecidedN = awaiting.filter(it => obxEffState(it) === "queued").length;
-    const heldN      = awaiting.filter(it => obxEffState(it) === "held").length;
-    const failN      = awaiting.filter(it => it.status === "failed").length;
-    const clearedN   = cleared.length;
-    const parts = [];
-    if (undecidedN) parts.push(`${undecidedN} awaiting review`);
-    if (heldN)      parts.push(`${heldN} held`);
-    if (failN)      parts.push(`${failN} failed`);
-    if (clearedN)   parts.push(`${clearedN} cleared`);
-    const countChip = parts.length
-      ? `<span class="cnt">${parts.join(" · ")}</span>`
-      : `<span class="cnt">nothing to review</span>`;
+     The page used to render an "awaiting approval" + "cleared" pair inside every
+     desk section, so "what needs my decision right now" was a question the
+     operator had to ask thirteen times and then add up himself. It is not a
+     per-desk question. Every desk merges into one list ordered by when the post
+     goes out; the desk becomes a chip ON the card and the desk pills above
+     become a FILTER over this one list rather than a section selector. The
+     mental model is reversible in one click — pick a pill and you have your
+     desk-at-a-time view back.
 
-    /* Slot meter — cap-many dots, filled = slots this desk has already spent
-       today (posted). The visual explanation for the small daily ceiling. */
-    const slotMeter = obxSlotMeter((acct.counts || {}).posted || 0, cap);
+     Two zones, and the split is liveness, not status: ALIVE-WAITING-ON-YOU
+     (a decision is owed) above, ALIVE-WAITING-ON-THE-MACHINE (cleared, booked,
+     in flight) collapsed below. Dead posts are in neither — see obxDeadBlock. */
+  const railAll = [];
+  accounts.forEach(acct => (acct.items || []).forEach(it => {
+    if (obxInRail(it)) railAll.push(Object.assign({ _acct: acct.id }, it));
+  }));
+  const awaiting = railAll.filter(it => !obxIsCleared(it));
+  const cleared  = railAll.filter(obxIsCleared);
+  /* Awaiting order: undecided first, then held, then re-armable failures (the
+     oldest copy in the list); each by scheduled_at. Cleared: by post order. */
+  const awRank = it => obxEffState(it) === "held" ? 1 : (it.status === "failed" ? 2 : 0);
+  awaiting.sort((a, b) => (awRank(a) - awRank(b)) || (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
+  cleared.sort((a, b) => (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
 
-    /* Per-account bulk bar — acts only on the awaiting zone (ready = undecided
-       queued + re-armable failures, not held). */
-    const acctReady = awaiting.filter(it => obxIsBulkApprovable(it) && obxEffState(it) !== "held");
-    const acctHeld  = awaiting.filter(it => obxEffState(it) === "held");
-    const bulk = (acctReady.length || acctHeld.length) ? `<div class="obx-acct-bulk">
-      <button class="obx-bulk-btn obx-bulk-approve" ${acctReady.length ? "" : "disabled"}
-        onclick="obxBulkAccount(${esc(JSON.stringify(acct.id))},'approve',this)">Approve all ready${acctReady.length ? ` (${acctReady.length})` : ""}</button>
-      <button class="obx-bulk-btn obx-bulk-hold" ${acctReady.length ? "" : "disabled"}
-        onclick="obxBulkAccount(${esc(JSON.stringify(acct.id))},'hold',this)">Hold all ready</button>
-      <span class="obx-bulk-msg"></span>
-    </div>` : "";
+  const undecidedN = awaiting.filter(it => obxEffState(it) === "queued").length;
+  const heldN      = awaiting.filter(it => obxEffState(it) === "held").length;
+  const failN      = awaiting.filter(it => it.status === "failed").length;
+  const parts = [];
+  if (undecidedN) parts.push(`${undecidedN} awaiting review`);
+  if (heldN)      parts.push(`${heldN} held`);
+  if (failN)      parts.push(`${failN} retryable failure${failN === 1 ? "" : "s"}`);
+  const countChip = parts.length ? `<span class="cnt">${parts.join(" · ")}</span>` : "";
 
-    /* Zone 1 — awaiting approval. The small zone label appears only when there
-       is also a cleared shelf, so the two-zone split is legible without adding
-       noise to the common "nothing cleared yet" case. */
-    const awCards = awaiting.map(it => obxItemCard(it, acct.id)).join("");
-    const awLabel = clearedN
-      ? `<div class="obx-zone-label">Awaiting your approval${undecidedN ? ` <span class="obx-zone-n">${undecidedN}</span>` : ""}</div>`
-      : "";
-    const awaitingHtml = awCards
-      ? `${awLabel}${awCards}`
-      : `<div class="card"><div class="note muted">${clearedN ? "Nothing left to review — everything is cleared and waiting to post." : "No items in the review window for this desk."}</div></div>`;
+  /* Zone 1 — awaiting YOUR decision. Bounded like every other list on these
+     pages: twelve cards, then one button. */
+  const awaitingHtml = awaiting.length
+    ? blList(awaiting.map(it => obxItemCard(it, it._acct)), 12, 60)
+    : blEmpty("Nothing waiting on you",
+              "Every post has a decision. New drafts arrive with tonight's run.");
 
-    /* Zone 2 — cleared, awaiting publish. Collapsed shelf; cards here carry no
-       Approve button (already approved) — only a quiet "Hold instead" pull-back
-       while the decision is still reversible. */
-    const clearedHtml = clearedN ? `<details class="obx-cleared-group">
-      <summary class="obx-cleared-summary">
-        <span class="obx-cleared-ico" aria-hidden="true">✓</span>
-        <span class="obx-cleared-lbl">Awaiting publish</span>
-        <span class="obx-cleared-n">${clearedN}</span>
-        <span class="obx-cleared-hint">approved — will post at the next slot</span>
-      </summary>
-      <div class="obx-cleared-body">${cleared.map(it => obxItemCard(it, acct.id)).join("")}</div>
-    </details>` : "";
+  /* Zone 2 — cleared / booked / in flight. The machine's turn; collapsed. */
+  const nextOut = cleared.map(it => it.scheduled_at).filter(s => s && s !== "immediate").sort()[0];
+  const clearedHtml = cleared.length ? `<details class="obx-cleared-group">
+    <summary class="obx-cleared-summary">
+      <span class="obx-cleared-ico" aria-hidden="true">✓</span>
+      <span class="obx-cleared-lbl">Scheduled to go out</span>
+      <span class="obx-cleared-n">${cleared.length}</span>
+      <span class="obx-cleared-hint">${nextOut ? `next at ${esc(conLocalTime(nextOut))}` : "sending at the next slot"}</span>
+    </summary>
+    <div class="obx-cleared-body">${blList(cleared.map(it => obxItemCard(it, it._acct)), 12, 60)}</div>
+  </details>` : `<div class="obx-zone-quiet">${blEmpty("Nothing scheduled",
+      "Approve a post and it books into the next slot.")}</div>`;
 
-    sections += `<div class="obx-acct-section" data-acct="${esc(acct.id)}">
-      <div class="obx-acct-head">
-        <div class="obx-acct-title">${esc(acct.id)} ${countChip}</div>
-        ${slotMeter}
-      </div>
-      ${bulk}
+  const sections = `<div class="obx-zone" data-zone="awaiting">
+      <div class="section">Awaiting your decision ${countChip}</div>
       ${awaitingHtml}
-      ${clearedHtml}
-    </div>`;
-  });
+    </div>
+    <div class="obx-zone" data-zone="cleared">${clearedHtml}</div>`;
 
-  /* Per-item decision audit + posted/terminal history — the outcome zone. */
+  /* The outcome zone, in the order the operator asks about it: what died and
+     why (with the one action, or an honest "nothing — here is why"), then what
+     went out, then the decision receipt. Dead things come with their reason
+     attached and collapsed; they used to be a flat table that read like a
+     to-do list. */
+  const spentFailures = [];
+  accounts.forEach(a => (a.items || []).forEach(it => {
+    if (it.status === "failed" && !obxIsFailedRearmable(it)) {
+      spentFailures.push(Object.assign({ _acct: a.id }, it));
+    }
+  }));
   const decisionHtml = obxDecisionLog(d.decision_log || []);
-  const historyHtml = obxHistoryBlock(history);
+  const deadHtml   = obxDeadBlock(history, spentFailures, d.history_total);
+  const postedHtml = obxPostedBlock(history, d.history_total);
 
-  live.innerHTML = obxSentinelCard(sentinel, cap) + commandBar + tiles
-    + obxActivityStrip(activity)
+  live.innerHTML = obxSentinelCard(sentinel, cap, d.caps_by_account, accounts)
+    + commandBar + tiles
     + filterChips + acctPills + `<div id="obx-review">${sections}</div>`
-    + obxRejectionBox(OBX_REJ) + decisionHtml + historyHtml;
+    + obxActivityStrip(activity)
+    + deadHtml + postedHtml
+    + obxRejectionBox(OBX_REJ) + decisionHtml
+    + `<div id="obe-root"></div>`;
   /* Re-apply any active desk/kind filter (persisted across in-place refreshes). */
   obxApplyDeskFilter();
   obxApplyKindFilter();
@@ -6956,10 +7498,13 @@ async function obxRefreshInPlace() {
 const OBX_DEC_VERB = {
   approve:     { label: "Approved",    cls: "obx-dl-ok"   },
   hold:        { label: "Held",        cls: "obx-dl-warn" },
+  edited:      { label: "Edited",      cls: "obx-dl-ok"   },
   approved:    { label: "Cleared",     cls: "obx-dl-ok"   },
+  posting:     { label: "Sending",     cls: "obx-dl-warn" },
   posted:      { label: "Posted",      cls: "obx-dl-post" },
   failed:      { label: "Failed",      cls: "obx-dl-bad"  },
-  quarantined: { label: "Quarantined", cls: "obx-dl-bad"  },
+  quarantined: { label: "Blocked",     cls: "obx-dl-bad"  },
+  recalled:    { label: "Pulled back", cls: "obx-dl-warn" },
 };
 function obxDecisionLog(log) {
   if (!log || !log.length) {
@@ -7037,7 +7582,114 @@ function sentReasonChip(reason) {
       label = raw.replace(/_/g, " ").replace(/:/g, " · ");
       cls = "sent-flag-caution";
   }
-  return `<span class="sent-flag ${cls}" title="${esc(tip)}">${esc(label)}</span>`;
+  /* The machine string rides in a <code>, not only in title=. A load-bearing
+     fact must never live solely in a tooltip: the raw slug is what the operator
+     greps the ledger with, and an unmapped head (e.g. ramp_theme_list) used to
+     reach the screen as nothing but a prettified guess with the truth hidden in
+     a hover. `head` is enough — the detail is already spelled out in the label. */
+  const tone = cls === "sent-flag-hot" ? "hard" : cls === "sent-flag-inert" ? "inert" : "hot";
+  return `<span class="rz rz-${tone}" title="${esc(tip)}"><b>${esc(label)}</b> <code>${esc(head)}</code></span>`;
+}
+
+/* The reason FAMILY a sentinel hold belongs to — the head of the first reason
+   slug. Used to filter the flag list from a checks-grid cell, so a cell reading
+   "3 caught" can show the operator the three. */
+function sentReasonFamily(q) {
+  const first = ((q && q.reasons) || [])[0];
+  return String(first || "unknown").split(":")[0];
+}
+
+/* Scroll a counted section into view (and open it if it is a disclosure), then
+   optionally narrow the flag list to one reason family. Every count on this
+   page links to the rows it counts; this is the mechanism. */
+function sentJump(sel, family) {
+  const el = document.querySelector(sel);
+  if (family != null) sentFilterFlags(family);
+  if (!el) return;
+  if (el.tagName === "DETAILS") el.open = true;
+  /* A held row can be behind the bounded-list expander; open it so the jump
+     never lands on a section that does not contain the row it promised. */
+  const wrap = el.parentElement ? el.parentElement.querySelector(".bl .bl-rest") : null;
+  if (family != null && wrap) { wrap.hidden = false; const b = document.querySelector(".bl-more"); if (b) b.remove(); }
+  el.scrollIntoView({ behavior: flrReducedMotion() ? "auto" : "smooth", block: "start" });
+}
+
+/* Narrow the policy-flag cards to one reason family (null / "" = all). */
+let SENT_FLAG_FILTER = "";
+function sentFilterFlags(family) {
+  SENT_FLAG_FILTER = family || "";
+  const rest = document.querySelector("#sent-flag-list .bl-rest");
+  if (SENT_FLAG_FILTER && rest) {
+    rest.hidden = false;
+    const more = document.querySelector("#sent-flag-list .bl-more");
+    if (more) more.remove();
+  }
+  document.querySelectorAll(".sent-flag-card[data-family]").forEach(el => {
+    const hit = !SENT_FLAG_FILTER || el.getAttribute("data-family") === SENT_FLAG_FILTER;
+    el.classList.toggle("hidden", !hit);
+  });
+  document.querySelectorAll(".sent-fbar-chip").forEach(b => {
+    b.classList.toggle("on", (b.getAttribute("data-family") || "") === SENT_FLAG_FILTER);
+  });
+}
+
+/* Filter bar over the held posts, one chip per reason family present. Reuses
+   sentReasonChip's label vocabulary so the chip and the card agree. */
+function sentReasonFilterBar(policyQ) {
+  const fam = {};
+  for (const q of policyQ) { const f = sentReasonFamily(q); fam[f] = (fam[f] || 0) + 1; }
+  const keys = Object.keys(fam).sort((a, b) => fam[b] - fam[a]);
+  if (keys.length < 2) return "";     /* one family: a filter bar adds nothing */
+  const chips = keys.map(k =>
+    `<button class="sent-fbar-chip" data-family="${esc(k)}" onclick="sentFilterFlags('${esc(k)}')">${esc(sentFamilyLabel(k))} <span class="cnt">${fam[k]}</span></button>`).join("");
+  return `<div class="sent-fbar">
+    <button class="sent-fbar-chip on" data-family="" onclick="sentFilterFlags('')">All ${policyQ.length}</button>${chips}</div>`;
+}
+
+/* Reader word for a reason family head. Falls back to a prettified slug rather
+   than swallowing an unmapped gate. */
+function sentFamilyLabel(head) {
+  const M = {
+    near_dup: "Near-duplicates",
+    advice_lexicon: "Advice phrasing",
+    missing_disclosure: "Missing disclosure",
+    cherry_pick_suspected: "Cherry-picked receipts",
+    cashtag_cap: "Cashtag over cap",
+    cashtag_breadth: "Too many cashtags",
+    cadence_cap_daily: "Over the daily cap",
+    slot_collision: "Slot collision",
+    reply_cap_daily: "Over the reply cap",
+    media_cap_daily: "Over the media cap",
+    shared_media: "Reused image",
+    link_not_allowed: "Link not allowed",
+    account_disabled: "Desk switched off",
+    stale_receipts_ledger: "Receipts ledger stale",
+    receipts_age_unknown: "Receipts age unknown",
+  };
+  return M[head] || String(head).replace(/_/g, " ");
+}
+
+/* Table-safe bounded list. `.bl` wraps its rows in <div>s, which a browser
+   hoists straight out of a <tbody> — so a bounded TABLE needs its own form:
+   the overflow rows ship with `hidden` and one <tr> carries the expander. */
+function sentBoundedRows(rows, cap, rest_n, cols) {
+  const CAP = cap || 20, REST = rest_n || 80;
+  if (!rows || !rows.length) return "";
+  const head = rows.slice(0, CAP).join("");
+  const rest = rows.slice(CAP, CAP + REST);
+  const dropped = rows.length - CAP - rest.length;
+  const hidden = rest.map(r => r.replace(/^<tr/, '<tr hidden class="bl-trest"')).join("");
+  const moreTr = rest.length
+    ? `<tr class="bl-more-tr"><td colspan="${cols}"><button class="bl-more" onclick="sentExpandRows(this)">Show ${rest.length} more</button></td></tr>`
+    : "";
+  const tailTr = dropped > 0
+    ? `<tr><td colspan="${cols}" class="bl-tail">and ${dropped} older ones, not loaded</td></tr>` : "";
+  return head + hidden + moreTr + tailTr;
+}
+function sentExpandRows(btn) {
+  const tb = btn.closest("tbody"); if (!tb) return;
+  tb.querySelectorAll("tr.bl-trest").forEach(tr => { tr.hidden = false; });
+  const row = btn.closest("tr"); if (row) row.remove();
 }
 
 /* Compact UTC stamp, "2026-07-19 13:23 UTC" from an ISO string. */
@@ -7046,11 +7698,22 @@ function sentStamp(ts) {
   return String(ts).replace("T", " ").replace(/:\d\dZ?$/, "").replace("Z", "") + " UTC";
 }
 
-/* Verdict metadata for the hero strip. publish_enabled is the hero:
-   false = SHADOW MODE, the SAFE armed-and-holding state (steel, not green,
-   not red); true = LIVE, the loud warning. plan_status colors the sub-line. */
+/* Verdict metadata for the hero strip.
+
+   LIVENESS COMES FROM arm_state, NOT from the report. `publish_enabled` is what
+   the kill-switch read at ~03:51 UTC when last night's gate ran — a historical
+   fact, and the hero was selling it as live state: it printed "nothing leaves
+   the building. This is the safe resting state" on mornings when the publisher
+   posted with real Buffer receipts. arm_state is the same GitHub repo-variable
+   read the Publisher page uses, so the two pages can no longer disagree about
+   whether posting is on. Three honest states now, not two: armed / dark /
+   unknown — `live` is a tri-state (true | false | null), so callers must test
+   `=== true` and `=== false`, never truthiness. */
 function sentVerdict(d) {
-  const live = d.publish_enabled === true;
+  const as = d.arm_state || {};
+  const live = (as.enabled === true || as.enabled === false)
+    ? as.enabled
+    : (d.arm_state ? null : d.publish_enabled === true);
   const ps = d.plan_status;
   const planMeta = {
     pass:               { cls: "sent-plan-ok",   word: "Plan clean — no policy holds" },
@@ -7059,6 +7722,98 @@ function sentVerdict(d) {
     error:              { cls: "sent-plan-bad",  word: "Gate errored — treat as held" },
   }[ps] || { cls: "sent-plan-mut", word: ps ? `Plan: ${ps}` : "Plan not yet gated" };
   return { live, planMeta };
+}
+
+/* =========================================================================
+   FLOOR SUITE — shared operator components (status chip, liveness, reasons,
+   bounded lists).
+
+   The thesis: every row on the five Floor pages is exactly one of three
+   things, and the console used to draw all three identically —
+     ALIVE, waiting on YOU     (a decision is owed)
+     ALIVE, waiting on the MACHINE (cleared, scheduled, in flight)
+     DEAD                      (posted / failed / blocked — nothing you do
+                                changes it)
+   Every operator complaint reduced to "dead things look alive, and alive
+   things are buried under dead ones", so liveness gets its own encoding
+   (the .lv gutter) orthogonal to hue.
+
+   DELIBERATE DECLARATION STYLE: four lanes edit this file concurrently and
+   more than one of them needs these helpers. They are `function`
+   declarations with their lookup tables scoped INSIDE the body — a duplicate
+   `function` declaration is legal JS and the last one wins, whereas a
+   duplicate top-level `const` is a SyntaxError that would take the whole
+   console down. Do not lift the tables to module scope.
+   ========================================================================= */
+
+/* Canonical state → label + stance + liveness. One vocabulary for all five
+   pages, replacing four divergent chip families. "Blocked" is the Tier-1 word
+   for `quarantined`: it says what happened to a reader who does not know the
+   pipeline. The ledger word survives on the row's receipt line, never lost. */
+function stMeta(state) {
+  const ST = {
+    queued:      { cls: "st-queued",      label: "Ready",       stance: "awaiting your call",         live: "you"  },
+    held:        { cls: "st-held",        label: "Held",        stance: "won't go out",               live: "you"  },
+    approve_ok:  { cls: "st-approved",    label: "Cleared",     stance: "goes at the next slot",      live: "mach" },
+    approved:    { cls: "st-approved",    label: "Cleared",     stance: "goes at the next slot",      live: "mach" },
+    scheduled:   { cls: "st-scheduled",   label: "Scheduled",   stance: "booked",                     live: "mach" },
+    posting:     { cls: "st-posting",     label: "Sending",     stance: "in flight",                  live: "mach" },
+    posted:      { cls: "st-posted",      label: "Posted",      stance: "went out",                   live: "dead" },
+    failed:      { cls: "st-failed",      label: "Failed",      stance: "did not send",               live: "dead" },
+    quarantined: { cls: "st-quarantined", label: "Blocked",     stance: "never sent",                 live: "dead" },
+    recalled:    { cls: "st-recalled",    label: "Pulled back", stance: "cancelled before sending",   live: "dead" },
+    expired:     { cls: "st-expired",     label: "Expired",     stance: "its day passed",             live: "dead" },
+  };
+  return ST[state] || ST.queued;
+}
+/* extra = optional stance override, e.g. "attempt 2 of 2". */
+function stChip(state, extra) {
+  const m = stMeta(state);
+  return `<span class="st ${m.cls}">${esc(m.label)} <i>· ${esc(extra || m.stance)}</i></span>`;
+}
+function stLive(state) { return stMeta(state).live; }
+
+/* Expand a bounded list in place. The button removes itself — a "Show 45 more"
+   that stays after it has fired is a control that lies about what it does. */
+function blExpand(btn) {
+  const wrap = btn.closest(".bl"); if (!wrap) return;
+  const rest = wrap.querySelector(".bl-rest"); if (rest) rest.hidden = false;
+  btn.remove();
+}
+
+/* Bounded list. LAW on these five pages: no list renders unbounded, ever.
+   The Publisher shipped 187 quarantined <div>s in one flat wall because the
+   map() had no slice; the operator called it "goes on forever, and there's
+   nothing i can do about it". `rows` is an array of html strings. */
+function blList(rows, cap, rest_n) {
+  const CAP = cap || 5, REST = rest_n || 45;
+  if (!rows || !rows.length) return "";
+  const head = rows.slice(0, CAP).join("");
+  const rest = rows.slice(CAP, CAP + REST);
+  const dropped = rows.length - CAP - rest.length;
+  return `<div class="bl" data-cap="${CAP}"><div class="bl-body">${head}</div>` +
+    (rest.length
+      ? `<div class="bl-rest" hidden>${rest.join("")}</div>
+         <button class="bl-more" onclick="blExpand(this)">Show ${rest.length} more</button>`
+      : "") +
+    (dropped > 0 ? `<div class="bl-tail">and ${dropped} older ones, not loaded</div>` : "") +
+    `</div>`;
+}
+
+/* Honour the OS reduced-motion setting for programmatic scrolling. The global
+   stylesheet kills CSS animation under the query, but scrollIntoView({behavior:
+   "smooth"}) is JS and the query cannot reach it. */
+function flrReducedMotion() {
+  try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch (e) { return false; }
+}
+
+/* Reason chip. Names the gate or check in READER words; the machine string
+   rides along in <code> so a gate nobody has mapped yet is still greppable on
+   screen. Never emit a raw slug into the bold half. */
+function rzChip(title, machine, tone) {
+  const cls = tone ? ` rz-${tone}` : "";
+  return `<span class="rz${cls}"><b>${esc(title)}</b>${machine ? ` <code>${esc(machine)}</code>` : ""}</span>`;
 }
 
 /* Next weekday publish slot (14:00 / 17:30 / 20:15 UTC) as an ISO string — the
@@ -7110,14 +7865,22 @@ function pubGoLive(d) {
   </div>`;
 
   /* Row 2 — BUFFER_TOKEN paste-box. Password input + Save; on ok the row flips
-     to done. The value is never rendered and the input clears on submit. */
+     to done. The value is never rendered and the input clears on submit.
+
+     HONEST-UNKNOWN, not a false TODO. `token_present` is `bool(os.environ
+     ["BUFFER_TOKEN"])` read in the ADMIN process — which is never set on the
+     operator's Mac — while the runner reads the BUFFER_TOKEN repo SECRET, which
+     no process can read back by design. So a false here means "this host cannot
+     see it", NOT "it is not set": the old row showed a ○ TODO reading "paste
+     your token" on a day the runner posted successfully six times. The mark is
+     now the unknown state (!) and the copy says which fact it is reporting. */
   const row2 = `<div class="golive-row" id="golive-token-row">
-    <span class="golive-mark ${tokenPresent ? "done" : "todo"}" id="golive-token-mark">${tokenPresent ? "✓" : "○"}</span>
+    <span class="golive-mark ${tokenPresent ? "done" : "warn"}" id="golive-token-mark">${tokenPresent ? "✓" : "?"}</span>
     <div class="golive-main">
       <div class="golive-title">Buffer token</div>
       <div class="golive-do" id="golive-token-do">${tokenPresent
         ? `Token saved to repo secrets. Paste a new value only to replace it.`
-        : `Paste your Buffer personal API token — it is saved straight to the <span class="k">BUFFER_TOKEN</span> repo secret (stdin only; never shown or logged). <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`}</div>
+        : `Not visible from this machine — a repo secret cannot be read back, and this admin process has no local copy. If the runner is posting, the token is set. Paste one here only to replace it (stdin only; never shown or logged).`}</div>
       <div class="golive-tokbox">
         <input type="password" id="pub-token-input" class="golive-tokinput" autocomplete="off"
                spellcheck="false" placeholder="Buffer API token" aria-label="Buffer API token">
@@ -7278,6 +8041,368 @@ function pubLinksLabel(la) {
   return `${vals.filter(Boolean).length} of ${vals.length} desks`;
 }
 
+/* The daily cap in reader words. `cap` is a SENTINEL value: negative means "no
+   limit", and the config strip used to print it raw — "-1 / account", which is
+   not a number the operator can act on or even parse. The per-desk ceilings sit
+   in the same payload (caps_by_account) and were never drawn at all. */
+function pubCapLabel(cfg) {
+  const cap = cfg.cap;
+  const per = cfg.caps_by_account || {};
+  const keys = Object.keys(per);
+  if (keys.length) {
+    const vals = keys.map(k => Number(per[k])).filter(n => !isNaN(n));
+    const real = vals.filter(n => n >= 0);
+    if (real.length) {
+      const lo = Math.min(...real), hi = Math.max(...real);
+      const span = lo === hi ? `${lo}` : `${lo}–${hi}`;
+      return `<b>${span}</b> posts / desk / day <span class="cnt">${keys.length} desks on the age ramp</span>`;
+    }
+  }
+  if (cap == null) return `<b>—</b> <span class="cnt">not measured</span>`;
+  if (Number(cap) < 0) return `<b>no daily cap</b> <span class="cnt">volume is unlimited</span>`;
+  return `<b>${esc(String(cap))}</b> / desk / day`;
+}
+
+/* Scroll a counted section into view and open it if it is a disclosure. Every
+   count on this page links to the rows behind it; this is the in-page half of
+   that (the cross-page half is go()). */
+function pubJump(sel) {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  if (el.tagName === "DETAILS") el.open = true;
+  el.scrollIntoView({ behavior: flrReducedMotion() ? "auto" : "smooth", block: "start" });
+  el.classList.add("pub-jump-flash");
+  setTimeout(() => el.classList.remove("pub-jump-flash"), 1200);
+}
+
+/* =========================================================================
+   PUBLISHER §3 — NEXT DISPATCHES (operator question 1: what is about to go
+   out, and when).
+
+   The page had no view of this. It had a dry-run BUTTON that computed it on
+   demand — so the one thing the operator opens the Publisher to learn was the
+   one thing the page never drew until he clicked. These are the approved
+   items, in slot order, with the copy and the chart he is about to send.
+   ========================================================================= */
+
+/* One about-to-send card. `lv-mach` — it already has the operator's yes, so it
+   is alive but waiting on the machine, not on him. */
+function pubDispatchCard(p) {
+  const chars = p.chars != null ? p.chars : [...(p.text || "")].length;
+  const over = chars > 275;
+  const when = p.scheduled_at && p.scheduled_at !== "immediate"
+    ? `<span class="pc-when" title="${esc(p.scheduled_at)}">${esc(conLocalTime(p.scheduled_at))}</span>`
+    : `<span class="pc-when">sends when the slot opens</span>`;
+  /* A desk with no Buffer channel cannot post no matter what is approved. That
+     is a blocker ON THIS ROW, so it is named here rather than left to the
+     config strip three sections down. */
+  const blocked = p.channel_ok === false
+    ? rzChip("This desk has no Buffer channel", p.account, "hard")
+    : "";
+  const overChip = over ? rzChip("Over the length budget", `${chars} / 275`, "hard") : "";
+  const reasons = (blocked || overChip)
+    ? `<div class="pc-reasons">${blocked}${overChip}</div>` : "";
+  const media = p.media_path
+    ? `<div class="obx-media" data-media-path="${esc(p.media_path)}" data-media-cap="${esc(p.media_label || "chart")}">
+         <div class="obx-media-head"><span class="obx-media-tag">chart · ${esc(p.media_label || "chart")}</span></div>
+         <div class="obx-media-slot"><span class="obx-media-load">loading preview…</span></div>
+       </div>`
+    : "";
+  const kindChip = p.kind ? obxKindChip(p.kind) : "";
+  return `<div class="pc lv lv-mach" data-item="${esc(p.id)}" data-acct="${esc(p.account || "")}">
+    <div class="pc-top">
+      ${kindChip}
+      ${when}
+      <span class="pc-desk">${esc(p.account || "")}</span>
+      <span class="pc-state">${stChip("approved")}</span>
+    </div>
+    <div class="pc-body">
+      <p class="pc-text">${esc(p.text || "")}</p>
+      <div class="obx-meter">
+        <div class="obx-meter-bar"><div class="obx-meter-fill ${over ? "obx-over" : ""}" style="width:${Math.min(100, (chars / 275) * 100).toFixed(1)}%"></div></div>
+        <span class="obx-count ${over ? "obx-over" : ""}">${chars} / 275</span>
+      </div>
+    </div>
+    ${media}
+    ${reasons}
+    <div class="pc-act">
+      <button class="btn obx-btn-postnow" onclick="obxPostNow('${esc(p.id)}',this)" title="Send this one now instead of waiting for its slot — every safety check still runs">Post now</button>
+      <button class="btn" onclick="go('marketing_outbox')" title="Pull it back or edit it in the Outbox">Hold or edit in the Outbox</button>
+      <span class="obx-ctrl-msg"></span>
+    </div>
+  </div>`;
+}
+
+function pubNextDispatchSection(d) {
+  const nextIso = d.next_slot_utc || pubNextSlotIso();
+  const cd = nextIso
+    ? `<span class="pub-nd-cd golive-cd" data-cd-target="${esc(nextIso)}">${esc(conCountdown(nextIso))}</span>
+       <span class="cnt">${esc(conLocalTime(nextIso))} your time</span>`
+    : `<span class="cnt">next slot not resolvable</span>`;
+
+  /* GRACEFUL DEGRADATION, mandatory: an older payload has no next_dispatch, and
+     an empty list there would read as "nothing is going out" — a false and
+     expensive claim. Absent field → the dry-run affordance and an honest line
+     about why this build cannot list them. Never a zero. */
+  if (!Array.isArray(d.next_dispatch)) {
+    return `<div class="card" id="pub-next">
+      <div class="section">Next dispatches <span class="cnt">${cd}</span></div>
+      <div class="note muted">This build can't list them without running the preview — the panel it reads was added after this payload was built.</div>
+      <button class="btn primary" onclick="pubRunDryRun(this)" style="margin-top:8px">Run dry-run</button>
+    </div>`;
+  }
+
+  const rows = d.next_dispatch;
+  const total = d.next_dispatch_total != null ? d.next_dispatch_total : rows.length;
+  if (!rows.length) {
+    return `<div class="card" id="pub-next">
+      <div class="section">Next dispatches <span class="cnt">${cd}</span></div>
+      <div class="empty"><div class="empty-icon">◍</div>
+        <div class="empty-text">Nothing goes out at the next slot</div>
+        <div class="empty-sub">Approve posts in the Outbox and they appear here with their slot time.</div></div>
+      <button class="btn" onclick="go('marketing_outbox')" style="margin-top:2px">Open the Outbox →</button>
+    </div>`;
+  }
+  const dueNow = rows.filter(r => r.due_at_next_slot === true).length;
+  const cards = rows.map(pubDispatchCard);
+  const more = total > rows.length ? `<div class="bl-tail">and ${total - rows.length} more approved, not listed</div>` : "";
+  return `<div class="card" id="pub-next">
+    <div class="section">Next dispatches <span class="cnt">${total} approved · ${dueNow} due at the next slot</span>${cd}</div>
+    <div class="obx-lede">This is what leaves the building next, exactly as X will set it. Send one early with Post now, or pull it back in the Outbox.</div>
+    ${blList(cards, 6, 14)}${more}
+  </div>`;
+}
+
+/* =========================================================================
+   PUBLISHER §4 — NEEDS ATTENTION, TRIAGED (operator question 3: what is
+   blocked, WHY, and the one action that unblocks it).
+
+   The old section mapped `quarantined` straight into flat rows with no slice
+   and no date: 187 identical <div>s carrying an id and a free-text note, no
+   timestamp, no action, no grouping. The operator: "goes on forever, and
+   there's nothing i can do about it."
+
+   Rules this section is built to, and they are not negotiable:
+     · Every group carries EXACTLY ONE action button, or an honest terminal
+       label. Never both. Never neither. Never an invented action.
+     · A DEAD row carries no enabled action. If a row has a real action it is
+       not dead and it is classified lv-you.
+     · The header count splits honestly — "N to act on · M closed". 189 closed
+       things are not 189 problems and the header must stop implying they are.
+     · The `other` bucket prints its recorded note VERBATIM on every row, so a
+       new engine gate is readable here before anyone remembers to map it.
+   ========================================================================= */
+
+/* Reason families, matched against the ledger note. FIRST MATCH WINS, so the
+   order is significant. Declared as a function (not a top-level const) because
+   the Outbox lane needs the same table — see the FLOOR SUITE header. */
+function pubDeadReasons() {
+  return [
+    { key: "desk_off", re: /account_disabled|desk not enabled/i, ico: "⛔",
+      title: "Desk switched off",
+      what: "Addressed to a desk that is not enabled, so the publisher parked them instead of posting.",
+      goto: "marketing_channels", cta: "Open Channels & Desks" },
+    { key: "backend", re: /http_error|buffer_|InvalidInput|Too many requests|no_post_id|429/i, ico: "↯",
+      title: "X refused the post",
+      what: "Buffer or X rejected the send. The copy was fine; the send was not.",
+      dead: "Nothing to re-run — the slot has passed." },
+    { key: "operator", re: /operator .*(batch )?rejection|queue-quality sweep|self-review:|operator review:/i, ico: "✂",
+      title: "You cut these",
+      what: "Rejected in a review sweep: template voice, filler, or a repeated frame.",
+      dead: "Nothing to do — these are closed." },
+    { key: "superseded", re: /superseded|byte-identical|near-dup|near-identical|\brepeat:|replaced:|duplicate \$/i, ico: "⇄",
+      title: "A better post won",
+      what: "Another post covered the same name or fact and went out instead.",
+      dead: "Nothing to do — the desk kept the stronger one." },
+    { key: "language", re: /banned language|em dash|en dash|reads too technical|number soup|voice laws/i, ico: "✎",
+      title: "House language law",
+      what: "The copy used a banned word, a banned dash, or stacked loose numbers. The writer is the fix, not this queue.",
+      goto: "marketing_models", cta: "Open the Model Desk" },
+    { key: "stale", re: /tape gate|move claim stale|\bstale\b|schedule passed|deferred past/i, ico: "⌛",
+      title: "Numbers went stale",
+      what: "The move the post described no longer matches the tape.",
+      dead: "Nothing to do — the day moved on." },
+    /* Placed AFTER stale/superseded/language on purpose: those are the more
+       specific reads and should keep their rows. This catches what is left of
+       the post-write quality pass — 10 live rows that landed in the unmapped
+       bucket reading "fable audit: …" / "approval-desk: invented_level: …". */
+    { key: "review", re: /fable audit|approval-desk|invented_level|zero-payload|chart law|ensemble echo|number salad/i, ico: "✂",
+      title: "The review desk cut these",
+      what: "A quality read cut them after they were written: desk-speak that names nothing, a level the data does not back, a ticker post with no chart, or a claim that aged out in the queue.",
+      goto: "marketing_models", cta: "Open the Model Desk" },
+    { key: "orphan", re: /orphaned|unresolved/i, ico: "○",
+      title: "Lost its source",
+      what: "The brief behind the post was never resolved.",
+      dead: "Nothing to do — it closed with its source." },
+  ];
+}
+function pubDeadOther() {
+  return { key: "other", ico: "·", title: "Held for another reason",
+    what: "No reason family matched these. The recorded note is printed on every row below.",
+    dead: "Read the notes below." };
+}
+
+/* Classify one terminal row into a family. */
+function pubDeadFamily(note) {
+  const n = String(note || "");
+  for (const f of pubDeadReasons()) { if (f.re.test(n)) return f; }
+  return pubDeadOther();
+}
+
+/* One triage row. `live` is "you" (still needs a human, carries a real action)
+   or "dead" (struck, no action, receipt only). */
+function pubTriageRow(r, live, actionHtml) {
+  const when = r.at ? `<span class="pub-tri-when" title="${esc(r.at)}">${esc(obxStamp(r.at))}</span>` : "";
+  const age = r.as_of ? `<span class="pub-tri-age">plan ${esc(String(r.as_of))}</span>` : "";
+  const ex = r.excerpt || (r.text ? String(r.text).slice(0, 110) : "");
+  const receipt = r.external_url
+    ? ` <a class="pub-tri-receipt" href="${esc(r.external_url)}" target="_blank" rel="noopener">check on X ↗</a>` : "";
+  return `<div class="pub-tri-row lv lv-row ${live === "you" ? "lv-you" : "lv-dead"}">
+    <div class="pub-tri-meta">
+      <code class="pub-tri-id">${esc(r.id)}</code>
+      <span class="pub-tri-desk">${esc(r.account || "")}</span>
+      ${when}${age}${receipt}
+    </div>
+    ${ex ? `<div class="pc-excerpt">${esc(ex)}</div>` : ""}
+    ${actionHtml || ""}
+  </div>`;
+}
+
+/* Re-arm ONE failed post. Deliberately per-item and never a bulk sweep: a
+   failed post carries a market claim with a date on it, and approving a batch
+   of three-day-old retries re-books Thursday's tape on Saturday — the exact
+   class of copy the quarantine ledger is already full of. The row prints its
+   plan day next to the button so the age is on screen at the moment of the
+   click. */
+async function pubRetry(id, btn) {
+  const row = btn.closest(".pub-tri-row");
+  const msg = row ? row.querySelector(".pub-tri-msg") : null;
+  if (btn.dataset.armed !== "1") {
+    btn.dataset.armed = "1";
+    btn.textContent = "Confirm retry";
+    if (msg) msg.textContent = "Re-books this exact copy. Check the plan day first.";
+    return;
+  }
+  btn.disabled = true; btn.textContent = "re-arming…";
+  const r = await post("/api/marketing/outbox/decide", { id: id, decision: "approve" });
+  if (r && r.ok) {
+    toast("Retry approved — the next run re-arms it.");
+    RENDER.marketing_publish();
+  } else {
+    btn.disabled = false; btn.dataset.armed = "0"; btn.textContent = "Approve retry";
+    if (msg) msg.textContent = (r && r.error) || "could not re-arm";
+  }
+}
+
+/* The whole triaged section. */
+function pubTriageSection(d) {
+  const stuck = d.stuck_posting || [];
+  const quar = d.quarantined || [];
+  const failed = d.failed_dead || [];
+  const quarTotal = d.quarantined_total != null ? d.quarantined_total : quar.length;
+  const failTotal = d.failed_dead_total != null ? d.failed_dead_total : failed.length;
+  const stuckTotal = d.stuck_posting_total != null ? d.stuck_posting_total : stuck.length;
+
+  /* --- Group 1: stuck sending. Genuinely alive: the runner NEVER reposts an
+     in-flight marker (no-double-post), so a human has to look at X and clear
+     it. There is no resolve endpoint, so this group carries an honest terminal
+     instruction plus the receipt link — an invented button would be worse than
+     no button. --- */
+  const groups = [];
+  if (stuck.length) {
+    groups.push({
+      key: "stuck", live: "you", ico: "⚠", n: stuckTotal,
+      title: "Stuck sending",
+      what: "Left in flight by a crashed run. The runner never reposts these.",
+      dead: "Confirm on X, then resolve by hand.",
+      rows: stuck.map(r => pubTriageRow(r, "you", "")),
+    });
+  }
+
+  /* --- Group 2: failed but still re-armable. A real action on a real endpoint,
+     one item at a time. --- */
+  const retryable = failed.filter(r => (r.attempts || 0) < 2);
+  const spent = failed.filter(r => (r.attempts || 0) >= 2);
+  if (retryable.length) {
+    groups.push({
+      key: "retry", live: "you", ico: "↻", n: retryable.length,
+      title: "Failed, retry still open",
+      what: "The send failed but an attempt is left. Re-arming re-books this exact copy — check its plan day before you do.",
+      dead: null, perRow: true,
+      rows: retryable.map(r => pubTriageRow(r, "you",
+        `<div class="pub-tri-act"><button class="btn sm" onclick="pubRetry('${esc(r.id)}',this)">Approve retry</button><span class="pub-tri-msg"></span></div>`)),
+    });
+  }
+
+  /* --- Groups 3..n: the dead, grouped by reason family. --- */
+  const bucket = {};
+  const dead = quar.concat(spent);
+  for (const r of dead) {
+    const f = pubDeadFamily(r.note);
+    (bucket[f.key] = bucket[f.key] || { f: f, rows: [] }).rows.push(r);
+  }
+  for (const k of Object.keys(bucket)) {
+    const b = bucket[k];
+    groups.push({
+      key: k, live: "dead", ico: b.f.ico, n: b.rows.length,
+      title: b.f.title, what: b.f.what,
+      goto: b.f.goto, cta: b.f.cta, dead: b.f.dead,
+      verbatim: k === "other",
+      rows: b.rows.map(r => pubTriageRow(r, "dead",
+        /* The unmapped bucket prints its note verbatim — a gate nobody has
+           labelled yet must still be readable here. */
+        (k === "other" && r.note)
+          ? `<div class="pub-tri-note">${esc(r.note)}</div>` : "")),
+    });
+  }
+
+  if (!groups.length) {
+    return `<div class="card" id="pub-triage">
+      <div class="section">Needs attention</div>
+      <div class="empty"><div class="empty-icon">◍</div>
+        <div class="empty-text">Nothing needs you</div>
+        <div class="empty-sub">No stuck sends, and nothing was blocked worth reading.</div></div>
+    </div>`;
+  }
+
+  /* Actionable groups first, then by count desc. */
+  groups.sort((a, b) => (a.live === b.live ? b.n - a.n : (a.live === "you" ? -1 : 1)));
+  const toAct = groups.filter(g => g.live === "you").reduce((s, g) => s + g.n, 0);
+  const closed = groups.filter(g => g.live !== "you").reduce((s, g) => s + g.n, 0);
+
+  const groupHtml = groups.map(g => {
+    /* EXACTLY ONE action, or an honest terminal label. A per-row action group
+       carries neither at group level — the button lives on each row. */
+    let act = "";
+    if (g.perRow) act = "";
+    else if (g.goto) act = `<button class="flr-blk-go" onclick="go('${esc(g.goto)}')">${esc(g.cta)} →</button>`;
+    else if (g.dead) act = `<span class="dz-dead">${esc(g.dead)}</span>`;
+    const open = g.live === "you" ? " open" : "";
+    return `<details class="pub-tri-grp pub-tri-${g.live}"${open}>
+      <summary>
+        <span class="pub-tri-ico">${g.ico}</span>
+        <span class="pub-tri-title">${esc(g.title)}</span>
+        <span class="pub-tri-n">${g.n}</span>
+        <span class="pub-tri-act-slot">${act}</span>
+      </summary>
+      <div class="pub-tri-what">${esc(g.what)}</div>
+      ${blList(g.rows, 5, 45)}
+    </details>`;
+  });
+
+  /* The group list is bounded too — a runaway ledger must never be able to
+     reintroduce the wall through a new reason family. */
+  const capped = blList(groupHtml, 6, 12);
+  const truncNote = (quarTotal > quar.length || failTotal > failed.length)
+    ? `<div class="bl-tail">Counts cover the ${quar.length + failed.length} most recent terminal items; ${quarTotal + failTotal} exist in the ledger.</div>` : "";
+
+  return `<div class="card pub-callout" id="pub-triage">
+    <div class="section">Needs attention <span class="cnt">${toAct} to act on · ${closed} closed</span></div>
+    <div class="obx-lede">Grouped by what actually stopped them. Anything with an action is open at the top; the closed groups are receipts, not problems.</div>
+    ${capped}${truncNote}
+  </div>`;
+}
+
 /* ---- Publisher (D02 W1) — the live-publish control plane ------------------ */
 RENDER.marketing_publish = async () => {
   const v = $("#view");
@@ -7304,7 +8429,7 @@ RENDER.marketing_publish = async () => {
     armPill = `<span class="obx-shadow-pill" style="color:var(--warn)" title="${esc(as.error || "state unknown")}"><span class="obx-shadow-dot" style="background:var(--warn)"></span>Arm state unknown${srcNote}</span>`;
   }
   const header = `<div class="section">Publisher ${asOfChip}${armPill}</div>
-  <div class="obx-lede">The publisher posts APPROVED, DUE outbox items to X through Buffer. Paste the Buffer token and Arm it in the checklist below — one click, no GitHub steps. Run a dry-run to see exactly what the next live run would post — no network, no writes.</div>`;
+  <div class="obx-lede">What goes out next, what is stuck, and what already went. Approved, due posts leave through Buffer at the next slot.</div>`;
 
   /* Status strip — one tile per publisher state. */
   const tileDefs = [
@@ -7316,15 +8441,34 @@ RENDER.marketing_publish = async () => {
     ["quarantined", "Quarantined", "var(--bad)"],
     ["recalled", "Recalled", "var(--warn)"],
   ];
-  /* Each tile is a LINK to the Outbox, not a dead number. "17 queued" with no
-     way to see the seventeen is a count the operator cannot act on or verify
-     (operator, 2026-07-26). Zero-count tiles stay inert — nothing to show. */
+  /* Each tile is a LINK to the rows it counts, not a dead number. "17 queued"
+     with no way to see the seventeen is a count the operator cannot act on or
+     verify (operator, 2026-07-26).
+
+     WHERE a tile links matters as much as THAT it links: the quarantined /
+     failed / posting tiles used to send the operator to the Outbox with the
+     promise "show the quarantined items", and the Outbox has no quarantined
+     view — a link to a destination that does not exist is worse than a dead
+     number. Those three now open the triage section ON THIS PAGE, which is the
+     only surface that actually holds those rows. Zero-count tiles stay inert. */
+  const TILE_TARGET = {
+    quarantined: ["#pub-triage", "Open the triage list below"],
+    failed: ["#pub-triage", "Open the triage list below"],
+    posting: ["#pub-triage", "Open the stuck-sending group below"],
+    approved: ["#pub-next", "Show what goes out next"],
+    posted: ["#pub-posted", "Show the recent posts and their receipts"],
+  };
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
       const val = sc[k] != null ? sc[k] : 0;
       const body = `<div class="eyebrow">${esc(lbl)}</div>
         <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>`;
       if (!val) return `<div class="metric-tile" style="opacity:.55">${body}</div>`;
+      const tgt = TILE_TARGET[k];
+      if (tgt) {
+        return `<button class="metric-tile pub-tile-link" onclick="pubJump('${tgt[0]}')"
+          title="${esc(tgt[1])}">${body}</button>`;
+      }
       return `<button class="metric-tile pub-tile-link" onclick="go('marketing_outbox')"
         title="Show the ${esc(lbl.toLowerCase())} items in the Outbox">${body}</button>`;
     }).join("")}
@@ -7337,98 +8481,103 @@ RENDER.marketing_publish = async () => {
     ? Object.entries(chSet).map(([a, on]) =>
         `<span class="pub-cfg-chip ${on ? "on" : "off"}">${esc(a)}: ${on ? "channel set" : "no channel"}</span>`).join("")
     : `<span class="note muted">no accounts configured</span>`;
-  const cfgCard = `<div class="card">
-    <div class="section">Configuration <span class="cnt">config/marketing.yml · read-only</span></div>
-    <div class="pub-cfg-grid">
+  /* Configuration is reference material, not a control — collapsed, and below
+     the three sections that answer an actual question. */
+  const cfgCard = `<details class="card pub-cfg-details">
+    <summary class="section" style="cursor:pointer">Configuration <span class="cnt">config/marketing.yml · read-only</span></summary>
+    <div class="pub-cfg-grid" style="margin-top:10px">
       <div><span class="eyebrow">Backend</span> <b>${esc(cfg.backend || "buffer")}</b></div>
-      <div><span class="eyebrow">Daily cap</span> <b>${cfg.cap != null ? cfg.cap : "—"}</b> / account</div>
+      <div><span class="eyebrow">Daily cap</span> ${pubCapLabel(cfg)}</div>
       <div><span class="eyebrow">Require approval</span> <b>${cfg.require_approval ? "yes" : "no"}</b></div>
       <div><span class="eyebrow">Auto-approve</span> <b>${cfg.auto_approve ? "ON" : "off"}</b></div>
-      <div><span class="eyebrow">Buffer token</span> <b style="color:${cfg.token_present ? "var(--ok)" : "var(--muted)"}">${cfg.token_present ? "present" : "not set"}</b></div>
+      <div><span class="eyebrow">Buffer token</span> <b style="color:${cfg.token_present ? "var(--ok)" : "var(--muted)"}">${cfg.token_present ? "present in this admin process" : "not visible from here"}</b></div>
       <div><span class="eyebrow">Links in posts</span> <b>${pubLinksLabel(cfg.links_allowed)}</b></div>
     </div>
     <div class="pub-cfg-channels">${chLine}</div>
-  </div>`;
+  </details>`;
 
-  /* PROMINENT callout — anything stuck in 'posting' (a crashed in-flight post)
-     or quarantined needs a human look. Loud, above the fold. */
-  const stuck = d.stuck_posting || [];
-  const quar = d.quarantined || [];
-  let callout = "";
-  if (stuck.length || quar.length) {
-    const stuckRows = stuck.map(r => `<div class="pub-alert-row">
-      <span class="pub-alert-tag warn">stuck posting</span>
-      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
-      <span class="pub-alert-note">${esc(r.note || "in-flight from a crashed run — never auto-reposted")}</span>
-    </div>`).join("");
-    const quarRows = quar.map(r => `<div class="pub-alert-row">
-      <span class="pub-alert-tag bad">quarantined</span>
-      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
-      <span class="pub-alert-note">${esc(r.note || "no reason recorded")}</span>
-    </div>`).join("");
-    callout = `<div class="card pub-callout">
-      <div class="section">Needs attention <span class="cnt">${stuck.length} stuck · ${quar.length} quarantined</span></div>
-      ${stuck.length ? `<div class="note muted" style="margin-bottom:6px">Items left in <b>posting</b> are in-flight markers from a crashed run. The runner reports them and NEVER reposts (no-double-post). Confirm on X, then resolve manually.</div>` : ""}
-      ${stuckRows}${quarRows}
-    </div>`;
-  }
+  /* §3 — what is about to go out. §4 — what is stuck and why. */
+  const nextCard = pubNextDispatchSection(d);
+  const callout = pubTriageSection(d);
 
-  /* Recent posted table — with receipts (external id + link when present). */
+  /* Recent posted table — receipts AND engagement. The metrics join already ran
+     server-side (_latest_metrics_by_remote_id) and every recent row carries
+     impressions/likes/reposts; the table drew four columns and threw the fifth
+     away, so the page could say what went out but never how it did. */
   const posted = d.recent_posted || [];
+  const anyMetrics = posted.some(r => r.metrics && Object.keys(r.metrics).length);
   let postedCard;
   if (posted.length) {
+    const num = (v2) => (v2 == null ? `<span class="faint">—</span>` : `<span class="pub-met-n">${esc(String(v2))}</span>`);
     const rows = posted.map(r => {
       const idCell = r.external_url
         ? `<a href="${esc(r.external_url)}" target="_blank" rel="noopener">${esc(r.external_id || "post")}</a>`
         : (r.external_id ? esc(r.external_id) : `<span class="muted">—</span>`);
+      const m = r.metrics || null;
+      /* An absent metrics block is NOT a zero — it means the poller has not
+         reached this post yet. Print "—", never 0. */
+      const metCell = anyMetrics
+        ? `<td class="pub-met">${m
+            ? `${num(m.impressions)} <span class="pub-met-l">seen</span> · ${num(m.likes)} <span class="pub-met-l">likes</span> · ${num(m.reposts)} <span class="pub-met-l">reposts</span>`
+            : `<span class="faint">not measured yet</span>`}</td>`
+        : "";
       return `<tr>
         <td class="muted">${esc(r.at || "")}</td>
         <td>${esc(r.account || "")}</td>
         <td class="pub-text">${esc((r.text || "").slice(0, 120))}</td>
+        ${metCell}
         <td>${esc(r.backend || "")}</td>
         <td><code>${idCell}</code></td>
       </tr>`;
     }).join("");
-    postedCard = `<div class="card">
+    postedCard = `<div class="card" id="pub-posted">
       <div class="section">Recent posts <span class="cnt">last ${posted.length} · newest first</span></div>
-      <table class="tbl pub-tbl"><thead><tr><th>at</th><th>desk</th><th>post</th><th>via</th><th>receipt</th></tr></thead>
-      <tbody>${rows}</tbody></table>
+      <div class="table-wrap"><table class="tbl pub-tbl"><thead><tr><th>at</th><th>desk</th><th>post</th>${anyMetrics ? "<th>how it did</th>" : ""}<th>via</th><th>receipt</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+      ${anyMetrics ? `<div class="note muted" style="margin-top:6px">Engagement is polled after the post lands — a dash means the poller has not read that post yet, not a zero.</div>` : ""}
     </div>`;
   } else {
-    postedCard = `<div class="card"><div class="section">Recent posts</div>
+    postedCard = `<div class="card" id="pub-posted"><div class="section">Recent posts</div>
       <div class="note muted">Nothing posted yet. Live posts land here with their Buffer receipt once the publisher is armed and runs.</div></div>`;
   }
 
-  /* Dry-run action + result zone. */
-  const actionCard = `<div class="card">
-    <div class="section">Dry-run preview</div>
-    <div class="note muted" style="margin-bottom:8px">See exactly what the next <code>--live</code> run would post right now. Runs in-process: no network call, no ledger write.</div>
+  /* Dry-run action + result zone. Now a disclosure: §3 answers "what goes out
+     next" without the operator having to run anything. */
+  const actionCard = `<details class="card">
+    <summary class="section" style="cursor:pointer">Dry-run preview <span class="cnt">exactly what a live run would do right now</span></summary>
+    <div class="note muted" style="margin:8px 0">Runs in-process: no network call, no ledger write.</div>
     <button class="btn primary" id="pub-dryrun-btn" onclick="pubRunDryRun(this)">Run dry-run</button>
     <div id="pub-dryrun-out" style="margin-top:10px"></div>
-  </div>`;
+  </details>`;
 
   /* Activity strip — publisher run tallies. */
   const activity = d.activity || [];
-  const actStrip = activity.length ? `<div class="card"><div class="section">Recent runs</div>
-    ${activity.map(a => `<div class="pub-act-row"><span class="muted">${esc(a.at || "")}</span>
+  const actStrip = activity.length ? `<details class="card"><summary class="section" style="cursor:pointer">Recent runs <span class="cnt">last ${activity.length}</span></summary>
+    <div style="margin-top:8px">${activity.map(a => `<div class="pub-act-row"><span class="muted">${esc(a.at || "")}</span>
       <span class="pub-act-lane">${esc(a.lane || "")}</span>
-      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}${pubParkedReadout(a)}</div>`).join("")}
-  </div>` : "";
+      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}${pubParkedReadout(a)}</div>`).join("")}</div>
+  </details>` : "";
 
   const goLive = pubGoLive(d);
 
   /* Cold outbox → honest note (still show the go-live checklist + config + action
      so the operator can see exactly what to do to arm). */
-  if (d.note && !posted.length && !stuck.length && !quar.length) {
-    v.innerHTML = header + goLive + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+  if (d.note && !posted.length && !(d.stuck_posting || []).length && !(d.quarantined || []).length) {
+    v.innerHTML = header + goLive + nextCard + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
     pubWireGoLive(d);
     conStartCountdowns();
     return;
   }
 
-  v.innerHTML = header + goLive + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+  /* Section order is the operator's question order: what goes out next (Q1),
+     what is stuck and why (Q3), the counts (Q5), what went out and how it did
+     (Q2), then the reference material. */
+  v.innerHTML = header + goLive + nextCard + callout + tiles + postedCard + actionCard + cfgCard + actStrip;
   pubWireGoLive(d);
   conStartCountdowns();
+  /* Chart thumbnails on the next-dispatch cards use the Outbox's lazy media
+     loader (auth-guarded endpoint, cached per path). */
+  if (typeof obxLoadAllMedia === "function") obxLoadAllMedia();
 };
 
 /* Dark-desk park readout for ONE publisher run row. The dispatch-time gate parks
@@ -7485,7 +8634,9 @@ function pubZeroWhy(d) {
   const noChannel = c.skipped_no_channel || 0;
   const capped = c.skipped_cap || 0;
   const parked = c.would_park_dark || 0;
-  const cfg = (OBX_LAST && OBX_LAST.summary) || null;  /* best-effort outbox snapshot */
+  /* (Removed a dead read of the Outbox module global OBX_LAST: it was assigned
+     and never referenced, and it made this function silently depend on whether
+     the operator had visited another page first in the same session.) */
   const rows = [];
   const line = (state, txt) => rows.push(`<div class="pub-why-row"><span class="dot ${state}"></span><span class="pub-why-txt">${txt}</span></div>`);
 
@@ -7588,15 +8739,32 @@ RENDER.marketing_sentinel = async () => {
   const passed   = d.passed || null;
   const { live, planMeta } = sentVerdict(d);
 
-  /* ---------- 1 · VERDICT STRIP (the hero) ---------- */
-  const heroCls  = live ? "sent-hero-live" : "sent-hero-hold";
-  const dotCls   = live ? "sent-dot-live"  : "sent-dot-hold";
-  const heroState = live
+  /* ---------- 1 · VERDICT STRIP (the hero) ----------
+     Tri-state, because "we could not read the kill-switch" is a real answer and
+     the old two-state hero had to lie to express it. `live === null` means the
+     GitHub variable was unreachable from this host — the runner still follows
+     the repo variable, so the honest words are "unknown", never "safe". */
+  const heroCls  = live === true ? "sent-hero-live" : live === false ? "sent-hero-hold" : "sent-hero-accruing";
+  const dotCls   = live === true ? "sent-dot-live"  : "sent-dot-hold";
+  const heroState = live === true
     ? "LIVE — publishing armed"
-    : "Shadow mode — nothing posts externally";
-  const heroSub = live
+    : live === false
+      ? "Dark — nothing posts externally"
+      : "Publishing state unknown";
+  const heroSub = live === true
     ? "The kill-switch is OFF: approved posts will go out to X. Every hold below is the last line before publication."
-    : "The kill-switch is holding. Posts are gated and reviewed, but nothing leaves the building. This is the safe resting state.";
+    : live === false
+      ? "The kill-switch is holding. Posts are gated and reviewed, but nothing leaves the building. This is the safe resting state."
+      : "This machine could not read the publish switch, so assume posts CAN go out — the runner follows the repo variable either way. Open the Publisher to see and set it.";
+  /* What the GATE saw when it ran, kept separate from what is true now. When the
+     two disagree the operator must be told, not quietly shown the newer one. */
+  const gateSaw = d.publish_enabled === true || d.publish_enabled === false
+    ? `<span class="sent-chip sent-chip-mut" title="publish_enabled recorded in last night's gate report">Gate ran with posting ${d.publish_enabled ? "ON" : "off"}</span>`
+    : "";
+  const armMismatch = (live === true && d.publish_enabled === false)
+    ? `<div class="sent-hero-sub" style="color:var(--warn);margin-top:6px">The gate ran while posting was off, but posting is ON now — tonight's holds were decided under the older setting.</div>`
+    : "";
+  const armLink = `<button class="sent-shadow-link" onclick="go('marketing_publish')">Open Publisher →</button>`;
   const strictChip = d.auditor_strict
     ? `<span class="sent-chip sent-chip-on">Strict review on</span>`
     : `<span class="sent-chip sent-chip-off">Strict review off</span>`;
@@ -7605,13 +8773,25 @@ RENDER.marketing_sentinel = async () => {
     ? `<span class="sent-chip sent-chip-mut">${disabled.length} account${disabled.length > 1 ? "s" : ""} switched off</span>`
     : "";
 
-  /* One-glance triptych: cleared / to review / trimmed. */
+  /* One-glance triptych: cleared / to review / trimmed.
+     EVERY CELL IS A BUTTON THAT OPENS THE ROWS IT COUNTS. Before, only the
+     middle cell linked anywhere, and it linked AWAY to the Floor — the gate
+     page deferred explaining its own holds to another page. A count you cannot
+     open is a count you cannot verify. */
+  const tripCell = (n, label, cls, target, title) => {
+    const val = n != null ? n : "—";
+    if (!target || !n) {
+      return `<div class="sent-trip-cell"><div class="sent-trip-n ${cls}">${val}</div><div class="sent-trip-l">${label}</div></div>`;
+    }
+    return `<button class="sent-trip-cell sent-trip-link" onclick="sentJump('${target}')" title="${esc(title)}">
+      <div class="sent-trip-n ${cls}">${val}</div><div class="sent-trip-l">${label}</div></button>`;
+  };
   const trip = `<div class="sent-trip">
-    <div class="sent-trip-cell"><div class="sent-trip-n sent-n-ok">${counts.passed != null ? counts.passed : "—"}</div><div class="sent-trip-l">cleared to post</div></div>
+    ${tripCell(counts.passed != null ? counts.passed : (passed ? passed.length : null), "cleared to post", "sent-n-ok", "#sent-passed", "Show the posts that cleared")}
     <div class="sent-trip-div"></div>
-    <div class="sent-trip-cell"><div class="sent-trip-n ${policyQ.length ? "sent-n-warn" : "sent-n-mut"}">${counts.quarantined_policy != null ? counts.quarantined_policy : policyQ.length}</div><div class="sent-trip-l">held to review<br><button class="flr-blk-go" onclick="go('marketing_floor')" style="margin-top:2px">see what held them →</button></div></div>
+    ${tripCell(counts.quarantined_policy != null ? counts.quarantined_policy : policyQ.length, "held to review", policyQ.length ? "sent-n-warn" : "sent-n-mut", "#sent-policy", "Show the held posts and why")}
     <div class="sent-trip-div"></div>
-    <div class="sent-trip-cell"><div class="sent-trip-n sent-n-mut">${counts.quarantined_overflow != null ? counts.quarantined_overflow : overQ.length}</div><div class="sent-trip-l">trimmed by caps</div></div>
+    ${tripCell(counts.quarantined_overflow != null ? counts.quarantined_overflow : overQ.length, "trimmed by caps", "sent-n-mut", "#sent-overflow", "Show the posts the caps trimmed")}
   </div>`;
 
   const hero = `<div class="sent-hero ${heroCls}">
@@ -7619,29 +8799,32 @@ RENDER.marketing_sentinel = async () => {
     <div class="sent-hero-main">
       <div class="sent-hero-state">${esc(heroState)}</div>
       <div class="sent-hero-sub">${esc(heroSub)}</div>
+      ${armMismatch}
       <div class="sent-hero-meta">
         <span class="sent-plan ${planMeta.cls}">${esc(planMeta.word)}</span>
-        ${strictChip}${disabledChip}
+        ${strictChip}${disabledChip}${gateSaw}
         <span class="sent-chip sent-chip-mut">${counts.items != null ? counts.items : "—"} posts checked</span>
+        ${armLink}
       </div>
     </div>
     ${trip}
   </div>`;
 
-  /* ---------- 2 · POLICY FLAGS (the reviewable list) ---------- */
+  /* ---------- 2 · POLICY FLAGS (the reviewable list) ----------
+     Bounded: 19 today, but the list is the whole report with no server cap and
+     nothing about the gate promises it stays small. */
   let policyHtml;
   if (policyQ.length) {
-    const cards = policyQ.map(sentPolicyCard).join("");
-    policyHtml = `<div class="section">Policy flags <span class="cnt">${policyQ.length} held for a human read</span></div>
+    const cards = policyQ.map(sentPolicyCard);
+    policyHtml = `<div class="section" id="sent-policy">Policy flags <span class="cnt">${policyQ.length} held for a human read</span></div>
       <div class="sent-lede sent-lede-tight">These posts tripped a ban-risk rule — near-duplicate text across accounts, advice-style phrasing, or a missing disclosure. Read each one. They stay held until you grant an exception; nothing here posts on its own.</div>
-      ${cards}`;
+      ${sentReasonFilterBar(policyQ)}
+      <div id="sent-flag-list">${blList(cards, 8, 40)}</div>`;
   } else {
-    policyHtml = `<div class="section">Policy flags <span class="cnt">nothing held</span></div>
-      <div class="sent-clear-card">
-        <span class="sent-clear-mark">✓</span>
-        <div><div class="sent-clear-title">No ban-risk flags in this plan</div>
-        <div class="sent-clear-sub">No near-duplicate posts, advice phrasing, or disclosure gaps caught across the six accounts. The only holds are routine capacity trims, below.</div></div>
-      </div>`;
+    policyHtml = `<div class="section" id="sent-policy">Policy flags <span class="cnt">nothing held</span></div>
+      <div class="empty"><div class="empty-icon">◍</div>
+        <div class="empty-text">Nothing held — the desk cleared everything</div>
+        <div class="empty-sub">Held posts land here the moment the gate flags one.</div></div>`;
   }
 
   /* ---------- 3 · OVERFLOW (collapsed — benign by design) ---------- */
@@ -7653,18 +8836,18 @@ RENDER.marketing_sentinel = async () => {
       <td class="sent-of-cash">${esc(q.cashtag || "")}</td>
       <td class="sent-of-head">${esc(q.headline || "")}</td>
       <td class="sent-of-slot">${esc(q.slot || "")}</td>
-    </tr>`).join("");
-    overHtml = `<details class="sent-overflow">
+    </tr>`);
+    overHtml = `<details class="sent-overflow" id="sent-overflow">
       <summary><span class="sent-of-count">${overQ.length}</span> posts trimmed by cadence &amp; media caps <span class="sent-of-why">— the plan over-generates on purpose; caps sit at the new-account tier (2 posts / account / day). These are queued, not problems.</span></summary>
       <div class="table-wrap"><table class="exp-table sent-of-table">
         <thead><tr><th>Desk</th><th>Type</th><th>Cashtag</th><th>Headline</th><th>Slot</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${sentBoundedRows(rows, 20, 80, 5)}</tbody>
       </table></div>
     </details>`;
   }
 
   /* ---------- 4 · CHECKS GRID + notes ---------- */
-  const checksHtml = sentChecksGrid(checks, topR);
+  const checksHtml = sentChecksGrid(checks, topR, policyQ);
   let notesHtml = "";
   if (notes.length) {
     notesHtml = `<div class="section sent-sec-tight">Gate notes</div>
@@ -7674,9 +8857,12 @@ RENDER.marketing_sentinel = async () => {
   /* Shadow-mode banner — plain words + a link to the Publisher, so the operator
      knows the gate reports but nothing posts until the publisher is armed. Only
      shown while shadow (publish disabled); when live, the loud hero covers it. */
-  const shadowBanner = !live
+  /* `=== false` deliberately, NOT `!live`: an unknown arm state is not a dark
+     one, and this banner is the sentence the operator trusted while posts were
+     going out. It only appears when the switch was actually read as off. */
+  const shadowBanner = live === false
     ? `<div class="cs-freshbar" style="border-left:3px solid var(--ok)">
-        <span class="cs-fresh-pill fresh">Shadow mode</span>
+        <span class="cs-fresh-pill fresh">Publisher is dark</span>
         <span class="cs-fresh-txt">The gate runs and reports, but <b>nothing posts externally</b> until the Publisher is armed.</span>
         <button class="sent-shadow-link" onclick="go('marketing_publish')" style="margin-left:auto">Open Publisher →</button>
       </div>`
@@ -7703,7 +8889,10 @@ function sentPolicyCard(q) {
   const cash = q.cashtag ? `<span class="mkt-cash-chip">${esc(q.cashtag)}</span>` : "";
   const slot = q.slot ? `<span class="statpill s-mut obx-mini">${esc(q.slot)}</span>` : "";
   const id = String(q.id || "");
-  return `<div class="sent-flag-card" data-allow-card="${esc(id)}">
+  /* lv-you: a held post is ALIVE and the decision is owed to the operator — it
+     is the one thing on this page that is neither cleared nor closed.
+     data-family lets a checks-grid cell narrow the list to the rows it counts. */
+  return `<div class="sent-flag-card lv lv-you" data-family="${esc(sentReasonFamily(q))}" data-allow-card="${esc(id)}">
     <div class="sent-flag-top">
       <span class="sent-flag-acct">${esc(q.account || "—")}</span>
       ${sentTypeChip(q.type)}${cash}${slot}
@@ -7716,7 +8905,25 @@ function sentPolicyCard(q) {
       ${id ? `<button class="sent-allow-btn" data-id="${esc(id)}" onclick="sentAllow(this)">Allow this post</button>
       <span class="sent-allow-msg"></span>` : ""}
     </div>
+    ${sentFamilyFix(sentReasonFamily(q))}
   </div>`;
+}
+
+/* What ACTUALLY unblocks this family — the honest half of operator question 3.
+   The Allow button writes an exception the NEXT nightly gate honours, so for
+   most families it is not today's fix and the card must not imply that it is.
+   Near-duplicates are the live case: 18 of 19 holds, and the real cause is
+   upstream fact supply, not this queue. */
+function sentFamilyFix(head) {
+  const F = {
+    near_dup: "The real fix is upstream: two desks were handed the same fact. Allowing one post here does not widen the fact supply — the Floor page tracks where the collisions come from.",
+    advice_lexicon: "Rewrite the line without the advice phrasing. Allowing it ships the phrasing as-is.",
+    missing_disclosure: "The standing disclosure line is missing. The writer adds it; an exception here just waives the check.",
+    account_disabled: "The desk itself is switched off. Enable it in Channels & Desks, or this post can never go out.",
+    cadence_cap_daily: "This is a capacity trim, not a fault — the plan over-generates on purpose.",
+  }[head];
+  if (!F) return "";
+  return `<div class="sent-flag-fix">${esc(F)}</div>`;
 }
 
 /* Allow flow: first click arms ("Confirm — writes an exception"); second click
@@ -7761,26 +8968,39 @@ async function sentAllow(btn) {
    list yet (tonight's run predates the engine fix) shows the count + a one-liner. */
 function sentPassedSection(passed, counts) {
   const n = (counts && counts.passed != null) ? counts.passed : (passed ? passed.length : null);
-  const head = `<div class="section sent-sec-tight">Cleared to post ${n != null ? `<span class="cnt">${n} post${n === 1 ? "" : "s"}</span>` : ""}</div>`;
+  const head = `<div class="section sent-sec-tight" id="sent-passed">Cleared to post ${n != null ? `<span class="cnt">${n} post${n === 1 ? "" : "s"}</span>` : ""}</div>`;
   if (Array.isArray(passed) && passed.length) {
+    /* Per-desk counts lead. 137 undifferentiated cards answer nothing; "which
+       desks cleared how many" is the shape of the fact, and the cards are the
+       receipt behind it. */
+    const byDesk = {};
+    for (const p of passed) { const k = p.account || "—"; byDesk[k] = (byDesk[k] || 0) + 1; }
+    const deskStrip = `<div class="sent-pass-desks">${Object.keys(byDesk).sort((a, b) => byDesk[b] - byDesk[a])
+      .map(k => `<span class="sent-pass-desk"><b>${byDesk[k]}</b> ${esc(k)}</span>`).join("")}</div>`;
+
     const cards = passed.map(p => {
       const cash = p.cashtag ? `<span class="mkt-cash-chip">${esc(p.cashtag)}</span>` : "";
       const when = p.display_time || p.slot || "";
-      return `<div class="sent-pass-card">
+      /* NO per-card button. It used to render one "→ approve in Outbox" per
+         post — 137 buttons all navigating to the same unfiltered page with no
+         anchor, no id and no filter, and the destination often holds none of
+         them (only 9 of tonight's 137 ever became outbox items). go() takes no
+         target parameter, so a deep link does not exist to build; one honest
+         section-level link replaces 137 dead ends. */
+      return `<div class="sent-pass-card lv lv-mach">
         <div class="sent-pass-top">
           <span class="sent-pass-acct">${esc(p.account || "—")}</span>
           ${sentTypeChip(p.type)}${cash}
           ${when ? `<span class="sent-pass-slot">${esc(when)}</span>` : ""}
         </div>
         <div class="sent-pass-head">${esc(p.headline || "(no headline)")}</div>
-        <div class="sent-pass-foot">
-          <button class="sent-approve-link" onclick="go('marketing_outbox')">→ approve in Outbox</button>
-        </div>
       </div>`;
-    }).join("");
+    });
     return head
-      + `<div class="con-lede" style="margin-bottom:10px">These posts passed every ban-risk rule. Approve the ones you want in the Outbox — the publisher posts approved items at the next slot.</div>`
-      + `<div class="sent-passed-grid">${cards}</div>`;
+      + `<div class="con-lede" style="margin-bottom:10px">These passed every ban-risk rule. Clearing the gate is not approval — they still have to be approved in the Outbox before anything is sent, and only the ones that reached the outbox are there.</div>`
+      + deskStrip
+      + `<div class="sent-passed-grid-wrap">${blList(cards, 8, 40)}</div>`
+      + `<button class="sent-approve-link" onclick="go('marketing_outbox')" style="margin-top:8px">Open the Outbox to approve →</button>`;
   }
   // No list yet — honest count + when it fills in.
   return head + `<div class="sent-clear-card">
@@ -7798,25 +9018,43 @@ function sentTypeChip(type) {
 }
 
 /* Checks grid — one compact cell per gate check. Non-verbal severity dot:
-   steel = ran clean, amber = caught something, muted = skipped/off. */
-function sentCheckCell(title, state, value, sub) {
+   steel = ran clean, amber = caught something, muted = skipped/off.
+
+   A cell that CAUGHT something becomes a button that opens the rows it counted.
+   "3 caught" with no way to see the three is exactly the count the operator
+   cannot act on. The cell is only made clickable when the flag list actually
+   holds rows of that family (SENT_FAM_PRESENT, seeded per render) — a filter
+   that would empty the list is worse than no link. Clean and skipped cells stay
+   inert <div>s: there is nothing behind them to open. */
+let SENT_FAM_PRESENT = {};
+function sentCheckCell(title, state, value, sub, family) {
   const dot = state === "hit" ? "sent-ck-hit" : state === "skip" ? "sent-ck-skip" : "sent-ck-ok";
-  return `<div class="sent-check">
-    <div class="sent-check-head"><span class="sent-ck-dot ${dot}"></span>${esc(title)}</div>
+  const body = `<div class="sent-check-head"><span class="sent-ck-dot ${dot}"></span>${esc(title)}</div>
     <div class="sent-check-val">${value}</div>
-    ${sub ? `<div class="sent-check-sub">${esc(sub)}</div>` : ""}
-  </div>`;
+    ${sub ? `<div class="sent-check-sub">${esc(sub)}</div>` : ""}`;
+  if (state === "hit" && family && SENT_FAM_PRESENT[family]) {
+    return `<button class="sent-check sent-check-link" onclick="sentJump('#sent-policy','${esc(family)}')"
+      title="Show the ${SENT_FAM_PRESENT[family]} held post${SENT_FAM_PRESENT[family] === 1 ? "" : "s"} this caught">${body}
+      <span class="sent-check-go">show the ${SENT_FAM_PRESENT[family]} held →</span></button>`;
+  }
+  return `<div class="sent-check">${body}</div>`;
 }
 
-function sentChecksGrid(checks, topR) {
+function sentChecksGrid(checks, topR, policyQ) {
   const c = checks || {};
+  SENT_FAM_PRESENT = {};
+  for (const q of (policyQ || [])) {
+    const f = sentReasonFamily(q);
+    SENT_FAM_PRESENT[f] = (SENT_FAM_PRESENT[f] || 0) + 1;
+  }
   const cells = [];
   const nd = c.near_dup || {};
   cells.push(sentCheckCell(
     "Duplicate posts",
     (nd.hits || 0) > 0 ? "hit" : "ok",
     (nd.hits || 0) > 0 ? `${nd.hits} caught` : "none",
-    `${nd.pairs_checked != null ? nd.pairs_checked.toLocaleString() : "—"} pairs checked${nd.shared_media_hits ? ` · ${nd.shared_media_hits} shared images` : ""} · checked locally with text math — costs zero AI tokens`));
+    `${nd.pairs_checked != null ? nd.pairs_checked.toLocaleString() : "—"} pairs checked${nd.shared_media_hits ? ` · ${nd.shared_media_hits} shared images` : ""} · checked locally with text math — costs zero AI tokens`,
+    "near_dup"));
 
   const cad = c.cadence || {};
   const cadHit = (cad.cashtag_cap_hits || 0) + (cad.slot_collision_hits || 0) + (cad.reply_cap_hits || 0);
@@ -7824,30 +9062,36 @@ function sentChecksGrid(checks, topR) {
     "Cadence caps",
     cadHit > 0 ? "hit" : "ok",
     cadHit > 0 ? `${cadHit} over cap` : "within caps",
-    `${cad.cadence_cap_daily_hits || 0} trimmed to the daily limit`));
+    `${cad.cadence_cap_daily_hits || 0} trimmed to the daily limit`,
+    "cadence_cap_daily"));
 
   const lex = c.lexicon || {};
   cells.push(sentCheckCell("Advice phrasing", (lex.hits || 0) > 0 ? "hit" : "ok",
-    (lex.hits || 0) > 0 ? `${lex.hits} caught` : "clean", "no “guaranteed / can’t lose” language"));
+    (lex.hits || 0) > 0 ? `${lex.hits} caught` : "clean", "no “guaranteed / can’t lose” language",
+    "advice_lexicon"));
 
   const disc = c.disclosure || {};
   cells.push(sentCheckCell("Disclosure line", (disc.hits || 0) > 0 ? "hit" : "ok",
-    (disc.hits || 0) > 0 ? `${disc.hits} missing` : "all present", "signal posts carry the standing line"));
+    (disc.hits || 0) > 0 ? `${disc.hits} missing` : "all present", "signal posts carry the standing line",
+    "missing_disclosure"));
 
   const link = c.link_rule || {};
   cells.push(sentCheckCell("Link rule", (link.hits || 0) > 0 ? "hit" : "ok",
     link.links_allowed ? "links allowed" : "no links",
-    (link.hits || 0) > 0 ? `${link.hits} posts had links` : "new-account tier: links off"));
+    (link.hits || 0) > 0 ? `${link.hits} posts had links` : "new-account tier: links off",
+    "link_not_allowed"));
 
   const breadth = c.cashtag_breadth || {};
   cells.push(sentCheckCell("Cashtags per post", (breadth.hits || 0) > 0 ? "hit" : "ok",
     (breadth.hits || 0) > 0 ? `${breadth.hits} over` : "within limit",
-    `cap ${breadth.max_cashtags_per_post != null ? breadth.max_cashtags_per_post : "—"} per post`));
+    `cap ${breadth.max_cashtags_per_post != null ? breadth.max_cashtags_per_post : "—"} per post`,
+    "cashtag_breadth"));
 
   const media = c.media_cap || {};
   cells.push(sentCheckCell("Media per day", (media.hits || 0) > 0 ? "hit" : "ok",
     (media.hits || 0) > 0 ? `${media.hits} over` : "within limit",
-    `cap ${media.max_media_posts_per_account_per_day != null ? media.max_media_posts_per_account_per_day : "—"} / account / day`));
+    `cap ${media.max_media_posts_per_account_per_day != null ? media.max_media_posts_per_account_per_day : "—"} / account / day`,
+    "media_cap_daily"));
 
   const cp = c.cherry_pick || {};
   if (cp.status === "skip" || cp.status === "skipped") {
@@ -7858,14 +9102,16 @@ function sentChecksGrid(checks, topR) {
     const losers = (cp.loss_tickers_in_window || []).length;
     cells.push(sentCheckCell("Cherry-picked receipts", detected ? "hit" : "ok",
       detected ? "losers hidden" : "losers shown",
-      losers ? `${losers} losing name${losers > 1 ? "s" : ""} in the window` : "no losers in the window"));
+      losers ? `${losers} losing name${losers > 1 ? "s" : ""} in the window` : "no losers in the window",
+      "cherry_pick_suspected"));
   }
 
   const sr = c.stale_receipts || {};
   const srStale = sr.age_days != null && sr.max != null && sr.age_days > sr.max;
   cells.push(sentCheckCell("Receipts freshness", srStale ? "hit" : "ok",
     sr.age_days != null ? `${sr.age_days}d old` : "—",
-    `refuses the plan past ${sr.max != null ? sr.max : "—"} days`));
+    `refuses the plan past ${sr.max != null ? sr.max : "—"} days`,
+    "stale_receipts_ledger"));
 
   const ks = c.kill_switch || {};
   const nDisabled = (ks.accounts_disabled || []).length;
@@ -7885,7 +9131,7 @@ function sentFooter(d) {
 /* Sentinel contract card — plain words, no config-key slugs. Explains the small
    caps to the operator instead of the page looking broken. Degrades to nothing
    when an older payload omits the sentinel block. */
-function obxSentinelCard(s, cap) {
+function obxSentinelCard(s, cap, capsByAccount, accounts) {
   if (!s) return "";
   const capN = (s.effective_cap != null ? s.effective_cap : cap);
   /* A negative cap is the "no limit" sentinel (unlimited daily volume). */
@@ -7896,16 +9142,51 @@ function obxSentinelCard(s, cap) {
   const links = s.links_allowed ? "allowed" : "off";
   const mediaN = s.max_media_posts_per_account_per_day;
   const mediaUnlimited = mediaN != null && Number(mediaN) < 0;
+
+  /* THE PER-DESK CEILINGS, WHICH THIS CARD USED TO HIDE. `effective_cap` is the
+     BASE number and it is currently -1, so a card headed "What the actuator will
+     honour" rendered "∞ · no daily cap" while the desks were actually running on
+     ramp-narrowed ceilings of 10 and 20 that ship in the SAME payload
+     (caps_by_account) and had no reader anywhere in this file. The scalar stays
+     — it is the honest base — but the row now says what each desk may really
+     send, because the operator's question is "how many more can go out today",
+     and that answer is per desk. */
+  const caps = capsByAccount && typeof capsByAccount === "object" ? capsByAccount : {};
+  /* The RANGE covers every configured desk (that is what "per desk each day"
+     means), while the meters below cover only desks with a queue today — a desk
+     with no posts has no slots to draw. */
+  const capVals = Object.keys(caps).map(k => Number(caps[k]))
+    .filter(n => Number.isFinite(n) && n >= 0);
+  const deskIds = ((accounts || []).map(a => a.id)).filter(id => caps[id] != null);
+  const capRange = capVals.length
+    ? (Math.min(...capVals) === Math.max(...capVals)
+        ? String(Math.min(...capVals))
+        : `${Math.min(...capVals)}–${Math.max(...capVals)}`)
+    : null;
+
   const rows = [
-    ["Posts per desk each day", (capUnlimited ? "∞" : esc(String(capN))), esc(capNote)],
+    ["Posts per desk each day",
+     capRange != null ? esc(capRange) : (capUnlimited ? "∞" : esc(String(capN))),
+     capRange != null ? "set per desk by its age tier" : esc(capNote)],
     ["Minimum gap between posts", (spacing != null ? `${esc(String(spacing))} min` : "—"), ""],
     ["Links in posts", esc(links), ""],
     ["Charts per desk each day", (mediaUnlimited ? "∞" : (mediaN != null ? esc(String(mediaN)) : "—")), ""],
   ];
+
+  /* One slot meter per desk that has both a real ceiling and posts today. The
+     meter used to be per-desk-section and bailed whenever the cap was <= 0 —
+     which, with the base cap at -1, meant it never rendered anywhere. */
+  const meters = deskIds.map(id => {
+    const acct = (accounts || []).find(a => a.id === id) || {};
+    const used = (acct.counts || {}).posted || 0;
+    const m = obxSlotMeter(used, caps[id]);
+    return m ? `<div class="obx-desk-slot"><span class="obx-desk-slot-id">${esc(id)}</span>${m}</div>` : "";
+  }).filter(Boolean).join("");
+
   return `<div class="obx-sentinel">
     <div class="obx-sentinel-head">
       <span class="obx-sentinel-title">Posting limits in force</span>
-      <span class="obx-sentinel-sub">What the actuator will honour — this is why the daily counts are low, not a bug.</span>
+      <span class="obx-sentinel-sub">What the publisher will honour — this is why the daily counts are low, not a bug.</span>
     </div>
     <div class="obx-sentinel-grid">
       ${rows.map(([lbl, val, note]) => `<div class="obx-sentinel-cell">
@@ -7913,6 +9194,8 @@ function obxSentinelCard(s, cap) {
         <div class="obx-sentinel-lbl">${esc(lbl)}</div>
       </div>`).join("")}
     </div>
+    ${meters ? `<details class="obx-desk-slots"><summary>Slots spent today, desk by desk</summary>
+      <div class="obx-desk-slots-body">${meters}</div></details>` : ""}
   </div>`;
 }
 
@@ -7920,7 +9203,9 @@ function obxSentinelCard(s, cap) {
    encoding of how many of the desk's daily slots are spent. */
 function obxSlotMeter(used, cap) {
   const capN = Number(cap);
-  if (!Number.isFinite(capN) || capN <= 0 || capN > 12) return "";  /* only render for a small, sane cap */
+  /* Only for a small, sane ceiling: 20 dots still read as dots, 200 do not, and
+     a negative cap means "no limit" — there is nothing to draw. */
+  if (!Number.isFinite(capN) || capN <= 0 || capN > 24) return "";
   const u = Math.max(0, Math.min(capN, Number(used) || 0));
   let dots = "";
   for (let i = 0; i < capN; i++) dots += `<span class="obx-slot-dot${i < u ? " obx-slot-on" : ""}"></span>`;
@@ -7940,8 +9225,16 @@ function obxActivityStrip(activity) {
       <div class="note muted">No pipeline runs recorded yet. Once the nightly emit and the actuator run, their tallies appear here so you can see how the queue was built.</div>
     </div>`;
   }
+  /* THE LANE NAMES ARE THE REAL ONES NOW. This block used to look for a lane
+     called `actuator_dry_run`, a string that appears NOWHERE in
+     data/marketing/outbox/activity.jsonl — the whole "cleared / re-armed /
+     quarantined / would post" read-out had therefore never rendered once. The
+     rows that do exist are `emit` (the nightly queue build) and `publisher_live`
+     (a real publish run), and the else-branch below labelled every publisher run
+     "actuator run · 0 cleared" because it read `applied.approved` off a row that
+     has no `applied` key at all. Six real runs rendered as six zeroes. */
   const emit = activity.find(r => r.lane === "emit");
-  const act = activity.find(r => r.lane === "actuator_dry_run");
+  const act = activity.find(r => r.lane === "publisher_live" || r.lane === "actuator_dry_run");
 
   let emitLine = "";
   if (emit) {
@@ -7958,18 +9251,41 @@ function obxActivityStrip(activity) {
     </div>`;
   }
 
+  /* A publisher run's own counters, in the words the run uses. `applied` is the
+     old actuator shape and survives only so an archived row still reads; a
+     `publisher_live` row carries posted / failed / quarantined / parked_dark and
+     a family of skipped_* counters, and every one of them explains part of "why
+     did so few go out". A counter the table does not know is printed with its
+     own name rather than swallowed. */
+  const OBX_RUN_LABEL = {
+    posted: "posted", failed: "failed to send", quarantined: "blocked",
+    parked_dark: "held back — desk is off", would_post: "would go out",
+    skipped_cap: "over the daily cap", skipped_gate: "gate said no",
+    skipped_spacing: "too soon after the last one",
+    skipped_not_due: "not due yet", skipped_no_media: "waiting on a chart",
+  };
+  const obxRunSegs = (r) => {
+    const a = r.applied || {};
+    const out = [];
+    if (a.approved != null) out.push([`${Number(a.approved) || 0}`, "cleared"]);
+    if (a.rearmed != null) out.push([`${Number(a.rearmed) || 0}`, "re-armed"]);
+    Object.keys(r).forEach(k => {
+      if (!(k in OBX_RUN_LABEL)) return;
+      const n = Number(r[k]);
+      if (!Number.isFinite(n) || n === 0) return;
+      out.push([String(n), OBX_RUN_LABEL[k]]);
+    });
+    return out;
+  };
+
   let actLine = "";
   if (act) {
-    const a = act.applied || {};
-    const parts = [
-      `<b>${Number(a.approved) || 0}</b> cleared`,
-      `<b>${Number(a.rearmed) || 0}</b> re-armed`,
-      `<b>${Number(a.quarantined) || 0}</b> quarantined`,
-      `<b>${Number(act.would_post) || 0}</b> would post`,
-    ];
+    const segs = obxRunSegs(act);
     actLine = `<div class="obx-act-run">
-      <div class="obx-act-line">${parts.map(p => `<span class="obx-act-seg">${p}</span>`).join("")}</div>
-      <div class="obx-act-when">Last actuator run${act.at ? ` · ${obxStamp(act.at)}` : ""}</div>
+      <div class="obx-act-line">${segs.length
+        ? segs.map(([n, l]) => `<span class="obx-act-seg"><b>${esc(n)}</b> ${esc(l)}</span>`).join("")
+        : `<span class="obx-act-seg">the run moved nothing</span>`}</div>
+      <div class="obx-act-when">Last publish run${act.at ? ` · ${obxStamp(act.at)}` : ""}</div>
     </div>`;
   }
 
@@ -7978,9 +9294,10 @@ function obxActivityStrip(activity) {
   let timeline = "";
   if (rest.length) {
     timeline = `<div class="obx-act-timeline">${rest.map(r => {
+      const segs = r.lane === "emit" ? [] : obxRunSegs(r);
       const label = r.lane === "emit"
         ? `queue build · ${Number(r.emitted) || 0} queued`
-        : `actuator run · ${(r.applied && Number(r.applied.approved)) || 0} cleared`;
+        : `publish run · ${segs.length ? segs.map(([n, l]) => `${n} ${l}`).join(", ") : "nothing moved"}`;
       return `<div class="obx-act-tl-row"><span class="obx-act-tl-dot ${r.lane === "emit" ? "obx-tl-emit" : "obx-tl-act"}"></span><span class="obx-act-tl-txt">${esc(label)}</span><span class="obx-act-tl-at">${obxStamp(r.at)}</span></div>`;
     }).join("")}</div>`;
   }
@@ -7992,39 +9309,200 @@ function obxActivityStrip(activity) {
   </div>`;
 }
 
-/* Posted / terminal history block — outcomes visually separated by result. */
-function obxHistoryBlock(history) {
-  if (!history.length) {
-    return `<div class="section" style="margin-top:26px">Posted history</div>
-      <div class="card"><div class="note muted">Nothing has reached a terminal state yet. Once the actuator posts (or an item fails or is blocked), it lands here with its receipt.</div></div>`;
-  }
-  const rows = history.map(h => {
-    const st = OBX_STATE[h.status] || { cls: "obx-posted", label: h.status || "—", stance: "" };
-    const rl = obxReceiptLine(h.receipt);
-    const txt = (h.text || "").replace(/\s+/g, " ").trim();
-    const short = txt.length > 90 ? txt.slice(0, 90) + "…" : txt;
-    const att = (h.attempts && h.attempts > 0) ? ` <span class="obx-h-att">${h.attempts} attempt${h.attempts > 1 ? "s" : ""}</span>` : "";
-    return `<tr class="obx-h-row obx-h-${esc(h.status)}">
-      <td class="obx-h-acct">${esc(h.account || "—")}</td>
-      <td>${obxKindChip(h.kind)}</td>
-      <td class="obx-h-text">${esc(short)}</td>
-      <td><span class="statpill obx-state ${st.cls}">${esc(st.label)}</span>${att}</td>
-      <td class="obx-h-at">${obxStamp(h.at)}</td>
-      <td class="obx-h-rc">${rl || '<span class="faint">—</span>'}</td>
-    </tr>`;
-  }).join("");
-  return `<div class="section" style="margin-top:26px">Posted history <span class="cnt">${history.length} recorded</span></div>
-    <div class="table-wrap"><table class="exp-table obx-h-table">
-      <thead><tr><th>Desk</th><th>Kind</th><th>Post</th><th>Result</th><th>When (UTC)</th><th>Receipt</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+/* ── DEAD POSTS ────────────────────────────────────────────────────────────
+   The operator's complaint, verbatim: the Outbox "showed me DEAD rows in a way
+   that read as pending garbage". The old block was one flat table where a
+   posted receipt, a 429 failure and a corpse from an operator sweep six days ago
+   all rendered as the same grey row, in the same list, in the same weight. And
+   the header counted the WINDOW, printing "50 recorded" over 242 terminal items.
+
+   Dead now gets: its own collapsed section, a reason GROUP (a post nobody can
+   act on is not a to-do item, it is a fact with a cause), a struck one-line
+   excerpt, and either the one action that unblocks the group or an honest
+   "nothing to do — here is why". Never both. Never neither. */
+const OBX_DEAD_REASONS = [
+  { key: "desk_off", re: /account_disabled|desk not enabled/i, ico: "⛔",
+    title: "Desk switched off",
+    what: "Addressed to a desk that is not enabled, so the publisher parked them.",
+    goto: "marketing_channels", cta: "Open Channels & Desks" },
+  { key: "backend", re: /http_error|buffer_|InvalidInput|Too many requests|no_post_id|429/i, ico: "↯",
+    title: "X refused the post",
+    what: "Buffer or X rejected the send. The copy was fine; the send was not.",
+    dead: "Nothing to re-run — the slot has passed." },
+  { key: "operator", re: /operator .*(batch )?rejection|queue-quality sweep|self-review:|rejected by operator/i, ico: "✂",
+    title: "You cut these",
+    what: "Rejected in a review sweep: template voice, filler, or a repeated frame.",
+    dead: "Nothing to do — these are closed." },
+  { key: "superseded", re: /superseded|byte-identical|near-dup|replaced:|rewritten copy|operator edit/i, ico: "⇄",
+    title: "A better post won",
+    what: "Another post covered the same name or fact and went out instead.",
+    dead: "Nothing to do — the desk kept the stronger one." },
+  { key: "language", re: /banned language|em dash|reads too technical|approval-desk: banned_language/i, ico: "✎",
+    title: "House language law",
+    what: "The copy used a banned word or dash. The writer is the fix, not this queue.",
+    goto: "marketing_models", cta: "Open the Model Desk" },
+  { key: "stale", re: /tape gate|move claim stale|\bstale\b|max age|expired/i, ico: "⌛",
+    title: "Numbers went stale",
+    what: "The move the post described no longer matches the tape.",
+    dead: "Nothing to do — the day moved on." },
+  { key: "attempts", re: /max attempts/i, ico: "⟲",
+    title: "Out of retries",
+    what: "It failed twice, so the next run blocks it instead of trying again.",
+    dead: "Nothing to do — write it fresh tomorrow." },
+  { key: "orphan", re: /orphaned|unresolved/i, ico: "○",
+    title: "Lost its source",
+    what: "The brief behind the post was never resolved.",
+    dead: "Nothing to do — it closed with its source." },
+];
+const OBX_DEAD_OTHER = { key: "other", ico: "·", title: "Held for another reason",
+  what: "No reason family matched these. The recorded note is on each row.",
+  dead: "Read the notes below." };
+
+/* One dead row: struck excerpt, the ledger's own note as a reason chip, and the
+   receipt if there is one. NO enabled action, ever — that is what dead means. */
+function obxDeadRow(h) {
+  const txt = String(h.text || h.excerpt || "").replace(/\s+/g, " ").trim();
+  const short = txt.length > 96 ? txt.slice(0, 96) + "…" : txt;
+  const note = String(h.note || "").trim();
+  const rl = obxReceiptLine(h.receipt);
+  return `<div class="obx-dead-row lv lv-dead lv-row">
+    <div class="obx-dead-main">
+      <span class="pc-excerpt">${esc(short || "(no copy recorded)")}</span>
+      <div class="obx-dead-meta">
+        <code>${esc(h.id || "")}</code>
+        <span class="pc-desk">${esc(h.account || h._acct || "—")}</span>
+        <span class="pc-when">${obxStamp(h.at)}</span>
+        ${stChip(h.status || "quarantined")}
+      </div>
+      ${note ? `<div class="obx-dead-note">${rzChip("what the ledger recorded", note, "inert")}</div>` : ""}
+      ${rl ? `<div class="obx-dead-rc">${rl}</div>` : ""}
+    </div>
+  </div>`;
 }
 
-/* Kind chip — reuse the content-type color map where a kind matches. */
+/* Group dead posts by reason family, actionable-looking groups first, then by
+   count. Cap the groups AND the rows inside each one — this is the section that
+   used to run to 192 rows. */
+function obxDeadBlock(history, spentFailures, historyTotal) {
+  const dead = (history || []).filter(h => h.status !== "posted")
+    .concat(spentFailures || []);
+  if (!dead.length) {
+    return `<div class="section" style="margin-top:26px">Didn't make it</div>
+      ${blEmpty("Nothing died today",
+                "No post failed, was blocked, or got pulled back.")}`;
+  }
+  const buckets = new Map();
+  dead.forEach(h => {
+    const note = String(h.note || "");
+    const fam = OBX_DEAD_REASONS.find(f => f.re.test(note)) || OBX_DEAD_OTHER;
+    if (!buckets.has(fam.key)) buckets.set(fam.key, { fam, rows: [] });
+    buckets.get(fam.key).rows.push(h);
+  });
+  const groups = [...buckets.values()];
+  groups.sort((a, b) => (b.fam.goto ? 1 : 0) - (a.fam.goto ? 1 : 0)
+                     || b.rows.length - a.rows.length);
+
+  const groupHtml = groups.map(g => {
+    const action = g.fam.goto
+      ? `<button class="flr-blk-go" onclick="go('${esc(g.fam.goto)}')">${esc(g.fam.cta)} →</button>`
+      : `<span class="dz-dead">${esc(g.fam.dead || "Nothing to do.")}</span>`;
+    return `<div class="obx-dead-group">
+      <div class="obx-dead-ghead">
+        <span class="obx-dead-ico" aria-hidden="true">${esc(g.fam.ico)}</span>
+        <span class="obx-dead-title">${esc(g.fam.title)}</span>
+        <span class="obx-dead-n">${g.rows.length}</span>
+        ${action}
+      </div>
+      <div class="obx-dead-what">${esc(g.fam.what)}</div>
+      ${blList(g.rows.map(obxDeadRow), 5, 45)}
+    </div>`;
+  });
+
+  /* The honest header: how many of these are still work (none — that is the
+     point) versus how many are simply closed, and how many the payload never
+     shipped. `history_total` is the real terminal count; the window is 50. */
+  const shown = dead.length;
+  const total = Number(historyTotal);
+  const unshipped = Number.isFinite(total) && total > (history || []).length
+    ? total - (history || []).length : 0;
+  return `<div class="section" style="margin-top:26px">Didn't make it
+      <span class="cnt">${shown} shown · all closed${unshipped ? ` · ${unshipped} older ones not loaded` : ""}</span></div>
+    <details class="obx-dead">
+      <summary class="obx-dead-summary">${shown} post${shown === 1 ? "" : "s"} in ${groups.length} reason${groups.length === 1 ? "" : "s"} — nothing here needs you</summary>
+      <div class="obx-dead-body">${blList(groupHtml, 6, 12)}</div>
+    </details>`;
+}
+
+/* ── WHAT WENT OUT ─────────────────────────────────────────────────────────
+   Operator question 2. Separated from the dead block because "it posted" and
+   "it never posted" are opposite facts and shared a table for a year. */
+function obxPostedBlock(history, historyTotal) {
+  const posted = (history || []).filter(h => h.status === "posted");
+  if (!posted.length) {
+    return `<div class="section" style="margin-top:26px">Posted</div>
+      ${blEmpty("Nothing has gone out yet",
+                "Approved posts land here with their receipt the moment they send.")}`;
+  }
+  const rows = posted.map(h => {
+    const txt = String(h.text || "").replace(/\s+/g, " ").trim();
+    const short = txt.length > 96 ? txt.slice(0, 96) + "…" : txt;
+    const rl = obxReceiptLine(h.receipt);
+    return `<div class="obx-dead-row lv lv-dead lv-row obx-posted-row">
+      <div class="obx-dead-main">
+        <span class="pc-excerpt">${esc(short)}</span>
+        <div class="obx-dead-meta">
+          <span class="pc-desk">${esc(h.account || "—")}</span>
+          ${obxKindChip(h.kind)}
+          <span class="pc-when">${obxStamp(h.at)}</span>
+          ${stChip("posted")}
+        </div>
+        ${rl ? `<div class="obx-dead-rc">${rl}</div>` : ""}
+      </div>
+    </div>`;
+  });
+  const total = Number(historyTotal);
+  const windowed = Number.isFinite(total) && total > (history || []).length;
+  return `<div class="section" style="margin-top:26px">Posted
+      <span class="cnt">${posted.length} with receipts${windowed ? ` · newest ${(history || []).length} of ${total} closed posts loaded` : ""}</span></div>
+    <div class="obx-posted-list">${blList(rows, 10, 40)}</div>`;
+}
+
+/* Kind chip — reuse the content-type color map where a kind matches.
+   PLAIN WORDS, NOT SLUGS. The Content Studio has always mapped these same
+   tokens to reader words while this page printed `theme_list` and `watchlist`
+   raw. An unmapped kind is prettified rather than swallowed, so a new one shows
+   up as itself instead of disappearing. */
+const OBX_KIND_LABEL = {
+  signal: "signal", chart: "chart", mover: "mover", macro: "macro read",
+  watchlist: "watchlist", theme_list: "theme list", receipt: "receipt",
+  education: "explainer", event: "event", congress: "congress trade",
+  insider: "insider buy", breaking: "breaking", earnings: "earnings",
+  wire: "wire", news: "news", reply: "reply",
+};
+function obxKindWord(kind) {
+  const k = String(kind || "");
+  return OBX_KIND_LABEL[k] || k.replace(/_/g, " ");
+}
 function obxKindChip(kind) {
   if (!kind) return "";
   const color = mktTypeColor(kind);
-  return `<span class="mkt-type-chip" style="background:${color}22;border-color:${color}44;color:${color}">${esc(kind)}</span>`;
+  return `<span class="mkt-type-chip" style="background:${color}22;border-color:${color}44;color:${color}">${esc(obxKindWord(kind))}</span>`;
+}
+
+/* Provenance = which lane wrote this post. The raw values leaked straight onto
+   the card, including `claude_rewrite`, which puts the model vendor on the
+   operator's console. Named lanes get a reader word; anything else prints
+   prettified, never raw-with-underscores and never swallowed. */
+const OBX_PROV_LABEL = {
+  content_studio: "nightly plan", hot_tape: "intraday tape",
+  weekend_levels: "weekend levels", claude_rewrite: "rewritten copy",
+  press_lane: "press wire", publisher_live_movers: "live movers",
+  intelligence_desk: "intelligence desk", operator_edit: "your edit",
+};
+function obxProvWord(p) {
+  const s = String(p || "");
+  if (!s) return "";
+  return OBX_PROV_LABEL[s] || s.replace(/_/g, " ");
 }
 
 /* One review-queue item card — the signature surface. */
@@ -8033,7 +9511,6 @@ function obxItemCard(it, acctId) {
   const isFailed = it.status === "failed";
   const attempts = it.attempts || 0;
   const spent = isFailed && attempts >= OBX_MAX_ATTEMPTS;   /* re-arm would quarantine */
-  const stateMeta = OBX_STATE[eff] || OBX_STATE.queued;
   const text = it.text || "";
   const n = [...text].length;               /* codepoint count, not UTF-16 units */
   const over = n > OBX_CHAR_CAP;
@@ -8052,11 +9529,13 @@ function obxItemCard(it, acctId) {
   const slotChip = it.slot ? `<span class="statpill s-mut obx-mini">${esc(it.slot)}</span>` : "";
   const prioChip = (it.priority != null) ? `<span class="obx-prio" title="posting priority">P${esc(String(it.priority))}</span>` : "";
 
-  /* Decision / state chip — plain-word outcome. Failed carries the attempt count. */
-  const stateLabel = isFailed
-    ? `Failed · attempt ${attempts} of ${OBX_MAX_ATTEMPTS}`
-    : `${stateMeta.label} · ${stateMeta.stance}`;
-  const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${esc(stateLabel)}</span>`;
+  /* Decision / state chip — one shared vocabulary across all five Floor-suite
+     pages (stChip), so the same fact stops rendering four different ways.
+     A failure spends its stance on the count, which is the only thing the
+     operator needs from it: how many tries are left. */
+  const stateChip = isFailed
+    ? stChip("failed", `attempt ${attempts} of ${OBX_MAX_ATTEMPTS}`)
+    : stChip(eff);
 
   /* Copy-review finding (advisory). Present only when the reviewer had
      something to say, so a clean queue carries no markers and the ones that do
@@ -8116,9 +9595,18 @@ function obxItemCard(it, acctId) {
     /* Hold parks a post and keeps it here — it is a reversible decision, not a
        verdict, so a held item deliberately stays in the rail. Reject is the
        verdict: terminal, and it records WHY into the rejection box for the
-       review sheet (operator, 2026-07-26 — "shouldn't there be reject button?"). */
+       review sheet (operator, 2026-07-26 — "shouldn't there be reject button?").
+
+       EDIT is the verb the console was missing (operator, 2026-08-01). The card
+       has always shown him the exact copy and a live character meter and then
+       given him nothing to do about one bad phrase but kill the whole post —
+       which is what the rejection ledger is full of. Offered ONLY while the
+       ledger status is queued: past that the post is cleared, sending or gone,
+       and editing it would be a second version of something the queue has moved
+       on from. */
     controls = `<div class="obx-controls" data-item="${esc(it.id)}">
       <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve</button>
+      <button class="btn obx-btn-edit" onclick="obeOpen('${esc(it.id)}',this)" title="Change the words, then approve it">Edit</button>
       <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)" title="Park it — stays here, reversible">Hold</button>
       <button class="btn obx-btn-reject" onclick="obxReject('${esc(it.id)}',this)" title="Kill it and log why — moves to the rejection box, leaves this list">Reject</button>
       ${postNowBtn}
@@ -8131,8 +9619,11 @@ function obxItemCard(it, acctId) {
       <span class="obx-ctrl-msg"></span>
     </div>`;
   } else if (isFailed && spent) {
+    /* Unreachable from the rail now — a spent failure is dead and renders under
+       "Didn't make it" (see obxInRail). Kept so a card built from any other
+       caller still says the true thing rather than falling to "Locked". */
     controls = `<div class="obx-controls obx-locked">
-      <span class="obx-fail-warn">Out of retries — the next actuator run will quarantine this item.</span>
+      <span class="obx-fail-warn">Out of retries — the next publish run will block this item.</span>
     </div>`;
   } else {
     /* Cleared/approved is handled above; this is any other non-decidable rail
@@ -8147,15 +9638,26 @@ function obxItemCard(it, acctId) {
     it.as_of ? `<span class="obx-meta-chip" title="plan day">plan ${esc(String(it.as_of))}</span>` : "",
   ].join("");
 
-  return `<div class="obx-card obx-edge-${eff}${recedeCls}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}" data-kind="${esc(it.kind || "")}">
-    <div class="obx-card-top">
-      ${kindChip}${prioChip}${slotChip}${schedChip}
-      <span class="obx-prov">${esc(it.provenance || "")}</span>
+  /* The liveness gutter (.lv). Colour says which of the three things this row
+     is — waiting on YOU, waiting on the MACHINE, or dead — without reading a
+     word. Every complaint on this page reduced to "dead things look alive and
+     alive things are buried under dead ones", so liveness gets an encoding
+     orthogonal to everything else. `.obx-card`/`.obx-edge-*` stay so the
+     existing stylesheet and every existing selector keep working. */
+  const lv = ` lv lv-${stLive(eff)}`;
+  /* The desk name is a WORD, so it is set in sans; the times and ids are
+     figures, so they stay mono (mono-numerals are for figures, never words). */
+  const deskChip = `<span class="pc-desk">${esc(it.account || acctId || "")}</span>`;
+
+  return `<div class="obx-card pc obx-edge-${eff}${recedeCls}${lv}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}" data-kind="${esc(it.kind || "")}">
+    <div class="obx-card-top pc-top">
+      ${kindChip}${prioChip}${slotChip}${schedChip}${deskChip}
+      <span class="obx-prov">${esc(obxProvWord(it.provenance))}</span>
       ${stateChip}
     </div>
     ${metaChips ? `<div style="display:flex;gap:8px;margin:-2px 0 6px">${metaChips}</div>` : ""}
-    <div class="obx-compose">
-      <pre class="obx-text">${esc(text)}</pre>
+    <div class="obx-compose pc-body">
+      <p class="pc-text">${esc(text)}</p>
       <div class="obx-meter">
         <div class="obx-meter-bar"><div class="obx-meter-fill ${meterCls}" style="width:${Math.min(100, (n / OBX_CHAR_CAP) * 100).toFixed(1)}%"></div></div>
         <span class="obx-count ${meterCls}">${n} / ${OBX_CHAR_CAP}${over ? " · over limit" : ""}</span>
@@ -8237,8 +9739,15 @@ function obxSwitchAcct(acct, btn) {
   OBX_ACTIVE_DESK = acct;
   obxApplyDeskFilter();
 }
-/* Re-apply the stored desk filter (active pill + section visibility). Falls back
-   to "all" if the remembered desk vanished from the payload. */
+/* Re-apply the stored desk filter. Falls back to "all" if the remembered desk
+   vanished from the payload.
+
+   FILTERS CARDS, NOT SECTIONS. The per-desk sections are gone (the review list
+   is one time-ordered list across every desk), so the pills now hide and show
+   individual cards — the same shape the Content Studio filter has always used.
+   The bulk button follows the filter: with a desk selected, "Approve all ready"
+   must mean THIS desk, because a global action behind a filtered view is how an
+   operator approves thirteen desks believing he approved one. */
 function obxApplyDeskFilter() {
   const sw = document.getElementById("obx-acct-sw");
   if (!sw) return;
@@ -8246,9 +9755,35 @@ function obxApplyDeskFilter() {
   const known = new Set([...pills].map(p => p.dataset.acct));
   if (!known.has(OBX_ACTIVE_DESK)) OBX_ACTIVE_DESK = "all";
   pills.forEach(p => p.classList.toggle("active", p.dataset.acct === OBX_ACTIVE_DESK));
-  document.querySelectorAll(".obx-acct-section").forEach(el => {
-    el.style.display = (OBX_ACTIVE_DESK === "all" || el.dataset.acct === OBX_ACTIVE_DESK) ? "" : "none";
+  obxApplyCardVisibility();
+  obxSyncBulkButton();
+}
+
+/* One pass over every review card applying BOTH stored filters. Kept as one
+   function because two independent passes fought each other: whichever ran last
+   reset `display` for the cards the other had hidden. */
+function obxApplyCardVisibility() {
+  document.querySelectorAll("#obx-review .obx-card").forEach(card => {
+    const deskOk = (OBX_ACTIVE_DESK === "all" || card.dataset.acct === OBX_ACTIVE_DESK);
+    const kindOk = (OBX_ACTIVE_KIND === "all" || card.dataset.kind === OBX_ACTIVE_KIND);
+    card.style.display = (deskOk && kindOk) ? "" : "none";
   });
+}
+
+/* Retarget the one bulk control at whatever the operator is actually looking
+   at, and say so on the button. Counts come from the last payload snapshot, so
+   the label never disagrees with what the click will do. */
+function obxSyncBulkButton() {
+  const btn = document.getElementById("obx-approve-all");
+  if (!btn) return;
+  const ids = obxBulkIds(OBX_ACTIVE_DESK === "all" ? "*" : OBX_ACTIVE_DESK, "approve");
+  const n = ids.length;
+  btn.setAttribute("data-n", String(n));
+  btn.dataset.armed = "0";
+  btn.disabled = !n;
+  btn.textContent = OBX_ACTIVE_DESK === "all"
+    ? `Approve all ready${n ? ` (${n})` : ""}`
+    : `Approve all ready on ${OBX_ACTIVE_DESK}${n ? ` (${n})` : ""}`;
 }
 
 /* Filter the rail to one content kind (client-side). Hides non-matching cards
@@ -8265,16 +9800,7 @@ function obxApplyKindFilter() {
   const known = new Set([...chips].map(c => c.dataset.kind));
   if (!known.has(OBX_ACTIVE_KIND)) OBX_ACTIVE_KIND = "all";
   chips.forEach(c => c.classList.toggle("active", c.dataset.kind === OBX_ACTIVE_KIND));
-  document.querySelectorAll(".obx-acct-section").forEach(sec => {
-    let shown = 0;
-    sec.querySelectorAll(".obx-card").forEach(card => {
-      const match = (OBX_ACTIVE_KIND === "all" || card.dataset.kind === OBX_ACTIVE_KIND);
-      card.style.display = match ? "" : "none";
-      if (match) shown++;
-    });
-    /* When a kind filter is on, hide desks with no matching cards entirely. */
-    sec.classList.toggle("obx-sec-empty", OBX_ACTIVE_KIND !== "all" && shown === 0);
-  });
+  obxApplyCardVisibility();
 }
 
 /* POST a single approve/hold decision, then refetch to fold the new state in. */
@@ -8364,9 +9890,196 @@ async function obxPostNow(id, btn) {
     if (!r || !r.ok) throw new Error((r && r.error) || "dispatch failed");
     toast("Sending now — the publisher run is starting");
     if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = r.note || "dispatched"; }
+    /* Every other action on this page refolds the payload; this one did not, so
+       the card sat frozen mid-state with a stale chip until a manual reload —
+       on the one action where the operator most wants to see the state move. */
+    await obxRefreshInPlace();
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
+  }
+}
+
+/* ═══ EDIT SHEET (obe*) ════════════════════════════════════════════════════
+   The operator's own words, in front of the same gates the writer answers to.
+
+   Contract, in order:
+     1. Opens only from a card whose ledger status is `queued` — the Edit button
+        does not exist anywhere else.
+     2. Typing recomputes the codepoint count (never .length: an emoji is one
+        character to X and two to JavaScript) and re-locks Save, because a check
+        that ran against the previous draft has proved nothing about this one.
+     3. "Check it" runs the real gates server-side and prints every objection
+        VERBATIM. The vocabulary the modal teaches must be the vocabulary the
+        pipeline uses.
+     4. Save re-runs all of it on the server anyway. A client that skipped step 3
+        is refused, not trusted.
+     5. A refusal is named ON the sheet, never in a toast alone. Toasts vanish;
+        the reason is the whole point. */
+let OBE_ITEM = null;      /* {id, text, chars} of the post being edited */
+let OBE_CHECKED = false;  /* has a check run against the CURRENT text? */
+let OBE_OPENER = null;    /* the Edit button, so focus can go back to it */
+
+function obeOpen(id, btn) {
+  const it = obxFindItem(id);
+  if (!it) { toast("That post is no longer in the queue", true); return; }
+  OBE_ITEM = { id, text: it.text || "" };
+  OBE_CHECKED = false;
+  OBE_OPENER = btn || null;
+  const root = document.getElementById("obe-root");
+  if (!root) return;
+  const when = (it.scheduled_at && it.scheduled_at !== "immediate")
+    ? conLocalTime(it.scheduled_at) : "when approved";
+  root.innerHTML = `<div class="allies-backdrop" onclick="if(event.target===this)obeClose()">
+    <div class="allies-dialog wide obe" role="dialog" aria-modal="true" aria-labelledby="obe-t">
+      <div class="allies-dialog-head">
+        <div>
+          <div class="allies-dialog-title" id="obe-t">Edit this post</div>
+          <div class="allies-dialog-sub">${esc(it.account || "")} · goes out ${esc(when)} · <code>${esc(id)}</code></div>
+        </div>
+        <button class="allies-x" onclick="obeClose()" aria-label="Close">✕</button>
+      </div>
+      <div class="obe-body">
+        <textarea class="obe-ta" id="obe-ta" rows="7" spellcheck="true"
+          aria-describedby="obe-count" oninput="obeInput()"></textarea>
+        <div class="obe-meter">
+          <div class="obx-meter-bar"><div class="obx-meter-fill" id="obe-fill"></div></div>
+          <span class="obx-count" id="obe-count"></span>
+        </div>
+        <div class="obe-findings" id="obe-findings"></div>
+        <div class="obe-orig" id="obe-orig">
+          <div class="eyebrow">What it said before</div>
+          <p class="pc-excerpt">${esc(it.text || "")}</p>
+        </div>
+      </div>
+      <div class="allies-confirm-actions">
+        <span class="obe-msg" id="obe-msg"></span>
+        <button class="btn" onclick="obeClose()">Cancel</button>
+        <button class="btn" id="obe-check" onclick="obeCheck(this)">Check it</button>
+        <button class="btn primary" id="obe-save" onclick="obeSave(this)" disabled>Save and approve</button>
+      </div>
+    </div>
+  </div>`;
+  const ta = document.getElementById("obe-ta");
+  if (ta) { ta.value = it.text || ""; ta.focus(); }
+  obeInput();
+  document.addEventListener("keydown", obeKey);
+}
+
+/* Find one item in the last payload snapshot — the modal never re-fetches to
+   open, so the copy it shows is exactly the copy the card showed. */
+function obxFindItem(id) {
+  if (!OBX_LAST) return null;
+  let found = null;
+  (OBX_LAST.accounts || []).forEach(a => (a.items || []).forEach(it => {
+    if (it.id === id) found = Object.assign({ account: a.id }, it);
+  }));
+  return found;
+}
+
+function obeKey(e) { if (e.key === "Escape") obeClose(); }
+
+function obeClose() {
+  const root = document.getElementById("obe-root");
+  if (root) root.innerHTML = "";
+  document.removeEventListener("keydown", obeKey);
+  OBE_ITEM = null; OBE_CHECKED = false;
+  if (OBE_OPENER && document.body.contains(OBE_OPENER)) OBE_OPENER.focus();
+  OBE_OPENER = null;
+}
+
+/* Live meter + the re-lock. Save is disabled while the text is over budget,
+   empty, unchanged, or unchecked since the last keystroke — four different
+   reasons, one honest line saying which. */
+function obeInput() {
+  const ta = document.getElementById("obe-ta");
+  const cnt = document.getElementById("obe-count");
+  const fill = document.getElementById("obe-fill");
+  const save = document.getElementById("obe-save");
+  const msg = document.getElementById("obe-msg");
+  if (!ta || !OBE_ITEM) return;
+  const text = ta.value || "";
+  const n = [...text].length;
+  const over = n > OBX_CHAR_CAP;
+  const near = !over && n > OBX_CHAR_CAP * 0.9;
+  const cls = over ? "obx-over" : near ? "obx-near" : "";
+  if (cnt) { cnt.className = "obx-count " + cls; cnt.textContent = `${n} / ${OBX_CHAR_CAP}${over ? " · over limit" : ""}`; }
+  if (fill) { fill.className = "obx-meter-fill " + cls; fill.style.width = Math.min(100, (n / OBX_CHAR_CAP) * 100).toFixed(1) + "%"; }
+  ta.classList.toggle("is-bad", over);
+  OBE_CHECKED = false;
+  const unchanged = text.trim() === String(OBE_ITEM.text || "").trim();
+  const empty = !text.trim();
+  if (save) save.disabled = true;
+  if (msg) {
+    msg.className = "obe-msg";
+    msg.textContent = over ? "Too long for one post."
+      : empty ? "A post needs words."
+      : unchanged ? "Nothing changed yet."
+      : "Run the checks before saving.";
+    if (over || empty) msg.className = "obe-msg is-bad";
+  }
+}
+
+/* Print every objection the server returned, verbatim, as its own chip. An
+   unmapped reason still prints — a gate nobody has written a label for must
+   still be readable, or the operator learns to distrust the ones that are. */
+function obeRenderFindings(res) {
+  const box = document.getElementById("obe-findings");
+  if (!box) return;
+  const viols = (res && res.violations) || [];
+  const warns = (res && res.warnings) || [];
+  box.innerHTML = viols.map(v => `<span class="rz rz-hot"><b>${esc(v)}</b></span>`).join("")
+    + warns.map(w => `<span class="rz rz-inert"><b>${esc(w)}</b></span>`).join("");
+}
+
+async function obeCheck(btn) {
+  const ta = document.getElementById("obe-ta");
+  const msg = document.getElementById("obe-msg");
+  const save = document.getElementById("obe-save");
+  if (!ta || !OBE_ITEM) return;
+  const text = ta.value || "";
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "checking…";
+  try {
+    const r = await post("/api/marketing/outbox/validate", { id: OBE_ITEM.id, text });
+    if (!r || !r.ok) throw new Error((r && r.error) || "the checks could not run");
+    obeRenderFindings(r);
+    const unchanged = text.trim() === String(OBE_ITEM.text || "").trim();
+    OBE_CHECKED = !!r.clean && !unchanged;
+    if (save) save.disabled = !OBE_CHECKED;
+    if (msg) {
+      msg.className = "obe-msg " + (r.clean ? "is-ok" : "is-bad");
+      msg.textContent = r.clean
+        ? (unchanged ? "Reads clean, but nothing changed." : "Reads clean. Save and approve.")
+        : `${r.violations.length} thing${r.violations.length === 1 ? "" : "s"} to fix.`;
+    }
+  } catch (e) {
+    if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = (e && e.message) || "the checks could not run"; }
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+async function obeSave(btn) {
+  const ta = document.getElementById("obe-ta");
+  const msg = document.getElementById("obe-msg");
+  if (!ta || !OBE_ITEM) return;
+  const text = ta.value || "";
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "saving…";
+  try {
+    const r = await post("/api/marketing/outbox/edit", { id: OBE_ITEM.id, text });
+    if (!r || !r.ok) {
+      obeRenderFindings(r);
+      const why = (r && (r.detail || r.error)) || "the edit was refused";
+      if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = why; }
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+    obeClose();
+    toast(r.approved ? "Saved and approved" : (r.note || "Saved"));
+    await obxRefreshInPlace();
+  } catch (e) {
+    if (msg) { msg.className = "obe-msg is-bad"; msg.textContent = (e && e.message) || "could not save"; }
+    btn.disabled = false; btn.textContent = orig;
   }
 }
 
@@ -8377,6 +10090,7 @@ async function obxPostNow(id, btn) {
 function obxBulkIds(scope, decision) {
   if (!OBX_LAST) return [];
   const ids = [];
+  const refAsOf = obxBulkRefAsOf();
   (OBX_LAST.accounts || []).forEach(a => {
     if (scope !== "*" && a.id !== scope) return;
     (a.items || []).forEach(it => {
@@ -8385,8 +10099,11 @@ function obxBulkIds(scope, decision) {
         /* "Approve all ready" acts on the genuinely-ready work: undecided queued
            items + re-armable failures. It deliberately does NOT sweep up held
            items — an explicit hold is only reversed via that item's own control,
-           so bulk-approve never silently undoes an operator decision. */
-        if (obxIsBulkApprovable(it) && !held) ids.push(it.id);
+           so bulk-approve never silently undoes an operator decision.
+           It also does not sweep up posts from an EARLIER plan day: a re-armable
+           failure is days old by construction and its copy quotes that day's
+           tape. See obxIsStale. */
+        if (obxIsBulkApprovable(it) && !held && !obxIsStale(it, refAsOf)) ids.push(it.id);
       } else {
         /* Hold only undecided queued items — don't re-hold the already-held,
            and failed/cleared aren't holdable. */
@@ -8397,40 +10114,47 @@ function obxBulkIds(scope, decision) {
   return ids;
 }
 
-/* One batched decision for a whole desk. No confirm step (≤ a few items). */
+/* One batched decision for a whole desk. Reachable from the command bar while a
+   desk pill is active (obxSyncBulkButton retargets it) — the per-desk bulk bars
+   went away with the per-desk sections. */
 async function obxBulkAccount(acctId, decision, btn) {
-  const bar = btn ? btn.closest(".obx-acct-bulk") : null;
-  const msg = bar ? bar.querySelector(".obx-bulk-msg") : null;
+  const bar = btn ? (btn.closest(".obx-acct-bulk") || btn.parentElement) : null;
+  const msg = bar ? (bar.querySelector(".obx-bulk-msg") || bar.querySelector(".obx-gmsg")) : null;
   const ids = obxBulkIds(acctId, decision);
   if (!ids.length) { if (msg) { msg.className = "obx-bulk-msg"; msg.textContent = "nothing ready"; } return; }
   await obxRunBatch(ids, decision, bar, msg,
     decision === "approve" ? "approving all…" : "holding all…");
 }
 
-/* Global "Approve all ready" with a single inline confirm step: the button
-   flips to "Confirm approve N" for a few seconds, then reverts if not clicked. */
+/* "Approve all ready" with a single inline confirm step: the button flips to
+   "Confirm approve N" for a few seconds, then reverts if not clicked. Scope
+   follows the active desk filter (obxSyncBulkButton keeps the label honest) —
+   a global action behind a filtered view is how thirteen desks get approved by
+   someone who meant one. */
 let OBX_GCONFIRM_T = null;
 async function obxApproveAllGlobal(btn) {
   const n = Number(btn.getAttribute("data-n")) || 0;
   const msg = document.getElementById("obx-gmsg");
+  const scope = (OBX_ACTIVE_DESK && OBX_ACTIVE_DESK !== "all") ? OBX_ACTIVE_DESK : "*";
   if (!n) return;
   if (btn.dataset.armed === "1") {
     clearTimeout(OBX_GCONFIRM_T);
     btn.dataset.armed = "0";
-    const ids = obxBulkIds("*", "approve");
+    btn.classList.remove("obx-armed");
+    const ids = obxBulkIds(scope, "approve");
     await obxRunBatch(ids, "approve", btn.parentElement, msg, "approving all…");
     return;
   }
   /* Arm: flip to a confirm label; auto-disarm after 4s. */
   btn.dataset.armed = "1";
   btn.classList.add("obx-armed");
-  btn.textContent = `Confirm approve ${n}`;
+  btn.textContent = `Confirm approve ${n}${scope === "*" ? "" : ` on ${scope}`}`;
   if (msg) { msg.className = "obx-gmsg"; msg.textContent = "click again to confirm"; }
   clearTimeout(OBX_GCONFIRM_T);
   OBX_GCONFIRM_T = setTimeout(() => {
     btn.dataset.armed = "0";
     btn.classList.remove("obx-armed");
-    btn.textContent = `Approve all ready (${n})`;
+    obxSyncBulkButton();
     if (msg) msg.textContent = "";
   }, 4000);
 }

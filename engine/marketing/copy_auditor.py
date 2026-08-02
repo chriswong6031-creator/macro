@@ -94,6 +94,23 @@ AUDIT_CRITERIA: tuple[tuple[str, str], ...] = (
     ("no_value",
      "True but worthless. Says nothing a reader could act on, learn from, or "
      "react to. 'I'm watching' with no level and no reason is this."),
+    # 2026-08-01. Three macro/event posts cleared every deterministic gate,
+    # cleared THIS auditor, were approved, and were then pulled by hand:
+    # "4 of 11 sectors green on a day growth data firmed and inflation stayed
+    # warm." The owner's words are the definition, verbatim, because the
+    # paraphrase is what let it through the first time — `no_value` was already
+    # in this list and did not catch it, since the posts do carry a fact and a
+    # stance. What they do not carry is a PRINT, and that is the cut.
+    ("esoteric",
+     "Desk-speak a general reader cannot decode. Gestures at 'growth data', "
+     "'inflation readings', 'liquidity' or 'the tape' without ever naming the "
+     "actual release and its number, so there is nothing to look up, agree "
+     "with or argue against. The owner's own words for this: 'too bland, too "
+     "weak, no real value, so esoteric no one knows what it's talking about, "
+     "zero engagement, people might even report us cuz only bots/llm write "
+     "garbage like this.' A macro read names the print ('jobless claims at "
+     "203,000, 8.6% below a year ago') or it is filler. A count of our own "
+     "sectors is not a print."),
 )
 
 _VERDICT_KEEP = "keep"

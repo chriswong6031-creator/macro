@@ -376,3 +376,213 @@ def test_the_2026_07_30_gates_are_named_in_operator_language():
         for banned in ("cashtag_", "_violations", "validate_", "queued_voice",
                        "jaccard", "regex"):
             assert banned not in words.lower(), (key, words)
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-01 operator audit — the Floor's six defects (F1..F7)
+#
+# Every test below FAILS on the pre-fix module. They pin the properties that
+# make the production line trustworthy rather than merely populated: a funnel
+# that clamps an impossible transition is a lie in layout form, and it fabricated
+# a rank-1 instruction the operator could not act on.
+# ---------------------------------------------------------------------------
+@pytest.fixture()
+def broken_chain_repo(tmp_path):
+    """A repo reproducing the LIVE 2026-08-01 shape: the gate reports more posts
+    cleared than the writer ever wrote, because the two counters are measured
+    over different post sets (``_copy_mode`` stamps vs the sentinel's count over
+    the whole plan queue).
+    """
+    plan = {
+        "as_of": "2026-08-01",
+        "summary": {"total_posts": 6},
+        "accounts": [{
+            "id": "flagship",
+            "queue": [
+                # 6 planned, exactly ONE of which reached a writer
+                {"id": f"post-{i}", "type": "macro", "account": "flagship",
+                 "status": "drafted", "headline": f"h{i}",
+                 **({"_copy_mode": "llm"} if i == 1 else {})}
+                for i in range(1, 7)
+            ],
+        }],
+    }
+    _write(tmp_path / "data/marketing/content_plan.json", plan)
+    # The gate says 5 passed — over the whole queue, not over the 1 written.
+    _write(tmp_path / "data/marketing/sentinel_report.json", {
+        "as_of": "2026-08-01",
+        "counts": {"items": 6, "passed": 5,
+                   "quarantined_policy": 1, "quarantined_overflow": 0},
+    })
+    # NOTHING reached the rail. Pre-fix this made the phantom enqueue gap a
+    # 5-post / 100%-share loss, which BEAT the real 5-post / 83%-share writer
+    # loss on the tie-break and crowned the phantom as the biggest leak.
+    _write_lines(tmp_path / "data/marketing/outbox/items.jsonl", [
+        {"id": "ob-old", "as_of": "2026-07-01", "account": "flagship", "status": "posted"},
+    ])
+    _write_lines(tmp_path / "data/marketing/outbox/status_ledger.jsonl", [])
+    return tmp_path
+
+
+def test_f1_a_non_monotone_station_is_never_clamped(broken_chain_repo):
+    """out > in must publish NO loss, not a clamped zero.
+
+    Pre-fix: ``lost = max(0, prior - out)`` turned 1-in/5-out into a confident
+    "nothing lost here" over an impossible transition.
+    """
+    d = mf.floor(broken_chain_repo)
+    st = {s["id"]: s for s in d["line"]}["cleared"]
+    assert st["in"] == 1 and st["out"] == 5
+    assert st["odd"] is True
+    assert st["lost"] is None, "a clamped 0 here is a lie in layout form"
+    assert st["yield"] is None
+    assert st["odd_note"] and "do not nest" in st["odd_note"]
+    assert d["line_odd"] == ["cleared"]
+
+
+def test_f1_the_break_propagates_down_the_line(broken_chain_repo):
+    """Everything downstream of the odd station inherits its denominator."""
+    d = mf.floor(broken_chain_repo)
+    chain = {s["id"]: s["chain_ok"] for s in d["line"]}
+    assert chain["planned"] is True and chain["written"] is True
+    assert chain["cleared"] is False
+    assert chain["enqueued"] is False and chain["live"] is False
+
+
+def test_f1_break_at_never_crowns_a_loss_from_a_broken_chain(broken_chain_repo):
+    """`enqueued` shows lost=5 arithmetically, but its `in` is not comparable.
+
+    Pre-fix that phantom (5 lost, 100% share) beat the real writer loss (5 lost,
+    83% share) on the share tie-break and was rendered as "biggest leak".
+    """
+    d = mf.floor(broken_chain_repo)
+    st = {s["id"]: s for s in d["line"]}
+    assert st["enqueued"]["out"] == 0
+    assert st["enqueued"]["lost"] == 5          # the arithmetic still happens…
+    assert d["break_at"] == "written"           # …but it never becomes the verdict
+
+
+def test_f2_the_phantom_enqueue_blocker_does_not_fire(broken_chain_repo):
+    """The 128-post "cleared but never enqueued" gap was triple-counted.
+
+    Its cost is cleared-minus-enqueued, and `cleared` counted posts that never
+    got copy at all — already charged to the `written` station AND to the
+    "never reached a writer" blocker. It sent the operator hunting a gap that
+    does not exist.
+    """
+    d = mf.floor(broken_chain_repo)
+    titles = [b["title"] for b in d["blockers"]]
+    assert "Cleared posts never reached the rail" not in titles
+    # …and the honest measurement defect IS surfaced, with no invented button.
+    odd = [b for b in d["blockers"] if b["title"] == "Two stations on this line do not nest"]
+    assert len(odd) == 1
+    assert odd[0].get("goto") is None
+
+
+def test_f2_the_enqueue_blocker_still_fires_on_a_sound_chain(repo):
+    """The guard must not silence a REAL enqueue gap — regression on the fix."""
+    d = mf.floor(repo)
+    st = {s["id"]: s for s in d["line"]}
+    assert st["enqueued"]["chain_ok"] is True and st["enqueued"]["lost"] == 2
+    assert "Cleared posts never reached the rail" in [b["title"] for b in d["blockers"]]
+
+
+def test_f3_the_break_station_blocker_outranks_the_rest(broken_chain_repo):
+    """One screen must not say "start here" and "this is fine" about one loss.
+
+    Pre-fix `break_at` was `written` (rendered as the loud "biggest leak") while
+    its blocker sat at severity `watch`, ranked 5th of 6.
+    """
+    d = mf.floor(broken_chain_repo)
+    assert d["break_at"] == "written"
+    nw = [b for b in d["blockers"]
+          if b["title"] == "Some planned posts never reached a writer"]
+    assert nw and nw[0]["severity"] == "high"
+    # It leads everything below a genuine `stop` — pre-fix it was a `watch`
+    # ranked behind every other blocker on the page.
+    below_stop = [b for b in d["blockers"] if b["severity"] != "stop"]
+    assert below_stop[0]["title"] == "Some planned posts never reached a writer"
+
+
+def test_f3_a_non_break_no_writer_loss_stays_a_watch(repo):
+    """Severity tracks the LINE's verdict, it is not simply promoted forever."""
+    d = mf.floor(repo)
+    assert d["break_at"] == "cleared"
+    nw = [b for b in d["blockers"]
+          if b["title"] == "Some planned posts never reached a writer"]
+    assert nw and nw[0]["severity"] == "watch"
+
+
+def test_f4_a_new_deterministic_lane_is_not_counted_as_a_model():
+    """Whitelist, not subtraction.
+
+    Pre-fix `_authorship` computed model = total - template - none, so every
+    unrecognised mode was promoted into the model-written share and had its raw
+    slug printed as a model name ("written by a model (movers_desk)").
+    """
+    posts = [
+        {"type": "macro", "_copy_mode": "llm"},
+        {"type": "macro", "_copy_mode": "llm_repair"},
+        {"type": "macro", "_copy_mode": "llm:sol"},
+        {"type": "macro", "_copy_mode": "movers_desk"},   # deterministic lane
+        {"type": "macro", "_copy_mode": "house_picks"},   # deterministic lane
+        {"type": "macro", "_copy_mode": "deterministic"},
+        {"type": "macro"},
+    ]
+    a = mf._authorship(posts)
+    assert a["llm_posts"] == 3, "only llm* modes are model-written"
+    assert a["model_modes"] == ["llm", "llm:sol", "llm_repair"]
+    assert a["house_lane_modes"] == ["house_picks", "movers_desk"]
+    assert a["house_lane_posts"] == 2
+    # A house LANE is not the house TEMPLATE defect — different fix, different blocker.
+    assert a["template_on_planned_kind"] == 1
+
+
+def test_f5_a_host_local_blindness_is_not_a_stop_when_posts_are_going_out(
+        broken_chain_repo, monkeypatch):
+    """BUFFER_TOKEN is read from THIS process; the runner that posts is elsewhere.
+
+    Pre-fix the operator's Mac rendered a rank-1 STOP reading "Nothing can post:
+    the publisher is dark" while posts went out daily with real receipts.
+    """
+    monkeypatch.delenv("BUFFER_TOKEN", raising=False)
+    _write_lines(broken_chain_repo / "data/marketing/outbox/status_ledger.jsonl", [
+        {"id": "ob-1", "to": "posted", "at": mf._utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")},
+    ])
+    d = mf.floor(broken_chain_repo)
+    titles = [b["title"] for b in d["blockers"]]
+    assert "Nothing can post" not in titles
+    blind = [b for b in d["blockers"]
+             if b["title"] == "This console cannot see the publish switch"]
+    assert blind and blind[0]["severity"] == "watch"
+    assert "about this admin process" in blind[0]["why"]
+    assert d["publisher"]["token_scope"] == "this admin host"
+    assert d["publisher"]["host_local_only"] is True
+
+
+def test_f5_a_genuinely_dark_publisher_still_stops(broken_chain_repo, monkeypatch):
+    """The de-escalation is evidence-gated — no posts, no excuse."""
+    monkeypatch.delenv("BUFFER_TOKEN", raising=False)
+    d = mf.floor(broken_chain_repo)          # ledger is empty: nothing ever posted
+    assert d["today"]["posted_recently"] is False
+    assert "Nothing can post" in [b["title"] for b in d["blockers"]]
+
+
+def test_f6_the_glance_answers_are_served_not_dropped(repo):
+    """`awaiting_review` was the operator's question-4 datum and had no reader."""
+    d = mf.floor(repo)
+    t = d["today"]
+    assert set(t) >= {"going_out", "awaiting_review", "went_out_today",
+                      "last_post_at", "blocked_total", "blocked_today",
+                      "posted_recently"}
+    assert t["blocked_total"] == 1           # ob-2 quarantined
+    assert t["blocked_today"] == 1
+    assert t["last_post_at"] == "2026-07-29T22:00:00Z"
+
+
+def test_f6_an_unmeasured_answer_is_none_never_zero(tmp_path):
+    """A 0 reads as "we checked, nothing there". Absence must stay absent."""
+    d = mf.floor(tmp_path)                   # empty repo: no plan, no as_of
+    assert d["ok"] is True
+    assert d["today"]["going_out"] is None
+    assert d["today"]["awaiting_review"] is None
