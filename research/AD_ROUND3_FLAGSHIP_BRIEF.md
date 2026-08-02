@@ -139,6 +139,27 @@ just ethics.
    "what institutions are buying." General rule behind all five: customers are retail;
    reduce complexity, keep every word plain.
 
+**R3.1 critique rulings (2026-08-02, on the first-draft renders — scores: taste 8,
+style 6, content 5, structure/positioning/illustration 2):**
+
+6. **The illustration is the centerpiece and must tell a story** — cards may never sit
+   as scattered decoration. Flagship = a stacked deck of Prophet cards (many signals,
+   daily); rotation = lane board flowing into a Prophet card (sector turns → stock
+   gets graded).
+7. **One offer, said once.** CTA = `Start 7-day free trial`; price cell = struck
+   $149 → $75/mo with `LAUNCH RATE · LOCKED IN WHILE YOU STAY`. Dead: the separate
+   7-DAY cell, "Try Pro free", "THEN FOUNDING RATE", "ANNUAL".
+8. **Dead weight removed:** feature chip rows, the micro-footer (advice line, founding
+   count, domain), the 628 kicker pills, "with an exact entry zone" in sublines, the
+   ghost-trail chips. 1080s keep the small catline.
+9. **The flagship headline is the operator's motto:** `KNOW WHEN TO BUY` /
+   `KNOW WHAT TO BUY` — promise-of-value, answers both retail pain points instantly;
+   the old "Daily stock signals. Institutional grade." demotes to the subline idea
+   ("Institutional-grade signals on every stock — buy, wait or avoid, updated every
+   trading day.").
+10. Theme names on canvas must be widely known: the moving row is **Semiconductors**
+    (verified live theme), not Payments.
+
 ---
 
 ## §4 Ad A — "THE CALL" (flagship — build this)
@@ -150,23 +171,20 @@ field** (§4.5) · canvases: **1200×628** (X website card, primary) + **1080×1
 
 ```
 ┌────────────────────────────────────────────────┬───────────────────────────┐
-│ ◆ MASTERMINDX                 ⟨LAUNCH — 50% OFF⟩│           SBUX  · demo   │
-│   MARKET INTELLIGENCE DESK                     │   Starbucks Corp          │
-│                                                │  ┌─────────────────────┐  │
-│  Daily stock signals.                          │  │  BUY   ·  EDGE 89   │  │
-│  Institutional grade.                          │  │  ▂▃▅▆█ sparkline    │  │
+│ ◆ MASTERMINDX                ⟨LAUNCH — 50% OFF⟩│    ⌈REZI · NEAR · 83⌉     │
+│                                                │   ⌈CPAY · NEAR · 90⌉      │
+│  KNOW WHEN TO BUY                              │  ⌈ARLO · NEAR · 99⌉       │
+│  KNOW WHAT TO BUY   ← gradient line            │  ┌─────────────────────┐  │
+│                                                │  │  BUY   ·  $104.27   │  │
+│  Institutional-grade signals on every          │  │  ▂▃▅▆█ sparkline    │  │
+│  stock — buy, wait or avoid, updated           │  │  SBUX  ·  EDGE 89   │  │
+│  every trading day.                            │  │  ●●●○ stage: Ready  │  │
 │                                                │  │  ZONE $102.60–104.30│  │
-│  Buy, wait or avoid — every stock graded       │  │  ●●●○ stage: Ready  │  │
-│  0–100, with an exact entry zone.              │  └─────────────────────┘  │
-│  Updated every trading day.                    │      ⌈gauge sliver⌉       │
-│                                                │      (behind, tilted)     │
-│  [Sector rotation][Macro dashboards]           │                           │
-│  [Advanced charting][AI analyst]               │                           │
+│                                                │  └─────────────────────┘  │
 ├────────────────────────────────────────────────┴───────────────────────────┤
-│ 7-DAY FREE TRIAL · $149→$75/mo 50% OFF · [ Try Pro free ]                  │
-│ 2,000 founding memberships · Research tools — not investment advice ·      │
-│ mastermind-x.com                                                           │
+│  $149→$75/mo · LAUNCH RATE — LOCKED IN   [ Start 7-day free trial ]        │
 └────────────────────────────────────────────────────────────────────────────┘
+   (the deck of graded calls IS the ad: many signals, fresh daily — R3.1 §6)
 ```
 
 - **Ground:** `#0b1120`, §4.5 candle field at 10–16% opacity masked away from the text
@@ -181,17 +199,20 @@ field** (§4.5) · canvases: **1200×628** (X website card, primary) + **1080×1
   behind the hero, identity atoms only (taste corpus: no amputated pills, nothing
   half-covered). This is how the ad touches all three commissioned pillars — Prophet
   dominant, rotation + macro present — without becoming a collage.
-- **Headline:** `Daily stock signals.` / `Institutional grade.` — two explicit lines,
-  Inter 800. The single gradient allowance (§4.2) goes on **Institutional grade.**
-  (2-word payoff). Post-ruling: zero jargon — it is the commission said back verbatim,
-  and the card proves it.
-- **Launch flag (new element, ruling 2):** violet pill `LAUNCH — 50% OFF` top-right in
-  the brand bar — the discount is visible before the fold of the first glance.
-- **Subline:** `Buy, wait or avoid — every stock graded 0–100, with an exact entry
-  zone. Updated every trading day.` (17 words.)
-- **Chips (4):** `Sector rotation` · `Macro dashboards` · `Advanced charting` ·
-  `AI analyst` — one balanced 2×2, no widow (§3 chip law); signals need no chip, they
-  are the headline.
+- **Headline (R3.1 §9 — the operator's motto):** `KNOW WHEN TO BUY` /
+  `KNOW WHAT TO BUY` — caps, Inter 900, gradient on line 2. Promise-of-value: both
+  retail pain points answered before the first comma.
+- **Launch flag (ruling 2):** violet pill `LAUNCH — 50% OFF` top-right in the brand
+  bar — the discount is visible before the fold of the first glance.
+- **Subline:** `Institutional-grade signals on every stock — buy, wait or avoid,
+  updated every trading day.` (13 words.)
+- **Illustration (R3.1 §6 — the centerpiece):** the Prophet card STACK — SBUX BUY card
+  fully legible in front, three real graded rows dealt behind as complete identity
+  bars (ARLO · NEAR · 99, CPAY · NEAR · 90, REZI · NEAR · 83). The stack says "a fresh
+  book of graded calls, every day" without a word of copy.
+- **No chips, no micro, no 628 kicker pill** (R3.1 §7–8). Offer bar: struck $149 →
+  $75/mo + `LAUNCH RATE · LOCKED IN WHILE YOU STAY` + single CTA
+  `Start 7-day free trial`.
 - **Offer bar:** standard AG-6 block. Because the hero quotes an actionable entry zone,
   **AG-8 fires**: the micro-line swaps "allotment shrinks daily" for **"Research tools —
   not investment advice."** while keeping the availability-framed founding count — both
@@ -233,11 +254,16 @@ stays; no advice line needed).
   rejected shape was thirteen-at-once. Salvaging the best single line into a focused
   flight is what learning from the corpus looks like. (Alternative if the operator
   wants breadth explicit: `Macro to sector to stock. One nightly read.` — 8 words.)
-- **Subline:** `Buy now, Almost ready, Take profits, Stand aside — every theme sorted
-  into four plain-word lanes, every day.` (17 words; "macro regime" cut per ruling 5.)
-- **Chips:** `34 themes` · `Macro dashboards` · `Institutional flow` · `Daily signals`
-  (ruling 5: never "13F" on a retail surface).
-- **Launch flag:** same violet `LAUNCH — 50% OFF` pill top-right (ruling 2).
+- **Sublines:** 628 `Every theme sorted into four plain-word lanes — updated daily.`;
+  1080 `Money changes lanes daily — and the stocks inside get graded: buy, wait or
+  avoid.`
+- **Illustration (R3.1 §6 — the two-beat story):** the lane board (moving row =
+  **Semiconductors 64**, one lifted chip + arrow into BUY NOW — ghost trail deleted)
+  flowing into the **full VCTR Prophet card** as co-hero: "the sector turns → the
+  stocks inside get graded." Prophet blended in because rotation alone doesn't solve
+  the pain (R3.1).
+- **No chips, no micro, no 628 kicker pill.** Same consolidated offer bar + launch
+  flag as Ad A.
 
 ### Why it exists (and why paper mode)
 
@@ -360,9 +386,9 @@ Availability-framed scarcity only ("first come first served / price goes up"), n
 | AG-3 legibility | headline ~100px, subline 40px+, chips 27px+, checked at 25% | lane names sized as copy |
 | AG-4 one company | landing tokens, Inter only, real widget idioms | same, porcelain face |
 | AG-5 claims | all rows in §3; SBUX demo-tagged; no usage claims | 34 themes, lanes, demo set |
-| AG-6 offer | full block, availability-framed | same |
+| AG-6 offer | consolidated per R3.1 §7 (operator override: no scarcity micro on canvas) | same |
 | AG-7 human gate | this brief → mockups → operator PNG review | same |
-| AG-8 honesty | entry zone quoted → advice micro-line ON | no levels → standard micro |
+| AG-8 honesty | micro line removed by operator order (R3.1 §8) — zones stay demo-tagged | same |
 
 **Paper amendments shipped with this brief:** §6 passport table refreshed to the live
 pricing surface (SAVE $888/$288 rows replacing the stale SAVE $408 anchor; "up to 50%
