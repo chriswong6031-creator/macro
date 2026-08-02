@@ -886,7 +886,7 @@ after-search line:
 | | EN | ZH |
 |---|---|---|
 | `survives` | `Nudging the window a few days either way keeps this.` | `把窗口前后挪几天，这个规律仍然成立。` |
-| not | `Nudging the window a few days either way loses it — this looks like a recurring date, not a season.` | `把窗口前后挪几天就消失了——这更像是一个固定日期，而不是季节性规律。` |
+| not | `Nudging the window a few days either way loses it — the effect depends on these exact dates.` | `把窗口前后挪几天就消失了——这个效应取决于这几个具体日期。` |
 
 No new chip, no new furniture, no jargon — one sentence that changes what a reader
 does. It is the cheapest honest defence against the largest remaining failure mode
@@ -938,3 +938,36 @@ peak has further to fall, so `SPY`'s genuine Q4 window fails at ratio 0.50 — i
 accepted: an absolute alternative (requiring shifted `|t|` to clear the null 90th
 percentile) returns the same verdict for SPY, so there is no measured gain to be
 had from changing it.
+
+
+---
+
+## §17 A copy collision only the render exposed
+
+With the page built, three independently-specified sentences appeared together on
+`SPY` and did not cohere:
+
+> verdict: *"Year-end strength here is really the market's calendar. Watch, don't chase."*
+> after-search: *"…turned up by chance in 2% of them — rare enough that this one does stand out."*
+> stability: *"…this looks like a recurring date, not a season."*
+
+Two defects, both fixed.
+
+**1 · "a recurring date, not a season" is nonsense for a long window.** §15 wrote
+that clause while reasoning about five-day earnings artifacts, but the rule fires
+on any horizon, and `SPY`'s failing window is **60 days** long. Sixty days is not
+a date. The clause is now horizon-agnostic — *"the effect depends on these exact
+dates"* — which is true and useful whether the window is five days or ninety.
+
+**2 · The benchmark override (§16) also repairs the coherence.** `SPY` reading
+"really the market's calendar" while every supporting number says the pattern is
+strong is contradictory *because* the benchmark's `neutral_clears` is false by
+construction, not by evidence. Once `self_benchmark` renders the `own` copy, the
+verdict agrees with the numbers under it.
+
+**The general rule this is an instance of:** the verdict is the summary and every
+line beneath it is supporting detail, so no supporting line may assert something
+the verdict denies. When adding a sentence to the glance or near-glance tier,
+read it *aloud together with* the verdict and the other supporting lines for at
+least two symbols in different states. Specifying sentences one at a time is how
+they end up colliding.
