@@ -215,6 +215,13 @@ class _RootRaceR2:
             return {"Body": _Body(self.objects[Key])}
         raise RuntimeError("missing")
 
+    def list_objects_v2(self, *, Bucket: str, Prefix: str, ContinuationToken: str | None = None):  # noqa: N803
+        assert ContinuationToken is None
+        return {
+            "IsTruncated": False,
+            "Contents": [{"Key": key} for key in sorted(self.objects) if key.startswith(Prefix)],
+        }
+
 
 class _VerifiedR2:
     def __init__(self, objects: dict[str, bytes]) -> None:
@@ -229,13 +236,22 @@ class _VerifiedR2:
             result["ETag"] = '"verified-root"'
         return result
 
+    def list_objects_v2(self, *, Bucket: str, Prefix: str, ContinuationToken: str | None = None):  # noqa: N803
+        assert ContinuationToken is None
+        return {
+            "IsTruncated": False,
+            "Contents": [{"Key": key} for key in sorted(self.objects) if key.startswith(Prefix)],
+        }
+
 
 def _verified_r2(evidence: Path, store: Path, manifest: dict) -> _VerifiedR2:
+    anchor = publisher._anchor_receipt(manifest)
     objects = {
         f"{publisher.PREFIX}/manifest.json": (store / "manifest.json").read_bytes(),
         f"{publisher.PREFIX}/generations/{manifest['generation_id']}/manifest.json": (
             store / "generations" / manifest["generation_id"] / "manifest.json"
         ).read_bytes(),
+        publisher._journal_key("anchors", manifest["generation_id"]): canonical_json_bytes(anchor),
     }
     for receipt in manifest["files"].values():
         objects[f"{publisher.PREFIX}/{receipt['object_key']}"] = (store / receipt["object_key"]).read_bytes()
@@ -274,7 +290,11 @@ def _transport_manifest(generation: str) -> tuple[dict, dict[str, bytes]]:
         "packets": {"earnings:AAPL/2026Q1": {"object": "packet"}},
         "files": {"packet": {"object_key": object_key, "sha256": digest, "bytes": len(body)}},
     }
-    return manifest, {f"{publisher.PREFIX}/{object_key}": body}
+    anchor = publisher._anchor_receipt(manifest)
+    return manifest, {
+        f"{publisher.PREFIX}/{object_key}": body,
+        publisher._journal_key("anchors", generation): canonical_json_bytes(anchor),
+    }
 
 
 def test_transport_audit_rejects_a_root_race_before_admission(monkeypatch: pytest.MonkeyPatch) -> None:

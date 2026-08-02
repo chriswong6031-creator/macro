@@ -37,6 +37,8 @@ log = logging.getLogger(__name__)
 # Rough token estimate, matching the house convention in
 # engine/chronicle/context_pack.py: chars / 4.
 _CHARS_PER_TOKEN = 4
+_ADMITTED_MAX_TOTAL_TOKENS = 12_000
+_ADMITTED_PROTOCOL_OVERHEAD_TOKENS = 512
 
 
 class RunState:
@@ -89,6 +91,65 @@ class RunState:
 
 def estimate_tokens(text: str) -> int:
     return max(1, len(str(text or "")) // _CHARS_PER_TOKEN)
+
+
+def _admitted_input_upper_bound(system_prompt: str, user_prompt: str) -> int:
+    """Conservative provider-agnostic input ceiling for the admitted lane.
+
+    A byte-level tokenizer cannot produce more text tokens than the UTF-8 byte
+    stream.  The fixed reserve covers Messages roles and protocol framing.  It
+    intentionally over-counts ASCII and CJK alike; this rail would rather
+    quarantine an oversized candidate than discover its real cost after call.
+    """
+    return (
+        len(system_prompt.encode("utf-8", "surrogatepass"))
+        + len(user_prompt.encode("utf-8", "surrogatepass"))
+        + _ADMITTED_PROTOCOL_OVERHEAD_TOKENS
+    )
+
+
+def _provider_usage(response: object) -> dict[str, Any] | None:
+    try:
+        usage = getattr(response, "usage", None)
+    except Exception:  # noqa: BLE001 - malformed provider metadata is not evidence.
+        return None
+    if usage is None:
+        return None
+
+    def required(name: str) -> int | None:
+        try:
+            value = getattr(usage, name, None)
+        except Exception:  # noqa: BLE001
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            return None
+        return value
+
+    def optional(name: str) -> int | None:
+        try:
+            value = getattr(usage, name, 0)
+        except Exception:  # noqa: BLE001
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            return None
+        return value
+
+    input_tokens = required("input_tokens")
+    output_tokens = required("output_tokens")
+    if input_tokens is None or output_tokens is None:
+        return None
+    cache_read = optional("cache_read_input_tokens")
+    cache_creation = optional("cache_creation_input_tokens")
+    if cache_read is None or cache_creation is None:
+        return None
+    return {
+        "reported": True,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "cache_read_input_tokens": cache_read,
+        "cache_creation_input_tokens": cache_creation,
+        "billable_total_tokens": input_tokens + output_tokens + cache_read + cache_creation,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -399,7 +460,8 @@ def _model_id(model_key: str) -> str:
 
 def write(slot: dict, cfg: dict, *, state: RunState | None = None,
           attempt: int = 0, prior_failures: list[str] | None = None,
-          single_provider_attempt: bool = False) -> dict:
+          single_provider_attempt: bool = False,
+          admitted_token_cap: bool = False) -> dict:
     """Write one draft.  Returns {"ok", "draft"|None, "reason", "provider", ...}.
 
     Never raises.  Every failure path records against the RunState so the
@@ -423,15 +485,63 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
     system_prompt, user_prompt = build_prompt(
         slot, cfg, attempt=attempt, prior_failures=prior_failures)
     max_tokens = int(llm_cfg.get("max_tokens") or 4000)
-    est = estimate_tokens(system_prompt) + estimate_tokens(user_prompt) + max_tokens
-    if not state.can_start(est):
-        return _fail(state, "token_budget_exhausted", charge=False, record=False,
-                     estimated_tokens=est, tokens_left=state.tokens_left)
+    token_cap: dict[str, Any] | None = None
+    if admitted_token_cap:
+        if not single_provider_attempt or attempt != 0:
+            return _fail(
+                state,
+                "invalid_admitted_call_shape",
+                charge=False,
+                record=False,
+            )
+        if max_tokens <= 0:
+            return _fail(
+                state,
+                "invalid_admitted_max_tokens",
+                charge=False,
+                record=False,
+            )
+        input_upper = _admitted_input_upper_bound(system_prompt, user_prompt)
+        effective_limit = min(_ADMITTED_MAX_TOTAL_TOKENS, state.tokens_left)
+        reservation = input_upper + max_tokens
+        token_cap = {
+            "hard_limit_tokens": _ADMITTED_MAX_TOTAL_TOKENS,
+            "effective_limit_tokens": effective_limit,
+            "protocol_overhead_tokens": _ADMITTED_PROTOCOL_OVERHEAD_TOKENS,
+            "input_upper_bound_tokens": input_upper,
+            "requested_output_tokens": max_tokens,
+            "reserved_total_tokens": reservation,
+        }
+        est = reservation
+        if reservation > effective_limit:
+            return _fail(
+                state,
+                "admitted_token_cap_preflight",
+                charge=False,
+                record=False,
+                token_cap=token_cap,
+                tokens_left=state.tokens_left,
+            )
+    else:
+        est = estimate_tokens(system_prompt) + estimate_tokens(user_prompt) + max_tokens
+        if not state.can_start(est):
+            return _fail(state, "token_budget_exhausted", charge=False, record=False,
+                         estimated_tokens=est, tokens_left=state.tokens_left)
 
     model_key = str(slot.get("model_key") or "press_brief")
     model_id = _model_id(model_key)
     if not model_id:
-        return _fail(state, f"no model id for llm_models.{model_key}")
+        extra = {}
+        if token_cap is not None:
+            extra = {
+                "token_cap": token_cap,
+                "provider_usage": {
+                    "reported": False,
+                    "accounting": "no_provider_call",
+                    "charged_tokens": 0,
+                },
+            }
+        return _fail(state, f"no model id for llm_models.{model_key}", **extra)
 
     try:
         provider_cfg = {"usage_lane": f"press-{slot.get('desk')}"}
@@ -443,7 +553,17 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
         providers = llm_auth.build_providers(
             provider_cfg, opus_model=model_id)
     except Exception as exc:  # noqa: BLE001
-        return _fail(state, f"provider construction failed: {exc}")
+        extra = {}
+        if token_cap is not None:
+            extra = {
+                "token_cap": token_cap,
+                "provider_usage": {
+                    "reported": False,
+                    "accounting": "no_provider_call",
+                    "charged_tokens": 0,
+                },
+            }
+        return _fail(state, f"provider construction failed: {exc}", **extra)
 
     if single_provider_attempt:
         # ``make_call`` normally walks the complete waterfall after auth,
@@ -462,13 +582,26 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
               "DEEPSEEK_API_KEY to this step.", flush=True)
         log.warning("press.writer: no provider credential — dropping slot %s",
                     slot.get("id"))
-        return _fail(state, "no_provider")
+        extra = {}
+        if token_cap is not None:
+            extra = {
+                "token_cap": token_cap,
+                "provider_usage": {
+                    "reported": False,
+                    "accounting": "no_provider_call",
+                    "charged_tokens": 0,
+                },
+            }
+        return _fail(state, "no_provider", **extra)
+
+    response_box: dict[str, Any] = {}
 
     def _do_call(client, model):
         resp = client.messages.create(
             model=model, max_tokens=max_tokens, system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
+        response_box["response"] = resp
         if getattr(resp, "stop_reason", None) == "refusal":
             return None, "stop_refusal", resp
         text = "".join(b.text for b in resp.content
@@ -479,23 +612,83 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
         raw_text, reason, provider = llm_auth.make_call(
             providers, _do_call, context=f"press_{slot.get('desk')}")
     except Exception as exc:  # noqa: BLE001
-        state.charge(est)
-        return _fail(state, f"llm call raised: {exc}", charge=False)
+        extra: dict[str, Any] = {}
+        if token_cap is not None:
+            reported = _provider_usage(response_box.get("response"))
+            if reported is not None:
+                state.charge(reported["billable_total_tokens"])
+                reported["within_requested_bounds"] = bool(
+                    reported["input_tokens"] <= token_cap["input_upper_bound_tokens"]
+                    and reported["output_tokens"] <= token_cap["requested_output_tokens"]
+                    and reported["billable_total_tokens"] <= token_cap["effective_limit_tokens"]
+                )
+                extra = {"token_cap": token_cap, "provider_usage": reported}
+            else:
+                state.charge(est)
+                extra = {
+                    "token_cap": token_cap,
+                    "provider_usage": {
+                        "reported": False,
+                        "accounting": "reserved_upper_bound",
+                        "charged_tokens": est,
+                    },
+                }
+        else:
+            state.charge(est)
+        return _fail(state, f"llm call raised: {exc}", charge=False, **extra)
 
-    state.charge(estimate_tokens(system_prompt) + estimate_tokens(user_prompt)
-                 + estimate_tokens(raw_text or ""))
+    # Generic Press preserves its legacy response handling byte-for-byte; only
+    # the admitted rail requires and inspects provider usage metadata.
+    usage = _provider_usage(response_box.get("response")) if token_cap is not None else None
+    if token_cap is not None:
+        if usage is None:
+            state.charge(est)
+            return _fail(
+                state,
+                "provider_usage_missing",
+                charge=False,
+                provider=provider,
+                token_cap=token_cap,
+                provider_usage={
+                    "reported": False,
+                    "accounting": "reserved_upper_bound",
+                    "charged_tokens": est,
+                },
+            )
+        state.charge(usage["billable_total_tokens"])
+        usage["within_requested_bounds"] = bool(
+            usage["input_tokens"] <= token_cap["input_upper_bound_tokens"]
+            and usage["output_tokens"] <= token_cap["requested_output_tokens"]
+            and usage["billable_total_tokens"] <= token_cap["effective_limit_tokens"]
+        )
+        if not usage["within_requested_bounds"]:
+            return _fail(
+                state,
+                "provider_usage_exceeds_admitted_cap",
+                charge=False,
+                provider=provider,
+                token_cap=token_cap,
+                provider_usage=usage,
+            )
+    else:
+        state.charge(estimate_tokens(system_prompt) + estimate_tokens(user_prompt)
+                     + estimate_tokens(raw_text or ""))
+
+    usage_receipt: dict[str, Any] = {}
+    if token_cap is not None:
+        usage_receipt = {"token_cap": token_cap, "provider_usage": usage}
 
     if not raw_text:
         return _fail(state, f"empty response ({reason or 'unknown'})", charge=False,
-                     provider=provider)
+                     provider=provider, **usage_receipt)
 
     draft = parse_envelope(raw_text)
     if draft is None:
         return _fail(state, "unparsable envelope", charge=False, provider=provider,
-                     raw_head=str(raw_text)[:240])
+                     raw_head=str(raw_text)[:240], **usage_receipt)
 
     state.record_success()
-    return {
+    result = {
         "ok": True,
         "draft": draft,
         "reason": "",
@@ -504,6 +697,10 @@ def write(slot: dict, cfg: dict, *, state: RunState | None = None,
         "attempt": attempt,
         "state": state.snapshot(),
     }
+    if token_cap is not None:
+        result["token_cap"] = token_cap
+        result["provider_usage"] = usage
+    return result
 
 
 def _fail(state: RunState, reason: str, *, charge: bool = False,

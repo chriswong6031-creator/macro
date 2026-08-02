@@ -4,7 +4,15 @@ The deterministic packet compiler is the only producer of this projection.
 This transport never picks a promotion tier, invokes a model, or stages Press
 content.  It verifies the local catalog, creates every content-addressed
 object with ``If-None-Match: *``, writes the immutable generation manifest,
-and only then moves the sole mutable root marker with compare-and-swap.
+reserves the exact parent in an append-only publication journal, moves the sole
+mutable root marker with compare-and-swap, and only then commits that journal
+transition.  Auditors trust the finalized journal tip, not orphaned CAS losers.
+
+Operational trust boundary: audit/read principals must be able to list the
+entire journal prefix, while the publisher principal must have no DeleteObject
+authority over journal or generation objects.  Application code can fail a
+denied list call closed; it cannot detect an IAM policy that silently hides a
+subset of otherwise valid keys.
 """
 from __future__ import annotations
 
@@ -30,18 +38,33 @@ from engine.earnings_narrative.contracts import (
     sha256_bytes,
     validate_manifest as validate_evidence_manifest,
 )
-from engine.earnings_narrative.admission import ROOT_AUDIT_SCHEMA
+from engine.earnings_narrative.admission import (
+    ROOT_AUDIT_SCHEMA,
+    validate_story_root_audit_binding,
+)
 
 
 log = logging.getLogger("publish_earnings_story_packets_r2")
 PREFIX = "earnings_story_packets"
 EVIDENCE_PREFIX = "earnings_evidence"
+JOURNAL_PREFIX = f"{PREFIX}/journal"
+JOURNAL_ANCHOR_KEY = f"{JOURNAL_PREFIX}/anchor.json"
 PUBLISH_CONFLICT = 2
+ANCHOR_SCHEMA = "earnings.story_packet_publish_anchor/v1"
+TRANSITION_SCHEMA = "earnings.story_packet_publish_transition/v1"
+COMMIT_SCHEMA = "earnings.story_packet_publish_commit/v1"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_GENERATION_ID = re.compile(r"^[0-9a-f]{32}$")
+_PACKET_ID = re.compile(r"^storypacket_[0-9a-f]{32}$")
+_STORY_REVISION_ID = re.compile(r"^storyrev_[0-9a-f]{32}$")
 
 
 class ImmutableAddressIntegrityError(RuntimeError):
     """An immutable address or the public catalog has invalid receipts."""
+
+
+class ImmutableCreateConflict(ImmutableAddressIntegrityError):
+    """A conditional immutable create lost to different stored bytes."""
 
 
 def _story_contracts() -> tuple[Callable[[object], None], Callable[..., Mapping[str, Any]]]:
@@ -277,6 +300,276 @@ def _remote_marker(s3: Any, bucket: str) -> tuple[dict[str, Any] | None, str | N
         raise ImmutableAddressIntegrityError("cannot read current story packet marker") from exc
 
 
+def _listed_keys(s3: Any, bucket: str, *, prefix: str) -> list[str]:
+    """Return a complete, strictly paginated object listing."""
+    continuation: str | None = None
+    seen_tokens: set[str] = set()
+    rows: list[str] = []
+    seen_keys: set[str] = set()
+    while True:
+        args: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+        if continuation is not None:
+            args["ContinuationToken"] = continuation
+        try:
+            response = s3.list_objects_v2(**args)
+        except Exception as exc:  # noqa: BLE001
+            raise ImmutableAddressIntegrityError(
+                "cannot list immutable story packet publication journal; ListObjects permission is required"
+            ) from exc
+        if not isinstance(response, Mapping):
+            raise ImmutableAddressIntegrityError("story packet publication journal listing is invalid")
+        truncated = response.get("IsTruncated")
+        if not isinstance(truncated, bool):
+            raise ImmutableAddressIntegrityError("story packet publication journal pagination flag is invalid")
+        contents = response.get("Contents") or []
+        if not isinstance(contents, list):
+            raise ImmutableAddressIntegrityError("story packet publication journal listing has invalid contents")
+        for item in contents:
+            key = item.get("Key") if isinstance(item, Mapping) else None
+            if not isinstance(key, str) or not key.startswith(prefix):
+                raise ImmutableAddressIntegrityError("story packet publication journal listing has invalid key")
+            if key in seen_keys:
+                raise ImmutableAddressIntegrityError("story packet publication journal listing repeated a key")
+            seen_keys.add(key)
+            rows.append(key)
+        next_token = response.get("NextContinuationToken")
+        if not truncated:
+            if next_token not in (None, ""):
+                raise ImmutableAddressIntegrityError("terminal journal listing exposed a continuation token")
+            break
+        if not isinstance(next_token, str) or not next_token or next_token in seen_tokens:
+            raise ImmutableAddressIntegrityError("story packet publication journal pagination is invalid")
+        seen_tokens.add(next_token)
+        continuation = next_token
+    return sorted(rows)
+
+
+def _manifest_sha256(manifest: Mapping[str, Any]) -> str:
+    return sha256_bytes(canonical_json_bytes(manifest))
+
+
+def _anchor_receipt(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema": ANCHOR_SCHEMA,
+        "generation_id": _generation_id(manifest),
+        "generation_manifest_sha256": _manifest_sha256(manifest),
+    }
+
+
+def _transition_receipt(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    parent = manifest.get("parent_generation_id")
+    if not isinstance(parent, str):
+        raise ImmutableAddressIntegrityError("a journal transition requires a parent generation")
+    return {
+        "schema": TRANSITION_SCHEMA,
+        "parent_generation_id": parent,
+        "generation_id": _generation_id(manifest),
+        "generation_manifest_sha256": _manifest_sha256(manifest),
+    }
+
+
+def _commit_receipt(transition: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema": COMMIT_SCHEMA,
+        "generation_id": str(transition["generation_id"]),
+        "transition_sha256": sha256_bytes(canonical_json_bytes(transition)),
+    }
+
+
+def _journal_key(kind: str, generation_id: str) -> str:
+    if kind == "anchors":
+        # One fixed If-None-Match reservation prevents concurrent first-root
+        # candidates from creating multiple permanent anchors before root CAS.
+        return JOURNAL_ANCHOR_KEY
+    return f"{JOURNAL_PREFIX}/{kind}/{generation_id}.json"
+
+
+def _generation_manifest_from_r2(s3: Any, bucket: str, generation_id: str) -> dict[str, Any]:
+    try:
+        raw = s3.get_object(
+            Bucket=bucket,
+            Key=f"{PREFIX}/generations/{generation_id}/manifest.json",
+        )["Body"].read()
+        manifest = _canonical_object(raw, label=f"journal-bound generation {generation_id}")
+        _validate_manifest(manifest)
+    except ImmutableAddressIntegrityError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise ImmutableAddressIntegrityError(
+            f"cannot verify journal-bound generation: {generation_id}"
+        ) from exc
+    if _generation_id(manifest) != generation_id:
+        raise ImmutableAddressIntegrityError("journal generation key differs from manifest identity")
+    return manifest
+
+
+def _load_publication_journal(
+    s3: Any,
+    bucket: str,
+    *,
+    current_manifest: Mapping[str, Any] | None,
+    require_resolved: bool,
+    allow_empty: bool = False,
+) -> dict[str, Any] | None:
+    """Validate the append-only, parent-reserved publication journal.
+
+    Generation objects are written before the mutable root and may therefore
+    include harmless CAS losers.  Only a journaled transition that reserved its
+    exact parent and received a post-CAS commit is a durable high-water mark.
+    An unresolved transition fails staging closed: it can mean either a pending
+    exact retry or a root move whose commit was interrupted.
+    """
+    prefix = f"{JOURNAL_PREFIX}/"
+    keys = _listed_keys(s3, bucket, prefix=prefix)
+    if not keys:
+        if allow_empty:
+            return None
+        raise ImmutableAddressIntegrityError("story packet publication journal is absent")
+
+    anchors: dict[str, dict[str, Any]] = {}
+    transitions: dict[str, dict[str, Any]] = {}
+    commits: dict[str, dict[str, Any]] = {}
+    for key in keys:
+        if key == JOURNAL_ANCHOR_KEY:
+            kind = "anchors"
+            key_id = ""
+        else:
+            relative = key[len(prefix):]
+            parts = relative.split("/")
+            if len(parts) != 2 or not parts[1].endswith(".json"):
+                raise ImmutableAddressIntegrityError(f"unexpected publication journal object: {key}")
+            kind, filename = parts
+            if kind == "anchors":
+                raise ImmutableAddressIntegrityError(f"unexpected publication journal object: {key}")
+            key_id = filename[:-5]
+            _generation_id({"generation_id": key_id})
+        try:
+            raw = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+            receipt = _canonical_object(raw, label=f"story packet publication {kind} receipt")
+        except ImmutableAddressIntegrityError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise ImmutableAddressIntegrityError(f"cannot read publication journal object: {key}") from exc
+
+        if kind == "anchors":
+            if set(receipt) != {"schema", "generation_id", "generation_manifest_sha256"}:
+                raise ImmutableAddressIntegrityError("publication anchor fields mismatch")
+            if receipt.get("schema") != ANCHOR_SCHEMA:
+                raise ImmutableAddressIntegrityError("publication anchor identity mismatch")
+            anchor_id = _generation_id(receipt)
+            if not isinstance(receipt.get("generation_manifest_sha256"), str) or not _SHA256.fullmatch(
+                receipt["generation_manifest_sha256"]
+            ):
+                raise ImmutableAddressIntegrityError("publication anchor manifest digest invalid")
+            anchors[anchor_id] = receipt
+        elif kind == "transitions":
+            if set(receipt) != {
+                "schema", "parent_generation_id", "generation_id", "generation_manifest_sha256",
+            }:
+                raise ImmutableAddressIntegrityError("publication transition fields mismatch")
+            if receipt.get("schema") != TRANSITION_SCHEMA or receipt.get("parent_generation_id") != key_id:
+                raise ImmutableAddressIntegrityError("publication transition parent reservation mismatch")
+            generation_id = _generation_id(receipt)
+            if generation_id == key_id:
+                raise ImmutableAddressIntegrityError("publication transition cannot point to itself")
+            if not isinstance(receipt.get("generation_manifest_sha256"), str) or not _SHA256.fullmatch(
+                receipt["generation_manifest_sha256"]
+            ):
+                raise ImmutableAddressIntegrityError("publication transition manifest digest invalid")
+            transitions[key_id] = receipt
+        elif kind == "commits":
+            if set(receipt) != {"schema", "generation_id", "transition_sha256"}:
+                raise ImmutableAddressIntegrityError("publication commit fields mismatch")
+            if receipt.get("schema") != COMMIT_SCHEMA or receipt.get("generation_id") != key_id:
+                raise ImmutableAddressIntegrityError("publication commit identity mismatch")
+            if not isinstance(receipt.get("transition_sha256"), str) or not _SHA256.fullmatch(
+                receipt["transition_sha256"]
+            ):
+                raise ImmutableAddressIntegrityError("publication commit transition digest invalid")
+            commits[key_id] = receipt
+        else:
+            raise ImmutableAddressIntegrityError(f"unexpected publication journal kind: {kind}")
+
+    if len(anchors) != 1:
+        raise ImmutableAddressIntegrityError("publication journal must contain exactly one immutable anchor")
+    anchor_id, anchor = next(iter(anchors.items()))
+    anchor_manifest = _generation_manifest_from_r2(s3, bucket, anchor_id)
+    if _manifest_sha256(anchor_manifest) != anchor["generation_manifest_sha256"]:
+        raise ImmutableAddressIntegrityError("publication anchor differs from generation manifest")
+
+    transition_by_generation: dict[str, dict[str, Any]] = {}
+    for parent_id, transition in transitions.items():
+        generation_id = str(transition["generation_id"])
+        if generation_id in transition_by_generation:
+            raise ImmutableAddressIntegrityError("publication journal generation has multiple parents")
+        manifest = _generation_manifest_from_r2(s3, bucket, generation_id)
+        if (
+            manifest.get("parent_generation_id") != parent_id
+            or _manifest_sha256(manifest) != transition["generation_manifest_sha256"]
+        ):
+            raise ImmutableAddressIntegrityError("publication transition differs from generation manifest")
+        transition_by_generation[generation_id] = transition
+    for generation_id, commit in commits.items():
+        transition = transition_by_generation.get(generation_id)
+        if transition is None or commit["transition_sha256"] != sha256_bytes(canonical_json_bytes(transition)):
+            raise ImmutableAddressIntegrityError("publication commit lacks its exact transition")
+
+    tip = anchor_id
+    visited_parents: set[str] = set()
+    visited_commits: set[str] = set()
+    unresolved: dict[str, Any] | None = None
+    while tip in transitions:
+        if tip in visited_parents:
+            raise ImmutableAddressIntegrityError("publication journal contains a cycle")
+        visited_parents.add(tip)
+        transition = transitions[tip]
+        candidate = str(transition["generation_id"])
+        if candidate not in commits:
+            unresolved = transition
+            break
+        visited_commits.add(candidate)
+        tip = candidate
+    if visited_parents != set(transitions) or visited_commits != set(commits):
+        raise ImmutableAddressIntegrityError("publication journal is forked or disconnected")
+    if require_resolved and unresolved is not None:
+        raise ImmutableAddressIntegrityError("story packet publication transition is unresolved")
+
+    if current_manifest is not None:
+        current_generation = _generation_id(current_manifest)
+        allowed_current = {tip}
+        if unresolved is not None:
+            allowed_current.add(str(unresolved["generation_id"]))
+        if current_generation not in allowed_current:
+            raise ImmutableAddressIntegrityError(
+                "current story packet marker is behind or outside the finalized publication journal"
+            )
+        if require_resolved and current_generation != tip:
+            raise ImmutableAddressIntegrityError(
+                "current story packet marker is not the finalized publication journal tip"
+            )
+    return {
+        "anchor_generation_id": anchor_id,
+        "tip_generation_id": tip,
+        "unresolved_transition": unresolved,
+        "transition_count": len(transitions),
+        "commit_count": len(commits),
+    }
+
+
+def _assert_current_generation_is_finalized(
+    marker: Mapping[str, Any],
+    *,
+    s3: Any,
+    bucket: str,
+) -> None:
+    _load_publication_journal(
+        s3,
+        bucket,
+        current_manifest=marker,
+        require_resolved=True,
+    )
+
+
 def load_remote_root_marker(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any] | None:
     """Return the validated last-good public marker, if credentials exist."""
     marker, _etag, _digest = load_remote_root_state(s3=s3, bucket=bucket)
@@ -376,7 +669,7 @@ def _existing_immutable_matches(s3: Any, bucket: str, key: str, body: bytes) -> 
         raise ImmutableAddressIntegrityError(f"cannot determine immutable object state: {key}") from exc
     digest = sha256_bytes(body)
     if int(head.get("ContentLength", -1)) != len(body):
-        raise ImmutableAddressIntegrityError(f"immutable object byte receipt mismatch: {key}")
+        raise ImmutableCreateConflict(f"immutable object byte receipt mismatch: {key}")
     metadata = head.get("Metadata", {})
     metadata_sha = metadata.get("sha256") if isinstance(metadata, Mapping) else None
     if metadata_sha == digest:
@@ -386,7 +679,7 @@ def _existing_immutable_matches(s3: Any, bucket: str, key: str, body: bytes) -> 
     except Exception as exc:  # noqa: BLE001
         raise ImmutableAddressIntegrityError(f"cannot read immutable object: {key}") from exc
     if not isinstance(existing, bytes) or existing != body or sha256_bytes(existing) != digest:
-        raise ImmutableAddressIntegrityError(f"immutable object byte receipt mismatch: {key}")
+        raise ImmutableCreateConflict(f"immutable object byte receipt mismatch: {key}")
     return True
 
 
@@ -401,8 +694,12 @@ def _put_immutable(s3: Any, bucket: str, key: str, body: bytes, *, dry_run: bool
             Metadata={"sha256": sha256_bytes(body)}, IfNoneMatch="*",
         )
     except Exception as exc:  # noqa: BLE001
-        if _is_precondition_failed(exc) and _existing_immutable_matches(s3, bucket, key, body):
-            return
+        if _is_precondition_failed(exc):
+            try:
+                if _existing_immutable_matches(s3, bucket, key, body):
+                    return
+            except ImmutableCreateConflict:
+                raise
         raise ImmutableAddressIntegrityError(f"immutable create failed: {key}") from exc
 
 
@@ -421,7 +718,10 @@ def _shrink_allowed(local: Mapping[str, Any], remote: Mapping[str, Any] | None) 
 
 
 def _hydrate_and_verify_current_story_root(
-    *, s3: Any | None = None, bucket: str | None = None,
+    *,
+    s3: Any | None = None,
+    bucket: str | None = None,
+    require_publication_journal: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return a sealed binding plus the original detailed audit health."""
     client = s3 if s3 is not None else _client()
@@ -439,6 +739,12 @@ def _hydrate_and_verify_current_story_root(
         marker_raw = canonical_json_bytes(marker)
         _validate_manifest(marker)
         generation_id = _generation_id(marker)
+        if require_publication_journal:
+            _assert_current_generation_is_finalized(
+                marker,
+                s3=client,
+                bucket=target_bucket,
+            )
         immutable = client.get_object(
             Bucket=target_bucket, Key=f"{PREFIX}/generations/{generation_id}/manifest.json",
         )["Body"].read()
@@ -509,6 +815,19 @@ def _hydrate_and_verify_current_story_root(
             raise ValueError("public story packet root ETag is absent after audit")
         if current_etag != marker_etag or canonical_json_bytes(current) != marker_raw:
             raise ValueError("public story packet root changed during audit")
+        if require_publication_journal:
+            _assert_current_generation_is_finalized(
+                current,
+                s3=client,
+                bucket=target_bucket,
+            )
+        final, final_etag = _remote_marker(client, target_bucket)
+        if (
+            final is None
+            or final_etag != current_etag
+            or canonical_json_bytes(final) != canonical_json_bytes(current)
+        ):
+            raise ValueError("public story packet root moved during journal proof")
         return {
             "schema": ROOT_AUDIT_SCHEMA,
             "authority": AUTHORITY,
@@ -516,7 +835,7 @@ def _hydrate_and_verify_current_story_root(
             "marker_sha256": sha256_bytes(marker_raw),
             # Bind the second read: it is the identity proven current after
             # every immutable object and evidence receipt was replayed.
-            "marker_etag": current_etag,
+            "marker_etag": final_etag,
             "manifest": dict(marker),
             "execution": dict(EXECUTION_RECEIPT),
         }, dict(health)
@@ -540,10 +859,212 @@ def hydrate_and_verify_current_story_root(
     return binding
 
 
+def assert_story_root_binding_current(
+    binding: object,
+    *,
+    s3: Any | None = None,
+    bucket: str | None = None,
+) -> None:
+    """Re-prove that an audited root is still the sole mutable R2 marker.
+
+    Admission uses this immediately before a writer call and again after the
+    staged artifact is produced.  Canonical bytes and the transport identity
+    must both match; a same-body ETag change is a race, not permission to keep
+    working from a detached audit.
+    """
+    validate_story_root_audit_binding(binding)
+    assert isinstance(binding, Mapping)
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        raise ImmutableAddressIntegrityError("R2 credentials are required for a story root currentness check")
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        raise ImmutableAddressIntegrityError("R2_BUCKET not set for a story root currentness check")
+    current, current_etag = _remote_marker(client, target_bucket)
+    if (
+        current is None
+        or current_etag is None
+        or current_etag != binding["marker_etag"]
+        or canonical_json_bytes(current) != canonical_json_bytes(binding["manifest"])
+    ):
+        raise ImmutableAddressIntegrityError("public earnings story packet root no longer matches admission audit")
+    _assert_current_generation_is_finalized(
+        current,
+        s3=client,
+        bucket=target_bucket,
+    )
+    # Close the root/List TOCTOU as far as a multi-object store permits.
+    final, final_etag = _remote_marker(client, target_bucket)
+    if (
+        final is None
+        or final_etag != current_etag
+        or canonical_json_bytes(final) != canonical_json_bytes(current)
+    ):
+        raise ImmutableAddressIntegrityError("public earnings story packet root moved during currentness proof")
+
+
+def load_exact_current_story_packet(
+    binding: object,
+    *,
+    generation_id: str,
+    packet_id: str,
+    story_revision_id: str,
+    s3: Any | None = None,
+    bucket: str | None = None,
+) -> dict[str, Any]:
+    """Fetch one exact packet named by the still-current audited root.
+
+    The caller supplies immutable identities only.  The packet path, policy,
+    tier, Press slot, and receipts all come from the audited catalog.  This
+    function performs a second current-root check after the object read so a
+    root move between audit and packet hydration cannot reach the model rail.
+    """
+    validate_story_root_audit_binding(binding)
+    assert isinstance(binding, Mapping)
+    if not isinstance(generation_id, str) or not _GENERATION_ID.fullmatch(generation_id):
+        raise ImmutableAddressIntegrityError("requested story generation id is invalid")
+    if not isinstance(packet_id, str) or not _PACKET_ID.fullmatch(packet_id):
+        raise ImmutableAddressIntegrityError("requested story packet id is invalid")
+    if not isinstance(story_revision_id, str) or not _STORY_REVISION_ID.fullmatch(story_revision_id):
+        raise ImmutableAddressIntegrityError("requested story revision id is invalid")
+    if generation_id != binding["generation_id"]:
+        raise ImmutableAddressIntegrityError("requested story generation is not the current audited root")
+
+    manifest = binding["manifest"]
+    assert isinstance(manifest, Mapping)
+    matches = [
+        (str(key), index)
+        for key, index in manifest["packets"].items()
+        if isinstance(index, Mapping)
+        and index.get("packet_id") == packet_id
+        and index.get("story_revision_id") == story_revision_id
+    ]
+    if len(matches) != 1:
+        raise ImmutableAddressIntegrityError("requested packet and story revision do not identify one current packet")
+    _event_key, index = matches[0]
+    object_key = index.get("object_key")
+    receipt = manifest["files"].get(object_key) if isinstance(object_key, str) else None
+    if not isinstance(receipt, Mapping) or receipt.get("object_key") != object_key:
+        raise ImmutableAddressIntegrityError("current packet object receipt is absent")
+
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        raise ImmutableAddressIntegrityError("R2 credentials are required to read a current story packet")
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        raise ImmutableAddressIntegrityError("R2_BUCKET not set to read a current story packet")
+    try:
+        body = client.get_object(Bucket=target_bucket, Key=f"{PREFIX}/{object_key}")["Body"].read()
+        packet = _canonical_object(body, label="current admitted story packet")
+        if len(body) != receipt.get("bytes") or sha256_bytes(body) != receipt.get("sha256"):
+            raise ValueError("packet bytes differ from the current root receipt")
+        from engine.earnings_narrative.story_packets import validate_story_packet  # noqa: PLC0415
+
+        validate_story_packet(packet, policy=manifest["policy"]["snapshot"])
+        if (
+            packet.get("packet_id") != packet_id
+            or packet.get("story", {}).get("story_revision_id") != story_revision_id
+        ):
+            raise ValueError("packet body differs from requested immutable identities")
+    except ImmutableAddressIntegrityError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise ImmutableAddressIntegrityError(f"cannot hydrate exact current story packet: {exc}") from exc
+
+    assert_story_root_binding_current(binding, s3=client, bucket=target_bucket)
+    return packet
+
+
 def audit_remote_generation(*, s3: Any | None = None, bucket: str | None = None) -> dict[str, Any]:
     """Replay every public root receipt and all immutable objects it cites."""
     _binding, health = _hydrate_and_verify_current_story_root(s3=s3, bucket=bucket)
     return health
+
+
+def initialize_publication_journal(
+    *,
+    expected_generation_id: str,
+    expected_manifest_sha256: str,
+    s3: Any | None = None,
+    bucket: str | None = None,
+) -> dict[str, Any]:
+    """Explicitly establish the immutable high-water anchor for a legacy root.
+
+    This is a one-time trust ceremony, not part of routine publication.  The
+    operator supplies the generation and canonical manifest digest observed on
+    the already-audited public release.  Before anchoring, the complete packet,
+    ancestry, and evidence closure is replayed without assuming a journal.
+    """
+    if not isinstance(expected_generation_id, str) or not _GENERATION_ID.fullmatch(expected_generation_id):
+        raise ImmutableAddressIntegrityError("expected journal anchor generation id is invalid")
+    if not isinstance(expected_manifest_sha256, str) or not _SHA256.fullmatch(expected_manifest_sha256):
+        raise ImmutableAddressIntegrityError("expected journal anchor manifest sha256 is invalid")
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        raise ImmutableAddressIntegrityError("R2 credentials are required to initialize publication journal")
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        raise ImmutableAddressIntegrityError("R2_BUCKET not set to initialize publication journal")
+
+    existing = _load_publication_journal(
+        client,
+        target_bucket,
+        current_manifest=None,
+        require_resolved=True,
+        allow_empty=True,
+    )
+    binding, health = _hydrate_and_verify_current_story_root(
+        s3=client,
+        bucket=target_bucket,
+        require_publication_journal=False,
+    )
+    if (
+        binding["generation_id"] != expected_generation_id
+        or binding["marker_sha256"] != expected_manifest_sha256
+    ):
+        raise ImmutableAddressIntegrityError("public story packet root differs from requested journal anchor")
+    manifest = binding["manifest"]
+    assert isinstance(manifest, Mapping)
+    if existing is not None:
+        _load_publication_journal(
+            client,
+            target_bucket,
+            current_manifest=manifest,
+            require_resolved=True,
+        )
+        if existing["anchor_generation_id"] != expected_generation_id:
+            raise ImmutableAddressIntegrityError("publication journal already has a different anchor")
+        return {**dict(health), "journal": "already_initialized"}
+
+    current, current_etag = _remote_marker(client, target_bucket)
+    if (
+        current is None
+        or current_etag != binding["marker_etag"]
+        or canonical_json_bytes(current) != canonical_json_bytes(manifest)
+    ):
+        raise ImmutableAddressIntegrityError("public story packet root moved before journal initialization")
+    anchor = _anchor_receipt(manifest)
+    _put_immutable(
+        client,
+        target_bucket,
+        _journal_key("anchors", expected_generation_id),
+        canonical_json_bytes(anchor),
+        dry_run=False,
+    )
+    final, final_etag = _remote_marker(client, target_bucket)
+    if (
+        final is None
+        or final_etag != current_etag
+        or canonical_json_bytes(final) != canonical_json_bytes(current)
+    ):
+        raise ImmutableAddressIntegrityError("public story packet root moved during journal initialization")
+    _load_publication_journal(
+        client,
+        target_bucket,
+        current_manifest=final,
+        require_resolved=True,
+    )
+    return {**dict(health), "journal": "initialized"}
 
 
 def publish(
@@ -576,13 +1097,84 @@ def publish(
         _catalog_keys(manifest)
         _validate_staging(Path(out_dir), manifest)
         remote, remote_etag = _remote_marker(client, target_bucket)
+        if remote is not None and remote_etag is None:
+            raise ImmutableAddressIntegrityError(
+                "current story packet root ETag is required before publication"
+            )
+        generation_id = _generation_id(manifest)
+        journal = _load_publication_journal(
+            client,
+            target_bucket,
+            current_manifest=remote,
+            require_resolved=False,
+            allow_empty=True,
+        )
         if remote is not None:
             _validate_manifest(remote)
             _catalog_keys(remote)
+            if journal is None and not dry_run:
+                raise ImmutableAddressIntegrityError(
+                    "existing story packet root has no publication journal; "
+                    "run the explicit expected-generation/manifest initialization first"
+                )
+            elif journal is not None:
+                unresolved = journal.get("unresolved_transition")
+                if isinstance(unresolved, Mapping):
+                    pending_generation = str(unresolved["generation_id"])
+                    current_generation = _generation_id(remote)
+                    if current_generation == pending_generation and not dry_run:
+                        # The root CAS succeeded but the worker stopped before
+                        # its commit receipt.  Current==candidate makes this
+                        # repair unambiguous and idempotent.
+                        commit = _commit_receipt(unresolved)
+                        _put_immutable(
+                            client,
+                            target_bucket,
+                            _journal_key("commits", pending_generation),
+                            canonical_json_bytes(commit),
+                            dry_run=False,
+                        )
+                        confirmed, confirmed_etag = _remote_marker(client, target_bucket)
+                        if (
+                            confirmed is None
+                            or confirmed_etag != remote_etag
+                            or canonical_json_bytes(confirmed) != canonical_json_bytes(remote)
+                        ):
+                            raise ImmutableAddressIntegrityError(
+                                "story packet root moved while repairing publication commit"
+                            )
+                        journal = _load_publication_journal(
+                            client,
+                            target_bucket,
+                            current_manifest=remote,
+                            require_resolved=True,
+                        )
+                    elif (
+                        current_generation != str(journal["tip_generation_id"])
+                        or pending_generation != generation_id
+                        or canonical_json_bytes(unresolved) != canonical_json_bytes(_transition_receipt(manifest))
+                    ):
+                        return PUBLISH_CONFLICT
+                else:
+                    _load_publication_journal(
+                        client,
+                        target_bucket,
+                        current_manifest=remote,
+                        require_resolved=True,
+                    )
+        elif journal is not None:
+            # A first-root anchor is written before If-None-Match.  Only the
+            # exact same generation may retry that interrupted first publish.
+            if (
+                journal.get("transition_count") != 0
+                or journal.get("commit_count") != 0
+                or journal.get("anchor_generation_id") != generation_id
+                or manifest.get("parent_generation_id") is not None
+            ):
+                return PUBLISH_CONFLICT
         remote_digest = sha256_bytes(canonical_json_bytes(remote)) if remote is not None else None
         if remote is not None and canonical_json_bytes(remote) == canonical_json_bytes(manifest):
             return 0
-        generation_id = _generation_id(manifest)
         if remote is None:
             if manifest.get("parent_generation_id") is not None:
                 return PUBLISH_CONFLICT
@@ -623,6 +1215,53 @@ def publish(
         )
         if dry_run:
             return 0
+        transition: dict[str, Any] | None = None
+        if remote is None:
+            anchor = _anchor_receipt(manifest)
+            try:
+                _put_immutable(
+                    client,
+                    target_bucket,
+                    _journal_key("anchors", generation_id),
+                    canonical_json_bytes(anchor),
+                    dry_run=False,
+                )
+            except ImmutableCreateConflict:
+                return PUBLISH_CONFLICT
+            confirmed, confirmed_etag = _remote_marker(client, target_bucket)
+            if confirmed is not None or confirmed_etag is not None:
+                return PUBLISH_CONFLICT
+        else:
+            transition = _transition_receipt(manifest)
+            try:
+                _put_immutable(
+                    client,
+                    target_bucket,
+                    _journal_key("transitions", str(transition["parent_generation_id"])),
+                    canonical_json_bytes(transition),
+                    dry_run=False,
+                )
+            except ImmutableCreateConflict:
+                return PUBLISH_CONFLICT
+            confirmed, confirmed_etag = _remote_marker(client, target_bucket)
+            if (
+                confirmed is None
+                or confirmed_etag != remote_etag
+                or canonical_json_bytes(confirmed) != canonical_json_bytes(remote)
+            ):
+                return PUBLISH_CONFLICT
+            pending = _load_publication_journal(
+                client,
+                target_bucket,
+                current_manifest=remote,
+                require_resolved=False,
+            )
+            if (
+                not isinstance(pending.get("unresolved_transition"), Mapping)
+                or canonical_json_bytes(pending["unresolved_transition"]) != canonical_json_bytes(transition)
+                or pending.get("tip_generation_id") != remote.get("generation_id")
+            ):
+                return PUBLISH_CONFLICT
         marker = (Path(out_dir) / "manifest.json").read_bytes()
         args: dict[str, Any] = {
             "Bucket": target_bucket,
@@ -642,6 +1281,15 @@ def publish(
             if _is_precondition_failed(exc):
                 return PUBLISH_CONFLICT
             raise
+        if transition is not None:
+            commit = _commit_receipt(transition)
+            _put_immutable(
+                client,
+                target_bucket,
+                _journal_key("commits", generation_id),
+                canonical_json_bytes(commit),
+                dry_run=False,
+            )
         return 0
     except Exception as exc:  # noqa: BLE001
         log.error("earnings story packet publication failed: %s", exc)
@@ -653,7 +1301,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", type=Path)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--audit-remote", action="store_true", help="Read and replay the complete public packet catalog")
+    parser.add_argument("--initialize-journal", action="store_true", help="Explicitly anchor one already-audited legacy root")
+    parser.add_argument("--expected-generation-id")
+    parser.add_argument("--expected-manifest-sha256")
     args = parser.parse_args(argv)
+    if args.audit_remote and args.initialize_journal:
+        parser.error("--audit-remote and --initialize-journal are mutually exclusive")
+    if args.initialize_journal:
+        if not args.expected_generation_id or not args.expected_manifest_sha256:
+            parser.error("journal initialization requires both expected immutable root values")
+        try:
+            health = initialize_publication_journal(
+                expected_generation_id=args.expected_generation_id,
+                expected_manifest_sha256=args.expected_manifest_sha256,
+            )
+        except ImmutableAddressIntegrityError as exc:
+            print(f"earnings story packets: journal initialization failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(health, sort_keys=True))
+        return 0
     if args.audit_remote:
         try:
             health = audit_remote_generation()

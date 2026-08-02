@@ -496,6 +496,7 @@ def _stage_preplanned_slots(
     revision_reconciliation: dict | None = None,
     admission_receipt: dict | None = None,
     single_provider_attempt: bool = False,
+    admitted_token_cap: bool = False,
 ) -> dict:
     """Write already-selected slots through the normal writer/validator rail.
 
@@ -518,14 +519,24 @@ def _stage_preplanned_slots(
         attempts: list[dict] = []
         prior: list[str] = []
         passed_payload = None
-        writer_kwargs = {"single_provider_attempt": True} if single_provider_attempt else {}
+        writer_kwargs: dict[str, bool] = {}
+        if single_provider_attempt:
+            writer_kwargs["single_provider_attempt"] = True
+        if admitted_token_cap:
+            writer_kwargs["admitted_token_cap"] = True
 
         for attempt in range(max_regenerations + 1):
             res = writer.write(slot, cfg, state=state, attempt=attempt,
                                prior_failures=prior or None, **writer_kwargs)
             if not res.get("ok"):
-                attempts.append({"attempt": attempt, "ok": False,
-                                 "reason": res.get("reason")})
+                attempt_row = {"attempt": attempt, "ok": False,
+                               "reason": res.get("reason")}
+                if admitted_token_cap:
+                    attempt_row["provider"] = res.get("provider")
+                for key in ("token_cap", "provider_usage"):
+                    if key in res:
+                        attempt_row[key] = res[key]
+                attempts.append(attempt_row)
                 if res.get("reason") in ("circuit_open", "token_budget_exhausted",
                                          "no_provider", "llm_disabled"):
                     break                       # a run-level stop, not a draft problem
@@ -536,11 +547,15 @@ def _stage_preplanned_slots(
             draft["slug"] = _unique_slug(draft.get("slug") or slot.get("slug_hint") or "",
                                          slot, taken_slugs)
             report = validators.validate(draft, slot, cfg, root=root)
-            attempts.append({"attempt": attempt, "ok": bool(report["ok"]),
-                             "failed": report["failed"],
-                             "our_value_share": report.get("our_value_share"),
-                             "max_block_jaccard": report.get("max_block_jaccard"),
-                             "provider": res.get("provider")})
+            attempt_row = {"attempt": attempt, "ok": bool(report["ok"]),
+                           "failed": report["failed"],
+                           "our_value_share": report.get("our_value_share"),
+                           "max_block_jaccard": report.get("max_block_jaccard"),
+                           "provider": res.get("provider")}
+            for key in ("token_cap", "provider_usage"):
+                if key in res:
+                    attempt_row[key] = res[key]
+            attempts.append(attempt_row)
             if report["ok"]:
                 taken_slugs.add(draft["slug"])
                 passed_payload = (draft, report, res)
@@ -684,6 +699,7 @@ def run_admitted_earnings_staging(
         taken_slugs=set(),
         admission_receipt=dict(admission_receipt),
         single_provider_attempt=True,
+        admitted_token_cap=True,
     )
 
 

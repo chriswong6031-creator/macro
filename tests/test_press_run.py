@@ -43,12 +43,13 @@ def _good_draft(slot, n=0):
 
 
 def _stub_writer(monkeypatch, *, draft_fn=None, ok=True, reason="stubbed failure"):
-    calls = {"n": 0, "single_provider_attempt": []}
+    calls = {"n": 0, "single_provider_attempt": [], "admitted_token_cap": []}
 
     def _write(slot, cfg, *, state=None, attempt=0, prior_failures=None,
-               single_provider_attempt=False):
+               single_provider_attempt=False, admitted_token_cap=False):
         calls["n"] += 1
         calls["single_provider_attempt"].append(single_provider_attempt)
+        calls["admitted_token_cap"].append(admitted_token_cap)
         if not ok:
             (state or W.RunState()).record_failure()
             return {"ok": False, "draft": None, "reason": reason,
@@ -283,6 +284,7 @@ def test_admitted_earnings_staging_isolated_and_receipt_bound(tmp_path, monkeypa
 
     assert calls["n"] == 1
     assert calls["single_provider_attempt"] == [True]
+    assert calls["admitted_token_cap"] == [True]
     assert summary["planned"] == 1
     assert summary["passed"] == 1
     assert summary["writer_state"]["token_budget"] == 12_000
@@ -378,6 +380,53 @@ def test_admitted_earnings_staging_does_not_follow_the_provider_waterfall(tmp_pa
     assert summary["quarantined"] == 1
 
 
+def test_admitted_failure_artifact_retains_cap_usage_and_provider(tmp_path, monkeypatch):
+    root = F.fixture_root(tmp_path)
+    cfg = P.load_config(root)
+    slot = F.slot(id="press-earnings-usage-receipt")
+    token_cap = {
+        "hard_limit_tokens": 12_000,
+        "effective_limit_tokens": 12_000,
+        "reserved_total_tokens": 9_000,
+    }
+    provider_usage = {
+        "reported": True,
+        "input_tokens": 600,
+        "output_tokens": 4001,
+        "billable_total_tokens": 4601,
+        "within_requested_bounds": False,
+    }
+
+    def _failed(*_args, **_kwargs):
+        return {
+            "ok": False,
+            "draft": None,
+            "reason": "provider_usage_exceeds_admitted_cap",
+            "provider": "deepseek",
+            "token_cap": token_cap,
+            "provider_usage": provider_usage,
+        }
+
+    monkeypatch.setattr(R.writer, "write", _failed)
+    destination = tmp_path / "usage-receipt-stage"
+    R.run_admitted_earnings_staging(
+        root,
+        cfg,
+        slot=slot,
+        admission_receipt={"schema": "earnings.press_admission/v1"},
+        staging_dir=destination,
+    )
+    staged = json.loads((destination / f"{slot['id']}.json").read_text(encoding="utf-8"))
+    assert staged["attempts"] == [{
+        "attempt": 0,
+        "ok": False,
+        "reason": "provider_usage_exceeds_admitted_cap",
+        "provider": "deepseek",
+        "token_cap": token_cap,
+        "provider_usage": provider_usage,
+    }]
+
+
 def test_generic_run_staging_keeps_planning_reconciliation_and_retry_contract(tmp_path, monkeypatch):
     """The preplanned helper is an extraction, not a policy change to W1."""
     root = F.fixture_root(tmp_path)
@@ -401,9 +450,12 @@ def test_generic_run_staging_keeps_planning_reconciliation_and_retry_contract(tm
     summary = R.run_staging(root, cfg, as_of="2026-07-26")
     assert seen == {"plan": 1, "reconcile": 1}
     assert calls["n"] == cfg["quarantine"]["max_regenerations"] + 1
+    assert calls["single_provider_attempt"] == [False] * calls["n"]
+    assert calls["admitted_token_cap"] == [False] * calls["n"]
     assert summary["revision_reconciliation"]["current_sources"] == 0
     staged = json.loads((root / "data" / "press" / "staging" / f"{slot['id']}.json").read_text())
     assert len(staged["attempts"]) == cfg["quarantine"]["max_regenerations"] + 1
+    assert all(set(row) == {"attempt", "ok", "reason"} for row in staged["attempts"])
 
 
 def test_emit_rejects_mutable_admission_allow_emit_claim(tmp_path):
