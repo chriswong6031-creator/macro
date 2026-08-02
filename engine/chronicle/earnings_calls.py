@@ -32,6 +32,8 @@ import math
 import os
 import re
 import tempfile
+import threading
+import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -507,10 +509,90 @@ def _sort_rows(rows: list[dict]) -> list[dict]:
     return sorted(rows, key=lambda row: (row.get("call_date") or "", row.get("id") or ""))
 
 
+# --------------------------------------------------------------------------- #
+# Ledger read cache (Analyst OS W5-T)
+# --------------------------------------------------------------------------- #
+# The full JSONL re-parse + per-row validation used to run on EVERY call, and a single
+# Brain symbol turn calls it TWICE (once as the ambient earnings context, once through
+# get_symbol_context). Cached on (path, stat signature) with a short TTL: the stat
+# signature makes a nightly write visible immediately, and the TTL bounds how long a
+# same-signature stale read can survive (e.g. a restored file the filesystem gave back
+# an identical mtime/size for).
+_LEDGER_CACHE_TTL_S = 60.0
+_ledger_cache: dict[str, tuple[float, tuple[int, int], tuple[list[dict], str | None, bool]]] = {}
+_ledger_cache_lock = threading.Lock()
+
+
+def clear_ledger_cache() -> None:
+    """Drop every cached ledger parse. For tests and for an ops-side flush."""
+
+    with _ledger_cache_lock:
+        _ledger_cache.clear()
+
+
+def _clone_json(value: Any) -> Any:
+    """Deep copy of json.loads-shaped data (dict/list/scalars only).
+
+    Every cached row came out of ``json.loads``, so this is exhaustive by construction
+    and ~3x cheaper than ``copy.deepcopy`` on this shape. Callers therefore keep the
+    pre-cache contract — they own the objects they are handed and may mutate them
+    without corrupting the next reader.
+    """
+    if isinstance(value, dict):
+        return {key: _clone_json(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_clone_json(item) for item in value]
+    return value
+
+
+def _ledger_stat_signature(path: Path) -> tuple[int, int] | None:
+    """``(mtime_ns, size)`` for *path*, or None when it cannot be stat'd."""
+
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return (st.st_mtime_ns, st.st_size)
+
+
 def _read_ledger(repo: Path) -> tuple[list[dict], str | None, bool]:
-    """Return ``(rows, gap, safe_to_write)`` without ever raising."""
+    """Return ``(rows, gap, safe_to_write)`` without ever raising.
+
+    Parse results are cached per file for :data:`_LEDGER_CACHE_TTL_S` seconds, keyed on
+    the file's ``(mtime_ns, size)``; the returned rows are a fresh clone every time, so
+    the parse behaviour and the objects a caller may mutate are unchanged.
+    """
 
     path = Path(repo) / CALL_EVENTS_REL
+    signature = _ledger_stat_signature(path)
+    if signature is not None:
+        now = time.monotonic()
+        with _ledger_cache_lock:
+            hit = _ledger_cache.get(str(path))
+        if hit is not None and hit[0] > now and hit[1] == signature:
+            rows, gap, safe = hit[2]
+            return _clone_json(rows), gap, safe
+
+    result = _read_ledger_uncached(path)
+
+    # Cache only when the file did not change UNDER the read — otherwise the parse we
+    # just did belongs to bytes the signature no longer describes, and caching it would
+    # pin a torn read for a whole TTL.
+    if signature is not None and _ledger_stat_signature(path) == signature:
+        with _ledger_cache_lock:
+            if len(_ledger_cache) > 64:
+                _ledger_cache.clear()
+            _ledger_cache[str(path)] = (
+                time.monotonic() + _LEDGER_CACHE_TTL_S, signature, result,
+            )
+        rows, gap, safe = result
+        return _clone_json(rows), gap, safe
+    return result
+
+
+def _read_ledger_uncached(path: Path) -> tuple[list[dict], str | None, bool]:
+    """The parse itself — byte-identical to the pre-cache ``_read_ledger`` body."""
+
     if not path.exists():
         return [], f"{CALL_EVENTS_REL} absent", True
     try:
@@ -628,6 +710,11 @@ def _write_ledger(path: Path, rows: list[dict]) -> None:
         except Exception:  # noqa: BLE001
             pass
         raise
+    # The stat signature would catch this anyway; dropping the entry here means the
+    # writer never has to rely on the filesystem's mtime granularity to see its own
+    # write (a same-size rewrite inside one clock tick is the aliasing case).
+    with _ledger_cache_lock:
+        _ledger_cache.pop(str(path), None)
 
 
 def _nightly_lane() -> bool:
