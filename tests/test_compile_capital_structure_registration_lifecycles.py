@@ -41,6 +41,12 @@ def _manifest(*, role: str, parent_manifest_id: str | None = None) -> dict:
             "filing_date": "2026-08-01",
             "accepted_at": "2026-08-01T10:00:00Z",
             "file_number": "333-123",
+            "file_number_provenance": {
+                "state": "observed",
+                "value": "333-123",
+                "candidate_values": ["333-123"],
+                "sources": ["legacy_sgml_file_number"],
+            },
         },
         "document": {
             "canonical_url": f"https://www.sec.gov/Archives/{accession}.txt#document={sequence}",
@@ -121,21 +127,11 @@ def test_disk_compiler_verifies_generation_and_writes_receipt_bound_artifact(tmp
     payload = json.loads(output.read_text(encoding="utf-8"))
     telemetry = json.loads((root / "telemetry.json").read_text(encoding="utf-8"))
     validate_registration_lifecycle_bundle(payload)
-    if payload["records"]:
-        # Wave2C source generations carry the trusted provenance object.
-        assert summary["status"] == "observed"
-        assert summary["lifecycles"] == 1
-        assert summary["timeline_events"] == 1
-        assert payload["records"][0]["observed_registration_state"] == "filed"
-    else:
-        # A pre-Wave2C generation is intentionally non-publishable rather than
-        # treating its legacy file-number scalar as an exact grouping key.
-        assert summary["status"] == "partial"
-        assert summary["lifecycles"] == 0
-        assert summary["timeline_events"] == 0
-        assert {item["reason"] for item in payload["deferred"]} == {
-            "untrusted_file_number_provenance"
-        }
+    assert summary["status"] == "observed"
+    assert summary["lifecycles"] == 1
+    assert summary["timeline_events"] == 1
+    assert len(payload["records"]) == 1
+    assert payload["records"][0]["observed_registration_state"] == "filed"
     assert telemetry["generation_id"]
     assert (
         payload["source_receipt"]["verification_state"]
