@@ -12,7 +12,7 @@ Use `research/GOVERNMENT_REVENUE_FORESIGHT_MASTERPLAN_FOR_FABLE.md` as the canon
 - Collection is daily, keyless, and hard bounded to 160 deterministic parents, 100 rows per page, five pages per parent, 2,000 detail rows per run, and 2,000 public current identities. Parents above 500 reported subawards and parents that would breach the run cap remain explicit verified-count-only coverage; they never fabricate detail.
 - First live baseline: generation `subaward-61cf42853879556a966b1589` / dossier `grsd1-77abcccf4902c93d8202b2fe`; 160 parents counted, 1,949 detail rows published, 21 complete-detail parents, 63 verified-zero parents, 66 high-count count-only parents, and 10 run-cap count-only parents, with zero collector errors.
 - Public serving is precomputed-only through `/api/government-revenue/award/{award_key}/subawards` and `/api/government-revenue/subaward/{subaward_key}`. Both surfaces return parent coverage so `zero`, `not_selected`, `high_count_count_only`, and `run_cap_count_only` cannot be mistaken for complete detail.
-- The Wave 6 checkpoint passes 482 broad Government Revenue/collector/build/API/workflow tests plus the generated Signal Bus and Synapse registry suite. The subaward UI panel is deliberately still open; this wave establishes the production evidence and API substrate first.
+- The Wave 6 checkpoint passes 503 Government Revenue/collector/build/API/workflow/Signal Bus/Synapse tests. The subaward UI panel is deliberately still open; this wave establishes the production evidence and API substrate first.
 
 ## Truth and authority fences
 
