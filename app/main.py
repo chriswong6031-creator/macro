@@ -1835,6 +1835,15 @@ except ImportError:
 from app.biocatalyst import router as biocatalyst_router  # noqa: E402
 app.include_router(biocatalyst_router)
 
+# Capital Structure observed filing-state desk.  This is an authenticated
+# artifact-serving boundary: it reads the verified projection only and does not
+# calculate financing terms, capacity, runway, or probability in the API tier.
+try:
+    from app.capital_structure import router as capital_structure_router  # noqa: E402
+    app.include_router(capital_structure_router)
+except Exception as _capital_structure_exc:  # noqa: BLE001
+    log.warning("capital structure router not mounted: %r", _capital_structure_exc)
+
 # Warm the SHARED corpus cache off the request path (Analyst OS W4). The chat
 # tool's mode="report" and the vault routes now read one process-wide copy
 # (engine/research_vault/corpus.py); without this, the first report call in a

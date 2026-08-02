@@ -410,10 +410,17 @@ on:
       # collectors/** and scripts/collect.py cover collector edits; these explicit
       # paths cover contract-, compiler-, fixture-, and test-only changes too.
       - "engine/capital_structure/**"
+      - "app/capital_structure.py"
+      - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
       - "scripts/build_capital_structure_projection.py"
+      - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
+      - "templates/capital_structure.html.j2"
+      - "templates/capital_structure_boot.js"
+      - "templates/capital_structure.css"
+      - "templates/capital_structure.js"
       - "tests/test_capital_structure_*.py"
       - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"

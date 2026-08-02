@@ -171,6 +171,11 @@ MUST_RESTART = [
     "engine/biocatalyst/trials.py",
     "engine/sector_intelligence/__init__.py",
     "engine/sector_intelligence/contracts.py",
+
+    # Capital Structure serving closure — imported by app/capital_structure.py.
+    "engine/capital_structure/__init__.py",
+    "engine/capital_structure/event_spine.py",
+    "engine/capital_structure/projection.py",
     # /api/ask + /api/brain engine closure
     "engine/neuralweb/ask_brain.py",
     "engine/neuralweb/chat_plain_words.py",

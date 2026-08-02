@@ -5953,6 +5953,16 @@ def main() -> int:
     except Exception as _bci_e:  # noqa: BLE001 — additive; never break main build
         log.warning("biocatalyst.html render failed (%s); page skipped", _bci_e)
 
+    # Capital Structure Intelligence — data-free premium observed-filing-state
+    # shell. Its browser reads stay inside the authenticated API; this render
+    # hook only prevents a full-site rebuild from leaving its page/assets stale.
+    try:
+        from scripts.build_capital_structure_page import render as _render_capital_structure
+        _cs_page = _render_capital_structure(config.ROOT)
+        log.info("wrote %s", _cs_page)
+    except Exception as _cs_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("capital_structure.html render failed (%s); page skipped", _cs_e)
+
     # W4: TIL State of Themes terminal — cross-theme matrix with asymmetry legs,
     # falsifier health, filter chips, and weekly-delta strip. Reads the four
     # site/neuralwebdata theme artifacts already written by build_thematic_state.
