@@ -53,6 +53,15 @@ lanes:
           checkpoint, so an integrity failure blocks publication of a partial
           event generation. Context-only; it has no rank, size, gate, trade, or
           Prophet authority.
+      - id: compile_capital_structure_document_terms
+        module: scripts.compile_capital_structure_document_terms
+        note: >
+          Capital Structure Intelligence W2B precision-first direct SEC fee-table
+          transcription. Reads primary/EX-FILING FEES children from complete submissions
+          only through the exact named source-manifest store namespace, emits row/security-
+          scoped decimal strings and exact cell spans, and fails on missing/mismatched bytes. It does not aggregate
+          rows or create instruments, remaining capacity, risk, probability, ranking,
+          sizing, entry, or Prophet authority.
       - id: build_capital_structure_projection
         module: scripts.build_capital_structure_projection
         note: >

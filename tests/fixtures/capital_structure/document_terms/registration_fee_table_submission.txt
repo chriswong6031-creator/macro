@@ -1,0 +1,31 @@
+<SEC-DOCUMENT>0000000001-26-000001.txt
+<SEC-HEADER>ACCESSION NUMBER: 0000000001-26-000001
+<DOCUMENT>
+<TYPE>S-3
+<SEQUENCE>1
+<FILENAME>registration.htm
+<TEXT>
+<html><body>
+<h1>Calculation of Filing Fee Tables</h1>
+<table border="1">
+  <tr>
+    <th>Title of Each Class of Securities to be Registered</th>
+    <th>Amount to be Registered</th>
+    <th>Proposed Maximum Offering Price Per Unit</th>
+    <th>Proposed Maximum Aggregate Offering Price</th>
+    <th>Amount of Registration Fee</th>
+    <th>Fee Rate</th>
+  </tr>
+  <tr>
+    <td>Common stock</td>
+    <td>1,250,000</td>
+    <td>$8.50</td>
+    <td>$10,625,000.00</td>
+    <td>$1,237.10</td>
+    <td>0.0001164</td>
+  </tr>
+</table>
+</body></html>
+</TEXT>
+</DOCUMENT>
+</SEC-DOCUMENT>
