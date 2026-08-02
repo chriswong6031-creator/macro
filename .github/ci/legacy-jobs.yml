@@ -663,6 +663,7 @@ jobs:
           tests/test_fundamental_forensics_raw_ledger.py
           tests/test_fundamental_forensics_periods.py
           tests/test_fundamental_forensics_query.py
+          tests/test_fundamental_forensics_query_snapshots.py
           tests/test_sec_document_spine.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
