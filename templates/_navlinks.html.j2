@@ -69,15 +69,14 @@
            Verbatim copy + icon, only the position changed. #}
         <a href="{{ NP }}movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span>{{ t('Daily Movers', '每日异动') }}<span class="d">{{ t('Free · biggest gainers & losers today · themes moving together', '免费 · 今日涨跌最大 · 联动主题') }}</span></a>
         <a href="{{ NP }}stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span>{{ t('Stage Analysis', '阶段分析') }}<span class="d">{{ t('Stage 1-4 cycle · fresh breakouts · earnings tone', '阶段1-4周期 · 新突破 · 财报语气') }}</span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="{{ NP }}sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Central', '行业中枢') }}<span class="d">{{ t('Cycle map · heat · gated reads', '周期图谱 · 热度 · 门控研判') }}</span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="{{ NP }}sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Central', '行业中枢') }}<span class="d">{{ t('Cycle map · market heat · one gated read per sector & theme · graded', '周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分') }}</span></a>
-            <a href="{{ NP }}baskets.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span>{{ t('Thematic Baskets & Rotation', '主题篮子与轮动') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P · which theme to hold & when to rotate', '等权主题篮子 vs 标普 · 持有哪个主题及何时轮动') }}</span></a>
-            <a href="{{ NP }}subsector_rotation.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span>{{ t('Subsector Rotation', '子行业轮动') }}<span class="d">{{ t("268 subsectors · rotation map · velocity screen · catch emerging themes early", '268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题') }}</span></a>
-            <a href="{{ NP }}subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
-          </div>
-        </div>
+        {# Sector Intelligence consolidation (2026-08-01, operator-chartered): the old
+           4-entry Sector Central flyout (Sector Central / Thematic Baskets & Rotation /
+           Subsector Rotation / Subsector Confluence) collapsed to two flat rows. Baskets +
+           Subsector Rotation merged INTO sector_central.html (redirect stubs remain at the
+           old URLs, vector_allocation.html.j2 pattern); Confluence stays — it is the
+           stock-entry funnel the merged page links to. #}
+        <a href="{{ NP }}sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span>{{ t('Sector Intelligence', '行业智慧') }}<span class="d">{{ t('Sectors, themes & rotation in one read · lanes · cycle map · graded', '板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分') }}</span></a>
+        <a href="{{ NP }}subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span>{{ t('Subsector Confluence', '子行业汇聚') }}<span class="d">{{ t('Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts', 'S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图') }}</span></a>
         <a href="{{ NP }}strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span>{{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span>{{ t('News Feed', '新闻流') }}<span class="d">{{ t('Macro headlines · catalysts · sentiment', '宏观头条 · 日程 · 情绪') }}</span></a>
         <a href="{{ NP }}alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span>{{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>

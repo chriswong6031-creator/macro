@@ -497,13 +497,28 @@ def test_banned_key_guard():
 # ---------------------------------------------------------------------------
 
 def test_template_smoke():
-    """subsector_rotation.html.j2 contains td-section and no title= violations."""
-    template_path = _REPO / "templates" / "subsector_rotation.html.j2"
-    assert template_path.exists(), "template not found"
-    content = template_path.read_text()
+    """The turn-desk surface survives the Sector Intelligence consolidation.
 
-    # Section present
-    assert 'class="td-section"' in content, "td-section missing from template"
+    subsector_rotation.html.j2 is a redirect stub as of 2026-08 — the desk moved
+    onto sector_central.html.j2 under the #si-movement section. The old pin was
+    `class="td-section"` in the standalone template; asserting that now would
+    just fail on the stub, and DELETING the assertion would leave the surface
+    unguarded. So pin the redirect AND its landing site: a stub that points at a
+    section the merged page does not actually have is the failure this replaces.
+    The title= i18n law is checked on the live surface, where the copy now lives.
+    """
+    stub_path = _REPO / "templates" / "subsector_rotation.html.j2"
+    assert stub_path.exists(), "stub template not found"
+    stub = stub_path.read_text()
+    assert 'location.replace("sector_central.html#si-movement")' in stub, (
+        "the redirect stub lost its target — the desk would be unreachable")
+
+    template_path = _REPO / "templates" / "sector_central.html.j2"
+    assert template_path.exists(), "merged template not found"
+    content = template_path.read_text()
+    assert 'id="si-movement"' in content, (
+        "sector_central.html.j2 has no #si-movement section, so the stub above "
+        "redirects into a void")
 
     # No CJK in title= attributes (check_title_i18n law)
     import re
@@ -519,9 +534,13 @@ def test_template_smoke():
     title_with_t = re.findall(r'title=["\'][^"\']*\bt\s*\(', content)
     assert not title_with_t, f"t() macro found in title= attribute: {title_with_t}"
 
-    # "validated" must not appear (CI-banned)
-    # Allow it only in comments or quoted strings that clearly aren't display text
-    # Simple check: not in user-facing strings
-    assert "validated" not in content, (
-        "Word 'validated' found in template — CI-banned per check_validated_claims.py"
-    )
+    # The "validated" law is NOT re-implemented here. This test used to carry a
+    # bare `"validated" not in content` substring check, which was safe only while
+    # it scanned the tiny standalone subsector_rotation template. Pointed at the
+    # merged sector_central.html.j2 it fires on two legitimate uses — the
+    # `tr.verdict === 'validated'` enum in the self-grader JS, and hover copy whose
+    # claim IS backed — neither of which the law forbids. scripts/
+    # check_validated_claims.py is the authority (it distinguishes an affirmative
+    # unearned claim from a backed one) and runs in CI as the `validated-claims`
+    # step, so duplicating it with a blunter rule here would only produce false
+    # reds on the merged surface.

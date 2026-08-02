@@ -1,27 +1,22 @@
 """Render/parse assertions for FTR W3+W8-UI tape-surface template additions.
 
-Guards (all three templates: baskets.html.j2, allocation.html.j2, basket_detail.html.j2):
+Guards (all three templates: sector_central.html.j2, allocation.html.j2, basket_detail.html.j2):
 - ftr-tape-band with the tape band v3 idiom (#2227 port) in baskets:
   dtp-token state label, ONE as-of, ranked leader/laggard columns with ordinals,
   full-tape expander, ai_capex complex row
 - user-first copy (docs/DESIGN_DOCTRINE.md): no rank numbers, no raw
-  IGNITION/WATCH display labels, plain-word fade footer with the 58% / n=26
-  receipt demoted to data-tips / ? help tips
+  IGNITION/WATCH display labels, plain-word fade footer with the technical
+  receipt (Oracle P8 / 58% / n=26) demoted to data-tips / ? help tips
+- ftr-disagree-chip (plain words + receipt tip) in baskets
+- ftr-tw-card (turn-watch card, STRONG SIGN / EARLY SIGN badges) in baskets
 - ftr-alloc-tape-panel in allocation (display names, no rank numbers)
 - ftr-live-strip + ftr-anatomy-card in basket_detail
 - T+1 58% fade base rate retained on all three templates (FT-R3, Tier-2 receipt)
 - No "validated" keyword in FTR-added copy (house-law gauntlet guard)
+- stale-gate: STALE chip present in baskets source (FT-R12)
 - Relative paths for basket_detail fetches (../ prefix)
 - FT-R8: fail-silent fetch pattern (catch) present
 - W8 anatomy panel leg order / WEIGHTS present in basket_detail
-- REACHABILITY (TestFtrBandReachability): every element the baskets band script
-  reads has markup in the same template, and the band fetches only what it
-  renders. These replace the per-card chip guards, which asserted class names
-  against template SOURCE and so stayed green for months while the chips they
-  described reached zero readers (#3282 deleted their emitter).
-- RETIREMENT (TestFtrPerCardChipLaneRetired): the dead per-card chip lane
-  (ftr-disagree-chip / ftr-stale-chip / ftr-heat-chip / ftr-tw-card) must not
-  return without a live emitter.
 
 All artifacts are display-tier / de-escalation only (FT-R1, FT-R2).
 """
@@ -52,34 +47,8 @@ def _render_baskets(syms: list[str]) -> str:
     env = Environment(
         loader=FileSystemLoader(str(TMPL_DIR)), autoescape=False, undefined=Undefined
     )
-    t = env.get_template("baskets.html.j2")
+    t = env.get_template("sector_central.html.j2")
     return t.render(basket_member_syms=syms)
-
-
-# ── FTR band script isolation ────────────────────────────────────────────────
-# The reachability guards below police ONLY the tape-band <script>, not the whole
-# page: baskets.html.j2 carries other lanes (rotation board, act board, MLC stance
-# chips) with their own owners and their own PRs.
-
-_BAND_START = "/* FTR-BAND-SCRIPT:"
-
-
-def _band_script(name: str = "baskets.html.j2") -> str:
-    src = _src(name)
-    i = src.find(_BAND_START)
-    assert i != -1, (
-        f"{_BAND_START} marker missing from {name} — the band script anchor was "
-        "renamed or deleted; the reachability guards below cannot run without it"
-    )
-    j = src.find("</script>", i)
-    assert j != -1, "unterminated band <script> block"
-    return src[i:j]
-
-
-def _band_fetch_urls(name: str = "baskets.html.j2") -> set[str]:
-    """Every URL the band script fetches (fetchJson(...) or bare fetch(...))."""
-    block = _band_script(name)
-    return set(re.findall(r"""fetch(?:Json)?\(\s*['"]([^'"]+)['"]""", block))
 
 
 # ── Parse (Jinja syntax) guards ───────────────────────────────────────────────
@@ -87,7 +56,7 @@ def _band_fetch_urls(name: str = "baskets.html.j2") -> set[str]:
 
 class TestFtrW3TemplatesParse:
     def test_baskets_parses(self):
-        _parse("baskets.html.j2")
+        _parse("sector_central.html.j2")
 
     def test_allocation_parses(self):
         _parse("allocation.html.j2")
@@ -96,27 +65,27 @@ class TestFtrW3TemplatesParse:
         _parse("basket_detail.html.j2")
 
 
-# ── baskets.html.j2 tape band markers ─────────────────────────────────────────
+# ── sector_central.html.j2 tape band markers ─────────────────────────────────────────
 
 
 class TestBasketsW3Markers:
     def test_tape_band_div(self):
-        assert "ftr-tape-band" in _src("baskets.html.j2")
+        assert "ftr-tape-band" in _src("sector_central.html.j2")
 
     def test_tape_band_visible_class(self):
         """CSS toggle class must be present (JS adds .visible to show the band)."""
-        assert "ftr-tape-band.visible" in _src("baskets.html.j2")
+        assert "ftr-tape-band.visible" in _src("sector_central.html.j2")
 
     def test_dtp_state_token(self):
         """The .dtp state token IS the label (LIVE · 15-MIN DELAYED / SETTLED CLOSE …)."""
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "dtp-token" in src
         assert "LIVE · 15-MIN DELAYED" in src
         assert "POST-MARKET · SETTLED CLOSE" in src
 
     def test_cx_chip(self):
         """AI-Capex complex chip rendered inside the .dtp chip row (live mode only)."""
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "ai_capex" in src
         assert "AI-Capex Complex" in src
 
@@ -132,7 +101,7 @@ class TestBasketsW3Markers:
         Continuation rows now live inside each preview column and the two columns
         meet at mid-tape, so each basket appears exactly once.
         """
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "ftr-dtp-body" in src
         assert "LIVE LEADERS" in src
         assert "SESSION LEADERS — AT THE CLOSE" in src
@@ -153,69 +122,93 @@ class TestBasketsW3Markers:
     def test_no_raw_rank_idiom(self):
         """The vetoed '#'-prefixed raw tape_rank idiom must not render (v3 per-column
         ordinals in .dtp-rank are the sanctioned form)."""
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "mr-rank" not in src
         assert "'#'+rank" not in src
         assert "tape rank #" not in src
         assert "dtp-rank" in src
 
     def test_no_raw_state_display_labels(self):
-        """IGNITION/WATCH stay as JSON states but must not be user-facing labels
-        (docs/DESIGN_DOCTRINE.md Law 2 — plain words on Tier 1)."""
-        src = _src("baskets.html.j2")
+        """IGNITION/WATCH must never be user-facing labels (DESIGN_DOCTRINE Law 2).
+        The plain-label turn-watch card (STRONG SIGN / EARLY SIGN) rode the dead
+        FTR chip lane, retired per #4257 — the live turn read is the SR
+        "Turns this week" rail."""
+        src = _src("sector_central.html.j2")
         assert "&#9889; IGNITION" not in src
         assert "&#9889; WATCH" not in src
 
+    def test_ftr_card_chip_lane_stays_retired(self):
+        """#4257: the FTR per-card chip lane (injectCardChips onto [id^="theme-"]
+        desk cards) was dead since #3282 — nothing on this page creates its
+        targets, and its two JSON fetches were fetch-and-discard. The whole lane
+        must stay absent. (The old presence pins stayed green through the entire
+        dead window — source-substring pins prove nothing about reach.)"""
+        src = _src("sector_central.html.j2")
+        for token in ("injectCardChips", "ftr-disagree-chip", "ftr-tw-card",
+                      "ftr-chip-strip", "ftr-heat-chip", "ftr-stale-chip",
+                      'id^="theme-"'):
+            assert token not in src, f"dead chip lane resurfacing: {token}"
+
     def test_t1_fade_rate(self):
         """FT-R3: T+1 58% fade base rate retained (in the Tier-2 technical receipt)."""
-        assert "58%" in _src("baskets.html.j2")
+        assert "58%" in _src("sector_central.html.j2")
 
     def test_plain_fade_footer_with_receipt(self):
         """User-first null disclosure (docs/DESIGN_DOCTRINE.md Law 5): plain words on
-        Tier 1 ('Not a buy signal … 6 in 10 faded within a day'), the 58% receipt
-        demoted to the footnote's ? tip — that IS the compliant 'nulls printed'
-        form; the jargon form must be gone.
-
-        (The Oracle P8 receipt moved out with the retired per-card turn-watch card;
-        it still ships on the basket detail page, which has a live reader.)"""
-        src = _src("baskets.html.j2")
+        Tier 1 ('Not a buy signal … 6 in 10 faded within a day'), the expected-null
+        receipt (Oracle P8) demoted to data-tips — that IS the compliant 'nulls
+        printed' form; the jargon form must be gone."""
+        src = _src("sector_central.html.j2")
         assert "Not a buy signal" in src
         assert "6 in 10" in src
+        # 58% technical receipt lives in the band footnote ? tip; the Oracle-P8
+        # receipt rode the dead chip lane (retired, #4257)
+        assert "ftr-t1-help" in src
         assert "Expected-null forward meter" not in src
 
     def test_no_validated_copy(self):
-        """House law: 'validated' is CI-guarded and must not appear in FTR copy."""
-        # Only check within JS/HTML added by FTR W3 (the tape band section)
-        src = _src("baskets.html.j2")
-        # Allowed in comments referencing CI guard itself; disallowed in user-facing copy
-        # Simple check: no standalone "validated" as a user-facing claim
-        assert "is validated" not in src
-        assert '"validated"' not in src
+        """House law: 'validated' is CI-guarded and must not appear in FTR copy.
+
+        Scoped to the FTR tape-band region this suite owns. The merged Sector
+        Intelligence template also carries the conviction board's trend-gate
+        methodology receipt ('validated for drawdown/staying-power control'),
+        which is a BACKED claim allowlisted by scripts/check_validated_claims.py
+        — that guard, not this pin, is the authority for it.
+        """
+        src = _src("sector_central.html.j2")
+        lo = src.find("ftr-tape-strip")
+        hi = src.find("Verdict Hero")
+        assert lo != -1, "tape band region missing"
+        band = src[lo:hi if hi != -1 else len(src)]
+        assert "is validated" not in band
+        assert '"validated"' not in band
 
     def test_fail_silent_catch(self):
         """FT-R8: fetch errors must be swallowed (catch present)."""
-        assert ".catch(" in _src("baskets.html.j2")
+        assert ".catch(" in _src("sector_central.html.j2")
 
-    def test_band_fetches_only_the_artifact_it_reads(self):
-        """The band script must fetch basket_pulse and nothing else.
+    def test_basket_pulse_json_fetch(self):
+        assert "basket_pulse.json" in _src("sector_central.html.j2")
 
-        turn_watch.json and sector_pulse.json used to be fetched on every single
-        page load purely to feed the per-card chip injector — which had targeted a
-        DOM that #3282 deleted, so ~61 KB/load was downloaded and discarded. This
-        pins the fetch list to what the band actually renders; adding a fetch back
-        without a reader fails here.
-        """
-        urls = _band_fetch_urls()
-        assert urls == {"live/basket_pulse.json"}, (
-            f"band script must fetch exactly the tape source it renders; got {sorted(urls)}"
-        )
+    def test_dead_lane_fetches_stay_gone(self):
+        """#4257: turn_watch.json + sector_pulse.json fed ONLY the dead chip lane
+        here (the tape band renders from basket_pulse.json alone) — 61KB of
+        fetch-and-discard per load. Producers stay (basket_detail + notify hooks
+        consume them); this page must not refetch without a consumer."""
+        src = _src("sector_central.html.j2")
+        assert "turn_watch.json" not in src
+        assert "sector_pulse.json" not in src
+
+    # (test_card_selector_uses_id_prefix_not_data_bid removed with the lane, #4257 —
+    # the selector token is asserted ABSENT in test_ftr_card_chip_lane_stays_retired;
+    # the live MLC chips use data-mlc-bid, pinned in test_theme_scoring_conflicted.)
 
     def test_t1_fade_in_tape_band_html(self):
         """FT-R3: the fade note must be always-rendered HTML in the tape band footer
         (not only in JS/shock banner) — plain words visible, 58% receipt in the
         adjacent ? help tip within the same footnote element.
         """
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         # Search for the HTML element usage (class="dtp-fn ftr-tape-t1"), not the CSS rule
         html_element_marker = 'class="dtp-fn ftr-tape-t1"'
         assert html_element_marker in src, "ftr-tape-t1 footnote element must exist in tape band"
@@ -230,13 +223,13 @@ class TestBasketsW3Markers:
 
     def test_mover_chips_use_tape_rank(self):
         """Mover chips must sort by b.tape_rank (authoritative) not synthetic n-i index."""
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "b.tape_rank" in src, "chip ordering must use b.tape_rank, not n-i or bot3.length-i"
 
     def test_honest_shared_scale_bars(self):
         """#2208 idiom law: bars are proportional on a shared px scale (maxAbs), not
         the old fake fixed-multiplier bars."""
-        src = _src("baskets.html.j2")
+        src = _src("sector_central.html.j2")
         assert "maxAbs" in src
         assert "Math.abs(chg)/maxAbs" in src
 
@@ -368,7 +361,7 @@ class TestBasketDetailW3Markers:
         assert "on today&#39;s board" in src
 
 
-# ── Full-render guard: baskets.html.j2 with syms ─────────────────────────────
+# ── Full-render guard: sector_central.html.j2 with syms ─────────────────────────────
 
 
 class TestFtrW3BasketsRender:
@@ -384,6 +377,11 @@ class TestFtrW3BasketsRender:
         html = _render_baskets(["SPY"])
         assert "ftr-dtp-body" in html
 
+    def test_dead_chip_lane_absent_in_render(self):
+        html = _render_baskets(["SPY"])
+        for token in ("ftr-disagree-chip", "ftr-tw-card", "injectCardChips"):
+            assert token not in html, f"dead chip lane in render: {token}"
+
     def test_t1_fade_rate_in_render(self):
         html = _render_baskets(["SPY"])
         assert "58%" in html
@@ -391,108 +389,10 @@ class TestFtrW3BasketsRender:
     def test_plain_null_disclosure_in_render(self):
         html = _render_baskets(["SPY"])
         assert "Not a buy signal" in html
+        assert "ftr-t1-help" in html  # 58% receipt tip (Oracle-P8 rode the dead lane)
 
-
-# ── Reachability: the band's JS and its markup must stay paired ───────────────
-
-
-class TestFtrBandReachability:
-    """The guards that would have caught the dead per-card chip lane.
-
-    #3282 deleted the theme-desk cards that `injectCardChips` wrote into. The
-    injector kept running, kept fetching three artifacts, and produced nothing
-    for months — while `tests/test_ftr_w3_ui.py` stayed green, because every
-    assertion it made was `"<class-name>" in template_source`, which is true
-    whether or not a single chip ever reaches a reader.
-
-    A source-substring assertion cannot see an empty NodeList. These can: they
-    pin each DOM read in the band script to markup that exists in the same
-    template, so deleting one half fails the build instead of going dark.
-    """
-
-    def test_every_band_target_id_has_markup(self):
-        """Each getElementById('x') in the band script needs an id="x" element.
-
-        This is the half that was missing: delete the markup and the JS still
-        parses, still runs, and silently no-ops.
-        """
-        src = _src("baskets.html.j2")
-        block = _band_script()
-        targets = set(re.findall(r"""getElementById\(\s*['"]([\w-]+)['"]""", block))
-        assert targets, "band script reads no elements — anchor probably drifted"
-        missing = sorted(t for t in targets if f'id="{t}"' not in src)
-        assert not missing, (
-            "band script drives element(s) that no markup in baskets.html.j2 "
-            f"renders — live-looking JS wired to nothing: {missing}"
-        )
-
-    def test_band_uses_no_id_prefix_selector(self):
-        """No `[id^="..."]` fan-out selector in the band script.
-
-        The retired injector's whole failure mode was a prefix selector whose
-        emitter lived in another page's renderer (`baskets_desk.js`, which this
-        page does not even load). A prefix selector is a promise about markup the
-        template cannot see; the band addresses its own ids directly instead.
-        """
-        stray = re.findall(r"""\[id\^=['"][^'"]+['"]\]""", _band_script())
-        assert not stray, (
-            "band script selects elements by id-prefix; the emitter is not "
-            f"guaranteed to exist in this template: {stray}"
-        )
-
-    def test_band_markup_and_visibility_toggle_both_present(self):
-        """The band is the one surface here that IS live — keep it that way."""
-        src = _src("baskets.html.j2")
-        assert 'id="ftr-tape-band"' in src, "tape band markup must exist"
-        assert ".ftr-tape-band.visible" in src, "the .visible CSS toggle must exist"
-        assert "classList.add('visible')" in _band_script(), (
-            "band script must still reveal the band"
-        )
-
-
-class TestFtrPerCardChipLaneRetired:
-    """The per-card chip lane is retired — it must not come back half-wired.
-
-    Retired because every read it carried is already on a live surface: the
-    rank-delta chip duplicated the rotation board's velocity column (literally
-    the same field, `pulse_rank_delta_5d`), the heat chip restated the quadrant
-    map's LEADING/WEAKENING/IMPROVING/LAGGING classification in a second
-    vocabulary, the disagreement chip is re-homed by the act board's stance chip
-    (PR #4241), and the turn-watch card still ships on the basket detail page,
-    which has a live reader.
-    """
-
-    RETIRED_CLASSES = (
-        "ftr-disagree-chip",
-        "ftr-stale-chip",
-        "ftr-heat-chip",
-        "ftr-tw-card",
-        "ftr-chip-strip",
-        "ftr-live-chg",
-    )
-
-    def test_no_injector(self):
-        assert "injectCardChips" not in _src("baskets.html.j2")
-
-    def test_no_retired_chip_emitters_or_css(self):
-        """Rendered output carries none of the retired classes.
-
-        Checked against the RENDER, not the template source, so a Jinja comment
-        explaining the retirement does not satisfy the guard.
-        """
+    def test_dead_lane_fetches_absent_in_render(self):
         html = _render_baskets(["SPY"])
-        # The #theme-desk compact-chip rule still names two of these inside one
-        # selector list. It is dead CSS scoped to a container that no longer
-        # exists, and PR #4246 (shared-desk-renderer cleanup) owns that line, not
-        # this lane. Excise that ONE declaration rather than exempting the class
-        # names, so a genuine re-emission of ftr-stale-chip / ftr-heat-chip
-        # anywhere else on the page still trips this guard.
-        html = re.sub(
-            r"#theme-desk td \.txrow \.chip,.*?\{[^}]*\}", "", html, flags=re.S
-        )
-        present = [c for c in self.RETIRED_CLASSES if c in html]
-        assert not present, (
-            f"retired per-card chip artifacts are back in the render: {present} — "
-            "if you are reviving them, give them a live emitter and a DOM-level "
-            "assertion, not a source-substring one"
-        )
+        assert "basket_pulse.json" in html
+        assert "sector_pulse.json" not in html
+        assert "turn_watch.json" not in html
