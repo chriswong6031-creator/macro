@@ -862,6 +862,12 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
             "scanner": session.get("universe"),
             "ticker": "SPY" if "SPY" in (stores.get("gex") or {}) else (INDEX_KEYS[0]),
             "leaders": n_boards or None,
+            # Flow mode's tab figure is the COVERED-SECTOR count (ONE_DOOR spec
+            # §2.0.1) — counted with build_sectors' own filter, so the tab and the
+            # panel it opens can never disagree about how many sectors reported.
+            # The mode's rows themselves are lazy-fetched client-side; this is the
+            # only thing about Flow the chrome needs to know.
+            "flow": (len(sectors["rows"]) if sectors and sectors.get("rows") else None),
         },
         "missing": missing,
         # Direction honesty, straight from the flow desk's own fields (#F2-01/
