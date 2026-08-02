@@ -18,6 +18,11 @@ on:
         required: false
         default: "100"
         type: string
+      cohort_limit:
+        description: "Maximum retained evidence cohort; old bootstrap rows outside it are explicitly excluded"
+        required: false
+        default: "500"
+        type: string
       promote:
         description: "Promote after (and only after) the bounded cursor drains"
         required: false
@@ -71,6 +76,7 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           BOOTSTRAP_SINCE: ${{ inputs.bootstrap_since || '2026-01-01' }}
           MAX_BODIES: ${{ inputs.max_bodies || '100' }}
+          COHORT_LIMIT: ${{ inputs.cohort_limit || '500' }}
           SHOULD_PROMOTE: ${{ github.event_name == 'schedule' || inputs.promote }}
         run: |
           set -euo pipefail
@@ -79,6 +85,7 @@ jobs:
             --out-dir "$RUNNER_TEMP/earnings-evidence/output"
             --bootstrap-since "$BOOTSTRAP_SINCE"
             --max-bodies "$MAX_BODIES"
+            --cohort-limit "$COHORT_LIMIT"
           )
           if [ "${SHOULD_PROMOTE}" = "true" ]; then
             ARGS+=(--promote)

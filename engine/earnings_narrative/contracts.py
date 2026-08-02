@@ -42,7 +42,7 @@ _TX_KEYS = frozenset({"schema", "ticker", "id", "period", "date", "title", "segm
 _TX_SEGMENT_KEYS = frozenset({"speaker", "role", "text"})
 _SOURCE_KEYS = frozenset({
     "ticker", "transcript_id", "body_sha256", "body_bytes", "index_sha256",
-    "indexed_body_sha256", "index_generated_at",
+    "indexed_body_sha256", "index_generated_at", "locator",
 })
 _EVENT_KEYS = frozenset({"ticker", "transcript_id", "period", "date", "title"})
 _EXECUTION_KEYS = frozenset({"mode", "providers", "model_calls", "tokens"})
@@ -61,7 +61,7 @@ _MANIFEST_KEYS = frozenset({
     "schema", "authority", "generation_id", "generated_at", "status", "warnings",
     "omissions", "events", "files", "execution",
 })
-_EVENT_MANIFEST_KEYS = frozenset({"source_sha256", "supersedes_source_sha256", "fact_pack", "claim_graph"})
+_EVENT_MANIFEST_KEYS = frozenset({"source_sha256", "supersedes_source_sha256", "fact_pack", "claim_graph", "source_body"})
 _FILE_KEYS = frozenset({"sha256", "bytes", "schema"})
 _OMISSION_KEYS = frozenset({"event_key", "reason", "expected_source_sha256"})
 
@@ -218,6 +218,7 @@ def transcript_source(payload: object, *, index_payload: object, indexed_body_sh
         "index_sha256": canonical_json_sha256(index_payload),
         "indexed_body_sha256": indexed_sha,
         "index_generated_at": indexed_at,
+        "locator": f"/data/tx/{safe_ticker(transcript['ticker'])}/{transcript_id(transcript['id'])}.json.gz",
     }
 
 
@@ -289,6 +290,9 @@ def _validate_source(value: object, *, name: str) -> Mapping[str, Any]:
     if indexed is not None and indexed != row.get("body_sha256"):
         raise ContractError(f"{name}.indexed_body_sha256 must match body_sha256")
     iso_timestamp(row.get("index_generated_at"), field=f"{name}.index_generated_at")
+    expected_locator = f"/data/tx/{safe_ticker(row['ticker'])}/{transcript_id(row['transcript_id'])}.json.gz"
+    if row.get("locator") != expected_locator:
+        raise ContractError(f"{name}.locator must be the canonical Terminal transcript path")
     return row
 
 
@@ -465,6 +469,35 @@ def validate_evidence_pair(fact_pack: object, claim_graph: object) -> None:
             raise ContractError("direct claim does not exactly bind its fact")
 
 
+def verify_fact_pack_against_transcript(fact_pack: object, transcript: object) -> None:
+    """Replay every direct receipt against its immutable source body bytes."""
+    validate_fact_pack(fact_pack)
+    pack = _mapping(fact_pack, name="fact_pack")
+    tx = validate_terminal_transcript(transcript)
+    source = pack["source"]
+    body = canonical_transcript_body_bytes(tx)
+    if sha256_bytes(body) != source["body_sha256"] or len(body) != source["body_bytes"]:
+        raise ContractError("fact_pack source body receipt mismatch")
+    if event_from_transcript(tx) != pack["event"]:
+        raise ContractError("fact_pack event does not match source body")
+    for index, fact in enumerate(pack["facts"]):
+        receipt = fact["receipt"]
+        segment_index = int(receipt["segment_index"])
+        segments = tx["segments"]
+        if segment_index >= len(segments):
+            raise ContractError(f"fact_pack facts[{index}] segment is absent from source body")
+        segment_text = str(segments[segment_index]["text"])
+        segment_bytes = segment_text.encode("utf-8")
+        start = int(receipt["span_start_byte"])
+        end = int(receipt["span_end_byte"])
+        if (
+            receipt["segment_sha256"] != sha256_bytes(segment_bytes)
+            or receipt["segment_bytes"] != len(segment_bytes)
+            or segment_bytes[start:end] != fact["text"].encode("utf-8")
+        ):
+            raise ContractError(f"fact_pack facts[{index}] does not replay against source bytes")
+
+
 def validate_manifest(payload: object) -> None:
     row = _mapping(payload, name="manifest")
     _keys(row, _MANIFEST_KEYS, name="manifest")
@@ -510,13 +543,19 @@ def validate_manifest(payload: object) -> None:
         expected_base = key.replace("/", "/")
         if block.get("fact_pack") != f"fact_packs/{expected_base}.json" or block.get("claim_graph") != f"claim_graphs/{expected_base}.json":
             raise ContractError("manifest event paths invalid")
-        for path, schema in ((block["fact_pack"], FACT_PACK_SCHEMA), (block["claim_graph"], CLAIM_GRAPH_SCHEMA)):
+        if block.get("source_body") != f"source_bodies/{block['source_sha256']}.json":
+            raise ContractError("manifest source body path invalid")
+        for path, schema in (
+            (block["fact_pack"], FACT_PACK_SCHEMA),
+            (block["claim_graph"], CLAIM_GRAPH_SCHEMA),
+            (block["source_body"], TERMINAL_TRANSCRIPT_SCHEMA),
+        ):
             file = _mapping(files.get(path), name=f"manifest.files[{path}]")
             _keys(file, _FILE_KEYS, name=f"manifest.files[{path}]")
             _sha(file.get("sha256"), field=f"manifest.files[{path}].sha256")
             if not isinstance(file.get("bytes"), int) or file["bytes"] <= 0 or file.get("schema") != schema:
                 raise ContractError("manifest file block invalid")
-    if set(files) != {path for block in events.values() for path in (block["fact_pack"], block["claim_graph"])}:
+    if set(files) != {path for block in events.values() for path in (block["fact_pack"], block["claim_graph"], block["source_body"])}:
         raise ContractError("manifest files must exactly cover event artifacts")
     # ``ready`` means the immutable tree is complete and verifies. Coverage
     # notices and an individual event's insufficiency remain explicit in their

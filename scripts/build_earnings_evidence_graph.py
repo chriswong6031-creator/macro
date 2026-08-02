@@ -56,7 +56,7 @@ def build(
                 indexed_body_sha256=ref.body_sha256 or None,
                 index_generated_at=index_generated_at,
             )
-            pairs.append(EvidencePair(fact_pack=pack, claim_graph=graph))
+            pairs.append(EvidencePair(fact_pack=pack, claim_graph=graph, transcript=body))
         except FileNotFoundError:
             omissions.append({
                 "event_key": ref.pair,
