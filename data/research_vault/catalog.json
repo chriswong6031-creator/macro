@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T18:33:31.594910+00:00",
-  "count": 611,
+  "generated_at": "2026-08-02T18:48:33.586651+00:00",
+  "count": 612,
   "institutions": [
     "Amova",
     "Apollo",
@@ -268,6 +268,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mdbhzpmueud-b2d68d",
+      "title": "125973",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:32:53Z",
+      "summary_points": [
+        "**Core Platform Differentiation**: Primary DeFi/stablecoin/NFT platform with programmable smart contracts; ETH powers fees, staking, and security via PoS, distinguishing it from value-transfer blockchains.",
+        "**Scalability Upgrades**: Ongoing protocol enhancements prioritize scalability and sustainability, critical for institutional adoption and long-term ecosystem growth.",
+        "**Allocation Risk Structure**: Direct wallet ownership (operational/regulatory risks) vs.",
+        "exchange products (simplified access); requires alignment with investor risk tolerance for Web3 growth positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
