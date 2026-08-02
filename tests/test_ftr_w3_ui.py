@@ -7,13 +7,14 @@ Guards (all three templates: baskets.html.j2, allocation.html.j2, basket_detail.
 - user-first copy (docs/DESIGN_DOCTRINE.md): no rank numbers, no raw
   IGNITION/WATCH display labels, plain-word fade footer with the technical
   receipt (Oracle P8 / 58% / n=26) demoted to data-tips / ? help tips
-- ftr-disagree-chip (plain words + receipt tip) in baskets
-- ftr-tw-card (turn-watch card, STRONG SIGN / EARLY SIGN badges) in baskets
+- the per-card chip lane (ftr-disagree-chip / ftr-heat-chip / ftr-tw-card) is
+  RETIRED (2026-08-02) and guarded by reachability, not presence — see
+  TestFtrCardChipLaneReachability at the bottom of this module
 - ftr-alloc-tape-panel in allocation (display names, no rank numbers)
 - ftr-live-strip + ftr-anatomy-card in basket_detail
 - T+1 58% fade base rate retained on all three templates (FT-R3, Tier-2 receipt)
 - No "validated" keyword in FTR-added copy (house-law gauntlet guard)
-- stale-gate: STALE chip present in baskets source (FT-R12)
+- stale-gate: isChipSuppressed() still gates the tape band's flow chips (FT-R12)
 - Relative paths for basket_detail fetches (../ prefix)
 - FT-R8: fail-silent fetch pattern (catch) present
 - W8 anatomy panel leg order / WEIGHTS present in basket_detail
@@ -28,6 +29,56 @@ from pathlib import Path
 import pytest
 
 TMPL_DIR = Path(__file__).parent.parent / "templates"
+
+# ── Per-card chip lane: the classes injectCardChips() used to append to
+# theme-desk cards, and the two entry points that can put such a card on a page.
+FTR_CARD_CHIP_CLASSES = (
+    "ftr-disagree-chip",
+    "ftr-heat-chip",
+    "ftr-stale-chip",
+    "ftr-tw-card",
+    "ftr-chip-strip",
+)
+CARD_RENDERER_ENTRY_POINTS = ("renderThemeDesk", "deskBoot")
+
+
+def _emits_class(src: str, cls: str) -> bool:
+    """True when `src` puts `cls` on an element it BUILDS.
+
+    Matches a class= / className= / classList.add() site only, so a CSS rule
+    (`.ftr-tw-card { … }`) or a sentence in a comment does not read as markup.
+    That distinction is the whole point: the pins this replaced were satisfied
+    by both.
+    """
+    esc = re.escape(cls)
+    return bool(
+        re.search(rf"""(?:class|className)\s*=\s*["'][^"'\n]*{esc}""", src)
+        or re.search(rf"""classList\.add\(\s*["']{esc}\b""", src)
+    )
+
+
+def _call_count(src: str, fn: str) -> int:
+    """Times `fn` is CALLED in `src` (its own `function fn(` declaration excluded)."""
+    total = len(re.findall(rf"\b{re.escape(fn)}\s*\(", src))
+    declared = len(re.findall(rf"\bfunction\s+{re.escape(fn)}\s*\(", src))
+    return total - declared
+
+
+def card_chip_lane_violations(sources: dict[str, str]) -> dict[str, list[str]]:
+    """Sources that BUILD per-card chip markup with no reachable card to put it on.
+
+    A source may emit the chip classes only if it also *invokes* a renderer that
+    emits theme-desk cards. Defining one is not enough — `renderThemeDesk` sat
+    defined-and-uncalled on baskets.html.j2 for the entire dead window.
+    """
+    violations: dict[str, list[str]] = {}
+    for name, src in sources.items():
+        emitted = [c for c in FTR_CARD_CHIP_CLASSES if _emits_class(src, c)]
+        if not emitted:
+            continue
+        if not any(_call_count(src, fn) > 0 for fn in CARD_RENDERER_ENTRY_POINTS):
+            violations[name] = emitted
+    return violations
 
 
 def _src(name: str) -> str:
@@ -130,24 +181,18 @@ class TestBasketsW3Markers:
 
     def test_no_raw_state_display_labels(self):
         """IGNITION/WATCH stay as JSON states but must not be user-facing labels
-        (docs/DESIGN_DOCTRINE.md Law 2 — plain words on Tier 1)."""
+        (docs/DESIGN_DOCTRINE.md Law 2 — plain words on Tier 1).
+
+        The plain-word pair itself moved to basket_detail.html.j2 when the
+        per-card turn-watch card was retired from this page (2026-08-02); the
+        no-raw-enum half still belongs here.
+        """
         src = _src("baskets.html.j2")
         assert "&#9889; IGNITION" not in src
         assert "&#9889; WATCH" not in src
-        assert "STRONG SIGN" in src
-        assert "EARLY SIGN" in src
-
-    def test_disagree_chip(self):
-        """Amber disagreement chip (FT-R2 display, FT-R12 stale-gated)."""
-        assert "ftr-disagree-chip" in _src("baskets.html.j2")
-
-    def test_tw_card(self):
-        """Turn-watch inline card for WATCH/IGNITION states."""
-        assert "ftr-tw-card" in _src("baskets.html.j2")
-
-    def test_stale_chip_present(self):
-        """FT-R12: STALE chip must be renderable from source."""
-        assert "ftr-stale-chip" in _src("baskets.html.j2")
+        detail = _src("basket_detail.html.j2")
+        assert "STRONG SIGN" in detail
+        assert "EARLY SIGN" in detail
 
     def test_t1_fade_rate(self):
         """FT-R3: T+1 58% fade base rate retained (in the Tier-2 technical receipt)."""
@@ -155,13 +200,20 @@ class TestBasketsW3Markers:
 
     def test_plain_fade_footer_with_receipt(self):
         """User-first null disclosure (docs/DESIGN_DOCTRINE.md Law 5): plain words on
-        Tier 1 ('Not a buy signal … 6 in 10 faded within a day'), the expected-null
-        receipt (Oracle P8) demoted to data-tips — that IS the compliant 'nulls
-        printed' form; the jargon form must be gone."""
+        Tier 1 ('Not a buy signal … 6 in 10 faded within a day'), the technical
+        receipt demoted to data-tips — that IS the compliant 'nulls printed'
+        form; the jargon form must be gone.
+
+        The disclosure follows the claim. This page's live claim is the tape
+        band, whose receipt is the T+1 58% (n=26) fade rate in the footnote's ?
+        tip. The Oracle P8 expected-null receipt belonged to the turn-watch
+        meter, and moved with it to basket_detail.html.j2 (2026-08-02) — pinned
+        by test_turn_watch_receipt_lives_with_its_surface below.
+        """
         src = _src("baskets.html.j2")
         assert "Not a buy signal" in src
         assert "6 in 10" in src
-        assert "Oracle P8" in src  # receipt survives on Tier 2 (data-tip / ? tip)
+        assert "58%" in src  # receipt survives on Tier 2 (data-tip / ? tip)
         assert "Expected-null forward meter" not in src
 
     def test_no_validated_copy(self):
@@ -177,29 +229,23 @@ class TestBasketsW3Markers:
         """FT-R8: fetch errors must be swallowed (catch present)."""
         assert ".catch(" in _src("baskets.html.j2")
 
-    def test_turn_watch_json_fetch(self):
-        """Tape band fetches turn_watch.json for WATCH/IGNITION states."""
-        assert "turn_watch.json" in _src("baskets.html.j2")
-
     def test_basket_pulse_json_fetch(self):
-        assert "basket_pulse.json" in _src("baskets.html.j2")
+        """The tape band's own source — the one fetch this page still makes."""
+        assert "fetchJson('live/basket_pulse.json'" in _src("baskets.html.j2")
 
-    def test_sector_pulse_json_fetch(self):
-        assert "sector_pulse.json" in _src("baskets.html.j2")
+    def test_no_fetches_for_the_retired_card_lane(self):
+        """turn_watch.json (14 KB) and sector_pulse.json (47 KB) were fetched on
+        every load of this page and handed to injectCardChips(), which had no
+        cards to chip after #3282 — 62 KB parsed and dropped per view. Retired
+        2026-08-02.
 
-    def test_card_selector_uses_id_prefix_not_data_bid(self):
-        """BLOCKER fix: must use [id^="theme-"] selector (not [data-bid] which matches nothing).
-
-        baskets_desk.js renders cards as id="theme-<bid>" with no data-bid attribute.
-        Using [data-bid] produces an empty NodeList — all per-card chips silently no-op.
+        Pinned as fetch CALLS, not bare filenames: the filenames appear in the
+        comment that records why they went, and a substring pin would read that
+        comment as a live fetch.
         """
         src = _src("baskets.html.j2")
-        assert '[id^="theme-"]' in src, (
-            "Card selector must be [id^='theme-'] — [data-bid] matches nothing in the DOM"
-        )
-        assert "[data-bid]" not in src, (
-            "[data-bid] selector matches nothing (baskets_desk.js emits no data-bid attrs)"
-        )
+        assert "fetchJson('basketdata/turn_watch.json'" not in src
+        assert "fetchJson('basketdata/sector_pulse.json'" not in src
 
     def test_t1_fade_in_tape_band_html(self):
         """FT-R3: the fade note must be always-rendered HTML in the tape band footer
@@ -375,14 +421,6 @@ class TestFtrW3BasketsRender:
         html = _render_baskets(["SPY"])
         assert "ftr-dtp-body" in html
 
-    def test_disagree_chip_in_render(self):
-        html = _render_baskets(["SPY"])
-        assert "ftr-disagree-chip" in html
-
-    def test_tw_card_in_render(self):
-        html = _render_baskets(["SPY"])
-        assert "ftr-tw-card" in html
-
     def test_t1_fade_rate_in_render(self):
         html = _render_baskets(["SPY"])
         assert "58%" in html
@@ -390,8 +428,101 @@ class TestFtrW3BasketsRender:
     def test_plain_null_disclosure_in_render(self):
         html = _render_baskets(["SPY"])
         assert "Not a buy signal" in html
-        assert "Oracle P8" in html  # Tier-2 receipt survives
+        assert "58%" in html  # Tier-2 receipt survives
 
-    def test_sector_pulse_fetch_in_render(self):
+    def test_retired_card_lane_absent_from_render(self):
+        """The rendered US page must ship no per-card chip machinery."""
         html = _render_baskets(["SPY"])
-        assert "sector_pulse.json" in html
+        assert "injectCardChips" not in html
+        for cls in FTR_CARD_CHIP_CLASSES:
+            assert not _emits_class(html, cls), f"{cls} is emitted by a page with no cards"
+
+
+# ── Per-card chip lane: reachability, not presence ───────────────────────────
+
+
+class TestFtrCardChipLaneReachability:
+    """The FTR per-card chip lane injected `ftr-disagree-chip` / `ftr-heat-chip`
+    / `ftr-stale-chip` / `ftr-tw-card` into theme-desk cards — `[id^="theme-"]`
+    / `.tcard` elements that `renderThemeDesk()` builds.
+
+    #3282 (the baskets rvx revamp) replaced that desk with the act lanes and the
+    rotation board and dropped the call. From then until 2026-08-02 the lane ran
+    on every load of the US page, matched an empty NodeList, and injected
+    nothing — while `assert "ftr-disagree-chip" in _src("baskets.html.j2")` and
+    four sibling pins stayed green the whole time. A presence pin cannot see an
+    unreachable feature: the string it asserts lives in the injector, and the
+    injector is exactly the half that survives.
+
+    These pins assert reachability instead. `card_chip_lane_violations` is
+    itself pinned against a synthetic reproduction of the #3282 state below, so
+    it cannot quietly decay into a function that never fires.
+    """
+
+    # The historical defect, minimised: the chip builder with no reachable card.
+    DEAD_LANE = """
+      function injectCardChips(pulse){
+        document.querySelectorAll('[id^="theme-"]').forEach(function(card){
+          card.innerHTML = '<span class="ftr-disagree-chip">strong today</span>';
+        });
+      }
+      injectCardChips(pulse);
+      function renderThemeDesk(){ return '<div class="tcard" id="theme-'+id+'"></div>'; }
+    """
+    # The same page with the desk actually booted.
+    LIVE_LANE = DEAD_LANE + "\n renderThemeDesk();\n"
+
+    def test_detector_fires_on_the_historical_defect(self):
+        """Mutation check. If this stops failing, the guard below is decorative.
+
+        Note DEAD_LANE *defines* renderThemeDesk — presence of the emitter is
+        not reachability, which is precisely how the original pins were fooled.
+        """
+        found = card_chip_lane_violations({"dead.j2": self.DEAD_LANE})
+        assert "dead.j2" in found
+        assert found["dead.j2"] == ["ftr-disagree-chip"]
+
+    def test_detector_clears_a_page_that_boots_the_desk(self):
+        """Control: the guard must not fire on a page whose cards are reachable."""
+        assert card_chip_lane_violations({"live.j2": self.LIVE_LANE}) == {}
+
+    def test_detector_ignores_css_and_prose(self):
+        """CSS rules and comments naming the retired classes are not markup."""
+        noise = """
+          .ftr-tw-card { border-radius:8px; }
+          {# ftr-disagree-chip and ftr-heat-chip were retired 2026-08-02 #}
+          // injectCardChips() appended an ftr-chip-strip here.
+        """
+        assert card_chip_lane_violations({"noise.j2": noise}) == {}
+
+    def test_no_template_builds_card_chips_it_cannot_place(self):
+        """The repo-wide guard. Fires on any template — including one that
+        inherits this markup by being copied from baskets.html.j2 — that emits
+        per-card chips without booting a renderer that produces the cards."""
+        sources = {
+            p.name: p.read_text()
+            for p in sorted(TMPL_DIR.glob("*.j2")) + sorted(TMPL_DIR.glob("*.js"))
+        }
+        assert sources, "template sweep found nothing — the glob is wrong"
+        found = card_chip_lane_violations(sources)
+        assert found == {}, (
+            "per-card chip markup with no reachable theme-desk card: "
+            + "; ".join(f"{k} emits {v}" for k, v in found.items())
+        )
+
+    def test_us_page_ships_no_card_chip_injector(self):
+        """The retirement itself, stated so re-adding the lane trips a pin."""
+        src = _src("baskets.html.j2")
+        assert "function injectCardChips" not in src
+        assert 'querySelectorAll(\'[id^="theme-"]\')' not in src
+
+    def test_turn_watch_receipt_lives_with_its_surface(self):
+        """The turn-watch read kept its home on the per-basket detail page — one
+        click from every act-lane and rotation-board row — and its expected-null
+        receipt (Oracle P8) went with it. Disclosure follows the claim: the US
+        index page makes no turn-watch claim, so it carries no orphan receipt.
+        """
+        detail = _src("basket_detail.html.j2")
+        assert "fetch('../basketdata/turn_watch.json'" in detail
+        assert "Oracle P8" in detail
+        assert "Oracle P8" not in _src("baskets.html.j2")
