@@ -187,17 +187,35 @@ failed test is not a bearish signal, and painting it red would be a lie);
 `significance`, `证伪`, `falsifier`, `refuted`, and the spin words `fade`,
 `giveback`, `bounce`, `dead-cat`. Every one of these has a Tier-2 home.
 
-### The after-search line (Tier 1 sentence + Tier 2 receipt)
+### The after-search line — GRADED, never binary (revised 2026-08-01, see §12)
 
-Tier 1, under the dot row:
+A main-loop probe on real data showed the pass/fail verdict is `fails` for almost
+every symbol. A page whose only possible answer is "no" is a constant, not
+information. So the sentence carries the **graded** comparison, and it is the same
+sentence in every state — only the number moves:
 
-> EN `Across every start date and length we tried on SPY, a run this good shows up by chance often enough that this one doesn't stand out.`
-> ZH `在 SPY 上尝试过的所有起点与长度中，这种表现纯属偶然出现的频率已经足够高，因此这一个并不突出。`
+> EN `We shuffled SPY's history 2,000 times. A window this strong turned up by chance in {pct}% of them.`
+> ZH `我们把 SPY 的历史打乱了 2,000 次。像这样强的窗口在其中 {pct}% 里纯属偶然出现。`
 
-`holds` variant:
+Followed by one clause keyed to the state:
 
-> EN `Even after counting every start date and length we tried on SPY, a run this good is rare by chance.`
-> ZH `即使计入在 SPY 上尝试过的所有起点与长度，这种表现纯属偶然也很罕见。`
+| State | EN clause | ZH clause |
+|---|---|---|
+| `fails` | `— often enough that this one doesn't stand out.` | `——出现得够频繁，因此这一个并不突出。` |
+| `holds` | `— rare enough that this one does stand out.` | `——出现得够罕见，因此这一个确实突出。` |
+
+`pct` = `100 × (1 − percentile_of(observed |t|) in the null-max distribution)`,
+shipped by the server as `null_max_exceedance_pct`, rounded to a whole number and
+floored at 1 (never print `0%` — with B=2,000 the honest floor is "under 1%", so
+render `<1%` / `<1%` in that case).
+
+**The chance track.** Directly under the sentence, a 4px-tall, full-width track
+renders where chance concentrates and where this window sits: a soft
+`--sx-ink` gradient ramp for the null-max distribution and one 2px `--sx-ink` tick
+at the observed statistic. No axes, no labels, no numbers — the sentence above
+already carries them. This exists because the graded fact is what makes the page
+informative on a symbol whose verdict is "doesn't hold up", and a position on a
+track is read faster than a percentage.
 
 Tier 2 (`?` help tip on the line, ≤80 words, label: value form):
 
@@ -434,7 +452,10 @@ The word `validated` must not appear (CI-guarded,
       "max_abs_t_quantiles": { "0.90": 2.81, "0.95": 3.06, "0.99": 3.55 }
     }
   },
-  "default_window": { "start_doy": 215, "end_doy": 254, "source": "registered" },
+  "default_window": {
+    "start_doy": 215, "end_doy": 254, "source": "symbol_best",
+    "abs_t": 5.9, "null_max_exceedance_pct": 9.0, "state": "fails"
+  },
   "neutral": {
     "market": { "benchmark": "SPY", "beta_source": "pit_trailing_252d", "years": ["…same shape as years"] }
   }
@@ -533,3 +554,64 @@ textual conflict there and rebase on `origin/main` before merging; do not edit
 any `biocatalyst.*` file, `engine/biocatalyst/`, `collectors/biocatalyst/`,
 `contracts/biocatalyst/`, or `config/biocatalyst_*.yml` — that program is owned
 by another session.
+
+---
+
+## §12 What a real-data probe changed (main loop, 2026-08-01)
+
+Before the builders shipped, the main loop independently implemented this spec's
+math over `data/yahoo/` to check that the product thesis survives contact with
+real prices. Three results, each of which moved a design decision:
+
+**1 · The null is correctly calibrated.** Fed 40 pure-noise panels (15 years ×
+365 slots, iid), the test fired 2/40 = **5.0%** — exactly nominal for a 95%
+familywise threshold. The correction is real, not decorative.
+
+**2 · The uncorrected test over-fires massively, which is the incumbent's
+defect, quantified.** On real symbols, **6–17% of the 2,645 windows** clear a
+naive |t| ≥ 1.96. A product that ranks by in-sample return therefore has
+hundreds of "significant" windows per symbol to choose its headline from. After
+the family correction, essentially none survive: SPY 2 of 2,645, and XBI, IBB,
+XLV, LLY, AMGN, QQQ, XLE **zero**.
+
+| symbol | complete yrs | max abs t | null 95th | verdict |
+|---|---:|---:|---:|---|
+| SPY | 25 | 7.25 | 6.52 | holds |
+| XBI | 19 | 5.90 | 6.27 | fails (close) |
+| QQQ | 25 | 5.10 | 6.03 | fails |
+| XLV | 25 | 5.15 | 6.53 | fails |
+| LLY | 25 | 4.57 | 5.23 | fails |
+| AMGN | 25 | 4.31 | 5.12 | fails |
+| IBB | 24 | 4.52 | 5.70 | fails |
+| XLE | 25 | 4.77 | 5.17 | fails |
+
+Note the null threshold itself varies from 5.12 to 6.53 across symbols — the
+correction is adapting to each symbol's own autocorrelation and volatility
+structure, which is the whole reason it is computed per symbol rather than
+assumed.
+
+**3 · Therefore the verdict must be graded, and the default window must be the
+symbol's own best.** A binary pass/fail reads "no" on essentially every symbol; a
+user learns nothing and leaves after three lookups. Two changes:
+
+- **Default window = the symbol's own strongest window** (`source: "symbol_best"`),
+  not a fixed preset. Opening a symbol then answers a question that genuinely
+  varies: *what is the strongest calendar structure in this name, and does it
+  beat chance here?*
+- **The after-search line is graded** (§3): the same sentence every time with a
+  moving number, so XBI's "9% of shuffles" is visibly different from a name's
+  "61% of shuffles" even though both verdicts read `Doesn't hold up`.
+
+**4 · Coverage is larger than assumed.** Of 726 symbols in `data/yahoo/`, **256
+clear ≥15 complete years** (297 clear ≥10, 157 clear ≥25). The store is bimodal —
+267 symbols have exactly 2 complete years because they were added recently — so
+the universe must be built by **measuring** complete years, never by hand-listing
+tickers that look established. `GILD` and `BIIB`, for instance, have too little
+history in this store despite being decades-old companies.
+
+**5 · The null can be cached for a year.** It depends only on the complete-year
+panel, which changes once per calendar year. Recompute `family.null` only when
+`coverage.last_complete_year` advances; otherwise reuse it. This is what makes a
+256-symbol nightly affordable — without it, B=2,000 resamples × 2,645 windows ×
+256 symbols is a 15–35 minute job every single night for a result that is
+identical 364 days out of 365.
