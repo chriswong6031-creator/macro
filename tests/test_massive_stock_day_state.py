@@ -42,6 +42,12 @@ def store(tmp_path, monkeypatch):
     """Tmp store + stubbed S3 layer.  Returns a dict the tests mutate to steer the
     fake fetch: holidays (empty frames) and failures (raise)."""
     monkeypatch.setattr(msd.config, "data_dir", lambda: tmp_path)
+    # These tests are about resume-state semantics, not the store-absent fence: their
+    # synthetic store is two tickers, and the real floor (~100 parquets, sized to tell a
+    # restored store from a checkout holding only the committed sidecars) would read a
+    # legitimate 2-file store as a throwaway checkout and short-circuit every case.
+    # tests/test_massive_stock_day_fence.py owns the fence itself.
+    monkeypatch.setattr(msd, "_MIN_STORE_FILES", 1)
     monkeypatch.setattr(msd, "enabled", lambda: True)
     monkeypatch.setattr(msd, "latest_available", lambda *a, **k: DAYS[-1])
     ctl = {"holidays": set(), "fail": set(), "calls": []}
