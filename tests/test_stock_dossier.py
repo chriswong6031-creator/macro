@@ -126,12 +126,35 @@ class TestBuildDossierSchema:
         assert "no_buy_reasons" in result
         assert "freshness_expired" in result["no_buy_reasons"]
 
-    def test_no_buy_reasons_risk_veto_from_caution(self):
+    def test_no_buy_reasons_risk_veto_from_structural_flag(self):
+        # the contract: conviction_profile exports risk.veto; the dossier keys on it.
         row = _make_row()
-        row["conviction"]["cautions"] = ["stressed tape — size down / confirm"]
+        row["conviction"]["risk"] = {"total": 1.2, "veto": True}
         result = sd.build_dossier(row)
         assert result is not None
         assert "risk_veto" in result.get("no_buy_reasons", [])
+
+    def test_no_buy_reasons_risk_veto_from_live_profile(self):
+        # end-to-end producer→consumer: the REAL conviction_profile output under a
+        # stressed tape must map to risk_veto. This is the pin that was missing when
+        # #4297 rewrote the caution prose and silently killed the substring match.
+        rec = _minimal_rec(tech={"above200": True, "pct_vs_200dma": 35.0, "rsi14": 70.0})
+        conv = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.9}})
+        assert conv["risk"]["veto"] is True          # producer half
+        result = sd.build_dossier(_make_row(conviction=conv))
+        assert result is not None
+        assert "risk_veto" in result.get("no_buy_reasons", [])
+
+    def test_no_buy_reasons_risk_veto_prose_fallbacks_for_stored_rows(self):
+        # stored rows profiled by OLDER engines carry no flag — both prose eras
+        # must still map (pre-#4297 and #4297..flag). New copy never extends this.
+        for legacy in ("stressed tape — size down / confirm",
+                       "The broad tape is under stress. Size down, or wait for confirmation."):
+            row = _make_row()
+            row["conviction"]["cautions"] = [legacy]
+            result = sd.build_dossier(row)
+            assert result is not None
+            assert "risk_veto" in result.get("no_buy_reasons", []), legacy
 
     def test_capped_by_entry_in_stale_flags_and_reasons(self):
         row = _make_row()
@@ -159,7 +182,7 @@ class TestBuildDossierSchema:
             earnings_soon={"days_to": 1, "in_blackout": True},
             ext_z=3.0,
         )
-        row["conviction"]["cautions"] = ["stressed tape — size down / confirm"]
+        row["conviction"]["risk"] = {"total": 1.2, "veto": True}
         row["conviction"]["size"]["capped_by_entry"] = True
         result = sd.build_dossier(row, ext_grade="parabolic")
         for code in (result or {}).get("no_buy_reasons", []):
