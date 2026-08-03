@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T05:35:08.160974+00:00",
-  "count": 643,
+  "generated_at": "2026-08-03T05:49:58.666434+00:00",
+  "count": 644,
   "institutions": [
     "Amova",
     "Apollo",
@@ -44,6 +44,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-vvy2usrko4a-0d8de9",
+      "title": "Diversification",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:37:29Z",
+      "summary_points": [
+        "**60/40 Strategy Collapse**: 2022 Sharpe ratio plummeted to 0.14 (vs.",
+        "47 long-term), with bonds failing to offset equity drawdowns; policy uncertainty (not inflation) drove positive equity-bond correlation (+0.77 in May 2022), eroding diversification.",
+        "**No-Regret Portfolio Performance**: 16% gold, 29% private credit, 16% private equity delivers 1.33 Sharpe ratio (vs.",
+        "benchmark 0.59), doubling risk-adjusted returns and reducing max drawdown from -24.6% to -15.3%.",
+        "**Policy Uncertainty Dominance**: Unprecedented policy uncertainty index (+1.7 z-score, sustained since May 2022) is primary driver of positive correlation; unresolved Iran conflict (ceasefire July 2026) and tariff litigation sustain regime shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-viqbfc2ds47-a12f56",
       "title": "Quantum",
