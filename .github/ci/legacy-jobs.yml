@@ -611,6 +611,19 @@ jobs:
       # ci.yml on the test files; templates are covered by "templates/**" (#3488).
       - name: theme deep-link contract + sector-intelligence consolidation invariants
         run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
+      # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
+      # pinned SEC source objects into filing packages, Company Facts ledgers,
+      # and deterministic B4 binding plans. Keep these security/provenance
+      # contracts ahead of the broad sweep so an unrelated red guard cannot
+      # leave the new materialization boundary dark.
+      - name: B4D-A offline materialization foundation
+        run: >-
+          python -m pytest
+          tests/test_sec_document_spine.py
+          tests/test_fundamental_forensics_attestation.py
+          tests/test_fundamental_forensics_filing_package_materializer.py
+          tests/test_fundamental_forensics_companyfacts_pinned_loader.py
+          tests/test_fundamental_forensics_attested_history_materializer.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
