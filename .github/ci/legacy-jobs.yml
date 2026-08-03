@@ -1137,7 +1137,7 @@ jobs:
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
       # nowhere, so a job list and a green run both lie about it. This is what an
       # `importorskip` added to clear a red lane creates by construction — it
@@ -3142,6 +3142,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_history.py
           tests/test_biocatalyst_endpoint_alignment.py
+          tests/test_biocatalyst_change_classification.py
           tests/test_clinicaltrials_history.py -q
 
   biocatalyst-contracts:
@@ -4745,7 +4746,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # test_earnings_api.py exercises the mounted FastAPI route through
+        # TestClient; without both wheels pytest importorskips the whole suite.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
         run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_private_store.py tests/test_earnings_public_wire.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
 

@@ -27,12 +27,17 @@ _SHELL_RE = re.compile(
     r'<script id="gov-data" type="application/json">(.*?)</script>',
     re.DOTALL,
 )
-_REQUIRED_MARKERS = (
+_REQUIRED_SITE_MARKERS = (
     'id="gov-workspace"',
     'id="queueList"',
     'id="inspectorPane"',
     'id="evidenceDrawer"',
     'id="gov-data"',
+)
+_REQUIRED_CANDIDATE_MARKERS = (
+    'data-mode="candidates"',
+    'data-mode="companies"',
+    'src="government-revenue-candidate-radar.js"',
 )
 
 
@@ -86,6 +91,7 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     canonical_dir = root / "data" / "government_revenue"
     public_dir = root / "site" / "government-revenue-data"
     html_path = root / "site" / "government_revenue.html"
+    template_path = root / "templates" / "government_revenue.html.j2"
 
     canonical_latest_raw, canonical_latest = _read_json(
         canonical_dir / "latest.json", "canonical latest"
@@ -121,6 +127,17 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         public_dir / "idv-dossiers.json",
         label="IDV dossier",
     )
+    try:
+        from scripts import build_government_revenue_candidates
+
+        candidate_projection = build_government_revenue_candidates.verify_candidate_artifacts(
+            root,
+            mirror_public=False,
+        )
+    except build_government_revenue_candidates.CandidateProjectionError as exc:
+        raise ProjectionDriftError(
+            "Government Revenue candidate projection is invalid"
+        ) from exc
 
     try:
         build_government_revenue._validate_payload(canonical_latest)
@@ -238,7 +255,25 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             f"public HTML exceeds {_RAW_HTML_BUDGET_BYTES} bytes: {len(html_raw)}"
         )
-    missing = [marker for marker in _REQUIRED_MARKERS if marker not in html]
+    try:
+        template = template_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ProjectionDriftError(
+            f"Government Revenue template is unavailable or invalid: {template_path}"
+        ) from exc
+    missing_template = [
+        marker for marker in _REQUIRED_CANDIDATE_MARKERS if marker not in template
+    ]
+    if missing_template:
+        raise ProjectionDriftError(
+            "Government Revenue template is missing candidate markers: "
+            + ", ".join(missing_template)
+        )
+
+    required_site_markers = _REQUIRED_SITE_MARKERS
+    if candidate_projection.get("status") != "absent":
+        required_site_markers += _REQUIRED_CANDIDATE_MARKERS
+    missing = [marker for marker in required_site_markers if marker not in html]
     if missing:
         raise ProjectionDriftError(
             "public HTML is missing governed workspace markers: " + ", ".join(missing)
@@ -291,6 +326,9 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
             idv_dossier.get("content_id") if idv_dossier is not None else None
         ),
         "idv_relationships": len(idv_dossier.get("relationships") or []) if idv_dossier is not None else 0,
+        "candidate_content_id": candidate_projection.get("queue_content_id"),
+        "candidates": candidate_projection.get("candidate_count", 0),
+        "candidate_mapping_backlog": candidate_projection.get("mapping_backlog_count", 0),
         "recipient_graph_id": (
             recipient_coverage.get("resolution_graph", {}).get("graph_id")
             if recipient_coverage is not None
@@ -320,7 +358,10 @@ def main(argv: list[str] | None = None) -> int:
         f"budget_graph={result['budget_program_graph_content_id']} "
         f"programs={result['budget_programs']} "
         f"idv_dossier={result['idv_dossier_content_id']} "
-        f"idv_relationships={result['idv_relationships']}"
+        f"idv_relationships={result['idv_relationships']} "
+        f"candidate_queue={result['candidate_content_id']} "
+        f"candidates={result['candidates']} "
+        f"mapping_backlog={result['candidate_mapping_backlog']}"
     )
     return 0
 
