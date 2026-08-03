@@ -13,8 +13,9 @@ EnvironmentFile=-/etc/macro-admin.env
 # Use the same refreshable Codex account state as macro-api so every deployed
 # AI surface sees the same Claude OAuth + Codex subscription pool.
 Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
 Environment=CODEX_PROVIDER_ENABLED=1
-StateDirectory=macro-codex
+StateDirectory=macro-codex macro-codex-2
 StateDirectoryMode=0700
 # ── Site Access Gate env (optional; admin reads/writes the same store) ────────
 # SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (must match macro-api.service)

@@ -1928,9 +1928,12 @@ def test_copy_review_asks_for_codex_first_and_keeps_its_own_pool_lane(monkeypatc
 # ── the real waterfall, with the Codex transport faked ────────────────────────
 
 class _FakeCodexClient:
-    def __init__(self, timeout_s: int = 180, reasoning_effort: str | None = None) -> None:
+    def __init__(self, timeout_s: int = 180, reasoning_effort: str | None = None,
+                 codex_home=None, capability_id: str = "codex_account") -> None:
         self.timeout_s = timeout_s
         self.reasoning_effort = reasoning_effort
+        self.codex_home = codex_home
+        self.capability_id = capability_id
         self.messages = _Messages(lambda **k: '{"text": "unused"}')
 
 
@@ -1944,7 +1947,11 @@ def _fake_codex(monkeypatch, *, available: bool) -> dict:
         built.update(kwargs)
         return _FakeCodexClient(**kwargs)
 
-    monkeypatch.setattr(codex_provider, "is_available", lambda: available)
+    monkeypatch.setattr(
+        codex_provider,
+        "available_accounts",
+        lambda: [("codex_account", None)] if available else [],
+    )
     monkeypatch.setattr(codex_provider, "CodexClient", _client)
     return built
 

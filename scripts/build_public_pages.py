@@ -82,7 +82,7 @@ def plans_view_model() -> dict:
 
     return {
         "currency": catalog.get("currency", "usd"),
-        "insider": tier_vm("insider"),
+        "essential": tier_vm("essential"),
         "pro": tier_vm("pro"),
         "founding": founding,
         "terminal_indicators": catalog.get("terminal_indicators", {}),
@@ -103,7 +103,7 @@ def build(site=None) -> None:
     plans = env.get_template("plans.html.j2").render(
         generated_utc=generated,
         currency=vm["currency"],
-        insider=vm["insider"],
+        essential=vm["essential"],
         pro=vm["pro"],
         founding=vm["founding"],
         terminal_indicators=vm["terminal_indicators"],
@@ -120,9 +120,9 @@ def build(site=None) -> None:
         ),
     )
     log.info(
-        "wrote public pages (Insider $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
-        vm["insider"]["monthly_pm"],
-        vm["insider"]["annual_pm"],
+        "wrote public pages (Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
+        vm["essential"]["monthly_pm"],
+        vm["essential"]["annual_pm"],
         vm["pro"]["monthly_pm"],
         vm["pro"]["annual_pm"],
         vm["founding"]["annual_total"] if vm["founding"] else "off",

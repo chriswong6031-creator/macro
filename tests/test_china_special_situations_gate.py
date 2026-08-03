@@ -186,7 +186,7 @@ def test_builder_split_withholds_every_named_row_beyond_the_preview():
     snap = _snapshot()
     shell, locked, gate = _split(snap, 3)
 
-    assert gate["tier"] == "insider"
+    assert gate["tier"] == "essential"
     assert gate["payload"] == "/premiumdata/china_special_situations.json"
     assert gate["preview"] == 3
     # 3 unlocks + 3 letters stay; all seven populated ranked boards are withheld
@@ -274,7 +274,7 @@ def test_payload_renders_the_locked_rows_from_the_same_partial(tmp_path):
     doc = json.loads((tmp_path / "premiumdata" / b.PAYLOAD_NAME).read_text())
 
     assert doc["schema"] == "tier_payload.v1"
-    assert doc["gated"] is True and doc["required_tier"] == "insider"
+    assert doc["gated"] is True and doc["required_tier"] == "essential"
     paid = set()
     for k, v in doc.items():
         if k.endswith("_html"):
@@ -355,5 +355,5 @@ def test_shipped_payload_declares_the_required_tier():
     payload = json.loads(PAYLOAD.read_text(encoding="utf-8"))
     assert payload["schema"] == "tier_payload.v1"
     if payload.get("gated"):
-        assert payload["required_tier"] == "insider"
+        assert payload["required_tier"] == "essential"
         assert payload["locked"] > 0

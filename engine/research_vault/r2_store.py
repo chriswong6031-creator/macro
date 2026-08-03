@@ -30,6 +30,7 @@ from __future__ import annotations
 import errno
 import logging
 import os
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -85,6 +86,44 @@ def _validate_bounded_read_limit(maximum_bytes: int) -> int:
     if maximum_bytes < 0:
         raise ValueError("maximum_bytes must be a non-negative integer")
     return maximum_bytes
+
+
+class BoundedReadError(RuntimeError):
+    """A strict bounded object read could not establish exact bytes."""
+
+
+class BoundedReadTooLarge(BoundedReadError):
+    """An object exceeded its caller-authorized allocation boundary."""
+
+
+class BoundedReadLengthMismatch(BoundedReadError):
+    """An object's authoritative or observed length was not exact."""
+
+
+class BoundedReadProtocolError(BoundedReadError):
+    """A backend response or filesystem object violated the read protocol."""
+
+
+@runtime_checkable
+class BoundedStrictReadStore(Protocol):
+    """Opt-in fail-closed reader with a pre-allocation byte boundary."""
+
+    def get_bytes_strict_bounded(
+        self, key: str, *, expected_byte_length: int, max_byte_length: int,
+    ) -> bytes | None: ...
+
+
+def _validate_bounded_lengths(*, expected_byte_length: int, max_byte_length: int) -> None:
+    if (
+        isinstance(expected_byte_length, bool)
+        or not isinstance(expected_byte_length, int)
+        or expected_byte_length < 0
+        or isinstance(max_byte_length, bool)
+        or not isinstance(max_byte_length, int)
+        or max_byte_length < 0
+        or expected_byte_length > max_byte_length
+    ):
+        raise ValueError("bounded object lengths must satisfy 0 <= expected <= maximum")
 
 
 # ---------------------------------------------------------------------------
@@ -197,71 +236,154 @@ class R2Store:
             raise RuntimeError("R2 object body returned non-bytes")
         return content
 
-    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
-        """Strictly read at most ``maximum_bytes`` without unbounded buffering.
+    def get_bytes_strict_bounded(
+        self,
+        key: str,
+        maximum_bytes: int | None = None,
+        *,
+        expected_byte_length: int | None = None,
+        max_byte_length: int | None = None,
+    ) -> bytes | None:
+        """Read a capped object in legacy-cap or exact-length mode.
 
-        ``ContentLength`` is used only as an early rejection optimization: the
-        body is still read with ``maximum + 1`` so a lying or absent header
-        cannot evade the cap.  The stream is closed on every path, including
-        a rejected header or a read error.  This deliberately does *not* turn
-        permission/network/body errors into a missing object.
+        The positional ``maximum_bytes`` mode is the pre-existing generic
+        strict-cap contract.  Company Facts additionally needs a HEAD/ETag
+        bound exact-length read, selected only by the two keyword arguments.
+        Keeping both prevents a rebase from weakening either established
+        caller's fail-closed boundary.
         """
-        limit = _validate_bounded_read_limit(maximum_bytes)
+        if maximum_bytes is not None:
+            if expected_byte_length is not None or max_byte_length is not None:
+                raise ValueError("bounded read modes are mutually exclusive")
+            limit = _validate_bounded_read_limit(maximum_bytes)
+            if not self.available:
+                raise RuntimeError("R2 store unavailable: missing bucket or credentials")
+            try:
+                response = self._s3.get_object(Bucket=self.bucket, Key=key)
+            except Exception as error:
+                if _is_authoritative_r2_not_found(error):
+                    return None
+                raise
+            if not isinstance(response, dict):
+                raise RuntimeError("R2 get_object returned a malformed response")
+            body = response.get("Body")
+            if body is None or not callable(getattr(body, "read", None)):
+                raise RuntimeError("R2 get_object response is missing a readable body")
+            close = getattr(body, "close", None)
+            if not callable(close):
+                raise RuntimeError("R2 get_object response body is not closeable")
+            try:
+                announced_length = response.get("ContentLength")
+                if announced_length is not None:
+                    if (
+                        isinstance(announced_length, bool)
+                        or not isinstance(announced_length, int)
+                        or announced_length < 0
+                    ):
+                        raise RuntimeError("R2 get_object returned an invalid ContentLength")
+                    if announced_length > limit:
+                        raise ValueError(
+                            f"R2 object exceeds bounded read limit ({announced_length} > {limit})"
+                        )
+                chunks: list[bytes] = []
+                observed = 0
+                read_calls = 0
+                while observed <= limit:
+                    read_calls += 1
+                    if read_calls > _MAX_STRICT_STREAM_READ_CALLS:
+                        raise RuntimeError("R2 object body exceeded strict read iteration limit")
+                    requested = limit + 1 - observed
+                    chunk = body.read(requested)
+                    if not isinstance(chunk, bytes):
+                        raise RuntimeError("R2 object body returned non-bytes")
+                    if not chunk:
+                        break
+                    if len(chunk) > requested:
+                        raise RuntimeError("R2 object body returned more bytes than requested")
+                    chunks.append(chunk)
+                    observed += len(chunk)
+                content = b"".join(chunks)
+            finally:
+                close()
+            if len(content) > limit:
+                raise ValueError(
+                    f"R2 object exceeds bounded read limit ({len(content)} > {limit})"
+                )
+            return content
+
+        if expected_byte_length is None or max_byte_length is None:
+            raise ValueError("expected and maximum byte lengths are required")
+        _validate_bounded_lengths(
+            expected_byte_length=expected_byte_length, max_byte_length=max_byte_length,
+        )
         if not self.available:
             raise RuntimeError("R2 store unavailable: missing bucket or credentials")
         try:
-            response = self._s3.get_object(Bucket=self.bucket, Key=key)
+            head = self._s3.head_object(Bucket=self.bucket, Key=key)
         except Exception as error:
             if _is_authoritative_r2_not_found(error):
                 return None
             raise
-
-        if not isinstance(response, dict):
-            raise RuntimeError("R2 get_object returned a malformed response")
-        body = response.get("Body")
-        if body is None or not callable(getattr(body, "read", None)):
-            raise RuntimeError("R2 get_object response is missing a readable body")
-        close = getattr(body, "close", None)
-        if not callable(close):
-            raise RuntimeError("R2 get_object response body is not closeable")
+        head_length = head.get("ContentLength") if isinstance(head, dict) else None
+        if (
+            isinstance(head_length, bool)
+            or not isinstance(head_length, int)
+            or head_length != expected_byte_length
+            or head_length > max_byte_length
+        ):
+            if isinstance(head_length, int) and not isinstance(head_length, bool) and head_length > max_byte_length:
+                raise BoundedReadTooLarge("R2 bounded object exceeds maximum length")
+            raise BoundedReadLengthMismatch("R2 bounded object HEAD length mismatch")
+        etag = head.get("ETag") if isinstance(head, dict) else None
+        if not isinstance(etag, str) or not etag:
+            raise BoundedReadProtocolError("R2 bounded object HEAD lacks a valid ETag")
+        request = {"Bucket": self.bucket, "Key": key}
+        if expected_byte_length > 0:
+            request["Range"] = f"bytes=0-{expected_byte_length}"
+        request["IfMatch"] = etag
         try:
-            announced_length = response.get("ContentLength")
-            if announced_length is not None:
-                if (
-                    isinstance(announced_length, bool)
-                    or not isinstance(announced_length, int)
-                    or announced_length < 0
-                ):
-                    raise RuntimeError("R2 get_object returned an invalid ContentLength")
-                if announced_length > limit:
-                    raise ValueError(
-                        f"R2 object exceeds bounded read limit ({announced_length} > {limit})"
-                    )
+            response = self._s3.get_object(**request)
+        except Exception as error:
+            if _is_authoritative_r2_not_found(error):
+                return None
+            raise
+        body = response.get("Body") if isinstance(response, dict) else None
+        if body is None or not callable(getattr(body, "read", None)):
+            raise BoundedReadProtocolError("R2 bounded object response has no readable body")
+        try:
+            response_etag = response.get("ETag")
+            if response_etag != etag:
+                raise BoundedReadProtocolError("R2 bounded object GET/HEAD ETag mismatch")
+            response_length = response.get("ContentLength")
+            if (
+                isinstance(response_length, bool)
+                or not isinstance(response_length, int)
+                or response_length < 0
+                or response_length > max_byte_length
+                or response_length > expected_byte_length + 1
+            ):
+                raise BoundedReadTooLarge("R2 bounded object GET length exceeds read boundary")
             chunks: list[bytes] = []
             observed = 0
-            read_calls = 0
-            while observed <= limit:
-                read_calls += 1
-                if read_calls > _MAX_STRICT_STREAM_READ_CALLS:
-                    raise RuntimeError("R2 object body exceeded strict read iteration limit")
-                requested = limit + 1 - observed
-                chunk = body.read(requested)
+            boundary = expected_byte_length + 1
+            while observed < boundary:
+                chunk = body.read(min(1024 * 1024, boundary - observed))
                 if not isinstance(chunk, bytes):
-                    raise RuntimeError("R2 object body returned non-bytes")
+                    raise BoundedReadProtocolError("R2 bounded object body returned non-bytes")
                 if not chunk:
                     break
-                if len(chunk) > requested:
-                    raise RuntimeError("R2 object body returned more bytes than requested")
                 chunks.append(chunk)
                 observed += len(chunk)
-            content = b"".join(chunks)
+            payload = b"".join(chunks)
+            if len(payload) != expected_byte_length:
+                raise BoundedReadLengthMismatch("R2 bounded object body length mismatch")
+            if response_length != expected_byte_length:
+                raise BoundedReadLengthMismatch("R2 bounded object GET length mismatch")
+            return payload
         finally:
-            close()
-        if len(content) > limit:
-            raise ValueError(
-                f"R2 object exceeds bounded read limit ({len(content)} > {limit})"
-            )
-        return content
+            close = getattr(body, "close", None)
+            if callable(close):
+                close()
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
@@ -391,24 +513,128 @@ class LocalStore:
         except FileNotFoundError:
             return None
 
-    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+    def get_bytes_strict_bounded(
+        self,
+        key: str,
+        maximum_bytes: int | None = None,
+        *,
+        expected_byte_length: int | None = None,
+        max_byte_length: int | None = None,
+    ) -> bytes | None:
         """Strict local read with a hard ``maximum + 1`` streaming cap.
 
         This mirrors the remote bounded method exactly: a missing path alone
         maps to ``None``; traversal, permissions, and oversize content remain
         hard failures for immutable-source consumers.
         """
-        limit = _validate_bounded_read_limit(maximum_bytes)
+        if maximum_bytes is not None:
+            if expected_byte_length is not None or max_byte_length is not None:
+                raise ValueError("bounded read modes are mutually exclusive")
+            limit = _validate_bounded_read_limit(maximum_bytes)
+            try:
+                with self._open_strict_read(key) as handle:
+                    content = handle.read(limit + 1)
+            except FileNotFoundError:
+                return None
+            if len(content) > limit:
+                raise ValueError(
+                    f"local object exceeds bounded read limit ({len(content)} > {limit})"
+                )
+            return content
+
+        if expected_byte_length is None or max_byte_length is None:
+            raise ValueError("expected and maximum byte lengths are required")
+        """Read a regular local object through no-follow descriptors, with a cap."""
+        _validate_bounded_lengths(
+            expected_byte_length=expected_byte_length, max_byte_length=max_byte_length,
+        )
+        parts = key.split("/")
+        if (
+            not key
+            or key.startswith("/")
+            or any(part in {"", ".", ".."} or "\\" in part for part in parts)
+        ):
+            raise ValueError(f"unsafe key: {key!r}")
+        directory_flags = (
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        )
+        descriptors: list[int] = []
         try:
-            with self._open_strict_read(key) as handle:
-                content = handle.read(limit + 1)
-        except FileNotFoundError:
-            return None
-        if len(content) > limit:
-            raise ValueError(
-                f"local object exceeds bounded read limit ({len(content)} > {limit})"
+            # ``abspath`` is lexical (it does not resolve symlinks), letting the
+            # descriptor walk reject every linked component itself.
+            root = Path(os.path.abspath(self.root))
+            anchor_fd = os.open("/", directory_flags)
+            descriptors.append(anchor_fd)
+            parent_fd = anchor_fd
+            for part in root.parts[1:]:
+                try:
+                    checked = os.stat(part, dir_fd=parent_fd, follow_symlinks=False)
+                except FileNotFoundError as exc:
+                    raise BoundedReadProtocolError("local bounded store root is missing") from exc
+                if stat.S_ISLNK(checked.st_mode) or not stat.S_ISDIR(checked.st_mode):
+                    raise BoundedReadProtocolError(
+                        "local bounded store root cannot follow a symlink"
+                    )
+                opened = os.open(part, directory_flags, dir_fd=parent_fd)
+                metadata = os.fstat(opened)
+                if (metadata.st_dev, metadata.st_ino) != (checked.st_dev, checked.st_ino):
+                    os.close(opened)
+                    raise BoundedReadProtocolError(
+                        "local bounded store root changed during secure open"
+                    )
+                descriptors.append(opened)
+                parent_fd = opened
+            for part in parts[:-1]:
+                try:
+                    checked = os.stat(part, dir_fd=parent_fd, follow_symlinks=False)
+                except FileNotFoundError:
+                    return None
+                if stat.S_ISLNK(checked.st_mode) or not stat.S_ISDIR(checked.st_mode):
+                    raise BoundedReadProtocolError(
+                        "local bounded object parent is not a no-follow directory"
+                    )
+                opened = os.open(part, directory_flags, dir_fd=parent_fd)
+                metadata = os.fstat(opened)
+                if (metadata.st_dev, metadata.st_ino) != (checked.st_dev, checked.st_ino):
+                    os.close(opened)
+                    raise BoundedReadProtocolError(
+                        "local bounded object parent changed during open"
+                    )
+                descriptors.append(opened)
+                parent_fd = opened
+            try:
+                checked = os.stat(parts[-1], dir_fd=parent_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                return None
+            if stat.S_ISLNK(checked.st_mode) or not stat.S_ISREG(checked.st_mode):
+                raise BoundedReadProtocolError("local bounded object is not a regular file")
+            object_fd = os.open(
+                parts[-1], os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd,
             )
-        return content
+            descriptors.append(object_fd)
+            metadata = os.fstat(object_fd)
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or (metadata.st_dev, metadata.st_ino) != (checked.st_dev, checked.st_ino)
+            ):
+                raise BoundedReadProtocolError("local bounded object changed during secure open")
+            if metadata.st_size > max_byte_length:
+                raise BoundedReadTooLarge("local bounded object exceeds maximum length")
+            if metadata.st_size != expected_byte_length:
+                raise BoundedReadLengthMismatch("local bounded object length mismatch")
+            payload = bytearray()
+            boundary = expected_byte_length + 1
+            while len(payload) < boundary:
+                chunk = os.read(object_fd, min(1024 * 1024, boundary - len(payload)))
+                if not chunk:
+                    break
+                payload.extend(chunk)
+            if len(payload) != expected_byte_length:
+                raise BoundedReadLengthMismatch("local bounded object changed during read")
+            return bytes(payload)
+        finally:
+            for descriptor in reversed(descriptors):
+                os.close(descriptor)
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:

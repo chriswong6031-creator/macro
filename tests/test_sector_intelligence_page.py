@@ -38,6 +38,27 @@ def test_redirect_stub(name: str, target: str) -> None:
     assert len(s) < 4000, f"{name} is {len(s)} chars — no longer a stub?"
 
 
+@pytest.mark.parametrize("name,target", [
+    ("baskets.html", "sector_central.html#actnow-section"),
+    ("subsector_rotation.html", "sector_central.html#si-movement"),
+])
+def test_redirect_stub_rendered(name: str, target: str) -> None:
+    """The RENDERED stubs must hold too — the template pin above cannot see this
+    failure mode. A scope=all render that raced the #4237 merge (04946ac459d,
+    2026-08-02: pre-merge checkout replayed over main with `pull --rebase -X
+    theirs`) resurrected the old 1,379-line baskets body under the stub's head,
+    shipping a chimera to direct visitors for a day.
+    """
+    s = _read(ROOT / "site" / name)
+    assert f'content="0;url={target}"' in s, "meta refresh missing/retargeted"
+    assert f'location.replace("{target}")' in s, "JS redirect fallback missing"
+    assert '<body class="macro-desk' not in s, "absorbed page body regrew in the render"
+    assert "macro-desk.css" not in s, "stub must not re-join the macro-desk surface"
+    # Headroom over the ~4.1KB healthy render for future head-injected chrome
+    # (shim/preload/stamps); the resurrected chimera weighed ~840KB.
+    assert len(s) < 12000, f"site/{name} is {len(s)} chars — stub body regrew?"
+
+
 # ---------------------------------------------------- merged template skeleton
 
 def test_merged_template_sections() -> None:

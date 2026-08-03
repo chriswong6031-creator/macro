@@ -135,7 +135,7 @@ def _load_brain_config(root: Path | None = None) -> dict:
         "quotas": {
             "free":    {"fast": {"limit": 5, "period": "week"},    "pro": {"limit": 0, "period": "month"}},
             "trial":   {"fast": {"limit": 25, "period": "trial"},  "pro": {"limit": 3, "period": "trial"}},
-            "insider": {"fast": {"limit": 300, "period": "month"}, "pro": {"limit": 10, "period": "month"}},
+            "essential": {"fast": {"limit": 300, "period": "month"}, "pro": {"limit": 10, "period": "month"}},
             "pro":     {"fast": {"limit": 1000, "period": "month"},"pro": {"limit": 150, "period": "month"}},
         },
         "token_ceilings": {"fast": 5_000_000, "pro": 2_000_000},
@@ -3616,12 +3616,13 @@ def _dispatch_brain_tool(
                     "Institutional research search needs a signed-in Essential or Pro "
                     "account — explain the gate and answer from the desk's own signals.")}
             _ent = _resolve_tier(user_id, root=root)
-            _tier = _ent.get("tier") or "free"
+            # normalise-then-validate: a row written before the rename still carries
+            # 'insider'. _resolve_tier already normalizes; re-normalizing here means the
+            # gate stays correct if this ever reads a tier from somewhere that does not,
+            # and lets the tuple below stay CANONICAL rather than growing a second value.
+            _tier = normalize_tier(_ent.get("tier")) or "free"
             _status = _ent.get("status") or "active"
-            # 'essential' is the rename migration's alias of 'insider' (lib/tiers.py).
-            # _resolve_tier already normalizes; naming it here too means the gate stays
-            # correct if this ever reads a tier from somewhere that does not.
-            if not (_tier in ("insider", "essential", "pro", "unlimited")
+            if not (_tier in ("essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
                 return {"error": "insider_required", "tier": _tier, "note": (
                     "The research vault is an Essential/Pro capability. This user is on "
@@ -3630,7 +3631,7 @@ def _dispatch_brain_tool(
             if _mode == "report":
                 # Analyst OS W4 (operator ruling 2026-07-31): full-report content is
                 # PRO-only, mirroring the vault product's own view gate
-                # (app/research._VIEW_TIERS). Insider keeps summaries/clusters.
+                # (app/research._VIEW_TIERS). Essential keeps summaries/clusters.
                 if not (_tier in ("pro", "unlimited")
                         and _status in ("active", "trialing")):
                     return {"error": "pro_required", "tier": _tier, "note": (
@@ -3655,10 +3656,10 @@ def _dispatch_brain_tool(
                     "Historical analogues need a signed-in Essential or Pro account — "
                     "explain the gate and answer from the current desk reads.")}
             _ent = _resolve_tier(user_id, root=root)
-            _tier = _ent.get("tier") or "free"
+            # normalise-then-validate — see the search_research gate above.
+            _tier = normalize_tier(_ent.get("tier")) or "free"
             _status = _ent.get("status") or "active"
-            # 'essential' alias — see the search_research gate above.
-            if not (_tier in ("insider", "essential", "pro", "unlimited")
+            if not (_tier in ("essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
                 return {"error": "insider_required", "tier": _tier, "note": (
                     "Historical analogues are an Essential/Pro capability. This user is "

@@ -451,8 +451,10 @@ function renderSleeveChip(){
 // says it adds nothing over plain vol-targeting. That gate was measured on US books only
 // (scripts/backtest_vol_overlay.py — SPY primary + a US basket book), so the body claims only
 // "no measured edge" and the Tier-2 receipt carries the scope. Keep this text BYTE-IDENTICAL
-// to the US page's own copy in templates/baskets.html.j2 — the US flagship loads no
-// baskets_desk.js, so the two cannot be collapsed into one function; the pairing is pinned by
+// to the US page's own copy in templates/sector_central.html.j2 (the US flagship since the
+// 2026-08 Sector Intelligence merge) — that page cannot load baskets_desk.js (this file's
+// top-level `const L` / `isZh()` would redeclare its own helpers), so the two cannot be
+// collapsed into one function; the pairing is pinned by
 // tests/test_regime_sizing_disclosure_parity.py instead.
 function renderRegimeSizing(){
   const rs=THEME&&THEME.regime_sizing;

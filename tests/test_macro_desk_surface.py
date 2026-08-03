@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 #     China sibling still declares page-sector-central, so those rules stay live there.
 #     Reconciling the two is a styling call (cascade collision risk with the rvx layer),
 #     not a roster call; this pin records the shipped truth in the meantime.
+#   • Stub invariants for the two redirect stubs live in
+#     tests/test_sector_intelligence_page.py.
 PAGE_CLASSES = {
     "sector_central": "macro-desk page-baskets",
     "sector_central_china": "macro-desk page-sector-central",

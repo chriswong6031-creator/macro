@@ -1019,8 +1019,8 @@ def models(root=None) -> dict:
             "lanes": lanes,
             "waterfall": [
                 {"rung": "codex", "name": "ChatGPT (Codex)",
-                 "what": "Primary. Idle capacity and generous limits — the "
-                         "operator's default for all marketing authorship."},
+                 "what": "Primary. Load-balanced across the independently "
+                         "attached Codex accounts before metered fallbacks."},
                 {"rung": "oauth", "name": "Claude key pool",
                  "what": "Fallback, load-balanced across the OAuth keys below."},
                 {"rung": "anthropic", "name": "Anthropic API key",
@@ -1057,10 +1057,10 @@ def _pool_health(repo: Path) -> dict:
     except Exception as exc:  # noqa: BLE001
         return {"available": False, "note": f"key pool read failed: {exc}"}
 
-    # usage_snapshot covers the balanced Claude pool AND the single-key
-    # providers (codex, deepseek). They are different things and must not share
-    # a heading: only the pool rows are load-balanced, so filing codex_account
-    # under "Claude key pool" would misreport what the balancer does.
+    # usage_snapshot covers the balanced Claude pool AND provider rows (the
+    # independently cooled Codex accounts plus DeepSeek). They must not share a
+    # heading: Codex is balanced inside its own provider rung, not inside the
+    # Claude OAuth pool.
     pool_ids = set(POOL_CAPABILITY_IDS or ())
 
     keys: list[dict] = []

@@ -1093,29 +1093,51 @@ def build_providers(
         elif p == "codex":
             try:
                 from engine import codex_provider as _codex  # noqa: PLC0415
-                if not _codex.is_available():
+                accounts = _codex.available_accounts()
+                if not accounts:
                     continue
+                # Balance attached subscriptions the same way as the Claude
+                # pool: healthy lowest-window-load account first, cooling
+                # accounts last. Stable ties preserve the operator's primary,
+                # secondary ordering.
+                try:
+                    from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                    accounts.sort(key=lambda account: (
+                        bool(_kp.is_cooling(account[0])),
+                        int(_kp.window_load(account[0])),
+                    ))
+                except Exception as _e:  # noqa: BLE001
+                    log.debug(
+                        "llm_auth: Codex account balancing failed (%s) — "
+                        "using configured order",
+                        _e,
+                    )
                 codex_timeout = cfg.get(
                     "codex_timeout_s",
                     cfg.get("client_timeout_s", 180),
                 )
                 codex_effort = str(cfg.get("codex_reasoning_effort") or "").strip()
-                if codex_effort:
-                    client = _codex.CodexClient(
-                        timeout_s=int(float(codex_timeout)),
-                        reasoning_effort=codex_effort,
-                    )
-                else:
-                    client = _codex.CodexClient(timeout_s=int(float(codex_timeout)))
-                out.append({
-                    "name": "codex",
-                    "env_var": _codex.CODEX_ENV_ID,
-                    "cred": "attached",
-                    "client": client,
-                    "model": _codex.translate_model(str(codex_source_model)),
-                    "source_model": str(codex_source_model),
-                    "cap_id": _codex.CODEX_CAPABILITY_ID,
-                })
+                for cap_id, codex_home in accounts:
+                    client_kwargs = {
+                        "timeout_s": int(float(codex_timeout)),
+                        "codex_home": codex_home,
+                        "capability_id": cap_id,
+                    }
+                    if codex_effort:
+                        client_kwargs["reasoning_effort"] = codex_effort
+                    client = _codex.CodexClient(**client_kwargs)
+                    out.append({
+                        # Keep the public provider vocabulary stable: callers
+                        # still see "codex" while cap_id/env_var distinguish
+                        # the independently cooled load-balancer rungs.
+                        "name": "codex",
+                        "env_var": cap_id,
+                        "cred": "attached",
+                        "client": client,
+                        "model": _codex.translate_model(str(codex_source_model)),
+                        "source_model": str(codex_source_model),
+                        "cap_id": cap_id,
+                    })
             except Exception as e:  # noqa: BLE001
                 log.warning("llm_auth: Codex provider init failed (%s)", e)
 

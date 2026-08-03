@@ -47,10 +47,19 @@
 .pvcard{position:relative;display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);min-width:0;transition:transform .12s,box-shadow .12s,border-color .12s}
 .pvcard:hover{transform:translateY(-2px);box-shadow:0 5px 18px rgba(0,0,0,.22);border-color:color-mix(in srgb,var(--pvh) 55%,var(--line))}
 .pv-buy{--pvh:var(--pv-buy)}.pv-near{--pvh:var(--pv-near)}.pv-wait{--pvh:var(--pv-wait)}.pv-hold{--pvh:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid)}
-.pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
+.pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
-.pv-chart{position:relative;min-width:0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
-.pv-chart svg{display:block;width:100%;height:74px}
+{# The ⚠ popover lives inside .pv-chart, so .pvcard{overflow:hidden} used to CLIP it:
+   a 5-caution name rendered a 207px popover inside a 180px card and two whole rows —
+   the sector stance and the "already moving" warning — were unreachable at any width.
+   The card must therefore stop clipping while the popover is open. The chart, its
+   sparkline and the zone row now round their OWN corners instead of borrowing the
+   card's clip, so releasing it costs no square-corner artifact. NOTE: never give
+   .pv-chart overflow:hidden to do this — that is the popover's own ancestor and would
+   re-create the bug one level down. #}
+.pvcard:has(.pv-cau:hover),.pvcard:has(.pv-cau:focus-within){overflow:visible}
+.pv-chart{position:relative;min-width:0;border-radius:11px 11px 0 0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
+.pv-chart svg{display:block;width:100%;height:74px;border-radius:11px 11px 0 0}
 {# spark recolor law (band contract): everything strokes the verb hue; filled shapes flip
    to hue fill. The builder-drawn buy-zone band (_spark_svg zone_lo/zone_hi/zone_state)
    relies on this exact split — its dashed edge lines carry NO fill attribute (only the
@@ -100,10 +109,17 @@
 .pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
 .pv-cau{position:relative;display:inline-flex}
 .pv-cau-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;line-height:1.35;padding:2px 7px;border-radius:999px;cursor:pointer;background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);font-family:inherit}
-.pv-cau-pop{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:190px;max-width:250px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 9px;box-shadow:var(--popover-shadow);white-space:normal}
+{# Wider than the old 190-250px: these rows are full sentences now, and at 190px a
+   two-clause caution wrapped to four lines. Height is capped and scrolls rather than
+   growing without limit — a name can carry six or more cautions. #}
+.pv-cau-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:264px;max-width:min(264px,78vw);max-height:min(300px,58vh);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px 10px;box-shadow:var(--popover-shadow);white-space:normal;text-align:left}
 .pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
-.pv-cau-row{display:block;font-size:10.5px;line-height:1.45;color:var(--text);padding:2px 0}
-.pv-cau-row + .pv-cau-row{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+{# Bulleted, not hairline-ruled: five ledger rows read as a table of equals; a bullet
+   list reads as notes and lets each row keep its own sentence rhythm. #}
+.pv-cau-row{position:relative;display:block;padding-left:12px;font-size:10.5px;line-height:1.5;color:var(--text)}
+.pv-cau-row::before{content:"";position:absolute;left:2px;top:6.5px;width:4px;height:4px;border-radius:50%;background:var(--warn);opacity:.7}
+.pv-cau-row + .pv-cau-row{margin-top:7px}
 {# PROPHET LIVE P1 (spec §5.3) — the ◐ live chip. Reserved empty slot in every overlay,
    filled client-side from live/prophet_live.json (dashboard.html.j2, mode=stocks only).
    NOT --pvh: this chip is today's tape, not the nightly verdict (see the macro header). #}
@@ -164,7 +180,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
           every non-us_stocks board and most cards here. #}
       <span class="pv-live" hidden></span>
       {%- if cx.get('flags') %}
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes ({{ cx.flags|length }})" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ {{ cx.flags|length }}</button><span class="pv-cau-pop" role="tooltip">{% for _f in cx.flags %}<span class="pv-cau-row">{{ t(_f[0], _f[1]) }}</span>{% endfor %}</span></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes ({{ cx.flags|length }})" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ {{ cx.flags|length }}</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd">{{ t('Before you act','动手之前') }}</span>{% for _f in cx.flags %}<span class="pv-cau-row">{{ t(_f[0], _f[1]) }}</span>{% endfor %}</span></span>
       {%- endif %}
     </span>
     {% if cx.get('price_txt') %}<span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="{{ (cx.get('sym') or cx.tk)|e }}" data-mkt="{{ cx.mkt|e }}">{{ cx.price_txt }}</span></span>{% endif %}

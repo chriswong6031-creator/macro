@@ -735,6 +735,30 @@ def test_sweep_prunes_js_orphans_independently_of_css(tmp_path):
     assert not (js / "00000000.js").exists()
 
 
+def test_sweep_never_prunes_named_product_assets(tmp_path):
+    """Only content-addressed sweep output is eligible for orphan pruning.
+
+    A named asset can be committed beside a template before the render lane has
+    emitted the first page that references it.  Treating every ``*.js`` or
+    ``*.css`` file as sweep-owned lets an unrelated fast render delete that
+    product asset before its heavier page render runs.
+    """
+    site = tmp_path / "site"
+    css, js = site / "assets" / "css", site / "assets" / "js"
+    css.mkdir(parents=True)
+    js.mkdir(parents=True)
+    named_css = css / "earnings-wire.css"
+    named_js = js / "company-intelligence-dossier.js"
+    named_css.write_text("/* product-owned */", encoding="utf-8")
+    named_js.write_text("/* product-owned */", encoding="utf-8")
+    (site / "macro.html").write_text("<html><body></body></html>", encoding="utf-8")
+
+    externalize(site)
+
+    assert named_css.exists()
+    assert named_js.exists()
+
+
 def test_prune_spares_a_script_only_an_absent_committed_page_loads(tmp_path):
     """The #3988/#4042 shape, JS side: in a partial checkout the pages on disk
     are not the pages that ship, so orphanhood cannot be decided from them."""

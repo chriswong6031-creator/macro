@@ -16,6 +16,9 @@ DEPLOY = ROOT / "app" / "deploy"
 SERVICE_PATH = DEPLOY / "macro-biocatalyst.service"
 MACRO_API_SERVICE_PATH = DEPLOY / "macro-api.service"
 TIMER_PATH = DEPLOY / "macro-biocatalyst.timer"
+HEARTBEAT_SERVICE_PATH = DEPLOY / "macro-biocatalyst-activation-heartbeat.service"
+HEARTBEAT_TIMER_PATH = DEPLOY / "macro-biocatalyst-activation-heartbeat.timer"
+HEARTBEAT_RUNNER_PATH = DEPLOY / "biocatalyst-activation-heartbeat.sh"
 SETUP_PATH = DEPLOY / "biocatalyst-setup.sh"
 RUNTIME_PATH = DEPLOY / "biocatalyst-runtime.sh"
 SECURE_PATHS_PATH = DEPLOY / "biocatalyst-secure-paths.py"
@@ -60,7 +63,7 @@ def _lane_test_paths(job_body: str) -> set[str]:
 
 
 def test_biocatalyst_deploy_shell_scripts_have_valid_syntax():
-    for script in (RUNTIME_PATH, SETUP_PATH, UPDATE_PATH):
+    for script in (RUNTIME_PATH, SETUP_PATH, HEARTBEAT_RUNNER_PATH, UPDATE_PATH):
         subprocess.run(["bash", "-n", str(script)], check=True)
     subprocess.run([sys.executable, "-m", "py_compile", str(SECURE_PATHS_PATH)], check=True)
 
@@ -132,6 +135,15 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
     assert "Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state" in service
     assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
+    assert "Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation" in service
+    assert (
+        "Environment=BIOCATALYST_R2_ACTIVATION_GATE_PATH="
+        "/var/lib/macro-biocatalyst/activation/gate.json"
+    ) in service
+    assert (
+        "Environment=BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH="
+        "/var/lib/macro-biocatalyst/activation/heartbeat.json"
+    ) in service
     assert (
         "ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker "
         "--mode canary_poll"
@@ -148,7 +160,9 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
         "ProtectHome=true",
         "ReadWritePaths=/var/lib/macro-biocatalyst/state",
         "ReadWritePaths=/var/lib/macro-biocatalyst/public",
+        "ReadOnlyPaths=/var/lib/macro-biocatalyst/activation",
         "InaccessiblePaths=/etc/macro-biocatalyst.env",
+        "InaccessiblePaths=/etc/macro-biocatalyst-control.env",
         "ProtectKernelTunables=true",
         "ProtectKernelModules=true",
         "ProtectControlGroups=true",
@@ -175,6 +189,8 @@ def test_service_is_a_bounded_hardened_oneshot_with_worker_owned_locking():
     assert "worker owns its non-blocking lock" in service
     assert "flock" not in service
     assert "Restart=always" not in service
+    assert "EnvironmentFile=/etc/macro-biocatalyst-control.env" not in service
+    assert "BIOCATALYST_R2_CONTROL_" not in service
 
 
 def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_state():
@@ -183,7 +199,9 @@ def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_sta
     assert "Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public" in service
     assert "ReadOnlyPaths=-/var/lib/macro-biocatalyst/public" in service
     assert "InaccessiblePaths=-/var/lib/macro-biocatalyst/state" in service
+    assert "InaccessiblePaths=-/var/lib/macro-biocatalyst/activation" in service
     assert "InaccessiblePaths=-/etc/macro-biocatalyst.env" in service
+    assert "InaccessiblePaths=-/etc/macro-biocatalyst-control.env" in service
     assert "BIOCATALYST_R2_" not in service
     assert "ReadWritePaths=/var/lib/macro-biocatalyst" not in service
 
@@ -191,7 +209,7 @@ def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_sta
 def test_macro_api_declares_projection_validation_dependencies():
     requirements = _text(API_REQUIREMENTS_PATH)
 
-    assert re.search(r"^jsonschema>=4\.23,<5\.0$", requirements, re.MULTILINE)
+    assert re.search(r"^jsonschema==4\.26\.0$", requirements, re.MULTILINE)
     assert re.search(r"^referencing>=0\.30,<1\.0$", requirements, re.MULTILINE)
 
 
@@ -262,6 +280,67 @@ def test_timer_is_hourly_jittered_and_operator_armable():
     assert "operator-armed" in timer
 
 
+def test_root_heartbeat_is_read_only_hardened_and_disabled_by_default():
+    service = _text(HEARTBEAT_SERVICE_PATH)
+    timer = _text(HEARTBEAT_TIMER_PATH)
+    runner = _text(HEARTBEAT_RUNNER_PATH)
+
+    assert "Type=oneshot" in service
+    assert "User=root" in service
+    assert "Group=macro-biocatalyst" in service
+    assert "ConditionPathExists=/etc/macro-biocatalyst.env" in service
+    assert "ConditionPathExists=/etc/macro-biocatalyst-control.env" in service
+    assert "ConditionPathExists=/var/lib/macro-biocatalyst/activation/gate.json" in service
+    assert "EnvironmentFile=/etc/macro-biocatalyst.env" in service
+    assert "EnvironmentFile=/etc/macro-biocatalyst-control.env" in service
+    assert "ExecStart=/usr/bin/env bash /opt/macro/app/deploy/biocatalyst-activation-heartbeat.sh" in service
+    assert "ReadWritePaths=/var/lib/macro-biocatalyst/activation" in service
+    assert "InaccessiblePaths=/var/lib/macro-biocatalyst/state" in service
+    assert "InaccessiblePaths=/var/lib/macro-biocatalyst/public" in service
+    for setting in (
+        "UMask=0077",
+        "NoNewPrivileges=true",
+        "PrivateTmp=true",
+        "PrivateDevices=true",
+        "ProtectSystem=strict",
+        "ProtectHome=true",
+        "ProtectKernelTunables=true",
+        "ProtectKernelModules=true",
+        "ProtectControlGroups=true",
+        "ProtectKernelLogs=true",
+        "ProtectClock=true",
+        "ProtectHostname=true",
+        "ProtectProc=invisible",
+        "ProcSubset=pid",
+        "RestrictSUIDSGID=true",
+        "RestrictNamespaces=true",
+        "RestrictRealtime=true",
+        "LockPersonality=true",
+        "SystemCallArchitectures=native",
+        "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6",
+    ):
+        assert setting in service
+    assert re.search(r"^CapabilityBoundingSet=$", service, re.MULTILINE)
+    assert re.search(r"^AmbientCapabilities=$", service, re.MULTILINE)
+
+    assert "OnCalendar=hourly" in timer
+    assert "AccuracySec=1min" in timer
+    assert "RandomizedDelaySec=120s" in timer
+    assert "Persistent=false" in timer
+    assert "Unit=macro-biocatalyst-activation-heartbeat.service" in timer
+    assert "WantedBy=timers.target" in timer
+    assert "operator-armed" in timer
+
+    assert '-m scripts.biocatalyst_activation --mode heartbeat' in runner
+    assert '--gate-file "$ACTIVATION_GATE"' in runner
+    assert 'mktemp "$ACTIVATION_ROOT/.heartbeat.XXXXXX"' in runner
+    assert 'mv -f -- "$temporary_heartbeat" "$HEARTBEAT_FILE"' in runner
+    assert 'stat -c \'%g\' "$temporary_heartbeat"' in runner
+    assert 'chmod 0440 "$temporary_heartbeat"' in runner
+    assert "BIOCATALYST_R2_CONTROL_API_TOKEN" not in runner
+    assert "curl" not in runner
+
+
 def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
     setup = _text(SETUP_PATH)
 
@@ -277,9 +356,14 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
     assert 'python3 "$SECURE_PATH_HELPER" provision-state' in setup
     assert '--state-root "$STATE_ROOT"' in setup
     assert '--env-file "$ENV_FILE"' in setup
+    assert '--control-env-file "$CONTROL_ENV_FILE"' in setup
+    assert '--activation-root "$ACTIVATION_ROOT"' in setup
+    assert '--activation-gate "$ACTIVATION_GATE"' in setup
+    assert '--activation-heartbeat "$ACTIVATION_HEARTBEAT"' in setup
     assert '--service-uid "$SERVICE_UID"' in setup
     assert '--service-gid "$SERVICE_GID"' in setup
     assert '--root-uid "$ROOT_UID"' in setup
+    assert '--root-gid "$ROOT_GID"' in setup
     assert '--env-uid "$ROOT_UID"' in setup
     assert '--env-gid "$ROOT_GID"' in setup
     assert 'install -d -o "$SERVICE_USER"' not in setup
@@ -301,6 +385,9 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
         "BIOCATALYST_ENABLED",
         "BIOCATALYST_HISTORY_ENABLED=0",
         "BIOCATALYST_PROSPECTIVE_ENABLED=0",
+        "BIOCATALYST_R2_ACTIVATION_ID",
+        "BIOCATALYST_R2_ACCOUNT_ID",
+        "BIOCATALYST_R2_JURISDICTION=default",
         "BIOCATALYST_R2_RETENTION_CONFIRMED=0",
         "BIOCATALYST_CANARY_NCTS",
         "BIOCATALYST_USER_AGENT",
@@ -311,9 +398,24 @@ def test_setup_keeps_environment_root_only_and_requires_explicit_prereq_check():
     ):
         assert key in setup
 
-    assert "BIOCATALYST_R2_RETENTION_CONFIRMED must equal 1 when prospective collection is enabled" in setup
+    assert "deprecated evidence only; never authorizes collection" in setup
     assert "BIOCATALYST_PROSPECTIVE_ENABLED must equal 0 or 1" in setup
     assert "BIOCATALYST_R2_RETENTION_CONFIRMED must equal 0 or 1" in setup
+    assert "BIOCATALYST_R2_ACTIVATION_ID must match activation gate" in setup
+    assert "BIOCATALYST_R2_ACCOUNT_ID must match the root-only control account" in setup
+    assert "BIOCATALYST_R2_JURISDICTION must be default, eu, or fedramp" in setup
+    assert "BIOCATALYST_R2_CONTROL_API_TOKEN" in setup
+    assert "BIOCATALYST_R2_CONTROL_ACCOUNT_ID" in setup
+    assert "BIOCATALYST_R2_ACTIVATION_GATE_TTL_SECONDS=86400" in setup
+    assert "BIOCATALYST_R2_HEARTBEAT_TTL_SECONDS=7200" in setup
+    assert "BIOCATALYST_R2_ACTIVATION_GATE_TTL_SECONDS must equal 86400" in setup
+    assert "BIOCATALYST_R2_HEARTBEAT_TTL_SECONDS must equal 7200" in setup
+    assert "validate_activation_artifacts" in setup
+    assert '"--mode",\n        "validate"' in setup
+    assert '"--heartbeat-file"' in setup
+    assert "verify-activation" in setup
+    assert 'install -m 0644 "$HEARTBEAT_SERVICE_SOURCE" "$HEARTBEAT_SERVICE_DEST"' in setup
+    assert 'install -m 0644 "$HEARTBEAT_TIMER_SOURCE" "$HEARTBEAT_TIMER_DEST"' in setup
 
     executable_lines = [
         line.strip() for line in setup.splitlines()
@@ -367,12 +469,22 @@ def _provision_state(tmp_path: Path, state_root: Path, env_file: Path) -> subpro
             str(state_root),
             "--env-file",
             str(env_file),
+            "--control-env-file",
+            str(tmp_path / "macro-biocatalyst-control.env"),
+            "--activation-root",
+            str(state_root / "activation"),
+            "--activation-gate",
+            str(state_root / "activation" / "gate.json"),
+            "--activation-heartbeat",
+            str(state_root / "activation" / "heartbeat.json"),
             "--service-uid",
             str(current_uid),
             "--service-gid",
             str(current_gid),
             "--root-uid",
             str(current_uid),
+            "--root-gid",
+            str(current_gid),
             "--env-uid",
             str(current_uid),
             "--env-gid",
@@ -411,6 +523,15 @@ def test_secure_provisioner_creates_exact_no_follow_layout(tmp_path: Path):
         assert not managed.is_symlink()
     assert _mode_owner(env_file) == (0o600, current_uid, current_gid)
     assert env_file.is_file() and not env_file.is_symlink()
+    control_env = tmp_path / "macro-biocatalyst-control.env"
+    assert _mode_owner(control_env) == (0o600, current_uid, current_gid)
+    assert control_env.is_file() and not control_env.is_symlink()
+    activation_root = state_root / "activation"
+    assert _mode_owner(activation_root) == (0o750, current_uid, current_gid)
+    assert activation_root.is_dir() and not activation_root.is_symlink()
+    for artifact in (activation_root / "gate.json", activation_root / "heartbeat.json"):
+        assert _mode_owner(artifact) == (0o440, current_uid, current_gid)
+        assert artifact.is_file() and not artifact.is_symlink()
 
 
 _MANAGED_ANCHORS = (
@@ -421,6 +542,10 @@ _MANAGED_ANCHORS = (
     "committed",
     "dead-letter",
     "env",
+    "control_env",
+    "activation",
+    "gate",
+    "heartbeat",
 )
 
 
@@ -441,12 +566,16 @@ def test_secure_provisioner_rejects_hostile_anchor_without_touching_target(
         "committed": state_root / "state" / "committed",
         "dead-letter": state_root / "state" / "dead-letter",
         "env": env_file,
+        "control_env": tmp_path / "macro-biocatalyst-control.env",
+        "activation": state_root / "activation",
+        "gate": state_root / "activation" / "gate.json",
+        "heartbeat": state_root / "activation" / "heartbeat.json",
     }
     blocker = anchor_paths[anchor]
     blocker.parent.mkdir(parents=True, exist_ok=True)
 
     if hostile_kind == "symlink":
-        if anchor == "env":
+        if anchor in {"env", "control_env", "gate", "heartbeat"}:
             protected = tmp_path / "protected-secret"
             protected.write_text("do-not-touch", encoding="utf-8")
             protected.chmod(0o640)
@@ -458,7 +587,7 @@ def test_secure_provisioner_rejects_hostile_anchor_without_touching_target(
             sentinel = protected / "sentinel.txt"
             sentinel.write_text("do-not-touch", encoding="utf-8")
             blocker.symlink_to(protected, target_is_directory=True)
-    elif anchor == "env":
+    elif anchor in {"env", "control_env", "gate", "heartbeat"}:
         blocker.mkdir(mode=0o751)
         sentinel = blocker / "sentinel.txt"
         sentinel.write_text("do-not-touch", encoding="utf-8")
@@ -478,13 +607,24 @@ def test_secure_provisioner_rejects_hostile_anchor_without_touching_target(
     assert sentinel.read_text(encoding="utf-8") == before_content
 
 
-def test_secure_provisioner_rejects_hard_linked_environment_file(tmp_path: Path):
+@pytest.mark.parametrize("anchor", ("env", "control_env", "gate", "heartbeat"))
+def test_secure_provisioner_rejects_hard_linked_control_files(tmp_path: Path, anchor: str):
     state_root = tmp_path / "macro-biocatalyst"
     env_file = tmp_path / "macro-biocatalyst.env"
+    control_env = tmp_path / "macro-biocatalyst-control.env"
+    activation_root = state_root / "activation"
+    anchor_paths = {
+        "env": env_file,
+        "control_env": control_env,
+        "gate": activation_root / "gate.json",
+        "heartbeat": activation_root / "heartbeat.json",
+    }
+    target = anchor_paths[anchor]
+    target.parent.mkdir(parents=True, exist_ok=True)
     protected = tmp_path / "protected-secret"
     protected.write_text("do-not-touch", encoding="utf-8")
     protected.chmod(0o640)
-    os.link(protected, env_file)
+    os.link(protected, target)
     before = _mode_owner(protected)
 
     result = _provision_state(tmp_path, state_root, env_file)
@@ -492,6 +632,56 @@ def test_secure_provisioner_rejects_hard_linked_environment_file(tmp_path: Path)
     assert result.returncode != 0
     assert _mode_owner(protected) == before
     assert protected.read_text(encoding="utf-8") == "do-not-touch"
+
+
+def _verify_activation(tmp_path: Path, state_root: Path) -> subprocess.CompletedProcess[str]:
+    current_uid = os.getuid()
+    current_gid = os.getgid()
+    return subprocess.run(
+        [
+            sys.executable,
+            str(SECURE_PATHS_PATH),
+            "verify-activation",
+            "--state-root",
+            str(state_root),
+            "--activation-root",
+            str(state_root / "activation"),
+            "--activation-gate",
+            str(state_root / "activation" / "gate.json"),
+            "--activation-heartbeat",
+            str(state_root / "activation" / "heartbeat.json"),
+            "--control-env-file",
+            str(tmp_path / "macro-biocatalyst-control.env"),
+            "--root-uid",
+            str(current_uid),
+            "--root-gid",
+            str(current_gid),
+            "--service-gid",
+            str(current_gid),
+        ],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def test_activation_verifier_rejects_nonimmutable_gate_and_heartbeat(tmp_path: Path):
+    state_root = tmp_path / "macro-biocatalyst"
+    result = _provision_state(tmp_path, state_root, tmp_path / "macro-biocatalyst.env")
+    assert result.returncode == 0, result.stderr
+    assert _verify_activation(tmp_path, state_root).returncode == 0
+
+    gate = state_root / "activation" / "gate.json"
+    gate.chmod(0o640)
+    assert _verify_activation(tmp_path, state_root).returncode != 0
+    gate.chmod(0o440)
+
+    heartbeat = state_root / "activation" / "heartbeat.json"
+    protected = tmp_path / "protected-heartbeat"
+    heartbeat.rename(protected)
+    heartbeat.symlink_to(protected)
+    assert _verify_activation(tmp_path, state_root).returncode != 0
 
 
 def _fake_runtime(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -584,10 +774,18 @@ def test_update_reconciles_only_a_fully_operator_installed_lane_without_arming_i
     assert "[ -f /etc/systemd/system/macro-biocatalyst.timer ]" in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service"' in block
     assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer"' in block
+    assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service"' in block
+    assert 'cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer"' in block
     assert "systemd-analyze verify" in block
     assert "systemctl daemon-reload" in block
+    assert "BIOCATALYST_TIMER_WAS_ENABLED=0" in block
+    assert "BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=0" in block
+    assert "[ -f /etc/systemd/system/macro-biocatalyst.timer ]" in block
+    assert "[ -f /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer ]" in block
     assert "systemctl is-enabled --quiet macro-biocatalyst.timer" in block
     assert "systemctl restart macro-biocatalyst.timer" in block
+    assert "systemctl is-enabled --quiet macro-biocatalyst-activation-heartbeat.timer" in block
+    assert "systemctl restart macro-biocatalyst-activation-heartbeat.timer" in block
     assert "BIOCATALYST_UNIT_UPDATED=1" in block
     assert "BIOCATALYST_RUNTIME_UPDATED=0" in block
     assert "BIOCATALYST_RUNTIME_READY=0" in block

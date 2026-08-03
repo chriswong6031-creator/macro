@@ -6,8 +6,8 @@ ONLY on an allowed download, with a **fail-open-but-LOUD** write (a broken ledge
 must never lock out a paying subscriber — availability wins over a perfect cap,
 exactly as the brain gateway reasons at its ``_write_quota``).
 
-Limits: ``free``/``insider``/unknown = 0 (viewing + downloading are PRO-only;
-insider is a browse-and-teaser tier) · ``pro`` = 10/day · ``pro`` holding a
+Limits: ``free``/``essential``/unknown = 0 (viewing + downloading are PRO-only;
+Essential is a browse-and-teaser tier) · ``pro`` = 10/day · ``pro`` holding a
 LIFETIME grant = 50/day. Period = UTC calendar day (``YYYY-MM-DD``).
 
 State layout (masterplan §4):
@@ -37,13 +37,13 @@ from pathlib import Path
 log = logging.getLogger("research_vault.download_quota")
 
 # Daily download allowance per tier. Reading research is PRO-only, so free AND
-# insider both get 0 (insider is a browse-and-teaser tier); pro = 10/day.
-LIMITS: dict[str, int] = {"free": 0, "insider": 0, "pro": 10}
+# essential both get 0 (Essential is a browse-and-teaser tier); pro = 10/day.
+LIMITS: dict[str, int] = {"free": 0, "essential": 0, "pro": 10}
 
 # Raised allowance for a LIFETIME holder — a comp entitlement row with no period
 # end, the same shape the account panel chips as "Lifetime". Applied only ON TOP OF
 # a tier that already has a paid allowance (see `_limit_for`): the flag decides HOW
-# MANY, never IF, so a comp/no-end row parked on free or insider (an admin downgrade
+# MANY, never IF, so a comp/no-end row parked on free or essential (an admin downgrade
 # writes exactly that shape) still gets 0.
 LIFETIME_LIMITS: dict[str, int] = {"pro": 50}
 

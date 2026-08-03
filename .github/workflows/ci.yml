@@ -98,6 +98,12 @@ on:
       - "tests/test_no_absolute_path_part_prunes.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
+      # chat.html header guard: the one product page that cannot {% include %} the
+      # shared nav (it is a plain-copy pair) has its header RENDERED from
+      # _site_nav.html.j2 instead. Named here, not just reached via templates/**,
+      # so a PR touching only the generator still runs the job that checks it.
+      - "scripts/sync_chat_nav.py"
+      - "tests/test_chat_nav_sync.py"
       # ?v= stamp lane guard (ui.asset_stamp): the sweep that moves a stamp, and the
       # ordering/staging contract the lanes must keep for it to survive to main. The
       # lane YAMLs themselves already reach this via ".github/workflows/**" below.
@@ -1784,6 +1790,7 @@ on:
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces
       - "tests/test_backfill_china_communiques.py"
       - "tests/test_baskets_china_intel.py"
+      - "tests/test_baskets_china_ths.py"
       - "tests/test_canada_branch_b.py"
       - "tests/test_china_analogs.py"
       - "tests/test_china_fx_context_render.py"
@@ -1794,6 +1801,7 @@ on:
       - "tests/test_w0_5_10_8.py"
       - "scripts/backfill_china_communiques.py"
       - "scripts/build_baskets_china.py"
+      - "scripts/build_baskets_china_ths.py"
       - "scripts/build_canada_library.py"
       - "scripts/build_china_analogs.py"
       - "scripts/build_china_library.py"
@@ -2143,6 +2151,21 @@ on:
       # history and Terminal transcript marker. Its focused contract and
       # refresh tests run in the publish-r2-client pack; list every source and
       # test half so a workflow-only/test-only edit cannot evade that proof.
+      #
+      # The public product has two additional release surfaces: the bounded API
+      # + ticker dossier, and the deterministic earnings wire.  Name their
+      # subjects explicitly even where a broad engine/templates/site glob also
+      # matches them.  That keeps the release-audit reachability contract
+      # reviewable and prevents a future narrowing of those globs from making
+      # either product face ship without its focused pack.
+      - "app/company_intelligence.py"
+      - "tests/test_company_intelligence_api.py"
+      - "site/assets/js/company-intelligence-dossier.js"
+      - "templates/ticker.html.j2"
+      - "engine/earnings_narrative/public_wire.py"
+      - "scripts/build_earnings_public_wire.py"
+      - "templates/earnings_wire/**"
+      - "tests/test_earnings_public_wire.py"
       - "engine/company_intelligence/**"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
@@ -2306,6 +2329,7 @@ on:
       - "tests/test_seo_foundation.py"
       - "tests/test_signal_contracts_wiring.py"
       - "tests/test_signal_sanity.py"
+      - "tests/test_ticker_dossier_render_lane.py"
       - "tests/test_ticker_pages.py"
       - "tests/test_ts_u1_session_date.py"
       - "tests/test_w4_pit_fixes.py"
@@ -2421,6 +2445,13 @@ on:
       # needs an entry.
       # billing-offers
       - "tests/test_billing_offers.py"
+      # ── Stripe object bootstrap (tier rename, Phase 2) ──────────────────────
+      # scripts/stripe_bootstrap.py reaches this workflow by NO other path, and
+      # its renamed-product adoption is the step that decides whether a live
+      # Product is reused or duplicated. Both halves listed by name (#3509).
+      - "scripts/stripe_bootstrap.py"
+      - "tests/test_stripe_bootstrap_offers.py"
+      - "tests/test_stripe_bootstrap_products.py"
   workflow_dispatch:
 
 permissions:

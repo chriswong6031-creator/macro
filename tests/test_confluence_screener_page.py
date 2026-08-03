@@ -248,7 +248,7 @@ def test_premium_payload_contains_only_gated_top_three_tickers():
     assert payload["schema"] == "tier_payload.v1"
     assert payload["page"] == "confluence_screener"
     assert payload["gated"] is True
-    assert payload["required_tier"] == "insider"
+    assert payload["required_tier"] == "essential"
     assert payload["built"] == "2026-07-19T04:00:00Z"
     assert [combo["combo_id"] for combo in payload["combos"]] == ["L0002", "L0003"]
 
@@ -335,7 +335,7 @@ def test_shipped_shell_and_protected_payload_are_paired():
     assert payload["schema"] == "tier_payload.v1"
     assert payload["page"] == "confluence_screener"
     assert payload["gated"] is True
-    assert payload["required_tier"] == "insider"
+    assert payload["required_tier"] == "essential"
     assert PAYLOAD_URL in html
     for combo in payload["combos"]:
         assert combo["active_count"] == len(combo["active_tickers"])

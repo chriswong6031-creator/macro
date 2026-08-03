@@ -4,7 +4,7 @@ Frozen cross-lane API:
     resolve_codex_bin() -> str
     run_codex(prompt, *, cwd=None, timeout_s=1500, model="",
               sandbox="workspace-write", network=True,
-              extra_args=None) -> dict
+              extra_args=None, env=None) -> dict
     fetch_rate_limits(timeout_s=30) -> dict | None
 
 run_codex return shape:
@@ -666,6 +666,7 @@ def run_codex(
     sandbox: str = "workspace-write",
     network: bool = True,
     extra_args: list[str] | None = None,
+    env: dict[str, str] | None = None,
 ) -> dict:
     """Run ``codex exec --json`` and return a structured result dict.
 
@@ -688,6 +689,10 @@ def run_codex(
         ``-c sandbox_workspace_write.network_access=true``.
     extra_args:
         Additional CLI arguments inserted before the prompt.
+    env:
+        Optional complete subprocess environment.  Account-pool callers use
+        this to select an isolated ``CODEX_HOME`` without mutating the parent
+        process environment (which would race concurrent requests).
 
     Returns
     -------
@@ -747,6 +752,7 @@ def run_codex(
                 timeout=timeout_s,
                 cwd=effective_cwd,
                 stdin=subprocess.DEVNULL,
+                env=env,
             )
         except FileNotFoundError:
             log.warning("codex_lane.runner: codex binary not found at %r", bin_path)

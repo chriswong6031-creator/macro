@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-02T20:04:13.548754+00:00",
-  "count": 614,
+  "generated_at": "2026-08-03T01:19:10.767642+00:00",
+  "count": 631,
   "institutions": [
     "Amova",
     "Apollo",
@@ -66,6 +66,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ofcmkmkrl9a-fd3387",
+      "title": "Financial Literacy AZ",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:34:02Z",
+      "summary_points": [
+        "**Financial Literacy Gap as Systemic Risk**: Global high literacy at 17.5% (US: 13%, France: 11%), with critical gender (men 23.9% vs women 11.2%) and generational (Gen Z 12.3% vs Boomers 22.2%) disparities driving behavioral risks and poor investment decisions in volatile markets.",
+        "**Inflation Misjudgment Distorts Behavior**: 48.7% globally overestimate inflation (Italy 70.6%, France 70.0%), directly suppressing asset allocation; Gen Z overestimates 60% vs 19% accurate, increasing demand for inflation-protected assets.",
+        "**Wealth Impact of Literacy**: Shifting 50% savings to bonds/equities lifts per capita wealth 14–21% over 20 years (Germany: EUR11,700 surplus); low-literacy households (53%) cannot identify investment products vs 21% of high-literacy groups.",
+        "**AI as Augmentation, Not Replacement**: 48% use AI weekly but literacy gaps persist (18% highly literate users vs 17% overall); overconfidence risks costly errors—portfolio managers must integrate AI with human judgment.",
+        "**Demographic Vulnerabilities**: Gen Z women (9.6% high literacy) and low-income groups (11.8% high literacy) face systemic exclusion; pension reforms shift responsibility to individuals amid rising cost-of-living pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 32,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-yhzxfhxz5lp-bd7bf2",
       "title": "India Equity Update July 2026",
       "institution": "Other",
@@ -103,6 +124,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qlbooymfv3b-aa0ef3",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:21:19Z",
+      "summary_points": [
+        "**GE Vernova Q2 Outperformance & Wind Risk**: Beat EPS (USD 2.47 vs 1.86), $5B FCF, 88% organic orders growth (134% Power), but wind orders down 43% due to North American demand softness (fundamental strength with sector-specific risk).",
+        "**NextEra Energy Backlog & Regulatory Tailwinds**: 35.1 GW backlog (battery storage growth driver), FPL’s Florida tariff legislation enabling 21 GW investments (12 GW in advanced discussions), directly expanding capital expenditure opportunities.",
+        "**Sector Volatility & Tactical Shifts**: Frequent \"Most Preferred\" ↔ \"Not Listed\" toggling (e.g., Glencore, Goodman Group) signals rapid portfolio repositioning driven by commodity prices, tech trends, and geopolitical risks, requiring real-time monitoring."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
@@ -148,6 +188,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-k6q3j9iq1md-2988bd",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:14:01Z",
+      "summary_points": [
+        "**Amazon AWS Acceleration & Capex Surge**: AWS growth at 37% (vs.",
+        "34% consensus), $169bn annualized run rate, $496bn backlog; capex surged to $54.2bn (above $49.4bn consensus) driven by AWS and generative AI, signaling infrastructure investment momentum.",
+        "**Apple Supply Constraints & Margin Pressure**: iPhone/Mac revenue growth (+22%/+29%) driven by strong demand, but supply constraints (advanced-node silicon, memory costs) cause margin compression despite demand strength, with management citing capacity limitations as primary issue.",
+        "**AI Enterprise Monetization Acceleration**: Positive enterprise adoption of AI-enabled Macs/iPhones (financial services, media, education), private AI focus, and Siri AI feedback driving fundamental revenue growth beyond consumer apps.",
+        "**Amazon Technical Momentum**: Sustained price above $200 since mid-2024 (up from ~$150 in Oct 2023 to ~$250 in Jul 2026), indicating strong institutional interest in AI infrastructure plays with consolidation near $250 suggesting potential breakout."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yz8jibnuxp0-a5460a",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:01:19Z",
+      "summary_points": [
+        "**Japan forex intervention & BoJ hold**: Ministry of Finance intervened to defend yen (effective only for speculative/temporary weakness); BoJ held rates, signaling no immediate policy shift.",
+        "**UK BoE rate hold**: BoE maintained rates (3 dissenters), with no monetary policy uncertainty risk premium in UK government bonds, reflecting market confidence in BoE communication.",
+        "**Asset Class Rating System**: Five-tier equity rating (Most Attractive to Least Attractive) guides tactical allocation via expected returns and scenario analysis, collapsing to three tiers when combined with other assets.",
+        "**Risk Disclosure Criticality**: Essential for risk assessment; includes AI tool usage, legal restrictions on valuation, and UBS conflict of interest (may trade based on this info)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xxtmvxpd6h7-8b5a08",
       "title": "Daily Europe",
       "institution": "UBS",
@@ -184,6 +265,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6uczb3r5eja-56c3c6",
+      "title": "Chinese economy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:59:30Z",
+      "summary_points": [
+        "**Fiscal Acceleration & Infrastructure**: Fiscal policy to accelerate spending/bond deployment for infrastructure (\"Two Key\"/\"Two New\" initiatives); \"Six Networks\" strategy (water, power grids) to boost H2 2026 growth, with H1 2026 fiscal spending up 0.8% y/y.",
+        "**Monetary Constraints & Geopolitical Risks**: PBOC limited rate cut room due to inflation, bank NIM pressure, and global rates; trade tensions (US tariffs, EU-China) and property stabilization efforts heighten geopolitical risks impacting trade flows and risk sentiment.",
+        "**Growth Divergence & Policy Timing**: Persistent activity divergence (rising exports vs.",
+        "weakening retail sales); growth target 4.5-5.0% achievable, with potential near-term rate cuts in Sep/Oct if momentum falters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -292,6 +393,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-nffr9ga8rgt-e4fabf",
+      "title": "MS Nick Savone Global Reflections Aug 1",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:41:54Z",
+      "summary_points": [
+        "**Earnings Season Dominance**: 86% S&P 500 companies beat EPS, led by AI/cloud demand (MSFT, AMZN, AAPL); markets penalize even minor misses, prioritizing execution over uncertainty.",
+        "**Korean Market Flow Surge**: KOSPI +18% driven by $5.1B foreign buying (SK Hynix +30%, Samsung +27%), 5.9x market breadth skew to gainers, Morgan Stanley Korea flows skewed 45% buy.",
+        "**Fed Policy Uncertainty**: Fed held rates amid dissent, disinflation intact despite GDP miss; policy framework uncertainty now outweighs inflation as key risk.",
+        "**Europe Earnings Momentum**: Strongest earnings season in years, net weighted skew to beats +45% (vs.",
+        "+31% prior), guidance raises +23%, US-Europe earnings gap narrowed to historic low."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hx5lyp97g3j-c866ba",
       "title": "Article bmfimultisectorplaybookincreasingdispersion ltr",
       "institution": "Morgan Stanley",
@@ -313,6 +435,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-vxdshnipqrz-46653d",
+      "title": "125976",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:33:16Z",
+      "summary_points": [
+        "**Staking Yield Gap**: Bitcoin lacks staking rewards, while Ethereum/Solana offer validator-based yields—critical for crypto ETP/ETF yield calculations and asset allocation.",
+        "**Core Execution Risks**: Slashing penalties (for validator errors), liquidity mismatch (redemption delays vs.",
+        "unstaked assets), and token dilution from rewards pose direct portfolio volatility and operational threats.",
+        "**Structural Exposure Differential**: PoS (ETH/SOL) exposes investors to both price and staking risk/reward; PoW (BTC) is purely price-driven with no yield component.",
+        "**Technical Efficiency Divide**: PoS networks (ETH/SOL) reduce energy consumption vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-llanmzsusrl-403844",
+      "title": "125974",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:33:03Z",
+      "summary_points": [
+        "**Store-of-Value Differentiation**: Bitcoin’s fixed supply (21M) and decentralization position it as a non-correlated store of value, distinct from Ethereum (programmable settlement) and Solana (high-speed execution).",
+        "**Yield Mechanics**: Bitcoin has no staking yield; Ethereum offers 2.5%–4.0% (network fees, MEV); Solana yields 4.0%–7.0% (protocol inflation, transaction activity), critical for income-driven allocation.",
+        "**Speed-Use Case Alignment**: Bitcoin (3–7 TPS, 10-min confirmations) prioritizes scarcity; Ethereum (15–25 TPS, 12s) enables secure DeFi; Solana (2,825 TPS, 0.4s) targets latency-sensitive applications (DEX, payments) without scaling compromises."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mdbhzpmueud-b2d68d",
       "title": "125973",
       "institution": "Morgan Stanley",
@@ -324,6 +486,46 @@
         "**Scalability Upgrades**: Ongoing protocol enhancements prioritize scalability and sustainability, critical for institutional adoption and long-term ecosystem growth.",
         "**Allocation Risk Structure**: Direct wallet ownership (operational/regulatory risks) vs.",
         "exchange products (simplified access); requires alignment with investor risk tolerance for Web3 growth positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dqbpmjii8hx-cf9a9e",
+      "title": "125972",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:32:38Z",
+      "summary_points": [
+        "**Solana's Technical Edge**: High throughput (thousands TPS), near real-time settlement, and minimal fees enabled by Proof-of-Stake + Proof-of-History consensus, supporting scalable DeFi, NFTs, and gaming without secondary layers.",
+        "**Ecosystem Differentiation**: SOL token powers fees, staking, and security within a high-speed ecosystem (DeFi, NFTs, gaming), distinguishing it from Bitcoin (value transfer) and traditional finance via technical superiority.",
+        "**Implementation Risk Factors**: Portfolio integration hinges on custody model (private keys vs.",
+        "ETFs), regulatory scrutiny, liquidity needs, and risk tolerance—critical for allocation decisions amid custody and compliance vulnerabilities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v1apunjdph5-779fe3",
+      "title": "Ii europe AI macro brief",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T14:31:51Z",
+      "summary_points": [
+        "**EU Productivity Parity Despite Adoption Lag**: European firms achieve 4.5% productivity gains (7.5% time savings/month) matching US potential (1-1.25ppt annual labor growth), but slower diffusion (smaller firms, regulations) risks widening the gap.",
+        "**US-EU Adoption Gap Widens Productivity Differential**: EU adoption at 20% (2025) vs US 43% (2026); intensive use at 6% EU vs 15% US.",
+        "Adopters see 4% higher productivity, with 25% citing system incompatibility as barrier.",
+        "**Management Quality Drives Adoption Gap**: Personnel management index (performance rewards, merit promotion) explains 50% of US-EU gap; 1 std dev increase linked to 10ppt higher AI adoption, mirroring US ICT revolution success."
       ],
       "tags": [],
       "tickers": [],
@@ -390,6 +592,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-01mqlm8tfbr-eceafe",
+      "title": "fxfistrategy docs",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T10:55:20Z",
+      "summary_points": [
+        "**Market Performance Divergence**: Taiwan/S.",
+        "Korea equities (+53%) outperform US/EU stocks (+9-10%) and commodities (Brent +44%, TTF gas +105%), driven by AI boom and safe-haven rotation despite Middle East conflict and energy price pressures.",
+        "**Geopolitical-AI Nexus**: US-Iran conflict spiked energy prices (Brent +40%, TTF gas +100%), while AI-driven demand fueled semiconductor rallies (Taiwan/S.",
+        "Korea stocks +50% vs US/Europe +10%); energy/bond prices unlikely to revert to pre-March levels.",
+        "**BoJ Policy & FX Technicals**: BoJ holds rates at 1.00% with next hike likely Oct/Dec; USD-JPY consolidates near 160 (post-intervention) below 164, reflecting Middle East crisis-driven energy inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -511,6 +734,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q6jzvhselya-a777ee",
+      "title": "Incap 202607300903 flash",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:34:43Z",
+      "summary_points": [
+        "**Q2 Margin Miss**: Incap missed Q2 EBITA margin due to unfavorable sales mix and component issues, though full-year guidance remains unchanged.",
+        "**EBITA Guidance Below Consensus**: Full-year adjusted EBITA guidance (EUR 26-29m) trails Nordea's estimate (EUR 29.5m), signaling potential underperformance.",
+        "**Margin Contraction Outlook**: Projected EBITA margin decline to 9.83% in 2026E (vs.",
+        "0% in 2025) reflects deteriorating profitability fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -1260,6 +1503,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-askhyzfj41i-8d3284",
+      "title": "Lending Pulse Loans Aren't the Problem, Funding Them Is",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:08:22Z",
+      "summary_points": [
+        "**Lending Sustainability & Broadening Demand**: Sustainable lending cycle confirmed with broad demand (money centers → regions), CRE strength (PNC, M&T), and capex drivers (AI, infrastructure, data centers) fueling growth.",
+        "**Funding Costs as Key Differentiator**: Intensifying deposit competition creates critical dispersion; low-cost DDA franchises vs.",
+        "high-cost/wholesale funding separates 2H26 winners from laggards.",
+        "**Borrowings Decelerating**: Borrowings growth decelerating (QTD -0.43% vs historical -0.66%) signals easing funding costs and potential stabilization in bank funding demand.",
+        "**Geopolitical & Rate Risk Pressures**: Elevated risks from Middle East conflict (FHN), volatile deposit campaigns near wholesale rates (ZION), and irrational pricing (COLB), with exposure to volatility noted (WFC)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-myfjhnohu9e-b22974",
       "title": "Credit Analysis Summer bummer for bonds",
       "institution": "Bank of America",
@@ -1323,6 +1587,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-lvoxa46ccvs-f70495",
+      "title": "The US Fixed Income Weekly",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:52Z",
+      "summary_points": [
+        "**July FOMC & Geopolitical Inflation Risk**: Fed holds rates but faces 3 hikes by September (BofA forecast); Brent oil near $100 signals Iran escalation risk, driving persistent inflation concerns and front-end yield vulnerability.",
+        "**Credit Market Rotation**: HY outperforms IG/loans due to AI supply dynamics; credit risk shifts favor high-yield, lower AI exposure, and defensive carry (AAA CLOs, ABS, floaters).",
+        "**Geopolitical-Driven Flows**: $14.9bn into bonds, $2.0bn gold, $33.9bn cash outflow; Iran conflict spurs reallocation to fixed income (govt bonds, short-duration credit) amid widening IG spreads.",
+        "**Fixed Income Defensive Allocation**: Prioritize carry, structure, and security selection; AAA CLOs, ABS, SASB/CMO floaters favored as oil volatility and rate uncertainty intensify.",
+        "**European Credit Dynamics**: Hyperscaler debt growth ($210bn→$460bn) outpaces demand; ECB hikes expected Sept, BBB scarcity, spreads rich, with IG funds seeing duration outflows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 41,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xljn1o7xykc-149bd1",
       "title": "Record single stock inflows driven by institutional clients",
       "institution": "Bank of America",
@@ -1344,6 +1629,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kgxzoik8cex-a3124e",
+      "title": "Put up or bond up",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:44Z",
+      "summary_points": [
+        "**Fed's rate hike credibility & global steepening**: Dovish FOMC raised credibility concerns, but strong data supports Fed hikes; monitor BoJ/CB for global long-end steepening risks.",
+        "**US bill demand & geopolitical risks**: $700bn FY '27 bill demand from SOMA/MMFs; UST underperformance driven by heightened geopolitical risks.",
+        "**OAT-EU trade positioning**: Short OATs vs EU bonds (current 38bp spread, target 40bp, stop 25bp) fueled by Le Pen candidacy, US-Iran tensions, and supply dynamics.",
+        "**BoE holds rates at 3.75% with 2026 hike risk**: MPC keeps door open for hikes if energy shock persists, no immediate action due to soft labor market; risks tilted to 2026 if energy prices endure.",
+        "**Debt limit & bill shortfall**: Debt limit binds March '27 (X-date Aug-Nov '27); $400b bill shortfall justifies higher FY '27 coupon auction sizes amid debt limit resolution timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-snnxoro5pbu-6b0f04",
+      "title": "Wishy Warshy Investment Strategy",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:40Z",
+      "summary_points": [
+        "**Fed Policy Uncertainty & Market Credibility**: Dissenting Fed members (Hammack, Kashkari, Logan) at July meeting triggered long-end yield spikes and dollar sell-off; markets question Fed credibility despite elevated September hike probability (25bp each meeting).",
+        "**Institutional Flows & Sector Rotation**: Record $8.2bn single-stock inflows (4th straight week) and Industrials sector seeing 8 of 11 sectors' record inflows; hedge funds sold equities (3rd straight week), signaling institutional conviction amid geopolitical uncertainty.",
+        "**Earnings Momentum & Tech Divergence**: S&P 500 Q2 EPS growth at 36% YoY (80% beat), but tech underperformed (beat lagged by 2.6ppt); AI capex growth at 40% YoY, with robust guidance (1.3x above-consensus MTD).",
+        "**Geopolitical Impact on Consumer Spending**: US-Iran conflict escalation drove 4.1% YoY total card spending surge (gas prices), while ex-gas retail spending rose 3.3% YoY (department stores strongest weekly gain), indicating resilient demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-7rkuwevyoe0-d36d7b",
       "title": "July jobs a litmus test for Fed credibility",
       "institution": "Bank of America",
@@ -1361,6 +1687,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ubwbb0kk77s-774cab",
+      "title": "Yen it to win",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:33Z",
+      "summary_points": [
+        "**JPY Intervention Risk**: Dovish Fed, NYK correction, and bearish yen sentiment could trigger intervention before 155 level, with long JPY exposure at stake.",
+        "**Fed Credibility vs Market Tightening**: USD reacts bearish to market-driven tightening; Fed’s dovish stance post-FOMC weakens USD (DXY fell 1.4%, 2Y yield down 5bp).",
+        "**AUD/NZD Trade**: Sell via 3m AUDNZD 1x1.5 put spread (strikes 1.1960/1.1850) as NZD shorts near 5-year lows and RBNZ hikes contrast RBA’s dovish stance.",
+        "**¥155 Technical Threshold**: Sustained move below ¥155 triggers stop-loss selling in USD/JPY; holding above maintains it as a floor for short positions.",
+        "**Critical Data Releases**: US payrolls (Fri), ISM surveys (Mon/Wed), NZ/CA labour data (Tue/Fri), Switzerland/Sweden CPI (Mon/Thu) drive near-term FX volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },

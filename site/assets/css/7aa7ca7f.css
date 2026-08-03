@@ -1,0 +1,344 @@
+
+  /* ══════════════════════════════════════════════════════════════════════
+     PLANS — the landing page's pricing idiom, on theme tokens.
+
+     index.html (#pricing) is the reference surface: porcelain cards on a
+     hairline grid, display-face figures, a blue pill toggle and one wide
+     feature matrix. That page is light-only with its own landing.css; this
+     one lives in the public chrome and must keep working in dark, so every
+     landing token below is BRIDGED onto theme.css rather than copied as a
+     literal. In light theme the bridge resolves to the landing's exact
+     values (theme.css's light palette already IS the landing palette:
+     #f7f8fa / #ffffff / #5d6b7e / #285fff), so a visitor stepping from the
+     homepage to this page sees one continuous design.
+
+     Light is the default here (see the <head> boot): the public nav and
+     footer are hardcoded porcelain — they deliberately mirror the landing —
+     so a dark body between them read as a broken page. An explicit theme
+     choice made in the app still wins.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── landing token bridge — dark values are the fallback (mirrors theme.css,
+        whose :root is dark), light overrides below restore the landing's own ── */
+  :root {
+    --display: -apple-system, 'SF Pro Display', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+    --fig: var(--display);
+    --r-lg: 16px;
+    --ink: var(--text);
+    --hair: var(--line);
+    --hair-2: color-mix(in srgb, var(--text) 17%, transparent);
+    --faint: color-mix(in srgb, var(--muted) 82%, transparent);
+    --blue: var(--info);
+    --blue-ink: #82b1f6;
+    --blue-wash: color-mix(in srgb, var(--info) 15%, transparent);
+    --q-green: #45b873;  --green-wash: color-mix(in srgb, #45b873 15%, transparent);
+    --q-gold:  #d8a43c;  --gold-wash:  color-mix(in srgb, #d8a43c 15%, transparent);
+    --violet: #9b86f0;   --teal: #3fbfae;
+    --x-red: #c98a8a;   /* non-directional: --down flips green under [data-lang=zh] */
+    --chip-a: color-mix(in srgb, var(--teal) 18%, transparent);
+    --chip-b: color-mix(in srgb, var(--info) 18%, transparent);
+    --chip-ink: #4fc9b8;
+    --surface: var(--panel);
+    --surface-2: var(--panel2);
+    --sh-card: 0 1px 0 rgba(255,255,255,.02);
+    --sh-lift: 0 18px 40px -18px rgba(0,0,0,.62), 0 3px 8px rgba(0,0,0,.3);
+    /* the two card washes — Pro (hot) and the violet→gold cast on the last card */
+    --wash-hot: linear-gradient(150deg, rgba(63,191,174,.10), rgba(91,155,240,.11) 55%, rgba(155,134,240,.10));
+    --wash-last: linear-gradient(150deg, rgba(155,134,240,.12), rgba(216,97,150,.07) 55%, rgba(216,164,60,.10));
+  }
+  html[data-theme="light"] {
+    --hair-2: #dfe3e9;
+    --faint: #8a95a4;
+    --blue-ink: #1c47cc;
+    --blue-wash: #eef2ff;
+    --q-green: #1f8b41;  --green-wash: #e9f5ec;
+    --q-gold:  #b07d05;  --gold-wash:  #faf3e2;
+    --violet: #7862e0;   --teal: #0f9d8f;
+    --x-red: #dc8f8f;
+    --chip-a: #e7f3f1;  --chip-b: #e9eefc;  --chip-ink: #0d7f74;
+    --surface: #ffffff;
+    --surface-2: #fbfcfd;
+    --sh-card: 0 1px 3px rgba(20,30,50,.07), 0 1px 2px rgba(20,30,50,.05);
+    --sh-lift: 0 14px 34px -14px rgba(20,30,50,.25), 0 3px 8px rgba(20,30,50,.07);
+    --wash-hot: linear-gradient(150deg, rgba(15,157,143,.055), rgba(40,95,255,.06) 55%, rgba(120,98,224,.05));
+    --wash-last: linear-gradient(150deg, rgba(120,98,224,.07), rgba(193,47,120,.045) 55%, rgba(176,125,5,.065));
+  }
+
+  /* ── the landing's canvas, pinned ──────────────────────────────────────
+     theme.js injects a site-wide "soft-contrast" palette for EVERY page
+     (light: --bg:#eceef1 / --panel:#f5f5f7 / --text:#2e3950) at
+     html.soft-contrast[data-theme="light"]. The homepage never links theme.js,
+     so it keeps #f7f8fa / #ffffff / #1c2430 — and the public nav above this
+     page is hardcoded to rgba(247,248,250,.85), i.e. the LANDING's background.
+     On the soft-contrast canvas that nav is a visibly different shade from the
+     page it sits on. Re-pinning the landing values here fixes the seam and
+     makes the homepage → pricing handoff continuous. Selector must out-specify
+     html.soft-contrast[data-theme="light"] (0,0,2,1), hence body.page-plans.
+     Contrast holds: #1c2430 on #f7f8fa ≈ 14:1, --muted ≈ 5.4:1 (both > AA), and
+     these are the exact values the homepage already ships to every visitor.
+     Dark keeps the app's soft-contrast canvas — there is no homepage dark to
+     match, and the rest of the product lives on it. */
+  html[data-theme="light"] body.page-plans {
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#fbfcfd;
+    --text:#1c2430; --muted:#5d6b7e; --line:#eaecf0;
+  }
+  /* the ambient aurora is an app surface, not a marketing one — the homepage's
+     pricing section is flat porcelain, so drop the wash in light and keep it in
+     dark, where it is part of the product's look. */
+  html[data-theme="light"] body.page-plans::before { display:none; }
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.55 var(--font-ui); margin:0; }
+  a { text-decoration:none; color:inherit; }
+  /* ZH keeps the display voice but hands off to a CJK face (landing.css parity) */
+  html[data-lang="zh"] .sec-title, html[data-lang="zh"] .tier h3, html[data-lang="zh"] h1, html[data-lang="zh"] h2 {
+    font-family:var(--display), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    letter-spacing:-.01em;
+  }
+  /* tabular figures everywhere a number can change under the toggle */
+  .price, .price .was, .fcount, .mx .val { font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+  /* ── page shell ─────────────────────────────────────────────────────── */
+  .wrap { width:100%; max-width:1280px; margin-inline:auto; padding-inline:clamp(20px,4.5vw,60px); }
+  .section-pad { padding-block:clamp(52px,7vw,86px); }
+  .pricing-sec { padding-top:clamp(38px,5vw,60px); }
+
+  /* ── section head (kicker · title · toggle) ─────────────────────────── */
+  .p-head { text-align:center; max-width:640px; margin:0 auto; }
+  .kicker { font-family:var(--display); font-weight:700; font-size:.72rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--blue); }
+  .sec-title { font-family:var(--display); font-weight:700; letter-spacing:-.02em; line-height:1.02;
+    font-size:clamp(1.9rem,4vw,3rem); margin:12px 0 14px; color:var(--ink); }
+  .sec-sub { color:var(--muted); font-size:1.02rem; max-width:52ch; margin:0 auto; }
+
+  .toggle { display:inline-flex; margin-top:22px; border:1px solid var(--hair-2); border-radius:99px;
+    padding:4px; font-weight:600; font-size:13px; background:var(--surface); box-shadow:var(--sh-card); }
+  .toggle button { appearance:none; border:0; cursor:pointer; font:600 13px/1 var(--font-ui);
+    padding:9px 17px; border-radius:99px; color:var(--muted); background:none;
+    transition:background .18s ease, color .18s ease; }
+  .toggle button[aria-pressed="true"] { background:var(--blue); color:#fff; }
+  .toggle button:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .toggle .save { font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.05em;
+    margin-left:5px; color:#bff2cf; }
+  .toggle button[aria-pressed="false"] .save { color:var(--q-green); }
+  .toggle-note { text-align:center; font-size:12.5px; color:var(--muted); margin:12px 0 0; min-height:1.2em; }
+
+  /* ── tier cards ─────────────────────────────────────────────────────── */
+  .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:40px; }
+  .tier { position:relative; border:1px solid var(--hair-2); border-radius:var(--r-lg);
+    background:var(--surface); box-shadow:var(--sh-card); padding:24px; display:flex; flex-direction:column; }
+  .tiers .tier:last-child { background:var(--wash-last), var(--surface); }
+  .tier.hot { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue), var(--sh-lift);
+    background:var(--wash-hot), var(--surface); }
+  /* the "FOUNDING RATE" tab — a real element (not ::before) so the offer API can
+     retitle it when the allotment runs out; same geometry as landing.css */
+  .hot-tab { position:absolute; top:-11px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-family:var(--display); font-weight:700; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:#fff; background:var(--blue); padding:4px 11px; border-radius:99px; }
+  html[data-lang="zh"] .hot-tab { letter-spacing:.08em; }
+
+  .tier h3 { margin:0; font-family:var(--display); font-weight:800; font-size:19px; color:var(--ink); }
+  .tier .who { color:var(--muted); font-size:13px; margin:4px 0 0; min-height:36px; }
+
+  .price { margin-top:12px; font-family:var(--fig); font-weight:800; font-size:41px; letter-spacing:-.005em;
+    color:var(--ink); line-height:1.05; }
+  .price .amt { transition:opacity .18s ease; }
+  .price .per { font-family:var(--font-ui); font-weight:500; font-size:12.5px; color:var(--muted); letter-spacing:0; }
+  .price .was { font-family:var(--fig); font-weight:600; font-size:16px; letter-spacing:normal;
+    color:var(--faint); text-decoration:line-through; margin-right:7px; }
+  .price .was.hidden { display:none; }
+
+  .bill { margin:7px 0 0; font-size:12px; line-height:1.45; color:var(--muted); }
+  /* NOT .badge — theme.css carries `html body .badge` and would win on size/padding */
+  .save-badge { display:inline-block; margin-top:6px; font-family:var(--display); font-weight:700;
+    font-size:10px; letter-spacing:.06em; color:var(--q-green); background:var(--green-wash);
+    border-radius:6px; padding:4px 9px; }
+  .save-badge.hidden { visibility:hidden; }  /* reserve the line — no card jump on toggle */
+
+  .founding { margin-top:12px; padding:11px 12px; border-radius:10px;
+    border:1px solid color-mix(in srgb, var(--blue) 24%, transparent);
+    background:linear-gradient(160deg, color-mix(in srgb,var(--blue) 6%,transparent), color-mix(in srgb,var(--violet) 6%,transparent)); }
+  .founding.hidden { display:none; }
+  .founding-line { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-size:10.5px; color:var(--muted); }
+  .founding-line b { font-family:var(--display); font-weight:750; letter-spacing:.05em; color:var(--ink); }
+  .founding-line .fcount { font-family:var(--fig); font-weight:600; color:var(--ink); text-align:right; }
+  .founding-track { height:6px; margin-top:8px; overflow:hidden; border-radius:999px;
+    background:color-mix(in srgb, var(--blue) 14%, transparent); }
+  .founding-fill { display:block; width:0; height:100%; border-radius:inherit;
+    background:linear-gradient(90deg, var(--blue), var(--violet)); transition:width .6s ease; }
+  .founding-terms { margin:8px 0 0; font-size:10px; line-height:1.4; color:var(--muted); }
+
+  .tier .tf { list-style:none; margin:15px 0 18px; padding:0; flex:1; display:flex; flex-direction:column; gap:9px; }
+  .tier .tf li { position:relative; padding-left:21px; font-size:13px; line-height:1.5; color:var(--muted); }
+  .tier .tf li::before { content:"✓"; position:absolute; left:1px; top:.05em; font-family:var(--display);
+    font-weight:800; font-size:11px; color:var(--q-green); }
+  .tier .tf li b { color:var(--ink); font-weight:600; }
+
+  /* CTA — landing .btn geometry. Keeps the [data-act] hooks and the busy spinner. */
+  .tier .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    border-radius:10px; padding:11px 20px; font:600 14.5px/1 var(--font-ui); cursor:pointer;
+    border:1px solid var(--hair-2); background:var(--surface); color:var(--ink); box-shadow:var(--sh-card);
+    transition:transform .16s, box-shadow .16s, background .16s; margin-top:auto; }
+  .tier .btn:hover { transform:translateY(-1px); box-shadow:var(--sh-lift); }
+  .tier .btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .tier .btn.primary:hover { background:var(--blue-ink); }
+  .tier .btn:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .tier .btn[aria-busy="true"] { pointer-events:none; opacity:.75; }
+  .btn .spin { width:14px; height:14px; border:2px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-top-color:currentColor; border-radius:50%; animation:pspin .7s linear infinite; }
+  @keyframes pspin { to { transform:rotate(360deg); } }
+  .cta-note { font-size:11.5px; color:var(--muted); text-align:center; margin:9px 0 0; min-height:1.3em; }
+
+  /* ── feature matrix ─────────────────────────────────────────────────── */
+  .matrix-card { margin-top:28px; background:var(--surface); border:1px solid var(--hair-2);
+    border-radius:var(--r-lg); box-shadow:var(--sh-card); overflow:auto; }
+  .mx-mobile-head { display:none; }
+  table.mx { width:100%; border-collapse:collapse; min-width:760px; }
+  .mx th, .mx td { padding:9px 16px; text-align:center; font-size:13.5px; border-bottom:1px solid var(--hair); }
+  .mx thead th { font-family:var(--display); font-weight:800; font-size:13px; letter-spacing:.02em;
+    position:sticky; top:0; background:var(--surface); z-index:2; border-bottom:1px solid var(--hair-2); color:var(--ink); }
+  .mx thead th small { display:block; font-family:var(--font-ui); font-weight:500; font-size:11px;
+    color:var(--faint); letter-spacing:0; margin-top:2px; }
+  .mx td:first-child, .mx th:first-child { text-align:left; position:sticky; left:0;
+    background:var(--surface); z-index:1; min-width:230px; }
+  .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
+    color:var(--blue); background:var(--surface-2); padding:9px 16px; }
+  .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
+  .mx .no { color:var(--x-red); font-weight:700; font-size:13px; }
+  .mx .val { font-weight:600; color:var(--ink); }
+  .mx .val small { display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:1px; }
+  .mx tbody tr:not(.grp):hover td { background:var(--blue-wash); }
+  .mx td:nth-child(3) { background:color-mix(in srgb, var(--blue) 3%, transparent); }
+  .mx tbody tr:last-child td { border-bottom:0; }
+
+  /* feature cell + its Tier-2 hover tip (the mechanics live here, not on the row) */
+  .mx td.feat { position:relative; }
+  .mx td.feat.has-tip { cursor:help; }
+  .mx td.feat.has-tip .ft { border-bottom:1px dotted var(--hair-2); }
+  .mx td.feat:hover, .mx td.feat:focus-within { z-index:30; }
+  .mx .tipbox { position:fixed; left:-9999px; top:-9999px; z-index:80; width:min(280px,64vw);
+    background:var(--ink); color:var(--bg); font-size:11.5px; font-weight:400; line-height:1.5;
+    border-radius:9px; padding:9px 12px; box-shadow:0 12px 30px -12px rgba(18,26,45,.55);
+    opacity:0; visibility:hidden; transform:translateY(3px); pointer-events:none; white-space:normal;
+    transition:opacity .18s, transform .18s, visibility 0s .18s; }
+  .mx .tipbox.up { transform:translateY(-3px); }
+  .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox {
+    opacity:1; visibility:visible; transform:none; transition:opacity .18s, transform .18s; }
+  .mx .feat .mchip { display:inline-block; font-family:var(--display); font-weight:800; font-size:8px;
+    letter-spacing:.1em; text-transform:uppercase; border-radius:6px; border:1px solid transparent; padding:2px 7px;
+    margin:0 0 0 8px; vertical-align:1px; white-space:nowrap; color:var(--chip-ink);
+    background:linear-gradient(90deg,var(--chip-a),var(--chip-b)) padding-box,
+               linear-gradient(90deg,color-mix(in srgb,var(--teal) 60%,transparent),color-mix(in srgb,var(--blue) 55%,transparent)) border-box; }
+
+  /* ── FAQ ────────────────────────────────────────────────────────────── */
+  .sec-head { text-align:center; margin-bottom:22px; }
+  .sec-head h2 { font-family:var(--display); font-weight:700; letter-spacing:-.015em;
+    font-size:clamp(1.4rem,2.6vw,2rem); margin:0; color:var(--ink); }
+  .sec-head p { color:var(--muted); margin:8px auto 0; max-width:52ch; font-size:14px; }
+  .faq { display:grid; gap:10px; max-width:760px; margin:22px auto 0; }
+  .faq details { border:1px solid var(--hair-2); border-radius:12px; background:var(--surface);
+    box-shadow:var(--sh-card); overflow:hidden; }
+  .faq summary { list-style:none; cursor:pointer; padding:15px 18px; font:600 14.5px/1.4 var(--font-ui);
+    color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary:focus-visible { outline:2px solid var(--blue); outline-offset:-2px; }
+  .faq summary .chev { flex:none; width:16px; height:16px; color:var(--muted); transition:transform .22s ease; }
+  .faq details[open] summary .chev { transform:rotate(180deg); }
+  .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.6px; line-height:1.6; }
+  .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
+    color:var(--muted); line-height:1.55; }
+  .faq-more a { color:var(--blue); font-weight:600; }
+  .faq-more a:hover { color:var(--blue-ink); }
+
+  /* ── disclaimer ─────────────────────────────────────────────────────── */
+  .disclaimer { margin:44px auto 40px; max-width:820px; padding:16px 18px; border:1px solid var(--hair);
+    border-radius:12px; background:var(--surface-2); color:var(--muted); font-size:11.8px; line-height:1.6; }
+  .disclaimer b { color:var(--ink); font-weight:600; }
+
+  /* ── return-flag banner (?checkout=success | cancel) ─────────────────── */
+  .flag-banner { display:none; align-items:center; gap:12px; margin:20px 0 0; padding:13px 16px;
+    border-radius:12px; font-size:13.5px; border:1px solid var(--hair-2); background:var(--surface);
+    box-shadow:var(--sh-card); color:var(--ink); }
+  .flag-banner.show { display:flex; }
+  /* --q-green, not --up: theme.css flips --up to red under [data-lang="zh"] (红涨绿跌),
+     and a "you're in" banner must not turn red for a Chinese reader. */
+  .flag-banner.ok { border-color:color-mix(in srgb, var(--q-green) 42%, var(--hair-2)); background:var(--green-wash); }
+  .flag-banner.cancel { border-color:color-mix(in srgb, var(--q-gold) 42%, var(--hair-2)); background:var(--gold-wash); }
+  .flag-banner .ficon { flex:none; font-size:17px; }
+  .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
+    color:var(--blue); border-bottom:1px solid currentColor; }
+  .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
+    font-size:16px; line-height:1; padding:2px 4px; }
+
+  /* ── toast (checkout errors — interface voice, no apology) ──────────── */
+  #ptoast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    max-width:min(92vw,420px); background:var(--ink); border:1px solid var(--hair-2); color:var(--bg);
+    padding:12px 16px; border-radius:12px; box-shadow:var(--sh-lift); font-size:13px; z-index:2147483600;
+    opacity:0; pointer-events:none; transition:opacity .22s ease, transform .22s ease; }
+  #ptoast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion:reduce){
+    .tier .btn, .price .amt, .faq summary .chev, #ptoast, .founding-fill, .toggle button { transition:none; }
+    .btn .spin { animation-duration:1.4s; }
+  }
+
+  /* ── mobile: one readable plan column + tap-to-expand mechanics ──────── */
+  @media (max-width:760px){
+    .tiers { grid-template-columns:1fr; gap:18px; margin-top:32px; }
+    .tier { padding:22px 20px; border-radius:18px; }
+    .tier .who { min-height:0; margin-bottom:2px; }
+    .tier .tf { margin:13px 0 17px; gap:8px; }
+    .tier .btn { min-height:48px; }
+    .price { font-size:37px; }
+
+    .matrix-card { margin-top:30px; overflow:visible; border-radius:18px; }
+    .mx-mobile-head { display:block; position:sticky; top:62px; z-index:35; padding:12px;
+      background:color-mix(in srgb, var(--surface) 94%, transparent); border-bottom:1px solid var(--hair-2);
+      border-radius:18px 18px 0 0; box-shadow:0 10px 24px -22px rgba(18,26,45,.6);
+      backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%); }
+    .mx-mobile-label { margin:0 0 8px; font-family:var(--display); font-weight:700; font-size:9.5px;
+      letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+    .mx-plan-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:4px;
+      background:var(--surface-2); border:1px solid var(--hair); border-radius:12px; }
+    .mx-plan-tabs button { min-width:0; min-height:46px; border:1px solid transparent; border-radius:9px;
+      padding:6px 5px; color:var(--muted); background:none; cursor:pointer;
+      transition:background .16s, color .16s, box-shadow .16s, border-color .16s; }
+    .mx-plan-tabs button span { display:block; font-family:var(--display); font-size:12.5px; font-weight:800; line-height:1.15; }
+    .mx-plan-tabs button small { display:block; margin-top:2px; font-size:10px; font-weight:500; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mx-plan-tabs button[aria-pressed="true"] { background:var(--surface); border-color:var(--hair-2);
+      color:var(--blue); box-shadow:var(--sh-card); }
+    .mx-mobile-hint { margin:8px 2px 0; color:var(--faint); font-size:11px; line-height:1.35; }
+
+    table.mx { min-width:0; table-layout:fixed; }
+    .mx th, .mx td { padding:11px 12px; }
+    .mx th:first-child, .mx td:first-child { position:static; left:auto; min-width:0; width:68%; text-align:left; }
+    .mx thead th { position:static; top:auto; font-size:12px; vertical-align:top; }
+    .mx thead th:first-child { color:var(--muted); font-size:11px; font-weight:600; }
+    .mx thead th small { font-size:9.5px; line-height:1.25; }
+    .mx th:nth-child(n+2), .mx td:nth-child(n+2) { display:none; }
+    .matrix-card[data-plan="free"]    .mx th:nth-child(2), .matrix-card[data-plan="free"]    .mx td:nth-child(2),
+    .matrix-card[data-plan="essential"] .mx th:nth-child(3), .matrix-card[data-plan="essential"] .mx td:nth-child(3),
+    .matrix-card[data-plan="pro"]     .mx th:nth-child(4), .matrix-card[data-plan="pro"]     .mx td:nth-child(4) { display:table-cell; width:32%; }
+    .mx .grp td { display:table-cell !important; width:auto !important; padding:10px 12px; }
+    .mx .ok { font-size:16px; }
+    .mx .val { font-size:12px; line-height:1.25; }
+    .mx .feat .mchip { margin-left:6px; padding:2px 5px; font-size:7.5px; }
+    .mx td.feat.has-tip { cursor:pointer; }
+    .mx td.feat.has-tip .ft::after { content:" ⓘ"; color:var(--blue); font-size:10px; }
+    .mx td.feat.has-tip .tipbox { position:static; display:block; width:100%; max-height:0; margin:0; padding:0;
+      background:transparent; color:var(--muted); border:0; border-radius:0; box-shadow:none;
+      font-size:11.5px; line-height:1.45; opacity:0; visibility:hidden; overflow:hidden; transform:none;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease, visibility 0s .22s; }
+    .mx td.feat:hover, .mx td.feat:focus-within { z-index:auto; }
+    .mx td.feat:hover .tipbox, .mx td.feat:focus-within .tipbox { opacity:0; visibility:hidden; }
+    .mx td.feat.has-tip.tip-open .tipbox { max-height:120px; margin-top:7px; opacity:1; visibility:visible;
+      transition:max-height .22s ease, opacity .16s ease, margin .22s ease; }
+  }
+  @media (max-width:680px){
+    .pricing-sec { padding-block:44px; }
+    .toggle { display:grid; grid-template-columns:1fr 1fr; width:100%; max-width:360px; }
+    .toggle button { min-height:44px; padding:8px 10px; }
+    .toggle .save { display:block; margin:2px 0 0; font-size:8.5px; }
+  }

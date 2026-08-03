@@ -1,14 +1,205 @@
 {
   "schema": "gsc_index_status.v1",
   "as_of": "2026-08-02",
-  "available": false,
-  "reason": "GSC_SA_JSON is multiply-encoded and the inner layer is not valid JSON: Expecting value: line 1 column 1 (char 0) [inner payload: looks like a bare PEM private key — the secret must be the whole .json key file, not just the private_key field (1703 chars)]",
+  "available": true,
+  "reason": null,
   "property": "sc-domain:mastermind-x.com",
-  "service_account": {},
-  "sitemaps": {
-    "sitemaps": [],
-    "never_downloaded": [],
-    "count": 0
+  "service_account": {
+    "client_email": "mas***@***.gserviceaccount.com"
   },
-  "urls": []
+  "sitemaps": {
+    "sitemaps": [
+      {
+        "path": "https://www.mastermind-x.com/sitemap.xml",
+        "lastSubmitted": "2026-08-02T07:18:18.537Z",
+        "lastDownloaded": "2026-08-02T07:18:19.667Z",
+        "isPending": false,
+        "isSitemapsIndex": false,
+        "type": "sitemap",
+        "warnings": 0,
+        "errors": 0,
+        "submitted": 2219,
+        "indexed": 0,
+        "contents": [
+          {
+            "type": "web",
+            "submitted": 2219,
+            "indexed": 0
+          }
+        ]
+      }
+    ],
+    "never_downloaded": [],
+    "count": 1
+  },
+  "urls": [
+    {
+      "url": "https://www.mastermind-x.com/",
+      "error": null,
+      "verdict": "PASS",
+      "coverageState": "Submitted and indexed",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED",
+      "lastCrawlTime": "2026-08-02T07:12:59Z",
+      "pageFetchState": "SUCCESSFUL",
+      "googleCanonical": "https://www.mastermind-x.com/",
+      "userCanonical": "https://www.mastermind-x.com/",
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=WIhNApXWE3DatIzdZKVXTA&utm_medium=link&utm_source=api",
+      "indexed": true
+    },
+    {
+      "url": "https://www.mastermind-x.com/products/index.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=hMh-uIZU5yS-BLkn5ILVkg&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/macro.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=9llLPtrzahH3MLPZqdgfiw&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=fOoPk40hikb6pkcohFdDFA&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/plans.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=5nDDQ4-skTY2uNM2Sc850w&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/start.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=D2MwyLTLxKSqq60b9JcudA&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/blog/index.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=rSDxutvS-7G-6nqk9WH8pA&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/research/index.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=hUdze6jrXkUW78OvEI9Dpw&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/learn/index.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=EAe2Pw6poUg99wE3E9hC6g&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/tools/index.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=dmgo2UPLaNeBb6N2to1aHQ&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/blog/win-rate-is-overrated.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=bPooitLG9sDeOHloqsIzXQ&utm_medium=link&utm_source=api",
+      "indexed": false
+    },
+    {
+      "url": "https://www.mastermind-x.com/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html",
+      "error": null,
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED",
+      "lastCrawlTime": null,
+      "pageFetchState": "PAGE_FETCH_STATE_UNSPECIFIED",
+      "googleCanonical": null,
+      "userCanonical": null,
+      "inspectionResultLink": "https://search.google.com/search-console/inspect?resource_id=sc-domain:mastermind-x.com&id=Q577qoFYrsNs2VLxmAxWIw&utm_medium=link&utm_source=api",
+      "indexed": false
+    }
+  ]
 }

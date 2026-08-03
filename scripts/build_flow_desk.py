@@ -246,16 +246,20 @@ def build_market_tide(flow_rows: list[dict], data_dir: Path) -> dict:
                     "premium_mn": float(hist_row["premium_mn"]) if not pd.isna(hist_row.get("premium_mn", float("nan"))) else None,
                     "net_premium_mn": float(hist_row["net_premium_mn"]) if not pd.isna(hist_row.get("net_premium_mn", float("nan"))) else None,
                 })
-    # Group by date (aggregate across spark_etfs)
+    # Group by date (aggregate across spark_etfs). A date starts as None, not 0.0:
+    # a session where NO ETF reported a field has no observation, and emitting a
+    # fabricated 0.0 painted the pre-history run of the series as a measured flat
+    # zero (the first ~14 sessions of net premium before the store began). None
+    # rows render as gaps; a real 0.0 observation still accumulates and draws.
     spark_by_date: dict[str, dict] = {}
     for item in spark_data:
         d = item["date"]
         if d not in spark_by_date:
-            spark_by_date[d] = {"premium_mn": 0.0, "net_premium_mn": 0.0}
-        if item["premium_mn"] is not None:
-            spark_by_date[d]["premium_mn"] += item["premium_mn"]
-        if item["net_premium_mn"] is not None:
-            spark_by_date[d]["net_premium_mn"] += item["net_premium_mn"]
+            spark_by_date[d] = {"premium_mn": None, "net_premium_mn": None}
+        for f in ("premium_mn", "net_premium_mn"):
+            if item[f] is not None:
+                prev = spark_by_date[d][f]
+                spark_by_date[d][f] = item[f] if prev is None else prev + item[f]
 
     spark = sorted(
         [{"date": d, **v} for d, v in spark_by_date.items()],

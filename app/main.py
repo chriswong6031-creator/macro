@@ -790,11 +790,11 @@ def me(user: dict = Depends(require_user)) -> dict:
 
 
 # Wire tier -> DISPLAY name (rendered by account.js as the plan pill). Two keys, one label:
-# 'insider' is the wire value config/plans.yml still stores, 'essential' is what the rename
-# migration will store, and BOTH are the product the catalog names "Essential"
-# (config/plans.yml products.insider.name — app/billing_emails.plan_name() already reads it,
-# so a receipt said "Essential" while this pill said "Insider").
-_PLAN_LABELS = {"free": "Free", "insider": "Essential", "essential": "Essential",
+# 'essential' is the wire value config/plans.yml stores now, 'insider' is what rows written
+# before the rename still carry, and BOTH are the product the catalog names "Essential"
+# (config/plans.yml products.essential.name — app/billing_emails.plan_name() reads it, so a
+# receipt said "Essential" while this pill said "Insider").
+_PLAN_LABELS = {"free": "Free", "essential": "Essential", "insider": "Essential",
                 "pro": "Pro", "unlimited": "Unlimited"}
 
 
@@ -1815,6 +1815,13 @@ try:
     app.include_router(research_router)
 except ImportError:
     pass  # app/research.py not yet present — vault routes unavailable until RV W2
+
+# Public per-ticker event context for the static dossier layer.  The router
+# delegates retrieval and immutable-receipt verification to the existing
+# context-only Company Intelligence reader; it is deliberately not a signal or
+# recommendation surface.
+from app.company_intelligence import router as company_intelligence_router  # noqa: E402
+app.include_router(company_intelligence_router)
 
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid

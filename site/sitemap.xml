@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.mastermind-x.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.mastermind-x.com/about.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.mastermind-x.com/confluence_screener.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/disclaimer.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/macro.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
@@ -1649,6 +1650,19 @@
   <url><loc>https://www.mastermind-x.com/stocks/HUN.html</loc><lastmod>2026-08-02</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/PPTA.html</loc><lastmod>2026-08-02</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/research/index.html</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/quantum-a12f56.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/india-equity-update-july-2026-bd7bf2.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/find-value-in-the-ai-stack-d3-fa2ef8.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/us-markets-a607ec.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/daily-asia-0ae831.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/daily-europe-8b5a08.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/daily-us-15b216.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/weekly-viewpoints-bb70a0.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/jpm-pi-monthly-wrap-metrics-2026-07-31-1-441486.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/global-insights-1-4d16a7.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/global-insights-260665.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/article-bmfimultisectorplaybookincreasingdispersion-ltr-c866ba.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/125973-b2d68d.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ing-think-asia-week-ahead-da65cb.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ing-think-boj-leaves-rates-at-100-with-no-surprises-e33b3d.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/ing-think-think-ahead-warsh-wants-a-quieter-fed-the-bank-of-england-sh-c03eb7.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1658,6 +1672,7 @@
   <url><loc>https://www.mastermind-x.com/research/prime-services-weekly-report-7-31-26-67bf01.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/correlation-six-seven-3e67ff.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/relais-group-oyj-202607300700-fullreport-77849b.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/atria-202607310825-flash-7bd5cb.html</loc><lastmod>2026-08-02</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/euro-weekly-digest-e18cea.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/amazon-july-31-575573.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/asset-allocation-july-31-6c44da.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
@@ -1670,9 +1685,11 @@
   <url><loc>https://www.mastermind-x.com/research/mohawk-industries-inc-mhk-2q26-recap-new-product-development-and-opera-bf7b0d.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/paypay-corp-payp-1q-beat-and-raise-on-back-of-gmv-loan-growth-and-marg-6caf0e.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/europe-energy-windfall-taxes-sensitivities-for-eur-oils-following-port-b4e4e1.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/gs-early-morning-research-recap-ratings-and-target-price-changes-july-d6ceca.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/global-healthcare-pharmaceuticals-the-obesity-evolution-cost-of-sema-p-a74312.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/first-solar-inc-e18e99.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/adidas-adsgn-de-following-strong-world-cup-driven-growth-investors-rem-c4b38a.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.mastermind-x.com/research/latam-week-ahead-mpc-meeting-brazil-25bp-to-14-0-and-mexico-hold-at-6-4fb0a4.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/us-weekly-kickstart-q2-2026-mid-season-earnings-update-7e4482.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/global-fx-trader-policy-pushback-c3efb8.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.mastermind-x.com/research/mexico-private-sector-credit-growth-firmed-in-june-ramos-52c38c.html</loc><lastmod>2026-08-01</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>

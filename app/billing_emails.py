@@ -64,6 +64,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app import billing, mailer
+from lib.tiers import normalize_tier
 
 log = logging.getLogger("macro.billing_emails")
 
@@ -234,8 +235,13 @@ def add_interval(d: datetime, interval: str | None) -> datetime:
 # Catalog (config/plans.yml is the source — never a literal price or plan name)
 # --------------------------------------------------------------------------- #
 def plan_name(tier: str | None) -> str:
-    """Display name for a tier, from the catalog ('insider' -> 'Insider')."""
-    t = (tier or "").strip().lower()
+    """Display name for a tier, from the catalog ('essential' -> 'Essential').
+
+    Normalised first: a row written before the rename still carries the old wire value,
+    and an unmatched tier would fall through to ``t.title()`` — printing the RETIRED
+    product name on a live receipt.
+    """
+    t = normalize_tier(tier)
     try:
         for prod in billing._catalog().get("products", {}).values():
             if prod.get("tier") == t:
@@ -280,8 +286,14 @@ def _feature_label(key: str) -> tuple[str, str] | None:
 
 
 def _tier_rank_of(tier: str | None) -> int:
+    """Position in ``tier_rank``, or -1 for anything the catalog does not carry.
+
+    Normalised first for the same reason as :func:`plan_name`, and it matters more here:
+    an un-normalised pre-rename tier ranks -1, which reads as "not a paid plan" and would
+    silently SUPPRESS the receipt / upgrade mail for exactly the grandfathered customers.
+    """
     rank = billing._tier_rank()
-    t = (tier or "").strip().lower()
+    t = normalize_tier(tier)
     return rank.index(t) if t in rank else -1
 
 

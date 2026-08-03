@@ -53,6 +53,10 @@ lanes:
           checkpoint, so an integrity failure blocks publication of a partial
           event generation. Context-only; it has no rank, size, gate, trade, or
           Prophet authority.
+          The preceding collect step also runs the separate bounded Company Facts
+          source intake only after verified complete-submission anchors exist. That
+          collector publishes its own source-manifest/coverage receipt and is not an
+          input to this event compiler or a share-count ledger consumer.
       - id: compile_capital_structure_document_terms
         module: scripts.compile_capital_structure_document_terms
         note: >
@@ -1965,6 +1969,12 @@ lanes:
           dead nightlies froze foresight.html at its pre-revamp render. ~11s
           measured on committed stores. Also rewrites
           site/basketdata/foresight_cascade.json in the same pass as its page.
+      - id: build_ticker_pages
+        module: scripts.build_ticker_pages
+        note: >
+          Company Intelligence dossier render — a post-render, pre-publication pass
+          for all/macro scopes that reads rebuilt US stockdata and fails closed if its
+          manifest, page count, index, or required dossier markers are incomplete.
       - id: publish_r2_stockdata
         module: scripts.publish_r2
         args: [--dirs, stockdata, --no-manifest]
@@ -2244,6 +2254,12 @@ lanes:
           Insider+ payload site/premiumdata/china_special_situations.json
           (docs/TIER_PREVIEW_PATTERN.md) — they must never be rebuilt apart.
           Display-only; CONST-ART2 authority: false.
+      - id: build_ticker_pages
+        module: scripts.build_ticker_pages
+        note: >
+          Company Intelligence dossier render — a post-render, pre-publication pass
+          for all or composite macro scopes that reads rebuilt US stockdata and fails
+          closed if its manifest, page count, index, or dossier markers are incomplete.
       - id: publish_r2_stockdata
         module: scripts.publish_r2
         args: [--dirs, stockdata, --no-manifest]

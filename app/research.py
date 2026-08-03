@@ -20,8 +20,8 @@ SECURITY INVARIANTS (the red-team probes these — see the block above each guar
      input never reaches an R2 key. Blocks path traversal / key injection / prefix
      listing.
   2. Entitlement fails CLOSED: any error/absence resolving tier → 'free' → blocked
-     (402). Reading is PRO-only — insider/free/unknown are NEVER granted view (402
-     paid_required); insider is a browse-and-teaser tier. (The download COUNTER
+     (402). Reading is PRO-only — essential/free/unknown are NEVER granted view (402
+     paid_required); Essential is a browse-and-teaser tier. (The download COUNTER
      fails OPEN per the availability rule in download_quota — deliberate asymmetry.)
   3. Server-authoritative quota: the 402 on exhaustion is returned regardless of
      client state; the counter increments only on a successful allow, before bytes.
@@ -60,9 +60,9 @@ _VAULT_PREFIX = "research_vault/"                      # ingest VAULT_PREFIX
 # The corpus key now lives with the reader that fetches it: corpus_mod.CORPUS_KEY.
 
 _UPGRADE_URL = "/plans.html"
-# Reading research (stream PDF + download) is a PRO-only benefit. Insider is a
+# Reading research (stream PDF + download) is a PRO-only benefit. Essential is a
 # TEASER tier: it may browse the latest three summaries, but the full catalog,
-# full search, view, and download surfaces require PRO — insider/free/unknown all
+# full search, view, and download surfaces require PRO — essential/free/unknown all
 # stay on the preview or resolve to 402 paid_required. Fails CLOSED.
 _VIEW_TIERS = frozenset({"pro"})
 _PUBLIC_PREVIEW_COUNT = 3
@@ -337,7 +337,7 @@ def _is_lifetime(user_id: str) -> bool:
 def _lifetime_for(tier: str, user_id: str) -> bool:
     """Lifetime flag for the quota call, short-circuited for tiers that cannot download.
 
-    Free/insider have a 0 allowance that a lifetime flag cannot lift, so there is
+    Free/essential have a 0 allowance that a lifetime flag cannot lift, so there is
     nothing to learn from the lookup — skipping it keeps ``/api/research/quota``
     a single Supabase round-trip for the non-paid callers who hit it most.
     """
@@ -469,7 +469,7 @@ def research_search(
     """FTS search over the corpus, restricted to preview IDs unless caller is Pro.
 
     Input is clamped (limit ≤ 50) and malformed queries degrade to an empty result.
-    Anonymous, free, and Insider callers can receive hits only for the three
+    Anonymous, free, and Essential callers can receive hits only for the three
     public preview reports; an authenticated Pro can search the complete corpus.
     """
     try:
@@ -521,7 +521,7 @@ def research_view(doc_id: str, request: Request,
 
     Gate order (each step is a distinct guard the red-team probes):
       1. auth (require_user) — 401 handled by the dependency.
-      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
+      2. tier resolve → non-pro (essential/free/unknown) → 402 paid_required.
       3. doc_id validate (shape 400 / existence 404) BEFORE any R2 key.
       4. hourly view rate-limit (anti-scrape) → 429 on exceed.
       5. fetch from the PRIVATE bucket; 404 if the object is absent.
@@ -567,7 +567,7 @@ def research_download(doc_id: str, request: Request,
 
     Gate order:
       1. auth (require_user).
-      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
+      2. tier resolve → non-pro (essential/free/unknown) → 402 paid_required.
       3. doc_id validate (400/404) BEFORE any R2 key.
       4. ``download_quota.check_and_increment`` (day-keyed; pro 10/day, 50/day for a
          lifetime holder). allowed=False → 402 quota_exhausted (server-authoritative

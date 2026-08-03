@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_instrument_candidate_term.schema.json",
+  "title": "Capital Structure instrument candidate-term observation",
+  "description": "An immutable, provenance-preserving projection of one validated document-term observation. It is deliberately not an instrument, a resolved security identity, a capacity measurement, a dilution score, or a trading signal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "candidate_term_id", "logical_candidate_term_id", "issuer_id",
+    "source_term", "candidate", "filing", "document", "security", "term",
+    "source_term_state", "reported", "normalized", "evidence", "extraction",
+    "relationships", "version", "point_in_time", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.instrument_candidate_term.v1"},
+    "candidate_term_id": {"type": "string", "pattern": "^instrument-candidate-term:cs:[a-f0-9]{24}$"},
+    "logical_candidate_term_id": {"type": "string", "pattern": "^instrument-candidate-term-slot:cs:[a-f0-9]{24}$"},
+    "issuer_id": {"type": "string", "minLength": 1},
+    "source_term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "observation_id", "logical_observation_id", "correction_version",
+        "observation_sha256", "source_available_at", "available_at", "receipt"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.document_term_observation.v1"},
+        "observation_id": {"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"},
+        "logical_observation_id": {"type": "string", "pattern": "^document-term-slot:cs:[a-f0-9]{24}$"},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "observation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_available_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time"},
+        "receipt": {"$ref": "#/$defs/sourceReceipt"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mapping_version", "family", "supply_role", "state"],
+      "properties": {
+        "mapping_version": {"const": "capital-structure-instrument-candidate-terms/1.0.0"},
+        "family": {
+          "type": "string",
+          "enum": ["common_stock", "preferred_stock", "debt", "units", "warrant", "other", "unknown"]
+        },
+        "supply_role": {
+          "type": "string",
+          "enum": ["registration_security_candidate", "not_applicable", "unknown"]
+        },
+        "state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["disposition", "reason"],
+          "properties": {
+            "disposition": {"type": "string", "enum": ["observed", "deferred", "ambiguous"]},
+            "reason": {
+              "type": "string",
+              "enum": [
+                "direct_security_class_mapping",
+                "direct_security_class_mapping_supply_not_applicable",
+                "upstream_document_term_unavailable",
+                "upstream_document_term_ambiguous",
+                "security_classification_unknown",
+                "missing_security_row",
+                "unsupported_source_term_type"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "filing": {"$ref": "#/$defs/filing"},
+    "document": {"$ref": "#/$defs/document"},
+    "security": {"$ref": "#/$defs/security"},
+    "term": {"$ref": "#/$defs/term"},
+    "source_term_state": {"$ref": "#/$defs/sourceState"},
+    "reported": {"$ref": "#/$defs/value"},
+    "normalized": {"$ref": "#/$defs/value"},
+    "evidence": {"$ref": "#/$defs/evidence"},
+    "extraction": {"$ref": "#/$defs/extraction"},
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supersedes", "source_observation_supersedes", "contradiction_ids"],
+      "properties": {
+        "supersedes": {"type": "array", "items": {"type": "string", "pattern": "^instrument-candidate-term:cs:[a-f0-9]{24}$"}, "uniqueItems": true, "maxItems": 1},
+        "source_observation_supersedes": {"type": "array", "items": {"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"}, "uniqueItems": true, "maxItems": 1},
+        "contradiction_ids": {"type": "array", "maxItems": 0}
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutable_record", "correction_version", "correction_of"],
+      "properties": {
+        "immutable_record": {"const": true},
+        "correction_version": {"type": "integer", "minimum": 1},
+        "correction_of": {"oneOf": [{"type": "string", "pattern": "^instrument-candidate-term:cs:[a-f0-9]{24}$"}, {"type": "null"}]}
+      }
+    },
+    "point_in_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_available_at", "source_term_available_at", "available_at"],
+      "properties": {
+        "source_available_at": {"type": "string", "format": "date-time"},
+        "source_term_available_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_context_only", "instrument_authority", "capacity_authority",
+        "risk_authority", "probability_authority", "rank_authority",
+        "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"
+      ],
+      "properties": {
+        "is_context_only": {"const": true},
+        "instrument_authority": {"const": false},
+        "capacity_authority": {"const": false},
+        "risk_authority": {"const": false},
+        "probability_authority": {"const": false},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"version": {"properties": {"correction_version": {"const": 1}}, "required": ["correction_version"]}}, "required": ["version"]},
+      "then": {"properties": {"version": {"properties": {"correction_of": {"type": "null"}}}}},
+      "else": {"properties": {"version": {"properties": {"correction_of": {"type": "string"}}}}}
+    },
+    {
+      "if": {"properties": {"candidate": {"properties": {"state": {"properties": {"disposition": {"const": "observed"}}, "required": ["disposition"]}}, "required": ["state"]}}, "required": ["candidate"]},
+      "then": {"properties": {"candidate": {"properties": {"family": {"not": {"const": "unknown"}}, "supply_role": {"not": {"const": "unknown"}}}}}}
+    }
+  ],
+  "$defs": {
+    "sourceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "receipt_id", "verification_state", "direct_observation_id", "direct_observation_sha256", "direct_available_at"],
+      "properties": {
+        "schema": {"const": "capital_structure.instrument_candidate_term_input_receipt.v1"},
+        "receipt_id": {"type": "string", "pattern": "^receipt:instrument-candidate-term-input:cs:[a-f0-9]{24}$"},
+        "verification_state": {"const": "validated_document_term_observation"},
+        "direct_observation_id": {"type": "string", "pattern": "^document-term:cs:[a-f0-9]{24}$"},
+        "direct_observation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "direct_available_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "filing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["accession", "form", "filing_date", "accepted_at"],
+      "properties": {
+        "accession": {"type": "string", "minLength": 1}, "form": {"type": "string", "minLength": 1},
+        "filing_date": {"type": ["string", "null"], "format": "date"}, "accepted_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_manifest_id", "source_id", "document_role", "canonical_url", "content_sha256", "child_document_type", "child_sequence", "child_filename", "child_text_start", "child_text_end"],
+      "properties": {
+        "source_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"}, "source_id": {"type": "string", "minLength": 1},
+        "document_role": {"const": "complete_submission"}, "canonical_url": {"type": "string", "format": "uri"}, "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "child_document_type": {"type": ["string", "null"]}, "child_sequence": {"type": ["string", "null"]}, "child_filename": {"type": ["string", "null"]},
+        "child_text_start": {"type": ["integer", "null"], "minimum": 0}, "child_text_end": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "security": {
+      "type": "object", "additionalProperties": false,
+      "required": ["row_id", "table_index", "row_index", "title_raw", "title_normalized", "classification"],
+      "properties": {
+        "row_id": {"oneOf": [{"type": "string", "pattern": "^fee-row:cs:[a-f0-9]{24}$"}, {"type": "null"}]},
+        "table_index": {"type": ["integer", "null"], "minimum": 0}, "row_index": {"type": ["integer", "null"], "minimum": 0},
+        "title_raw": {"type": ["string", "null"], "maxLength": 500}, "title_normalized": {"type": ["string", "null"], "maxLength": 500},
+        "classification": {"type": "string", "enum": ["common_stock", "preferred_stock", "debt", "units", "warrants", "other", "unknown"]}
+      }
+    },
+    "term": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "term_type", "scope"],
+      "properties": {
+        "name": {"type": "string", "enum": ["amount_to_be_registered", "proposed_maximum_offering_price_per_unit", "proposed_maximum_aggregate_offering_price", "registration_fee", "filing_fee_rate"]},
+        "term_type": {"type": "string", "enum": ["share_count", "principal_amount", "quantity", "price", "amount", "rate"]},
+        "scope": {"const": "registration_fee_table_row"}
+      }
+    },
+    "sourceState": {
+      "type": "object", "additionalProperties": false, "required": ["disposition", "reason"],
+      "properties": {
+        "disposition": {"type": "string", "enum": ["observed", "unavailable", "ambiguous"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "value": {
+      "type": "object", "additionalProperties": false, "required": ["raw_text", "value", "unit", "currency", "scale"],
+      "properties": {
+        "raw_text": {"type": ["string", "null"]}, "value": {"type": ["string", "null"]},
+        "unit": {"type": ["string", "null"]}, "currency": {"type": ["string", "null"]}, "scale": {"type": ["string", "null"]}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_manifest_id", "source_document_sha256", "rights_class", "privacy_classification", "contains_personal_data", "publication", "spans"],
+      "properties": {
+        "source_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"}, "source_document_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "rights_class": {"type": "string", "minLength": 1}, "privacy_classification": {"type": "string", "minLength": 1}, "contains_personal_data": {"type": "boolean"},
+        "publication": {"type": "object", "additionalProperties": false, "required": ["disposition", "excerpt_char_count", "personal_data_redacted"], "properties": {"disposition": {"const": "public_fact_only"}, "excerpt_char_count": {"const": 0}, "personal_data_redacted": {"type": "boolean"}}},
+        "spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/span"}, "uniqueItems": true}
+      }
+    },
+    "span": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifest_id", "span_id", "locator_type", "locator", "text_sha256"],
+      "properties": {
+        "manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"}, "span_id": {"type": "string", "minLength": 1},
+        "locator_type": {"type": "string", "enum": ["document", "table", "text_range"]}, "locator": {"type": "string", "minLength": 1},
+        "text_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "extraction": {
+      "type": "object", "additionalProperties": false, "required": ["method", "parser_version", "review_status"],
+      "properties": {"method": {"type": "string", "enum": ["deterministic", "deferred"]}, "parser_version": {"type": "string", "minLength": 1}, "review_status": {"type": "string", "enum": ["unreviewed", "deferred"]}}
+    }
+  }
+}

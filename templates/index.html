@@ -46,26 +46,37 @@
   document.documentElement.setAttribute('data-lang',l);
   document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
 </script>
-<title>MastermindX — Market Intelligence for Active Investors</title>
-<meta name="description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
+<title>MastermindX — AI Market Intelligence &amp; Stock Signals</title>
+<meta name="description" content="MastermindX is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro dashboards, research and an AI analyst.">
 <link rel="canonical" href="https://www.mastermind-x.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="MastermindX — Market Intelligence for Active Investors">
-<meta property="og:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
+<meta property="og:title" content="MastermindX — AI Market Intelligence &amp; Stock Signals">
+<meta property="og:description" content="MastermindX is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro dashboards, research and an AI analyst.">
 <meta property="og:url" content="https://www.mastermind-x.com/">
 <meta property="og:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="MastermindX market intelligence platform with connected dashboards, research and AI analysis.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="MastermindX — Market Intelligence for Active Investors">
-<meta name="twitter:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
+<meta name="twitter:title" content="MastermindX — AI Market Intelligence &amp; Stock Signals">
+<meta name="twitter:description" content="MastermindX is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro dashboards, research and an AI analyst.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"MastermindX","alternateName":"Mastermind","url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png","sameAs":["https://x.com/mastermindx001"]},{"@type":"WebSite","name":"MastermindX","alternateName":"Mastermind","url":"https://www.mastermind-x.com/","inLanguage":["en","zh"]}]}</script>
+<!-- ENTITY GRAPH (SEO_SUPERCHARGE_MASTERPLAN §0.9). Both nodes carry a stable @id so
+     every other page on the site can point AT them instead of re-declaring a second
+     copy of the brand — that is what lets a crawler merge the pages into one entity.
+     `alternateName` lists only brand-specific spellings: the old bare "Mastermind"
+     was dropped on purpose, because the generic word is exactly what the unrelated
+     entities owning our brand SERP are called. `sameAs` carries the ONE profile that
+     is verifiable in repo config as ours (config/marketing.yml flagship desk,
+     app/mailer.py _X_HANDLES) — never a guessed handle. No legalName: unknown.
+     KEY ORDER IS PINNED: tests/test_landing_navigation.py matches the literal
+     `"@type":"Organization","name":"MastermindX"`, so `name` stays adjacent to
+     `@type` and every later key goes after it. -->
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"MastermindX","@id":"https://www.mastermind-x.com/#organization","alternateName":["Mastermind X","Mastermind-X"],"url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png","description":"MastermindX is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro regime dashboards, deep research and an AI analyst, rebuilt nightly.","sameAs":["https://x.com/mastermindx001"]},{"@type":"WebSite","name":"MastermindX","@id":"https://www.mastermind-x.com/#website","alternateName":["Mastermind X","Mastermind-X"],"url":"https://www.mastermind-x.com/","inLanguage":["en","zh"],"publisher":{"@id":"https://www.mastermind-x.com/#organization"}}]}</script>
 <!-- No font is fetched from fonts.googleapis.com: it is blocked in mainland China,
      so the CDN <link> that used to sit here delivered NOTHING to Chinese visitors
      and every headline fell back to system sans, silently. The display face is now
@@ -75,7 +86,7 @@
      theme.css and so would otherwise lose its body face too; it now serves as both
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
-<link rel="stylesheet" href="onboard.css?v=5c897a72">
+<link rel="stylesheet" href="onboard.css?v=69e6ab81">
 <link rel="stylesheet" href="landing.css?v=944df4a7">
 <link rel="stylesheet" href="scene-motion.css?v=f426716d">
 </head>
@@ -190,13 +201,29 @@
     <!-- copy column -->
     <div class="cov-copy">
       <span class="live-pill" data-zh="实时 · 今日研判"><i></i>LIVE · MARKET READ</span>
-      <h1 data-adtest-slot="hero_headline" data-zh="你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>">Your personal<br>market intelligence desk.<br><span class="dim">Institutional-grade.</span></h1>
+      <!-- BRAND IN THE H1 — SEO_SUPERCHARGE_MASTERPLAN §0.8. Google does not associate
+           "MastermindX" with this site, so the page's one h1 has to say the name. The
+           wordmark is a MASTHEAD LINE: one span sized in `em` off the h1's own clamp, so
+           it rides the existing responsive scale and the three authored headline lines
+           below it are untouched (gradient third line, display face, motion: all as
+           shipped — operator identity ruling, landing.css §.cov-copy h1).
+           The same span is carried by BOTH adtest arms below: adtest.js rewrites this
+           h1's innerHTML wholesale when the arena goes live, so a brand that lived only
+           here would silently vanish from the h1 the day the test starts. -->
+      <h1 data-adtest-slot="hero_headline" data-zh="<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>"><span class="h1-brand" style="display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)">MastermindX</span>Your personal<br>market intelligence desk.<br><span class="dim">Institutional-grade.</span></h1>
       <p class="sub" data-adtest-slot="hero_sub" data-zh="宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>">Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b></p>
       <div class="cta-row">
         <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
         <a class="btn" href="start.html" data-zh="看实时演示">See it live</a>
       </div>
       <p class="micro" data-zh="免费试用 · 机构级市场情报">FREE TRIAL · INSTITUTIONAL MARKET INTELLIGENCE</p>
+      <!-- ENTITY SENTENCE (§0.8) — the blunt "what this is" line, in the reader's own
+           words and in the crawler's. Deliberately subordinate: it sits below the CTAs
+           at body-small in --faint, so it costs the hero no attention, and it repeats
+           the Organization.description above and /about.html's lede verbatim, because
+           an entity is resolved by the SAME sentence appearing in the same voice on
+           every surface that claims the name. -->
+      <p class="ent-line" style="margin:20px auto 0;max-width:64ch;font-size:.86rem;line-height:1.6;color:var(--faint)" data-zh="<b style='font-weight:600;color:var(--muted)'>MastermindX</b> 是一个面向主动型投资者的 AI 市场情报平台：分级个股信号、期权流向、宏观状态仪表盘、深度研究，以及一位 AI 分析师，每晚重建。"><b style="font-weight:600;color:var(--muted)">MastermindX</b> is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro regime dashboards, deep research and an AI analyst, rebuilt nightly.</p>
     </div>
 
     <!-- Ad Central Plane O — landing-hero split test (research/AD_CENTRAL_MASTERPLAN.md §2).
@@ -205,7 +232,7 @@
          after the slots above are parsed, so the swap lands before first paint.
          This block must match data/marketing/ad_central/arenas.jsonl —
          tests/test_marketing_ad_plane_o.py fails if the two drift apart. -->
-    <script type="application/json" id="mm-adtest">{"arena_id":"hero-promise-vs-receipt","status":"planned","mode":"shadow","holdout":0.0,"arms":[{"id":"adc-a929e26ce95c","w":0.5,"copy":{"hero_headline":{"html":"Your personal<br>market intelligence desk.<br><span class=\"dim\">Institutional-grade.</span>","zh":"你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>"},"hero_sub":{"html":"Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b>","zh":"宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>"}}},{"id":"adc-67661666832f","w":0.5,"copy":{"hero_headline":{"html":"Every call we make<br>goes on the record.<br><span class=\"dim\">Including the wrong ones.</span>","zh":"我们的每一次判断<br>都会留下记录。<span class='dim'>包括错的那些。</span>"},"hero_sub":{"html":"Macro, signals, options flow and deep research — timestamped when we say it, graded after the market answers. <b>Live, below.</b>","zh":"宏观、信号、期权流与深度研究——判断发出即打时间戳，事后由市场检验并留档。<b>就在下方，实时运行。</b>"}}}]}</script>
+    <script type="application/json" id="mm-adtest">{"arena_id":"hero-promise-vs-receipt","status":"planned","mode":"shadow","holdout":0.0,"arms":[{"id":"adc-a929e26ce95c","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Your personal<br>market intelligence desk.<br><span class=\"dim\">Institutional-grade.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>你的专属<br>市场情报台。<br><span class='dim'>机构级标准。</span>"},"hero_sub":{"html":"Macro context, stock signals, options flow, and deep research come together in one clear view—so you can see what is moving the market and understand why. <b>See it in action below.</b>","zh":"宏观背景、个股信号、期权流与深度研究汇于一处，帮你看清市场为何而动、重点何在。<b>在下方查看实际效果。</b>"}}},{"id":"adc-67661666832f","w":0.5,"copy":{"hero_headline":{"html":"<span class=\"h1-brand\" style=\"display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)\">MastermindX</span>Every call we make<br>goes on the record.<br><span class=\"dim\">Including the wrong ones.</span>","zh":"<span class='h1-brand' style='display:block;font-size:.42em;letter-spacing:.05em;margin-bottom:.34em;color:var(--ink-soft)'>MastermindX</span>我们的每一次判断<br>都会留下记录。<span class='dim'>包括错的那些。</span>"},"hero_sub":{"html":"Macro, signals, options flow and deep research — timestamped when we say it, graded after the market answers. <b>Live, below.</b>","zh":"宏观、信号、期权流与深度研究——判断发出即打时间戳，事后由市场检验并留档。<b>就在下方，实时运行。</b>"}}}]}</script>
     <script src="adtest.js?v=1f2ceb11" defer></script>
 
     <!-- the pyramid — five live desk cards, one choreographed regime cycle -->
@@ -862,6 +889,7 @@
           <a href="learn/index.html" data-zh="学习">Learn</a>
           <a href="blog/index.html" data-zh="博客">Blog</a>
           <a href="support.html" data-zh="支持">Support</a>
+          <a href="about.html" data-zh="关于 MastermindX">About MastermindX</a>
         </div>
         <div class="f-col">
           <p data-zh="法律">Legal</p>
@@ -2247,6 +2275,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
-<script src="onboard.js?v=b4f238f6" defer></script>
+<script src="onboard.js?v=dc7d4d5b" defer></script>
 </body>
 </html>

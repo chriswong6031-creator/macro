@@ -7,9 +7,9 @@ file), and the landing page can't silently diverge:
     Essential  $99/mo · $900/yr ($75/mo-equivalent, save 24%) · NO trial
     Pro        $149/mo · $1,308/yr ($109/mo-equivalent, save 27%) · 7-day trial
 
-(`Essential` is the display name; the catalog key and entitlement tier stay
-`insider`. Its trial went to 0 on 2026-07-31 — everyone who wants to try the
-desk lands in Pro's, and Essential is bought outright.)
+(`Essential` is the display name, the catalog key AND the entitlement tier as of
+the Phase-2 rename. Its trial went to 0 on 2026-07-31 — everyone who wants to try
+the desk lands in Pro's, and Essential is bought outright.)
     Founding Pro  $900/yr ($75/mo-equivalent, save $408/year) · first 2,000
 
 Also verifies the billing endpoints are mounted by hitting them with a TestClient
@@ -31,8 +31,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The locked table (onboarding masterplan §2; landing templates/index.html shows the same).
 LOCKED = {
-    "insider": {"monthly": 9900, "annual": 90000, "trial_days": 0,
-                "annual_pm": 75, "save_pct": 24, "name": "Essential"},
+    "essential": {"monthly": 9900, "annual": 90000, "trial_days": 0,
+                  "annual_pm": 75, "save_pct": 24, "name": "Essential"},
     "pro":     {"monthly": 14900, "annual": 130800, "trial_days": 7,
                 "annual_pm": 109, "save_pct": 27, "name": "Pro"},
 }
@@ -40,7 +40,7 @@ LOCKED = {
 TERMINAL_INDICATORS = {
     "core_count": 21,
     "advanced_total": 31,
-    "access": {"free": 1, "insider": 15, "pro": 31},
+    "access": {"free": 1, "essential": 15, "pro": 31},
 }
 
 
@@ -106,22 +106,26 @@ def test_billing_maps_tiers_trials_and_lookup_keys():
     from app import billing
 
     assert billing._tier_trial_days("pro") == 7
-    assert billing._tier_trial_days("insider") == 0
-    for tier in ("insider", "pro"):
+    assert billing._tier_trial_days("essential") == 0
+    for tier in ("essential", "pro"):
         for interval in ("monthly", "annual"):
             lk = billing._tier_to_lookup_key(tier, interval)
             assert lk == f"{tier}_2026_v2_{interval}"
     lk2t = billing._lookup_key_to_tier()
     assert lk2t == {
-        "insider_2026_v2_monthly": "insider", "insider_2026_v2_annual": "insider",
-        "insider_2026_monthly": "insider", "insider_2026_annual": "insider",
-        "insider_monthly": "insider", "insider_annual": "insider",
+        "essential_2026_v2_monthly": "essential", "essential_2026_v2_annual": "essential",
+        # Every retired Essential price key still resolves. Dropping ANY of these
+        # silently downgrades the subscriptions still sitting on that Price to free —
+        # including insider_2026_v2_*, which were the LIVE keys until this rename.
+        "insider_2026_v2_monthly": "essential", "insider_2026_v2_annual": "essential",
+        "insider_2026_monthly": "essential", "insider_2026_annual": "essential",
+        "insider_monthly": "essential", "insider_annual": "essential",
         "pro_2026_v2_monthly": "pro", "pro_2026_v2_annual": "pro",
         "pro_2026_monthly": "pro", "pro_2026_annual": "pro",
         "pro_monthly": "pro", "pro_annual": "pro",
     }
     assert billing._tier_features("pro") == ["site_full", "terminal_live_options", "chat_opus"]
-    assert billing._tier_features("insider") == ["site_full", "terminal_live_options"]
+    assert billing._tier_features("essential") == ["site_full", "terminal_live_options"]
 
 
 def test_founding_price_anchor_survives_a_future_regular_pro_increase(monkeypatch):
@@ -151,7 +155,7 @@ def test_billing_endpoints_mounted(monkeypatch):
     billing._PROMO_CACHE.clear()
     client = TestClient(app)
 
-    r = client.post("/api/billing/checkout", json={"tier": "insider", "interval": "annual"})
+    r = client.post("/api/billing/checkout", json={"tier": "essential", "interval": "annual"})
     assert r.status_code == 401, f"checkout should require auth, got {r.status_code}"
     r = client.get("/api/billing/portal")
     assert r.status_code == 401, f"portal should require auth, got {r.status_code}"
