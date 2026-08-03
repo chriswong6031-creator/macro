@@ -4044,12 +4044,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # lxml is required (not optional) because the THS concept boards are HTML:
+      # collectors.china_ths_concepts parses them with pandas.read_html, which
+      # raises ImportError("`Import lxml` failed") without it. Verified against a
+      # venv holding exactly this list — beautifulsoup4 alone does not satisfy
+      # read_html's default flavor. It is a first-class dep (requirements.txt).
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn
       - name: china + hk + canada library builders and their manifests
         run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
       - name: china intel/analog/facet organs + fx context render
         run: python -m pytest tests/test_baskets_china_intel.py tests/test_china_analogs.py tests/test_china_stf_facets.py tests/test_china_fx_context_render.py tests/test_backfill_china_communiques.py -q
+      # 同花顺 (THS) themes: the concept collector, the PIT membership seeding, and
+      # the page-weight split that moves member rows + level history out of
+      # baskets_china_ths.html into the fetched hydrate payload. The split's
+      # row-conservation and no-mutation guards are the reason this suite has to be
+      # reachable — a builder edit that silently thinned members would otherwise
+      # ship green (#3488: a guard the guarded change cannot trigger is not a guard).
+      - name: china THS concept baskets — collector, PIT seeding, page-weight split
+        run: python -m pytest tests/test_baskets_china_ths.py -q
 
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.
