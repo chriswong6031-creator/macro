@@ -651,6 +651,10 @@ jobs:
           tests/test_fundamental_forensics_filing_package_materializer.py
           tests/test_fundamental_forensics_companyfacts_pinned_loader.py
           tests/test_fundamental_forensics_attested_history_materializer.py -q
+      - name: read-only attested-history operator foundation
+        run: >-
+          python -m pytest
+          tests/test_fundamental_forensics_attested_history_operator.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest

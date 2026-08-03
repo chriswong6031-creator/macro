@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_attested_history_preflight_receipt.schema.json",
+  "title": "Fundamental Forensics read-only attested-history preflight receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "operator_verification_observed_at", "publication", "redaction", "nonclaims"],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.attested_history_preflight_receipt/v1"},
+    "status": {"enum": ["prepared", "non_publishable", "failed"]},
+    "operator_verification_observed_at": {"$ref": "#/$defs/utc"},
+    "publication": {"$ref": "#/$defs/publication"},
+    "redaction": {"$ref": "#/$defs/redaction"},
+    "nonclaims": {"const": ["not_published", "not_a_freshness_claim", "not_a_filing_completeness_claim", "not_investment_or_trading_authority"]},
+    "inputs": {"$ref": "#/$defs/inputs"},
+    "materialization": {"$ref": "#/$defs/materialization"},
+    "binding_plan": {"$ref": "#/$defs/bindingPlan"},
+    "candidate": {"oneOf": [{"$ref": "#/$defs/preparedCandidate"}, {"$ref": "#/$defs/nonPublishableCandidate"}]},
+    "failure": {"$ref": "#/$defs/failure"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "prepared"}}, "required": ["status"]},
+      "then": {
+        "required": ["inputs", "materialization", "binding_plan", "candidate"],
+        "properties": {"candidate": {"$ref": "#/$defs/preparedCandidate"}},
+        "not": {"required": ["failure"]}
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "non_publishable"}}, "required": ["status"]},
+      "then": {
+        "required": ["inputs", "materialization", "binding_plan", "candidate"],
+        "properties": {"candidate": {"$ref": "#/$defs/nonPublishableCandidate"}},
+        "not": {"required": ["failure"]}
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "failed"}}, "required": ["status"]},
+      "then": {
+        "required": ["failure"],
+        "not": {
+          "anyOf": [
+            {"required": ["inputs"]},
+            {"required": ["materialization"]},
+            {"required": ["binding_plan"]},
+            {"required": ["candidate"]}
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$", "format": "date-time"},
+    "count": {"type": "integer", "minimum": 0, "maximum": 250000},
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publication_performed", "pointer_advanced", "immutable_objects_written", "storage_write_attempts"],
+      "properties": {
+        "publication_performed": {"const": false},
+        "pointer_advanced": {"const": false},
+        "immutable_objects_written": {"const": false},
+        "storage_write_attempts": {"type": "integer", "minimum": 0, "maximum": 1}
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_source_payloads_included", "storage_paths_included", "storage_endpoints_included", "storage_credentials_included", "error_messages_included"],
+      "properties": {
+        "raw_source_payloads_included": {"const": false},
+        "storage_paths_included": {"const": false},
+        "storage_endpoints_included": {"const": false},
+        "storage_credentials_included": {"const": false},
+        "error_messages_included": {"const": false}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_query_snapshot_id", "source_snapshot_id", "cik", "accession", "filing_manifest_id"],
+      "properties": {
+        "base_query_snapshot_id": {"type": "string", "pattern": "^ffqs_[a-f0-9]{64}$"},
+        "source_snapshot_id": {"type": "string", "pattern": "^ffsecsrc_[a-f0-9]{64}$"},
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "accession": {"type": "string", "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"},
+        "filing_manifest_id": {"type": "string", "pattern": "^ffsec_manifest_[a-f0-9]{64}$"}
+      }
+    },
+    "materialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filing_package_id", "ixbrl_extraction_id", "filing_attestation_id", "companyfacts_conversion_receipt_id"],
+      "properties": {
+        "filing_package_id": {"type": "string", "pattern": "^ffpkg_[a-f0-9]{64}$"},
+        "ixbrl_extraction_id": {"type": "string", "pattern": "^ffxbrl_[a-f0-9]{64}$"},
+        "filing_attestation_id": {"type": "string", "pattern": "^ffatt_[a-f0-9]{64}$"},
+        "companyfacts_conversion_receipt_id": {"type": "string", "pattern": "^cffledger_[a-f0-9]{64}$"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root_cell_id", "status", "selected_leaf_count", "eligible_leaf_count", "candidate_leaf_count", "auto_bound_leaf_count"],
+      "properties": {
+        "root_cell_id": {"type": "string", "pattern": "^metric_cell_[a-f0-9]{64}$"},
+        "status": {"enum": ["not_evaluable", "all_leaves_attested", "partially_attested", "not_attested"]},
+        "selected_leaf_count": {"$ref": "#/$defs/count"},
+        "eligible_leaf_count": {"$ref": "#/$defs/count"},
+        "candidate_leaf_count": {"$ref": "#/$defs/count"},
+        "auto_bound_leaf_count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "bindingPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding_count", "candidate_leaf_count", "rejected_leaf_count", "rejection_reason_counts", "coverage"],
+      "properties": {
+        "binding_count": {"$ref": "#/$defs/count"},
+        "candidate_leaf_count": {"$ref": "#/$defs/count"},
+        "rejected_leaf_count": {"$ref": "#/$defs/count"},
+        "rejection_reason_counts": {
+          "type": "object",
+          "maxProperties": 8,
+          "propertyNames": {"enum": ["not_sec_companyfacts", "dimensions_known", "selected_occurrence_not_in_companyfacts_conversion", "conversion_occurrence_differs_from_selected_leaf", "no_b3_attestation_binds_companyfacts_conversion", "no_exact_b3_match", "ambiguous_exact_b3_matches", "exact_b3_match_shared_by_selected_leaves"]},
+          "additionalProperties": {"$ref": "#/$defs/count"}
+        },
+        "coverage": {"type": "array", "maxItems": 2048, "items": {"$ref": "#/$defs/coverage"}}
+      }
+    },
+    "preparedCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prepared_in_memory", "candidate_snapshot_id", "candidate_published_at_is_not_an_actual_publication"],
+      "properties": {
+        "prepared_in_memory": {"const": true},
+        "candidate_snapshot_id": {"type": "string", "pattern": "^ffqsv2_[a-f0-9]{64}$"},
+        "candidate_published_at_is_not_an_actual_publication": {"const": true}
+      }
+    },
+    "nonPublishableCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prepared_in_memory", "candidate_snapshot_id", "candidate_published_at_is_not_an_actual_publication"],
+      "properties": {
+        "prepared_in_memory": {"const": false},
+        "candidate_snapshot_id": {"const": null},
+        "candidate_published_at_is_not_an_actual_publication": {"const": false}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "error_type"],
+      "properties": {
+        "phase": {"enum": ["packet_admission", "packet_read", "store_initialization", "materialization", "binding_plan", "candidate_prepare", "receipt_write"]},
+        "error_type": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,127}$"}
+      }
+    }
+  }
+}
