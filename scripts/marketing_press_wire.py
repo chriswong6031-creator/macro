@@ -770,8 +770,8 @@ def floor_diagnostic(press_cfg: dict, skipped: list[dict], emitted: list[dict]) 
     WHAT THIS REPORTS. ``wire.flagship_salience_floor`` is checked BEFORE account
     routing (press_lane step 5 precedes step 5b), so an item under it emits to NO
     account — not the flagship, not the wire desk. It survives only on the
-    news.html rail, whose floor is 40. When a tick emits nothing and the floor is
-    the reason, that is worth one line in the run log.
+    news.html rail, whose ``rail_salience_floor`` is far lower. When a tick emits
+    nothing and the floor is the reason, that is worth one line in the run log.
 
     EVERY NUMBER IN THE MESSAGE IS COMPUTED, none is asserted. The first cut of
     this function narrated the calibration as it stood that morning ("the

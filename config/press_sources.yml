@@ -374,8 +374,31 @@ wire:
   # ── B4a live-wire rail (news.html retention surface) ──────────────────────
   # The rail shows EVERYTHING above this LOWER floor (incl. digest-class items X
   # never posts); X gets only the flagship top-K. Rail payload = last N items.
-  rail_salience_floor: 40.0
-  rail_max_items: 50
+  #
+  # 40.0 -> 4.5 (2026-08-03). The 40 predates the flagship recalibration above
+  # (70 -> 30 on 2026-07-31) and was never re-read against it, which INVERTED
+  # this comment: the site rail demanded MORE salience than an outbound X post.
+  # Measured against the daemon's own 24h ingest corpus on 2026-08-03 (n=703
+  # scored items): median 4.8, p90 22.8, max 40.8 — the served wires.json window
+  # held THREE items across 48h while ~30 real headlines/h were being scored and
+  # discarded. The tape was dead by arithmetic, not by news supply.
+  #
+  # WHY 4.5 AND NOT ANOTHER ROUND NUMBER. salience is clock-weighted
+  # (breaking_relevance._market_hours_weight: overnight/weekend ×0.6) but a
+  # fixed floor is not, so the floor must clear at the WEAKEST clock. The
+  # smallest trusted-tier bonus this register carries is wire/x_relay +8.0;
+  # 8.0 × 0.6 = 4.8 ≥ 4.5, so a bare trusted-wire flash clears at any hour,
+  # while the zero-signal band (aggregator tier +0, no event class, no ticker,
+  # no keyword → 0.0) stays out. The rail is a READ surface on our own site:
+  # its junk gate is the curated register + the garbage gate, not this floor.
+  # X emission is untouched — flagship_salience_floor / top-K / corroboration
+  # decide what posts, and none of them moved.
+  rail_salience_floor: 4.5
+  # 50 -> 120 (2026-08-03): the client tape (news.html.j2 nxWire) shows up to 40
+  # items PER LANE FILTER; a 50-item global window left the Companies/Fed lanes
+  # nearly empty even at full flow. 120 ≈ 4h of tape at the observed ~30/h, and
+  # rail_max_age_h below still bounds staleness on a quiet weekend.
+  rail_max_items: 120
   # Where the wires.v1 rail payload is published (first writable wins). VPS live
   # dir first (served to registered users via the @reg_asset default-deny route);
   # repo-relative dev path is gitignored (data/marketing/press/). NEVER a git write.
@@ -397,7 +420,22 @@ wire:
   # advances whenever the fastlane is running, independently of outbound X
   # publishing. All state is host-local / gitignored.
   intelligence:
-    salience_floor: 30.0
+    # 30.0 -> 4.5 (2026-08-03). The 30 was read off ONE cash-session tick (13
+    # candidates, see the flagship note above) and equalled the X-post floor —
+    # but the desk is the site's durable story layer, chartered to advance
+    # "independently of outbound X publishing", so its admission bar sitting AT
+    # the posting bar starved it by construction. Worse, salience is
+    # clock-weighted (×0.6 overnight/weekend) while the floor is fixed: a
+    # weekend geopolitical wire flash scored (40 + 8) × 0.6 = 28.8 and was
+    # arithmetically excluded — the desk froze at the same 25 stories for hours
+    # on 2026-08-02/03 while ~700 items/day ingested cleanly underneath it.
+    # 4.5 = the rail's bar (see rail_salience_floor): every trusted-tier source
+    # clears at any clock weight (min tier bonus 8.0 × 0.6 = 4.8), zero-signal
+    # aggregator noise (0.0) does not. Story flood is bounded downstream, not
+    # here: max_packets_per_tick, max_stories, retention_h and
+    # snapshot_max_items all held. X drafting is untouched — drafts remain
+    # review-gated and the flagship floor/top-K decide what may post.
+    salience_floor: 4.5
     max_packets_per_tick: 100
     retention_h: 72
     active_h: 48
