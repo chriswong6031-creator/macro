@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T12:20:46.841026+00:00",
-  "count": 663,
+  "generated_at": "2026-08-03T12:50:37.703328+00:00",
+  "count": 664,
   "institutions": [
     "Alger",
     "Amova",
@@ -46,6 +46,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-z1i4guo3cne-b3896e",
+      "title": "EMR July 2026 Performance Review",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:09:06Z",
+      "summary_points": [
+        "**Geopolitical Oil Surge**: US-Iran escalation and Strait of Hormuz disruptions drove Brent (+23.6%) and WTI (+21.8%) to 50% YTD gains, with wheat (+10.1%) and corn (+6.8%) surging on supply fears.",
+        "**AI/Sec Semiconductor Reversal**: Chinese competition fears triggered KOSPI (-22.2%) and Philly Semiconductor index (-20.6%) drops, offsetting Mag-7 earnings amid AI trade volatility.",
+        "**KOSPI & Brent Outperformance**: KOSPI and Brent Oil recorded highest YTD returns in local currency and USD terms, signaling strong domestic sentiment and energy demand dynamics.",
+        "**EM Equity Surge**: MSCI Emerging Market equities surged 16.3% in Q1, driven by China’s policy tailwinds, Latin American growth, and reduced risk aversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zmun1pxghor-c0a3c8",
       "title": "MS Latin America's Unfinished Business",
