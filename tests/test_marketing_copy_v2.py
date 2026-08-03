@@ -2104,7 +2104,10 @@ def test_every_marketing_lane_is_authorized_in_the_capability_manifest():
     lanes = set(_marketing_llm_blocks()) | {"marketing-copy-review"}
     for cap in manifest.get("capabilities") or []:
         cap_id = str(cap.get("capability_id") or "")
-        if not (cap_id.startswith("claude_code_oauth") or cap_id == "codex_account"):
+        if not (
+            cap_id.startswith("claude_code_oauth")
+            or cap_id.startswith("codex_account")
+        ):
             continue
         missing = lanes - set(cap.get("allowed_lanes") or [])
         assert not missing, f"{cap_id} does not authorize {sorted(missing)}"

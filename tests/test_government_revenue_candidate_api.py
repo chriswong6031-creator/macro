@@ -20,7 +20,7 @@ from tests.test_government_revenue_candidates import _award_event, _graph, _payl
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN_AT = "2026-08-03T07:00:00+00:00"
+FROZEN_AT = "2026-08-03T15:00:00+00:00"
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -195,7 +195,7 @@ def test_candidate_list_detail_history_company_and_mapping_backlog_page_against_
     assert first_company["total"] == 2
     assert len(first_company["items"]) == len(second_company["items"]) == 1
     assert first_company["next_cursor"] and second_company["next_cursor"] is None
-    assert first_backlog["total"] == 20
+    assert first_backlog["total"] == 21
     assert len(first_backlog["items"]) == len(second_backlog["items"]) == 1
     assert first_backlog["next_cursor"] and second_backlog["next_cursor"]
 

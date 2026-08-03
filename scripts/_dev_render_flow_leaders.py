@@ -1,15 +1,13 @@
 """DEV-ONLY fast re-render of flow_leaders.html from the last-built leaders.json.
 
 Mirrors the render step inside scripts/build_flow_leaders.build() (same minimal
-Jinja env) but reads the already-built site/flowleaders/leaders.json instead of
-recomputing the payload from the data stores. Lets us iterate on the template /
-CSS in well under a second without running the full builder.
+Jinja env). Since W1.6-B the template is a payload-free redirect stub, so this
+is a plain sub-second re-render convenience for iterating on the stub markup.
 
 Usage:  python -m scripts._dev_render_flow_leaders
 Writes: site/flow_leaders.html   (the real output path — nightly re-renders it)
 NOT on the daily/commit path; build_flow_leaders remains the source of truth.
 """
-import json
 import sys
 from pathlib import Path
 
@@ -22,18 +20,14 @@ from lib.pages import write_page  # noqa: E402
 
 
 def main() -> int:
+    # W1.6-B: flow_leaders.html is a payload-free redirect stub — the template
+    # takes no context, so this helper is now a plain re-render convenience.
     site = config.ROOT / config.load()["storage"]["site_dir"]
-    payload_path = site / "flowleaders" / "leaders.json"
-    if not payload_path.exists():
-        print(f"no payload at {payload_path} — run build_flow_leaders first", file=sys.stderr)
-        return 1
-    payload = json.loads(payload_path.read_text())
-
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
     tpl = env.get_template("flow_leaders.html.j2")
     out = site / "flow_leaders.html"
-    write_page(out, tpl.render(flow_leaders=payload))
-    print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB) from {payload_path.name}")
+    write_page(out, tpl.render())
+    print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB) — redirect stub")
     return 0
 
 

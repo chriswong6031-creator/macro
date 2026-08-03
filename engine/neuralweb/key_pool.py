@@ -119,6 +119,7 @@ POOL_CAPABILITY_IDS = [
 PROVIDER_CAPABILITY_IDS = [
     "codex_account",
     "codex_account_2",
+    "codex_account_3",
     "deepseek_api_key",
 ]
 

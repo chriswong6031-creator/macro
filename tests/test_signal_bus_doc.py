@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 586, (
-        f"Expected 586 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 588, (
+        f"Expected 588 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Biopharma Seasonality Lane 6 added the Neural Web shadow state and its"
+        " append-only forward outcome ledger = 586->588;"
         " (Government Revenue Wave9A candidate foundation added candidate ledger,"
         " queue, projection state, projection status, and public queue artifacts = 581->586;"
         " (Earnings Evidence Spine Wave 2 added the protected exact-evidence"

@@ -57,8 +57,12 @@ def test_availability_uses_vps_codex_home(monkeypatch, tmp_path):
     assert cp.is_available() is True
 
 
-def test_two_isolated_codex_homes_become_two_stable_accounts(monkeypatch, tmp_path):
-    homes = [tmp_path / "macro-codex", tmp_path / "macro-codex-2"]
+def test_three_isolated_codex_homes_become_three_stable_accounts(monkeypatch, tmp_path):
+    homes = [
+        tmp_path / "macro-codex",
+        tmp_path / "macro-codex-2",
+        tmp_path / "macro-codex-3",
+    ]
     for home in homes:
         home.mkdir()
         (home / "auth.json").write_text('{"auth_mode":"chatgpt"}', encoding="utf-8")
@@ -72,6 +76,7 @@ def test_two_isolated_codex_homes_become_two_stable_accounts(monkeypatch, tmp_pa
     assert cp.available_accounts() == [
         ("codex_account", homes[0]),
         ("codex_account_2", homes[1]),
+        ("codex_account_3", homes[2]),
     ]
 
 

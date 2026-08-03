@@ -25,6 +25,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -324,7 +325,13 @@ def compute_eightk_magnitude(
 # ---------------------------------------------------------------------------
 
 def _append_ledger(payload: dict) -> None:
-    """Append one ledger row per (theme, asof) — idempotent across re-runs."""
+    """Append one ledger row per (theme, asof) — idempotent across re-runs.
+
+    Lane-gated (house law: nightly is the sole advancer): reached via
+    build_theme_addons <- build_baskets, which also run on the express render
+    lanes with no COLLECT_LANE set."""
+    if not _ledger_advance_enabled():
+        return
     d = config.data_dir() / "eightk_magnitude"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"

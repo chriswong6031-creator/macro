@@ -50,6 +50,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -622,7 +623,14 @@ def _append_ledger(
     *,
     root: Path | None = None,
 ) -> None:
-    """Append one row to ledger.jsonl; idempotent by date."""
+    """Append one row to ledger.jsonl; idempotent by date.
+
+    Lane-gated (house law: nightly is the sole advancer of data/ forward ledgers) —
+    snapshot() also runs on the express render lanes, which set no COLLECT_LANE.
+    The sibling _append_cohort_flow_ledger below carries the same gate."""
+    if not _ledger_advance_enabled():
+        log.debug("mag7_regime: ledger append skipped (off-lane)")
+        return
     try:
         base = root or config.data_dir()
         p = base / "mag7_regime" / "ledger.jsonl"

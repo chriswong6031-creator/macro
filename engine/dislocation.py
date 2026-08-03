@@ -58,6 +58,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -845,7 +846,13 @@ def merge_state_log(existing, rows: list[dict]):
 def append_state_log(snap: dict | None, ndi: dict | None = None,
                      news: dict | None = None) -> dict | None:
     """IO wrapper: append today's state row to data/dislocation/state_log.parquet
-    (append-only, keep-last per date). Returns the row written or None. Never raises."""
+    (append-only, keep-last per date). Returns the row written or None. Never raises.
+
+    Lane-gated (house law: nightly is the sole advancer of data/ forward ledgers) —
+    the caller (build_site) runs on every express render lane and on closing-bell,
+    none of which set COLLECT_LANE. Gate-first, before any arg evaluation."""
+    if not _ledger_advance_enabled():
+        return None
     try:
         row = state_row(snap, ndi, news, gpr=_gpr_reading())
         if row is None:

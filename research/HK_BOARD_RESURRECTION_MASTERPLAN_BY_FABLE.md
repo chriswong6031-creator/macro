@@ -72,6 +72,99 @@ the port depends on `engine/us_board_rank.py`. Siblings: `research/PROPHET_BOARD
 - **G9 — Ship discipline.** Same PR chain; screenshots light/dark/EN/ZH; fail-soft on pre-v1
   artifacts; forward cohorts wired into the HK grader; no "validated" language.
 
+## §1b BUILD FINDINGS (engine lane, 2026-08-02 — all recomputed on the committed
+## `data/hk_search/closes_deep.parquet` panel, 157 names through 2026-07-31)
+
+**§1 reproduces exactly.** The 06-26 → 07-31 leg: 1024 +8.7%, 0700 +15.4%, 9961
++20.1%, 9988 +30.7%, 9618 +32.4%, 1810 +34.4%, 3690 +44.0%; HSI +14.2%; six of
+seven beat the index. Cascade-eligible on 07-31: 5 of 157.
+
+**But the witnesses are not "leaders" on any frame wider than that 25-session leg**,
+and this is the fact the build had to design around:
+
+| name | vs 200-dma | off 52w high | 63d total return | cascade |
+|---|---|---|---|---|
+| 0700.HK | −11.2% | −29.0% | +0.3% | ineligible |
+| 9988.HK | −15.6% | −36.7% | −10.3% | ineligible |
+| 9618.HK | **+10.5%** | −10.6% | +8.2% | ineligible |
+| 1810.HK | −17.3% | −51.6% | −4.5% | ineligible |
+| 3690.HK | **+3.7%** | −31.2% | +11.2% | ineligible |
+| 1024.HK | −26.1% | −52.4% | +0.4% | ineligible |
+| 9961.HK | −18.8% | −39.8% | −12.2% | ineligible |
+
+Panel context: 58/157 names hold their 200-dma, median off-high −21.3%, and 71/157
+clear the US leaders lane's −20% near-high floor — so the US gates are **not**
+structurally unreachable in HK. HSI itself is above its 200-dma and 7.5% off its
+high. The witnesses are the damaged tail of a healthy tape, bouncing.
+
+**Consequence for G1: a faithful port surfaces 2 of 7** (9618 in leaders, 3690 in
+ran). The other five fail `above200`, correctly. Meeting G1 by relaxing that gate
+would have been the hot-patch G6 forbids — and would have measured nothing.
+
+**Resolution — the `vetoed` lane** (G6's "display-tier relief… blocked names VISIBLE
+with the blocking reason named", built as a lane rather than left as a copy note).
+Admission: cascade-ineligible ∧ last marker is a `buy`/`rebuy` ∧ that marker's
+quality is `block` ∧ weekly still bull ∧ not marked down. It prints the marker date,
+sessions since, **the move since the marker**, and the block reason in plain words.
+48 names qualify on 07-31; 39 of them on the same `counter-trend, no
+200-reclaim/hold` string. Cohort members are emitted unconditionally, the rest fill
+to a cap of 12 by move desc, capped at a 63-session staleness window.
+
+**Measured witness visibility: 5 of 7 through the display lanes, 6 of 7 on the
+page** (corrected 2026-08-03 — the first measurement replayed the lanes with an
+EMPTY exclusion set, which is not how the builder calls them). Under production
+arguments — `exclude = buy ∪ watch`, `dedup_name=norm_company`, momentum over the
+enriched panel — the lanes place 9618 (leaders), 3690 (ran), 0700 / 9988 / 1810
+(vetoed). **1024.HK is on the WATCH STRIP**, which claims its ticker before the
+vetoed lane runs; it is visible there, under a strip header that reads "strong edge,
+blocked entry (wait for a base)" — so the *fact* of a blocked entry is carried, but
+the marker date and the specific block reason are NOT (those print only in the
+vetoed lane). No new surface was built for it; the gap is recorded here.
+9961.HK stays dark and honestly so: outside the mega-cap cohort, −12% on the
+quarter, and its post-marker move does not beat the non-cohort field. G1's ≥5 pin is
+met against the PRODUCTION measurement with no gate loosened. The lane is
+deliberately self-critical — it exists to print what the board missed, so it is
+working when it reads badly. It is also the G6 study's product-side receipt: 1024.HK
+has been blocked on a single 2026-05-06 marker for 59 sessions.
+
+## §1c G7 / G8 — answered
+
+**G7 (ledger).** NOT a write failure. `data/board_ledger/hk_board.parquet` is
+healthy — 347 rows through 2026-07-31, including that session's 13.
+`board_ledger.append_board` returns 0 **by design** when `CN_LANE != "asia"` (the
+PR-R10 lane gate; the nightly asia-close lane is the sole advancer, house law).
+`CN_LANE` is set only in `asia-close.yml`, so every `render.yml` /
+`engine-render.yml` re-render — i.e. most merges to main — raised a false alarm on a
+healthy store. Git archaeology is unambiguous: `asia dashboards` commits ship
+`health: []` and a real `board_track`; the same-day `engine-render` re-renders ship
+the alarm. **Fixed on the caller, never the gate** (the gate is correct and pinned by
+`tests/test_board_ledger_lane_gates.py`): off-lane logs and moves on; an on-lane zero
+still raises the health row.
+
+**G7 (universe gap).** Already healed before this build —
+`build_hk_library.hk_beta_close_panel`'s deep-panel overlay fixed the 126-session
+causal-beta `min_periods` drop that stuck the universe at 73/160 (its docstring
+carries the diagnosis). Universe now reads 156. What remains is ordinary coverage
+loss, and it is now **printed** rather than inferred: `universe_excluded` +
+`universe_source_rows` on the artifact.
+
+**G8 (PDD).** Not a universe bug — no fix warranted, and none made. PDD is already
+in the roster (`config.yml` `stock_search.extra_tickers` + `extra_names`) with fresh
+data (`data/yahoo/PDD.parquet`, 2,014 rows through 2026-07-31). It reaches `cand`
+and is scored. It is absent from the lanes because it fails each on its merits: no
+live confluence cross (`eligible: False`, `tier_cascade: None`), 17th-percentile
+3-month momentum (too weak for the 15-slot leaders lane), and a composite damped
+toward zero by `stock_score._axis_selection`'s confidence floor, because PDD carries
+none of the three event legs (no SUE, no insider, no revision coverage). That last
+part is **categorical, not PDD-specific**: 0 of the 14 China/HK ADRs in
+`extra_tickers` have SUE or revision coverage. BIDU proves there is no ADR exclusion
+— it is on tonight's buy lane, on a live T2 cross. Admitting PDD "properly" would
+mean extending three nightly collectors to the `extra_tickers` roster (a
+data-collection expansion), or loosening a documented scoring floor (a
+promotion-gated methodology change). Neither is in this program's scope.
+**Verdict: documented exclusion. 9961.HK carries the HK-side exposure**, and it now
+has a lane that can show it.
+
 ## §2 Sequencing
 
 1. This charter merges with PR #4331 (docs-only addition).
@@ -79,6 +172,24 @@ the port depends on `engine/us_board_rank.py`. Siblings: `research/PROPHET_BOARD
    idiom) + G6 measurement prereg (doc). Est. one session with the US/CN patterns as
    reference.
 3. G6 study runs offline; veto recalibration promotes only through the prereg.
+
+## §2b Follow-ups opened by the adversarial review (2026-08-03)
+
+- **Display-lane forward grading needs its OWN book (§8-class).** leaders / ran /
+  vetoed were briefly appended to `data/board_ledger/hk_board.parquet` alongside the
+  buy lane. They must not be: `append_board` assigns `board_pos` by list position and
+  the ledger's rank-IC is Spearman(board_pos, forward excess) over a date's rows, so
+  ~30 rows carrying no entry claim, no `edge_z` and no rank were taking positions in
+  the graded board's own rank sample. They are display-tier by charter (§3 below,
+  `hk_board_rank.DISPLAY_TIER_LANES`) and now get **no ledger writes at all**. Grading
+  them remains a real question — it needs a separate store (or an explicitly
+  non-graded column) whose rows never enter the buy lane's rank sample, plus its own
+  pre-registered read date. Nothing accrues for them until that book exists.
+- **Era fence shipped with the re-sort.** `board_ledger` gained a nullable
+  `board_definition` column; HK stamps `hk_prophet_v1`, and `scorecard()` scopes
+  rank-IC and IC-eligible dates to the newest definition (CN
+  `china_standout_track._latest_definition_frame` pattern). Pre-stamp rows and CA
+  keep their legacy pooled behaviour unchanged.
 
 ## §3 Fences
 

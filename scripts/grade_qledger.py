@@ -157,7 +157,9 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
       - wilson_ci_low:        Wilson CI lower bound (None if no directional grades)
       - hit_rate:             directional hit-rate (None if salience-only)
       - excess_mean:          mean excess return (None if no grades)
-      - ready:                n_dates>=25 AND wilson_ci_low>0 (§3 gate)
+      - ready:                n_dates>=25 AND wilson_ci_low>0.5 (§3 gate — the bound is a
+                              hit-rate PROPORTION, so 0.5 is the coin-flip null; the former
+                              `>0` was cleared by any nonzero hit count)
       - approaching:          n_dates>=20 AND not ready (5-date warning window)
       - projected_ready_date: linear estimate from trailing-14d accrual rate (or None)
 

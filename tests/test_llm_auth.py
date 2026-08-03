@@ -1020,7 +1020,7 @@ def test_cross_process_cooling_moves_codex_behind_other_fallbacks(monkeypatch):
     assert [p["name"] for p in providers] == ["oauth", "anthropic", "codex"]
 
 
-def test_build_providers_expands_two_codex_accounts_before_metered(monkeypatch):
+def test_build_providers_expands_three_codex_accounts_before_metered(monkeypatch):
     import sys
     from unittest.mock import patch
 
@@ -1033,6 +1033,7 @@ def test_build_providers_expands_two_codex_accounts_before_metered(monkeypatch):
         lambda: [
             ("codex_account", Path("/var/lib/macro-codex")),
             ("codex_account_2", Path("/var/lib/macro-codex-2")),
+            ("codex_account_3", Path("/var/lib/macro-codex-3")),
         ],
     )
     monkeypatch.setattr(
@@ -1041,7 +1042,11 @@ def test_build_providers_expands_two_codex_accounts_before_metered(monkeypatch):
     )
     monkeypatch.setattr(
         "engine.neuralweb.key_pool.window_load",
-        lambda cap_id, root=None: 10 if cap_id == "codex_account" else 2,
+        lambda cap_id, root=None: {
+            "codex_account": 10,
+            "codex_account_2": 2,
+            "codex_account_3": 5,
+        }[cap_id],
     )
     built = []
 
@@ -1056,11 +1061,18 @@ def test_build_providers_expands_two_codex_accounts_before_metered(monkeypatch):
             "opus_model": "claude-opus-5",
         })
 
-    assert [p["name"] for p in providers] == ["codex", "codex", "anthropic"]
-    assert [p["cap_id"] for p in providers[:2]] == ["codex_account_2", "codex_account"]
-    assert [p["env_var"] for p in providers[:2]] == ["codex_account_2", "codex_account"]
+    assert [p["name"] for p in providers] == [
+        "codex", "codex", "codex", "anthropic",
+    ]
+    assert [p["cap_id"] for p in providers[:3]] == [
+        "codex_account_2", "codex_account_3", "codex_account",
+    ]
+    assert [p["env_var"] for p in providers[:3]] == [
+        "codex_account_2", "codex_account_3", "codex_account",
+    ]
     assert [str(row["codex_home"]) for row in built] == [
         "/var/lib/macro-codex-2",
+        "/var/lib/macro-codex-3",
         "/var/lib/macro-codex",
     ]
 

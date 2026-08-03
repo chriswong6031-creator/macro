@@ -132,6 +132,39 @@ def test_jsonl_dates_reads_desk_row_date_keys(tmp_path, monkeypatch):
     assert experiments_registry._jsonl_dates("data/ai_desk/scored.jsonl") == (2, 3)
 
 
+def test_jsonl_dates_reads_the_forward_log_asof_key(tmp_path, monkeypatch):
+    """FORWARD LOGS stamp `asof` — no underscore — and the reader used to miss it.
+
+    engine/risk_radar_audit.py and ~9 sibling ledgers write `asof`; with only `as_of` in
+    _ROW_DATE_KEYS every one of them published "0 days logged" on the Experiments surface
+    while data/governance/grading_closure.json held the true counts (risk_radar forward_log:
+    25 logged, 7 graded — surfaced as 0). Reading a key no writer emits is indistinguishable
+    from an empty ledger, which is why the whole suite stayed green on it: every other test
+    here monkeypatches _jsonl_dates away. This one must hit the real reader.
+    """
+    p = tmp_path / "data" / "risk_radar"
+    p.mkdir(parents=True)
+    (p / "forward_log.jsonl").write_text("".join(json.dumps(r) + "\n" for r in [
+        {"asof": "2026-07-28", "state": "elevated", "alert": True},
+        {"asof": "2026-07-29", "state": "caution", "alert": False},
+        {"asof": "2026-07-29", "state": "caution", "alert": False},   # same day, one date
+    ]))
+    monkeypatch.setattr(experiments_registry, "_root", lambda: tmp_path)
+    assert experiments_registry._jsonl_dates("data/risk_radar/forward_log.jsonl") == (2, 3), (
+        "a forward log keyed on `asof` must not read as an empty ledger")
+
+
+def test_jsonl_dates_key_preference_survives_the_asof_addition(tmp_path, monkeypatch):
+    """`date` still wins over `asof` when a row carries both — the key order is a contract."""
+    p = tmp_path / "data" / "mixed"
+    p.mkdir(parents=True)
+    (p / "log.jsonl").write_text(json.dumps({"date": "2026-07-01", "asof": "2026-07-31"}) + "\n")
+    monkeypatch.setattr(experiments_registry, "_root", lambda: tmp_path)
+    assert experiments_registry._jsonl_dates("data/mixed/log.jsonl") == (1, 1)
+    assert experiments_registry._ROW_DATE_KEYS.index("date") < \
+        experiments_registry._ROW_DATE_KEYS.index("asof")
+
+
 # ---------------------------------------------------------------------------
 # the newly-wired live readers
 # ---------------------------------------------------------------------------
