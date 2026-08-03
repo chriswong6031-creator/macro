@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T04:04:31.945560+00:00",
-  "count": 639,
+  "generated_at": "2026-08-03T04:34:36.406041+00:00",
+  "count": 640,
   "institutions": [
     "Amova",
     "Apollo",
@@ -487,6 +487,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wg00xnqlvcr-b959c6",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:53:57Z",
+      "summary_points": [
+        "**Structural Inflation Breakpoint**: Quandt-Andrews test confirms Q4 2022 structural break in past inflation coefficient (p=0.0339), signaling persistent post-pandemic inflation dynamics with shocks now lasting longer.",
+        "**Food/Fuel Shock Persistence**: VAR analysis shows food/fuel price shocks generate more persistent core inflation effects (peaking at 4-5 quarters, upper CI 0.75 vs.",
+        "gas’s 0.40), indicating structural change in transmission.",
+        "**Monetary Policy Implications**: Slower shock dissipation requires prolonged restrictive policy (Selic likely 14% in Dec 2023), elevating policy uncertainty and delaying disinflation convergence to target."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
