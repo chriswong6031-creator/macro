@@ -4825,6 +4825,13 @@ jobs:
         run: python -m pytest tests/test_spotlight.py -q
       - name: etf_pulse sector leg + analyst delta channel — each pins the data branch it exercises
         run: python -m pytest tests/test_etf_pulse.py tests/test_fix43_analyst_and_whitehouse.py -q
+      # test_etf_board ran in ZERO jobs until 2026-08-03 — the etfs.html hero
+      # tile's zh leak (bare label_en RISK-ON on an indexed bilingual page) had
+      # its natural pin in a suite CI never executed. The suite needs numpy (via
+      # engine.etf_pulse constants) + jinja2 for its end-to-end zh render; both
+      # are already in this job's venv line.
+      - name: etf board synthesis — bilingual backdrop tile + pulse-dated rotation (zh-leak / §B9.6 pins)
+        run: python -m pytest tests/test_etf_board.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 

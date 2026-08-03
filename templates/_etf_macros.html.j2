@@ -60,7 +60,7 @@
   {% for tl in tiles %}
   <div class="tile t-{{ tl.tone }}">
     <div class="tk">{{ b(tl.k) }}</div>
-    <div class="tv">{{ tl.v }}</div>
+    <div class="tv">{{ b(tl.v) if tl.v is mapping else tl.v }}</div>
     <div class="tm">{{ b(tl.m) }}</div>
     {% if tl.stance %}<div class="tstance">{{ stance(tl.stance) }}</div>{% endif %}
   </div>

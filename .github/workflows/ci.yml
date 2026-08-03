@@ -1799,6 +1799,10 @@ on:
       # job's own `run:` steps, so a PR editing only this suite still runs it.
       - "tests/test_etfs_gate.py"
       - "tests/test_public_dashboard_preview.py"
+      # test_etf_board joined the unrun-scoring-engine job 2026-08-03 (it ran in
+      # zero jobs before that; its subjects engine/** + templates/** already
+      # trigger above — this line covers a PR editing only the suite itself).
+      - "tests/test_etf_board.py"
       # OEU M-FIX wiring (2026-07-25): flow-leaders / market-structure /
       # options-screener suites + the neural-web support-map suite — previously
       # run by ZERO workflows (see the options-estate-guards job). Engine
