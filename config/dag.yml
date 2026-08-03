@@ -270,24 +270,63 @@ lanes:
           NO LLM. Deterministic n-gram/statistics only.
           DISPLAY/WATCHLIST — all outputs may_rank/may_gate/may_size/may_escalate=false.
           Always exits 0 (tolerant; absent stores → honest nulls written).
+      - id: equity_earnings
+        module: collectors.equity_earnings
+        note: >
+          MLC-W5 root-cause fix (rotation-miss postmortem #2576): equity_earnings
+          existed but was never scheduled — earnings.parquet stayed empty and the
+          W1.5 blackout gate + W5 chips fail-open stale. Sweeps Nasdaq's public
+          calendar (~66 weekdays) → data/earnings/earnings.parquet (ticker-indexed:
+          next_date, next_time, eps_forecast, surprises_json, surprises_as_of,
+          as_of). Bot-wall-aware: a blocked first call keeps the existing cache and
+          exits 0. ~3.5m/night (measured 07-29). Non-fatal.
+          INVOKED BARE — no args means "whole universe" (breadth union + Hot Tape
+          liquid names from data/marketing/hot_tape_pack.json). Passing --tickers
+          collapses the universe to that subset and leaves every other row on a
+          frozen as_of; that is the 2026-06-19 freeze (a 3-name demo default in the
+          module's __main__ pinned the nightly for six weeks).
+          PLACEMENT (starvation incident 07-29→08-02): moved BEFORE the
+          shadow-importance band — the two scorers outgrew their estimate to
+          80-120m+, blew the job's old 150m cap five nights running, and every
+          step behind them (this one included, plus "commit tail data") was
+          skipped. Cheap bounded accrual runs before unbudgeted scorers.
+          A certified full sweep (>= MIN_SWEEP_COVERAGE) single-stamps every
+          row's as_of with the run's one clock — mixed per-row stamps are the
+          signature of a partial refresh only. Writes
+          data/earnings/earnings.parquet (git-tracked).
+      - id: audit_earnings_freshness
+        module: scripts.audit_earnings_freshness
+        note: >
+          MLC-W5 freshness tripwire. Reads the just-written earnings.parquet and
+          fires ::warning:: on the exact postmortem failure shape (fresh as_of but
+          0 / <50 rows, or rows present with zero next_dates) so a silent empty
+          store surfaces loudly instead of gating nothing. Writes
+          data/quality/earnings_freshness_audit.json. Non-fatal (never fails build).
       - id: shadow_importance_v0
         module: scripts.shadow_importance_v0
         note: >
           importance_v0 SHADOW lane (W3) — scores the full US+CN qbus store and
           registers HIGH/LOW band claims (idempotent salts). Moved out of
           scripts.collect 2026-07-14 (collect split; collect-core passes
-          --skip-shadow-importance) — ~13-14m combined with the _pit pass, the
-          spike leg of the old 98.5m collectors step. Ordering vs grade_qledger
-          is NOT load-bearing: the grader only grades claims matured ≥5d
-          (engine/qledger._matured), so one-job-later registration never changes
-          grading arithmetic. __main__ uses lib.procutil.hard_exit (#2196 —
-          parquet one-shots can deadlock in pyarrow shutdown). Non-fatal.
+          --skip-shadow-importance) — estimated ~13-14m combined with the _pit
+          pass at split time, but the full-store re-score grows with the qbus
+          store: measured 40m on 07-27 and 61m on 08-01, which (with W4) blew the
+          job's old 150m cap five nights running (starvation incident
+          07-29→08-02). Now STEP-BOUNDED in daily.yml (timeout-minutes: 60 +
+          continue-on-error) so an overgrown pass is truncated loudly instead of
+          cancelling the job and starving every later step. Ordering vs
+          grade_qledger is NOT load-bearing: the grader only grades claims
+          matured ≥5d (engine/qledger._matured), so one-job-later registration
+          never changes grading arithmetic. __main__ uses lib.procutil.hard_exit
+          (#2196 — parquet one-shots can deadlock in pyarrow shutdown). Non-fatal.
       - id: shadow_importance_v0_pit
         module: scripts.shadow_importance_v0_pit
         note: >
           importance_v0 PIT-correct tape (W4) — the _pit families are the PRIMARY
           leak-free tape on the duel scoreboard; accrues nightly alongside W3.
-          Same move/idempotency/hard_exit rationale as shadow_importance_v0 above.
+          Same move/idempotency/hard_exit rationale as shadow_importance_v0 above,
+          same starvation-incident step bound (timeout-minutes: 50 +
+          continue-on-error in daily.yml).
       - id: backfill_qledger_us
         module: scripts.backfill_qledger_us
         note: >
@@ -318,29 +357,6 @@ lanes:
           and data/corp_bonds/forward_log.jsonl (keep-FIRST ledger).
           Spread velocity-percentile is PRIMARY; oscillator crosses SECONDARY per
           CCW-R15. Display-tier; authority all-false. Non-fatal (CCW-R16).
-      - id: equity_earnings
-        module: collectors.equity_earnings
-        note: >
-          MLC-W5 root-cause fix (rotation-miss postmortem #2576): equity_earnings
-          existed but was never scheduled — earnings.parquet stayed empty and the
-          W1.5 blackout gate + W5 chips fail-open stale. Sweeps Nasdaq's public
-          calendar (~66 weekdays) → data/earnings/earnings.parquet (ticker-indexed:
-          next_date, next_time, eps_forecast, surprises_json, surprises_as_of,
-          as_of). Bot-wall-aware: a blocked first call keeps the existing cache and
-          exits 0. ~3.5m/night (measured 07-29). Non-fatal.
-          INVOKED BARE — no args means "whole breadth universe". Passing --tickers
-          collapses the universe to that subset and leaves every other row on a
-          frozen as_of; that is the 2026-06-19 freeze (a 3-name demo default in the
-          module's __main__ pinned the nightly for six weeks). Writes
-          data/earnings/earnings.parquet (git-tracked).
-      - id: audit_earnings_freshness
-        module: scripts.audit_earnings_freshness
-        note: >
-          MLC-W5 freshness tripwire. Reads the just-written earnings.parquet and
-          fires ::warning:: on the exact postmortem failure shape (fresh as_of but
-          0 / <50 rows, or rows present with zero next_dates) so a silent empty
-          store surfaces loudly instead of gating nothing. Writes
-          data/quality/earnings_freshness_audit.json. Non-fatal (never fails build).
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml

@@ -20,11 +20,19 @@ dates are estimated and can move; data is community/Nasdaq-sourced, not official
 guidance.
 
 ENTRY POINT — `python -m collectors.equity_earnings` (the nightly line in daily.yml's
-collect_tail job) sweeps the WHOLE breadth universe. Named tickers are a smoke-test
+collect_tail job) sweeps the WHOLE universe: the S&P 500+400+600 breadth union PLUS the
+Hot Tape liquid names (data/marketing/hot_tape_pack.json — the calendar sweep is
+date-keyed, so the wider set costs zero extra requests). Named tickers are a smoke-test
 opt-in and must be passed explicitly: `--tickers AAPL NVDA JPM`. This is load-bearing:
 the no-arg path used to fall through to a 3-name demo default, which pinned the nightly
 to a 3-ticker universe for six weeks (1361 of 1364 rows frozen at as_of 2026-06-19)
 while the store-level freshness tripwire read green off the 3 fresh rows.
+
+AS_OF CONTRACT — one sweep, one stamp. A successful full-universe sweep at or above
+MIN_SWEEP_COVERAGE re-stamps every row with the run's single `now`; consumers may read
+the store's as_of as a file-level freshness anchor. Only a partial refresh (smoke run,
+or a sweep below the coverage floor) leaves mixed per-row stamps — deliberately, as the
+honest signature of a partial refresh.
 """
 from __future__ import annotations
 
@@ -99,11 +107,26 @@ def _get_json(session, url: str, retries: int = 2):
 
 
 def _universe() -> set[str]:
+    """Index union (S&P 500+400+600) ∪ the Hot Tape liquid names.
+
+    The calendar sweep is DATE-keyed (66 calls total, each returning every name
+    reporting that day), so widening the universe costs zero extra calendar
+    requests — membership only decides which returned rows are kept. The Hot
+    Tape context pack (data/marketing/hot_tape_pack.json, ~1,300 liquid names)
+    is the marketing supply program's universe (TrendSpider masterplan): its
+    non-index names (recent IPOs, liquid mid/small caps) need earnings-week
+    context too. Fail-open: an absent/unreadable pack leaves the index union.
+    """
     out: set[str] = set()
     for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
         p = config.data_dir() / grp / "constituents.parquet"
         if p.exists():
             out.update(str(t) for t in pd.read_parquet(p).index)
+    try:
+        pack = json.loads((config.data_dir() / "marketing" / "hot_tape_pack.json").read_text())
+        out.update(str(t).upper() for t in (pack.get("tickers") or {}))
+    except (OSError, ValueError):
+        pass
     return out
 
 
@@ -252,6 +275,25 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         out.loc[t, "surprises_as_of"] = now
         out.loc[t, "as_of"] = now
         time.sleep(0.25)
+    # SINGLE-STAMP (standing law: one freshness anchor key, one writer, one stamp).
+    # A certified full-universe sweep re-stamps EVERY row — including carried-forward
+    # names the calendar returned no row for, because "absent from the whole 66-weekday
+    # forward calendar" is itself an observation made at `now` (no report scheduled in
+    # the window). Without this, carried-forward rows keep old stamps and the store ships
+    # a MIXED-as_of file that forces every consumer to gate per row (the 2026-08-02
+    # two-stamp file: 1361 rows at 06-19 beside 3 at 07-28).
+    # Guarded three ways, because a uniform stamp on a partial refresh would certify rot
+    # as freshness (exactly how the 06-19 freeze hid behind a max()-based tripwire):
+    #   - full-universe path only (a --tickers smoke run touches a subset; its untouched
+    #     rows must keep their honest old stamps),
+    #   - never when bot-walled (that path returns above, cache untouched),
+    #   - only at >= MIN_SWEEP_COVERAGE (below the floor the mixed stamps ARE the
+    #     tripwire, and _emit_coverage_annotation has already fired).
+    # surprises_as_of stays per-row on purpose — it is the drip's own clock and gates
+    # which names the capped drip picks up next night.
+    if tickers is None and universe and (len(cal) / len(universe)) >= MIN_SWEEP_COVERAGE \
+            and not out.empty:
+        out["as_of"] = now
     if not out.empty:
         out.to_parquet(cache)
     _n_surp = 0
