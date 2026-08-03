@@ -557,15 +557,22 @@
      Applied unconditionally at boot (no user toggle). theme.js loads end-of-
      body, so pages get one standard-palette paint first on cold load; the hub's
      <head> boot script also sets the class pre-paint (delta is subtle). */
+  /* --line raised in both palettes (estate contrast pass 2026-08-03): the old
+     #d0d4db / #262c38 hairlines measured 1.02–1.45:1 against these surfaces —
+     card boundaries you had to hunt for, and dark sat FAINTER than light. The
+     raised pair lands both themes in the same 1.45–1.86 perceptual band
+     (#c0c4cd: 1.45–1.60 on the light surfaces · #3a4150: 1.61–1.86 on dark),
+     matching the W3 sector-page floor. This block outcascades theme.css, so
+     these are the operative estate values. */
   var SOFT_CONTRAST_CSS =
     'html.soft-contrast[data-theme="light"]{' +
-      '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#d0d4db;' +
+      '--bg:#eceef1;--panel:#f5f5f7;--panel2:#e8eaed;--text:#2e3950;--muted:#4c5a6c;--line:#c0c4cd;' +
       '--glass-bg:color-mix(in srgb,#f5f5f7 64%,transparent);' +
       '--glass-brd:color-mix(in srgb,#2e3950 9%,transparent);' +
       '--card-shadow:0 1px 3px rgba(20,30,50,.05)' +
     '}' +
     'html.soft-contrast[data-theme="dark"]{' +
-      '--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#262c38' +
+      '--bg:#0d1018;--panel:#151820;--panel2:#1b1f28;--text:#c8d0dc;--line:#3a4150' +
     '}';
 
   function _applySoftContrastCSS() {

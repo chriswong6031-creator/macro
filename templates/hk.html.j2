@@ -197,8 +197,16 @@
   .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
   .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
-  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  /* per-quad ink/fill matrix — same recipe as dashboard.html.j2 small badges
+     (13px needs 4.5:1; green/gold carry near-black ink, blue/light-green deepen
+     the fill; zh rules after light so the q1/q3 hue swap wins ties). */
+  .badge.quad-Q1 { background: var(--q1); color: #1a1a1a; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
   .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
+  html:not([data-theme="light"]) .badge.quad-Q4 { background: color-mix(in srgb, var(--q4) 88%, var(--bg)); }
+  html[data-theme="light"] .badge.quad-Q1 { background: color-mix(in srgb, var(--q1) 90%, var(--text)); color: #fff; }
+  html[data-lang="zh"] .badge.quad-Q1 { background: var(--q1); color: #fff; }
+  html[data-lang="zh"] .badge.quad-Q3 { color: #1a1a1a; }
+  html[data-theme="light"][data-lang="zh"] .badge.quad-Q3 { background: color-mix(in srgb, var(--q3) 90%, var(--text)); color: #fff; }
   .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
   .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
   .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
@@ -281,8 +289,182 @@
   .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
-  .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
-  .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  .ent-warn { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  /* dark-zh: red-on-red-tint lands at 4.41:1 on the 14% tint; thin to 8% (W3 lever). */
+  html[data-lang="zh"]:not([data-theme="light"]) .ent-good { background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
+
+  /* ═══ HK BOARD RESURRECTION — priority display layer (hk_prophet_v1, 2026-08-02) ═══
+     research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G1/G4/G9.
+
+     PORTED, NOT DESIGNED. Every rule below is the shipped US board's (#4331,
+     templates/dashboard.html.j2) with the panel id swapped — same tokens, same
+     geometry, same interaction, same words for the same states. HK is the third
+     board on this idiom; a third dialect of it would cost the reader more than
+     it could ever buy. The only HK-specific decision is WHAT the theme slot
+     names (the hk_leadership cohort, fenced display-tier — see the marks row).
+
+     Everything here renders ONLY when the artifact carries row.stage. A pre-v1
+     hk_standouts.json (which is every artifact until the first nightly after the
+     engine lane merges) takes the untouched flat path and renders unchanged.
+
+     ── stage-bucket headings ────────────────────────────────────────────────
+     The board's PRIMARY structure, so they carry more presence than a hairline:
+     a coloured left bar plus a tint fading out to the right. The bar is the
+     non-verbal encoding of the bucket and the label IS the stance — "Live now",
+     "Ran — don't chase" are complete instructions on their own. --sgc carries
+     the tone so one rule set serves four buckets. Tones are --pv-* tokens
+     (direction-STABLE): they never flip under html[data-lang="zh"] the way
+     --up/--down do, so Live now stays green in Chinese. */
+  .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
+                 gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
+                 border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
+                 background: linear-gradient(90deg,
+                   color-mix(in srgb, var(--sgc, var(--muted)) 12%, transparent), transparent 62%); }
+  .nb-stage-hd:first-child { margin-top: 2px; }
+  .nb-stage-hd .sh-l { font-size: 11.5px; font-weight: 800; letter-spacing: .05em;
+                 text-transform: uppercase;
+                 color: color-mix(in srgb, var(--sgc, var(--muted)) 52%, var(--text)); }
+  .nb-stage-hd .sh-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+                 padding: 1px 7px; border-radius: 999px;
+                 background: color-mix(in srgb, var(--sgc, var(--muted)) 17%, transparent);
+                 color: color-mix(in srgb, var(--sgc, var(--muted)) 55%, var(--text)); }
+  .nb-stage-hd .sh-s { font-size: 11px; font-weight: 500; color: var(--muted);
+                 text-transform: none; letter-spacing: 0; }
+  html[data-lang="zh"] .nb-stage-hd .sh-l { letter-spacing: 0; }
+  .sg-live       { --sgc: var(--pv-buy); }
+  .sg-setting_up { --sgc: var(--pv-near); }
+  .sg-ran        { --sgc: var(--muted); }
+  .sg-blocked    { --sgc: var(--pv-avoid); }
+
+  /* ── stage filter chips ──────────────────────────────────────────────────
+     Real button elements with aria-pressed (a toggle group, not tabs — there is
+     no tabpanel), count pills matching the stage headings so the panel counts one
+     way throughout. Lives INSIDE .nb-grid-section so HK's table-mode toggle
+     hides it with the grid it filters. */
+  .pbf-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 11px;
+             background: var(--panel2); border: 1px solid var(--line); margin: 8px 0 2px; }
+  .pbf-bar button { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+             display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+             border: 1px solid transparent; background: transparent; color: var(--muted);
+             padding: 6px 13px; border-radius: 8px; line-height: 1.2;
+             -webkit-tap-highlight-color: transparent;
+             transition: color .14s ease, background .14s ease, border-color .14s ease; }
+  .pbf-bar button:hover { color: var(--text); }
+  .pbf-bar button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+  .pbf-bar button[aria-pressed="true"] { background: var(--panel); color: var(--text);
+             border-color: var(--line); box-shadow: var(--popover-shadow, 0 1px 3px rgba(0,0,0,.12)); }
+  .pbf-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+           padding: 1px 7px; border-radius: 999px;
+           background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+  .pbf-bar button[aria-pressed="true"] .pbf-n {
+           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--link); }
+  @media (max-width: 680px) { .pbf-bar button { min-height: 44px; padding: 6px 14px; font-size: 13px; } }
+  /* the polite result announcement — visible to assistive tech only */
+  .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+              overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+  /* filter visibility. The hide half and the reveal half target DISJOINT sets
+     (`:not([data-stage=X])` vs `[data-stage=X]`), so they never fight on
+     specificity. The reveal half exists because .sm-hidden is
+     `display:none!important` — without it, filtering to a bucket that sits below
+     the show-more fold would show an EMPTY board. While a bucket is filtered the
+     show-more bar is hidden too: its "Showing 12 of 40" counts the unfiltered
+     board. `:not(.st-table-mode)` is the HK-only addition — the table view has
+     its own row filtering and must not inherit a stale grid facet. */
+  #standouts:not(.st-table-mode)[data-stagef="live"]       [data-stage]:not([data-stage="live"]),
+  #standouts:not(.st-table-mode)[data-stagef="setting_up"] [data-stage]:not([data-stage="setting_up"]),
+  #standouts:not(.st-table-mode)[data-stagef="ran"]        [data-stage]:not([data-stage="ran"]),
+  #standouts:not(.st-table-mode)[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"]) { display: none !important; }
+  #standouts:not(.st-table-mode)[data-stagef="live"]       .sm-hidden[data-stage="live"],
+  #standouts:not(.st-table-mode)[data-stagef="setting_up"] .sm-hidden[data-stage="setting_up"],
+  #standouts:not(.st-table-mode)[data-stagef="ran"]        .sm-hidden[data-stage="ran"],
+  #standouts:not(.st-table-mode)[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
+  #standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
+
+  /* ── ran section ─────────────────────────────────────────────────────────
+     Deliberately NOT a fourth table: the leaders table already follows this
+     panel, and the ran lane is a "these are gone" list, not a comparison. Quiet
+     one-line rows, panel-TINTED rather than panel-filled, so they read as
+     visible-but-not-entries. */
+  .pbr { margin-top: 17px; }
+  .pbr-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 9px; }
+  .pbr-t { font-size: 11.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+           color: var(--muted); }
+  html[data-lang="zh"] .pbr-t { letter-spacing: 0; }
+  .pbr-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+           padding: 1px 7px; border-radius: 999px;
+           background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+  .pbr-s { font-size: 11px; color: var(--muted); line-height: 1.5; margin: 4px 0 8px; }
+  .pbr-l { display: flex; flex-direction: column; gap: 5px; }
+  .pbr-r { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 9px; padding: 6px 10px;
+           border: 1px solid var(--line); border-radius: 8px; text-decoration: none;
+           background: color-mix(in srgb, var(--panel2) 45%, transparent);
+           color: var(--text); font-size: 11px; min-width: 0; }
+  .pbr-r:hover { border-color: color-mix(in srgb, var(--muted) 45%, var(--line)); }
+  .pbr-tk { font-weight: 800; font-size: 11.5px; flex: none; }
+  .pbr-nm { color: var(--muted); min-width: 0; flex: 1 1 7em;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pbr-m { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  /* --up/--down (NOT --pv-*) is correct here: this IS a directional figure, so it
+     must flip red/green under html[data-lang="zh"]. HK already scopes .pos/.neg
+     the same way; .az-up/.az-dn are the board-family names the US rows use. */
+  .pbr-m .az-up { color: var(--up); font-weight: 700; }
+  .pbr-m .az-dn { color: var(--down); font-weight: 700; }
+  /* the honest em-dash: a ran row whose move since the signal could not be
+     measured prints the gap rather than a zero. Muted, so it never reads as a
+     flat return. */
+  .pbr-m .pbr-na { color: var(--muted); opacity: .8; font-weight: 600; }
+  /* ── vetoed section (G6) — the entry gate's own receipt ───────────────────
+     The register here is SELF-CRITICISM, not opportunity. These are signals the
+     gate refused, printed with what the name did afterwards so the gate can be
+     judged; the lane is doing its job precisely when it reads badly. Two things
+     keep it from inverting into "look what you missed, go buy them": it wears the
+     Blocked bucket's own tone (--pv-avoid) rather than the buy green or the
+     ran-lane amber, and the move column sits BEHIND the reason, never above it.
+     Row geometry is the ran lane's, deliberately — same family, quieter voice. */
+  .pbv { margin-top: 17px; }
+  .pbr-r.pbr-veto { border-left: 2px solid color-mix(in srgb, var(--pv-avoid) 45%, var(--line));
+           background: color-mix(in srgb, var(--pv-avoid) 4%, transparent); }
+  .pbr-r.pbr-veto:hover { border-color: color-mix(in srgb, var(--pv-avoid) 45%, var(--line));
+           border-left-color: color-mix(in srgb, var(--pv-avoid) 70%, var(--line)); }
+  /* the block reason gets its own line: it is a full sentence, and squeezing it
+     onto the identity row would truncate the one thing this lane exists to say */
+  .pbv-why { flex: 1 1 100%; font-size: 10.5px; line-height: 1.5;
+             color: color-mix(in srgb, var(--muted) 70%, var(--text)); }
+  .pbv-mk { color: var(--muted); font-variant-numeric: tabular-nums; opacity: .85; flex: none; }
+  /* a row whose stance differs from the section's says so; when every row agrees,
+     the constant is printed ONCE in the section line and nowhere else */
+  .pbv-st { font-size: 10.5px; font-weight: 700; color: var(--muted); flex: none; }
+  /* board order / priority framing footnote */
+  .pb-fn { margin: 9px 0 0; font-size: 11px; color: var(--muted); line-height: 1.55; }
+
+  /* ── leaders strip table (US .topsetups idiom, ported) ────────────────────
+     `.ts-tbl td{text-align:left}` is load-bearing: the page-global `th, td
+     {text-align:right}` above would otherwise right-shift every text column. */
+  .topsetups { margin-top: 14px; }
+  .ts-tbl { width: 100%; border-collapse: collapse; margin-top: 7px; font-size: 11.5px; }
+  .ts-tbl th { text-align: left; font-weight: 700; color: var(--muted); font-size: 10px;
+               text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px;
+               border-bottom: 1px solid var(--line); }
+  html[data-lang="zh"] .ts-tbl th { letter-spacing: 0; }
+  .ts-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  .ts-tbl th.r, .ts-tbl td.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .ts-row { cursor: pointer; transition: background .12s; }
+  .ts-row:hover { background: var(--panel2); }
+  .ts-tk { font-weight: 800; color: var(--text); }
+  .ts-nm { font-size: 10px; color: var(--muted); }
+  .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
+  .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  /* ── strip tables on phones: primary decisions never x-scroll. At the board's
+     own 680px break the tertiary columns demote to the row's own page (every row
+     is a tap-through); what stays — ticker+name, the rank-key column, and the
+     stance column — keeps its visible header as its label. .tbl-scroll (theme.css)
+     remains underneath as the fail-safe if a future column outgrows the budget. */
+  @media (max-width: 680px){
+    .topsetups .ts-tbl .c-sector, .topsetups .ts-tbl .c-offhigh,
+    .topsetups .ts-tbl .c-age,    .topsetups .ts-tbl .c-theme { display: none; }
+  }
   /* ---- unified Conviction Profile on each standout card (SCREEN framing) ----- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -1028,6 +1210,8 @@
   body.page-hk .hkx-stk-meta{flex:1;min-width:0;color:var(--muted);font-size:10.5px}
   body.page-hk .hkx-stk-meta b{color:var(--text);font-weight:650;font-size:11.5px}
   body.page-hk .hkx-stage{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:5px;padding:2px 7px;background:rgba(69,184,115,.14);color:#8fd7ae;border:1px solid rgba(69,184,115,.35)}
+  /* the mint literal is dark-tuned (1.45:1 on light paper); light takes the estate ink, dark is untouched */
+  html[data-theme="light"] body.page-hk .hkx-stage{color:var(--ink-up,var(--up));border-color:color-mix(in srgb,var(--ink-up,var(--up)) 40%,var(--line))}
   body.page-hk .hkx-screener-btn{display:block;width:100%;text-align:center;margin-top:11px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px}
   body.page-hk .hkx-bbar{display:flex;height:14px;border-radius:6px;overflow:hidden;margin:6px 0}
   body.page-hk .hkx-bbar .bull{background:var(--up)} body.page-hk .hkx-bbar .bear{background:var(--down)}
@@ -1265,9 +1449,9 @@
   body.page-hk .mx5-path-labels > span{position:absolute;white-space:nowrap;}
   body.page-hk .mx5-pl-y{left:4px;transform:translateY(-50%);color:var(--ink-3);font-variant-numeric:tabular-nums;}
   body.page-hk .mx5-pl-zone{right:10px;transform:translateY(-50%);font-weight:600;}
-  body.page-hk .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 78%,transparent);}
-  body.page-hk .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 80%,transparent);}
-  body.page-hk .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 78%,transparent);}
+  body.page-hk .mx5-pl-zone.on{color:var(--ink-up,var(--up));}
+  body.page-hk .mx5-pl-zone.mid{color:var(--ink-warn,var(--warn));}
+  body.page-hk .mx5-pl-zone.off{color:var(--ink-down,var(--down));}
   body.page-hk .mx5-pl-x{top:96.4%;color:var(--ink-3);}
   body.page-hk .mx5-pl-today{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:currentColor;box-shadow:0 0 6px currentColor;}
   body.page-hk .mx5-path-cross{position:absolute;top:0;width:1px;height:100%;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));opacity:0;transform:translateX(-1px);pointer-events:none;transition:opacity .12s ease-out;will-change:left,opacity;}
@@ -3235,7 +3419,15 @@
   {% endif %}
 
   <!-- ===================== PROPHET — HK stock signals (relative-strength cards) ===================== -->
-  {% if mode == 'stocks' and setups and setups.buy %}
+  {# THE PANEL GATE IS ALSO ARTIFACT-LEVEL on the v1 path. `setups.buy` alone put the
+     whole board — filter, leaders, ran, vetoed, laggards, footnote — behind a lane
+     that is allowed to be EMPTY, so a v1 night on which the cascade admits nobody
+     would have deleted the entire surface built for exactly that night. A pre-v1
+     artifact keeps the old rule: without the display lanes there is genuinely
+     nothing to show, and rendering an empty panel would be worse than none. #}
+  {% if mode == 'stocks' and setups and (setups.buy
+        or setups.get('board_definition') == 'hk_prophet_v1'
+        or setups.get('rank_by') == 'hk_prophet_v1') %}
   {# ── W8-G: JSON data block — feeds StockTable.init(); one row per buy name in system order ── #}
   {% set _hk_st_rows = [] %}
   {% for _hn in setups.buy %}
@@ -3272,10 +3464,157 @@
     "as_of": {{ (setups.as_of or '') | tojson }}
   }
   </script>
+  {# ═══ HK BOARD RESURRECTION — priority display layer (hk_prophet_v1, 2026-08-02) ═══
+     research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G1/G4/G9.
+
+     FAIL-SOFT IS THE CONTRACT. The committed hk_standouts.json carries none of the
+     v1 fields (stage / prophet / featured / new / theme / ran[] / leaders[]) — the
+     first nightly after the engine lane merges fills them. `_hsg.any` gates every
+     new branch below, so a pre-v1 artifact renders the flat three-lane board it
+     renders today, tag for tag. Pinned by tests/test_hk_board_ui.py. #}
+  {# THE SENTINEL IS ARTIFACT-LEVEL, NEVER ROW-DERIVED. It began as "does any BUY row
+     carry a stage?" — which reads the priority layer's presence off a lane that can
+     legitimately be EMPTY. On a night when the cascade admits nobody (2026-07-31 came
+     within three names of it), a v1 artifact with `buy: []` would have failed this
+     test and silently dropped the stage filter, the leaders/ran/vetoed lanes and the
+     footnote — deleting exactly the surface built for the nights the buy lane has
+     nothing to say. The board stamps its own definition; that is what we read.
+     `rank_by` is the same string under the older key, kept as the fallback so an
+     artifact written between the two stamps still lights the layer. #}
+  {%- set _hkb = setups.buy or [] -%}
+  {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
+  {%- set _hsg = namespace(any=(_hk_def == 'hk_prophet_v1')) -%}
+  {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
+  {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
+  {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
+  {# ── STANCE, PRINTED ONCE ──────────────────────────────────────────────────
+       Every display-lane row now carries the engine's own `stance`/`stance_zh`.
+       Printed per row it would be a constant repeated 12–15 times, which Law 4
+       forbids; dropped, the surface would stop showing a stance the engine may
+       one day vary per row. So each lane resolves its DISTINCT stances: when they
+       all agree the sentence becomes the section's own line (one place, one
+       source of truth, no literal to drift), and when a row disagrees only that
+       row prints its own. `_stances(rows)` returns the shared [en, zh] pair or
+       none — the "none" case is what makes the per-row chip appear. #}
+  {%- set _st_ran = [] -%}
+  {%- for r in _hk_ran -%}{%- set _p = [r.get('stance'), r.get('stance_zh')] -%}
+    {%- if _p[0] and _p not in _st_ran -%}{%- set _ = _st_ran.append(_p) -%}{%- endif -%}{%- endfor -%}
+  {%- set _ran_st = _st_ran[0] if _st_ran|length == 1 else none -%}
+  {%- set _st_ldr = [] -%}
+  {%- for r in _hk_ldrs -%}{%- set _p = [r.get('stance'), r.get('stance_zh')] -%}
+    {%- if _p[0] and _p not in _st_ldr -%}{%- set _ = _st_ldr.append(_p) -%}{%- endif -%}{%- endfor -%}
+  {%- set _ldr_st = _st_ldr[0] if _st_ldr|length == 1 else none -%}
+  {%- set _st_vet = [] -%}
+  {%- for r in _hk_veto -%}{%- set _p = [r.get('stance'), r.get('stance_zh')] -%}
+    {%- if _p[0] and _p not in _st_vet -%}{%- set _ = _st_vet.append(_p) -%}{%- endif -%}{%- endfor -%}
+  {%- set _vet_st = _st_vet[0] if _st_vet|length == 1 else none -%}
+  {# Month names for the blocked-marker date. "blocked on a Jul 6 marker" is the
+     honesty the G6 measurement turns on — a name held out on ONE marker for a
+     quarter is a different fact from one blocked yesterday, and only the date
+     tells them apart. #}
+  {%- set _VMN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+                  '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+  {%- set _stage_order = ['live','setting_up','ran','blocked'] -%}
+  {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','blocked':'Blocked'} -%}
+  {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','blocked':'受阻'} -%}
+  {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','blocked':'stand aside for now'} -%}
+  {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','blocked':'暂时观望'} -%}
+  {# ── the Priority formula, READ from the artifact, not hard-coded ──────────
+       The masterplan freezes hk_prophet_v1 on the us_prophet_v1 constants, but a
+       weight printed on a user surface that disagrees with the engine's is a wrong
+       number, and this template ships months before the weights are next revisited.
+       So the sentence is built from `ranking.weights` whenever the artifact carries
+       it and falls back to the frozen constants per leg. Fractions (0.30) and
+       points (30) both render as 30% — the scale is decided from the SUM, so one
+       leg written either way cannot flip the reading. #}
+  {%- set _HK_W_ORDER = ['signal','entry','edge','runway','quality'] -%}
+  {%- set _HK_W_DEF = {'signal':30,'entry':25,'edge':25,'runway':10,'quality':10} -%}
+  {%- set _HK_W_EN = {'signal':'signal','entry':'entry','edge':'edge','runway':'runway','quality':'setup quality'} -%}
+  {%- set _HK_W_ZH = {'signal':'信号','entry':'入场','edge':'优势','runway':'上行空间','quality':'形态质量'} -%}
+  {%- set _hk_rk = setups.get('ranking') or {} -%}
+  {%- set _hk_wts = _hk_rk.get('weights') or {} -%}
+  {%- set _wns = namespace(sum=0.0) -%}
+  {%- for _wk in _HK_W_ORDER -%}{%- if _hk_wts.get(_wk) is number -%}{%- set _wns.sum = _wns.sum + _hk_wts[_wk] -%}{%- endif -%}{%- endfor -%}
+  {%- set _wscale = 100 if (_wns.sum > 0 and _wns.sum <= 1.5) else 1 -%}
+  {%- set _wl_en = [] -%}
+  {%- set _wl_zh = [] -%}
+  {%- for _wk in _HK_W_ORDER -%}
+    {%- set _wv = (_hk_wts[_wk] * _wscale) if _hk_wts.get(_wk) is number else _HK_W_DEF[_wk] -%}
+    {%- set _ = _wl_en.append(_HK_W_EN[_wk] ~ ' ' ~ (_wv|round|int) ~ '%') -%}
+    {%- set _ = _wl_zh.append(_HK_W_ZH[_wk] ~ (_wv|round|int) ~ '%') -%}
+  {%- endfor -%}
+  {%- set _wtxt_en = _wl_en | join(' · ') -%}
+  {%- set _wtxt_zh = _wl_zh | join(' · ') -%}
+  {# Dark-leg disclosure. A weight advertised while its input is absent is an
+     overclaim, so a leg the artifact positively reports as scoring zero for every
+     name is named wherever the weights appear. COUNTED from the artifact, never a
+     literal, so the night a leg is wired the note switches itself off. Silent when
+     the artifact ships no coverage block — HK has never measured it, and asserting
+     an unmeasured null would be the same overclaim pointing the other way. #}
+  {%- set _hk_cov = _hk_rk.get('component_coverage') or {} -%}
+  {%- set _dl_en = [] -%}
+  {%- set _dl_zh = [] -%}
+  {%- set _dl_n = namespace(v=0) -%}
+  {%- for _wk in _HK_W_ORDER -%}
+    {%- set _c = _hk_cov.get(_wk) -%}
+    {%- if _c and (_c.get('nonzero') or 0) == 0 -%}
+      {%- set _ = _dl_en.append(_HK_W_EN[_wk]) -%}
+      {%- set _ = _dl_zh.append(_HK_W_ZH[_wk]) -%}
+      {%- if (_c.get('n') or 0) > _dl_n.v -%}{%- set _dl_n.v = _c.get('n') -%}{%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set _rw_en = (' ' ~ (_dl_en | join(' and ')) ~ ' currently contribute' ~ ('s' if _dl_en|length == 1 else '') ~ ' 0 for '
+        ~ (('all ' ~ _dl_n.v ~ ' names') if _dl_n.v else 'every name')
+        ~ ' — the readings behind ' ~ ('it' if _dl_en|length == 1 else 'them') ~ ' are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt.') if _dl_en else '' -%}
+  {%- set _rw_zh = ((_dl_zh | join('与')) ~ '目前对' ~ (('全部 ' ~ _dl_n.v ~ ' 只股票') if _dl_n.v else '每一只股票')
+        ~ '都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。') if _dl_zh else '' -%}
+  {# One shared Tier-2 sentence on every bucket: the ordering is a readiness rank,
+     NOT a return forecast. #}
+  {%- set _pri_en = ' Cards inside are in priority order — a 0–100 readiness rank built from ' ~ _wtxt_en ~ '. Priority order, not a return forecast.' ~ _rw_en -%}
+  {%- set _pri_zh = ' 组内按优先级排序 —— 由' ~ _wtxt_zh ~ '构成的0–100就绪度分。这是排序，不是收益预测。' ~ _rw_zh -%}
+  {%- set _stage_tip_en = {
+       'live':'The entry signal is open right now — buy now, partial, or buy soon.' ~ _pri_en,
+       'setting_up':'The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet.' ~ _pri_en,
+       'ran':'The signal fired and price has already moved — extended, topping, or hold. The entry window has passed; wait for the next setup.' ~ _pri_en,
+       'blocked':'Entry is blocked, exited, avoided, or the trend is down. Each card names its own reason on the ⚠ mark. Stand aside.' ~ _pri_en } -%}
+  {%- set _stage_tip_zh = {
+       'live':'入场信号当前已打开 —— 可买入、部分买入或即将买入。' ~ _pri_zh,
+       'setting_up':'形态正在形成但入场尚未触发 —— 等待共振、等待回踩或处于观察中。暂时无需操作。' ~ _pri_zh,
+       'ran':'信号已触发且价格已经启动 —— 过度拉伸、做顶或持有。入场窗口已过，等待下一个买点。' ~ _pri_zh,
+       'blocked':'入场受阻、已离场、建议回避，或趋势向下。每张卡片的 ⚠ 标记会写明各自的原因。请观望。' ~ _pri_zh } -%}
+  {# The render list: stage bucket first, engine order preserved INSIDE each bucket
+     (the artifact ships buy[] pre-sorted by stage then score desc, so this only
+     partitions — it never re-ranks). The catch-all is deliberately LAST: a row with
+     no stage, or a stage value newer than this template, still renders, but it may
+     never sit above a live row. #}
+  {%- set _render_list = namespace(items=[]) -%}
+  {%- set _sc = {'live':0,'setting_up':0,'ran':0,'blocked':0} -%}
+  {%- if _hsg.any -%}
+    {%- for _sk in _stage_order -%}
+      {%- set _grp = _hkb | selectattr('stage', 'equalto', _sk) | list -%}
+      {%- if _grp -%}
+        {%- set _render_list.items = _render_list.items + [{'_heading': true, 'stage_hd': _sk, 'count': _grp|length}] + _grp -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- for _n in _hkb -%}
+      {%- if _n.get('stage') not in _stage_order -%}{%- set _render_list.items = _render_list.items + [_n] -%}{%- endif -%}
+    {%- endfor -%}
+    {# Chip counts come from the RENDERED rows, never from lane_counts: a chip whose
+       number disagrees with what filtering shows is a defect, and the ran bucket
+       spans two artifact arrays (buy-lane ran rows + the separate `ran` array). #}
+    {%- for _n in _hkb -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
+    {%- set _ = _sc.update({'ran': _sc['ran'] + (_hk_ran|length)}) -%}
+    {# the vetoed lane lives INSIDE the blocked bucket — it is what the entry gate
+       refused — so the Blocked chip counts it, and filtering to Blocked shows the
+       blocked cards AND the refusals together. A chip whose number excluded half
+       of what its own filter reveals would be the defect this counts-from-rendered
+       -rows rule exists to prevent. #}
+    {%- set _ = _sc.update({'blocked': _sc['blocked'] + (_hk_veto|length)}) -%}
+  {%- endif -%}
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
-      <span class="note" style="text-transform:none">· {{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}</span>
-      {{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}
+      <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
+      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The hk_prophet_v1 forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。hk_prophet_v1 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
@@ -3284,7 +3623,7 @@
     </h2>
     {# THE ONE board-note (§7.2). Board mechanics only — the "screen, not a buy list" caveat
        lives once in the desk manifest above + the per-card tier badge. #}
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Only names with a fresh entry signal make this board. Entry-open group first, then setting-up. Rank is a screen, not a promise.', '仅收录出现新入场信号的个股。入场开启组优先，蓄势中次之。排名是筛选，不是承诺。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{% if _hsg.any %}{{ t('Live entries first, then setups forming, then names that already ran or are blocked. Rank is a screen, not a promise.', '先看入场窗口已打开的，再看形态形成中的，最后是已启动或受阻的。排名是筛选，不是承诺。') }}{% else %}{{ t('Only names with a fresh entry signal make this board. Entry-open group first, then setting-up. Rank is a screen, not a promise.', '仅收录出现新入场信号的个股。入场开启组优先，蓄势中次之。排名是筛选，不是承诺。') }}{% endif %}</p>
     {# Data-health note (§5.5) demoted to ONE muted glance-tier line; the raw leg messages
        (ledger-write / store-stale plumbing) live in the ? tip, never on Tier 1. #}
     {% if setups.health %}
@@ -3303,8 +3642,30 @@
     {# ── W8-G: grid section (hidden in table mode by CSS .nb-grid-section) ── #}
     {{ pv.pv_css() }}
     <div class="nb-grid-section">
+    {# ── stage filter chips. Empty buckets render NO chip (China precedent) — a chip
+         you can press into a void is worse than no chip. Inside .nb-grid-section so
+         HK's table-mode toggle hides it with the grid it filters. #}
+    {% if _hsg.any %}
+    <div class="pbf-bar" id="hk-stage-filter" role="group" aria-label="Filter the board by entry stage">
+      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">{{ _hkb|length + _hk_ran|length + _hk_veto|length }}</span></button>
+      {%- for _sk in _stage_order %}{% if _sc[_sk] %}
+      <button type="button" data-stagepick="{{ _sk }}" aria-pressed="false" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span><span class="pbf-n">{{ _sc[_sk] }}</span></button>
+      {% endif %}{% endfor %}
+    </div>
+    <span class="pbf-live" id="hk-stage-status" aria-live="polite"></span>
+    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
-    {% for n in setups.buy %}
+    {% for n in (_render_list.items if _hsg.any else _hkb) %}
+      {% if n.get('_heading') %}
+      {# stage-bucket heading — the board's primary structure on the priority path.
+         Never emitted on the legacy path, where there is no stage to group by. #}
+      {% set _sk = n.stage_hd %}
+      <div class="nb-stage-hd sg-{{ _sk }}" data-stage="{{ _sk }}" data-tip-en="{{ _stage_tip_en[_sk] }}" data-tip-zh="{{ _stage_tip_zh[_sk] }}">
+        <span class="sh-l"><span class="l-en">{{ _stage_en[_sk] }}</span><span class="l-zh">{{ _stage_zh[_sk] }}</span></span>
+        <span class="sh-n">{{ n.count }}</span>
+        <span class="sh-s"><span class="l-en">{{ _stage_sub_en[_sk] }}</span><span class="l-zh">{{ _stage_sub_zh[_sk] }}</span></span>
+      </div>
+      {% else %}
       {# ═══ PROPHET CARD (flagship redesign 2026-07-21) — HK ripe-list grid. Old nbcard
          retired; disclosures demoted, not deleted: verdict + entry headline + §7.1 mechanism
          lead + A/H-cheap / southbound context → verb-chip tooltip; cautions + already-moving
@@ -3318,6 +3679,18 @@
                else ('hold' if _st in ('hold','topping')
                else ('avoid' if _st in ('exit','avoid')
                else ('wait' if _st else 'near')))) %}
+      {# THE BUCKET OUTRANKS THE VERB. `stage` and `entry_signal.status` are two
+         different reads, and on HK they routinely disagree: the 200-day veto stamps
+         a blocking marker while the entry gauge still says "partial", which used to
+         render a solid green BUY chip underneath a heading that says "Blocked —
+         stand aside for now". A card whose own stance contradicts the bucket it sits
+         in makes the reader arbitrate, which is the analyst's job, not theirs. So a
+         ran/blocked row can never carry a buy-family verb; it demotes to Wait, the
+         cautious lane (DESIGN_DOCTRINE §3: unknown states route to the cautious
+         lane), and the ⚠ mark names the check that shut the entry. Demoting also
+         drops the buy zone from lit to muted, because `_zk` reads `_verb` below.
+         Legacy path unaffected — there is no stage to disagree with. #}
+      {% if _hsg.any and n.get('stage') in ('ran','blocked') and _verb in ('buy','near') %}{% set _verb = 'wait' %}{% endif %}
       {% set _lbl = (n.label or '')|upper %}
       {% set _stage = 4 if ('RALLY' in _lbl or 'UPTREND' in _lbl)
                else (1 if ('BOTTOM' in _lbl or 'BOUNCE' in _lbl)
@@ -3326,30 +3699,312 @@
       {% set _fl = namespace(rows=[]) %}
       {% if c %}{% for cau in (c.cautions or []) %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endfor %}{% endif %}
       {% if _vs and _vs.state in ('FIRED_UP','EXPANSION') %}{% set _fl.rows = _fl.rows + [("Already moving — don't chase above the zone", '已在异动 — 勿在买区上方追高')] %}{% endif %}
+      {# ── G6 display-tier relief: a BLOCKED name is now visible, so the check that
+           is holding it out has to be nameable in plain words. The engine's own
+           reason strings are short and technical ("failed reclaim-and-hold"); this
+           map turns each into a sentence a reader can act on, and an unmapped
+           reason gets the generic sentence with the engine's wording appended —
+           inside the ⚠ popover, which is Tier 2, where mechanics belong.
+           Priority path only: on a pre-v1 artifact there is no `stage`, so no row
+           is known to be blocked and the popover is unchanged. #}
+      {% if _hsg.any and n.get('stage') == 'blocked' %}
+      {% set _HK_BLOCK = {
+           'failed reclaim-and-hold': ['Price has not reclaimed its 200-day line and held there, so entries stay shut until it does.', '价格尚未重新站上200日均线并守住，在此之前入场保持关闭。'],
+           'counter-trend, no 200-reclaim/hold': ['This would be a bounce against the bigger downtrend, and price is still under its 200-day line.', '这属于逆着更大级别下跌趋势的反弹，且价格仍在200日均线下方。'],
+           'pending confirmation': ['The signal fired but the follow-through check has not cleared yet.', '信号已触发，但确认检查尚未通过。'] } %}
+      {% set _blr = ((n.get('signal') or {}).get('last') or {}).get('reason') %}
+      {% set _blm = _HK_BLOCK.get(_blr) %}
+      {% if _blm %}{% set _fl.rows = _fl.rows + [(_blm[0], _blm[1])] %}
+      {% else %}{% set _fl.rows = _fl.rows + [('An entry check is holding this name out' ~ ((' — ' ~ _blr) if _blr else '') ~ '.', '一项入场检查正把该股挡在外面' ~ ((' —— ' ~ _blr) if _blr else '') ~ '。')] %}{% endif %}
+      {% endif %}
       {% set _ctx_en = ((' — ' ~ n.lead.en) if n.lead else '') ~ ((' · cheap H vs its A twin' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · mainland Connect adding' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
       {% set _ctx_zh = ((' — ' ~ n.lead.zh) if n.lead else '') ~ ((' · H 较 A 股便宜' if (n.ah_value and n.ah_value.cheap) else '')) ~ ((' · 南向资金加仓' if (n.southbound and n.southbound.accum_z is not none and n.southbound.accum_z >= 0.6) else '')) %}
       {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
       {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
+      {# ── MARKS ROW — three categorically different facts in descending weight:
+           rank (★ Featured) · recency (New) · leader-cohort context (plain, or amber
+           when the cohort itself only just turned). The US board's fourth chip — the
+           setup SHAPE — is deliberately not repeated here: this card's own 4-stage
+           tracker (Bottoming → Turning → Ready → Trend) is derived from the same
+           label and already says it, and a chip that restates the tracker is the one
+           accessory to take off before leaving the house.
+           `featured` supersedes any triage ring: one accent per card. #}
+      {# `and stage == 'live'` is display-side insurance, not a second gate: the
+         engine's featured requirements already exclude every other bucket. It costs
+         one comparison and it makes a green aura under a "Blocked" heading
+         unrenderable, whatever a future engine change does. #}
+      {% set _feat = _hsg.any and n.get('featured') and n.get('stage') == 'live' %}
+      {# leadership first, theme as the fallback — see the ran section's note: the HK
+         engine stamps `leadership`, never the US board's `theme`. #}
+      {% set _hth = (n.get('leadership') or n.get('theme')) if _hsg.any else none %}
+      {% set _dss = n.get('days_since_signal') %}
+      {# Trust the engine's own recency flag when it ships one; fall back to the
+         ≤2-session rule only when the key is absent. `is not none` matters — a row
+         the engine marked new=false must not be re-chipped by the fallback. #}
+      {% set _isnew = n.get('new') if n.get('new') is not none else (_dss is not none and _dss <= 2) %}
+      {% set _mk = namespace(rows=[]) %}
+      {% if _hsg.any %}
+        {% if _feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
+          'tip_en':'One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board) and price is not extended. Capped per sector and per board, so fewer can show. Priority order, not a return forecast.',
+          'tip_zh':'今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+        {% if _isnew %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
+          'tip_en':'This signal fired in the last two sessions — the name was not on the board before that.',
+          'tip_zh':'该信号在最近两个交易日内触发 —— 在此之前不在榜上。'}] %}{% endif %}
+        {# The `theme_confirmed` variant of this chip went with the ran lane's (see
+           there): the HK cohort organ ships no per-name turn, so only the plain
+           membership form was ever reachable. This is the form. #}
+        {% if _hth and _hth.get('name') %}{% set _mk.rows = _mk.rows + [{'k':'theme',
+          'en': _hth.name,
+          'zh': (_hth.get('name_zh') or _hth.name),
+          'tip_en':'This name sits in the large-cap leader group we track separately. Context only — membership earns the card no points and changes nothing in the ranking on this board.',
+          'tip_zh':'该股属于我们单独跟踪的大市值龙头组合。仅供参考 —— 归属不为卡片加分，也不改变本榜排名。'}] %}{% endif %}
+      {% endif %}
+      {# Priority in the Edge slot. A row without prophet.score keeps today's
+         conviction-percentile "Edge" display exactly as-is — label, value and tooltip
+         fall back together, so a mixed artifact never shows a Priority label over an
+         Edge number. #}
+      {% set _prs = (n.get('prophet') or {}).get('score') %}
+      {% set _prs = _prs if (_prs is number) else none %}
+      {# `marks` is `none` on the legacy path so an old artifact renders unchanged, and
+         `[]` on the priority path so even an unmarked card reserves the slot and the
+         tracker + zone rows stay aligned across a grid row. #}
+      {# SECTOR IN ZH — a three-step ladder, because the artifact's own `sector_zh` is
+         frequently just the English string echoed back ("Industrials & Transport"),
+         and English sector names sitting on a Chinese card are the parity defect
+         §5.5 names. Prefer a real translation from the artifact, fall back to the
+         shared i18n map, and only then to English (which is `tr`'s own fallback). #}
+      {% set _csz = n.sector_zh if (n.sector_zh and n.sector_zh != n.sector) else tr(n.sector) %}
       {{ pv.pv_card({
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
-        'name': n.name, 'sec': n.sector, 'sec_zh': n.sector_zh or n.sector,
+        'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
         'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
-        'edge': (c.score if (c and c.score is not none) else none),
-        'edge_tip_en': 'Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list.',
-        'edge_tip_zh': '优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。',
+        'edge': (('%.0f'|format(_prs)) if _prs is not none
+                 else (c.score if (c and c.score is not none) else none)),
+        'edge_label_en': ('Priority' if _prs is not none else 'Edge'),
+        'edge_label_zh': ('优先级' if _prs is not none else '优势'),
+        'edge_tip_en': (('HK Prophet priority 0–100 — ' ~ _wtxt_en ~ '. Transparent readiness rank for ordering this board; not a win probability or a return forecast.' ~ _rw_en)
+                 if _prs is not none
+                 else 'Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list.'),
+        'edge_tip_zh': (('港股先知优先级 0–100 —— ' ~ _wtxt_zh ~ '。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。' ~ _rw_zh)
+                 if _prs is not none
+                 else '优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。'),
         'stage': _stage, 'spark': n.get('spark_svg'),
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
         'date': (n.get('signal') or {}).get('asof') or setups.get('as_of'),
-        'flags': _fl.rows
+        'flags': _fl.rows,
+        'featured': _feat, 'stage_key': (n.get('stage') if _hsg.any else none),
+        'marks': (_mk.rows if _hsg.any else none)
       }) }}
+      {% endif %}{# /not a heading #}
     {% endfor %}
     </div>
     </div>{# /nb-grid-section #}
+    {# ═══ RAN LANE — names whose signal fired several sessions ago with the trend
+         still intact. Before this a name VANISHED the day its cross went stale, so
+         the leader cohort could run for weeks with nothing on the board to show for
+         it (masterplan §1: Meituan sat in LAGGARDS through a +44% leg).
+         Deliberately NOT a fourth table — the leaders table already follows — and
+         no BUY-family language anywhere inside.
+         Fail-soft: no `ran` array (every artifact today) → nothing renders. #}
+    {% if _hsg.any and _hk_ran %}
+    {# THE `theme_confirmed` PATH IS GONE (2026-08-03). It was ported wholesale from
+       the US board, where `us_board_rank` stamps the flag from a `theme_by` map. The
+       HK builder passes no such map and the HK cohort organ (`hk_leadership`) emits
+       no per-name confirmation and no `bull_days` — so nothing on this page could
+       ever set it. What it bought was an amber-washed row class, a warm-first
+       partition and an amber line quoting a cohort turn date, all three unreachable,
+       and one synthetic-only test standing guard over them. Deleting is the honest
+       repair: a fixture-only branch is a surface nobody has seen. If the cohort read
+       ever ships a per-name turn date, that lands here as a new branch with a real
+       row behind it. The engine's own order is now simply preserved. #}
+    <div class="pbr" data-stage="ran">
+      <div class="pbr-hd">
+        <span class="pbr-t">{{ t('Recently fired', '近期已触发') }}</span>
+        <span class="pbr-n">{{ _hk_ran|length }}</span>
+      </div>
+      <div class="pbr-s">{% if _ran_st %}{{ t(_ran_st[0][0]|upper ~ _ran_st[0][1:] ~ '.', (_ran_st[1] or _ran_st[0]) ~ '。') }}{% else %}{{ t('Recently fired — the entry window has passed; wait for the next setup.', '信号已触发 —— 入场窗口已过，等待下一个买点。') }}{% endif %}</div>
+      <div class="pbr-l">
+      {% for r in _hk_ran %}
+        {# COHORT CHIP SOURCE. The HK engine stamps `leadership` (the mega-cap
+           cohort read) on lane rows — it does NOT stamp the US board's `theme`,
+           so a chip that only looked for `theme` rendered nothing at all against
+           a real artifact. Read leadership first, fall back to theme so a future
+           basket stamp still lands, and take the chip's words from `state_en`/
+           `state_zh` when the payload carries them: `state` itself is the slug
+           `leaders_participating` and must never reach the glance tier. #}
+        {% set _rth = r.get('leadership') or r.get('theme') %}
+        {# AGE UNITS: sessions_since, never ticks. `ticks` counts 3-day-grid buckets,
+           so it understates the real age ~3x — "fired 4 days ago" on a name that
+           fired nine sessions back is a wrong number, which the doctrine treats
+           exactly like a broken layout. The word is "sessions" for the same reason:
+           9 sessions is ~13 calendar days, so "9d" would be the same error wearing
+           different units. #}
+        {% set _rsn = r.get('sessions_since') %}
+        {# APPROXIMATE AGES ARE MARKED. The engine stamps `anchor`: "marker" when the
+           row carries the buy-marker date the count was measured from, "approx" when
+           it was worked back from the fresh-bar window instead. An approximate figure
+           printed like an exact one is a wrong number wearing the right units, so it
+           gets the ≈ glyph on the figure and the reason on the row's hover. A missing
+           `anchor` reads as "marker". #}
+        {% set _rapx = r.get('anchor') == 'approx' %}
+        {# the engine falls back to the ticker when it has no company name, and a row
+           reading "1810.HK  1810.HK" is a defect wearing real data. #}
+        {% set _rnm = r.get('name') if (r.get('name') and r.get('name') != r.get('ticker')) else none %}
+        <a class="pbr-r" href="hk_lookup.html#{{ r.get('ticker','') }}">
+          <span class="pbr-tk">{{ r.get('ticker','') }}</span>
+          {% if _rnm %}<span class="pbr-nm">{{ t(_rnm, r.get('name_zh') or _rnm) }}</span>{% endif %}
+          {% if _rth and _rth.get('name') %}<span class="pv-mk-i pv-mk-theme"{% if _rth.get('state_en') %} data-tip-en="{{ _rth.state_en }} — a display-only read of the mega-cap leader group. Context for why this name moved; it earns no rank on the board above." data-tip-zh="{{ _rth.get('state_zh') or _rth.state_en }} —— 对大市值龙头组合的仅供展示读数。用于解释该股为何异动；不为上方榜单加分。"{% endif %}>{{ t(_rth.name, _rth.get('name_zh') or _rth.name) }}</span>{% endif %}
+          <span class="pbr-m"{% if _rapx %} data-tip-en="≈ means the exact date this signal fired was not recorded for this name, so the age is counted back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股信号触发的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
+            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since this signal fired could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自信号触发以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
+            <span class="l-en">since signal{% if _rsn is not none %} · fired {% if _rapx %}≈{% endif %}{{ _rsn }} session{{ '' if _rsn == 1 else 's' }} ago{% endif %}</span>
+            {# the figure span is language-agnostic and comes FIRST in the DOM, so the
+               Chinese qualifier trails it. Parenthesised, because a bare 信号后 after
+               a number reads as an unfinished clause. #}
+            <span class="l-zh">（信号后）{% if _rsn is not none %} · {% if _rapx %}≈{% endif %}{{ _rsn }}个交易日前触发{% endif %}</span>
+          </span>
+        </a>
+      {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {# ═══ VETOED LANE (G1 / G6) — the entry gate's own receipt ══════════════════
+         The lane that answers "where is the name I was looking for". A buy signal
+         FIRED on each of these and the entry gate refused it; the row prints the
+         refusal in plain words, the marker it was refused on, how long that single
+         marker has stood, and what the name did afterwards. On the measured
+         2026-07-31 panel four of the six reachable mega-cap witnesses appear ONLY
+         here — without this section they are invisible at the surface even though
+         the engine found them, which is G1 failing at the page.
+
+         It sits INSIDE the blocked bucket (data-stage="blocked"), so the Blocked
+         chip counts it and filtering to Blocked reveals it with the blocked cards.
+
+         THE REGISTER IS SELF-CRITICISM, NOT OPPORTUNITY. No buy-family language, no
+         priority score, no entry claim: `pct_since` here is not a missed profit, it
+         is the distance the name travelled while the board stayed out, printed so
+         the gate can be judged. Cohort members lead, because they are the names a
+         reader came looking for.
+         Fail-soft: no `vetoed` array (every artifact before the engine lane) →
+         nothing renders. #}
+    {% if _hsg.any and _hk_veto %}
+    {% set _vwm = [] %}
+    {% set _vot = [] %}
+    {% for r in _hk_veto %}{% if r.get('in_leadership_cohort') %}{% set _ = _vwm.append(r) %}{% else %}{% set _ = _vot.append(r) %}{% endif %}{% endfor %}
+    {% set _hk_veto_o = _vwm + _vot %}
+    <div class="pbv" data-stage="blocked">
+      <div class="pbr-hd">
+        <span class="pbr-t">{{ t('What the gate refused', '门控拒绝的信号') }}</span>
+        <span class="pbr-n">{{ _hk_veto|length }}</span>
+      </div>
+      <div class="pbr-s">{{ t('A buy signal fired on each of these and the entry check refused it. This is what happened next — the section exists to keep the board honest, not to hand you a list to buy.', '这些个股都曾触发买入信号，但被入场检查拒绝。这里记录门控拒绝后的走势，用于自我审视 —— 不是一份可买清单。') }}{% if _vet_st %} <span class="l-en">Stance: {{ _vet_st[0] }}.</span><span class="l-zh">立场：{{ _vet_st[1] or _vet_st[0] }}。</span>{% endif %}</div>
+      <div class="pbr-l">
+      {% for r in _hk_veto_o %}
+        {% set _vth = r.get('leadership') or r.get('theme') %}
+        {% set _vnm = r.get('name') if (r.get('name') and r.get('name') != r.get('ticker')) else none %}
+        {% set _vsn = r.get('sessions_since') %}
+        {% set _vapx = r.get('anchor') == 'approx' %}
+        {% set _vd = r.get('signal_date') or '' %}
+        {% set _vdt = (_VMN.get(_vd[5:7], _vd[5:7]) ~ ' ' ~ (_vd[8:10]|int)) if _vd|length >= 10 else '' %}
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#{{ r.get('ticker','') }}">
+          <span class="pbr-tk">{{ r.get('ticker','') }}</span>
+          {% if _vnm %}<span class="pbr-nm">{{ t(_vnm, r.get('name_zh') or _vnm) }}</span>{% endif %}
+          {# state_en / state_zh — never `state`, which is the slug
+             `leaders_participating`. The chip's PRESENCE is the per-row fact
+             (this name is in the cohort); its words are the cohort's read. #}
+          {% if _vth and _vth.get('state_en') %}<span class="pv-mk-i pv-mk-theme" data-tip-en="{{ (_vth.get('name') or 'Mega-cap cohort') }} — a display-only leadership read. It orders and chips this section; it carries no rank, size or gate authority on the buy board." data-tip-zh="{{ (_vth.get('name_zh') or _vth.get('name') or '大型股群体') }} —— 仅供展示的龙头读数。它只用于本区的排序与标注；在买入榜上不具备排名、仓位或门控权限。">{{ t(_vth.state_en, _vth.get('state_zh') or _vth.state_en) }}</span>
+          {% elif _vth and _vth.get('name') %}<span class="pv-mk-i pv-mk-theme">{{ t(_vth.name, _vth.get('name_zh') or _vth.name) }}</span>{% endif %}
+          {# a row whose stance differs from the section's prints its own; when they
+             all agree the sentence lives once, in the section line above. #}
+          {% if not _vet_st and r.get('stance') %}<span class="pbv-st">{{ t(r.stance, r.get('stance_zh') or r.stance) }}</span>{% endif %}
+          <span class="pbr-m"{% if _vapx %} data-tip-en="≈ means the exact date of the blocking marker was not recorded for this name, so the count is worked back from its recent bars — read it as a session or two either way." data-tip-zh="≈ 表示该股受阻标记的确切日期没有记录，此处的交易日数由近期K线倒推得出 —— 可能相差一两个交易日。"{% endif %}>
+            {%- if r.get('pct_since') is not none %}<span class="{{ 'az-up' if r.pct_since >= 0 else 'az-dn' }}">{{ '%+.1f'|format(r.pct_since) }}%</span> {% else %}<span class="pbr-na" data-tip-en="The move since the blocking marker could not be measured for this name — the price history behind it is incomplete." data-tip-zh="该股自受阻标记以来的涨跌幅无法计算 —— 其背后的价格历史不完整。">—</span> {% endif -%}
+            <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">{{ r.get('blocked_reason_en') or 'The entry gate refused this signal' }}{% if _vdt %} · blocked on a {{ _vdt }} marker{% if _vsn is not none %}, {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}{% elif _vsn is not none %} · blocked {% if _vapx %}≈{% endif %}{{ _vsn }} session{{ '' if _vsn == 1 else 's' }} ago{% endif %}</span>
+            <span class="l-zh">{{ r.get('blocked_reason_zh') or r.get('blocked_reason_en') or '入场闸门未放行该信号' }}{% if _vd|length >= 10 %} · 受阻标记 {{ _vd }}{% if _vsn is not none %}，{% if _vapx %}≈{% endif %}{{ _vsn }}个交易日前{% endif %}{% elif _vsn is not none %} · {% if _vapx %}≈{% endif %}{{ _vsn }}个交易日前受阻{% endif %}</span>
+          </span>
+        </a>
+      {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {# Board-order framing footnote. One line, once — the per-card Priority tooltip
+       carries the same arithmetic on Tier 2. #}
+    {% if _hsg.any %}
+    <p class="pb-fn"><span class="l-en">Priority = {{ _wtxt_en|replace(' · ', ' + ') }}. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The hk_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝{{ _wtxt_zh|replace(' · ', '＋') }}。它衡量的是一只股票的可操作就绪度，用于给本榜排序 —— 并非胜率。hk_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+    {% endif %}
+    {# 🏃 LEADERS STRIP — the strongest HK runners, which the entry-gated board above
+       structurally cannot show: the gate admits a name only on a fresh cross, and a
+       name that has been running for weeks rarely prints one (masterplan §1 — every
+       one of the seven mega-cap witnesses was buy-eligible for a 2–6 session cameo
+       inside a 25-session leg). Coverage, not entries: the stance is always
+       watch — don't chase. Fail-soft: key absent → no strip, page unchanged. #}
+    {% if _hk_ldrs %}
+    <div class="topsetups leaders-strip">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:700;font-size:12.5px">🏃 {{ t('Market leaders', '市场领跑股') }}</span>
+        <span class="note" style="font-size:11px;text-transform:none">{% if _ldr_st %}{{ t('Strongest runners by 3-month momentum, leader-group boosted — no fresh entry signal; ' ~ _ldr_st[0] ~ '.', '按3个月动量排名（龙头组合另有加成）的最强领跑股 —— 暂无新入场信号；' ~ (_ldr_st[1] or _ldr_st[0]) ~ '。') }}{% else %}{{ t('Strongest runners by 3-month momentum, leader-group boosted — no fresh entry signal; watch, don’t chase.', '按3个月动量排名（龙头组合另有加成）的最强领跑股 —— 暂无新入场信号；观察，勿追高。') }}{% endif %}
+          {{ help("Coverage of Hong Kong's strongest runners — the piece the entry-gated board above structurally cannot show. That board admits a name only on a fresh momentum cross, and a name that has been climbing for weeks rarely prints one. Order here is trailing 3-month total return, plus a small boost for belonging to the large-cap leader group we track separately. When two names come out level on that, the plain 3-month return separates them, and if they are still level the ticker does — there is no other input. To appear at all a name must be in an intact uptrend and trading near its 52-week high — leaders sit near their highs, and a name much further off than that is not one. The entry column is honest: none of these has a fresh trigger, so the stance is watch — buy pullbacks toward the zone, never chase. Forward results for this strip are graded nightly from its ship date; it is a research shortlist, not a buy list.", "覆盖港股最强的领跑股 —— 上方入场门控榜单在结构上无法展示的部分。那张榜单只在动量新交叉时收录个股，而已连涨数周的领跑股很少出现新交叉。本表按3个月总回报排序，属于我们单独跟踪的大市值龙头组合的个股另有小幅加成。若两只股票该项持平，则先比未加成的3个月回报，仍持平则按代码先后 —— 再无其他输入。入选还须趋势完好且股价贴近52周高点 —— 领跑股都贴着高点走，回落太多的算不上领跑。入场列如实标注：这些标的均无新触发，立场是观察 —— 回调至买区分批买入，绝不追高。本栏前瞻成绩自上线之日起每晚评分；这是研究清单，而非买入清单。") }}</span>
+      </div>
+      {# The cohort column appears only when the artifact stamps the rows. Same c-*
+         mobile contract as the US strips: the conditional column is context, not
+         stance, so it demotes with the other tertiary columns at the 680px break. #}
+      {%- set _lth = namespace(any=false) -%}
+      {%- for r in _hk_ldrs[:15] -%}{%- set _c = r.get('leadership') or r.get('theme') -%}{%- if _c and (_c.get('state_en') or _c.get('name')) -%}{%- set _lth.any = true -%}{%- endif -%}{%- endfor -%}
+      <div class="tbl-scroll"><table class="ts-tbl">
+        <thead><tr>
+          <th class="c-stock">{{ t('Stock', '个股') }}</th><th class="c-sector">{{ t('Sector', '板块') }}</th>
+          {% if _lth.any %}<th class="c-theme" data-tip-en="The large-cap leader group this name belongs to. Membership adds a small boost to where a name sits in THIS table; on the board above it earns nothing at all. Context, not an entry." data-tip-zh="该股所属的大市值龙头组合。归属会为该股在本表的名次带来小幅加成；在上方榜单中则完全不加分。仅供参考，非入场信号。">{{ t('leader group', '龙头组合') }}</th>{% endif %}
+          {# THE COLUMN NAMES THE RANK KEY. This slot began as the US strip's
+             "α (tiebreak)" — but HK leaders rows carry no `alpha` at all
+             (build_leaders_rows emits `momentum_z` + `rank_key`), so that header
+             sat over a column of em-dashes and named a field the engine never
+             ships. What orders this table is the 3-month momentum z plus the
+             cohort boost, so that is what the column shows and what it is called;
+             `alpha` stays as the fallback for any row that does carry it. #}
+          <th class="r c-edge" data-tip-en="Trailing 3-month total return, expressed as a z-score against the HK panel — the number this table is ranked by. Membership of the mega-cap leader group adds a small boost on top, so a chipped row can sit above a bare row with a higher z." data-tip-zh="过去3个月总回报的 z 分（相对港股样本）—— 本表即按此排序。属于大市值龙头组合的个股会在此基础上获得小幅加成，因此带标签的个股可能排在 z 更高的个股之上。">{{ t('3-mo momentum', '3个月动量') }}</th>
+          <th class="r c-offhigh" data-tip-en="Distance below the 52-week high — 0% means at the high" data-tip-zh="距52周高点的距离 —— 0%代表正处高点">{{ t('off high', '距高点') }}</th>
+          {# was `state`: leaders rows carry no cycle label either, so that column
+             was dead too. Signal age is the read this lane actually has, and it is
+             the one that matters here — a leader with no signal for months is the
+             whole reason the entry-gated board cannot see it. #}
+          <th class="c-age" data-tip-en="How long since this name last printed an entry signal. A leader that has been running for months rarely prints one, which is why the board above cannot show it." data-tip-zh="距该股上一次出现入场信号有多久。已连涨数月的领跑股很少出现新信号，这正是上方榜单无法收录它的原因。">{{ t('last signal', '上次信号') }}</th>
+          <th class="c-entry" data-tip-en="No fresh entry trigger on any of these — the honest read is wait for a pullback. Where the engine has a pullback buy zone, it is shown." data-tip-zh="这些标的均无新入场触发 —— 诚实读法是等待回调。若引擎给出回调买区，则在此显示。">{{ t('entry', '入场') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in _hk_ldrs[:15] %}
+          {% set _les = r.get('entry_signal') %}
+          {% set _lbz = _les.buy_zone if _les else none %}
+          {% set _lnm = r.get('name') if (r.get('name') and r.get('name') != r.get('ticker')) else none %}
+          {% set _lmz = r.get('momentum_z') if r.get('momentum_z') is not none else r.get('alpha') %}
+          {% set _lage = r.get('days_since_signal') %}
+          {% set _lt = r.get('leadership') or r.get('theme') %}
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#{{ r.get('ticker','') }}'">
+            <td class="c-stock"><span class="ts-tk">{{ r.get('ticker','') }}</span>{% if _lnm %} <span class="ts-nm">{{ t(_lnm, r.get('name_zh') or _lnm) }}</span>{% endif %}</td>
+            {% set _lsec = r.get('sector') or '' %}
+            {% set _lsz = r.get('sector_zh') %}
+            <td class="muted c-sector">{% if _lsec %}{{ t(_lsec, _lsz if (_lsz and _lsz != _lsec) else tr(_lsec)) }}{% else %}—{% endif %}</td>
+            {% if _lth.any %}<td class="c-theme">{% if _lt and (_lt.get('state_en') or _lt.get('name')) %}<span class="pv-mk-i pv-mk-theme"{% if _lt.get('state_en') %} data-tip-en="{{ _lt.state_en }} — a display-only leadership read. It boosts where a name sits in this table and chips the row; it carries no rank, size or gate authority on the buy board." data-tip-zh="{{ _lt.get('state_zh') or _lt.state_en }} —— 仅供展示的龙头读数。它会影响本表名次并为该行加标签；在买入榜上不具备排名、仓位或门控权限。"{% endif %}>{{ t(_lt.get('name') or _lt.state_en, _lt.get('name_zh') or _lt.get('name') or _lt.get('state_zh') or _lt.state_en) }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>{% endif %}
+            <td class="r c-edge {{ 'az-up' if (_lmz is not none and _lmz > 0) else ('az-dn' if _lmz is not none else 'muted') }}">{% if _lmz is not none %}{{ '%+.2f'|format(_lmz) }}{% else %}—{% endif %}</td>
+            <td class="r muted c-offhigh">{% if r.get('off_high') is not none %}{{ '%+.1f'|format(r.off_high) }}%{% else %}—{% endif %}</td>
+            {# UNITS COME FROM THE ENGINE. `days_since_signal_basis` says whether the
+               count is sessions or calendar days; printing "sessions" over a
+               calendar count is the same class of wrong number the ran lane's
+               ticks-vs-sessions rule exists to stop. #}
+            <td class="muted c-age">{% if _lage is not none %}{% if r.get('days_since_signal_basis') == 'sessions' %}<span class="l-en">{{ _lage }} session{{ '' if _lage == 1 else 's' }} ago</span><span class="l-zh">{{ _lage }}个交易日前</span>{% else %}<span class="l-en">{{ _lage }} day{{ '' if _lage == 1 else 's' }} ago</span><span class="l-zh">{{ _lage }}天前</span>{% endif %}{% else %}—{% endif %}</td>
+            <td class="c-entry">{% if _lbz and _lbz.low is not none and _lbz.high is not none %}<span class="ent-good">{{ t('pullback zone', '回调买区') }} {{ '%.2f'|format(_lbz.low) }}–{{ '%.2f'|format(_lbz.high) }}</span>{% elif r.get('stance') and not _ldr_st %}<span class="ent-warn">{{ t(r.stance, r.get('stance_zh') or r.stance) }}</span>{% else %}<span class="ent-warn">{{ t('wait for pullback', '等待回调') }}</span>{% endif %}{% if r.get('extended') or (r.get('ext_z') is not none and r.ext_z > 2.0) %} <span class="ent-warn" data-tip-en="Stretched well above its trend line — chasing here is the risk" data-tip-zh="远高于趋势线 —— 此处追高就是风险">{{ t('extended', '过热') }}</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>{# /tbl-scroll #}
+    </div>
+    {% endif %}
     {% if setups.watch %}
     <div class="watch-strip">
       <p class="ws-h">👁 {{ t('On watch — strong edge, blocked entry (wait for a base)', '观察名单 — 优势强但入场受阻（等待筑底）') }}</p>
@@ -3383,12 +4038,73 @@
     </div>
     {% endif %}
     {% if setups.laggards %}
+    {# THE HEADER NAMES THE KEY — on the v1 path, where the key changed. G5 re-cut this
+       lane from the conviction composite to the SELECTION axis alone, and "Weakest —
+       avoid" carried a momentum reading the new key no longer makes: a name here is
+       not falling, it is one whose stock-picking edge reads weakest on the board —
+       which in a rising tape usually means distribution, money leaving while the price
+       holds up. The momentum claim moved to where it is still true: the 🔻 knife chip
+       on the watch strip and the cards, keyed to the deepest trailing-3M quintile (H4),
+       not to this lane. A PRE-v1 artifact keeps the old header and the old figure,
+       because its laggards really were composite-ordered — relabelling them under the
+       new copy would put an accurate sentence on the wrong data. #}
+    {% if _hsg.any %}
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest selection edge — distribution risk', '选股优势最弱 — 派发风险') }}
+      {{ help("The names whose selection edge — our stock-picking read, before any timing — sits lowest on the board tonight. It is NOT a statement that they are falling: a name can be up on the month and still be here, which usually reads as distribution, money leaving while the price holds. The figure is that edge, as a z-score against the HK panel, and it is the number the list is ordered by. A name whose edge cannot be resolved at all sorts to the end rather than the front — an unknown edge is not evidence of a weak one.", "本栏是今晚全榜选股优势最低的个股 —— 选股优势指的是不考虑择时的选股读数。这并不表示它们正在下跌：一只月内上涨的股票同样可能出现在这里，通常意味着派发，即股价撑住而资金在流出。所标数值即该优势的 z 分（相对港股样本），也是本列表的排序依据。优势完全无法计算的个股排在末尾而非开头 —— 优势未知不等于优势弱。") }}</p>
+    {% else %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest — avoid', '最弱 — 回避') }}</p>
+    {% endif %}
     <p style="margin:0;line-height:2">
-      {% for r in setups.laggards %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+      {# PRINT THE KEY YOU SORTED BY, SIGN-AWARE. Two defects lived on this line. (1) It
+         printed `alpha` — the 3-month return z — beside a v1 list ordered by the
+         selection axis, so the column read non-monotone and the number argued against
+         its own lane. `laggard_z` is the resolved sort key itself, stamped by the
+         builder beside the sort, so figure and order cannot disagree; `edge_z` is its
+         first leg and stands in for an artifact written before the stamp. (2) A
+         hardcoded `.neg` painted +1.05 in the loss colour — which under
+         html[data-lang="zh"] inverts again to green, so one positive number read
+         "loss" in English and "gain" in Chinese. The class follows the sign;
+         --up/--down is right here because this IS a directional figure and must flip
+         with the zh convention. An unresolvable key prints an em-dash: those rows sort
+         LAST, and a borrowed number would be a wrong one. #}
+      {% for r in setups.laggards %}{% set _lgz = (r.get('laggard_z') if r.get('laggard_z') is not none else r.get('edge_z')) if _hsg.any else r.get('alpha') %}<a href="hk_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span> <span class="{{ ('pos' if _lgz > 0 else 'neg') if _lgz is not none else 'note' }}"{% if _lgz is none %} data-tip-en="This name's selection edge could not be resolved tonight — it is listed last rather than scored." data-tip-zh="该股今晚的选股优势无法计算 —— 因此列在末尾而非给分。"{% endif %}>{{ '%+.2f'|format(_lgz) if _lgz is not none else '—' }}</span></a>{% endfor %}
     </p>
     {% endif %}
   </div>
+  {# ── stage filter behaviour. Delegated; emitted only on the priority path, so a
+       pre-v1 artifact ships no extra script tag at all. All the hiding is CSS keyed
+       on #standouts[data-stagef] — this only moves the attribute, keeps aria-pressed
+       truthful, and announces the new result count once via the polite live region.
+       The button already carries its label in both languages as l-en/l-zh spans, so
+       the announcement reads them off the DOM rather than duplicating translated
+       copy into data-* attributes. #}
+  {% if _hsg.any %}
+  <script>
+  (function () {
+    var box = document.getElementById('standouts');
+    var bar = document.getElementById('hk-stage-filter');
+    if (!box || !bar) return;
+    var status = document.getElementById('hk-stage-status');
+    function say(btn) {
+      if (!status) return;
+      var n = btn.querySelector('.pbf-n');
+      var en = btn.querySelector('.l-en');
+      var zh = btn.querySelector('.l-zh');
+      n = n ? n.textContent.trim() : '';
+      status.innerHTML = '<span class="l-en">Showing ' + n + ' — ' + (en ? en.textContent.trim() : '') + '</span>' +
+                         '<span class="l-zh">已显示 ' + n + ' 个 — ' + (zh ? zh.textContent.trim() : '') + '</span>';
+    }
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-stagepick]');
+      if (!btn) return;
+      box.setAttribute('data-stagef', btn.getAttribute('data-stagepick'));
+      var bs = bar.querySelectorAll('button[data-stagepick]');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i] === btn ? 'true' : 'false');
+      say(btn);
+    });
+  })();
+  </script>
+  {% endif %}
   {% endif %}
 
   <!-- ===================== TRACK RECORD — receipt chip + popup (shared partial) — sits with Prophet ===================== -->

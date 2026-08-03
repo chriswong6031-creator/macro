@@ -238,11 +238,21 @@
 
   .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
            font-weight: 600; font-size: 13px; }
-  /* quad badge keeps its solid vivid colour; text contrast set per badge */
-  .quad-Q1, .quad-Q3, .quad-Q4 { color: #fff; }
-  .quad-Q2 { color: #1a1a1a; }
+  /* quad badge keeps its solid vivid colour; ink + fill tuned per quad so this
+     13px size clears 4.5:1 in BOTH themes (hero badges pass at the 3:1 large-text
+     bar elsewhere). Mid-luminance hues carry near-black ink (gold, green) or a
+     slightly deepened fill (blue, light green); zh swaps q1/q3 hues at the token
+     level, so the ink/fill choices swap with them in the zh rules below (kept
+     after the light rules — the tie resolves in source order). */
+  .quad-Q3, .quad-Q4 { color: #fff; }
+  .quad-Q1, .quad-Q2 { color: #1a1a1a; }
   .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
   .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  html:not([data-theme="light"]) .quad-Q4 { background: color-mix(in srgb, var(--q4) 88%, var(--bg)); }
+  html[data-theme="light"] .quad-Q1 { background: color-mix(in srgb, var(--q1) 90%, var(--text)); color: #fff; }
+  html[data-lang="zh"] .quad-Q1 { background: var(--q1); color: #fff; }
+  html[data-lang="zh"] .quad-Q3 { color: #1a1a1a; }
+  html[data-theme="light"][data-lang="zh"] .quad-Q3 { background: color-mix(in srgb, var(--q3) 90%, var(--text)); color: #fff; }
 
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
 
@@ -386,11 +396,14 @@
   .actcol { background: var(--panel); border: 1px solid var(--line); min-width: 0;
             border-radius: 14px; padding: 0; overflow: hidden;
             display: flex; flex-direction: column; --act-accent: var(--muted); }
-  .act-buy  { --act-accent: var(--up); }
-  .act-soon { --act-accent: var(--info); }
-  .act-run  { --act-accent: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-trim { --act-accent: var(--warn); }
-  .act-hold { --act-accent: var(--muted); }
+  /* --act-accent stays fill-grade for the lane bar; --act-accent-ink is the
+     text-grade twin for .acth-name (violet measured 4.19:1 dark / 3.89 light). */
+  .act-buy  { --act-accent: var(--up); --act-accent-ink: var(--ink-up, var(--up)); }
+  .act-soon { --act-accent: var(--info); --act-accent-ink: var(--ink-info, var(--info)); }
+  .act-run  { --act-accent: #8b5cf6; --act-accent-ink: color-mix(in srgb, #8b5cf6 80%, var(--text)); }   /* neutral violet — NOT green/buy */
+  .act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn, var(--warn)); }
+  .act-hold { --act-accent: var(--muted); --act-accent-ink: var(--muted); }
+  html[data-theme="light"] .act-run { --act-accent-ink: color-mix(in srgb, #8b5cf6 72%, var(--text)); }
   /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
   .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
   .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -398,7 +411,7 @@
   .acth-title-row { display: flex; align-items: center; gap: 5px; }
   .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
   .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-               color: var(--act-accent); flex: 0 1 auto; min-width: 0;
+               color: var(--act-accent-ink, var(--act-accent)); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); }
   .acth-count::before { content: "("; } .acth-count::after { content: ")"; }
@@ -421,28 +434,28 @@
   /* theme composite score — anv2-score idiom (big number, right of the name) */
   .act-row-score { flex: none; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
                    white-space: nowrap; }
-  .act-score-hi  { color: var(--up); }
-  .act-score-mid { color: var(--warn); }
-  .act-score-lo  { color: var(--down); }
+  .act-score-hi  { color: var(--ink-up, var(--up)); }
+  .act-score-mid { color: var(--ink-warn, var(--warn)); }
+  .act-score-lo  { color: var(--ink-down, var(--down)); }
   /* V2 stat line — last line of the row; muted label, china-anv2-style colored value
      (var(--up)/var(--down) so the zh red/green flip rides along); hidden on mobile */
   .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .act-row-stat .up { color: var(--up); font-weight: 600; }
-  .act-row-stat .dn { color: var(--down); font-weight: 600; }
+  .act-row-stat .up { color: var(--ink-up, var(--up)); font-weight: 600; }
+  .act-row-stat .dn { color: var(--ink-down, var(--down)); font-weight: 600; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
   .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
   /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
   .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
              padding: 2px 6px; border-radius: 4px; line-height: 15px; white-space: nowrap; flex: none; }
   .ab-chip--warn { background: color-mix(in srgb, var(--warn) 14%, transparent);
-                   color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
+                   color: var(--ink-warn, var(--warn)); border: 1px solid color-mix(in srgb, var(--ink-warn, var(--warn)) 28%, transparent); }
   .ab-chip--pos  { background: color-mix(in srgb, var(--up) 14%, transparent);
-                   color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 28%, transparent); }
+                   color: var(--ink-up, var(--up)); border: 1px solid color-mix(in srgb, var(--ink-up, var(--up)) 28%, transparent); }
   .ab-chip--neg  { background: color-mix(in srgb, var(--down) 14%, transparent);
-                   color: var(--down); border: 1px solid color-mix(in srgb, var(--down) 28%, transparent); }
+                   color: var(--ink-down, var(--down)); border: 1px solid color-mix(in srgb, var(--ink-down, var(--down)) 28%, transparent); }
   .ab-chip--info { background: color-mix(in srgb, var(--info) 14%, transparent);
-                   color: var(--info); border: 1px solid color-mix(in srgb, var(--info) 28%, transparent); }
+                   color: var(--ink-info, var(--info)); border: 1px solid color-mix(in srgb, var(--ink-info, var(--info)) 28%, transparent); }
   .ab-chip--muted { background: color-mix(in srgb, var(--muted) 12%, transparent);
                     color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
   /* gate-override ✓ pill */
@@ -839,8 +852,8 @@
      and there is no bare .az-up rule to inherit, so this one is required or the move
      since the signal renders colourless.  --up/--down (NOT --pv-*) is correct here:
      this IS a directional figure, so it must flip red/green under html[data-lang="zh"]. */
-  .pbr-m .az-up { color: var(--up); font-weight: 700; }
-  .pbr-m .az-dn { color: var(--down); font-weight: 700; }
+  .pbr-m .az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .pbr-m .az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* theme_confirmed: the name's own signal is old but its THEME only just turned.
      A touch of warmth — an amber wash and one amber line — deliberately a quieter
      register than the featured aura, which stays the board's only green glow. */
@@ -948,8 +961,8 @@
   .nb-az { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
            padding: 0 5px; border-radius: 7px; background: var(--panel);
            border: 1px solid var(--line); color: var(--muted); }
-  .nb-az.az-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .nb-az.az-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--ink-up, var(--up)) 38%, var(--line)); }
+  .nb-az.az-dn { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--ink-down, var(--down)) 38%, var(--line)); }
   .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .nb-comp { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
@@ -977,8 +990,12 @@
                            background: color-mix(in srgb, var(--warn, #c79a2e) 7%, var(--panel)); }
   .nb-disp.disp-lean_out b { color: var(--warn, #c79a2e); }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
-  .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
-  .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  /* dark-zh: 红涨绿跌 makes this a red-on-red-tint pair, which lands at 4.41:1 on
+     the 14% tint (green clears easily; red sits lower in the dark). Thinning the
+     tint to 8% is the W3 lever — the ink stays vivid, dark-EN is untouched. */
+  html[data-lang="zh"]:not([data-theme="light"]) .ent-good { background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
+  .ent-warn { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
   /* insider Form-4 buy-cluster confirmer chip */
   .nb-ins { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--up);
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); white-space: nowrap; }
@@ -1181,8 +1198,8 @@
   .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
   .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
   .nb-donor .donor-ic{font-size:12px;flex:none}
-  .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
-  .nb-donor.donor-intact .donor-ic{color:var(--up)}
+  .nb-donor.donor-cracking .donor-ic{color:var(--ink-warn,var(--warn))}
+  .nb-donor.donor-intact .donor-ic{color:var(--ink-up,var(--up))}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -1213,8 +1230,8 @@
   .oc-dot.running{background:var(--up)}
   .oc-dot.stopped{background:var(--down)}
   .oc-dot.flat{background:var(--muted)}
-  .oc-pct.az-up{color:var(--up);font-weight:700}
-  .oc-pct.az-dn{color:var(--down);font-weight:700}
+  .oc-pct.az-up{color:var(--ink-up,var(--up));font-weight:700}
+  .oc-pct.az-dn{color:var(--ink-down,var(--down));font-weight:700}
   /* P2.4 board contract v2: lane chips (display-only, US standouts) */
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* v2 lane taxonomy (bottoming/continuation/watch) + legacy names (trend/recovery) for backward compat */
@@ -1285,6 +1302,13 @@
   .ts-tbl th { text-align: left; font-weight: 700; color: var(--muted); font-size: 10px;
                text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px;
                border-bottom: 1px solid var(--line); }
+  /* The α headers are SYMBOLS, and uppercase folds α to Greek capital Alpha — which
+     renders as a plain Latin "A", so "edge (α)" and "α (tiebreak)" ship as
+     "EDGE (A)" / "A (TIEBREAK)" and stop naming the thing they hold. A wrong label
+     is a wrong number wearing words. Only this header opts out of the case
+     transform; the rest of the row keeps the uppercase idiom. Caught on the HK port
+     of this table (templates/hk.html.j2), which carries the same one-line fix. */
+  .ts-tbl th.c-edge { text-transform: none; }
   /* left by default to sit under the left-aligned headers (else the page-global th,td{right}
      right-shifts the text columns); .r columns stay right on both header + body (rule below). */
   .ts-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
@@ -1293,8 +1317,8 @@
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
   .ts-nm { font-size: 10px; color: var(--muted); }
-  .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
-  .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  .ts-tbl td.az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* confluence buy-signal chip (the hard gate the board now requires) */
   .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
   .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
@@ -1333,7 +1357,7 @@
   .idx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .idx-tkr { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 5px; }
   .idx-chg { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; white-space: nowrap; }
-  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  .idx-grid .pos { color: var(--ink-up, var(--up)); } .idx-grid .neg { color: var(--ink-down, var(--down)); } .idx-grid .warn { color: var(--ink-warn, var(--warn)); }
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
   .idx-gauge, .idx-alloc { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
@@ -1845,7 +1869,7 @@
   .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
   .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
   .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
-  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--ink-up,var(--up)); border:1px solid color-mix(in srgb,var(--ink-up,var(--up)) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
   .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
   /* U7: ring state — running trend (histogram positive, no recent cross; does not count toward K) */
@@ -2775,7 +2799,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop .mxfs{border:none;background:transpare
 /* affordance: pill cursor + info icon */
 body.page-macro.mx4-grid .mx5-regime-pill{cursor:help;}
 body.page-macro.mx4-grid .mx5-pill-info{
-  font-size:10px;opacity:.6;margin-left:3px;flex-shrink:0;
+  font-size:10px;margin-left:3px;flex-shrink:0;
 }
 /* mobile: pop is static and initially hidden; toggled by JS tap */
 @media(max-width:700px){
@@ -4047,12 +4071,14 @@ body.page-macro.mx4-grid .mx5-pl-y{
 body.page-macro.mx4-grid .mx5-pl-zone{
   right:14px;transform:translateY(-50%);font-weight:600;
 }
-body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(34,217,122,.62);}
-body.page-macro.mx4-grid .mx5-pl-zone.mid{color:rgba(245,158,11,.66);}
-body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
+/* zone labels: the .60–.66 alpha literals measured 1.51:1 (light) and 2.46:1
+   (dark, the maroon) — the wash was the defect. State tokens are full-strength
+   in dark and text-graded in light, and they carry the zh flip natively. */
+body.page-macro.mx4-grid .mx5-pl-zone.on{color:var(--ink-up,var(--up));}
+body.page-macro.mx4-grid .mx5-pl-zone.mid{color:var(--ink-warn,var(--warn));}
+body.page-macro.mx4-grid .mx5-pl-zone.off{color:var(--ink-down,var(--down));}
 /* zh 红涨绿跌: Risk-on(偏多)=bullish→red, Risk-off(偏空)=bearish→green (mid amber stays) */
-html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(239,68,68,.60);}
-html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217,122,.62);}
+/* zh flip now rides --up/--down at the token level — no hand-rolled override. */
 /* path-chart verdict-band zone fills + boundary hairlines — the SVG rect/line elements
    carry these classes so the zh mirror below can re-tint them (their fill/stroke
    presentation attrs remain as no-CSS fallbacks; CSS wins over attrs). */
@@ -4920,7 +4946,7 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-fed-desc{color:rgba(0,0,0,.55);}
 .mx5-dlg-fed-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--link,#22d97a);white-space:nowrap;}
 .mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
-.mx5-dlg-fed-chg.pos{color:var(--up,#22d97a);}.mx5-dlg-fed-chg.neg{color:var(--down,#ef4444);}
+.mx5-dlg-fed-chg.pos{color:var(--ink-up,var(--up,#22d97a));}.mx5-dlg-fed-chg.neg{color:var(--ink-down,var(--down,#ef4444));}
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
 [data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
 
@@ -5608,8 +5634,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-bench-outcome{font:700 13px/1.3 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
 .fbm-bench-label{font-size:11px;color:var(--ink-3,rgba(255,255,255,.5));margin-top:1px;}
 .fbm-bench-arrow{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;font:700 12px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;}
-.fbm-bench-arrow.pos{color:var(--up,#22d97a);}
-.fbm-bench-arrow.neg{color:var(--down,#ef4444);}
+.fbm-bench-arrow.pos{color:var(--ink-up,var(--up,#22d97a));}
+.fbm-bench-arrow.neg{color:var(--ink-down,var(--down,#ef4444));}
 .fbm-bench-src{font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));}
 [data-theme="light"] .fbm-bench-odds small,[data-theme="light"] .fbm-bench-outcome{color:inherit;}
 
@@ -6154,11 +6180,11 @@ body.page-macro.mx4-grid .mx5-sector-chip{
 }
 body.page-macro.mx4-grid .mx5-sector-chip.hot{
   background:rgba(34,217,122,.11);border:1px solid rgba(34,217,122,.28);
-  color:var(--up,#22d97a);
+  color:var(--ink-up,var(--up,#22d97a));
 }
 body.page-macro.mx4-grid .mx5-sector-chip.cold{
   background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);
-  color:var(--down,#ef4444);
+  color:var(--ink-down,var(--down,#ef4444));
 }
 /* zh 红涨绿跌: hot(强势)=red family, cold(退潮)=green family — text already flips
    via --up/--down; the literal glass tints mirror here */
@@ -6203,8 +6229,8 @@ body.page-macro.mx4-grid .mx5-sector-heat-legend{
   display:flex;justify-content:space-between;margin-top:8px;
   font-size:10px;font-weight:600;letter-spacing:.03em;
 }
-body.page-macro.mx4-grid .mx5-sector-heat-legend .heat-up{color:var(--up,#22d97a);}
-body.page-macro.mx4-grid .mx5-sector-heat-legend .heat-dn{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-sector-heat-legend .heat-up{color:var(--ink-up,var(--up,#22d97a));}
+body.page-macro.mx4-grid .mx5-sector-heat-legend .heat-dn{color:var(--ink-down,var(--down,#ef4444));}
 /* .mx5-sector-heat-name removed (2.5 — truncation at every width; full names in chip lists) */
 
 /* ── ALERTS CENTRE (sx-news-v2 face) — Wave E ───────────────────────────── */
@@ -6289,13 +6315,13 @@ body.page-macro.mx4-grid #sx-v5-fed .plf-spark-svg{width:100%;height:44px;}
 body.page-macro.mx4-grid #sx-v5-fed .plf-spark-row{margin-bottom:8px;}
 body.page-macro.mx4-grid .plf-open{display:inline-flex;align-items:center;gap:4px;margin-top:12px;
   font:600 10.5px/1 var(--font-ui,inherit);letter-spacing:.04em;text-align:right;
-  color:var(--isle-policy,#a070e8);opacity:.7;transition:opacity .18s ease,transform .18s ease;}
+  color:color-mix(in srgb,var(--isle-policy,#a070e8) 45%,var(--text));transition:opacity .18s ease,transform .18s ease;}
 /* face-anatomy: each card's open chip carries its own isle colour + right-aligns */
-body.page-macro.mx4-grid #sx-v5-fed .plf-open{color:var(--isle-policy,#a070e8);align-self:flex-start;}
+body.page-macro.mx4-grid #sx-v5-fed .plf-open{color:color-mix(in srgb,var(--isle-policy,#a070e8) 45%,var(--text));align-self:flex-start;}
 body.page-macro.mx4-grid #sx-v5-sentiment .mx5-card,
 body.page-macro.mx4-grid #sx-v5-sector .mx5-card{display:flex;flex-direction:column;}
-body.page-macro.mx4-grid .plf-open-sent{color:var(--isle-brief,#38c472);align-self:flex-end;margin-left:auto;}
-body.page-macro.mx4-grid .plf-open-sect{color:var(--isle-evidence,#20c0a0);align-self:flex-end;margin-left:auto;}
+body.page-macro.mx4-grid .plf-open-sent{color:color-mix(in srgb,var(--isle-brief,#38c472) 45%,var(--text));align-self:flex-end;margin-left:auto;}
+body.page-macro.mx4-grid .plf-open-sect{color:color-mix(in srgb,var(--isle-evidence,#20c0a0) 45%,var(--text));align-self:flex-end;margin-left:auto;}
 body.page-macro.mx4-grid #sx-v5-fed:hover .plf-open,
 body.page-macro.mx4-grid #sx-v5-fed:focus-within .plf-open,
 body.page-macro.mx4-grid #sx-v5-sentiment:hover .plf-open,
@@ -6364,7 +6390,7 @@ body.page-macro.mx4-grid .wnx-card:focus-visible{
 }
 body.page-macro.mx4-grid .wnx-kicker{
   font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--wnx-c);display:flex;align-items:center;gap:6px;
+  color:color-mix(in srgb,var(--wnx-c) 45%,var(--text));display:flex;align-items:center;gap:6px;
 }
 body.page-macro.mx4-grid .wnx-kicker svg{width:12px;height:12px;flex-shrink:0;}
 body.page-macro.mx4-grid .wnx-state{
@@ -6377,7 +6403,9 @@ body.page-macro.mx4-grid .wnx-line{
 }
 body.page-macro.mx4-grid .wnx-go{
   margin-top:auto;font-size:10.5px;font-weight:700;letter-spacing:.03em;
-  color:var(--wnx-c);opacity:.68;display:inline-flex;align-items:center;gap:4px;
+  /* accent mixed to text-grade in BOTH themes (the .68-alpha wash measured
+     1.69–1.76:1 on light, 2.92–4.15 dark); hover keeps the lift + slide. */
+  color:color-mix(in srgb,var(--wnx-c) 45%,var(--text));display:inline-flex;align-items:center;gap:4px;
   transition:opacity .18s ease,transform .18s ease;
 }
 body.page-macro.mx4-grid .wnx-card:hover .wnx-go,
@@ -10213,7 +10241,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <style>
   /* zh 红涨绿跌 for the Fear & Greed gauge: Greed=bullish→red, Fear=bearish→green (neutral amber).
      --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
-  .fg-greed{--fg-col:var(--up)} .fg-fear{--fg-col:var(--down)} .fg-neutral{--fg-col:var(--warn)}
+  .fg-greed{--fg-col:var(--up);--fg-ink:var(--ink-up,var(--up))} .fg-fear{--fg-col:var(--down);--fg-ink:var(--ink-down,var(--down))} .fg-neutral{--fg-col:var(--warn);--fg-ink:var(--ink-warn,var(--warn))}
   #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
   #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
   /* zh 红涨绿跌: the arc gradient is baked hex (panic-red → euphoria-green Western);
@@ -10231,6 +10259,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {# greed zone = bullish → --up (red in zh), fear zone = bearish → --down (green in zh);
      var() needs style="", not SVG presentation attrs — needle paints via style below #}
   {% set _fgv5_col = 'var(--up)' if _fgv5_dial > 60 else ('var(--down)' if _fgv5_dial < 40 else 'var(--warn)') %}
+  {# text twin: dial strokes/fills keep the vivid hue; the zone LABEL takes the text-grade ink #}
+  {% set _fgv5_ink = 'var(--ink-up,var(--up))' if _fgv5_dial > 60 else ('var(--ink-down,var(--down))' if _fgv5_dial < 40 else 'var(--ink-warn,var(--warn))') %}
   {# Needle: SVG rotate transform — angle=dial/100*180, needle points from center (190,185) upward.
      rotate(angle-90, cx, cy) maps 0→left, 100→right; no trig needed in Jinja. #}
   {% set _fg_needle_rot = (_fgv5_dial / 100 * 180 - 90) | round(1) %}
@@ -10271,7 +10301,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <text class="l-zh fg-lab-euph" x="354" y="208" fill="#22d97a" font-size="13" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">亢奋</text>
       </svg>
     </div>
-    <div class="mx5-sentiment-zone-text" style="color:var(--fg-col, {{ _fgv5_col }})">
+    <div class="mx5-sentiment-zone-text" style="color:var(--fg-ink, {{ _fgv5_ink }})">
       <span class="l-en">{{ _fgv5_label_en }}</span>
       <span class="l-zh">{{ _fgv5_label_zh }}</span>
     </div>
@@ -14880,25 +14910,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   body.page-stocks .stk-ctx-strip .scx-alert{
     display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
     padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;
-    color:var(--warn);
+    color:var(--ink-warn,var(--warn));
     background:color-mix(in srgb,var(--warn) 13%,transparent);
-    border:1px solid color-mix(in srgb,var(--warn) 34%,var(--line));
+    border:1px solid color-mix(in srgb,var(--ink-warn,var(--warn)) 34%,var(--line));
+  }
+  /* light: the 13% warm tint under the desk's lighter --text left the zh warn ink
+     at 4.12:1 — thinning to 9% clears it; dark keeps 13% (already passing). */
+  html[data-theme="light"] body.page-stocks .stk-ctx-strip .scx-alert{
+    background:var(--panel);
   }
   body.page-stocks .stk-ctx-strip .scx-more{
     margin-left:auto;flex:none;white-space:nowrap;
     font-size:11px;font-weight:700;
-    color:var(--link);text-decoration:none;
+    color:var(--ink-link,var(--link));text-decoration:none;
   }
   body.page-stocks .stk-ctx-strip .scx-more:hover{text-decoration:underline;}
   body.page-stocks .stk-ctx-strip.ctx-green{border-left-color:var(--up);}
   body.page-stocks .stk-ctx-strip.ctx-green .scx-dot{background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent);}
-  body.page-stocks .stk-ctx-strip.ctx-green .scx-state{color:var(--up);}
+  body.page-stocks .stk-ctx-strip.ctx-green .scx-state{color:var(--ink-up,var(--up));}
   body.page-stocks .stk-ctx-strip.ctx-yellow{border-left-color:var(--warn);}
   body.page-stocks .stk-ctx-strip.ctx-yellow .scx-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 22%,transparent);}
-  body.page-stocks .stk-ctx-strip.ctx-yellow .scx-state{color:var(--warn);}
+  body.page-stocks .stk-ctx-strip.ctx-yellow .scx-state{color:var(--ink-warn,var(--warn));}
   body.page-stocks .stk-ctx-strip.ctx-red{border-left-color:var(--down);}
   body.page-stocks .stk-ctx-strip.ctx-red .scx-dot{background:var(--down);box-shadow:0 0 0 3px color-mix(in srgb,var(--down) 22%,transparent);}
-  body.page-stocks .stk-ctx-strip.ctx-red .scx-state{color:var(--down);}
+  body.page-stocks .stk-ctx-strip.ctx-red .scx-state{color:var(--ink-down,var(--down));}
   </style>
   {% set _b4_color = market_state.color if (market_state.color is defined and market_state.color) else 'yellow' %}
   {% set _b4_cls = 'ctx-red' if _b4_color == 'red' else ('ctx-green' if _b4_color == 'green' else 'ctx-yellow') %}
@@ -16352,7 +16387,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     .sbx-tile:hover,.sbx-bar-card:hover{border-color:color-mix(in srgb,var(--link) 40%,var(--line))}
     .sbx-tl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sbx-tv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:7px}
-    .sbx-tv.pos{color:var(--up)}.sbx-tv.neg{color:var(--down)}
+    .sbx-tv.pos{color:var(--ink-up,var(--up))}.sbx-tv.neg{color:var(--ink-down,var(--down))}
     .sbx-tw{font-size:11px;color:var(--muted);line-height:1.35}
     .sbx-wl{position:relative;height:4px;border-radius:2px;background:var(--line);margin:0 0 7px}
     .sbx-wl i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--up)}

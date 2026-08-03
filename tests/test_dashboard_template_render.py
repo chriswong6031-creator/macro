@@ -247,6 +247,17 @@ def test_stocks_mode_renders_without_exception():
     assert len(html) > 50_000
 
 
+def test_us_track_record_filter_bar_stays_in_document_flow():
+    """The dense US ledger filters must scroll away instead of covering rows."""
+    vm = _base_vm()
+    vm["us_board_outcomes"] = {"rows": [{"ticker": "ACME"}], "as_of": "2026-07-04"}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert (
+        '.trd-dlg[data-market="us"] .trd-rail{ '
+        'position:static;top:auto;z-index:auto; }'
+    ) in html
+
+
 def test_stocks_mode_renders_standout_card_body():
     """The board-row loop body actually ran — this is where the template-crash
     class lives (per-card chips; the dossier/expander legs were removed from

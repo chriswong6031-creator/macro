@@ -38,7 +38,12 @@
      `font-family:var(--num)` is otherwise an invalid decl on non-macro pages). */
   --num: var(--font-ui);
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
-  --muted: #8b93a1; --line: #2a2f3a;
+  --muted: #8b93a1;
+  /* Estate contrast pass 2026-08-03: #2a2f3a measured 1.13–1.29:1 against the
+     dark panels — fainter than the LIGHT theme's raised 1.6 floor, inverted from
+     how the two themes should sit. #3a4150 lands containers at 1.56–1.85 across
+     the estate's dark surfaces, the same perceptual band as light. */
+  --line: #3a4150;
   --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
   --warn: #e0a030; --act: #e05555; --ok: #3da564;
   --up: #45b873; --down: #e06464; --orange: #e08b45;
@@ -92,8 +97,13 @@ html[data-theme="light"] {
      on a white pill). */
   --gbtn-bg:        color-mix(in srgb, var(--panel2) 78%, var(--panel));
   --gbtn-bg-hover:  color-mix(in srgb, var(--panel2) 96%, var(--panel));
-  --gbtn-brd:       color-mix(in srgb, #1c2430 11%, transparent);
-  --gbtn-brd-hover: color-mix(in srgb, #1c2430 22%, transparent);
+  /* Estate contrast pass 2026-08-03: at 11%, the pill outline measured 1.24:1 —
+     the border IS the affordance on a glass button, a WCAG 1.4.11 component
+     boundary, so it earns the 3:1 bar (50% text ≈ 3.08 on the light canvas).
+     Dark is left alone: its frosted fill + sheen carry the boundary there, and
+     the dark A/B in this pass is pinned to byte-identical. */
+  --gbtn-brd:       color-mix(in srgb, #1c2430 50%, transparent);
+  --gbtn-brd-hover: color-mix(in srgb, #1c2430 66%, transparent);
   --gbtn-sheen:     rgba(255,255,255,.7);
 }
 html[data-theme="light"] {
@@ -102,7 +112,14 @@ html[data-theme="light"] {
      primary so links / buttons / accents read as one design family. The dark
      theme (the :root block above) is intentionally left untouched. */
   --bg: #f7f8fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
-  --muted: #5d6b7e; --line: #eaecf0;
+  --muted: #5d6b7e;
+  /* Estate contrast pass 2026-08-03: #eaecf0 drew a 1.02–1.18:1 hairline on the
+     light surfaces — a card boundary you have to hunt for (the W3 audit's words
+     for the same defect on the sector page). 16% text lands the container edge
+     at 1.61 vs a white card / 1.48 vs the canvas, matching the W3 light floor
+     (1.6) and the raised dark hairline below, without turning row rules into a
+     grid. */
+  --line: color-mix(in srgb, #1c2430 16%, #eaecf0);
   --q1: #1f8b41; --q2: #b07d05; --q3: #c12f2f; --q4: #2f63c4;
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
@@ -145,6 +162,64 @@ html[data-theme="light"][data-lang="zh"] {
   --q1: #c12f2f;
   --q3: #1f8b41;
 }
+/* ---- Text-grade state INKS (estate pass 2026-08-03; method = SI V2 W3 audit) --
+   The state palette is FILL-grade, not TEXT-grade: on light, --up #1f9a55 tops
+   out at 3.61:1 on pure white (3.00 on the estate's darkest common surface
+   #e8eaed) and --warn/--orange sit at 2.9–3.6 — yet this file and most product
+   pages print them as 9–15px text. These tokens are the text-safe form.
+
+   Shape: --ink-mix-* holds the share of the STATE hue kept in the ink; the rest
+   is --text. Dark keeps 100% (ink ≡ raw token → dark renders byte-identical —
+   measured raw dark inks pass 4.5:1 on every estate surface). Light percentages
+   are keyed to HUE, not token name — green sits high in luminance and needs far
+   more darkening than red — and are adopted verbatim from the W3 calibration so
+   the estate and the SI workspace speak one vocabulary: measured on the worst
+   light surface (#e8eaed) they land at 4.8–5.5:1 (up 5.22 · down 4.83 · warn
+   5.25 · ok 5.27 · act 4.96 · orange 5.45 · link 4.81). The zh twin re-keys
+   up/down because 红涨绿跌 swaps the HUES under the names: red clears AA with
+   far less mixing, and keeping one percentage for both would print a dour
+   maroon (W3's words — the exact failure this prevents).
+
+   The inks resolve at html scope (page-level :root re-themes still flow in;
+   subtree rebinds of --up do not — the one subtree rebinder today, the SI V2
+   workspace, computes the same formula so the results agree). Consumers in page
+   templates should write var(--ink-up, var(--up)) so a cache-stale theme.css
+   degrades to today's colors rather than an invalid declaration. */
+:root {
+  --ink-mix-up: 100%; --ink-mix-down: 100%; --ink-mix-warn: 100%; --ink-mix-ok: 100%;
+  --ink-mix-act: 100%; --ink-mix-orange: 100%; --ink-mix-link: 100%; --ink-mix-info: 100%;
+}
+html[data-theme="light"] {
+  --ink-mix-up: 62%; --ink-mix-down: 84%; --ink-mix-warn: 62%; --ink-mix-ok: 70%;
+  --ink-mix-act: 88%; --ink-mix-orange: 58%; --ink-mix-link: 88%; --ink-mix-info: 88%;
+}
+html[data-theme="light"][data-lang="zh"] {
+  --ink-mix-up: 84%;   /* red under 红涨绿跌 */
+  --ink-mix-down: 62%; /* green */
+}
+:root {
+  --ink-up:     color-mix(in srgb, var(--up)     var(--ink-mix-up),     var(--text));
+  --ink-down:   color-mix(in srgb, var(--down)   var(--ink-mix-down),   var(--text));
+  --ink-warn:   color-mix(in srgb, var(--warn)   var(--ink-mix-warn),   var(--text));
+  --ink-ok:     color-mix(in srgb, var(--ok)     var(--ink-mix-ok),     var(--text));
+  --ink-act:    color-mix(in srgb, var(--act)    var(--ink-mix-act),    var(--text));
+  --ink-orange: color-mix(in srgb, var(--orange) var(--ink-mix-orange), var(--text));
+  --ink-link:   color-mix(in srgb, var(--link)   var(--ink-mix-link),   var(--text));
+  --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
+}
+/* prophet-card verb inks — same shape for the direction-STABLE --pv-* family
+   (see the --pv-* note above: never zh-flipped, so no zh twin here). --pv-near
+   sits higher in luminance than --pv-buy and needs the deeper 56% mix. */
+:root {
+  --ink-pv-buy: var(--pv-buy); --ink-pv-near: var(--pv-near);
+  --ink-pv-wait: var(--pv-wait); --ink-pv-avoid: var(--pv-avoid);
+}
+html[data-theme="light"] {
+  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   62%, var(--text));
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  56%, var(--text));
+  --ink-pv-wait:  color-mix(in srgb, var(--pv-wait)  62%, var(--text));
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 84%, var(--text));
+}
 /* ---- Chinese mode: directional GAUGES that paint state from status tokens ----
    The status tokens --ok/--act deliberately DON'T swap (they encode health/danger, see
    above). But a few gauges are genuine market-DIRECTION reads (bullish vs bearish) that
@@ -156,8 +231,9 @@ html[data-theme="light"][data-lang="zh"] {
    Western and every health/severity/staleness/validation signal keeps red=bad. --up/--down
    already carry correct dark+light zh values, so remapping onto them needs no hex here.
    (Mid-tones --warn/--orange/--info/--muted are direction-neutral escalation — left alone.) */
-html[data-lang="zh"] .rrx { --ok: var(--up); --act: var(--down); }
-html[data-lang="zh"] :is(.igx, .igs) { --ok: var(--up); }
+html[data-lang="zh"] .rrx { --ok: var(--up); --act: var(--down);
+  --ink-ok: var(--ink-up); --ink-act: var(--ink-down); }
+html[data-lang="zh"] :is(.igx, .igs) { --ok: var(--up); --ink-ok: var(--ink-up); }
 /* ---- language visibility toggle (dual-emit text) ---------------------------- */
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
@@ -357,18 +433,22 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   border-color: color-mix(in srgb, var(--c, var(--muted)) 34%, transparent);
   font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
-/* base-color assignments */
+/* base-color assignments — bound to the text-grade INKS, not the raw fills:
+   these chips carry their state in 9–15px text, and the raw light palette tops
+   out at 2.9–3.6:1 there (ink ≡ raw under dark, so dark pixels are unchanged).
+   The ink follows the zh 红涨绿跌 swap and the .rrx/.igx gauge remaps because
+   --c resolves on the element. */
 .st-FRESH_BUY, .st-RALLY_ON, .pill-ok, .tag-lead, .chip-pos, .sig-p,
-.urgpill.urg-now { --c: var(--up); }
+.urgpill.urg-now { --c: var(--ink-up); }
 .st-TURN_SIGNALED, .st-BOTTOM_WATCH, .tag-watch, .sig-i,
-.urgpill.urg-imminent, .urgpill.urg-soon, .state-NEW_REGIME { --c: var(--info); }
-.st-TOP_WATCH, .pill-stale, .urgpill.urg-caution, .state-WEAKENING { --c: var(--warn); }
-.st-ROLLING_OVER, .st-COUNTERTREND_BOUNCE, .state-TRANSITIONING { --c: var(--orange); }
+.urgpill.urg-imminent, .urgpill.urg-soon, .state-NEW_REGIME { --c: var(--ink-info); }
+.st-TOP_WATCH, .pill-stale, .urgpill.urg-caution, .state-WEAKENING { --c: var(--ink-warn); }
+.st-ROLLING_OVER, .st-COUNTERTREND_BOUNCE, .state-TRANSITIONING { --c: var(--ink-orange); }
 .st-DECLINE, .pill-failed, .pill-dead, .tag-avoid, .chip-neg, .sig-m,
-.urgpill.urg-exit, .urgpill.urg-avoid { --c: var(--down); }
+.urgpill.urg-exit, .urgpill.urg-avoid { --c: var(--ink-down); }
 .pill-blocked, .state-STABLE, .urgpill.urg-hold, .urgpill.urg-later { --c: var(--muted); }
 
-.pos { color: var(--up); } .neg { color: var(--down); }
+.pos { color: var(--ink-up); } .neg { color: var(--ink-down); }
 
 /* advancing/declining mini-bar (market-breadth scorecard) */
 .bbar { display:inline-flex; width:90px; height:7px; margin-left:8px; vertical-align:middle;
@@ -387,15 +467,15 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .vixhead { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
 .vixnum { font-size:30px; font-weight:700; line-height:1; }
 .vixstats { display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; }
-.badge.vix-muted { --c: var(--muted); } .badge.vix-warn { --c: var(--warn); } .badge.vix-neg { --c: var(--down); }
+.badge.vix-muted { --c: var(--muted); } .badge.vix-warn { --c: var(--ink-warn); } .badge.vix-neg { --c: var(--ink-down); }
 
 /* rotation-stage pills (heat board) — tinted like the badges */
 .stg-improving, .stg-leading, .stg-weakening, .stg-lagging {
   background: color-mix(in srgb, var(--c) 15%, var(--panel));
   color: color-mix(in srgb, var(--c) 80%, var(--text));
 }
-.stg-improving { --c: var(--info); } .stg-leading { --c: var(--up); }
-.stg-weakening { --c: var(--warn); } .stg-lagging { --c: var(--down); }
+.stg-improving { --c: var(--ink-info); } .stg-leading { --c: var(--ink-up); }
+.stg-weakening { --c: var(--ink-warn); } .stg-lagging { --c: var(--ink-down); }
 
 /* charts render on their own dark slate (set in build_site PLOT_LAYOUT); the
    wrapper just rounds the corners so they sit cleanly in either theme */
@@ -829,11 +909,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .verdict .v-text { flex: 1; min-width: 220px; font-size: 14.5px; line-height: 1.45;
   color: var(--text); }
 .verdict .v-text b { color: var(--c, var(--text)); }
-/* urgency → accent colour (mirrors the entrybar mapping, one source here) */
-.verdict.urg-now    { --c: var(--up); }
+/* urgency → accent colour (mirrors the entrybar mapping, one source here).
+   Ink-grade: .v-act and .v-text b print --c as text (23px/800 clears at 3:1,
+   but light --up only reaches 3.0 on the darkest estate surface). */
+.verdict.urg-now    { --c: var(--ink-up); }
 .verdict.urg-imminent, .verdict.urg-soon { --c: var(--g-cold); }
-.verdict.urg-caution { --c: var(--warn); }
-.verdict.urg-exit, .verdict.urg-avoid { --c: var(--down); }
+.verdict.urg-caution { --c: var(--ink-warn); }
+.verdict.urg-exit, .verdict.urg-avoid { --c: var(--ink-down); }
 .verdict.urg-hold, .verdict.urg-later { --c: var(--muted); }
 
 .sigstrip { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
@@ -844,15 +926,15 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   color: var(--muted); font-weight: 700; }
 .sigchip .sc-v { font-size: 15px; font-weight: 800; line-height: 1.15; color: var(--text); }
 .sigchip .sc-s { font-size: 10.5px; font-weight: 500; color: var(--muted); }
-.sigchip.up   { border-color: color-mix(in srgb, var(--up) 42%, transparent);
-  background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
-.sigchip.up   .sc-v { color: var(--up); }
-.sigchip.down { border-color: color-mix(in srgb, var(--down) 42%, transparent);
-  background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
-.sigchip.down .sc-v { color: var(--down); }
-.sigchip.warn { border-color: color-mix(in srgb, var(--warn) 42%, transparent);
-  background: color-mix(in srgb, var(--warn) 10%, var(--panel)); }
-.sigchip.warn .sc-v { color: var(--warn); }
+.sigchip.up   { border-color: color-mix(in srgb, var(--ink-up) 42%, transparent);
+  background: color-mix(in srgb, var(--ink-up) 9%, var(--panel)); }
+.sigchip.up   .sc-v { color: var(--ink-up); }
+.sigchip.down { border-color: color-mix(in srgb, var(--ink-down) 42%, transparent);
+  background: color-mix(in srgb, var(--ink-down) 9%, var(--panel)); }
+.sigchip.down .sc-v { color: var(--ink-down); }
+.sigchip.warn { border-color: color-mix(in srgb, var(--ink-warn) 42%, transparent);
+  background: color-mix(in srgb, var(--ink-warn) 10%, var(--panel)); }
+.sigchip.warn .sc-v { color: var(--ink-warn); }
 
 /* ===================== alert feed (.af-*) =====================
    Cloned from the Bitcoin Vector alert timeline (.tl-*), re-themed to the shared
@@ -868,7 +950,10 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .af-toggle:active { transform: translateY(0); box-shadow: none; }
 .af-toggle[aria-expanded="true"] { border-color: var(--link); color: var(--link);
   background: color-mix(in srgb, var(--link) 10%, var(--panel2)); }
-.af-toggle .af-badge { background: var(--act); color: #fff; font-size: 11px; font-weight: 800;
+/* count ink: var(--bg), not #fff — white on the dark theme's #e05555 is 3.75:1
+   at 11px/800; near-black passes (6.1) and light's near-white is visually the
+   white it always was (4.9). The solid urgent-red pill identity is kept. */
+.af-toggle .af-badge { background: var(--act); color: var(--bg); font-size: 11px; font-weight: 800;
   min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 9px; }
 .af-toggle .af-caret { font-size: 10px; opacity: .6; transition: transform .2s; }
 .af-toggle[aria-expanded="true"] .af-caret { transform: rotate(180deg); }
@@ -940,7 +1025,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   background: color-mix(in srgb, var(--c, var(--info)) 8%, var(--panel));
   border-left: 4px solid var(--c, var(--info)); border-radius: 12px;
   padding: 11px 14px; margin-bottom: 14px; }
-.af-pin.dir-up { --c: var(--up); } .af-pin.dir-down { --c: var(--down); }
+.af-pin.dir-up { --c: var(--ink-up); } .af-pin.dir-down { --c: var(--ink-down); }
 .af-pin.dir-neutral { --c: var(--muted); }
 .af-pin .af-pin-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .af-pin .af-pin-tag { font-size: 10px; font-weight: 800; text-transform: uppercase;
@@ -972,9 +1057,9 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
   color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text));
   border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 28%, transparent); white-space: nowrap; }
-.af-chip.f-signal   { --c: var(--info); } .af-chip.f-trend  { --c: var(--link); }
-.af-chip.f-momentum { --c: var(--g-cold); } .af-chip.f-strength { --c: var(--warn); }
-.af-chip.f-cycle    { --c: var(--orange); }
+.af-chip.f-signal   { --c: var(--ink-info); } .af-chip.f-trend  { --c: var(--ink-link); }
+.af-chip.f-momentum { --c: var(--g-cold); } .af-chip.f-strength { --c: var(--ink-warn); }
+.af-chip.f-cycle    { --c: var(--ink-orange); }
 .af-head { font-weight: 600; color: var(--text); font-size: 13.5px; flex: 1; min-width: 180px; }
 .af-time { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .af-detail { padding: 2px 0 12px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
@@ -1029,16 +1114,16 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sstack-state { font-size: 12.5px; font-weight: 600; text-align: right; }
 .sstack-dot.tone-up { background: var(--up); } .sstack-dot.tone-down { background: var(--down); }
 .sstack-dot.tone-flat { background: var(--muted); }
-.sstack-state.tone-up, b.tone-up { color: var(--up); } .sstack-state.tone-down, b.tone-down { color: var(--down); }
+.sstack-state.tone-up, b.tone-up { color: var(--ink-up); } .sstack-state.tone-down, b.tone-down { color: var(--ink-down); }
 .sstack-state.tone-flat { color: var(--muted); }
 .sstack-verdict { background: var(--panel2); border: 1px solid var(--line); border-radius: 11px;
   padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
 .sstack-final { font-size: 16.5px; color: var(--text); }
-.sstack-final.tone-up { color: var(--up); } .sstack-final.tone-down { color: var(--down); }
+.sstack-final.tone-up { color: var(--ink-up); } .sstack-final.tone-down { color: var(--ink-down); }
 .sstack-agree { font-size: 13px; color: var(--muted); } .sstack-agree b { color: var(--text); }
 .sstack-tally { font-size: 12px; color: var(--muted); } .sstack-tally b { color: var(--text); }
-.sstack-contra { font-size: 13px; color: var(--warn); line-height: 1.45; margin-top: 2px; }
-.sstack-contra.ok { color: var(--ok); }
+.sstack-contra { font-size: 13px; color: var(--ink-warn); line-height: 1.45; margin-top: 2px; }
+.sstack-contra.ok { color: var(--ink-ok); }
 
 /* ---- progressive "show more" for standout-stock card grids (shared; wired by
    theme.js initShowMore on any [data-showmore] grid). Cards beyond the initial
@@ -1104,7 +1189,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text));
   border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 34%, transparent); }
 .sig-gate.sig-take { --c: var(--ok); }
-.sig-gate.sig-pending { --c: var(--warn); }
+.sig-gate.sig-pending { --c: var(--ink-warn); }
 .sig-gate.sig-t2 { --c: var(--ok); opacity:.82; }
 .sig-gate.sig-early { --c: var(--muted); }
 /* S1 HTF-sponsorship badge (display-only, rank-neutral, 2026-07-06) */
@@ -1251,20 +1336,20 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .row-pop-tag { margin-left:auto; font-size:10px; font-weight:700; letter-spacing:.05em;
   padding:2px 8px; border-radius:6px; color:var(--muted); background:var(--panel2);
   border:1px solid var(--line); }
-.row-pop-tag.up   { color:var(--up);   background:color-mix(in srgb, var(--up) 12%, transparent);
-  border-color:color-mix(in srgb, var(--up) 35%, transparent); }
-.row-pop-tag.dn   { color:var(--down); background:color-mix(in srgb, var(--down) 10%, transparent);
-  border-color:color-mix(in srgb, var(--down) 32%, transparent); }
-.row-pop-tag.warn { color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, transparent);
-  border-color:color-mix(in srgb, var(--warn) 32%, transparent); }
+.row-pop-tag.up   { color:var(--ink-up);   background:color-mix(in srgb, var(--ink-up) 12%, transparent);
+  border-color:color-mix(in srgb, var(--ink-up) 35%, transparent); }
+.row-pop-tag.dn   { color:var(--ink-down); background:color-mix(in srgb, var(--ink-down) 10%, transparent);
+  border-color:color-mix(in srgb, var(--ink-down) 32%, transparent); }
+.row-pop-tag.warn { color:var(--ink-warn); background:color-mix(in srgb, var(--ink-warn) 10%, transparent);
+  border-color:color-mix(in srgb, var(--ink-warn) 32%, transparent); }
 .row-pop-div { height:1px; background:var(--line); margin:0 13px; }
 .row-pop-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; padding:10px 13px; }
 .row-pop-cell { display:flex; flex-direction:column; gap:2px; min-width:0; }
 .row-pop-cell.wide { grid-column:1 / -1; }
 .row-pop-lbl { font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
 .row-pop-val { font-size:12px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
-.row-pop-val .up  { color:var(--up); }
-.row-pop-val .dn  { color:var(--down); }
+.row-pop-val .up  { color:var(--ink-up); }
+.row-pop-val .dn  { color:var(--ink-down); }
 .row-pop-val .mut { color:var(--muted); font-weight:400; }
 .row-pop-bar { height:3px; border-radius:2px; background:var(--panel2); margin-top:3px;
   position:relative; overflow:hidden; }
@@ -1305,10 +1390,10 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .anv2-lane--bot   { --anv2-accent: var(--warn); }
 .anv2-lane--red   { --anv2-accent: var(--down); }
 .anv2-lane-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; display:flex; align-items:center; gap:5px; white-space:nowrap; }
-.anv2-lane--buy   .anv2-lane-title { color:var(--up); }
-.anv2-lane--pull  .anv2-lane-title { color:var(--info); }
-.anv2-lane--bot   .anv2-lane-title { color:var(--warn); }
-.anv2-lane--red   .anv2-lane-title { color:var(--down); }
+.anv2-lane--buy   .anv2-lane-title { color:var(--ink-up); }
+.anv2-lane--pull  .anv2-lane-title { color:var(--ink-info); }
+.anv2-lane--bot   .anv2-lane-title { color:var(--ink-warn); }
+.anv2-lane--red   .anv2-lane-title { color:var(--ink-down); }
 .anv2-lane-count { font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
 .anv2-lane-sub { font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.4; }
 .anv2-lane--bot .anv2-lane-sub { color:color-mix(in srgb,var(--warn) 75%,var(--muted)); }
@@ -1316,7 +1401,7 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .anv2-lane-body { padding:6px 0; flex:1; }
 /* bottoming disclaimer box */
 .anv2-bot-disc { margin:6px 12px 4px; background:color-mix(in srgb,var(--warn) 8%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 20%,transparent); border-radius:7px; padding:6px 9px; font-size:10.5px; line-height:1.45; }
-.anv2-bot-disc strong { display:block; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:color-mix(in srgb,var(--warn) 90%,var(--text)); margin-bottom:2px; }
+.anv2-bot-disc strong { display:block; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:color-mix(in srgb,var(--ink-warn) 90%,var(--text)); margin-bottom:2px; }
 /* row items */
 .anv2-lst .anv2-row { padding:7px 13px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); min-width:0; overflow:hidden; }
 .anv2-lst .anv2-row:last-child { border-bottom:none; }
@@ -1324,9 +1409,9 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .anv2-row-top { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px; }
 .anv2-name { font-size:12.5px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .anv2-score { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.anv2-score-hi  { color:var(--up); }
-.anv2-score-mid { color:var(--warn); }
-.anv2-score-lo  { color:var(--down); }
+.anv2-score-hi  { color:var(--ink-up); }
+.anv2-score-mid { color:var(--ink-warn); }
+.anv2-score-lo  { color:var(--ink-down); }
 .anv2-chips { display:flex; flex-wrap:wrap; gap:3px; align-items:center; margin-bottom:3px; }
 /* chip base */
 .anv2-chip { display:inline-flex; align-items:center; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 6px; border-radius:4px; border:1px solid; white-space:nowrap; text-transform:uppercase; }
@@ -1340,20 +1425,23 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 /* bottoming + dual-read chips */
 .anv2-chip-trough  { background:color-mix(in srgb,var(--warn) 12%,var(--panel)); color:color-mix(in srgb,var(--warn) 85%,var(--text)); border-color:color-mix(in srgb,var(--warn) 28%,transparent); }
 .anv2-chip-turn    { background:color-mix(in srgb,#3dd6c8 10%,var(--panel)); color:color-mix(in srgb,#3dd6c8 80%,var(--text)); border-color:color-mix(in srgb,#3dd6c8 24%,transparent); }
+/* light: 80% of the teal literal toward a near-black text is still 2.13:1 on the
+   tinted chip — the teal needs to KEEP mostly text. 40% lands at 5.6:1. */
+html[data-theme="light"] .anv2-chip-turn { color:color-mix(in srgb,#3dd6c8 40%,var(--text)); border-color:color-mix(in srgb,#3dd6c8 55%,var(--line)); }
 .anv2-chip-washout { background:color-mix(in srgb,var(--warn) 11%,var(--panel)); color:color-mix(in srgb,var(--warn) 80%,var(--text)); border-color:color-mix(in srgb,var(--warn) 26%,transparent); cursor:help; }
 .anv2-chip-tag     { background:var(--panel2); color:var(--muted); border-color:var(--line); }
 /* stat line */
 .anv2-stat { font-size:11px; color:var(--muted); }
-.anv2-pos { color:var(--up); font-weight:600; }
-.anv2-neg { color:var(--down); font-weight:600; }
+.anv2-pos { color:var(--ink-up); font-weight:600; }
+.anv2-neg { color:var(--ink-down); font-weight:600; }
 
 /* ==== regime panels (base-effect strip + HMM regime-probability) — shared by dashboard.html.j2 (US) + china.html.j2. Status colours --ok/--warn/--muted do NOT flip in zh; quad colours --q1..--q4 do (intentional). ==== */
 /* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
    flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */
 .mbadge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800;
           letter-spacing:.07em; padding:2px 7px; border-radius:5px; text-transform:uppercase; border:1px solid; }
-.mbadge.measured { color:var(--ok);    border-color:color-mix(in srgb,var(--ok) 55%,transparent);   background:color-mix(in srgb,var(--ok) 12%,transparent); }
-.mbadge.modeled  { color:var(--warn);  border-color:color-mix(in srgb,var(--warn) 55%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+.mbadge.measured { color:var(--ink-ok);    border-color:color-mix(in srgb,var(--ink-ok) 55%,transparent);   background:color-mix(in srgb,var(--ink-ok) 12%,transparent); }
+.mbadge.modeled  { color:var(--ink-warn);  border-color:color-mix(in srgb,var(--ink-warn) 55%,transparent); background:color-mix(in srgb,var(--ink-warn) 12%,transparent); }
 .mbadge.noedge   { color:var(--muted); border-color:var(--line); background:var(--panel2); }
 .bfwd .bfwd-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 4px; }
 .bfwd .bfwd-head h3 { font-size:12px; margin:0; color:var(--text); text-transform:uppercase; letter-spacing:.05em; }
@@ -1425,13 +1513,13 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 /* Zone header row — uses .nb-shelf-hdr accent-left-border idiom */
 .rip-zone-hdr { display:flex; align-items:center; gap:9px; margin-bottom:12px; flex-wrap:wrap; }
 .rip-zone-label { font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
-.rz-ready  .rip-zone-label { color:var(--up); }
+.rz-ready  .rip-zone-label { color:var(--ink-up); }
 .rz-basing .rip-zone-label { color:var(--muted); }
-.rz-fall   .rip-zone-label { color:var(--down); }
+.rz-fall   .rip-zone-label { color:var(--ink-down); }
 .rip-zone-count { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:14px; }
-.rz-ready  .rip-zone-count { background:color-mix(in srgb,var(--up) 14%,var(--panel)); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
+.rz-ready  .rip-zone-count { background:color-mix(in srgb,var(--ink-up) 14%,var(--panel)); color:var(--ink-up); border:1px solid color-mix(in srgb,var(--ink-up) 28%,transparent); }
 .rz-basing .rip-zone-count { background:color-mix(in srgb,var(--muted) 12%,var(--panel)); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
-.rz-fall   .rip-zone-count { background:color-mix(in srgb,var(--down) 14%,var(--panel)); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
+.rz-fall   .rip-zone-count { background:color-mix(in srgb,var(--ink-down) 14%,var(--panel)); color:var(--ink-down); border:1px solid color-mix(in srgb,var(--ink-down) 28%,transparent); }
 .rip-zone-defn { font-size:10.5px; color:var(--muted); margin-left:auto; font-style:italic; }
 .rip-toggle-btn { margin-left:auto; font-size:10.5px; color:var(--link); cursor:pointer;
                   background:none; border:none; font-family:inherit; padding:2px 7px; border-radius:6px; }
@@ -1463,22 +1551,22 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .rip-metric { display:flex; flex-direction:column; gap:1px; }
 .rip-metric-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
 .rip-metric-val { font-size:12px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:3px; }
-.rip-metric-val.pos { color:var(--up); } .rip-metric-val.neg { color:var(--down); } .rip-metric-val.mut { color:var(--muted); }
+.rip-metric-val.pos { color:var(--ink-up); } .rip-metric-val.neg { color:var(--ink-down); } .rip-metric-val.mut { color:var(--muted); }
 /* MACD glyph strip (D/2D/3D) */
 .rip-macd-strip { display:flex; gap:3px; align-items:center; }
 .rip-macd-g { font-size:12px; line-height:1; }
-.rip-macd-g.pg { color:var(--up); } .rip-macd-g.ng { color:var(--down); } .rip-macd-g.mg { color:var(--muted); }
+.rip-macd-g.pg { color:var(--ink-up); } .rip-macd-g.ng { color:var(--ink-down); } .rip-macd-g.mg { color:var(--muted); }
 .rip-macd-lbl { font-size:8.5px; color:var(--muted); letter-spacing:.03em; }
 /* Evidence + chip row */
 .rip-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
 .rip-chip { font-size:9px; font-weight:600; padding:2px 7px; border-radius:14px; border:1px solid transparent; white-space:nowrap; }
 .rip-chip.cp-cross { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:var(--info); border-color:color-mix(in srgb,var(--info) 25%,transparent); }
-.rip-chip.cp-ready { background:color-mix(in srgb,var(--up) 10%,var(--panel)); color:var(--up); border-color:color-mix(in srgb,var(--up) 25%,transparent); }
-.rip-chip.cp-warn  { background:color-mix(in srgb,var(--warn) 10%,var(--panel)); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 25%,transparent); }
+.rip-chip.cp-ready { background:color-mix(in srgb,var(--ink-up) 10%,var(--panel)); color:var(--ink-up); border-color:color-mix(in srgb,var(--ink-up) 25%,transparent); }
+.rip-chip.cp-warn  { background:color-mix(in srgb,var(--ink-warn) 10%,var(--panel)); color:var(--ink-warn); border-color:color-mix(in srgb,var(--ink-warn) 25%,transparent); }
 .rip-chip.cp-neutral { background:color-mix(in srgb,var(--muted) 8%,var(--panel)); color:var(--muted); border-color:color-mix(in srgb,var(--muted) 18%,transparent); }
 /* Stoch arrow */
 .rip-arrow { font-size:10px; }
-.rip-arrow.up { color:var(--up); } .rip-arrow.dn { color:var(--down); } .rip-arrow.fl { color:var(--muted); }
+.rip-arrow.up { color:var(--ink-up); } .rip-arrow.dn { color:var(--ink-down); } .rip-arrow.fl { color:var(--muted); }
 
 /* FALLING sink — compact rows, muted+red */
 .rip-fall-rows { display:flex; flex-direction:column; gap:5px; }
@@ -1496,8 +1584,8 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .revw-null { margin-top:7px; font-size:10px; color:var(--muted); }
 @media (max-width:640px){ .revw-row { grid-template-columns:1fr auto; grid-template-rows:auto auto; } }
 .rip-fall-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rip-fall-ret { font-weight:700; color:var(--down); white-space:nowrap; }
-.rip-fall-lbl { font-size:9.5px; color:var(--down); opacity:.7; }
+.rip-fall-ret { font-weight:700; color:var(--ink-down); white-space:nowrap; }
+.rip-fall-lbl { font-size:9.5px; color:var(--ink-down); opacity:.7; }
 @media (max-width:480px) {
   .rip-fall-row { grid-template-columns:1fr auto; grid-template-rows:auto auto; }
   .rip-fall-nm { grid-column:1/-1; grid-row:2; }
@@ -1559,13 +1647,13 @@ span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
   width:6px; height:6px; border-radius:50%; flex:none;
   background:currentColor;
 }
-.dtp-chip--live { color:var(--up); }
+.dtp-chip--live { color:var(--ink-up); }
 .dtp-chip--pre { color:var(--link); }
-.dtp-chip--warn { color:var(--warn); }
+.dtp-chip--warn { color:var(--ink-warn); }
 .dtp-chip--stale, .dtp-chip--behind { color:var(--muted); }
-.dtp-token.live { color:var(--up); }
+.dtp-token.live { color:var(--ink-up); }
 .dtp-token.pre { color:var(--link); }
-.dtp-token.warn { color:var(--warn); }
+.dtp-token.warn { color:var(--ink-warn); }
 .dtp-token.stale, .dtp-token.behind { color:var(--muted); }
 .dtp-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:dtp-pulse 1.4s ease-in-out infinite; flex:none; }
 .dtp-token.post .dtp-dot, .dtp-token.closed .dtp-dot,
@@ -1587,8 +1675,8 @@ span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
 .dtp-mname { flex:1; min-width:0; color:var(--text); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .dtp-mflow { flex:none; font-size:9.5px; color:var(--muted); white-space:nowrap; }
 .dtp-mpct { flex:none; min-width:56px; text-align:right; font-family:var(--font-mono,monospace); font-variant-numeric:tabular-nums; font-weight:700; font-size:12px; }
-.dtp-mpct.up { color:var(--up); }
-.dtp-mpct.dn { color:var(--down); }
+.dtp-mpct.up { color:var(--ink-up); }
+.dtp-mpct.dn { color:var(--ink-down); }
 .dtp-mtrack { flex:none; width:56px; height:4px; display:flex; align-items:center; }
 .dtp-mtrack.dn { justify-content:flex-end; }
 .dtp-mbar { height:4px; border-radius:2px; min-width:4px; display:inline-block; }
