@@ -220,6 +220,11 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
         "prelaunch-hardening"
     )
     publish_ops = job_commands("unrun-publish-ops")
+    publish_ops_install = next(
+        step["run"]
+        for step in manifest["jobs"]["unrun-publish-ops"]["steps"]
+        if step.get("name") == "install minimal deps"
+    )
     assert "tests/test_earnings_public_wire.py" in publish_ops
     assert "tests/test_earnings_api.py" in publish_ops
     assert "tests/test_earnings_private_store.py" in publish_ops
@@ -227,6 +232,8 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     assert "tests/test_earnings_worker_terminal.py" in publish_ops
     assert "tests/test_ticker_dossier_render_lane.py" in publish_ops
     assert "tests/test_ticker_pages.py" in publish_ops
+    assert re.search(r"\bfastapi\b", publish_ops_install)
+    assert re.search(r"\bhttpx\b", publish_ops_install)
 
 
 def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
