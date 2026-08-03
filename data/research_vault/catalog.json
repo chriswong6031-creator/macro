@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T17:51:25.184152+00:00",
-  "count": 679,
+  "generated_at": "2026-08-03T18:06:27.763644+00:00",
+  "count": 680,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-kymvavdcyqb-db21e5",
+      "title": "SpaceX Aug 3",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T17:36:28Z",
+      "summary_points": [
+        "**Earnings & Growth Outlook**: 2Q26 revenue $6.67bn (+64% YoY), driven by AI segment (Anthropic deal: $1.88bn, +2x seq.) and connectivity revenue +50% YoY ($4bn), with gross margin ~58% and EBITDA >$2.1bn.",
+        "**Lock-Up Liquidity Flow**: 912m shares unlock Aug 6, 2026, with 300m increments until Q2 2026, creating significant supply pressure and short-term volatility risk.",
+        "**SpaceX Valuation Stress Test**: Current $108 stock price implies punitive pricing; Space/Connectivity segments justify $1.1-1.6tn valuation (mid-$1.35tn), while Connectivity uses 45x EV/EBITDA vs.",
+        "current 57.5x multiple."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-f3bliu8p1gc-1b7c0c",
       "title": "US Weekly Kickstart Q2 2026 mid season earnings update",
