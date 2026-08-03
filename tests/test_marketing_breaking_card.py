@@ -120,15 +120,24 @@ def test_official_vs_aggregator_differ():
     agg = render_breaking_card(
         _CPI, "SomeBlog", "aggregator", "2026-07-19T14:32:00Z"
     )
-    # Different tier labels.
+    # The badge word is a POSITIVE marker only. "AGGREGATOR" was removed from
+    # the face of the card (operator 2026-08-03), so the tiers no longer differ
+    # by two words — they differ by one word plus the tier CLASS, which is the
+    # assertion that was always carrying the anti-laundering property anyway.
     assert "OFFICIAL SOURCE" in off
-    assert "AGGREGATOR" in agg
+    assert "AGGREGATOR" not in agg
+    # ...and the aggregator chip still names its source, so dropping the badge
+    # cost the reader nothing they were relying on.
+    assert "SomeBlog" in agg
     # Different tier classes.
     assert "bc-tier-official" in off
     assert "bc-tier-aggregator" in agg
     # An aggregator card must NOT carry the official marker (no laundering).
     assert "bc-tier-official" not in agg
     assert "OFFICIAL SOURCE" not in agg
+    # The two cards are still genuinely different markup — pinned directly so
+    # this test cannot pass by both tiers rendering identically.
+    assert off != agg
 
 
 def test_wire_tier_distinct():
@@ -406,3 +415,56 @@ def test_price_only_row_renders_price_no_pct_arrows():
     _parse(svg)
     assert "$512.30" in svg
     assert "▲" not in svg and "▼" not in svg
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The word "AGGREGATOR" is off the face of the card (operator 2026-08-03)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("tier", [
+    "aggregator", "premium-verified-vip", "", None, "UNKNOWN", "  ", "official-ish",
+])
+def test_no_card_prints_the_word_aggregator(tier):
+    """Every tier that ROUTES to the aggregator treatment, including the junk and
+    empty ones that fail closed into it, must render without the badge word.
+
+    Parametrised over the fail-closed inputs on purpose: the operator asked for
+    the string to be gone from illustrations, and a card that prints it only for
+    a garbage `source_tier` is still a card that prints it.
+    """
+    svg = render_breaking_card(_CPI, "SomeBlog", tier, "2026-07-19T14:32:00Z")
+    assert "AGGREGATOR" not in svg.upper() or "bc-tier-aggregator" in svg, (
+        "the literal badge word leaked onto the card")
+    # Belt and braces: the badge word specifically, not the css class token.
+    assert "AGGREGATOR" not in svg.replace("bc-tier-aggregator", ""), (
+        f"tier {tier!r} still prints the AGGREGATOR badge word")
+
+
+def test_the_badge_word_removal_did_not_cost_the_source_name(tier=None):
+    """Dropping the badge must not drop the attribution with it.
+
+    The source NAME is the provenance the reader actually needs (and the thing
+    the wire-attribution gates exist to keep honest); the tier word was our own
+    internal grade. Losing the name here would be a real regression wearing the
+    same diff.
+    """
+    svg = render_breaking_card(
+        _CPI, "Some Obscure Blog", "aggregator", "2026-07-19T14:32:00Z")
+    assert "Some Obscure Blog" in svg
+    assert "bc-tier-aggregator" in svg
+
+
+def test_a_labelless_tier_leaves_no_dangling_separator():
+    """`f"{source} · {label}"` with an empty label would print 'SomeBlog · '."""
+    svg = render_breaking_card(_CPI, "SomeBlog", "aggregator", "2026-07-19T14:32:00Z")
+    assert "SomeBlog ·" not in svg, "dangling ' · ' separator with no badge after it"
+    assert "·</text>" not in svg.replace(" ", "")
+
+
+def test_the_positive_badges_survive():
+    """Only the aggregator word went. official/wire still earn their caption."""
+    off = render_breaking_card(_CPI, "Federal Reserve", "official",
+                               "2026-07-19T14:32:00Z")
+    wire = render_breaking_card(_CPI, "Reuters", "wire", "2026-07-19T14:32:00Z")
+    assert "OFFICIAL SOURCE" in off
+    assert "WIRE SERVICE" in wire

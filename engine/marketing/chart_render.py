@@ -4437,9 +4437,25 @@ def _break_tier_style(tier: str) -> dict[str, str]:
             "stroke": _BREAK_AMBER,
             "rail": _BREAK_AMBER, "rail_opacity": "0.5",
         }
-    # Aggregator (and any unknown tier): visibly lighter grey outline.
+    # Aggregator (and any unknown tier): visibly lighter grey outline, and NO
+    # BADGE WORD (operator 2026-08-03: "should get rid of the 'aggregator'
+    # string from illustrations").
+    #
+    # THE TIER IS UNCHANGED — only its caption is. `key`, the grey fill/ink/
+    # stroke and the faint rail all still say aggregator, the `bc-tier-aggregator`
+    # class is still stamped on the chip, and an unknown tier still routes HERE
+    # rather than laundering up. What goes away is a piece of our own source-
+    # taxonomy vocabulary printed at a reader who never asked for it: "AGGREGATOR"
+    # is an internal grade, and the doctrine's glance tier bans internal state
+    # names and untranslated jargon on the face of a card. The reader already has
+    # the thing that matters — the source's own name, which the chip still shows.
+    #
+    # The POSITIVE badges stay ("OFFICIAL SOURCE", "WIRE SERVICE"): those earn a
+    # reader something. Absence of a badge is now the aggregator signal, which is
+    # the honest direction — a card must be able to claim MORE trust only by
+    # showing more, never by showing less.
     return {
-        "key": "aggregator", "label": "AGGREGATOR",
+        "key": "aggregator", "label": "",
         "fill": _BREAK_GREY, "fill_opacity": "0.08", "ink": _BREAK_GREY,
         "stroke": _BREAK_GREY,
         "rail": _BREAK_GREY, "rail_opacity": "0.55",
@@ -4621,7 +4637,11 @@ def render_breaking_card(
         # Tier chip — the signature. Weight encodes trust; anti-laundering law.
         ts_str = _break_fmt_ts(published_at)
         tier = _break_tier_style(source_tier)
-        chip_label = f"{source_name} · {tier['label']}"
+        # A tier with no badge word shows the source name ALONE — never a
+        # dangling "Reuters · " separator (the aggregator tier is label-less by
+        # operator order 2026-08-03; see _break_tier_style).
+        chip_label = (f"{source_name} · {tier['label']}"
+                      if str(tier.get("label") or "").strip() else str(source_name))
         if len(chip_label) > 48:
             chip_label = chip_label[:47] + "…"
         chip_text = _xesc(chip_label)
