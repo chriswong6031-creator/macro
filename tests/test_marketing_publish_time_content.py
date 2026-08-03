@@ -1261,13 +1261,12 @@ def test_generated_theme_copy_never_ends_on_reader_bait(tmp_path, monkeypatch,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_marketing_publish_workflow_can_render_and_host_a_card():
-    """PINS defect 2. The publish job originally ran with a pip line that had
-    neither a rasteriser fallback nor an S3 client, and no R2 credentials in
-    the publisher step's env — so every card this lane renders would fail to
-    host and every candidate would be dropped. The pinned defect is the missing
-    deps/R2 env, not the runner vendor: #4436 deliberately moved the job onto
-    the idle self-hosted light lane (hosted queueing was the outage), so the
-    runner assertion tracks that lane."""
+    """PINS defect 2 across the current deadline-bound publishing runner.
+
+    The lane still needs the rasteriser, S3 client, and R2 credentials after its
+    intentional move from hosted Ubuntu to the self-hosted light Mac pool; if
+    those disappear, every rendered card would still fail to host and drop.
+    """
     import yaml
     root = Path(__file__).resolve().parents[1]
     wf = yaml.safe_load(
