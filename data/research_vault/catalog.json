@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T04:49:37.353716+00:00",
-  "count": 641,
+  "generated_at": "2026-08-03T05:04:43.703164+00:00",
+  "count": 642,
   "institutions": [
     "Amova",
     "Apollo",
@@ -853,6 +853,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cpszeclgt26-19c00d",
+      "title": "Energy Resilience Sov",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T10:43:03Z",
+      "summary_points": [
+        "**Energy Security & AI Convergence**: Conflict-driven supply shocks and AI’s energy demands make energy resilience a core sovereign risk; nations with renewable/nuclear transitions (e.g., China’s 7.8M bpd oil import reduction, $21.9B EV/solar exports) outperform energy-dependent peers in growth/inflation.",
+        "**Sovereign Sorting Mechanism**: Sovereigns are assessed via energy position (net importer vs.",
+        "localized availability) and AI capacity (grid reliability), enabling direct currency/interest rate exposure analysis.",
+        "**Energy-AI Infrastructure Impact**: Spain (Energy Advantage/AI Have) uses clean power/data-center growth to shield from shocks; Italy (Energy Disadvantage/AI Have Not) faces stagflation; Australia’s 17% Q1 data-center investment supports higher rates vs.",
+        "New Zealand’s constrained AI ecosystem."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
