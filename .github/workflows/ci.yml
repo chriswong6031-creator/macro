@@ -2046,6 +2046,22 @@ on:
       - "tests/test_template_items_footgun.py"
       - "tests/test_trading_journal_xlsx.py"
       - "tests/test_us_stocks_w8g_table.py"
+      # Nav-chrome guards (unrun-suite backfill 2026-08-03): the one-header
+      # law, nav prefix/hover/anchor geometry, landing IA, start-page voice +
+      # publish integrity, and the Terminal portal/entitlement contracts.
+      # Subjects all live under templates/**, site/**, and named scripts/*
+      # entries already present; only the test halves were missing.
+      - "tests/test_product_chrome.py"
+      - "tests/test_subdir_nav_prefix.py"
+      - "tests/test_nav_hover_bridge.py"
+      - "tests/test_nav_menu_mockup_hover.py"
+      - "tests/test_nav_wide_menu_anchor.py"
+      - "tests/test_landing_navigation.py"
+      - "tests/test_oip_w1_nav_regroup.py"
+      - "tests/test_hub_welcome_persona.py"
+      - "tests/test_start_publish_integrity.py"
+      - "tests/test_terminal_indicator_pricing.py"
+      - "tests/test_terminal_overlay_contract.py"
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"
