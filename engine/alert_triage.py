@@ -122,7 +122,10 @@ SOURCES = {
     "forex":     {"label": "Forex",           "label_zh": "外汇",       "icon": "💱", "page": "forex.html"},
     "vector":    {"label": "Bitcoin Vector",  "label_zh": "比特币向量", "icon": "₿",  "page": "vector.html"},
     "commodity": {"label": "Commodity Vector","label_zh": "大宗商品",   "icon": "🛢", "page": "commodities.html"},
-    "themes":    {"label": "Theme Rotation",  "label_zh": "主题轮动",   "icon": "🧺", "page": "baskets.html"},
+    # themes: page must carry a #theme-<id> resolver — baskets.html is a redirect stub
+    # since the Sector Intelligence consolidation (#4237); the resolver lives on the
+    # merged page (tests/test_theme_hash_deeplink.py pins both halves).
+    "themes":    {"label": "Theme Rotation",  "label_zh": "主题轮动",   "icon": "🧺", "page": "sector_central.html"},
     "emergence": {"label": "Forming Narratives","label_zh": "成形叙事", "icon": "🔥", "page": "baskets.html"},
     "altdata":   {"label": "Alternative Data",  "label_zh": "替代数据",   "icon": "📊", "page": "alt_data.html"},
     "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},

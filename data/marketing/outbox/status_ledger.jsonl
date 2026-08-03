@@ -532,3 +532,5 @@
 {"id":"ob-2026-08-03-0eb8d55923","from":"queued","to":"approved","at":"2026-08-03T00:14:30Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-03-0eb8d55923","from":"approved","to":"posting","at":"2026-08-03T00:14:31Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-03-0eb8d55923","from":"posting","to":"posted","at":"2026-08-03T00:14:32Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a6fdd6798d2f31dff145c05","external_url":null,"at":"2026-08-03T00:14:30Z","booked_at":"2026-08-03T00:14:30Z"}}
+{"id":"ob-2026-08-02-e731cc12b9","from":"queued","to":"quarantined","at":"2026-08-03T04:24:31Z","actor":"wire_expiry","note":"expired_stale_wire: breaking sat untouched 5.2h (ttl 3h) — the moment it was written about is gone","receipt":null}
+{"id":"ob-2026-08-03-0e3434135a","from":"queued","to":"approved","at":"2026-08-03T04:24:31Z","actor":"approval-desk","note":"approval-desk: payload, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}

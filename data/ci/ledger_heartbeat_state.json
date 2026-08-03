@@ -1,41 +1,41 @@
 {
   "schema": "ledger_heartbeat_state.v1",
-  "updated_utc": "2026-07-31T04:54:47Z",
-  "last_check_date": "2026-07-31",
+  "updated_utc": "2026-08-03T03:40:56Z",
+  "last_check_date": "2026-08-03",
   "ledgers": {
     "data/opex_windows/forward_log.jsonl": {
-      "asof": "2026-07-18",
-      "last_check_date": "2026-07-31",
-      "stalled_since": "2026-07-20"
+      "asof": "2026-08-01",
+      "last_check_date": "2026-08-03",
+      "stalled_since": null
     },
     "data/risk_radar/forward_log.jsonl": {
-      "asof": "2026-07-30",
-      "last_check_date": "2026-07-31",
+      "asof": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     },
     "data/market_state/forward_log.jsonl": {
-      "asof": "2026-07-30",
-      "last_check_date": "2026-07-31",
+      "asof": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     },
     "data/mag7_regime/ledger.jsonl": {
-      "asof": "2026-07-30",
-      "last_check_date": "2026-07-31",
+      "asof": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     },
     "data/leadership_crack/forward_log.jsonl": {
-      "asof": "2026-07-30",
-      "last_check_date": "2026-07-31",
+      "asof": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     },
     "data/deterioration_cascade/forward_log.jsonl": {
-      "asof": "2026-07-29",
-      "last_check_date": "2026-07-31",
+      "asof": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     },
     "data/event_windows/forward_log.jsonl": {
       "asof": null,
-      "last_check_date": "2026-07-31",
+      "last_check_date": "2026-08-03",
       "stalled_since": null
     }
   }

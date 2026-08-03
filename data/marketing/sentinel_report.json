@@ -1,245 +1,40 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-02T03:50:49Z",
-  "as_of": "2026-08-02",
+  "produced_at": "2026-08-03T03:33:30Z",
+  "as_of": "2026-08-03",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 154,
-    "passed": 135,
-    "quarantined": 19,
-    "quarantined_policy": 19,
+    "items": 8,
+    "passed": 6,
+    "quarantined": 2,
+    "quarantined_policy": 2,
     "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "near_dup": 18,
-    "ramp_theme_list": 1
+    "ramp_theme_list": 2
   },
   "quarantined": [
     {
-      "id": "post-kelly-037",
-      "account": "kelly",
-      "slot": "D2-S9",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "Call result",
+      "id": "post-theme-004",
+      "account": "meagan",
+      "slot": "D1-S14",
+      "type": "theme_list",
+      "cashtag": "$STKH",
+      "headline": "Agriculture & FoodTech selling off, -2.2% avg today",
       "class": "policy",
       "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-065",
-      "account": "kelly",
-      "slot": "D3-S9",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-066",
-      "account": "kelly",
-      "slot": "D3-S10",
-      "type": "watchlist",
-      "cashtag": "$TEAM",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-068",
-      "account": "kelly",
-      "slot": "D3-S12",
-      "type": "watchlist",
-      "cashtag": "$JBLU",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-073",
-      "account": "kelly",
-      "slot": "D3-S17",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-086",
-      "account": "kelly",
-      "slot": "D4-S2",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-091",
-      "account": "kelly",
-      "slot": "D4-S7",
-      "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-101",
-      "account": "kelly",
-      "slot": "D4-S17",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-108",
-      "account": "kelly",
-      "slot": "D4-S24",
-      "type": "watchlist",
-      "cashtag": "$CDW",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-109",
-      "account": "kelly",
-      "slot": "D4-S25",
-      "type": "watchlist",
-      "cashtag": "$TPR",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-114",
-      "account": "kelly",
-      "slot": "D5-S2",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-120",
-      "account": "kelly",
-      "slot": "D5-S8",
-      "type": "watchlist",
-      "cashtag": "$BDC",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-128",
-      "account": "kelly",
-      "slot": "D5-S16",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-144",
-      "account": "kelly",
-      "slot": "D6-S4",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-149",
-      "account": "kelly",
-      "slot": "D6-S9",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-165",
-      "account": "kelly",
-      "slot": "D6-S25",
-      "type": "watchlist",
-      "cashtag": "$TPR",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-171",
-      "account": "kelly",
-      "slot": "D7-S3",
-      "type": "watchlist",
-      "cashtag": "$ROST",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-kelly-182",
-      "account": "kelly",
-      "slot": "D7-S14",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "Call result",
-      "class": "policy",
-      "reasons": [
-        "near_dup:post-founder-051"
+        "ramp_theme_list"
       ]
     },
     {
       "id": "post-theme-005",
       "account": "kelly",
-      "slot": "D1-S1",
+      "slot": "D1-S2",
       "type": "theme_list",
       "cashtag": "$ETN",
       "headline": "Industrial Automation ripping, +1.9% avg today",
@@ -251,1090 +46,58 @@
   ],
   "passed": [
     {
-      "id": "post-flagship-033",
+      "id": "post-conf-flagship-004",
       "account": "flagship",
-      "slot": "D2-S5",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
+      "slot": "CONF-04",
+      "type": "signal",
+      "cashtag": "$PEG",
+      "headline": "$PEG just lined up a pattern we track."
     },
     {
-      "id": "post-flagship-048",
-      "account": "flagship",
-      "slot": "D2-S20",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-049",
-      "account": "flagship",
-      "slot": "D2-S21",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-050",
-      "account": "flagship",
-      "slot": "D2-S22",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-053",
-      "account": "flagship",
-      "slot": "D2-S25",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-054",
-      "account": "flagship",
-      "slot": "D2-S26",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-078",
-      "account": "flagship",
-      "slot": "D3-S22",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-095",
-      "account": "flagship",
-      "slot": "D4-S11",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-096",
-      "account": "flagship",
-      "slot": "D4-S12",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-101",
-      "account": "flagship",
-      "slot": "D4-S17",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-110",
-      "account": "flagship",
-      "slot": "D4-S26",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-111",
-      "account": "flagship",
-      "slot": "D4-S27",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-118",
-      "account": "flagship",
-      "slot": "D5-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-125",
-      "account": "flagship",
-      "slot": "D5-S13",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-128",
-      "account": "flagship",
-      "slot": "D5-S16",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-142",
-      "account": "flagship",
-      "slot": "D6-S2",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-152",
-      "account": "flagship",
-      "slot": "D6-S12",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-155",
-      "account": "flagship",
-      "slot": "D6-S15",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-162",
-      "account": "flagship",
-      "slot": "D6-S22",
-      "type": "watchlist",
-      "cashtag": "$KWR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-167",
-      "account": "flagship",
-      "slot": "D6-S27",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-170",
-      "account": "flagship",
-      "slot": "D7-S2",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-174",
-      "account": "flagship",
-      "slot": "D7-S6",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-flagship-175",
-      "account": "flagship",
-      "slot": "D7-S7",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "On my radar this week"
-    },
-    {
-      "id": "post-flagship-187",
-      "account": "flagship",
-      "slot": "D7-S19",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "How that call played out"
-    },
-    {
-      "id": "post-founder-007",
+      "id": "post-founder-004",
       "account": "founder",
-      "slot": "D1-S7",
-      "type": "watchlist",
-      "cashtag": "$CBOE",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-020",
-      "account": "founder",
-      "slot": "D1-S20",
-      "type": "watchlist",
-      "cashtag": "$HSY",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-051",
-      "account": "founder",
-      "slot": "D2-S23",
-      "type": "watchlist",
-      "cashtag": "$BDC",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-065",
-      "account": "founder",
-      "slot": "D3-S9",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-073",
-      "account": "founder",
-      "slot": "D3-S17",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-088",
-      "account": "founder",
-      "slot": "D4-S4",
-      "type": "watchlist",
-      "cashtag": "$HSY",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-090",
-      "account": "founder",
-      "slot": "D4-S6",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-100",
-      "account": "founder",
-      "slot": "D4-S16",
+      "slot": "D1-S4",
       "type": "watchlist",
       "cashtag": "$AVNT",
-      "headline": "Called it, here's the result"
+      "headline": ""
     },
     {
-      "id": "post-founder-108",
+      "id": "post-founder-012",
       "account": "founder",
-      "slot": "D4-S24",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-110",
-      "account": "founder",
-      "slot": "D4-S26",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-112",
-      "account": "founder",
-      "slot": "D4-S28",
-      "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-116",
-      "account": "founder",
-      "slot": "D5-S4",
-      "type": "watchlist",
-      "cashtag": "$HSY",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-117",
-      "account": "founder",
-      "slot": "D5-S5",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-120",
-      "account": "founder",
-      "slot": "D5-S8",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-124",
-      "account": "founder",
-      "slot": "D5-S12",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-146",
-      "account": "founder",
-      "slot": "D6-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-151",
-      "account": "founder",
-      "slot": "D6-S11",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-152",
-      "account": "founder",
-      "slot": "D6-S12",
-      "type": "watchlist",
-      "cashtag": "$BDC",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-164",
-      "account": "founder",
-      "slot": "D6-S24",
-      "type": "watchlist",
-      "cashtag": "$CBOE",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-174",
-      "account": "founder",
-      "slot": "D7-S6",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Called it, here's the result"
-    },
-    {
-      "id": "post-founder-188",
-      "account": "founder",
-      "slot": "D7-S20",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-founder-193",
-      "account": "founder",
-      "slot": "D7-S25",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching these right now"
-    },
-    {
-      "id": "post-meagan-006",
-      "account": "meagan",
-      "slot": "D1-S6",
-      "type": "macro",
+      "slot": "D1-S12",
+      "type": "event",
       "cashtag": "",
       "headline": ""
     },
     {
-      "id": "post-meagan-029",
-      "account": "meagan",
-      "slot": "D2-S1",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
+      "id": "post-mover-001",
+      "account": "founder",
+      "slot": "D1-S5",
+      "type": "mover",
+      "cashtag": "$GDDY",
+      "headline": "$GDDY -16.7% today"
     },
     {
-      "id": "post-meagan-040",
-      "account": "meagan",
-      "slot": "D2-S12",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-049",
-      "account": "meagan",
-      "slot": "D2-S21",
-      "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-051",
-      "account": "meagan",
-      "slot": "D2-S23",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-058",
-      "account": "meagan",
-      "slot": "D3-S2",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-061",
-      "account": "meagan",
-      "slot": "D3-S5",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-062",
-      "account": "meagan",
-      "slot": "D3-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-066",
-      "account": "meagan",
-      "slot": "D3-S10",
-      "type": "watchlist",
-      "cashtag": "$CDW",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-091",
-      "account": "meagan",
-      "slot": "D4-S7",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-096",
-      "account": "meagan",
-      "slot": "D4-S12",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-098",
-      "account": "meagan",
-      "slot": "D4-S14",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-102",
-      "account": "meagan",
-      "slot": "D4-S18",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-104",
-      "account": "meagan",
-      "slot": "D4-S20",
-      "type": "watchlist",
-      "cashtag": "$KWR",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-107",
-      "account": "meagan",
-      "slot": "D4-S23",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-108",
-      "account": "meagan",
-      "slot": "D4-S24",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-126",
-      "account": "meagan",
-      "slot": "D5-S14",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-128",
-      "account": "meagan",
-      "slot": "D5-S16",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-130",
-      "account": "meagan",
-      "slot": "D5-S18",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-146",
-      "account": "meagan",
-      "slot": "D6-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-153",
-      "account": "meagan",
-      "slot": "D6-S13",
-      "type": "watchlist",
-      "cashtag": "$BDC",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-158",
-      "account": "meagan",
-      "slot": "D6-S18",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-167",
-      "account": "meagan",
-      "slot": "D6-S27",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-meagan-170",
-      "account": "meagan",
-      "slot": "D7-S2",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-171",
-      "account": "meagan",
-      "slot": "D7-S3",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-175",
-      "account": "meagan",
-      "slot": "D7-S7",
-      "type": "watchlist",
-      "cashtag": "$ARLO",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-176",
-      "account": "meagan",
-      "slot": "D7-S8",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-180",
-      "account": "meagan",
-      "slot": "D7-S12",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "One result, posted flat"
-    },
-    {
-      "id": "post-meagan-183",
-      "account": "meagan",
-      "slot": "D7-S15",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "What earns a spot on a watch list"
-    },
-    {
-      "id": "post-sophia-030",
+      "id": "post-mover-002",
       "account": "sophia",
-      "slot": "D2-S2",
-      "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Did the rhyme hold?"
+      "slot": "D1-S2",
+      "type": "mover",
+      "cashtag": "$AMZN",
+      "headline": "$AMZN +15.3% today"
     },
     {
-      "id": "post-sophia-036",
-      "account": "sophia",
-      "slot": "D2-S8",
-      "type": "watchlist",
-      "cashtag": "$KWR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-054",
-      "account": "sophia",
-      "slot": "D2-S26",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-055",
-      "account": "sophia",
-      "slot": "D2-S27",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-057",
-      "account": "sophia",
-      "slot": "D3-S1",
-      "type": "watchlist",
-      "cashtag": "$KWR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-058",
-      "account": "sophia",
-      "slot": "D3-S2",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-072",
-      "account": "sophia",
-      "slot": "D3-S16",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-074",
-      "account": "sophia",
-      "slot": "D3-S18",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-080",
-      "account": "sophia",
-      "slot": "D3-S24",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-087",
-      "account": "sophia",
-      "slot": "D4-S3",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-090",
-      "account": "sophia",
-      "slot": "D4-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-091",
-      "account": "sophia",
-      "slot": "D4-S7",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-093",
-      "account": "sophia",
-      "slot": "D4-S9",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-097",
-      "account": "sophia",
-      "slot": "D4-S13",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-119",
-      "account": "sophia",
-      "slot": "D5-S7",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-128",
-      "account": "sophia",
-      "slot": "D5-S16",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-129",
-      "account": "sophia",
-      "slot": "D5-S17",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-132",
-      "account": "sophia",
-      "slot": "D5-S20",
-      "type": "watchlist",
-      "cashtag": "$SHOO",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-135",
-      "account": "sophia",
-      "slot": "D5-S23",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-143",
-      "account": "sophia",
-      "slot": "D6-S3",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-148",
-      "account": "sophia",
-      "slot": "D6-S8",
-      "type": "watchlist",
-      "cashtag": "$KWR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-154",
-      "account": "sophia",
-      "slot": "D6-S14",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-159",
-      "account": "sophia",
-      "slot": "D6-S19",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-166",
-      "account": "sophia",
-      "slot": "D6-S26",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-186",
-      "account": "sophia",
-      "slot": "D7-S18",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Patterns I'm watching"
-    },
-    {
-      "id": "post-sophia-187",
-      "account": "sophia",
-      "slot": "D7-S19",
-      "type": "watchlist",
-      "cashtag": "$CSR",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-sophia-189",
-      "account": "sophia",
-      "slot": "D7-S21",
-      "type": "watchlist",
-      "cashtag": "$LPG",
-      "headline": "Did the rhyme hold?"
-    },
-    {
-      "id": "post-kelly-031",
-      "account": "kelly",
-      "slot": "D2-S3",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-032",
-      "account": "kelly",
-      "slot": "D2-S4",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-053",
-      "account": "kelly",
-      "slot": "D2-S25",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-089",
-      "account": "kelly",
-      "slot": "D4-S5",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-112",
-      "account": "kelly",
-      "slot": "D4-S28",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-117",
-      "account": "kelly",
-      "slot": "D5-S5",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-123",
-      "account": "kelly",
-      "slot": "D5-S11",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-142",
-      "account": "kelly",
-      "slot": "D6-S2",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-146",
-      "account": "kelly",
-      "slot": "D6-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-148",
-      "account": "kelly",
-      "slot": "D6-S8",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-kelly-195",
-      "account": "kelly",
-      "slot": "D7-S27",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watching, no position"
-    },
-    {
-      "id": "post-cici-019",
+      "id": "post-cici-018",
       "account": "cici",
-      "slot": "D1-S19",
+      "slot": "D1-S18",
       "type": "watchlist",
-      "cashtag": "$MSFT",
+      "cashtag": "",
       "headline": ""
-    },
-    {
-      "id": "post-cici-042",
-      "account": "cici",
-      "slot": "D2-S14",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-045",
-      "account": "cici",
-      "slot": "D2-S17",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-048",
-      "account": "cici",
-      "slot": "D2-S20",
-      "type": "watchlist",
-      "cashtag": "$NSSC",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-062",
-      "account": "cici",
-      "slot": "D3-S6",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-067",
-      "account": "cici",
-      "slot": "D3-S11",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-080",
-      "account": "cici",
-      "slot": "D3-S24",
-      "type": "watchlist",
-      "cashtag": "$HSY",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-097",
-      "account": "cici",
-      "slot": "D4-S13",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-098",
-      "account": "cici",
-      "slot": "D4-S14",
-      "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-109",
-      "account": "cici",
-      "slot": "D4-S25",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-122",
-      "account": "cici",
-      "slot": "D5-S10",
-      "type": "watchlist",
-      "cashtag": "$HSY",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-129",
-      "account": "cici",
-      "slot": "D5-S17",
-      "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-134",
-      "account": "cici",
-      "slot": "D5-S22",
-      "type": "watchlist",
-      "cashtag": "$ROST",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-140",
-      "account": "cici",
-      "slot": "D5-S28",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-142",
-      "account": "cici",
-      "slot": "D6-S2",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-143",
-      "account": "cici",
-      "slot": "D6-S3",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-144",
-      "account": "cici",
-      "slot": "D6-S4",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-160",
-      "account": "cici",
-      "slot": "D6-S20",
-      "type": "watchlist",
-      "cashtag": "$NSSC",
-      "headline": "How the group read played out"
-    },
-    {
-      "id": "post-cici-170",
-      "account": "cici",
-      "slot": "D7-S2",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-171",
-      "account": "cici",
-      "slot": "D7-S3",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-182",
-      "account": "cici",
-      "slot": "D7-S14",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
-    },
-    {
-      "id": "post-cici-191",
-      "account": "cici",
-      "slot": "D7-S23",
-      "type": "watchlist",
-      "cashtag": "",
-      "headline": "Names in my group I'm watching"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 7981,
-      "hits": 18,
+      "pairs_checked": 12,
+      "hits": 0,
       "shared_media_hits": 0
     },
     "cadence": {
@@ -1359,7 +122,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 3,
+      "age_days": 4,
       "max": 7
     },
     "kill_switch": {
@@ -1370,7 +133,6 @@
         "research_a",
         "research_b",
         "research_c",
-        "mastermind_news",
         "mastermind_research"
       ]
     },
@@ -1389,7 +151,7 @@
     "ramp": {
       "enforced": true,
       "graduate_after_days": 56,
-      "as_of": "2026-08-02",
+      "as_of": "2026-08-03",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -1405,7 +167,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 9,
+          "age_days": 10,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1518,7 +280,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 6,
+          "age_days": 7,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1536,7 +298,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 5,
+          "age_days": 6,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1554,7 +316,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 5,
+          "age_days": 6,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1572,7 +334,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 5,
+          "age_days": 6,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1590,7 +352,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 5,
+          "age_days": 6,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -1607,10 +369,10 @@
           "overrides": {}
         },
         "mastermind_news": {
-          "created": null,
-          "age_days": null,
+          "created": "2026-08-02",
+          "age_days": 1,
           "tier": "weeks_1_2",
-          "enabled": false,
+          "enabled": true,
           "caps": {
             "max_posts_per_account_per_day": 10,
             "max_media_posts_per_account_per_day": 10,
@@ -1644,7 +406,7 @@
         }
       },
       "missing_created": [],
-      "theme_list_hits": 1
+      "theme_list_hits": 2
     }
   },
   "notes": []

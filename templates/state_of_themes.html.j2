@@ -15,8 +15,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>State of Themes — Market Intelligence</title>
-{% set seo_title = "State of Themes — Mastermind" %}{% set seo_desc = "The market's themes ranked by health — which stories are gaining money and breadth, which are early and under-owned, and which just tripped a break-rule. Updated nightly." %}{% set seo_path = "state_of_themes.html" %}
+<title>Theme Tracker — Market Intelligence</title>
+{# Display name follows the nav promise (_navlinks.html.j2 → 'Theme Tracker/主题追踪').
+   The SLUG stays state_of_themes.html — the SEO canonical (seo_path) and every
+   inbound link are stable; only the human-facing name moves. #}
+{% set seo_title = "Theme Tracker — Mastermind" %}{% set seo_desc = "The market's themes ranked by health — which stories are gaining money and breadth, which are early and under-owned, and which are losing support. Updated nightly." %}{% set seo_path = "state_of_themes.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -262,7 +265,7 @@ html[data-theme="dark"] body::before{
 
 {# ── HERO ── #}
 <header class="sot-hero">
-  <div class="sot-brand"><span class="gl">🗺️</span><span class="gn">{{ t('State of Themes', '主题态势') }}</span></div>
+  <div class="sot-brand"><span class="gl">🗺️</span><span class="gn">{{ t('Theme Tracker', '主题追踪') }}</span></div>
   <p class="sot-tag">{{ t('Which market stories are gaining money and breadth — and which just tripped a break-rule.', '哪些市场主题正在吸金、扩散——哪些刚刚触发否定条件。') }}</p>
   {% if n_themes and hero_en %}<div class="sot-verdict"><span class="l-en">{{ hero_en|safe }}</span><span class="l-zh">{{ hero_zh|safe }}</span></div>{% endif %}
   <div class="sot-asof"><span class="bdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>

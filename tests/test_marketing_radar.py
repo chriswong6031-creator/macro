@@ -1092,3 +1092,69 @@ def test_build_radar_end_to_end_live_rows_written(tmp_path):
     assert after_count > before_count, (
         "opportunities.jsonl should grow: live earnings/stage/prophet rows must be written"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# _feed_stage freshness gate (stale snapshot → empty feed + ONE annotation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_stage_parquet(r: Path, rows: dict) -> None:
+    d = r / "data" / "stage_analysis" / "backfill"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(d / "equitydesk_overview.parquet", index=False)
+
+
+def test_feed_stage_fresh_snapshot_serves_rows(tmp_path):
+    from engine.marketing.radar_internal import _feed_stage
+    _write_stage_parquet(tmp_path, {
+        "ticker": ["MSFT"], "region": ["USA"], "stage_flag": [2],
+        "stage_detailed": ["2X_fallback_bullish"], "sata_score": [85],
+        "weeks_in_stage": [4], "as_of_date": [_TODAY],
+    })
+    items = _feed_stage(tmp_path)
+    assert [i["ticker"] for i in items] == ["MSFT"]
+    assert items[0]["as_of"] == _TODAY
+
+
+def test_feed_stage_stale_snapshot_empties_feed_with_annotation(tmp_path, capsys):
+    from engine.marketing.radar_internal import _feed_stage
+    stale = (date.today() - timedelta(days=16)).isoformat()
+    _write_stage_parquet(tmp_path, {
+        "ticker": ["MSFT"], "region": ["USA"], "stage_flag": [2],
+        "stage_detailed": ["2X_fallback_bullish"], "sata_score": [85],
+        "weeks_in_stage": [4], "as_of_date": [stale],
+    })
+    assert _feed_stage(tmp_path) == []
+    out = capsys.readouterr().out
+    warn_lines = [l for l in out.splitlines() if "stage feed empty" in l]
+    assert len(warn_lines) == 1, f"expected exactly one annotation, got: {out!r}"
+    # Line-START law: GitHub drops a prefixed '::warning' silently.
+    assert warn_lines[0].startswith("::warning")
+    assert stale in warn_lines[0]
+
+
+def test_feed_stage_serves_only_newest_snapshot(tmp_path):
+    """Two retained snapshots: names present only in the OLD one must not leak."""
+    from engine.marketing.radar_internal import _feed_stage
+    prior = (date.today() - timedelta(days=1)).isoformat()
+    _write_stage_parquet(tmp_path, {
+        "ticker": ["NEW", "GONE"], "region": ["USA", "USA"],
+        "stage_flag": [2, 2],
+        "stage_detailed": ["2X_fallback_bullish", "2X_fallback_bullish"],
+        "sata_score": [80, 99], "weeks_in_stage": [3, 9],
+        "as_of_date": [_TODAY, prior],
+    })
+    items = _feed_stage(tmp_path)
+    assert [i["ticker"] for i in items] == ["NEW"]
+
+
+def test_feed_stage_unparseable_asof_fails_closed(tmp_path, capsys):
+    from engine.marketing.radar_internal import _feed_stage
+    _write_stage_parquet(tmp_path, {
+        "ticker": ["MSFT"], "region": ["USA"], "stage_flag": [2],
+        "stage_detailed": ["2X_fallback_bullish"], "sata_score": [85],
+        "weeks_in_stage": [4], "as_of_date": ["garbage"],
+    })
+    assert _feed_stage(tmp_path) == []
+    out = capsys.readouterr().out
+    assert any(l.startswith("::warning") for l in out.splitlines())

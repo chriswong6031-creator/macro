@@ -95,6 +95,11 @@ def run(
             "Run import_equitydesk_backfill first."
         )
     ov = pd.read_parquet(ov_path)
+    # Yardstick = the VENDOR seed rows only. The parquet also accrues nightly
+    # engine snapshots (source="stage_engine", stage_analysis.append_stage_snapshot);
+    # calibrating our engine against its own rows would be a self-comparison.
+    if "source" in ov.columns:
+        ov = ov[ov["source"].fillna("equitydesk_backfill") != "stage_engine"]
     # US names only, with a valid stage_flag and ticker
     us = ov[
         (ov["region"].str.upper() == "USA") &

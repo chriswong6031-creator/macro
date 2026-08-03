@@ -1292,11 +1292,41 @@ class TestTheFloorAdmitsMoreThanOneEventClass:
         assert base + _TIER_BONUS["wire"] >= self._floor()
 
     def test_volume_is_still_bounded_by_top_k_not_by_the_floor(self):
-        """Lowering the floor cannot flood the account: flagship_top_k_per_day
-        is what caps volume, and it is unchanged. The floor only decides WHICH
-        items compete for those slots."""
+        """Lowering the floor cannot flood a desk: the per-desk daily budget is
+        what caps volume, and the floor only decides WHICH items compete for
+        those slots.
+
+        THE ASSERTION USED TO BE `<= 3` AND THAT WAS A TIME BOMB. It pinned the
+        value the floor PR happened to leave in place as proof that the floor PR
+        raised no volume — but the budget is a volume cap, and W4d (masterplan
+        §8.2) was chartered to raise exactly it on measured evidence. A test that
+        pins the number a later ruling is expected to change does not guard the
+        separation it was written for; it just fails the day the ruling lands and
+        pressures the next reader to weaken something.
+
+        What this test actually protects is the SEPARATION: the budget must stay
+        a finite, positive, config-declared bound, and it must never be wide
+        enough to hand the wire a desk's entire day (the ramp cap is the
+        operator's declared daily volume, shared with the nightly ladder and the
+        publish-time lanes). Both of those survive any value W4d chooses.
+        """
+        import yaml
+
         cfg = _live_press_cfg()
-        assert int(cfg["wire"]["flagship_top_k_per_day"]) <= 3
+        mcfg = yaml.safe_load(
+            (ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+        from engine.marketing.press_lane import _resolve_top_k
+
+        top_k = _resolve_top_k(mcfg.get("breaking"), cfg.get("wire"))
+        assert isinstance(top_k, int) and top_k > 0, (
+            "the wire budget must be a finite positive bound, not absent or 0")
+        ramp_cap = (((mcfg.get("sentinel") or {}).get("ramp") or {})
+                    .get("account_overrides", {}).get("flagship", {})
+                    .get("max_posts_per_account_per_day"))
+        assert isinstance(ramp_cap, int) and top_k < ramp_cap, (
+            f"per-desk wire budget {top_k} is not below flagship's {ramp_cap}/day "
+            f"ramp cap — the wire would be licensed to spend a desk's whole day "
+            f"and leave the nightly ladder nowhere to post")
 
     def test_unclassified_noise_still_does_not_clear_it(self):
         """A live tick scores its `none`-class rows at 4.8-7.2. The floor must

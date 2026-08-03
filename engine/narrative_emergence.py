@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -95,16 +96,38 @@ def _attention_backdrop(root: Path) -> dict | None:
     }
 
 
+# Display de-registration (operator ruling 2026-07-27, #3821).  emerging_watch is LLM
+# prose printed VERBATIM to users by the Forming Narratives panel, so the scout's old
+# "Kill criterion: <condition>" framing reached a user-cycle surface.  The prompt no
+# longer asks for one (engine.thematic_desk), but briefs are regenerated on the gated
+# desk lane — days-old ai_desk_<region>.json files keep the old wording — so the read
+# path rewrites the LABEL into the sanctioned watching register.  The CONDITION text is
+# never touched, and the background tripwire semantics are unchanged: this is copy only.
+_WATCH_LABEL_RE = re.compile(r"\bkill[\s\-_]?criteri(?:on|a)\s*[:：]\s*|\bkill\s*[:：]\s*",
+                             re.IGNORECASE)
+_WATCH_NOUN_RE = re.compile(r"\bkill[\s\-_]?criteri(?:on|a)\b", re.IGNORECASE)
+WATCH_PREFIX_EN = "Watching for: "
+
+
+def _watch_register(txt: str) -> str:
+    """Swap falsifier-register framing in scout prose for the watching register.
+
+    Label form ("Kill criterion: X" / "Kill: X") becomes "Watching for: X"; a bare noun
+    phrase ("its kill criterion") becomes "watch condition".  Idempotent, and a no-op on
+    text that never carried the register."""
+    return _WATCH_NOUN_RE.sub("watch condition", _WATCH_LABEL_RE.sub(WATCH_PREFIX_EN, txt))
+
+
 def _ai_watch(root: Path, region: str) -> dict | None:
     """The AI thematic desk's ONE emerging_watch hypothesis for this market, if the (gated)
-    LLM layer ran. A graded, falsifiable WATCH — never a buy. None when the desk is off."""
+    LLM layer ran. A graded, checkable WATCH — never a buy. None when the desk is off."""
     b = _read_json(root / "site" / "allocationdata" / f"ai_desk_{region}.json")
     if not b:
         return None
     txt = b.get("emerging_watch")
     if not txt or not str(txt).strip():
         return None
-    return {"text": str(txt).strip(), "confidence": b.get("confidence"),
+    return {"text": _watch_register(str(txt).strip()), "confidence": b.get("confidence"),
             "as_of": b.get("state_asof") or b.get("generated_at")}
 
 

@@ -663,6 +663,14 @@ PUBLIC_EXACT = frozenset({
     # fetchable — that fetch IS the ownership check. No signals, no user data.
     "/88bb90b05303e3cf469878ebc4dc7543.txt",
     "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    # Stock Seasonality calendar clock (2026-08). Reviewed public deliberately:
+    # it is a marketing/SEO surface whose page, stylesheet and script carry only
+    # the seasonality sample view — no account state, no gated signal payload
+    # (the data itself is served from /seasonalitydata/, gated separately).
+    # Ratified here rather than only in config/site_access.yml, which is the
+    # whole point of this frozen set: widening the public boundary is an
+    # explicit, reviewed act, never a side effect of shipping a page.
+    "/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

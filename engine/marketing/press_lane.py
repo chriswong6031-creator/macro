@@ -29,11 +29,26 @@ Public API:
                    spool=False, llm_override=None) -> dict
         {emitted:[...], skipped:[...], digest:[...], blocked:[...]}
 
-State (daemon-local, gitignored — data/marketing/press/):
-    state["flagship_counter"] = {"day": "YYYY-MM-DD", "count": N}
+State (daemon-local, gitignored — data/marketing/press/; the Actions lane
+commits the same dict to data/marketing/press_wire/cursors.json):
+    state["flagship_counter"]  = {"day": "YYYY-MM-DD", "count": N}
+        the PRIMARY desk's row, kept for the committed-cursors contract
+    state["wire_day_counts"]   = {"day": "YYYY-MM-DD", "counts": {account: N}}
+        W4d: the per-desk daily wire budget ledger. Each desk draws its own
+        stricter-of(top-K, ramp cap) budget instead of sharing one counter that
+        was named for one account while bounding all of them.
+    state["wire_headroom"]     = {"day": ..., "spilled": {"a->b": N},
+                                  "exhausted": N}
+        W4d: the COUNTED drops. `exhausted` is items that cleared every quality
+        gate and were dropped only because no live wire desk had budget left.
+        Persisted, not local — a silent `continue` is how twelve nights of
+        mover posts disappeared. `spilled` counts ROUTING DECISIONS, not
+        emissions: an item can be handed to another desk here and still be
+        refused downstream by the story lock or the queue, which is why the
+        budget itself is charged at the emission, never here.
     state["transient_refusals"] = {emission_key: consecutive_env_refusals}
     (the seen-ledger + provider cursors live in the same state file, owned by the
-     daemon; this module only reads/advances the flagship counter, the
+     daemon; this module only reads/advances the counters above, the
      corroboration window and the transient-refusal retry tally.)
 """
 from __future__ import annotations
@@ -129,7 +144,46 @@ _TRANSIENT_RETRY_ALARM_AT = 3
 _TRANSIENT_TALLY_CAP = 500
 
 
-_DEFAULT_FLAGSHIP_TOP_K = 3
+#: Wire emissions allowed PER WIRE DESK PER DAY. A VOLUME CAP, not a quality
+#: gate — which item may go out is decided by `flagship_salience_floor`, the
+#: market-nexus test, the corroboration gate and the garbage gate, and none of
+#: those moved when this number did (W4d, 2026-08-02).
+#:
+#: WAS 3, AND 3 WAS NOT MEASURED. It is now, by replaying the real backlog —
+#: 438 live items polled from the six `breaking.sources` RSS feeds plus the two
+#: free Truth mirrors on 2026-08-02 — through this function in hourly ticks with
+#: the daemon's own clocks:
+#:
+#:   day        candidates  above-floor (cash-session clock)  emitted at K=3
+#:   2026-07-30      20            2                                2
+#:   2026-07-31      22            2                                2
+#:   2026-08-01      96            2                                0
+#:   2026-08-02      43            6                                1
+#:
+#: TWO THINGS THAT REPLAY SAYS, AND BOTH BELONG HERE. First, on most days the
+#: binding constraint is SUPPLY, not this counter: ~45% of the daily ingest is a
+#: mirror duplicate and nearly all of the rest scores under the 30.0 floor, so
+#: the lane emits 1-2/day with `flagship_top_k_reached` never once firing.
+#: Raising this number does not manufacture volume and must not be sold as
+#: though it does. Second, it DOES bind on the busy days — 2026-08-02 cleared 6
+#: above the floor off a PARTIAL day's 43 candidates, so K=3 would have dropped
+#: half of them, and it would have dropped them into a `continue` whose count
+#: nothing persisted.
+#:
+#: WHY 10. Bounded from above by flagship's own ramp cap: `sentinel.ramp.
+#: account_overrides.flagship.max_posts_per_account_per_day` is 20, and the wire
+#: must not be able to consume a desk's whole day — the nightly ladder and the
+#: publish-time lanes draw from the same 20. Half is the operator-legible split.
+#: Bounded from below by the measured supply: 10 covers the highest observed
+#: above-floor day (6) with headroom, and covers a full weekday extrapolated
+#: from 2026-08-02's 14% above-floor rate on ~95 candidates (~13) at ~75%.
+#: It is >3x the masterplan §8.0 per-account acceptance floor.
+#:
+#: PER DESK, NOT PER NETWORK (this is the fix to the XG-W2 TODO at step 5). The
+#: pre-W4d counter was global while being named for one account, so the moment
+#: mastermind_news armed it would have shared flagship's 3/day and the wire desk
+#: would have starved the flagship rather than adding to it.
+_DEFAULT_FLAGSHIP_TOP_K = 10
 _DEFAULT_FLAGSHIP_FLOOR = 70.0
 _DEFAULT_CORROBORATION_WINDOW_S = 1800
 
@@ -622,6 +676,143 @@ def _independent_source(item: dict) -> str:
         return independence_key(item)
     except Exception:  # noqa: BLE001
         return str(item.get("x_handle") or item.get("source") or "")
+
+
+def _resolve_top_k(breaking_cfg: dict | None, wire_cfg: dict | None) -> int:
+    """Daily wire budget per desk, from config, with the measured code default.
+
+    Precedence, highest first:
+
+        cfg["breaking"]["flagship_top_k_per_day"]        (config/marketing.yml)
+        press_cfg["wire"]["flagship_top_k_per_day"]      (config/press_sources.yml)
+        _DEFAULT_FLAGSHIP_TOP_K
+
+    TWO HOMES ON PURPOSE, AND THIS IS THE ORDER THAT MAKES THEM SAFE. The knob
+    has always lived under press_sources' `wire:` block, next to the salience
+    floor it is repeatedly confused with. Everything else that decides whether a
+    breaking item may go out — the salience threshold, the LLM lane, the garbage
+    gate, the sources themselves — lives in marketing.yml `breaking:`, which is
+    also where the desk roster and the routing table are. Adding the marketing.yml
+    key at HIGHER precedence lets the volume decision sit beside the desks it
+    governs without silently disowning a press_sources value an operator already
+    tuned: absent the new key, the old one still wins, and a checkout that sets
+    neither gets the measured default rather than the historical 3.
+
+    Junk in either place is IGNORED with a start-of-line annotation rather than
+    coerced — a mistyped cap that silently reads as 0 is a dark lane, and this
+    lane has been dark for reasons exactly that dull before.
+    """
+    for block, home in ((breaking_cfg, "breaking"), (wire_cfg, "wire")):
+        if not isinstance(block, dict) or "flagship_top_k_per_day" not in block:
+            continue
+        raw = block.get("flagship_top_k_per_day")
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            # BARE, line-start, flushed — a logger prefix makes GitHub drop it.
+            print(f"::warning title=press-lane-top-k-invalid::"
+                  f"{home}.flagship_top_k_per_day={raw!r} is not an integer — "
+                  f"ignoring it and falling through to the next source "
+                  f"(default {_DEFAULT_FLAGSHIP_TOP_K})", flush=True)
+            continue
+        if value < 0:
+            print(f"::warning title=press-lane-top-k-invalid::"
+                  f"{home}.flagship_top_k_per_day={value} is negative — ignoring "
+                  f"it (use 0 to stop the lane deliberately)", flush=True)
+            continue
+        return value
+    return _DEFAULT_FLAGSHIP_TOP_K
+
+
+def _ramp_post_caps(cfg: dict | None, now: datetime, root: Path) -> dict[str, int]:
+    """``{account: max_posts_per_account_per_day}`` from the sentinel ramp.
+
+    The wire's per-desk budget is the STRICTER of its own top-K and this, so a
+    cold desk cannot be handed a warmed desk's volume just because the wire is
+    the lane doing the handing. Press items are ``scheduled_at="immediate"`` and
+    an immediate item is exempt from the per-account daily cap downstream
+    (standing operator ruling, "breaking has no limits"), so this is the ONLY
+    place the ramp reaches them — and it reaches them as a CEILING, never as a
+    licence: an account absent from the map, or holding an unlimited cap, keeps
+    the plain top-K.
+
+    Never raises and never blocks: a ramp that cannot be resolved returns {} and
+    every desk falls back to the plain top-K, which is the pre-W4d behaviour.
+    """
+    try:
+        from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+
+        report = resolve_ramp(cfg if isinstance(cfg, dict) else {},
+                              _day_key(now), root=root, announce=False)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=press-lane-ramp-unavailable::"
+              f"{type(exc).__name__}: {exc} — wire desks fall back to the plain "
+              f"top-K budget", flush=True)
+        return {}
+    caps: dict[str, int] = {}
+    for acct, row in (report.get("accounts") or {}).items():
+        raw = (row.get("caps") or {}).get("max_posts_per_account_per_day")
+        if raw is None:          # config -1/"unlimited" — no ceiling to apply
+            continue
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value >= 0:
+            caps[str(acct)] = value
+    return caps
+
+
+#: (from, to) spill pairs already announced in THIS process. The daemon ticks
+#: every ~90s and a busy news day spills repeatedly; one line per pair is the
+#: operator's signal, 300 identical lines are noise that buries it.
+_WARNED_SPILL: set[tuple[str, str]] = set()
+
+
+def reset_spill_warnings() -> None:
+    """Clear the once-per-process spill announcement set (tests)."""
+    _WARNED_SPILL.clear()
+
+
+def _pick_spill_account(routed: str, *, pool: list[str], budgets: dict[str, int],
+                        counts: dict[str, int]) -> str:
+    """A live wire desk with headroom, or "" when the whole pool is spent.
+
+    Chooses the desk with the MOST remaining headroom so a busy day spreads
+    across the network instead of filling one desk and then the next — a
+    20-post/day flagship firehose is a worse product than a distributed wire,
+    which is the whole point of W4d. Ties break on account id so the choice is
+    reproducible run to run.
+
+    `pool` is wire_routing.spill_pool's answer, so a dark desk cannot appear
+    here: there is one liveness read in this lane and this is not a second one.
+    """
+    best = ""
+    best_room = 0
+    for acct in pool:
+        if acct == routed:
+            continue
+        room = int(budgets.get(acct, 0)) - int(counts.get(acct, 0))
+        if room > best_room:
+            best, best_room = acct, room
+    return best
+
+
+def _spill_pool(cfg: dict, root: Path) -> list[str]:
+    """Live wire-owning desks (wire_routing.spill_pool), fail-soft to none.
+
+    An empty pool is a valid answer and means "no spill target" — the routed
+    desk's own budget then bounds the lane exactly as it did before W4d.
+    """
+    try:
+        from engine.marketing.wire_routing import spill_pool  # noqa: PLC0415
+
+        return spill_pool(cfg, root=root)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=wire-spill-unavailable::{type(exc).__name__}: "
+              f"{exc} — surplus wire items have no spill target this tick",
+              flush=True)
+        return []
 
 
 def _route_account(scored: dict, *, cfg: dict, root: Path) -> str:
@@ -1301,7 +1492,7 @@ def run_press_tick(
     reset_media_host_stats()
     breaking_cfg = cfg.get("breaking", {}) if isinstance(cfg, dict) else {}
     wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
-    top_k = int(wire_cfg.get("flagship_top_k_per_day", _DEFAULT_FLAGSHIP_TOP_K))
+    top_k = _resolve_top_k(breaking_cfg, wire_cfg)
     floor = float(wire_cfg.get("flagship_salience_floor", _DEFAULT_FLAGSHIP_FLOOR))
     window_s = int(wire_cfg.get("corroboration_window_s", _DEFAULT_CORROBORATION_WINDOW_S))
     rail_floor = float(wire_cfg.get("rail_salience_floor", _DEFAULT_RAIL_FLOOR))
@@ -1331,11 +1522,58 @@ def run_press_tick(
     blocklist_lower = {s.lower() for s in ((press_cfg or {}).get("satire_blocklist") or [])}
     seen = set(seen_ids or set())
 
-    # Flagship daily counter (reset on day boundary).
-    counter = state.setdefault("flagship_counter", {"day": _day_key(now), "count": 0})
-    if counter.get("day") != _day_key(now):
-        counter["day"] = _day_key(now)
+    # ── PER-DESK daily wire budgets (W4d) ────────────────────────────────────
+    # `flagship_counter` is KEPT and still advanced for the routing default: the
+    # Actions lane commits it in cursors.json, and three tests in
+    # tests/test_marketing_press_wire.py assert it survives the state-ceiling
+    # trim. It is now a VIEW of the primary desk's row in `wire_day_counts`,
+    # not the network-wide budget it used to be — the old shape was a single
+    # counter named for one account while bounding all of them, which is the
+    # defect the XG-W2 TODO at step 5 recorded and W4d closes.
+    day = _day_key(now)
+    counter = state.setdefault("flagship_counter", {"day": day, "count": 0})
+    if counter.get("day") != day:
+        counter["day"] = day
         counter["count"] = 0
+
+    wire_counts_state = state.setdefault("wire_day_counts", {"day": day, "counts": {}})
+    if wire_counts_state.get("day") != day:
+        wire_counts_state["day"] = day
+        wire_counts_state["counts"] = {}
+    day_counts: dict = wire_counts_state.setdefault("counts", {})
+
+    # The live wire desks and their budgets, resolved ONCE per tick. Budget =
+    # stricter-of(top-K, the desk's ramp cap) — see _ramp_post_caps.
+    spill_targets = _spill_pool(cfg, root) if top_k > 0 else []
+    ramp_caps = _ramp_post_caps(cfg, now, root) if top_k > 0 else {}
+    primary_desk = _FALLBACK_ACCOUNT
+    try:
+        from engine.marketing.wire_routing import default_account  # noqa: PLC0415
+        primary_desk = default_account(cfg)
+    except Exception:  # noqa: BLE001
+        pass
+
+    def _budget(acct: str) -> int:
+        """This desk's wire budget for today."""
+        cap = ramp_caps.get(acct)
+        return top_k if cap is None else min(top_k, cap)
+
+    # HEADROOM CENSUS — a NAMED, PERSISTED counter, not a local dict that dies
+    # with the tick. save_cursors (scripts/marketing_press_wire.py) writes every
+    # non-underscore state key to the COMMITTED cursors.json, so a day that
+    # dropped surplus wire items leaves evidence in the repo rather than in a
+    # log line nobody folds. This is the same defect class as the mover bug that
+    # hid twelve nights of lost posts: a silent `continue` is not a decision, it
+    # is a leak.
+    census = state.setdefault("wire_headroom", {"day": day, "spilled": {},
+                                                "exhausted": 0})
+    if census.get("day") != day:
+        census["day"] = day
+        census["spilled"] = {}
+        census["exhausted"] = 0
+    census.setdefault("spilled", {})
+    census.setdefault("exhausted", 0)
+    exhausted_before = int(census.get("exhausted") or 0)
 
     # Transient-refusal retry tally: emission_key -> CONSECUTIVE refusals whose
     # reason is environmental (see _TRANSIENT_REFUSALS). Lives in daemon state
@@ -1597,9 +1835,9 @@ def run_press_tick(
                            "salience": s.get("salience"), "headline": s.get("headline")})
             continue
 
-        # 5. Flagship interim lane: top-K/day + salience floor.
+        # 5. Wire admission: salience floor, market nexus, per-desk daily budget.
         #
-        # ⚠ THIS COUNTER IS THE END-TO-END VOLUME BOUND ON THE WIRE RAIL.
+        # ⚠ THESE COUNTERS ARE THE END-TO-END VOLUME BOUND ON THE WIRE RAIL.
         # Trace the composition honestly: press items are emitted with
         # scheduled_at="immediate", and an immediate item is EXEMPT from the
         # per-account daily cap, the tier ramp, the global 10-minute floor
@@ -1617,10 +1855,13 @@ def run_press_tick(
         # cadence_resolver.exempt_immediate: false — one config flip, already
         # tested — not a new knob.
         #
-        # TODO(xg-w2-review): the top-K/day counter is global, keyed
-        # 'flagship_top_k_per_day', not per routed account — when mastermind_news
-        # arms, its wire volume shares this one 3/day budget; per-account
-        # counters are the XG-W2 follow-up before that arming.
+        # CLOSED (W4d, was TODO(xg-w2-review)): the budget is now PER ROUTED
+        # DESK, not one counter named for one account while bounding all of
+        # them. Under the old shape, arming mastermind_news would have made the
+        # wire desk share flagship's 3/day — the desk whose entire job is the
+        # wire would have SUBTRACTED from the flagship rather than adding to the
+        # network. Each desk now draws its own budget, stricter-of(top-K, its
+        # ramp cap), and surplus spills across desks instead of being dropped.
         if s.get("salience", 0.0) < floor:
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})
@@ -1654,14 +1895,62 @@ def run_press_tick(
                             "salience": s.get("salience"),
                             "event_class": s.get("event_class")})
             continue
-        if counter["count"] >= top_k:
-            skipped.append({"id": iid, "reason": "flagship_top_k_reached",
-                            "salience": s.get("salience")})
-            continue
-
         # 5b. ROUTE (XG-W2). Which account owns this wire class? Config, not a
         #     module constant — see engine/marketing/wire_routing.py.
+        #
+        # ROUTING NOW PRECEDES THE BUDGET CHECK (W4d) and that order is the
+        # feature: you cannot charge a desk's budget before you know which desk
+        # owns the item. The old order charged one global counter and then asked
+        # who it belonged to.
         account = _route_account(s, cfg=cfg, root=root)
+
+        # 5b-ii. PER-DESK BUDGET + CROSS-DESK SPILL.
+        #
+        # THE SURPLUS MOVES ACROSS THE NETWORK, NOT ONTO THE FLAGSHIP. Piling a
+        # busy day's whole wire onto one desk is a worse product than a
+        # distributed one, and the operator ruling that opened this budget said
+        # so explicitly. `_spill_pool` is wire_routing's DECLARED wire-desk
+        # roster resolved through the same liveness read `route` uses, so a dark
+        # desk can never be selected and a persona desk is never eligible (§4:
+        # wire accounts relay, they do not take stances).
+        #
+        # A spill is announced ONCE per (from, to) pair per process — the daemon
+        # ticks every ~90s and would otherwise bury the Actions summary in
+        # identical lines.
+        if int(day_counts.get(account, 0)) >= _budget(account):
+            spill = _pick_spill_account(account, pool=spill_targets,
+                                        budgets={a: _budget(a) for a in spill_targets},
+                                        counts=day_counts)
+            if not spill:
+                # COUNTED, NOT SILENT. The census below is persisted to the
+                # committed cursors.json; the reason string is unchanged so the
+                # existing skip taxonomy and its test keep meaning what they did.
+                census["exhausted"] = int(census.get("exhausted") or 0) + 1
+                skipped.append({
+                    "id": iid, "reason": "flagship_top_k_reached",
+                    "salience": s.get("salience"), "account": account,
+                    "detail": "every live wire desk has spent its daily budget: "
+                              + ", ".join(f"{a}={day_counts.get(a, 0)}/{_budget(a)}"
+                                          for a in (spill_targets or [account])),
+                })
+                continue
+            pair = (account, spill)
+            if pair not in _WARNED_SPILL:
+                _WARNED_SPILL.add(pair)
+                # BARE, line-start, flushed (house law): routed through a logger
+                # this module's format prefixes the line and GitHub drops the
+                # annotation silently. A desk publishing another desk's routed
+                # class is exactly what must not be silent.
+                print(f"::notice title=press-lane-wire-spill::{account!r} has "
+                      f"spent its daily wire budget ({_budget(account)}) — "
+                      f"surplus is routing to {spill!r} "
+                      f"({day_counts.get(spill, 0)}/{_budget(spill)} used). "
+                      f"Raise breaking.flagship_top_k_per_day, or point more "
+                      f"wire_routing.classes at the desk that should own them.",
+                      flush=True)
+            census["spilled"][f"{account}->{spill}"] = int(
+                census["spilled"].get(f"{account}->{spill}", 0)) + 1
+            account = spill
 
         # 5c. ONE CONVERSATION, ONE OWNER (charter §2 amendment 6). The story key
         #     reuses the lane's OWN claim identity (_corroboration_key), so the
@@ -1870,7 +2159,15 @@ def run_press_tick(
             skipped.append(_skip_row)
             continue
         transient_tries.pop(_emission_key(s), None)   # it shipped; streak over
-        counter["count"] = int(counter["count"]) + 1
+        # Charge the desk that actually took the item — the SPILL target when one
+        # was chosen, never the class's nominal owner. Charging the pre-spill
+        # account would leave the receiving desk's budget uncharged and let one
+        # busy day empty the whole pool through a single exhausted route.
+        day_counts[account] = int(day_counts.get(account, 0)) + 1
+        # `flagship_counter` is the primary desk's row, kept for the committed
+        # cursors.json contract (see the per-desk budget block above).
+        if account == primary_desk:
+            counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
         # dedupe skip. (There is no per-item outbox FILENAME any more — XG-W2
         # moved this lane onto items.jsonl/the daemon spool — but the feed id
@@ -2045,6 +2342,28 @@ def run_press_tick(
         for s in scored
         if should_row(str(s.get("id", "")))
     ]
+
+    # ── W4d headroom alarm ────────────────────────────────────────────────────
+    # A day that DROPPED admissible wire items for want of a desk is a volume
+    # decision the operator never made, and it used to happen through a bare
+    # `continue`. The running day total is persisted (state -> cursors.json); one
+    # line-start warning per TICK that dropped anything puts the same number in
+    # the Actions summary. Bare print, flushed: through a logger GitHub silently
+    # drops it, which is how five earlier annotations shipped dead.
+    #
+    # SILENT AT top_k=0, AND ONLY THERE. Zero is a deliberate stop, not a
+    # shortage, and a lane an operator switched off must not shout on all 288 of
+    # the day's runs — that is how a real alarm gets tuned out. The census still
+    # COUNTS the drops, so the evidence survives in cursors.json either way.
+    _dropped_this_tick = int(census.get("exhausted") or 0) - exhausted_before
+    if _dropped_this_tick > 0 and top_k > 0:
+        print(f"::warning title=press-lane-wire-headroom::{_dropped_this_tick} "
+              f"wire item(s) cleared every quality gate and were dropped for want "
+              f"of desk headroom (day total {census['exhausted']}). Budgets: "
+              + ", ".join(f"{a}={day_counts.get(a, 0)}/{_budget(a)}"
+                          for a in (spill_targets or [primary_desk]))
+              + ". Raise breaking.flagship_top_k_per_day, or arm another wire desk "
+                "in desk_network and point wire_routing.classes at it.", flush=True)
 
     return {
         "emitted": emitted,

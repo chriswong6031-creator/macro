@@ -93,19 +93,35 @@ def grade_board(
     prior_close: float | None = None,
     median_iv: float | None = None,
     band_mult: float = 1.96,
+    prior_bar: dict | None = None,
 ) -> dict:
     """Grade one ``levels.v1`` board against the next session's OHLC bar.
 
     next_bar = {date, open?, high, low, close}. prior_close = the board session's close
     (needed to know which side price approached a level from — the hold/break verdict is
     None without it). median_iv = the board's ATM IV for the expected-move band.
+    prior_bar = {high, low} of the BOARD session itself — enables the prior-day-extreme
+    null (R2.4b); the prevday block is None without it.
+
+    R2.4b nulls and intraday variants (all additive):
+      per node — ``null_touched``/``null_held``: the same touch/close-side-hold test run
+        on the strike MIRRORED across the board spot (2·spot − strike). Same distance,
+        no positioning information: the deterministic equidistant null. ``pierce_pct``:
+        how far beyond the level the session's extreme traded (approach side), in % of
+        spot, among touched nodes — the threshold-free intraday-hold read.
+      per board — ``wall_range_contained`` (the WHOLE next-session range stayed inside
+        the walls, stricter than the close test), ``band_close_contained`` (the close
+        stayed in the EM band, looser than the range test), and ``prevday``: the
+        prior-day high/low graded as pseudo-walls plus their containment rates — the
+        structural null every real level must beat.
 
     Returns a ``levels_grade.v1`` dict:
       { schema, root, session_date, next_date, reason, band_mult,
-        board: { spot, next_close, wall_contained, band_contained, anchor_drew, flip_pivot,
-                 range_pct, regime },
+        board: { spot, next_close, wall_contained, wall_range_contained, band_contained,
+                 band_close_contained, anchor_drew, flip_pivot, range_pct, regime,
+                 prevday },
         nodes: [ { level_id, role, strike, sticky, touched, held, broke,
-                   post_touch_move_pct } ] }
+                   post_touch_move_pct, null_touched, null_held, pierce_pct } ] }
     reason ∈ ok | empty_board | no_price_data. Never raises.
     """
     root = (levels_payload or {}).get("root")
@@ -167,11 +183,34 @@ def grade_board(
             # sticky None (undetermined dealer sign): leave hold/break unscored
         post = ((close - strike) / strike * 100.0) if (touched and strike) else None
 
+        # equidistant null: the strike mirrored across the board spot carries the same
+        # distance information and zero positioning information
+        null_touched: bool | None = None
+        null_held: bool | None = None
+        if spot is not None and spot > 0:
+            mirror = 2.0 * spot - strike
+            if mirror > 0:
+                null_touched = _touched(mirror, lo, hi)
+                if null_touched and pc is not None and role != "flip":
+                    null_held = _same_side(pc, close, mirror)
+
+        # intraday trade-through depth on the approach side, in % of spot
+        pierce: float | None = None
+        if touched and spot is not None and spot > 0 and pc is not None:
+            if pc < strike:
+                pierce = max(0.0, hi - strike) / spot * 100.0
+            elif pc > strike:
+                pierce = max(0.0, strike - lo) / spot * 100.0
+            else:
+                pierce = max(hi - strike, strike - lo, 0.0) / spot * 100.0
+
         out["nodes"].append({
             "level_id": level_id(root or "", session_date or "", role, strike, idx),
             "role": role, "strike": round(strike, 4), "sticky": sticky,
             "touched": touched, "held": held, "broke": broke,
             "post_touch_move_pct": (round(post, 4) if post is not None else None),
+            "null_touched": null_touched, "null_held": null_held,
+            "pierce_pct": (round(pierce, 4) if pierce is not None else None),
         })
 
         if role == "call_wall":
@@ -184,14 +223,37 @@ def grade_board(
             flip_pivot = flip_pivot or touched
 
     wall_contained: bool | None = None
+    wall_range_contained: bool | None = None
     if call_wall_strike is not None and put_wall_strike is not None:
         wlo, whi = sorted((put_wall_strike, call_wall_strike))
         wall_contained = wlo <= close <= whi
+        wall_range_contained = (wlo <= lo) and (hi <= whi)
 
     band = expected_move_band(spot, median_iv, band_mult)
     band_contained: bool | None = None
+    band_close_contained: bool | None = None
     if band is not None:
         band_contained = (lo >= band[0]) and (hi <= band[1])
+        band_close_contained = band[0] <= close <= band[1]
+
+    # prior-day extremes as pseudo-walls: the structural null (R2.4b)
+    pd_hi = _num((prior_bar or {}).get("high"))
+    pd_lo = _num((prior_bar or {}).get("low"))
+    prevday: dict | None = None
+    if pd_hi is not None and pd_lo is not None and pd_hi >= pd_lo:
+        def _null_level(lvl: float) -> tuple[bool, bool | None]:
+            t = _touched(lvl, lo, hi)
+            h = _same_side(pc, close, lvl) if (t and pc is not None) else None
+            return t, h
+        hi_t, hi_h = _null_level(pd_hi)
+        lo_t, lo_h = _null_level(pd_lo)
+        prevday = {
+            "high": round(pd_hi, 4), "low": round(pd_lo, 4),
+            "high_touched": hi_t, "high_held": hi_h,
+            "low_touched": lo_t, "low_held": lo_h,
+            "range_contained_close": pd_lo <= close <= pd_hi,
+            "range_contained_range": (lo >= pd_lo) and (hi <= pd_hi),
+        }
 
     out["board"] = {
         "spot": (round(spot, 4) if spot is not None else None),
@@ -199,12 +261,15 @@ def grade_board(
         "call_wall": (round(call_wall_strike, 4) if call_wall_strike is not None else None),
         "put_wall": (round(put_wall_strike, 4) if put_wall_strike is not None else None),
         "wall_contained": wall_contained,
+        "wall_range_contained": wall_range_contained,
         "band": ([round(band[0], 4), round(band[1], 4)] if band is not None else None),
         "band_contained": band_contained,
+        "band_close_contained": band_close_contained,
         "anchor_drew": anchor_drew,
         "flip_pivot": flip_pivot,
         "range_pct": (round((hi - lo) / spot * 100.0, 4) if spot else None),
         "regime": regime,
+        "prevday": prevday,
     }
     return out
 
@@ -251,12 +316,14 @@ def aggregate_track_record(grades: list[dict], ci_fn=None) -> dict:
     # collect nodes flat, carrying the board regime for the sticky/slippery split
     for role, (label, pred, only_touched) in role_verdict.items():
         pool = []
+        full = []  # unrestricted pool — the null pools must not condition on the REAL touch
         for g in grades:
             if g.get("reason") != "ok":
                 continue
             for nd in g.get("nodes", []):
                 if nd.get("role") != role:
                     continue
+                full.append(nd)
                 if only_touched and not nd.get("touched"):
                     continue
                 pool.append(nd)
@@ -266,22 +333,38 @@ def aggregate_track_record(grades: list[dict], ci_fn=None) -> dict:
         sl = [nd for nd in pool if nd.get("sticky") is False]
         moves = [nd["post_touch_move_pct"] for nd in pool
                  if nd.get("touched") and nd.get("post_touch_move_pct") is not None]
+        null_scored = [nd for nd in full if nd.get("null_held") is not None]
+        pierces = [nd["pierce_pct"] for nd in pool
+                   if nd.get("touched") and nd.get("pierce_pct") is not None]
         per_role[role] = {
             "label": label,
             **wrap(hits, n),
             "sticky": wrap(sum(1 for nd in st if pred(nd)), len(st)),
             "slippery": wrap(sum(1 for nd in sl if pred(nd)), len(sl)),
             "median_post_touch_move_pct": (round(_median(moves), 4) if moves else None),
+            # equidistant-mirror null, held on touch (close-side) — the bar a real level
+            # must clear before "held on touch" carries positioning information
+            "null_equidistant": wrap(sum(1 for nd in null_scored if nd.get("null_held")),
+                                     len(null_scored)),
+            "median_pierce_pct": (round(_median(pierces), 4) if pierces else None),
         }
 
     # board-level metrics
     ok = [g for g in grades if g.get("reason") == "ok"]
-    walls = [g for g in ok if g.get("board", {}).get("wall_contained") is not None]
-    wall_hits = sum(1 for g in walls if g["board"]["wall_contained"])
-    bands = [g for g in ok if g.get("board", {}).get("band_contained") is not None]
-    band_hits = sum(1 for g in bands if g["board"]["band_contained"])
+
+    def board_rate(field: str, sub: str | None = None) -> dict:
+        vals = []
+        for g in ok:
+            b = g.get("board", {})
+            v = (b.get(sub) or {}).get(field) if sub else b.get(field)
+            if v is not None:
+                vals.append(bool(v))
+        return wrap(sum(vals), len(vals))
+
+    wall_w = board_rate("wall_contained")
+    band_w = board_rate("band_contained")
     # walls verdict is board-level; expose it under a synthetic "walls" key too
-    per_role["walls"] = {"label": "close finished inside the walls", **wrap(wall_hits, len(walls))}
+    per_role["walls"] = {"label": "close finished inside the walls", **wall_w}
 
     reasons: dict[str, int] = {}
     for g in grades:
@@ -294,8 +377,17 @@ def aggregate_track_record(grades: list[dict], ci_fn=None) -> dict:
         "reasons": reasons,
         "per_role": per_role,
         "board": {
-            "band_contained": wrap(band_hits, len(bands)),
-            "wall_contained": wrap(wall_hits, len(walls)),
+            "band_contained": band_w,
+            "wall_contained": wall_w,
+            # R2.4b intraday variants + the prior-day structural null
+            "wall_range_contained": board_rate("wall_range_contained"),
+            "band_close_contained": board_rate("band_close_contained"),
+            "prevday": {
+                "high_held": board_rate("high_held", "prevday"),
+                "low_held": board_rate("low_held", "prevday"),
+                "range_contained_close": board_rate("range_contained_close", "prevday"),
+                "range_contained_range": board_rate("range_contained_range", "prevday"),
+            },
         },
     }
 

@@ -39,6 +39,7 @@ Coverage for engine.marketing.chart_render.render_breaking_card:
 """
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -77,8 +78,13 @@ def test_returns_wellformed_svg():
 
 def test_headline_present_escaped():
     svg = render_breaking_card(_CPI, "Reuters", "wire", "2026-07-19T14:32:00Z")
-    # A distinctive fragment of the headline survives into the SVG.
-    assert "hotter than" in svg
+    # STRONGER than the old "a fragment survives" check (which pinned the
+    # two words 'hotter than' and therefore pinned one particular line break):
+    # the wrapped hero must reconstruct the WHOLE headline, word for word.
+    # Rejoining the <text> lines is what actually proves nothing was dropped.
+    lines = re.findall(r'font-weight="800"[^>]*>([^<]*)</text>', svg)
+    hero = " ".join(lines).replace("&#39;", "'").replace("&amp;", "&")
+    assert _CPI in hero
     _parse(svg)
 
 

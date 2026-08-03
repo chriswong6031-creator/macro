@@ -3283,7 +3283,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     _seo_title = "MastermindX — Global Macro Regime & Market Cycle Intelligence"
     _seo_desc = ("MastermindX is a live macro dashboard tracking market regimes, sector "
                  "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
-                 "global markets — risk radar, signals and cycle clocks in one place.")
+                 "global markets.")
     _seo = (
         '<meta name="description" content="%s">\n'
         '<link rel="canonical" href="https://www.mastermind-x.com/start.html">\n'

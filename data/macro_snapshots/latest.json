@@ -1,6 +1,6 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-08-01",
+  "asof": "2026-08-02",
   "oldest_component_asof": "2026-07-31",
   "macro_context_id": "d46987a2d5195cc4",
   "labels": {
@@ -107,7 +107,7 @@
     "data/china_regime/latest.json": "2026-07-31",
     "data/hk_regime/latest.json": "2026-07-31",
     "data/canada_regime/latest.json": "2026-07-31",
-    "data/dispersion/regime.json": "2026-08-01",
+    "data/dispersion/regime.json": "2026-08-02",
     "data/intl_regime/AU_history.parquet": "2026-07-31",
     "data/intl_regime/EZ_history.parquet": "2026-07-31",
     "data/intl_regime/GB_history.parquet": "2026-07-31",

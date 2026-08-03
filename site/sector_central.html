@@ -57,9 +57,9 @@
 <link rel="preload" href="mm_charts.js?v=244eb769" as="script">
 <link rel="preload" href="sector_cycles.js?v=bc35b288" as="script">
 <link rel="prefetch" href="sector_cycles_series_data.js?v=bb310169" as="script">
-<link rel="prefetch" href="sector_cycles_narr_data.js?v=37c98e73" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js?v=0a9f953c" as="script">
 <link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
-<link rel="preload" href="sector_central_data.js?v=c29c6597" as="script">
+<link rel="preload" href="sector_central_data.js?v=338310d3" as="script">
 <link rel="stylesheet" href="assets/css/aa819f7b.css?v=aa819f7b">
 <link rel="stylesheet" href="assets/css/a98ac5b6.css?v=a98ac5b6">
 <link rel="stylesheet" href="macro-desk.css?v=b4966394">
@@ -82,8 +82,10 @@
 </head>
 <body class="macro-desk page-baskets">
 <div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
+
+
 <nav class="site-nav">
-    
+
 
 
     <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
@@ -302,13 +304,14 @@
   <script src="live_config.js?v=52943e92" defer></script>
   <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
-    <span class="mag">🔎</span>
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
@@ -1017,7 +1020,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-02 03:17 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-03 02:04 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js?v=46fc6953" defer></script>
@@ -1295,6 +1298,48 @@ function openTheme(id){ location.href='basket/'+encodeURIComponent(id)+'.html'; 
 function themeById(id){ return ((THEME&&THEME.themes)||[]).find(t=>t&&t.id===id)||null; }
 function relPct(t,win){ const p=t&&t.perf&&t.perf[win]; return (p&&p.rel!=null)?p.rel:null; }
 
+// ── Regime-sizing pill — inline US fork of renderRegimeSizing() ────────────────────────
+// Byte-identical to the copy in templates/baskets_desk.js; the pairing is pinned by
+// tests/test_regime_sizing_disclosure_parity.py. This page cannot load baskets_desk.js to
+// share the function: that file's top-level `const L` / `isZh()` redeclare this page's own
+// helpers (classic scripts share one global scope — a second `const L` is a parse-time
+// SyntaxError), so the two copies are a real structural fork — guarded, not collapsed.
+function renderRegimeSizing(){
+  const rs=THEME&&THEME.regime_sizing;
+  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm
+  const pct=Math.round((rs.gross_scalar||1)*100);
+  const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
+  const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
+  const factorsEn=[`volatility target ${mech}%`];
+  if(reg<100) factorsEn.push(`risk regime ${reg}%`);
+  if(sc<100) factorsEn.push(`signal mix ${sc}%`);
+  const factorsZh=[`波动率目标 ${mech}%`];
+  if(reg<100) factorsZh.push(`风险状态 ${reg}%`);
+  if(sc<100) factorsZh.push(`信号组合 ${sc}%`);
+  const regLblEn={'backwardation-stress':'stress in the volatility market','warning':'warning signs building'}[rs.regime]||'';
+  const regLblZh={'backwardation-stress':'波动率市场承压','warning':'风险信号增多'}[rs.regime]||'';
+  const cautionScored=!!(rs.caution_passport&&rs.caution_passport.verdict==='scored');
+  const shadow=Math.round((rs.regime_caution_shadow||1)*100);
+  const showNote=!cautionScored&&shadow<100&&!!regLblEn;
+  const noteEn=showNote?` | Note: that US reading is risk-off (${regLblEn}) and would suggest a further ×${shadow}% caution — but that caution has no measured edge, so it is shown for awareness only and does NOT reduce your positions.`:'';
+  const noteZh=showNote?` | 提示：该美国读数偏向避险（${regLblZh}），本会再施加约 ×${shadow}% 的审慎——但该审慎没有可测的优势，因此仅作提示，不会减少您的仓位。`:'';
+  const tipEn=`How it's set: ${factorsEn.join(' · ')} → ${pct}%`
+    +(demoted?` · ${demoted} theme(s) eased to hold-only`:'')
+    +` | Read from US volatility, applied on every market page. Volatile markets get smaller position sizes. This does not change the basket ranking.`
+    +noteEn;
+  const tipZh=`计算方式：${factorsZh.join(' · ')} → ${pct}%`
+    +(demoted?` · ${demoted}个主题降为仅持有`:'')
+    +` | 依据美国波动率读数，各市场页面同用此读数。波动加大时降低仓位；不改变篮子排序。`
+    +noteZh;
+  // Tier-2 receipt (mono line under the dashed perforation) — the sanctioned home for scope
+  // and sources, which are banned from the tip body. Only shown alongside the note it scopes.
+  const asof=(rs.caution_passport&&rs.caution_passport.validation&&rs.caution_passport.validation.asof)||'';
+  const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
+  const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
+  const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+}
+
 // ── Verdict hero enrichment (server renders the shell; JS fills counts + handoff perf) ──
 function renderVerdictHero(){
   const zh=isZh();
@@ -1556,7 +1601,7 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 </script>
 
 
-<script src="sector_central_data.js?v=c29c6597" defer></script>
+<script src="sector_central_data.js?v=338310d3" defer></script>
 <script>
 (function(){
   "use strict";
@@ -1961,5 +2006,6 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 })();
 </script>
 <script src="theme.js?v=402a51a2" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>
