@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -946,6 +947,13 @@ def test_press_items_inherit_the_same_account_near_dup_guard(tmp_path):
 # 7. Wire routing is config, not code
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: A root with no outbox. `route` weighs the account's rolling kind=breaking
+#: ceiling since W5 (`wire_volume.breaking`), and it defaults to the REPO root —
+#: so a rootless call here would read the committed queue and turn a routing
+#: assertion into a statement about how much the wire posted today.
+_NO_OUTBOX = Path(tempfile.mkdtemp(prefix="cadence-spine-empty-"))
+
+
 def test_routing_is_read_from_config():
     from engine.marketing.wire_routing import route
 
@@ -953,26 +961,55 @@ def test_routing_is_read_from_config():
                             "classes": {"macro_print": "mastermind_news"}},
            "desk_network": {"accounts": [{"id": "mastermind_news", "enabled": True},
                                          {"id": "flagship", "enabled": True}]}}
-    assert route("macro_print", cfg=cfg) == "mastermind_news"
-    assert route("company_news", cfg=cfg) == "flagship"      # unmapped → default
-    assert route("macro_print", cfg={}) == "flagship"        # no config → fallback
+    assert route("macro_print", cfg=cfg, root=_NO_OUTBOX) == "mastermind_news"
+    # unmapped → default
+    assert route("company_news", cfg=cfg, root=_NO_OUTBOX) == "flagship"
+    # no config → fallback
+    assert route("macro_print", cfg={}, root=_NO_OUTBOX) == "flagship"
 
 
-def test_routing_to_a_dark_account_falls_back_and_says_so(capsys):
-    """Liveness is not routing: a route onto a disabled desk falls back to the
-    default and prints a START-OF-LINE annotation (house law) so the operator
-    sees both the intent and the fact that it is not in force."""
-    from engine.marketing.wire_routing import route
+def test_routing_to_a_dark_account_PARKS_and_says_so(capsys):
+    """W5 (2026-08-03) INVERTED THIS TEST, on purpose.
+
+    It used to assert that a route onto a disabled desk "falls back to the
+    default". That fallback is what turned one desk_network switch into a
+    firehose on the brand account: the routing default IS the flagship, and a
+    wire desk carries relay volume by construction. Measured consequence — 11
+    kind=breaking items on flagship in one day, four of them from a single Fed
+    appearance inside an hour.
+
+    The item now PARKS on the desk that owns it (counted in
+    wire_routing.park_census, quarantined at dispatch with reason
+    account_disabled). What survives from the old test is the part that was
+    always right: the operator must SEE it, at the start of the line, because a
+    logger prefix makes GitHub drop the annotation entirely.
+    """
+    from engine.marketing.wire_routing import park_census, route
 
     cfg = {"wire_routing": {"default": "flagship",
                             "classes": {"macro_print": "mastermind_news"}},
            "desk_network": {"accounts": [{"id": "mastermind_news", "enabled": False},
                                          {"id": "flagship", "enabled": True}]}}
-    assert route("macro_print", cfg=cfg) == "flagship"
+    assert route("macro_print", cfg=cfg, root=_NO_OUTBOX) == "mastermind_news"
+    assert park_census() == {"mastermind_news": 1}
     out = capsys.readouterr().out
-    warn = [ln for ln in out.splitlines() if "wire-routing-dark" in ln]
+    warn = [ln for ln in out.splitlines() if "wire-routing-parked" in ln]
     assert warn, f"no annotation emitted: {out!r}"
     assert warn[0].startswith("::warning"), "annotation must start the line"
+
+
+def test_the_dark_redirect_is_still_available_but_must_be_asked_for(capsys):
+    """The pre-W5 behaviour is a config flip, not a code change — and the point
+    is that it now has to be requested rather than inherited."""
+    from engine.marketing.wire_routing import route
+
+    cfg = {"wire_routing": {"default": "flagship",
+                            "dark_desk": {"policy": "redirect"},
+                            "classes": {"macro_print": "mastermind_news"}},
+           "desk_network": {"accounts": [{"id": "mastermind_news", "enabled": False},
+                                         {"id": "flagship", "enabled": True}]}}
+    assert route("macro_print", cfg=cfg, root=_NO_OUTBOX) == "flagship"
+    assert "::warning title=wire-routing-dark::" in capsys.readouterr().out
 
 
 def test_committed_config_routes_every_class_to_a_live_account():
@@ -1144,21 +1181,32 @@ def test_a_refused_press_item_is_recorded_as_seen(tmp_path):
 
 
 def test_routing_falls_back_when_liveness_is_unknown(monkeypatch, capsys):
-    """MAJOR-3. The fail-soft was INVERTED: an unresolvable accounts model
-    returned an empty set, and `if live and …` read that as "no constraint",
-    letting a configured DARK account through — a silent widening in the one
-    failure mode where widening is least defensible."""
+    """MAJOR-3, as amended by W5. The original fail-soft was INVERTED: an
+    unresolvable accounts model returned an empty set, and `if live and …` read
+    that as "no constraint".
+
+    W5 changed which direction is safe. MAJOR-3's answer was "fall back to the
+    default", and the default IS the brand desk — so under a firehose that
+    answer donates a wire desk's whole output to @mastermindx001 on the strength
+    of an import failure. The configured owner now stands, and NOTHING is
+    announced or counted, because an import failure is not evidence about a
+    switch position. What is unchanged is the property MAJOR-3 actually
+    protects: an unresolvable accounts model must never read as "no constraint"
+    and quietly ARM a route that config never armed."""
     from engine.marketing import wire_routing as WR
 
     WR.reset_dark_route_warnings()
     monkeypatch.setattr(WR, "_enabled_accounts", lambda cfg, root: None)
     cfg = {"wire_routing": {"default": "flagship",
                             "classes": {"macro_print": "mastermind_news"}}}
-    assert WR.route("macro_print", cfg=cfg) == "flagship"
-    assert WR.routing_table(cfg) == {"macro_print": "flagship"}
-    out = capsys.readouterr().out
-    assert "wire-routing-dark" in out
-    assert out.splitlines()[0].startswith("::warning")
+    # W5: unknown liveness is STILL not evidence of darkness, so the class keeps
+    # its configured owner rather than being donated to the default — and
+    # nothing is announced, because there is nothing to report but an import
+    # failure. What MUST NOT happen either way is the silent widening MAJOR-3
+    # found: an unresolvable accounts model must never read as "no constraint".
+    assert WR.route("macro_print", cfg=cfg, root=_NO_OUTBOX) == "mastermind_news"
+    assert WR.routing_table(cfg) == {"macro_print": "mastermind_news"}
+    assert not WR.park_census(), "an import failure is not a park"
 
 
 def test_dark_route_warning_prints_once_per_account(capsys):
@@ -1173,11 +1221,14 @@ def test_dark_route_warning_prints_once_per_account(capsys):
            "desk_network": {"accounts": [{"id": "mastermind_news", "enabled": False},
                                          {"id": "flagship", "enabled": True}]}}
     for _ in range(5):
-        WR.route("macro_print", cfg=cfg)
-        WR.route("policy", cfg=cfg)
+        WR.route("macro_print", cfg=cfg, root=_NO_OUTBOX)
+        WR.route("policy", cfg=cfg, root=_NO_OUTBOX)
     warnings = [ln for ln in capsys.readouterr().out.splitlines()
-                if "wire-routing-dark" in ln]
+                if "wire-routing-parked" in ln]
     assert len(warnings) == 1, f"expected one warning per account, got {warnings}"
+    # Every one of the ten is still COUNTED. De-duplicating the ANNOUNCEMENT
+    # must not de-duplicate the evidence — that is how a leak becomes invisible.
+    assert WR.park_census() == {"mastermind_news": 10}
 
 
 def test_a_dead_item_does_not_block_a_live_desk(tmp_path):

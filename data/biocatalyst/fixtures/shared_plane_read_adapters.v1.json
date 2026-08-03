@@ -14,6 +14,7 @@
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/changes",
+        "/api/biocatalyst/v1/trials/change-tape",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/prospective-changes",
         "/api/biocatalyst/v1/trials/{nct_id}"
@@ -24,7 +25,8 @@
         "trial_protocol_projection.v1",
         "trial_peer_set.v1",
         "trial_history_read_model.v1",
-        "trial_prospective_change_read_model.v1"
+        "trial_prospective_change_read_model.v1",
+        "trial_change_tape_read_model.v1"
       ],
       "transport": "authenticated_site_full_private_no_store",
       "point_in_time_scope": "committed_current_public_generation",

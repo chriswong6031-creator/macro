@@ -377,6 +377,59 @@ def _emission_key(item: dict) -> str:
     return str(item.get("id", ""))
 
 
+class _NoStoryLedger:
+    """Null object for the story ledger — every item is its own story.
+
+    This is the PRE-D1 behaviour, and reaching it is a defect, not a mode: it is
+    what shipped four posts off one Fed appearance. It exists only so an import
+    error or a malformed `wire.story` config degrades the daemon to the old
+    behaviour with a loud annotation instead of taking the tick down, exactly as
+    the scoring brain degrades. `enabled=False` in config reaches the REAL ledger
+    (which then returns None from consider), never this.
+    """
+
+    enabled = False
+    tick_suppressed: dict = {}
+
+    def consider(self, item, *, now, item_id):   # noqa: D102, ARG002
+        return None
+
+    def claim(self, item, *, now, item_id):      # noqa: D102, ARG002
+        return None
+
+    def describe(self, item) -> dict:            # noqa: D102, ARG002
+        return {}
+
+    def warn(self) -> int:                       # noqa: D102
+        return 0
+
+    def prune(self, now) -> int:                 # noqa: D102, ARG002
+        return 0
+
+
+def _story_ledger(state: dict, *, wire_cfg: dict, now: datetime):
+    """Build the D1 story ledger over daemon state; degrade loudly, never raise.
+
+    Config home is `press_sources.yml wire.story` (every threshold has an in-code
+    default in wire_story._DEFAULTS, so a config-less checkout still collapses).
+    """
+    try:
+        from engine.marketing.wire_story import StoryLedger  # noqa: PLC0415
+
+        ledger = StoryLedger(state, cfg=(wire_cfg or {}).get("story", {}))
+        ledger.prune(now)
+        return ledger
+    except Exception as exc:  # noqa: BLE001
+        # BARE, line-start, flushed — through a logger this module's format
+        # prefixes the line and GitHub silently drops the annotation.
+        print(f"::warning title=press-lane-story-clustering-unavailable::"
+              f"{type(exc).__name__}: {exc} — story clustering is OFF for this "
+              f"tick, so one real-world event can post more than once (D1, the "
+              f"four-Williams-posts defect). Fix the wire.story config or the "
+              f"engine.marketing.wire_story import.", flush=True)
+        return _NoStoryLedger()
+
+
 def _strip_trailing_source_clause(summary: str, source_name: str, *aliases: str) -> str:
     """Remove a trailing '-- {name}' clause from a summary (m3).
 
@@ -1196,7 +1249,12 @@ def _emit_outbox_item(
     return item
 
 
-_RECENT_OPENERS_KEEP = 3   # per-account no-repeat window depth (only [-1] gates)
+# Per-account no-repeat window depth. THE WHOLE WINDOW GATES (2026-08-02): it
+# used to be recorded three deep and read one deep, so a batch could alternate
+# two hooks forever. wire_voice.select_opener now takes the least-recently-used
+# hook across this window, and the pools hold 4-6 entries, so a depth of 3 always
+# leaves the walk a genuinely fresh choice.
+_RECENT_OPENERS_KEEP = 3
 
 
 def _corroboration_chip(n_sources: int, corr_class: str) -> str:
@@ -1614,6 +1672,26 @@ def run_press_tick(
                if not _within_window(e.get("first_ts"), now, window_s)]:
         del corr[ck]
 
+    # ── ONE EVENT, ONE POST (D1) ──────────────────────────────────────────────
+    # THE DEFECT: `_emission_key` below collapses MIRRORS and nothing else, so
+    # four snap headlines off ONE John Williams appearance were four feed ids and
+    # therefore four posts on the brand account inside an hour (2026-08-02); two
+    # sub-prints of one Switzerland CPI release were two posts; and the same
+    # Williams sentence went out TWICE because one feed sent CAPS and another
+    # sent title case. Identity in this lane had no normalisation, no entity, no
+    # topic and no time window.
+    #
+    # `wire_story` supplies all four. It is CONSULTED IN THE EMISSION LOOP
+    # (step 5a-ii), not here at ingest, and the ordering is load-bearing: the
+    # loop runs over the SALIENCE-SORTED list, so a story's representative is its
+    # strongest member. Collapsing at ingest would hand the story to whichever
+    # member the poller happened to list first and let it starve a stronger
+    # sibling on every subsequent tick, deterministically.
+    #
+    # The ledger is CLAIMED at the emission itself (never at the reservation),
+    # so a representative the outbox later refuses leaves its story open.
+    story_ledger = _story_ledger(state, wire_cfg=wire_cfg, now=now)
+
     emitted: list[dict] = []
     skipped: list[dict] = []
     digest: list[dict] = []
@@ -1919,6 +1997,42 @@ def run_press_tick(
                             "salience": s.get("salience"),
                             "event_class": s.get("event_class")})
             continue
+
+        # 5a-ii. ONE EVENT, ONE POST (D1).
+        #
+        # "TWO FUCKING POSTS ON SWITZERLAND CPI" — operator, 2026-08-02, looking
+        # at four posts off one Fed appearance, two off one CPI release, and one
+        # sentence posted twice because two feeds disagreed about capitalisation.
+        # Everything above this line is a QUALITY gate: is this item worth
+        # posting. This is the first gate that asks whether the EVENT is already
+        # posted, which is a question no per-item score can answer.
+        #
+        # PLACEMENT, three constraints, all binding:
+        #   * AFTER the salience sort and after the floor/nexus gates, so the
+        #     member that carries a story is its strongest ADMISSIBLE member —
+        #     a below-floor sibling must never be able to claim a story and take
+        #     it down with it.
+        #   * BEFORE routing and the per-desk budget, so a suppressed item never
+        #     charges a desk, never triggers a spill notice and never appears in
+        #     the headroom census as a dropped item. It was not dropped for want
+        #     of headroom; it is the same story.
+        #   * BEFORE every LLM call (build_breaking_payload is below), which is
+        #     the whole economic argument: the four Williams posts each paid for
+        #     a summarize-with-citation call to restate a headline we had already
+        #     posted.
+        _dupe = story_ledger.consider(s, now=now, item_id=iid)
+        if _dupe is not None:
+            skipped.append({"id": iid, **_dupe, "salience": s.get("salience")})
+            if _dupe.get("settled"):
+                # SETTLED = the story ALREADY POSTED. Same discipline as the
+                # copy-refusal branch below: the answer is a stable property of
+                # what is already on the timeline, so re-ingesting this item on
+                # all 288 of today's remaining ticks would re-decide an outcome
+                # we know. A within-tick collapse is deliberately NOT settled —
+                # its carrier has not emitted yet and may still be refused.
+                seen.add(_emission_key(s))
+            continue
+
         # 5b. ROUTE (XG-W2). Which account owns this wire class? Config, not a
         #     module constant — see engine/marketing/wire_routing.py.
         #
@@ -2070,6 +2184,67 @@ def run_press_tick(
             else:
                 body = base_summary
 
+        # ── NO LINE MAY RESTATE ANOTHER (D2, live defect 2026-08-02) ──────────
+        # The post is `headline + blank line + body`, and `body` is a summary OF
+        # THAT HEADLINE by construction. On the keyless path it IS the headline:
+        # breaking_summary._deterministic_summary falls back to
+        # `{headline} -- {source_name}` whenever the packet has no usable
+        # body_snippet, so the post shipped the same sentence twice with an
+        # opener in front of the second copy —
+        #
+        #   Fed's Williams: central bank very committed to returning inflation
+        #   to 2%
+        #   / On the tape: Fed's Williams: central bank very committed to ...
+        #
+        # — four times inside one hour on the brand account. `wire_post_shape` is
+        # the gate: a line 2 that re-says line 1 and brings no number of its own
+        # REJECTS the two-line post, and the item ships as the SHORT FORM — the
+        # headline plus the citation clause, one line, which is what a real wire
+        # desk posts and what one line cannot restate.
+        #
+        # IT RUNS HERE, BEFORE THE CLAMP AND BEFORE THE RAIL RECORD, because both
+        # surfaces carried the duplicate: `emitted_bodies` feeds news.html, and a
+        # gate that only cleaned the X text would have left the restatement on
+        # the site.
+        #
+        # FAIL-CLOSED, unlike every other soft layer on this path. The voice pass
+        # above may decline because a missing opener costs nothing; this one
+        # decides whether the post is a duplicate of itself, so a gate that
+        # raised and let the two-line form through would re-open the defect
+        # exactly. An unexpected failure degrades to the short form — always
+        # compliant — and says so out loud rather than passing quietly.
+        try:
+            from engine.marketing import wire_format as _wf_shape  # noqa: PLC0415
+            _shape = _wf_shape.wire_post_shape(
+                headline, body, opener=opener, attribution=attribution,
+                tape_stamp=tape_stamp,
+            )
+        except Exception as exc:  # noqa: BLE001
+            print("::warning title=press-lane-restatement-gate::"
+                  f"{iid}: {type(exc).__name__}: {exc} — degrading to the short "
+                  "form (one line cannot restate another)", flush=True)
+            _one_line = f"{headline} -- {attribution}" if attribution else headline
+            _shape = {"shape": "short_form", "headline": "", "body": _one_line,
+                      "reason": "restatement gate unavailable", "coverage": 1.0}
+
+        if _shape["shape"] == "short_form":
+            body = _shape["body"]
+            # THE OPENER NEVER SHIPPED, so it must not sit in the account's
+            # no-repeat window pretending it did. That window is the only thing
+            # stopping two consecutive posts from sharing a hook, and a phantom
+            # entry makes the NEXT post dodge a hook the timeline never saw —
+            # which is variety spent on nothing. _apply_wire_voice appends the
+            # chosen opener as the newest entry, so the newest entry is the one
+            # to take back.
+            if opener:
+                _acct_recent = recent_openers_state.get(account)
+                if _acct_recent and _acct_recent[-1] == opener:
+                    _acct_recent.pop()
+                opener = ""
+            print("::notice title=press-lane-short-form::"
+                  f"{iid}: {_shape['reason']} — posting the headline alone",
+                  flush=True)
+
         provenance = {
             **payload.get("provenance", {}),
             "corroboration_class": s.get("corroboration_class", "hearsay"),
@@ -2091,6 +2266,19 @@ def run_press_tick(
             # items.jsonl is read on every publisher pass. MARKETING-INTERNAL:
             # provenance never reaches a post body or a user-facing surface.
             "scoring": _scoring_provenance(s),
+            # D1: the story this post CLAIMS. Its suppressed siblings name the
+            # same key in their skip rows (`merged_into` points back at this
+            # item's id), so a collapse is joinable from either end. A lane that
+            # silently eats stories is the same class of defect as one that
+            # sprays them — this is the half that makes the eating auditable.
+            "wire_story": story_ledger.describe(s),
+            # D2: which SHAPE this post took and why. "short_form" means the
+            # restatement gate refused the two-line form, and `post_shape_reason`
+            # names the leg — the census that tells an operator whether the wire
+            # is short because its packets are thin (expected) or because the
+            # summarizer regressed into rephrasing headlines (not).
+            "post_shape": _shape["shape"],
+            "post_shape_reason": _shape["reason"],
         }
 
         # ── M1 platform clamp ─────────────────────────────────────────────────
@@ -2100,7 +2288,14 @@ def run_press_tick(
         # once. The clamp decides what X gets; `body` (full length) is what the
         # rail keeps, which is why this is computed here and not inside the
         # voice pass.
-        _clamp = _clamp_for_x(headline, body, attribution=attribution,
+        #
+        # THE HEADLINE COMES FROM THE SHAPE DECISION, NOT FROM `headline` (D2).
+        # `clamp_for_x` joins the non-empty parts with a blank line, so passing
+        # the headline here is exactly how the duplicate reached the timeline; in
+        # the short form the shape returns "" and the headline travels inside the
+        # single line instead. The item still CARRIES `headline` as its own field
+        # for the rail and the admin preview — only the joined POST text changes.
+        _clamp = _clamp_for_x(_shape["headline"], body, attribution=attribution,
                               tape_stamp=tape_stamp)
         if not _clamp["text"]:
             print("::warning title=press-lane-over-x-budget::"
@@ -2211,6 +2406,15 @@ def run_press_tick(
             skipped.append(_skip_row)
             continue
         transient_tries.pop(_emission_key(s), None)   # it shipped; streak over
+        # D1 FIRST-WINS, CLAIMED AT THE EMISSION AND NOWHERE EARLIER. Everything
+        # between the reservation in step 5a-ii and this line can still refuse
+        # the item (story lock, copy properties, the outbox's own dedupe), and a
+        # story claimed by a post that never went out is a story deleted. The
+        # ruling itself — first-wins, never supersede-by-a-bigger-sibling — is
+        # argued in engine/marketing/wire_story.py's module docstring; the short
+        # version is that superseding an ALREADY-POSTED item means retracting it,
+        # and this repo's one delete path deleted a post it should have retried.
+        story_ledger.claim(s, now=now, item_id=iid)
         # Charge the desk that actually took the item — the SPILL target when one
         # was chosen, never the class's nominal owner. Charging the pre-spill
         # account would leave the receiving desk's budget uncharged and let one
@@ -2394,6 +2598,15 @@ def run_press_tick(
         for s in scored
         if should_row(str(s.get("id", "")))
     ]
+
+    # ── D1 story-collapse alarm ───────────────────────────────────────────────
+    # NEVER LET A SUPPRESSED ITEM VANISH UNCOUNTED. One line-start ::warning per
+    # story key collapsed this tick, plus a persisted per-key day census in
+    # state["wire_story_suppressed"] which save_cursors commits to cursors.json
+    # (every non-underscore state key). This lane lost twelve nights of mover
+    # posts to a bare `continue` that counted nothing; the fix for spraying one
+    # event across four posts must not be a silent version of the same bug.
+    story_ledger.warn()
 
     # ── W4d headroom alarm ────────────────────────────────────────────────────
     # A day that DROPPED admissible wire items for want of a desk is a volume
