@@ -60,7 +60,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install control-plane dependencies
-        run: pip install pytest pyyaml pandas numpy pyarrow jinja2 requests
+        # Every command below is static/manifest analysis; none imports the
+        # product data stack. Keep the circuit breaker cheap enough to run after
+        # every source merge instead of recreating the full CI bottleneck here.
+        run: pip install pytest pyyaml
       - name: workflow grammar selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: every workflow must parse
