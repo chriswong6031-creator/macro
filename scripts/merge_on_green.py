@@ -19,10 +19,20 @@ Every GitHub-native fix is structurally unavailable on this account:
     (verified PR #3889, 2026-07-28 — merged ~1 min after arming, packs pending).
 
 So the release valve is account-side: a session arms its PR with the
-`merge-on-green` label and stops; this sweeper runs every 10 minutes on
-GitHub-hosted infrastructure and performs the merge the session would otherwise
-have sat there waiting to perform. The discipline is unchanged — nothing merges
-until every check has CONCLUDED clean — only the waiting moved off the session.
+`merge-on-green` label and stops; this sweeper wakes when `ci`, `fences`, or the
+source-main `integration-baseline` concludes, with a ten-minute cron retained as
+a recovery net. It performs the merge the session would otherwise have sat there
+waiting to perform. The discipline is unchanged — nothing merges until every
+check has CONCLUDED clean — only the waiting moved off the session.
+
+MAIN-RED CIRCUIT BREAKER. PR checks prove a head against the base GitHub gave it;
+they do not prove that the rapidly moving source main remains healthy after later
+merges. `integration-baseline.yml` publishes one fast verdict for each source or
+control-plane descendant on main. This sweeper reads the latest run before it
+looks at PRs. Pending, red, missing, or non-ancestral baseline evidence pauses
+ordinary merges. Exactly one explicitly labelled `main-red-repair` PR may be
+considered per sweep, and it still needs every one of its own checks green. That
+is the escape hatch which prevents a circuit breaker from deadlocking its repair.
 
 TOKENS. Reads use `READ_TOKEN` (in Actions the job's own `GITHUB_TOKEN`, whose
 per-repository quota is separate from the shared account pool that
@@ -61,6 +71,8 @@ from typing import Any
 GITHUB_API = "https://api.github.com"
 MERGE_ON_GREEN_LABEL = "merge-on-green"
 MERGE_BLOCKED_LABEL = "merge-blocked"
+MAIN_RED_REPAIR_LABEL = "main-red-repair"
+BASELINE_WORKFLOW = "integration-baseline.yml"
 # The conclusions that count as "this check did not fail". `neutral` and
 # `skipped` are the shapes a path-filtered or deliberately-inert job publishes.
 CLEAN_CONCLUSIONS = {"success", "neutral", "skipped"}
@@ -212,6 +224,64 @@ def labeled_pulls(repo: str, token: str) -> list[dict[str, Any]]:
     if status >= 400 or not isinstance(payload, list):
         raise RuntimeError(f"pull-request listing failed: HTTP {status}")
     return [pull for pull in payload if MERGE_ON_GREEN_LABEL in label_names(pull)]
+
+
+def integration_baseline_state(repo: str, token: str) -> tuple[str, str]:
+    """Return ``(state, detail)`` for the newest source-main baseline proof.
+
+    States are ``green``, ``pending``, ``red``, or ``unproven``. Only ``green``
+    admits ordinary pull requests. The latest run's SHA must be an ancestor of
+    current main: a successful proof from an abandoned history is not evidence.
+
+    Data/site-only commits intentionally do not trigger the baseline workflow.
+    Their current-main descendants therefore accept the latest source proof when
+    GitHub's compare endpoint confirms ancestry.
+    """
+    workflow = urllib.parse.quote(BASELINE_WORKFLOW, safe="")
+    query = urllib.parse.urlencode({"branch": "main", "per_page": "1"})
+    status, payload = _request(
+        "GET",
+        f"{GITHUB_API}/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+        token,
+    )
+    if status >= 400 or not isinstance(payload, dict):
+        raise RuntimeError(f"integration-baseline listing failed: HTTP {status}")
+    runs = payload.get("workflow_runs") or []
+    if not runs:
+        return "unproven", "integration-baseline has not published a run"
+
+    run = runs[0]
+    run_status = str(run.get("status") or "").lower()
+    conclusion = str(run.get("conclusion") or "").lower()
+    run_sha = str(run.get("head_sha") or "")
+    run_url = str(run.get("html_url") or "")
+    detail = f"{run_sha[:12] or 'unknown-sha'} {run_url}".strip()
+    if run_status != "completed":
+        return "pending", detail
+
+    ref_status, ref_payload = _request(
+        "GET", f"{GITHUB_API}/repos/{repo}/git/ref/heads/main", token
+    )
+    if ref_status >= 400 or not isinstance(ref_payload, dict):
+        raise RuntimeError(f"main ref lookup failed: HTTP {ref_status}")
+    main_sha = str(((ref_payload.get("object") or {}).get("sha")) or "")
+    if not run_sha or not main_sha:
+        return "unproven", f"baseline/main SHA missing ({detail})"
+
+    if run_sha != main_sha:
+        compare_status, compare_payload = _request(
+            "GET", f"{GITHUB_API}/repos/{repo}/compare/{run_sha}...{main_sha}", token
+        )
+        relation = str((compare_payload or {}).get("status") or "")
+        if compare_status >= 400 or relation not in {"ahead", "identical"}:
+            return "unproven", (
+                f"baseline {run_sha[:12]} is not proven ancestral to main "
+                f"{main_sha[:12]} (HTTP {compare_status}, {relation or 'unknown'})"
+            )
+
+    if conclusion in CLEAN_CONCLUSIONS:
+        return "green", detail
+    return "red", f"{conclusion or 'missing conclusion'} at {detail}"
 
 
 def mark_blocked(repo: str, pull: dict[str, Any], message: str, token: str) -> bool:
@@ -438,8 +508,44 @@ def main() -> int:
         print(f"No open pull requests labeled {MERGE_ON_GREEN_LABEL}.", flush=True)
         return 0
 
+    try:
+        baseline_state, baseline_detail = integration_baseline_state(repo, read_token)
+    except Exception as exc:
+        # Fail closed. An unavailable circuit breaker must never silently become
+        # permission to merge; the schedule/workflow_run recovery will retry.
+        _annotate(
+            "error",
+            "merge-on-green",
+            f"Could not establish integration-baseline state: {exc}; no PRs swept.",
+        )
+        return 1
+
+    if baseline_state != "green":
+        _annotate(
+            "warning",
+            "main-red circuit breaker",
+            f"integration-baseline is {baseline_state} ({baseline_detail}). Ordinary "
+            f"merges are paused; one `{MAIN_RED_REPAIR_LABEL}` PR may be considered.",
+        )
+
     tally: dict[str, int] = {}
+    repair_slot_used = False
     for pull in pulls:
+        if baseline_state != "green":
+            is_repair = MAIN_RED_REPAIR_LABEL in label_names(pull)
+            if not is_repair or repair_slot_used:
+                number = pull.get("number")
+                print(
+                    f"PR #{number}: source main baseline is {baseline_state}; "
+                    "leaving it armed behind the circuit breaker.",
+                    flush=True,
+                )
+                verdict = "baseline-blocked"
+                tally[verdict] = tally.get(verdict, 0) + 1
+                continue
+            # At most one repair candidate per pass. Even two individually green
+            # repairs have not been jointly proven against the broken baseline.
+            repair_slot_used = True
         try:
             verdict = sweep_pull(repo, pull, read_token, merge_token)
         except Exception as exc:

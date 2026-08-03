@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOCKUP — etfs.html anonymous tier-preview (W2)</title>
+<style>
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --bg:#0f1115; --panel:#181b21; --line:#2a2f3a;
+  --ink:#e8edf4; --text:#d7dce3; --muted:#8b93a1; --faint:#6b7280;
+  --link:#7aa7e0;
+  --up:#1FA971; --down:#e06464;
+  --surface: color-mix(in srgb, var(--panel) 80%, transparent);
+  --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
+  --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44),
+                    inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent);
+}
+/* 红涨绿跌 — flip the direction inks under 中文 (theme.css:138). */
+html[data-lang="zh"]{ --up:#e06464; --down:#1FA971; }
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.up{color:var(--up)} .dn{color:var(--down)}
+
+/* mockup chrome */
+.mockbar{max-width:1180px;margin:16px auto 22px;padding:11px 16px;border-radius:12px;display:flex;
+  align-items:center;justify-content:space-between;gap:14px;
+  background:color-mix(in srgb,#f0b429 9%,transparent);border:1px solid color-mix(in srgb,#f0b429 30%,transparent);
+  color:#f0b429;font-size:12px;font-weight:700}
+.mockbar code{font-family:var(--font-num);font-size:11.5px}
+.langbtn{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:9px;
+  padding:6px 13px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+
+/* hero */
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:0 0 5px;display:flex;
+  align-items:baseline;gap:11px;flex-wrap:wrap}
+h1 .tag{font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:0}
+.stance-line{font-size:16px;line-height:1.5;color:var(--ink);font-weight:600;margin:12px 0 9px;max-width:760px}
+.stance-line .st{color:var(--up)}
+.asof{font-size:11.5px;color:var(--faint);margin-bottom:18px}
+.asof b{color:var(--muted);font-family:var(--font-num);font-weight:700}
+.tiles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
+.t3{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+  border-top:2px solid var(--line)}
+.t3.a{border-top-color:var(--link)} .t3.b{border-top-color:#8b5cf6} .t3.c{border-top-color:var(--up)}
+.t3 .k{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:7px}
+.t3 .v{font-size:25px;font-weight:800;color:var(--ink);font-family:var(--font-num);line-height:1.1;
+  letter-spacing:-.02em}
+.t3 .m{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+
+/* section chrome */
+.sec{margin-bottom:34px}
+.sec h2{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
+  margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.sec h2::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--link);flex:none}
+.sec .lede{font-size:12.5px;color:var(--muted);margin:0 0 14px;max-width:760px;line-height:1.55}
+.gate-pill{padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  color:#8b5cf6;background:color-mix(in srgb,#8b5cf6 13%,transparent);
+  border:1px solid color-mix(in srgb,#8b5cf6 34%,transparent)}
+
+/* skeletons */
+@keyframes gh-pulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.gh{border-radius:6px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 45%,transparent));
+  animation:gh-pulse 2.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.gh{animation:none}}
+.cb-ghosts{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.cbg-hd{display:grid;grid-template-columns:34px 1.7fr 1fr 1.5fr 1.05fr;gap:14px;padding:10px 16px;
+  border-bottom:1px solid var(--line);font-size:9.5px;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+.cbg-row{display:grid;grid-template-columns:34px 1.7fr 1fr 1.5fr 1.05fr;gap:14px;padding:13px 16px;
+  align-items:center;border-bottom:1px solid color-mix(in srgb,var(--text) 6%,transparent)}
+.cbg-row:last-child{border-bottom:0}
+.gh-rank{width:15px;height:12px}
+.gh-tkr{width:48px;height:12px;margin-bottom:6px}
+.gh-nm{width:78%;height:9px}
+.gh-dots{width:66px;height:10px}
+.gh-bar{width:100%;height:9px}
+.gh-pill{width:96px;height:20px;border-radius:999px}
+
+/* gate note */
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+
+/* tier wall */
+.tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
+.tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tw-ghost{border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--panel) 55%,transparent);
+  padding:18px 20px}
+.tw-ghost .g1{width:64px;height:14px;margin-bottom:11px}
+.tw-ghost .g2{width:70%;height:10px;margin-bottom:8px}
+.tw-ghost .g3{width:38%;height:10px}
+.tw-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94%);text-align:center;
+  padding:30px 30px 26px;border-radius:20px;background:var(--surface);border:1px solid var(--surface-brd);
+  box-shadow:var(--surface-shadow);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.tw-lock{width:28px;height:28px;color:#8b5cf6;margin-bottom:12px}
+.tw-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.25;margin-bottom:9px}
+.tw-p{font-size:13px;line-height:1.6;color:var(--muted);max-width:450px;margin:0 auto 18px}
+.tw-acts{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 26px;border-radius:12px;
+  text-decoration:none;font-size:13.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--link),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent)}
+.tw-note{font-size:11px;color:var(--faint)}
+.tw-signed{margin-top:12px;font-size:12px}
+.tw-signed a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+
+/* rotation backdrop — FREE */
+.rot{display:grid;grid-template-columns:.95fr 1.25fr 1fr;gap:12px;align-items:start}
+.rcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.rcard h3{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  margin:0 0 11px}
+.regime{font-size:20px;font-weight:800;color:var(--up);letter-spacing:.02em;margin-bottom:5px}
+.regime-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:11px}
+.leg{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:4px 0}
+.leg .nm{flex:1;color:var(--text)}
+.leg .v{font-family:var(--font-num);font-weight:700;font-size:11px}
+.srow{display:flex;align-items:center;gap:9px;padding:3.5px 0;font-size:11.5px}
+.srow .tk{font-family:var(--font-num);font-size:10px;color:var(--faint);width:36px;flex:none}
+.srow .nm{flex:1;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .track{width:64px;height:5px;border-radius:99px;background:color-mix(in srgb,var(--text) 9%,transparent);
+  flex:none;display:flex;align-items:center}
+.srow .track i{display:block;height:100%;border-radius:99px}
+.srow .v{font-family:var(--font-num);font-weight:700;font-size:11px;width:48px;text-align:right}
+.tug{margin-bottom:9px}
+.tug .lab{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.tug .lab b{color:var(--text);font-weight:700}
+.tug .rail{height:6px;border-radius:99px;background:color-mix(in srgb,var(--text) 9%,transparent);position:relative}
+.tug .rail i{position:absolute;top:0;height:100%;border-radius:99px;background:var(--down)}
+.disc{font-size:11px;color:var(--faint);margin-top:12px;line-height:1.5}
+
+/* coverage — FREE */
+.cov{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.cov table{width:100%;border-collapse:collapse;font-size:12px}
+.cov th{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+.cov td{padding:8px 14px;border-bottom:1px solid color-mix(in srgb,var(--text) 5%,transparent);color:var(--text)}
+.cov tr:last-child td{border-bottom:0}
+.cov .fd{font-family:var(--font-num);font-weight:700;color:var(--ink)}
+.cov .th-tag{font-size:10px;color:var(--muted);background:color-mix(in srgb,var(--text) 7%,transparent);
+  padding:2px 7px;border-radius:6px}
+.fdot{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.fdot .d{width:6px;height:6px;border-radius:50%;flex:none}
+/* Freshness is a DATA-QUALITY status, not a market direction — it must NOT ride
+   --up/--down, or the 红涨绿跌 flip paints "fresh" red and "stale" green under 中文.
+   Fixed semantic inks, identical in both languages. */
+.fdot .d.fresh{background:#1FA971} .fdot .d.aging{background:#f0b429} .fdot .d.stale{background:#e06464}
+.num{font-family:var(--font-num)}
+.tp{font-size:9.5px;color:#f0b429;background:color-mix(in srgb,#f0b429 12%,transparent);padding:1.5px 6px;
+  border-radius:5px;margin-left:6px}
+
+.foot{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);
+  line-height:1.65;max-width:900px}
+.foot b{color:var(--muted)}
+@media(max-width:900px){
+  .tiles3,.rot{grid-template-columns:1fr}
+  .tw-ghosts{display:none}
+  .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <span>MOCKUP — anonymous / walled state of <code>etfs.html</code> · W2 design spec reference · not shipping code</span>
+  <button class="langbtn" id="lang">中文</button>
+</div>
+
+<div class="wrap">
+
+  <!-- ── HERO ── -->
+  <h1>🐳 <span class="l-en">Real fund moves</span><span class="l-zh">基金真实动作</span>
+    <span class="tag"><span class="l-en">where thematic &amp; active managers are building conviction</span><span class="l-zh">主题与主动经理人积累信念之处</span></span>
+  </h1>
+
+  <!-- T5 stance line — derived from the rotation backdrop ONLY, never from graded output -->
+  <p class="stance-line">
+    <span class="l-en"><span class="st">Risk-on tape</span> — credit and cyclicals lead. Watch, don't chase.</span>
+    <span class="l-zh"><span class="st">风险偏好行情</span> —— 信用与周期领先。观望，勿追。</span>
+  </p>
+
+  <p class="asof">
+    <span class="l-en">Tracking <b>77</b> curated &amp; active funds · updated each filing cycle · 2026-08-03 03:27 UTC</span>
+    <span class="l-zh">追踪 <b>77</b> 只精选与主动基金 · 每个申报周期更新 · 2026-08-03 03:27 UTC</span>
+  </p>
+
+  <!-- three honest tiles — no ghost ever opens this page -->
+  <div class="tiles3">
+    <div class="t3 a">
+      <div class="k"><span class="l-en">On the board</span><span class="l-zh">上榜个股</span></div>
+      <div class="v">40</div>
+      <div class="m"><span class="l-en">names at least two funds are building at once</span><span class="l-zh">至少两只基金同时增持的个股</span></div>
+    </div>
+    <div class="t3 b">
+      <div class="k"><span class="l-en">Fresh conviction</span><span class="l-zh">全新建仓</span></div>
+      <div class="v">17</div>
+      <div class="m"><span class="l-en">brand-new positions opened this cycle</span><span class="l-zh">本轮新开立的仓位</span></div>
+    </div>
+    <div class="t3 c">
+      <div class="k"><span class="l-en">Market backdrop</span><span class="l-zh">市场环境</span></div>
+      <!-- mono numerals are for figures, never words -->
+      <div class="v" style="font-size:21px;font-family:var(--font-ui);letter-spacing:.01em">RISK-ON</div>
+      <div class="m"><span class="l-en">credit and cyclicals leading — a supportive tape for new bets</span><span class="l-zh">信用与周期领先 · 有利于新仓位的市场环境</span></div>
+    </div>
+  </div>
+
+  <!-- ── §1 CONSENSUS BOARD — WALLED (skeletons + note, no CTA here) ── -->
+  <div class="sec">
+    <h2><span class="l-en">The consensus board</span><span class="l-zh">共识看板</span>
+      <span class="gate-pill">Essential</span></h2>
+    <p class="lede">
+      <span class="l-en">Stocks the most funds are accumulating at once — a name many managers back together is a far stronger read than one fund's bet. Sorted by how broad the agreement is, then how much conviction sits behind it.</span>
+      <span class="l-zh">被最多基金同时增持的个股 —— 多位经理人共同押注，其信号远强于单只基金的下注。先按共识广度排序，再看背后的信念规模。</span>
+    </p>
+    <div class="gate-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>
+        <span class="l-en">40 names sit on the board, ranked by how many funds are backing each one. Members see the names, the conviction behind them, and what we'd do about each. The rotation backdrop below is open to everyone.</span>
+        <span class="l-zh">看板上共有 40 只个股，按增持基金数量排名。会员可查看个股名称、背后的信念规模，以及我们对每只个股的应对建议。下方的轮动背景对所有人开放。</span>
+      </span>
+    </div>
+    <div class="cb-ghosts">
+      <div class="cbg-hd">
+        <span>#</span>
+        <span><span class="l-en">Stock</span><span class="l-zh">个股</span></span>
+        <span><span class="l-en">Funds in</span><span class="l-zh">参与基金</span></span>
+        <span><span class="l-en">Net conviction</span><span class="l-zh">净信念</span></span>
+        <span><span class="l-en">What to do</span><span class="l-zh">如何应对</span></span>
+      </div>
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
+    </div>
+  </div>
+
+  <!-- ── §2 ROTATION BACKDROP — FREE, in full ── -->
+  <div class="sec">
+    <h2><span class="l-en">The market they're buying into</span><span class="l-zh">他们正买入的市场</span></h2>
+    <p class="lede">
+      <span class="l-en">The rotation backdrop for every move above — accumulation into a supportive tape confirms; against it, be more skeptical.</span>
+      <span class="l-zh">上述每一笔动作的轮动背景 —— 顺势增持是确认，逆势增持则需更谨慎。</span>
+    </p>
+    <div class="rot">
+      <div class="rcard">
+        <h3><span class="l-en">Risk backdrop</span><span class="l-zh">风险环境</span></h3>
+        <div class="regime">RISK-ON</div>
+        <div class="regime-sub"><span class="l-en">Credit is leading duration and volatility is easing — a tape that supports new positions.</span><span class="l-zh">信用领先久期、波动率回落 —— 有利于新建仓位的市场环境。</span></div>
+        <div class="leg"><span class="nm"><span class="l-en">Credit vs Duration</span><span class="l-zh">信用 vs 久期</span></span><span class="v up">+3.66%</span></div>
+        <div class="leg"><span class="nm"><span class="l-en">Gold vs Equities</span><span class="l-zh">黄金 vs 股票</span></span><span class="v dn">&minus;1.84%</span></div>
+        <div class="leg"><span class="nm"><span class="l-en">US Dollar</span><span class="l-zh">美元</span></span><span class="v dn">&minus;1.32%</span></div>
+        <div class="leg"><span class="nm"><span class="l-en">Volatility</span><span class="l-zh">波动率</span></span><span class="v dn">&minus;0.99%</span></div>
+      </div>
+
+      <div class="rcard">
+        <h3><span class="l-en">Sector leadership · 60-day</span><span class="l-zh">板块领导力 · 60日</span></h3>
+        <div class="srow"><span class="tk">XLV</span><span class="nm"><span class="l-en">Health Care</span><span class="l-zh">医疗</span></span><span class="track"><i style="width:100%;background:var(--up)"></i></span><span class="v up">+8.39%</span></div>
+        <div class="srow"><span class="tk">XLF</span><span class="nm"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="track"><i style="width:83%;background:var(--up)"></i></span><span class="v up">+6.93%</span></div>
+        <div class="srow"><span class="tk">XLK</span><span class="nm"><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span class="track"><i style="width:31%;background:var(--up)"></i></span><span class="v up">+2.57%</span></div>
+        <div class="srow"><span class="tk">XLI</span><span class="nm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span class="track"><i style="width:13%;background:var(--up)"></i></span><span class="v up">+1.06%</span></div>
+        <div class="srow"><span class="tk">XLRE</span><span class="nm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span><span class="track"><i style="width:12%;background:var(--down)"></i></span><span class="v dn">&minus;1.14%</span></div>
+        <div class="srow"><span class="tk">XLP</span><span class="nm"><span class="l-en">Cons. Staples</span><span class="l-zh">必需消费</span></span><span class="track"><i style="width:21%;background:var(--down)"></i></span><span class="v dn">&minus;1.97%</span></div>
+        <div class="srow"><span class="tk">XLE</span><span class="nm"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="track"><i style="width:32%;background:var(--down)"></i></span><span class="v dn">&minus;2.95%</span></div>
+        <div class="srow"><span class="tk">XLY</span><span class="nm"><span class="l-en">Cons. Discretionary</span><span class="l-zh">非必需消费</span></span><span class="track"><i style="width:51%;background:var(--down)"></i></span><span class="v dn">&minus;4.74%</span></div>
+        <div class="srow"><span class="tk">XLB</span><span class="nm"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="track"><i style="width:56%;background:var(--down)"></i></span><span class="v dn">&minus;5.18%</span></div>
+        <div class="srow"><span class="tk">XLU</span><span class="nm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="track"><i style="width:79%;background:var(--down)"></i></span><span class="v dn">&minus;7.33%</span></div>
+        <div class="srow"><span class="tk">XLC</span><span class="nm"><span class="l-en">Comm. Services</span><span class="l-zh">通信服务</span></span><span class="track"><i style="width:100%;background:var(--down)"></i></span><span class="v dn">&minus;9.31%</span></div>
+      </div>
+
+      <div class="rcard">
+        <h3><span class="l-en">Style rotation · 20-day</span><span class="l-zh">风格轮动 · 20日</span></h3>
+        <div class="tug"><div class="lab"><span><span class="l-en">Small vs Large</span><span class="l-zh">小盘 vs 大盘</span></span><b><span class="l-en">large leading</span><span class="l-zh">大盘领先</span></b></div>
+          <div class="rail"><i style="right:50%;width:24%"></i></div></div>
+        <div class="tug"><div class="lab"><span><span class="l-en">Equal vs Cap-weight</span><span class="l-zh">等权 vs 市值加权</span></span><b><span class="l-en">cap-weight leading</span><span class="l-zh">市值加权领先</span></b></div>
+          <div class="rail"><i style="right:50%;width:3%"></i></div></div>
+        <div class="tug"><div class="lab"><span><span class="l-en">Growth-tilt vs Broad</span><span class="l-zh">成长 vs 大盘</span></span><b><span class="l-en">broad leading</span><span class="l-zh">大盘领先</span></b></div>
+          <div class="rail"><i style="right:50%;width:37%"></i></div></div>
+        <div class="tug"><div class="lab"><span><span class="l-en">Growth vs Value</span><span class="l-zh">成长 vs 价值</span></span><b><span class="l-en">value leading</span><span class="l-zh">价值领先</span></b></div>
+          <div class="rail"><i style="right:50%;width:43%"></i></div></div>
+        <div class="tug"><div class="lab"><span><span class="l-en">EM vs US</span><span class="l-zh">新兴 vs 美国</span></span><b><span class="l-en">us leading</span><span class="l-zh">美国领先</span></b></div>
+          <div class="rail"><i style="right:50%;width:27%"></i></div></div>
+      </div>
+    </div>
+    <p class="disc">
+      <span class="l-en">Rotation context — how style, risk and sector ETFs have been trading. Descriptive, never a buy list.</span>
+      <span class="l-zh">轮动背景 —— 风格、风险与行业 ETF 的近期走势。描述性，非买入清单。</span>
+    </p>
+  </div>
+
+  <!-- ── §3 EVERY ADD, BY FUND — the ONE tier-wall, after the free backdrop ── -->
+  <div class="sec">
+    <h2><span class="l-en">Every add, by fund</span><span class="l-zh">逐基金增持明细</span>
+      <span class="gate-pill">Essential</span></h2>
+    <p class="lede">
+      <span class="l-en">The individual buys behind the board — each fund's strongest add this cycle, highest conviction first.</span>
+      <span class="l-zh">看板背后的单笔买入 —— 每只基金本轮最强增持，信念最高者优先。</span>
+    </p>
+    <div class="tier-wall">
+      <div class="tw-ghosts" aria-hidden="true">
+        <div class="tw-ghost"><div class="gh g1"></div><div class="gh g2"></div><div class="gh g3"></div></div>
+        <div class="tw-ghost"><div class="gh g1"></div><div class="gh g2"></div><div class="gh g3"></div></div>
+        <div class="tw-ghost"><div class="gh g1"></div><div class="gh g2"></div><div class="gh g3"></div></div>
+        <div class="tw-ghost"><div class="gh g1"></div><div class="gh g2"></div><div class="gh g3"></div></div>
+      </div>
+      <div class="tw-card">
+        <svg class="tw-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <div class="tw-h">
+          <span class="l-en">92 individual buys, across 77 funds, are open to members</span>
+          <span class="l-zh">来自 77 只基金的 92 笔买入向会员开放</span>
+        </div>
+        <div class="tw-p">
+          <span class="l-en">You're reading which funds we track and the market they're buying into. Members also get every name on the consensus board, each fund's strongest adds, what's being trimmed, and what we'd do about each one.</span>
+          <span class="l-zh">你正在查看我们追踪的基金以及它们所买入的市场。会员另可获取共识看板上的全部个股、每只基金的最强增持、正在减持的仓位，以及我们对每一项的应对建议。</span>
+        </div>
+        <div class="tw-acts">
+          <a class="tw-btn" href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a>
+          <span class="tw-note"><span class="l-en">7-day Pro trial · cancel anytime</span><span class="l-zh">Pro 7 天试用 · 随时取消</span></span>
+        </div>
+        <div class="tw-signed">
+          <a href="#"><span class="l-en">Already a member? Sign in</span><span class="l-zh">已是会员？登录</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── §4 COVERAGE — FREE, in full, open by default on the gated build ── -->
+  <div class="sec">
+    <h2>📡 <span class="l-en">Coverage &amp; freshness</span><span class="l-zh">覆盖范围与新鲜度</span></h2>
+    <p class="lede">
+      <span class="l-en">Every tracked fund; any stale feed surfaces here. 12 of 77 shown.</span>
+      <span class="l-zh">所有已追踪基金；任何陈旧数据源都会在此暴露。显示 77 只中的 12 只。</span>
+    </p>
+    <div class="cov">
+      <table>
+        <thead><tr>
+          <th><span class="l-en">Fund</span><span class="l-zh">基金</span></th>
+          <th><span class="l-en">Name</span><span class="l-zh">名称</span></th>
+          <th><span class="l-en">Theme</span><span class="l-zh">主题</span></th>
+          <th><span class="l-en">Snapshots</span><span class="l-zh">快照</span></th>
+          <th><span class="l-en">Latest</span><span class="l-zh">最新</span></th>
+          <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="fd">ARKK</td><td>ARK Innovation ETF</td><td><span class="th-tag"><span class="l-en">Active / Innovation</span><span class="l-zh">主动 / 创新</span></span></td><td class="num">412</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">XLK</td><td>Technology Select Sector SPDR</td><td><span class="th-tag"><span class="l-en">Technology</span><span class="l-zh">科技</span></span></td><td class="num">389</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">SPCX</td><td>SPAC and New Issue ETF</td><td><span class="th-tag"><span class="l-en">Space</span><span class="l-zh">太空</span></span></td><td class="num">208</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">SMH</td><td>VanEck Semiconductor ETF</td><td><span class="th-tag"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td><td class="num">377</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">BOTZ</td><td>Global X Robotics &amp; AI ETF</td><td><span class="th-tag"><span class="l-en">Robotics / AI</span><span class="l-zh">机器人 / AI</span></span></td><td class="num">341</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">FDN</td><td>First Trust Dow Jones Internet</td><td><span class="th-tag"><span class="l-en">Internet</span><span class="l-zh">互联网</span></span></td><td class="num">356</td><td class="num">2026-08-01</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">SLVR</td><td>Sprott Silver Miners &amp; Physical</td><td><span class="th-tag"><span class="l-en">Precious metals</span><span class="l-zh">贵金属</span></span></td><td class="num">122</td><td class="num">2026-08-01</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">BLOK</td><td>Amplify Transformational Data</td><td><span class="th-tag"><span class="l-en">Blockchain</span><span class="l-zh">区块链</span></span></td><td class="num">298</td><td class="num">2026-07-31</td><td><span class="fdot"><span class="d aging"></span><span class="l-en">aging · 2d</span><span class="l-zh">偏旧 · 2天</span></span></td></tr>
+          <tr><td class="fd">SMR</td><td>Defiance Nuclear &amp; Uranium</td><td><span class="th-tag"><span class="l-en">Uranium</span><span class="l-zh">铀</span></span></td><td class="num">187</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">BITQ</td><td>Bitwise Crypto Industry Innovators</td><td><span class="th-tag"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span></td><td class="num">241</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">QQQ</td><td>Invesco QQQ Trust</td><td><span class="th-tag"><span class="l-en">Large-cap growth</span><span class="l-zh">大盘成长</span></span></td><td class="num">401</td><td class="num">2026-08-02</td><td><span class="fdot"><span class="d fresh"></span><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span></td></tr>
+          <tr><td class="fd">IWM</td><td>iShares Russell 2000 ETF<span class="tp"><span class="l-en">3rd-party</span><span class="l-zh">第三方</span></span></td><td><span class="th-tag"><span class="l-en">Small-cap</span><span class="l-zh">小盘</span></span></td><td class="num">96</td><td class="num">2026-07-28</td><td><span class="fdot"><span class="d stale"></span><span class="l-en">stale · 6d</span><span class="l-zh">陈旧 · 6天</span></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="foot">
+    <p><b><span class="l-en">How to read this:</span><span class="l-zh">如何解读：</span></b>
+      <span class="l-en">fund managers accumulating a name is context on a lagged filing cadence — where curated &amp; active money is going, not a timed buy signal. The stance answers "so what do I do?" in plain words; the honest default is "watch — don't chase" until a name has both broad backing and a forming setup.</span>
+      <span class="l-zh">基金经理增持某只个股是基于滞后申报节奏的背景信息 —— 反映精选与主动资金的流向，而非择时买入信号。操作倾向以平实语言回答"我该怎么做"；在个股同时具备广泛支持与成形形态之前，诚实的默认答案是"观望 —— 勿追"。</span>
+    </p>
+    <p><b><span class="l-en">Coverage:</span><span class="l-zh">覆盖范围：</span></b>
+      <span class="l-en">SPDR, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill are verified daily holdings feeds (with shares). iShares and Schwab are blocked at source but reachable via a labelled third-party feed; Vanguard publishes no free daily feed. A fund missing here failed today's fetch and is skipped, never crashing the page.</span>
+      <span class="l-zh">SPDR、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill 为经核实的每日持仓数据源（含股数）。iShares 与 Schwab 在源头受限，但可通过已标注的第三方数据源获取；Vanguard 不提供免费每日数据源。此处缺失的基金为当日抓取失败并被跳过，绝不会导致页面崩溃。</span>
+    </p>
+  </div>
+</div>
+
+<script>
+  if (new URLSearchParams(location.search).get('lang') === 'zh') {
+    document.documentElement.setAttribute('data-lang', 'zh');
+    document.getElementById('lang').textContent = 'EN';
+  }
+  document.getElementById('lang').addEventListener('click', function () {
+    var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+    document.documentElement.setAttribute('data-lang', zh ? 'en' : 'zh');
+    this.textContent = zh ? '中文' : 'EN';
+  });
+</script>
+</body>
+</html>

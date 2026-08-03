@@ -1,7 +1,7 @@
 {
   "schema": "signal_governor.v1",
-  "as_of": "2026-08-02",
-  "generated_at": "2026-08-02T09:59:25.503506+00:00",
+  "as_of": "2026-08-03",
+  "generated_at": "2026-08-03T11:18:33.396923+00:00",
   "region": "cn",
   "gate": {
     "min_n": 150,
@@ -27,13 +27,13 @@
     },
     "hub": {
       "signal": "hub",
-      "n_matured": 172,
-      "ic": 0.4575,
-      "t_hac": 11.809,
+      "n_matured": 205,
+      "ic": 0.4024,
+      "t_hac": 6.894,
       "horizon": "10",
       "demoted": false,
       "trust": 1.0,
-      "reason": "healthy: 10d IC=+0.458 not wrong-sign \u2014 trust 1.0"
+      "reason": "healthy: 10d IC=+0.402 not wrong-sign \u2014 trust 1.0"
     }
   },
   "n_demoted": 0,

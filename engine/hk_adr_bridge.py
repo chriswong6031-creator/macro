@@ -21,7 +21,7 @@ ADR → HK mapping:
         BABA  ↔ 9988.HK  (Alibaba)
         BIDU  ↔ 9888.HK  (Baidu)
         JD    ↔ 9618.HK  (JD.com)
-        PDD   ↔ 9961.HK  (Pinduoduo / PDD Holdings)
+        TCOM  ↔ 9961.HK  (Trip.com Group / Ctrip)
     No clean direct HK-listed ADR twin:
         0700.HK (Tencent)   → OTC TCEHY; thin/illiquid → group ETF proxy only
         3690.HK (Meituan)   → no US listing → group ETF proxy only
@@ -75,7 +75,7 @@ _DIRECT_PAIRS: list[_Pair] = [
     _Pair("9988.HK", "Alibaba", "阿里巴巴", "BABA", "direct", ""),
     _Pair("9888.HK", "Baidu",   "百度",     "BIDU", "direct", ""),
     _Pair("9618.HK", "JD.com",  "京东",     "JD",   "direct", ""),
-    _Pair("9961.HK", "PDD",     "拼多多",   "PDD",  "direct", ""),
+    _Pair("9961.HK", "Trip.com", "携程",    "TCOM", "direct", ""),
 ]
 
 # Names with no clean direct ADR: use group ETF proxy (KWEB is preferred because
@@ -90,6 +90,25 @@ _PROXY_PAIRS: list[_Pair] = [
 ]
 
 ALL_PAIRS: list[_Pair] = _DIRECT_PAIRS + _PROXY_PAIRS
+
+# Live ADR ticker per HK ticker — fences ledger rows stamped under a pairing that
+# has since been corrected. Identity fix 2026-08-03: 9961.HK rows stamped before
+# then carry adr_ticker=PDD, but 9961.HK is Trip.com Group (HKEX "TRIP.COM GROUP
+# LTD. - S", dual-listed with NASDAQ TCOM) and PDD Holdings has no HK listing —
+# those rows compare two unrelated companies.
+_PAIR_ADR_BY_HK: dict[str, str] = {p.hk_ticker: p.adr_ticker for p in ALL_PAIRS}
+
+
+def _pair_is_current(row: dict) -> bool:
+    """True when a ledger row's recorded pairing matches the live ADR→HK map.
+
+    Rows stamped under a since-corrected pairing stay in the ledger file as an
+    append-only audit trail but are excluded from grading and from the
+    follow-rate aggregate: their implied-vs-actual comparison was never a
+    same-company comparison, so grading them would blend noise into the stat.
+    """
+    return _PAIR_ADR_BY_HK.get(row.get("name", "")) == row.get("adr_ticker")
+
 
 # Group ETFs used for the composite
 _ETF_TICKERS = ["KWEB", "FXI"]
@@ -631,7 +650,8 @@ def grade(data_root: Path | None = None) -> dict:
 
         # Load HK close series for all tickers we need
         hk_cache: dict[str, pd.Series | None] = {}
-        tickers_needed = {r["name"] for r in rows if r.get("actual_open_gap_pct") is None}
+        tickers_needed = {r["name"] for r in rows
+                          if r.get("actual_open_gap_pct") is None and _pair_is_current(r)}
         for ticker in tickers_needed:
             # We need OPEN prices for T+1; fall back to close series if open not available
             try:
@@ -681,6 +701,8 @@ def grade(data_root: Path | None = None) -> dict:
             try:
                 if r.get("actual_open_gap_pct") is not None:
                     continue  # already graded
+                if not _pair_is_current(r):
+                    continue  # stale pairing (e.g. pre-2026-08-03 9961.HK/PDD rows) — never grade
                 hk_session_date = pd.Timestamp(r["hk_session_date"])
                 ticker = r["name"]
 
@@ -730,8 +752,10 @@ def grade(data_root: Path | None = None) -> dict:
         if graded:
             _write_ledger(rows, data_root)
 
-        n_graded_total = sum(1 for r in rows if r.get("actual_open_gap_pct") is not None)
-        n_followed = sum(1 for r in rows
+        current_rows = [r for r in rows if _pair_is_current(r)]
+        n_excluded_stale_pair = len(rows) - len(current_rows)
+        n_graded_total = sum(1 for r in current_rows if r.get("actual_open_gap_pct") is not None)
+        n_followed = sum(1 for r in current_rows
                          if r.get("followed") is True)
         follow_rate = (round(n_followed / n_graded_total, 3)
                        if n_graded_total else None)
@@ -740,6 +764,7 @@ def grade(data_root: Path | None = None) -> dict:
             "ok": True,
             "graded_this_run": graded,
             "n_rows_total": len(rows),
+            "n_excluded_stale_pair": n_excluded_stale_pair,
             "n_graded_total": n_graded_total,
             "follow_rate": follow_rate,
             "note": ("Live follow-rate (actual T+1 HK open vs implied ADR gap). "

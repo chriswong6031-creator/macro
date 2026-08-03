@@ -511,6 +511,14 @@ jobs:
         run: python -m pytest tests/test_site_access_boundary.py -q
       - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
         run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
+      # #4409 shipped the member Earnings Wire API suite named only in
+      # unrun-publish-ops, whose 21-job venv line has no fastapi/httpx — so the
+      # auth-gate/private-header tests skipped in every job that named them
+      # (check_skip_only_suites, same class as the boto3/publish-r2 case above).
+      # This job's install line already provides both; verified in a clean venv
+      # with exactly `pytest pyyaml jinja2 fastapi httpx`: 10 passed.
+      - name: member Earnings Wire API transport (auth gate + private headers)
+        run: python -m pytest tests/test_earnings_api.py -q
 
   cycles-payload-split:
     if: ${{ false }}
@@ -643,6 +651,10 @@ jobs:
           tests/test_fundamental_forensics_filing_package_materializer.py
           tests/test_fundamental_forensics_companyfacts_pinned_loader.py
           tests/test_fundamental_forensics_attested_history_materializer.py -q
+      - name: read-only attested-history operator foundation
+        run: >-
+          python -m pytest
+          tests/test_fundamental_forensics_attested_history_operator.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1118,7 +1130,7 @@ jobs:
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
       # nowhere, so a job list and a green run both lie about it. This is what an
       # `importorskip` added to clear a red lane creates by construction — it
@@ -3123,6 +3135,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_history.py
           tests/test_biocatalyst_endpoint_alignment.py
+          tests/test_biocatalyst_change_classification.py
           tests/test_clinicaltrials_history.py -q
 
   biocatalyst-contracts:
@@ -4549,7 +4562,9 @@ jobs:
         run: python -m pytest tests/test_radar_page_boot.py tests/test_reports_timeline_ui.py tests/test_bilingual_span_leak.py -q
 
   unrun-picks-boards:
-    # pick lab runners + US board grading — shipped picks and their outcome ledgers.
+    # pick lab runners + US/CN board surfaces — shipped picks, their outcome
+    # ledgers, and the us_prophet_v1 priority-board rank + UI (#4331; suites
+    # found unwired by its 2026-08-02 adversarial review).
     if: ${{ false }}
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -4560,8 +4575,25 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
-      - name: pick lab runners + US board grading — shipped picks and their outcome ledgers
-        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_w3_evidence.py -q
+      - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
+
+  unrun-prophet-learning-loop:
+    # Prophet learning loop (#4331) — postmortem forensics over the loser cohort
+    # + the exit-policy horse race on the US buy-lane cohort. Same install
+    # string as the other unrun-* jobs, so execute_pack shares their venv.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: prophet learning loop — postmortem forensics + exit-policy horse race
+        run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py -q
 
   unrun-intl-collectors:
     # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
@@ -4707,7 +4739,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        # test_earnings_api.py exercises the mounted FastAPI route through
+        # TestClient; without both wheels pytest importorskips the whole suite.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
         run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_private_store.py tests/test_earnings_public_wire.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from pathlib import Path
+import threading
 
 import pytest
 
@@ -11,6 +12,7 @@ from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
 from engine.earnings_narrative.context_packets import canonical_json_bytes
 from engine.earnings_narrative.private_publication import (
+    IDEMPOTENT_READ_WORKERS,
     POINTER_KEY,
     EarningsPrivatePublicationError,
     load_private_context_packet,
@@ -30,6 +32,60 @@ from scripts.build_earnings_public_wire import PublicWireBuildError, publish_pub
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class CountingLocalStore(LocalStore):
+    """Local strict store that exposes writes for idempotence assertions."""
+
+    def __init__(self, root: Path):
+        super().__init__(root)
+        self.put_calls: list[str] = []
+
+    def put_bytes(
+        self,
+        key: str,
+        data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        self.put_calls.append(key)
+        return super().put_bytes(key, data, content_type=content_type)
+
+
+class BlockingStrictStore(CountingLocalStore):
+    """Strict local store that makes bounded GET concurrency observable."""
+
+    def __init__(self, root: Path):
+        super().__init__(root)
+        self.blocked_keys: frozenset[str] = frozenset()
+        self.release_reads = threading.Event()
+        self.parallel_reads = threading.Event()
+        self._read_lock = threading.Lock()
+        self._in_flight = 0
+        self.max_in_flight = 0
+
+    def block_artifacts(self, keys: set[str]) -> None:
+        self.blocked_keys = frozenset(keys)
+        self.release_reads.clear()
+        self.parallel_reads.clear()
+        with self._read_lock:
+            self._in_flight = 0
+            self.max_in_flight = 0
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+        if key not in self.blocked_keys:
+            return super().get_bytes_strict_bounded(key, maximum_bytes)
+        with self._read_lock:
+            self._in_flight += 1
+            self.max_in_flight = max(self.max_in_flight, self._in_flight)
+            if self._in_flight > 1:
+                self.parallel_reads.set()
+        try:
+            if not self.release_reads.wait(timeout=5):
+                raise RuntimeError("test artifact read release timed out")
+        finally:
+            with self._read_lock:
+                self._in_flight -= 1
+        return super().get_bytes_strict_bounded(key, maximum_bytes)
 
 
 def _staged_publication(tmp_path: Path) -> tuple[Path, Path, str]:
@@ -241,6 +297,106 @@ def test_private_pointer_is_published_last_and_idempotently(tmp_path: Path) -> N
     second = publish_private_publication(store, prepared)
     assert second == first
     assert load_private_manifest(store)["generation_id"] == prepared.generation_id
+
+
+def test_private_exact_remote_generation_is_a_zero_write_idempotent_noop(tmp_path: Path) -> None:
+    _public_dir, private_dir, _slug = _staged_publication(tmp_path)
+    prepared = prepare_private_publication(private_dir)
+    store = CountingLocalStore(tmp_path / "private-r2")
+    first = publish_private_publication(store, prepared)
+
+    store.put_calls.clear()
+    second = publish_private_publication(store, prepared)
+
+    assert second == first
+    assert store.put_calls == []
+
+
+def test_private_exact_remote_generation_replays_immutables_with_bounded_concurrency(
+    tmp_path: Path,
+) -> None:
+    _public_dir, private_dir, _slug = _staged_publication(tmp_path)
+    prepared = prepare_private_publication(private_dir)
+    store = BlockingStrictStore(tmp_path / "private-r2")
+    expected = publish_private_publication(store, prepared)
+    store.put_calls.clear()
+    store.block_artifacts({artifact.object_key for artifact in prepared.artifacts})
+
+    result: list[dict[str, object]] = []
+    failures: list[BaseException] = []
+
+    def _publish() -> None:
+        try:
+            result.append(publish_private_publication(store, prepared))
+        except BaseException as exc:  # noqa: BLE001 - re-raised after joining the worker
+            failures.append(exc)
+
+    worker = threading.Thread(target=_publish, daemon=True)
+    worker.start()
+    try:
+        assert store.parallel_reads.wait(timeout=2)
+    finally:
+        store.release_reads.set()
+    worker.join(timeout=5)
+
+    assert not worker.is_alive()
+    assert failures == []
+    assert result == [expected]
+    assert 1 < store.max_in_flight <= IDEMPOTENT_READ_WORKERS
+    assert store.put_calls == []
+
+
+def test_private_missing_remote_artifact_falls_through_to_verified_repair(tmp_path: Path) -> None:
+    _public_dir, private_dir, _slug = _staged_publication(tmp_path)
+    prepared = prepare_private_publication(private_dir)
+    store = CountingLocalStore(tmp_path / "private-r2")
+    publish_private_publication(store, prepared)
+    missing = prepared.artifacts[0]
+    (store.root / missing.object_key).unlink()
+
+    store.put_calls.clear()
+    pointer = publish_private_publication(store, prepared)
+
+    assert pointer["generation_id"] == prepared.generation_id
+    assert store.put_calls == [missing.object_key]
+    assert load_private_manifest(store)["generation_id"] == prepared.generation_id
+
+
+def test_private_corrupt_remote_artifact_never_qualifies_for_noop(tmp_path: Path) -> None:
+    _public_dir, private_dir, _slug = _staged_publication(tmp_path)
+    prepared = prepare_private_publication(private_dir)
+    store = CountingLocalStore(tmp_path / "private-r2")
+    publish_private_publication(store, prepared)
+    corrupt = prepared.artifacts[0]
+    (store.root / corrupt.object_key).write_bytes(b"{}")
+
+    store.put_calls.clear()
+    with pytest.raises(EarningsPrivatePublicationError, match="immutable private earnings object differs"):
+        publish_private_publication(store, prepared)
+    assert store.put_calls == []
+
+
+def test_private_changed_generation_uses_normal_pointer_last_promotion(tmp_path: Path) -> None:
+    _public_dir, private_dir, slug = _staged_publication(tmp_path)
+    first_prepared = prepare_private_publication(private_dir)
+    store = CountingLocalStore(tmp_path / "private-r2")
+    first = publish_private_publication(store, first_prepared)
+
+    record_path = private_dir / "records" / f"{slug}.json"
+    record = json.loads(record_path.read_bytes())
+    record["facts_html"] += "<p>Member evidence was refreshed.</p>"
+    record_path.write_bytes(canonical_json_bytes(record))
+    changed_prepared = prepare_private_publication(private_dir)
+    assert changed_prepared.generation_id != first_prepared.generation_id
+
+    store.put_calls.clear()
+    second = publish_private_publication(store, changed_prepared)
+
+    assert second["generation_id"] == changed_prepared.generation_id
+    assert second["generation_id"] != first["generation_id"]
+    assert changed_prepared.manifest_key in store.put_calls
+    assert POINTER_KEY in store.put_calls
+    assert load_private_manifest(store)["generation_id"] == changed_prepared.generation_id
 
 
 def test_zero_locked_records_is_a_valid_context_only_private_generation(tmp_path: Path) -> None:

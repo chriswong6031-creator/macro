@@ -188,8 +188,11 @@ MUST_RESTART = [
     "engine/capital_structure/projection.py",
     # Government Revenue serving modules are imported by app/government_revenue.py.
     "engine/government_revenue/budget_program.py",
+    "engine/government_revenue/candidates.py",
     "engine/government_revenue/idv_dossiers.py",
     "engine/government_revenue/subaward_dossiers.py",
+    "contracts/government_revenue/government_revenue_candidate.v1.schema.json",
+    "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
     # The public Company Intelligence API imports the reader plus this
     # non-inert package at process startup (contracts, health, and views).
     "engine/neuralweb/company_intelligence_reader.py",

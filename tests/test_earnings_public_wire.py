@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 
 import pytest
+import yaml
 
 from engine.earnings_narrative.extract import build_evidence_pair
 from engine.earnings_narrative.generation import EvidencePair, write_generation
@@ -667,3 +668,34 @@ def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None
     assert "push_do origin HEAD:main" in workflow
     assert "push_backoff" in workflow
     assert "Sitemap: https://www.mastermind-x.com/stocks/earnings/sitemap.xml" in robots
+
+
+def test_public_wire_retry_budget_covers_fresh_main_regeneration_and_private_containment() -> None:
+    """The 420s shared deadline starts before a ~13-minute generation.
+
+    A ref-lock loss must buy one full rebuild from the winning main, not consume
+    the default budget before the loop reaches its first push.
+    """
+    repo = Path(__file__).resolve().parents[1]
+    workflow = yaml.safe_load(
+        (repo / ".github" / "workflows" / "earnings-public-wire.yml").read_text(encoding="utf-8")
+    )
+    job = workflow["jobs"]["publish"]
+    publish = next(step for step in job["steps"] if step.get("name") == "regenerate current wire from latest main and publish")
+    run = publish["run"]
+
+    assert job["timeout-minutes"] == 40
+    assert "PUSH_BUDGET_SECS=1980" in run
+    assert "PUSH_MAX_ATTEMPTS=2" in run
+    assert run.index("PUSH_BUDGET_SECS=1980") < run.index('push_retry_init "earnings public wire"')
+    assert run.index("PUSH_MAX_ATTEMPTS=2") < run.index('push_retry_init "earnings public wire"')
+    assert 2 * 13 * 60 < 1980 < job["timeout-minutes"] * 60
+    assert run.index("git reset --hard origin/main") < run.index(
+        "python -m scripts.build_earnings_public_wire"
+    )
+    assert run.index("python -m scripts.publish_earnings_private_store") < run.index(
+        "git add site/stocks/earnings"
+    )
+    assert "git add site/stocks/earnings site/premiumdata/earnings" not in run
+    assert "git pull --rebase" not in run
+    assert "push_abort_rebase" not in run
