@@ -12,7 +12,7 @@
 <article class="ewa">
   <header class="ewa-head">
     <div class="ew-wrap">
-      <div class="ewa-crumb"><a href="index.html">{{ t('Earnings wire', '财报情报线') }}</a><span>/</span><span class="mono">{{ article.event.ticker }}</span><span>/</span><span>{{ article.company_label }}</span></div>
+      <nav class="ewa-crumb" aria-label="{{ t('Breadcrumb', '面包屑导航') }}"><a href="index.html">{{ t('Earnings wire', '财报情报线') }}</a><span aria-hidden="true">/</span><span class="mono">{{ article.event.ticker }}</span><span aria-hidden="true">/</span><span aria-current="page">{{ article.company_label }}</span></nav>
       <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span>{{ t('Verified call record', '已核验电话会记录') }} <span>·</span> <time class="mono" datetime="{{ article.event.date }}">{{ article.event.date }}</time></div>
       <div class="ewa-title-row">
         <div><h1><span class="mono">{{ article.event.ticker }}</span> · {{ article.company_label }} {{ article.event.period }} {{ t('earnings call record', '财报电话会记录') }}</h1>

@@ -475,7 +475,9 @@ def test_wire_article_has_one_localized_breadcrumb_and_source_language() -> None
     css = (repo / "templates/earnings_wire/earnings-wire.css").read_text(encoding="utf-8")
 
     assert "{% block breadcrumb %}{% endblock %}" in article
-    assert article.count('class="ewa-crumb"') == 1
+    assert article.count('<nav class="ewa-crumb"') == 1
+    assert "aria-label=\"{{ t('Breadcrumb', '面包屑导航') }}\"" in article
+    assert 'aria-current="page"' in article
     assert '<blockquote lang="en">' in article
     assert '<blockquote lang="en">' in index
     assert "overflow-x:auto" in css
