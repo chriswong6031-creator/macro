@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_change_tape_read_model.v1.schema.json",
+  "title": "BioCatalyst trial change tape read model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "nct_id", "history", "prospective",
+    "chronology_order", "interpretation", "protocol_change_asserted",
+    "materiality_assessed", "correction_assessed", "authority", "capacity",
+    "hash_scope", "model_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_change_tape_read_model.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "nct_id": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "history": {"$ref": "#/$defs/lane"},
+    "prospective": {"$ref": "#/$defs/lane"},
+    "chronology_order": {"const": "source_version_then_exact_operation_order"},
+    "interpretation": {"const": "registry_record_changed"},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "correction_assessed": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"},
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_history_pairs", "max_rows", "overflow_behavior"],
+      "properties": {
+        "max_history_pairs": {"const": 128},
+        "max_rows": {"const": 512},
+        "overflow_behavior": {"const": "unavailable_no_partial_tape"}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_model_payload_sha256"},
+    "model_payload_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "unavailable_reason", "classification_count", "row_count", "rows"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "unavailable_reason": {
+          "enum": [
+            null,
+            "history_not_available",
+            "private_replay_evidence_not_present",
+            "retrospective_evidence_missing",
+            "retrospective_evidence_replay_failed",
+            "retrospective_classification_unavailable",
+            "classification_limit_exceeded",
+            "prospective_not_collected",
+            "prospective_not_available",
+            "activation_proofs_not_retained"
+          ]
+        },
+        "classification_count": {"type": "integer", "minimum": 0, "maximum": 128},
+        "row_count": {"type": "integer", "minimum": 0, "maximum": 512},
+        "rows": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/row"}}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"unavailable_reason": {"const": null}}},
+          "else": {"properties": {"classification_count": {"const": 0}, "row_count": {"const": 0}, "rows": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_class", "review_state", "semantic_resolution", "op", "before_state",
+        "after_state", "protocol_change_asserted", "materiality_assessed",
+        "correction_assessed", "source_versions", "observed_at", "exact_operation_index"
+      ],
+      "properties": {
+        "field_class": {"enum": ["registry_status", "enrollment", "milestone_date_constraint", "site_list", "intervention", "endpoint_record_delta"]},
+        "exact_operation_index": {"type": "integer", "minimum": 0, "maximum": 4095},
+        "review_state": {"enum": ["not_required", "needs_review"]},
+        "semantic_resolution": {"enum": ["registry_field_class_only", "unresolved"]},
+        "op": {"enum": ["add", "remove", "replace"]},
+        "before_state": {"enum": ["missing", "present"]},
+        "after_state": {"enum": ["missing", "present"]},
+        "protocol_change_asserted": {"const": false},
+        "materiality_assessed": {"const": false},
+        "correction_assessed": {"const": false},
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["before", "after"],
+          "properties": {
+            "before": {"type": "integer", "minimum": 1},
+            "after": {"type": "integer", "minimum": 2}
+          }
+        },
+        "observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "deterministic_registry_change_read_model"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {
+          "const": [
+            "originate_signal", "issuer_resolution", "security_resolution", "asset_resolution",
+            "rank_security", "select_security", "size_position", "gate_decision",
+            "execute_trade", "neural_web_authority", "all_prophet_uses", "assess_materiality",
+            "assert_protocol_change", "assess_correction", "deliver_alert", "raise_authority"
+          ]
+        }
+      }
+    }
+  }
+}

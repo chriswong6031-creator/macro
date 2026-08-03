@@ -24,6 +24,11 @@ from engine.biocatalyst.endpoint_alignment import (
     build_trial_endpoint_alignment_review_projection,
 )
 from engine.biocatalyst.history import build_history_exact_diff
+from engine.biocatalyst.change_tape import (
+    ChangeTapeError,
+    build_trial_change_tape_read_model,
+    validate_trial_change_tape_read_model,
+)
 from engine.biocatalyst.prospective import SourceEvidence
 from engine.sector_intelligence import (
     canonical_json_bytes,
@@ -457,6 +462,123 @@ def test_retrospective_all_six_classes_bind_exact_operations_and_separate_clocks
     }
     assert "after" not in compiled.classification["source_clock"]
     validate_retrospective_trial_change_compilation(compiled, diff, before, after)
+
+
+def test_change_tape_replays_private_history_and_strips_classifier_integrity_fields() -> None:
+    before, after, _diff = _all_six_history_case()
+    tape = build_trial_change_tape_read_model(
+        nct_id=NCT_ID,
+        history_model={"available": True},
+        history_snapshots=(before, after),
+        history_carried_forward=False,
+        prospective_model=None,
+    )
+
+    validate_trial_change_tape_read_model(tape, nct_id=NCT_ID)
+    history = tape["history"]
+    assert history["available"] is True
+    assert history["classification_count"] == 1
+    assert history["row_count"] == len(history["rows"])
+    assert all(
+        set(row) == {
+            "field_class", "review_state", "semantic_resolution", "op",
+            "before_state", "after_state", "protocol_change_asserted",
+            "materiality_assessed", "correction_assessed", "source_versions",
+            "observed_at", "exact_operation_index",
+        }
+        for row in history["rows"]
+    )
+    assert all(
+        not any(
+            fragment in key
+            for fragment in ("hash", "ref", "path", "receipt", "raw", "provenance")
+        )
+        for row in history["rows"]
+        for key in row
+    )
+    assert tape["prospective"] == {
+        "available": False,
+        "unavailable_reason": "prospective_not_collected",
+        "classification_count": 0,
+        "row_count": 0,
+        "rows": [],
+    }
+
+
+def test_change_tape_rejects_duplicate_or_unordered_sanitized_rows_and_recomputes_prospective_state() -> None:
+    before, after, _diff = _all_six_history_case()
+    tape = build_trial_change_tape_read_model(
+        nct_id=NCT_ID,
+        history_model={"available": True},
+        history_snapshots=(before, after),
+        history_carried_forward=False,
+        prospective_model=None,
+    )
+    carried = build_trial_change_tape_read_model(
+        nct_id=NCT_ID,
+        history_model={"available": True},
+        history_snapshots=(),
+        history_carried_forward=True,
+        carried_history_lane=tape["history"],
+        prospective_model={"available": True},
+    )
+    assert carried["history"] == tape["history"]
+    assert carried["prospective"]["unavailable_reason"] == "activation_proofs_not_retained"
+
+    forged = deepcopy(tape)
+    forged["history"]["rows"].append(deepcopy(forged["history"]["rows"][0]))
+    forged["history"]["row_count"] += 1
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="duplicate_row"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
+
+    forged = deepcopy(tape)
+    rows = forged["history"]["rows"]
+    rows[1]["exact_operation_index"] = rows[0]["exact_operation_index"]
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="operation_order"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
+
+    forged = deepcopy(tape)
+    forged["history"]["classification_count"] = 2
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="classification_count"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
+
+    forged = deepcopy(tape)
+    forged["history"]["rows"][1]["observed_at"] = "2026-08-03T00:00:00Z"
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="clock_invalid"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
+
+    forged = deepcopy(tape)
+    forged["history"]["rows"][0]["observed_at"] = "2026-08-02T00:00:00+00:00"
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="clock_invalid"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
+
+    forged = deepcopy(tape)
+    forged["history"]["rows"] = deepcopy(forged["history"]["rows"][:2])
+    forged["history"]["rows"][1]["source_versions"] = {"before": 2, "after": 3}
+    forged["history"]["rows"][1]["exact_operation_index"] = 0
+    forged["history"]["rows"][1]["observed_at"] = "2026-01-01T00:00:00Z"
+    forged["history"]["row_count"] = 2
+    forged["history"]["classification_count"] = 2
+    forged["model_payload_sha256"] = canonical_json_sha256(
+        {key: value for key, value in forged.items() if key != "model_payload_sha256"}
+    )
+    with pytest.raises(ChangeTapeError, match="chronology_invalid"):
+        validate_trial_change_tape_read_model(forged, nct_id=NCT_ID)
 
 
 def test_unselected_exact_change_is_available_with_no_rows_not_a_truncation() -> None:

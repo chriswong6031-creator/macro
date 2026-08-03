@@ -150,12 +150,21 @@ def _replace_v14_history_model(config: Any, model: dict[str, Any]) -> None:
         for artifact_path in prospective_root.iterdir():
             artifact_path.unlink()
         prospective_root.rmdir()
+    # v1.4 predates the separately governed T2c read model.  Test fixtures
+    # that deliberately downgrade a current generation must remove both the
+    # newer prospective artifacts and the newer change-tape artifacts.
+    change_tape_root = generation / "change_tapes"
+    if change_tape_root.exists():
+        for artifact_path in change_tape_root.iterdir():
+            artifact_path.unlink()
+        change_tape_root.rmdir()
     manifest["schema_version"] = "1.4.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if artifact["name"] != "history/NCT00000001.json"
         and not artifact["name"].startswith("prospective/")
+        and not artifact["name"].startswith("change_tapes/")
     ]
     manifest["artifacts"].append(
         {
@@ -453,6 +462,77 @@ def _prospective_projection(
         trials=base.trials,
         history_models_by_nct={},
         prospective_models_by_nct=models,
+    )
+
+
+def _classified_change_tape(
+    nct_id: str,
+    *,
+    rows: list[dict[str, Any]] | None = None,
+    history_available: bool = True,
+    history_reason: str | None = None,
+) -> dict[str, Any]:
+    rendered_rows = rows if rows is not None else [
+        {
+            "field_class": "registry_status",
+            "exact_operation_index": 0,
+            "review_state": "not_required",
+            "semantic_resolution": "registry_field_class_only",
+            "op": "replace",
+            "before_state": "present",
+            "after_state": "present",
+            "source_versions": {"before": 1, "after": 2},
+            "observed_at": "2026-08-02T12:00:00.000000Z",
+            "protocol_change_asserted": False,
+            "materiality_assessed": False,
+            "correction_assessed": False,
+        }
+    ]
+    history = {
+        "available": history_available,
+        "unavailable_reason": None if history_available else history_reason,
+        "classification_count": 1 if history_available else 0,
+        "row_count": len(rendered_rows) if history_available else 0,
+        "rows": rendered_rows if history_available else [],
+    }
+    model: dict[str, Any] = {
+        "contract_id": "trial_change_tape_read_model.v1",
+        "schema_version": "1.0.0",
+        "nct_id": nct_id,
+        "history": history,
+        "prospective": {
+            "available": False,
+            "unavailable_reason": "activation_proofs_not_retained",
+            "classification_count": 0,
+            "row_count": 0,
+            "rows": [],
+        },
+        "chronology_order": "source_version_then_exact_operation_order",
+        "interpretation": "registry_record_changed",
+        "protocol_change_asserted": False,
+        "materiality_assessed": False,
+        "correction_assessed": False,
+        "authority": dict(biocatalyst_api._CHANGE_TAPE_AUTHORITY),
+        "capacity": {
+            "max_history_pairs": 128,
+            "max_rows": 512,
+            "overflow_behavior": "unavailable_no_partial_tape",
+        },
+        "hash_scope": "canonical_payload_excluding_model_payload_sha256",
+    }
+    model["model_payload_sha256"] = canonical_json_sha256(model)
+    return model
+
+
+def _classified_change_tape_projection(
+    snapshots: list[dict[str, Any]],
+    tapes: dict[str, dict[str, Any]],
+):
+    base = _milestone_projection(snapshots)
+    return SimpleNamespace(
+        generation=base.generation,
+        trials=base.trials,
+        change_tapes_by_nct=tapes,
     )
 
 
@@ -1157,6 +1237,113 @@ def test_registry_change_tape_reads_available_history_from_real_public_generatio
             "after_value": "RECRUITING",
         }
     ]
+
+
+def test_classified_change_tape_is_bounded_sanitized_and_handles_extreme_clock(
+    entitled_client, monkeypatch
+) -> None:
+    first = _milestone_snapshot("NCT00000001", title="Classified registry study")
+    second = _milestone_snapshot("NCT00000002", title="Unavailable registry study")
+    rows = [
+        {
+            "field_class": "enrollment",
+            "exact_operation_index": 0,
+            "review_state": "not_required",
+            "semantic_resolution": "registry_field_class_only",
+            "op": "replace",
+            "before_state": "present",
+            "after_state": "present",
+            "source_versions": {"before": 1, "after": 2},
+            "observed_at": "0001-01-01T00:00:00Z",
+            "protocol_change_asserted": False,
+            "materiality_assessed": False,
+            "correction_assessed": False,
+        },
+        {
+            "field_class": "enrollment",
+            "exact_operation_index": 1,
+            "review_state": "not_required",
+            "semantic_resolution": "registry_field_class_only",
+            "op": "replace",
+            "before_state": "present",
+            "after_state": "present",
+            "source_versions": {"before": 1, "after": 2},
+            "observed_at": "0001-01-01T00:00:00Z",
+            "protocol_change_asserted": False,
+            "materiality_assessed": False,
+            "correction_assessed": False,
+        },
+    ]
+    projection = _classified_change_tape_projection(
+        [first, second],
+        {
+            "NCT00000001": _classified_change_tape("NCT00000001", rows=rows),
+            "NCT00000002": _classified_change_tape(
+                "NCT00000002",
+                history_available=False,
+                history_reason="history_not_available",
+            ),
+        },
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    response = entitled_client.get("/api/biocatalyst/v1/trials/change-tape?limit=1")
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["pagination"]["total"] == 2
+    assert payload["change_tape_coverage"] == {
+        "class": "replay_verified_record_history",
+        "selection_basis": "committed_trial_record",
+        "available_trials": 1,
+        "unavailable_trials": 1,
+        "unavailable_reasons": {"history_not_available": 1},
+        "prospective_state": "unavailable_without_retained_activation_proofs",
+    }
+    assert payload["change_tape"][0]["change"]["exact_operation_index"] == 0
+    assert not any(
+        any(fragment in key.casefold() for fragment in _FORBIDDEN_KEY_FRAGMENTS)
+        for key in _walk_keys(payload)
+    )
+    next_page = entitled_client.get(
+        "/api/biocatalyst/v1/trials/change-tape?limit=1&cursor="
+        + payload["pagination"]["next_cursor"]
+    )
+    assert next_page.status_code == 200
+    assert next_page.json()["change_tape"][0]["change"]["exact_operation_index"] == 1
+
+
+def test_classified_change_tape_rejects_oversized_cursor_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    query = biocatalyst_api._change_tape_query_binding(
+        nct_id=None,
+        field_class="all",
+        review_state="all",
+        limit=50,
+    )
+    key = b"z" * 32
+    oversized = biocatalyst_api._encode_change_tape_cursor(
+        biocatalyst_api._CHANGE_TAPE_MAX_CURSOR_OFFSET + 1,
+        generation_id="ctgov_run_cursor_fixture",
+        query_binding=query,
+        cursor_key=key,
+    )
+    monkeypatch.setattr(biocatalyst_api, "_change_tape_cursor_key", lambda: key)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(AssertionError("cursor must fail before projection read")),
+    )
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials/change-tape?cursor=" + oversized
+    )
+    assert response.status_code == 400
+    _assert_private_headers(response)
 
 
 def test_registry_change_tape_groups_exact_history_values_with_current_record_filters(
@@ -2399,6 +2586,11 @@ def test_v11_generation_remains_readable_with_an_explicit_history_unavailable_st
         for artifact_path in protocols.iterdir():
             artifact_path.unlink()
         protocols.rmdir()
+    change_tapes = generation / "change_tapes"
+    if change_tapes.exists():
+        for artifact_path in change_tapes.iterdir():
+            artifact_path.unlink()
+        change_tapes.rmdir()
     manifest["schema_version"] = "1.1.0"
     manifest["artifacts"] = [
         artifact
@@ -2406,6 +2598,7 @@ def test_v11_generation_remains_readable_with_an_explicit_history_unavailable_st
         if not artifact["name"].startswith("history/")
         and not artifact["name"].startswith("prospective/")
         and not artifact["name"].startswith("protocols/")
+        and not artifact["name"].startswith("change_tapes/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
