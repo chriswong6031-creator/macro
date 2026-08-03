@@ -2,6 +2,17 @@
 
 Canonical build and operating handoff for Wave 8. The implementation and local release gates are complete; use this document for subsequent product lanes instead of reconstructing the work from chat.
 
+## Post-merge record (2026-08-03)
+
+- Wave 8 merged in PR #4348 as d1fe0ee65411f3d4ea3c08f428bbad837391dfdd.
+- The Government Revenue live materializer advanced the data generation in descendant
+  b61c304208d9d1c01f15d8cc14a56673543d212a.
+- Production health reported app commit b61c304208d from checkout descendant
+  d81f3a556a2; the latest API, IDV relationship route, and deliberate budget-unavailable
+  state were verified there.
+- The canonical next-build docket is
+  research/GOVERNMENT_REVENUE_WAVE9_DEFENSE_CATALYST_CANDIDATE_LEDGER_2026-08-03.md.
+
 ## Exact workspace state
 
 - Worktree: `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/government-revenue-wave8-foundations-20260802`
