@@ -9,6 +9,7 @@ Charter: research/SECTOR_INTELLIGENCE_CONSOLIDATION_MASTERPLAN_BY_FABLE.md §0.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,17 @@ TPL = ROOT / "templates"
 def _read(p: Path) -> str:
     assert p.exists(), f"{p} missing"
     return p.read_text(encoding="utf-8")
+
+
+def _view_body(src: str, view: str) -> str:
+    """The markup between `<section class="si-view" data-view="<view>">` and the next
+    view's open tag (V2 workspace shell). Views are display-toggled siblings, so
+    "inside view X" is a slice between two sibling opens, not a nesting question."""
+    opens = re.split(r'<section class="si-view[^"]*" data-view="([a-z]+)"', src)
+    # re.split with one group → [pre, name, body, name, body, ...]
+    names, bodies = opens[1::2], opens[2::2]
+    assert view in names, f"no si-view for {view!r} (found {names})"
+    return bodies[names.index(view)]
 
 
 # ---------------------------------------------------------------- stubs
@@ -76,23 +88,74 @@ def test_merged_template_sections() -> None:
     assert "basket_member_syms" in s
 
 
-def test_forming_narratives_mounted_at_end_of_movement() -> None:
+# V2 workspace partition (SI_WORKSPACE_V2_MASTERPLAN_BY_FABLE §2b). The V1 pin above
+# only proved these ids EXIST somewhere on the page — which stayed true even while an
+# organ sat in the wrong view. Membership is the property the shell actually depends
+# on: the router sends every legacy anchor to a specific view, so an organ in the wrong
+# view means a deep link that scrolls to a hidden element and shows the user nothing.
+VIEW_MEMBERSHIP = {
+    "overview": ('id="ftr-tape-strip"', 'id="ftr-tape-band"', 'id="regime"',
+                 'id="actnow-section"', 'id="actnow"', 'id="grader"'),
+    "map": ('id="rotmap-section"', 'id="si-map"', 'id="rvx-rmap"', 'id="rvx-board"',
+            'id="sc-cyclemap"', 'id="sc-chart"', 'id="board"'),
+    "moving": ('id="si-movement"', 'id="rc-events-mount"', 'id="rotation-app"',
+               'id="desk-watch-mount"'),
+    "money": ('id="si-money"', 'id="internals-section"', 'id="sc-heatmap"',
+              'id="heatmap-scorecard"', 'id="scc-leadership"'),
+    "explore": ('id="explore-section"', 'id="table-section"', 'id="chart-section"',
+                'id="btable"', 'id="chart"', 'id="tm-mount"',
+                "_forming_narratives.html.j2", "ftr-member-sym-registry"),
+}
+
+
+@pytest.mark.parametrize("view,anchors", sorted(VIEW_MEMBERSHIP.items()))
+def test_organs_sit_in_their_assigned_view(view: str, anchors: tuple) -> None:
+    body = _view_body(_read(TPL / "sector_central.html.j2"), view)
+    for a in anchors:
+        assert a in body, f"{a} is not inside the {view} view"
+
+
+def test_view_order_is_the_sidebar_order() -> None:
+    """Five views, in the pinned order, each driven by a sidebar button of the same
+    name. Order is load-bearing twice over: it is the reading order of the product
+    (overview → map → moving → money → explore) and it is the tab order of the mobile
+    switcher."""
+    s = _read(TPL / "sector_central.html.j2")
+    order = ["overview", "map", "moving", "money", "explore"]
+    assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', s) == order
+    assert re.findall(r'class="si-view-btn[^"]*" data-view="([a-z]+)"', s) == order
+    # the V1 sticky anchor rail is retired — the sidebar replaced it
+    assert 'id="si-rail"' not in s, "the V1 anchor rail came back"
+    assert 'class="scc-rail"' not in s
+
+
+def test_forming_narratives_mounted_at_end_of_explore() -> None:
     """The Forming Narratives panel ships on the US page (PR-A1).
 
     engine.narrative_emergence has emitted site/basketdata/narrative_emergence.json for
     US nightly all along, but the shared panel was mounted only on the non-US baskets
-    pages — the US read was computed and never shown. It belongs at the END of
-    MOVEMENT: the funnel descends gated lanes → map → whole-market motion → what is
-    forming next.
+    pages — the US read was computed and never shown.
+
+    RETARGETED by the V2 workspace (SI_WORKSPACE_V2_MASTERPLAN_BY_FABLE §2b): the panel
+    and the Time Machine both moved out of MOVEMENT into EXPLORE, because both are reads
+    you go looking for rather than heads-up context. The ordering law is unchanged — the
+    Time Machine still precedes the forming panel, which is still the LAST read of its
+    view — only the view it ends changed. Mount ids are preserved so #tm-mount and
+    #forming-narratives keep resolving through the router.
     """
     s = _read(TPL / "sector_central.html.j2")
     assert '{% include "_forming_narratives.html.j2" %}' in s, "panel not mounted"
-    # placement: inside #si-movement, after the time-machine mount, before the close
-    movement = s.split('id="si-movement"', 1)[1].split("</section>", 1)[0]
-    assert '{% include "_forming_narratives.html.j2" %}' in movement, \
-        "panel escaped the MOVEMENT section"
-    assert movement.index('id="tm-mount"') < movement.index("_forming_narratives"), \
-        "panel must come after the time machine — it is the last read in MOVEMENT"
+    explore = _view_body(s, "explore")
+    assert '{% include "_forming_narratives.html.j2" %}' in explore, \
+        "panel escaped the EXPLORE view"
+    assert 'id="tm-mount"' in explore, "time machine escaped the EXPLORE view"
+    assert explore.index('id="tm-mount"') < explore.index("_forming_narratives"), \
+        "panel must come after the time machine — it is the last read in EXPLORE"
+    # …and both must have LEFT movement: a copy left behind would double-mount and the
+    # second mount would silently win.
+    movement = _view_body(s, "moving")
+    assert 'id="tm-mount"' not in movement, "time machine still mounted in MOVEMENT too"
+    assert "_forming_narratives" not in movement, "forming panel still in MOVEMENT too"
 
 
 def test_forming_narratives_asset_copied_by_builder() -> None:
