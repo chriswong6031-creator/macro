@@ -169,6 +169,10 @@ The v2 path closes the previously missing source seam without weakening it:
    the selected state from the signed head plus exactly one receipt and ledger.
    A runner retaining an authenticated local high-water accepts a later head
    only after a logarithmic binary-lifting proof lands on that exact receipt.
+   Local pointer/receipt selection and external selected-receipt authentication
+   complete before any ledger opens. Rejected rollback/fork/ancestry paths read
+   no ledger; a valid convergence reads only logarithmic proof receipts followed
+   by one selected external ledger fetch and an exact local install readback.
    Bounded restart tests cover death after the recovery capsule, after durable
    CAS intent but before the storage call, and between the two cleanup unlinks.
 6. One inner ledger receipt covers the entire bounded source batch and carries
@@ -271,13 +275,15 @@ the correction chain.
 2. **Implemented, pre-production:** metadata-only authenticated reader, strict
    contiguous raw-object bridge, pure v2 model, independently signed
    crash-recoverable publication, a bounded retention planner/receipt contract,
-   default-off daily execution, DAG/Synapse declarations, CI coverage, and
+   selector/receipt-first high-water proof before any ledger load, default-off
+   daily execution, DAG/Synapse declarations, CI coverage, and
    explicit zero-source unavailability. The retention production shell is a
    deliberate fail-closed release block, not an operational compactor.
 3. **Still required before activation:** replace the two-record local recovery
    journal with one signed journal (or an equivalently unambiguous cleanup
-   protocol), and split high-water selector/receipt validation from loading its
-   full ledger. The frozen default-off audit passed, but it correctly refused an
+   protocol). The selector/receipt-versus-ledger split is now implemented and
+   adversarially pinned; that closure does not enable the lane. The frozen
+   default-off audit passed, but it correctly refused an
    activation-grade rollback claim when the local pointer and marker are both
    lost and only the signed capsule remains. Separately prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
@@ -326,7 +332,10 @@ exact receipt/source/anchor binding, bounded append and replay, semantic
 re-derivation, all-false authority, strict store identity, separate HMAC/R2
 publication, concurrent CAS conflict, pre/post-CAS crash recovery, lagging
 runner convergence, replayable bounded CAS intent, capsule-only recovery,
-logarithmic high-water ancestry proof, clean-run rollback nonclaim, rolling-prefix
+logarithmic high-water ancestry proof before ledger access, zero ledger reads on
+rollback/fork/divergent-proof rejection, exactly one selected external ledger
+fetch after a successful proof, bounded local install readback, clean-run
+rollback nonclaim, rolling-prefix
 tamper refusal, descriptor-relative symlink/root-swap/lock
 refusal, bounded retention planning and production hard-blocking, deadline
 enforcement, Git-plane
