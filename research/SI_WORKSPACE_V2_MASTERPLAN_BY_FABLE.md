@@ -92,6 +92,24 @@ Engines, payloads, si_handoff, stubs, nav files, detail families, tests' epistem
 pins, the China V1 PR (#4299 lands as-is; the China V2 port is a follow-up wave of
 this program reusing the same shell partial).
 
+## §2b W1 view-partition map (measured on post-#4300 main; line refs indicative)
+
+| V1 markup (templates/sector_central.html.j2) | V2 view |
+|---|---|
+| tape strip + band (~870-894) · rvx-hero both variants (1247/1301) · `#regime` (1315) · `#actnow-section` (1331) + `#grader` | **overview** (+ new what-changed strip) |
+| `#si-map` (1347, contains `#sc-cyclemap` 1388 + sectors `#board` + fast-lens footnote) | **map** |
+| `#si-movement` (1452: rc-events-mount, rotation-app, desk-watch-mount) | **moving** |
+| `#tm-mount` + `{% include "_forming_narratives" %}` (1466) — RELOCATE out of movement | **explore** |
+| `#si-money` span (1469) + `#internals-section` (1470: internals, flows, heatmap, `#scc-leadership`) | **money** |
+| `#explore-section` (1502: `#table-section` 1507, `#chart-section` 1517, member-sym registry, track record) | **explore** |
+| `#si-rail` (1316, the V1 sticky anchor rail) | **dies** — replaced by the sidebar |
+
+LEGACY_ANCHORS (router table; CI-pinned): `#actnow-section`→overview · `#read-<id>`→
+overview+trace-open · `#regime`/`#grader`→overview · `#si-map`/`#sc-cyclemap`/`#board`→map ·
+`#si-movement`/`#rc-events-mount`/`#rotation-app`→moving · `#si-money`/`#internals-section`/
+`#scc-leadership`→money · `#explore-section`/`#table-section`/`#chart-section`/
+`#forming-narratives`/`#tm-mount`→explore · unknown→overview.
+
 ## §3 Waves
 
 - **W1 (main loop, design):** shell skeleton + router + LEGACY_ANCHORS table +
