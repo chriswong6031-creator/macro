@@ -545,6 +545,70 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     return out
 
 
+# ---- extension panels: equities and crypto are read on their OWN calendars ---
+# engine.extension.extension_signals takes ONE global `.iloc[-1]` and drops every
+# ticker whose latest cell is NaN. This universe mixes 5-sessions-a-week equities
+# with 24/7 crypto (config.yml yahoo.tickers.crypto), so one panel is indexed on the
+# UNION of the two calendars and BOTH reads are wrong:
+#   * whenever the panel's newest calendar date is not an equity session — every
+#     weekend, every US market holiday — that last row is crypto-only, so every
+#     equity's ext_z is NaN and ext_map collapses to the crypto names alone.
+#     Measured 2026-08-02 on the live universe: 3 readings instead of 1,662, which
+#     zeroes the us_prophet_v1 `runway` leg (0/71 buy rows) and strips the ez-term
+#     and the parabolic/stretched grade floor out of conviction.risk.components.ext
+#     (engine.stock_score._risk_idio, the largest idio-risk weight at 0.38);
+#   * even on a weekday build the union index injects ~62 all-NaN weekend rows into
+#     every 200-row window, so px.rolling(200) averages only ~138 actual sessions —
+#     ext_z was not the back-tested quantity on ANY day (SPY 07-31: +0.28 mixed vs
+#     −0.39 on its own calendar).
+# Splitting by calendar fixes both, and matches what build_discovery (equity_factors
+# breadth closes), build_hk_library and build_canada_library already feed the module.
+# `.iloc[:-1]` does NOT fix it: a weekend or a Monday holiday leaves SEVERAL trailing
+# crypto-only rows, and it would silently discard a real session the rest of the year.
+
+
+def _crypto_tickers() -> frozenset[str]:
+    """The universe's crypto members, read from the SAME config block universe()
+    sources them from (config.yml `yahoo.tickers.crypto`).
+
+    Derived, never a literal list: a hardcoded {BTC-USD, ETH-USD, SOL-USD} would rot
+    silently the day a fourth coin is added to that block and put the mixed-calendar
+    bug straight back."""
+    try:
+        return frozenset(config.load()["yahoo"]["tickers"].get("crypto") or [])
+    except Exception as e:  # noqa: BLE001 — additive; the caller degrades to one panel
+        log.warning("crypto ticker list unreadable (%s) — extension panel not split", e)
+        return frozenset()
+
+
+def extension_panels(closes: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split a universe close matrix into (equities, crypto) SAME-CALENDAR panels.
+
+    Each panel drops the rows that are all-NaN for its own members, so the equity
+    panel ends on the last equity session (not on a crypto-only Saturday) and its
+    rolling windows count sessions rather than calendar days. Either half may come
+    back empty — the caller must not assume both are populated."""
+    if closes is None or closes.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    crypto = _crypto_tickers()
+    cx_cols = [c for c in closes.columns if c in crypto]
+    eq_cols = [c for c in closes.columns if c not in crypto]
+    eq = closes[eq_cols].dropna(how="all") if eq_cols else pd.DataFrame()
+    cx = closes[cx_cols].dropna(how="all") if cx_cols else pd.DataFrame()
+    return eq, cx
+
+
+def _panel_asof(panel: pd.DataFrame) -> str:
+    """Newest date in a close panel, for the build log — the one line that makes a
+    calendar collision visible instead of silent."""
+    if panel is None or panel.empty:
+        return "—"
+    try:
+        return str(pd.Timestamp(panel.index.max()).date())
+    except Exception:  # noqa: BLE001 — a log label must never break the build
+        return "?"
+
+
 # ---- parallel per-ticker analysis (the build's single heaviest stretch) ------
 # _one() is dominated by engine.cycles.analyze and is GIL-bound, but every ticker
 # is independent (its JSON is written serially in main()), so the universe is
@@ -2180,7 +2244,18 @@ def main() -> int:
     disp_regime, regime_gross = None, 1.0
     try:
         _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
-        ext_map = extension_signals(_ext_closes)
+        # equities and crypto get SEPARATE panels — see extension_panels(). The mixed
+        # panel is indexed on the union of a 5-day and a 24/7 calendar, so on any
+        # non-session date (weekend / market holiday) the global .iloc[-1] that
+        # extension_signals reads is crypto-only and every equity drops out. Crypto
+        # keeps its own reading — the crypto stockdata pages consume it.
+        _ext_eq, _ext_cx = extension_panels(_ext_closes)
+        ext_map = extension_signals(_ext_eq)
+        if not _ext_cx.empty:
+            ext_map.update(extension_signals(_ext_cx))
+        log.info("extension panels: %d equities (through %s) · %d crypto (through %s)",
+                 _ext_eq.shape[1], _panel_asof(_ext_eq),
+                 _ext_cx.shape[1], _panel_asof(_ext_cx))
         # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high
         # dispersion => selection earns more => take more gross on the cross-sectional book).
         # Computed ONCE over the whole-universe return panel; feeds per-name vol-managed sizing.
