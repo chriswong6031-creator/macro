@@ -800,8 +800,16 @@ def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
     return name_ret - bench_ret, pinned                   # CSI300-relative excess
 
 
+# Watch/measurement cohorts log to the same store but must NEVER own the headline
+# grade — they are labeled watch-tier surfaces with their own separate ledgers
+# (charting-app docs/PREREG_WASHOUT_REVERSAL.md §5.4). Excluded from headline-
+# definition resolution below so an append ORDER can never flip grade() onto a
+# watch cohort.
+WATCH_DEFINITIONS = frozenset({"cn_reversal_watch_v1"})
+
+
 def _latest_definition_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
-    """Return only the newest versioned board cohort.
+    """Return only the newest versioned NON-WATCH board cohort.
 
     A board definition changes the selection instrument.  Pooling the former
     110-name cascade/setup board with the selective China Prophet v2 shelf would
@@ -813,6 +821,7 @@ def _latest_definition_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None
     stamped = df[
         df["board_definition"].notna()
         & ~df["board_definition"].astype(str).isin(("", "nan", "None", "NaT"))
+        & ~df["board_definition"].astype(str).isin(WATCH_DEFINITIONS)
     ]
     if stamped.empty:
         return df, None

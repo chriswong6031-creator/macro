@@ -17,7 +17,9 @@ has NO reply-threading capability at B2 (verified — see the TODO in the daemon
 docstring), so a wire_deep ships as a SINGLE post. Threading is explicitly NOT
 built here; when the rail gains reply support, split compose here.
 
-IMPORT CLOSURE: stdlib only (re). No yaml, no pandas at import.
+IMPORT CLOSURE: stdlib only (re). No yaml, no pandas at import. (clamp_for_x
+lazily imports the sibling breaking_summary — itself stdlib-only at module
+level — for the restatement rung; nothing heavier enters the closure.)
 
 Public API:
     pick_format(item, *, cfg=None) -> dict
@@ -188,13 +190,23 @@ def clamp_for_x(
 
     THE LADDER, in order, stopping at the first rung that fits:
 
+      0. when the body already SAYS the headline
+         (breaking_summary.headline_earns_its_line is False — the X-relay shape,
+         where the deterministic body is the same statement the headline
+         carries), the joined form would print one sentence twice, so the
+         headline line is dropped REGARDLESS of length and the body-only rungs
+         below decide the rest. The post ships ONE statement — the body, which
+         keeps the opener, the attribution and the tape stamp, and is the exact
+         text the news rail displays for an emitted item. This is a redundancy
+         rung, not a length rung: before it existed a doubled relay that fit
+         inside 280 characters shipped doubled (live posts, 2026-08-02);
       1. ``headline + body`` unchanged (what a flash almost always is);
       2. ``body`` alone. On the LLM path the body is a restatement of the same
          source; on the deterministic path it is the source's own lead sentence
          (breaking_summary._det_lead_sentence). Either way the FACT and the
          ATTRIBUTION both live in the body, so dropping the headline prefix
-         costs framing, never substance -- and this rung only fires when the
-         joined form does not fit at all;
+         costs framing, never substance -- this rung fires when the joined form
+         does not fit, or always via rung 0;
       3. the longest WHOLE-SENTENCE prefix of the body, with the attribution and
          tape clauses re-attached, so the post never ends mid-claim and never
          loses its source line;
@@ -204,15 +216,30 @@ def clamp_for_x(
     Truncating mid-sentence is deliberately absent from the ladder: a wire post
     cut at "officials weigh a military resp" is worse than no post.
 
+    ``breaking_summary`` is imported lazily inside the call (module import
+    closure here stays stdlib-only, and breaking_summary's own module level is
+    stdlib-only too) and WITHOUT a fallback, same rule as the caller's import of
+    this module: a checkout that cannot import it is broken, and failing soft
+    would silently re-open the doubled-post shape.
+
     Returns ``{"text", "clamped", "reason"}``; ``text == ""`` is rung 4.
     """
+    from engine.marketing.breaking_summary import headline_earns_its_line  # noqa: PLC0415
+
     headline = str(headline or "").strip()
     body = str(body or "").strip()
     joined = "\n\n".join(p for p in (headline, body) if p)
-    if len(joined) <= cap:
+
+    restated = (bool(headline) and bool(body)
+                and not headline_earns_its_line(headline, body))
+    if not restated and len(joined) <= cap:
         return {"text": joined, "clamped": False, "reason": ""}
 
     if body and len(body) <= cap:
+        if restated:
+            return {"text": body, "clamped": True,
+                    "reason": "headline restated by the body -- posted as one "
+                              "statement"}
         return {"text": body, "clamped": True,
                 "reason": f"headline prefix dropped ({len(joined)} > {cap})"}
 

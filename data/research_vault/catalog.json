@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T13:05:39.971195+00:00",
-  "count": 665,
+  "generated_at": "2026-08-03T13:20:44.324830+00:00",
+  "count": 666,
   "institutions": [
     "Alger",
     "Amova",
@@ -85,6 +85,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-we83r0jgu1z-f07611",
+      "title": "MS El Niño's Back",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:03:01Z",
+      "summary_points": [
+        "**El Niño Sovereign Credit Risk**: 47% of EMBI-D index negatively exposed; 11% highest-risk bucket (Ecuador, Mozambique, Zambia, Colombia, Costa Rica, Peru) with avg sovereign risk score 5.9 for HY names vs.",
+        "8 for moderate risks.",
+        "**Risk Framework Channels**: Sovereigns scored on physical (40%: hydropower/agriculture exposure), fiscal (40%: 2026 deficit, EMBI spreads), and macro (20%: food CPI, FDI) channels; direct physical impacts drive upfront credit stress.",
+        "**Regional Exposure Disparity**: Africa/Asia face highest negative exposure; LatAm (Argentina, Chile, Mexico, Uruguay) potential beneficiaries if rainfall supports agriculture; Peru/Costa Rica highest sovereign risk in LatAm.",
+        "**HY Credit Vulnerability**: Lower-quality HY names (Ecuador, Mozambique, Zambia) exhibit elevated sovereign risk scores (avg 5.9) and underperform during El Niño peaks, with spreads peaking near physical impact dates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
       "language": "en",
       "needs_metadata": false
     },

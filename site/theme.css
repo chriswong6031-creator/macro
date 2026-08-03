@@ -1574,6 +1574,15 @@ html[data-theme="light"] .anv2-chip-turn { color:color-mix(in srgb,#3dd6c8 40%,v
                 background:color-mix(in srgb,var(--down) 4%,var(--panel)); border:1px solid color-mix(in srgb,var(--down) 15%,var(--line));
                 border-radius:7px; padding:7px 11px; opacity:.72; font-size:11px; }
 .rip-fall-tk { font-weight:800; color:var(--text); }
+/* washout reversal watch shelf — neutral/amber (measurement, not a falling-knife sink) */
+.revw-rows { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.revw-row { display:grid; grid-template-columns:minmax(140px,1.4fr) auto auto auto; align-items:center; gap:14px;
+            background:color-mix(in srgb,var(--warn) 4%,var(--panel)); border:1px solid color-mix(in srgb,var(--warn) 18%,var(--line));
+            border-radius:7px; padding:7px 11px; font-size:11px; }
+.revw-val { font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; }
+.revw-val.pos { color:var(--up); } .revw-val.neg { color:var(--down); }
+.revw-null { margin-top:7px; font-size:10px; color:var(--muted); }
+@media (max-width:640px){ .revw-row { grid-template-columns:1fr auto; grid-template-rows:auto auto; } }
 .rip-fall-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rip-fall-ret { font-weight:700; color:var(--ink-down); white-space:nowrap; }
 .rip-fall-lbl { font-size:9.5px; color:var(--ink-down); opacity:.7; }

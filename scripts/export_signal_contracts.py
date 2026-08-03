@@ -395,6 +395,62 @@ ARTIFACT_MANIFEST = [
      "as_of_field": None,
      "consumers": ["bot:china_book"],
      "note": "China regime timeline"},
+    # 1.0.0 (2026-08-02, hk_prophet_v1): first registration of the HK Stock Desk
+    # board. The artifact has shipped for months but was never in this manifest, so
+    # it had no drift guard at all — registering it now is the guard, and the
+    # priority-ranking keys land in optional_fields for the usual transition window
+    # (the contract lands one render BEFORE the artifact carrying them; a required
+    # field the artifact has not been rebuilt with yet reads as `removed` drift).
+    # They GRADUATE to schema_fields on a minor bump once the first hk_prophet_v1
+    # render is committed — the same order us_standouts reached 1.5.0 in.
+    {"artifact": "site/factordata/hk_standouts.json",
+     "kind": "board",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "as_of", "board_track", "buy", "calm", "cohort", "context_chips",
+         "eligible", "health", "laggards", "leadership", "liquidity_regime",
+         "overlay", "risk_state", "southbound_summary", "universe",
+         "washout_watch", "watch",
+     ],
+     "optional_fields": [
+         # dispersion_regime — build_hk_library.py `if disp_regime:` (only when the
+         # selection-regime dial computes); conditional-by-design, as on the Canada
+         # board. The rest are the hk_prophet_v1 additions described above:
+         #   board_definition / rank_by / ranking  the priority score + its receipt
+         #   lane_counts                            per-lane + per-stage counts
+         #   leaders / ran / vetoed                 the three display-tier lanes
+         #   universe_excluded / universe_source_rows  the disclosed universe gap
+         # (List order is alphabetical — test_contract_drift asserts it sorted.)
+         "board_definition", "dispersion_regime", "lane_counts", "leaders",
+         "ran", "rank_by", "ranking", "universe_excluded", "universe_source_rows",
+         "vetoed",
+     ],
+     "schema_item_fields": [
+         "ah_value", "align_tier", "alpha", "alpha_entry", "anchor", "beta",
+         "blocked_reason_en", "blocked_reason_zh", "conviction",
+         "days_since_signal", "days_since_signal_basis", "dir", "display_only",
+         "display_rank", "dist_200dma", "edge_basis", "edge_z", "entry_signal",
+         "entry_window", "extended", "featured", "featured_blocked_by", "group",
+         # knife_risk — the H4 deepest-3M-quintile CLASS, stamped on every row of
+         #   every cohort (knife_demoted is the narrower "this buy was pushed to the
+         #   watch strip"). scripts/build_hk_pick_lab reads this, not lane membership.
+         # laggard_z — the resolved laggards SORT KEY, stamped on laggards[] rows so
+         #   the strip prints the number it was ordered by.
+         "in_leadership_cohort", "knife_demoted", "knife_risk", "knife_z",
+         "label", "label_zh", "laggard_z",
+         "lane", "lead", "leadership", "momentum_z", "name", "name_zh", "off_high",
+         "pct_since", "placement_flag", "price", "prophet", "rank_key",
+         "reason_raw", "risk_sizing", "role", "rsi", "score_rank", "sector",
+         "sector_n", "sector_rank", "sector_zh", "sessions_since", "sfc_short",
+         "signal", "signal_asof", "signal_date", "southbound", "spark_svg",
+         "stage", "stance", "stance_zh", "ticker", "ticks", "tilt", "washout_2w",
+         "watch_reason",
+     ],
+     "expected_max_age_td": 3,
+     "as_of_field": "as_of",
+     "consumers": ["bot:hk_book"],
+     "note": "HK Stock Desk board; leaders/ran/vetoed are display-tier context "
+             "lanes carrying no entry claim"},
     {"artifact": "site/hk_regime_timeline.json",
      "kind": "regime",
      "schema_version": "1.0.0",
