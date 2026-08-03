@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T18:51:34.724432+00:00",
-  "count": 682,
+  "generated_at": "2026-08-03T19:36:38.597582+00:00",
+  "count": 684,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -185,6 +185,48 @@
         "vs LT EPS average and -1.7 s.d.",
         "vs LT P/B average, with EPS expected to decline 36% by Dec-26, signaling significant overvaluation.",
         "**PBT Estimate Downgrade & Consensus Gap**: Profit before tax estimates revised -5% to -9%, 2026 PBT 7% below consensus, reflecting weak fundamentals and pricing pressures in London/Southern operations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l6rp4rrqiyh-79b9c1",
+      "title": "Global Healthcare Pharmaceuticals The Obesity Evolution GLP 1 Prescription Trends Point to Early Tailwind from Medicare Un...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:51Z",
+      "summary_points": [
+        "**Medicare Bridge Program Catalyst**: Weekly GLP-1 prescriptions (TRx/NBRx: ~1.25mn/199k) surged 8%/49% post-launch, with LLY’s Zeppound Kwikpen leading at 44% share; oral therapy share declines as physicians shift to injectables for Medicare patients.",
+        "**Revenue Offset Mechanism**: Volume growth for LLY’s Kwikpen and obesity GLP-1 therapies offsets cash-pay channel pricing headwinds (10-20% of LLY Direct Patients eligible), generating $250-$500m annualized incremental revenue potential.",
+        "**Critical Risk Exposure**: Key risks include obesity market pricing decline, market share erosion (e.g., from competitor GLP-1 assets), and pipeline underperformance, directly impacting sector fundamentals and valuation multiples.",
+        "**Prescription Trend Divergence**: AOM TRx shows steady growth through 2026, while NBRx inflects post-Medicare unlock (Exhibit 1); Wegovy/Zepbound NBRx sustained upward trend, contrasting with oral therapy decline.",
+        "**Valuation Discrepancy**: Novo Nordisk (NOVOB.CO) shows persistent target premiums (e.g., 745.00 vs 439.60 closing price), reflecting aggressive bullish sentiment, versus LLY’s narrower gap (1,283.00 vs 963.33), signaling sector-specific risk appetite."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-izxfoifrbes-acc3d5",
+      "title": "Eisai (4523)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:48Z",
+      "summary_points": [
+        "**Q1 Earnings Beat Catalyst**: Lenvima sales (front-loaded EMEA shipments) drove ¥24.7bn operating profit vs.",
+        "est.",
+        "¥20.6bn, triggering sales estimate revisions and 12m target hike to ¥4,400.",
+        "**AD Franchise Risk Dependency**: Neutral rating hinges on Leqembi (Alzheimer’s) global sales growth and Merck payment risks; DCF assumes 6% WACC and 0% terminal growth.",
+        "**Price Target Divergence**: Goldman Sachs’ ¥4,400 target below current price (¥4,656), reversing prior trend (targets > closing price), signaling potential downward revision or market overpricing."
       ],
       "tags": [],
       "tickers": [],
