@@ -692,6 +692,21 @@ on:
       # needed: .github/workflows/** covers the lanes, these cover the policy itself.
       - "scripts/ci/push_retry.sh"
       - "tests/test_push_retry.py"
+      # Publish-ops / worker / live-plane guards (unrun backfill 2026-08-03):
+      # dead-asset refs, ticker links, autostash containment, checkout bound,
+      # admin research tools, earnings worker, china board watch lane, live
+      # session floor. ops/** is the earnings worker's launchd estate — the
+      # one subject tree no glob matched; other subjects ride existing
+      # entries (scripts/*, admin/**, site/**, .github/workflows/**).
+      - "ops/**"
+      - "tests/test_rendered_ticker_links.py"
+      - "tests/test_push_conflict_guard.py"
+      - "tests/test_render_checkout_bound.py"
+      - "tests/test_admin_research_tools.py"
+      - "tests/test_earnings_worker_terminal.py"
+      - "tests/test_earnings_worker_launchd.py"
+      - "tests/test_china_board_watch_lane.py"
+      - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
