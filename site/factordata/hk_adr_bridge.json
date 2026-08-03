@@ -5,6 +5,21 @@
   "expected_hk_session": "2026-08-03",
   "freshness_verdict": "degraded",
   "adr_freshness": {
+    "FXI": {
+      "asof": "2026-07-31",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "BABA": {
+      "asof": "2026-07-31",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "TCOM": {
+      "asof": "2026-07-31",
+      "lag_days": 3,
+      "state": "slow"
+    },
     "KWEB": {
       "asof": "2026-07-31",
       "lag_days": 3,
@@ -16,21 +31,6 @@
       "state": "slow"
     },
     "JD": {
-      "asof": "2026-07-31",
-      "lag_days": 3,
-      "state": "slow"
-    },
-    "PDD": {
-      "asof": "2026-07-31",
-      "lag_days": 3,
-      "state": "slow"
-    },
-    "BABA": {
-      "asof": "2026-07-31",
-      "lag_days": 3,
-      "state": "slow"
-    },
-    "FXI": {
       "asof": "2026-07-31",
       "lag_days": 3,
       "state": "slow"
@@ -96,13 +96,13 @@
     },
     {
       "hk_ticker": "9961.HK",
-      "hk_name_en": "PDD",
-      "hk_name_zh": "\u62fc\u591a\u591a",
-      "adr_ticker": "PDD",
+      "hk_name_en": "Trip.com",
+      "hk_name_zh": "\u643a\u7a0b",
+      "adr_ticker": "TCOM",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": 1.28,
-      "adr_move_pct": 1.28,
+      "implied_open_gap_pct": 1.14,
+      "adr_move_pct": 1.14,
       "hk_last_move_pct": -0.16,
       "gap_context": "up",
       "disconnect_flag": true,
@@ -210,7 +210,7 @@
     }
   ],
   "composite": {
-    "bellwether_implied_open_pct": 2.98,
+    "bellwether_implied_open_pct": 2.95,
     "gap_context": "up",
     "composite_source": "direct_average",
     "n_direct": 4,

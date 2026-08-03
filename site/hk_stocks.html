@@ -2,9 +2,12 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -32,7 +35,6 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hong Kong Stock & Exposure Board — 2026-08-03</title>
 
@@ -57,12 +59,14 @@
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 <link rel="stylesheet" href="illus.css?v=8032719c">
-<link rel="stylesheet" href="assets/css/c821091e.css?v=c821091e">
+<link rel="stylesheet" href="assets/css/b32c72e8.css?v=b32c72e8">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 <link rel="preload" as="style" href="assets/css/93143cb3.css?v=93143cb3">
-<link rel="preload" as="style" href="assets/css/a6767031.css?v=a6767031">
-<link rel="preload" as="style" href="assets/css/b3672184.css?v=b3672184">
+<link rel="preload" as="style" href="assets/css/5e973f2b.css?v=5e973f2b">
+<link rel="preload" as="style" href="assets/css/3cff5b20.css?v=3cff5b20">
+<link rel="preload" as="style" href="assets/css/5517bdf6.css?v=5517bdf6">
+<link rel="preload" as="style" href="assets/css/845c061c.css?v=845c061c">
 </head>
 <body>
 
@@ -107,6 +111,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -116,11 +122,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -308,15 +312,6 @@
 
   
   
-  
-  
-  
-  
-  <div class="span12 hk-fresh-degraded" id="hk-freshness-banner">
-    <span class="hfd-i">&#9680;</span> <span class="l-en">Some background feeds are a step behind — prices and picks are current. (prices current as of 2026-07-31)</span><span class="l-zh">部分后台数据来源稍有滞后 — 价格和选股仍是最新的。（价格截至 2026-07-31 为最新）</span>
-  </div>
-  
-  
 
   
 
@@ -397,11 +392,40 @@
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
   
   <link rel="stylesheet" href="assets/css/93143cb3.css?v=93143cb3">
+<link rel="stylesheet" href="assets/css/5e973f2b.css?v=5e973f2b">
   <div class="panel span12 anv2-board" id="act-now">
+    <link rel="stylesheet" href="assets/css/3cff5b20.css?v=3cff5b20">
     <div class="anv2-hd">
       <h2>⚡ <span class="l-en">What to Act On Now</span><span class="l-zh">现在行动</span>
         <span class="anv2-v2pill">v2</span>
-        <span class="help">?<span class="tip"><span class="l-en">Four lanes, read left to right: Buy Now = a clean HK sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. HK has no validated single-stock edge — this board is sector positioning, not an allocation rule.</span><span class="l-zh">四个分栏从左到右：立即买入＝今天有干净的港股板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。香港无经验证的个股优势 — 本看板用于板块定位，不是配置规则。</span></span></span>
+        <span class="lens-q" data-lens-kind="read" tabindex="0" role="button"
+      aria-label="Four lanes, left to right — what this means">?<span class="lens-src" data-lens-kind="read" hidden>
+  <div class="lens-hd">
+    <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h5M4 12h9M4 18h4"/><path d="M17 9l3 3-3 3"/></svg></span>
+    <span class="lens-hgroup">
+      <span class="lens-kick"><span class="l-en">How to read this</span><span class="l-zh">如何看懂</span></span>
+      <span class="lens-title"><span class="l-en">Four lanes, left to right</span><span class="l-zh">四个分栏，从左到右</span></span>
+    </span>
+  </div>
+  <div class="lensx-rows">
+    <div class="lensx-row up">
+      <span class="lensx-k"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
+      <span class="lensx-v"><span class="l-en">A clean HK sector entry today.</span><span class="l-zh">今天有干净的港股板块入场点。</span></span>
+    </div>
+    <div class="lensx-row info">
+      <span class="lensx-k"><span class="l-en">In favour</span><span class="l-zh">看好</span></span>
+      <span class="lensx-v"><span class="l-en">Still good — but it has run. <b>Wait for a dip.</b></span><span class="l-zh">依然看好 — 但已经涨过。<b>等回调。</b></span></span>
+    </div>
+    <div class="lensx-row warn">
+      <span class="lensx-k"><span class="l-en">Bottoming</span><span class="l-zh">洗盘观察</span></span>
+      <span class="lensx-v"><span class="l-en">Setting up near a cycle low. <b>Watch only — never a buy signal.</b></span><span class="l-zh">接近周期低点并开始形成形态。<b>仅供观察 — 绝非买入信号。</b></span></span>
+    </div>
+    <div class="lensx-row dn">
+      <span class="lensx-k"><span class="l-en">Reduce / avoid</span><span class="l-zh">减仓·回避</span></span>
+      <span class="lensx-v"><span class="l-en">The trend is weakening — take profits or stay away.</span><span class="l-zh">趋势正在转弱 — 止盈或回避。</span></span>
+    </div>
+  </div><div class="lensx-note"><span class="l-en">This is a structure and risk map for sectors — not an allocation rule, and not a single-stock call.</span><span class="l-zh">这是板块的结构与风险图 — 不是配置规则，也不是个股建议。</span></div><div class="lens-receipt"><span class="l-en">sector positioning · timed by cycle stage · re-drawn nightly</span><span class="l-zh">板块定位 · 按周期阶段定时机 · 每晚重绘</span></div>
+</span></span>
       </h2>
       <div class="anv2-meta">
         <span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-08-03</span>
@@ -451,33 +475,43 @@
         </div>
         <div class="anv2-lane-body lst-wrap">
           <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-            <div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="up">+2.2%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="up">+6.5%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">93p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+            <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-financials-banks</span><span class="l-zh">板块脉搏 · hk-financials-banks</span></span>
+      <span class="row-pop-name"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+2.2%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+6.5%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +41</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-financials-banks ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-financials-banks.html"><span class="l-en">Financials &amp; Banks</span><span class="l-zh">金融与银行</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -488,33 +522,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-financials-banks</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-2.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="up">+1.4%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">24p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-internet-tech</span><span class="l-zh">板块脉搏 · hk-internet-tech</span></span>
+      <span class="row-pop-name"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-2.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+1.4%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +72</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-internet-tech ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-internet-tech.html"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -525,33 +569,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-internet-tech</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Consumer</span><span class="l-zh">消费</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-4.0%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-2.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">19p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-consumer</span><span class="l-zh">板块脉搏 · hk-consumer</span></span>
+      <span class="row-pop-name"><span class="l-en">Consumer</span><span class="l-zh">消费</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-4.0%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-2.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +56</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-consumer ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-consumer.html"><span class="l-en">Consumer</span><span class="l-zh">消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -562,33 +616,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-consumer</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Insurance</span><span class="l-zh">保险</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-1.9%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-2.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">62p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-insurance</span><span class="l-zh">板块脉搏 · hk-insurance</span></span>
+      <span class="row-pop-name"><span class="l-en">Insurance</span><span class="l-zh">保险</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-1.9%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-2.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +45</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-insurance ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-insurance.html"><span class="l-en">Insurance</span><span class="l-zh">保险</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -599,33 +663,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-insurance</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Industrials &amp; Transport</span><span class="l-zh">Industrials &amp; Transport</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-2.5%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-3.0%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">7p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-industrials-transport</span><span class="l-zh">板块脉搏 · hk-industrials-transport</span></span>
+      <span class="row-pop-name"><span class="l-en">Industrials &amp; Transport</span><span class="l-zh">Industrials &amp; Transport</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-2.5%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-3.0%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +49</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-industrials-transport ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-industrials-transport.html"><span class="l-en">Industrials &amp; Transport</span><span class="l-zh">Industrials &amp; Transport</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -636,33 +710,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-industrials-transport</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-2.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-6.5%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">4p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-gaming-leisure</span><span class="l-zh">板块脉搏 · hk-gaming-leisure</span></span>
+      <span class="row-pop-name"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-2.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-6.5%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +59</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-gaming-leisure ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-gaming-leisure.html"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -673,33 +757,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-gaming-leisure</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-2.5%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-12.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">49p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-energy</span><span class="l-zh">板块脉搏 · hk-energy</span></span>
+      <span class="row-pop-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-2.5%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-12.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +68</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-energy ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-energy.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -710,33 +804,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-energy</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Property</span><span class="l-zh">地产</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-4.2%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-12.6%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">49p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-property</span><span class="l-zh">板块脉搏 · hk-property</span></span>
+      <span class="row-pop-name"><span class="l-en">Property</span><span class="l-zh">地产</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-4.2%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-12.6%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +70</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-property ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-property.html"><span class="l-en">Property</span><span class="l-zh">地产</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -747,33 +851,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-property</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-5.1%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-16.3%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">6p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-auto-ev</span><span class="l-zh">板块脉搏 · hk-auto-ev</span></span>
+      <span class="row-pop-name"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-5.1%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-16.3%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +56</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-auto-ev ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-auto-ev.html"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -784,33 +898,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · hk-auto-ev</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-2.9%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-19.0%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">26p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-materials</span><span class="l-zh">板块脉搏 · hk-materials</span></span>
+      <span class="row-pop-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-2.9%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-19.0%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +61</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-materials ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-materials.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -834,33 +958,43 @@
         </div>
         <div class="anv2-lane-body lst-wrap">
           <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-            <div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-3.4%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-5.2%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">23p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+            <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-telecom-utilities</span><span class="l-zh">板块脉搏 · hk-telecom-utilities</span></span>
+      <span class="row-pop-name"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">In favour — but it has run</span><span class="l-zh">仍看好 — 但已上涨</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-3.4%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-5.2%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▼ -19</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Still in favour, but it has run — wait for a dip.</span><span class="l-zh">仍然看好，但已上涨 — 等回调。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-telecom-utilities ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-telecom-utilities.html"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -871,33 +1005,43 @@
           
         </div>
         <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · hk-telecom-utilities</div>
-      </div><div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="up">+0.1%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="up">+0.7%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">92p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">23 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+      </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-exchange-diversified</span><span class="l-zh">板块脉搏 · hk-exchange-diversified</span></span>
+      <span class="row-pop-name"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">In favour — but it has run</span><span class="l-zh">仍看好 — 但已上涨</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 23</span><span class="l-zh">周期第 23 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+0.1%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+0.7%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +48</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Still in favour, but it has run — wait for a dip.</span><span class="l-zh">仍然看好，但已上涨 — 等回调。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-exchange-diversified ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-exchange-diversified.html"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -934,33 +1078,43 @@
         </div>
         <div class="anv2-lane-body lst-wrap">
           <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-            <div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span></span>
-            <span class="row-pop-kind">SECTOR</span>
-            <span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="dn">-9.1%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="dn">-2.4%</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">12p</span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val"><span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span></span></div>
-            
-            
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">25 <span class="mut">· (23, 44)</span></span></div>
-            
-            
-          </div>
-          <div class="row-pop-ft"><span>2026-08-03</span></div>
+            <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · hk-healthcare-pharma</span><span class="l-zh">板块脉搏 · hk-healthcare-pharma</span></span>
+      <span class="row-pop-name"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-9.1%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-2.4%</strong><small><span class="l-en">vs the market</span><span class="l-zh">相对大盘</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +35</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>hk-healthcare-pharma ↗</b>
+  </div>
+</div>
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/hk-healthcare-pharma.html"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -983,6 +1137,7 @@
   
 
   <!-- ===================== PROPHET — HK stock signals (relative-strength cards) ===================== -->
+  
   
   
   
@@ -1029,10 +1184,11 @@
     "as_of": "2026-08-03"
   }
   </script>
+  
   <div class="panel span12" id="standouts">
     <h2>⚡ <span class="l-en">Prophet — HK stock signals</span><span class="l-zh">先知 — 港股信号</span>
-      <span class="note" style="text-transform:none">· <span class="l-en">Bottoming names, ranked by flow, value and strength</span><span class="l-zh">筑底个股，按资金、价值与强度排序</span></span>
-      <span class="help">?<span class="tip"><span class="l-en">Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.</span><span class="l-zh">显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。</span></span></span>
+      <span class="note" style="text-transform:none">· <span class="l-en">Ranked by readiness — what to act on, and what to leave alone</span><span class="l-zh">按就绪度排序 —— 哪些可以动手，哪些放着别碰</span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The hk_prophet_v1 forward record is accruing separately.</span><span class="l-zh">我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。hk_prophet_v1 的前瞻记录将单独积累。</span></span></span>
       
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
@@ -1040,7 +1196,7 @@
       </span>
     </h2>
     
-    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Only names with a fresh entry signal make this board. Entry-open group first, then setting-up. Rank is a screen, not a promise.</span><span class="l-zh">仅收录出现新入场信号的个股。入场开启组优先，蓄势中次之。排名是筛选，不是承诺。</span></p>
+    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Live entries first, then setups forming, then names that already ran or are blocked. Rank is a screen, not a promise.</span><span class="l-zh">先看入场窗口已打开的，再看形态形成中的，最后是已启动或受阻的。排名是筛选，不是承诺。</span></p>
     
     
     
@@ -1051,10 +1207,35 @@
 
     
     
-<link rel="stylesheet" href="assets/css/a6767031.css?v=a6767031">
+<link rel="stylesheet" href="assets/css/5517bdf6.css?v=5517bdf6">
 
     <div class="nb-grid-section">
+    
+    
+    <div class="pbf-bar" id="hk-stage-filter" role="group" aria-label="Filter the board by entry stage">
+      <button type="button" data-stagepick="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span><span class="pbf-n">28</span></button>
+      <button type="button" data-stagepick="live" aria-pressed="false" data-tip-en="The entry signal is open right now — buy now, partial, or buy soon. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="入场信号当前已打开 —— 可买入、部分买入或即将买入。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="l-en">Live now</span><span class="l-zh">现在可操作</span><span class="pbf-n">3</span></button>
+      
+      <button type="button" data-stagepick="setting_up" aria-pressed="false" data-tip-en="The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="形态正在形成但入场尚未触发 —— 等待共振、等待回踩或处于观察中。暂时无需操作。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="l-en">Setting up</span><span class="l-zh">形成中</span><span class="pbf-n">1</span></button>
+      
+      <button type="button" data-stagepick="ran" aria-pressed="false" data-tip-en="The signal fired and price has already moved — extended, topping, or hold. The entry window has passed; wait for the next setup. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="信号已触发且价格已经启动 —— 过度拉伸、做顶或持有。入场窗口已过，等待下一个买点。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="l-en">Ran — don’t chase</span><span class="l-zh">已启动 — 勿追</span><span class="pbf-n">12</span></button>
+      
+      <button type="button" data-stagepick="blocked" aria-pressed="false" data-tip-en="Entry is blocked, exited, avoided, or the trend is down. Each card names its own reason on the ⚠ mark. Stand aside. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="入场受阻、已离场、建议回避，或趋势向下。每张卡片的 ⚠ 标记会写明各自的原因。请观望。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="l-en">Blocked</span><span class="l-zh">受阻</span><span class="pbf-n">12</span></button>
+      
+    </div>
+    <span class="pbf-live" id="hk-stage-status" aria-live="polite"></span>
+    
     <div class="nbgrid" data-showmore-rows="3">
+    
+      
+      
+      
+      <div class="nb-stage-hd sg-live" data-stage="live" data-tip-en="The entry signal is open right now — buy now, partial, or buy soon. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="入场信号当前已打开 —— 可买入、部分买入或即将买入。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。">
+        <span class="sh-l"><span class="l-en">Live now</span><span class="l-zh">现在可操作</span></span>
+        <span class="sh-n">3</span>
+        <span class="sh-s"><span class="l-en">entry window is open</span><span class="l-zh">入场窗口已打开</span></span>
+      </div>
+      
     
       
       
@@ -1073,7 +1254,33 @@
       
       
       
-      <a class="pvcard pv-buy" href="hk_lookup.html#9999.HK" data-ticker="9999.HK">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+        
+        
+        
+        
+      
+      
+      
+      
+      
+      
+      
+      <a class="pvcard pv-buy pv-featured" href="hk_lookup.html#9999.HK" data-ticker="9999.HK" data-stage="live">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="14.5" width="96.0" height="4.8" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="14.5" x2="240" y2="14.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="19.2" x2="240" y2="19.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,36.5 3.8,34.3 7.6,34.8 11.4,34.6 15.2,31.5 19.0,33.1 22.9,33.8 26.7,31.3 30.5,31.1 34.3,32.9 38.1,36.5 41.9,39.4 45.7,37.1 49.5,35.4 53.3,42.0 57.1,34.6 61.0,28.7 64.8,24.1 68.6,26.1 72.4,25.1 76.2,24.2 80.0,22.4 83.8,24.4 87.6,25.9 91.4,29.3 95.2,29.8 99.0,30.1 102.9,24.7 106.7,22.2 110.5,20.8 114.3,20.2 118.1,23.8 121.9,23.9 125.7,27.7 129.5,27.9 133.3,31.2 137.1,31.4 141.0,34.3 144.8,30.0 148.6,21.0 152.4,18.7 156.2,20.5 160.0,16.4 163.8,14.2 167.6,16.6 171.4,10.1 175.2,11.0 179.0,15.4 182.9,15.2 186.7,19.2 190.5,18.5 194.3,17.0 198.1,18.4 201.9,12.2 205.7,14.2 209.5,25.8 213.3,27.3 217.1,29.8 221.0,27.3 224.8,20.8 228.6,18.1 232.4,15.5 236.2,14.6 240.0,14.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,36.5 3.8,34.3 7.6,34.8 11.4,34.6 15.2,31.5 19.0,33.1 22.9,33.8 26.7,31.3 30.5,31.1 34.3,32.9 38.1,36.5 41.9,39.4 45.7,37.1 49.5,35.4 53.3,42.0 57.1,34.6 61.0,28.7 64.8,24.1 68.6,26.1 72.4,25.1 76.2,24.2 80.0,22.4 83.8,24.4 87.6,25.9 91.4,29.3 95.2,29.8 99.0,30.1 102.9,24.7 106.7,22.2 110.5,20.8 114.3,20.2 118.1,23.8 121.9,23.9 125.7,27.7 129.5,27.9 133.3,31.2 137.1,31.4 141.0,34.3 144.8,30.0 148.6,21.0 152.4,18.7 156.2,20.5 160.0,16.4 163.8,14.2 167.6,16.6 171.4,10.1 175.2,11.0 179.0,15.4 182.9,15.2 186.7,19.2 190.5,18.5 194.3,17.0 198.1,18.4 201.9,12.2 205.7,14.2 209.5,25.8 213.3,27.3 217.1,29.8 221.0,27.3 224.8,20.8 228.6,18.1 232.4,15.5 236.2,14.6 240.0,14.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.5" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl">
@@ -1086,9 +1293,10 @@
   <div class="pv-bd">
     <div class="pv-hd">
       <span class="pv-idw"><span class="pv-tk">9999.HK</span><span class="pv-nm"><span class="l-en">NetEase</span><span class="l-zh">NetEase</span></span></span>
-      <span class="pv-edge" data-tip-en="Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list." data-tip-zh="优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。"><span class="pv-edl"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="pv-edn">52</span></span>
+      <span class="pv-edge" data-tip-en="HK Prophet priority 0–100 — signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Transparent readiness rank for ordering this board; not a win probability or a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="港股先知优先级 0–100 —— 信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">70</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Internet & Tech</span><span class="l-zh">互联网与科技</span></div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat" data-tip-en="One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board) and price is not extended. Capped per sector and per board, so fewer can show. Priority order, not a return forecast." data-tip-zh="今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span><span class="pv-mk-i pv-mk-new" data-tip-en="This signal fired in the last two sessions — the name was not on the board before that." data-tip-zh="该信号在最近两个交易日内触发 —— 在此之前不在榜上。"><span class="l-en">New</span><span class="l-zh">新</span></span></div>
     <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
@@ -1096,6 +1304,7 @@
   </div>
 </a>
 
+      
     
       
       
@@ -1114,7 +1323,33 @@
       
       
       
-      <a class="pvcard pv-buy" href="hk_lookup.html#1024.HK" data-ticker="1024.HK">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+        
+        
+        
+        
+      
+      
+      
+      
+      
+      
+      
+      <a class="pvcard pv-buy pv-featured" href="hk_lookup.html#1024.HK" data-ticker="1024.HK" data-stage="live">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="29.9" width="96.0" height="4.4" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="29.9" x2="240" y2="29.9" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="34.3" x2="240" y2="34.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,35.2 3.8,31.3 7.6,32.0 11.4,30.0 15.2,21.5 19.0,10.1 22.9,13.5 26.7,11.0 30.5,13.5 34.3,15.3 38.1,19.1 41.9,20.8 45.7,20.3 49.5,23.3 53.3,30.0 57.1,28.4 61.0,29.9 64.8,31.2 68.6,32.2 72.4,30.5 76.2,28.1 80.0,22.1 83.8,27.6 87.6,27.1 91.4,27.3 95.2,34.0 99.0,33.5 102.9,29.4 106.7,30.3 110.5,29.7 114.3,28.8 118.1,33.2 121.9,25.2 125.7,26.4 129.5,30.6 133.3,36.2 137.1,37.0 141.0,38.9 144.8,42.0 148.6,40.0 152.4,38.5 156.2,35.9 160.0,36.0 163.8,27.5 167.6,41.3 171.4,32.5 175.2,37.2 179.0,34.9 182.9,33.5 186.7,33.0 190.5,30.7 194.3,25.2 198.1,34.3 201.9,29.3 205.7,29.7 209.5,35.7 213.3,34.8 217.1,37.2 221.0,35.8 224.8,36.6 228.6,35.5 232.4,35.1 236.2,33.2 240.0,29.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.2 3.8,31.3 7.6,32.0 11.4,30.0 15.2,21.5 19.0,10.1 22.9,13.5 26.7,11.0 30.5,13.5 34.3,15.3 38.1,19.1 41.9,20.8 45.7,20.3 49.5,23.3 53.3,30.0 57.1,28.4 61.0,29.9 64.8,31.2 68.6,32.2 72.4,30.5 76.2,28.1 80.0,22.1 83.8,27.6 87.6,27.1 91.4,27.3 95.2,34.0 99.0,33.5 102.9,29.4 106.7,30.3 110.5,29.7 114.3,28.8 118.1,33.2 121.9,25.2 125.7,26.4 129.5,30.6 133.3,36.2 137.1,37.0 141.0,38.9 144.8,42.0 148.6,40.0 152.4,38.5 156.2,35.9 160.0,36.0 163.8,27.5 167.6,41.3 171.4,32.5 175.2,37.2 179.0,34.9 182.9,33.5 186.7,33.0 190.5,30.7 194.3,25.2 198.1,34.3 201.9,29.3 205.7,29.7 209.5,35.7 213.3,34.8 217.1,37.2 221.0,35.8 224.8,36.6 228.6,35.5 232.4,35.1 236.2,33.2 240.0,29.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.9" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl">
@@ -1127,9 +1362,10 @@
   <div class="pv-bd">
     <div class="pv-hd">
       <span class="pv-idw"><span class="pv-tk">1024.HK</span><span class="pv-nm"><span class="l-en">Kuaishou</span><span class="l-zh">Kuaishou</span></span></span>
-      <span class="pv-edge" data-tip-en="Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list." data-tip-zh="优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。"><span class="pv-edl"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="pv-edn">95</span></span>
+      <span class="pv-edge" data-tip-en="HK Prophet priority 0–100 — signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Transparent readiness rank for ordering this board; not a win probability or a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="港股先知优先级 0–100 —— 信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">69</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Internet & Tech</span><span class="l-zh">互联网与科技</span></div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat" data-tip-en="One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board) and price is not extended. Capped per sector and per board, so fewer can show. Priority order, not a return forecast." data-tip-zh="今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span><span class="pv-mk-i pv-mk-new" data-tip-en="This signal fired in the last two sessions — the name was not on the board before that." data-tip-zh="该信号在最近两个交易日内触发 —— 在此之前不在榜上。"><span class="l-en">New</span><span class="l-zh">新</span></span><span class="pv-mk-i pv-mk-theme" data-tip-en="This name sits in the large-cap leader group we track separately. Context only — membership earns the card no points and changes nothing in the ranking on this board." data-tip-zh="该股属于我们单独跟踪的大市值龙头组合。仅供参考 —— 归属不为卡片加分，也不改变本榜排名。"><span class="l-en">Mega-cap cohort</span><span class="l-zh">大型股群体</span></span></div>
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
@@ -1137,6 +1373,7 @@
   </div>
 </a>
 
+      
     
       
       
@@ -1155,7 +1392,33 @@
       
       
       
-      <a class="pvcard pv-buy" href="hk_lookup.html#0763.HK" data-ticker="0763.HK">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+        
+        
+        
+        
+      
+      
+      
+      
+      
+      
+      
+      <a class="pvcard pv-buy pv-featured" href="hk_lookup.html#0763.HK" data-ticker="0763.HK" data-stage="live">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="28.0" width="96.0" height="5.7" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="28.0" x2="240" y2="28.0" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="33.7" x2="240" y2="33.7" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,31.4 3.8,25.9 7.6,26.2 11.4,20.1 15.2,19.6 19.0,20.1 22.9,20.2 26.7,24.8 30.5,22.5 34.3,25.9 38.1,30.1 41.9,30.6 45.7,32.4 49.5,33.0 53.3,36.7 57.1,33.5 61.0,31.5 64.8,33.0 68.6,18.2 72.4,23.0 76.2,26.5 80.0,19.1 83.8,22.4 87.6,15.9 91.4,10.1 95.2,19.8 99.0,17.8 102.9,23.1 106.7,25.9 110.5,26.8 114.3,23.1 118.1,23.4 121.9,26.7 125.7,31.0 129.5,25.9 133.3,32.9 137.1,34.1 141.0,29.5 144.8,39.5 148.6,38.7 152.4,39.3 156.2,42.0 160.0,39.3 163.8,38.4 167.6,40.1 171.4,37.6 175.2,30.6 179.0,25.9 182.9,29.6 186.7,30.2 190.5,27.0 194.3,23.2 198.1,37.8 201.9,36.4 205.7,32.0 209.5,26.4 213.3,30.1 217.1,31.3 221.0,31.1 224.8,33.3 228.6,28.8 232.4,32.3 236.2,29.9 240.0,28.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.4 3.8,25.9 7.6,26.2 11.4,20.1 15.2,19.6 19.0,20.1 22.9,20.2 26.7,24.8 30.5,22.5 34.3,25.9 38.1,30.1 41.9,30.6 45.7,32.4 49.5,33.0 53.3,36.7 57.1,33.5 61.0,31.5 64.8,33.0 68.6,18.2 72.4,23.0 76.2,26.5 80.0,19.1 83.8,22.4 87.6,15.9 91.4,10.1 95.2,19.8 99.0,17.8 102.9,23.1 106.7,25.9 110.5,26.8 114.3,23.1 118.1,23.4 121.9,26.7 125.7,31.0 129.5,25.9 133.3,32.9 137.1,34.1 141.0,29.5 144.8,39.5 148.6,38.7 152.4,39.3 156.2,42.0 160.0,39.3 163.8,38.4 167.6,40.1 171.4,37.6 175.2,30.6 179.0,25.9 182.9,29.6 186.7,30.2 190.5,27.0 194.3,23.2 198.1,37.8 201.9,36.4 205.7,32.0 209.5,26.4 213.3,30.1 217.1,31.3 221.0,31.1 224.8,33.3 228.6,28.8 232.4,32.3 236.2,29.9 240.0,28.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.0" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl">
@@ -1167,9 +1430,10 @@
   <div class="pv-bd">
     <div class="pv-hd">
       <span class="pv-idw"><span class="pv-tk">0763.HK</span><span class="pv-nm"><span class="l-en">ZTE Corporation</span><span class="l-zh">ZTE Corporation</span></span></span>
-      <span class="pv-edge" data-tip-en="Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list." data-tip-zh="优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。"><span class="pv-edl"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="pv-edn">79</span></span>
+      <span class="pv-edge" data-tip-en="HK Prophet priority 0–100 — signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Transparent readiness rank for ordering this board; not a win probability or a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="港股先知优先级 0–100 —— 信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">55</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Industrials & Transport</span><span class="l-zh">Industrials & Transport</span></div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-feat" data-tip-en="One of today’s picks: the signal is fresh, the entry window is open, edge above zero (an absolute floor, not a rank against the rest of the board) and price is not extended. Capped per sector and per board, so fewer can show. Priority order, not a return forecast." data-tip-zh="今日重点之一：信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸。每个行业与全板均有名额上限，因此可能更少。这是排序，不是收益预测。"><span class="l-en">★ Featured</span><span class="l-zh">★ 精选</span></span></div>
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
@@ -1177,6 +1441,17 @@
   </div>
 </a>
 
+      
+    
+      
+      
+      
+      <div class="nb-stage-hd sg-setting_up" data-stage="setting_up" data-tip-en="The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet. Cards inside are in priority order — a 0–100 readiness rank built from signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Priority order, not a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="形态正在形成但入场尚未触发 —— 等待共振、等待回踩或处于观察中。暂时无需操作。 组内按优先级排序 —— 由信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%构成的0–100就绪度分。这是排序，不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。">
+        <span class="sh-l"><span class="l-en">Setting up</span><span class="l-zh">形成中</span></span>
+        <span class="sh-n">1</span>
+        <span class="sh-s"><span class="l-en">not there yet — get ready</span><span class="l-zh">尚未触发 — 做好准备</span></span>
+      </div>
+      
     
       
       
@@ -1195,7 +1470,33 @@
       
       
       
-      <a class="pvcard pv-wait" href="hk_lookup.html#9888.HK" data-ticker="9888.HK">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+        
+        
+        
+        
+      
+      
+      
+      
+      
+      
+      
+      <a class="pvcard pv-wait" href="hk_lookup.html#9888.HK" data-ticker="9888.HK" data-stage="setting_up">
   <div class="pv-chart">
     <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="35.6" x2="240" y2="35.6" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="37.7" x2="240" y2="37.7" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,28.3 3.8,25.5 7.6,23.7 11.4,19.4 15.2,15.5 19.0,10.1 22.9,13.0 26.7,13.9 30.5,15.4 34.3,13.0 38.1,16.5 41.9,17.3 45.7,15.9 49.5,17.6 53.3,22.9 57.1,21.8 61.0,21.9 64.8,21.8 68.6,23.5 72.4,20.5 76.2,21.1 80.0,17.3 83.8,18.5 87.6,20.5 91.4,23.5 95.2,30.1 99.0,29.7 102.9,29.7 106.7,32.1 110.5,30.4 114.3,31.0 118.1,33.8 121.9,32.8 125.7,33.1 129.5,35.2 133.3,37.9 137.1,36.3 141.0,38.8 144.8,42.0 148.6,38.2 152.4,34.5 156.2,34.3 160.0,33.7 163.8,33.9 167.6,33.9 171.4,29.0 175.2,31.2 179.0,30.6 182.9,31.3 186.7,37.0 190.5,36.0 194.3,34.1 198.1,36.7 201.9,34.8 205.7,36.2 209.5,38.1 213.3,36.5 217.1,38.2 221.0,38.2 224.8,40.0 228.6,39.1 232.4,39.7 236.2,37.1 240.0,34.3 240,42" fill="var(--muted)" opacity="0.12" stroke="none"/><polyline points="0.0,28.3 3.8,25.5 7.6,23.7 11.4,19.4 15.2,15.5 19.0,10.1 22.9,13.0 26.7,13.9 30.5,15.4 34.3,13.0 38.1,16.5 41.9,17.3 45.7,15.9 49.5,17.6 53.3,22.9 57.1,21.8 61.0,21.9 64.8,21.8 68.6,23.5 72.4,20.5 76.2,21.1 80.0,17.3 83.8,18.5 87.6,20.5 91.4,23.5 95.2,30.1 99.0,29.7 102.9,29.7 106.7,32.1 110.5,30.4 114.3,31.0 118.1,33.8 121.9,32.8 125.7,33.1 129.5,35.2 133.3,37.9 137.1,36.3 141.0,38.8 144.8,42.0 148.6,38.2 152.4,34.5 156.2,34.3 160.0,33.7 163.8,33.9 167.6,33.9 171.4,29.0 175.2,31.2 179.0,30.6 182.9,31.3 186.7,37.0 190.5,36.0 194.3,34.1 198.1,36.7 201.9,34.8 205.7,36.2 209.5,38.1 213.3,36.5 217.1,38.2 221.0,38.2 224.8,40.0 228.6,39.1 232.4,39.7 236.2,37.1 240.0,34.3" fill="none" stroke="var(--muted)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.3" r="2.6" fill="var(--muted)"/></svg>
     <span class="pv-ov pv-ovl">
@@ -1207,9 +1508,10 @@
   <div class="pv-bd">
     <div class="pv-hd">
       <span class="pv-idw"><span class="pv-tk">9888.HK</span><span class="pv-nm"><span class="l-en">Baidu</span><span class="l-zh">Baidu</span></span></span>
-      <span class="pv-edge" data-tip-en="Edge percentile — within-market rank by the flow · value · exposure screen. Not a probability and not a validated buy list." data-tip-zh="优势百分位 — 按资金·价值·敞口筛选在市场内的排名。不是概率，也不是已验证的买入清单。"><span class="pv-edl"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="pv-edn">12</span></span>
+      <span class="pv-edge" data-tip-en="HK Prophet priority 0–100 — signal 30% · entry 25% · edge 25% · runway 10% · setup quality 10%. Transparent readiness rank for ordering this board; not a win probability or a return forecast. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt." data-tip-zh="港股先知优先级 0–100 —— 信号30% · 入场25% · 优势25% · 上行空间10% · 形态质量10%。用于给本榜排序的透明就绪度分；不是胜率，也不是收益预测。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。"><span class="pv-edl"><span class="l-en">Priority</span><span class="l-zh">优先级</span></span><span class="pv-edn">42</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Internet & Tech</span><span class="l-zh">互联网与科技</span></div>
+    <div class="pv-mk"><span class="pv-mk-i pv-mk-theme" data-tip-en="This name sits in the large-cap leader group we track separately. Context only — membership earns the card no points and changes nothing in the ranking on this board." data-tip-zh="该股属于我们单独跟踪的大市值龙头组合。仅供参考 —— 归属不为卡片加分，也不改变本榜排名。"><span class="l-en">Mega-cap cohort</span><span class="l-zh">大型股群体</span></span></div>
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span class="on"><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
@@ -1217,9 +1519,827 @@
   </div>
 </a>
 
+      
     
     </div>
     </div>
+    
+    
+    
+    <div class="pbr" data-stage="ran">
+      <div class="pbr-hd">
+        <span class="pbr-t"><span class="l-en">Recently fired</span><span class="l-zh">近期已触发</span></span>
+        <span class="pbr-n">12</span>
+      </div>
+      <div class="pbr-s"><span class="l-en">The move already started — wait for the next entry.</span><span class="l-zh">行情已经启动 — 等待下一个买点。</span></div>
+      <div class="pbr-l">
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0778.HK">
+          <span class="pbr-tk">0778.HK</span>
+          <span class="pbr-nm"><span class="l-en">Fortune REIT</span><span class="l-zh">Fortune REIT</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+5.3%</span> <span class="l-en">since signal · fired 13 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 13个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0144.HK">
+          <span class="pbr-tk">0144.HK</span>
+          <span class="pbr-nm"><span class="l-en">China Merchants Port</span><span class="l-zh">China Merchants Port</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+15.7%</span> <span class="l-en">since signal · fired 16 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 16个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0823.HK">
+          <span class="pbr-tk">0823.HK</span>
+          <span class="pbr-nm"><span class="l-en">Link REIT</span><span class="l-zh">Link REIT</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+4.3%</span> <span class="l-en">since signal · fired 15 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 15个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0966.HK">
+          <span class="pbr-tk">0966.HK</span>
+          <span class="pbr-nm"><span class="l-en">China Taiping</span><span class="l-zh">China Taiping</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+14.8%</span> <span class="l-en">since signal · fired 18 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 18个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#1112.HK">
+          <span class="pbr-tk">1112.HK</span>
+          <span class="pbr-nm"><span class="l-en">Health & Happiness</span><span class="l-zh">Health & Happiness</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+10.8%</span> <span class="l-en">since signal · fired 20 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 20个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#1038.HK">
+          <span class="pbr-tk">1038.HK</span>
+          <span class="pbr-nm"><span class="l-en">CK Infrastructure</span><span class="l-zh">CK Infrastructure</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+5.9%</span> <span class="l-en">since signal · fired 19 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 19个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0002.HK">
+          <span class="pbr-tk">0002.HK</span>
+          <span class="pbr-nm"><span class="l-en">CLP Holdings</span><span class="l-zh">CLP Holdings</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+3.4%</span> <span class="l-en">since signal · fired 19 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 19个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#3690.HK">
+          <span class="pbr-tk">3690.HK</span>
+          <span class="pbr-nm"><span class="l-en">Meituan</span><span class="l-zh">Meituan</span></span>
+          <span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-caps moving together — a display-only read of the mega-cap leader group. Context for why this name moved; it earns no rank on the board above." data-tip-zh="大型股同步走强 —— 对大市值龙头组合的仅供展示读数。用于解释该股为何异动；不为上方榜单加分。"><span class="l-en">Mega-cap cohort</span><span class="l-zh">大型股群体</span></span>
+          <span class="pbr-m"><span class="az-up">+30.5%</span> <span class="l-en">since signal · fired 21 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 21个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#0656.HK">
+          <span class="pbr-tk">0656.HK</span>
+          <span class="pbr-nm"><span class="l-en">Fosun International</span><span class="l-zh">Fosun International</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+19.1%</span> <span class="l-en">since signal · fired 23 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 23个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#2378.HK">
+          <span class="pbr-tk">2378.HK</span>
+          <span class="pbr-nm"><span class="l-en">Prudential</span><span class="l-zh">Prudential</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+9.5%</span> <span class="l-en">since signal · fired 21 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 21个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#2057.HK">
+          <span class="pbr-tk">2057.HK</span>
+          <span class="pbr-nm"><span class="l-en">ZTO Express</span><span class="l-zh">ZTO Express</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+6.0%</span> <span class="l-en">since signal · fired 21 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 21个交易日前触发</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r" href="hk_lookup.html#2628.HK">
+          <span class="pbr-tk">2628.HK</span>
+          <span class="pbr-nm"><span class="l-en">China Life</span><span class="l-zh">China Life</span></span>
+          
+          <span class="pbr-m"><span class="az-up">+3.3%</span> <span class="l-en">since signal · fired 22 sessions ago</span>
+            
+            <span class="l-zh">（信号后） · 22个交易日前触发</span>
+          </span>
+        </a>
+      
+      </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <div class="pbv" data-stage="blocked">
+      <div class="pbr-hd">
+        <span class="pbr-t"><span class="l-en">What the gate refused</span><span class="l-zh">门控拒绝的信号</span></span>
+        <span class="pbr-n">12</span>
+      </div>
+      <div class="pbr-s"><span class="l-en">A buy signal fired on each of these and the entry check refused it. This is what happened next — the section exists to keep the board honest, not to hand you a list to buy.</span><span class="l-zh">这些个股都曾触发买入信号，但被入场检查拒绝。这里记录门控拒绝后的走势，用于自我审视 —— 不是一份可买清单。</span> <span class="l-en">Stance: blocked — the board did not act on this.</span><span class="l-zh">立场：受阻 — 看板未据此操作。</span></div>
+      <div class="pbr-l">
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#1810.HK">
+          <span class="pbr-tk">1810.HK</span>
+          <span class="pbr-nm"><span class="l-en">Xiaomi</span><span class="l-zh">小米集团</span></span>
+          
+          <span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-cap cohort — a display-only leadership read. It orders and chips this section; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股群体 —— 仅供展示的龙头读数。它只用于本区的排序与标注；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-caps moving together</span><span class="l-zh">大型股同步走强</span></span>
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+20.1%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 6 marker, 20 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-06，20个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#9988.HK">
+          <span class="pbr-tk">9988.HK</span>
+          <span class="pbr-nm"><span class="l-en">Alibaba</span><span class="l-zh">阿里巴巴</span></span>
+          
+          <span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-cap cohort — a display-only leadership read. It orders and chips this section; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股群体 —— 仅供展示的龙头读数。它只用于本区的排序与标注；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-caps moving together</span><span class="l-zh">大型股同步走强</span></span>
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+13.6%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 10 marker, 16 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-10，16个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#1211.HK">
+          <span class="pbr-tk">1211.HK</span>
+          <span class="pbr-nm"><span class="l-en">BYD</span><span class="l-zh">比亚迪</span></span>
+          
+          <span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-cap cohort — a display-only leadership read. It orders and chips this section; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股群体 —— 仅供展示的龙头读数。它只用于本区的排序与标注；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-caps moving together</span><span class="l-zh">大型股同步走强</span></span>
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+13.2%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 6 marker, 20 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-06，20个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#2318.HK">
+          <span class="pbr-tk">2318.HK</span>
+          <span class="pbr-nm"><span class="l-en">Ping An Insurance</span><span class="l-zh">中国平安</span></span>
+          
+          <span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-cap cohort — a display-only leadership read. It orders and chips this section; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股群体 —— 仅供展示的龙头读数。它只用于本区的排序与标注；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-caps moving together</span><span class="l-zh">大型股同步走强</span></span>
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+10.2%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 10 marker, 16 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-10，16个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#0268.HK">
+          <span class="pbr-tk">0268.HK</span>
+          <span class="pbr-nm"><span class="l-en">Kingdee International</span><span class="l-zh">金蝶国际</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+36.5%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Reclaimed the 200-day average, then lost it again · blocked on a Jul 7 marker, 19 sessions ago</span>
+            <span class="l-zh">曾收复 200 日均线，但随后再度失守 · 受阻标记 2026-07-07，19个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#3888.HK">
+          <span class="pbr-tk">3888.HK</span>
+          <span class="pbr-nm"><span class="l-en">Kingsoft</span><span class="l-zh">金山软件</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+33.7%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Reclaimed the 200-day average, then lost it again · blocked on a May 29 marker, 44 sessions ago</span>
+            <span class="l-zh">曾收复 200 日均线，但随后再度失守 · 受阻标记 2026-05-29，44个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#1093.HK">
+          <span class="pbr-tk">1093.HK</span>
+          <span class="pbr-nm"><span class="l-en">CSPC Pharmaceutical</span><span class="l-zh">中国制药</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+26.5%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jun 26 marker, 25 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-06-26，25个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#0867.HK">
+          <span class="pbr-tk">0867.HK</span>
+          <span class="pbr-nm"><span class="l-en">China Medical System</span><span class="l-zh">中国医疗系统</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+17.0%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jun 25 marker, 26 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-06-25，26个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#6618.HK">
+          <span class="pbr-tk">6618.HK</span>
+          <span class="pbr-nm"><span class="l-en">JD Health</span><span class="l-zh">京东健康</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+16.5%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 2 marker, 22 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-02，22个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#2150.HK">
+          <span class="pbr-tk">2150.HK</span>
+          <span class="pbr-nm"><span class="l-en">Nayuki Holdings</span><span class="l-zh">奈雪的茶</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+16.1%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a May 28 marker, 45 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-05-28，45个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#0780.HK">
+          <span class="pbr-tk">0780.HK</span>
+          <span class="pbr-nm"><span class="l-en">Tongcheng Travel</span><span class="l-zh">同程旅行</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+15.9%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 7 marker, 19 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-07，19个交易日前</span>
+          </span>
+        </a>
+      
+        
+        
+        
+        
+        
+        
+        <a class="pbr-r pbr-veto" href="hk_lookup.html#0027.HK">
+          <span class="pbr-tk">0027.HK</span>
+          <span class="pbr-nm"><span class="l-en">Galaxy Entertainment</span><span class="l-zh">银河娱乐</span></span>
+          
+          
+          
+          
+          <span class="pbr-m"><span class="az-up">+13.9%</span> <span class="l-en">since the block</span><span class="l-zh">（受阻后）</span>
+          </span>
+          <span class="pbv-why">
+            <span class="l-en">Price never held above its 200-day average after the signal · blocked on a Jul 2 marker, 22 sessions ago</span>
+            <span class="l-zh">信号出现后股价未能站稳 200 日均线之上 · 受阻标记 2026-07-02，22个交易日前</span>
+          </span>
+        </a>
+      
+      </div>
+    </div>
+    
+    
+    
+    <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The hk_prophet_v1 forward record is accruing separately. runway and setup quality currently contribute 0 for all 4 names — the readings behind them are not wired up yet, so the leg is scored as a zero rather than given the benefit of the doubt.</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 —— 并非胜率。hk_prophet_v1 的前瞻记录将单独积累。上行空间与形态质量目前对全部 4 只股票都记 0 分 —— 其所依据的数据尚未接入，因此该项按 0 分计，而不是默认给分。</span></p>
+    
+    
+    
+    <div class="topsetups leaders-strip">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:700;font-size:12.5px">🏃 <span class="l-en">Market leaders</span><span class="l-zh">市场领跑股</span></span>
+        <span class="note" style="font-size:11px;text-transform:none"><span class="l-en">Strongest runners by 3-month momentum, leader-group boosted — no fresh entry signal; watch — don't chase.</span><span class="l-zh">按3个月动量排名（龙头组合另有加成）的最强领跑股 —— 暂无新入场信号；观察 — 不要追高。</span>
+          <span class="help">?<span class="tip"><span class="l-en">Coverage of Hong Kong's strongest runners — the piece the entry-gated board above structurally cannot show. That board admits a name only on a fresh momentum cross, and a name that has been climbing for weeks rarely prints one. Order here is trailing 3-month total return, plus a small boost for belonging to the large-cap leader group we track separately. When two names come out level on that, the plain 3-month return separates them, and if they are still level the ticker does — there is no other input. To appear at all a name must be in an intact uptrend and trading near its 52-week high — leaders sit near their highs, and a name much further off than that is not one. The entry column is honest: none of these has a fresh trigger, so the stance is watch — buy pullbacks toward the zone, never chase. Forward results for this strip are graded nightly from its ship date; it is a research shortlist, not a buy list.</span><span class="l-zh">覆盖港股最强的领跑股 —— 上方入场门控榜单在结构上无法展示的部分。那张榜单只在动量新交叉时收录个股，而已连涨数周的领跑股很少出现新交叉。本表按3个月总回报排序，属于我们单独跟踪的大市值龙头组合的个股另有小幅加成。若两只股票该项持平，则先比未加成的3个月回报，仍持平则按代码先后 —— 再无其他输入。入选还须趋势完好且股价贴近52周高点 —— 领跑股都贴着高点走，回落太多的算不上领跑。入场列如实标注：这些标的均无新触发，立场是观察 —— 回调至买区分批买入，绝不追高。本栏前瞻成绩自上线之日起每晚评分；这是研究清单，而非买入清单。</span></span></span></span>
+      </div>
+      <div class="tbl-scroll"><table class="ts-tbl">
+        <thead><tr>
+          <th class="c-stock"><span class="l-en">Stock</span><span class="l-zh">个股</span></th><th class="c-sector"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+          <th class="c-theme" data-tip-en="The large-cap leader group this name belongs to. Membership adds a small boost to where a name sits in THIS table; on the board above it earns nothing at all. Context, not an entry." data-tip-zh="该股所属的大市值龙头组合。归属会为该股在本表的名次带来小幅加成；在上方榜单中则完全不加分。仅供参考，非入场信号。"><span class="l-en">leader group</span><span class="l-zh">龙头组合</span></th>
+          
+          <th class="r c-edge" data-tip-en="Trailing 3-month total return, expressed as a z-score against the HK panel — the number this table is ranked by. Membership of the mega-cap leader group adds a small boost on top, so a chipped row can sit above a bare row with a higher z." data-tip-zh="过去3个月总回报的 z 分（相对港股样本）—— 本表即按此排序。属于大市值龙头组合的个股会在此基础上获得小幅加成，因此带标签的个股可能排在 z 更高的个股之上。"><span class="l-en">3-mo momentum</span><span class="l-zh">3个月动量</span></th>
+          <th class="r c-offhigh" data-tip-en="Distance below the 52-week high — 0% means at the high" data-tip-zh="距52周高点的距离 —— 0%代表正处高点"><span class="l-en">off high</span><span class="l-zh">距高点</span></th>
+          
+          <th class="c-age" data-tip-en="How long since this name last printed an entry signal. A leader that has been running for months rarely prints one, which is why the board above cannot show it." data-tip-zh="距该股上一次出现入场信号有多久。已连涨数月的领跑股很少出现新信号，这正是上方榜单无法收录它的原因。"><span class="l-en">last signal</span><span class="l-zh">上次信号</span></th>
+          <th class="c-entry" data-tip-en="No fresh entry trigger on any of these — the honest read is wait for a pullback. Where the engine has a pullback buy zone, it is shown." data-tip-zh="这些标的均无新入场触发 —— 诚实读法是等待回调。若引擎给出回调买区，则在此显示。"><span class="l-en">entry</span><span class="l-zh">入场</span></th>
+        </tr></thead>
+        <tbody>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#2359.HK'">
+            <td class="c-stock"><span class="ts-tk">2359.HK</span> <span class="ts-nm"><span class="l-en">WuXi AppTec</span><span class="l-zh">药明康德</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Healthcare & Pharma</span><span class="l-zh">医疗与制药</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.60</td>
+            <td class="r muted c-offhigh">-1.3%</td>
+            
+            <td class="muted c-age"><span class="l-en">29 sessions ago</span><span class="l-zh">29个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0669.HK'">
+            <td class="c-stock"><span class="ts-tk">0669.HK</span> <span class="ts-nm"><span class="l-en">Techtronic Industries</span><span class="l-zh">创科实业</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Industrials & Transport</span><span class="l-zh">Industrials & Transport</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.57</td>
+            <td class="r muted c-offhigh">+0.0%</td>
+            
+            <td class="muted c-age"><span class="l-en">34 sessions ago</span><span class="l-zh">34个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0005.HK'">
+            <td class="c-stock"><span class="ts-tk">0005.HK</span> <span class="ts-nm"><span class="l-en">HSBC</span><span class="l-zh">汇丰控股</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Financials & Banks</span><span class="l-zh">金融与银行</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.55</td>
+            <td class="r muted c-offhigh">+0.0%</td>
+            
+            <td class="muted c-age"><span class="l-en">33 sessions ago</span><span class="l-zh">33个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#9618.HK'">
+            <td class="c-stock"><span class="ts-tk">9618.HK</span> <span class="ts-nm"><span class="l-en">JD.com</span><span class="l-zh">京东集团</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Internet & Tech</span><span class="l-zh">互联网与科技</span></td>
+            <td class="c-theme"><span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-caps moving together — a display-only leadership read. It boosts where a name sits in this table and chips the row; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股同步走强 —— 仅供展示的龙头读数。它会影响本表名次并为该行加标签；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-cap cohort</span><span class="l-zh">大型股群体</span></span></td>
+            <td class="r c-edge az-up">+0.98</td>
+            <td class="r muted c-offhigh">-9.0%</td>
+            
+            <td class="muted c-age"><span class="l-en">13 sessions ago</span><span class="l-zh">13个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#2269.HK'">
+            <td class="c-stock"><span class="ts-tk">2269.HK</span> <span class="ts-nm"><span class="l-en">WuXi Biologics</span><span class="l-zh">药明生物</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Healthcare & Pharma</span><span class="l-zh">医疗与制药</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.36</td>
+            <td class="r muted c-offhigh">-8.0%</td>
+            
+            <td class="muted c-age"><span class="l-en">28 sessions ago</span><span class="l-zh">28个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#2388.HK'">
+            <td class="c-stock"><span class="ts-tk">2388.HK</span> <span class="ts-nm"><span class="l-en">BOC Hong Kong</span><span class="l-zh">中银香港</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Financials & Banks</span><span class="l-zh">金融与银行</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.28</td>
+            <td class="r muted c-offhigh">-1.3%</td>
+            
+            <td class="muted c-age"><span class="l-en">9 sessions ago</span><span class="l-zh">9个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0019.HK'">
+            <td class="c-stock"><span class="ts-tk">0019.HK</span> <span class="ts-nm"><span class="l-en">Swire Pacific</span><span class="l-zh">太古股份公司</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Exchange & Diversified</span><span class="l-zh">交易所与综合企业</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.24</td>
+            <td class="r muted c-offhigh">-1.6%</td>
+            
+            <td class="muted c-age"><span class="l-en">16 sessions ago</span><span class="l-zh">16个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0316.HK'">
+            <td class="c-stock"><span class="ts-tk">0316.HK</span> <span class="ts-nm"><span class="l-en">Orient Overseas</span><span class="l-zh">东方海外</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Exchange & Diversified</span><span class="l-zh">交易所与综合企业</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+1.03</td>
+            <td class="r muted c-offhigh">-3.7%</td>
+            
+            <td class="muted c-age"><span class="l-en">15 sessions ago</span><span class="l-zh">15个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#2319.HK'">
+            <td class="c-stock"><span class="ts-tk">2319.HK</span> <span class="ts-nm"><span class="l-en">Mengniu Dairy</span><span class="l-zh">蒙牛乳业</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Consumer</span><span class="l-zh">消费</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.99</td>
+            <td class="r muted c-offhigh">-4.1%</td>
+            
+            <td class="muted c-age"><span class="l-en">4 days ago</span><span class="l-zh">4天前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0941.HK'">
+            <td class="c-stock"><span class="ts-tk">0941.HK</span> <span class="ts-nm"><span class="l-en">China Mobile</span><span class="l-zh">中国移动</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Telecom & Utilities</span><span class="l-zh">电信与公用事业</span></td>
+            <td class="c-theme"><span class="pv-mk-i pv-mk-theme" data-tip-en="Mega-caps moving together — a display-only leadership read. It boosts where a name sits in this table and chips the row; it carries no rank, size or gate authority on the buy board." data-tip-zh="大型股同步走强 —— 仅供展示的龙头读数。它会影响本表名次并为该行加标签；在买入榜上不具备排名、仓位或门控权限。"><span class="l-en">Mega-cap cohort</span><span class="l-zh">大型股群体</span></span></td>
+            <td class="r c-edge az-up">+0.41</td>
+            <td class="r muted c-offhigh">-3.0%</td>
+            
+            <td class="muted c-age"><span class="l-en">7 sessions ago</span><span class="l-zh">7个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#6160.HK'">
+            <td class="c-stock"><span class="ts-tk">6160.HK</span> <span class="ts-nm"><span class="l-en">BeiGene</span><span class="l-zh">百济神州</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Healthcare & Pharma</span><span class="l-zh">医疗与制药</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.90</td>
+            <td class="r muted c-offhigh">-16.6%</td>
+            
+            <td class="muted c-age"><span class="l-en">24 sessions ago</span><span class="l-zh">24个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#1997.HK'">
+            <td class="c-stock"><span class="ts-tk">1997.HK</span> <span class="ts-nm"><span class="l-en">Wharf REIC</span><span class="l-zh">九龙仓房产</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Property</span><span class="l-zh">地产</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.85</td>
+            <td class="r muted c-offhigh">-5.4%</td>
+            
+            <td class="muted c-age"><span class="l-en">20 sessions ago</span><span class="l-zh">20个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#3968.HK'">
+            <td class="c-stock"><span class="ts-tk">3968.HK</span> <span class="ts-nm"><span class="l-en">China Merchants Bank</span><span class="l-zh">招商银行</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Financials & Banks</span><span class="l-zh">金融与银行</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.79</td>
+            <td class="r muted c-offhigh">-3.1%</td>
+            
+            <td class="muted c-age"><span class="l-en">18 sessions ago</span><span class="l-zh">18个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#0322.HK'">
+            <td class="c-stock"><span class="ts-tk">0322.HK</span> <span class="ts-nm"><span class="l-en">Tingyi</span><span class="l-zh">顶益控股</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Consumer</span><span class="l-zh">消费</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.68</td>
+            <td class="r muted c-offhigh">-5.4%</td>
+            
+            <td class="muted c-age"><span class="l-en">22 sessions ago</span><span class="l-zh">22个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+          
+          
+          
+          
+          
+          
+          <tr class="ts-row" onclick="location.href='hk_lookup.html#2607.HK'">
+            <td class="c-stock"><span class="ts-tk">2607.HK</span> <span class="ts-nm"><span class="l-en">Shanghai Henlius Biotech</span><span class="l-zh">上海复宏汉霖</span></span></td>
+            
+            
+            <td class="muted c-sector"><span class="l-en">Healthcare & Pharma</span><span class="l-zh">医疗与制药</span></td>
+            <td class="c-theme"><span class="muted">—</span></td>
+            <td class="r c-edge az-up">+0.63</td>
+            <td class="r muted c-offhigh">-2.2%</td>
+            
+            <td class="muted c-age"><span class="l-en">15 sessions ago</span><span class="l-zh">15个交易日前</span></td>
+            <td class="c-entry"><span class="ent-warn"><span class="l-en">wait for pullback</span><span class="l-zh">等待回调</span></span></td>
+          </tr>
+        
+        </tbody>
+      </table></div>
+    </div>
+    
     
     <div class="watch-strip">
       <p class="ws-h">👁 <span class="l-en">On watch — strong edge, blocked entry (wait for a base)</span><span class="l-zh">观察名单 — 优势强但入场受阻（等待筑底）</span></p>
@@ -1319,12 +2439,45 @@
     </div>
     
     
-    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ <span class="l-en">Weakest — avoid</span><span class="l-zh">最弱 — 回避</span></p>
+    
+    
+    <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ <span class="l-en">Weakest selection edge — distribution risk</span><span class="l-zh">选股优势最弱 — 派发风险</span>
+      <span class="help">?<span class="tip"><span class="l-en">The names whose selection edge — our stock-picking read, before any timing — sits lowest on the board tonight. It is NOT a statement that they are falling: a name can be up on the month and still be here, which usually reads as distribution, money leaving while the price holds. The figure is that edge, as a z-score against the HK panel, and it is the number the list is ordered by. A name whose edge cannot be resolved at all sorts to the end rather than the front — an unknown edge is not evidence of a weak one.</span><span class="l-zh">本栏是今晚全榜选股优势最低的个股 —— 选股优势指的是不考虑择时的选股读数。这并不表示它们正在下跌：一只月内上涨的股票同样可能出现在这里，通常意味着派发，即股价撑住而资金在流出。所标数值即该优势的 z 分（相对港股样本），也是本列表的排序依据。优势完全无法计算的个股排在末尾而非开头 —— 优势未知不等于优势弱。</span></span></span></p>
+    
     <p style="margin:0;line-height:2">
-      <a href="hk_lookup.html#0884.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>0884.HK</b> <span class="note">CIFI Holdings</span> <span class="neg">-2.32</span></a><a href="hk_lookup.html#3690.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>3690.HK</b> <span class="note">Meituan</span> <span class="neg">+1.04</span></a><a href="hk_lookup.html#3888.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>3888.HK</b> <span class="note">Kingsoft</span> <span class="neg">+1.77</span></a><a href="hk_lookup.html#2319.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>2319.HK</b> <span class="note">Mengniu Dairy</span> <span class="neg">+0.99</span></a><a href="hk_lookup.html#0992.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>0992.HK</b> <span class="note">Lenovo</span> <span class="neg">+7.12</span></a><a href="hk_lookup.html#1347.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>1347.HK</b> <span class="note">Hua Hong Semiconductor</span> <span class="neg">+0.97</span></a>
+      
+      <a href="hk_lookup.html#0884.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>0884.HK</b> <span class="note">CIFI Holdings</span> <span class="neg">-2.09</span></a><a href="hk_lookup.html#2331.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>2331.HK</b> <span class="note">Li Ning</span> <span class="neg">-1.38</span></a><a href="hk_lookup.html#1958.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>1958.HK</b> <span class="note">BAIC Motor</span> <span class="neg">-1.37</span></a><a href="hk_lookup.html#0981.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>0981.HK</b> <span class="note">SMIC</span> <span class="neg">-1.33</span></a><a href="hk_lookup.html#1072.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>1072.HK</b> <span class="note">Dongfang Electric</span> <span class="neg">-1.15</span></a><a href="hk_lookup.html#1833.HK" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>1833.HK</b> <span class="note">Ping An Healthcare</span> <span class="neg">-1.13</span></a>
     </p>
     
   </div>
+  
+  
+  <script>
+  (function () {
+    var box = document.getElementById('standouts');
+    var bar = document.getElementById('hk-stage-filter');
+    if (!box || !bar) return;
+    var status = document.getElementById('hk-stage-status');
+    function say(btn) {
+      if (!status) return;
+      var n = btn.querySelector('.pbf-n');
+      var en = btn.querySelector('.l-en');
+      var zh = btn.querySelector('.l-zh');
+      n = n ? n.textContent.trim() : '';
+      status.innerHTML = '<span class="l-en">Showing ' + n + ' — ' + (en ? en.textContent.trim() : '') + '</span>' +
+                         '<span class="l-zh">已显示 ' + n + ' 个 — ' + (zh ? zh.textContent.trim() : '') + '</span>';
+    }
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-stagepick]');
+      if (!btn) return;
+      box.setAttribute('data-stagef', btn.getAttribute('data-stagepick'));
+      var bs = bar.querySelectorAll('button[data-stagepick]');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i] === btn ? 'true' : 'false');
+      say(btn);
+    });
+  })();
+  </script>
+  
   
 
   <!-- ===================== TRACK RECORD — receipt chip + popup (shared partial) — sits with Prophet ===================== -->
@@ -1336,7 +2489,7 @@
     
   
   
-  <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px"><link rel="stylesheet" href="assets/css/b3672184.css?v=b3672184"><span class="trd-wrap trd-band-neutral">
+  <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px"><link rel="stylesheet" href="assets/css/845c061c.css?v=845c061c"><span class="trd-wrap trd-band-neutral">
 <button type="button" id="trd-btn" class="trd-btn"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="trd-dlg"><svg class="trd-spark" viewBox="0 0 40 14" aria-hidden="true" preserveAspectRatio="none">
     <path d="M0,10 L8,10 L12,4 L17,12 L22,7 L30,8 L40,6"/>
@@ -1612,6 +2765,16 @@
   var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat' };
   function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard') }; return mp[st]||st; }
   var FLAG = { locked:{en:'Locked-limit day excluded', zh:'一字板剔除'}, susp:{en:'Suspended', zh:'停牌'}, delisted:{en:'Delisted', zh:'退市'} };
+  // Lane names in plain words. The sub-cell under a ticker falls back to the row's
+  // GROUP when a name was never logged, and the group is a raw engine slug —
+  // "setting_up" / "entry_open" printing at the glance tier is the slug leak the
+  // doctrine bans. Same pattern as canada.html.j2's GROUP_LABELS, extended to the
+  // hk_prophet_v1 display lanes so a future non-buy cohort cannot leak either.
+  // Unknown slug → the raw value, which is still better than nothing.
+  var GRP = { entry_open:{en:'Entry open', zh:'入场开启'}, setting_up:{en:'Setting up', zh:'蓄势中'},
+              watch:{en:'Watch', zh:'观察'}, leaders:{en:'Market leaders', zh:'市场领跑股'},
+              ran:{en:'Recently fired', zh:'近期已触发'}, vetoed:{en:'Entry gate refused', zh:'入场闸门未放行'} };
+  function grpWord(g){ var d = GRP[g]; return d ? (isZh()? d.zh : d.en) : (g||''); }
 
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function primaryCol(){ return (market==='us') ? 'p' : 'x'; } // CN/HK/CA grade on excess
@@ -1675,7 +2838,7 @@
       // active language; fall back to sector/group when a name isn't logged.
       var nmTxt = '';
       if(r.nm){ var np = String(r.nm).split(' / '); nmTxt = isZh() ? (np[1]||np[0]) : np[0]; }
-      var subInfo = nmTxt || r.sec || r.grp || '';
+      var subInfo = nmTxt || r.sec || grpWord(r.grp);
       var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
       h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
       h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';
@@ -1742,6 +2905,126 @@
       <div class="nbcard nb-up" style="cursor:default">
         <div class="nb-id">
           <div class="nb-tkrow">
+            <span class="nb-tk">2888.HK</span>
+            
+            <span class="nb-px" data-sym="2888.HK" data-mkt="hk">HK$236.80</span>
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">Standard Chartered</span>
+            <span class="l-zh">渣打集团</span>
+          </div>
+          
+          <div class="nb-secrow"><span class="nb-sec">Financials & Banks</span></div>
+        </div>
+        <div class="nb-ctx">
+          
+          <span class="chip c-muted" style="font-size:10px">3 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
+          <span class="nb-washout" style="font-size:10px"><span class="l-en">washout_watch</span><span class="l-zh">washout_watch</span></span>
+          
+          
+          <span class="chip c-muted" style="font-size:10px">amplifier</span>
+        </div>
+      </div>
+      
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">0700.HK</span>
+            
+            <span class="nb-px" data-sym="0700.HK" data-mkt="hk">HK$490.40</span>
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">Tencent</span>
+            <span class="l-zh">腾讯控股</span>
+          </div>
+          
+          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
+        </div>
+        <div class="nb-ctx">
+          
+          <span class="chip c-muted" style="font-size:10px">3 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
+          
+          <span class="chip c-muted" style="font-size:10px">ADR +153.0%</span>
+          
+          <span class="chip c-muted" style="font-size:10px">amplifier</span>
+        </div>
+      </div>
+      
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">1024.HK</span>
+            
+            <span class="nb-px" data-sym="1024.HK" data-mkt="hk">HK$45.02</span>
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">Kuaishou</span>
+            <span class="l-zh">快手科技</span>
+          </div>
+          
+          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
+        </div>
+        <div class="nb-ctx">
+          
+          <span class="chip c-muted" style="font-size:10px">3 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
+          
+          <span class="chip c-muted" style="font-size:10px">ADR +153.0%</span>
+          
+          <span class="chip c-muted" style="font-size:10px">amplifier</span>
+        </div>
+      </div>
+      
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">0345.HK</span>
+            
+            <span class="nb-px" data-sym="0345.HK" data-mkt="hk">HK$6.50</span>
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">Vitasoy</span>
+            <span class="l-zh">维他奶国际</span>
+          </div>
+          
+          <div class="nb-secrow"><span class="nb-sec">Consumer</span></div>
+        </div>
+        <div class="nb-ctx">
+          
+          <span class="chip c-muted" style="font-size:10px">3 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
+          <span class="nb-washout" style="font-size:10px"><span class="l-en">washout_watch</span><span class="l-zh">washout_watch</span></span>
+          
+          
+          <span class="chip c-muted" style="font-size:10px">neutral</span>
+        </div>
+      </div>
+      
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
+            <span class="nb-tk">9888.HK</span>
+            
+            <span class="nb-px" data-sym="9888.HK" data-mkt="hk">HK$109.90</span>
+          </div>
+          <div class="nb-nm">
+            <span class="l-en">Baidu</span>
+            <span class="l-zh">百度</span>
+          </div>
+          
+          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
+        </div>
+        <div class="nb-ctx">
+          
+          <span class="chip c-muted" style="font-size:10px">3 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
+          
+          <span class="chip c-muted" style="font-size:10px">ADR +338.0%</span>
+          
+          <span class="chip c-muted" style="font-size:10px">amplifier</span>
+        </div>
+      </div>
+      
+      <div class="nbcard nb-up" style="cursor:default">
+        <div class="nb-id">
+          <div class="nb-tkrow">
             <span class="nb-tk">9999.HK</span>
             
             <span class="nb-px" data-sym="9999.HK" data-mkt="hk">HK$208.00</span>
@@ -1760,30 +3043,6 @@
           
           
           <span class="chip c-muted" style="font-size:10px">neutral</span>
-        </div>
-      </div>
-      
-      <div class="nbcard nb-up" style="cursor:default">
-        <div class="nb-id">
-          <div class="nb-tkrow">
-            <span class="nb-tk">2888.HK</span>
-            
-            <span class="nb-px" data-sym="2888.HK" data-mkt="hk">HK$236.80</span>
-          </div>
-          <div class="nb-nm">
-            <span class="l-en">Standard Chartered</span>
-            <span class="l-zh">渣打集团</span>
-          </div>
-          
-          <div class="nb-secrow"><span class="nb-sec">Financials & Banks</span></div>
-        </div>
-        <div class="nb-ctx">
-          
-          <span class="chip c-muted" style="font-size:10px">2 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
-          
-          
-          
-          <span class="chip c-muted" style="font-size:10px">amplifier</span>
         </div>
       </div>
       
@@ -1814,54 +3073,6 @@
       <div class="nbcard nb-up" style="cursor:default">
         <div class="nb-id">
           <div class="nb-tkrow">
-            <span class="nb-tk">0700.HK</span>
-            
-            <span class="nb-px" data-sym="0700.HK" data-mkt="hk">HK$490.40</span>
-          </div>
-          <div class="nb-nm">
-            <span class="l-en">Tencent</span>
-            <span class="l-zh">腾讯控股</span>
-          </div>
-          
-          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
-        </div>
-        <div class="nb-ctx">
-          
-          <span class="chip c-muted" style="font-size:10px">2 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
-          
-          
-          
-          <span class="chip c-muted" style="font-size:10px">amplifier</span>
-        </div>
-      </div>
-      
-      <div class="nbcard nb-up" style="cursor:default">
-        <div class="nb-id">
-          <div class="nb-tkrow">
-            <span class="nb-tk">1024.HK</span>
-            
-            <span class="nb-px" data-sym="1024.HK" data-mkt="hk">HK$45.02</span>
-          </div>
-          <div class="nb-nm">
-            <span class="l-en">Kuaishou</span>
-            <span class="l-zh">快手科技</span>
-          </div>
-          
-          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
-        </div>
-        <div class="nb-ctx">
-          
-          <span class="chip c-muted" style="font-size:10px">2 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
-          
-          
-          
-          <span class="chip c-muted" style="font-size:10px">amplifier</span>
-        </div>
-      </div>
-      
-      <div class="nbcard nb-up" style="cursor:default">
-        <div class="nb-id">
-          <div class="nb-tkrow">
             <span class="nb-tk">9626.HK</span>
             
             <span class="nb-px" data-sym="9626.HK" data-mkt="hk">HK$149.80</span>
@@ -1869,54 +3080,6 @@
           <div class="nb-nm">
             <span class="l-en">Bilibili</span>
             <span class="l-zh">哔哩哔哩</span>
-          </div>
-          
-          <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
-        </div>
-        <div class="nb-ctx">
-          
-          <span class="chip c-muted" style="font-size:10px">2 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
-          
-          
-          
-          <span class="chip c-muted" style="font-size:10px">amplifier</span>
-        </div>
-      </div>
-      
-      <div class="nbcard nb-up" style="cursor:default">
-        <div class="nb-id">
-          <div class="nb-tkrow">
-            <span class="nb-tk">0345.HK</span>
-            
-            <span class="nb-px" data-sym="0345.HK" data-mkt="hk">HK$6.50</span>
-          </div>
-          <div class="nb-nm">
-            <span class="l-en">Vitasoy</span>
-            <span class="l-zh">维他奶国际</span>
-          </div>
-          
-          <div class="nb-secrow"><span class="nb-sec">Consumer</span></div>
-        </div>
-        <div class="nb-ctx">
-          
-          <span class="chip c-muted" style="font-size:10px">2 <span class="l-en">triggers</span><span class="l-zh">项触发</span></span>
-          
-          
-          
-          <span class="chip c-muted" style="font-size:10px">neutral</span>
-        </div>
-      </div>
-      
-      <div class="nbcard nb-up" style="cursor:default">
-        <div class="nb-id">
-          <div class="nb-tkrow">
-            <span class="nb-tk">9888.HK</span>
-            
-            <span class="nb-px" data-sym="9888.HK" data-mkt="hk">HK$109.90</span>
-          </div>
-          <div class="nb-nm">
-            <span class="l-en">Baidu</span>
-            <span class="l-zh">百度</span>
           </div>
           
           <div class="nb-secrow"><span class="nb-sec">Internet & Tech</span></div>
@@ -2610,7 +3773,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-03 10:39 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-03 21:12 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 

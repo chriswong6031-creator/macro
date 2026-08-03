@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-03",
-  "generated_utc": "2026-08-03T10:04:06.108028+00:00",
+  "generated_utc": "2026-08-03T20:37:52.909958+00:00",
   "n_tickers": 2609,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -654,7 +654,7 @@
         "lobbying",
         "special_situation"
       ],
-      "weighted_score": 0.85,
+      "weighted_score": 0.7,
       "lobbying_usd": 4198850.0,
       "days_to_earnings": 3,
       "next_earnings": "2026-08-06",
@@ -708,7 +708,7 @@
         "fda_label_expansion",
         "lobbying"
       ],
-      "weighted_score": 1.35,
+      "weighted_score": 1.2,
       "lobbying_usd": 3690000.0,
       "clinical_phase3_starts": 2,
       "clinical_halts": 1,
@@ -1234,7 +1234,7 @@
         "clinical_phase3_start",
         "fda_label_expansion"
       ],
-      "weighted_score": 1.05,
+      "weighted_score": 0.9,
       "clinical_phase3_starts": 8,
       "clinical_halts": 6,
       "congress_position_usd": 28025000.0,
@@ -1249,7 +1249,7 @@
         "fda_label_expansion",
         "special_situation"
       ],
-      "weighted_score": 1.25,
+      "weighted_score": 1.1,
       "days_to_earnings": 1,
       "next_earnings": "2026-08-04",
       "clinical_phase3_starts": 8,
@@ -1266,7 +1266,7 @@
         "fda_label_expansion",
         "trump"
       ],
-      "weighted_score": 1.55,
+      "weighted_score": 1.4,
       "trump_side": "buy",
       "days_to_earnings": 1,
       "next_earnings": "2026-08-04",
@@ -1283,7 +1283,7 @@
         "clinical_phase3_start",
         "fda_label_expansion"
       ],
-      "weighted_score": 1.05,
+      "weighted_score": 0.9,
       "clinical_phase3_starts": 25,
       "clinical_halts": 1,
       "convergence_score": 2,
@@ -1296,7 +1296,7 @@
         "clinical_phase3_start",
         "fda_label_expansion"
       ],
-      "weighted_score": 1.05,
+      "weighted_score": 0.9,
       "clinical_phase3_starts": 5,
       "clinical_halts": 2,
       "congress_position_usd": 37658000.0,
@@ -1310,7 +1310,7 @@
         "clinical_phase3_start",
         "fda_label_expansion"
       ],
-      "weighted_score": 1.05,
+      "weighted_score": 0.9,
       "clinical_phase3_starts": 4,
       "clinical_halts": 2,
       "convergence_score": 2,
@@ -2082,7 +2082,7 @@
         "clinical_phase3_start",
         "trump"
       ],
-      "weighted_score": 0.85,
+      "weighted_score": 0.7,
       "trump_side": "buy",
       "days_to_earnings": 4,
       "next_earnings": "2026-08-07",
@@ -3197,7 +3197,7 @@
         "clinical_phase3_start",
         "special_situation"
       ],
-      "weighted_score": 0.55,
+      "weighted_score": 0.4,
       "days_to_earnings": 1,
       "next_earnings": "2026-08-04",
       "clinical_phase3_starts": 6,
@@ -3638,7 +3638,7 @@
         "clinical_phase3_start",
         "special_situation"
       ],
-      "weighted_score": 0.55,
+      "weighted_score": 0.4,
       "days_to_earnings": 3,
       "next_earnings": "2026-08-06",
       "clinical_phase3_starts": 5,
@@ -3904,7 +3904,7 @@
         "clinical_phase3_start",
         "special_situation"
       ],
-      "weighted_score": 0.55,
+      "weighted_score": 0.4,
       "clinical_phase3_starts": 14,
       "clinical_halts": 0,
       "convergence_score": 2,
@@ -3916,7 +3916,7 @@
       "channels": [
         "clinical_phase3_start"
       ],
-      "weighted_score": 0.35,
+      "weighted_score": 0.2,
       "clinical_phase3_starts": 9,
       "clinical_halts": 1,
       "convergence_score": 1,
@@ -3928,7 +3928,7 @@
       "channels": [
         "clinical_phase3_start"
       ],
-      "weighted_score": 0.35,
+      "weighted_score": 0.2,
       "clinical_phase3_starts": 2,
       "clinical_halts": 0,
       "convergence_score": 1,
@@ -3940,7 +3940,7 @@
       "channels": [
         "clinical_phase3_start"
       ],
-      "weighted_score": 0.35,
+      "weighted_score": 0.2,
       "clinical_phase3_starts": 1,
       "clinical_halts": 3,
       "convergence_score": 1,

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-03T10:03:58.391050+00:00",
+  "generated_utc": "2026-08-03T20:37:45.311765+00:00",
   "as_of": "2026-08-03",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -29730,17 +29730,6 @@
         "why": "lobbying: $7,002,500 lobbied \u00b7 special_situation: M&A / Divestitures \u00b7 stocktwits_bull: 67% bull \u00b7 601,506 watching \u00b7 trump: META PLATFORMS INC \u00b7 unusual_options: 3.34\u00d7 vol/OI, balanced"
       },
       {
-        "ticker": "PFE",
-        "score": 3,
-        "weighted_score": 1.55,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "trump"
-        ],
-        "why": "clinical_phase3_start: 12 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 trump: PFIZER INC"
-      },
-      {
         "ticker": "AMD",
         "score": 4,
         "weighted_score": 1.4,
@@ -29765,6 +29754,17 @@
         "why": "darkpool_accum: DPI 0.386 \u00b7 hf_model_momentum: +21.4% model downloads \u00b7 lobbying: $5,010,000 lobbied \u00b7 special_situation: Acquisitions"
       },
       {
+        "ticker": "PFE",
+        "score": 3,
+        "weighted_score": 1.4,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "trump"
+        ],
+        "why": "clinical_phase3_start: 12 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 trump: PFIZER INC"
+      },
+      {
         "ticker": "AAPL",
         "score": 4,
         "weighted_score": 1.35,
@@ -29775,17 +29775,6 @@
           "patent_cluster"
         ],
         "why": "13f_add: Ascentis Wealth Management, LLC +$2,533,830,031 \u00b7 cnbc_pick: Joe Terranova \u00b7 lobbying: $3,680,000 lobbied \u00b7 patent_cluster: 318 grants, 54 IPC classes"
-      },
-      {
-        "ticker": "BMY",
-        "score": 3,
-        "weighted_score": 1.35,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "lobbying"
-        ],
-        "why": "clinical_phase3_start: 2 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: ONUREG \u00b7 lobbying: $3,690,000 lobbied"
       },
       {
         "ticker": "PLTR",
@@ -29800,17 +29789,6 @@
         "why": "gov_contract: $15,851,351 awarded \u00b7 retail_buzz: 91 WSB mentions \u00b7 stocktwits_bull: 79% bull \u00b7 322,537 watching \u00b7 trump: PALANTIR TECHNOLOGIES INC"
       },
       {
-        "ticker": "MRK",
-        "score": 3,
-        "weighted_score": 1.25,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "special_situation"
-        ],
-        "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
-      },
-      {
         "ticker": "AJG",
         "score": 3,
         "weighted_score": 1.25,
@@ -29820,6 +29798,17 @@
           "trump"
         ],
         "why": "material_8k: 2 material 8-Ks (items 7.01, 8.01) \u00b7 news_sentiment: 0.86 bullish news (14 art) \u00b7 trump: GALLAGHER ARTHUR J & CO"
+      },
+      {
+        "ticker": "BMY",
+        "score": 3,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "lobbying"
+        ],
+        "why": "clinical_phase3_start: 2 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: ONUREG \u00b7 lobbying: $3,690,000 lobbied"
       },
       {
         "ticker": "CNTM",
@@ -29873,6 +29862,17 @@
         "why": "trump: NRG ENERGY INC \u00b7 unusual_options: 4.19\u00d7 vol/OI, call-skew"
       },
       {
+        "ticker": "MRK",
+        "score": 3,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "special_situation"
+        ],
+        "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
+      },
+      {
         "ticker": "T",
         "score": 2,
         "weighted_score": 1.1,
@@ -29916,46 +29916,6 @@
         "why": "app_demand: 4.71\u2605 \u00d7 26,009,619 reviews \u00b7 hf_model_momentum: +1.9% model downloads \u00b7 lobbying: $4,810,000 lobbied"
       },
       {
-        "ticker": "NVS",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 8 new Phase-3, 6 halt(s) \u00b7 fda_label_expansion: FABHALTA"
-      },
-      {
-        "ticker": "AZN",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 25 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: TRUQAP"
-      },
-      {
-        "ticker": "ABBV",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 5 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: LINZESS"
-      },
-      {
-        "ticker": "RHHBY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 4 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: PERJETA"
-      },
-      {
         "ticker": "HCA",
         "score": 2,
         "weighted_score": 1.05,
@@ -29964,6 +29924,46 @@
           "trump"
         ],
         "why": "material_8k: 3 material 8-Ks (items 2.03, 7.01, 8.01) \u00b7 trump: HCA HEALTHCARE INC"
+      },
+      {
+        "ticker": "PG",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "material_8k",
+          "trump"
+        ],
+        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01) \u00b7 trump: PROCTER & GAMBLE CO"
+      },
+      {
+        "ticker": "TDG",
+        "score": 2,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "congress_buy",
+          "material_8k"
+        ],
+        "why": "congress_buy: 1 member(s) net +10 \u00b7 material_8k: 3 material 8-Ks (items 5.02, 8.01)"
+      },
+      {
+        "ticker": "AMCR",
+        "score": 2,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "congress_cluster",
+          "special_situation"
+        ],
+        "why": "congress_cluster: 3 members net +6 \u00b7 special_situation: Strategic Reviews"
+      },
+      {
+        "ticker": "BIIB",
+        "score": 2,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "congress_cluster",
+          "special_situation"
+        ],
+        "why": "congress_cluster: 3 members net +6 \u00b7 special_situation: Acquisitions"
       }
     ]
   }

@@ -3,9 +3,12 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -33,7 +36,6 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Canada — S&P/TSX Stock Dashboard — 2026-07-31</title>
 
@@ -61,8 +63,10 @@
 <link rel="stylesheet" href="assets/css/38467254.css?v=38467254">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="preload" as="style" href="assets/css/b3672184.css?v=b3672184">
-<link rel="preload" as="style" href="assets/css/a6767031.css?v=a6767031">
+<link rel="preload" as="style" href="assets/css/5e973f2b.css?v=5e973f2b">
+<link rel="preload" as="style" href="assets/css/3cff5b20.css?v=3cff5b20">
+<link rel="preload" as="style" href="assets/css/845c061c.css?v=845c061c">
+<link rel="preload" as="style" href="assets/css/5517bdf6.css?v=5517bdf6">
 </head>
 <body class="page-canada">
 
@@ -107,6 +111,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -116,11 +122,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -309,7 +313,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-31 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-03 11:18 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-31 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-03 21:50 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -329,11 +333,40 @@
 .anv2-board .anv2-go{font-size:10px;opacity:.55;margin-left:3px}
 .anv2-board .anv2-empty{padding:10px 13px;color:var(--muted);font-size:11px}
 </style>
+<link rel="stylesheet" href="assets/css/5e973f2b.css?v=5e973f2b">
 <div class="panel anv2-board" id="act-now">
+    <link rel="stylesheet" href="assets/css/3cff5b20.css?v=3cff5b20">
   <div class="anv2-hd">
     <h2>⚡ <span class="l-en">What to Act On Now</span><span class="l-zh">现在行动</span>
       <span class="anv2-v2pill">v2</span>
-      <span class="help">?<span class="tip"><span class="l-en">Four lanes, read left to right: Buy Now = a clean TSX sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. This is a structure and risk map, not an allocation rule.</span><span class="l-zh">四个分栏从左到右：立即买入＝今天有干净的TSX板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。这是结构与风险图，不是配置规则。</span></span></span>
+      <span class="lens-q" data-lens-kind="read" tabindex="0" role="button"
+      aria-label="Four lanes, left to right — what this means">?<span class="lens-src" data-lens-kind="read" hidden>
+  <div class="lens-hd">
+    <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h5M4 12h9M4 18h4"/><path d="M17 9l3 3-3 3"/></svg></span>
+    <span class="lens-hgroup">
+      <span class="lens-kick"><span class="l-en">How to read this</span><span class="l-zh">如何看懂</span></span>
+      <span class="lens-title"><span class="l-en">Four lanes, left to right</span><span class="l-zh">四个分栏，从左到右</span></span>
+    </span>
+  </div>
+  <div class="lensx-rows">
+    <div class="lensx-row up">
+      <span class="lensx-k"><span class="l-en">Buy now</span><span class="l-zh">立即买入</span></span>
+      <span class="lensx-v"><span class="l-en">A clean TSX sector entry today.</span><span class="l-zh">今天有干净的TSX板块入场点。</span></span>
+    </div>
+    <div class="lensx-row info">
+      <span class="lensx-k"><span class="l-en">In favour</span><span class="l-zh">看好</span></span>
+      <span class="lensx-v"><span class="l-en">Still good — but it has run. <b>Wait for a dip.</b></span><span class="l-zh">依然看好 — 但已经涨过。<b>等回调。</b></span></span>
+    </div>
+    <div class="lensx-row warn">
+      <span class="lensx-k"><span class="l-en">Bottoming</span><span class="l-zh">洗盘观察</span></span>
+      <span class="lensx-v"><span class="l-en">Setting up near a cycle low. <b>Watch only — never a buy signal.</b></span><span class="l-zh">接近周期低点并开始形成形态。<b>仅供观察 — 绝非买入信号。</b></span></span>
+    </div>
+    <div class="lensx-row dn">
+      <span class="lensx-k"><span class="l-en">Reduce / avoid</span><span class="l-zh">减仓·回避</span></span>
+      <span class="lensx-v"><span class="l-en">The trend is weakening — take profits or stay away.</span><span class="l-zh">趋势正在转弱 — 止盈或回避。</span></span>
+    </div>
+  </div><div class="lensx-note"><span class="l-en">This is a structure and risk map for sectors — not an allocation rule.</span><span class="l-zh">这是板块的结构与风险图 — 不是配置规则。</span></div><div class="lens-receipt"><span class="l-en">sector positioning · timed by cycle stage · re-drawn nightly</span><span class="l-zh">板块定位 · 按周期阶段定时机 · 每晚重绘</span></div>
+</span></span>
     </h2>
     <div class="anv2-meta">
       <span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-31</span>
@@ -346,7 +379,43 @@
       </div>
       <div class="anv2-lane-body lst-wrap">
         <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-          <div class="anv2-row">
+          <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XST.TO</span><span class="l-zh">板块脉搏 · XST.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 28</span><span class="l-zh">周期第 28 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+2.5%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+5.3%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +91</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XST.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XST.TO.html"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -356,7 +425,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · XST.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XEG.TO</span><span class="l-zh">板块脉搏 · XEG.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 22</span><span class="l-zh">周期第 22 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+15.2%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+0.9%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +28</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XEG.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XEG.TO.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -366,7 +471,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XEG.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XCD.TO</span><span class="l-zh">板块脉搏 · XCD.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Entry open today</span><span class="l-zh">今日入场窗口开启</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 25</span><span class="l-zh">周期第 25 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+1.2%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-4.0%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +65</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">A clean entry is open today.</span><span class="l-zh">今日入场窗口干净。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XCD.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XCD.TO.html"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -389,7 +530,43 @@
       </div>
       <div class="anv2-lane-body lst-wrap">
         <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-          <div class="anv2-row">
+          <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XIT.TO</span><span class="l-zh">板块脉搏 · XIT.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">In favour — but it has run</span><span class="l-zh">仍看好 — 但已上涨</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 27</span><span class="l-zh">周期第 27 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+0.1%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+4.5%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▼ -31</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Still in favour, but it has run — wait for a dip.</span><span class="l-zh">仍然看好，但已上涨 — 等回调。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XIT.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XIT.TO.html"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -425,7 +602,43 @@
       </div>
       <div class="anv2-lane-body lst-wrap">
         <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-          <div class="anv2-row">
+          <div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · ZEB.TO</span><span class="l-zh">板块脉搏 · ZEB.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Banks</span><span class="l-zh">银行</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 92</span><span class="l-zh">周期第 92 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+1.6%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+10.6%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▼ -68</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>ZEB.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/ZEB.TO.html"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -435,7 +648,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · ZEB.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XFN.TO</span><span class="l-zh">板块脉搏 · XFN.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 65</span><span class="l-zh">周期第 65 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+1.3%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+9.3%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▼ -54</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XFN.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XFN.TO.html"><span class="l-en">Financials</span><span class="l-zh">金融</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -445,7 +694,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · XFN.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XUT.TO</span><span class="l-zh">板块脉搏 · XUT.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 70</span><span class="l-zh">周期第 70 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="up">+0.7%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="up">+2.1%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +40</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XUT.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XUT.TO.html"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -455,7 +740,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XUT.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XCG.TO</span><span class="l-zh">板块脉搏 · XCG.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
+    </span><span class="row-pop-tag up"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 36</span><span class="l-zh">周期第 36 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-1.8%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-5.9%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +67</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway up">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XCG.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XCG.TO.html"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -465,7 +786,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XCG.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XRE.TO</span><span class="l-zh">板块脉搏 · XRE.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 55</span><span class="l-zh">周期第 55 日</span></span>
+      <span class="row-pop-trust"><span class="up"><span class="l-en">▲ Above the 200-day</span><span class="l-zh">▲ 高于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-1.5%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-0.8%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +20</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XRE.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XRE.TO.html"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -475,7 +832,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XRE.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XBM.TO</span><span class="l-zh">板块脉搏 · XBM.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">Signal ~34d · cycle day 10</span><span class="l-zh">信号约 34 天 · 周期第 10 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-5.0%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-11.6%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +37</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XBM.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XBM.TO.html"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -485,7 +878,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · ~34<span class="l-en">d</span><span class="l-zh">天</span> · XBM.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XMA.TO</span><span class="l-zh">板块脉搏 · XMA.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">Signal ~34d · cycle day 10</span><span class="l-zh">信号约 34 天 · 周期第 10 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-7.5%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-16.2%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +22</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XMA.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XMA.TO.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -495,7 +924,43 @@
         
       </div>
       <div class="anv2-stat"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · ~34<span class="l-en">d</span><span class="l-zh">天</span> · XMA.TO</div>
-    </div><div class="anv2-row">
+    </div><div class="anv2-row" data-rpop><div class="rp-src row-pop-decision" hidden>
+  <div class="row-pop-decision-hd">
+    <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+    <span class="row-pop-heading"><span class="row-pop-eyebrow"><span class="l-en">Sector pulse · XGD.TO</span><span class="l-zh">板块脉搏 · XGD.TO</span></span>
+      <span class="row-pop-name"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></span>
+    </span><span class="row-pop-tag warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+  </div>
+  <div class="row-pop-summary">
+    <span class="row-pop-summary-copy"><span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span><strong><span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span></strong><span class="row-pop-sub"><span class="l-en">cycle day 36</span><span class="l-zh">周期第 36 日</span></span>
+      <span class="row-pop-trust"><span class=""><span class="l-en">Below the 200-day</span><span class="l-zh">低于200日均线</span></span></span>
+    </span>
+  </div>
+  <div class="row-pop-stats">
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">20d move</span><span class="l-zh">20日动能</span></span>
+      <strong class="dn">-8.3%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">60d move</span><span class="l-zh">60日动能</span></span>
+      <strong class="dn">-20.7%</strong><small><span class="l-en">vs the TSX</span><span class="l-zh">相对TSX</span></small>
+    </span>
+    <span class="row-pop-stat">
+      <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+      <strong class="">▲ +22</strong><small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+    </span>
+  </div>
+  <div class="row-pop-takeaway warn">
+    <span aria-hidden="true">&rarr;</span>
+    <span>
+      <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+      <span><span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span></span>
+    </span>
+  </div>
+  <div class="row-pop-decision-ft">
+    <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span><b>XGD.TO ↗</b>
+  </div>
+</div>
       <div class="anv2-row-top">
         <a class="anv2-name anv2-name-link" href="sectors/XGD.TO.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
       </div>
@@ -635,7 +1100,7 @@
     
   
   
-  <div class="trk" style="display:flex;justify-content:center"><link rel="stylesheet" href="assets/css/b3672184.css?v=b3672184"><span class="trd-wrap trd-band-neutral">
+  <div class="trk" style="display:flex;justify-content:center"><link rel="stylesheet" href="assets/css/845c061c.css?v=845c061c"><span class="trd-wrap trd-band-neutral">
 <button type="button" id="trd-btn" class="trd-btn"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="trd-dlg"><svg class="trd-spark" viewBox="0 0 40 14" aria-hidden="true" preserveAspectRatio="none">
     <path d="M0,10 L8,10 L12,4 L17,12 L22,7 L30,8 L40,6"/>
@@ -911,6 +1376,16 @@
   var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat' };
   function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard') }; return mp[st]||st; }
   var FLAG = { locked:{en:'Locked-limit day excluded', zh:'一字板剔除'}, susp:{en:'Suspended', zh:'停牌'}, delisted:{en:'Delisted', zh:'退市'} };
+  // Lane names in plain words. The sub-cell under a ticker falls back to the row's
+  // GROUP when a name was never logged, and the group is a raw engine slug —
+  // "setting_up" / "entry_open" printing at the glance tier is the slug leak the
+  // doctrine bans. Same pattern as canada.html.j2's GROUP_LABELS, extended to the
+  // hk_prophet_v1 display lanes so a future non-buy cohort cannot leak either.
+  // Unknown slug → the raw value, which is still better than nothing.
+  var GRP = { entry_open:{en:'Entry open', zh:'入场开启'}, setting_up:{en:'Setting up', zh:'蓄势中'},
+              watch:{en:'Watch', zh:'观察'}, leaders:{en:'Market leaders', zh:'市场领跑股'},
+              ran:{en:'Recently fired', zh:'近期已触发'}, vetoed:{en:'Entry gate refused', zh:'入场闸门未放行'} };
+  function grpWord(g){ var d = GRP[g]; return d ? (isZh()? d.zh : d.en) : (g||''); }
 
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function primaryCol(){ return (market==='us') ? 'p' : 'x'; } // CN/HK/CA grade on excess
@@ -974,7 +1449,7 @@
       // active language; fall back to sector/group when a name isn't logged.
       var nmTxt = '';
       if(r.nm){ var np = String(r.nm).split(' / '); nmTxt = isZh() ? (np[1]||np[0]) : np[0]; }
-      var subInfo = nmTxt || r.sec || r.grp || '';
+      var subInfo = nmTxt || r.sec || grpWord(r.grp);
       var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
       h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
       h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';
@@ -1028,7 +1503,7 @@
   <div id="stocktable-wrap"></div>
   
   
-<link rel="stylesheet" href="assets/css/a6767031.css?v=a6767031">
+<link rel="stylesheet" href="assets/css/5517bdf6.css?v=5517bdf6">
 
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">

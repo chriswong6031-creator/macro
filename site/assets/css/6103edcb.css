@@ -1,0 +1,164 @@
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     V2.1 — VISUAL LANGUAGE (Fable, operator redesign order 2026-08-03).
+     Reference = macro.html's panel system (operator-named): the estate's
+     hand-drawn icon family, panel tokens (--desk-tile/--desk-hair-strong/
+     --card-shadow/--desk-r-lg from macro-desk.css, already loaded here), and
+     the macro h2 rail-tick idiom. Three moves:
+       1. SURFACES — macro-idiom panels (tile bg + hair-strong border + card
+          shadow); light additionally gets a deeper canvas so the white cards
+          actually lift. Chips lose their boxes; ink carries state.
+       2. SIGNATURE — the handoff card: full names, losing→taking tinted wash.
+       3. RAIL — drawn icons (masked, currentColor), no wrap, no dead void.
+     Composition only: var()/color-mix, zero literal colours (shell pin). */
+
+  /* — drawn-glyph sizing (masked spans need an explicit box) — */
+  .si-vb-g { width:19px; height:19px; flex:none; }
+  .si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; }
+  .si-view-btn .si-vb-g { color:var(--muted); }
+  .si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+  .si-vr-g { color:var(--link); }
+  .si-side-out .si-vb-g { color:var(--muted); }
+
+  /* — rail: macro-desk composure — */
+  .si-side { padding:14px 11px; }
+  .si-view-btn { font-size:13px; padding:8.5px 11px; }
+  .si-view-btn.on { border-left-width:3px; }
+  .si-side-out { white-space:nowrap; }
+  .si-side-out .si-vb-l { white-space:nowrap; }
+  /* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
+     COMPLETELY open — no fill, no border. On a near-white canvas any column fill
+     reads as a flat cut with a drawn edge (operator crop, 2026-08-03); the active
+     pill and the content cards' shadows do all the structuring light needs. */
+  .si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
+  html[data-theme="light"] .si-side { background:transparent; border-right:0;
+    backdrop-filter:none; -webkit-backdrop-filter:none; }
+
+  /* — surfaces: the macro.html container recipe — drop shadow does the definition,
+       borders stay TRANSPARENT (layout-stable, invisible), and the stage itself stays
+       transparent so the aurora gradient runs unbroken beneath every panel. A flat
+       stage fill painted over the gradient is exactly the hard-seam defect the
+       operator flagged — never reintroduce one. — */
+  .si-stage { background:transparent; }
+  .rvx-hero, .rvx-lane, .rvx-hocard, .si-view-read {
+    background:var(--desk-tile, var(--panel));
+    border:1px solid transparent;
+    border-radius:var(--desk-r-lg, 14px);
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+  html[data-theme="light"] .rvx-hero,
+  html[data-theme="light"] .rvx-lane,
+  html[data-theme="light"] .si-view-read {
+    background:var(--panel);
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  /* the session tape floats as a container too — its old edge-to-edge flat band was
+     the worst of the gradient cutoffs */
+  .ftr-tape-strip.visible, .ftr-tape-full.open .ftr-tape-band {
+    border-radius:var(--desk-r-lg, 14px);
+    border:1px solid transparent;
+    background:var(--panel);
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+  html[data-theme="light"] .ftr-tape-strip.visible,
+  html[data-theme="light"] .ftr-tape-full.open .ftr-tape-band {
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  .ftr-tape-strip { margin-bottom:10px; }
+
+  /* — the macro h2 rail-tick on every workspace section head — */
+  .rvx-sec-h h2 { display:flex; align-items:center; gap:11px; }
+  .rvx-sec-h h2::before { content:""; flex:none; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--link), color-mix(in srgb, var(--link) 35%, transparent)); }
+
+  /* — hero: committed verdict ink, chips demoted to a quiet context line — */
+  .rvx-vword { letter-spacing:-.028em; }
+  html[data-theme="light"] .rvx-hero .rvx-vword .ac {
+    background:linear-gradient(94deg, var(--si-ink-up, var(--up)),
+      color-mix(in srgb, var(--si-ink-up, var(--up)) 52%, var(--link)));
+    -webkit-background-clip:text; background-clip:text; }
+  html[data-theme="light"] .rvx-hero.strain .rvx-vword .ac {
+    background:linear-gradient(94deg, var(--si-ink-warn, var(--warn)), var(--si-ink-down, var(--down)));
+    -webkit-background-clip:text; background-clip:text; }
+  /* ONE family for the hero context row (.rvx-chips.ctx): quiet ink + a state dot,
+     no boxes — the row previously mixed FOUR treatments (plain text, green pill,
+     amber pill, warn pill; operator: "each of ur 4 children look nothing like you").
+     Covers the server chips (.rvx-chip), the seasonality tones (.fs-chip.*) and the
+     client-injected lever/sizing chips (.tc-chip): the lever's inline border-COLOR
+     cannot survive border:0, and each item's ink still carries its state. */
+  .rvx-chips { gap:5px 15px; margin-top:12px; }
+  .rvx-chips.ctx { gap:7px 20px; }
+  .rvx-chips.ctx :is(.rvx-chip, .fs-chip, .tc-chip, .pulse-size) {
+    border:0; background:transparent; padding:2px 0; font-size:12px; gap:7px;
+    display:inline-flex; align-items:center; }
+  .rvx-chips.ctx :is(.rvx-chip, .fs-chip, .tc-chip, .pulse-size)::before {
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:currentColor; opacity:.5; flex:none; }
+  .rvx-chips.ctx > .rvx-chip:not(.fs-chip) { color:var(--muted); }
+  /* 红涨绿跌: with the boxes gone the INK is the only state carrier — flip it in ZH */
+  html[data-lang="zh"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--down); }
+  html[data-theme="light"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--si-ink-up, var(--up)); }
+  html[data-theme="light"][data-lang="zh"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--si-ink-down, var(--down)); }
+  html[data-theme="light"] .rvx-chips.ctx .fs-chip.headwind { color:var(--si-ink-warn, var(--warn)); }
+  /* the action/receipt row: quiet text and links, no boxes, no dots */
+  .rvx-chips:not(.ctx) .rvx-chip { border:0; background:transparent; padding:2px 0;
+    color:var(--muted); gap:5px; }
+  .rvx-chip.sz { border:0; background:transparent; color:var(--warn); }
+  html[data-theme="light"] .rvx-chip.sz { color:var(--si-ink-warn, var(--warn)); }
+  a.rvx-chip { color:var(--link); }
+  /* the stance banner joins the family: tint stays (it is the one instruction that
+     earns a surface), the border goes; days-in-state rides inside it quietly */
+  .rvx-stance { border:0; border-radius:11px; font-weight:600; }
+  .rvx-stance-days { opacity:.72; font-weight:500; }
+
+  /* the session tape's rank chips: same boxless family — state ink + mono figure,
+     no borders (the six outlined pills were their own mongrel row). 红涨绿跌: with
+     the boxes gone the ink is the only carrier, so it flips in ZH. */
+  .ftr-tape-strip .ftr-strip-chip { border:0; background:transparent; padding:1px 0; }
+  .ftr-tape-strip { gap:5px 16px; }
+  html[data-lang="zh"] .ftr-strip-chip.up { color:var(--down); }
+  html[data-lang="zh"] .ftr-strip-chip.dn { color:var(--up); }
+  html[data-theme="light"] .ftr-strip-chip.up { color:var(--si-ink-up, var(--up)); }
+  html[data-theme="light"] .ftr-strip-chip.dn { color:var(--si-ink-down, var(--down)); }
+  html[data-theme="light"][data-lang="zh"] .ftr-strip-chip.up { color:var(--si-ink-down, var(--down)); }
+  html[data-theme="light"][data-lang="zh"] .ftr-strip-chip.dn { color:var(--si-ink-up, var(--up)); }
+
+  /* typeface: SF first (Apple system faces), Inter everywhere else — operator
+     directive for the sector pages */
+  body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+    Roboto, Helvetica, sans-serif; }
+
+  /* — the signature: this week's handoff — */
+  .rvx-hocol .nm { white-space:normal; overflow:visible; text-overflow:clip;
+    font-size:16px; line-height:1.28; letter-spacing:-.012em; }
+  .rvx-hocol { padding:13px 16px; }
+  .rvx-hocard .cap { letter-spacing:.09em; padding:10px 16px 0; }
+  .rvx-hoarrow { width:54px; } .rvx-hoarrow svg { width:54px; }
+  html[data-theme="light"] .rvx-hocard {
+    background:linear-gradient(100deg,
+      color-mix(in srgb, var(--si-ink-warn, var(--warn)) 6%, var(--panel)) 0%,
+      var(--panel) 46%,
+      color-mix(in srgb, var(--si-ink-up, var(--up)) 8%, var(--panel)) 100%);
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 10%, transparent); }
+  html[data-theme="light"] .rvx-hocol.out .nm { color:var(--si-ink-warn, var(--warn)); }
+  html[data-theme="light"] .rvx-hocol.in .nm  { color:var(--si-ink-up, var(--up)); }
+
+  /* — lanes as decision cards — */
+  .rvx-lanes { align-items:start; }
+  .rvx-lane { padding:14px 15px 10px; }
+  .rvx-lane.buy   { border-left:3px solid color-mix(in srgb, var(--rvx-lead) 55%, transparent); }
+  .rvx-lane.wait  { border-left:3px solid color-mix(in srgb, var(--rvx-improve) 55%, transparent); }
+  .rvx-lane.trim  { border-left:3px solid color-mix(in srgb, var(--rvx-weak) 55%, transparent); }
+  .rvx-lane.avoid { border-left:3px solid color-mix(in srgb, var(--rvx-lag) 45%, transparent); }
+  .rvx-lane-desc { min-height:0; margin-bottom:8px; }
+  .rvx-trow .tnm .rsn { color:color-mix(in srgb, var(--muted) 80%, transparent); }
+  .rvx-trow .tick { display:none; }  /* the figure's colour already says it */
+  .rvx-trow .tnm .mlcchip { border-color:transparent; border-radius:6px; padding:1px 6px;
+    background:color-mix(in srgb, var(--warn) 13%, transparent); opacity:1; }
+  html[data-theme="light"] .rvx-trow .tnm .mlcchip { color:var(--si-ink-warn, var(--warn)); }
+
+  /* — overview: the hero IS the read; no echo line beneath it — */
+  .si-view[data-view="overview"] .si-view-read { display:none; }
