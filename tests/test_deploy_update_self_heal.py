@@ -182,7 +182,9 @@ MUST_RESTART = [
     "engine/capital_structure/__init__.py",
     "engine/capital_structure/event_spine.py",
     "engine/capital_structure/projection.py",
-    # Government Revenue subaward serving is imported by app/government_revenue.py.
+    # Government Revenue serving modules are imported by app/government_revenue.py.
+    "engine/government_revenue/budget_program.py",
+    "engine/government_revenue/idv_dossiers.py",
     "engine/government_revenue/subaward_dossiers.py",
     # The public Company Intelligence API imports the reader plus this
     # non-inert package at process startup (contracts, health, and views).
