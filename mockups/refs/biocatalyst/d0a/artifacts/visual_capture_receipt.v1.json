@@ -4,8 +4,9 @@
   "purpose": "Records the deterministic design-reference render only. This is not a production browser-verification receipt and cannot approve a user-facing release.",
   "reference_truth_class": "draft_contract_state_plate",
   "portable_across_browser_or_font_environments": false,
-  "renderer": {"name": "deterministic_svg_to_png_sips", "entrypoint": "mockups/refs/biocatalyst/d0a/render_reference.py", "platform": "macos", "device_scale_factor": 1},
-  "fixture": {"path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json", "synthetic_only": true},
+  "renderer": {"name": "deterministic_svg_to_png_sips", "entrypoint": "mockups/refs/biocatalyst/d0a/render_reference.py", "source_sha256": "8d1dba6b0ee96f8d7bd2a1245e8f6b46ea4b3e3f7a4867d98767843d4ed97045", "platform": "macos", "device_scale_factor": 1},
+  "fixture": {"path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json", "sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24", "synthetic_only": true},
+  "projection": {"path": "data/biocatalyst/fixtures/biocatalyst_d0a_synthetic_projection.v1.json", "sha256": "574ef26d65cf4d2b77b072b24deb039fe1781204f1beb5950cf4b5d290d7c8db", "generation_id": "synthetic-d0a-v1", "synthetic_only": true},
   "capture_timestamp": "2026-08-02T16:00:00Z",
   "browser_engine": null,
   "browser_version": null,
@@ -15,5 +16,5 @@
   "approval": "pending_fable_or_opus_design_owner",
   "non_authorizing": true,
   "cell_count": 24,
-  "blocked_by": ["named_human_design_approval", "production_shaped_browser_capture", "D0b_state_harness"]
+  "blocked_by": ["named_human_design_approval", "production_shaped_browser_capture", "D0b_state_harness", "trusted_browser_verifier_successor_contract"]
 }

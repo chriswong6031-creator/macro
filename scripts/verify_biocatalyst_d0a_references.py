@@ -1,9 +1,10 @@
 """Verify the finite D0a BioCatalyst reference corpus without a product release.
 
 ``--reference-integrity`` proves committed references, hashes, finite state coverage,
-PNG dimensions, and bounded masks. ``--acceptance`` additionally invokes the semantic
-contract, which intentionally fails while human approval/browser verification are
-pending. This separation prevents a builder from treating a pretty mockup as a launch.
+PNG dimensions, bounded masks, and exact renderer/data byte bindings. ``--acceptance``
+additionally invokes the semantic contract, whose v1 independent-verifier gate is
+unconditional. This separation prevents any self-described manifest from turning a
+pretty mockup into a launch approval.
 """
 
 from __future__ import annotations
@@ -121,11 +122,38 @@ def reference_integrity_issues(document: dict) -> list[str]:
         path = _bound_path(str(binding.get("path", "")))
         if not path.is_file() or _sha256(path) != binding.get("sha256"):
             issues.append(f"{binding_name}: file/hash binding does not match")
+    renderer = visual.get("renderer_source", {}) if isinstance(visual, dict) else {}
+    if isinstance(renderer, dict):
+        renderer_path = _bound_path(str(renderer.get("path", "")))
+        if (
+            renderer.get("path") != "mockups/refs/biocatalyst/d0a/render_reference.py"
+            or not renderer_path.is_file()
+            or _sha256(renderer_path) != renderer.get("sha256")
+        ):
+            issues.append("visual renderer: exact source-byte binding does not match")
+    else:
+        issues.append("visual renderer: missing source-byte binding")
     artifact = visual.get("artifact", {}) if isinstance(visual, dict) else {}
     if isinstance(artifact, dict):
         path = _bound_path(str(artifact.get("path", "")))
         if not path.is_file() or _sha256(path) != artifact.get("sha256"):
             issues.append("visual artifact: file/hash binding does not match")
+        else:
+            try:
+                receipt = json.loads(path.read_text(encoding="utf-8"))
+                benchmark = document["benchmark_corpus"]
+                corpus = json.loads(_bound_path(benchmark["path"]).read_text(encoding="utf-8"))
+                if (
+                    receipt.get("renderer", {}).get("entrypoint") != renderer.get("path")
+                    or receipt.get("renderer", {}).get("source_sha256") != renderer.get("sha256")
+                    or receipt.get("fixture", {}).get("path") != document["reference_fixture"]["path"]
+                    or receipt.get("fixture", {}).get("sha256") != document["reference_fixture"]["sha256"]
+                    or receipt.get("projection", {}).get("path") != corpus.get("projection_path")
+                    or receipt.get("projection", {}).get("sha256") != corpus.get("projection_sha256")
+                ):
+                    issues.append("visual artifact: renderer/fixture/projection byte bindings do not match")
+            except (KeyError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+                issues.append("visual artifact: receipt or bound benchmark is not valid JSON")
     else:
         issues.append("visual artifact: missing binding")
     payload = {key: value for key, value in document.items() if key not in {"manifest_id", "content_sha256"}}

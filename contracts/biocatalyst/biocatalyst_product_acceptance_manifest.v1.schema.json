@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_product_acceptance_manifest.v1.schema.json",
   "title": "BioCatalyst product acceptance manifest v1",
-  "description": "An immutable, non-authorizing D0a design and release-quality contract. It binds a finite visual/performance corpus and fails closed without named human design approval and browser verification.",
+  "description": "An immutable, non-authorizing D0a draft contract. This v1 can never confer release acceptance; a separate trusted verifier and successor contract are required.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,10 +15,10 @@
     "contract_id": {"const": "biocatalyst_product_acceptance_manifest.v1"},
     "schema_version": {"const": "1.0.0"},
     "manifest_id": {"type": "string", "pattern": "^biocatalyst_product_acceptance_[a-f0-9]{24}$"},
-    "state": {"enum": ["draft_human_approval_pending", "approved", "superseded"]},
+    "state": {"const": "draft_human_approval_pending"},
     "effective_at": {"$ref": "#/$defs/utcTimestamp"},
-    "supersedes_manifest_id": {"type": ["null", "string"], "pattern": "^biocatalyst_product_acceptance_[a-f0-9]{24}$"},
-    "supersedes_manifest_content_sha256": {"type": ["null", "string"], "pattern": "^[a-f0-9]{64}$"},
+    "supersedes_manifest_id": {"const": null},
+    "supersedes_manifest_content_sha256": {"const": null},
     "owner": {"const": "biocatalyst"},
     "design_spec_ref": {"const": "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"},
     "design_spec_sha256": {"$ref": "#/$defs/sha256"},
@@ -100,10 +100,11 @@
     },
     "visual": {
       "type": "object", "additionalProperties": false,
-      "required": ["reference_root", "renderer", "cells", "required_state_codes", "artifact"],
+      "required": ["reference_root", "renderer", "renderer_source", "cells", "required_state_codes", "artifact"],
       "properties": {
         "reference_root": {"const": "mockups/refs/biocatalyst/d0a"},
         "renderer": {"const": "deterministic_svg_to_png_sips"},
+        "renderer_source": {"$ref": "#/$defs/fileBinding"},
         "cells": {"type": "array", "minItems": 24, "maxItems": 24, "items": {"$ref": "#/$defs/visualCell"}},
         "required_state_codes": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": {"enum": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]}},
         "artifact": {"$ref": "#/$defs/fileBinding"}

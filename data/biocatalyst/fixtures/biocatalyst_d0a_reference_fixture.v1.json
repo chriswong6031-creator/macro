@@ -9,6 +9,16 @@
     "asset": {"id": "asset:synthetic-01", "name": "SYN-01", "owner_state": "Ambiguous relationship; two reviewed candidates remain separate"},
     "regulatory": {"id": "application:synthetic-001", "name": "Synthetic application dossier", "source_mix": "Regulator-native fact + company-reported statement kept distinct"}
   },
-  "evidence": {"source_class": "Registry fact", "completeness": "Partial", "authority": "Research context — no trade call", "locator": "/protocolSection/statusModule/overallStatus"},
+  "evidence": {
+    "source_class": "Registry fact",
+    "completeness": "Partial",
+    "authority": "Research context — no trade call",
+    "locator": "/protocolSection/statusModule/overallStatus",
+    "fact_count": 3,
+    "unresolved_relationship_count": 1,
+    "record_versions": ["v7", "v8", "v9"],
+    "current_version": "v9",
+    "submitted_at": "2026-08-02T15:42:00Z"
+  },
   "states": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]
 }

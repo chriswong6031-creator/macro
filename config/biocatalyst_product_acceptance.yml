@@ -1,22 +1,22 @@
 {
   "contract_id": "biocatalyst_product_acceptance_manifest.v1",
   "schema_version": "1.0.0",
-  "manifest_id": "biocatalyst_product_acceptance_c7a58a9c09122ec8f8518512",
+  "manifest_id": "biocatalyst_product_acceptance_e13391e2ed44a8f5d7d5c71a",
   "state": "draft_human_approval_pending",
   "effective_at": "2026-08-02T16:00:00Z",
   "supersedes_manifest_id": null,
   "supersedes_manifest_content_sha256": null,
   "owner": "biocatalyst",
   "design_spec_ref": "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md",
-  "design_spec_sha256": "dfa0469007f7dca2ff88f35054fb8f91db99bebec1ba8711cdff2f5cb90388c9",
+  "design_spec_sha256": "684bc741dae63c12f401e35f88d1e772ac0f157b4418446971d7b75a3e4f8a93",
   "reference_fixture": {
     "path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-    "sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+    "sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
     "purpose": "Synthetic production-shaped visual state data; non-authorizing."
   },
   "benchmark_corpus": {
     "path": "data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json",
-    "sha256": "20fddbabb03885303d69cc2147b3c9227b9737a2681302aa6c25b9a74318ca48",
+    "sha256": "cad0b984e29da8049371877f421b99881312bcb3529f8b819cda62e317bbf75c",
     "purpose": "Frozen endpoint, cardinality, entitlement, and measurement corpus."
   },
   "performance": {
@@ -42,7 +42,7 @@
     "artifacts": [
       {
         "path": "data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json",
-        "sha256": "20fddbabb03885303d69cc2147b3c9227b9737a2681302aa6c25b9a74318ca48",
+        "sha256": "cad0b984e29da8049371877f421b99881312bcb3529f8b819cda62e317bbf75c",
         "purpose": "Frozen design-stage benchmark corpus; measurements have not run."
       }
     ]
@@ -50,6 +50,11 @@
   "visual": {
     "reference_root": "mockups/refs/biocatalyst/d0a",
     "renderer": "deterministic_svg_to_png_sips",
+    "renderer_source": {
+      "path": "mockups/refs/biocatalyst/d0a/render_reference.py",
+      "sha256": "8d1dba6b0ee96f8d7bd2a1245e8f6b46ea4b3e3f7a4867d98767843d4ed97045",
+      "purpose": "Exact draft renderer source bytes; non-browser and non-authorizing."
+    },
     "required_state_codes": [
       "catalyst_radar",
       "explorer_dense",
@@ -66,16 +71,16 @@
     ],
     "artifact": {
       "path": "mockups/refs/biocatalyst/d0a/artifacts/visual_capture_receipt.v1.json",
-      "sha256": "34f71ec0dbe51193f214c620fc346fe0a7cc41658876b599d325e0f1200ff51e",
+      "sha256": "86d33db3e82ae3ca6e4d996d6c414cb575d22d8781f90300dd62ea57f303444f",
       "purpose": "Draft deterministic renderer receipt; browser verification is intentionally absent."
     },
     "cells": [
       {
         "id": "d0a_desktop_dark_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_dark_en_standard.png",
-        "reference_png_sha256": "31b330d3295b7665e6bc5fbdb1220f8c73f65c66fa85095da8125fc445d422f8",
+        "reference_png_sha256": "6c6f30ca7e9bcf341a504c32da6ab45e2b7b4fd2514b780ce15f5c05cc5d2be8",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -110,9 +115,9 @@
       {
         "id": "d0a_desktop_dark_en_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_dark_en_reduced.png",
-        "reference_png_sha256": "c95a41996af813cb110ab948ee75043dedfc0c4778ce6b0b9ddd5546f596b11b",
+        "reference_png_sha256": "cdfa968ee92a41b4674eb3f1299ed41f6a364a0b2d561c66f7c0402bc77f11fe",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -147,9 +152,9 @@
       {
         "id": "d0a_desktop_dark_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_dark_zh_standard.png",
-        "reference_png_sha256": "fa31d2113dc9f8de50b845ba1fcaa802330a41e76ea9e2fcd1fc14aa578b047d",
+        "reference_png_sha256": "09b98f88ee41cfbbf30aa20c1831ba206be07125f8379774d164d76010cca6e0",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -184,9 +189,9 @@
       {
         "id": "d0a_desktop_dark_zh_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_dark_zh_reduced.png",
-        "reference_png_sha256": "04fe16cf2dc71a5c9b998451af51f04b76ec97ed35daa5b2c9303ba142a6d51e",
+        "reference_png_sha256": "a8715ab973fa949586487e93747e423ebf9883a7c9c86eb179b5c9356845be5c",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -221,9 +226,9 @@
       {
         "id": "d0a_desktop_light_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_light_en_standard.png",
-        "reference_png_sha256": "302c131bdf14848ecd73e11f885beec972638060b3aad8d0168b582df51c2dd5",
+        "reference_png_sha256": "05aa6f541a45c90f1fae89e7925ed893c9001081026dcbe1fbc5afe689af16e4",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -258,9 +263,9 @@
       {
         "id": "d0a_desktop_light_en_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_light_en_reduced.png",
-        "reference_png_sha256": "cf7edab5376bfe027e0a39fdff504195f5c1f553200d11bd0baf6c0d0b5d1459",
+        "reference_png_sha256": "803e3aa6eff2ecf1cbee02fda2ade7d94fcb159fc0cff47f167786c0abf2bf85",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -295,9 +300,9 @@
       {
         "id": "d0a_desktop_light_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_light_zh_standard.png",
-        "reference_png_sha256": "ffdb0fe89f45ec59c47acfe1789fd30f7769e1b0d1257282f5aefa925b22c9a9",
+        "reference_png_sha256": "322c60390147a90cedc80a4d03cacdb5e80a373dfc762c1ce586a11163ef8aab",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -332,9 +337,9 @@
       {
         "id": "d0a_desktop_light_zh_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_desktop_light_zh_reduced.png",
-        "reference_png_sha256": "3481451867aa622fa483baa39739a783e9ebe8b3b30f1facc50fd07b8c7aaedf",
+        "reference_png_sha256": "ed3b4439029dfaf8dd1cd566e5ee2a7b2ae55521932039a32189eecde2999a6a",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "desktop",
           "width": 1440,
@@ -369,9 +374,9 @@
       {
         "id": "d0a_tablet_dark_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_dark_en_standard.png",
-        "reference_png_sha256": "3a3d505a2fe507ca85f9a20c7d663624e1d786b763e80c977cee9594d83cc434",
+        "reference_png_sha256": "e9a48fa5a774f45850f6c2d88dd7fed39471ba7a7668fdd61a0ca930fbb2ee0b",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -406,9 +411,9 @@
       {
         "id": "d0a_tablet_dark_en_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_dark_en_reduced.png",
-        "reference_png_sha256": "70cbcdb9792ae35c4c977ce4ac83ba282d550e33ea29a2f2642b61ea6f1d406c",
+        "reference_png_sha256": "bcbcd4c7dd0f43d781ef90ae790dffefb8ff9ab41a067179ed781cc1dbe738d2",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -443,9 +448,9 @@
       {
         "id": "d0a_tablet_dark_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_dark_zh_standard.png",
-        "reference_png_sha256": "958b0fa03773dcd3733a63fd146af307a59cfabf68195fcadc0d6a28e25b587a",
+        "reference_png_sha256": "23053e0d1169d05098c14640a3e24665e12f5136bfd37004bbfc73a8b547b856",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -480,9 +485,9 @@
       {
         "id": "d0a_tablet_dark_zh_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_dark_zh_reduced.png",
-        "reference_png_sha256": "f81f688dd0a3067ba92c4c6df81ddbfd99363f4c42c7ccbf5522ebe85b4ed1a6",
+        "reference_png_sha256": "00a0bef231e4e58253e053aeb553be62cdcf23840b8db05116409050cc3d8c9c",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -517,9 +522,9 @@
       {
         "id": "d0a_tablet_light_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_light_en_standard.png",
-        "reference_png_sha256": "cf093a11617e1fdf33e4bb63a110d0e8a9c971bbfa22b6367e6951ead1cc4f8b",
+        "reference_png_sha256": "9827959230f8a496fe0bea7a9bd3d03642e75ed9abfd19c9e06697d661821bac",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -554,9 +559,9 @@
       {
         "id": "d0a_tablet_light_en_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_light_en_reduced.png",
-        "reference_png_sha256": "b16b0f625674e4d671044c92a1d7d39a11b3f1799a384a566d56d66a59755b91",
+        "reference_png_sha256": "60c2f7a2cb70f0af36951dea44b2cf88f5082cef597bd879e33320a527dfa887",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -591,9 +596,9 @@
       {
         "id": "d0a_tablet_light_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_light_zh_standard.png",
-        "reference_png_sha256": "da63f5f9eb4329ae7e6cac67cf25f8fcf5e42384f8bfbc09928f6be3c3d0b89e",
+        "reference_png_sha256": "e87e6135328d571301badba6653f9c883512af109ede4b1d317f3037d1868e39",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -628,9 +633,9 @@
       {
         "id": "d0a_tablet_light_zh_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_tablet_light_zh_reduced.png",
-        "reference_png_sha256": "f71df9d26341e7f0064726d7d88916fc17aa06964e95ea2f720317fb20bc0fdf",
+        "reference_png_sha256": "e6a348ce7652a345803ede592e1a4727fcbc5e467fbccb861b035510131e2441",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "tablet",
           "width": 820,
@@ -665,9 +670,9 @@
       {
         "id": "d0a_mobile_dark_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_dark_en_standard.png",
-        "reference_png_sha256": "5ac63e3bf44ec9c8320475fbb57af3fdd3e7bf39db316fd38768e64a7f8885af",
+        "reference_png_sha256": "0941b35f03056bf3b8740c7ce83daa5ab46d48e63c85daceb38d62f568ff1da4",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -704,7 +709,7 @@
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_dark_en_reduced.png",
         "reference_png_sha256": "e0acd1a0d26d02c3d97454e5bf6a8b8c99c86ae42829b4a93e9303ab1b9bf83b",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -739,9 +744,9 @@
       {
         "id": "d0a_mobile_dark_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_dark_zh_standard.png",
-        "reference_png_sha256": "0139cef46a495b2c99f2d9d17571f9a15b6bc0aed6c35cb4d9ca2b2b54e346df",
+        "reference_png_sha256": "5663ee5030be405842931492b1e60b967ad64f28f1deae631cfd81f477dea579",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -778,7 +783,7 @@
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_dark_zh_reduced.png",
         "reference_png_sha256": "bbe3a171ac154b5ddffd8a0f95e44238ae3d8c81e938e223cfdea9416b68326f",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -813,9 +818,9 @@
       {
         "id": "d0a_mobile_light_en_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_light_en_standard.png",
-        "reference_png_sha256": "7ce963c520f9c4c11eba3e73c268c1daf04d1bc83010a5e71a564f22cc2de169",
+        "reference_png_sha256": "bb31c09e4b5d6e4e13e67edcead6eff844f22a142bb4942d5b362baf6d5f8a80",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -850,9 +855,9 @@
       {
         "id": "d0a_mobile_light_en_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_light_en_reduced.png",
-        "reference_png_sha256": "0235a6da5cb16e74edec67a3d5d77b76e631e295ee1c850f3cc13ed2d74b8367",
+        "reference_png_sha256": "c36231e645daaa0028ef2e1d5e65301ecad6e2aff5f3ff62319bd5b9dfc63d0e",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -887,9 +892,9 @@
       {
         "id": "d0a_mobile_light_zh_standard",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_light_zh_standard.png",
-        "reference_png_sha256": "3351ba6a191fa688acb369d1f70797889756155d3e1cf01bb47f206a3041528a",
+        "reference_png_sha256": "d177acbbb31c8399306af0875a92a2b08313194f4cc189140869ff4111dce4d9",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -924,9 +929,9 @@
       {
         "id": "d0a_mobile_light_zh_reduced",
         "reference_png_path": "mockups/refs/biocatalyst/d0a/d0a_mobile_light_zh_reduced.png",
-        "reference_png_sha256": "1931758b028f294374a6f85d0cd0ea5a380dc055da2b09ef757a18d0cfc5225d",
+        "reference_png_sha256": "8000fe325e110c7b31c61af3720561ac4ac842941e3c9c2e7132a0f963060e3a",
         "fixture_path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
-        "fixture_sha256": "8a675b73800f7ef25891b71892bfd1b68d38e3b267c93be72fd8e34f25812209",
+        "fixture_sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
         "viewport": {
           "name": "mobile",
           "width": 390,
@@ -977,5 +982,5 @@
     "authorizes_prophet_behavior": false
   },
   "hash_scope": "canonical_payload_excluding_manifest_id_and_content_sha256",
-  "content_sha256": "c7a58a9c09122ec8f85185123049bc7ac1de46fe0cfef45c45af98fc8e659a09"
+  "content_sha256": "e13391e2ed44a8f5d7d5c71aaa6e1f727f79af5d5ea205de5b8be91753d3a670"
 }

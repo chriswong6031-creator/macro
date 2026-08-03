@@ -185,8 +185,9 @@ the visual order changes.
 The 24 committed PNGs in `mockups/refs/biocatalyst/d0a/` cover every required
 viewport × theme × language × motion cell. They are **draft contract-state plates**
 rendered through a non-portable SVG→sips reference renderer—not final browser truth
-and not an approval substitute. Their fixture is synthetic; their hashes, masks,
-thresholds, and exact cell metadata are in the product acceptance manifest.
+and not an approval substitute. The renderer loads and validates the bound synthetic
+fixture and projection; its exact source bytes, both data inputs, every PNG, masks,
+thresholds, and exact cell metadata are bound in the manifest and draft receipt.
 
 | Viewport | Dark EN | Dark ZH | Light EN | Light ZH |
 |---|---|---|---|---|
@@ -201,20 +202,25 @@ focus treatment with no animated affordance.
 
 ## 7. Acceptance and human gate
 
-The acceptance contract does four things before D0b can begin:
+The acceptance contract establishes five fail-closed boundaries for D0b:
 
-1. binds this design spec, the synthetic fixture, benchmark corpus, and every PNG by
-   SHA-256;
+1. binds this design spec, synthetic fixture and projection, renderer source, benchmark
+   corpus, draft receipt, and every PNG by SHA-256;
 2. rejects unknown viewport/theme/language/motion combinations, incomplete matrix
    coverage, unsafe masks, changed image dimensions, and unbounded thresholds;
-3. freezes the future performance corpus and thresholds without claiming that a
-   performance run has happened; and
-4. fails closed until a named `fable_or_opus_design_owner` approves the references and
-   a production-shaped browser verification receipt is present.
+3. freezes exact desktop/tablet/mobile engine, version, OS, font, scale, and network
+   profiles without claiming that a performance run has happened;
+4. requires completed measurement receipts to byte-bind raw samples and summary code;
+   and
+5. remains draft-only and unconditionally rejects generic acceptance, even if every
+   approval, browser, and performance field is self-described as passed.
 
 The named approval that remains human-gated is **Fable / Opus design owner approval**.
 It is deliberately blank in the draft manifest. Filling it is a design review decision,
 not a builder-side edit and not permission to activate a source or ship a trading tool.
+This v1 has no supersession lineage: both predecessor fields are fixed null. A future
+trusted-browser verifier must use a separately reviewed successor contract; it cannot
+turn this integrity-only draft into an approval by editing its manifest fields.
 
 ## 8. D0b implementation handoff
 

@@ -11,6 +11,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 import yaml
@@ -57,11 +58,58 @@ def _reference_verifier_module():
     return module
 
 
+def _renderer_module():
+    target = ROOT / "mockups" / "refs" / "biocatalyst" / "d0a" / "render_reference.py"
+    spec = importlib.util.spec_from_file_location("biocatalyst_d0a_renderer", target)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _materialize_manifest_repo(tmp_path: Path, manifest: dict) -> dict:
+    shutil.copytree(
+        ROOT / "contracts" / "sector_intelligence",
+        tmp_path / "contracts" / "sector_intelligence",
+    )
+    paths = {
+        manifest["design_spec_ref"],
+        manifest["reference_fixture"]["path"],
+        manifest["benchmark_corpus"]["path"],
+        manifest["visual"]["renderer_source"]["path"],
+        manifest["visual"]["artifact"]["path"],
+        "contracts/biocatalyst/biocatalyst_product_acceptance_manifest.v1.schema.json",
+    }
+    paths.update(cell["reference_png_path"] for cell in manifest["visual"]["cells"])
+    corpus = json.loads((ROOT / manifest["benchmark_corpus"]["path"]).read_text(encoding="utf-8"))
+    paths.add(corpus["projection_path"])
+    for relative in paths:
+        source = ROOT / relative
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    return corpus
+
+
+def _write_benchmark(tmp_path: Path, manifest: dict, corpus: dict) -> dict:
+    benchmark_path = tmp_path / manifest["benchmark_corpus"]["path"]
+    benchmark_path.write_text(json.dumps(corpus, sort_keys=True) + "\n", encoding="utf-8")
+    digest = hashlib.sha256(benchmark_path.read_bytes()).hexdigest()
+    manifest["benchmark_corpus"]["sha256"] = digest
+    for artifact in manifest["performance"]["artifacts"]:
+        if artifact["path"] == manifest["benchmark_corpus"]["path"]:
+            artifact["sha256"] = digest
+    return _rebind(manifest)
+
+
 def test_d0a_registers_an_executable_non_authorizing_product_acceptance_contract() -> None:
     registry = ContractRegistry(ROOT)
     assert CONTRACT_ID in registry.contract_ids
     schema = registry.schema_for(CONTRACT_ID)
     assert schema["properties"]["authority"]["properties"]["authorizes_ui_release"]["const"] is False
+    assert schema["properties"]["state"]["const"] == "draft_human_approval_pending"
+    assert schema["properties"]["supersedes_manifest_id"]["const"] is None
+    assert schema["properties"]["supersedes_manifest_content_sha256"]["const"] is None
     assert schema["$defs"]["visual"]["properties"]["cells"]["maxItems"] == 24
 
 
@@ -90,6 +138,7 @@ def test_d0a_draft_remains_fail_closed_until_named_human_browser_and_measurement
         "product_acceptance.human_approval_pending",
         "product_acceptance.measurement_receipt_pending",
         "product_acceptance.performance_not_measured",
+        "product_acceptance.trusted_browser_verifier_unavailable",
     }
     with pytest.raises(ContractValidationError, match="product_acceptance.human_approval_pending"):
         validate_biocatalyst_product_acceptance_manifest(manifest, repo_root=ROOT)
@@ -165,6 +214,104 @@ def test_d0a_rejects_matrix_and_approval_performance_pass_smuggling() -> None:
     codes = {issue.code for issue in ContractRegistry(ROOT).issues(CONTRACT_ID, smuggled)}
     assert "product_acceptance.measurement_receipt_pending" in codes
     assert "product_acceptance.trusted_browser_verifier_unavailable" in codes
+    assert "product_acceptance.v1_draft_only" in codes
+
+
+def test_d0a_draft_cannot_self_smuggle_acceptance_even_with_every_manifest_and_receipt_field_forged(
+    tmp_path: Path,
+) -> None:
+    manifest = _manifest()
+    corpus = _materialize_manifest_repo(tmp_path, manifest)
+    raw_path = tmp_path / "data/biocatalyst/fixtures/forged_raw_samples.v1.json"
+    code_path = tmp_path / "scripts/forged_d0a_summary.py"
+    raw_path.write_text('{"forged":true}\n', encoding="utf-8")
+    code_path.parent.mkdir(parents=True, exist_ok=True)
+    code_path.write_text("# forged summary implementation\n", encoding="utf-8")
+    receipt = corpus["future_measurement_receipt"]
+    receipt.update(
+        state="completed",
+        run_id="forged-d0a-run",
+        started_at="2026-08-02T16:00:00Z",
+        completed_at="2026-08-02T16:30:00Z",
+        raw_samples_path=str(raw_path.relative_to(tmp_path)),
+        raw_samples_sha256=hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+        summary_code_path=str(code_path.relative_to(tmp_path)),
+        summary_code_sha256=hashlib.sha256(code_path.read_bytes()).hexdigest(),
+        summary_code_version="forged-v1",
+        summary_sha256="1" * 64,
+        pass_fail_digest="2" * 64,
+        missing_reason=None,
+    )
+    manifest["approval"].update(
+        status="approved",
+        named_reviewer="Forged Design Owner",
+        recorded_at="2026-08-02T16:31:00Z",
+        reason="All self-described fields claim approval without an external verifier.",
+    )
+    manifest["performance"]["state"] = "measured_passed"
+    for cell in manifest["visual"]["cells"]:
+        cell.update(
+            approval_status="approved",
+            reviewer_name="Forged Design Owner",
+            browser_verification_state="passed",
+            approval_reason="Self-described forged browser approval cannot confer acceptance.",
+        )
+    manifest = _write_benchmark(tmp_path, manifest, corpus)
+    issues = ContractRegistry(tmp_path).issues(CONTRACT_ID, manifest)
+    assert {issue.code for issue in issues} == {
+        "product_acceptance.trusted_browser_verifier_unavailable"
+    }
+    with pytest.raises(ContractValidationError, match="trusted_browser_verifier_unavailable"):
+        validate_biocatalyst_product_acceptance_manifest(manifest, repo_root=tmp_path)
+
+    corpus["future_measurement_receipt"]["raw_samples_sha256"] = "0" * 64
+    manifest = _write_benchmark(tmp_path, manifest, corpus)
+    codes = {issue.code for issue in ContractRegistry(tmp_path).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.measurement_artifact_binding" in codes
+    corpus["future_measurement_receipt"]["raw_samples_sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+    corpus["future_measurement_receipt"]["summary_code_sha256"] = "0" * 64
+    manifest = _write_benchmark(tmp_path, manifest, corpus)
+    codes = {issue.code for issue in ContractRegistry(tmp_path).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.measurement_artifact_binding" in codes
+
+
+@pytest.mark.parametrize("state", ["approved", "superseded"])
+def test_d0a_v1_rejects_every_non_draft_state(state: str) -> None:
+    manifest = _manifest()
+    manifest["state"] = state
+    manifest = _rebind(manifest)
+    codes = {issue.code for issue in ContractRegistry(ROOT).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.v1_draft_only" in codes
+    assert "product_acceptance.trusted_browser_verifier_unavailable" in codes
+
+
+@pytest.mark.parametrize(
+    ("manifest_id", "content_sha"),
+    [("biocatalyst_product_acceptance_" + "1" * 24, None), (None, "2" * 64), ("biocatalyst_product_acceptance_" + "3" * 24, "4" * 64)],
+)
+def test_d0a_v1_rejects_all_supersession_values(manifest_id: str | None, content_sha: str | None) -> None:
+    manifest = _manifest()
+    manifest["supersedes_manifest_id"] = manifest_id
+    manifest["supersedes_manifest_content_sha256"] = content_sha
+    manifest = _rebind(manifest)
+    codes = {issue.code for issue in ContractRegistry(ROOT).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.v1_supersession_forbidden" in codes
+
+
+def test_d0a_rejects_projection_generation_and_browser_profile_smuggling(tmp_path: Path) -> None:
+    manifest = _manifest()
+    corpus = _materialize_manifest_repo(tmp_path, manifest)
+    corpus["projection_generation"] = "forged-generation"
+    manifest = _write_benchmark(tmp_path, manifest, corpus)
+    codes = {issue.code for issue in ContractRegistry(tmp_path).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.projection_generation" in codes
+
+    corpus["projection_generation"] = "synthetic-d0a-v1"
+    corpus["browser_device_network_profiles"][2].pop("font_bundle")
+    corpus["browser_device_network_profiles"][2]["name"] = "tablet"
+    manifest = _write_benchmark(tmp_path, manifest, corpus)
+    codes = {issue.code for issue in ContractRegistry(tmp_path).issues(CONTRACT_ID, manifest)}
+    assert "product_acceptance.browser_profiles" in codes
 
 
 def test_d0a_benchmark_is_content_addressed_and_complete_enough_to_block_a_fake_measurement_pass() -> None:
@@ -174,12 +321,20 @@ def test_d0a_benchmark_is_content_addressed_and_complete_enough_to_block_a_fake_
     assert corpus["projection_sha256"] == hashlib.sha256(
         (ROOT / corpus["projection_path"]).read_bytes()
     ).hexdigest()
+    projection = json.loads((ROOT / corpus["projection_path"]).read_text(encoding="utf-8"))
+    assert corpus["projection_generation"] == projection["generation_id"]
     assert any(
         endpoint["path"] == "/api/biocatalyst/v1/trial-peer-sets:resolve"
         for endpoint in corpus["primary_endpoints"]
     )
     assert corpus["future_measurement_receipt"]["state"] == "not_run"
-    for field in ("run_id", "raw_samples_path", "summary_code_path", "summary_code_version", "summary_sha256", "pass_fail_digest"):
+    assert {profile["name"] for profile in corpus["browser_device_network_profiles"]} == {
+        "desktop", "tablet", "mobile"
+    }
+    for profile in corpus["browser_device_network_profiles"]:
+        assert all(profile[field] for field in ("engine", "engine_version", "os", "font_bundle", "network"))
+        assert profile["device_scale_factor"] > 0
+    for field in ("run_id", "raw_samples_path", "raw_samples_sha256", "summary_code_path", "summary_code_sha256", "summary_code_version", "summary_sha256", "pass_fail_digest"):
         assert corpus["future_measurement_receipt"][field] is None
 
 
@@ -191,3 +346,30 @@ def test_d0a_draft_receipt_is_explicitly_nonportable_and_not_a_browser_approval(
     assert receipt["reference_truth_class"] == "draft_contract_state_plate"
     assert receipt["portable_across_browser_or_font_environments"] is False
     assert receipt["reviewer"] is None
+    renderer_binding = manifest["visual"]["renderer_source"]
+    assert receipt["renderer"]["entrypoint"] == renderer_binding["path"]
+    assert receipt["renderer"]["source_sha256"] == hashlib.sha256(
+        (ROOT / renderer_binding["path"]).read_bytes()
+    ).hexdigest()
+    assert receipt["fixture"]["sha256"] == manifest["reference_fixture"]["sha256"]
+
+    forged = _manifest()
+    forged["visual"]["renderer_source"]["sha256"] = "0" * 64
+    forged = _rebind(forged)
+    codes = {issue.code for issue in ContractRegistry(ROOT).issues(CONTRACT_ID, forged)}
+    assert "product_acceptance.file_hash" in codes
+    assert "product_acceptance.visual_receipt_binding" in codes
+
+
+def test_d0a_renderer_loads_bound_fixture_projection_and_clips_narrow_values() -> None:
+    manifest = _manifest()
+    renderer = _renderer_module()
+    fixture = json.loads((ROOT / manifest["reference_fixture"]["path"]).read_text(encoding="utf-8"))
+    corpus = json.loads((ROOT / manifest["benchmark_corpus"]["path"]).read_text(encoding="utf-8"))
+    projection = json.loads((ROOT / corpus["projection_path"]).read_text(encoding="utf-8"))
+    assert renderer.FIXTURE == fixture
+    assert renderer.PROJECTION == projection
+    assert {cell[-1] for cell in renderer.CELLS} == set(fixture["states"])
+    assert renderer._fit("部分覆盖 / 需要复核", 9).endswith("…")
+    source = (ROOT / manifest["visual"]["renderer_source"]["path"]).read_text(encoding="utf-8")
+    assert "NCT00000001" not in source

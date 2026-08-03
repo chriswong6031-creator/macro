@@ -4,7 +4,7 @@
   "state": "frozen_not_run",
   "projection_generation": "synthetic-d0a-v1",
   "projection_path": "data/biocatalyst/fixtures/biocatalyst_d0a_synthetic_projection.v1.json",
-  "projection_sha256": "e3816c442e5fe0d3659e76c5e62daa60c469937a5f45759e775c8652a184f997",
+  "projection_sha256": "574ef26d65cf4d2b77b072b24deb039fe1781204f1beb5950cf4b5d290d7c8db",
   "primary_endpoints": [
     {"method": "GET", "path": "/api/biocatalyst/v1/trials", "page_size": 50, "result_cardinality": 108, "response_shape": "authenticated current-trial page"},
     {"method": "GET", "path": "/api/biocatalyst/v1/trials/{nct_id}", "page_size": 1, "result_cardinality": 1, "response_shape": "authenticated current-trial dossier"},
@@ -20,10 +20,10 @@
   "environment": {"host_class": "closed_beta_vps_2vcpu_4gb", "runtime": "python-3.12", "process_runtime": "uvicorn-single-worker", "worker_count": 1, "storage_topology": "private_object_store_plus_public_projection", "network_location": "vancouver_ca"},
   "warmup": {"cold_process_required": true, "cold_projection_required": true, "warm_scenarios_required": true, "fixed_warmup_requests": 25},
   "browser_device_network_profiles": [
-    {"viewport": "1440x900", "engine": "chromium", "device_scale_factor": 1, "network": "wired"},
-    {"viewport": "820x1180", "engine": "webkit", "device_scale_factor": 2, "network": "wifi"},
-    {"viewport": "390x844", "engine": "webkit", "device_scale_factor": 3, "network": "4g"}
+    {"name": "desktop", "viewport": "1440x900", "engine": "chromium", "engine_version": "140.0.7339.41", "os": "macos-15.6-arm64", "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 1, "network": "wired-100mbps-20ms"},
+    {"name": "tablet", "viewport": "820x1180", "engine": "webkit", "engine_version": "620.1.16", "os": "macos-15.6-arm64", "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 2, "network": "wifi-40mbps-40ms"},
+    {"name": "mobile", "viewport": "390x844", "engine": "webkit", "engine_version": "620.1.16", "os": "macos-15.6-arm64", "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 3, "network": "4g-10mbps-80ms"}
   ],
   "measurement_rules": {"primary_api_samples_per_scenario_min": 1000, "search_queries_per_scenario_min": 200, "web_navigations_per_page_profile_min": 20, "discard_failures": false, "cold_and_warm_required": true, "deterministic_cursor_and_as_of_recovery_required": true},
-  "future_measurement_receipt": {"state": "not_run", "run_id": null, "started_at": null, "completed_at": null, "raw_samples_path": null, "summary_code_path": null, "summary_code_version": null, "summary_sha256": null, "pass_fail_digest": null, "missing_reason": "D0a freezes the corpus before D0b implementation and browser capture."}
+  "future_measurement_receipt": {"state": "not_run", "run_id": null, "started_at": null, "completed_at": null, "raw_samples_path": null, "raw_samples_sha256": null, "summary_code_path": null, "summary_code_sha256": null, "summary_code_version": null, "summary_sha256": null, "pass_fail_digest": null, "missing_reason": "D0a freezes the corpus before D0b implementation and browser capture."}
 }
