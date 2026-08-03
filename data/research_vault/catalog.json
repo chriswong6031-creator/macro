@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T18:06:27.763644+00:00",
-  "count": 680,
+  "generated_at": "2026-08-03T18:51:34.724432+00:00",
+  "count": 682,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -152,6 +152,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tvidqpbwj4r-8cd1e8",
+      "title": "Global Healthcare Pharmaceuticals The Obesity Evolution GLP 1 Prescription Trends Point to Early Tailwind from Medicare Un...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:05:03Z",
+      "summary_points": [
+        "**Medicare Bridge Program Catalyst**: Weekly GLP-1 prescriptions (TRx/NBRx: ~1.25mn/199k) surged 8%/49% post-launch, with LLY’s Zeppound Kwikpen leading at 44% share; oral therapy share declines as physicians shift to injectables for Medicare patients.",
+        "**Revenue Offset Mechanism**: Volume growth for LLY’s Kwikpen and obesity GLP-1 therapies offsets cash-pay channel pricing headwinds (10-20% of LLY Direct Patients eligible), generating $250-$500m annualized incremental revenue potential.",
+        "**Critical Risk Exposure**: Key risks include obesity market pricing decline, market share erosion (e.g., from competitor GLP-1 assets), and pipeline underperformance, directly impacting sector fundamentals and valuation multiples.",
+        "**Prescription Trend Divergence**: AOM TRx shows steady growth through 2026, while NBRx inflects post-Medicare unlock (Exhibit 1); Wegovy/Zepbound NBRx sustained upward trend, contrasting with oral therapy decline.",
+        "**Valuation Discrepancy**: Novo Nordisk (NOVOB.CO) shows persistent target premiums (e.g., 745.00 vs 439.60 closing price), reflecting aggressive bullish sentiment, versus LLY’s narrower gap (1,283.00 vs 963.33), signaling sector-specific risk appetite."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-4xoz2ba562w-b131ba",
       "title": "Taylor Wimpey (TW.L) Margin compression and downgraded shareholder returns, Maintain Sell",
       "institution": "Goldman Sachs",
@@ -169,6 +190,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-csgfjxdrqxp-2b05ba",
+      "title": "MUFG (8306)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:45Z",
+      "summary_points": [
+        "**1Q Profit Surge**: ¥809.0bn net business profit (+49% YoY) driven by fund demand, spread expansion, and market-related revenues above consensus.",
+        "**Capital Adequacy Risk**: CET1 growth may not reach 9.5% due to AOCI expansion despite unchanged FY3/27 guidance (policy rate 1.0%).",
+        "**Valuation Gap & Momentum**: Target price ¥4,000 (vs.",
+        "3,567 close) with 67.7% 12m absolute return vs TOPIX (24.9%), highlighting strong bullish momentum.",
+        "**Downside Risks**: Global economic deterioration, credit cycle weakening, and weak capital markets critical for risk management."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
