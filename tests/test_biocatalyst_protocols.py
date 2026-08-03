@@ -680,7 +680,7 @@ def test_n0a_sector_packet_is_permutation_stable_and_facts_only() -> None:
     assert "NX-101" not in serialized
 
 
-def test_n0a_sector_packet_preserves_committed_evidence_and_source_refs_exactly() -> None:
+def test_n0a_sector_packet_does_not_promote_unattested_projection_claim_refs() -> None:
     snapshot = json.loads(
         (
             ROOT
@@ -694,10 +694,14 @@ def test_n0a_sector_packet_preserves_committed_evidence_and_source_refs_exactly(
 
     packet = _sector_packet([snapshot])
 
-    assert packet["current_fact_refs"] == [
+    # The projection's string is not an independently attested claim
+    # allowlist. N0a retains the source record but publishes no claim/current
+    # fact reference from it.
+    assert snapshot["evidence_claim_refs"] == [
         "claim:trial:NCT00000001:overall_status:20260801"
     ]
-    assert packet["evidence_claim_refs"] == packet["current_fact_refs"]
+    assert packet["current_fact_refs"] == []
+    assert packet["evidence_claim_refs"] == []
     assert packet["source_record_refs"] == [snapshot["source_record_ref"]]
 
 
@@ -963,7 +967,7 @@ def test_n0a_sector_packet_refuses_rehashed_sealed_forbidden_carriers() -> None:
         )
 
 
-def test_n0a_sector_packet_revalidates_evidence_and_pit_after_seal_import() -> None:
+def test_n0a_sector_packet_rejects_invented_same_nct_claim_after_seal_import() -> None:
     projection = build_trial_snapshot(_source())
     health, lobe, manifest = _sector_inputs([projection])
     prepared = prepare_sector_packet_inputs(
@@ -974,14 +978,33 @@ def test_n0a_sector_packet_revalidates_evidence_and_pit_after_seal_import() -> N
         authority_manifest=manifest,
     )
     tampered = compile_sector_packet(prepared)
-    tampered["current_fact_refs"] = ["prediction:forbidden"]
-    tampered["evidence_claim_refs"] = ["prediction:forbidden"]
-    # It is structurally valid to the generic contract, yet invalid for N0a:
-    # it has neither the claim namespace nor its entity-NCT binding.
+    invented_claim = "claim:trial:NCT00000001:invented-but-syntax-valid"
+    tampered["current_fact_refs"] = [invented_claim]
+    tampered["evidence_claim_refs"] = [invented_claim]
+    # It is structurally valid and names the same entity NCT, but no injected
+    # input independently attests it as a real claim artifact.
     forged_evidence = _forged_prepared(tampered, prepared)
     validate_contract("sector_intelligence_packet.v1", tampered, repo_root=ROOT)
     with pytest.raises(SectorPacketError, match="compiled_packet_unavailable"):
         compile_sector_packet(forged_evidence)
+
+
+def test_n0a_sector_packet_recomputes_freshness_after_seal_import() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    ancient_fresh = compile_sector_packet(prepared)
+    ancient_fresh["freshness"]["oldest_required_source_at"] = "2026-08-01T10:00:00Z"
+    forged_ancient = _forged_prepared(ancient_fresh, prepared)
+    validate_contract("sector_intelligence_packet.v1", ancient_fresh, repo_root=ROOT)
+    with pytest.raises(SectorPacketError, match="compiled_packet_unavailable"):
+        compile_sector_packet(forged_ancient)
 
     stale_carrier = compile_sector_packet(prepared)
     stale_carrier["freshness"]["oldest_required_source_at"] = "2026-08-01T15:00:30Z"
@@ -989,6 +1012,79 @@ def test_n0a_sector_packet_revalidates_evidence_and_pit_after_seal_import() -> N
     validate_contract("sector_intelligence_packet.v1", stale_carrier, repo_root=ROOT)
     with pytest.raises(SectorPacketError, match="compiled_packet_unavailable"):
         compile_sector_packet(forged_clock)
+
+
+@pytest.mark.parametrize("forged_state", ("stale", "unknown"))
+def test_n0a_sector_packet_rejects_inconsistent_source_health_vectors(
+    forged_state: str,
+) -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    inconsistent = compile_sector_packet(prepared)
+    inconsistent["freshness"]["state"] = forged_state
+    inconsistent["quality"]["state"] = "degraded"
+    inconsistent["quality"]["warnings"].append(
+        "ClinicalTrials.gov source freshness is not confirmed."
+    )
+    if forged_state == "unknown":
+        inconsistent["freshness"]["unknown_source_ids"] = [
+            "clinicaltrials_gov_v2"
+        ]
+        inconsistent["quality"]["warnings"].insert(
+            1,
+            "ClinicalTrials.gov source dataTimestamp has no declared timezone; freshness is unknown.",
+        )
+    forged = _forged_prepared(inconsistent, prepared)
+    validate_contract("sector_intelligence_packet.v1", inconsistent, repo_root=ROOT)
+    with pytest.raises(SectorPacketError, match="compiled_packet_unavailable"):
+        compile_sector_packet(forged)
+
+
+def test_n0a_sector_packet_rejects_101_entities_after_seal_import() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    oversized = compile_sector_packet(prepared)
+    oversized["entity_refs"] = [f"trial:NCT{index:08d}" for index in range(101)]
+    oversized["source_record_refs"] = [
+        f"src:ctgov:NCT{index:08d}:sha256:{'a' * 64}" for index in range(101)
+    ]
+    forged_oversized = _forged_prepared(oversized, prepared)
+    validate_contract("sector_intelligence_packet.v1", oversized, repo_root=ROOT)
+    with pytest.raises(SectorPacketError, match="compiled_packet_unavailable"):
+        compile_sector_packet(forged_oversized)
+
+
+def test_n0a_sector_packet_rejects_extreme_raw_nesting_before_decode() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    nested = b'{"carrier":' + b"[" * 2_000 + b"0" + b"]" * 2_000 + b"}"
+    forged_nested = type(prepared)(
+        packet_bytes=nested,
+        _seal=sector_packet_module._PREPARATION_SEAL,
+    )
+    with pytest.raises(SectorPacketError, match="validated_inputs_required"):
+        compile_sector_packet(forged_nested)
 
 
 def test_n0a_sector_packet_marks_naive_ctgov_version_clock_unknown() -> None:

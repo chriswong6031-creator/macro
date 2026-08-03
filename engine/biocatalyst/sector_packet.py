@@ -14,9 +14,10 @@ revalidates both the generic packet contract and N0a's stricter facts-only
 carrier invariants.  The extra final check makes an imported private seal
 insufficient to smuggle a rehashed generic packet through compilation.  The
 boundary validator uses the repository's existing contract registry before
-construction.  Current ``trial_snapshot.v1`` has a scalar contradiction state
-but no claim-pair/resolution references; any state other than ``none_known``
-therefore fails closed rather than being flattened into an empty packet
+construction. Current ``trial_snapshot.v1`` has neither an independently
+attested claim allowlist nor claim-pair/resolution references. N0a therefore
+emits empty evidence/current-fact lanes, and any contradiction state other than
+``none_known`` fails closed rather than being flattened into an empty packet
 contradiction list.
 """
 from __future__ import annotations
@@ -181,6 +182,46 @@ def _preflight_json_object(value: Any, *, code: str, max_bytes: int) -> int:
         if estimated_bytes > max_bytes:
             _reject(code)
     return estimated_bytes
+
+
+def _preflight_raw_json_bytes(payload: bytes, *, code: str) -> None:
+    """Bound nesting and approximate nodes before the recursive JSON decoder.
+
+    This lexical pass understands JSON strings and escapes well enough to
+    ignore structural characters inside strings. The real decoder still owns
+    syntax validation; this pass only ensures hostile nesting never reaches it.
+    """
+
+    depth = 0
+    node_count = 1
+    in_string = False
+    escaped = False
+    for character in payload:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == 0x5C:  # backslash
+                escaped = True
+            elif character == 0x22:  # quote
+                in_string = False
+            continue
+        if character == 0x22:
+            in_string = True
+        elif character in {0x5B, 0x7B}:  # [ or {
+            depth += 1
+            node_count += 1
+            if depth > _MAX_JSON_DEPTH:
+                _reject(code)
+        elif character in {0x5D, 0x7D}:  # ] or }
+            depth -= 1
+            if depth < 0:
+                _reject(code)
+        elif character == 0x2C:  # comma: at least one additional value/member
+            node_count += 1
+        if node_count > _MAX_JSON_NODES:
+            _reject(code)
+    if in_string or escaped or depth != 0:
+        _reject(code)
 
 
 def _ordered_actions(actions: Sequence[str]) -> tuple[str, ...]:
@@ -518,13 +559,10 @@ def _packet_payload(
     packet_id = "packet:biopharma:" + canonical_json_sha256(identity)[:24]
     entity_refs = [f"trial:{projection['nct_id']}" for projection in projections]
     source_refs = sorted({str(projection["source_record_ref"]) for projection in projections})
-    evidence_refs = sorted(
-        {
-            str(ref)
-            for projection in projections
-            for ref in projection["evidence_claim_refs"]
-        }
-    )
+    # ``trial_snapshot.v1`` contains strings named evidence_claim_refs but no
+    # independently attested allowlist binding those strings to claim
+    # artifacts. N0a therefore carries none of them as public/current facts.
+    evidence_refs: list[str] = []
     completeness = health["observed_nct_count"] / health["configured_nct_count"] if health["configured_nct_count"] else 0.0
     quality_state = "complete" if freshness["state"] == "fresh" and completeness == 1 else "degraded"
     warnings = ["Current-only ClinicalTrials.gov facts; complete prior history is not implied."]
@@ -796,7 +834,11 @@ def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes)
         packet.get("entity_refs"), pattern=_ENTITY_REF_RE, code=code
     )
     entity_refs = packet["entity_refs"]
-    if not entity_refs or entity_refs != sorted(entity_refs):
+    if (
+        not entity_refs
+        or len(entity_refs) > _MAX_TRIAL_PROJECTIONS
+        or entity_refs != sorted(entity_refs)
+    ):
         _reject(code)
     entity_ncts = {match.group(1) for match in entity_matches}
     if len(entity_ncts) != len(entity_refs):
@@ -811,16 +853,10 @@ def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes)
     if {match.group(1) for match in source_matches} != entity_ncts:
         _reject(code)
 
-    evidence_matches = _validated_ref_list(
-        packet.get("evidence_claim_refs"), pattern=_EVIDENCE_REF_RE, code=code
-    )
-    evidence_refs = packet["evidence_claim_refs"]
-    if (
-        len(evidence_refs) > _MAX_EVIDENCE_REFS
-        or evidence_refs != sorted(evidence_refs)
-        or packet.get("current_fact_refs") != evidence_refs
-        or any(match.group(1) not in entity_ncts for match in evidence_matches)
-    ):
+    # No current input contract independently attests a claim allowlist. Any
+    # non-empty claim lane is therefore invented provenance, even if its NCT
+    # syntax happens to match a packet entity.
+    if packet.get("evidence_claim_refs") != [] or packet.get("current_fact_refs") != []:
         _reject(code)
 
     for lane in (
@@ -850,14 +886,13 @@ def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes)
     oldest = freshness.get("oldest_required_source_at")
     stale_sources = freshness.get("stale_source_ids")
     unknown_sources = freshness.get("unknown_source_ids")
-    if freshness_state == "unknown":
-        if oldest is not None or stale_sources != [] or unknown_sources != [_SOURCE_ID]:
+    if oldest is None:
+        expected_freshness_state = "unknown"
+        if stale_sources != [] or unknown_sources != [_SOURCE_ID]:
             _reject(code)
-    elif freshness_state in {"fresh", "stale", "degraded"}:
+    elif isinstance(oldest, str):
         source_clock = (
             _explicit_source_clock(oldest, code=code)
-            if isinstance(oldest, str)
-            else None
         )
         if (
             source_clock is None
@@ -865,17 +900,22 @@ def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes)
             or source_clock > generated_at
         ):
             _reject(code)
-        if freshness_state == "fresh" and (stale_sources != [] or unknown_sources != []):
-            _reject(code)
-        if freshness_state == "stale" and (
-            stale_sources != [_SOURCE_ID] or unknown_sources != []
+        age_seconds = (generated_at - source_clock).total_seconds()
+        if stale_sources == [_SOURCE_ID] and unknown_sources == []:
+            expected_freshness_state = "stale"
+        elif stale_sources == [] and unknown_sources == [_SOURCE_ID]:
+            expected_freshness_state = "degraded"
+        elif (
+            stale_sources == []
+            and unknown_sources == []
+            and age_seconds <= _CTGOV_FRESHNESS_BUDGET_SECONDS
         ):
-            _reject(code)
-        if freshness_state == "degraded" and (
-            stale_sources != [] or unknown_sources != [_SOURCE_ID]
-        ):
+            expected_freshness_state = "fresh"
+        else:
             _reject(code)
     else:
+        _reject(code)
+    if freshness_state != expected_freshness_state:
         _reject(code)
 
     completeness = quality.get("completeness")
@@ -937,23 +977,31 @@ def compile_sector_packet(inputs: _ValidatedSectorPacketInputs) -> dict[str, Any
         or len(inputs.packet_bytes) > _MAX_PACKET_BYTES
     ):
         _reject("validated_inputs_required")
+    _preflight_raw_json_bytes(inputs.packet_bytes, code="validated_inputs_required")
     try:
         packet = json.loads(inputs.packet_bytes)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, RecursionError, MemoryError):
         _reject("validated_inputs_required")
     if not isinstance(packet, dict):
         _reject("validated_inputs_required")
+    # Run the iterative structural bound before calling any recursive
+    # canonicalization or schema-validation machinery.
+    _preflight_json_object(
+        packet,
+        code="validated_inputs_required",
+        max_bytes=_MAX_PACKET_BYTES * 6,
+    )
     try:
         if canonical_json_bytes(packet) != inputs.packet_bytes:
             _reject("validated_inputs_required")
-    except (ContractError, TypeError, ValueError):
+    except (ContractError, TypeError, ValueError, RecursionError, MemoryError):
         _reject("validated_inputs_required")
     declared_hash = packet.get("packet_hash")
     payload = dict(packet)
     payload.pop("packet_hash", None)
     try:
         hash_matches = declared_hash == canonical_json_sha256(payload)
-    except (ContractError, TypeError, ValueError):
+    except (ContractError, TypeError, ValueError, RecursionError, MemoryError):
         _reject("validated_inputs_required")
     if not hash_matches:
         _reject("validated_inputs_required")

@@ -7,6 +7,11 @@ pointer receipt, so generation-commit provenance remains the upstream public
 publication boundary's responsibility; N0a validates the immutable projection
 contract and never follows a raw-store path to reconstruct it.
 
+`trial_snapshot.v1.evidence_claim_refs` is not an independently attested claim
+allowlist. N0a may bind the projection and its source record, but its public
+`evidence_claim_refs` and `current_fact_refs` remain empty until a successor
+contract supplies that independent provenance. Same-NCT syntax is not proof.
+
 Freshness is derived only from the ClinicalTrials.gov v2 `/version`
 `dataTimestamp` that the upstream committed receipt observed. The active launch
 SLO fixes its budget at 7,200 seconds. A lexical ClinicalTrials timestamp
@@ -18,7 +23,8 @@ The internal boundary is intentionally finite: at most 100 trial projections,
 input, 32 evidence refs per projection (1,000 aggregate), and a 1 MiB final
 packet. Health is capped at 16 KiB; each injected governance document at
 256 KiB; all JSON inputs are additionally bounded by 20,000 nodes, depth 32,
-and 4,096 items per container before canonical serialization.
+and 4,096 items per container before canonical serialization. Final carrier
+bytes also receive a quote-aware lexical nesting scan before JSON decoding.
 
 There is intentionally no committed lobe-run or authority-manifest fixture for
 the final compiler path.  Those references are governance-owned runtime inputs,
