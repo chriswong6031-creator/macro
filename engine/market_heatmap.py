@@ -25,11 +25,15 @@ Design notes
 """
 from __future__ import annotations
 
+import re
 from typing import Mapping
 
 import pandas as pd
 
 from engine import sp500_heatmap as us  # reuse daily_returns + the timeframe contract
+
+_DMA_WINDOW = 200        # the "vs 200d" tag's window
+_MIN_DMA_OBS = 200       # never print a 200-day average from fewer than 200 prints
 
 # ---------------------------------------------------------------------------
 # Per-market Sector → Chinese label maps. Keys must match the ``sector`` strings
@@ -200,10 +204,21 @@ MARKETS: dict[str, dict] = {
 # Per-market standalone-page copy (consumed by scripts/build_site.py rendering
 # templates/market_heatmap.html.j2). Kept here so the engine is the single source
 # of truth for everything market-specific.
+#
+# `seo_title` / `seo_desc` are the ONE title each page carries — <title>, og:,
+# twitter: and the SERP line all read them (SEO_SUPERCHARGE W2 spec §A8). The page
+# used to carry three different strings; a searcher types entity nouns ("A-share",
+# "TSX", "heatmap", "sector"), not product vocabulary, so each leads with those and
+# ends with the brand. Titles stay ≤ 70 chars and descriptions inside 50–170 —
+# pinned by tests/test_china_heatmap_gate.py.
 PAGE_META: dict[str, dict] = {
     "china": {
         "icon": "🔥", "key": "china", "json": "marketdata/china_heatmap.json",
         "title": "China A-share Heatmap",
+        "seo_title": "China A-Share Heatmap — Live Sector Map — MastermindX",
+        "seo_desc": ("Every liquid Shanghai and Shenzhen A-share as one sector treemap — "
+                     "today's winners, losers and sector breadth, sized by market cap, "
+                     "after each close."),
         "label_en": "China A-shares", "label_zh": "A股",
         "h1_en": "China A-share Heatmap", "h1_zh": "A股市场热力图",
         "sub_en": "Every liquid A-share as a tile, grouped <b>Sector → stock</b> and sized by <b>market cap</b> — the institutional treemap in our theme. Tiles shade by the move over the timeframe you pick; hover a tile for our conviction read, or a sector header for its members, and click through to the analyzer.",
@@ -214,6 +229,10 @@ PAGE_META: dict[str, dict] = {
     "hk": {
         "icon": "🔥", "key": "hk", "json": "marketdata/hk_heatmap.json",
         "title": "Hong Kong Stock Heatmap",
+        "seo_title": "Hong Kong Stock Heatmap — Sector Map — MastermindX",
+        "seo_desc": ("Every liquid Hong Kong listing as one sector treemap — today's "
+                     "winners, losers and sector breadth, sized by average turnover, "
+                     "after each close."),
         "label_en": "Hong Kong", "label_zh": "港股",
         "h1_en": "Hong Kong Stock Heatmap", "h1_zh": "港股市场热力图",
         "sub_en": "The Hong Kong universe as a tile each, grouped <b>Sector → stock</b> and sized by <b>average dollar turnover</b> (a liquidity proxy — HK carries no shares-outstanding feed). Tiles shade by the move over the timeframe you pick; hover a tile for our conviction read, or a sector header for its members, and click through to the analyzer.",
@@ -224,6 +243,9 @@ PAGE_META: dict[str, dict] = {
     "canada": {
         "icon": "🔥", "key": "canada", "json": "marketdata/canada_heatmap.json",
         "title": "Canada · TSX Heatmap",
+        "seo_title": "Canada TSX Heatmap — Sector Map — MastermindX",
+        "seo_desc": ("Every liquid TSX listing as one sector treemap — today's winners, "
+                     "losers and sector breadth, sized by market cap, updated nightly."),
         "label_en": "Canada · TSX", "label_zh": "加拿大 · TSX",
         "h1_en": "Canada · TSX Heatmap", "h1_zh": "加拿大 · TSX 热力图",
         "sub_en": "The TSX universe as a tile each, grouped <b>Sector → stock</b> and sized by <b>market cap</b> — the institutional treemap in our theme. Tiles shade by the move over the timeframe you pick; hover a tile for our conviction read, or a sector header for its members, and click through to the analyzer.",
@@ -299,6 +321,44 @@ def _board_breadth_block(market: str, row: Mapping | None, asof_date: str) -> di
     }
 
 
+def _market_facts(closes: pd.DataFrame, asof: pd.Timestamp | None) -> dict[str, dict[str, float]]:
+    """ticker -> {'px': last close, 'p200': % vs its 200-day average}.
+
+    Both are MARKET FACTS, not grades. They used to reach the hover card only
+    inside ``<market>stockdata/<T>.json`` — the file that also carries our graded
+    conviction block — so an anonymous card lost two honest numbers to protect a
+    third thing entirely (W2 spec T-A2, MITIGATE ruling). Carrying them on the
+    tile keeps the free card useful and leaves the graded block as the only thing
+    the wall is actually about.
+
+    ``p200`` is omitted (not zeroed, not extrapolated) below 200 observations: a
+    "200-day average" printed off 40 prints is a different statistic wearing the
+    same label.
+    """
+    out: dict[str, dict[str, float]] = {}
+    if closes is None or closes.empty:
+        return out
+    frame = closes.sort_index()
+    if asof is not None:
+        frame = frame.loc[:pd.Timestamp(asof)]
+    if frame.empty:
+        return out
+    for col in frame.columns:
+        s = frame[col].dropna()
+        if s.empty:
+            continue
+        last = float(s.iloc[-1])
+        if not (last > 0):
+            continue
+        fact: dict[str, float] = {"px": round(last, 4)}
+        if len(s) >= _MIN_DMA_OBS:
+            dma = float(s.iloc[-_DMA_WINDOW:].mean())
+            if dma > 0:
+                fact["p200"] = round((last / dma - 1.0) * 100.0, 2)
+        out[str(col)] = fact
+    return out
+
+
 def build_market_heatmap(
     market: str,
     constituents: pd.DataFrame,
@@ -347,6 +407,7 @@ def build_market_heatmap(
         })
 
     sizes, size_basis = _float_sizes(rows, caps, weights)
+    facts = _market_facts(closes_sorted, asof)
 
     tiles: list[dict] = []
     for r in rows:
@@ -366,6 +427,7 @@ def build_market_heatmap(
         }
         if r["name_zh"] and r["name_zh"] != r["name"]:
             tile["name_zh"] = r["name_zh"]
+        tile.update(facts.get(str(sym), {}))
         tiles.append(tile)
 
     # A timeframe lights up only once enough constituents carry it (keeps a
@@ -443,4 +505,249 @@ def _empty_payload(market: str, cfg: dict, generated_utc: str | None) -> dict:
         "tiles": [],
         "n_tiles": 0,
         "size_basis": "equal",
+    }
+
+
+# ---------------------------------------------------------------------------
+#  SERVER-RENDERED PAGE SUMMARY (SEO Supercharge W2, spec §A2.3)
+# ---------------------------------------------------------------------------
+#  `templates/market_heatmap.html.j2` used to ship a 76-line shell: a header, an
+#  empty <div id="heatmap-full">, a footer. Every number on the page was built at
+#  runtime by heatmap.js from the tile JSON, so a crawler — and anyone with JS
+#  off — got one sentence: "Could not load heatmap data." Opening that page to
+#  anonymous visitors would have handed Google a thin-content 200 in place of a
+#  302: a worse failure, because Google KEEPS it and rates it thin.
+#
+#  So the conversion is a CONTENT build. These functions compute, in Python and
+#  from the same payload the map draws, exactly what heatmap.js's renderPulse /
+#  renderStats / renderBoards compute client-side: the market pulse, the four
+#  breadth stat cards, the sector ladder and the two mover boards. The template
+#  renders them as static HTML; heatmap.js REPLACES them the moment live data
+#  draws, so the SSR copy is the crawlable floor and the JS copy stays the live
+#  truth. The arithmetic below is a deliberate mirror — pinned against the JS
+#  source in tests/test_china_heatmap_gate.py.
+#
+#  Nothing here is graded. Breadth, medians, sector aggregates and biggest movers
+#  are arithmetic over public closes; the one graded surface on this page (our
+#  per-name conviction read) lives in a separate fetched file and never enters
+#  this summary.
+
+_ADV_BAND = 0.05          # ±% dead-band for advancing/declining (mirrors heatmap.js)
+_MOVERS = 5               # rows per mover board
+
+
+def _fmt_pc(v: float | None) -> str:
+    """heatmap.js fmtPc, character for character (U+2212 MINUS, not a hyphen)."""
+    if v is None:
+        return "—"
+    a = abs(float(v))
+    d = 0 if a >= 100 else (1 if a >= 10 else 2)
+    sign = "+" if v > 0 else ("−" if v < 0 else "")
+    return f"{sign}{a:.{d}f}%"
+
+
+def _fmt_int(v: float | None) -> str:
+    return "—" if v is None else f"{round(float(v)):,}"
+
+
+def _disp_t(t: str) -> str:
+    """Tile display ticker — strip the exchange suffix (heatmap.js dispT)."""
+    return re.sub(r"\.(SS|SZ|SH|HK|TO|V|TSX|NE|CN)$", "", str(t), flags=re.I)
+
+
+def _median(vals: list[float]) -> float | None:
+    if not vals:
+        return None
+    s = sorted(vals)
+    m = len(s) // 2
+    return s[m] if len(s) % 2 else (s[m - 1] + s[m]) / 2.0
+
+
+def _sector_agg(size_basis: str, tiles: list[dict], tf: str) -> float | None:
+    """Cap-weighted where sizes are real caps, median otherwise (heatmap.js sectorAgg)."""
+    vals = [(t, t["perf"][tf]) for t in tiles if t.get("perf", {}).get(tf) is not None]
+    if not vals:
+        return None
+    if size_basis == "marketcap":
+        num = sum(float(t.get("size") or 0.0) * v for t, v in vals)
+        den = sum(float(t.get("size") or 0.0) for t, _ in vals)
+        return (num / den) if den > 0 else None
+    return _median([v for _, v in vals])
+
+
+def _median_word(v: float | None) -> dict[str, str] | None:
+    if v is None:
+        return None
+    if abs(v) < 0.25:
+        return {"en": "Flat — no drift", "zh": "基本走平"}
+    return ({"en": "Tilted higher", "zh": "偏强"} if v > 0
+            else {"en": "Tilted lower", "zh": "偏弱"})
+
+
+def _stance(pct_up: float, med: float, secs: list[dict]) -> dict[str, str]:
+    """Deterministic plain-word read of the tape (heatmap.js stanceOf).
+
+    Breadth + leadership arithmetic only — no model, no LLM, no graded input.
+    This is the page's Law-1 stance for an anonymous reader (spec §A6).
+    """
+    top = secs[0] if secs else None
+    led = bool(top and top["agg"] > 1.2)
+    if pct_up >= 60 and med > 0.2:
+        return {"tone": "up", "en": "Broad advance", "zh": "普涨"}
+    if pct_up <= 40 and med < -0.2:
+        return {"tone": "down", "en": "Broad decline", "zh": "普跌"}
+    if led and pct_up < 52:
+        return {"tone": "flat", "en": f"Narrow · led by {top['en']}", "zh": "结构性行情"}
+    if pct_up >= 54:
+        return {"tone": "up", "en": "Firmer tape", "zh": "偏强"}
+    if pct_up <= 46:
+        return {"tone": "down", "en": "Softer tape", "zh": "偏弱"}
+    return {"tone": "flat", "en": "Split tape", "zh": "涨跌分化"}
+
+
+def page_summary(payload: Mapping | None) -> dict | None:
+    """The crawlable summary layer for one market's standalone heatmap page.
+
+    Returns None when the payload carries nothing renderable, so the template can
+    fall back to the shell it has always shipped rather than print empty blocks.
+    """
+    if not payload:
+        return None
+    tiles = list(payload.get("tiles") or [])
+    if not tiles:
+        return None
+
+    tf = str(payload.get("default_tf") or "1D")
+    frames = list(payload.get("timeframes") or [])
+    if not any(f.get("key") == tf and f.get("available") for f in frames):
+        avail = [f["key"] for f in frames if f.get("available")]
+        if not avail:
+            return None
+        tf = avail[0]
+
+    ts = [t for t in tiles if t.get("perf", {}).get(tf) is not None]
+    if not ts:
+        return None
+
+    adv = sum(1 for t in ts if t["perf"][tf] > _ADV_BAND)
+    dec = sum(1 for t in ts if t["perf"][tf] < -_ADV_BAND)
+    flat = len(ts) - adv - dec
+    n = len(ts)
+    pct_up = (adv / n * 100.0) if n else 0.0
+    med = _median([t["perf"][tf] for t in ts])
+
+    size_basis = str(payload.get("size_basis") or "")
+    labels = {s["key"]: s for s in (payload.get("sectors") or [])}
+    by_sector: dict[str, list[dict]] = {}
+    for t in ts:
+        by_sector.setdefault(t["sector"], []).append(t)
+    secs: list[dict] = []
+    for key, group in by_sector.items():
+        agg = _sector_agg(size_basis, group, tf)
+        if agg is None:
+            continue
+        lab = labels.get(key, {})
+        secs.append({"key": key, "en": lab.get("en", key), "zh": lab.get("zh", key),
+                     "agg": agg, "n": len(group)})
+    secs.sort(key=lambda s: s["agg"], reverse=True)
+
+    ranked = sorted(ts, key=lambda t: t["perf"][tf], reverse=True)
+    gainers, losers = ranked[:_MOVERS], list(reversed(ranked[-_MOVERS:]))
+
+    # Whole-board 涨跌家数 overlay: the tiles are a SAMPLE of a bigger board (China
+    # ~1.5k of ~5.2k names), so where a same-session whole-board row exists we quote
+    # THAT for the counts, the % up and the median — one sentence, one universe.
+    # Per-name detail (movers, sector strength) stays tile-derived: the board feed
+    # carries no names. Mirrors heatmap.js applyBoard, including its 1D-only gate.
+    scope = None
+    board = payload.get("board_breadth") or None
+    if board and tf == str(payload.get("default_tf") or "1D") and (board.get("n") or 0) > 0:
+        adv, dec, flat = board["adv"], board["dec"], board["flat"]
+        n, pct_up = board["n"], board["pct_up"]
+        if board.get("med_pct") is not None:
+            med = board["med_pct"]
+        scope = {
+            "en": f"{board['scope_en']} · {_fmt_int(board['n'])} traded",
+            "zh": f"{board['scope_zh']} · {_fmt_int(board['n'])} 只交易",
+        }
+    elif str(payload.get("market") or "") == "china":
+        # China is the one market whose coverage gap is MEASURED, so it is the one
+        # market that may name its denominator. Never assert a coverage claim for a
+        # market where we have not measured one.
+        scope = {"en": f"Map sample · {_fmt_int(n)} names",
+                 "zh": f"本图样本 · {_fmt_int(n)} 只"}
+
+    tot = max(1, adv + dec + flat)
+    top, bot = (secs[0] if secs else None), (secs[-1] if secs else None)
+
+    def _mover(t: dict, max_abs: float) -> dict:
+        v = t["perf"][tf]
+        w = max(6.0, min(100.0, abs(v) / max_abs * 100.0)) if max_abs > 0 else 0.0
+        return {
+            "code": _disp_t(t["t"]),
+            "name_en": t.get("name") or _disp_t(t["t"]),
+            "name_zh": t.get("name_zh") or t.get("name") or _disp_t(t["t"]),
+            "pc": _fmt_pc(v), "up": v >= 0, "w": round(w),
+        }
+
+    g_max = max((abs(t["perf"][tf]) for t in gainers), default=0.0)
+    l_max = max((abs(t["perf"][tf]) for t in losers), default=0.0)
+    s_max = max((abs(s["agg"]) for s in secs), default=0.0)
+
+    return {
+        "tf": tf,
+        "asof": str(payload.get("asof") or ""),
+        "n_tiles": int(payload.get("n_tiles") or len(tiles)),
+        "stance": _stance(pct_up, med or 0.0, secs),
+        "pct_up": round(pct_up),
+        "median": _fmt_pc(med),
+        "median_word": _median_word(med),
+        "median_tone": "up" if (med or 0) > 0 else ("down" if (med or 0) < 0 else ""),
+        "breadth": {
+            "adv": _fmt_int(adv), "dec": _fmt_int(dec),
+            "adv_w": round(100.0 * adv / tot, 2),
+            "flat_w": round(100.0 * flat / tot, 2),
+            "dec_w": round(100.0 * dec / tot, 2),
+            "scope": scope,
+        },
+        # Where the tape is strong / weak, in plain words. Two each side, and only
+        # sectors that actually moved (±0.05%) — mirrors heatmap.js _leadPhrase.
+        "up_sectors": [{"en": s["en"], "zh": s["zh"]} for s in secs if s["agg"] > 0.05][:2],
+        "down_sectors": [{"en": s["en"], "zh": s["zh"]}
+                         for s in secs if s["agg"] < -0.05][-2:][::-1],
+        "top": (None if not top else
+                {"en": top["en"], "zh": top["zh"], "pc": _fmt_pc(top["agg"]),
+                 "tone": "up" if top["agg"] >= 0 else "down"}),
+        "bot": (None if (not bot or bot is top) else
+                {"en": bot["en"], "zh": bot["zh"], "pc": _fmt_pc(bot["agg"]),
+                 "tone": "up" if bot["agg"] >= 0 else "down"}),
+        "gainers": [_mover(t, g_max) for t in gainers],
+        "losers": [_mover(t, l_max) for t in losers],
+        "sectors": [{
+            "en": s["en"], "zh": s["zh"], "pc": _fmt_pc(s["agg"]),
+            "up": s["agg"] >= 0,
+            "w": round(max(4.0, abs(s["agg"]) / s_max * 100.0) if s_max > 0 else 0.0),
+        } for s in secs],
+    }
+
+
+def sibling_markets(market: str) -> dict[str, str] | None:
+    """"Hong Kong and Canada" — the OTHER two maps, named for the CTA copy.
+
+    Computed from PAGE_META so one string serves three pages and a fourth market
+    joins without a copy edit.
+    """
+    others = [k for k in PAGE_META if k != market]
+    if not others:
+        return None
+    names = {
+        "china": {"en": "China", "zh": "A股"},
+        "hk": {"en": "Hong Kong", "zh": "港股"},
+        "canada": {"en": "Canada", "zh": "加拿大"},
+    }
+    en = [names.get(k, {}).get("en", k) for k in others]
+    zh = [names.get(k, {}).get("zh", k) for k in others]
+    return {
+        "en": " and ".join([", ".join(en[:-1]), en[-1]]) if len(en) > 1 else en[0],
+        "zh": "与".join(zh) if len(zh) > 1 else zh[0],
     }

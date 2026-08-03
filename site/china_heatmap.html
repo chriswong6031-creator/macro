@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -29,28 +30,27 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>China A-share Heatmap — Market Intelligence</title>
 
-<meta name="description" content="China A-shares at a glance — today&#39;s winners and losers sized by market cap, after each close.">
+<title>China A-Share Heatmap — Live Sector Map — MastermindX</title>
+<meta name="description" content="Every liquid Shanghai and Shenzhen A-share as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, after each close.">
 <link rel="canonical" href="https://www.mastermind-x.com/china_heatmap.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="China A-Share Heatmap — Mastermind">
-<meta property="og:description" content="China A-shares at a glance — today&#39;s winners and losers sized by market cap, after each close.">
+<meta property="og:title" content="China A-Share Heatmap — Live Sector Map — MastermindX">
+<meta property="og:description" content="Every liquid Shanghai and Shenzhen A-share as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, after each close.">
 <meta property="og:url" content="https://www.mastermind-x.com/china_heatmap.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="China A-Share Heatmap — Mastermind">
-<meta name="twitter:description" content="China A-shares at a glance — today&#39;s winners and losers sized by market cap, after each close.">
+<meta name="twitter:title" content="China A-Share Heatmap — Live Sector Map — MastermindX">
+<meta name="twitter:description" content="Every liquid Shanghai and Shenzhen A-share as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, after each close.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="stylesheet" href="assets/css/154b41d5.css?v=154b41d5">
+<link rel="stylesheet" href="assets/css/36d1e991.css?v=36d1e991">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
@@ -96,6 +96,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -105,11 +107,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -302,8 +302,89 @@
     
     <span class="hm-live-badge" data-live-label></span>
   </div>
+  <div id="hm-ssr">
+    <div class="hx-pulse up">
+      <div class="hx-pulse-top">
+        <span class="hx-stance"><span class="ic"></span><span class="l-en">Broad advance</span><span class="l-zh">普涨</span></span>
+        <span class="hx-pulse-lab"><span class="l-en">Market pulse</span><span class="l-zh">市场脉搏</span></span>
+        <span class="hx-pulse-when">2026-08-03</span>
+      </div><div class="hx-pulse-read">
+        <span class="l-en"><b>74%</b> of names advancing · median <b>+1.44%</b>. Strength in <b>Communication Services</b>, <b>A-share</b> — weakness in <b>Technology</b>, <b>Healthcare</b>.</span>
+        <span class="l-zh"><b>74%</b> 个股上涨 · 中位数 <b>+1.44%</b>。资金流向：<b>通信服务</b>、<b>其他</b> 走强，<b>信息技术</b>、<b>医疗保健</b> 走弱。</span>
+      </div>
+    </div>
 
-  <div id="heatmap-full" data-hm-maps='[{"key":"china","icon":"🔥","label_en":"China A-shares","label_zh":"A股","url":"marketdata/china_heatmap.json"}]'></div>
+    <div class="hx-stats">
+      <div class="hx-stat hx-stat-br">
+        <div class="k"><span class="l-en">Breadth · advancing vs declining</span><span class="l-zh">市场广度 · 涨跌家数</span></div>
+        <div class="v">74% <span class="u"><span class="l-en">advancing</span><span class="l-zh">上涨</span></span></div>
+        <div class="hx-bbar"><i class="adv" style="width:74.37%"></i><i class="flt" style="width:1.04%"></i><i class="dec" style="width:24.59%"></i></div>
+        <div class="hx-bleg"><span class="hx-up">▲ 3,866</span><span class="hx-dn">1,278 ▼</span></div>
+        <div class="hx-bscope"><span class="l-en">Shanghai + Shenzhen A-shares · 5,198 traded</span><span class="l-zh">沪深全市场 · 5,198 只交易</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Median move</span><span class="l-zh">涨跌中位数</span></div>
+        <div class="v up">+1.44%</div>
+        <div class="m"><span class="l-en">Tilted higher</span><span class="l-zh">偏强</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Strongest sector</span><span class="l-zh">最强板块</span></div>
+        <div class="v up">+1.60%</div>
+        <div class="m"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Weakest sector</span><span class="l-zh">最弱板块</span></div>
+        <div class="v down">−3.10%</div>
+        <div class="m"><span class="l-en">Technology</span><span class="l-zh">信息技术</span></div>
+      </div>
+    </div>
+
+    <div class="hx-boards">
+      <div class="hx-board"><h3><span class="tag up">▲</span><span class="l-en">Biggest gainers</span><span class="l-zh">涨幅榜</span></h3>
+        <div class="hx-row"><span class="tk">300613</span><span class="nm"><span class="l-en">Shanghai Fullhan Microelectronics Co., Ltd.</span><span class="l-zh">富瀚微</span></span><span class="pc hx-up">+20.0%</span><span class="bar"><i style="width:100%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">301205</span><span class="nm"><span class="l-en">Linktel Technologies Co., Ltd.</span><span class="l-zh">联特科技</span></span><span class="pc hx-up">+14.9%</span><span class="bar"><i style="width:74%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">301127</span><span class="nm"><span class="l-en">Wuhan Tianyuan Group Co., Ltd.</span><span class="l-zh">武汉天源</span></span><span class="pc hx-up">+14.0%</span><span class="bar"><i style="width:70%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">002131</span><span class="nm"><span class="l-en">Leo Group Co., Ltd.</span><span class="l-zh">利欧股份</span></span><span class="pc hx-up">+10.1%</span><span class="bar"><i style="width:50%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">000967</span><span class="nm"><span class="l-en">Infore Environment Technology Group Co., Ltd.</span><span class="l-zh">盈峰环境</span></span><span class="pc hx-up">+10.1%</span><span class="bar"><i style="width:50%;background:var(--up)"></i></span></div>
+      </div>
+      <div class="hx-board"><h3><span class="tag dn">▼</span><span class="l-en">Biggest losers</span><span class="l-zh">跌幅榜</span></h3>
+        <div class="hx-row"><span class="tk">302132</span><span class="nm"><span class="l-en">AVIC Chengdu Aircraft Company Limited</span><span class="l-zh">中航成飞</span></span><span class="pc hx-dn">−19.8%</span><span class="bar"><i style="width:100%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">301526</span><span class="nm"><span class="l-en">Chongqing Polycomp International Corporation</span><span class="l-zh">国际复材</span></span><span class="pc hx-dn">−12.8%</span><span class="bar"><i style="width:65%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">688361</span><span class="nm"><span class="l-en">Skyverse Technology Co., Ltd.</span><span class="l-zh">中科飞测</span></span><span class="pc hx-dn">−12.6%</span><span class="bar"><i style="width:64%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">300567</span><span class="nm"><span class="l-en">Wuhan Jingce Electronics Group Co., Ltd.</span><span class="l-zh">精测电子</span></span><span class="pc hx-dn">−12.6%</span><span class="bar"><i style="width:64%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">300604</span><span class="nm"><span class="l-en">Hangzhou Changchuan Technology Co.,Ltd</span><span class="l-zh">长川科技</span></span><span class="pc hx-dn">−12.4%</span><span class="bar"><i style="width:63%;background:var(--down)"></i></span></div>
+      </div>
+      <div class="hx-board hx-board-sec"><h3><span class="l-en">Sector leaders &amp; laggards</span><span class="l-zh">板块强弱</span></h3>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span><span class="track"><i style="width:52%;background:var(--up)"></i></span><span class="pc hx-up">+1.60%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">A-share</span><span class="l-zh">其他</span></span><span class="track"><i style="width:35%;background:var(--up)"></i></span><span class="pc hx-up">+1.08%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="track"><i style="width:27%;background:var(--up)"></i></span><span class="pc hx-up">+0.84%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span><span class="track"><i style="width:21%;background:var(--up)"></i></span><span class="pc hx-up">+0.66%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span class="track"><i style="width:17%;background:var(--up)"></i></span><span class="pc hx-up">+0.51%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Consumer Defensive</span><span class="l-zh">必需消费</span></span><span class="track"><i style="width:5%;background:var(--down)"></i></span><span class="pc hx-dn">−0.14%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Financial Services</span><span class="l-zh">金融</span></span><span class="track"><i style="width:14%;background:var(--down)"></i></span><span class="pc hx-dn">−0.44%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Consumer Cyclical</span><span class="l-zh">非必需消费</span></span><span class="track"><i style="width:34%;background:var(--down)"></i></span><span class="pc hx-dn">−1.04%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="track"><i style="width:40%;background:var(--down)"></i></span><span class="pc hx-dn">−1.24%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Basic Materials</span><span class="l-zh">材料</span></span><span class="track"><i style="width:44%;background:var(--down)"></i></span><span class="pc hx-dn">−1.36%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Healthcare</span><span class="l-zh">医疗保健</span></span><span class="track"><i style="width:45%;background:var(--down)"></i></span><span class="pc hx-dn">−1.40%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Technology</span><span class="l-zh">信息技术</span></span><span class="track"><i style="width:100%;background:var(--down)"></i></span><span class="pc hx-dn">−3.10%</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="heatmap-full" data-hm-gated="1" data-hm-maps='[{"key":"china","icon":"🔥","label_en":"China A-shares","label_zh":"A股","url":"marketdata/china_heatmap.json"}]'></div>
+  <div class="gate-note" id="hm-gate-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span><span class="l-en">The whole map is open — every tile, every timeframe, every sector. What members add is our read on each name: where it sits and what we&#39;d do about it.</span><span class="l-zh">整张热力图完全开放 —— 每个方块、每个周期、每个板块。会员另可看到我们对每只个股的解读：所处位置与应对方式。</span></span>
+  </div>
+
+  <div class="cta-row" id="hm-cta">
+    <span class="cta-txt">
+      <span class="l-en"><b>The map is free, and stays free.</b> Members get our nightly read on all 1,521 names here — plus the same maps for Hong Kong and Canada.</span>
+      <span class="l-zh"><b>热力图免费，且将持续免费。</b>会员可获取我们对全部 1,521 只个股的每晚解读 —— 以及港股与加拿大的同款热力图。</span>
+    </span>
+    <a class="tw-btn" href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a>
+    <span class="tw-note"><span class="l-en">7-day Pro trial · cancel anytime</span><span class="l-zh">Pro 7 天试用 · 随时取消</span></span>
+  </div>
 
   <div class="hm-foot">
     <span class="l-en">Green = up, red = down (inverted in 中文). Our market read is research context — never a buy signal.</span><span class="l-zh">绿涨红跌（中文按亚洲习惯反转）。市场研判仅供研究参考，绝非买入信号。</span><span class="hx-help" tabindex="0" aria-label="Details">?<span class="hx-tip"><span class="l-en">Green = up, red = down (inverted in 中文 to the Asian convention); the 1D view bins at ±1/2/3%, longer windows widen the bins so the map stays legible. Tiles are sized by market cap and computed from adjusted closes; the hover card is our own conviction read (verdict, 0–100 score, drivers and cautions) — research context, never a buy signal.</span><span class="l-zh">绿涨红跌（中文模式按亚洲习惯反转）；1天视图采用 ±1/2/3% 分档，更长周期会拓宽分档以保持可读性。方块按市值定大小、由复权收盘价计算；悬停卡片为我们自有的研判（结论、0–100 评分、驱动与风险）—— 仅作研究参考，绝非买入信号。</span></span></span>
@@ -315,6 +396,6 @@
 </footer>
 
 <script src="theme.js?v=3d2163fc" defer></script>
-<script src="heatmap.js?v=7bc5b4d6" defer></script>
+<script src="heatmap.js?v=f644ec8e" defer></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T17:39:53.331206+00:00",
-  "count": 678,
+  "generated_at": "2026-08-03T18:51:34.724432+00:00",
+  "count": 682,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-kymvavdcyqb-db21e5",
+      "title": "SpaceX Aug 3",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T17:36:28Z",
+      "summary_points": [
+        "**Earnings & Growth Outlook**: 2Q26 revenue $6.67bn (+64% YoY), driven by AI segment (Anthropic deal: $1.88bn, +2x seq.) and connectivity revenue +50% YoY ($4bn), with gross margin ~58% and EBITDA >$2.1bn.",
+        "**Lock-Up Liquidity Flow**: 912m shares unlock Aug 6, 2026, with 300m increments until Q2 2026, creating significant supply pressure and short-term volatility risk.",
+        "**SpaceX Valuation Stress Test**: Current $108 stock price implies punitive pricing; Space/Connectivity segments justify $1.1-1.6tn valuation (mid-$1.35tn), while Connectivity uses 45x EV/EBITDA vs.",
+        "current 57.5x multiple."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-f3bliu8p1gc-1b7c0c",
       "title": "US Weekly Kickstart Q2 2026 mid season earnings update",
@@ -111,6 +131,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-grqideeruji-216b2a",
+      "title": "Japan Economic Flash First Coordinated US Japan Intervention in 15 Years Sends a Strong Signal Against Yen Depreciation",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:05:08Z",
+      "summary_points": [
+        "**Coordinated US-Japan FX Intervention (July 30-31)**: First in 15 years targeting ¥164/USD (40-yr low), with ¥7-8tn intervention + statement, signaling unprecedented policy commitment against yen depreciation despite inflation below 2% threshold.",
+        "**FIMA Repo Facility Shift**: Japan now leverages US Fed’s FIMA Repo to borrow USD against Treasuries for JPY-buying interventions, avoiding direct Treasury sales and preserving $1.3tn foreign reserves—critical for sustainable FX management.",
+        "**BOJ Policy Flexibility & Timeline**: Intervention eases immediate BOJ rate hike pressure; next hike expected Jan 2026 with gradual 6-month intervals, contingent on inflation exceeding 2% (current probability low).",
+        "**Historical Rarity & Policy Signal**: Only second coordinated intervention since 2011 (after 2000 Euro crisis), underscoring authorities’ recognition of high yen volatility risk post-2000s and divergence from Fed’s QE-driven yen appreciation trend.",
+        "**Intervention Limitations**: FX actions delay but cannot reverse yen depreciation without resolving underlying fiscal fragility, Middle East oil dependency, and structural inflation risks—foreign reserves (85% in securities) cap immediate market impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tvidqpbwj4r-8cd1e8",
+      "title": "Global Healthcare Pharmaceuticals The Obesity Evolution GLP 1 Prescription Trends Point to Early Tailwind from Medicare Un...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:05:03Z",
+      "summary_points": [
+        "**Medicare Bridge Program Catalyst**: Weekly GLP-1 prescriptions (TRx/NBRx: ~1.25mn/199k) surged 8%/49% post-launch, with LLY’s Zeppound Kwikpen leading at 44% share; oral therapy share declines as physicians shift to injectables for Medicare patients.",
+        "**Revenue Offset Mechanism**: Volume growth for LLY’s Kwikpen and obesity GLP-1 therapies offsets cash-pay channel pricing headwinds (10-20% of LLY Direct Patients eligible), generating $250-$500m annualized incremental revenue potential.",
+        "**Critical Risk Exposure**: Key risks include obesity market pricing decline, market share erosion (e.g., from competitor GLP-1 assets), and pipeline underperformance, directly impacting sector fundamentals and valuation multiples.",
+        "**Prescription Trend Divergence**: AOM TRx shows steady growth through 2026, while NBRx inflects post-Medicare unlock (Exhibit 1); Wegovy/Zepbound NBRx sustained upward trend, contrasting with oral therapy decline.",
+        "**Valuation Discrepancy**: Novo Nordisk (NOVOB.CO) shows persistent target premiums (e.g., 745.00 vs 439.60 closing price), reflecting aggressive bullish sentiment, versus LLY’s narrower gap (1,283.00 vs 963.33), signaling sector-specific risk appetite."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-4xoz2ba562w-b131ba",
       "title": "Taylor Wimpey (TW.L) Margin compression and downgraded shareholder returns, Maintain Sell",
       "institution": "Goldman Sachs",
@@ -128,6 +190,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-csgfjxdrqxp-2b05ba",
+      "title": "MUFG (8306)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:45Z",
+      "summary_points": [
+        "**1Q Profit Surge**: ¥809.0bn net business profit (+49% YoY) driven by fund demand, spread expansion, and market-related revenues above consensus.",
+        "**Capital Adequacy Risk**: CET1 growth may not reach 9.5% due to AOCI expansion despite unchanged FY3/27 guidance (policy rate 1.0%).",
+        "**Valuation Gap & Momentum**: Target price ¥4,000 (vs.",
+        "3,567 close) with 67.7% 12m absolute return vs TOPIX (24.9%), highlighting strong bullish momentum.",
+        "**Downside Risks**: Global economic deterioration, credit cycle weakening, and weak capital markets critical for risk management."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },

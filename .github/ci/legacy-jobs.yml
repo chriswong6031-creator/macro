@@ -4586,6 +4586,15 @@ jobs:
         run: python -m pytest tests/test_dashboard_cold_load_budget.py tests/test_stocktable_load_order.py tests/test_stock_logo_system.py tests/test_globe_tooltip_behavior.py -q
       - name: radar page boot + reports timeline + bilingual span-leak scan
         run: python -m pytest tests/test_radar_page_boot.py tests/test_reports_timeline_ui.py tests/test_bilingual_span_leak.py -q
+      # china_heatmap's anonymous tier preview: the server-rendered summary layer
+      # (all three markets), the hover card's two empty states, and the shipped
+      # shell. It lives HERE rather than in `tier-gate` because the summary is
+      # computed by engine/market_heatmap.py, which imports pandas — tier-gate's
+      # venv is pytest/pyyaml/jinja2/fastapi/httpx and would error, not fail.
+      # The boundary half is pinned in tier-gate by test_site_access_boundary.py
+      # and test_regwall.py, which read the same three mirrors.
+      - name: china_heatmap tier preview (SSR content layer + hover-card gate)
+        run: python -m pytest tests/test_china_heatmap_gate.py -q
 
   unrun-picks-boards:
     # pick lab runners + US/CN board surfaces — shipped picks, their outcome

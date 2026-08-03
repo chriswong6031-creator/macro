@@ -668,6 +668,9 @@ PUBLIC_EXACT = frozenset({
     # /premiumdata/etfs.json. Zero stock rows are free here — both boards are
     # best-first. What ships is the rotation backdrop, the 77-fund coverage
     # directory, the honest totals and a non-graded stance line.
+    # China heatmap W2 deliberately opened the crawlable A-share context shell
+    # and its source-fact tile map. The graded per-name stores remain gated.
+    "/china_heatmap.html", "/marketdata/china_heatmap.json",
     "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",

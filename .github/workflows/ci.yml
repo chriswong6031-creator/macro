@@ -542,6 +542,10 @@ on:
       - "engine/market_heatmap.py"
       - "scripts/build_market_heatmap.py"
       - "tests/test_market_heatmap.py"
+      # china_heatmap's anonymous tier preview (SEO_SUPERCHARGE W2). The subject
+      # files above already trigger, but the guard itself must too — a PR that
+      # only weakens the test would otherwise reach main unchecked.
+      - "tests/test_china_heatmap_gate.py"
       # LHB-W3 winner-autopsy B-family feature columns: engine + builder + test re-run together.
       - "tests/test_winner_autopsy.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
