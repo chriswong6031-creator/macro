@@ -44,7 +44,8 @@
     "stringList": {"type": "array", "maxItems": 200, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
     "date": {"type": "object", "additionalProperties": false, "required": ["date", "type", "precision"], "properties": {"date": {"type": "string", "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"}, "type": {"type": ["string", "null"], "maxLength": 20}, "precision": {"enum": ["year", "month", "day"]}}},
     "intervention": {"type": "object", "additionalProperties": false, "required": ["name", "type", "description", "other_names"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 512}, "type": {"type": ["string", "null"], "maxLength": 80}, "description": {"type": ["string", "null"], "maxLength": 4000}, "other_names": {"$ref": "#/$defs/stringList"}}},
-    "armGroup": {"type": "object", "additionalProperties": false, "required": ["label", "type", "description", "intervention_names"], "properties": {"label": {"type": "string", "minLength": 1, "maxLength": 1000}, "type": {"type": ["string", "null"], "maxLength": 80}, "description": {"type": ["string", "null"], "maxLength": 6000}, "intervention_names": {"$ref": "#/$defs/stringList"}}},
+    "armGroupInterventionNames": {"type": "array", "maxItems": 100, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "armGroup": {"type": "object", "additionalProperties": false, "required": ["label", "type", "description", "intervention_names"], "properties": {"label": {"type": "string", "minLength": 1, "maxLength": 1000}, "type": {"type": ["string", "null"], "maxLength": 80}, "description": {"type": ["string", "null"], "maxLength": 6000}, "intervention_names": {"$ref": "#/$defs/armGroupInterventionNames"}}},
     "endpoint": {"type": "object", "additionalProperties": false, "required": ["measure", "time_frame", "description"], "properties": {"measure": {"type": "string", "minLength": 1, "maxLength": 1000}, "time_frame": {"type": ["string", "null"], "maxLength": 1000}, "description": {"type": ["string", "null"], "maxLength": 6000}}},
     "sponsor": {"type": ["object", "null"], "additionalProperties": false, "required": ["name", "class"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 512}, "class": {"type": ["string", "null"], "maxLength": 80}}},
     "enrollment": {"type": ["object", "null"], "additionalProperties": false, "required": ["count", "type"], "properties": {"count": {"type": "integer", "minimum": 0}, "type": {"type": ["string", "null"], "maxLength": 20}}},
@@ -62,7 +63,41 @@
         "field_evidence": {"type": "object", "additionalProperties": false, "required": ["title", "brief_title", "status", "study_type", "phases", "sponsor", "conditions", "interventions", "arm_groups", "enrollment", "endpoints", "dates", "site_count", "countries"], "properties": {"title": {"$ref": "#/$defs/fieldEvidence"}, "brief_title": {"$ref": "#/$defs/fieldEvidence"}, "status": {"$ref": "#/$defs/fieldEvidence"}, "study_type": {"$ref": "#/$defs/fieldEvidence"}, "phases": {"$ref": "#/$defs/fieldEvidence"}, "sponsor": {"$ref": "#/$defs/fieldEvidence"}, "conditions": {"$ref": "#/$defs/fieldEvidence"}, "interventions": {"$ref": "#/$defs/fieldEvidence"}, "arm_groups": {"$ref": "#/$defs/fieldEvidence"}, "enrollment": {"$ref": "#/$defs/fieldEvidence"}, "endpoints": {"$ref": "#/$defs/fieldEvidence"}, "dates": {"$ref": "#/$defs/fieldEvidence"}, "site_count": {"$ref": "#/$defs/fieldEvidence"}, "countries": {"$ref": "#/$defs/fieldEvidence"}}}
       }
     },
-    "fieldEvidence": {"type": "object", "additionalProperties": false, "required": ["state", "source_json_paths", "transform"], "properties": {"state": {"enum": ["observed", "source_null", "source_missing", "not_applicable", "parser_degraded", "license_restricted", "mixed"]}, "source_json_paths": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "pattern": "^/protocolSection/"}}, "transform": {"type": "string", "minLength": 1, "maxLength": 128}}},
+    "fieldEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "source_field_locators", "transform"],
+      "properties": {
+        "state": {"enum": ["observed", "source_null", "source_missing", "not_applicable", "parser_degraded", "license_restricted", "mixed"]},
+        "source_field_locators": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "/protocolSection/identificationModule/briefTitle",
+              "/protocolSection/identificationModule/officialTitle",
+              "/protocolSection/statusModule/overallStatus",
+              "/protocolSection/designModule/studyType",
+              "/protocolSection/designModule/phases",
+              "/protocolSection/sponsorCollaboratorsModule/leadSponsor",
+              "/protocolSection/designModule/enrollmentInfo",
+              "/protocolSection/statusModule/startDateStruct",
+              "/protocolSection/statusModule/primaryCompletionDateStruct",
+              "/protocolSection/statusModule/completionDateStruct",
+              "/protocolSection/conditionsModule/conditions",
+              "/protocolSection/armsInterventionsModule/interventions",
+              "/protocolSection/armsInterventionsModule/armGroups",
+              "/protocolSection/outcomesModule/primaryOutcomes",
+              "/protocolSection/outcomesModule/secondaryOutcomes",
+              "/protocolSection/contactsLocationsModule/locations"
+            ]
+          }
+        },
+        "transform": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
     "authority": {"type": "object", "additionalProperties": false, "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"], "properties": {"classification": {"const": "source_fact"}, "decision_authority": {"const": false}, "allowed_uses": {"const": ["display", "context", "explain"]}, "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}}
   }
 }

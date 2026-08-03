@@ -13,6 +13,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "app" / "deploy"
+CADDYFILE_PATH = DEPLOY / "Caddyfile"
 SERVICE_PATH = DEPLOY / "macro-biocatalyst.service"
 MACRO_API_SERVICE_PATH = DEPLOY / "macro-api.service"
 TIMER_PATH = DEPLOY / "macro-biocatalyst.timer"
@@ -204,6 +205,15 @@ def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_sta
     assert "InaccessiblePaths=-/etc/macro-biocatalyst-control.env" in service
     assert "BIOCATALYST_R2_" not in service
     assert "ReadWritePaths=/var/lib/macro-biocatalyst" not in service
+
+
+def test_peer_set_caddy_body_cap_is_endpoint_scoped():
+    caddyfile = _text(CADDYFILE_PATH)
+    assert "request_body /api/biocatalyst/v1/trial-peer-sets:resolve {" in caddyfile
+    peer_block = caddyfile.split(
+        "request_body /api/biocatalyst/v1/trial-peer-sets:resolve {", 1
+    )[1].split("}", 1)[0]
+    assert "max_size 16KB" in peer_block
 
 
 def test_macro_api_declares_projection_validation_dependencies():

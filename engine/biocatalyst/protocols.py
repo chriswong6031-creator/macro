@@ -25,6 +25,16 @@ class TrialProtocolProjectionError(ValueError):
 
 _MISSING = object()
 _ARM_GROUPS_PATH = "/protocolSection/armsInterventionsModule/armGroups"
+_ARM_GROUP_LIMIT = 100
+_ARM_GROUP_LABEL_MAX = 1000
+_ARM_GROUP_TYPE_MAX = 80
+_ARM_GROUP_DESCRIPTION_MAX = 6000
+_ARM_GROUP_INTERVENTION_NAMES_LIMIT = 100
+_ARM_GROUP_INTERVENTION_NAME_MAX = 512
+# A publication artifact is a bounded public product, not a lossy raw-record
+# tunnel.  Keep the ceiling below the serving response ceiling so one normal
+# page can never amplify a single protocol arbitrarily.
+_MAX_PROTOCOL_PROJECTION_BYTES = 256 * 1024
 _AUTHORITY = {
     "classification": "source_fact",
     "decision_authority": False,
@@ -73,6 +83,80 @@ def _source_fact(canonical_study: Mapping[str, Any], json_pointer: str) -> dict[
         "state": "observed",
         "value": _json_copy(value),
         "source_json_path": json_pointer,
+    }
+
+
+def _public_arm_groups_fact(canonical_study: Mapping[str, Any]) -> dict[str, Any]:
+    """Copy a closed, bounded arm-group shape at the publication boundary.
+
+    The public projection deliberately ignores unregistered upstream keys.  It
+    rejects oversized or wrongly typed registered values instead of silently
+    truncating them, so the worker cannot publish a partial protocol artifact.
+    """
+
+    value = _resolve_json_pointer(canonical_study, _ARM_GROUPS_PATH)
+    if value is _MISSING:
+        return {
+            "state": "source_missing",
+            "value": None,
+            "source_json_path": _ARM_GROUPS_PATH,
+        }
+    if value is None:
+        return {
+            "state": "source_null",
+            "value": None,
+            "source_json_path": _ARM_GROUPS_PATH,
+        }
+    if not isinstance(value, list) or len(value) > _ARM_GROUP_LIMIT:
+        raise TrialProtocolProjectionError("arm_groups_invalid")
+
+    public_groups: list[dict[str, Any]] = []
+    for arm_group in value:
+        if not isinstance(arm_group, Mapping):
+            raise TrialProtocolProjectionError("arm_groups_invalid")
+        label = arm_group.get("label")
+        arm_type = arm_group.get("type")
+        description = arm_group.get("description")
+        intervention_names = arm_group.get("interventionNames")
+        if (
+            not isinstance(label, str)
+            or not label
+            or len(label) > _ARM_GROUP_LABEL_MAX
+            or (arm_type is not None and (not isinstance(arm_type, str) or len(arm_type) > _ARM_GROUP_TYPE_MAX))
+            or (
+                description is not None
+                and (
+                    not isinstance(description, str)
+                    or len(description) > _ARM_GROUP_DESCRIPTION_MAX
+                )
+            )
+            or (
+                intervention_names is not None
+                and (
+                    not isinstance(intervention_names, list)
+                    or len(intervention_names) > _ARM_GROUP_INTERVENTION_NAMES_LIMIT
+                    or any(
+                        not isinstance(name, str)
+                        or not name
+                        or len(name) > _ARM_GROUP_INTERVENTION_NAME_MAX
+                        for name in intervention_names
+                    )
+                )
+            )
+        ):
+            raise TrialProtocolProjectionError("arm_groups_invalid")
+        public_groups.append(
+            {
+                "label": label,
+                "type": arm_type,
+                "description": description,
+                "interventionNames": list(intervention_names or []),
+            }
+        )
+    return {
+        "state": "observed",
+        "value": public_groups,
+        "source_json_path": _ARM_GROUPS_PATH,
     }
 
 
@@ -150,7 +234,7 @@ def build_trial_protocol_projection(
         protocol_facts = _json_copy(facts)
         if not isinstance(protocol_facts, dict):
             raise TrialProtocolProjectionError("trial_snapshot_projection_invalid")
-        protocol_facts["arm_groups"] = _source_fact(canonical_study, _ARM_GROUPS_PATH)
+        protocol_facts["arm_groups"] = _public_arm_groups_fact(canonical_study)
         nct_id = source["nct_id"]
         projection: dict[str, Any] = {
             "contract_id": "trial_protocol_projection.v1",
@@ -180,6 +264,8 @@ def build_trial_protocol_projection(
             "hash_scope": "canonical_payload_excluding_protocol_projection_sha256",
         }
         projection["protocol_projection_sha256"] = canonical_json_sha256(projection)
+        if len(canonical_json_bytes(projection)) > _MAX_PROTOCOL_PROJECTION_BYTES:
+            raise TrialProtocolProjectionError("protocol_projection_too_large")
         return validate_trial_protocol_projection(projection)
     except TrialProtocolProjectionError:
         raise

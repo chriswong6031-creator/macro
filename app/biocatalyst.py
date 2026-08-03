@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
@@ -63,6 +63,7 @@ _PEER_SET_CURSOR_VERSION = "t1"
 _PEER_SET_CURSOR_DOMAIN = b"macro-biocatalyst:trial-peer-sets:cursor-key:v1"
 _PEER_SET_CURSOR_PROCESS_KEY = os.urandom(32)
 _PEER_SET_DEFAULT_LIMIT = 50
+_PEER_SET_MAX_BODY_BYTES = 16 * 1024
 _PROSPECTIVE_ACCRUAL_STATES = frozenset(("baseline_established", "accruing"))
 _PROSPECTIVE_CHANGE_KINDS = frozenset(
     (
@@ -756,7 +757,7 @@ def _opaque_digest(value: Mapping[str, Any]) -> str:
     ).hexdigest()
 
 
-def _peer_set_request(payload: Any) -> tuple[tuple[str, ...], int, str | None]:
+def _resolve_peer_set_payload(payload: Any) -> tuple[tuple[str, ...], int, str | None]:
     """Parse one strict explicit-NCT cohort without deriving any membership."""
 
     if not isinstance(payload, Mapping) or set(payload) - {"nct_ids", "limit", "cursor"}:
@@ -796,6 +797,59 @@ def _peer_set_request(payload: Any) -> tuple[tuple[str, ...], int, str | None]:
             headers=_PRIVATE_HEADERS,
         )
     return tuple(sorted(nct_ids)), raw_limit, cursor
+
+
+async def _read_peer_set_payload(request: Request) -> Any:
+    """Read one bounded JSON body only after FastAPI has authenticated it."""
+
+    declared_size = request.headers.get("content-length")
+    if declared_size is not None:
+        try:
+            declared_bytes = int(declared_size)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="invalid peer set request",
+                headers=_PRIVATE_HEADERS,
+            ) from None
+        if declared_bytes < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="invalid peer set request",
+                headers=_PRIVATE_HEADERS,
+            )
+        if declared_bytes > _PEER_SET_MAX_BODY_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="request body too large",
+                headers=_PRIVATE_HEADERS,
+            )
+    chunks: list[bytes] = []
+    received_bytes = 0
+    async for chunk in request.stream():
+        received_bytes += len(chunk)
+        if received_bytes > _PEER_SET_MAX_BODY_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="request body too large",
+                headers=_PRIVATE_HEADERS,
+            )
+        chunks.append(chunk)
+    body = b"".join(chunks)
+    if not body:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid peer set request",
+            headers=_PRIVATE_HEADERS,
+        )
+    try:
+        return json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise HTTPException(
+            status_code=400,
+            detail="invalid peer set request",
+            headers=_PRIVATE_HEADERS,
+        ) from None
 
 
 def _peer_set_caller_binding(user: Mapping[str, Any]) -> dict[str, str]:
@@ -2029,23 +2083,18 @@ def trials(
     return _response(payload)
 
 
-@router.post("/api/biocatalyst/v1/trial-peer-sets:resolve")
-def resolve_trial_peer_set(
-    request: Any = Body(...),
-    _user: dict = Depends(require_site_full_user),
+def _resolve_trial_peer_set_payload(
+    payload: Any,
+    *,
+    user: Mapping[str, Any],
 ) -> JSONResponse:
-    """Resolve an explicit NCT cohort into a facts-only protocol matrix.
+    """Pure payload resolver for an already-authenticated peer-set request."""
 
-    ``nct_ids`` are caller-supplied identifiers, not a retrieved, inferred, or
-    ranked cohort.  The route reads only pointer-bound protocol artifacts
-    written by the worker; it has no private-source or identity-plane access.
-    """
-
-    cohort_nct_ids, page_limit, cursor = _peer_set_request(request)
+    cohort_nct_ids, page_limit, cursor = _resolve_peer_set_payload(payload)
     query_binding = _peer_set_query_binding(
         cohort_nct_ids=cohort_nct_ids,
         page_limit=page_limit,
-        user=_user,
+        user=user,
     )
     offset, cursor_generation_digest, cursor_query_digest = _decode_peer_set_cursor(
         cursor
@@ -2101,7 +2150,7 @@ def resolve_trial_peer_set(
             build_trial_peer_set,
         )
 
-        payload = build_trial_peer_set(
+        response_payload = build_trial_peer_set(
             cohort_nct_ids=cohort_nct_ids,
             protocols_by_nct=protocols_by_nct,
             history_models_by_nct=history_models_by_nct,
@@ -2115,7 +2164,23 @@ def resolve_trial_peer_set(
     except TrialPeerSetError as exc:
         log.warning("BioCatalyst protocol peer projection unavailable (%s)", exc)
         raise _unavailable() from None
-    return _response(payload)
+    return _response(response_payload)
+
+
+@router.post("/api/biocatalyst/v1/trial-peer-sets:resolve")
+async def resolve_trial_peer_set(
+    request: Request,
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """Resolve an explicit NCT cohort into a facts-only protocol matrix.
+
+    ``nct_ids`` are caller-supplied identifiers, not a retrieved, inferred, or
+    ranked cohort.  The route reads only pointer-bound protocol artifacts
+    written by the worker; it has no private-source or identity-plane access.
+    """
+
+    payload = await _read_peer_set_payload(request)
+    return _resolve_trial_peer_set_payload(payload, user=_user)
 
 
 @router.get("/api/biocatalyst/v1/trials/milestones")

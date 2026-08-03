@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+import engine.biocatalyst.peer_matrix as peer_matrix
+import engine.biocatalyst.protocols as protocol_module
 from engine.biocatalyst.peer_matrix import (
     TrialPeerSetError,
     build_trial_peer_set,
@@ -120,6 +122,89 @@ def test_protocol_projection_copies_arm_groups_only_at_the_publication_boundary(
         assert forbidden not in serialized
 
 
+@pytest.mark.parametrize(
+    "mutate",
+    (
+        lambda group: group.update(label="x" * 1001),
+        lambda group: group.update(type="x" * 81),
+        lambda group: group.update(description="x" * 6001),
+        lambda group: group.update(interventionNames=["x" * 513]),
+        lambda group: group.update(interventionNames=["NX-101"] * 101),
+    ),
+)
+def test_protocol_projection_rejects_overcap_registered_arm_group_values(mutate) -> None:
+    source = _source()
+    mutate(
+        source["canonical_study"]["protocolSection"]["armsInterventionsModule"]
+        ["armGroups"][0]
+    )
+    canonical_sha = canonical_json_sha256(source["canonical_study"])
+    source["canonical_content_sha256"] = canonical_sha
+    source["source_record_ref"] = f"src:ctgov:NCT00000001:sha256:{canonical_sha}"
+    source["raw_object_key"] = (
+        "biocatalyst/raw/clinicaltrials/v2/NCT00000001/"
+        f"{canonical_sha}.json"
+    )
+    validate_contract(source, repo_root=ROOT)
+
+    with pytest.raises(TrialProtocolProjectionError, match="arm_groups_invalid"):
+        build_trial_protocol_projection(source, build_trial_snapshot(source))
+
+
+def test_protocol_projection_rejects_overcap_arm_group_list() -> None:
+    source = _source()
+    groups = source["canonical_study"]["protocolSection"]["armsInterventionsModule"][
+        "armGroups"
+    ]
+    source["canonical_study"]["protocolSection"]["armsInterventionsModule"][
+        "armGroups"
+    ] = groups * 101
+    canonical_sha = canonical_json_sha256(source["canonical_study"])
+    source["canonical_content_sha256"] = canonical_sha
+    source["source_record_ref"] = f"src:ctgov:NCT00000001:sha256:{canonical_sha}"
+    source["raw_object_key"] = (
+        "biocatalyst/raw/clinicaltrials/v2/NCT00000001/"
+        f"{canonical_sha}.json"
+    )
+    validate_contract(source, repo_root=ROOT)
+
+    with pytest.raises(TrialProtocolProjectionError, match="arm_groups_invalid"):
+        build_trial_protocol_projection(source, build_trial_snapshot(source))
+
+
+def test_protocol_projection_is_a_closed_arm_group_allowlist() -> None:
+    source = _source()
+    source["canonical_study"]["protocolSection"]["armsInterventionsModule"][
+        "armGroups"
+    ][0]["private_note"] = "must not cross the publication boundary"
+    canonical_sha = canonical_json_sha256(source["canonical_study"])
+    source["canonical_content_sha256"] = canonical_sha
+    source["source_record_ref"] = f"src:ctgov:NCT00000001:sha256:{canonical_sha}"
+    source["raw_object_key"] = (
+        "biocatalyst/raw/clinicaltrials/v2/NCT00000001/"
+        f"{canonical_sha}.json"
+    )
+    validate_contract(source, repo_root=ROOT)
+
+    arm_group = build_trial_protocol_projection(
+        source, build_trial_snapshot(source)
+    )["facts"]["arm_groups"]["value"][0]
+    assert arm_group == {
+        "label": "NX-101 arm",
+        "type": "EXPERIMENTAL",
+        "description": "Active study arm",
+        "interventionNames": ["NX-101"],
+    }
+
+
+def test_protocol_projection_rejects_aggregate_byte_overflow(monkeypatch) -> None:
+    source = _source()
+    monkeypatch.setattr(protocol_module, "_MAX_PROTOCOL_PROJECTION_BYTES", 1)
+
+    with pytest.raises(TrialProtocolProjectionError, match="protocol_projection_too_large"):
+        build_trial_protocol_projection(source, build_trial_snapshot(source))
+
+
 def test_protocol_projection_is_hash_and_source_transform_bound() -> None:
     source = _source()
     snapshot = build_trial_snapshot(source)
@@ -210,7 +295,7 @@ def test_protocol_row_counts_all_locations_while_capping_country_labels() -> Non
     assert row["countries"] == [f"Country {index:03d}" for index in range(100)]
     assert row["field_evidence"]["site_count"] == {
         "state": "observed",
-        "source_json_paths": [
+        "source_field_locators": [
             "/protocolSection/contactsLocationsModule/locations"
         ],
         "transform": "count_mapping_location_rows",
@@ -283,7 +368,7 @@ def test_peer_set_is_explicit_sorted_partial_and_facts_only() -> None:
     }
     assert row["field_evidence"]["title"] == {
         "state": "observed",
-        "source_json_paths": [
+        "source_field_locators": [
             "/protocolSection/identificationModule/officialTitle",
             "/protocolSection/identificationModule/briefTitle",
         ],
@@ -291,12 +376,33 @@ def test_peer_set_is_explicit_sorted_partial_and_facts_only() -> None:
     }
     assert row["field_evidence"]["arm_groups"] == {
         "state": "observed",
-        "source_json_paths": [
+        "source_field_locators": [
             "/protocolSection/armsInterventionsModule/armGroups"
         ],
         "transform": "normalize_whitespace_filter_missing_label_cap_100",
     }
     assert "score" not in json.dumps(peer_set, sort_keys=True).casefold()
+    field_evidence_schema = json.loads(
+        (ROOT / "contracts" / "biocatalyst" / "trial_peer_set.v1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )["$defs"]["fieldEvidence"]["properties"]["source_field_locators"]["items"]
+    assert set(field_evidence_schema["enum"]) == peer_matrix._PUBLIC_SOURCE_FIELD_LOCATORS
+
+
+def test_peer_set_rejects_aggregate_response_byte_overflow(monkeypatch) -> None:
+    monkeypatch.setattr(peer_matrix, "_MAX_TRIAL_PEER_SET_RESPONSE_BYTES", 1)
+
+    with pytest.raises(TrialPeerSetError, match="peer_set_response_too_large"):
+        build_trial_peer_set(
+            cohort_nct_ids=("NCT00000001", "NCT00000002"),
+            protocols_by_nct={"NCT00000001": _protocol("NCT00000001")},
+            history_models_by_nct={},
+            as_of="2026-08-01T15:00:04.000000Z",
+            page_limit=1,
+            offset=0,
+            next_cursor=None,
+        )
 
 
 def test_peer_set_pagination_presence_matches_remaining_covered_rows() -> None:

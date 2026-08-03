@@ -1,11 +1,13 @@
 """HTTP-client-independent checks for the bounded T1a route contract."""
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from starlette.requests import Request
 
 import app.biocatalyst as api
 from engine.biocatalyst.protocols import build_trial_protocol_projection
@@ -62,9 +64,9 @@ def test_t1a_direct_route_returns_contract_valid_partial_facts_only_set(monkeypa
     projection = _projection()
     monkeypatch.setattr(api, "_read_bundle", lambda: (projection, {}))
 
-    response = api.resolve_trial_peer_set(
+    response = api._resolve_trial_peer_set_payload(
         {"nct_ids": ["NCT99999999", "NCT00000001"], "limit": 1},
-        _user={"id": "paid-user", "tier": "pro"},
+        user={"id": "paid-user", "tier": "pro"},
     )
 
     payload = json.loads(response.body)
@@ -84,9 +86,9 @@ def test_t1a_legacy_projection_is_unavailable_not_false_all_uncovered(monkeypatc
     monkeypatch.setattr(api, "_read_bundle", lambda: (projection, {}))
 
     with pytest.raises(api.HTTPException) as caught:
-        api.resolve_trial_peer_set(
+        api._resolve_trial_peer_set_payload(
             {"nct_ids": ["NCT00000001", "NCT99999999"]},
-            _user={"id": "paid-user", "tier": "pro"},
+            user={"id": "paid-user", "tier": "pro"},
         )
 
     assert caught.value.status_code == 503
@@ -113,9 +115,46 @@ def test_t1a_cursor_mismatch_rejects_before_public_projection_read(monkeypatch) 
     )
 
     with pytest.raises(api.HTTPException) as caught:
-        api.resolve_trial_peer_set(
+        api._resolve_trial_peer_set_payload(
             {"nct_ids": ["NCT00000001", "NCT00000002"], "limit": 2, "cursor": cursor},
-            _user={"id": "paid-user", "tier": "pro"},
+            user={"id": "paid-user", "tier": "pro"},
         )
     assert caught.value.status_code == 400
     assert caught.value.detail == "cursor query mismatch"
+
+
+def test_t1a_streamed_body_without_content_length_aborts_at_cap() -> None:
+    messages = iter(
+        (
+            {
+                "type": "http.request",
+                "body": b"x" * (api._PEER_SET_MAX_BODY_BYTES + 1),
+                "more_body": False,
+            },
+        )
+    )
+
+    async def receive() -> dict:
+        return next(messages)
+
+    request = Request(
+        {
+            "type": "http",
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "https",
+            "path": "/api/biocatalyst/v1/trial-peer-sets:resolve",
+            "raw_path": b"/api/biocatalyst/v1/trial-peer-sets:resolve",
+            "query_string": b"",
+            "headers": [],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 443),
+        },
+        receive,
+    )
+
+    with pytest.raises(api.HTTPException) as caught:
+        asyncio.run(api._read_peer_set_payload(request))
+    assert caught.value.status_code == 413
+    assert caught.value.detail == "request body too large"
+    assert caught.value.headers == api._PRIVATE_HEADERS

@@ -98,7 +98,37 @@
     "completionDateFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/completionDateStruct"}}}]},
     "conditionsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/conditionsModule/conditions"}}}]},
     "interventionsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/armsInterventionsModule/interventions"}}}]},
-    "armGroupsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/armsInterventionsModule/armGroups"}}}]},
+    "armGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "type", "description", "interventionNames"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "type": {"type": ["string", "null"], "maxLength": 80},
+        "description": {"type": ["string", "null"], "maxLength": 6000},
+        "interventionNames": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {"type": "string", "minLength": 1, "maxLength": 512}
+        }
+      }
+    },
+    "armGroupList": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/armGroup"}
+    },
+    "armGroupsFact": {
+      "allOf": [
+        {"$ref": "#/$defs/sourceFact"},
+        {
+          "properties": {
+            "source_json_path": {"const": "/protocolSection/armsInterventionsModule/armGroups"},
+            "value": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/armGroupList"}]}
+          }
+        }
+      ]
+    },
     "primaryOutcomesFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/primaryOutcomes"}}}]},
     "secondaryOutcomesFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/secondaryOutcomes"}}}]},
     "locationsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/contactsLocationsModule/locations"}}}]},

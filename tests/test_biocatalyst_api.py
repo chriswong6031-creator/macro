@@ -660,6 +660,61 @@ def test_trial_peer_set_enforces_exact_uppercase_unique_nct_cohort_before_read(
         _assert_private_headers(response)
 
 
+def test_trial_peer_set_http_body_errors_are_private_and_bounded(entitled_client) -> None:
+    path = "/api/biocatalyst/v1/trial-peer-sets:resolve"
+    for content in (b"", b"{"):
+        response = entitled_client.post(
+            path, content=content, headers={"content-type": "application/json"}
+        )
+        assert response.status_code == 400
+        assert response.json() == {"detail": "invalid peer set request"}
+        _assert_private_headers(response)
+
+    oversized = entitled_client.post(
+        path,
+        content=b"x" * (biocatalyst_api._PEER_SET_MAX_BODY_BYTES + 1),
+        headers={"content-type": "application/json"},
+    )
+    assert oversized.status_code == 413
+    assert oversized.json() == {"detail": "request body too large"}
+    _assert_private_headers(oversized)
+
+    declared_oversized = entitled_client.post(
+        path,
+        content=b"{}",
+        headers={
+            "content-type": "application/json",
+            "content-length": str(biocatalyst_api._PEER_SET_MAX_BODY_BYTES + 1),
+        },
+    )
+    assert declared_oversized.status_code == 413
+    assert declared_oversized.json() == {"detail": "request body too large"}
+    _assert_private_headers(declared_oversized)
+
+
+def test_trial_peer_set_authenticates_before_json_decoding() -> None:
+    app = FastAPI()
+    app.include_router(biocatalyst_api.router)
+
+    def reject_user() -> dict:
+        raise HTTPException(
+            status_code=401,
+            detail="authentication required",
+            headers=biocatalyst_api._PRIVATE_HEADERS,
+        )
+
+    app.dependency_overrides[biocatalyst_api.require_site_full_user] = reject_user
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/biocatalyst/v1/trial-peer-sets:resolve",
+            content=b"{",
+            headers={"content-type": "application/json"},
+        )
+    assert response.status_code == 401
+    assert response.json() == {"detail": "authentication required"}
+    _assert_private_headers(response)
+
+
 def test_trial_peer_set_cursor_is_signed_and_binds_cohort_limit_caller_and_generation() -> None:
     user = {"id": "paid-user", "tier": "pro"}
     binding = biocatalyst_api._peer_set_query_binding(
@@ -2428,10 +2483,10 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
         "countries",
     }
     for locator in trial["field_evidence"].values():
-        assert locator["source_json_paths"]
+        assert locator["source_field_locators"]
         assert all(
             path.startswith("/protocolSection/")
-            for path in locator["source_json_paths"]
+            for path in locator["source_field_locators"]
         )
         assert locator["transform"]
 

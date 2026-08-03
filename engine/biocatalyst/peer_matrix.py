@@ -11,7 +11,7 @@ from datetime import datetime
 import re
 from typing import Any, Mapping, Sequence
 
-from engine.sector_intelligence import validate_contract
+from engine.sector_intelligence import canonical_json_bytes, validate_contract
 from engine.sector_intelligence.contracts import ContractError
 
 from .protocols import (
@@ -39,6 +39,27 @@ _AUTHORITY = {
     ],
 }
 _NCT_ID = re.compile(r"^NCT[0-9]{8}$")
+_PUBLIC_SOURCE_FIELD_LOCATORS = frozenset(
+    (
+        "/protocolSection/identificationModule/briefTitle",
+        "/protocolSection/identificationModule/officialTitle",
+        "/protocolSection/statusModule/overallStatus",
+        "/protocolSection/designModule/studyType",
+        "/protocolSection/designModule/phases",
+        "/protocolSection/sponsorCollaboratorsModule/leadSponsor",
+        "/protocolSection/designModule/enrollmentInfo",
+        "/protocolSection/statusModule/startDateStruct",
+        "/protocolSection/statusModule/primaryCompletionDateStruct",
+        "/protocolSection/statusModule/completionDateStruct",
+        "/protocolSection/conditionsModule/conditions",
+        "/protocolSection/armsInterventionsModule/interventions",
+        "/protocolSection/armsInterventionsModule/armGroups",
+        "/protocolSection/outcomesModule/primaryOutcomes",
+        "/protocolSection/outcomesModule/secondaryOutcomes",
+        "/protocolSection/contactsLocationsModule/locations",
+    )
+)
+_MAX_TRIAL_PEER_SET_RESPONSE_BYTES = 1024 * 1024
 
 
 def _text(value: object, *, maximum: int) -> str | None:
@@ -85,7 +106,7 @@ def _field_evidence(
     independently explainable without returning the private source snapshot.
     """
 
-    paths: list[str] = []
+    locators: list[str] = []
     states: list[str] = []
     for fact_name in fact_names:
         fact = facts.get(fact_name)
@@ -93,15 +114,19 @@ def _field_evidence(
             raise TrialPeerSetError("trial_protocol_projection_invalid")
         path = fact.get("source_json_path")
         state = fact.get("state")
-        if not isinstance(path, str) or not isinstance(state, str):
+        if (
+            not isinstance(path, str)
+            or path not in _PUBLIC_SOURCE_FIELD_LOCATORS
+            or not isinstance(state, str)
+        ):
             raise TrialPeerSetError("trial_protocol_projection_invalid")
-        paths.append(path)
+        locators.append(path)
         states.append(state)
     distinct_states = set(states)
     state = states[0] if len(distinct_states) == 1 else "mixed"
     return {
         "state": state,
-        "source_json_paths": paths,
+        "source_field_locators": locators,
         "transform": transform,
     }
 
@@ -478,6 +503,8 @@ def build_trial_peer_set(
         validate_contract("trial_peer_set.v1", result)
     except (ContractError, TypeError, ValueError) as exc:
         raise TrialPeerSetError("trial_peer_set_invalid") from exc
+    if len(canonical_json_bytes(result)) > _MAX_TRIAL_PEER_SET_RESPONSE_BYTES:
+        raise TrialPeerSetError("peer_set_response_too_large")
     return result
 
 
