@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T02:04:18.512962+00:00",
-  "count": 633,
+  "generated_at": "2026-08-03T02:19:22.390061+00:00",
+  "count": 634,
   "institutions": [
     "Amova",
     "Apollo",
@@ -343,6 +343,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fgnrqel6xpr-6837ee",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:57:10Z",
+      "summary_points": [
+        "**Fed Communication Gap**: 34% of households unaware of Fed's mandate (2022 Ipsos), with inflation expectations below 2% occurring only 8 months in 48 years (U-M survey), undermining policy transmission.",
+        "**Policy Efficacy Risk**: Misaligned public understanding of Fed targets reduces monetary policy effectiveness, creating market uncertainty due to low engagement with Fed communications.",
+        "**Asset Tier Collapse Risk**: Equity \"Most Attractive\" and \"Least Attractive\" tiers collapse into \"Unattractive\" under three-tier portfolio construction, invalidating tactical allocation logic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
