@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from jinja2 import DictLoader, Environment
+from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -96,8 +96,26 @@ def test_tag_literals_match_engine_source_bytes():
 
 # --- template render (standalone pages, missing-key-safe) ---------------------
 def _env(snippet: str) -> Environment:
+    """Render a sliced page block with the page's own file-top imports available.
+
+    china.html.j2 / hk.html.j2 import _decision_card and _lens at file top, OUTSIDE
+    every snippet sliced here — without the imports the slice renders against
+    Undefined. The FileSystemLoader fallback resolves the real partials, so a future
+    {% import %} never silently breaks this harness.
+    """
     from engine import i18n
-    env = Environment(loader=DictLoader({"blk": snippet}), autoescape=False)
+    blk = (
+        '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
+    ) + snippet
+    env = Environment(
+        loader=ChoiceLoader([
+            DictLoader({"blk": blk}),
+            FileSystemLoader(str(ROOT / "templates")),
+        ]),
+        autoescape=False,
+    )
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t, help=lambda *a, **k: "")
     return env
 

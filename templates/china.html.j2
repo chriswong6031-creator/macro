@@ -1,4 +1,6 @@
 {% import "_prophet_card.html.j2" as pv %}
+{% import "_decision_card.html.j2" as dc %}
+{% import "_lens.html.j2" as lens %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -1445,6 +1447,7 @@
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
+{{ lens.lens_css() }}
 {%- if mode != 'stocks' %}{%- set _aur_color = (market_state.color if market_state else 'yellow') %}<div class="aurora{{ ' au-red' if _aur_color == 'red' else (' au-yellow' if _aur_color == 'yellow' else '') }}" aria-hidden="true"><div class="au-a3"></div></div>
 {%- endif %}
 
@@ -1460,10 +1463,20 @@
         {{ help('A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.', 'A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。') }}</h1>
       {# Regime + Posture header pills, aligned with the US stock dashboard (Regime: … / Posture: …) #}
       <span style="display:inline-flex;align-items:center">
-        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, use the China macro dashboard's risk read.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看中国宏观看板的风险读数。") }}
+        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ lens.lens(
+          kind='define', ill=lens.ILL_QUAD,
+          kick=('Backdrop','背景'),
+          title=('The economy, not today&#39;s market','描述经济，而非今日盘面'),
+          body=('Where growth and inflation sit right now. It moves slowly, so use it to judge <b>which sectors are favoured</b> — not when to buy. For whether the market itself is turning over, read the risk backdrop on the China macro dashboard.','当前增长与通胀所处的位置。它变化缓慢，用来判断<b>哪些板块占优</b>，而不是用来择时。市场本身是否转向，请看中国宏观看板的风险读数。'),
+          receipt=('growth × inflation quadrant · filters this entire page','增长 × 通胀象限 · 过滤整个页面')) }}
       </span>
       {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span style="display:inline-flex;align-items:center">
-        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the China macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见中国宏观看板。") }}
+        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{{ lens.lens(
+          kind='read', ill=lens.ILL_DIAL,
+          kick=('Position size','仓位'),
+          title=('How hard to lean in','该用多大力度'),
+          body=('A dial from <b>defensive</b> to <b>aggressive</b> that sets how much risk to carry today. It sizes your positions — it does not pick stocks and it is not a buy or sell call. The full dial and its reasoning live on the China macro dashboard.','一个从<b>防御</b>到<b>进取</b>的刻度，决定今天承担多少风险。它只调整仓位大小 — 不选股，也不是买卖建议。完整刻度与推理见中国宏观看板。'),
+          receipt=('Defensive · Careful · Neutral · Constructive · Aggressive','防御 · 谨慎 · 中性 · 建设性 · 进取')) }}
       </span>{% endif %}
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none">
@@ -1493,7 +1506,12 @@
       <span style="color:{{ _rs_col }};font-weight:700"><span class="l-en">{{ _rs_en }} — {{ _rs_act_en }}</span><span class="l-zh">{{ _rs_zh }} — {{ _rs_act_zh }}</span></span>
       {% if _sc.dominant_driver_en %}<span class="muted" style="font-size:10.5px">· <span class="l-en">main risk: {{ _sc.dominant_driver_en.split(' (')[0] }}</span><span class="l-zh">主要风险：{{ (_sc.dominant_driver_zh or _sc.dominant_driver_en).split('（')[0] }}</span></span>{% endif %}
       {% if _sc.radar_as_of %}<span class="muted" style="font-size:10px">· {{ t('as of', '截至') }} {{ _sc.radar_as_of }}</span>{% endif %}
-      {{ help('CN drawdown radar: external-driver risk (US rate shocks, USD/CNH, US–China yield gap, market breadth). Sets a risk backdrop for sizing — context only, never vetoes names or changes board rank (CN-SYS-R7).', 'CN回撤雷达：衡量外部驱动风险（美债利率冲击、美元/人民币、中美利差、市场广度）。用于设定仓位风险背景——仅供背景参考，不排除个股或改变看板排名（CN-SYS-R7）。') }}
+      {{ lens.lens(
+        kind='caution', ill=lens.ILL_RADAR,
+        kick=('Outside risk','外部风险'),
+        title=('What could hit from abroad','外部可能的冲击'),
+        body=('Pressure coming from <b>outside China</b> — US interest rates, the yuan, the gap between US and Chinese yields, and how many stocks are joining in. It sets the backdrop for <b>how big to trade</b>. It never removes a name and never changes the board&#39;s order.','来自<b>中国以外</b>的压力 — 美国利率、人民币汇率、中美利差，以及有多少个股在参与。它决定<b>该用多大仓位</b>，但绝不剔除任何标的，也不改变看板排序。'),
+        receipt=('US rate shocks · USD/CNH · US-China yield gap · market breadth · context only (CN-SYS-R7)','美债利率冲击 · 美元/离岸人民币 · 中美利差 · 市场广度 · 仅供参考（CN-SYS-R7）')) }}
     </div>
     {% endif %}
   </div>
@@ -1508,10 +1526,22 @@
   {% set _anv2 = act_now_v2 %}
   {% set _anl = _anv2.lanes %}
   <div class="panel span12 anv2-board" id="act-now">
+    {{ dc.dc_css() }}
     <div class="anv2-hd">
       <h2 style="margin:0">⚡ {{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
-        {{ help('Four lanes, read left to right: Buy Now = a clean entry point today. In Favour = still in favour, but it has run — wait for a dip. Bottoming Watch = beaten-down groups showing the first signs of turning up (watch only, never a buy signal). Reduce / Avoid = the trend is weakening. Rows mix investment themes (scored 0-100 by the basket engine) and sectors (timed by the cycle ladder). A name can honestly sit in two lanes at once — e.g. weakening trend but an early bottom forming — and is shown in both, never merged.', '四个分栏从左到右：立即买入＝今天有干净入场点。看好＝仍看好但已涨高，等回调再买。洗盘观察＝超跌板块初现回升迹象（仅观察，绝非买入信号）。减仓/回避＝趋势转弱。行内混合投资主题（篮子引擎0-100打分）与行业板块（周期阶梯定时机）。同一名称可能同时出现在两个分栏——例如趋势转弱但初现筑底——两种判读并列显示，永不合并。') }}
+        {{ lens.lens(
+          kind='read', ill=lens.ILL_LANES,
+          kick=('How to read this','如何看懂'),
+          title=('Four lanes, left to right','四个分栏，从左到右'),
+          rows=[
+            {'tone':'up',   'k':('Buy now','立即买入'),        'v':('A clean entry point today.','今天有干净的入场点。')},
+            {'tone':'info', 'k':('In favour','看好'),          'v':('Still good — but it has run. <b>Wait for a dip.</b>','依然看好 — 但已经涨过。<b>等回调。</b>')},
+            {'tone':'warn', 'k':('Bottoming','洗盘观察'),      'v':('Beaten down, first signs of turning up. <b>Watch only — never a buy signal.</b>','超跌后初现回升迹象。<b>仅供观察 — 绝非买入信号。</b>')},
+            {'tone':'dn',   'k':('Reduce / avoid','减仓·回避'),'v':('The trend is weakening.','趋势正在转弱。')},
+          ],
+          body=('A name can honestly sit in two lanes at once — weakening, yet bottoming. We show both reads rather than pick one for you.','同一名称可以同时出现在两栏 — 趋势转弱，却已在筑底。我们把两种判读都显示，而不是替你二选一。'),
+          receipt=('rows mix themes (scored 0-100) and sectors (timed by cycle stage) · re-drawn nightly','行内混合主题（0-100分）与行业板块（按周期阶段定时机）· 每晚重绘')) }}
       </h2>
       <div class="anv2-meta">
         {% if _anv2.as_of %}<span class="muted" style="font-size:11px">{{ t('themes as of','主题截至') }} {{ _anv2.as_of }}</span>{% endif %}
@@ -1531,90 +1561,135 @@
     {%- set _rptag_cls = 'up' if row.reco in ('accumulate','buy','add') else ('dn' if row.reco in ('avoid','trim','reduce','exit') else 'warn') -%}
     <div class="anv2-row" data-rpop>
       {# PR-4: hover card payload — cloned by theme.js into a .row-pop overlay #}
-      <span class="rp-src" hidden>
-        <div class="row-pop-hd">
-          <span class="row-pop-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span></span>
-          <span class="row-pop-kind"><span class="l-en">{{ row.kind }}</span><span class="l-zh">{{ tr(row.kind) }}</span></span>
-          {%- if row.reco_en -%}
-          <span class="row-pop-tag {{ _rptag_cls }}"><span class="l-en">{{ row.reco_en }}</span><span class="l-zh">{{ row.reco_zh or tr(row.reco_en) }}</span></span>
-          {%- elif row.tag -%}
-          <span class="row-pop-tag warn"><span class="l-en">{{ row.tag }}</span><span class="l-zh">{{ row.tag_zh or tr(row.tag) }}</span></span>
-          {%- elif row.phase -%}
-          <span class="row-pop-tag warn"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ tr(row.phase) }}</span></span>
-          {%- endif -%}
-        </div>
-        <div class="row-pop-div"></div>
-        <div class="row-pop-grid">
-          {%- if row.score is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
-            <span class="row-pop-val">{{ row.score }}</span></div>
-          {%- endif -%}
-          {%- if row.rel20 is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs CSI 300</span><span class="l-zh">20日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if row.rel20 >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span></span></div>
-          {%- endif -%}
-          {%- if row.rel5 is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">5d vs CSI 300</span><span class="l-zh">5日相对沪深300</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if row.rel5 >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rel5 * 100) }}%</span></span></div>
-          {%- endif -%}
-          {%- if row.rs_63d is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">63d RS · rank</span><span class="l-zh">63日相对强度 · 排名</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if row.rs_63d >= 0 else 'dn' }}">{{ '%+.1f'|format(row.rs_63d) }}%</span>{% if row.rs_rank is not none %} <span class="mut">· #{{ row.rs_rank }}</span>{% endif %}</span></div>
-          {%- endif -%}
-          {%- if row.phase is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle phase · position</span><span class="l-zh">周期阶段 · 位置</span></span>
-            <span class="row-pop-val"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ tr(row.phase) }}</span>{% if row.pos is not none %} <span class="mut">· {{ '%.0f'|format(row.pos) }}%</span>{% endif %}</span></div>
-          {%- endif -%}
-          {%- if row.osc_slope is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Turn oscillator</span><span class="l-zh">转向振荡器</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if row.osc_slope > 0 else 'dn' }}">{{ '↗' if row.osc_slope > 0 else '↘' }} {{ '%.1f'|format(row.osc_slope) }}</span></span></div>
-          {%- endif -%}
-          {%- if row.organ_state is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Price tape</span><span class="l-zh">价格走势</span></span>
-            <span class="row-pop-val"><span class="l-en">{{ row.organ_state|replace('_',' ')|title }}</span><span class="l-zh">{{ tr(row.organ_state) }}</span></span></div>
-          {%- endif -%}
-          {# SECTOR rows: enrich from sector card via sectors_by_ticker #}
-          {%- if _sc is not none -%}
-          {%- if _sc.get('mom20') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if _sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_sc.get('mom20')) }}%</span></span></div>
-          {%- endif -%}
-          {%- if _sc.get('mom60') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
-            <span class="row-pop-val"><span class="{{ 'up' if _sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_sc.get('mom60')) }}%</span></span></div>
-          {%- endif -%}
-          {%- if _sc.get('above200') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
-            <span class="row-pop-val">{% if _sc.get('above200') %}<span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span>{% else %}<span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span>{% endif %}</span></div>
-          {%- endif -%}
-          {%- if _sc.get('pctile') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
-            <span class="row-pop-val">{{ '%.0f'|format(_sc.get('pctile')) }}p</span></div>
-          {%- endif -%}
-          {%- if _sc.get('dc_day') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
-            <span class="row-pop-val">{{ _sc.get('dc_day') }}{% if _sc.get('dc_band') is not none %} <span class="mut">· {{ _sc.get('dc_band') }}</span>{% endif %}</span></div>
-          {%- endif -%}
-          {%- set _sce = _sc.get('entry') or {} -%}
-          {%- if _sce.get('text') is not none or _sce.get('text_zh') is not none -%}
-          <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
-            <span class="row-pop-val"><span class="l-en">{{ _sce.get('text') or '' }}</span><span class="l-zh">{{ _sce.get('text_zh') or _sce.get('text') or '' }}</span>{% if _sc.get('age_short') is not none %} <span class="mut">· <span class="l-en">{{ _sc.get('age_short') }}</span><span class="l-zh">{{ _sc.get('age_short_zh') or _sc.get('age_short') }}</span></span>{% endif %}</span></div>
-          {%- endif -%}
-          {%- if _sc.get('eq_badge') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">入场质量</span></span>
-            <span class="row-pop-val">{{ _sc.get('eq_badge') }}</span></div>
-          {%- endif -%}
-          {%- endif -%}{# /_sc enrichment #}
-        </div>
-        {%- if row.reasons -%}
-        <ul class="row-pop-why">
-          {%- for _r in row.reasons -%}<li><span class="l-en">{{ _r }}</span><span class="l-zh">{{ tr(_r) }}</span></li>{%- endfor -%}
-        </ul>
+      {#- Hover decision card — the SAME component the US board uses
+          (templates/_decision_card.html.j2). Themes get the score ring + leadership
+          read + breadth + leaders; sectors get the setup read + cycle metrics. -#}
+      {%- set _is_theme = row.kind in ('THEME','BASKET') and row.score is not none -%}
+      {%- set _stats = [] -%}
+      {%- set _trust = [] -%}
+      {%- if _is_theme -%}
+        {%- if row.rel20 is not none -%}
+          {%- set _ = _stats.append({'label': ('20d lead','20日领先'), 'val': '%+.1f%%'|format(row.rel20 * 100),
+                                     'tone': 'up' if row.rel20 >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
         {%- endif -%}
-        <div class="row-pop-ft">
-          <span>{{ _anv2.as_of if _anv2.as_of else '' }}</span>
-        </div>
-      </span>
+        {%- if row.get('breadth_pct50') is not none -%}
+          {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%.0f%%'|format(row.get('breadth_pct50') * 100),
+                                     'sub': ('above 50d','高于50日线')}) -%}
+        {%- endif -%}
+        {%- if row.rel5 is not none -%}
+          {%- set _ = _stats.append({'label': ('5d lead','5日领先'), 'val': '%+.1f%%'|format(row.rel5 * 100),
+                                     'tone': 'up' if row.rel5 >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
+        {%- endif -%}
+        {%- if row.organ_chip_en -%}
+          {%- set _ = _trust.append({'tone': 'up', 'en': row.organ_chip_en,
+                                     'zh': row.organ_chip_zh or tr(row.organ_chip_en)}) -%}
+        {%- endif -%}
+        {%- if row.get('n_members') -%}
+          {%- set _ = _trust.append({'tone': '', 'en': row.get('n_members') ~ ' names', 'zh': row.get('n_members') ~ ' 只成分股'}) -%}
+        {%- endif -%}
+      {%- else -%}
+        {%- if _sc is not none and _sc.get('mom20') is not none -%}
+          {%- set _ = _stats.append({'label': ('20d move','20日动能'), 'val': '%+.1f%%'|format(_sc.get('mom20')),
+                                     'tone': 'up' if _sc.get('mom20') >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
+        {%- endif -%}
+        {%- if _sc is not none and _sc.get('mom60') is not none -%}
+          {%- set _ = _stats.append({'label': ('60d move','60日动能'), 'val': '%+.1f%%'|format(_sc.get('mom60')),
+                                     'tone': 'up' if _sc.get('mom60') >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
+        {%- elif row.rs_63d is not none -%}
+          {%- set _ = _stats.append({'label': ('63d strength','63日强度'), 'val': '%+.1f%%'|format(row.rs_63d),
+                                     'tone': 'up' if row.rs_63d >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
+        {%- endif -%}
+        {%- if _sc is not none and _sc.get('eq_badge') is not none -%}
+          {%- set _ = _stats.append({'label': ('Entry','入场'), 'val': _sc.get('eq_badge'),
+                                     'sub': ('timing quality','时机质量')}) -%}
+        {%- elif row.pos is not none -%}
+          {%- set _ = _stats.append({'label': ('Cycle position','周期位置'), 'val': '%.0f%%'|format(row.pos),
+                                     'sub': ('of the full range','在整段区间中')}) -%}
+        {%- endif -%}
+        {%- if _sc is not none and _sc.get('pctile') is not none -%}
+          {%- set _ = _stats.append({'label': ('Strength rank','强度排名'), 'val': '%.0f'|format(_sc.get('pctile')) ~ 'p',
+                                     'sub': ('vs its own year','对比自身一年')}) -%}
+        {%- endif -%}
+        {%- if _sc is not none and _sc.get('above200') is not none -%}
+          {%- set _ = _trust.append({'tone': 'up' if _sc.get('above200') else '',
+                                     'en': ('▲ Above the 200-day' if _sc.get('above200') else 'Below the 200-day'),
+                                     'zh': ('▲ 高于200日均线' if _sc.get('above200') else '低于200日均线')}) -%}
+        {%- endif -%}
+        {%- if row.organ_chip_en -%}
+          {%- set _ = _trust.append({'tone': 'up', 'en': row.organ_chip_en,
+                                     'zh': row.organ_chip_zh or tr(row.organ_chip_en)}) -%}
+        {%- endif -%}
+      {%- endif -%}
+      {%- if lane == 'reduce' and row.dual_read -%}
+        {%- set _ = _trust.append({'tone': 'warn', 'en': '⇔ ' ~ (row.dual_chip_en or 'Two reads'),
+                                   'zh': '⇔ ' ~ (row.dual_chip_zh or '两个读数')}) -%}
+      {%- endif -%}
+      {%- set _sub_en -%}
+      {%- if _sc is not none and _sc.get('age_short') %}Signal {{ _sc.get('age_short') }}{% endif -%}
+      {%- if _sc is not none and _sc.get('age_short') and _sc.get('dc_day') is not none %} · {% endif -%}
+      {%- if _sc is not none and _sc.get('dc_day') is not none %}cycle day {{ _sc.get('dc_day') }}{% endif -%}
+      {%- endset -%}
+      {%- set _sub_zh -%}
+      {%- if _sc is not none and _sc.get('age_short') %}信号 {{ _sc.get('age_short_zh') or _sc.get('age_short') }}{% endif -%}
+      {%- if _sc is not none and _sc.get('age_short') and _sc.get('dc_day') is not none %} · {% endif -%}
+      {%- if _sc is not none and _sc.get('dc_day') is not none %}周期第 {{ _sc.get('dc_day') }} 日{% endif -%}
+      {%- endset -%}
+      {#- Theme reasons collapse to ONE plain-word line: "accelerating" is real state
+          the stats grid does not carry, and sub is where the US sector card already
+          puts its own state line. tr() is a global, not a filter — hence the loop. -#}
+      {%- set _rsn_en = row.reasons[:2] | join(' · ') if row.reasons else '' -%}
+      {%- set _rsn_zh_parts = [] -%}
+      {%- for _r in (row.reasons[:2] if row.reasons else []) -%}{%- set _ = _rsn_zh_parts.append(tr(_r)) -%}{%- endfor -%}
+      {%- set _rsn_zh = _rsn_zh_parts | join(' · ') -%}
+      {#- The kicker names its own evidence: "Leadership read" only when the row
+          carries theme_intel.leadership, otherwise the neutral "Current read". The
+          pre-parity board had no leadership data at all — that is what the old
+          no-Leadership-word test was protecting against. -#}
+      {{ dc.dc_card({
+        'kind': 'theme' if _is_theme else 'sector',
+        'mark': '◆' if _is_theme else '🏛',
+        'tone': _rptag_cls,
+        'eyebrow': ('Theme basket','主题篮子') if _is_theme
+                   else (('Sector pulse · ' ~ row.id, '板块脉搏 · ' ~ row.id) if row.id else ('Sector pulse','板块脉搏')),
+        'name': (row.name, row.name_zh or tr(row.name)),
+        'tag': (row.reco_en, row.reco_zh or tr(row.reco_en)) if row.reco_en
+               else ((row.tag, row.tag_zh or tr(row.tag)) if row.tag
+               else ((row.phase, tr(row.phase)) if row.phase else none)),
+        'score': row.score if _is_theme else none,
+        'kicker': (('Leadership read','领先度判断') if row.get('leadership') else ('Current read','当前判读'))
+                  if _is_theme else ('Current setup','当前形态'),
+        'read': (
+          (('Led by a few names','少数龙头带动') if row.get('leadership') == 'narrow'
+           else (('Broad and leading','广泛领先') if row.reco in ('accumulate','enter','buy','add')
+           else (('Late and extended','后期且延伸') if row.reco in ('trim','reduce')
+           else (('Breadth weakening','广度转弱') if row.reco in ('avoid','exit')
+           else ('Trend intact','趋势完好')))))
+          if _is_theme else
+          (('Turning up from the low','自低位回升') if lane == 'bot'
+           else (('Entry open today','今日入场窗口开启') if lane == 'buy'
+           else (('Momentum fading','动能转弱') if lane == 'reduce'
+           else ('In favour — but it has run','仍看好 — 但已上涨'))))
+        ),
+        'sub': (_sub_en|trim, _sub_zh|trim) if not _is_theme
+               else ((_rsn_en, _rsn_zh) if _rsn_en else none),
+        'trust': _trust, 'stats': _stats,
+        'leaders': {'label': ('Leaders','龙头'), 'val': (row.get('leaders_en'), row.get('leaders_zh') or row.get('leaders_en'))}
+                   if row.get('leaders_en') else none,
+        'takeaway': (
+          (('Signals disagree. The trend still says reduce while the price shows an early bottom — wait for them to agree.','信号不一致。趋势仍建议减仓，价格却初现筑底 — 等两者一致再动。')
+             if (lane == 'reduce' and row.dual_read)
+           else (('Turning up from the low — watch it, do not chase it.','自低位回升 — 观察为主，不要追。') if lane == 'bot'
+           else ((('Leadership is broad. Add on pullbacks, not into strength.','领先面广。回调时加仓，不要追强势。') if row.get('leadership') == 'broad'
+                  else ('In favour. Add on pullbacks, not into strength.','仍然看好。回调时加仓，不要追强势。')) if row.reco in ('accumulate','enter','buy','add')
+           else (('Momentum is extended. Protect gains into strength.','动能已过度延伸。逢强保护利润。') if row.reco in ('trim','reduce')
+           else (('Breadth is fading. Stand aside until it turns again.','广度转弱。在重新转强之前先观望。') if row.reco in ('avoid','exit')
+           else (('A clean entry is open today.','今日入场窗口干净。') if lane == 'buy'
+           else ('Still in favour, but it has run — wait for a dip.','仍然看好，但已上涨 — 等回调。')))))))
+        ),
+        'foot': ('Click row for holdings and full history','点击查看持仓与完整历史') if _is_theme
+                else ('Click row for the full sector view','点击查看完整板块详情'),
+        'foot_b': ('Open ↗','打开 ↗') if _is_theme else ((row.id ~ ' ↗',) if row.id else none),
+      }) }}
       <div class="anv2-row-top">
         {%- if row.href -%}
         <a class="anv2-name anv2-name-link" href="{{ row.href }}"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span><span class="anv2-go" aria-hidden="true">↗</span></a>
@@ -3259,7 +3334,18 @@
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
     <h2>{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}
-      {{ help("The featured shelf is deliberately selective: an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open/partial entry gauge, known liquidity, same-session fillability, no chase veto, and no extension flag. Priority 0–100 is a transparent readiness rank: signal 35%, entry 25%, runway 20%, bottom quality 10%, and deepest-quintile within-sector reversal membership 10%. Residual momentum, sector stories and fundamentals do not move the live rank because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing. Broader and blocked names remain below on demand.", "精选区刻意保持严格：必须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启/部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸。优先级0–100采用透明的就绪度排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。残差动量、板块叙事与基本面不会影响实时排名，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。更多候选与受阻标的可在下方按需展开。") }}
+      {{ lens.lens(
+        kind='define', ill=lens.ILL_SHELF,
+        kick=('What earns a slot','入选条件'),
+        title=('Only the ready ones','只放已就绪的'),
+        rows=[
+          {'tone':'up',   'k':('Signal','信号'),   'v':('Several timeframes agree.','多个周期一致。')},
+          {'tone':'info', 'k':('Entry','入场'),    'v':('The entry window is open today.','今天入场窗口是开的。')},
+          {'tone':'info', 'k':('Tradable','可成交'),'v':('Enough liquidity to fill in one session.','流动性足够当日成交。')},
+          {'tone':'warn', 'k':('Not chased','未追高'),'v':('Not already stretched.','尚未过度拉伸。')},
+        ],
+        body=('Priority 0-100 ranks <b>how ready</b> a name is. It is not a win rate and not a return forecast. Broader and blocked names stay below, on demand.','优先级 0-100 衡量的是<b>就绪程度</b>，既不是胜率，也不是收益预测。更多候选与受阻标的可在下方按需展开。'),
+        receipt=('signal 35% · entry 25% · runway 20% · bottom quality 10% · deep-reversal 10% · forward record still accruing','信号35% · 入场25% · 上行空间20% · 底部质量10% · 深度反转10% · 前瞻记录仍在积累')) }}
       {# W8-E: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>

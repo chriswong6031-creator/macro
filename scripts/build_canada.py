@@ -859,6 +859,8 @@ def main() -> int:
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
             "actions": _action_board(sectors),
+            # O(1) lookup for the act-now hover decision cards (US/China/HK parity)
+            "sectors_by_ticker": {s["ticker"]: s for s in sectors},
             "health": _health_rows(),
             "overlay": latest.get("overlay", {}),
             "coupling": (latest.get("overlay") or {}).get("coupling", {}),

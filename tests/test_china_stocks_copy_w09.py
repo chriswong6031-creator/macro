@@ -36,7 +36,7 @@ Prophet-card redesign (2026-07-21) — what moved, and why this suite was re-pin
 import re
 from pathlib import Path
 
-from jinja2 import DictLoader, Environment
+from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = (ROOT / "templates" / "china.html.j2").read_text()
@@ -58,7 +58,18 @@ def _render_stocks_header() -> str:
 
     from engine import i18n
 
-    env = Environment(loader=DictLoader({"blk": snippet}), autoescape=False)
+    # Mirror china.html.j2's file-top imports (they sit outside every sliced
+    # snippet) and let a FileSystemLoader resolve the real partials, so a new
+    # {% import %} never breaks this harness again.
+    blk = (
+        '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
+    ) + snippet
+    env = Environment(
+        loader=ChoiceLoader([DictLoader({"blk": blk}), FileSystemLoader(str(ROOT / "templates"))]),
+        autoescape=False,
+    )
     # help() renders its copy: since the 2026-07-10 declutter the header's archetype
     # description is user-facing via the (?) tooltip, so the stub must not drop it.
     env.globals.update(
@@ -126,9 +137,19 @@ def _render_standout_header() -> str:
         '<span class="help-tip l-zh">{{ zh }}</span>'
         "{%- endmacro -%}\n"
     )
-    full = macros + snippet
+    # Mirror china.html.j2's file-top imports (they sit outside every sliced
+    # snippet) and let a FileSystemLoader resolve the real partials, so a new
+    # {% import %} never breaks this harness again.
+    full = (
+        '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
+    ) + macros + snippet
 
-    env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
+    env = Environment(
+        loader=ChoiceLoader([DictLoader({"blk": full}), FileSystemLoader(str(ROOT / "templates"))]),
+        autoescape=False,
+    )
     return env.get_template("blk").render(setups=_standout_setups())
 
 
@@ -175,11 +196,20 @@ def test_stocks_header_names_washout_base_turn() -> None:
 
 
 def test_standout_h2_selective_v2_copy_present_and_old_subtitle_gone() -> None:
-    """The h2 explains selective v2 admission and does not revive old alignment copy."""
+    """The explainer states selective admission, in plain words, and keeps the weights.
+
+    Operator order 2026-08-02 ("simplify and dumb down"): the 150-word paragraph of
+    study vocabulary became a rich LENS card. The admission set is now named in
+    plain words — Signal / Entry / Tradable / Not chased — instead of "an actionable
+    T1-T3 confluence ... no chase veto, no extension flag", and the weights moved to
+    the receipt line where DESIGN_DOCTRINE Law 5 puts them. Selectivity and the
+    weights are still stated; only the vocabulary changed.
+    """
     html = _render_standout_header()
-    assert "deliberately selective" in html.lower()
-    assert "T1–T3" in html
-    assert "signal 35%" in html.lower()
+    assert "Only the ready ones" in html, "explainer no longer states selective admission"
+    for criterion in ("Signal", "Entry", "Tradable", "Not chased"):
+        assert f">{criterion}</span>" in html, f"admission criterion '{criterion}' missing"
+    assert "signal 35%" in html.lower(), "priority weights missing from the receipt line"
     # Old subtitle chip strings must NOT come back.
     assert "cycle-aligned bottoming" not in html, (
         "Old 'cycle-aligned bottoming' subtitle chip still present"
@@ -192,17 +222,24 @@ def test_standout_h2_selective_v2_copy_present_and_old_subtitle_gone() -> None:
 def test_standout_help_contains_v2_epistemic_caveats() -> None:
     """The popup distinguishes priority from prediction and exposes the broader set."""
     html = _render_standout_header()
-    assert "not a win probability or return forecast" in html.lower()
+    assert "not a win rate and not a return forecast" in html.lower()
     assert "accruing" in html.lower() or "累积" in html, (
         "forward record accrual caveat not found"
     )
-    assert "broader and blocked names remain below" in html.lower()
+    assert "broader and blocked names stay below" in html.lower()
 
 
 def test_standout_help_describes_actionable_tiers() -> None:
-    """Help tooltip must identify the actionable T1–T3 admission set."""
+    """The explainer must identify the admission set — in plain words, not tier codes.
+
+    "T1-T3 confluence" was internal vocabulary on a user surface; the plain-word
+    equivalent is the four named criteria. The tier codes stay available on the
+    Tier-3 detail pages.
+    """
     html = _render_standout_header()
-    assert "T1–T3" in html
+    assert "Several timeframes agree" in html, "multi-timeframe admission criterion missing"
+    assert "The entry window is open today" in html, "entry-lifecycle criterion missing"
+    assert "T1–T3" not in html, "internal tier codes are back on the glance surface"
 
 
 def test_standout_help_says_rank_not_bottoming_alignment() -> None:
@@ -210,7 +247,7 @@ def test_standout_help_says_rank_not_bottoming_alignment() -> None:
     html = _render_standout_header()
     # Positive control: the tooltip actually rendered (readiness is its live rank
     # driver) — the two absence pins below are real absences, not a vacuous empty render.
-    assert "readiness rank" in html.lower() or "就绪度排序" in html, (
+    assert "how ready" in html.lower() or "就绪程度" in html, (
         "standout tooltip did not render (absence checks would be vacuous)"
     )
     assert "MULTI-TIMEFRAME BOTTOMING-ALIGNMENT" not in html, (
@@ -226,7 +263,7 @@ def test_standfirst_paragraph_honest() -> None:
     html = _render_standout_header()
     # Must name the honest driver: buy-readiness, or the T1–T4 cascade in the subtitle
     assert (
-        "readiness rank" in html.lower() or "就绪度排序" in html
+        "how ready" in html.lower() or "就绪程度" in html
     ), "Header does not name the honest readiness rank"
     # Must not claim ranked by 'alignment quality'
     assert "Ranked by alignment quality" not in html, (
@@ -239,7 +276,7 @@ def test_bilingual_dual_spans_present() -> None:
     html = _render_stocks_header() + _render_standout_header()
     assert 'class="l-en"' in html or "l-en" in html, "No l-en spans found"
     assert 'class="l-zh"' in html or "l-zh" in html, "No l-zh spans found"
-    assert "精选入场" in html and "就绪度" in html
+    assert "精选入场" in html and "就绪程度" in html
 
 
 def test_no_t_call_inside_attributes_in_changed_blocks() -> None:
@@ -278,7 +315,7 @@ def test_no_straight_reversal_claims_in_standout_header() -> None:
     html = _render_standout_header()
     # Positive control: the honest readiness driver IS present — proves the
     # header rendered, so the reversal-tiebreaker absence below is a real absence.
-    assert "readiness rank" in html.lower() or "就绪度排序" in html, (
+    assert "how ready" in html.lower() or "就绪程度" in html, (
         "honest readiness rank missing (absence check would be vacuous)"
     )
     # The old standfirst mentioned 'A-share reversal / relative-strength leg only as a tiebreaker'

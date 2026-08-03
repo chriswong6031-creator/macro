@@ -1,4 +1,6 @@
 {% import "_prophet_card.html.j2" as pv %}
+{% import "_decision_card.html.j2" as dc %}
+{% import "_lens.html.j2" as lens %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -3049,11 +3051,24 @@
   .anv2-board .anv2-go { font-size: 10px; opacity: .55; margin-left: 3px; }
   .anv2-board .anv2-empty { padding: 10px 13px; color: var(--muted); font-size: 11px; }
   </style>
+{{ lens.lens_css() }}
   <div class="panel span12 anv2-board" id="act-now">
+    {{ dc.dc_css() }}
     <div class="anv2-hd">
       <h2>⚡ {{ t('What to Act On Now', '现在行动') }}
         <span class="anv2-v2pill">v2</span>
-        {{ help("Four lanes, read left to right: Buy Now = a clean HK sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. HK has no validated single-stock edge — this board is sector positioning, not an allocation rule.", "四个分栏从左到右：立即买入＝今天有干净的港股板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。香港无经验证的个股优势 — 本看板用于板块定位，不是配置规则。") }}
+        {{ lens.lens(
+          kind='read', ill=lens.ILL_LANES,
+          kick=('How to read this','如何看懂'),
+          title=('Four lanes, left to right','四个分栏，从左到右'),
+          rows=[
+            {'tone':'up',   'k':('Buy now','立即买入'),        'v':('A clean HK sector entry today.','今天有干净的港股板块入场点。')},
+            {'tone':'info', 'k':('In favour','看好'),          'v':('Still good — but it has run. <b>Wait for a dip.</b>','依然看好 — 但已经涨过。<b>等回调。</b>')},
+            {'tone':'warn', 'k':('Bottoming','洗盘观察'),      'v':('Setting up near a cycle low. <b>Watch only — never a buy signal.</b>','接近周期低点并开始形成形态。<b>仅供观察 — 绝非买入信号。</b>')},
+            {'tone':'dn',   'k':('Reduce / avoid','减仓·回避'),'v':('The trend is weakening — take profits or stay away.','趋势正在转弱 — 止盈或回避。')},
+          ],
+          body=('This is a structure and risk map for sectors — not an allocation rule, and not a single-stock call.','这是板块的结构与风险图 — 不是配置规则，也不是个股建议。'),
+          receipt=('sector positioning · timed by cycle stage · re-drawn nightly','板块定位 · 按周期阶段定时机 · 每晚重绘')) }}
       </h2>
       <div class="anv2-meta">
         <span class="muted" style="font-size:11px">{{ t('sectors as of', '板块截至') }} {{ latest.date }}</span>
@@ -3159,34 +3174,61 @@
       {%- macro _hk_anrow(it, lane) -%}
       {%- set _hk_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
       <div class="anv2-row" data-rpop>
-        <span class="rp-src" hidden>
-          <div class="row-pop-hd">
-            <span class="row-pop-name">{{ td(it.name) }}</span>
-            <span class="row-pop-kind">SECTOR</span>
-            {% if it.label %}<span class="row-pop-tag {{ 'up' if it.dir == 'up' else ('dn' if it.dir == 'dn' else 'warn') }}">{{ td(it.label) }}</span>{% endif %}
-          </div>
-          <div class="row-pop-div"></div>
-          <div class="row-pop-grid">
-            {% if _hk_sc is not none and _hk_sc.get('mom20') is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom20')) }}%</span></span></div>
-            {% endif %}
-            {% if _hk_sc is not none and _hk_sc.get('mom60') is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom60')) }}%</span></span></div>
-            {% endif %}
-            {% if _hk_sc is not none and _hk_sc.get('pctile') is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile')) }}p</span></div>
-            {% endif %}
-            {% if _hk_sc is not none and _hk_sc.get('above200') is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val">{% if _hk_sc.get('above200') %}<span class="up">▲</span> {{ t('above 200d', '高于均线') }}{% else %}<span class="mut">—</span> {{ t('below 200d', '低于均线') }}{% endif %}</span></div>
-            {% endif %}
-            {% if _hk_sc is not none and _hk_sc.get('dc_day') is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">{{ _hk_sc.get('dc_day') }}{% if _hk_sc.get('dc_band') is not none %} <span class="mut">· {{ _hk_sc.get('dc_band') }}</span>{% endif %}</span></div>
-            {% endif %}
-            {% if it.days is not none %}
-            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal days</span><span class="l-zh">信号天数</span></span><span class="row-pop-val">~{{ it.days }}{{ t('d', '天') }}</span></div>
-            {% endif %}
-          </div>
-          <div class="row-pop-ft"><span>{{ latest.date }}</span></div>
+        {#- Hover decision card — the SAME component the US board uses
+            (templates/_decision_card.html.j2). HK's act-now board is sector-only,
+            so this is the sector variant: setup read, cycle metrics, one stance. -#}
+        {%- set _hk_tone = 'up' if it.dir == 'up' else ('dn' if it.dir == 'dn' else 'warn') -%}
+        {%- set _hk_stats = [] -%}
+        {%- set _hk_trust = [] -%}
+        {%- if _hk_sc is not none and _hk_sc.get('mom20') is not none -%}
+          {%- set _ = _hk_stats.append({'label': ('20d move','20日动能'), 'val': '%+.1f%%'|format(_hk_sc.get('mom20')),
+                                        'tone': 'up' if _hk_sc.get('mom20') >= 0 else 'dn', 'sub': ('vs the market','相对大盘')}) -%}
+        {%- endif -%}
+        {%- if _hk_sc is not none and _hk_sc.get('mom60') is not none -%}
+          {%- set _ = _hk_stats.append({'label': ('60d move','60日动能'), 'val': '%+.1f%%'|format(_hk_sc.get('mom60')),
+                                        'tone': 'up' if _hk_sc.get('mom60') >= 0 else 'dn', 'sub': ('vs the market','相对大盘')}) -%}
+        {%- endif -%}
+        {%- if _hk_sc is not none and _hk_sc.get('eq_badge') is not none -%}
+          {%- set _ = _hk_stats.append({'label': ('Entry','入场'), 'val': _hk_sc.get('eq_badge'),
+                                        'sub': ('timing quality','时机质量')}) -%}
+        {%- elif _hk_sc is not none and _hk_sc.get('pctile') is not none -%}
+          {%- set _ = _hk_stats.append({'label': ('Strength rank','强度排名'), 'val': '%.0f'|format(_hk_sc.get('pctile')) ~ 'p',
+                                        'sub': ('vs its own year','对比自身一年')}) -%}
+        {%- endif -%}
+        {%- if _hk_sc is not none and _hk_sc.get('above200') is not none -%}
+          {%- set _ = _hk_trust.append({'tone': 'up' if _hk_sc.get('above200') else '',
+                                        'en': ('▲ Above the 200-day' if _hk_sc.get('above200') else 'Below the 200-day'),
+                                        'zh': ('▲ 高于200日均线' if _hk_sc.get('above200') else '低于200日均线')}) -%}
+        {%- endif -%}
+        {%- set _hk_sub_en -%}
+        {%- if it.days is not none %}Signal ~{{ it.days }}d{% endif -%}
+        {%- if it.days is not none and _hk_sc is not none and _hk_sc.get('dc_day') is not none %} · {% endif -%}
+        {%- if _hk_sc is not none and _hk_sc.get('dc_day') is not none %}cycle day {{ _hk_sc.get('dc_day') }}{% endif -%}
+        {%- endset -%}
+        {%- set _hk_sub_zh -%}
+        {%- if it.days is not none %}信号约 {{ it.days }} 天{% endif -%}
+        {%- if it.days is not none and _hk_sc is not none and _hk_sc.get('dc_day') is not none %} · {% endif -%}
+        {%- if _hk_sc is not none and _hk_sc.get('dc_day') is not none %}周期第 {{ _hk_sc.get('dc_day') }} 日{% endif -%}
+        {%- endset -%}
+        {{ dc.dc_card({
+          'kind': 'sector', 'mark': '🏛', 'tone': _hk_tone,
+          'eyebrow': ('Sector pulse · ' ~ it.ticker, '板块脉搏 · ' ~ it.ticker),
+          'name': (td(it.name),),
+          'tag': (td(it.label),) if it.label else none,
+          'kicker': ('Current setup','当前形态'),
+          'read': ('Entry open today','今日入场窗口开启') if lane == 'buy'
+                  else (('Turning up from the low','自低位回升') if lane == 'bot'
+                  else (('Momentum fading','动能转弱') if lane == 'red'
+                  else ('In favour — but it has run','仍看好 — 但已上涨'))),
+          'sub': (_hk_sub_en|trim, _hk_sub_zh|trim),
+          'trust': _hk_trust, 'stats': _hk_stats,
+          'takeaway': ('A clean entry is open today.','今日入场窗口干净。') if lane == 'buy'
+                  else (('Turning up from the low — watch it, do not chase it.','自低位回升 — 观察为主，不要追。') if lane == 'bot'
+                  else (('Momentum is fading — protect gains and avoid fresh adds.','动能转弱 — 保护利润，避免加仓。') if lane == 'red'
+                  else ('Still in favour, but it has run — wait for a dip.','仍然看好，但已上涨 — 等回调。'))),
+          'foot': ('Click row for the full sector view','点击查看完整板块详情'),
+          'foot_b': (it.ticker ~ ' ↗',),
+        }) }}
         </span>
         <div class="anv2-row-top">
           <a class="anv2-name anv2-name-link" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}<span class="anv2-go" aria-hidden="true">↗</span></a>

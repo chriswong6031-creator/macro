@@ -1,0 +1,111 @@
+{#- ============================================================================
+    RICH LENS EXPLAINER — plain-word replacement for long help() paragraphs.
+
+    theme.js already ships the LENS popover (the glass card, the hover-intent, the
+    mobile bottom sheet) and reads a hidden .lens-src block for its "rich tier":
+      .lens-hd (.lens-ill disc + .lens-kick + .lens-title) → body → .lens-receipt
+    What it does NOT ship is a row grid, so the only rich tier on the site lived
+    page-locally in dashboard.html.j2 (.rlx-*). China / HK / Canada therefore had
+    no option but a wall of prose inside help(), and that is what they shipped:
+    the China act-now tip ran 110 words, the featured-shelf tip over 150, both
+    dense with study vocabulary.
+
+    DESIGN_DOCTRINE §1 puts hover on Tier 2: "≤ ~80 words per tip; structured
+    (label: value) beats prose", and §Law 5 puts the receipt — n, windows, weights,
+    study IDs — on its own line rather than in the body. lens() is that shape:
+    a titled card, up to a few label:value rows in plain words, and one dashed
+    receipt line carrying every number the body no longer has to explain.
+
+    Usage — every text argument is an (english, chinese) tuple:
+
+      {{ lens.lens(
+           kind='read',
+           ill=lens.ILL_LANES,
+           kick=('How to read this','如何看懂'),
+           title=('Four lanes, left to right','四个分栏，从左到右'),
+           rows=[{'tone':'up', 'k':('Buy now','立即买入'),
+                                'v':('A clean entry point today.','今天有干净的入场点。')}],
+           body=('One closing sentence.','一句收尾。'),
+           receipt=('themes 0-100 · updated nightly','主题0-100分 · 每晚更新')) }}
+
+    `kind` tints the card and the icon disc: define | read | record | source |
+    caution (theme.js maps each to a --lens-accent).
+============================================================================ -#}
+
+{#- ── Icon set. Line art at 24px, currentColor, no fills except deliberate dots. ── -#}
+{%- set ILL_LANES -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h5M4 12h9M4 18h4"/><path d="M17 9l3 3-3 3"/></svg>{%- endset -%}
+{%- set ILL_QUAD -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 3.5v17M3.5 12h17"/><circle cx="16.2" cy="7.8" r="1.6" fill="currentColor" stroke="none"/></svg>{%- endset -%}
+{%- set ILL_DIAL -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 16a8 8 0 0116 0"/><path d="M12 16l4.6-3.4"/><circle cx="12" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg>{%- endset -%}
+{%- set ILL_RADAR -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><path d="M12 12l6-4.2"/></svg>{%- endset -%}
+{%- set ILL_SHELF -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>{%- endset -%}
+
+{%- macro lens_css() -%}
+  <style id="lensx-css">
+  /* Row grid for the rich LENS card. Scoped .lensx-* so it can never collide with
+     dashboard.html.j2's page-local .rlx-* set. Colours resolve through the same
+     --lens-* chain theme.js defines on .lens-pop, so vector-family pages (own
+     token names, no theme.css) inherit correctly. */
+  .lensx-rows{display:grid;gap:9px;margin:2px 16px 13px}
+  .lensx-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline}
+  .lensx-k{
+    display:flex;align-items:baseline;gap:6px;white-space:nowrap;
+    font:700 9px/1.5 var(--font-ui,Inter,sans-serif);letter-spacing:.09em;text-transform:uppercase;
+    color:color-mix(in srgb,var(--lens-accent,#5b9bf0) 80%,var(--lens-text,#d7dce3));
+  }
+  .lensx-k::before{
+    content:"";flex:none;width:6px;height:6px;border-radius:50%;
+    background:currentColor;transform:translateY(-1px);
+  }
+  .lensx-row.up   .lensx-k{color:var(--up,#3da564)}
+  .lensx-row.info .lensx-k{color:var(--info,var(--link,#5b9bf0))}
+  .lensx-row.warn .lensx-k{color:var(--warn,#e0a030)}
+  .lensx-row.dn   .lensx-k{color:var(--down,#d3455b)}
+  .lensx-v{
+    font:450 11.5px/1.52 var(--font-ui,Inter,sans-serif);
+    color:color-mix(in srgb,var(--lens-text,#d7dce3) 86%,var(--lens-mut,#8b93a1));
+  }
+  .lensx-v b{font-weight:650;color:var(--lens-text,#d7dce3)}
+  /* the closing sentence sits under the rows, quieter than them */
+  .lens-pop .lensx-note{
+    margin:0 16px 13px;padding-top:11px;
+    border-top:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 11%,transparent);
+    font:450 11.5px/1.55 var(--font-ui,Inter,sans-serif);
+    color:color-mix(in srgb,var(--lens-text,#d7dce3) 80%,var(--lens-mut,#8b93a1));
+  }
+  .lens-pop .lensx-note b{font-weight:650;color:var(--lens-text,#d7dce3)}
+  @media(max-width:640px){
+    .lensx-row{grid-template-columns:minmax(0,1fr);gap:2px}
+  }
+  </style>
+{%- endmacro -%}
+
+{%- macro _p(v) -%}
+{%- if v is string -%}{{ v }}
+{%- elif v -%}<span class="l-en">{{ v[0] }}</span><span class="l-zh">{{ v[1] if v|length > 1 and v[1] else v[0] }}</span>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro lens(kick, title, body=none, rows=[], receipt=none, kind='define', ill='') -%}
+<span class="lens-q" data-lens-kind="{{ kind }}" tabindex="0" role="button"
+      aria-label="{{ title[0] if title else 'Explain' }} — what this means">?<span class="lens-src" data-lens-kind="{{ kind }}" hidden>
+  <div class="lens-hd">
+    <span class="lens-ill">{{ ill }}</span>
+    <span class="lens-hgroup">
+      <span class="lens-kick">{{ _p(kick) }}</span>
+      <span class="lens-title">{{ _p(title) }}</span>
+    </span>
+  </div>
+  {%- if rows %}
+  <div class="lensx-rows">
+    {%- for r in rows %}
+    <div class="lensx-row {{ r.get('tone') or '' }}">
+      <span class="lensx-k">{{ _p(r.get('k')) }}</span>
+      <span class="lensx-v">{{ _p(r.get('v')) }}</span>
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+  {%- if body %}<div class="{{ 'lensx-note' if rows else 'lens-body' }}">{{ _p(body) }}</div>{% endif %}
+  {%- if receipt %}<div class="lens-receipt">{{ _p(receipt) }}</div>{% endif %}
+</span></span>
+{%- endmacro -%}

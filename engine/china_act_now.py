@@ -165,12 +165,20 @@ def _blank_row(kind: str, id_: str, name: str, name_zh: str | None = None) -> di
         "organ_state": None,
         "organ_chip_en": None,
         "organ_chip_zh": None,
+        # Hover decision-card fields (2026-08-02 US parity). The US board's theme
+        # popover shows breadth + leaders + a leadership read; theme_intel already
+        # carries all three, they were simply never lifted onto the lane row.
+        "breadth_pct50": None,
+        "leadership": None,        # 'broad' | 'narrow' | ... (theme_intel.leadership.breadth)
+        "leaders_en": None,        # "Ecovacs · Haier Smart Home · Midea"
+        "leaders_zh": None,        # "科沃斯 · 海尔智家 · 美的集团"
+        "n_members": None,
         # detail-page href (site-root-relative); None when page absent or id empty
         "href": None,
     }
 
 
-def _theme_row(item: dict, themes_by_id: dict) -> dict:
+def _theme_row(item: dict, themes_by_id: dict, member_names: dict | None = None) -> dict:
     """Build a LaneRow from a theme act_now item (buy/add_on_pullback/reduce)."""
     tid = item.get("id") or ""
     row = _blank_row("THEME", tid, item.get("name", tid), item.get("name_zh"))
@@ -186,6 +194,21 @@ def _theme_row(item: dict, themes_by_id: dict) -> dict:
     row["rel20"] = p20.get("rel")
     p5 = perf.get("5d") or {}
     row["rel5"] = p5.get("rel")
+    # ── hover decision-card enrichment (US parity, 2026-08-02) ───────────────
+    breadth = td.get("breadth") or {}
+    row["breadth_pct50"] = breadth.get("pct50")
+    row["n_members"] = td.get("n_members") or breadth.get("n")
+    leadership = td.get("leadership") or {}
+    row["leadership"] = leadership.get("breadth")
+    top = [m for m in (leadership.get("top") or []) if m.get("ticker")][:3]
+    if top:
+        names = member_names or {}
+        row["leaders_en"] = " · ".join(
+            (names.get(m["ticker"], (None, None))[0] or m["ticker"]) for m in top
+        )
+        row["leaders_zh"] = " · ".join(
+            (names.get(m["ticker"], (None, None))[1] or m["ticker"]) for m in top
+        )
     return row
 
 
@@ -223,6 +246,7 @@ def assemble_act_now(
     cycle_rows: list[dict] | None,
     basket_turn: dict | None = None,
     ths_baskets: dict | None = None,
+    member_names: dict | None = None,
     href_exists: "((str) -> bool) | None" = None,
 ) -> dict[str, Any]:
     """Assemble the four-lane Act-Now v2 board.
@@ -270,20 +294,20 @@ def assemble_act_now(
 
         # buy lane: clean-entry accumulate/enter
         for item in an.get("buy") or []:
-            row = _theme_row(item, themes_by_id)
+            row = _theme_row(item, themes_by_id, member_names)
             buy_now.append(row)
         # themes sorted by score desc (already in theme_scoring order, but enforce)
         buy_now.sort(key=lambda r: -(r["score"] or 0))
 
         # wait_pullback: add_on_pullback (no clean entry)
         for item in an.get("add_on_pullback") or []:
-            row = _theme_row(item, themes_by_id)
+            row = _theme_row(item, themes_by_id, member_names)
             wait_pullback.append(row)
         wait_pullback.sort(key=lambda r: -(r["score"] or 0))
 
         # reduce_avoid: trim/avoid themes
         for item in an.get("reduce") or []:
-            row = _theme_row(item, themes_by_id)
+            row = _theme_row(item, themes_by_id, member_names)
             reduce_avoid.append(row)
         # reduce sorted asc (worst/lowest score first)
         reduce_avoid.sort(key=lambda r: (r["score"] or 0))
@@ -543,6 +567,44 @@ def load_theme_intel(baskets_json_path: str | None) -> dict | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("Failed to load theme_intel from %s: %s", baskets_json_path, exc)
         return None
+
+
+def load_member_names(baskets_json_path: str | None) -> dict:
+    """symbol -> (english, chinese) display names — returns {} on any failure.
+
+    theme_intel.leadership.top carries bare symbols ("603486.SS"), and a raw
+    machine slug is banned from user-facing copy (DESIGN_DOCTRINE Law 2) — it also
+    tells a reader nothing. The basket member rows already hold both names: the
+    Chinese in `name`, the English at the head of `rationale`
+    ("Ecovacs — robot vacuums / smart home (科沃斯)").
+    """
+    if not baskets_json_path:
+        return {}
+    try:
+        import json
+        from pathlib import Path
+        p = Path(baskets_json_path)
+        if not p.exists():
+            return {}
+        with open(p) as f:
+            d = json.load(f)
+        out: dict[str, tuple[str | None, str | None]] = {}
+        for b in d.get("baskets") or []:
+            for m in b.get("members") or []:
+                sym = m.get("symbol")
+                if not sym or sym in out:
+                    continue
+                zh = m.get("name") or None
+                en = None
+                rat = m.get("rationale") or ""
+                if rat:
+                    # "Ecovacs — robot vacuums / smart home (科沃斯)" -> "Ecovacs"
+                    en = rat.split(" — ")[0].split(" - ")[0].strip() or None
+                out[sym] = (en or zh, zh or en)
+        return out
+    except Exception as exc:  # noqa: BLE001 — enrichment only, never fatal
+        log.warning("Failed to load member names from %s: %s", baskets_json_path, exc)
+        return {}
 
 
 def load_cycle_rows(forward_log_path: str | None) -> list[dict] | None:

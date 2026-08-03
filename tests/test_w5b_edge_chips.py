@@ -25,7 +25,7 @@ import re
 from pathlib import Path
 
 import pytest
-from jinja2 import DictLoader, Environment
+from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 CHINA_TMPL_SRC = (ROOT / "templates" / "china.html.j2").read_text()
@@ -91,8 +91,22 @@ def _render_stocks_header(setups, mode="stocks"):
     mode_open = "{% if mode == 'stocks' %}"
     mode_close = "{% endif %}"
     snippet = mode_open + "\n" + chip_block + "\n" + mode_close
-    full = macros + snippet
-    env = Environment(loader=DictLoader({"tmpl": full}), autoescape=False)
+    # Mirror the imports china.html.j2 carries at file top — they sit OUTSIDE
+    # every snippet sliced here, so without them {{ lens.lens(...) }} renders
+    # against Undefined. The FileSystemLoader fallback resolves the real
+    # partials, so a future {% import %} never breaks this harness again.
+    full = (
+        '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
+    ) + macros + snippet
+    env = Environment(
+        loader=ChoiceLoader([
+            DictLoader({"tmpl": full}),
+            FileSystemLoader(str(ROOT / "templates")),
+        ]),
+        autoescape=False,
+    )
     env.globals.update(td=i18n.td, t=i18n.t, tr=i18n.tr)
 
     return env.get_template("tmpl").render(
@@ -200,13 +214,23 @@ def test_t8_no_affirmative_validated_text_in_chip():
 
 
 def test_t9_help_tooltip_not_empty():
-    """T9: help tooltip (tip span) must not be empty."""
+    """T9: the risk-backdrop explainer must carry content.
+
+    The CN drawdown-radar tip moved from the plain help() bubble to the rich LENS
+    tier on 2026-08-02 (a 60-word jargon paragraph became a titled card with the
+    study vocabulary demoted to the receipt line), so the markup is now
+    .lens-src rather than .tip. The invariant is unchanged: the explainer must not
+    be empty, and it must still say what the radar does and what it does not do.
+    """
     setups = {"sleeve_chip": _sleeve_chip("caution"), "buy": [], "ripening": [], "ran": []}
     html = _render_stocks_header(setups)
-    # help renders as <span class='tip'>...</span>
-    tip_match = re.search(r"class='tip'>(.*?)</span>", html, re.DOTALL)
-    assert tip_match is not None, "help tip span not found in chip area"
-    assert tip_match.group(1).strip(), "help tooltip is empty"
+    assert 'class="lens-src"' in html, "lens explainer payload not found in chip area"
+    body = html[html.index('class="lens-src"'):]
+    assert body.strip(), "lens explainer is empty"
+    assert "lens-title" in body, "lens explainer has no title"
+    assert "lens-receipt" in body, "lens explainer has no receipt line"
+    # The honest half of the read: it is context, it does not veto a name.
+    assert "never removes a name" in body, "radar explainer dropped its no-veto disclosure"
 
 
 def test_t10_no_cjk_in_html_attributes_added_section():
