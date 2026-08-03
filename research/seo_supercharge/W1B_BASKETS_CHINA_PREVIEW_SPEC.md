@@ -563,3 +563,25 @@ and the same question will recur on `hk.html` and `etfs.html`. If the orchestrat
 free stance, the cheapest honest one is a single plain sentence derived from breadth alone
 (M6) — e.g. "More than half the market is above its 50-day line." That needs no graded input
 and would give the free page a real read. **Not specified here; raising it as an option.**
+
+## §8 Commissioner rulings (Fable, 2026-08-03) — binding on the build
+
+- **T1 RULED — neutral slice stands.** The spec's first-two-per-category
+  alphabetical slice is adopted; the commissioning brief's "top-N by default
+  sort" is overruled (it would preview the ranked head, which the ratified
+  pattern forbids).
+- **T2 RULED — Score column dropped from the free build.** Never lock-iconed
+  per row.
+- **T3 RULED — the VALIDATED EDGE card stays walled.** Standing note: if any
+  later wave un-walls it, the "validated" wording must first clear the
+  check_validated_claims CI guard and the promotion-gauntlet law — expect a
+  rename, not an exemption.
+- **T4 RULED — impulse/extremes COUNTS stay free.** They are how-the-market-
+  traded context, not graded output; consistent with the organizing principle.
+- **T5 RULED — add the honest stance line.** The free page carries ONE
+  plain-words sentence derived from breadth data alone (no graded inputs),
+  bilingual, e.g. EN "Breadth is firming — more baskets rising than falling
+  this week. The graded entry reads are member content." / zh equivalent in
+  natural product Chinese. This satisfies Doctrine Law 1 without leaking
+  signal authority, and is the standing recipe for hk.html/etfs.html
+  conversions.
