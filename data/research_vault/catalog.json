@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T18:06:27.763644+00:00",
-  "count": 680,
+  "generated_at": "2026-08-03T18:36:30.442858+00:00",
+  "count": 681,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -169,6 +169,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-csgfjxdrqxp-2b05ba",
+      "title": "MUFG (8306)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:45Z",
+      "summary_points": [
+        "**1Q Profit Surge**: ¥809.0bn net business profit (+49% YoY) driven by fund demand, spread expansion, and market-related revenues above consensus.",
+        "**Capital Adequacy Risk**: CET1 growth may not reach 9.5% due to AOCI expansion despite unchanged FY3/27 guidance (policy rate 1.0%).",
+        "**Valuation Gap & Momentum**: Target price ¥4,000 (vs.",
+        "3,567 close) with 67.7% 12m absolute return vs TOPIX (24.9%), highlighting strong bullish momentum.",
+        "**Downside Risks**: Global economic deterioration, credit cycle weakening, and weak capital markets critical for risk management."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
