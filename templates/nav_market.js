@@ -123,6 +123,7 @@
   MOCKUP_ICON_PATHS.smart_money = '<rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/>';
   MOCKUP_ICON_PATHS.fund_flows = '<path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/>';
   MOCKUP_ICON_PATHS.macro_weather = '<circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/>';
+  MOCKUP_ICON_PATHS.earnings_wire = '<path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/>';
 
   var MOCKUP_TONE_BY_ICON = {
     stocks: 'cyan', sectors: 'violet', rotation: 'violet', alerts: 'cyan',
@@ -137,6 +138,7 @@
     'intelligence_hub.html': ['intelligence_hub', ''],
     'reports.html': ['reports', ''],
     'research_vault.html': ['vault', 'violet'],
+    'earnings_wire': ['earnings_wire', 'cyan'],
     'neural_web.html': ['neural', 'cyan'],
     'foresight.html': ['foresight', ''],
     'state_of_themes.html': ['theme_tracker', 'violet'],
@@ -158,6 +160,7 @@
     'intelligence_hub.html': 'Your complete market command center',
     'reports.html': 'Deep dives and market calls',
     'research_vault.html': 'Search every published research note',
+    'earnings_wire': 'Verified calls, weekly intelligence and company context',
     'neural_web.html': 'See how every signal votes',
     'foresight.html': 'Themes before markets price them',
     'state_of_themes.html': 'What’s strengthening and fading now',
@@ -385,6 +388,8 @@
   };
 
   function fileOf(a) {
+    var declared = a && a.getAttribute ? (a.getAttribute('data-nav-file') || '') : '';
+    if (declared) return declared.toLowerCase();
     var h = a && a.getAttribute ? (a.getAttribute('href') || '') : '';
     return h.split('?')[0].split('#')[0].split('/').pop().toLowerCase();
   }
@@ -518,9 +523,50 @@
      same exact component emitted by _navlinks.html.j2.  This is a compatibility
      bridge only: it adds the approved classes and replaces the old mask glyphs
      with the mockup's inline drawings; it does not maintain a second design. */
+  function ensureEarningsWireCard(menu) {
+    // The shared runtime can reach production before every page is re-rendered.
+    // Keep older Research menus useful until their static navigation catches up.
+    if (menu.querySelector('[data-nav-file="earnings_wire"]')) return;
+
+    var main = menu.querySelector(':scope > .nav-mega-main');
+    if (!main) return;
+    var sections = main.querySelectorAll(':scope > .nav-mega-section');
+    var grid = null;
+    for (var i = 0; i < sections.length; i++) {
+      var heading = sections[i].querySelector(':scope > .nav-mega-h');
+      if (!heading || !/(?:Core Research|核心研究)/.test(heading.textContent || '')) continue;
+      grid = sections[i].querySelector(':scope > .nav-mega-item-grid');
+      if (grid) break;
+    }
+    if (!grid) return;
+
+    var dropdown = menu.closest ? menu.closest('.nav-dd') : null;
+    var item = document.createElement('a');
+    item.className = 'mega-item nm-feat';
+    item.setAttribute('data-nav-file', 'earnings_wire');
+    item.href = (dropdown ? prefixOf(dropdown) : '') + 'stocks/earnings/index.html';
+    item.innerHTML = '<span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48">' +
+      MOCKUP_ICON_PATHS.earnings_wire +
+      '</svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span>' +
+      '<span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span>' +
+      '<span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span>';
+
+    var next = null;
+    var cards = grid.querySelectorAll(':scope > a');
+    for (var j = 0; j < cards.length; j++) {
+      if (fileOf(cards[j]) === 'fundamental_forensics.html') {
+        next = cards[j];
+        break;
+      }
+    }
+    grid.insertBefore(item, next);
+  }
+
   function enhanceResearchMenu(links) {
     var menu = links && links.querySelector('.nav-dd-menu.nav-mega');
-    if (!menu || menu.getAttribute('data-mockup-exact') === '1') return;
+    if (!menu) return;
+    ensureEarningsWireCard(menu);
+    if (menu.getAttribute('data-mockup-exact') === '1') return;
     menu.setAttribute('data-mockup-exact', '1');
     menu.classList.add('mega-menu');
 

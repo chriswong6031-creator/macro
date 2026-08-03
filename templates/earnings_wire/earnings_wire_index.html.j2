@@ -33,6 +33,15 @@
   </div>
 </section>
 
+{% if latest_week %}
+<section class="ew-weekly-bridge" aria-labelledby="weekly-bridge-title">
+  <div class="ew-wrap">
+    <div><span>{{ t('Weekly intelligence', '每周情报') }}</span><h2 id="weekly-bridge-title">{{ t('See the pattern across calls.', '查看跨电话会的模式。') }}</h2><p>{{ latest_week.coverage.call_records }} {{ t('verified call records', '份已核验电话会记录') }} · {{ latest_week.coverage.exact_facts }} {{ t('exact facts', '条精确事实') }} · {{ latest_week.week_start }} → {{ latest_week.week_end }}</p></div>
+    <a href="weekly/{{ latest_week.week_start }}.html"><span>{{ t('Open this week’s evidence brief', '打开本周证据简报') }}</span><b>{{ latest_week.category_pulse[0].category|replace('_', ' ') if latest_week.category_pulse else t('Evidence pulse', '证据脉冲') }}</b><i aria-hidden="true">↗</i></a>
+  </div>
+</section>
+{% endif %}
+
 <section class="ew-directory" aria-labelledby="wire-directory-heading">
   <div class="ew-wrap">
     <div class="ew-section-head">

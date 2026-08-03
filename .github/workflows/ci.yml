@@ -2336,20 +2336,28 @@ on:
       # refresh tests run in the publish-r2-client pack; list every source and
       # test half so a workflow-only/test-only edit cannot evade that proof.
       #
-      # The public product has two additional release surfaces: the bounded API
-      # + ticker dossier, and the deterministic earnings wire.  Name their
-      # subjects explicitly even where a broad engine/templates/site glob also
-      # matches them.  That keeps the release-audit reachability contract
-      # reviewable and prevents a future narrowing of those globs from making
-      # either product face ship without its focused pack.
+      # The product has three additional release surfaces: the bounded API +
+      # ticker dossier, the deterministic earnings wire, and the protected
+      # receipt-bound context projection consumed by Brain/Prophet. Name their
+      # subjects explicitly even where broad engine/templates globs also match.
+      # Their focused tests run in unrun-publish-ops and the Prophet pack below.
       - "app/company_intelligence.py"
+      - "app/earnings.py"
       - "tests/test_company_intelligence_api.py"
       - "site/assets/js/company-intelligence-dossier.js"
       - "templates/ticker.html.j2"
       - "engine/earnings_narrative/public_wire.py"
+      - "engine/earnings_narrative/context_packets.py"
+      - "engine/earnings_narrative/private_publication.py"
+      - "engine/neuralweb/earnings_context_reader.py"
+      - "engine/prophet_bridge.py"
       - "scripts/build_earnings_public_wire.py"
+      - "scripts/publish_earnings_private_store.py"
       - "templates/earnings_wire/**"
       - "tests/test_earnings_public_wire.py"
+      - "tests/test_earnings_api.py"
+      - "tests/test_earnings_private_store.py"
+      - "tests/test_prophet_bridge.py"
       - "engine/company_intelligence/**"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
@@ -2524,6 +2532,8 @@ on:
       - "tests/test_seo_foundation.py"
       - "tests/test_signal_contracts_wiring.py"
       - "tests/test_signal_sanity.py"
+      - "tests/test_earnings_worker_launchd.py"
+      - "tests/test_earnings_worker_terminal.py"
       - "tests/test_ticker_dossier_render_lane.py"
       - "tests/test_ticker_pages.py"
       - "tests/test_ts_u1_session_date.py"
@@ -2533,6 +2543,9 @@ on:
       - "tests/test_world_state_migrations.py"
       - "scripts/backfill_qledger_us.py"
       - "scripts/build_impulse.py"
+      - "ops/bootstrap_earnings_worker.sh"
+      - "ops/launchd/com.mastermind.earnings-worker.plist"
+      - "ops/launchd/run_earnings_worker.sh"
       - "scripts/build_intelligence.py"
       - "scripts/build_radar_plus.py"
       - "scripts/build_sector_cycles.py"

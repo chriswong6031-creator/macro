@@ -5,13 +5,29 @@
 # under its already-gitignored data/earnings_calls/ directory and is transported
 # through R2 by tools/earnings_worker/run_worker.py. Secrets are deliberately not
 # read here: the LaunchAgent invokes this through run_with_env.sh and points that
-# wrapper at /Users/chriswong/flow-ops-wt/.env.
+# wrapper at the durable /Users/chriswong/hub-ops-wt/.env secret source.
 set -euo pipefail
 
 OPS_ROOT="${EARNINGS_OPS_ROOT:-/Users/chriswong/earnings-ops-wt}"
 PYTHON="${EARNINGS_PYTHON:-/Users/chriswong/earnings-venv/bin/python}"
 REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/chriswong6031-creator/macro.git}"
-PROVIDER_ORDER="${EARNINGS_PROVIDER_ORDER:-deepseek}"
+LOCAL_LLM_BASE_URL="${EARNINGS_LLM_BASE_URL:-}"
+LOCAL_LLM_MODEL="${EARNINGS_LLM_MODEL:-}"
+if { [ -n "$LOCAL_LLM_BASE_URL" ] && [ -z "$LOCAL_LLM_MODEL" ]; } || \
+   { [ -z "$LOCAL_LLM_BASE_URL" ] && [ -n "$LOCAL_LLM_MODEL" ]; }; then
+  echo "ERROR: EARNINGS_LLM_BASE_URL and EARNINGS_LLM_MODEL must be configured together" >&2
+  exit 1
+fi
+if [ -n "${EARNINGS_PROVIDER_ORDER:-}" ]; then
+  PROVIDER_ORDER="$EARNINGS_PROVIDER_ORDER"
+elif [ -n "$LOCAL_LLM_BASE_URL" ]; then
+  # Qwen becomes primary only after the operator has provisioned a reachable
+  # Ubuntu/LAN endpoint. DeepSeek remains the bounded automatic fallback.
+  PROVIDER_ORDER="openai_compat,deepseek"
+else
+  # Never burn two 120-second localhost retries when no local endpoint exists.
+  PROVIDER_ORDER="deepseek"
+fi
 RUNTIME_ROOT="${EARNINGS_RUNTIME_ROOT:-/Users/chriswong/earnings-runtime}"
 LOCK_DIR="${EARNINGS_LOCK_DIR:-/tmp/mm_earnings_worker.lock}"
 POST_UPDATE=0
