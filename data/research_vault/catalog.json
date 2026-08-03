@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T16:51:16.827761+00:00",
-  "count": 676,
+  "generated_at": "2026-08-03T17:06:18.343789+00:00",
+  "count": 677,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -87,6 +87,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4xoz2ba562w-b131ba",
+      "title": "Taylor Wimpey (TW.L) Margin compression and downgraded shareholder returns, Maintain Sell",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:04:03Z",
+      "summary_points": [
+        "**Sell rating with margin compression and pricing/volume pressure**: PBT estimates down 5-9% (lower gross margins, higher operating expenses), PT cut to 69p (-12% downside), pricing contraction (-2.0%), completions mix below 1.0% guidance.",
+        "**Valuation Metrics**: Trades at +1.3 s.d.",
+        "vs LT EPS average and -1.7 s.d.",
+        "vs LT P/B average, with EPS expected to decline 36% by Dec-26, signaling significant overvaluation.",
+        "**PBT Estimate Downgrade & Consensus Gap**: Profit before tax estimates revised -5% to -9%, 2026 PBT 7% below consensus, reflecting weak fundamentals and pricing pressures in London/Southern operations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
