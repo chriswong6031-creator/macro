@@ -2,8 +2,8 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-03",
-  "generated_at": "2026-08-03T22:32:56+00:00",
+  "as_of": "2026-08-02",
+  "generated_at": "2026-08-03T23:24:49+00:00",
   "hero": {
     "asset": "BTC-USD",
     "price": 63718.76,
