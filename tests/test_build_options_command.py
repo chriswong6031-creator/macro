@@ -2867,3 +2867,39 @@ def test_flow_canvases_repaint_on_reactivation_and_themechange(page):
     assert "document.addEventListener('themechange'" in page
     # premium preset re-arms its ordering (MA-1) — the chip is a sort, not a filter
     assert "if(scPreset === 'premium') scSort = scSortDefault();" in page
+
+
+@_needs_node
+def test_workspace_reads_the_gex_stubs_search_param_contract(page):
+    """W1.6-B reviewer finding 1 (MAJOR): the gex redirect stub emits
+    options.html?t=SYM#ticker, and tests pinned only the PRODUCER half —
+    deleting the workspace's two-line ?t= reader left every suite green while
+    every legacy gex.html#SYM bookmark would silently land on the default
+    ticker. This executes the real boot with the stub's exact output shape and
+    asserts the workspace fetches the carried symbol, not the default."""
+    driver = """
+    function el(){ return { innerHTML: '', classList: { toggle: function(){} },
+                            setAttribute: function(){}, addEventListener: function(){} }; }
+    var els = {};
+    var document = { querySelectorAll: function(){ return []; },
+                     getElementById: function(id){
+                       if(!/^mode-|^oew-tk-body$|^oew-clock$/.test(id)) return null;
+                       return els[id] || (els[id] = el());
+                     },
+                     addEventListener: function(){} };
+    var location = { hash: '#ticker', search: '?t=NVDA' };
+    var history = { replaceState: function(){} };
+    var fetched = [];
+    var fetch = function(url){ fetched.push(String(url)); return Promise.reject(new Error('no net in test')); };
+    var window = { addEventListener: function(){} };
+    """ + _extract_workspace_script(page) + """
+    console.log(JSON.stringify({ fetched: fetched }));
+    })();
+    """
+    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr[-2000:]
+    res = _json.loads(out.stdout.strip().splitlines()[-1])
+    assert any("gex/NVDA.json" in u for u in res["fetched"]), \
+        f"boot with ?t=NVDA#ticker did not fetch NVDA — the stub contract's consumer half is gone (fetched: {res['fetched']})"
+    assert not any("gex/SPY.json" in u for u in res["fetched"]), \
+        "boot fetched the DEFAULT ticker alongside/instead of the ?t= symbol"

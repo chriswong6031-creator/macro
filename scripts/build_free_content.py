@@ -343,8 +343,11 @@ def _validate(fm: dict[str, Any], path: Path, all_slugs: frozenset[str]) -> None
                 slugs = [slugs]
             for entry in slugs:
                 href = entry.get("href", "") if isinstance(entry, dict) else str(entry)
-                if href not in _URL_MAP and not (
-                    _LIVE_SITE_DIR / href.lstrip("/")
+                # a #fragment routes inside the destination page (e.g. the
+                # options workspace's mode tabs) — existence is a path question
+                base = href.split("#", 1)[0]
+                if base not in _URL_MAP and not (
+                    _LIVE_SITE_DIR / base.lstrip("/")
                 ).exists():
                     raise ValueError(
                         f"{path}: related.live href '{href}' not in §1 URL map and "
@@ -373,10 +376,11 @@ def _validate(fm: dict[str, Any], path: Path, all_slugs: frozenset[str]) -> None
     cta = fm.get("cta")
     if cta:
         href = cta.get("href", "") if isinstance(cta, dict) else str(cta)
+        base = href.split("#", 1)[0]  # fragments route inside the page
         if (
-            href not in _URL_MAP
+            base not in _URL_MAP
             and href not in _ALLOWED_EXTERNAL_CTAS
-            and not (_LIVE_SITE_DIR / href.lstrip("/")).exists()
+            and not (_LIVE_SITE_DIR / base.lstrip("/")).exists()
         ):
             raise ValueError(
                 f"{path}: cta.href '{href}' not in §1 URL map, the application "

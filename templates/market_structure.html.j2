@@ -421,8 +421,8 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
   <span class="eyebrow">5</span>
   <h2>{{ t('Vol weather', '波动率天气') }}</h2>
   <span class="help">?<span class="tip">
-    <span class="l-en">RV21: 1-month realized vol. RV63: 3-month. When RV21 &gt; RV63, fast vol above slow baseline = "stress building". VIX curve slope = M6 − M1 (positive = contango; negative = backwardation/stress). The whole-market vol read with the published track record lives in the Options workspace's console — this panel is context only.</span>
-    <span class="l-zh">RV21：1个月已实现波动率。RV63：3个月版本。RV21&gt;RV63时，短期超长期=压力积累。VIX曲线斜率=M6−M1（正值=期货升水；负值=现货升水/压力）。有公开跟踪记录的整体波动率读数在期权工作台的控制台，本面板仅为参考。</span>
+    <span class="l-en">RV21: 1-month realized vol. RV63: 3-month. When RV21 &gt; RV63, fast vol above slow baseline = "stress building". VIX curve slope = M6 − M1 (positive = contango; negative = backwardation/stress). The whole-market vol read lives in the Options workspace's console — this panel is context only.</span>
+    <span class="l-zh">RV21：1个月已实现波动率。RV63：3个月版本。RV21&gt;RV63时，短期超长期=压力积累。VIX曲线斜率=M6−M1（正值=期货升水；负值=现货升水/压力）。整体波动率读数在期权工作台的控制台，本面板仅为参考。</span>
   </span></span>
 </div>
 
@@ -440,7 +440,7 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
       {% if vol.rv21 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv21|float * 100) }}%</b>{{ t('1-month vol', '1个月波动率') }}</div>{% endif %}
       {% if vol.rv63 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv63|float * 100) }}%</b>{{ t('3-month vol', '3个月波动率') }}</div>{% endif %}
     </div>
-    <div class="sec-foot" style="margin-top:8px"><a href="options.html">{{ t('Options — the workspace', '期权工作台') }}</a></div>
+    <div class="sec-foot" style="margin-top:8px"><a href="options.html">{{ t('Options workspace → the whole-market vol console', '期权工作台 → 整体波动率控制台') }}</a></div>
   </div>
 
   <div class="panel">

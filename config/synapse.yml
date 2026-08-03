@@ -5795,7 +5795,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
-      - templates/flow_desk.html.j2
+      - templates/options.html.j2
     external_consumers: []
     notes: >
       Latest-day cohort snapshot + 10-session sparkline arrays for the Cohorts strip
@@ -14044,7 +14044,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
-      - templates/flow_leaders.html.j2
+      - templates/options.html.j2
       - engine/pick_lab/candidates.py
     external_consumers: []
     notes: >

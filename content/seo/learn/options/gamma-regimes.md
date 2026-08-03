@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/charm-and-time-drift]
   live:
-    - {href: /gex.html, label: "GEX regime chip & positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — regime read & positioning"}
 cta: {href: /learn/options/charm-and-time-drift.html, label: "Next lesson: charm and vanna, the second-order mechanics"}
 ---
 <div class="callout lead">

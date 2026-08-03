@@ -51,13 +51,13 @@
 <title>The Options Desk Moved — MastermindX</title>
 <meta name="robots" content="noindex,follow">
 <meta http-equiv="refresh" content="0;url=options.html#ticker">
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0f16;color:#edf0f7;font:15px/1.5 system-ui,sans-serif}main{width:min(560px,calc(100% - 40px));padding:32px;border:1px solid #2a3040}h1{margin:0 0 10px;font-size:25px}p{color:#aab1c1}a{color:#8e97c8}</style>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0f16;color:#edf0f7;font:15px/1.5 system-ui,sans-serif}main{width:min(560px,calc(100% - 40px));padding:32px;border:1px solid #2a3040}h1{margin:0 0 10px;font-size:25px}h1 .zh{display:block;font-size:19px;font-weight:600;margin-top:4px}p{color:#aab1c1}a{color:#8e97c8}</style>
 </head>
 <body>
 <main>
-<h1>This desk moved into the Options workspace</h1>
+<h1>This desk moved into the Options workspace<span class="zh">本面板已并入期权工作台</span></h1>
 <p>It now lives as the Ticker view of one consolidated page. You are being taken there — your symbol carries over.</p>
-<p>本面板已并入期权工作台，现在是统一页面中的「个股」视图，正在为你跳转（标的会一并带过去）。</p>
+<p>它现在是统一页面中的「个股」视图，正在为你跳转（标的会一并带过去）。</p>
 <p><a id="go" href="options.html#ticker">Open the workspace → / 打开期权工作台 →</a></p>
 </main>
 <script>
@@ -70,6 +70,10 @@
   if (/^[A-Za-z0-9.\-]{1,10}$/.test(h) && !/^(brief|flow|scanner|ticker|leaders)$/i.test(h)) {
     dest = 'options.html?t=' + encodeURIComponent(h.toUpperCase()) + '#ticker';
     var a = document.getElementById('go'); if (a) a.href = dest;
+    /* keep the declarative fallback on the SAME destination — the meta timer
+       only fires after full load, but the two paths must never diverge */
+    var m = document.querySelector('meta[http-equiv="refresh"]');
+    if (m) m.setAttribute('content', '0;url=' + dest);
   }
   location.replace(dest);
 })();

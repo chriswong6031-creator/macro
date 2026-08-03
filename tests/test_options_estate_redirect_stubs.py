@@ -80,10 +80,12 @@ def _drive(rendered: str, hash_: str = "") -> dict:
     harness = (
         "var __calls = [];\n"
         "var __anchor = { href: null };\n"
+        "var __meta = { content: null, setAttribute: function (k, v) { if (k === 'content') this.content = v; } };\n"
         f"var location = {{ hash: {json.dumps(hash_)}, replace: function (u) {{ __calls.push(u); }} }};\n"
-        "var document = { getElementById: function (id) { return id === 'go' ? __anchor : null; } };\n"
+        "var document = { getElementById: function (id) { return id === 'go' ? __anchor : null; },\n"
+        "                 querySelector: function (sel) { return /meta/.test(sel) ? __meta : null; } };\n"
         + _script_body(rendered)
-        + "\nprocess.stdout.write(JSON.stringify({ calls: __calls, anchorHref: __anchor.href }));\n"
+        + "\nprocess.stdout.write(JSON.stringify({ calls: __calls, anchorHref: __anchor.href, metaContent: __meta.content }));\n"
     )
     res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
@@ -157,6 +159,10 @@ def test_gex_stub_carries_a_legacy_symbol_hash_into_the_workspace(rendered, hash
     assert out["anchorHref"] == f"options.html?t={expect_symbol}#ticker", (
         "the visible fallback link must carry the symbol too — it is what a "
         f"reader whose redirect was blocked actually clicks; got {out['anchorHref']!r}"
+    )
+    assert out["metaContent"] == f"0;url=options.html?t={expect_symbol}#ticker", (
+        "the declarative meta-refresh must be rewritten onto the SAME "
+        f"destination — the two redirect paths may never diverge; got {out['metaContent']!r}"
     )
 
 

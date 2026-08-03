@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/open-interest-limits]
   live:
-    - {href: /gex.html, label: "GEX & dealer positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — per-name dealer positioning"}
 cta: {href: /learn/options/open-interest-limits.html, label: "Next lesson: what open interest can and cannot tell you"}
 ---
 <div class="callout lead">
