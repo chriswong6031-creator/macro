@@ -186,6 +186,12 @@
 	redir /us_stocks /us_stocks.html 301
 	redir /research_vault /research_vault.html 301
 	redir /confluence_screener /confluence_screener.html 301
+	# Consolidated-away page with real Google demand (63 impressions pre-outage):
+	# #4299 merged baskets_china into sector_central_china and left a meta-noindex
+	# redirect stub. A server-side 301 consolidates the URL's equity onto the
+	# canonical successor instead of burning it in a noindex hop (SEO Supercharge
+	# W1b-redux ruling, research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md).
+	redir /baskets_china.html /sector_central_china.html 301
 
 	# ── Site Access Boundary ──────────────────────────────────────────────────
 	#
