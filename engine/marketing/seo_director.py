@@ -250,30 +250,36 @@ def _classify_html(path: Path, site_dir: Path) -> str:
 # ---------------------------------------------------------------------------
 
 _RE_TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
-_RE_META_DESC = re.compile(
-    r'<meta\s[^>]*name=["\']description["\'][^>]*content=["\']([^"\']*)["\']',
-    re.IGNORECASE,
-)
+# An HTML attribute value is terminated by the quote character that OPENED it, not
+# by "either quote character". The older `["\']([^"\']*)["\']` form ended the capture
+# at the first APOSTROPHE inside a double-quoted value, so a perfectly good
+# description like content="…the page you're on…" measured 38 chars instead of 152
+# and was reported as a desc_length finding against copy that was already in band
+# (5 of the 10 desc_length findings on 2026-08-02 were this bug, not the pages).
+# Backreference the opening delimiter so the value is captured whole; `_attr_value`
+# reads the named group so callers do not depend on group numbering.
+def _attr_re(tag_prefix: str, attr: str) -> re.Pattern:
+    return re.compile(
+        tag_prefix + attr + r'=(?P<q>["\'])(?P<v>.*?)(?P=q)',
+        re.IGNORECASE | re.DOTALL,
+    )
+
+
+def _attr_value(pattern: re.Pattern, html: str) -> str | None:
+    """Return the first matched attribute value, or None when absent."""
+    m = pattern.search(html)
+    return m.group("v") if m else None
+
+
+_RE_META_DESC = _attr_re(r'<meta\s[^>]*name=["\']description["\'][^>]*?', "content")
 _RE_META_DESC_ALT = re.compile(
-    r'<meta\s[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']description["\']',
-    re.IGNORECASE,
+    r'<meta\s[^>]*?content=(?P<q>["\'])(?P<v>.*?)(?P=q)[^>]*name=["\']description["\']',
+    re.IGNORECASE | re.DOTALL,
 )
-_RE_CANONICAL = re.compile(
-    r'<link\s[^>]*rel=["\']canonical["\'][^>]*href=["\']([^"\']*)["\']',
-    re.IGNORECASE,
-)
-_RE_OG_TITLE = re.compile(
-    r'<meta\s[^>]*property=["\']og:title["\'][^>]*content=["\']([^"\']*)["\']',
-    re.IGNORECASE,
-)
-_RE_OG_DESC = re.compile(
-    r'<meta\s[^>]*property=["\']og:description["\'][^>]*content=["\']([^"\']*)["\']',
-    re.IGNORECASE,
-)
-_RE_OG_IMAGE = re.compile(
-    r'<meta\s[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']*)["\']',
-    re.IGNORECASE,
-)
+_RE_CANONICAL = _attr_re(r'<link\s[^>]*rel=["\']canonical["\'][^>]*?', "href")
+_RE_OG_TITLE = _attr_re(r'<meta\s[^>]*property=["\']og:title["\'][^>]*?', "content")
+_RE_OG_DESC = _attr_re(r'<meta\s[^>]*property=["\']og:description["\'][^>]*?', "content")
+_RE_OG_IMAGE = _attr_re(r'<meta\s[^>]*property=["\']og:image["\'][^>]*?', "content")
 _RE_JSONLD = re.compile(
     r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.IGNORECASE | re.DOTALL,
@@ -288,14 +294,14 @@ def _extract_meta(html: str) -> dict:
     title = re.sub(r"<[^>]+>", "", m_title.group(1)).strip() if m_title else None
 
     m_desc = _RE_META_DESC.search(html) or _RE_META_DESC_ALT.search(html)
-    description = m_desc.group(1).strip() if m_desc else None
+    description = m_desc.group("v").strip() if m_desc else None
 
-    m_can = _RE_CANONICAL.search(html)
-    canonical = m_can.group(1).strip() if m_can else None
+    canonical_raw = _attr_value(_RE_CANONICAL, html)
+    canonical = canonical_raw.strip() if canonical_raw else None
 
-    og_title = ((_RE_OG_TITLE.search(html) or None) and _RE_OG_TITLE.search(html).group(1))
-    og_desc = ((_RE_OG_DESC.search(html) or None) and _RE_OG_DESC.search(html).group(1))
-    og_image = ((_RE_OG_IMAGE.search(html) or None) and _RE_OG_IMAGE.search(html).group(1))
+    og_title = _attr_value(_RE_OG_TITLE, html)
+    og_desc = _attr_value(_RE_OG_DESC, html)
+    og_image = _attr_value(_RE_OG_IMAGE, html)
 
     jsonld_blocks = _RE_JSONLD.findall(html)
     lang_m = _RE_LANG.search(html)

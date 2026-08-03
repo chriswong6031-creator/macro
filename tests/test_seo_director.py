@@ -296,6 +296,71 @@ def public_boundary(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+class TestMetaExtractionQuoting:
+    """An attribute value ends at the quote that OPENED it, never at the other kind.
+
+    Regression pin: the extractor used `["\']([^"\']*)["\']`, which stopped the capture
+    at the first APOSTROPHE inside a double-quoted value. A 152-char description
+    containing "you're" measured 38 chars and was reported as a desc_length finding
+    against copy that was already inside the 50-170 band. Five of the ten desc_length
+    findings on 2026-08-02 were this bug rather than the pages.
+    """
+
+    APOSTROPHE_PAGE = (
+        '<!DOCTYPE html><html lang="en"><head>'
+        '<title>Apostrophe Page — MastermindX</title>'
+        '<meta name="description" content="An AI analyst grounded in the page '
+        'you\'re on — it cites the desks it used and leaves the calls to the engines.">'
+        '<link rel="canonical" href="https://www.mastermind-x.com/apostrophe.html">'
+        '<meta property="og:title" content="What\'s moving today">'
+        '<meta property="og:description" content="The market\'s themes, ranked.">'
+        '<meta property="og:image" content="https://www.mastermind-x.com/og.png">'
+        "</head><body></body></html>"
+    )
+
+    def _meta(self) -> dict:
+        from engine.marketing.seo_director import _extract_meta
+
+        return _extract_meta(self.APOSTROPHE_PAGE)
+
+    def test_description_survives_an_apostrophe(self):
+        desc = self._meta()["description"]
+        # The whole sentence, not the 38-char prefix ending at "you".
+        assert desc.endswith("leaves the calls to the engines."), desc
+        assert len(desc) > 100, f"truncated at {len(desc)} chars: {desc!r}"
+
+    def test_truncated_description_would_be_a_false_desc_length_finding(self):
+        # The band the director enforces is 50-170. The correct value sits inside it;
+        # the truncated value does not — which is exactly how the bug manifested.
+        desc = self._meta()["description"]
+        assert 50 <= len(desc) <= 170
+
+    def test_og_values_survive_an_apostrophe(self):
+        meta = self._meta()
+        assert meta["og_title"] == "What's moving today"
+        assert meta["og_desc"] == "The market's themes, ranked."
+
+    def test_canonical_and_title_still_extracted(self):
+        meta = self._meta()
+        assert meta["canonical"] == "https://www.mastermind-x.com/apostrophe.html"
+        assert meta["title"] == "Apostrophe Page — MastermindX"
+        assert meta["lang"] == "en"
+
+    def test_single_quoted_attributes_still_work(self):
+        from engine.marketing.seo_director import _extract_meta
+
+        html = (
+            "<html lang='en'><head>"
+            "<meta name='description' content='A single-quoted description that is "
+            "comfortably longer than the fifty character floor.'>"
+            "<link rel='canonical' href='https://www.mastermind-x.com/sq.html'>"
+            "</head></html>"
+        )
+        meta = _extract_meta(html)
+        assert meta["description"].startswith("A single-quoted description")
+        assert meta["canonical"] == "https://www.mastermind-x.com/sq.html"
+
+
 class TestClassifyPage:
     def test_stocks(self):
         assert classify_page("stocks/AAPL") == "stocks"

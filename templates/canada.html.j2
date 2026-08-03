@@ -12,8 +12,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canada — S&P/TSX Regime — {{ latest.date }}</title>
+<title>{{ 'Canada — S&P/TSX Stock Dashboard' if mode == 'stocks' else 'Canada — S&P/TSX Regime' }} — {{ latest.date }}</title>
+{%- if mode == 'stocks' %}
+{% set seo_title = 'Canada Stock Dashboard — TSX Names, Sectors and Signals | Mastermind' %}{% set seo_desc = 'Canadian single-stock signals and sector exposures — S&P/TSX names, sectors and regime context, updated daily.' %}{% set seo_path = 'canada_stocks.html' %}
+{%- else %}
 {% set seo_title = 'Canada Market Dashboard — TSX Composite Regime and Sectors | Mastermind' %}{% set seo_desc = 'Track the Canadian market regime — S&P/TSX sector rotation, factor signals and cycle position, updated daily.' %}{% set seo_path = 'canada.html' %}
+{%- endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
