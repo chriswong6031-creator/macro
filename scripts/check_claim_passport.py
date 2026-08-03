@@ -319,7 +319,7 @@ def main() -> None:
         print("RESULT: FAIL — Claim Passport violations found.")
         print("  Each FAIL entry must either:")
         print("  (a) promote the field to CONFIRMER+ in config/qual_ladder.yml after")
-        print("      passing the §3 gate (n_dates>=25, wilson_ci_low>0 vs control), OR")
+        print("      passing the §3 gate (n_dates>=25, wilson_ci_low>0.5 vs control), OR")
         print("  (b) add grandfathered:true with a gated_by note documenting the W0")
         print("      interim gate that limits blast radius while the field is UNGRADED.")
         if not args.report:
