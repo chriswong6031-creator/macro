@@ -4377,8 +4377,10 @@ jobs:
         run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
       # MSC R2.4 (2026-08-01): the live Level Report Card publisher. Wired at birth —
       # pure pandas/pytest, same import closure as the step above (pandas+pyarrow only).
+      # R2.4b (2026-08-02) adds the nulls/index-lane suite AND back-wires the two
+      # WP-C1 grader suites that were never CI-named (the named-test-files trap).
       - name: Level Report Card — grade-summary publisher (Wilson CI vs null, coverage honesty)
-        run: python -m pytest tests/test_level_grades_summary.py -q
+        run: python -m pytest tests/test_level_grades_summary.py tests/test_levels_grade_nulls.py tests/test_levels_grade.py tests/test_levels_track_record_rebase.py -q
       # MSC R3.2/R3.3 (2026-08-02): the cross-root gex_state _index.json aggregator
       # (lib/gex_state_index.py, called from build_gex_board). Wired at birth — pure
       # stdlib json/pathlib, no new wheels.

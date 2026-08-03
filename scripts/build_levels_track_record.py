@@ -54,15 +54,26 @@ log = logging.getLogger("build_levels_track_record")
 
 _LEVELS_DIR = Path(data_dir()) / "levels"
 _STOCKS_DIR = Path(data_dir()) / "stocks"
+_INDEX_BARS_DIR = _LEVELS_DIR / "index_bars"
 _GRADES_PARQUET = _LEVELS_DIR / "grades.parquet"
 _TR_JSON = _LEVELS_DIR / "track_record.json"
 R2_TR_KEY = "levels_track_record.json"
 
+# R2.4b index lane: the anchor roots the theta store carries greeks for. data/stocks
+# has no ETF/index bars, so these grade against data/levels/index_bars (written by
+# scripts/refresh_index_bars.py). SPXW is the weekly book on the SAME underlying index,
+# so it grades against the SPX bars.
+INDEX_ROOTS: tuple[str, ...] = ("SPY", "QQQ", "IWM", "DIA", "SPX", "SPXW")
+_BAR_ALIASES = {"SPXW": "SPX"}
 
-# ── price bars (data/stocks — the only US store with high/low) ────────────────────
+
+# ── price bars (data/stocks — the only US store with high/low; index roots fall
+#    back to data/levels/index_bars, same schema) ─────────────────────────────────
 
 def _load_stock_bars(root: str) -> pd.DataFrame | None:
     p = _STOCKS_DIR / f"{root}.parquet"
+    if not p.exists():
+        p = _INDEX_BARS_DIR / f"{_BAR_ALIASES.get(root, root)}.parquet"
     if not p.exists():
         return None
     try:
@@ -99,6 +110,24 @@ def _prior_close(bars: pd.DataFrame, session_date: str) -> float | None:
         return float(upto.iloc[-1]["close"])
     except (TypeError, ValueError, KeyError):
         return None
+
+
+def _prior_bar(bars: pd.DataFrame, session_date: str) -> dict | None:
+    """{high, low} of the bar at-or-before session_date — the board session's own
+    extremes, feeding the R2.4b prior-day-extreme null. Adjusted basis, same as
+    next_bar, so no rebase is needed."""
+    d = pd.Timestamp(session_date)
+    upto = bars[bars.index <= d]
+    if upto.empty:
+        return None
+    row = upto.iloc[-1]
+    try:
+        h, l = float(row["high"]), float(row["low"])
+    except (TypeError, ValueError, KeyError):
+        return None
+    if h != h or l != l:  # NaN guard
+        return None
+    return {"high": h, "low": l}
 
 
 def _ffloat(x) -> float | None:
@@ -220,22 +249,31 @@ def _grade_rows_from(g: dict) -> list[dict]:
     """Flatten one graded board into per-node parquet rows (+ a board summary row)."""
     rows = []
     b = g.get("board", {})
+    pdv = b.get("prevday") or {}
     base = {"board_id": board_id(g.get("root") or "", g.get("session_date") or ""),
             "root": g.get("root"), "session_date": g.get("session_date"),
             "next_date": g.get("next_date"), "reason": g.get("reason"),
             "band_mult": g.get("band_mult"),
             "wall_contained": b.get("wall_contained"), "band_contained": b.get("band_contained"),
+            "wall_range_contained": b.get("wall_range_contained"),
+            "band_close_contained": b.get("band_close_contained"),
+            "pd_high_held": pdv.get("high_held"), "pd_low_held": pdv.get("low_held"),
+            "pd_range_contained_close": pdv.get("range_contained_close"),
+            "pd_range_contained_range": pdv.get("range_contained_range"),
             "anchor_drew": b.get("anchor_drew"), "flip_pivot": b.get("flip_pivot"),
             "spot": b.get("spot"), "next_close": b.get("next_close"), "regime": b.get("regime")}
     if not g.get("nodes"):
         rows.append({**base, "level_id": base["board_id"], "role": "_board", "strike": None,
                      "sticky": None, "touched": None, "held": None, "broke": None,
-                     "post_touch_move_pct": None})
+                     "post_touch_move_pct": None, "null_touched": None, "null_held": None,
+                     "pierce_pct": None})
         return rows
     for nd in g["nodes"]:
         rows.append({**base, "level_id": nd["level_id"], "role": nd["role"], "strike": nd["strike"],
                      "sticky": nd["sticky"], "touched": nd["touched"], "held": nd["held"],
-                     "broke": nd["broke"], "post_touch_move_pct": nd["post_touch_move_pct"]})
+                     "broke": nd["broke"], "post_touch_move_pct": nd["post_touch_move_pct"],
+                     "null_touched": nd.get("null_touched"), "null_held": nd.get("null_held"),
+                     "pierce_pct": nd.get("pierce_pct")})
     return rows
 
 
@@ -282,6 +320,8 @@ def _resolve_roots(args) -> list[str]:
         return [r.strip().upper() for r in args.roots.split(",") if r.strip()]
     if args.universe == "stocks" and _STOCKS_DIR.exists():
         return sorted(p.stem.upper() for p in _STOCKS_DIR.glob("*.parquet"))
+    if args.universe == "index":
+        return list(INDEX_ROOTS)
     return []
 
 
@@ -289,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     ap = argparse.ArgumentParser(description="Reconstruct + grade historical levels boards.")
     ap.add_argument("--roots", default="")
-    ap.add_argument("--universe", choices=["stocks"], default=None)
+    ap.add_argument("--universe", choices=["stocks", "index"], default=None)
     ap.add_argument("--start", default="2023-01-01")
     ap.add_argument("--end", default="")
     ap.add_argument("--publish", action="store_true")
@@ -339,7 +379,8 @@ def main(argv: list[str] | None = None) -> int:
             # (split-adjustment fix — see _rebase_to_adjusted). No-op for clean names.
             levels_adj = _rebase_to_adjusted(rec["levels"], pc)
             g = grade_board(levels_adj, nb, prior_close=pc,
-                            median_iv=rec["median_iv"], band_mult=args.band_mult)
+                            median_iv=rec["median_iv"], band_mult=args.band_mult,
+                            prior_bar=_prior_bar(bars, sd))
             reasons[g["reason"]] = reasons.get(g["reason"], 0) + 1
             all_graded.append(g)
             if g["reason"] == "ok":
