@@ -660,6 +660,33 @@
   #standouts[data-stfacet="rip"] .rip-zone:not(.rz-ready) { display:none; }
   #standouts[data-stfacet="early"] .rip-zone.rz-ready { display:none; }
 
+  /* ── unified live grid key (prophet board priority engine G0.2, 2026-08-02) ──
+     One quiet line above 111 cards. Its bullet is a MINIATURE OF THE GLOW — same
+     --pv-buy token, same aura recipe as .pvcard.pv-featured — so the sentence
+     "glowing = act today" shows the reader the thing it is naming instead of
+     asking them to hold a colour in memory while they scroll. It is the only
+     ornament added to this panel; the featured aura keeps the boldness budget.
+     Pinned to --pv-buy, never --up: --up flips to RED under html[data-lang="zh"]
+     and a red key over a green board would invert the message. */
+  .cn-gridkey { display:flex; align-items:center; gap:8px; margin:0 0 10px;
+    font-size:11.5px; line-height:1.45; color:var(--muted); }
+  .cn-gridkey-dot { flex:none; width:9px; height:9px; border-radius:50%;
+    background:color-mix(in srgb,var(--pv-buy) 78%,transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 45%,transparent),
+               0 0 10px -1px color-mix(in srgb,var(--pv-buy) 75%,transparent); }
+  @media(max-width:560px) { .cn-gridkey { align-items:flex-start; font-size:11px; }
+    .cn-gridkey-dot { margin-top:4px; } }
+  /* Phone: ONE mark per card. The grid goes 2-up below 560px (~150px cards at 390),
+     where a second chip wraps to a new line — and a wrapped row on some cards and not
+     others breaks the prophet card's founding contract that the tracker and zone rows
+     line up across a grid row. The marks list is already built in descending
+     importance, so keeping only the first chip keeps the RIGHT one: ★ Featured on a
+     pick, the gate it failed on everything else. It stays a WORD, never collapsed to a
+     glyph — that is the macro's own mobile law (a colour-only mark is not a mark). */
+  @media(max-width:560px) {
+    #standouts .nbgrid .pv-mk-i ~ .pv-mk-i { display:none; }
+  }
+
   /* China Prophet v2 depth lanes.  The featured shelf keeps full decision
      cards; the much wider discovery population uses compact, collapsed cards
      so breadth remains inspectable without masquerading as another buy board. */
@@ -3249,7 +3276,16 @@
   {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
   {% set _rip_fall   = setups.get('ripening_falling') or [] %}
   {% set _ran = setups.get('ran') or [] %}
-  {% set _n_more_lane = (setups.get('more_actionable') or []) | length %}
+  {# ── UNIFIED LIVE GRID (prophet board priority engine G0.2, 2026-08-02) ────────
+     `more_actionable` used to sit in a collapsed "More live setups" drawer of compact
+     rows — 105 real T1–T3 signals rendered as second-class citizens under 6 full cards.
+     It now joins the featured rows in ONE score-ordered grid of identical full cards.
+     `_cn_v2` is the fail-soft gate: a pre-v2 artifact (no more_actionable lane, no
+     ranking block) takes the untouched legacy path and renders byte-for-byte as before —
+     no glow, no marks row, no reordering. #}
+  {%- set _more_lane = setups.get('more_actionable') or [] %}
+  {%- set _cn_v2 = true if (_more_lane or setups.get('ranking')) else false %}
+  {% set _n_more_lane = _more_lane | length %}
   {% set _n_late_lane = (setups.get('late_or_unfillable') or []) | length %}
   {% set _n_forming_lane = (setups.get('forming') or []) | length %}
   {% set _n_entry = (_entry_rows | length) + _n_more_lane %}
@@ -3258,8 +3294,12 @@
   {% set _n_ran = (_ran_late_rows | length) + (_ran | length) + _n_late_lane %}
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
-    <h2>{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}
+    <h2>{% if _cn_v2 %}{{ t('⚡ China Prophet — Live Board', '⚡ 中国先知 — 实时榜单') }}{% else %}{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}{% endif %}
+      {%- if _cn_v2 %}
+      {{ help("Two different things decide where a name sits. The glow is a GATE: a picked name has an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open or partial entry gauge, known liquidity, same-session fillability, no chase veto and no extension flag — capped per sector and per board, so fewer can show. Priority 0–100 is the ORDER inside that population: signal 35%, entry 25%, runway 20%, bottom quality 10%, deepest-quintile within-sector reversal membership 10%. The two can disagree: a name below the glowing picks can carry a higher score because it failed a gate, not because it ranked worse — and its own chip names which gate. Residual momentum, sector stories and fundamentals move neither, because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing.", "决定名次的是两件不同的事。发光是一道门槛：入选个股须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启或部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸，并受行业与全榜名额限制，因此可能更少。优先级0–100是该池内的排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。两者可能不一致：发光卡下方的个股分数更高，可能是因为它没通过某道门槛，而非排名更靠后——其标签会写明是哪一道。残差动量、板块叙事与基本面对两者均无影响，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。") }}
+      {%- else %}
       {{ help("The featured shelf is deliberately selective: an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open/partial entry gauge, known liquidity, same-session fillability, no chase veto, and no extension flag. Priority 0–100 is a transparent readiness rank: signal 35%, entry 25%, runway 20%, bottom quality 10%, and deepest-quintile within-sector reversal membership 10%. Residual momentum, sector stories and fundamentals do not move the live rank because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing. Broader and blocked names remain below on demand.", "精选区刻意保持严格：必须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启/部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸。优先级0–100采用透明的就绪度排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。残差动量、板块叙事与基本面不会影响实时排名，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。更多候选与受阻标的可在下方按需展开。") }}
+      {%- endif %}
       {# W8-E: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
@@ -3297,16 +3337,83 @@
     {# ── W1-C: ENTRY SHELF ────────────────────────────────────────────────────
        Only ENTRY cards may use BUY-family language. Stage badge is the loudest element.
        Preserves existing blend_sorted order unchanged (F3 discipline).
-       Row partition (_entry_rows / _ran_late_rows sets) hoisted above the panel div — W-FCT. #}
+       Row partition (_entry_rows / _ran_late_rows sets) hoisted above the panel div — W-FCT.
+
+       G0.2 (2026-08-02): the shelf became ONE grid. `_entry_rows` (the glowing picks,
+       in the producer's own display_rank order — NEVER re-sorted here) is followed by
+       every `more_actionable` row as a FULL card, score desc. The old collapsed
+       "More live setups" drawer is gone: those 105 rows were never less real, only
+       less visible, and a compact second grid taught the reader they were second-class.
+
+       WHY THE SCORE LADDER VISIBLY BREAKS AT THE GLOW BOUNDARY, AND WHY THAT IS RIGHT:
+       featured is a GATE (entry open + fillable + not extended + caps), priority is an
+       ORDER. The first non-featured card can and does out-score the first featured one
+       (83.9 vs 82.4 on the 2026-07-31 artifact). Presenting them as one descending list
+       would be the lie; presenting the gate first, with each gated card carrying a
+       plain-word chip naming the gate it failed, is the truth. The h2 `?` receipt states
+       the two-axis rule once, in words. Do not "fix" this by re-sorting on score alone. #}
     {{ pv.pv_css() }}
+    {# ── plain-word translations of the lane_reasons codes (Tier 1 glance).
+         cn_lane_reason() keeps its own longer forms for the depth lanes below; this map
+         is shorter, and deliberately carries NO machine slug fallback — an unknown code
+         renders the generic chip and puts the raw code in the hover, because a raw slug
+         at glance tier is a documented doctrine violation, not a graceful degradation. #}
+    {%- set _CN_MK = {
+      'entry_status_bounce_wait':     ['Turn not confirmed', '转向未确认'],
+      'entry_status_hold':            ['No add here', '此处不加仓'],
+      'entry_status_extended':        ['Already ran', '已经拉升'],
+      'entry_status_buy_soon':        ['Almost open', '即将开启'],
+      'entry_status_await_confluence':['Waiting on confirmation', '等待确认'],
+      'entry_status_watch':           ['On watch only', '仅列入观察'],
+      'entry_status_topping':         ['Rolling over', '见顶迹象'],
+      'entry_status_blocked':         ['Entry blocked', '入场受阻'],
+      'entry_status_exit':            ['Exit signalled', '已发出离场'],
+      'entry_status_avoid':           ['Avoid for now', '暂时回避'],
+      'featured_cap':                 ['Board full today', '今日名额已满'],
+      'sector_cap':                   ['Sector quota full', '该行业已满额'],
+      'liquidity_unknown':            ['Liquidity unchecked', '流动性未核实'],
+      'liquidity_below_floor':        ['Trades too thin', '成交太清淡'],
+      'micro_missing':                ['Trading data missing', '成交数据缺失'],
+      'micro_stale':                  ['Trading data stale', '成交数据过期'],
+      'micro_fillability_unknown':    ['Fill not checked', '可成交性未核实'],
+      'micro_chase_status_unknown':   ['Chase check missing', '追高检查缺失'],
+      'unfillable':                   ['Cannot fill today', '今日无法成交'],
+      'chase_veto':                   ['Chase risk', '追高风险'],
+      'extended':                     ['Already ran', '已经拉升'],
+      'extension_unknown':            ['Run-up unchecked', '涨幅未核实'],
+      'non_entry_stage':              ['Past the window', '已过入场窗口'],
+      'tier_t4_not_actionable':       ['Early warning only', '仅为早期预警'],
+      'no_buyable_tier':              ['No live signal', '无可操作信号'],
+      'raw_gate_ineligible':          ['Broad screen only', '仅通过粗筛']
+    } %}
+    {# The merged render list. Each item is {'r': row, 'f': featured}. Featured rows keep
+       the producer's order; the rest are sorted here because the artifact ships them in
+       lane order, not score order. A row with no numeric score sorts last (fail-soft)
+       rather than raising, and Jinja's sort is stable so ties keep producer order. #}
+    {%- set _mrg = [] %}
+    {%- for n in _entry_rows %}{% set _ = _mrg.append({'r': n, 'f': _cn_v2}) %}{% endfor %}
+    {%- if _cn_v2 and _more_lane %}
+      {%- set _msort = [] %}
+      {%- for n in _more_lane %}
+        {%- set _msc = (n.get('prophet') or {}).get('score') %}
+        {%- set _ = _msort.append({'sc': (_msc if _msc is number else -1), 'r': n}) %}
+      {%- endfor %}
+      {%- for _e in (_msort | sort(attribute='sc', reverse=true)) %}{% set _ = _mrg.append({'r': _e.r, 'f': false}) %}{% endfor %}
+    {%- endif %}
     <div class="stgf-grp" data-stf="entry">
     {% if not _entry_rows %}
     <div style="padding:12px;border:1px dashed var(--line);border-radius:9px;color:var(--muted);font-size:11.5px">
       {{ t('No name cleared every featured-entry check today. That is a valid selective result; broader live signals and early warnings remain available below.', '今日没有个股通过全部精选入场检查。这是严格筛选下的正常结果；更广泛的实时信号与早期预警仍可在下方查看。') }}
     </div>
     {% endif %}
+    {# The key to the grid, stated ONCE (Law 4: a constant belongs in the header, not on
+       every row). It is the only thing standing between the reader and 111 cards. #}
+    {%- if _cn_v2 and _entry_rows and _more_lane %}
+    <p class="cn-gridkey"><span class="cn-gridkey-dot" aria-hidden="true"></span>{{ t('Glowing = act today. The rest are real signals — each says what is holding it.', '发光卡＝今天可动手。其余同样是真实信号 — 每张都写明卡在哪一步。') }}</p>
+    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
-    {% for n in _entry_rows %}
+    {% for _mr in _mrg %}
+    {%- set n = _mr.r %}{% set _is_feat = _mr.f %}
       {# ═══ PROPHET CARD (flagship redesign 2026-07-21) — ENTRY shelf. Old nbcard retired;
          disclosures demoted, not deleted: verdict + entry headline + washout/coiled context →
          verb-chip tooltip; cautions / extension / chase-veto / limit-state → ⚠N popover;
@@ -3316,10 +3423,24 @@
       {% set _pr = n.get('prophet') or {} %}
       {% set _pc = _pr.get('components') or {} %}
       {% set _st = es.status if es else none %}
-      {% set _verb = 'buy' if _st in ('buy_now','partial')
+      {# Verb + lifecycle stage. The FEATURED branch is byte-identical to the pre-merge
+         expression (its statuses can only be buy_now/partial, and a pre-v2 artifact runs
+         every row down this branch) so the legacy render is provably unchanged. The
+         newly-merged rows get the two statuses the old map never saw — and they get the
+         verb the engine's OWN headline uses: `bounce_wait` reads "Bounce — turn not
+         confirmed; wait", so it is a Wait, not a Near. Near would claim it is about to
+         trigger, which the engine never says. Same for the tracker: a bounce that has not
+         confirmed is Turning, a name the gauge says to hold is already in Trend — 111
+         cards all frozen at "Ready" would say nothing at all. #}
+      {%- set _verb = ('buy' if _st in ('buy_now','partial')
                else ('near' if _st in ('buy_soon','await_confluence')
                else ('hold' if _st in ('hold','topping')
-               else ('avoid' if _st in ('exit','avoid') else 'near'))) %}
+               else ('avoid' if _st in ('exit','avoid') else 'near')))) if _is_feat
+               else ({'buy_now':'buy','partial':'buy','buy_soon':'near','await_confluence':'near',
+                      'hold':'hold','topping':'hold','exit':'avoid','avoid':'avoid',
+                      'bounce_wait':'wait','extended':'wait','blocked':'wait'}.get(_st) or 'wait') %}
+      {%- set _stage_n = 3 if _is_feat else {'buy_now':3,'partial':3,'buy_soon':3,'await_confluence':2,
+                      'bounce_wait':2,'watch':2,'hold':4,'topping':4,'extended':4}.get(_st, 3) %}
       {% set _nmp = (n.name or n.ticker).split(' / ') %}
       {% set _mpkt = n.get('microstructure') or (cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none) %}
       {% set _fl = namespace(rows=[]) %}
@@ -3327,23 +3448,73 @@
       {% if n.extension and n.extension.extended %}{% set _fl.rows = _fl.rows + [('Already ran a lot — chase risk', '已经大涨 — 追高风险')] %}{% endif %}
       {% if _mpkt and (_mpkt.get('chase_veto') or {}).get('flag') %}{% set _fl.rows = _fl.rows + [('Chase veto — recent spike (CN-SYS-R3)', '追涨否决 — 近期涨幅过大（CN-SYS-R3）')] %}{% endif %}
       {% if _mpkt and _mpkt.get('limit_state') and _mpkt.get('limit_state') != 'open' %}{% set _fl.rows = _fl.rows + [('Limit state: ' ~ _mpkt.limit_state, '涨跌停状态：' ~ tr(_mpkt.limit_state)) ] %}{% endif %}
-      {% if _pc.get('reversal_member') %}{% set _fl.rows = _fl.rows + [('Validated reversal sleeve member — deepest within-sector 3-month quintile', '已验证反转组合成员 — 行业内3个月跌幅最深五分位')] %}{% endif %}
+      {# This row sits under a popover headed "Before you act", so it must read as a
+         CAUTION, not a credential. "Validated reversal sleeve member" was a scoring
+         credential wearing a warning badge — on 6 cards that was odd, and the merged
+         grid puts it on 39. What the reader actually needs from a ⚠ is the risk: this
+         name is here BECAUSE it fell hardest, and that is the same reason it can keep
+         falling. Same fact, same 10 score points, honest framing. #}
+      {% if _pc.get('reversal_member') %}{% set _fl.rows = _fl.rows + [('Among the deepest 3-month fallers in its sector — that is the setup here, and it is also the risk.', '属于行业内3个月跌幅最深的一批 — 这既是本形态的来源，也是它的风险。')] %}{% endif %}
       {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
       {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
       {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
       {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('active' if _verb in ('buy','near') else 'muted') if (_bz and _bz.high is not none) else 'confirm' %}
+      {# ── MARKS ROW (G0.2 parity with the US board) ────────────────────────────
+         Four categorically different facts in DESCENDING weight, then sliced to two:
+         rank (★ Featured) · recency (New) · the gate this row failed · the shape of its
+         base. The slice is the discipline — the taxonomy decides what survives, so the
+         row can never become chip spam. On the 2026-07-31 artifact the median card
+         carries ONE chip and no card carries three.
+         The "why not featured" chip's hover is the row's OWN action line (per-name, with
+         its stop level) rather than a constant restated 105 times — Law 4. #}
+      {%- set _mk = namespace(rows=[]) %}
+      {%- if _cn_v2 %}
+        {%- if _is_feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
+          'tip_en':'One of today\'s picks: a live T1–T3 signal, the entry window open now, enough turnover to trade it, no chase veto and price not yet extended. Capped per sector and per board, so fewer names can show. Priority order, not a return forecast.',
+          'tip_zh':'今日精选之一：T1–T3信号有效、入场窗口当前已打开、成交足以买入、无追涨否决且价格尚未拉伸。受行业与全榜名额限制，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+        {%- set _dss = n.get('days_since_signal') %}
+        {%- if _dss is number and _dss <= 2 %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
+          'tip_en':'The signal fired within the last two sessions — a fresh turn, not an old one still sitting on the board.',
+          'tip_zh':'该信号在最近两个交易日内触发 — 属于新转向，而非仍挂在榜上的旧信号。'}] %}{% endif %}
+        {%- if not _is_feat %}
+          {%- set _lr0 = (n.get('lane_reasons') or [])[0] if (n.get('lane_reasons') or []) else none %}
+          {%- set _lrw = _CN_MK.get(_lr0) %}
+          {%- set _lr_tip_en = (es.action if (es and es.get('action')) else 'A real signal that has not cleared every entry check today. Watch it — do not act on it yet.') ~ (' (' ~ _lr0 ~ ')' if (_lr0 and not _lrw) else '') %}
+          {%- set _lr_tip_zh = (es.action_zh if (es and es.get('action_zh')) else '这是真实信号，但今日尚未通过全部入场检查。请观察，暂不操作。') ~ (' (' ~ _lr0 ~ ')' if (_lr0 and not _lrw) else '') %}
+          {%- set _mk.rows = _mk.rows + [{'k':'lane',
+            'en':(_lrw[0] if _lrw else 'Entry not open yet'), 'zh':(_lrw[1] if _lrw else '入场尚未开启'),
+            'tip_en':_lr_tip_en, 'tip_zh':_lr_tip_zh}] %}
+        {%- endif %}
+        {# Base shape. "Coiled" itself is on the doctrine's banned Tier-1 list (§7 row 12)
+           and it is true of 98 of 105 rows anyway — a constant, not a signal. Only the
+           two DISCRIMINATING forms get a chip, in plain words. #}
+        {%- set _cld = n.get('coiled') or {} %}
+        {%- if _cld.get('star') %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Selling easing','zh':'抛压减弱',
+          'tip_en':'The whole sector sold off together and this name\'s decline is losing force — the strongest base shape this board tracks. Context for the setup, never a reason on its own.',
+          'tip_zh':'整个板块同步下跌，而该股跌势正在减弱 — 本榜追踪的最强底部形态。仅为形态背景，本身不构成理由。'}] %}
+        {% elif n.washout_2w %}{% set _mk.rows = _mk.rows + [{'k':'theme','en':'Washed out','zh':'洗盘充分',
+          'tip_en':'Two weeks of heavy selling have already run their course here. Context for the setup, never a reason on its own.',
+          'tip_zh':'过去两周的重挫已基本释放。仅为形态背景，本身不构成理由。'}] %}{% endif %}
+      {%- endif %}
+      {# Priority is shown as a WHOLE number (Law 3 — precision belongs on Tier 2, and the
+         US board already formats %.0f). Unrounded, the slot printed "82.37" on every card;
+         across 111 of them the column read as noise, and two decimals claim a precision a
+         readiness heuristic does not have. #}
+      {%- set _edge_txt = ('%.0f'|format(_pr.get('score'))) if _pr.get('score') is number
+                         else (('%.0f'|format(c.score)) if (c and c.score is number) else none) %}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
         'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
-        'edge': (_pr.get('score') if _pr.get('score') is not none else (c.score if (c and c.score is not none) else none)),
+        'featured': _is_feat, 'marks': (_mk.rows[:2] if _cn_v2 else none),
+        'edge': _edge_txt,
         'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
         'edge_tip_en': 'China Prophet priority 0–100 — signal 35% · entry 25% · runway 20% · bottom quality 10% · reversal-sleeve membership 10%. Transparent readiness rank; not a win probability or return forecast.',
         'edge_tip_zh': '中国先知优先级0–100 — 信号35% · 入场25% · 上行空间20% · 底部质量10% · 反转组合成员10%。透明就绪度排序；不是胜率或收益预测。',
-        'stage': 3, 'spark': n.get('spark_svg'),
+        'stage': _stage_n, 'spark': n.get('spark_svg'),
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
@@ -3685,22 +3856,13 @@
        but each lane states what actually stopped it from the featured shelf.
        Pre-v2 fallback artifacts are collapsed into an explicitly unclassified
        legacy lane; they never return to the old flat-name spam. #}
-    {% set _more = setups.get('more_actionable') or [] %}
+    {# G0.2 (2026-08-02): the `more_actionable` lane no longer has a depth block — those
+       105 rows are FULL cards in the unified live grid above. `_more` survives only as
+       the guard that decides whether `watch` is an unclassified legacy population. #}
+    {% set _more = _more_lane %}
     {% set _late = setups.get('late_or_unfillable') or [] %}
     {% set _forming = setups.get('forming') or [] %}
     {% set _legacy_depth = (setups.get('watch') or []) if not (_more or _late or _forming) else [] %}
-
-    {% if _more %}
-    <details class="cn-depth" data-stf="entry">
-      <summary>
-        <span>＋ {{ t('More live setups', '更多实时形态') }}
-          <span class="cn-depth-sub">{{ t('real T1–T3 confluence, but entry is not fully open or it missed a featured verification/cap check', '真实T1–T3共振，但入场尚未完全开启，或未通过精选验证/数量上限') }}</span>
-        </span>
-        <span class="cn-depth-n">{{ _more|length }}</span>
-      </summary>
-      {{ cn_depth_grid(_more) }}
-    </details>
-    {% endif %}
 
     {% if _late %}
     <details class="cn-depth late" data-stf="ran">
@@ -3769,8 +3931,18 @@
        Falls back to the accruing shell when the ledger hasn't been built yet. #}
     {% set _cn_state = _cl.get('state') or 'accruing' %}
     {% set _cn_stats = _cl.get('summary') or {} %}
+    {# Prior-definition continuity (learning-loop G5). The board definition changed on
+       2026-07-30 and the ledger reset with it, so a month of graded history became
+       invisible. `prior_record` restores it as a separately-scored, separately-labeled,
+       CLOSED book below the live one — never pooled, never summed (era-pooling trap,
+       memory `us-board-definition-change`). The key is optional both ways: the emitter
+       lands independently of this render, and a ledger without it renders exactly as
+       it does today. The definition guard above still applies to the CURRENT record —
+       `prior_record` is by construction a different definition and is read from the
+       already-guarded artifact, so it does not re-open that gate. #}
     {% set trd = {
       'market': 'cn', 'state': _cn_state, 'stats': _cn_stats,
+      'prior': _cl.get('prior_record'),
       'data_url': 'factordata/cn_track_ledger.json',
       'eyebrow_en': 'China board · vs CSI300', 'eyebrow_zh': '中国榜单 · 对比沪深300',
       'bench_en': 'CSI300', 'bench_zh': '沪深300',

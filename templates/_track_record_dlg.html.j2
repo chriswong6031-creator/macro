@@ -304,6 +304,32 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-pg-ell{ color:var(--trd-muted);padding:0 2px; }
 .trd-pg-count{ font-size:11px;color:var(--trd-muted);margin-left:6px; }
 
+/* ── Zone B′ — PRIOR-DEFINITION RECORD (optional; CN continuity, G5 2026-08-02) ──
+   Rendered only when the host passes trd.prior. The design problem here is a
+   HONESTY problem, not a layout one: two records under one heading invite the
+   reader to add them up, and the era-pooling trap is exactly what this section
+   must not create. Three devices keep them apart, and they are the whole design:
+     1. a DASHED rule, not a solid one — a break in continuity, not a sub-section;
+     2. NO big .trd-card-v numbers. The 26px treatment is the live definition's
+        alone; the closed book gets one line of prose. A reader cannot mistake a
+        sentence for the headline stat, and cannot mentally sum two prose lines
+        the way they would sum two number cards;
+     3. the accent never reaches here — the chip's stance colour belongs to the
+        record that is still accruing. Only the per-row excess keeps its up/down
+        colour, because a beat was a beat. */
+.trd-prior{ margin-top:22px;padding-top:16px;
+  border-top:1px dashed color-mix(in srgb,var(--trd-text) 22%,transparent); }
+.trd-prior-hd{ display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:7px; }
+.trd-prior-tag{ font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--trd-muted);border:1px solid var(--trd-line);border-radius:999px;padding:3px 9px; }
+.trd-prior-dt{ font-size:11.5px;color:var(--trd-muted);font-variant-numeric:tabular-nums; }
+.trd-prior-line{ margin:0 0 10px;font-size:12px;line-height:1.5;color:var(--trd-text);max-width:74ch; }
+.trd-prior-line b{ font-weight:700; }
+.trd-prior-shut{ color:var(--trd-muted); }
+.trd-prior .trd-tbl td{ color:var(--trd-muted); }
+.trd-prior .trd-tbl .trd-tk{ color:var(--trd-text); }
+.trd-prior-more{ margin:8px 0 0;font-size:10.5px;color:var(--trd-muted); }
+
 /* Zone C — footer */
 .trd-ft{ flex:none;padding:12px 22px;border-top:1px solid color-mix(in srgb,var(--trd-text) 8%,transparent);
   display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
@@ -521,6 +547,99 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       </div>
       <div class="trd-pg" id="trd-pg"></div>
       </div>{# /stg-2 #}
+
+      {#- ── Zone B′ — the PREVIOUS board definition's closed record ──────────────
+          Optional host key `trd.prior` (CN continuity G5): {label_en, label_zh,
+          board_definition, date_from, date_to, summary, rows, meta}. Absent → this
+          block emits nothing and the dialog is byte-identical to before, which is
+          every host that does not set it (us_stocks / hk / canada) and every China
+          night before the emitter ships it.
+
+          Server-rendered, unlike the live ledger above: this book is CLOSED, so it
+          can never go stale between build and open, and it costs no second fetch.
+          The row list is capped — a definition can span a thousand episodes and this
+          markup ships inside every China page. The cap is DISCLOSED, never silent.
+
+          NEVER pooled with the record above. See the CSS block for the three devices
+          that enforce that, and read the summary sentence before changing it: it
+          says "closed book" in words as well as in layout. -#}
+      {%- if trd.prior %}
+      {%- set _p = trd.prior -%}
+      {%- set _ps = _p.get('summary') or {} -%}
+      {%- set _pw = _ps.get('win_pct') if _ps.get('win_pct') is not none else _ps.get('win_rate_pct') -%}
+      {%- set _pe = _ps.get('expectancy_pct') if _ps.get('expectancy_pct') is not none else _ps.get('avg_pct') -%}
+      {%- set _PMN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+      {%- set _pf = _p.get('date_from') or '' -%}{%- set _pt = _p.get('date_to') or '' -%}
+      {#- The emitter derives its label FROM the era's own dates and ships them joined
+          ("previous board definition · Jul 1 – Jul 29 2026" / "上一版选股口径 · …"), so
+          splitting on the separator is what keeps the era NAME in the uppercase pill and
+          the SPAN in the muted slot beside it — printing the label whole would put a date
+          in small-caps, and re-deriving the span from date_from/date_to alongside it would
+          print the range twice. Each language splits independently and each falls back to
+          a locally formatted range, so a future bare label still gets its dates. -#}
+      {%- set _lpe = (_p.get('label_en') or 'Previous board definition').split(' · ') -%}
+      {%- set _lpz = (_p.get('label_zh') or '前版榜单定义').split(' · ') -%}
+      {%- set _dated = _pf|length >= 10 and _pt|length >= 10 -%}
+      {%- set _dte = (_lpe[1:]|join(' · ')) if _lpe|length > 1
+                     else ((_PMN.get(_pf[5:7], _pf[5:7]) ~ ' ' ~ _pf[8:10]|int ~ ' – ' ~ _PMN.get(_pt[5:7], _pt[5:7]) ~ ' ' ~ _pt[8:10]|int ~ ' ' ~ _pt[0:4]) if _dated else '') -%}
+      {%- set _dtz = (_lpz[1:]|join(' · ')) if _lpz|length > 1
+                     else ((_pf[0:4] ~ '年' ~ _pf[5:7]|int ~ '月' ~ _pf[8:10]|int ~ '日–' ~ _pt[5:7]|int ~ '月' ~ _pt[8:10]|int ~ '日') if _dated else '') -%}
+      <div class="trd-stg trd-stg-3 trd-prior">
+        <div class="trd-prior-hd">
+          <span class="trd-prior-tag"><span class="l-en">{{ _lpe[0] }}</span><span class="l-zh">{{ _lpz[0] }}</span></span>
+          {%- if _dte or _dtz %}
+          <span class="trd-prior-dt"><span class="l-en">{{ _dte }}</span><span class="l-zh">{{ _dtz }}</span></span>
+          {%- endif %}
+        </div>
+        {#- Plain words, numbers carrying their meaning (Law 3), and the non-pooling
+            rule stated where a reader would otherwise do the adding themselves. -#}
+        <p class="trd-prior-line">
+          {%- if _pw is not none -%}
+          <span class="l-en">Under the older rules, <b>{{ _pw|round|int }}%</b> of {{ _ps.get('n_matured', '—') }} finished trades beat the {{ trd.bench_en or 'index' }}{% if _pe is not none %}, <b>{{ '%+g'|format(_pe) }}%</b> on an average trade{% endif %}. <span class="trd-prior-shut">A closed book: these are kept visible for history and are never added to the record above.</span></span>
+          <span class="l-zh">在旧规则下，{{ _ps.get('n_matured', '—') }} 笔已完成交易中有 <b>{{ _pw|round|int }}%</b> 跑赢{{ trd.bench_zh or '指数' }}{% if _pe is not none %}，每笔平均 <b>{{ '%+g'|format(_pe) }}%</b>{% endif %}。<span class="trd-prior-shut">该账已封存：保留以供查阅历史，绝不并入上方记录。</span></span>
+          {%- else -%}
+          <span class="l-en">The older rules logged {{ _ps.get('n_logged') or _ps.get('n_calls') or (_p.get('rows') or [])|length }} calls, too few of them finished to score. <span class="trd-prior-shut">Kept visible for history; never added to the record above.</span></span>
+          <span class="l-zh">旧规则共记录 {{ _ps.get('n_logged') or _ps.get('n_calls') or (_p.get('rows') or [])|length }} 笔信号，其中已完成的数量不足以评分。<span class="trd-prior-shut">保留以供查阅历史；绝不并入上方记录。</span></span>
+          {%- endif -%}
+        </p>
+        {%- set _prow_all = _p.get('rows') or [] -%}
+        {%- if _prow_all -%}
+        {%- set _psrt = [] -%}
+        {%- for _r in _prow_all %}{%- set _ = _psrt.append({'k': _r.get('d') or '', 'r': _r}) -%}{% endfor %}
+        {%- set _prows = (_psrt | sort(attribute='k', reverse=true))[:25] -%}
+        <div class="trd-tbl-wrap">
+          <table class="trd-tbl"><thead><tr>
+            <th>{{ t('Stock', '个股') }}</th>
+            <th>{{ t('Logged', '上榜') }}</th>
+            <th class="trd-num"><span class="l-en">vs {{ trd.bench_en or 'index' }} %</span><span class="l-zh">超额</span></th>
+            <th class="trd-num">{{ t('Days', '天数') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+          </tr></thead><tbody>
+          {%- for _e in _prows %}{%- set _r = _e.r -%}
+          {%- set _rx = _r.get('x') if _r.get('x') is not none else _r.get('p') -%}
+          {%- set _rst = _r.get('st') or '' -%}
+          <tr>
+            <td class="trd-tk">{{ _r.get('t') or '—' }}{% if _r.get('nm') %}<span class="trd-sub-cell"><span class="l-en">{{ (_r.nm).split(' / ')[0] }}</span><span class="l-zh">{{ (_r.nm).split(' / ')[-1] }}</span></span>{% endif %}</td>
+            <td class="trd-mut">{{ _r.get('d') or '—' }}</td>
+            <td class="trd-num {{ (_up if _rx >= 0 else _dn) if _rx is number else 'trd-mut' }}">{% if _rx is number %}{{ '%+g'|format(_rx) }}%{% else %}—{% endif %}</td>
+            <td class="trd-num">{{ _r.get('dy') if _r.get('dy') is not none else '—' }}</td>
+            <td>
+              {%- if _rst in ('beat','up') -%}<span class="trd-dot trd-dot-up"></span>{{ t('Beat index', '跑赢') }}
+              {%- elif _rst in ('lag','stopped') -%}<span class="trd-dot trd-dot-dn"></span>{{ t('Lagged', '跑输') }}
+              {%- elif _rst == 'flat' -%}<span class="trd-dot trd-dot-flat"></span>{{ t('Flat', '持平') }}
+              {%- elif _rst == 'early' -%}<span class="trd-dot trd-dot-early"></span>{{ t('Unfinished', '未完成') }}
+              {%- else -%}<span class="trd-mut">—</span>{%- endif -%}
+            </td>
+          </tr>
+          {%- endfor %}
+          </tbody></table>
+        </div>
+        {%- if _prow_all|length > 25 %}
+        <p class="trd-prior-more"><span class="l-en">Showing the 25 most recent of {{ _prow_all|length }}.</span><span class="l-zh">显示最近 25 笔，共 {{ _prow_all|length }} 笔。</span></p>
+        {%- endif -%}
+        {%- endif -%}
+      </div>{# /trd-prior #}
+      {%- endif %}
     </div>{# /trd-body #}
 
     {#- ── Zone C — footer (one merged note, one as-of) ──────────────────────-#}
