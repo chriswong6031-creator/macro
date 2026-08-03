@@ -189,6 +189,13 @@
           // content), verbatim copy from _navlinks.html.j2's own relocated row.
           ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
             'movers.html', 'stocks', '每日异动', '免费 · 今日涨跌最大 · 联动主题'],
+          // OIP W1.6-B: Intraday Flow Tracker moves OUT of the options section to
+          // sit beside Daily Movers, mirroring _navlinks.html.j2's own relocation —
+          // it is a live session board, not an options page. The 8th element is
+          // still its href gate, so it stays as conditional here as in the template.
+          ['Intraday Flow Tracker', 'Live session board — volume, tape and stance lanes · ≈15-min delayed',
+            'intraday_flow.html', 'dashboard', '盘中资金流追踪', '盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟',
+            null, 'intraday_flow.html'],
           // Sector Intelligence consolidation (#4237, 2026-08): Sector Central + Theme
           // Baskets + Subsector Rotation are ONE page now (the old URLs are redirect
           // stubs) — one menu row, matching the collapsed _navlinks flyout.
@@ -200,22 +207,19 @@
           ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert'],
           ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news']
         ]],
-        // OIP W1 §1 nav regroup (masterplan §4), mirrored from _navlinks.html.j2's
-        // Options & Flow flyout (B1 fix): options.html is now the workspace entry,
-        // gex.html is the instrument bench (freed 'dashboard' icon, reused — same
-        // reassignment the template makes), Intraday Flow Tracker/Dark Pool Desk
-        // stay guarded exactly like their template rows (8th element = the href
-        // gate), Market Structure is new here. The three absorbed pages
-        // (Options Screener, Group Flow Heatmap, Flow Leaders) leave this menu —
-        // their URLs stay live, unlinked from navigation only.
+        // OIP W1.6-B "One Door", mirrored from _navlinks.html.j2's own flyout
+        // (ONE_DOOR_RULING_AND_SPEC.md §3/§4). The workspace absorbed gex.html
+        // along with the screener, flow desk and flow leaders; all four are
+        // redirect stubs now, so this section drops the 'Options Desk' row rather
+        // than pointing a reader at a bounce. Intraday Flow Tracker moved up to
+        // 'Market overview'. Dark Pool Desk stays guarded exactly like its
+        // template row (8th element = the href gate). Section NAME is unchanged:
+        // langText() renders it identically in both languages, and the label the
+        // ruling renamed is the template flyout's trigger, which has no
+        // counterpart here.
         ['Market structure', [
-          ['Options — the workspace', 'Daily Brief · Scanner · Ticker · Leaders',
-            'options.html', 'options', '期权工作台', '每日简报 · 筛选 · 个股 · 领头股'],
-          ['Options Desk', 'Instrument bench — charts, walls, vol surface',
-            'gex.html', 'dashboard', '期权台', '工具台 — 图表、墙位、波动率曲面'],
-          ['Intraday Flow Tracker', 'Volume durability · RVOL · VWAP · ~options flow · K/7 confluence',
-            'intraday_flow.html', 'dashboard', '盘中资金流追踪', '量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚',
-            null, 'intraday_flow.html'],
+          ['Options — the workspace', 'Daily Brief · Flow · Scanner · Ticker · Leaders',
+            'options.html', 'options', '期权工作台', '每日简报 · 资金流 · 筛选 · 个股 · 领头股'],
           ['Dark Pool Desk', 'Off-exchange volume · short ratio · ATS venues',
             'darkpool.html', 'darkpool', '场外暗池台', '场外成交量 · 融券比率 · ATS场所',
             null, 'darkpool.html'],
