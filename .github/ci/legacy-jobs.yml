@@ -3016,6 +3016,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_biocatalyst_api.py
+          tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
           tests/test_biocatalyst_page.py -q
 
@@ -3039,6 +3040,7 @@ jobs:
           tests/test_biocatalyst_security.py
           tests/test_biocatalyst_source_registry.py
           tests/test_biocatalyst_storage.py
+          tests/test_biocatalyst_protocols.py
           tests/test_biocatalyst_trials.py -q
 
   biocatalyst-worker:

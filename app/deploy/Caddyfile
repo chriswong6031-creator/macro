@@ -73,6 +73,12 @@
 		max_size 64KB
 	}
 
+	# This paid endpoint authenticates before app-level decoding.  Cap it at the
+	# edge as well, including chunked requests that lack Content-Length.
+	request_body /api/biocatalyst/v1/trial-peer-sets:resolve {
+		max_size 16KB
+	}
+
 	reverse_proxy /api/* 127.0.0.1:8000 {
 		# TRUSTED peer identity for per-client rate limiting. mastermind-x.com is
 		# behind EdgeOne, so every real-client header the app reads (EO-Client-IP,
