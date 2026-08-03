@@ -60,6 +60,9 @@ _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
 _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
 _TRIAL_SCREEN_READ_MODEL_CONTRACT_ID = "trial_screen_read_model.v1"
 _TRIAL_SCREEN_FACETS_READ_MODEL_CONTRACT_ID = "trial_screen_facets_read_model.v1"
+_CTGOV_DISCOVERY_SCOPE_CONTRACT_ID = "ctgov_discovery_scope.v1"
+_CTGOV_DISCOVERY_RUN_CONTRACT_ID = "ctgov_discovery_run.v1"
+_CTGOV_DISCOVERY_COVERAGE_CONTRACT_ID = "ctgov_discovery_coverage_epoch.v1"
 _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
     "trial_endpoint_alignment_candidate.v1"
 )
@@ -3769,6 +3772,24 @@ def _contract_semantic_issues(
         )
 
         return trial_screen_facets_contract_semantic_issues(document)
+    if contract_id in {
+        _CTGOV_DISCOVERY_SCOPE_CONTRACT_ID,
+        _CTGOV_DISCOVERY_RUN_CONTRACT_ID,
+        _CTGOV_DISCOVERY_COVERAGE_CONTRACT_ID,
+    }:
+        # This owner module is pure contract replay: no transport, store,
+        # worker, publication, or activation path is imported here.
+        from engine.biocatalyst.discovery import (
+            discovery_coverage_epoch_contract_semantic_issues,
+            discovery_run_contract_semantic_issues,
+            discovery_scope_contract_semantic_issues,
+        )
+
+        if contract_id == _CTGOV_DISCOVERY_SCOPE_CONTRACT_ID:
+            return discovery_scope_contract_semantic_issues(document)
+        if contract_id == _CTGOV_DISCOVERY_RUN_CONTRACT_ID:
+            return discovery_run_contract_semantic_issues(document)
+        return discovery_coverage_epoch_contract_semantic_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID:
         return _endpoint_alignment_candidate_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:

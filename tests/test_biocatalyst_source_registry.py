@@ -86,6 +86,45 @@ def test_canary_is_disabled_and_empty_by_default() -> None:
     assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
 
 
+def test_scalable_discovery_control_is_dark_bounded_and_non_authoritative() -> None:
+    control = _load_yaml(SOURCE_REGISTRY)["b1s0_discovery_control"]
+
+    assert control["source_id"] == "clinicaltrials_gov_v2"
+    assert control["implementation_state"] == (
+        "dark_contract_and_hermetic_harness_only"
+    )
+    assert control["universe_mode"] == "declared_last_update_post_date_window"
+    assert control["source_selection_field"] == "LastUpdatePostDate"
+    assert control["source_query_form"] == (
+        "AREA[LastUpdatePostDate]RANGE[YYYY-MM-DD,YYYY-MM-DD]"
+    )
+    assert control["source_dataset_clock"] == "/version.dataTimestamp"
+    assert control["knowledge_clock"] == "response_received_at"
+    assert control["source_selection_precision"] == "day"
+    assert control["default_enabled"] is False
+    assert control["live_network_allowed"] is False
+    assert control["worker_mode_available"] is False
+    assert control["public_projection_allowed"] is False
+    assert control["api_exposure_allowed"] is False
+    assert control["storage_publication_allowed"] is False
+    assert set(control["allowed_contracts"]) == {
+        "ctgov_discovery_scope.v1",
+        "ctgov_discovery_run.v1",
+        "ctgov_discovery_coverage_epoch.v1",
+    }
+    assert control["allowed_scope_language"] == (
+        "Records returned for this declared ClinicalTrials.gov source query."
+    )
+    assert {
+        "complete_clinicaltrials_gov_universe",
+        "missing_record_means_deleted",
+        "last_update_post_date_is_event_time",
+        "last_update_post_date_is_knowledge_time",
+        "discovery_membership_is_issuer_or_security_identity",
+        "partial_or_quarantined_run_is_publishable",
+    } <= set(control["prohibited_claims"])
+
+
 def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> None:
     registry = _load_yaml(SOURCE_REGISTRY)
     manifest = _load_yaml(LAUNCH_SLO_MANIFEST)
