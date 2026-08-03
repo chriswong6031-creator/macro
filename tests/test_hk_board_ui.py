@@ -694,6 +694,34 @@ def test_footnote_follows_the_artifact_when_the_engine_changes_a_weight(prio_htm
     assert "signal 30% + entry 25%" not in html
 
 
+def test_footnote_reads_the_engines_real_weights_dict_not_a_lookalike():
+    """The scale rule (fractions vs points) is the one place this template can print
+    a plausible wrong number, so it is pinned against the ENGINE's own constant
+    rather than a hand-written stand-in. us_board_rank.SCORE_WEIGHTS is shared —
+    hk_board_rank.ranking_block() calls straight through to it — and it ships POINTS
+    (30.0), not fractions; a template that divided by 100 would render "signal 0%"
+    and nothing else would notice."""
+    try:
+        from engine.us_board_rank import SCORE_WEIGHTS
+    except Exception:                                    # pragma: no cover
+        pytest.skip("engine.us_board_rank unavailable in this checkout")
+    su = production_fixture()
+    su["ranking"]["weights"] = dict(SCORE_WEIGHTS)
+    html = _render(su)
+    foot = html[html.find('<p class="pb-fn">'):]
+    foot = foot[:foot.find("</p>")]
+    assert foot, "footnote not rendered"
+    total = 0
+    for leg in ("signal", "entry", "edge", "runway", "quality"):
+        pts = round(SCORE_WEIGHTS[leg])
+        total += pts
+        label = "setup quality" if leg == "quality" else leg
+        assert "%s %d%%" % (label, pts) in foot, "leg %r missing from the footnote" % leg
+    assert total == 100, "the disclosed weights no longer sum to 100: %r" % SCORE_WEIGHTS
+    # scoped to the footnote: `0%` is everywhere in the page's own gradients
+    assert " 0%" not in foot, "a weight collapsed to 0% — the fraction/points scale flipped"
+
+
 def test_dark_leg_is_disclosed_in_plain_words_wherever_the_weight_appears(prio_html):
     n = len(production_fixture()["buy"])
     assert "runway currently contributes 0 for all %d names" % n in prio_html
