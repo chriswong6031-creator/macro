@@ -54,7 +54,7 @@
       "turn_confirmed": false,
       "strength": 100,
       "market": {
-        "asof": "2026-08-01",
+        "asof": "2026-08-02",
         "chips": [
           {
             "key": "thrust_confluence",
@@ -4547,7 +4547,7 @@
         "reason": "version-matched + fresh",
         "calibration_version": "w2.7-loro-v1",
         "calibration_generated_at": "2026-07-02T12:32:51Z",
-        "calibration_age_days": 30
+        "calibration_age_days": 31
       },
       "lag_passport": {
         "basis": "per_leg_schedule",
@@ -5128,9 +5128,9 @@
     ],
     "freshness": {
       "asof": "2026-07-31",
-      "built_at": "2026-08-02T01:22:54Z",
-      "age_days": 2,
-      "age_sessions": 0,
+      "built_at": "2026-08-03T01:05:10Z",
+      "age_days": 3,
+      "age_sessions": 1,
       "max_age_sessions": 1,
       "stale": false,
       "note": "contract asof vs build time; the daily build lands post-close (22:40 UTC) so a consumer reading intraday should expect asof = prior session — recompute age against built_at at read time."
@@ -5165,7 +5165,7 @@
     "date": "2026-07-31"
   },
   "rotation": {
-    "asof": "2026-08-02",
+    "asof": "2026-08-03",
     "regime": {
       "n_active_complexes": 0,
       "breadth": null,
@@ -5222,7 +5222,7 @@
             ]
           ],
           "tinderbox_share": 0.0735,
-          "event_override_share": 0.3529,
+          "event_override_share": 0.3824,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5249,11 +5249,11 @@
               0.2778
             ],
             [
-              "rate_sensitive",
+              "secular_growth",
               0.2222
             ],
             [
-              "secular_growth",
+              "rate_sensitive",
               0.2222
             ]
           ],
@@ -5317,12 +5317,12 @@
               0.2113
             ],
             [
-              "basing_accumulator",
+              "failed_breakout_trap",
               0.0704
             ]
           ],
           "tinderbox_share": 0.0,
-          "event_override_share": 0.3333,
+          "event_override_share": 0.3623,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5367,12 +5367,12 @@
               0.1389
             ],
             [
-              "basing_accumulator",
+              "mean_reversion_rubber_band",
               0.0556
             ]
           ],
           "tinderbox_share": 0.0833,
-          "event_override_share": 0.2222,
+          "event_override_share": 0.3056,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5422,7 +5422,7 @@
             ]
           ],
           "tinderbox_share": 0.0725,
-          "event_override_share": 0.3333,
+          "event_override_share": 0.3913,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5468,7 +5468,7 @@
             ]
           ],
           "tinderbox_share": 0.0938,
-          "event_override_share": 0.1667,
+          "event_override_share": 0.2083,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5518,7 +5518,7 @@
             ]
           ],
           "tinderbox_share": 0.1125,
-          "event_override_share": 0.35,
+          "event_override_share": 0.3625,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5568,7 +5568,7 @@
             ]
           ],
           "tinderbox_share": 0.0608,
-          "event_override_share": 0.25,
+          "event_override_share": 0.2635,
           "share_denominators": {
             "archetypes_and_flags": "covered_tickers",
             "chart_labels": "label_emissions"
@@ -5590,7 +5590,7 @@
     "liquidity_overlay": "neutral"
   },
   "data_health": {
-    "last_run": "2026-08-02T00:47:10.752005+00:00",
+    "last_run": "2026-08-02T09:08:17.360647+00:00",
     "counts": {
       "ok": 161,
       "failed": 7,
@@ -5636,17 +5636,17 @@
       {
         "source": "china_einteraction",
         "error": "RuntimeError: china_einteraction: every attempted name failed at transport level (40/40)",
-        "checked_at": "2026-08-01T09:10:46.007551+00:00"
+        "checked_at": "2026-08-02T09:08:17.360903+00:00"
       }
     ]
   },
   "alerts": {
     "asof": "2026-07-31",
-    "generated_utc": "2026-08-02 01:31",
+    "generated_utc": "2026-08-03 01:15",
     "total": 60,
     "critical": 2,
-    "major": 31,
-    "minor": 27,
+    "major": 30,
+    "minor": 28,
     "actionable": 2,
     "backtested": 2
   },
@@ -5661,7 +5661,7 @@
     "ratio_qqq_spy_20d": -0.03755651064033405,
     "ratio_iwm_spy_20d": -0.02446055392502633,
     "display_only": true,
-    "factor_state_as_of": "2026-08-01",
+    "factor_state_as_of": "2026-08-02",
     "seasonal_climate": {
       "month": 8,
       "seasonality_as_of": "2026-05",
@@ -5686,7 +5686,7 @@
     "share_skew_rising": 0.631578947368421,
     "median_ivspread_rel": 0.03921,
     "share_pin_risk": null,
-    "opex_days": 20,
+    "opex_days": 19,
     "note": "sector-ETF/index options weather (raw aggregates; no composite — RO-2). Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); never directional.",
     "display_only": true
   },
@@ -5910,115 +5910,115 @@
         "value": "up",
         "prev": null,
         "since": "2026-07-05",
-        "days_in_state": 28
+        "days_in_state": 29
       },
       "usd_regime": {
         "value": "US growth premium",
         "prev": null,
         "since": "2026-07-05",
-        "days_in_state": 28
+        "days_in_state": 29
       },
       "fx_risk": {
         "value": "risk-on",
         "prev": "risk-off",
         "since": "2026-08-01",
-        "days_in_state": 1
+        "days_in_state": 2
       },
       "real_rate_regime": {
         "value": "Restrictive real yields",
         "prev": null,
         "since": "2026-07-05",
-        "days_in_state": 28
+        "days_in_state": 29
       },
       "fx_liquidity_dir": {
         "value": "supportive",
         "prev": "soft",
         "since": "2026-07-31",
-        "days_in_state": 2
+        "days_in_state": 3
       },
       "fx_regime_radar": {
         "value": null,
         "prev": "intervention_risk",
         "since": "2026-07-27",
-        "days_in_state": 6
+        "days_in_state": 7
       },
       "usd_valuation": {
         "value": "fair",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "usd_positioning": {
         "value": "neutral",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fed_path_lean": {
         "value": "hawkish_repricing",
         "prev": "steady",
         "since": "2026-07-26",
-        "days_in_state": 7
+        "days_in_state": 8
       },
       "fx_eurusd_action": {
         "value": "SHORT",
         "prev": "FLAT",
         "since": "2026-07-30",
-        "days_in_state": 3
+        "days_in_state": 4
       },
       "fx_gbpusd_action": {
         "value": "FLAT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_usdjpy_action": {
         "value": "SHORT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_usdchf_action": {
         "value": "FLAT",
         "prev": "LONG",
         "since": "2026-07-31",
-        "days_in_state": 2
+        "days_in_state": 3
       },
       "fx_audusd_action": {
         "value": "SHORT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_usdcad_action": {
         "value": "FLAT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_usdmxn_action": {
         "value": "SHORT",
         "prev": "FLAT",
         "since": "2026-07-21",
-        "days_in_state": 12
+        "days_in_state": 13
       },
       "fx_usdbrl_action": {
         "value": "FLAT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_usdcnh_action": {
         "value": "FLAT",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "fx_dxy_action": {
         "value": null,
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       }
     },
     "smile_decomp_regime": "mixed",
@@ -6335,74 +6335,74 @@
         "value": "Goldilocks",
         "prev": null,
         "since": "2026-07-05",
-        "days_in_state": 28
+        "days_in_state": 29
       },
       "commodity_favored": {
         "value": "Gold, Copper",
         "prev": "['Gold', 'Copper']",
         "since": "2026-07-10",
-        "days_in_state": 23
+        "days_in_state": 24
       },
       "commodity_mtf_grade": {
         "value": "CAUTION",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "commodity_ladder": {
         "value": "COUNTERTREND BOUNCE",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "commodity_shock_state": {
         "value": "normal",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "commodity_confluence_state": {
         "value": "Neutral",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "commodity_breadth_bucket": {
         "value": "broad",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "gold_action": {
         "value": "HOLD",
         "prev": "SELL",
         "since": "2026-07-22",
-        "days_in_state": 11
+        "days_in_state": 12
       },
       "silver_action": {
         "value": "SELL",
         "prev": "HOLD",
         "since": "2026-08-01",
-        "days_in_state": 1
+        "days_in_state": 2
       },
       "copper_action": {
         "value": "HOLD",
         "prev": null,
         "since": "2026-07-19",
-        "days_in_state": 14
+        "days_in_state": 15
       },
       "oil_action": {
         "value": "SELL",
         "prev": "HOLD",
         "since": "2026-07-22",
-        "days_in_state": 11
+        "days_in_state": 12
       }
     },
     "display_only": true
   },
   "intelligence": {
-    "as_of": "2026-08-01",
-    "n_universe": 2872,
+    "as_of": "2026-08-02",
+    "n_universe": 3029,
     "n_priority": 25,
     "n_actionable": 7,
     "n_divergences": 33,
@@ -6419,6 +6419,12 @@
         "read": "early_edge"
       },
       {
+        "ticker": "PSKY",
+        "priority": 0.49,
+        "lean": 1,
+        "read": "early_edge"
+      },
+      {
         "ticker": "F",
         "priority": 0.464,
         "lean": -1,
@@ -6429,12 +6435,6 @@
         "priority": 0.458,
         "lean": -1,
         "read": "fading"
-      },
-      {
-        "ticker": "PSKY",
-        "priority": 0.42,
-        "lean": 1,
-        "read": "early_edge"
       },
       {
         "ticker": "KO",
@@ -6648,7 +6648,7 @@
     "display_only": true
   },
   "cycle_pattern": {
-    "as_of": "2026-08-01",
+    "as_of": "2026-08-02",
     "model_epoch": "price_c4414dcb",
     "gate_status": {
       "up": {
@@ -6741,12 +6741,12 @@
       ]
     ],
     "n_tinderbox": 254,
-    "n_event_override": 567,
+    "n_event_override": 599,
     "display_only": true
   },
   "context_risk": {
     "available": true,
-    "as_of": "2026-08-01T21:40Z",
+    "as_of": "2026-08-02T03:41Z",
     "board_top_overweights": [
       {
         "archetype": "broken_growth",
@@ -6866,7 +6866,7 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-08-01",
+    "as_of": "2026-08-02",
     "schema": "china_market_state.v1",
     "phase": {
       "label": "POLICY_PUT",
@@ -6896,12 +6896,12 @@
   },
   "thematic_state": {
     "available": true,
-    "as_of": "2026-08-01",
+    "as_of": "2026-08-02",
     "n_themes": 18,
     "stage_counts": {
-      "RE-RATING": 2,
-      "WATCH": 8,
-      "BROADENING": 4,
+      "RE-RATING": 1,
+      "WATCH": 10,
+      "BROADENING": 3,
       "PRECIPICE": 4
     },
     "n_falsifiers_fired": 7,
@@ -6935,7 +6935,7 @@
         "falsifier_id": "ag_f1"
       }
     ],
-    "n_stale_legs": 4,
+    "n_stale_legs": 5,
     "noteworthy": [
       {
         "theme_id": "ai_semiconductors",
@@ -6968,19 +6968,9 @@
         "stage": "BROADENING"
       },
       {
-        "theme_id": "space_satellite",
-        "reason": "stage=BROADENING",
-        "stage": "BROADENING"
-      },
-      {
         "theme_id": "rare_earth_critical_min",
         "reason": "falsifier_fired, stage=PRECIPICE",
         "stage": "PRECIPICE"
-      },
-      {
-        "theme_id": "copper_steel_electrify",
-        "reason": "stage=RE-RATING",
-        "stage": "RE-RATING"
       },
       {
         "theme_id": "ag_fertilizer",
@@ -7006,8 +6996,8 @@
   "live_overlay": {
     "source": "data/regime/latest.json:freshness",
     "asof": "2026-07-31",
-    "built_at": "2026-08-02T01:22:54Z",
-    "age_days": 2,
+    "built_at": "2026-08-03T01:05:10Z",
+    "age_days": 3,
     "stale": false
   },
   "contradictions": {
@@ -7085,14 +7075,14 @@
     "display_only": true
   },
   "special_situations": {
-    "asof": "2026-08-02",
+    "asof": "2026-08-03",
     "counts": {
-      "total": 1199,
-      "new_today": 18,
+      "total": 1219,
+      "new_today": 30,
       "grade_a": 0,
       "grade_b": 3,
-      "with_arb": 15,
-      "cross_border": 516
+      "with_arb": 16,
+      "cross_border": 519
     },
     "setups_display": [
       {
@@ -7172,58 +7162,58 @@
     ],
     "changes": [
       {
-        "kind": "terminal",
-        "ticker": "CYCUW",
-        "category": "Acquisitions",
-        "from": "announced",
-        "to": "terminated"
-      },
-      {
         "kind": "new",
-        "ticker": "TCX",
-        "category": "Strategic Reviews",
+        "ticker": "IPCXU",
+        "category": "SPACs",
         "from": null,
-        "to": "initiated"
+        "to": "de-SPAC"
       },
       {
         "kind": "new",
-        "ticker": "ZNB",
-        "category": "Rights Offerings",
+        "ticker": "WSTNU",
+        "category": "SPACs",
         "from": null,
-        "to": "announced"
+        "to": "de-SPAC"
       },
       {
         "kind": "new",
-        "ticker": "WBQNL",
+        "ticker": "LRHC",
         "category": "Restructuring",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "GSCCF",
+        "ticker": "SCL",
+        "category": "Restructuring",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HODO",
         "category": "Other",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "CRBD",
+        "ticker": "OSTX",
         "category": "Other",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "VYNE",
+        "ticker": "ONCO",
         "category": "Other",
         "from": null,
         "to": "announced"
       },
       {
         "kind": "new",
-        "ticker": "CROX",
-        "category": "Capital Returns",
+        "ticker": "GCTK",
+        "category": "Other",
         "from": null,
         "to": "announced"
       }
@@ -7233,22 +7223,22 @@
         "ticker": "FSEA",
         "company": "First Seacoast Bancorp, Inc.",
         "gross_spread_pct": 2.37,
-        "annualized_pct": 33.0,
-        "days_to_close": 30
+        "annualized_pct": 34.4,
+        "days_to_close": 29
       },
       {
         "ticker": "SLP",
         "company": "Simulations Plus, Inc.",
         "gross_spread_pct": 1.43,
-        "annualized_pct": 22.0,
-        "days_to_close": 26
+        "annualized_pct": 23.0,
+        "days_to_close": 25
       },
       {
         "ticker": "ALOT",
         "company": "AstroNova, Inc.",
         "gross_spread_pct": 2.29,
         "annualized_pct": 5.6,
-        "days_to_close": 152
+        "days_to_close": 151
       }
     ],
     "display_only": true
@@ -7456,7 +7446,7 @@
     "display_only": true
   },
   "stage_analysis": {
-    "as_of": "2026-08-02",
+    "as_of": "2026-08-03",
     "counts": {
       "total": 2722,
       "stage1": 141,
@@ -7684,9 +7674,9 @@
       {
         "chain": "dollar_spike_em_multinational",
         "title_en": "Dollar spike → EM & multinational-EPS headwind",
-        "state": "arming",
+        "state": "propagating",
         "tier": "hypothesis",
-        "links_confirmed": 0,
+        "links_confirmed": 1,
         "n_hops": 2,
         "base_rates": null,
         "blast": {
@@ -7800,13 +7790,13 @@
     "data/market_state/latest.json": "2026-07-31",
     "data/regime/latest.json": "2026-07-31",
     "data/breadth/breadth.parquet": "2026-07-31",
-    "site/basketdata/oracle_state.json": "2026-08-02",
-    "data/run_status.json": "2026-08-02T00:47:10.752005+00:00",
+    "site/basketdata/oracle_state.json": "2026-08-03",
+    "data/run_status.json": "2026-08-02T09:08:17.360647+00:00",
     "site/factordata/alerts_triage.json": "2026-07-31",
     "data/neuralweb/liquidity_plumbing.json": "2026-07-31",
     "data/rebalance_pulse/latest.json": "2026-07-31",
-    "site/chinastatedata/market_state.json": "2026-08-01",
-    "data/neuralweb/theme_state.json": "2026-08-01",
+    "site/chinastatedata/market_state.json": "2026-08-02",
+    "data/neuralweb/theme_state.json": "2026-08-02",
     "data/transmission/latest.json": "2026-07-31",
     "data/rates_command/latest.json": "2026-07-31",
     "data/forex/latest.json": "2026-08-01",
@@ -7815,12 +7805,12 @@
     "data/hk_regime/latest.json": "2026-07-31",
     "data/canada_regime/latest.json": "2026-07-31",
     "data/commodity/latest.json": "2026-07-31",
-    "site/intelligence/briefing.json": "2026-08-01",
+    "site/intelligence/briefing.json": "2026-08-02",
     "data/crossasset/latest.json": "2026-08-01",
     "data/intl_risk/latest.json": null,
     "site/basketdata/theme_context.json": "2026-07-31",
     "data/market_structure/latest.json": "2026-07-31",
-    "data/stage_analysis/context/latest.json": "2026-08-02",
+    "data/stage_analysis/context/latest.json": "2026-08-03",
     "data/darkpool/context/latest.json": "2026-07-31",
     "data/transmission/chain_state.json": "2026-07-31",
     "data/mag7_washout/latest.json": "2026-07-31",
@@ -7828,7 +7818,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-08-02T03:30:58Z",
-  "inputs_hash": "sha256:b5ac023b66cc388f7dc0ef2da92d201f951eb6fd83aa93750a18262578354553",
+  "produced_at": "2026-08-03T03:18:38Z",
+  "inputs_hash": "sha256:2f24952c9c5e06e8d9891ce76bd7b3b90b1c2f57654740fb3704d703d2d50416",
   "tier": "infrastructure"
 }

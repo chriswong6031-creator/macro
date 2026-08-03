@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-02",
+  "as_of": "2026-08-03",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "credit_stress",
       "driver": "credit_stress",
       "pathway_role": "primary",
-      "as_of": "2026-08-02",
+      "as_of": "2026-08-03",
       "direction_en": "Credit stress",
       "direction_zh": "信用压力",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_credit_stress",
-          "as_of": "2026-08-02",
+          "as_of": "2026-08-03",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "credit_stress",
@@ -66,7 +66,7 @@
       "family": "rates",
       "driver": "fed_repricing",
       "pathway_role": "alternate",
-      "as_of": "2026-08-02",
+      "as_of": "2026-08-03",
       "direction_en": "dovish repricing — cuts priced in, front-end down",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_fed_repricing",
-          "as_of": "2026-08-02",
+          "as_of": "2026-08-03",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "fed_repricing",
@@ -102,7 +102,7 @@
       "family": "liquidity",
       "driver": "liquidity_impulse",
       "pathway_role": "alternate",
-      "as_of": "2026-08-02",
+      "as_of": "2026-08-03",
       "direction_en": "net liquidity draining — risk headwind",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -112,7 +112,7 @@
       "nodes": [
         {
           "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-08-02",
+          "as_of": "2026-08-03",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "liquidity_impulse",

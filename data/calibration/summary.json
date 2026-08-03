@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "desks": [
     {
       "name": "AI Desk",
@@ -79,7 +79,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 420,
+      "open": 421,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -205,7 +205,7 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 50,
-      "open": 113,
+      "open": 109,
       "hit_rate": 0.58,
       "dir_accuracy": 0.4,
       "null_hit_rate": 0.856,

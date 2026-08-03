@@ -126,6 +126,20 @@ body.page-macro.mx4-grid .sx{
 }
 /* v5.3 (Order 5): per-card colored hover tint REMOVED — unified idiom is applied
    on the interactive face element itself (see .sxg-face.mx5-card-face:hover below). */
+/* ...and once the face owns the card treatment, .sx must stop painting one too.
+   Both layers were drawing an opaque white rounded surface at ZERO inset with
+   MISMATCHED radii (.sx 10px under a face at 18px), so the parent showed as a
+   square-ish shoulder around every card corner — the "container within a
+   container" on the markets/what-to-do cards. Here .sx is just the grid cell.
+   Cards WITHOUT a face (#sx-risk-v2, the risk header) keep the rule above and are
+   untouched: :has() finds no face element in them at all. overflow must go visible
+   too, or the cell's 10px clip would bite the face's 18px corners back off. */
+body.page-macro.mx4-grid .sx:has(> .sxg-face.mx5-card-face){
+  background:transparent;
+  box-shadow:none;
+  border-radius:18px;
+  overflow:visible;
+}
 
 /* ── Markets face tiles ───────────────────────────────────────── */
 body.page-macro .sxg-face-tiles{

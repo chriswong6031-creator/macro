@@ -1,0 +1,13 @@
+{
+  "prediction_id": "CLAIMS:2026-08-13:first:2026-08-02:v1",
+  "asof": "2026-08-02",
+  "features": {
+    "IC4WSA": null,
+    "ICSA": null
+  },
+  "legs": {
+    "IC4WSA": "present",
+    "ICSA": "present"
+  },
+  "inputs_hash": ""
+}

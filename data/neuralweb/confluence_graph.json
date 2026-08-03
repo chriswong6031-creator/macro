@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-08-01",
+  "asof": "2026-08-02",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 44
+        "n_spine_rows": 45
       }
     },
     {
@@ -107,7 +107,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 1672
+        "n_spine_rows": 1734
       }
     },
     {
@@ -115,7 +115,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 228
+        "n_spine_rows": 239
       }
     },
     {
@@ -171,7 +171,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 168
+        "n_spine_rows": 177
       }
     },
     {
@@ -11537,6 +11537,46 @@
       "note": "structural: scripts/build_biopharma_seasonality.py writes site/seasonalitydata/methodology.json"
     },
     {
+      "src": "module:scripts/build_stock_seasonality.py",
+      "dst": "artifact:site-stock-seasonality-index",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_seasonality.py writes site/seasonalitydata/index.json"
+    },
+    {
+      "src": "module:scripts/build_stock_seasonality.py",
+      "dst": "artifact:site-stock-seasonality-entity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_seasonality.py writes site/seasonalitydata/entities/<SYM>.json"
+    },
+    {
+      "src": "module:scripts/build_stock_seasonality.py",
+      "dst": "artifact:data-stock-seasonality-selection-cache",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_seasonality.py writes data/seasonality/selection/<SYM>.json"
+    },
+    {
+      "src": "artifact:data-stock-seasonality-selection-cache",
+      "dst": "module:scripts/build_stock_seasonality.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/seasonality/selection/<SYM>.json consumed by scripts/build_stock_seasonality.py"
+    },
+    {
       "src": "module:scripts/build_site.py",
       "dst": "artifact:site-momentum-display",
       "edge_type": "feeds",
@@ -16738,6 +16778,116 @@
     },
     {
       "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-award-event-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/award_event_snapshots.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-award-event-snapshots",
+      "dst": "module:engine/government_revenue/metrics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_event_snapshots.parquet consumed by engine/government_revenue/metrics.py"
+    },
+    {
+      "src": "artifact:government-revenue-award-event-snapshots",
+      "dst": "module:engine/government_revenue/award_events.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_event_snapshots.parquet consumed by engine/government_revenue/award_events.py"
+    },
+    {
+      "src": "artifact:government-revenue-award-event-snapshots",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_event_snapshots.parquet consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-award-action-versions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/award_action_versions.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-award-action-versions",
+      "dst": "module:engine/government_revenue/metrics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_action_versions.parquet consumed by engine/government_revenue/metrics.py"
+    },
+    {
+      "src": "artifact:government-revenue-award-action-versions",
+      "dst": "module:engine/government_revenue/award_events.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_action_versions.parquet consumed by engine/government_revenue/award_events.py"
+    },
+    {
+      "src": "artifact:government-revenue-award-action-versions",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_action_versions.parquet consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-award-event-projection-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/award_event_projection_state.json"
+    },
+    {
+      "src": "artifact:government-revenue-award-event-projection-state",
+      "dst": "module:engine/government_revenue/metrics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_event_projection_state.json consumed by engine/government_revenue/metrics.py"
+    },
+    {
+      "src": "artifact:government-revenue-award-event-projection-state",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_event_projection_state.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
       "dst": "artifact:government-revenue-ingest-status",
       "edge_type": "feeds",
       "n": null,
@@ -16805,6 +16955,206 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/government_revenue/collection_receipts.jsonl consumed by collectors/usaspending_awards.py"
+    },
+    {
+      "src": "artifact:government-revenue-collection-receipts",
+      "dst": "module:engine/government_revenue/metrics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/collection_receipts.jsonl consumed by engine/government_revenue/metrics.py"
+    },
+    {
+      "src": "artifact:government-revenue-collection-receipts",
+      "dst": "module:engine/government_revenue/award_events.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/collection_receipts.jsonl consumed by engine/government_revenue/award_events.py"
+    },
+    {
+      "src": "artifact:government-revenue-collection-receipts",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/collection_receipts.jsonl consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_subawards.py",
+      "dst": "artifact:government-revenue-subaward-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_subawards.py writes data/government_revenue/subaward_snapshots.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-snapshots",
+      "dst": "module:collectors/usaspending_subawards.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_snapshots.parquet consumed by collectors/usaspending_subawards.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-snapshots",
+      "dst": "module:engine/government_revenue/subaward_dossiers.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_snapshots.parquet consumed by engine/government_revenue/subaward_dossiers.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-snapshots",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_snapshots.parquet consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_subawards.py",
+      "dst": "artifact:government-revenue-subaward-collection-receipts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_subawards.py writes data/government_revenue/subaward_collection_receipts.jsonl"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-collection-receipts",
+      "dst": "module:collectors/usaspending_subawards.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_collection_receipts.jsonl consumed by collectors/usaspending_subawards.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-collection-receipts",
+      "dst": "module:engine/government_revenue/subaward_dossiers.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_collection_receipts.jsonl consumed by engine/government_revenue/subaward_dossiers.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-collection-receipts",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_collection_receipts.jsonl consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_subawards.py",
+      "dst": "artifact:government-revenue-subaward-projection-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_subawards.py writes data/government_revenue/subaward_projection_state.json"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-projection-state",
+      "dst": "module:collectors/usaspending_subawards.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_projection_state.json consumed by collectors/usaspending_subawards.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-projection-state",
+      "dst": "module:engine/government_revenue/subaward_dossiers.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_projection_state.json consumed by engine/government_revenue/subaward_dossiers.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-projection-state",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_projection_state.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_subawards.py",
+      "dst": "artifact:government-revenue-subaward-ingest-status",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_subawards.py writes data/government_revenue/subaward_ingest_status.json"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-ingest-status",
+      "dst": "module:engine/government_revenue/subaward_dossiers.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_ingest_status.json consumed by engine/government_revenue/subaward_dossiers.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-ingest-status",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_ingest_status.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_subawards.py",
+      "dst": "artifact:government-revenue-subaward-collector-heartbeat",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_subawards.py writes data/government_revenue/subaward_collector_heartbeat.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-collector-heartbeat",
+      "dst": "module:scripts/collect.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_collector_heartbeat.parquet consumed by scripts/collect.py"
     },
     {
       "src": "module:collectors/sam_gov.py",
@@ -16978,6 +17328,136 @@
     },
     {
       "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:government-revenue-dossiers",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes data/government_revenue/dossiers.json"
+    },
+    {
+      "src": "artifact:government-revenue-dossiers",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/dossiers.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-dossiers",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/dossiers.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:government-revenue-subaward-dossiers",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes data/government_revenue/subaward_dossiers.json"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-dossiers",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_dossiers.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-subaward-dossiers",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/subaward_dossiers.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:scripts/curate_government_revenue_recipient_graph.py",
+      "dst": "artifact:government-revenue-recipient-entity-graph",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/curate_government_revenue_recipient_graph.py writes data/government_revenue/recipient_entity_graph.json"
+    },
+    {
+      "src": "artifact:government-revenue-recipient-entity-graph",
+      "dst": "module:engine/government_revenue/metrics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/recipient_entity_graph.json consumed by engine/government_revenue/metrics.py"
+    },
+    {
+      "src": "artifact:government-revenue-recipient-entity-graph",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/recipient_entity_graph.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-recipient-entity-graph",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/recipient_entity_graph.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:government-revenue-recipient-resolution-coverage",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes data/government_revenue/recipient_resolution_coverage.json"
+    },
+    {
+      "src": "artifact:government-revenue-recipient-resolution-coverage",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/recipient_resolution_coverage.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "artifact:government-revenue-recipient-resolution-coverage",
+      "dst": "module:scripts/check_government_revenue_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/recipient_resolution_coverage.json consumed by scripts/check_government_revenue_projection.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
       "dst": "artifact:site-government-revenue-latest",
       "edge_type": "feeds",
       "n": null,
@@ -17025,6 +17505,46 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/government-revenue-data/workspace.json consumed by site/government_revenue.html"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:site-government-revenue-dossiers",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes site/government-revenue-data/dossiers.json"
+    },
+    {
+      "src": "artifact:site-government-revenue-dossiers",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/dossiers.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:site-government-revenue-subaward-dossiers",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes site/government-revenue-data/subaward-dossiers.json"
+    },
+    {
+      "src": "artifact:site-government-revenue-subaward-dossiers",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/subaward-dossiers.json consumed by app/government_revenue.py"
     },
     {
       "src": "module:collectors/sec_capital_structure.py",
@@ -17088,6 +17608,26 @@
     },
     {
       "src": "module:collectors/sec_capital_structure.py",
+      "dst": "artifact:capital-structure-retrieval-queue-receipt",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure.py writes data/capital_structure/retrieval_queue_receipt.json"
+    },
+    {
+      "src": "artifact:capital-structure-retrieval-queue-receipt",
+      "dst": "module:collectors/sec_capital_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/retrieval_queue_receipt.json consumed by collectors/sec_capital_structure.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure.py",
       "dst": "artifact:capital-structure-source-manifest",
       "edge_type": "feeds",
       "n": null,
@@ -17107,6 +17647,96 @@
       "note": "structural: data/capital_structure/source_manifest.parquet consumed by scripts/compile_capital_structure_events.py"
     },
     {
+      "src": "artifact:capital-structure-source-manifest",
+      "dst": "module:scripts/build_capital_structure_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/source_manifest.parquet consumed by scripts/build_capital_structure_projection.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure_companyfacts.py",
+      "dst": "artifact:capital-structure-companyfacts-source-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure_companyfacts.py writes data/capital_structure/companyfacts/generations/*/source_manifest.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-source-manifest",
+      "dst": "module:collectors/sec_capital_structure_companyfacts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/generations/*/source_manifest.parquet consumed by collectors/sec_capital_structure_companyfacts.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure_companyfacts.py",
+      "dst": "artifact:capital-structure-companyfacts-coverage",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure_companyfacts.py writes data/capital_structure/companyfacts/generations/*/coverage.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-coverage",
+      "dst": "module:collectors/sec_capital_structure_companyfacts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/generations/*/coverage.parquet consumed by collectors/sec_capital_structure_companyfacts.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure_companyfacts.py",
+      "dst": "artifact:capital-structure-companyfacts-current-pointer",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure_companyfacts.py writes data/capital_structure/companyfacts/coverage_receipt.json"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure_companyfacts.py",
+      "dst": "artifact:capital-structure-companyfacts-coverage-receipts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure_companyfacts.py writes data/capital_structure/companyfacts/receipts/*.json"
+    },
+    {
+      "src": "artifact:capital-structure-companyfacts-coverage-receipts",
+      "dst": "module:collectors/sec_capital_structure_companyfacts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/companyfacts/receipts/*.json consumed by collectors/sec_capital_structure_companyfacts.py"
+    },
+    {
+      "src": "module:scripts/compile_capital_structure_document_terms.py",
+      "dst": "artifact:capital-structure-document-term-observations",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/compile_capital_structure_document_terms.py writes data/capital_structure/document_term_observations.parquet"
+    },
+    {
       "src": "module:scripts/compile_capital_structure_events.py",
       "dst": "artifact:capital-structure-event-versions",
       "edge_type": "feeds",
@@ -17115,6 +17745,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/event_versions.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-event-versions",
+      "dst": "module:scripts/build_capital_structure_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/event_versions.parquet consumed by scripts/build_capital_structure_projection.py"
     },
     {
       "src": "module:scripts/compile_capital_structure_events.py",
@@ -17127,6 +17767,16 @@
       "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/event_edges.parquet"
     },
     {
+      "src": "artifact:capital-structure-event-edges",
+      "dst": "module:scripts/build_capital_structure_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/event_edges.parquet consumed by scripts/build_capital_structure_projection.py"
+    },
+    {
       "src": "module:scripts/compile_capital_structure_events.py",
       "dst": "artifact:capital-structure-review-queue",
       "edge_type": "feeds",
@@ -17137,6 +17787,16 @@
       "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/review_queue.parquet"
     },
     {
+      "src": "artifact:capital-structure-review-queue",
+      "dst": "module:scripts/build_capital_structure_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/review_queue.parquet consumed by scripts/build_capital_structure_projection.py"
+    },
+    {
       "src": "module:scripts/compile_capital_structure_events.py",
       "dst": "artifact:capital-structure-telemetry",
       "edge_type": "feeds",
@@ -17145,6 +17805,46 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/telemetry.json"
+    },
+    {
+      "src": "artifact:capital-structure-telemetry",
+      "dst": "module:scripts/build_capital_structure_projection.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/telemetry.json consumed by scripts/build_capital_structure_projection.py"
+    },
+    {
+      "src": "module:scripts/build_capital_structure_projection.py",
+      "dst": "artifact:capital-structure-projection",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_capital_structure_projection.py writes data/capital_structure/projection.json"
+    },
+    {
+      "src": "artifact:capital-structure-projection",
+      "dst": "module:app/capital_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/projection.json consumed by app/capital_structure.py"
+    },
+    {
+      "src": "module:scripts/build_capital_structure_projection.py",
+      "dst": "artifact:site-capital-structure-projection",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_capital_structure_projection.py writes site/capital-structure-data/latest.json"
     },
     {
       "src": "module:scripts/build_chronicle.py",
@@ -17334,7 +18034,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=32 ticker-level demand-vs-supply divergences b=n_divergences=32, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO',"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=33 ticker-level demand-vs-supply divergences b=n_divergences=33, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO',"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -17584,16 +18284,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "32 ticker-level demand-vs-supply divergences"
+        "reading": "33 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=32, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO', 'CL']"
+        "reading": "n_divergences=33, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO', 'CL']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-02",
-      "note": "32 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, PSKY, NVDA, MO, CL.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-03",
+      "note": "33 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, PSKY, NVDA, MO, CL.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -17630,7 +18330,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-02T03:11:03Z",
-  "inputs_hash": "sha256:77d748723e4abe9806336e58c4aea5c00d3d545b4715543f86f7c5df68622653",
+  "produced_at": "2026-08-03T02:58:11Z",
+  "inputs_hash": "sha256:5a40402e03479330d1b6c74a2f634d361a18bf09541642ab5d8ea760ad3680ba",
   "tier": "display"
 }

@@ -124,7 +124,7 @@
   .panel.accent { background: color-mix(in srgb, var(--panel) 78%, transparent);
     -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
     border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-    box-shadow: 0 1px 0 color-mix(in srgb,#fff 8%,transparent) inset, 0 24px 60px -28px rgba(3,7,18,.7); }
+    box-shadow: 0 1px 0 color-mix(in srgb,#fff 8%,transparent) inset, 0 16px 40px -30px rgba(3,7,18,.34); }
 
   /* aurora backdrop — four soft blobs, state-tinted, compositor-safe (fixed, opacity-only) */
   .intl-aurora { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }

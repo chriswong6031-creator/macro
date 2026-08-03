@@ -226,7 +226,9 @@ body.page-macro .mxqm-q2-fill.active{opacity:.42}
 body.page-macro .mxqm-q3-fill.active{opacity:.42}
 body.page-macro .mxqm-q4-fill.active{opacity:.42}
 body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.34);font-size:7.5px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif}
-body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:8px;letter-spacing:.06em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.62);font-size:6.6px;letter-spacing:.04em;font-family:Inter,-apple-system,sans-serif;font-weight:700}
+body.page-macro .mxqm-quad-label.l-zh{font-size:8px;letter-spacing:.06em}
 body.page-macro .mxqm-odds{fill:rgba(255,255,255,.72);font-size:17px;font-weight:800;font-family:Inter,-apple-system,sans-serif;font-variant-numeric:tabular-nums}
 body.page-macro .mxqm-odds.active{fill:#fff}
 body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.92);stroke-width:1.5}

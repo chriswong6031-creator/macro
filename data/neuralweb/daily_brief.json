@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-02T20:33:10.765053+00:00",
+  "produced_at": "2026-08-03T03:19:44.768873+00:00",
   "as_of": "2026-07-31",
   "status": "warn",
-  "phase": "final",
+  "phase": "engine",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -11,7 +11,71 @@
     "context_stale": false,
     "summary": "cortex degraded — model_unavailable"
   },
-  "what_changed": [],
+  "what_changed": [
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "spine-index",
+      "summary": "lobe spine-index row count changed: 338286 → 338369 (0%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "nw-health-run-history",
+      "summary": "lobe nw-health-run-history row count changed: 16 → 17 (6%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "governance-ledger",
+      "summary": "lobe governance-ledger row count changed: 55 → 56 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "neuralweb-orchestrator-runlog",
+      "summary": "lobe neuralweb-orchestrator-runlog row count changed: 18 → 19 (6%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "mechanism-pathways-history",
+      "summary": "lobe mechanism-pathways-history row count changed: 24 → 25 (4%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "theme-phase-history",
+      "summary": "lobe theme-phase-history row count changed: 124 → 126 (2%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_row_count_changed",
+      "id": "covariance-spine-history",
+      "summary": "lobe covariance-spine-history row count changed: 20 → 21 (5%)",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "causal-edges",
+      "summary": "lobe causal-edges status: fresh → stale",
+      "severity": "warn",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_status_changed",
+      "id": "causal-nulls",
+      "summary": "lobe causal-nulls status: fresh → stale",
+      "severity": "warn",
+      "evidence_path": "data/neuralweb/health.json"
+    }
+  ],
   "what_contradicted": [
     {
       "id": "",
@@ -30,9 +94,33 @@
   ],
   "what_is_stale": [
     {
+      "id": "cortex-attention-grades",
+      "as_of": null,
+      "age_hours": 203.95,
+      "freshness_sla_hours": 30,
+      "severity": "warn",
+      "kind": "stale"
+    },
+    {
+      "id": "causal-edges",
+      "as_of": null,
+      "age_hours": 203.95,
+      "freshness_sla_hours": 192,
+      "severity": "warn",
+      "kind": "stale"
+    },
+    {
+      "id": "causal-nulls",
+      "as_of": null,
+      "age_hours": 203.95,
+      "freshness_sla_hours": 192,
+      "severity": "warn",
+      "kind": "stale"
+    },
+    {
       "id": "treasury-watch",
       "as_of": "2026-07-30",
-      "age_hours": 75.54,
+      "age_hours": 99.33,
       "freshness_sla_hours": 48,
       "severity": "warn",
       "kind": "stale"
@@ -40,15 +128,7 @@
     {
       "id": "cortex-attention-firings",
       "as_of": null,
-      "age_hours": 55.35,
-      "freshness_sla_hours": 30,
-      "severity": "warn",
-      "kind": "stale"
-    },
-    {
-      "id": "cortex-attention-grades",
-      "as_of": null,
-      "age_hours": 55.35,
+      "age_hours": 94.5,
       "freshness_sla_hours": 30,
       "severity": "warn",
       "kind": "stale"
@@ -56,7 +136,7 @@
     {
       "id": "causal-llm-lane",
       "as_of": "2026-07-29T03:34:23+00:00",
-      "age_hours": 95.96,
+      "age_hours": 119.76,
       "freshness_sla_hours": 200,
       "severity": "watch",
       "kind": "degraded"
@@ -176,7 +256,7 @@
   ],
   "why_the_tape_moved": {
     "available": true,
-    "as_of": "2026-08-02",
+    "as_of": "2026-08-03",
     "primary": {
       "family": "credit_stress",
       "direction": "Credit stress",
@@ -199,26 +279,38 @@
     },
     {
       "priority": 2,
+      "area": "cortex-attention-grades",
+      "summary": "lobe cortex-attention-grades is warn — age 203.95h vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "causal-edges",
+      "summary": "lobe causal-edges is warn — age 203.95h vs SLA 192h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "causal-nulls",
+      "summary": "lobe causal-nulls is warn — age 203.95h vs SLA 192h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
       "area": "treasury-watch",
-      "summary": "lobe treasury-watch is warn — age 75.54h vs SLA 48h",
+      "summary": "lobe treasury-watch is warn — age 99.33h vs SLA 48h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "cortex-attention-firings",
-      "summary": "lobe cortex-attention-firings is warn — age 55.35h vs SLA 30h",
-      "action_type": "inspect"
-    },
-    {
-      "priority": 2,
-      "area": "cortex-attention-grades",
-      "summary": "lobe cortex-attention-grades is warn — age 55.35h vs SLA 30h",
+      "summary": "lobe cortex-attention-firings is warn — age 94.5h vs SLA 30h",
       "action_type": "inspect"
     },
     {
       "priority": 2,
       "area": "causal-llm-lane",
-      "summary": "lobe causal-llm-lane is watch — age 95.96h vs SLA 200h",
+      "summary": "lobe causal-llm-lane is watch — age 119.76h vs SLA 200h",
       "action_type": "inspect"
     },
     {
@@ -421,7 +513,7 @@
   },
   "thematic_line": {
     "available": true,
-    "as_of": "2026-08-02",
+    "as_of": "2026-08-03",
     "n_themes": 18,
     "stage_counts": {
       "RE-RATING": 1,
@@ -430,7 +522,7 @@
       "PRECIPICE": 4
     },
     "n_falsifiers_fired": 7,
-    "n_stale_legs": 5,
+    "n_stale_legs": 7,
     "display_only": true,
     "is_context_only": true
   },
