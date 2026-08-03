@@ -218,6 +218,10 @@ class TestFullWhitelistParity:
             f"Prompt advertises 'READ ({advertised})' but names {len(named)} distinct "
             f"read tools in the list — the number and the list disagree"
         )
+        assert "read_earnings_evidence" in named, (
+            "Cortex may dispatch read_earnings_evidence but its system prompt does "
+            "not disclose that tool to the model"
+        )
 
     def test_prompt_read_count_is_derived_not_hardcoded(self):
         """The READ/WRITE counts must be INTERPOLATED, never hand-written.

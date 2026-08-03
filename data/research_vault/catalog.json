@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T11:50:29.139619+00:00",
-  "count": 661,
+  "generated_at": "2026-08-03T12:20:46.841026+00:00",
+  "count": 663,
   "institutions": [
     "Alger",
     "Amova",
@@ -68,13 +68,55 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-mwblyx01ibp-e17461",
+      "title": "MS Debunking the Value Add Myth",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:03:00Z",
+      "summary_points": [
+        "**GDP Forecast Upgrade**: Mexico 2027 GDP growth lifted to 1.9% (from 1.7%) driven by export boom, with IT hardware/AI sector as structural growth driver.",
+        "**Export Growth Divergence**: IT hardware/AI exports up 53% YTD vs auto exports down 8% YTD; IT sector nears auto export volume ($100bn vs $120bn+).",
+        "**Capital Efficiency Leadership**: IT hardware/AI generates $1.5 value added per $1 capital vs auto’s $1.2, with 1.3x higher productivity per worker.",
+        "**Structural Value-Add Surpass**: IT hardware/AI value added (~$20bn) nears auto benchmark (29% vs auto’s 29% in Exhibit 2), contradicting prior narratives.",
+        "**Auto Tariff Risk Disparity**: Auto faces elevated USMCA tariff risk (-8% YTD exports) vs IT hardware/AI’s growth (+53% YTD), extending uncertainty beyond July."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 39,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tbuesj1nzhm-46e1b0",
+      "title": "This Week in Asia Pacific Macro 3 9 August (Audio)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:24:39Z",
+      "summary_points": [
+        "**Data Catalysts**: Japan's June wage report, regional CPI/trade data, and RBI meeting as key drivers for Asia-Pacific market movements.",
+        "**Election Risk**: Malaysia state election introducing significant uncertainty requiring portfolio adjustments in regional markets.",
+        "**Policy Shifts**: RBI meeting and central bank policy changes creating volatility in Asia-Pacific asset pricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-jpjm7habrsh-5ec3bc",
       "title": "GS Utilities Daily Engie EPS upgrades and a new data center catalyst on the horizon Veolia Environnement Update numbers...",
       "institution": "Goldman Sachs",
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-03T10:23:55Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Engie: Data center catalyst drives 2.8% EPS uplift** – 4 GW co-siting projects (12-month horizon) lift 2026-28 EPS forecasts amid strong H1 2026 results (€7.7bn EBITDA) - **Europe electrification accelerates utility outperformance** – Power demand +5% pa, €2tn infrastructure investment (2026-35); utilities with strong balance sheets (RWE, Orsted, EDP) gain structural tailwinds - **Agentic AI fuels 25% datacenter demand surge** – +10pp AI queries → +25% power needs, driving 1.5-2% annual consumption growth and 9% EPS CAGR (2025-30) for renewables/FlexGen - **France offshore wind policy unlocks €260mn infrastructure** – €260mn allocated to 5 ports for 6GW floating wind (geopolitical policy catalyst), enabling sector capacity expansion"
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
