@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_change_alert_projection.v1.schema.json",
+  "title": "BioCatalyst Trial Change Alert Projection v1",
+  "description": "A chronological, tenant-neutral, content-addressed projection over exact registry-operation classifications. It is explicitly not a canonical alert and is never delivery eligible.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "projection_id", "classification_ref",
+    "classification_payload_sha256", "nct_id", "source_clock", "available",
+    "unavailable_reason", "tenant_scope", "chronology_order", "canonical_alert",
+    "delivery_eligible", "protocol_change_asserted", "materiality_assessed",
+    "correction_assessed", "review_decision_refs", "row_count", "rows", "authority",
+    "hash_scope", "projection_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_change_alert_projection.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "projection_id": {
+      "type": "string",
+      "pattern": "^trial_change_alert_projection_(NCT[0-9]{8}|unavailable)_[a-f0-9]{24}$"
+    },
+    "classification_ref": {
+      "type": "string",
+      "pattern": "^trial_change_classification_(NCT[0-9]{8}|unavailable)_[a-f0-9]{24}$"
+    },
+    "classification_payload_sha256": {
+      "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/sha256"
+    },
+    "nct_id": {
+      "anyOf": [
+        {"$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/nctId"},
+        {"type": "null"}
+      ]
+    },
+    "source_clock": {
+      "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/sourceClock"
+    },
+    "available": {"type": "boolean"},
+    "unavailable_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        "history_disabled", "retention_gate_closed", "prospective_activation_missing",
+        "prospective_activation_invalid", "prospective_activation_stale", "missing_evidence",
+        "schema_profile_mismatch", "unsupported_diff_contract", "evidence_replay_failed",
+        "input_before_snapshot_must_be_canonical_json", "input_after_snapshot_must_be_canonical_json",
+        "input_before_observation_must_be_canonical_json", "input_after_observation_must_be_canonical_json",
+        "input_diff_must_be_canonical_json", "input_before_run_must_be_canonical_json",
+        "input_after_run_must_be_canonical_json", "input_before_receipts_must_be_canonical_json",
+        "input_after_receipts_must_be_canonical_json", "input_before_raw_evidence_invalid",
+        "input_after_raw_evidence_invalid", "input_before_raw_bytes_limit_exceeded",
+        "input_after_raw_bytes_limit_exceeded", "input_canonical_byte_limit_exceeded",
+        "input_before_raw_key_bytes_limit_exceeded", "input_after_raw_key_bytes_limit_exceeded",
+        "input_node_limit_exceeded", "input_nesting_limit_exceeded",
+        "input_container_limit_exceeded", "operation_count_limit_exceeded",
+        "row_count_limit_exceeded", "classification_byte_limit_exceeded",
+        "projection_byte_limit_exceeded", null
+      ]
+    },
+    "tenant_scope": {"const": "tenant_neutral"},
+    "chronology_order": {"const": "source_clock_then_exact_op_index"},
+    "canonical_alert": {"const": false},
+    "delivery_eligible": {"const": false},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "correction_assessed": {"const": false},
+    "review_decision_refs": {"const": []},
+    "row_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "rows": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/changeRow"
+      }
+    },
+    "authority": {
+      "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/authority"
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_projection_payload_sha256"},
+    "projection_payload_sha256": {
+      "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"available": {"const": true}}},
+      "then": {
+        "properties": {
+          "nct_id": {
+            "$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json#/$defs/nctId"
+          },
+          "unavailable_reason": {"const": null}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"available": {"const": false}}},
+      "then": {
+        "properties": {
+          "nct_id": {"const": null},
+          "source_clock": {"properties": {"profile": {"const": "unavailable"}}},
+          "unavailable_reason": {"type": "string"},
+          "row_count": {"const": 0},
+          "rows": {"maxItems": 0}
+        }
+      }
+    }
+  ]
+}

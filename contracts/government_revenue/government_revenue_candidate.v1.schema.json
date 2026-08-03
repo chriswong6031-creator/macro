@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_candidate.v1.schema.json",
+  "title": "Government Revenue Research Candidate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "candidate_id", "observation_id", "candidate_scope", "is_neuralweb_trade_candidate",
+    "candidate_family", "candidate_state", "ticker", "issuer_company_id", "issuer", "issuer_resolution_ref", "ownership_path_refs",
+    "event_refs", "source_event", "source_receipt_refs", "artifact_content_ids", "effective_at", "known_at", "analysis_as_of", "generated_at", "freshness",
+    "coverage", "materiality", "transmission_direction", "mechanism", "earnings_transmission", "crosscheck_state",
+    "counterevidence", "internal_watch_conditions", "authority", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue_candidate.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "candidate_id": {"type": "string", "pattern": "^grc1-[a-f0-9]{24}$"},
+    "observation_id": {"type": "string", "pattern": "^gro1-[a-f0-9]{24}$"},
+    "candidate_scope": {"const": "government_revenue_research"},
+    "is_neuralweb_trade_candidate": {"const": false},
+    "candidate_family": {"enum": ["award_obligation_change", "award_ceiling_change", "option_exercise", "new_award"]},
+    "candidate_state": {"enum": ["detected", "awaiting_crosscheck", "active", "matured", "superseded", "withdrawn", "blocked"]},
+    "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+    "issuer_company_id": {"type": "string", "minLength": 1},
+    "issuer": {"$ref": "#/$defs/issuer"},
+    "issuer_resolution_ref": {"$ref": "#/$defs/issuerResolution"},
+    "ownership_path_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "event_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_event": {"$ref": "#/$defs/sourceEvent"},
+    "source_receipt_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/receiptRef"}},
+    "artifact_content_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 8}},
+    "effective_at": {"type": "string", "format": "date-time"}, "known_at": {"type": "string", "format": "date-time"},
+    "analysis_as_of": {"type": "string", "format": "date-time"}, "generated_at": {"type": "string", "format": "date-time"},
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "materiality": {"$ref": "#/$defs/materiality"},
+    "transmission_direction": {"enum": ["possible_positive", "possible_negative", "mixed", "unknown"]},
+    "mechanism": {"$ref": "#/$defs/mechanism"},
+    "earnings_transmission": {"$ref": "#/$defs/transmission"},
+    "crosscheck_state": {"const": "not_evaluated"},
+    "counterevidence": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "internal_watch_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "authority": {"$ref": "#/$defs/authority"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true},
+        "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false},
+        "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    },
+    "issuer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["company_name", "ticker"],
+      "properties": {
+        "company_name": {"type": "string", "minLength": 1},
+        "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"}
+      }
+    },
+    "issuerResolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["contract", "resolution_state", "relation_semantic", "graph_id", "graph_digest", "evidence_refs"],
+      "properties": {
+        "contract": {"const": "government_recipient_resolution.v1"},
+        "resolution_state": {"enum": ["confirmed", "reviewed"]},
+        "relation_semantic": {"const": "reviewed"},
+        "graph_id": {"type": "string", "minLength": 1}, "graph_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "sourceEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_id", "record_id", "event_type", "source_rail", "source_content_id", "is_late_discovery", "effective_at", "known_at", "amount"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1}, "record_id": {"type": "string", "minLength": 1},
+        "event_type": {"enum": ["new_award", "obligation", "deobligation", "ceiling_changed", "option_exercised"]},
+        "source_rail": {"enum": ["usaspending_award_snapshot", "usaspending_award_action"]},
+        "source_content_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "is_late_discovery": {"type": "boolean"},
+        "effective_at": {"type": "string", "format": "date-time"}, "known_at": {"type": "string", "format": "date-time"},
+        "amount": {"$ref": "#/$defs/amount"}
+      }
+    },
+    "receiptRef": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ref_id", "record_id", "content_sha256", "effective_at", "known_at"],
+      "properties": {
+        "ref_id": {"type": "string", "minLength": 1}, "record_id": {"type": "string", "minLength": 1},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "effective_at": {"type": "string", "format": "date-time"}, "known_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "amount": {
+      "type": "object", "additionalProperties": false,
+      "required": ["amount_id", "value", "currency", "semantic", "as_of", "source_ref"],
+      "properties": {
+        "amount_id": {"type": "string", "minLength": 1}, "value": {"type": "number"}, "currency": {"const": "USD"},
+        "semantic": {"type": "string", "minLength": 1}, "as_of": {"type": "string", "format": "date-time"}, "source_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "freshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "award_events_status", "recipient_graph_status", "event_known_at", "graph_known_at"],
+      "properties": {
+        "status": {"const": "ok"}, "award_events_status": {"const": "ok"}, "recipient_graph_status": {"const": "ready"},
+        "event_known_at": {"type": "string", "format": "date-time"}, "graph_known_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "exact_link_status", "is_complete"],
+      "properties": {"scope": {"type": "string", "minLength": 1}, "exact_link_status": {"const": "exact_linked"}, "is_complete": {"const": false}}
+    },
+    "materiality": {
+      "type": "object", "additionalProperties": false,
+      "required": ["observed_event_amount", "attributable_amount", "economic_share", "issuer_attributed_denominator", "materiality_ratio", "comparison_state", "reason_code"],
+      "properties": {
+        "observed_event_amount": {"type": "number"}, "attributable_amount": {"type": "number"},
+        "economic_share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "issuer_attributed_denominator": {"const": null}, "materiality_ratio": {"const": null},
+        "comparison_state": {"const": "not_comparable"}, "reason_code": {"const": "exact_issuer_attributed_denominator_not_available"}
+      }
+    },
+    "mechanism": {
+      "type": "object", "additionalProperties": false,
+      "required": ["observed_change", "issuer_role", "possible_channels", "mechanism_steps", "timing_window", "dependencies", "evidence_refs"],
+      "properties": {
+        "observed_change": {"type": "string", "minLength": 1}, "issuer_role": {"const": "reviewed_recipient"},
+        "possible_channels": {"type": "array", "minItems": 1, "items": {"enum": ["backlog", "revenue", "margin", "cash", "guidance", "narrative"]}},
+        "mechanism_steps": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "timing_window": {"type": "string", "minLength": 1}, "dependencies": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "transmission": {
+      "type": "object", "additionalProperties": false,
+      "required": ["direction", "statement_status", "possible_earnings_channels"],
+      "properties": {
+        "direction": {"enum": ["possible_positive", "possible_negative", "mixed", "unknown"]}, "statement_status": {"const": "research_context_not_trade_signal"},
+        "possible_earnings_channels": {"type": "array", "minItems": 1, "items": {"enum": ["backlog", "revenue", "margin", "cash", "guidance", "narrative"]}}
+      }
+    }
+  }
+}

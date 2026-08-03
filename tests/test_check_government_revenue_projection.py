@@ -41,9 +41,11 @@ def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path
     template_dir = root / "templates"
     template_dir.mkdir(parents=True)
     template_dir.joinpath("government_revenue.html.j2").write_text(
-        """<main id="gov-workspace"><div id="queueList"></div><aside id="inspectorPane"></aside></main>
+        """<button data-mode="candidates">Candidate Radar</button><button data-mode="companies">Companies</button>
+<main id="gov-workspace"><div id="queueList"></div><aside id="inspectorPane"></aside></main>
 <aside id="evidenceDrawer"></aside>
 <script id="gov-data" type="application/json">{{ payload_json|safe }}</script>
+<script src="government-revenue-candidate-radar.js"></script>
 """,
         encoding="utf-8",
     )
@@ -158,6 +160,39 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
     assert result["html_bytes"] < build_government_revenue.RAW_HTML_BUDGET_BYTES
+
+
+def test_projection_fence_accepts_source_owned_candidate_ui_before_first_materialization(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path)
+    html_path = tmp_path / "site" / "government_revenue.html"
+    html = html_path.read_text(encoding="utf-8")
+    for marker, replacement in {
+        'data-mode="candidates"': 'data-mode="staged-candidates"',
+        'data-mode="companies"': 'data-mode="staged-companies"',
+        'src="government-revenue-candidate-radar.js"': 'src="candidate-radar-pending.js"',
+    }.items():
+        html = html.replace(marker, replacement)
+    html_path.write_text(html, encoding="utf-8")
+
+    result = validate_projection(tmp_path)
+
+    assert result["candidate_content_id"] is None
+
+
+def test_projection_fence_requires_candidate_markers_in_the_canonical_template(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path)
+    template_path = tmp_path / "templates" / "government_revenue.html.j2"
+    template = template_path.read_text(encoding="utf-8").replace(
+        'data-mode="candidates"', 'data-mode="pending"'
+    )
+    template_path.write_text(template, encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match="template is missing candidate markers"):
+        validate_projection(tmp_path)
 
 
 def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> None:
@@ -392,6 +427,7 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
         "data/government_revenue/",
         "lib/pages.py",
         "scripts/build_government_revenue.py",
+        "scripts/build_government_revenue_candidates.py",
         "scripts/check_government_revenue_projection.py",
         "scripts/inject_data_base.py",
         "scripts/externalize_css.py",

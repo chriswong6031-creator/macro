@@ -29,9 +29,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib import pages as pages_mod  # noqa: E402 — private regexes for the sweep below
 from lib.pages import DBASE_MARKER, dbase_prefix, inject_text, write_page  # noqa: E402
 
 ROOT = config.ROOT
+
+
+def _charset_meta_end(raw: bytes) -> int:
+    """Byte offset just past the closing `>` of the page's <meta charset…> tag,
+    or -1 when the page has none. BYTES, not characters: the HTML5 pre-scan
+    examines the first 1024 bytes of the document, and a CJK title inflates
+    byte offsets past character offsets."""
+    i = raw.lower().find(b"<meta charset")
+    if i == -1:
+        return -1
+    return raw.index(b">", i) + 1
 
 
 # ---------------------------------------------------------------------------
@@ -39,13 +51,84 @@ ROOT = config.ROOT
 # ---------------------------------------------------------------------------
 
 def test_inject_text_top_of_head_and_idempotent():
-    html = "<!doctype html><html><head><meta charset='utf-8'></head><body>x</body></html>"
+    html = "<!doctype html><html><head><meta charset='utf-8'><title>t</title></head><body>x</body></html>"
     out = inject_text(html, "")
-    assert out.index(DBASE_MARKER) < out.index("<meta"), "shim must load before anything in <head>"
+    assert out.index("<meta charset") < out.index(DBASE_MARKER) < out.index("<title>"), (
+        "shim must follow the charset meta (pre-scan window) but precede "
+        "everything else in <head>"
+    )
     assert "window.DATA_BASE" in out, "shim body must be INLINE (see below)"
     assert "new URL(u, location.href)" in out, "absolute same-origin data URLs must route to R2"
     assert "a.origin === location.origin" in out, "external fetches must not be rewritten"
     assert inject_text(out, "") == out, "second injection must be a no-op"
+
+
+def test_inject_text_charset_stays_in_prescan_window():
+    """The regression this placement exists to prevent (2026-08-02): the ~1.6KB
+    inline shim inserted at the very top of <head> pushed <meta charset> to
+    ~byte 1700 — past the 1024-byte HTML5 pre-scan window — on EVERY generated
+    page. Production is masked by Caddy's `Content-Type: …; charset=utf-8`
+    header, but any charset-header-less path (python -m http.server previews,
+    mirrors, some CDN variants) falls back to windows-1252: the document text
+    late-recovers via the meta, but classic external scripts decode as cp1252
+    and every CJK string literal renders as mojibake (更多 → æ›´å¤š). The shim
+    itself never fetches page data, so sitting after the charset meta keeps its
+    load-first contract."""
+    for meta in (
+        '<meta charset="utf-8">',
+        "<meta charset='UTF-8'>",
+        "<meta charset=utf-8>",
+        '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">',
+    ):
+        html = f"<!doctype html><html><head>{meta}<title>t</title></head><body></body></html>"
+        out = inject_text(html, "")
+        raw = out.encode("utf-8")
+        i = raw.lower().find(b"<meta")
+        end = raw.index(b">", i) + 1
+        assert end <= 1024, f"charset meta ends at byte {end} — outside the pre-scan window ({meta})"
+        assert out.index(meta[:12]) < out.index(DBASE_MARKER) < out.index("<title>")
+        assert inject_text(out, "") == out, f"must stay idempotent ({meta})"
+
+
+def test_inject_text_charset_fallbacks():
+    # no charset at all -> plain top-of-head placement, as before
+    out = inject_text("<html><head><title>t</title></head><body></body></html>", "")
+    assert out.index(DBASE_MARKER) < out.index("<title>")
+    # data-charset is NOT a charset declaration (attr-name lookbehind, not \b —
+    # see _EXTERNALIZE_ATTR_RE for why \b in front of an attr name is a trap)
+    out = inject_text('<html><head><meta data-charset="x"><title>t</title></head><body></body></html>', "")
+    assert out.index(DBASE_MARKER) < out.index("<meta")
+    # a charset beyond the first 1024 chars of head was already outside the
+    # pre-scan window before the shim existed — keep the old placement
+    deep = "<html><head>" + "<!-- pad -->" * 100 + '<meta charset="utf-8"></head><body></body></html>'
+    out = inject_text(deep, "")
+    assert out.index(DBASE_MARKER) < out.index("<meta charset")
+
+
+def test_write_page_representative_head_keeps_prescan_contract(tmp_path):
+    """End-to-end through write_page with a realistic generated-page head — a
+    CJK title included, so the assertion measures BYTES the way the browser
+    pre-scan does, not characters."""
+    head = (
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        "<title>US Stocks — Sector &amp; Basket Intelligence | 美股行业与篮子情报</title>\n"
+        '<meta name="description" content="Daily sector rotation, basket flows and regime context.">\n'
+        '<link rel="stylesheet" href="theme.css">\n'
+        '<script src="nav_market.js"></script>\n'
+    )
+    html = f'<!DOCTYPE html>\n<html lang="en">\n<head>\n{head}</head>\n<body><main>x</main></body></html>'
+    site = tmp_path / "site"
+    site.mkdir()
+    p = write_page(site / "us_stocks.html", html)
+    raw = p.read_bytes()
+    end = _charset_meta_end(raw)
+    assert end > 0, "charset meta must survive injection"
+    assert end <= 1024, f"charset meta ends at byte {end} of write_page output"
+    # and the shim still precedes every fetchable resource in <head>
+    text = raw.decode("utf-8")
+    assert text.index(DBASE_MARKER) < text.index("<link")
+    assert text.index(DBASE_MARKER) < text.index("<script src=")
 
 
 def test_shim_is_inlined_not_linked():
@@ -179,6 +262,58 @@ def test_every_committed_site_page_has_shim():
         f"{len(missing)} committed site page(s) lack the data-base shim "
         f"(R2 rerouting regression — write via lib.pages.write_page): {missing[:10]}"
     )
+
+
+def test_committed_representative_pages_reinject_within_prescan_window():
+    """Sweep REAL rendered pages: strip the committed inline shim, re-inject via
+    the current injector, and require the charset declaration to end within the
+    first 1024 bytes of the document.
+
+    Strip-then-reinject, NOT an assertion on committed bytes: generated pages
+    are healed by the next render (fresh builder output has no marker, so it
+    takes the fresh-injection path), not by the PR that fixes the injector —
+    asserting the committed order here would be red in that very PR and only
+    green after a covering render. Re-running the injector against real page
+    structure pins the behavior that produces tomorrow's bytes."""
+    reps = [
+        "us_stocks.html", "macro.html", "china.html", "baskets.html",
+        "stocks/AAPL.html", "index.html", "products/market-terminal.html",
+    ]
+    for rel in reps:
+        p = ROOT / "site" / rel
+        assert p.is_file(), f"representative page missing from checkout: site/{rel}"
+        text = p.read_text(encoding="utf-8")
+        stripped = pages_mod._DBASE_INLINE_TAG_RE.sub("", text, count=1)
+        assert DBASE_MARKER not in stripped, f"site/{rel}: committed shim tag shape not strippable"
+        out = inject_text(stripped, dbase_prefix(p))
+        end = _charset_meta_end(out.encode("utf-8"))
+        assert end > 0, f"site/{rel}: no <meta charset> found"
+        assert end <= 1024, f"site/{rel}: charset meta ends at byte {end} after re-injection"
+
+
+def test_hand_authored_pages_carry_charset_in_prescan_window():
+    """The landing pair and the products flagships are hand-authored SOURCE —
+    no render lane ever rewrites their bytes (lib.pages.HAND_AUTHORED_PAGES;
+    templates/index.html ↔ site/index.html is a check_template_site_sync pair),
+    so the injector fix can never heal them. Their committed bytes were patched
+    once (charset meta moved above the shim, 2026-08-02) and must stay inside
+    the pre-scan window."""
+    committed = [
+        ROOT / "templates" / "index.html",
+        ROOT / "site" / "index.html",
+        ROOT / "site" / "products" / "market-terminal.html",
+        ROOT / "site" / "products" / "mastermind-ai.html",
+        ROOT / "site" / "products" / "market-dashboards.html",
+    ]
+    for p in committed:
+        assert p.is_file(), f"hand-authored page missing: {p}"
+        end = _charset_meta_end(p.read_bytes())
+        assert end > 0, f"{p.name}: no <meta charset>"
+        assert end <= 1024, (
+            f"{p}: charset meta ends at byte {end} — outside the 1024-byte "
+            "pre-scan window (was this page edited with new content above the "
+            "charset declaration?)"
+        )
 
 
 # ---------------------------------------------------------------------------

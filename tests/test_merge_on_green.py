@@ -24,6 +24,7 @@ import scripts.merge_on_green as MOG
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "merge-on-green.yml"
+BASELINE_WORKFLOW = ROOT / ".github" / "workflows" / "integration-baseline.yml"
 
 
 def _workflow() -> dict:
@@ -42,12 +43,19 @@ def _sweep_step(parsed: dict) -> dict:
     raise AssertionError("no step invokes scripts/merge_on_green.py")
 
 
-def test_the_workflow_parses_and_runs_on_a_ten_minute_schedule():
+def test_the_workflow_is_event_driven_with_a_ten_minute_recovery_schedule():
     parsed = _workflow()
     triggers = _triggers(parsed)
     crons = [entry.get("cron") for entry in (triggers.get("schedule") or [])]
     assert "*/10 * * * *" in crons, f"expected a 10-minute sweep, got {crons}"
     assert "workflow_dispatch" in triggers, "an operator must be able to force a sweep"
+    workflow_run = triggers.get("workflow_run") or {}
+    assert set(workflow_run.get("workflows") or []) == {
+        "ci",
+        "fences",
+        "integration-baseline",
+    }
+    assert workflow_run.get("types") == ["completed"]
 
 
 def test_the_sweep_is_github_hosted_and_bounded():
@@ -62,6 +70,7 @@ def test_the_sweep_is_github_hosted_and_bounded():
 def test_the_workflow_can_actually_merge_and_label():
     parsed = _workflow()
     permissions = parsed["permissions"]
+    assert permissions["actions"] == "read", "needed for the main-baseline circuit breaker"
     assert permissions["contents"] == "write", "needed to squash-merge and delete the head ref"
     assert permissions["pull-requests"] == "write", "needed for merge-blocked + the comment"
     concurrency = parsed["concurrency"]
@@ -78,6 +87,27 @@ def test_the_sweep_step_invokes_the_tracked_script_with_the_token_fallback():
     assert env["GH_REPO"] == "${{ github.repository }}"
     assert env["READ_TOKEN"] == "${{ secrets.GITHUB_TOKEN }}"
     assert env["MERGE_TOKEN"] == "${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}"
+
+
+def test_the_sweeper_sparse_checks_out_only_its_script():
+    checkout = _workflow()["jobs"]["sweep"]["steps"][0]
+    assert checkout["uses"] == "actions/checkout@v4"
+    options = checkout["with"]
+    assert options["filter"] == "blob:none"
+    assert options["sparse-checkout"] == "scripts/merge_on_green.py"
+    assert options["sparse-checkout-cone-mode"] is False
+
+
+def test_the_main_baseline_is_fast_bounded_and_runs_the_merge_train_contract():
+    parsed = yaml.safe_load(BASELINE_WORKFLOW.read_text(encoding="utf-8"))
+    triggers = _triggers(parsed)
+    assert "push" in triggers and triggers["push"]["branches"] == ["main"]
+    job = parsed["jobs"]["baseline"]
+    assert job["runs-on"] == "ubuntu-latest"
+    assert int(job["timeout-minutes"]) == 12
+    source = BASELINE_WORKFLOW.read_text(encoding="utf-8")
+    assert "tests/test_merge_on_green.py" in source
+    assert "scripts/check_skip_only_suites.py" in source
 
 
 def test_the_workflow_records_why_the_pat_matters():
@@ -339,6 +369,63 @@ def test_labeled_pulls_filters_client_side(monkeypatch):
     assert [pull["number"] for pull in MOG.labeled_pulls("acme/widgets", "t")] == [1, 3]
 
 
+def test_integration_baseline_accepts_a_green_ancestor_of_data_only_main(monkeypatch):
+    baseline_sha = "b" * 40
+    main_sha = "c" * 40
+
+    def fake_request(method, url, token, payload=None):
+        if "/actions/workflows/" in url:
+            return 200, {
+                "workflow_runs": [{
+                    "status": "completed",
+                    "conclusion": "success",
+                    "head_sha": baseline_sha,
+                    "html_url": "https://example.test/run/1",
+                }]
+            }
+        if "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": main_sha}}
+        if "/compare/" in url:
+            return 200, {"status": "ahead"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    state, detail = MOG.integration_baseline_state("acme/widgets", "read")
+    assert state == "green"
+    assert baseline_sha[:12] in detail
+
+
+@pytest.mark.parametrize(
+    ("status", "conclusion", "expected"),
+    [
+        ("in_progress", None, "pending"),
+        ("completed", "failure", "red"),
+        ("completed", "cancelled", "red"),
+    ],
+)
+def test_integration_baseline_fail_closes_non_green_runs(
+    monkeypatch, status, conclusion, expected
+):
+    sha = "d" * 40
+
+    def fake_request(method, url, token, payload=None):
+        if "/actions/workflows/" in url:
+            return 200, {
+                "workflow_runs": [{
+                    "status": status,
+                    "conclusion": conclusion,
+                    "head_sha": sha,
+                    "html_url": "https://example.test/run/2",
+                }]
+            }
+        if "/git/ref/heads/main" in url:
+            return 200, {"object": {"sha": sha}}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(MOG, "_request", fake_request)
+    assert MOG.integration_baseline_state("acme/widgets", "read")[0] == expected
+
+
 def test_one_bad_pull_request_does_not_fail_the_sweep(monkeypatch, capsys):
     """Individual outcomes are annotations, not job failures — a red PR must not
     stop the sweep from merging the clean ones behind it."""
@@ -346,6 +433,7 @@ def test_one_bad_pull_request_does_not_fail_the_sweep(monkeypatch, capsys):
     monkeypatch.setenv("READ_TOKEN", "read")
     monkeypatch.setenv("MERGE_TOKEN", "write")
     monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [_pull(1), _pull(2)])
+    monkeypatch.setattr(MOG, "integration_baseline_state", lambda *_a: ("green", "ok"))
 
     def flaky(_repo, pull, *_a):
         if pull["number"] == 1:
@@ -355,6 +443,50 @@ def test_one_bad_pull_request_does_not_fail_the_sweep(monkeypatch, capsys):
     monkeypatch.setattr(MOG, "sweep_pull", flaky)
     assert MOG.main() == 0
     assert "::warning" in capsys.readouterr().out
+
+
+def test_a_red_main_blocks_ordinary_pulls_and_allows_one_explicit_repair(
+    monkeypatch, capsys
+):
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    ordinary = _pull(1)
+    repair_one = _pull(2, labels=("merge-on-green", "main-red-repair"))
+    repair_two = _pull(3, labels=("merge-on-green", "main-red-repair"))
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [ordinary, repair_one, repair_two])
+    monkeypatch.setattr(
+        MOG, "integration_baseline_state", lambda *_a: ("red", "failure at run")
+    )
+    swept: list[int] = []
+
+    def record(_repo, pull, *_a):
+        swept.append(pull["number"])
+        return "merged"
+
+    monkeypatch.setattr(MOG, "sweep_pull", record)
+    assert MOG.main() == 0
+    assert swept == [2], "a broken baseline admits exactly one explicit repair per pass"
+    out = capsys.readouterr().out
+    assert "circuit breaker" in out and "2 baseline-blocked" in out
+
+
+def test_an_unavailable_baseline_aborts_without_touching_pulls(monkeypatch, capsys):
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [_pull(1)])
+
+    def unavailable(*_a):
+        raise RuntimeError("API down")
+
+    monkeypatch.setattr(MOG, "integration_baseline_state", unavailable)
+    monkeypatch.setattr(
+        MOG,
+        "sweep_pull",
+        lambda *_a: pytest.fail("no pull may be touched without baseline evidence"),
+    )
+    assert MOG.main() == 1
+    assert "Could not establish" in capsys.readouterr().out
 
 
 def test_a_missing_repository_is_a_real_failure(monkeypatch, capsys):
