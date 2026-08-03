@@ -1,0 +1,304 @@
+{# Calendar Clock — one instrument's own recurring calendar structure.
+   Implements research/STOCK_SEASONALITY_LANE2_DESIGN_SPEC.md. Rendered by
+   scripts/build_stock_seasonality.py; interaction in stock_seasonality.js.
+
+   TWO PICTURES, TWO SCALES (spec §13 — rendered before it was believed):
+   the YEAR FIELD answers "when in the year, and what shape" — every complete year
+   as its own faint thread with the median as ink over them, and a draggable gate.
+   The WINDOW FAN answers "how much, how consistently, how many" — the same years
+   re-anchored to zero at the window's first day, at the window's OWN y-scale, so
+   the threads diverge visibly and their end dots stack into a countable column.
+   In-gate lighting was tried and removed: at the year's scale it is a smudge.
+
+   The existing seasonality.html (Ken French factor climate) is a different page
+   with a different job and is untouched. #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='') -%}
+<span class="sx-help" tabindex="0" role="note">?<span class="sx-tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro tiprows(rows_en, rows_zh) -%}
+<span class="sx-help" tabindex="0" role="note">?<span class="sx-tip"><span class="l-en">{% for r in rows_en %}<span class="r">{{ r }}</span>{% endfor %}</span><span class="l-zh">{% for r in rows_zh %}<span class="r">{{ r }}</span>{% endfor %}</span></span></span>
+{%- endmacro %}
+{% macro pct(x, dp=1) -%}{{ '%+.{}f'.format(dp)|format(x * 100) }}%{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock seasonality — which calendar windows actually repeat</title>
+{% set seo_title = "Stock Seasonality — Mastermind" %}
+{% set seo_desc = "Every year of a stock's history drawn as its own thread, not one smoothed average — and an honest answer to whether a calendar window survives the search that found it." %}
+{% set seo_path = "stock_seasonality.html" %}
+{% include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="stock_seasonality.css">
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<main class="sx-wrap" id="sx-root" data-state="{{ v.state }}" data-a="{{ v.win.a }}" data-b="{{ v.win.b }}">
+
+  <p class="sx-eyebrow">{{ t('Calendar Clock', '日历时钟') }}</p>
+
+  <div class="sx-head">
+    <div class="sx-head-l">
+      <h1 class="sx-h1"><span id="sx-name">{{ v.name }}</span> <span class="sx-tick" id="sx-sym">{{ v.symbol }}</span></h1>
+    </div>
+    <div class="sx-pick">
+      <input type="text" id="sx-search" role="combobox" autocomplete="off" aria-expanded="false"
+             aria-controls="sx-results" aria-autocomplete="list" aria-label="Search a symbol"
+             placeholder="Search a symbol…" data-ph-zh="搜索代码…">
+      <ul class="sx-pop" id="sx-results" role="listbox" aria-label="Symbol results" hidden></ul>
+      <div class="sx-quick" id="sx-quick">
+        {% for s in ['SPY', 'QQQ', 'XBI', 'IBB', 'XLV'] %}<button type="button" class="gbtn gbtn-sm gbtn-pill" data-sym="{{ s }}">{{ s }}</button>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# ── the answer, before any evidence ─────────────────────────────────── #}
+  <p class="sx-verdict" id="sx-verdict">
+    {# §16: for the market benchmark the residual is empty BY CONSTRUCTION, so the
+       engine's honest `market` would tell a reader that SPY is "really the market's
+       calendar". Override the words, not the state. #}
+    {% if v.self_benchmark and v.state == 'market' %}{{ t(v.season_en ~ ' here holds up after counting every window tried. Get ready.', v.season_zh ~ '，在计入所有测试窗口后依然成立。做好准备。') }}
+    {%- elif v.state == 'own' %}{{ t(v.season_en ~ " here is this name's own, not the market's. Get ready.", v.season_zh ~ '源自该股自身，而非大盘。做好准备。') }}
+    {%- elif v.state == 'market' %}{{ t(v.season_en ~ " here is really the market's calendar. Watch, don't chase.", v.season_zh ~ '其实来自大盘日历，而非该股。观察，不要追。') }}
+    {%- elif v.state == 'thin' %}{{ t('Only ' ~ v.n ~ ' years of history — too few to call. Watch, don’t chase.', '仅 ' ~ v.n ~ ' 年历史，样本太少，暂无结论。观察，不要追。') }}
+    {%- else %}{{ t('Looks strong, but not after counting every window tried. Stand aside.', '看似强势，但计入所有测试窗口后并不成立。建议观望。') }}{% endif %}
+  </p>
+
+  <ul class="sx-chips" id="sx-chips">
+    <li class="sx-chip" style="animation-delay:300ms"><span class="n">{{ t(v.win.a_en ~ ' → ' ~ v.win.b_en, v.win.a_zh ~ ' → ' ~ v.win.b_zh) }}</span></li>
+    <li class="sx-chip sx-chip-expl" id="sx-expl" hidden>{{ t('Your window · exploratory', '自选窗口 · 探索性') }}{{ help('A window you chose after seeing the chart spends testing budget that is not counted here. Presets are counted.', '你在看过图之后自己选的窗口，会消耗这里没有计入的测试预算。预设窗口是计入的。') }}</li>
+    <li class="sx-chip" style="animation-delay:340ms"><span class="n">{{ t(v.n ~ ' years', v.n ~ ' 年') }}</span></li>
+    <li class="sx-chip" style="animation-delay:380ms"><span class="n">{{ t(v.stats.up ~ ' of ' ~ v.n ~ ' up', v.n ~ ' 年中 ' ~ v.stats.up ~ ' 年上涨') }}</span></li>
+    <li class="sx-chip {{ 'sx-chip-up' if (v.self_benchmark and v.state == 'market') else {'own':'sx-chip-up','market':'sx-chip-mkt','fails':'sx-chip-muted','thin':'sx-chip-thin'}.get(v.state,'sx-chip-thin') }}" id="sx-chip4" style="animation-delay:420ms">
+      {% if v.self_benchmark and v.state == 'market' %}{{ t('Its own pattern', '自身的规律') }}
+      {%- elif v.state == 'own' %}{{ t('Its own pattern', '该股自身的规律') }}
+      {%- elif v.state == 'market' %}{{ t("The market's pattern", '跟随大盘的规律') }}
+      {%- elif v.state == 'thin' %}{{ t('Not enough years', '年数不足') }}
+      {%- elif v.state == 'nonull' %}{{ t('No search accounting', '暂无搜索校正') }}
+      {%- else %}{{ t("Doesn't hold up", '不成立') }}{% endif %}
+      {% if v.self_benchmark and v.state == 'market' %}{{ help('This symbol is the market benchmark, so there is no separate market leg to remove — its calendar is the market\'s by definition.', '该标的就是市场基准，没有可剥离的大盘部分——它的日历规律即为大盘的规律。') }}
+      {%- else %}{{ help("Its own pattern: the window survives after removing a market leg sized to this name. The market's pattern: it survives raw, but disappears once the market is removed — real, just not specific to this name. Doesn't hold up: it does not survive the count of every window tried.", '该股自身的规律：按该股敏感度剔除大盘影响后，窗口依然成立。跟随大盘的规律：原始数据成立，但剔除大盘后消失 — 现象真实，只是并非该股特有。不成立：计入所有测试窗口后无法成立。') }}{% endif %}
+    </li>
+    <li class="sx-chip sx-chip-muted" style="animation-delay:460ms"><span class="n">{{ t('Through ' ~ v.asof_en, '截至 ' ~ v.asof_zh) }}</span></li>
+  </ul>
+
+  {% if v.is_example %}
+  <p class="sx-note" data-on="1">{{ t('Example panel, computed from committed closing prices.', '示例面板，基于已提交的收盘价计算。') }}{{ help('The nightly seasonality artifact for this symbol has not been generated yet. Every number here is computed from the committed adjusted closes in this repository; when the nightly artifact lands, the page reads that instead.', '该代码的每日季节性数据尚未生成。此处每个数字均由本仓库中已提交的复权收盘价计算得出；每日数据生成后，页面将改读该数据。') }}</p>
+  {% endif %}
+  <p class="sx-note" id="sx-err">{{ t('Seasonality data didn’t load. Reload the page.', '季节性数据未能加载，请重新载入页面。') }}</p>
+  <p class="sx-note" id="sx-nocov">{{ t('We don’t cover that symbol yet.', '暂未覆盖该代码。') }} <a href="methodology.html">{{ t('See what we cover →', '查看覆盖范围 →') }}</a></p>
+
+  {# ── the strand field ────────────────────────────────────────────────── #}
+  <section class="sx-card sx-fieldcard">
+    <div class="sx-fieldwrap">
+      <svg class="sxf" id="sxf" viewBox="0 0 960 372" preserveAspectRatio="none"
+           role="img" aria-label="Seasonal year strands with a selected window">
+        <g id="sxf-months">
+          {% for m in v.geom.months %}<line class="sxf-rule" x1="{{ m.x }}" y1="16" x2="{{ m.x }}" y2="296" vector-effect="non-scaling-stroke"/>{% endfor %}
+        </g>
+        <line class="sxf-base" x1="44" y1="{{ v.geom.baseline_y }}" x2="940" y2="{{ v.geom.baseline_y }}" vector-effect="non-scaling-stroke"/>
+        <path class="sxf-band" id="sxf-band" d="{{ v.geom.band }}"/>
+        <g id="sxf-strands">
+          {% for d in v.geom.strands %}<path class="sxf-strand" d="{{ d }}" vector-effect="non-scaling-stroke" style="animation-delay:{{ loop.index0 * 12 }}ms"/>{% endfor %}
+        </g>
+        <rect class="sxf-gatefill" id="sxf-gatefill" x="{{ v.geom.gate_x1 }}" y="16" width="{{ (v.geom.gate_x2 - v.geom.gate_x1)|round(1) }}" height="280"/>
+        <path class="sxf-median" id="sxf-median" d="{{ v.geom.median }}" vector-effect="non-scaling-stroke" style="--sx-len:{{ v.geom.median_len }}"/>
+        {% if v.geom.cur %}<path class="sxf-cur" id="sxf-cur" d="{{ v.geom.cur }}" vector-effect="non-scaling-stroke"/>{% endif %}
+        <line class="sxf-gate" id="sxf-g1" x1="{{ v.geom.gate_x1 }}" y1="16" x2="{{ v.geom.gate_x1 }}" y2="330" vector-effect="non-scaling-stroke"/>
+        <line class="sxf-gate" id="sxf-g2" x1="{{ v.geom.gate_x2 }}" y1="16" x2="{{ v.geom.gate_x2 }}" y2="330" vector-effect="non-scaling-stroke"/>
+        {% if v.geom.today_x %}<line class="sxf-today" x1="{{ v.geom.today_x }}" y1="16" x2="{{ v.geom.today_x }}" y2="296" vector-effect="non-scaling-stroke"/>{% endif %}
+        <g id="sxf-axis">
+          {% for m in v.geom.months %}<text class="sxf-mlab" x="{{ m.cx }}" y="318" text-anchor="middle">{{ m.label }}</text>{% endfor %}
+        </g>
+        <rect class="sxf-band-drag" id="sxf-drag" x="{{ v.geom.gate_x1 }}" y="16" width="{{ (v.geom.gate_x2 - v.geom.gate_x1)|round(1) }}" height="280"/>
+        <g class="sxf-handle" id="sxf-h1" role="slider" tabindex="0" aria-label="Window start"
+           aria-valuemin="1" aria-valuemax="365" aria-valuenow="{{ v.win.a }}" aria-valuetext="{{ v.win.a_iso }}"
+           transform="translate({{ v.geom.gate_x1 }},0)">
+          <rect class="hit" x="-15" y="310" width="30" height="40"/>
+          <rect class="grip" x="-5.5" y="319" width="11" height="22" rx="3"/>
+        </g>
+        <g class="sxf-handle" id="sxf-h2" role="slider" tabindex="0" aria-label="Window end"
+           aria-valuemin="1" aria-valuemax="365" aria-valuenow="{{ v.win.b }}" aria-valuetext="{{ v.win.b_iso }}"
+           transform="translate({{ v.geom.gate_x2 }},0)">
+          <rect class="hit" x="-15" y="310" width="30" height="40"/>
+          <rect class="grip" x="-5.5" y="319" width="11" height="22" rx="3"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="sx-legend">
+      <span class="lg-fan"><i></i>{{ t('one thread per year', '每年一条线') }}</span>
+      <span><i></i>{{ t('median year', '中位年份') }}</span>
+      {% if v.geom.cur %}<span class="lg-now"><i></i>{{ t('this year so far', '今年至今') }}</span>{% endif %}
+      {{ help('Drag either handle, or the shaded band, to move the window. With a handle focused the arrow keys move it one day, Shift and an arrow moves it seven, and Home or End jumps to the month edge.', '拖动任一手柄或阴影区域即可移动窗口。手柄获得焦点后，方向键每次移动一天，Shift 加方向键移动七天，Home 或 End 跳到月份边界。') }}
+    </div>
+
+    <div class="sx-ctrls">
+      <span class="sx-seg" id="sx-central" role="group" aria-label="Central line">
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="median" aria-pressed="true">{{ t('Median', '中位数') }}</button>
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="mean" aria-pressed="false">{{ t('Mean', '均值') }}</button>
+      </span>
+      <span class="sx-seg" id="sx-panel" role="group" aria-label="Panel">
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="raw" aria-pressed="true">{{ t('Raw', '原始') }}</button>
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="neutral" aria-pressed="false"{% if not v.has_neutral %} disabled{% endif %}>{{ t('Vs market', '相对大盘') }}</button>
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="detrended" aria-pressed="false">{{ t('Detrended', '去趋势') }}</button>
+        {{ help('Vs market removes a market leg sized to this name, so what is left is only what this name did beyond the market. Detrended removes each year’s own drift, so only the shape inside the year is compared — it carries no search accounting, so it shows no verdict.', '相对大盘：按该股对大盘的敏感度剔除大盘部分，剩下的只是该股超出大盘的表现。去趋势：剔除每年自身的整体涨跌，只比较年内形状 — 该视图没有搜索校正，因此不给结论。') }}
+      </span>
+      <span class="sx-seg" id="sx-lookback" role="group" aria-label="Years">
+        {# The default view is the whole shipped panel, which IS Max — the numbered
+           pills are sub-slices of it, so none of them starts pressed. #}
+        {% for lb in [10, 15, 25] %}<button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="{{ lb }}" aria-pressed="false">{{ t(lb ~ 'y', lb ~ '年') }}</button>{% endfor %}
+        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="0" aria-pressed="true">{{ t('Max', '全部') }}</button>
+      </span>
+    </div>
+  </section>
+
+  {# ── this window · the years ─────────────────────────────────────────── #}
+  <div class="sx-two">
+    <section class="sx-card">
+      <h2>{{ t('This window', '这个窗口') }}</h2>
+      <div class="sx-fig {{ 'up' if v.median_simple > 0 else 'dn' }}" id="sx-fig">{{ pct(v.median_simple) }}</div>
+      <p class="sx-figlab" id="sx-figlab">{{ t('typical year', '典型年份') }}</p>
+
+      <svg class="sx-fan" id="sx-fan" viewBox="0 0 460 190" role="img"
+           aria-label="Every year of this window from a common start">
+        <line class="z" x1="10" y1="{{ v.fan.zero }}" x2="450" y2="{{ v.fan.zero }}" vector-effect="non-scaling-stroke"/>
+        <g id="sx-fan-paths">
+          {% for f in v.fan.paths %}<path class="f {{ 'up' if f.up else 'dn' }}" d="{{ f.d }}" vector-effect="non-scaling-stroke"><title>{{ f.title }}</title></path>{% endfor %}
+        </g>
+        <path class="fmed" id="sx-fan-med" d="{{ v.fan.median }}" vector-effect="non-scaling-stroke"/>
+        <g id="sx-fan-dots">
+          {% for d in v.fan.dots %}<circle class="e {{ 'up' if d.up else 'dn' }}" cx="454" cy="{{ d.cy }}" r="2.1"/>{% endfor %}
+        </g>
+      </svg>
+      <p class="sx-fancap" id="sx-fancap">{{ t('Each thread is one year, starting from zero on ' ~ v.win.a_en ~ '. ' ~ v.fan.up ~ ' of ' ~ v.n ~ ' finished above the line.', '每条线是一年，从 ' ~ v.win.a_zh ~ ' 起算为零。' ~ v.n ~ ' 年中 ' ~ v.fan.up ~ ' 年收在零线之上。') }}</p>
+
+      <p class="sx-after" id="sx-after">
+        {% if v.state in ('own', 'market', 'fails') and v.exc.form != 'none' %}
+        <span class="l-en">We shuffled {{ v.symbol }}’s history {{ '{:,}'.format(v.family.B) }} times. A window this strong turned up by chance in {% if v.exc.form == 'lt' %}&lt;1%{% elif v.exc.form == 'gt' %}more than {{ v.exc.pct }}%{% else %}{{ v.exc.pct }}%{% endif %} of them{% if v.state == 'fails' %} — often enough that this one doesn’t stand out.{% else %} — rare enough that this one does stand out.{% endif %}</span>
+        <span class="l-zh">我们把 {{ v.symbol }} 的历史打乱了 {{ '{:,}'.format(v.family.B) }} 次。像这样强的窗口在其中 {% if v.exc.form == 'lt' %}&lt;1%{% elif v.exc.form == 'gt' %}超过 {{ v.exc.pct }}%{% else %}{{ v.exc.pct }}%{% endif %} 里纯属偶然出现{% if v.state == 'fails' %}——出现得够频繁，因此这一个并不突出。{% else %}——出现得够罕见，因此这一个确实突出。{% endif %}</span>
+        {% else %}
+        {{ t('We haven’t finished the search accounting for this symbol yet.', '该代码的搜索校正尚未完成。') }}
+        {% endif %}
+        {{ tiprows(
+             ['Family: ' ~ v.family.n_candidates ~ ' windows on this symbol (365 start days × ' ~ v.family.horizons ~ ' lengths).',
+              'Your window: |t| ' ~ '%.2f'|format(v.stats.abs_t) ~ '. Chance-alone 95th percentile of the best window in the family: |t| ' ~ '%.2f'|format(v.family.q95 or 0) ~ ' (' ~ '{:,}'.format(v.family.B or 0) ~ ' independent year-shift resamples).',
+              'Method: joint maxT, Westfall–Young style, dependence preserved by shifting whole years.',
+              'Unit of evidence: one complete year, not one day.'],
+             ['窗口族：该代码共 ' ~ v.family.n_candidates ~ ' 个窗口（365 个起点 × ' ~ v.family.horizons ~ ' 种长度）。',
+              '本窗口：|t| ' ~ '%.2f'|format(v.stats.abs_t) ~ '。纯属偶然情况下族内最佳窗口的 95 分位：|t| ' ~ '%.2f'|format(v.family.q95 or 0) ~ '（' ~ '{:,}'.format(v.family.B or 0) ~ ' 次独立整年循环平移重抽样）。',
+              '方法：联合 maxT，Westfall–Young 式，通过整年平移保留相关结构。',
+              '证据单位：一个完整年份，而非一个交易日。']) }}
+      </p>
+      {% if v.track %}
+      <div class="sx-track" id="sx-track" aria-hidden="true"
+           style="--sx-stops:{% for p, o in v.track.stops %}color-mix(in srgb, var(--sx-ink) {{ o }}%, transparent) {{ p }}%{{ ',' if not loop.last }}{% endfor %}">
+        <i style="left:{{ v.track.tick }}%"></i>
+      </div>
+      {% endif %}
+      <p class="sx-after sx-dim" id="sx-stab"{% if v.stability is none %} hidden{% endif %}>
+        {%- if v.stability %}{{ t('Nudging the window a few days either way keeps this.', '把窗口前后挪几天，这个规律仍然成立。') }}
+        {%- else %}{{ t('Nudging the window a few days either way loses it — the effect depends on these exact dates.', '把窗口前后挪几天就消失了——这个效应取决于这几个具体日期。') }}{% endif %}
+      </p>
+    </section>
+
+    <section class="sx-card">
+      <h2>{{ t('The years', '各年份') }}</h2>
+      <div class="sx-years">
+        <table class="sx-tbl" id="sx-tbl">
+          <thead><tr>
+            <th>{{ t('Year', '年份') }}</th><th>{{ t('Return', '回报') }}</th><th>{{ t('Scale', '幅度') }}</th>
+          </tr></thead>
+          <tbody id="sx-tbody">
+            {% for r in v.rows %}
+            <tr class="sx-yrow"><td class="y">{{ r.year }}</td>
+              <td class="r {{ 'up' if r.up else 'dn' }}">{{ pct(r.ret, 2) }}</td>
+              <td><span class="sx-bar"><span class="zero" style="left:50%"></span><i class="{{ 'up' if r.up else 'dn' }}" style="{{ 'left:50%' if r.up else 'right:50%' }};width:{{ (r.w / 2)|round(1) }}%"></i></span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {# ── small multiples ─────────────────────────────────────────────────── #}
+  <details class="sx-card sx-sect" id="sx-more" open>
+    <summary><h2 style="display:inline">{{ t('More views', '更多视角') }}</h2></summary>
+    <div class="sx-sm">
+      {% for key, ttl_en, ttl_zh, cap_en, cap_zh, unit_en, unit_zh in [
+          ('month', 'By month', '按月份', 'Average calendar-month return, one point per year.', '各月平均回报，每年计一次。', 'month', '月份'),
+          ('weekday', 'By weekday', '按星期', 'Average day-of-week return, one point per year.', '各星期平均回报，每年计一次。', 'weekday', '星期'),
+          ('tdom', 'By trading day', '按月内交易日', 'Average return by trading day of the month.', '按月内第几个交易日的平均回报。', 'trading day', '交易日')] %}
+      {% set p = v.sm[key] %}
+      <div class="sx-smp">
+        <h3>{{ t(ttl_en, ttl_zh) }}
+          {% if p.bars %}
+          {% set hi = p.bars|sort(attribute='mean')|last %}{% set lo = p.bars|sort(attribute='mean')|first %}
+          {{ tiprows(
+               ['Bars: mean return per ' ~ unit_en ~ ', one complete year per observation.',
+                'Strongest — ' ~ hi.lab_en ~ ': mean ' ~ '%+.2f'|format(hi.mean * 100) ~ '%, median ' ~ '%+.2f'|format(hi.median * 100) ~ '%, share up ' ~ '%.0f'|format(hi.up_share * 100) ~ '%, years counted ' ~ hi.n ~ '.',
+                'Weakest — ' ~ lo.lab_en ~ ': mean ' ~ '%+.2f'|format(lo.mean * 100) ~ '%, median ' ~ '%+.2f'|format(lo.median * 100) ~ '%, share up ' ~ '%.0f'|format(lo.up_share * 100) ~ '%, years counted ' ~ lo.n ~ '.'],
+               ['柱形：按' ~ unit_zh ~ '的平均回报，每个完整年份计一次。',
+                '最强 — ' ~ hi.lab_zh ~ '：均值 ' ~ '%+.2f'|format(hi.mean * 100) ~ '%，中位数 ' ~ '%+.2f'|format(hi.median * 100) ~ '%，上涨占比 ' ~ '%.0f'|format(hi.up_share * 100) ~ '%，计入年数 ' ~ hi.n ~ '。',
+                '最弱 — ' ~ lo.lab_zh ~ '：均值 ' ~ '%+.2f'|format(lo.mean * 100) ~ '%，中位数 ' ~ '%+.2f'|format(lo.median * 100) ~ '%，上涨占比 ' ~ '%.0f'|format(lo.up_share * 100) ~ '%，计入年数 ' ~ lo.n ~ '。']) }}
+          {% endif %}
+        </h3>
+        <svg viewBox="0 0 {{ p.w }} 92" preserveAspectRatio="none" role="img" aria-label="{{ 'Seasonal averages by ' ~ unit_en }}">
+          <line class="sx-smzero" x1="4" y1="{{ p.zero }}" x2="{{ p.w - 4 }}" y2="{{ p.zero }}" vector-effect="non-scaling-stroke"/>
+          {% for bar in p.bars %}
+          <rect class="{{ 'sx-smbar-up' if bar.up else 'sx-smbar-dn' }}" x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" rx="1.5"/>
+          {% if p.bars|length <= 12 %}<text class="sx-smlab" x="{{ bar.cx }}" y="88" text-anchor="middle">{{ bar.lab_en }}</text>{% endif %}
+          {% endfor %}
+        </svg>
+        <p class="sx-smcap">{{ t(cap_en, cap_zh) }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+
+  {# ── honesty strip ───────────────────────────────────────────────────── #}
+  <section class="sx-card sx-honesty">
+    <h2>{{ t('How this is computed', '计算方式') }}</h2>
+    <dl>
+      <div>
+        <dt>{{ t('What a year means here', '这里的「一年」是什么') }}</dt>
+        <dd>{{ t('One complete year is one piece of evidence — not one trading day. ' ~ v.n ~ ' years of history is ' ~ v.n ~ ' pieces.', '一个完整年份 = 一条证据，而不是一个交易日。' ~ v.n ~ ' 年历史 = ' ~ v.n ~ ' 条证据。') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('Prices', '价格') }}</dt>
+        <dd>{{ t('Split- and dividend-adjusted closing prices from our daily vendor feed.', '来自我们每日数据源的复权（拆股与分红）收盘价。') }}{{ help('Adjustment is the vendor’s current vintage, re-applied to all history — it is not a frozen point-in-time adjustment, so a very old year can read slightly differently than it did at the time.', '复权采用数据源当前版本并回溯应用于全部历史，并非冻结的时点复权，因此很久以前的年份读数可能与当时略有不同。') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('Which names', '覆盖哪些标的') }}</dt>
+        <dd>{{ t('We cover ' ~ v.n_entities ~ ' symbols with enough complete years to draw.', '我们覆盖 ' ~ v.n_entities ~ ' 个拥有足够完整年份的代码。') }}{{ help('The list is built from today’s index membership, so names that were delisted or acquired are not in it. That makes the covered set look healthier than the real historical market. This page never ranks names against each other, so that bias does not enter any number on it.', '名单基于今天的指数成分构建，已退市或被收购的标的不在其中，因此覆盖范围看起来会比真实历史市场更健康。本页从不对标的互相排名，所以这一偏差不会进入页面上的任何数字。') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('Browsing many symbols', '浏览多个代码时') }}</dt>
+        <dd>{{ t('Look at enough symbols and a few clear the bar by luck alone — about 1 in 20. That is why this page answers one symbol at a time and never ranks them.', '看得足够多，总有少数标的纯靠运气过关 — 大约二十分之一。这正是本页每次只回答一个代码、且从不排名的原因。') }}
+          {%- if v.program.per_100 %} {{ t('Across the ' ~ v.program.n_symbols ~ ' symbols we cover, ' ~ v.program.n_clearing ~ ' clear their own bar — about ' ~ v.program.per_100 ~ ' in 100.', '在我们覆盖的 ' ~ v.program.n_symbols ~ ' 个代码中，有 ' ~ v.program.n_clearing ~ ' 个通过了各自的门槛 — 约百分之 ' ~ v.program.per_100 ~ '。') }}{% endif %}{{ help('Browsing N symbols runs N familywise tests, so roughly 5% clear by chance regardless of the per-symbol correction. The program-level rate against that 5% expectation is published with the universe build; a Benjamini–Yekutieli step across symbols is not used here because it treats heavily correlated equities as independent hypotheses and is far too conservative.', '浏览 N 个代码即等于做了 N 次族级检验，因此无论单代码校正如何，约 5% 会凭偶然过关。全域实际比率将随universe构建一同发布；此处不采用跨代码的 Benjamini–Yekutieli 步骤，因为它把高度相关的股票当作独立假设，过于保守。') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('No screener yet', '暂无筛选器') }}</dt>
+        <dd>{{ t('We don’t rank symbols against each other yet. When we do, it will carry its own selection accounting.', '我们暂不对个股互相排名。推出时会附带独立的选择校正。') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('Windows you drag', '你自己拖出的窗口') }}</dt>
+        <dd>{{ t('Presets are counted in the search budget. A window you draw after seeing the chart is not — it’s marked exploratory.', '预设窗口已计入搜索预算。你在看过图之后自己拖出的窗口没有计入 — 会标记为探索性。') }}</dd>
+      </div>
+    </dl>
+    <p class="sx-smcap"><a href="seasonalitydata/methodology.json">{{ t('Full method (JSON) →', '完整方法（JSON）→') }}</a> · {{ t('Generated', '生成于') }} <span class="sx-num">{{ built }}</span></p>
+  </section>
+</main>
+
+<script type="application/json" id="sx-data">{{ v.payload|safe }}</script>
+<script src="theme.js"></script>
+<script src="stock_seasonality.js"></script>
+</body>
+</html>

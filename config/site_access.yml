@@ -183,6 +183,20 @@ public:
     # honest first paint (and something indexable) without R2.
     - /seasonalitydata/index.json
     - /seasonalitydata/entities/SPY.json
+    # Calendar Clock (stock_seasonality). Public by product ruling: the page makes
+    # NO forecast and NO ranking — it is an explorer over public price history, so
+    # there is no premium payload behind it in this tranche. Two more reasons it
+    # cannot sit behind the wall: /seasonalitydata/methodology.json is already
+    # public, and a public methodology pointing at a gated page is incoherent; and
+    # "stock seasonality" is the search term the incumbent's traffic rests on, which
+    # a registration-walled page can never earn. Its CSS/JS are presentation and
+    # client-side arithmetic only — every heavy per-symbol panel is fetched from R2
+    # through DATA_BASE and never passes through Caddy. When the cross-symbol
+    # screener lands it gets the tier-preview treatment (docs/TIER_PREVIEW_PATTERN.md,
+    # the confluence_screener precedent) — that is where the paid boundary belongs.
+    - /stock_seasonality.html
+    - /stock_seasonality.css
+    - /stock_seasonality.js
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json

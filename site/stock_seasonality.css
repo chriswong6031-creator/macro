@@ -1,0 +1,319 @@
+/* stock_seasonality.css — Calendar Clock (Lane 2).
+   Paired plain-copy asset: templates/ is the source, site/ must byte-match
+   (python -m scripts.check_template_site_sync --fix).
+
+   Two new tokens only; everything else resolves from theme.css so the light
+   theme and the zh 红涨绿跌 swap flow with no re-render.
+     --sx-ink  median path, gate rules + fill, eyebrows, page accent
+     --sx-now  current (incomplete) year thread + today marker
+   Per-year outcomes deliberately use --up/--down, NOT the ink, so the sample is
+   read in the same colour language as every other price surface on the site. */
+
+:root {
+  --sx-ink: #8a7fd4;
+  --sx-now: var(--warn);
+}
+html[data-theme="light"] {
+  --sx-ink: #6a5cc0;
+}
+
+/* ── page frame ─────────────────────────────────────────────────────────── */
+.sx-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 18px 64px; }
+@media (min-width: 1100px) { .sx-wrap { padding: 26px 24px 72px; } }
+
+.sx-eyebrow {
+  font: 600 10.5px/1.2 var(--font-ui);
+  text-transform: uppercase; letter-spacing: .14em; color: var(--muted);
+  margin: 0 0 10px;
+}
+.sx-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 18px; margin-bottom: 4px; }
+.sx-head-l { flex: 1 1 320px; min-width: 0; }
+.sx-h1 {
+  font: 700 19px/1.3 var(--font-ui); letter-spacing: -.01em;
+  margin: 0 0 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px;
+}
+.sx-tick { font: 600 .82em/1 var(--font-mono); color: var(--muted); letter-spacing: .02em; }
+
+.sx-verdict {
+  font: 800 clamp(21px, 2.5vw, 33px)/1.18 var(--font-ui);
+  letter-spacing: -.02em; max-width: 34ch; margin: 0 0 16px; color: var(--text);
+}
+
+/* ── chip strip ─────────────────────────────────────────────────────────── */
+.sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+.sx-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 500 12px/1 var(--font-ui);
+  padding: 6px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  white-space: nowrap;
+}
+/* House law: mono numerals are for FIGURES, never words. A chip reads as a phrase
+   ("22 of 25 up", "Through Jul 31"), so it keeps the UI face and takes only the
+   tabular figures. The mono face is reserved for the display figure, the years
+   table and the tips — matching mockups/refs/stock_seasonality/window_fan.html. */
+.sx-chip .n { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.sx-chip-muted { color: var(--muted); }
+.sx-chip-up {
+  border-color: color-mix(in srgb, var(--up) 46%, var(--line));
+  background: color-mix(in srgb, var(--up) 11%, var(--panel));
+}
+.sx-chip-mkt {
+  border-color: color-mix(in srgb, var(--info) 46%, var(--line));
+  background: color-mix(in srgb, var(--info) 12%, var(--panel));
+}
+.sx-chip-thin { border-style: dashed; color: var(--muted); }
+.sx-chip-expl { border-style: dashed; color: var(--muted); background: transparent; }
+/* [hidden] loses to the class rule above without this — a hidden chip would show. */
+.sx-chip[hidden] { display: none; }
+
+/* ── panels ─────────────────────────────────────────────────────────────── */
+.sx-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+}
+.sx-card > h2, .sx-sect > h2 {
+  font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase;
+  letter-spacing: .14em; color: var(--muted); margin: 0 0 12px;
+}
+.sx-body { font: 400 13.5px/1.55 var(--font-ui); color: var(--text); }
+.sx-dim  { color: var(--muted); }
+.sx-num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ── help tip (house idiom, Tier 2) ─────────────────────────────────────── */
+.sx-help {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid var(--muted); color: var(--muted);
+  font: 600 10px/1 var(--font-ui); cursor: help;
+  position: relative; vertical-align: middle; margin-left: 5px; flex: none;
+}
+.sx-help .sx-tip {
+  display: none; position: absolute; top: 145%; left: 50%; transform: translateX(-50%);
+  width: min(330px, 78vw); background: var(--panel); border: 1px solid var(--line);
+  padding: 10px 12px; border-radius: 9px; z-index: 60;
+  font: 400 12px/1.5 var(--font-ui); color: var(--text); text-align: left;
+  box-shadow: var(--popover-shadow); cursor: auto;
+  max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain;
+}
+.sx-help:hover::before { content: ""; position: absolute; top: 100%; left: -30px; right: -30px; height: 12px; }
+.sx-help:hover .sx-tip, .sx-help:focus-visible .sx-tip { display: block; }
+.sx-help:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 2px; }
+.sx-tip b { font-weight: 600; color: var(--muted); font-size: 11px; }
+.sx-tip .r { display: block; margin: 0 0 5px; }
+.sx-tip .r:last-child { margin-bottom: 0; }
+
+/* ── the strand field ───────────────────────────────────────────────────── */
+.sx-fieldcard { padding: 16px 12px 10px; }
+.sxf { display: block; width: 100%; height: 320px; touch-action: pan-y; color: var(--text); }
+.sxf text { font-family: var(--font-ui); }
+
+.sxf-rule    { stroke: var(--line); stroke-opacity: .55; stroke-width: 1; }
+.sxf-base    { stroke: var(--line); stroke-opacity: .9; stroke-width: 1; stroke-dasharray: 4 4; }
+.sxf-band    { fill: var(--sx-ink); fill-opacity: .12; }
+.sxf-strand  { fill: none; stroke: currentColor; stroke-opacity: .14; stroke-width: 1; }
+.sxf-gatefill{ fill: var(--sx-ink); fill-opacity: .07; }
+.sxf-median  { fill: none; stroke: var(--sx-ink); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.sxf-cur     { fill: none; stroke: var(--sx-now); stroke-opacity: .62; stroke-width: 1.3; stroke-linejoin: round; }
+.sxf-gate    { stroke: var(--sx-ink); stroke-width: 1; stroke-dasharray: 3 3; stroke-opacity: .75; }
+.sxf-today   { stroke: var(--sx-now); stroke-width: 1; stroke-opacity: .55; }
+.sxf-mlab    { fill: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; }
+
+/* No dim/undim state: rendered, in-gate lighting is illegible at the year's
+   y-scale (spec §13). The countable per-year outcome lives in the window fan. */
+
+/* handles */
+.sxf-hrail   { fill: none; }
+.sxf-handle  { cursor: ew-resize; }
+.sxf-handle .grip { fill: var(--sx-ink); }
+.sxf-handle:focus { outline: none; }
+.sxf-handle:focus-visible .grip { outline: 2px solid var(--sx-ink); outline-offset: 2px; }
+.sxf-handle .hit { fill: transparent; }
+.sxf-band-drag { cursor: grab; fill: transparent; }
+.sxf-band-drag:active { cursor: grabbing; }
+/* A drag owns both axes once it starts; the rest of the field keeps pan-y so the
+   page still scrolls vertically over the chart (spec §7.3). */
+.sxf-handle, .sxf-band-drag { touch-action: none; }
+
+/* HTML overlays — the SVG itself carries no translated text (spec §4/§0.6) */
+.sx-fieldwrap { position: relative; }
+.sx-legend {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin: 6px 2px 0; font: 500 11px/1.3 var(--font-ui); color: var(--muted);
+}
+.sx-legend i { display: inline-block; width: 16px; height: 0; border-top: 2.6px solid var(--sx-ink); margin-right: 6px; vertical-align: middle; }
+.sx-legend .lg-fan i { border-top-width: 1px; border-top-color: var(--text); opacity: .45; }
+.sx-legend .lg-now i { border-top-width: 1.75px; border-top-color: var(--sx-now); }
+.sx-legend .lg-up i { border-top-width: 1.4px; border-top-color: var(--up); }
+.sx-legend .lg-dn i { border-top-width: 1.4px; border-top-color: var(--down); }
+
+/* ── controls ───────────────────────────────────────────────────────────── */
+.sx-ctrls { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 2px 0; }
+.sx-seg { display: inline-flex; gap: 4px; }
+.sx-seg .gbtn[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--sx-ink) 60%, var(--gbtn-brd));
+  background: color-mix(in srgb, var(--sx-ink) 15%, var(--gbtn-bg));
+  color: var(--text); font-weight: 600;
+}
+.sx-seg .gbtn[disabled] { opacity: .42; cursor: not-allowed; }
+.sx-seg .gbtn[disabled]:hover { background: var(--gbtn-bg); border-color: var(--gbtn-brd); }
+
+/* ── this window / the years ────────────────────────────────────────────── */
+.sx-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.sx-fig { font: 600 30px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.sx-fig.up { color: var(--up); } .sx-fig.dn { color: var(--down); }
+.sx-figlab { font: 400 13.5px/1.55 var(--font-ui); color: var(--muted); margin: 4px 0 16px; }
+
+/* ── the window fan — THE signature (spec §5/§13) ───────────────────────
+   Every year re-anchored to zero at the window's first day, at the WINDOW's own
+   y-scale. The year field answers "when in the year"; this answers "how much,
+   how consistently, how many". Its end-dot column is the countable sample. */
+.sx-fan { width: 100%; max-width: 480px; height: auto; display: block; margin: 14px 0 6px; }
+.sx-fan .f { fill: none; stroke-opacity: .5; stroke-width: 1.25; }
+.sx-fan .f.up { stroke: var(--up); } .sx-fan .f.dn { stroke: var(--down); }
+.sx-fan .fmed { fill: none; stroke: var(--sx-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sx-fan .z { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
+.sx-fan .e.up { fill: var(--up); } .sx-fan .e.dn { fill: var(--down); }
+.sx-fancap { font: 400 12.5px/1.5 var(--font-ui); color: var(--muted); margin: 0 0 14px; max-width: 44ch; }
+.sx-fancap .n { font-variant-numeric: tabular-nums; }
+
+/* ── the chance track (spec §3) ─────────────────────────────────────────
+   A |t| axis: a soft ink ramp where the shuffles concentrate, one tick where
+   this window sits. No axes, no labels — the sentence above carries the number. */
+.sx-track { position: relative; height: 4px; border-radius: 2px; margin: 14px 0 2px;
+            background: linear-gradient(90deg, transparent, var(--sx-stops), transparent); }
+.sx-track i { position: absolute; top: -3px; width: 2px; height: 10px;
+              background: var(--sx-ink); border-radius: 1px; transform: translateX(-1px); }
+.sx-after { font: 400 13.5px/1.55 var(--font-ui); color: var(--text); margin: 0; }
+.sx-after.sx-dim { color: var(--muted); margin-top: 10px; }
+.sx-after[hidden] { display: none; }
+
+.sx-years { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; }
+table.sx-tbl { width: 100%; border-collapse: collapse; font: 400 13px/1.4 var(--font-ui); }
+table.sx-tbl th {
+  font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: .14em;
+  color: var(--muted); text-align: left; padding: 0 8px 8px 0; font-weight: 600;
+  position: sticky; top: 0; background: var(--panel); z-index: 1;
+}
+table.sx-tbl th:last-child, table.sx-tbl td:last-child { width: 52%; }
+table.sx-tbl td { padding: 5px 8px 5px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+table.sx-tbl td.y, table.sx-tbl td.r { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The year is the table's AXIS, not a footnote — it must be as legible as the
+   figure beside it. Inheriting --text (not --muted) keeps it readable in both
+   themes; the weight and tracking stop the mono digits reading as noise. */
+table.sx-tbl td.y { color: var(--text); font-weight: 600; letter-spacing: .01em; }
+table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--down); }
+.sx-bar { position: relative; display: block; height: 9px; background: transparent; }
+.sx-bar i { position: absolute; top: 0; height: 9px; border-radius: 2px; display: block; }
+.sx-bar i.up { background: var(--up); } .sx-bar i.dn { background: var(--down); }
+.sx-bar .zero { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.sx-yrow.cur td.y::after { content: "·"; color: var(--sx-now); margin-left: 4px; font-weight: 700; }
+
+/* ── small multiples ────────────────────────────────────────────────────── */
+.sx-sm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.sx-smp h3 { font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin: 0 0 8px; display: flex; align-items: center; }
+.sx-smp svg { display: block; width: 100%; height: 92px; }
+.sx-smcap { font: 400 12px/1.45 var(--font-ui); color: var(--muted); margin: 6px 0 0; }
+.sx-smbar-up { fill: var(--up); } .sx-smbar-dn { fill: var(--down); }
+.sx-smzero { stroke: var(--line); stroke-width: 1; }
+.sx-smlab { fill: var(--muted); font-size: 8.5px; font-family: var(--font-ui); }
+
+/* ── symbol picker ──────────────────────────────────────────────────────── */
+.sx-pick { flex: 0 1 320px; min-width: 240px; position: relative; }
+.sx-pick input {
+  width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--panel2); color: var(--text);
+  font: 400 13px/1.3 var(--font-ui);
+}
+.sx-pick input:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 1px; }
+.sx-pop {
+  position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 70;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: var(--popover-shadow); max-height: 300px; overflow-y: auto;
+  padding: 4px; margin: 0; list-style: none;
+}
+.sx-pop[hidden] { display: none; }
+.sx-pop li {
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font: 400 12.5px/1.35 var(--font-ui); display: flex; gap: 8px; align-items: baseline;
+}
+.sx-pop li[aria-selected="true"], .sx-pop li:hover { background: var(--panel2); }
+.sx-pop li .sy { font: 600 12.5px/1 var(--font-mono); min-width: 52px; }
+.sx-pop li .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-pop li .ny { color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; white-space: nowrap; }
+.sx-pop li.none { color: var(--muted); cursor: default; }
+.sx-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sx-quick button { font-family: var(--font-mono); font-size: 11.5px; }
+
+/* ── notices (honest states) ────────────────────────────────────────────── */
+.sx-note {
+  display: none; align-items: center; gap: 8px; margin: 0 0 16px;
+  padding: 10px 13px; border-radius: 10px;
+  border: 1px dashed var(--line); background: var(--panel);
+  font: 400 13px/1.5 var(--font-ui); color: var(--muted);
+}
+.sx-note[data-on="1"] { display: flex; }
+.sx-note a { color: var(--link); }
+
+/* ── honesty strip ──────────────────────────────────────────────────────── */
+.sx-honesty dl { margin: 0; display: grid; gap: 12px; }
+.sx-honesty dt { font: 600 12px/1.4 var(--font-ui); color: var(--text); margin: 0 0 2px; }
+.sx-honesty dd { margin: 0; font: 400 13px/1.55 var(--font-ui); color: var(--muted); }
+
+/* ── mobile: recompose, never squeeze (§7) ─────────────────────────────── */
+@media (max-width: 720px) {
+  .sx-wrap { padding: 16px 14px 56px; }
+  .sx-two { grid-template-columns: 1fr; }
+  .sx-sm { grid-template-columns: 1fr; }
+  .sxf { height: 260px; }
+  /* 44x48 TOUCH TARGETS (spec §4). The SVG is preserveAspectRatio="none", so a
+     hit rect declared in viewBox units is squashed to ~0.34x horizontally and
+     ~0.70x vertically at 375px — the 30x40 desktop rect renders about 10x28 CSS
+     px, well under the minimum. These are the user-unit sizes that come out at
+     >=44x48 on a 375px screen. They are deliberately ASYMMETRIC: the start
+     handle's target extends left and the end handle's right, so two large
+     targets can never overlap even at the 5-day minimum window. */
+  .sxf-handle .hit { y: 294px; height: 72px; }
+  #sxf-h1 .hit { x: -140px; width: 145px; }
+  #sxf-h2 .hit { x: -5px; width: 145px; }
+  .sx-years { max-height: none; overflow: visible; }
+  .sx-pick { flex: 1 1 100%; }
+  /* years table -> cards, 2 per row */
+  table.sx-tbl thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  table.sx-tbl, table.sx-tbl tbody { display: block; }
+  table.sx-tbl tbody { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  table.sx-tbl tr { display: block; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  table.sx-tbl td { display: block; border-top: 0; padding: 0; }
+  table.sx-tbl td.y { font-size: 11.5px; color: var(--text); opacity: .8; }
+  table.sx-tbl td.r { font-size: 15px; margin: 1px 0 6px; }
+  table.sx-tbl th:last-child, table.sx-tbl td:last-child { width: auto; }
+}
+@media (max-width: 420px) {
+  .sx-chip { font-size: 11.5px; padding: 5px 9px; }
+}
+
+/* ── motion: narrates arrival, never interaction (§4) ──────────────────── */
+@keyframes sx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sx-rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes sx-draw { to { stroke-dashoffset: 0; } }
+
+.sxf-strand { animation: sx-fade 260ms ease-out both; }
+.sxf-band   { animation: sx-fade 420ms ease-out 200ms both; }
+.sxf-median { stroke-dasharray: var(--sx-len, 4000); stroke-dashoffset: var(--sx-len, 4000);
+              animation: sx-draw 900ms cubic-bezier(.33,.62,.26,1) 240ms forwards; }
+.sxf-gate, .sxf-gatefill, .sxf-handle, .sxf-today { animation: sx-rise 240ms ease-out 900ms both; }
+.sx-chip    { animation: sx-fade 200ms ease-out both; }
+
+/* re-selection only transitions lighting — it is never re-animated */
+.sxf-gatefill { transition: fill-opacity 120ms linear; }
+.sxf-gate, .sxf-handle { transition: transform 120ms linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sxf-strand, .sxf-band, .sxf-median, .sxf-gate, .sxf-gatefill,
+  .sxf-handle, .sxf-today, .sx-chip, .sx-fan .f, .sx-fan .fmed {
+    animation: none !important; transition: none !important;
+    opacity: 1; transform: none;
+  }
+  .sxf-median { stroke-dasharray: none; stroke-dashoffset: 0; }
+  .sxf-strand { stroke-opacity: .14; }
+}
