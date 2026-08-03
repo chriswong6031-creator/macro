@@ -116,6 +116,66 @@ def test_universe_card_carries_the_coverage_note_and_roots_do_not():
     assert per["coverage_note"] is None
 
 
+# ─── R2.4b: nulls + intraday variants ────────────────────────────────────────
+
+
+def _frame_r24b(**kw):
+    """The _frame fixture plus the R2.4b columns: every call_wall row carries a
+    mirror-null verdict (weaker than the real one), pierce depth, and the board
+    rows carry the intraday/prevday fields."""
+    df = _frame(**kw)
+    cw = df["role"] == "call_wall"
+    # null: scored on the same rows the real level scored, holding at 50% exactly
+    df.loc[cw, "null_touched"] = df.loc[cw, "touched"]
+    scored = cw & df["held"].notna()
+    idx = df.index[scored]
+    df["null_held"] = None
+    df.loc[idx, "null_held"] = [i % 2 == 0 for i in range(len(idx))]
+    df.loc[cw & df["touched"], "pierce_pct"] = 0.8
+    df["wall_range_contained"] = False
+    df["band_close_contained"] = True
+    df["pd_high_held"] = df["wall_contained"]
+    df["pd_low_held"] = None
+    df["pd_range_contained_close"] = True
+    df["pd_range_contained_range"] = False
+    return df
+
+
+def test_null_fields_ride_the_card():
+    card = summarize(_frame_r24b(), "AMD")
+    cw = card["roles"]["call_wall"]
+    ne = cw["null_equidistant"]
+    assert ne["scored"] == 24 and ne["p_hold"] == pytest.approx(0.5)
+    # real 18/24 (Wilson lo ≈ .551) clears a 0.5 null
+    assert cw["beats_equidistant_null"] is True
+    assert cw["median_pierce_pct"] == pytest.approx(0.8)
+    b = card["boards"]
+    assert b["wall_range_contained"] == {"rate": 0.0, "n": 40}
+    assert b["band_close_contained"] == {"rate": 1.0, "n": 40}
+    pdv = b["prevday_null"]
+    assert pdv["range_contained_close"]["rate"] == 1.0
+    assert "low_held" not in pdv  # all-None column → absent, never a fake 0%
+
+
+def test_beats_equidistant_null_respects_a_strong_null():
+    # real 18/24 ≈ .75 with Wilson lo ≈ .551 — a null holding at 80% must NOT be beaten
+    df = _frame_r24b()
+    df.loc[df["null_held"].notna(), "null_held"] = [i % 5 != 0 for i in range(24)]
+    cw = summarize(df, "AMD")["roles"]["call_wall"]
+    assert cw["null_equidistant"]["p_hold"] == pytest.approx(0.7917, abs=1e-3)
+    assert cw["beats_equidistant_null"] is False
+
+
+def test_pre_r24b_parquet_degrades_to_the_v1_card():
+    # no new columns at all → no null/intraday keys, and nothing crashes
+    card = summarize(_frame(), "AMD")
+    cw = card["roles"]["call_wall"]
+    assert "null_equidistant" not in cw and "median_pierce_pct" not in cw
+    assert "wall_range_contained" not in card["boards"]
+    assert "prevday_null" not in card["boards"]
+    assert card["roles"]["call_wall"]["beats_null"] is True  # v1 gate untouched
+
+
 def test_build_all_excludes_synthetic_board_rows(tmp_path):
     df = _frame()
     df = pd.concat([df, pd.DataFrame([{

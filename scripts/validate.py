@@ -141,6 +141,9 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
     # page, so the no-flash init + visibility CSS + button style are inline; the
     # chart's title/series translate via the shared chart_i18n swap map)
     _head = (
+        # Plotly's write_html emits a bare <html> with no <title>; supply both so the
+        # page has a real browser-tab name and an honest document language.
+        '<title>Regime Classifier Validation Timeline — MastermindX</title>'
         '<script>try{var l=localStorage.getItem("lang");'
         'if(l)document.documentElement.setAttribute("data-lang",l);}catch(e){}</script>'
         '<style>html:not([data-lang="zh"]) .l-zh{display:none}'
@@ -171,6 +174,7 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
     )
     html = out_html.read_text()
     if "MastermindX Inc" not in html:
+        html = html.replace("<html>", '<html lang="en">', 1)
         html = html.replace("</head>", _head + "</head>", 1)
         html = html.replace("</body>", _body + _footer + "</body>", 1)
         write_page(out_html, html)

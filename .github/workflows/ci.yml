@@ -2291,8 +2291,12 @@ on:
       - "tests/test_index_gex_history.py"
       # MSC R2.4 level-grade scorecards (2026-08-01), wired into unrun-market-plumbing.
       # scripts/*.py is already path-covered; this entry is the OTHER half so a
-      # suite-only edit still starts ci.yml (two-halves law).
+      # suite-only edit still starts ci.yml (two-halves law). R2.4b (2026-08-02)
+      # adds the nulls/index-lane suite + the two back-wired WP-C1 grader suites.
       - "tests/test_level_grades_summary.py"
+      - "tests/test_levels_grade_nulls.py"
+      - "tests/test_levels_grade.py"
+      - "tests/test_levels_track_record_rebase.py"
       # MSC R3.2/R3.3 gex_state index aggregator (2026-08-02), wired into
       # unrun-market-plumbing. lib/*.py + scripts/*.py are path-covered; this is the
       # OTHER half so a suite-only edit still starts ci.yml (two-halves law).

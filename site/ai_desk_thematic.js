@@ -11,6 +11,17 @@
     return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); };
   // bilingual chrome label — matches the page's l-en/l-zh toggle (theme.css hides one)
   var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>'; };
+  /* Display de-registration (operator ruling 2026-07-27, #3821): emerging_watch is LLM prose
+     printed verbatim and used to arrive framed as "Kill criterion: <cond>". The scout prompt
+     no longer asks for one (engine/thematic_desk.py), but this brief is regenerated on the
+     gated desk lane, so an old-vintage ai_desk_<region>.json keeps the old wording until it
+     re-runs — normalize the LABEL here too. The condition text itself is never touched. */
+  var WATCH_LABEL = /\bkill[\s\-_]?criteri(?:on|a)\s*[:：]\s*|\bkill\s*[:：]\s*/gi;
+  var WATCH_NOUN = /\bkill[\s\-_]?criteri(?:on|a)\b/gi;
+  var watchEn = function (s) { return (s == null ? '' : String(s))
+    .replace(WATCH_LABEL, 'Watching for: ').replace(WATCH_NOUN, 'watch condition'); };
+  // one EN string on the payload (no zh field) — translate the label only, keep the read
+  var watchZh = function (s) { return watchEn(s).replace(/Watching for:\s*/g, '关注条件：'); };
   var leanColor = function (l) {
     return l === 'overweight' ? 'var(--up)' : (l === 'avoid' || l === 'underweight' ? 'var(--down)' : 'var(--muted)'); };
   var leanZh = { overweight: '超配', underweight: '低配', avoid: '回避' };
@@ -112,7 +123,8 @@
       }).join('');
 
       if (brief.emerging_watch && watchEl) {
-        watchEl.innerHTML = '<b>🔭 ' + L('Emerging-narrative watch', '新兴叙事观察') + ':</b> ' + esc(brief.emerging_watch);
+        watchEl.innerHTML = '<b>🔭 ' + L('Emerging-narrative watch', '新兴叙事观察') + ':</b> ' +
+          L(esc(watchEn(brief.emerging_watch)), esc(watchZh(brief.emerging_watch)));
         watchEl.style.display = 'block';
       }
 
