@@ -163,6 +163,14 @@ def hk_priority_overlay(rows: list[dict], *, board_cap: int = 8, sector_cap: int
 
     out.sort(key=lambda r: (_STAGE_ORDER.index(r["stage"]), -r["prophet"]["score"], r["ticker"]))
 
+    # The fixture GUARANTEES the NEW chip has a subject: without this the chip's
+    # presence depends on where the modulo lands after a lane reshuffle, and the
+    # test that pins it would go green by accident on an empty board.
+    for row in out:
+        if row["stage"] == "live":
+            row["days_since_signal"], row["new"] = 1, True
+            break
+
     per_sector: dict[str, int] = {}
     featured = 0
     for row in out:
@@ -262,6 +270,79 @@ def _witness_leader_row(w, *, themed: bool, zone: bool, confirmed: bool = False)
     return row
 
 
+ENGINE_FIXTURE = ROOT / "tests" / "fixtures" / "hk_board_2026_07_31.json"
+BOARD_ASOF = "2026-07-31"
+# The leadership snapshot the builder holds; mirrors tests/test_hk_board_rank.py so
+# the two suites see the same cohort read.
+_LEADERSHIP = {"state": "leaders_participating", "cohesion_now": 0.9,
+               "broad_breadth_pct": 71.2, "breadth_confirming": True}
+
+
+def engine_lanes() -> dict:
+    """Build leaders / ran / vetoed with the REAL engine, off the committed G1 panel.
+
+    Synthetic lane rows can only ever confirm what this template already assumes —
+    and what it assumed was the US board's `theme` key, which the HK engine never
+    emits (it stamps `leadership`). Building the lanes for real is what turns this
+    suite into an integration check between the two halves of the program.
+    """
+    from engine import hk_board_rank as hbr
+
+    panel = json.loads(ENGINE_FIXTURE.read_text())
+    verdicts, meta, closes = panel["verdicts"], panel["meta"], panel["closes"]
+
+    def close_of(ticker):
+        series = closes.get(ticker)
+        return (series["dates"], series["closes"]) if series else None
+
+    momentum = hbr.total_return_z(
+        {t: s["closes"] for t, s in closes.items()},
+        sessions=hbr.LEADERS_MOMENTUM_SESSIONS)
+    leaders = hbr.build_leaders_rows(momentum, verdict_by=verdicts, meta_by=meta,
+                                     leadership=_LEADERSHIP, board_asof=BOARD_ASOF)
+    ran = hbr.build_ran_rows(verdicts, meta_by=meta, close_of=close_of,
+                             exclude=[r["ticker"] for r in leaders],
+                             leadership=_LEADERSHIP, board_asof=BOARD_ASOF)
+    vetoed = hbr.build_vetoed_rows(
+        verdicts, meta_by=meta, close_of=close_of,
+        exclude=[r["ticker"] for r in leaders] + [r["ticker"] for r in ran],
+        leadership=_LEADERSHIP, board_asof=BOARD_ASOF)
+    return {"leaders": leaders, "ran": ran, "vetoed": vetoed}
+
+
+def _enrich(rows: list[dict]) -> list[dict]:
+    """Backfill company name / ZH name / sector onto engine lane rows.
+
+    The committed G1 panel's `meta` block carries prices and off-highs but no names
+    or sectors, so every lane row comes back with `name == ticker` and
+    `sector is None`. Production's `_lane_meta` (scripts/build_hk_library.py) carries
+    all three, and a design reference screenshot of an all-em-dash Sector column
+    would misrepresent the surface. Enrichment is DISPLAY-only — never a field any
+    assertion reads off the engine.
+    """
+    known: dict[str, dict] = {}
+    art = committed_artifact()
+    for lane in ("buy", "watch", "laggards"):
+        for r in art.get(lane) or []:
+            if r.get("ticker"):
+                known[r["ticker"]] = {"name": r.get("name"), "name_zh": r.get("name_zh"),
+                                      "sector": r.get("sector")}
+    for tk, name, name_zh, sector, _px, _run in WITNESSES:
+        known.setdefault(tk, {"name": name, "name_zh": name_zh, "sector": sector})
+    out = []
+    for row in rows:
+        row = dict(row)
+        extra = known.get(row.get("ticker"))
+        if extra:
+            for key, value in extra.items():
+                if value and not row.get(key):
+                    row[key] = value
+            if row.get("name") == row.get("ticker") and extra.get("name"):
+                row["name"] = extra["name"]
+        out.append(row)
+    return out
+
+
 def production_fixture() -> dict:
     """The committed artifact plus the hk_prophet_v1 overlay — the shape the first
     nightly after the engine lane merges will ship.  Used by the tests AND by the
@@ -269,22 +350,35 @@ def production_fixture() -> dict:
     art = committed_artifact()
     su = dict(art)
 
-    # Each witness appears in exactly ONE lane. A name carded in `blocked` while it
-    # also sits in "Recently fired" is two contradictory stances for one ticker, and
-    # the committed watch list already contains 1024.HK — so the witnesses claim
-    # their tickers first and the artifact's own rows yield.
-    carded = [
-        _witness_buy_row(WITNESSES[3], "buy_now"),                                       # Xiaomi
-        _witness_buy_row(WITNESSES[6], "partial"),                                       # Trip.com
-        _witness_buy_row(WITNESSES[2], "blocked", "failed reclaim-and-hold"),            # JD
-        _witness_buy_row(WITNESSES[1], "blocked", "counter-trend, no 200-reclaim/hold"),  # Alibaba
+    # THE ENGINE'S LANES CLAIM THEIR TICKERS FIRST. Once leaders/ran/vetoed are
+    # built for real, a synthetic witness card for a name the engine already placed
+    # would put one ticker in two lanes with two contradictory stances — which is
+    # the exact defect the bucket/verb clamp exists to prevent, reintroduced through
+    # the fixture. So the lanes are built first and only the leftovers are carded.
+    lanes = engine_lanes()
+    lane_tk = {r["ticker"] for lane in lanes.values() for r in lane}
+
+    # Edge shapes the 2026-07-31 panel happens not to contain: an `approx` anchor, a
+    # null `pct_since`, and a cohort-confirmed row. Synthetic tickers, deliberately
+    # outside the witness set, so they can never collide with an engine lane row.
+    ran_extra = [
+        _witness_ran_row(("8801.HK", "Sample Holdings A", "样本控股甲",
+                          "Industrials", 42.0, 18.0),
+                         sessions=11, pct=18.0, anchor="marker", confirmed=True),
+        _witness_ran_row(("8802.HK", "Sample Holdings B", "样本控股乙",
+                          "Industrials", 31.0, 9.0),
+                         sessions=9, pct=9.0, anchor="approx", confirmed=False),
+        _witness_ran_row(("8803.HK", "Sample Holdings C", "样本控股丙",
+                          "Industrials", 12.0, 0.0),
+                         sessions=6, pct=None, anchor="marker", confirmed=False),
     ]
-    ran_rows = [
-        _witness_ran_row(WITNESSES[4], sessions=11, pct=44.0, anchor="marker", confirmed=True),
-        _witness_ran_row(WITNESSES[0], sessions=9, pct=21.4, anchor="approx", confirmed=False),
-        _witness_ran_row(WITNESSES[5], sessions=6, pct=None, anchor="marker", confirmed=False),
-    ]
-    claimed = {r["ticker"] for r in carded} | {r["ticker"] for r in ran_rows}
+    claimed = lane_tk | {r["ticker"] for r in ran_extra}
+
+    # A witness the engine placed in no lane at all still deserves a card — 9961.HK
+    # is absent from the HK universe entirely (see the WITNESSES note), so it is the
+    # one that lands here.
+    carded = [_witness_buy_row(w, "buy_now" if i % 2 == 0 else "partial")
+              for i, w in enumerate(WITNESSES) if w[0] not in claimed]
 
     # The real buy rows, plus the watch rows promoted into the board (v1 shows the
     # blocked and setting-up names instead of hiding them).
@@ -297,18 +391,18 @@ def production_fixture() -> dict:
         r["entry_signal"].setdefault("status", "await_confluence")
         rows.append(r)
     rows += carded
+    # One card must exercise each mapped block reason, so the G6 copy is pinned on a
+    # real row rather than only in the map literal.
+    rows.append(_witness_buy_row(("8804.HK", "Sample Holdings D", "样本控股丁",
+                                  "Technology", 55.0, 0.0),
+                                 "partial", "failed reclaim-and-hold"))
 
     su["buy"] = hk_priority_overlay(rows, cohort=set(WITNESS_TICKERS))
-    su["ran"] = ran_rows
-    su["leaders"] = [
-        _witness_leader_row(WITNESSES[4], themed=True, zone=False, confirmed=True),
-        _witness_leader_row(WITNESSES[1], themed=True, zone=True),
-        _witness_leader_row(WITNESSES[3], themed=True, zone=False),
-        _witness_leader_row(WITNESSES[0], themed=True, zone=True),
-        _witness_leader_row(WITNESSES[2], themed=False, zone=False),
-        _witness_leader_row(WITNESSES[6], themed=False, zone=True),
-        _witness_leader_row(WITNESSES[5], themed=True, zone=False),
-    ]
+    # The display lanes come from the ENGINE — the real `leadership` chips, the real
+    # `stance` strings, the real anchors, the real veto reasons.
+    su["ran"] = _enrich(lanes["ran"]) + ran_extra
+    su["leaders"] = _enrich(lanes["leaders"])
+    su["vetoed"] = _enrich(lanes["vetoed"])
     su["lane_counts"] = {
         "featured": sum(1 for r in su["buy"] if r.get("featured")),
         "live": sum(1 for r in su["buy"] if r["stage"] == "live"),
@@ -316,6 +410,7 @@ def production_fixture() -> dict:
         "ran": sum(1 for r in su["buy"] if r["stage"] == "ran"),
         "blocked": sum(1 for r in su["buy"] if r["stage"] == "blocked"),
         "ran_lane": len(su["ran"]),
+        "vetoed_lane": len(su["vetoed"]),
     }
     su["board_definition"] = "hk_prophet_v1"
     su["ranking"] = {
@@ -414,11 +509,14 @@ def test_filter_bar_renders_one_chip_per_non_empty_bucket_with_true_counts(prio_
     su = production_fixture()
     counts = {sk: sum(1 for r in su["buy"] if r["stage"] == sk) for sk in _STAGE_ORDER}
     counts["ran"] += len(su["ran"])
+    # the vetoed lane IS the blocked bucket's second half
+    counts["blocked"] += len(su["vetoed"])
     assert '<div class="pbf-bar" id="hk-stage-filter" role="group"' in prio_html
     bar = prio_html[prio_html.find('<div class="pbf-bar"'):]
     bar = bar[:bar.find("</div>")]
     assert '<button type="button" data-stagepick="all" aria-pressed="true">' in bar
-    assert '<span class="pbf-n">%d</span>' % (len(su["buy"]) + len(su["ran"])) in bar
+    assert '<span class="pbf-n">%d</span>' % (
+        len(su["buy"]) + len(su["ran"]) + len(su["vetoed"])) in bar
     for sk, n in counts.items():
         chip = '<button type="button" data-stagepick="%s" aria-pressed="false"' % sk
         if n:
@@ -442,7 +540,7 @@ def test_filter_chip_counts_match_what_filtering_would_show(prio_html):
         claimed = int(re.search(r'<span class="pbf-n">(\d+)</span>',
                                 seg[:seg.find("</button>")]).group(1))
         cards = len(re.findall(r'<a class="pvcard[^"]*"[^>]*data-stage="%s"' % sk, prio_html))
-        extra = len(su["ran"]) if sk == "ran" else 0
+        extra = {"ran": len(su["ran"]), "blocked": len(su["vetoed"])}.get(sk, 0)
         assert claimed == cards + extra, (
             "chip %r claims %d, board shows %d" % (sk, claimed, cards + extra))
 
@@ -460,7 +558,10 @@ def test_filter_bar_has_exactly_one_polite_live_region_and_its_script(prio_html)
 def test_ran_section_renders_with_stage_attr_so_the_filter_reaches_it(prio_html):
     assert '<div class="pbr" data-stage="ran">' in prio_html
     assert '<span class="pbr-t"><span class="l-en">Recently fired</span>' in prio_html
-    assert '<span class="pbr-n">3</span>' in prio_html
+    seg = _ran_block(prio_html)
+    n = len(production_fixture()["ran"])
+    assert '<span class="pbr-n">%d</span>' % n in seg
+    assert seg.count('<a class="pbr-r') == n
 
 
 def test_ran_rows_count_sessions_never_ticks(prio_html):
@@ -480,7 +581,7 @@ def test_ran_approx_anchor_marks_the_figure_and_explains_itself(prio_html):
 
 
 def test_ran_row_with_no_measurable_move_prints_an_em_dash_not_a_zero(prio_html):
-    row = _ran_row(_ran_block(prio_html), "1024.HK")
+    row = _ran_row(_ran_block(prio_html), "8803.HK")
     assert '<span class="pbr-na"' in row, "null pct_since must render the em-dash slot"
     assert ">—</span>" in row
     assert "az-up" not in row and "az-dn" not in row
@@ -490,8 +591,8 @@ def test_ran_row_with_no_measurable_move_prints_an_em_dash_not_a_zero(prio_html)
 def test_ran_rows_with_a_confirmed_cohort_sort_first_and_carry_the_amber_line(prio_html):
     seg = _ran_block(prio_html)
     order = re.findall(r'<span class="pbr-tk">([^<]+)</span>', seg)
-    assert order[0] == "3690.HK", "theme_confirmed rows must lead the ran list: %r" % order
-    row = _ran_row(seg, "3690.HK")
+    assert order[0] == "8801.HK", "theme_confirmed rows must lead the ran list: %r" % order
+    row = _ran_row(seg, "8801.HK")
     assert '<a class="pbr-r pbr-warm"' in row
     assert '<span class="pbr-wl">' in row
     assert "Leader group just confirmed" in row
@@ -503,15 +604,42 @@ def test_ran_section_carries_no_buy_family_language(prio_html):
     seg = _ran_block(prio_html)
     for word in ("Buy now", "buy now", "Buy zone", "Add here"):
         assert word not in seg, "ran lane must not use buy-family language (%r)" % word
-    assert "the entry window has passed" in seg
+    # the section line is the ENGINE's stance, printed once — not a literal here
+    assert "The move already started — wait for the next entry." in seg
+    assert "行情已经启动 — 等待下一个买点。" in seg
 
 
 def _ran_block(html: str) -> str:
+    """The ran section ONLY.
+
+    The end sentinel is the vetoed section, which now sits between the ran lane and
+    the footnote — when it was still `<p class="pb-fn">` this slice silently grew to
+    include every vetoed row, and `assert X not in block` assertions stopped being
+    scoped to the thing they name. A missing sentinel fails loudly rather than
+    degrading into a vacuous pass.
+    """
     start = html.find('<div class="pbr" data-stage="ran">')
     assert start != -1, "ran section not rendered"
+    for sentinel in ('<div class="pbv" data-stage="blocked">', '<p class="pb-fn">'):
+        end = html.find(sentinel, start)
+        if end != -1:
+            return html[start:end]
+    raise AssertionError("no end sentinel found after the ran section")
+
+
+def _veto_block(html: str) -> str:
+    start = html.find('<div class="pbv" data-stage="blocked">')
+    assert start != -1, "vetoed section not rendered"
     end = html.find('<p class="pb-fn">', start)
-    assert end != -1, "pb-fn end sentinel not found after the ran section"
+    assert end != -1, "pb-fn end sentinel not found after the vetoed section"
     return html[start:end]
+
+
+def _veto_row(block: str, ticker: str) -> str:
+    idx = block.find('<span class="pbr-tk">%s</span>' % ticker)
+    assert idx != -1, "vetoed row %r not found" % ticker
+    start = block.rfind("<a class=", 0, idx)
+    return block[start:block.find("</a>", idx) + 4]
 
 
 def _ran_row(block: str, ticker: str) -> str:
@@ -519,6 +647,177 @@ def _ran_row(block: str, ticker: str) -> str:
     assert idx != -1, "ran row %r not found" % ticker
     start = block.rfind("<a class=", 0, idx)
     return block[start:block.find("</a>", idx) + 4]
+
+
+# --------------------------------------------------------------------------- #
+# G1 / G6 — the vetoed lane (what the entry gate refused)
+# --------------------------------------------------------------------------- #
+
+def test_vetoed_section_lives_inside_the_blocked_bucket(prio_html):
+    """It is what the entry gate refused, so it belongs to Blocked — and the filter
+    CSS keys on data-stage, so without the attribute the Blocked chip would reveal
+    the blocked cards and hide the refusals its own count includes."""
+    assert '<div class="pbv" data-stage="blocked">' in prio_html
+    seg = _veto_block(prio_html)
+    assert '<span class="pbr-t"><span class="l-en">What the gate refused</span>' in seg
+    assert '<span class="l-zh">门控拒绝的信号</span>' in seg
+    assert '<span class="pbr-n">%d</span>' % len(production_fixture()["vetoed"]) in seg
+
+
+def test_vetoed_section_states_why_it_exists_in_both_languages(prio_html):
+    seg = _veto_block(prio_html)
+    assert "the section exists to keep the board honest, not to hand you a list to buy" in seg
+    assert "这里记录门控拒绝后的走势，用于自我审视" in seg
+
+
+def test_vetoed_rows_carry_no_buy_family_language(prio_html):
+    seg = _veto_block(prio_html)
+    for word in ("Buy now", "buy now", "Buy zone", "buy zone", "Add here", "pullback zone"):
+        assert word not in seg, "the vetoed lane must not read as an entry list (%r)" % word
+    assert 'class="pv-mk-feat"' not in seg and "pv-featured" not in seg
+
+
+def test_vetoed_cohort_rows_lead_the_list(prio_html):
+    su = production_fixture()
+    cohort = [r["ticker"] for r in su["vetoed"] if r.get("in_leadership_cohort")]
+    assert cohort, "fixture has no cohort members in the vetoed lane"
+    seg = _veto_block(prio_html)
+    order = re.findall(r'<span class="pbr-tk">([^<]+)</span>', seg)
+    assert order[:len(cohort)] == cohort, (
+        "cohort rows must lead the vetoed list: got %r, cohort %r" % (order, cohort))
+
+
+def test_vetoed_cohort_rows_chip_the_plain_word_state_never_the_slug(prio_html):
+    su = production_fixture()
+    cohort = [r for r in su["vetoed"] if r.get("in_leadership_cohort")]
+    seg = _veto_block(prio_html)
+    for r in cohort:
+        row = _veto_row(seg, r["ticker"])
+        assert '<span class="pv-mk-i pv-mk-theme"' in row, "%s has no cohort chip" % r["ticker"]
+        assert r["leadership"]["state_en"] in row
+        assert r["leadership"]["state_zh"] in row
+        assert r["leadership"]["state"] not in row, "the raw state slug reached the surface"
+    # non-cohort rows carry no chip — the chip's PRESENCE is the per-row fact
+    plain = [r for r in su["vetoed"] if not r.get("in_leadership_cohort")]
+    if plain:
+        assert '<span class="pv-mk-i pv-mk-theme"' not in _veto_row(seg, plain[0]["ticker"])
+
+
+def test_vetoed_rows_name_the_refusal_and_the_marker_it_stands_on(prio_html):
+    """G6's honesty: a name held out on ONE marker for a quarter is a different fact
+    from one blocked yesterday, and only the date and the session count tell them
+    apart. The engine's own `reason_raw` must never be the words on the surface."""
+    su = production_fixture()
+    seg = _veto_block(prio_html)
+    for r in su["vetoed"][:5]:
+        row = _veto_row(seg, r["ticker"])
+        assert r["blocked_reason_en"] in row, "%s: reason missing" % r["ticker"]
+        assert r["blocked_reason_zh"] in row
+        if r.get("sessions_since") is not None:
+            n = r["sessions_since"]
+            assert "%d session%s ago" % (n, "" if n == 1 else "s") in row
+            assert "%d个交易日前" % n in row
+    assert "counter-trend, no 200-reclaim/hold" not in seg, (
+        "the engine's raw reason string must stay off the glance tier")
+
+
+def test_vetoed_move_is_signed_and_direction_coloured(prio_html):
+    su = production_fixture()
+    seg = _veto_block(prio_html)
+    moved = [r for r in su["vetoed"] if r.get("pct_since") is not None]
+    assert moved, "fixture has no measured moves"
+    for r in moved[:4]:
+        row = _veto_row(seg, r["ticker"])
+        cls = "az-up" if r["pct_since"] >= 0 else "az-dn"
+        assert '<span class="%s">%+.1f%%</span>' % (cls, r["pct_since"]) in row
+
+
+def test_vetoed_row_with_no_measurable_move_prints_an_em_dash(prio_html):
+    """The engine emits disclosed nulls (`_move_desc` sorts them last rather than
+    dropping them) — the surface must print the gap, never a zero."""
+    su = production_fixture()
+    su["vetoed"] = [dict(su["vetoed"][0], ticker="9999.HK", pct_since=None)]
+    seg = _veto_block(_render(su))
+    row = _veto_row(seg, "9999.HK")
+    assert '<span class="pbr-na"' in row and ">—</span>" in row
+    assert "az-up" not in row and "az-dn" not in row
+    assert "+0.0%" not in row
+
+
+def test_vetoed_rows_are_counted_by_the_blocked_chip(prio_html):
+    su = production_fixture()
+    n_cards = sum(1 for r in su["buy"] if r["stage"] == "blocked")
+    expected = n_cards + len(su["vetoed"])
+    chip = '<button type="button" data-stagepick="blocked" aria-pressed="false"'
+    seg = prio_html[prio_html.find(chip):]
+    seg = seg[:seg.find("</button>")]
+    assert '<span class="pbf-n">%d</span>' % expected in seg, (
+        "the Blocked chip must count the refusals its own filter reveals")
+
+
+def test_witnesses_reachable_only_through_the_vetoed_lane_are_visible(prio_html):
+    """The whole reason this section exists: on the measured panel most of the
+    mega-cap witnesses appear in NO other lane."""
+    su = production_fixture()
+    elsewhere = ({r["ticker"] for r in su["buy"]} | {r["ticker"] for r in su["ran"]}
+                 | {r["ticker"] for r in su["leaders"]})
+    veto_only = [r["ticker"] for r in su["vetoed"]
+                 if r["ticker"] in WITNESS_TICKERS and r["ticker"] not in elsewhere]
+    assert len(veto_only) >= 3, (
+        "fixture drifted: expected witnesses reachable only via the vetoed lane, got %r"
+        % veto_only)
+    seg = _veto_block(prio_html)
+    for tk in veto_only:
+        assert '<span class="pbr-tk">%s</span>' % tk in seg
+
+
+def test_no_vetoed_section_without_the_array(prio_html):
+    su = production_fixture()
+    su.pop("vetoed")
+    html = _render(su)
+    assert '<div class="pbv" data-stage="blocked">' not in html
+    n_cards = sum(1 for r in su["buy"] if r["stage"] == "blocked")
+    chip = '<button type="button" data-stagepick="blocked" aria-pressed="false"'
+    seg = html[html.find(chip):]
+    assert '<span class="pbf-n">%d</span>' % n_cards in seg[:seg.find("</button>")]
+
+
+# --------------------------------------------------------------------------- #
+# stance — the engine's own strings, printed once
+# --------------------------------------------------------------------------- #
+
+def test_a_lane_stance_is_printed_once_not_on_every_row(prio_html):
+    """`stance` is identical on every row of a lane today. Printed per row it is a
+    constant repeated 12–15 times (Law 4); dropped, the surface stops showing a
+    stance the engine may one day vary. So it becomes the section's own line."""
+    su = production_fixture()
+    stance = su["vetoed"][0]["stance"]
+    assert len({r["stance"] for r in su["vetoed"]}) == 1
+    seg = _veto_block(prio_html)
+    assert seg.count(stance) == 1, "the lane stance must appear exactly once"
+    assert '<span class="pbv-st">' not in seg
+
+
+def test_a_row_whose_stance_differs_prints_its_own(prio_html):
+    """The other half of the rule — without it, a lane that ever varied its stance
+    would silently show only the first row's."""
+    su = production_fixture()
+    su["vetoed"] = [dict(su["vetoed"][0]),
+                    dict(su["vetoed"][1], stance="on hold pending a restructuring",
+                         stance_zh="因重组暂缓")]
+    seg = _veto_block(_render(su))
+    assert '<span class="pbv-st">' in seg
+    assert "on hold pending a restructuring" in seg
+    assert "因重组暂缓" in seg
+
+
+def test_ran_and_leaders_sections_carry_the_engines_stance_strings(prio_html):
+    su = production_fixture()
+    assert su["ran"][0]["stance"] and su["leaders"][0]["stance"]
+    assert su["ran"][0]["stance_zh"] and su["leaders"][0]["stance_zh"]
+    assert su["ran"][0]["stance"][0].upper() + su["ran"][0]["stance"][1:] + "." in \
+        _ran_block(prio_html)
+    assert su["leaders"][0]["stance"] + "." in _leaders_block(prio_html)
 
 
 # --------------------------------------------------------------------------- #
@@ -537,14 +836,46 @@ def test_leaders_strip_states_its_rank_key_and_its_stance(prio_html):
     seg = _leaders_block(prio_html)
     assert "🏃 <span class=\"l-en\">Market leaders</span>" in seg
     assert "Strongest runners by 3-month momentum" in seg
-    assert "watch, don’t chase" in seg
-    assert "观察，勿追高" in seg
+    # the stance sentence comes from the rows' own `stance`, printed once
+    assert "watch — don't chase." in seg
+    assert "观察 — 不要追高。" in seg
 
 
-def test_leaders_alpha_column_says_it_is_only_a_tiebreak(prio_html):
+def test_leaders_numeric_column_names_the_key_the_engine_actually_ranks_by(prio_html):
+    """HK leaders rows carry `momentum_z` + `rank_key` and NO `alpha` — the ported
+    "α (tiebreak)" header sat over a column of em-dashes and named a field that
+    does not exist on this board. The column must show, and be named after, the
+    number the rows are ordered by."""
     seg = _leaders_block(prio_html)
-    assert "<span class=\"l-en\">α (tiebreak)</span>" in seg
-    assert "It does NOT order this table" in seg
+    assert '<span class="l-en">3-mo momentum</span>' in seg
+    assert "α (tiebreak)" not in seg, "the dead alpha header is back"
+    assert "the number this table is ranked by" in seg
+    rows = production_fixture()["leaders"][:15]
+    assert any(r.get("momentum_z") is not None for r in rows), "fixture has no momentum"
+    body = seg[seg.find("<tbody>"):]
+    for r in rows:
+        if r.get("momentum_z") is not None:
+            assert "%+.2f" % r["momentum_z"] in body, (
+                "%s momentum %r not rendered" % (r["ticker"], r["momentum_z"]))
+    assert body.count('c-edge muted">—') == 0, "the ranked column rendered as em-dashes"
+
+
+def test_leaders_age_column_replaced_the_dead_state_column(prio_html):
+    """`label` is never stamped on a leaders row either, so the ported `state`
+    column was dead. Signal age is the read this lane has — and the one that
+    explains why the entry-gated board cannot see these names."""
+    seg = _leaders_block(prio_html)
+    assert '<th class="c-age"' in seg
+    assert '<th class="c-state"' not in seg
+    assert '<span class="l-en">last signal</span>' in seg
+    rows = production_fixture()["leaders"][:15]
+    aged = [r for r in rows if r.get("days_since_signal") is not None]
+    assert aged, "fixture has no signal ages"
+    body = seg[seg.find("<tbody>"):]
+    for r in aged[:3]:
+        unit = "session" if r.get("days_since_signal_basis") == "sessions" else "day"
+        n = r["days_since_signal"]
+        assert "%d %s%s ago" % (n, unit, "" if n == 1 else "s") in body
 
 
 def test_leaders_rows_keep_the_engines_order(prio_html):
@@ -573,18 +904,57 @@ def test_every_leaders_column_carries_a_c_class_so_none_escapes_the_mobile_budge
 def test_leaders_cohort_column_appears_only_when_rows_carry_it(prio_html):
     assert '<th class="c-theme"' in _leaders_block(prio_html)
     su = production_fixture()
-    su["leaders"] = [{k: v for k, v in r.items() if k != "theme"} for r in su["leaders"]]
+    su["leaders"] = [{k: v for k, v in r.items() if k not in ("leadership", "theme")}
+                     for r in su["leaders"]]
     seg = _leaders_block(_render(su))
     assert '<th class="c-theme"' not in seg
     head = seg[seg.find("<thead>"):seg.find("</thead>")]
     assert len(re.findall(r"<th\b", head)) == 6
 
 
+def test_cohort_chip_reads_the_engines_leadership_key_not_the_us_theme_key(prio_html):
+    """The HK engine stamps `leadership` on lane rows; it never stamps the US
+    board's `theme`. A chip that only looked for `theme` rendered NOTHING against a
+    real artifact — the leaders column would have been all em-dashes and no card or
+    ran row would have carried a cohort chip at all."""
+    su = production_fixture()
+    lanes = engine_lanes()
+    assert not any(r.get("theme") for lane in lanes.values() for r in lane), (
+        "fixture drifted: the engine now stamps `theme`, so this test is vacuous")
+    assert any(r.get("leadership") for lane in lanes.values() for r in lane), (
+        "engine stopped stamping `leadership` — the chip source moved")
+    chipped = [r for r in su["leaders"][:15] if r.get("leadership")]
+    assert chipped, "fixture has no cohort members among the leaders"
+    seg = _leaders_block(prio_html)
+    body = seg[seg.find("<tbody>"):]
+    assert body.count('<span class="pv-mk-i pv-mk-theme"') >= len(chipped)
+    # and the chip's words are the plain-word state, never the slug
+    assert "leaders_participating" not in prio_html
+
+
 def test_leaders_entry_column_never_promises_an_entry(prio_html):
     seg = _leaders_block(prio_html)
-    assert seg.count('<span class="ent-warn"><span class="l-en">wait for pullback</span>') >= 1
-    assert '<span class="ent-good"><span class="l-en">pullback zone</span>' in seg
+    body = seg[seg.find("<tbody>"):]
+    n_rows = body.count("<tr ")
+    assert n_rows, "no leader rows rendered"
+    assert body.count('<span class="ent-warn">') >= n_rows, (
+        "every leaders row must carry an explicit no-entry read")
     assert "Buy now" not in seg
+    # no ROW may render the zone affordance when the engine ships no zone (the
+    # header tip legitimately explains what a pullback zone is, so scope to <tbody>)
+    assert '<span class="ent-good">' not in body
+
+
+def test_leaders_entry_column_shows_a_zone_when_the_engine_has_one(prio_html):
+    """Engine leaders rows carry no entry_signal today, so the zone branch is dark
+    on the live fixture — pin it against a row that does, or the branch could rot
+    unnoticed until the day the engine starts shipping one."""
+    su = production_fixture()
+    su["leaders"] = [dict(su["leaders"][0],
+                          entry_signal={"buy_zone": {"low": 10.0, "high": 11.5}})]
+    seg = _leaders_block(_render(su))
+    assert '<span class="ent-good"><span class="l-en">pullback zone</span>' in seg
+    assert "10.00–11.50" in seg
 
 
 def test_cohort_chip_tells_the_truth_about_where_it_counts(prio_html):
@@ -797,6 +1167,26 @@ def test_legacy_board_keeps_its_own_copy_and_the_edge_slot(legacy_html):
 def test_legacy_board_keeps_the_artifacts_own_card_order(legacy_html):
     order = re.findall(r'<a class="pvcard[^"]*" href="hk_lookup\.html#([^"]+)"', legacy_html)
     assert order == [r["ticker"] for r in committed_artifact()["buy"]]
+
+
+def test_laggards_value_class_follows_the_sign(legacy_html):
+    """The value was hardcoded `.neg`, so a POSITIVE laggard printed in the loss
+    colour — and because `.neg` maps to --down, which inverts under
+    html[data-lang="zh"], the same +1.05 read "loss" in English and "gain" in
+    Chinese. The class must follow the sign; the theme still owns the hue."""
+    art = committed_artifact()
+    lagg = art.get("laggards") or []
+    assert lagg, "the committed artifact has no laggards — this test is vacuous"
+    assert any(r.get("alpha") is not None and r["alpha"] > 0 for r in lagg), (
+        "no positive-alpha laggard in the fixture, so the defect cannot be seen")
+    block = legacy_html[legacy_html.find("⚠ <span class=\"l-en\">Weakest"):]
+    block = block[:block.find("</p>", block.find("<p style="))]
+    for r in lagg:
+        if r.get("alpha") is None:
+            continue
+        expect = "pos" if r["alpha"] > 0 else "neg"
+        assert '<span class="%s">%+.2f</span>' % (expect, r["alpha"]) in block, (
+            "%s (%+.2f) must render as %s" % (r["ticker"], r["alpha"], expect))
 
 
 def test_health_banner_survives_the_rebuild(legacy_html, prio_html):
