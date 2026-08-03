@@ -31,6 +31,8 @@ from engine import vol_squeeze  # noqa: E402  — single-stock volatility black 
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade; HK inclusion gate (2026-07-16)
+from engine import hk_board_rank  # noqa: E402 — hk_prophet_v1 priority score / stages / display lanes
+from engine.setups import norm_company  # noqa: E402 — dual-class / H-share dedup on the leaders strip
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
@@ -1475,13 +1477,168 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     watch = _demoted + [e for e in ranked
                         if id(e) not in buy_keys and id(e) not in _demoted_ids
                         and comp(e) > 0.2][: max(0, 8 - len(_demoted))]
-    laggards = sorted(enriched, key=comp)[:n_lag]
+    # ---- LAGGARDS: the SELECTION axis alone (masterplan §0 G5) -----------------
+    # WAS `sorted(enriched, key=comp)` — the conviction COMPOSITE, which averages
+    # the selection axis together with the ENTRY axis. Entry z is an extension /
+    # timing read, so a name that has already run scores deeply negative on it, and
+    # a name that ran BECAUSE its selection edge is working is exactly the name the
+    # composite then buries. Measured on the shipped 2026-07-31 board: FOUR of the
+    # six laggards carried a POSITIVE selection reading — 3690.HK (Meituan)
+    # selection +0.55 / entry −1.25, printed 4th-worst of 156 in the middle of a
+    # +44% run; 9618.HK +0.84 / −1.68; 0992.HK +1.11 / −2.36; 0019.HK +0.53 / −2.88.
+    # hk_board_rank.laggards_key reads the selection axis directly, so a row with a
+    # positive selection z can no longer be dragged into this lane by its entry
+    # penalty at any weight. An unresolvable axis sorts LAST, not first — an unknown
+    # edge is not evidence of a weak one.
+    laggards = sorted(enriched, key=hk_board_rank.laggards_key)[:n_lag]
 
     for e in buys + watch:
         col = ("var(--up)" if e["dir"] == "up" else
                "var(--down)" if e["dir"] == "down" else "var(--muted)")
         e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col,
                                     **_spark_zone(e.get("entry_signal")))
+
+    # ── hk_prophet_v1 priority ranking + display lanes ───────────────────────
+    # Masterplan: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G1-G5.
+    # Engine: engine/hk_board_rank.py (parameterised engine/us_board_rank.py).
+    #
+    # This runs AFTER the enrichment loop because every score leg reads a field
+    # that loop attaches (signal / entry_signal / edge_z / conviction / washout).
+    #
+    # It changes ORDER and adds FIELDS. It does NOT change MEMBERSHIP: the
+    # confluence cascade above is still the only thing that decides who is on the
+    # buy lane, and `featured` is a flag inside that lane, never an admission.
+    # The §5.0 ripe-list contract sort is superseded here by (stage, −score,
+    # ticker) — the same replacement the US board made — so a name you cannot act
+    # on today can no longer sit at slot 1 above a live one.
+
+    # The leadership organ is computed HERE (it used to run only at the end) so the
+    # display lanes can carry its cohort chip. The tail block reuses this value —
+    # it is never computed twice. AUTHORITY FENCE (HKRV-R5): the cohort orders and
+    # chips the DISPLAY lanes only; score_rows below cannot see it.
+    _leadership = None
+    try:
+        from engine import hk_leadership as _ldr
+        _ldr_closes: dict = {}
+        if closes is not None:
+            for _lt in _ldr.DEFAULT_COHORT:
+                if _lt in closes.columns:
+                    _ldr_closes[_lt] = closes[_lt]
+        _leadership = _ldr.compute(
+            closes_map=_ldr_closes or None,
+            cohort=_ldr.DEFAULT_COHORT,
+            as_of=str(as_of) if as_of else None,
+        )
+        log.info("hk leadership: state=%s cohesion_now=%s",
+                 (_leadership or {}).get("state"), (_leadership or {}).get("cohesion_now"))
+    except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: a missing organ never fails a lane
+        log.warning("hk leadership compute failed (%s) — lanes ship without the cohort chip",
+                    _ldr_ex)
+
+    buys = hk_board_rank.score_rows(
+        buys,
+        verdict_by=sig_verdict,
+        adv_by=adv63,
+        board_asof=as_of,
+    )
+    _stage_ct = hk_board_rank.stage_counts(buys)
+    _ranking = hk_board_rank.ranking_block(buys, theme_asof=as_of)
+    log.info("hk_prophet_v1: %d buy rows scored — stages %s, featured %d "
+             "(cap %d, sector cap %d)", len(buys), _stage_ct,
+             _ranking["featured_count"], hk_board_rank.FEATURED_CAP,
+             hk_board_rank.SECTOR_CAP)
+
+    # days_since_signal on the non-buy conviction lanes: one field, one meaning
+    # across the whole artifact (buy rows get it inside score_rows).
+    for _r_ds in watch + laggards:
+        _v_ds = sig_verdict.get(_r_ds.get("ticker"))
+        _sig_ds = hk_board_rank.signal_asof(_r_ds, _v_ds)
+        _r_ds["signal_asof"] = _sig_ds
+        _r_ds["days_since_signal"], _r_ds["days_since_signal_basis"] = (
+            hk_board_rank.signal_age(_v_ds, _sig_ds, as_of))
+
+    # Per-name context the display lanes read. Built from `enriched` (the whole
+    # scored universe) so a lane can reach a name that never made the buy list —
+    # which is the entire point of the leaders / ran / vetoed lanes.
+    _lane_meta = {
+        e["ticker"]: {
+            "name": e.get("name") or e["ticker"],
+            "name_zh": e.get("name_zh"),
+            "sector": e.get("sector"),
+            "price": e.get("price"),
+            "off_high": e.get("off_high"),
+            "dir": e.get("dir"),
+            "signal": e.get("signal"),
+        }
+        for e in enriched
+    }
+    _lane_closes = {e["ticker"]: e.get("_chart") for e in enriched}
+
+    def _lane_close_of(ticker: str):
+        """(dates, closes) for the move-since-the-marker read.
+
+        The wide close panel is the preferred source because it is DATE-INDEXED —
+        a marker-date anchor needs real dates, and the per-card `_chart` list has
+        none. A name missing from the panel therefore yields None here rather than
+        a positional guess: build_ran_rows / build_vetoed_rows fall back to the
+        verdict's own session count and print `pct_since: null`, which is a
+        disclosed null instead of a move measured off the wrong bar.
+        """
+        if closes is not None and ticker in closes.columns:
+            s = closes[ticker].dropna()
+            if len(s) >= 2:
+                return ([str(idx.date()) for idx in s.index], s.tolist())
+        return None
+
+    # Leaders lane (G2): trailing 3-month TOTAL-return z, intact-trend gates,
+    # mega-cap cohort boost. Deliberately NOT the selection axis — a beta-neutral
+    # reading strips out exactly the common move that makes a cohort a cohort.
+    _mom_by = hk_board_rank.total_return_z(
+        {t: (v or [])[-(hk_board_rank.LEADERS_MOMENTUM_SESSIONS + 1):]
+         for t, v in _lane_closes.items() if v},
+        sessions=hk_board_rank.LEADERS_MOMENTUM_SESSIONS)
+    _buy_tickers = {e.get("ticker") for e in buys}
+    _watch_tickers = {e.get("ticker") for e in watch}
+    leaders = hk_board_rank.build_leaders_rows(
+        _mom_by,
+        verdict_by=sig_verdict,
+        meta_by=_lane_meta,
+        exclude=_buy_tickers | _watch_tickers,
+        leadership=_leadership,
+        board_asof=as_of,
+        dedup_name=norm_company,
+    )
+    # Ran lane (G3): crossed 3-15 ticks back, trend still intact, marker-anchored.
+    ran = hk_board_rank.build_ran_rows(
+        sig_verdict,
+        meta_by=_lane_meta,
+        close_of=_lane_close_of,
+        exclude=_buy_tickers | _watch_tickers | {r["ticker"] for r in leaders},
+        leadership=_leadership,
+        board_asof=as_of,
+    )
+    # Vetoed lane (G1 / G6): a buy signal fired and the entry gate refused it —
+    # the block reason named, and what the name did while the board stayed out.
+    # This is the lane that shows what was MISSED; it is doing its job precisely
+    # when it reads badly, so do not quietly drop it.
+    vetoed = hk_board_rank.build_vetoed_rows(
+        sig_verdict,
+        meta_by=_lane_meta,
+        close_of=_lane_close_of,
+        exclude=(_buy_tickers | _watch_tickers
+                 | {r["ticker"] for r in leaders} | {r["ticker"] for r in ran}),
+        leadership=_leadership,
+        board_asof=as_of,
+    )
+    log.info("hk display lanes: leaders %d (cap %d, %d cohort) · ran %d (cap %d, "
+             "ticks %d-%d) · vetoed %d (cap %d, %d cohort)",
+             len(leaders), hk_board_rank.LEADERS_CAP,
+             sum(1 for r in leaders if r.get("in_leadership_cohort")),
+             len(ran), hk_board_rank.RAN_CAP,
+             hk_board_rank.RAN_TICKS_MIN, hk_board_rank.RAN_TICKS_MAX,
+             len(vetoed), hk_board_rank.VETOED_CAP,
+             sum(1 for r in vetoed if r.get("in_leadership_cohort")))
+
     # board-level fragility gauge over the top conviction cohort (display-only sizing context)
     cohort = ext_eng.cohort_stretch([ext_map[e["ticker"]] for e in ranked[:24]
                                      if e["ticker"] in ext_map])
@@ -1570,6 +1727,30 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
                 "gate_ver": "cascade_v1",
             })
+        # ---- FORWARD COHORTS for the new display lanes (masterplan §0 G9) -----
+        # The ledger's `group` column is the HK analogue of the US grader's LANES
+        # list: board_ledger.grade() is group-agnostic and scorecard() breaks out
+        # `by_group` from whatever values it finds, so a new lane needs NO schema
+        # change — it accrues from the first render that tags it. Ship date is
+        # therefore this render, by construction: board_ledger is forward-accrual
+        # only (no git-archaeology retro path), so nothing historical is
+        # back-graded into these cohorts.
+        #
+        # They are deliberately NOT added to the `hit_rate_21d` headline stat
+        # (engine/board_ledger.scorecard restricts that to entry_open/setting_up).
+        # These lanes carry no entry claim, so folding them into the number that
+        # describes the GRADED buy lane would misreport what the board called.
+        for _lane_rows, _lane_group in ((leaders, "leaders"), (ran, "ran"),
+                                        (vetoed, "vetoed")):
+            for _lr in _lane_rows:
+                calls.append({
+                    "ticker": _lr.get("ticker"),
+                    "group": _lane_group,
+                    "close_asof": _lr.get("price"),
+                    "gate_tier": ((_lr.get("signal") or {}).get("tier")
+                                  if isinstance(_lr.get("signal"), dict) else None),
+                    "gate_ver": "cascade_v1",
+                })
         _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
         if _n:
             _bt = board_ledger.grade("HK")            # cheap incremental — maturation accrues
@@ -1601,12 +1782,39 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             except Exception as _hkle:  # noqa: BLE001 — ledger is additive; never fatal
                 log.warning("hk track_ledger emit failed (%s) — render continues", _hkle)
         else:
-            log.warning("hk standout board-ledger: append_board returned 0 (no rows written)")
-            health.append({
-                "leg": "board_ledger",
-                "en": "Board ledger write returned no rows — the scoreboard did not accrue this render.",
-                "zh": "看板账本写入 0 行 —— 本次渲染未累积记分。",
-            })
+            # ---- G7: tell an OFF-LANE SKIP apart from a real write failure -----
+            # DIAGNOSED 2026-08-02. The shipped board carried "Board ledger write
+            # returned no rows" as a permanent health row, and the ledger was fine:
+            # data/board_ledger/hk_board.parquet holds 347 rows through 2026-07-31,
+            # including that session's 13. append_board returns 0 BY DESIGN when
+            # CN_LANE != "asia" (the PR-R10 lane gate, engine/board_ledger.py — the
+            # nightly asia-close lane is the sole advancer of the HK ledger, house
+            # law). CN_LANE is set only in asia-close.yml, so every general
+            # render.yml / engine-render.yml re-render — i.e. most merges to main —
+            # raised a false alarm on a healthy store. Git archaeology confirms the
+            # pattern exactly: "asia dashboards" commits ship health: [] and a real
+            # board_track; the same-day "engine-render" re-renders ship the alarm.
+            #
+            # Fixed on the CALLER, never the gate: the lane gate is correct and is
+            # pinned by tests/test_board_ledger_lane_gates.py. Off-lane logs and
+            # moves on (the China caller's discipline); an ON-LANE zero is still a
+            # genuine failure and still raises the health row.
+            _on_lane = True
+            try:
+                from engine.ledger_lane import asia_advance_enabled
+                _on_lane = bool(asia_advance_enabled())
+            except Exception as _le:  # noqa: BLE001 — cannot read the lane: assume
+                log.debug("hk board-ledger lane read failed (%s) — treating as on-lane", _le)
+            if not _on_lane:
+                log.info("hk standout board-ledger: off-lane (CN_LANE != asia) — append "
+                         "skipped by design; the nightly asia lane is the sole advancer")
+            else:
+                log.warning("hk standout board-ledger: append_board returned 0 (no rows written)")
+                health.append({
+                    "leg": "board_ledger",
+                    "en": "Board ledger write returned no rows — the scoreboard did not accrue this render.",
+                    "zh": "看板账本写入 0 行 —— 本次渲染未累积记分。",
+                })
     except Exception as ex:  # noqa: BLE001 — fail-OPEN, never SILENT
         log.warning("hk standout board-ledger FAILED (%s) — render continues, health flagged", ex)
         health.append({
@@ -1621,12 +1829,29 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     out = {"as_of": as_of, "risk_state": risk_state, "overlay": overlay,
            "calm": calm, "cohort": cohort or None,
            "buy": buys, "watch": watch, "laggards": laggards,
+           # hk_prophet_v1 display lanes — no entry claim, no priority score.
+           "leaders": leaders, "ran": ran, "vetoed": vetoed,
+           "rank_by": hk_board_rank.BOARD_DEFINITION,
+           "board_definition": hk_board_rank.BOARD_DEFINITION,
+           "ranking": _ranking,
+           "lane_counts": hk_board_rank.lane_counts(
+               buy=buys, leaders=leaders, ran=ran, vetoed=vetoed,
+               watch=watch, laggards=laggards,
+               featured=_ranking["featured_count"]),
            "southbound_summary": out_sb,
            "liquidity_regime": liquidity_regime,   # H5 ACCRUE conditioner — deskhero chip
            "health": health or None,
            "board_track": board_track,
            "eligible": len(elig),  # pre-demote cascade-eligible count
-           "universe": len(enriched)}
+           "universe": len(enriched),
+           # G7 (second half): the universe gap, stated as a number rather than
+           # left to be inferred from a count that moved. `enriched` drops a name
+           # that has no per-card record or <70 close bars; the 126-session
+           # beta-alignment gap that stuck the universe at 73/160 was healed by
+           # hk_beta_close_panel's deep overlay (see that docstring), so what
+           # remains here is ordinary coverage, printed either way.
+           "universe_excluded": max(0, len(rows) - len(enriched)),
+           "universe_source_rows": len(rows)}
     if disp_regime:                                  # selection-regime gross dial (board context)
         out["dispersion_regime"] = disp_regime
     # ---- WASHOUT WATCH (additive, fail-open) — ignition organ for the stock-board revamp.
@@ -1674,27 +1899,12 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         log.warning("hk washout_watch compute failed (%s) — existing board intact", _ww_ex)
         out["washout_watch"] = []
     # ---- LEADERSHIP PARTICIPATION (additive, fail-open) — cohort-level participation organ.
-    # Operates independently of the washout watch: fixed mega-cap cohort, cohesion metric,
-    # and southbound context.  The existing board dict is UNCHANGED when this block errors.
-    try:
-        from engine import hk_leadership as _ldr
-        # Pass the pre-computed closes matrix so the organ does not reload from disk.
-        # Build a closes_map restricted to the leadership cohort from the wide panel.
-        _ldr_closes: dict = {}
-        if closes is not None:
-            for _lt in _ldr.DEFAULT_COHORT:
-                if _lt in closes.columns:
-                    _ldr_closes[_lt] = closes[_lt]
-        out["leadership"] = _ldr.compute(
-            closes_map=_ldr_closes or None,
-            cohort=_ldr.DEFAULT_COHORT,
-            as_of=str(as_of) if as_of else None,
-        )
-        log.info("hk leadership: state=%s cohesion_now=%s",
-                 out["leadership"].get("state"), out["leadership"].get("cohesion_now"))
-    except Exception as _ldr_ex:  # noqa: BLE001 — ADDITIVE: existing board is untouched on error
-        log.warning("hk leadership compute failed (%s) — existing board intact", _ldr_ex)
-        out["leadership"] = None
+    # Fixed mega-cap cohort, cohesion metric, southbound context.  COMPUTED EARLIER
+    # (before the display lanes, which carry its cohort chip) and simply published
+    # here — one compute per render, one value in the artifact.  `None` when the
+    # organ failed: the lanes already shipped without the chip in that case, so the
+    # artifact and the lanes agree.
+    out["leadership"] = _leadership
     # ---- CONTEXT CHIPS (HKRV-W4, additive, fail-open) — display-tier macro chips.
     # Reads EXISTING committed stores; never feeds rank/size/gate (AUTHORITY FENCE HKRV-R5).
     # An error here must not disturb the standout board.

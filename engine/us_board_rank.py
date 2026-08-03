@@ -253,14 +253,36 @@ def entry_value(entry: Mapping[str, Any] | None) -> float:
     return _ENTRY_VALUE.get(_status_of(entry), 0.0)
 
 
-def alpha_percentiles(rows: Sequence[Mapping[str, Any]]) -> dict[int, float | None]:
-    """Row-index → residual-alpha percentile inside the supplied pool.
+def selection_value(row: Mapping[str, Any]) -> Any:
+    """The US board's selection-axis reading: residual alpha, straight off the row.
 
-    Rank 1 is the highest alpha; percentile 1.0 is the top of the pool and 0.0 the
+    Factored out (2026-08-02, hk_prophet_v1 port) so a sibling board can point the
+    ``edge`` leg at ITS OWN selection axis without copying the percentile machinery.
+    The leg's charter is "the selection axis" — the quantity a market's measurement
+    found positive-IC — and only the US spells that ``row["alpha"]``.  On the HK
+    board the same charter resolves to the fused ``hk_edge`` z; see
+    :func:`engine.hk_board_rank.selection_value`.
+    """
+    return row.get("alpha")
+
+
+def alpha_percentiles(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    value_of: Callable[[Mapping[str, Any]], Any] | None = None,
+) -> dict[int, float | None]:
+    """Row-index → selection-axis percentile inside the supplied pool.
+
+    Rank 1 is the highest reading; percentile 1.0 is the top of the pool and 0.0 the
     bottom.  Ties break on ticker so the percentile is reproducible for identical
-    inputs.  Rows with no finite ``alpha`` are excluded from the pool (they neither
+    inputs.  Rows with no finite reading are excluded from the pool (they neither
     occupy a rank nor distort the spread) and map to ``None`` — the fail-closed
     outcome is zero points, not a mid-pool default.
+
+    ``value_of`` reads each row's selection axis and defaults to
+    :func:`selection_value` (``row["alpha"]``), so the US call site is unchanged.
+    The percentile CONSTRUCTION is what the two boards share; the field it reads is
+    the market parameter.
 
     A pool of ONE also maps to ``None``.  A percentile is a CROSS-SECTIONAL reading,
     and a cross-section of one has none: the single row is simultaneously the top and
@@ -270,9 +292,10 @@ def alpha_percentiles(rows: Sequence[Mapping[str, Any]]) -> dict[int, float | No
     fail-closed rule that governs an unknown alpha — unknown evidence never earns
     best-case points.
     """
+    read = value_of or selection_value
     ranked: list[tuple[int, str, float]] = []
     for index, row in enumerate(rows):
-        alpha = _finite_float(row.get("alpha"))
+        alpha = _finite_float(read(row))
         if alpha is None:
             continue
         ranked.append((index, str(row.get("ticker") or ""), alpha))
@@ -481,11 +504,20 @@ def featured_shortfalls(
     verdict: Mapping[str, Any] | None = None,
     entry: Mapping[str, Any] | None = None,
     in_blackout: bool | None = None,
+    alpha_of: Callable[[Mapping[str, Any]], Any] | None = None,
+    extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
 ) -> list[str]:
     """Every reason this row may not be featured (empty list = it qualifies).
 
     Featured is a **flag plus an order**, never a population change: a row that fails
     here stays on the buy lane exactly where its stage and score put it.
+
+    ``alpha_of`` names the selection axis the ``alpha_below_floor`` test reads
+    (default :func:`selection_value`); ``extra`` contributes market-specific
+    shortfalls — the HK board adds a 63-day-turnover floor there.  Both default to
+    the US behaviour, so this signature change is invisible to the US call sites.
+    An ``extra`` that raises is NOT swallowed: a liquidity gate that fails open is
+    the failure mode a featured flag can least afford.
     """
     reasons: list[str] = []
     verdict = verdict if verdict is not None else (row.get("signal") or {})
@@ -519,7 +551,7 @@ def featured_shortfalls(
     if ext_z is not None and ext_z > EXT_Z_FULL:
         reasons.append("extended")
 
-    alpha = _finite_float(row.get("alpha"))
+    alpha = _finite_float((alpha_of or selection_value)(row))
     if alpha is None:
         reasons.append("alpha_unknown")
     elif alpha < 0:
@@ -530,6 +562,9 @@ def featured_shortfalls(
         blackout = (row.get("earnings_soon") or {}).get("in_blackout")
     if blackout is True:
         reasons.append("earnings_blackout")
+
+    if extra is not None:
+        reasons.extend(str(reason) for reason in (extra(row) or ()))
 
     return reasons
 
@@ -546,6 +581,9 @@ def score_rows(
     board_asof: Any = None,
     featured_cap: int = FEATURED_CAP,
     sector_cap: int = SECTOR_CAP,
+    definition: str = BOARD_DEFINITION,
+    alpha_of: Callable[[Mapping[str, Any]], Any] | None = None,
+    featured_extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
 ) -> list[dict]:
     """Score, stage, feature and order a buy pool.
 
@@ -557,10 +595,16 @@ def score_rows(
     Sort key: ``(stage_rank, −score, ticker)``.  ``score_rank`` is the pool rank by
     that key and ``display_rank`` the rendered position; today they are equal, and
     they are kept separate so a future lane split cannot silently conflate them.
+
+    ``definition`` stamps ``prophet.version`` (``hk_prophet_v1`` reuses this whole
+    pass), ``alpha_of`` names the selection axis the ``edge`` leg reads, and
+    ``featured_extra`` adds market-specific featured vetoes.  All three default to
+    the US answer — the arithmetic, the weights and the stage map are SHARED, and
+    only the field names are market parameters.
     """
     pool = list(rows)
     board_date = _as_date(board_asof)
-    percentiles = alpha_percentiles(pool)
+    percentiles = alpha_percentiles(pool, value_of=alpha_of)
 
     for index, row in enumerate(pool):
         ticker = str(row.get("ticker") or "")
@@ -582,7 +626,7 @@ def score_rows(
 
         row["stage"] = stage_for(row, entry)
         row["prophet"] = {
-            "version": BOARD_DEFINITION,
+            "version": definition,
             "score": round(score, 1),
             "components": {name: round(value, 6) for name, value in values.items()},
             "points": points,
@@ -604,6 +648,8 @@ def score_rows(
             verdict=verdict,
             entry=entry,
             in_blackout=(blackout_by or {}).get(ticker),
+            alpha_of=alpha_of,
+            extra=featured_extra,
         )
         row["_featured_shortfalls"] = shortfalls
         row["featured"] = False
@@ -679,12 +725,18 @@ def stage_counts(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     return counts
 
 
+EDGE_READS_US = "residual alpha percentile inside this buy pool"
+
+
 def ranking_block(
     rows: Iterable[Mapping[str, Any]],
     *,
     featured_cap: int = FEATURED_CAP,
     sector_cap: int = SECTOR_CAP,
     theme_asof: Any = None,
+    definition: str = BOARD_DEFINITION,
+    edge_reads: str = EDGE_READS_US,
+    featured_requirements_extra: Sequence[str] = (),
 ) -> dict[str, Any]:
     """The artifact-disclosed ``ranking`` block — the score's own receipt.
 
@@ -693,11 +745,16 @@ def ranking_block(
     carry no score authority at all — and ``component_coverage``, the measured nonzero
     count per leg, so a leg that is dead on this board (``runway``, 0/71) is visible
     in the artifact instead of inferable only from the weight table.
+
+    ``definition`` / ``edge_reads`` / ``featured_requirements_extra`` are the market
+    parameters (hk_prophet_v1 reuses this receipt verbatim apart from those three).
+    The weights, the formula bases and the zero-authority list are SHARED — a
+    sibling board that disclosed different weights would not be the same score.
     """
     scored = list(rows)
     counts = stage_counts(scored)
     return {
-        "definition": BOARD_DEFINITION,
+        "definition": definition,
         "score_kind": SCORE_KIND,
         "weights": dict(SCORE_WEIGHTS),
         "formula_points": [
@@ -709,7 +766,7 @@ def ranking_block(
              "reads": "entry_signal.status",
              "basis": "frozen status map, shared with the China board"},
             {"component": "edge", "points": SCORE_WEIGHTS["edge"],
-             "reads": "residual alpha percentile inside this buy pool",
+             "reads": edge_reads,
              "basis": "clip01((pctile − 0.25) / 0.75) — bottom quartile earns 0"},
             {"component": "runway", "points": SCORE_WEIGHTS["runway"],
              "reads": "own-history extension z (ext_z) / anti-chase flag",
@@ -740,6 +797,7 @@ def ranking_block(
             "residual alpha at or above zero",
             "outside the earnings blackout window",
             f"at most {int(sector_cap)} per sector, {int(featured_cap)} on the board",
+            *[str(item) for item in featured_requirements_extra],
         ],
         "zero_score_authority": list(ZERO_SCORE_AUTHORITY),
         "membership_note": "featured is a flag and an order — the buy lane's "
