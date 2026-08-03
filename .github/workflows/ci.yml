@@ -569,10 +569,11 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
-      # Wave 3B-B4A: the broad fundamental-forensics glob also matches this
-      # suite, but the explicit name documents the engine-render guard's
-      # provenance contract and protects test-only re-pins from future narrowing.
+      # Wave 3B-B4A/B4B: the broad fundamental-forensics glob also matches these
+      # suites, but the explicit names document the engine-render guard's sealed
+      # history + bounded serving contracts and protect test-only re-pins.
       - "tests/test_fundamental_forensics_attested_query_snapshots.py"
+      - "tests/test_fundamental_forensics_attested_history_reader.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"

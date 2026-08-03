@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from collections import OrderedDict
 from hashlib import sha256
 import hmac
 import json
 import re
-from threading import RLock
+from threading import Event, RLock
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
@@ -81,11 +82,32 @@ HARD_MAX_ATTESTED_CONVERSION_JSON_NODES = 5_000_000
 HARD_MAX_ATTESTED_JSON_DEPTH = 64
 HARD_MAX_ATTESTED_JSON_TEXT_BYTES = 1 * 1024 * 1024
 
+# The v2 publication format can retain large private artifacts so an operator
+# can reproduce a full verification offline.  The HTTP receipt reader is a
+# deliberately narrower product surface: its two compact artifacts must fit a
+# much smaller pre-read budget and a bounded decoded index.  These are serving
+# limits, not a change to what a valid immutable v2 publication may retain.
+HARD_MAX_ATTESTED_RECEIPT_COMPACT_BYTES = 2 * 1024 * 1024
+HARD_MAX_ATTESTED_RECEIPT_PROJECTIONS = 5_000
+HARD_MAX_ATTESTED_RECEIPT_BINDINGS = 20_000
+HARD_MAX_ATTESTED_RECEIPT_ROOT_CELLS = 10_000
+HARD_MAX_ATTESTED_RECEIPT_LEAF_REFERENCES = 40_000
+HARD_MAX_ATTESTED_RECEIPT_DECODED_INDEX_BYTES = 16 * 1024 * 1024
+
 _ID_RE = re.compile(r"^ffqsv2_[a-f0-9]{64}$")
 _V1_ID_RE = re.compile(r"^ffqs_[a-f0-9]{64}$")
 _ATTESTATION_ID_RE = re.compile(r"^ffatt_[a-f0-9]{64}$")
 _MATCH_ID_RE = re.compile(r"^ffatt_match_[a-f0-9]{64}$")
 _SHA_RE = re.compile(r"^[a-f0-9]{64}$")
+_RAW_OCCURRENCE_ID_RE = re.compile(r"^rawfact_[a-f0-9]{64}$")
+_ROOT_CELL_ID_RE = re.compile(r"^metric_cell_[a-f0-9]{64}$")
+_SOURCE_SNAPSHOT_ID_RE = re.compile(r"^ffsecsrc_[a-f0-9]{64}$")
+_PACKAGE_ID_RE = re.compile(r"^ffpkg_[a-f0-9]{64}$")
+_EXTRACTION_ID_RE = re.compile(r"^ffxbrl_[a-f0-9]{64}$")
+_COMPANYFACTS_CAPTURE_ID_RE = re.compile(r"^ffseccfc_[a-f0-9]{64}$")
+_COMPANYFACTS_MANIFEST_ID_RE = re.compile(r"^ffseccfm_[a-f0-9]{64}$")
+_CIK_RE = re.compile(r"^[0-9]{10}$")
+_ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _ROLES = ("attestations_json", "companyfacts_conversion_json", "bindings_json", "coverage_json")
 _ROLE_CONTENT_TYPES = {role: "application/json" for role in _ROLES}
 _ROLE_LIMITS = {
@@ -101,6 +123,12 @@ _V1_ROLE_LIMITS = {
     "cells_parquet": HARD_MAX_SNAPSHOT_PARQUET_BYTES,
 }
 _PUBLISH_LOCK = RLock()
+_RECEIPT_INDEX_CACHE_LOCK = RLock()
+_RECEIPT_INDEX_CACHE: OrderedDict[tuple[int, str], tuple[StrictBoundedReadStore, AttestedQueryReceiptIndex, int]] = OrderedDict()
+_RECEIPT_INDEX_CACHE_MAX_ENTRIES = 4
+_RECEIPT_INDEX_CACHE_MAX_BYTES = HARD_MAX_ATTESTED_RECEIPT_DECODED_INDEX_BYTES
+_RECEIPT_INDEX_CACHE_BYTES = 0
+_RECEIPT_INDEX_SINGLEFLIGHT_STRIPE_COUNT = 32
 _MAPPINGPROXY_TYPE = type(MappingProxyType({}))
 _JSON_SEQUENCE_TYPES = (list, tuple)
 
@@ -214,6 +242,58 @@ class AttestedQuerySnapshot:
     @property
     def published_at(self) -> datetime:
         return _utc(self.manifest["clocks"]["published_at"], field="snapshot.published_at")
+
+
+@dataclass(frozen=True)
+class AttestedQueryReceiptIndex:
+    """Small immutable receipt projection for the attested-history read API.
+
+    This is deliberately *not* an :class:`AttestedQuerySnapshot`: it does not
+    load the frozen v1 query snapshot, the B3 record bodies, or the full
+    Company Facts conversion.  Its narrow promise is stored-receipt
+    self-consistency, not a fresh source verification.
+    """
+
+    snapshot_id: str
+    manifest_key: str
+    base_snapshot_id: str
+    query_hash: str
+    manifest: Mapping[str, Any]
+    roots: tuple[Mapping[str, Any], ...]
+    root_ids: tuple[str, ...]
+    roots_by_id: Mapping[str, Mapping[str, Any]]
+    bindings_by_occurrence: Mapping[str, Mapping[str, Any]]
+    attestations_by_id: Mapping[str, Mapping[str, Any]]
+    published_at: datetime
+
+
+@dataclass
+class _ReceiptIndexFlight:
+    """One active immutable receipt load, retained only until its waiters wake."""
+
+    store: StrictBoundedReadStore
+    snapshot_id: str
+    done: Event
+    index: AttestedQueryReceiptIndex | None = None
+    error: BaseException | None = None
+
+
+@dataclass
+class _ReceiptIndexFlightStripe:
+    """A bounded singleflight slot; collisions queue, never grow a key map."""
+
+    lock: RLock
+    flight: _ReceiptIndexFlight | None = None
+
+
+# One bounded stripe per (store identity, snapshot id) coalesces an expensive
+# cold receipt parse.  The active-flight result is separate from the LRU cache:
+# every caller that joined this generation receives its exact outcome even if a
+# tiny cache policy evicts the index before waiters run.
+_RECEIPT_INDEX_SINGLEFLIGHT_STRIPES = tuple(
+    _ReceiptIndexFlightStripe(lock=RLock())
+    for _ in range(_RECEIPT_INDEX_SINGLEFLIGHT_STRIPE_COUNT)
+)
 
 
 # Implementation follows below.  Keeping the declarations first makes the
@@ -394,6 +474,37 @@ def _read_bounded(store: StrictBoundedReadStore, key: str, *, maximum: int, requ
         return None
     if not isinstance(payload, bytes) or len(payload) > maximum:
         raise AttestedQuerySnapshotError(f"private object violates bounded read contract: {key}")
+    return payload
+
+
+def _read_exact_bounded(
+    store: StrictBoundedReadStore,
+    key: str,
+    *,
+    expected_byte_length: int,
+    maximum: int,
+) -> bytes:
+    """Read through the public cap-only contract, then require exact bytes.
+
+    ``StrictBoundedReadStore`` deliberately promises only a cap argument.  A
+    couple of first-party stores offer a non-protocol exact-length extension,
+    but receipt serving cannot claim the public protocol and then require that
+    private signature at runtime.  Passing the manifest-declared length as the
+    cap still prevents a compliant store from returning an oversized body; the
+    exact equality check immediately below rejects a short/truncated body.
+    """
+    if (
+        isinstance(expected_byte_length, bool)
+        or not isinstance(expected_byte_length, int)
+        or expected_byte_length < 0
+        or isinstance(maximum, bool)
+        or not isinstance(maximum, int)
+        or expected_byte_length > maximum
+    ):
+        raise AttestedQuerySnapshotError("attested receipt exact read boundary is invalid")
+    payload = _read_bounded(store, key, maximum=expected_byte_length)
+    if len(payload) != expected_byte_length:
+        raise AttestedQuerySnapshotError(f"private object violates exact bounded read contract: {key}")
     return payload
 
 
@@ -1169,6 +1280,650 @@ def _decode_coverage(payload: bytes, *, base: QuerySnapshot, conversion: Company
     return tuple(_freeze(item) for item in normalized)
 
 
+# ---------------------------------------------------------------------------
+# B4B receipt-only reader
+#
+# The serving path deliberately validates only the v2 manifest plus its two
+# compact public-receipt artifacts.  Calling the full snapshot loader here
+# would re-read the v1 matrix/ledger/parquet and the B3/Company Facts bodies on
+# every cold HTTP worker, turning a small receipt endpoint into a multi-GB
+# request-time replay.  This reader therefore makes the narrower, explicit
+# stored-receipt self-consistency claim only.
+# ---------------------------------------------------------------------------
+
+
+def _receipt_text(value: Any, *, field: str) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise AttestedQuerySnapshotError(f"{field} is invalid")
+    try:
+        too_long = len(value.encode("utf-8")) > 16 * 1024
+    except UnicodeError as exc:
+        raise AttestedQuerySnapshotError(f"{field} is invalid") from exc
+    if too_long:
+        raise AttestedQuerySnapshotError(f"{field} is invalid")
+    return value
+
+
+def _receipt_attestation_projections(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """Validate the compact B3 projections retained in the v2 manifest.
+
+    We intentionally do not read ``attestations_json`` here.  The projection is
+    sufficient to bind an API-visible compact Company Facts correspondence to
+    its stored B3 identifier, capture, filing identity, and match budget.
+    """
+    receipt = manifest["companyfacts_conversion_receipt"]
+    if (
+        not isinstance(receipt["capture_id"], str)
+        or not _COMPANYFACTS_CAPTURE_ID_RE.fullmatch(receipt["capture_id"])
+        or not isinstance(receipt["manifest_id"], str)
+        or not _COMPANYFACTS_MANIFEST_ID_RE.fullmatch(receipt["manifest_id"])
+        or not isinstance(receipt["cik"], str)
+        or not _CIK_RE.fullmatch(receipt["cik"])
+    ):
+        raise AttestedQuerySnapshotError("Company Facts conversion receipt identity is invalid")
+    verification = _utc(
+        manifest["clocks"]["operator_verification_observed_at"],
+        field="attested snapshot operator_verification_observed_at",
+    )
+    projections = manifest["attestation_projections"]
+    if len(projections) > HARD_MAX_ATTESTED_RECEIPT_PROJECTIONS:
+        raise AttestedQuerySnapshotError("attested receipt projection count exceeds serving budget")
+    result: dict[str, dict[str, Any]] = {}
+    previous: str | None = None
+    for raw in projections:
+        projection = _strict_object(
+            raw,
+            field="attested snapshot projection",
+            required=frozenset({
+                "attestation_id", "authority_snapshot_id", "package_id", "extraction_id", "cik", "accession",
+                "companyfacts_capture_id", "companyfacts_manifest_id", "companyfacts_response_sha256",
+                "companyfacts_match_count", "attested_at",
+            }),
+        )
+        identifier = projection["attestation_id"]
+        if (
+            not isinstance(identifier, str)
+            or not _ATTESTATION_ID_RE.fullmatch(identifier)
+            or previous is not None and identifier <= previous
+            or not isinstance(projection["authority_snapshot_id"], str)
+            or not _SOURCE_SNAPSHOT_ID_RE.fullmatch(projection["authority_snapshot_id"])
+            or not isinstance(projection["package_id"], str)
+            or not _PACKAGE_ID_RE.fullmatch(projection["package_id"])
+            or not isinstance(projection["extraction_id"], str)
+            or not _EXTRACTION_ID_RE.fullmatch(projection["extraction_id"])
+            or not isinstance(projection["cik"], str)
+            or not _CIK_RE.fullmatch(projection["cik"])
+            or not isinstance(projection["accession"], str)
+            or not _ACCESSION_RE.fullmatch(projection["accession"])
+            or not isinstance(projection["companyfacts_capture_id"], str)
+            or not _COMPANYFACTS_CAPTURE_ID_RE.fullmatch(projection["companyfacts_capture_id"])
+            or not isinstance(projection["companyfacts_manifest_id"], str)
+            or not _COMPANYFACTS_MANIFEST_ID_RE.fullmatch(projection["companyfacts_manifest_id"])
+            or not isinstance(projection["companyfacts_response_sha256"], str)
+            or not _SHA_RE.fullmatch(projection["companyfacts_response_sha256"])
+            or isinstance(projection["companyfacts_match_count"], bool)
+            or not isinstance(projection["companyfacts_match_count"], int)
+            or projection["companyfacts_match_count"] <= 0
+        ):
+            raise AttestedQuerySnapshotError("attested snapshot receipt projection is invalid")
+        attested_at = _utc(projection["attested_at"], field="attested snapshot projection attested_at")
+        if utc_text(attested_at) != projection["attested_at"] or attested_at > verification:
+            raise AttestedQuerySnapshotError("attested snapshot receipt projection clock is invalid")
+        if (
+            projection["companyfacts_capture_id"] != receipt["capture_id"]
+            or projection["companyfacts_manifest_id"] != receipt["manifest_id"]
+            or projection["cik"] != receipt["cik"]
+        ):
+            raise AttestedQuerySnapshotError("attested snapshot receipt projection does not bind Company Facts receipt")
+        result[identifier] = projection
+        previous = identifier
+    if not result:
+        raise AttestedQuerySnapshotError("attested snapshot receipt has no projections")
+    return result
+
+
+def _receipt_binding_from_payload(
+    item: Mapping[str, Any],
+    *,
+    projections: Mapping[str, Mapping[str, Any]],
+    conversion_receipt: Mapping[str, Any],
+) -> tuple[AttestedOccurrenceBinding, dict[str, Any]]:
+    raw = _strict_object(
+        item,
+        field="attested receipt occurrence binding",
+        required=frozenset({"occurrence_id", "attestation_id", "match_id", "companyfacts"}),
+    )
+    binding = AttestedOccurrenceBinding(raw["occurrence_id"], raw["attestation_id"], raw["match_id"])
+    if not _RAW_OCCURRENCE_ID_RE.fullmatch(binding.occurrence_id):
+        raise AttestedQuerySnapshotError("attested receipt occurrence id is invalid")
+    projection = projections.get(binding.attestation_id)
+    if projection is None:
+        raise AttestedQuerySnapshotError("attested receipt binding references an unprojected attestation")
+    companyfacts = _strict_object(
+        raw["companyfacts"],
+        field="attested receipt Company Facts projection",
+        required=frozenset({
+            "capture_id", "manifest_id", "response_sha256", "cik", "accession", "taxonomy", "concept", "unit",
+            "entry_index", "start", "end", "value", "dimensions_known",
+        }),
+    )
+    if (
+        not isinstance(companyfacts["capture_id"], str)
+        or not _COMPANYFACTS_CAPTURE_ID_RE.fullmatch(companyfacts["capture_id"])
+        or not isinstance(companyfacts["manifest_id"], str)
+        or not _COMPANYFACTS_MANIFEST_ID_RE.fullmatch(companyfacts["manifest_id"])
+        or not isinstance(companyfacts["response_sha256"], str)
+        or not _SHA_RE.fullmatch(companyfacts["response_sha256"])
+        or not isinstance(companyfacts["cik"], str)
+        or not _CIK_RE.fullmatch(companyfacts["cik"])
+        or not isinstance(companyfacts["accession"], str)
+        or not _ACCESSION_RE.fullmatch(companyfacts["accession"])
+        or companyfacts["dimensions_known"] is not False
+        or isinstance(companyfacts["entry_index"], bool)
+        or not isinstance(companyfacts["entry_index"], int)
+        or companyfacts["entry_index"] < 0
+    ):
+        raise AttestedQuerySnapshotError("attested receipt Company Facts projection is invalid")
+    for field in ("taxonomy", "concept", "unit"):
+        _receipt_text(companyfacts[field], field=f"attested receipt Company Facts {field}")
+    _date_text(companyfacts["start"], field="attested receipt Company Facts start", nullable=True)
+    _date_text(companyfacts["end"], field="attested receipt Company Facts end")
+    if not isinstance(companyfacts["value"], str) or decimal_text(companyfacts["value"]) != companyfacts["value"]:
+        raise AttestedQuerySnapshotError("attested receipt Company Facts value is invalid")
+    if (
+        companyfacts["capture_id"] != projection["companyfacts_capture_id"]
+        or companyfacts["manifest_id"] != projection["companyfacts_manifest_id"]
+        or companyfacts["response_sha256"] != projection["companyfacts_response_sha256"]
+        or companyfacts["cik"] != projection["cik"]
+        or companyfacts["accession"] != projection["accession"]
+        or companyfacts["capture_id"] != conversion_receipt["capture_id"]
+        or companyfacts["manifest_id"] != conversion_receipt["manifest_id"]
+        or companyfacts["cik"] != conversion_receipt["cik"]
+    ):
+        raise AttestedQuerySnapshotError("attested receipt binding does not bind manifest Company Facts identity")
+    return binding, {**binding.to_dict(), "companyfacts": companyfacts}
+
+
+def _receipt_bindings(
+    payload: bytes,
+    *,
+    projections: Mapping[str, Mapping[str, Any]],
+    conversion_receipt: Mapping[str, Any],
+) -> Mapping[str, Mapping[str, Any]]:
+    raw = _json_object(payload, field="attested receipt bindings payload", limit=HARD_MAX_ATTESTED_SNAPSHOT_BINDINGS_BYTES)
+    value = _strict_object(raw, field="attested receipt bindings payload", required=frozenset({"schema", "items"}))
+    if (
+        value["schema"] != _BINDINGS_PAYLOAD_SCHEMA
+        or not isinstance(value["items"], list)
+        or not value["items"]
+        or len(value["items"]) > HARD_MAX_ATTESTED_RECEIPT_BINDINGS
+    ):
+        raise AttestedQuerySnapshotError("attested receipt bindings payload is invalid")
+    normalized: list[dict[str, Any]] = []
+    by_occurrence: dict[str, Mapping[str, Any]] = {}
+    used_matches: set[tuple[str, str]] = set()
+    counts_by_attestation: dict[str, int] = {}
+    previous: str | None = None
+    for item in value["items"]:
+        if not isinstance(item, Mapping):
+            raise AttestedQuerySnapshotError("attested receipt binding item is invalid")
+        binding, parsed = _receipt_binding_from_payload(
+            item,
+            projections=projections,
+            conversion_receipt=conversion_receipt,
+        )
+        if (
+            binding.occurrence_id in by_occurrence
+            or (binding.attestation_id, binding.match_id) in used_matches
+            or previous is not None and binding.occurrence_id <= previous
+        ):
+            raise AttestedQuerySnapshotError("attested receipt bindings are not uniquely canonical")
+        normalized.append(parsed)
+        frozen = _freeze(parsed)
+        assert isinstance(frozen, Mapping)
+        by_occurrence[binding.occurrence_id] = frozen
+        used_matches.add((binding.attestation_id, binding.match_id))
+        counts_by_attestation[binding.attestation_id] = counts_by_attestation.get(binding.attestation_id, 0) + 1
+        previous = binding.occurrence_id
+    if set(counts_by_attestation) != set(projections) or any(
+        count > projections[attestation_id]["companyfacts_match_count"]
+        for attestation_id, count in counts_by_attestation.items()
+    ):
+        raise AttestedQuerySnapshotError("attested receipt bindings do not exhaust manifest attestation projections")
+    if _binding_payload(normalized) != payload:
+        raise AttestedQuerySnapshotError("attested receipt bindings payload is not canonical")
+    return MappingProxyType(by_occurrence)
+
+
+def _receipt_occurrence_ids(value: Any, *, field: str) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        raise AttestedQuerySnapshotError(f"{field} is invalid")
+    result: list[str] = []
+    previous: str | None = None
+    for occurrence_id in value:
+        if (
+            not isinstance(occurrence_id, str)
+            or not _RAW_OCCURRENCE_ID_RE.fullmatch(occurrence_id)
+            or previous is not None and occurrence_id <= previous
+        ):
+            raise AttestedQuerySnapshotError(f"{field} is not canonical")
+        result.append(occurrence_id)
+        previous = occurrence_id
+    return tuple(result)
+
+
+def _receipt_coverage_status(
+    *,
+    selected: tuple[str, ...],
+    eligible: tuple[str, ...],
+    attested: tuple[str, ...],
+) -> str:
+    if not selected or not eligible:
+        return "not_evaluable"
+    if len(attested) == len(selected) and len(eligible) == len(selected):
+        return "all_leaves_attested"
+    if attested:
+        return "partially_attested"
+    return "not_attested"
+
+
+def _receipt_roots(
+    payload: bytes,
+    *,
+    binding_occurrence_ids: frozenset[str],
+    manifest_summary: Mapping[str, Any],
+) -> tuple[tuple[Mapping[str, Any], ...], int]:
+    raw = _json_object(payload, field="attested receipt coverage payload", limit=HARD_MAX_ATTESTED_SNAPSHOT_COVERAGE_BYTES)
+    value = _strict_object(raw, field="attested receipt coverage payload", required=frozenset({"schema", "items"}))
+    if (
+        value["schema"] != _COVERAGE_PAYLOAD_SCHEMA
+        or not isinstance(value["items"], list)
+        or len(value["items"]) > HARD_MAX_ATTESTED_RECEIPT_ROOT_CELLS
+    ):
+        raise AttestedQuerySnapshotError("attested receipt coverage payload is invalid")
+    normalized: list[dict[str, Any]] = []
+    seen_attested: set[str] = set()
+    previous: str | None = None
+    leaf_references = 0
+    for item in value["items"]:
+        parsed = _strict_object(
+            item,
+            field="attested receipt root coverage",
+            required=frozenset({"root_cell_id", "selected_leaf_occurrence_ids", "eligible_leaf_occurrence_ids", "attested_occurrence_ids", "status"}),
+        )
+        root_cell_id = parsed["root_cell_id"]
+        if (
+            not isinstance(root_cell_id, str)
+            or not _ROOT_CELL_ID_RE.fullmatch(root_cell_id)
+            or previous is not None and root_cell_id <= previous
+        ):
+            raise AttestedQuerySnapshotError("attested receipt root coverage is not uniquely canonical")
+        selected = _receipt_occurrence_ids(parsed["selected_leaf_occurrence_ids"], field="attested receipt selected leaves")
+        eligible = _receipt_occurrence_ids(parsed["eligible_leaf_occurrence_ids"], field="attested receipt eligible leaves")
+        attested = _receipt_occurrence_ids(parsed["attested_occurrence_ids"], field="attested receipt attested leaves")
+        leaf_references += len(selected) + len(eligible) + len(attested)
+        if leaf_references > HARD_MAX_ATTESTED_RECEIPT_LEAF_REFERENCES:
+            raise AttestedQuerySnapshotError("attested receipt leaf-reference count exceeds serving budget")
+        selected_set = frozenset(selected)
+        if not frozenset(eligible).issubset(selected_set) or not frozenset(attested).issubset(frozenset(eligible)):
+            raise AttestedQuerySnapshotError("attested receipt root coverage subset relation is invalid")
+        if parsed["status"] != _receipt_coverage_status(selected=selected, eligible=eligible, attested=attested):
+            raise AttestedQuerySnapshotError("attested receipt root coverage status is invalid")
+        normalized.append(parsed)
+        seen_attested.update(attested)
+        previous = root_cell_id
+    if seen_attested != binding_occurrence_ids:
+        raise AttestedQuerySnapshotError("attested receipt bindings and root coverage disagree")
+    if _coverage_summary(normalized) != _thaw(manifest_summary):
+        raise AttestedQuerySnapshotError("attested receipt coverage summary does not bind roots")
+    if _coverage_payload(normalized) != payload:
+        raise AttestedQuerySnapshotError("attested receipt coverage payload is not canonical")
+    return tuple(_freeze(item) for item in normalized), leaf_references
+
+
+def _receipt_artifact_payload(
+    store: StrictBoundedReadStore,
+    artifact: AttestedQuerySnapshotArtifact,
+) -> bytes:
+    payload = _read_exact_bounded(
+        store,
+        artifact.object_key,
+        expected_byte_length=artifact.byte_length,
+        maximum=_ROLE_LIMITS[artifact.role],
+    )
+    if sha256(payload).hexdigest() != artifact.sha256:
+        raise AttestedQuerySnapshotError("attested receipt object digest mismatch")
+    return payload
+
+
+def _receipt_manifest_from_store(
+    store: StrictBoundedReadStore,
+    *,
+    snapshot_id: str,
+) -> tuple[dict[str, Any], int]:
+    """Read and canonical-validate one immutable manifest before cache use."""
+    snapshot_id = _snapshot_id(snapshot_id)
+    manifest_key = _manifest_key(snapshot_id)
+    payload = _read_bounded(store, manifest_key, maximum=HARD_MAX_ATTESTED_SNAPSHOT_MANIFEST_BYTES)
+    manifest = _decode_manifest(payload)
+    if manifest["snapshot_id"] != snapshot_id:
+        raise AttestedQuerySnapshotError("attested receipt manifest does not bind requested snapshot")
+    return manifest, len(payload)
+
+
+def _receipt_artifacts_from_manifest(manifest: Mapping[str, Any]) -> Mapping[str, AttestedQuerySnapshotArtifact]:
+    artifacts = tuple(AttestedQuerySnapshotArtifact(**item) for item in manifest["objects"])
+    artifacts_by_role = {artifact.role: artifact for artifact in artifacts}
+    if tuple(artifacts_by_role) != _ROLES or len(artifacts_by_role) != len(_ROLES):
+        raise AttestedQuerySnapshotError("attested receipt manifest objects are invalid")
+    return MappingProxyType(artifacts_by_role)
+
+
+def _receipt_compact_artifact_budget(
+    artifacts_by_role: Mapping[str, AttestedQuerySnapshotArtifact],
+) -> int:
+    """Refuse an oversized HTTP receipt before reading either compact object."""
+    compact_bytes = sum(
+        artifacts_by_role[role].byte_length
+        for role in ("bindings_json", "coverage_json")
+    )
+    if compact_bytes > HARD_MAX_ATTESTED_RECEIPT_COMPACT_BYTES:
+        raise AttestedQuerySnapshotError("attested receipt compact artifacts exceed serving byte budget")
+    return compact_bytes
+
+
+def _receipt_index_weight(
+    *,
+    manifest_bytes: int,
+    compact_bytes: int,
+    projection_count: int,
+    binding_count: int,
+    root_count: int,
+    leaf_references: int,
+) -> int:
+    """Conservative retained-memory estimate for a frozen receipt index.
+
+    JSON byte size alone is not a cache budget: decoding plus frozen maps,
+    identifier indexes, and repeated occurrence references consume materially
+    more heap.  The fixed conservative multipliers make cache admission stable
+    across Python allocator details while the cardinality checks above cap every
+    component before it can grow without bound.
+    """
+    values = (manifest_bytes, compact_bytes, projection_count, binding_count, root_count, leaf_references)
+    if any(isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values):
+        raise AttestedQuerySnapshotError("attested receipt decoded index budget is invalid")
+    weight = (
+        2 * manifest_bytes
+        + 3 * compact_bytes
+        + 768 * projection_count
+        + 896 * binding_count
+        + 448 * root_count
+        + 144 * leaf_references
+    )
+    if weight > HARD_MAX_ATTESTED_RECEIPT_DECODED_INDEX_BYTES:
+        raise AttestedQuerySnapshotError("attested receipt decoded index exceeds serving budget")
+    return weight
+
+
+def _receipt_index_from_manifest(
+    store: StrictBoundedReadStore,
+    *,
+    snapshot_id: str,
+    manifest: Mapping[str, Any],
+    manifest_byte_length: int,
+) -> tuple[AttestedQueryReceiptIndex, int]:
+    """Build one cacheable index while reading only compact receipt objects."""
+    artifacts_by_role = _receipt_artifacts_from_manifest(manifest)
+    compact_bytes = _receipt_compact_artifact_budget(artifacts_by_role)
+    # Do not add a convenience read of either omitted payload.  The HTTP
+    # reader's bounded shape is part of the privacy and latency contract.
+    bindings_payload = _receipt_artifact_payload(store, artifacts_by_role["bindings_json"])
+    coverage_payload = _receipt_artifact_payload(store, artifacts_by_role["coverage_json"])
+    projections = _receipt_attestation_projections(manifest)
+    bindings = _receipt_bindings(
+        bindings_payload,
+        projections=projections,
+        conversion_receipt=manifest["companyfacts_conversion_receipt"],
+    )
+    roots, leaf_references = _receipt_roots(
+        coverage_payload,
+        binding_occurrence_ids=frozenset(bindings),
+        manifest_summary=manifest["coverage_summary"],
+    )
+    root_ids = tuple(root["root_cell_id"] for root in roots)
+    roots_by_id = MappingProxyType({root_id: root for root_id, root in zip(root_ids, roots)})
+    if len(roots_by_id) != len(root_ids):
+        raise AttestedQuerySnapshotError("attested receipt root index is not unique")
+    frozen_manifest = _freeze(manifest)
+    assert isinstance(frozen_manifest, Mapping)
+    frozen_projections = {
+        identifier: frozen_manifest["attestation_projections"][index]
+        for index, identifier in enumerate(sorted(projections))
+    }
+    if any(not isinstance(value, Mapping) for value in frozen_projections.values()):
+        raise AttestedQuerySnapshotError("attested receipt projection freeze failed")
+    index = AttestedQueryReceiptIndex(
+        snapshot_id=snapshot_id,
+        manifest_key=_manifest_key(snapshot_id),
+        base_snapshot_id=manifest["base_snapshot"]["snapshot_id"],
+        query_hash=manifest["base_snapshot"]["query_hash"],
+        manifest=frozen_manifest,
+        roots=roots,
+        root_ids=root_ids,
+        roots_by_id=roots_by_id,
+        bindings_by_occurrence=bindings,
+        attestations_by_id=MappingProxyType(frozen_projections),
+        published_at=_utc(manifest["clocks"]["published_at"], field="attested receipt published_at"),
+    )
+    return index, _receipt_index_weight(
+        manifest_bytes=manifest_byte_length,
+        compact_bytes=compact_bytes,
+        projection_count=len(projections),
+        binding_count=len(bindings),
+        root_count=len(roots),
+        leaf_references=leaf_references,
+    )
+
+
+def _receipt_index_cache_get(store: StrictBoundedReadStore, *, snapshot_id: str) -> AttestedQueryReceiptIndex | None:
+    global _RECEIPT_INDEX_CACHE_BYTES
+    key = (id(store), snapshot_id)
+    with _RECEIPT_INDEX_CACHE_LOCK:
+        cached = _RECEIPT_INDEX_CACHE.get(key)
+        if cached is None:
+            return None
+        cached_store, index, _byte_cost = cached
+        if cached_store is not store:
+            # An object id can be reused after a short-lived proxy is gone.
+            # Never let that turn a different private store into a cache hit.
+            _RECEIPT_INDEX_CACHE_BYTES -= _RECEIPT_INDEX_CACHE.pop(key)[2]
+            return None
+        _RECEIPT_INDEX_CACHE.move_to_end(key)
+        return index
+
+
+def _receipt_index_cache_put(
+    store: StrictBoundedReadStore,
+    index: AttestedQueryReceiptIndex,
+    *,
+    byte_cost: int,
+) -> AttestedQueryReceiptIndex:
+    global _RECEIPT_INDEX_CACHE_BYTES
+    if byte_cost > _RECEIPT_INDEX_CACHE_MAX_BYTES:
+        return index
+    key = (id(store), index.snapshot_id)
+    with _RECEIPT_INDEX_CACHE_LOCK:
+        prior = _RECEIPT_INDEX_CACHE.pop(key, None)
+        if prior is not None:
+            _RECEIPT_INDEX_CACHE_BYTES -= prior[2]
+        _RECEIPT_INDEX_CACHE[key] = (store, index, byte_cost)
+        _RECEIPT_INDEX_CACHE_BYTES += byte_cost
+        _RECEIPT_INDEX_CACHE.move_to_end(key)
+        while (
+            len(_RECEIPT_INDEX_CACHE) > _RECEIPT_INDEX_CACHE_MAX_ENTRIES
+            or _RECEIPT_INDEX_CACHE_BYTES > _RECEIPT_INDEX_CACHE_MAX_BYTES
+        ):
+            _evicted_key, (_evicted_store, _evicted_index, evicted_bytes) = _RECEIPT_INDEX_CACHE.popitem(last=False)
+            del _evicted_key, _evicted_store, _evicted_index
+            _RECEIPT_INDEX_CACHE_BYTES -= evicted_bytes
+    return index
+
+
+def _receipt_index_cache_discard(store: StrictBoundedReadStore, *, snapshot_id: str) -> None:
+    """Forget a stale/corrupt projection before another caller can reuse it."""
+    global _RECEIPT_INDEX_CACHE_BYTES
+    key = (id(store), snapshot_id)
+    with _RECEIPT_INDEX_CACHE_LOCK:
+        cached = _RECEIPT_INDEX_CACHE.get(key)
+        if cached is None or cached[0] is not store:
+            return
+        _RECEIPT_INDEX_CACHE_BYTES -= _RECEIPT_INDEX_CACHE.pop(key)[2]
+
+
+def _receipt_singleflight_stripe(
+    store: StrictBoundedReadStore,
+    *,
+    snapshot_id: str,
+) -> _ReceiptIndexFlightStripe:
+    """Choose one fixed flight slot without retaining attacker-selected keys."""
+    return _RECEIPT_INDEX_SINGLEFLIGHT_STRIPES[
+        hash((id(store), snapshot_id)) % len(_RECEIPT_INDEX_SINGLEFLIGHT_STRIPES)
+    ]
+
+
+def _assert_receipt_pointer(
+    index: AttestedQueryReceiptIndex,
+    pointer: AttestedQuerySnapshotPointer | None,
+) -> None:
+    if pointer is not None and (
+        index.manifest_key != pointer.manifest_key
+        or index.base_snapshot_id != pointer.base_snapshot_id
+        or index.published_at != pointer.published_at
+    ):
+        raise AttestedQuerySnapshotError("attested receipt latest pointer does not bind manifest")
+
+
+def _load_receipt_index_serial(
+    store: StrictBoundedReadStore,
+    *,
+    snapshot_id: str,
+    pointer: AttestedQuerySnapshotPointer | None,
+) -> AttestedQueryReceiptIndex:
+    """Do one fully revalidated read while its per-key singleflight is held."""
+    manifest, manifest_byte_length = _receipt_manifest_from_store(store, snapshot_id=snapshot_id)
+    index = _receipt_index_cache_get(store, snapshot_id=snapshot_id)
+    if index is None:
+        index, cache_weight = _receipt_index_from_manifest(
+            store,
+            snapshot_id=snapshot_id,
+            manifest=manifest,
+            manifest_byte_length=manifest_byte_length,
+        )
+        index = _receipt_index_cache_put(store, index, byte_cost=cache_weight)
+    elif _thaw(index.manifest) != manifest:
+        # This should be cryptographically impossible for a valid snapshot id,
+        # but never allow a mutable backend to turn a prior cache hit into a
+        # silent latest response.
+        _receipt_index_cache_discard(store, snapshot_id=snapshot_id)
+        raise AttestedQuerySnapshotError("attested receipt cached manifest disagrees with storage")
+    else:
+        # A cache stores only parsed data.  Re-read and digest-check the two
+        # compact immutable artifacts for ordinary cache hits; a concurrent
+        # cold waiter below can safely share its leader's just-completed check.
+        artifacts_by_role = _receipt_artifacts_from_manifest(manifest)
+        _receipt_compact_artifact_budget(artifacts_by_role)
+        _receipt_artifact_payload(store, artifacts_by_role["bindings_json"])
+        _receipt_artifact_payload(store, artifacts_by_role["coverage_json"])
+    _assert_receipt_pointer(index, pointer)
+    return index
+
+
+def reset_attested_query_receipt_index_cache() -> None:
+    """Clear the bounded receipt-reader cache (a deterministic test seam)."""
+    global _RECEIPT_INDEX_CACHE_BYTES
+    with _RECEIPT_INDEX_CACHE_LOCK:
+        _RECEIPT_INDEX_CACHE.clear()
+        _RECEIPT_INDEX_CACHE_BYTES = 0
+
+
+def load_attested_query_receipt_index(
+    store: StrictBoundedReadStore,
+    *,
+    snapshot_id: str | None = None,
+) -> AttestedQueryReceiptIndex:
+    """Load a compact, immutable B4 history receipt without source renewal.
+
+    ``snapshot_id=None`` always re-reads the independent v2 pointer before a
+    cache lookup.  Ordinary cache hits also re-read the canonical manifest and
+    two compact artifacts.  A contending cold caller shares the preceding
+    leader's just-completed fully checked immutable projection instead of
+    duplicating the same R2 download and parse; failed reads discard cache
+    state and are never shared.
+    """
+    store = _require_store(store)
+    pointer: AttestedQuerySnapshotPointer | None = None
+    if snapshot_id is None:
+        pointer = _decode_pointer(_read_bounded(store, _latest_key(), maximum=16 * 1024))
+        requested = pointer.snapshot_id
+    else:
+        requested = _snapshot_id(snapshot_id)
+    stripe = _receipt_singleflight_stripe(store, snapshot_id=requested)
+    while True:
+        with stripe.lock:
+            flight = stripe.flight
+            if flight is None:
+                flight = _ReceiptIndexFlight(
+                    store=store,
+                    snapshot_id=requested,
+                    done=Event(),
+                )
+                stripe.flight = flight
+                leader = True
+                collision = None
+            elif flight.store is store and flight.snapshot_id == requested:
+                leader = False
+                collision = None
+            else:
+                # A different key landed on this fixed stripe.  Queue behind
+                # it without allocating an unbounded per-key flight registry.
+                leader = False
+                collision = flight
+
+        if collision is not None:
+            collision.done.wait()
+            continue
+
+        if not leader:
+            # This caller joined the same active load generation, so it shares
+            # the leader's fully validated in-memory result rather than doing
+            # another warm-cache artifact download.  It still checks its own
+            # independently read latest pointer before returning.
+            flight.done.wait()
+            if flight.error is not None:
+                raise flight.error
+            if flight.index is None:  # pragma: no cover - protects future edits.
+                raise AttestedQuerySnapshotError("attested receipt singleflight completed without a result")
+            _assert_receipt_pointer(flight.index, pointer)
+            return flight.index
+
+        try:
+            index = _load_receipt_index_serial(store, snapshot_id=requested, pointer=pointer)
+        except BaseException as exc:
+            _receipt_index_cache_discard(store, snapshot_id=requested)
+            flight.error = exc
+            raise
+        else:
+            flight.index = index
+            return index
+        finally:
+            # Wake same-generation callers before removing the bounded flight
+            # slot.  Late callers start a normal cache-validated read instead.
+            flight.done.set()
+            with stripe.lock:
+                if stripe.flight is flight:
+                    stripe.flight = None
+
+
 def _required_verification_clock(base: QuerySnapshot, records: Mapping[str, Mapping[str, Any]], conversion: CompanyFactsLedgerConversion) -> datetime:
     values = [
         _utc(base.manifest["clocks"][name], field=f"base.{name}")
@@ -1637,6 +2392,6 @@ def _thaw_binding(binding: AttestedOccurrenceBinding, snapshot: AttestedQuerySna
 
 __all__ = [
     "ATTESTED_QUERY_SNAPSHOT_ID_PREFIX", "ATTESTED_QUERY_SNAPSHOT_POINTER_SCHEMA", "ATTESTED_QUERY_SNAPSHOT_POLICY_FINGERPRINT", "ATTESTED_QUERY_SNAPSHOT_POLICY_VERSION", "ATTESTED_QUERY_SNAPSHOT_PREFIX", "ATTESTED_QUERY_SNAPSHOT_PUBLICATION_CONTRACT", "ATTESTED_QUERY_SNAPSHOT_SCHEMA",
-    "AttestationMaterial", "AttestedOccurrenceBinding", "AttestedQuerySnapshot", "AttestedQuerySnapshotArtifact", "AttestedQuerySnapshotError", "AttestedQuerySnapshotPointer", "PreparedAttestedQuerySnapshot",
-    "load_attested_query_snapshot", "prepare_attested_query_snapshot", "publish_attested_query_snapshot", "verify_attested_query_snapshot", "verify_attested_query_snapshot_source",
+    "AttestationMaterial", "AttestedOccurrenceBinding", "AttestedQueryReceiptIndex", "AttestedQuerySnapshot", "AttestedQuerySnapshotArtifact", "AttestedQuerySnapshotError", "AttestedQuerySnapshotPointer", "PreparedAttestedQuerySnapshot",
+    "load_attested_query_receipt_index", "load_attested_query_snapshot", "prepare_attested_query_snapshot", "publish_attested_query_snapshot", "reset_attested_query_receipt_index_cache", "verify_attested_query_snapshot", "verify_attested_query_snapshot_source",
 ]
