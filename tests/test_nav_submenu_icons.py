@@ -67,10 +67,23 @@ EXPECTED_ICON_FAMILIES = {
 # still uses it — it is used elsewhere, just not in THIS rendered menu, which is
 # exactly the allocation/bitcoin case. submenu-icon-baskets (5 -> 4) and
 # submenu-icon-intelligence (4 -> 3) lose spans but keep other users, so they stay.
+#
+# OIP W1.6-B "One Door" (nav 53 -> 52): the options flyout's gex.html "Options
+# Desk" row is deleted — the workspace absorbed that page, which is a redirect
+# stub now — removing exactly one submenu-icon span. The Intraday Flow Tracker
+# row MOVED (flyout -> United States group) and kept its icon, so it is net
+# zero. The deleted row used submenu-icon-dashboard, which the Macro Dashboard
+# and the relocated Intraday Flow rows both still use, so this program removes
+# no FAMILY of its own — the emitted-minus set below is the China program's.
+#
+# This branch and the China consolidation landed against the same 56 and were
+# merged here, so the two deltas COMPOSE (-3 then -1) rather than either count
+# standing alone. 52 is the measured span count of the merged
+# _navlinks.html.j2 — the arithmetic is shown only to make the merge auditable.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {
     "allocation", "bitcoin", "rotation",
 }
-EXPECTED_EMITTED_ICON_COUNT = 53
+EXPECTED_EMITTED_ICON_COUNT = 52
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
