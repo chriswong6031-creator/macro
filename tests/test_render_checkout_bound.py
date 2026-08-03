@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import random
 import shutil
 import subprocess
 
@@ -175,7 +176,10 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     _git(workspace, "config", "user.name", "Render Test")
     _git(workspace, "config", "user.email", "render@example.test")
     (workspace / "site").mkdir()
-    payload = "current generated site\n" + ("x" * 1024 * 1024)
+    # The size assertion below measures the one blob the metadata replay drops
+    # from .git, so the payload must not zlib away: "x" * 1 MiB packs to ~1 KiB
+    # and left old and new stores tied at du(1) block granularity (132 == 132).
+    payload = "current generated site\n" + random.Random(0).randbytes(1024 * 1024).hex()
     (workspace / "site" / "macro.html").write_text(payload, encoding="utf-8")
     (workspace / "tracked.txt").write_text("committed\n", encoding="utf-8")
     _git(workspace, "add", "site/macro.html", "tracked.txt")

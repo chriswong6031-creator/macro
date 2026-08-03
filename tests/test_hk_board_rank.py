@@ -11,7 +11,6 @@ measurement replayed, not a hand-built board.  See ``regenerate_g1_fixture``.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -43,7 +42,7 @@ def regenerate_g1_fixture() -> str:
     """
     return (
         "python3 - <<'PY'\n"
-        "import json, hashlib, pandas as pd\n"
+        "import json, pandas as pd\n"
         "from engine import signal_gate\n"
         "df = pd.read_parquet('data/hk_search/closes_deep.parquet')\n"
         "# for each column with >=250 closes: signal_gate.compact(signal_gate.gate(t, s))\n"
@@ -1480,21 +1479,32 @@ class TestOnLaneLedgerFailureStillAlarms:
 
 
 class TestG1FixtureIsNotStale:
-    """A frozen fixture that no longer matches the panel would keep G1 vacuously green.
+    """A frozen fixture that no longer matches its historical panel would keep G1 green.
 
-    Re-derives the seven witnesses' verdicts LIVE from the committed parquet (about
-    5s — the other 150 names stay frozen because they only provide competition for
-    the caps).  A mismatch means the panel moved and the fixture needs regenerating;
-    it does not mean the engine broke.
+    The close panel is append-only and may advance beyond the fixture's ``_as_of``.
+    Appends must not invalidate a historical replay, but a rewrite at or before that
+    date must.  Compare every frozen tail against the matching historical slice, then
+    re-derive the seven witnesses from that same slice.  This preserves the stale-data
+    tripwire without making every new market session break an older measurement.
     """
 
-    def test_source_panel_is_unchanged(self, board):
+    def test_source_panel_history_is_unchanged(self, board):
+        pd = pytest.importorskip("pandas")
         src = Path(board["_source"])
         if not src.exists():                    # pragma: no cover — committed in-tree
             pytest.skip(f"{src} not present")
-        digest = hashlib.sha256(src.read_bytes()).hexdigest()[:16]
-        assert digest == board["_source_sha256_16"], (
-            f"{src} changed — regenerate the fixture: {regenerate_g1_fixture()}")
+        panel = pd.read_parquet(src).loc[:board["_as_of"]]
+        tail_sessions = int(board["_tail_sessions"])
+        for ticker, frozen in board["closes"].items():
+            series = panel[ticker].dropna().tail(tail_sessions)
+            dates = [str(index.date()) for index in series.index]
+            closes = [round(float(value), 3) for value in series.tolist()]
+            assert dates == frozen["dates"], (
+                f"{ticker} historical dates drifted — regenerate the fixture: "
+                f"{regenerate_g1_fixture()}")
+            assert closes == frozen["closes"], (
+                f"{ticker} historical closes drifted — regenerate the fixture: "
+                f"{regenerate_g1_fixture()}")
 
     def test_witness_verdicts_replay_from_the_live_panel(self, board):
         pd = pytest.importorskip("pandas")
@@ -1504,7 +1514,7 @@ class TestG1FixtureIsNotStale:
             pytest.skip(f"{src} not present")
         panel = pd.read_parquet(src)
         for ticker in WITNESSES:
-            series = panel[ticker].dropna()
+            series = panel[ticker].loc[:board["_as_of"]].dropna()
             live = signal_gate.compact(signal_gate.gate(ticker, series))
             frozen = board["verdicts"][ticker]
             for key in ("eligible", "ticks", "fresh_bars", "above200", "weekly_bull"):

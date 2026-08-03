@@ -355,12 +355,15 @@ reflexes:
   qledger_promotion_readiness:
     description: >
       qledger promotion-readiness alert fires the FIRST time a claim family
-      crosses n_dates>=25 + wilson_ci_low>0 vs matched control. Dedup via
-      persistent data/qledger/readiness_alerts_fired.json.
+      crosses the §3 gate (n_dates>=25 + Wilson CI-low floor, see
+      engine/qledger.py promotion_check) vs matched control. Dedup via
+      persistent data/qledger/readiness_alerts_fired.json is two-sided: a
+      key is released when its family×horizon reads ready=False, so a
+      genuine later re-cross alerts again.
     trigger:
       type: threshold_crossing
       source: scripts/grade_qledger.py:run_readiness_post_step
-      condition: "claim_family x horizon: n_dates>=25 AND wilson_ci_low > 0"
+      condition: "claim_family x horizon: §3 gate (n_dates>=25 AND wilson_ci_low above promotion floor — engine/qledger.py promotion_check)"
       cadence: "end-of-collect hook in nightly daily.yml collect job"
       lane: nightly-collect
     action:

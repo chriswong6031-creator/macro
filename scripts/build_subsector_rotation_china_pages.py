@@ -51,7 +51,7 @@ def build(site: Path | None = None) -> int:
             q_cls=qd[2], q_en=qd[0], q_zh=qd[1], qx_en=qx[0], qx_zh=qx[1],
             lede_en=lede_en, lede_zh=lede_zh,
             # China parameterization of the shared template
-            stock_base="china_lookup.html#", back_href="subsector_rotation_china.html",
+            stock_base="china_lookup.html#", back_href="sector_central_china.html#si-movement",
             back_en="China Subsector Rotation map", back_zh="中国子行业轮动图",
         )
         write_page(out_dir / f"{sub['key']}.html", html)

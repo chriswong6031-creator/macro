@@ -50,6 +50,37 @@ def _row(ticker="AAA", *, status="buy_now", tier="T2", ticks=1, alpha=1.0,
     return row
 
 
+def assert_runway_coverage_consistent(board, rows):
+    """The era-independent M1 contract: the artifact's disclosed runway coverage must
+    DESCRIBE the rows it shipped with.
+
+    Deliberately not "the leg is dead" — deadness was a property of one wiring era
+    (the builder's extension panel mixed the equity calendar with 24/7 crypto, so on
+    any non-session build date every equity's `ext_z` was NaN and no board row carried
+    the leg's input).  A test pinned to `nonzero == 0` goes red on the next render for
+    the RIGHT behaviour, which is a time bomb rather than a guard.
+
+    Returns the recomputed bucket so callers can assert further on it.
+    """
+    recomputed = ubr.component_coverage(rows)["runway"]
+    assert recomputed["n"] == len(board["buy"]), (
+        "every buy row must be scored on runway — a row missing the component reads "
+        "as 'not measured', which is a different claim from 'measured zero'")
+    ranking = board.get("ranking")
+    if ranking is None:
+        # Artifact predates us_prophet_v1: the board gained its `ranking` block in
+        # #4331. Pin the absence explicitly rather than skipping silently — when a
+        # render writes the block this branch stops firing and the comparison below
+        # takes over, with no wall-clock or "is it a weekday" dependence.
+        assert "ranking" not in board, "ranking present but null — unexpected shape"
+        return recomputed
+    disclosed = ranking["component_coverage"]["runway"]
+    assert disclosed == recomputed, (
+        f"the artifact discloses runway coverage {disclosed} but its own buy rows "
+        f"score {recomputed} — the receipt drifted from the board it describes")
+    return recomputed
+
+
 # ---------------------------------------------------------------------------
 # 1. frozen constants
 # ---------------------------------------------------------------------------
@@ -726,6 +757,65 @@ class TestComponentCoverage:
                            board_asof="2026-07-31"))
         assert dead["component_coverage"]["runway"]["nonzero"] == 0
         assert alive["component_coverage"]["runway"]["nonzero"] == 2
+
+
+class TestRunwayCoverageContract:
+    """Both eras of `assert_runway_coverage_consistent`, exercised NOW.
+
+    The committed artifact currently takes the pre-us_prophet_v1 branch, so without
+    these the comparison branch would ship unexecuted and first run on the render that
+    writes a `ranking` block — exactly the situation the rewrite exists to avoid.
+    """
+
+    @staticmethod
+    def _board(rows, *, ranking=True, **over):
+        board = {"as_of": "2026-07-31", "buy": rows}
+        if ranking:
+            board["ranking"] = ubr.ranking_block(rows)
+            board["ranking"]["component_coverage"]["runway"].update(over)
+        return board
+
+    def test_a_dead_era_board_is_consistent(self):
+        rows = ubr.score_rows([_row("A", alpha=1.0), _row("B", alpha=0.0)],
+                              board_asof="2026-07-31")
+        assert assert_runway_coverage_consistent(self._board(rows), rows) == {
+            "nonzero": 0, "n": 2}
+
+    def test_a_healed_era_board_is_consistent(self):
+        """The shape the next render produces: ext_z present, the leg alive. The old
+        `nonzero == 0` assertion failed here — this is the time bomb, defused."""
+        rows = ubr.score_rows(
+            [_row("A", alpha=1.0, ext_z=0.0), _row("B", alpha=0.0, ext_z=0.5),
+             _row("C", alpha=0.5, ext_z=2.5)],
+            board_asof="2026-07-31")
+        assert assert_runway_coverage_consistent(self._board(rows), rows) == {
+            "nonzero": 2, "n": 3}          # ext_z 2.5 is fully extended -> 0 runway
+
+    def test_an_artifact_without_a_ranking_block_pins_the_absence(self):
+        rows = ubr.score_rows([_row("A", alpha=1.0)], board_asof="2026-07-31")
+        board = self._board(rows, ranking=False)
+        assert "ranking" not in board
+        assert assert_runway_coverage_consistent(board, rows) == {"nonzero": 0, "n": 1}
+
+    def test_a_drifted_disclosure_is_caught(self):
+        """Mutation guard: the comparison must be able to SEE a stale receipt, or the
+        healed-era branch is decoration."""
+        rows = ubr.score_rows([_row("A", alpha=1.0, ext_z=0.0)],
+                              board_asof="2026-07-31")
+        with pytest.raises(AssertionError, match="receipt drifted"):
+            assert_runway_coverage_consistent(self._board(rows, nonzero=0), rows)
+
+    def test_a_null_ranking_key_is_not_read_as_a_missing_block(self):
+        rows = ubr.score_rows([_row("A", alpha=1.0)], board_asof="2026-07-31")
+        with pytest.raises(AssertionError, match="unexpected shape"):
+            assert_runway_coverage_consistent(
+                {"as_of": "2026-07-31", "buy": rows, "ranking": None}, rows)
+
+    def test_an_unscored_row_fails_the_denominator_check(self):
+        rows = ubr.score_rows([_row("A", alpha=1.0)], board_asof="2026-07-31")
+        board = {"as_of": "2026-07-31", "buy": rows + [{"ticker": "RAW"}]}
+        with pytest.raises(AssertionError, match="not measured"):
+            assert_runway_coverage_consistent(board, rows)
 
 
 # ---------------------------------------------------------------------------
@@ -1461,21 +1551,27 @@ class TestCommittedArtifactIntegration:
             assert r["days_since_signal_basis"] in ("sessions", "calendar", None)
         assert [r["display_rank"] for r in rows] == list(range(1, len(rows) + 1))
 
-    def test_the_runway_leg_is_measurably_dead_on_the_real_board(self, scored):
-        """M1: the disclosure, checked against production rows rather than asserted.
+    def test_runway_component_coverage_matches_the_committed_artifact(self, scored):
+        """M1: the disclosure must DESCRIBE the rows it ships with, in every era.
 
-        `ext_z` reaches 0 of the committed buy lane, so `runway` is 0 on every row —
-        the leg deducts a flat 10 points from everyone and carries no information.
-        If a future builder starts attaching ext_z this test fails LOUDLY, which is
-        the correct outcome: the docstrings and the artifact's own disclosure would
-        both be stale and must be re-stated from the new measurement.
+        Coverage CONSISTENCY, checked against production rows: whatever the artifact
+        discloses under `ranking.component_coverage.runway` must equal what the rows it
+        shipped alongside actually score.  Dead (0/71) passes; alive (68/71) passes; a
+        disclosure that drifted from its own rows fails, which is the real defect.
+        Both branches of the contract are exercised today by
+        `TestRunwayCoverageContract` — this test is the production-shape instance.
         """
+        board, rows = scored
+        assert_runway_coverage_consistent(board, rows)
+
+    def test_the_attainable_score_cap_follows_the_measured_coverage(self, scored):
+        """A dead leg deducts its full weight from EVERY row, so it caps the board's
+        top score below 100.  That relationship holds in both eras — it is the part of
+        the old deadness assertion worth keeping."""
         _board, rows = scored
-        cov = ubr.ranking_block(rows)["component_coverage"]
-        assert cov["runway"] == {"nonzero": 0, "n": len(rows)}, (
-            "runway coverage moved off zero — re-measure and update the module "
-            "docstring + runway_value docstring, do not silence this test")
-        assert max(r["prophet"]["score"] for r in rows) <= 90.0
+        runway = ubr.component_coverage(rows)["runway"]
+        cap = 100.0 if runway["nonzero"] else 100.0 - ubr.SCORE_WEIGHTS["runway"]
+        assert max(r["prophet"]["score"] for r in rows) <= cap
 
     def test_the_scoring_legs_that_are_alive_are_alive(self, scored):
         """Mutation guard for the coverage counter itself: a counter that reported
