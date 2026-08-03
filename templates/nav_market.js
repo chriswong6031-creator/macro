@@ -189,11 +189,13 @@
           // content), verbatim copy from _navlinks.html.j2's own relocated row.
           ['Daily Movers', 'Free · biggest gainers & losers today · themes moving together',
             'movers.html', 'stocks', '每日异动', '免费 · 今日涨跌最大 · 联动主题'],
-          ['Sector Central', 'Every sector in one view', 'sector_central.html', 'sectors'],
-          ['Theme Baskets', 'Themes, leaders and rotation', 'baskets.html', 'baskets']
+          // Sector Intelligence consolidation (#4237, 2026-08): Sector Central + Theme
+          // Baskets + Subsector Rotation are ONE page now (the old URLs are redirect
+          // stubs) — one menu row, matching the collapsed _navlinks flyout.
+          ['Sector Intelligence', 'Sectors, themes & rotation in one read', 'sector_central.html', 'sectors']
         ]],
         ['Signals & strategy', [
-          ['Subsector Rotation', 'Catch emerging groups early', 'subsector_rotation.html', 'rotation'],
+          ['Subsector Confluence', 'Entry-now subsectors, double-gated funnel', 'subsectors.html', 'confluence'],
           ['Strategies', 'Tactical scorecards and positioning', 'strategies.html', 'strategy'],
           ['Alert Center', 'Ranked market-moving alerts', 'alerts.html', 'alert'],
           ['News Feed', 'Catalysts, headlines and sentiment', 'news.html', 'news']
