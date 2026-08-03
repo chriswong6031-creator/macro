@@ -81,7 +81,7 @@ log = logging.getLogger("build_government_revenue")
 # governed workspace immediately after paint.
 SHELL_EVENT_LIMIT = 12
 SHELL_JSON_BUDGET_BYTES = 100_000
-RAW_HTML_BUDGET_BYTES = 250_000
+RAW_HTML_BUDGET_BYTES = 262_144
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",

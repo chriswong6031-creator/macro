@@ -70,6 +70,21 @@ HARD_MAX_ATTESTED_HISTORY_SELECTED_LEAVES = HARD_MAX_MATRIX_NODES
 HARD_MAX_ATTESTED_HISTORY_CONVERSION_OCCURRENCES = HARD_MAX_ATTESTED_SNAPSHOT_BINDINGS
 HARD_MAX_ATTESTED_HISTORY_B3_MATCHES = HARD_MAX_ATTESTED_SNAPSHOT_BINDINGS
 HARD_MAX_ATTESTED_HISTORY_CANDIDATES = HARD_MAX_ATTESTED_SNAPSHOT_BINDINGS
+# This is a closed, source-free planner vocabulary.  Downstream diagnostic
+# projections must import it rather than guess which B4D branches are safe to
+# expose as aggregate code counts.
+B4D_REJECTION_REASON_CODES = frozenset(
+    {
+        "not_sec_companyfacts",
+        "dimensions_known",
+        "selected_occurrence_not_in_companyfacts_conversion",
+        "conversion_occurrence_differs_from_selected_leaf",
+        "no_b3_attestation_binds_companyfacts_conversion",
+        "no_exact_b3_match",
+        "ambiguous_exact_b3_matches",
+        "exact_b3_match_shared_by_selected_leaves",
+    }
+)
 
 
 class AttestedHistoryMaterializerError(ValueError):
@@ -753,6 +768,7 @@ def enumerate_attested_binding_candidates(
 
 
 __all__ = [
+    "B4D_REJECTION_REASON_CODES",
     "HARD_MAX_ATTESTED_HISTORY_B3_MATCHES",
     "HARD_MAX_ATTESTED_HISTORY_CANDIDATES",
     "HARD_MAX_ATTESTED_HISTORY_CONVERSION_OCCURRENCES",

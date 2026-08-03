@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_attested_history_operator.schema.json",
+  "title": "Fundamental Forensics sealed read-only attested-history operator packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "base_query_snapshot_id", "source_snapshot_id", "packet"],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.attested_history_operator/v1"},
+    "base_query_snapshot_id": {"type": "string", "pattern": "^ffqs_[a-f0-9]{64}$"},
+    "source_snapshot_id": {"type": "string", "pattern": "^ffsecsrc_[a-f0-9]{64}$"},
+    "packet": {"$ref": "#/$defs/packet"}
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "maxLength": 2048, "not": {"pattern": "(^|/)latest(\\.json)?(/|$)"}},
+    "submissionsSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_name", "receipt_path", "object_path", "is_older"],
+      "properties": {
+        "source_name": {"type": "string", "minLength": 1},
+        "receipt_path": {"$ref": "#/$defs/path"},
+        "object_path": {"$ref": "#/$defs/path"},
+        "is_older": {"type": "boolean"}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_occurrences", "max_payload_bytes", "max_total_input_bytes", "max_submission_rows", "max_older_submissions_files", "max_revision_evidence", "max_revision_evidence_bytes"],
+      "properties": {
+        "max_occurrences": {"type": "integer", "minimum": 1},
+        "max_payload_bytes": {"type": "integer", "minimum": 1},
+        "max_total_input_bytes": {"type": "integer", "minimum": 1},
+        "max_submission_rows": {"type": "integer", "minimum": 1},
+        "max_older_submissions_files": {"type": "integer", "minimum": 1},
+        "max_revision_evidence": {"type": "integer", "minimum": 1},
+        "max_revision_evidence_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cik", "filing", "ixbrl_document_name", "companyfacts"],
+      "properties": {
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "ixbrl_document_name": {"type": "string", "minLength": 1},
+        "filing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accession", "manifest_id", "archive_index_document", "member_states", "policy_profile", "policy_version"],
+          "properties": {
+            "accession": {"type": "string", "pattern": "^[0-9]{10}-[0-9]{2}-[0-9]{6}$"},
+            "manifest_id": {"type": "string", "pattern": "^ffsec_manifest_[a-f0-9]{64}$"},
+            "archive_index_document": {"type": "object"},
+            "member_states": {"oneOf": [{"type": "object", "maxProperties": 4096}, {"type": "array", "maxItems": 4096, "items": {"type": "object"}}]},
+            "policy_profile": {"type": "string", "minLength": 1},
+            "policy_version": {"type": "string", "minLength": 1}
+          }
+        },
+        "companyfacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest_path", "capture_path", "response_path", "submissions_recorded_at", "recent_submissions", "older_submissions", "conversion_limits"],
+          "properties": {
+            "manifest_path": {"$ref": "#/$defs/path"},
+            "capture_path": {"$ref": "#/$defs/path"},
+            "response_path": {"$ref": "#/$defs/path"},
+            "submissions_recorded_at": {"type": "string", "format": "date-time"},
+            "recent_submissions": {"$ref": "#/$defs/submissionsSource"},
+            "older_submissions": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/submissionsSource"}},
+            "conversion_limits": {"$ref": "#/$defs/limits"}
+          }
+        }
+      }
+    }
+  }
+}
