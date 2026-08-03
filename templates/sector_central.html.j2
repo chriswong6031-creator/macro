@@ -1131,11 +1131,15 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   .si-view-btn.on { border-left-width:3px; }
   .si-side-out { white-space:nowrap; }
   .si-side-out .si-vb-l { white-space:nowrap; }
-  /* rail: translucent over the aurora (the estate's sticky-rail idiom), never a
-     flat fill that seams against the gradient */
+  /* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
+     COMPLETELY open — no fill, no border. On a near-white canvas any column fill
+     reads as a flat cut with a drawn edge (operator crop, 2026-08-03); the active
+     pill and the content cards' shadows do all the structuring light needs. */
   .si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
     backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
     border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
+  html[data-theme="light"] .si-side { background:transparent; border-right:0;
+    backdrop-filter:none; -webkit-backdrop-filter:none; }
 
   /* — surfaces: the macro.html container recipe — drop shadow does the definition,
        borders stay TRANSPARENT (layout-stable, invisible), and the stage itself stays
