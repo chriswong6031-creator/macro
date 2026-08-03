@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T07:35:16.720582+00:00",
-  "count": 649,
+  "generated_at": "2026-08-03T08:05:06.597391+00:00",
+  "count": 650,
   "institutions": [
+    "Alger",
     "Amova",
     "Apollo",
     "BTIG",
@@ -591,6 +592,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bv6lgvckdpx-c19452",
+      "title": "AOM Political Gridlock 1",
+      "institution": "Alger",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:44:41Z",
+      "summary_points": [
+        "**Political Gridlock & Equity Returns**: Split elections yield 12.0% median S&P 500 1-year returns vs.",
+        "6% for sweeps, driven by reduced policy risks limiting radical tax/regulatory changes.",
+        "**Fundamental Investment Approach**: Prioritize long-term secular growth companies and fundamentals over political dynamics, as historical data shows political outcomes lead to undesirable results."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
