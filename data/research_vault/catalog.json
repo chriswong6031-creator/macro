@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T01:49:14.262411+00:00",
-  "count": 632,
+  "generated_at": "2026-08-03T02:04:18.512962+00:00",
+  "count": 633,
   "institutions": [
     "Amova",
     "Apollo",
@@ -297,6 +297,26 @@
       "published_at": "2026-08-02T14:58:39Z",
       "summary_points": [
         "**ZAR Strength Drivers**: Fitch upgrade, fiscal consolidation, 3.2% ZAR yield carry, gold >$4k supporting rand despite SARB hold - **Inflation-Policy Mismatch**: SARB held rates at 7.00% despite 5.0% headline inflation (vs 4.7% expected), services inflation at 5.2% - **GDP Revision**: 2026 growth revised down to 1.3% (from 1.6%), SARB growth forecast cut to 1.2% - **USDZAR Forecasts**: Medium-term path 16.80-16.20 through 2027 despite near-term geopolitical/Fed headwinds - **Key SARB Catalysts**: Data releases (Sept 23, Nov 19) on GDP, inflation expectations, policy outlook"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ikrwglzkpsd-653769",
+      "title": "USDJPY",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:58:25Z",
+      "summary_points": [
+        "**MoF Intervention Unpredictability**: Japan’s MoF intervention caps near-term USDJPY upside but fails to reverse structural yen weakness; lack of \"final warning\" heightens intervention unpredictability, deterring speculative positioning and triggering short-JPY liquidation.",
+        "**Fed Policy Dominance & Downside Risk**: Revised Fed forecasts (162/160/158) dominate USDJPY dynamics; base case (softer US data) likely to weaken USDJPY, but Fed credibility erosion could push rates to 150-152.",
+        "**Yield Divergence Fundamentals**: US-Japan 5-yr yield divergence (since Oct 2024) reflects Japan’s fiscal outlook, amplifying USDJPY volatility as stretched speculative positioning may unwind if Fed lags.",
+        "**Critical Trade Levels**: Sell USDJPY ≥163 (1-mo horizon) for USD-based portfolios; JPY-based portfolios target AUDJPY ≤110/NZDJPY ≤92 amid low Japanese money rates."
       ],
       "tags": [],
       "tickers": [],
