@@ -6,21 +6,25 @@
 
 This is a bounded, clean-room, SEC-only pilot for one issuer: Apple Inc.
 (`AAPL`, CIK `0000320193`). It is **not yet a sealed issuer receipt**. The code
-lane has passed a real-source hermetic local run and remains unpublished until
-its PR is merged and the protected live run is separately reviewed.
+lane passed a real-source hermetic local run and merged in
+`59478c96de6a52d44937dc15f79d0f6d7b00788f`; production health subsequently
+reported descendant `8bd108d3084`. The protected live run and its artifact
+review have not occurred.
 The protected `attested-history-seed` environment exists with one required
 reviewer and a custom `main`-only deployment policy, but no live R2 seed,
 review-only artifact review, or canonical issuer packet has occurred.
 
-The dedicated-bucket read-only repository-secret names have been verified:
+The operator created a dedicated normal-access R2 bucket on 2026-08-03. Bucket
+creation alone does not connect it; the following dedicated repository-secret
+bindings are still required:
 
-- `R2_RESEARCH_READONLY_ENDPOINT`
-- `R2_RESEARCH_READONLY_ACCESS_KEY_ID`
-- `R2_RESEARCH_READONLY_SECRET_ACCESS_KEY`
-- `R2_RESEARCH_READONLY_BUCKET`
+- `R2_ATTESTED_HISTORY_ENDPOINT`
+- `R2_ATTESTED_HISTORY_BUCKET`
+- `R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID`
+- `R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY`
 
-That verifies secret presence only. It does not prove the role's permissions,
-any R2 operation, an issuer packet, or data coverage. The writer secrets remain
+The existing `R2_RESEARCH_*` secrets belong to Research Vault and are
+deliberately rejected by both B4F workflows. The writer secrets also remain
 unprovisioned at the protected-environment boundary:
 `R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID` and
 `R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY`.
@@ -70,8 +74,8 @@ Object Read & Write permission sets, including List. They are never handed to
 boto. The runner locally mints at-most-30-minute children scoped to the single
 `fundamental_forensics/` prefix: the writer child has exactly Get/Head/Put and
 the reader child exactly Get/Head; neither has List or Delete. Probe failure
-stops the run before source acquisition and no fallback to broad Research Vault
-credentials is allowed.
+stops the run before source acquisition and no fallback to any Research Vault
+credential or bucket is allowed.
 
 After acquisition, the runner materializes a bounded filing package, parses and
 replays the selected iXBRL fact, binds it to an exact SEC Company Facts
@@ -158,11 +162,12 @@ Fundamental Forensics CI path:
 
 Activation must occur in this order:
 
-1. Merge the B4F code lane and CI wiring to `main` after its normal tests.
+1. Confirm the merged B4F code lane and CI wiring on `main`.
 2. Confirm the existing protected `attested-history-seed` GitHub environment
-   still has its required reviewer and exact `main` branch policy. Add only the
-   two writer secrets there; do not put them at repository scope or expose them
-   to branch dispatches.
+   still has its required reviewer and exact `main` branch policy. Add the four
+   dedicated endpoint/bucket/read-only names at repository scope and only the
+   two writer secrets to that environment; do not expose writer credentials to
+   branch dispatches or reuse `R2_RESEARCH_*`.
 3. Dispatch `attested-history-aapl-seed.yml` manually on `main` with its boolean
    enable input. There is intentionally no `schedule:` trigger.
 4. Review the four review-only artifacts, including storage-control outcomes,

@@ -653,6 +653,11 @@ def test_contracts_and_workflow_are_inert_and_no_production_packet_exists():
     assert "contents: read" in workflow
     assert "publish_attested_query_snapshot" not in workflow
     assert "git push" not in workflow
+    assert "FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_ATTESTED_HISTORY_ENDPOINT }}" in workflow
+    assert "FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID }}" in workflow
+    assert "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY }}" in workflow
+    assert "FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_ATTESTED_HISTORY_BUCKET }}" in workflow
+    assert "R2_RESEARCH_" not in workflow
     assert "requirements.txt" not in workflow
     assert "--require-hashes" in workflow
     assert "attested-history-macos-arm64-py312.lock" in workflow
