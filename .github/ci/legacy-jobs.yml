@@ -4078,6 +4078,27 @@ jobs:
       - name: oracle gauntlet phases + onset quality + regime gate + intraday asymmetry
         run: python -m pytest tests/test_oracle_gauntlet.py tests/test_oracle_gauntlet_p3b.py tests/test_oracle_gauntlet_p8.py tests/test_oracle_onset_quality_w1.py tests/test_oracle_single_regime_gate.py tests/test_oracle_asymmetry_intraday.py -q
 
+  unrun-marketing-desk:
+    # X-growth desk organs beyond the engine/publisher lanes that already run:
+    # the Ad Central owned-inventory plane, the persona internal model +
+    # familiarity ladder (XG-W4b §E), the reply-desk arming/actuation contract
+    # (XG-W7), and the two committed X ad-campaign asset manifests. None was
+    # named by any run: step before the 2026-08-03 backfill.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: ad plane O + persona model + reply-desk arming
+        run: python -m pytest tests/test_marketing_ad_plane_o.py tests/test_marketing_persona_model.py tests/test_marketing_reply_arming.py -q
+      - name: X ad-campaign asset manifests (desktop + mobile)
+        run: python -m pytest tests/test_x_ad_campaign_assets.py tests/test_x_mobile_campaign_assets.py -q
+
   unrun-grading-board:
     # US board grading — the shipped verdict ledgers and their tenure stamps.
     if: ${{ false }}
@@ -4280,6 +4301,11 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
         run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
+      # Unrun backfill 2026-08-03: the Prophet Live P1 user-facing dashboard
+      # surfaces join the lane that owns the dashboard organs. (Distinct from
+      # the #4331 prophet-board suites, whose staging follows that PR's merge.)
+      - name: prophet live user-facing surfaces
+        run: python -m pytest tests/test_prophet_live_surface.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.

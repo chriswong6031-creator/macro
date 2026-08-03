@@ -1097,6 +1097,8 @@ on:
       - "engine/signal_gate.py"
       - "engine/confluence_tiers.py"
       - "scripts/build_prophet_live_pack.py"
+      # Unrun backfill 2026-08-03: the P1 user-facing surface suite's own half.
+      - "tests/test_prophet_live_surface.py"
       - "scripts/prophet_live_evaluator.py"
       - "scripts/reconcile_prophet_live.py"
       - ".github/workflows/prophet-live.yml"
@@ -1297,6 +1299,17 @@ on:
       # The design pin the page and the email base are ported FROM: a change to the pin
       # without a matching change to the implementation is exactly the drift to catch.
       - "mockups/support_email/**"
+      # X-growth desk suites (unrun backfill 2026-08-03): ad plane O, persona
+      # model, reply arming, and the two committed ad-campaign manifests. The
+      # mockups trees are the campaigns' source of truth and matched no glob;
+      # engine/marketing/** and the scripts entries cover the rest.
+      - "mockups/x-ads-2026-07/**"
+      - "mockups/x-mobile-ads-2026-07/**"
+      - "tests/test_marketing_ad_plane_o.py"
+      - "tests/test_marketing_persona_model.py"
+      - "tests/test_marketing_reply_arming.py"
+      - "tests/test_x_ad_campaign_assets.py"
+      - "tests/test_x_mobile_campaign_assets.py"
       # Support + Email estate (SEE W4): the marketing foundation. Same #3509 lesson —
       # every SOURCE by name, not only the tests. app/email_segments.py is listed first
       # because it is the shared one: BOTH the admin console's SQL and the sweeper's
