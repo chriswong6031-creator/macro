@@ -134,7 +134,8 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 .rvx-brow .bnm .cat{font-size:10px;color:var(--muted);font-weight:400}
 .rvx-scorebar{height:7px;border-radius:4px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden;position:relative}
 .rvx-scorebar i{position:absolute;inset:0 auto 0 0;border-radius:4px}
-.rvx-stag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-align:center;white-space:nowrap}
+.rvx-stag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-align:center;white-space:nowrap;
+  background:color-mix(in srgb,currentColor 15%,transparent)}
 .rvx-brow .mv{font-family:var(--rvx-num);font-size:12px;font-weight:600;text-align:right}
 .rvx-brow .spark{height:24px} .rvx-vel{font-family:var(--rvx-num);font-size:11px;text-align:right;font-weight:600}
 .rvx-qdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;flex:none}
