@@ -654,7 +654,14 @@ PUBLIC_EXACT = frozenset({
     "/about.html",
     "/", "/index.html", "/plans.html", "/macro.html", "/start.html",
     "/us_stocks.html", "/confluence_screener.html", "/research_vault.html",
-    "/research_vault_app.js", "/support.html", "/unsubscribe.html",
+    "/research_vault_app.js",
+    # The two Special Situations tier-preview SHELLS (docs/TIER_PREVIEW_PATTERN.md),
+    # promoted from free_registered to anonymous-public by SEO_SUPERCHARGE_MASTERPLAN
+    # W1a. Reviewed public: the shell holds only the preview slice, the honest totals
+    # and the upgrade wall — every paid row stays in /premiumdata/* (plus the two raw
+    # snapshots in premium.enforced_early), which 403 anonymous and Free alike.
+    "/special_situations.html", "/china_special_situations.html",
+    "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
     "/robots.txt",

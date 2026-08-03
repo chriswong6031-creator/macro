@@ -35,6 +35,23 @@ public:
     # authenticated /api/research/view and /api/research/download routes.
     - /research_vault.html
     - /research_vault_app.js
+    # Tier-preview shells, promoted from free_registered to ANONYMOUS-public
+    # (SEO_SUPERCHARGE_MASTERPLAN §A1/W1a). The pages themselves are preview
+    # SHELLS: honest totals + methodology + a small newest-first preview slice +
+    # a bilingual upgrade wall, with the controls baked inert. Every paid row
+    # lives in the payloads listed under premium.enforced_early below
+    # (/premiumdata/ prefix plus the two raw snapshots), which are unchanged by
+    # this promotion and keep 403ing anonymous and Free alike. Nothing about the
+    # split moved — only who may read the shell.
+    #
+    # Why anonymous rather than registered: special_situations is the ONE desk
+    # Google ever rewarded (41 impressions of demand) and the registration wall
+    # 302s Googlebot, which never has a session, into /?signin=1 — a soft-404
+    # shape that costs the crawl and gains nothing, since the shell holds no paid
+    # rows to protect. The wall the visitor meets is the UPGRADE wall, which is
+    # the product statement we actually want a stranger to read.
+    - /special_situations.html
+    - /china_special_situations.html
     # Support desk (SEE W2). Public by construction: the people who most need it
     # are the ones who cannot sign in, and a contact form behind a registration
     # wall is a contact form that never receives the account/billing tickets it
@@ -239,9 +256,9 @@ free_registered:
     # session-market context, and review-only X drafts. Same registered-news
     # product tier as news.html and wires.json; never public/anonymous.
     - /live/intelligence.json
-    # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
-    - /special_situations.html
-    - /china_special_situations.html
+    # (The two Special Situations tier-preview shells moved UP to public.exact on
+    # 2026-08-02 — SEO_SUPERCHARGE_MASTERPLAN W1a. Their paid payloads are still
+    # enforced under premium.enforced_early below; only the shells opened.)
     # BioCatalyst's registered preview shell contains no study facts. The
     # same-origin ClinicalTrials.gov API remains code-enforced at site_full, so
     # this page can explain and load the workspace without leaking its records.
