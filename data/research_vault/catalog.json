@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T23:06:49.630203+00:00",
-  "count": 694,
+  "generated_at": "2026-08-03T23:21:51.603468+00:00",
+  "count": 695,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -64,6 +64,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1eyjfgvqlsc-e7d9cf",
+      "title": "GOAL Positioning Tracking the momentum led deleveraging in Tech",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:42Z",
+      "summary_points": [
+        "**AI-driven Tech deleveraging accelerates**: Hedge funds reversed gross leverage (half-yearly), retail leverage peaked in DM Asia (South Korea, Japan), largest long selling in AI Tech since Jan '21.",
+        "**FOMC-driven Treasury ETF skew spike**: Post-FOMC put-call skew surge signals heightened risk aversion, critical for fixed income positioning.",
+        "**Money Market outflows**: Negative flows across all horizons (4-week, 3-month, 12-month) signal risk aversion/capital flight from safe havens.",
+        "**Persistent risk aversion**: 12-month rolling data confirms sustained capital allocation to safe assets (e.g., government bonds) with net outflows from risky assets.",
+        "**Geopolitical leverage shifts**: Korea’s margin trading decline vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
       "language": "en",
       "needs_metadata": false
     },
