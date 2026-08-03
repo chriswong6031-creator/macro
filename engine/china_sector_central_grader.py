@@ -22,6 +22,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -43,6 +44,14 @@ def _level_for(row: dict) -> float | None:
 
 
 def append_central_log(data: dict) -> int:
+    # House law: nightly is the SOLE advancer of data/ forward ledgers — but for THIS
+    # store the advancing lane is ASIA, not US-nightly. Its only caller is
+    # scripts.build_china_sector_central in asia-close.yml band 2, whose step env sets
+    # CN_LANE=asia and NO job-wide COLLECT_LANE; gating on nightly_advance_enabled()
+    # would close this gate forever (the "gate accidentally always closed" class).
+    # Keep-FIRST per (date, id): an off-lane append displaces the stamped row for good.
+    if not _ledger_advance_enabled():
+        return 0
     asof = (data or {}).get("as_of")
     if not asof:
         return 0

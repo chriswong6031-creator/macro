@@ -29,6 +29,7 @@ from datetime import datetime, timezone
 
 from engine import master_brain as _mb          # reuse the DeepSeek/Anthropic client
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -138,14 +139,38 @@ def assess(view: dict | None, *, drivers=None, headlines=None, regime=None,
 
 def _append_log(verdict: dict, bundle: dict) -> None:
     """Append-only grading log (data/regime_snap/veto_log.jsonl) so the calls can be
-    scored later — did 'durable' reads actually persist? Never fatal."""
+    scored later — did 'durable' reads actually persist? Never fatal.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of data/ forward
+    ledgers. assess(persist=True) is reached from scripts/build_site.py, which runs on
+    every render lane, so an ungated firing day accrued one row per render (22 rows
+    over 22 commits, 11 of them on 2026-06-16). Keep-FIRST once per UTC date: the
+    first verdict of a day is the graded one; later builds are read-only."""
+    if not _ledger_advance_enabled():
+        return
     try:
         d = config.data_dir() / "regime_snap"
         d.mkdir(parents=True, exist_ok=True)
-        row = {"generated_at": verdict["generated_at"], "lean": verdict["lean"],
+        p = d / "veto_log.jsonl"
+        day = verdict["generated_at"][:10]
+        for line in (p.read_text().splitlines() if p.exists() else []):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                prior = json.loads(line)
+            except ValueError:
+                continue                              # tolerate a corrupt legacy line
+            if not isinstance(prior, dict):
+                continue
+            # legacy rows predate the "date" field — fall back to the timestamp prefix
+            if (prior.get("date") or str(prior.get("generated_at", ""))[:10]) == day:
+                return
+        row = {"date": day,
+               "generated_at": verdict["generated_at"], "lean": verdict["lean"],
                "confidence": verdict["confidence"], "snap": bundle["snap"],
                "headlines_n": len(bundle["recent_headlines"])}
-        with open(d / "veto_log.jsonl", "a") as fh:
+        with open(p, "a") as fh:
             fh.write(json.dumps(row, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
         log.warning("veto log append failed: %s", e)

@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 from engine import grading  # W1c: shared next-bar-fill grader
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -100,6 +101,13 @@ def _level_for(row: dict, panel) -> float | None:
 
 
 def append_central_log(data: dict) -> int:
+    # House law: nightly is the SOLE advancer of data/ forward ledgers. The only
+    # advancing caller is scripts.build_sector_central on daily.yml's engine job
+    # (job-level COLLECT_LANE=nightly); render.yml / engine-render.yml run the same
+    # builder with no lane env and must stay read-only. Keep-FIRST per (date, id)
+    # means an off-lane append PERMANENTLY displaces that day's nightly row.
+    if not _ledger_advance_enabled():
+        return 0
     asof = (data or {}).get("as_of")
     if not asof:
         return 0
