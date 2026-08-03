@@ -29,6 +29,7 @@ Spec: research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md Part A + §R.
 """
 from __future__ import annotations
 
+import ast
 import json
 import re
 from pathlib import Path
@@ -84,6 +85,22 @@ def _caddy_matcher_paths(matcher: str) -> set[str]:
     return {tok
             for line in re.findall(r"^\s*(?:not\s+)?path\s+([^\n]+)", m.group(1), flags=re.M)
             for tok in shlex.split(line)}
+
+
+def _regwall_public_paths() -> set[str]:
+    """Read the wall's static mirror without importing FastAPI in this CI lane."""
+
+    source_path = ROOT / "app" / "regwall.py"
+    module = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    for node in module.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == "PUBLIC_PATHS" for target in node.targets):
+            value = ast.literal_eval(node.value)
+            assert isinstance(value, set)
+            assert all(isinstance(path, str) for path in value)
+            return value
+    raise AssertionError("app/regwall.py must declare a literal PUBLIC_PATHS set")
 
 
 ALL_MATCHERS = ("reg_html", "reg_asset", "gate_html",
@@ -451,8 +468,7 @@ def test_the_page_and_its_tile_map_are_public_in_every_mirror():
         assert "/china_heatmap.html" in _caddy_matcher_paths(matcher), matcher
     for matcher in ("reg_asset", "reg_asset_err"):
         assert "/marketdata/china_heatmap.json" in _caddy_matcher_paths(matcher), matcher
-    from app import regwall
-    assert "/china_heatmap.html" in regwall.PUBLIC_PATHS, (
+    assert "/china_heatmap.html" in _regwall_public_paths(), (
         "the wall's own mirror is the one a Caddy-vs-policy diff never reads")
 
 
@@ -461,10 +477,10 @@ def test_only_china_flipped():
     by adding one line each. Until they do, they must stay gated — a prefix
     where an exact path belonged would open all three silently."""
     public = set(POLICY["public"]["exact"])
-    from app import regwall
+    regwall_public = _regwall_public_paths()
     for market in ("hk", "canada"):
         assert f"/{market}_heatmap.html" not in public
-        assert f"/{market}_heatmap.html" not in regwall.PUBLIC_PATHS
+        assert f"/{market}_heatmap.html" not in regwall_public
         assert f"/marketdata/{market}_heatmap.json" not in public
         assert f"/{market}_heatmap.html" not in _caddy_matcher_paths("gate_html")
     assert not any(p.startswith("/marketdata") for p in POLICY["public"]["prefixes"])
