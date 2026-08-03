@@ -820,7 +820,7 @@ def main() -> int:
         act_now_v2 = None
         try:
             from engine.china_act_now import (  # noqa: PLC0415
-                assemble_act_now, load_cycle_rows, load_theme_intel,
+                assemble_act_now, load_cycle_rows, load_member_names, load_theme_intel,
             )
             cfg = config.load()
             site_dir = Path(cfg["storage"]["site_dir"])
@@ -848,10 +848,13 @@ def main() -> int:
                     log.debug("baskets_ths.json absent — THS organ-rider enrichment skipped")
             except Exception as _thse:  # noqa: BLE001
                 log.debug("baskets_ths.json load failed (%s) — THS enrichment skipped", _thse)
+            # Hover-card leaders print company names, never bare symbols.
+            _member_names = load_member_names(str(baskets_json_path))
             act_now_v2 = assemble_act_now(
                 sectors, theme_intel, cycle_rows,
                 basket_turn=_basket_turn_cn,
                 ths_baskets=_ths_baskets,
+                member_names=_member_names,
                 href_exists=lambda h: (site_dir / h).exists(),
             )
         except Exception as _e:  # noqa: BLE001 — additive, never fatal

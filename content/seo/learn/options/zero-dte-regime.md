@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/market-makers-middleman]
   live:
-    - {href: /gex.html, label: "GEX & dealer positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — per-name dealer positioning"}
 cta: {href: /learn/options/market-makers-middleman.html, label: "Next lesson: the market maker on the other side of every trade"}
 ---
 <div class="callout lead">

@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/gamma-regimes]
   live:
-    - {href: /gex.html, label: "GEX & dealer positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — per-name dealer positioning"}
 cta: {href: /learn/options/gamma-regimes.html, label: "Next lesson: long gamma vs short gamma regimes"}
 ---
 <div class="callout lead">

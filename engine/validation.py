@@ -684,12 +684,21 @@ def newey_west_tstat(x, lags: int = 4) -> dict:
     """HAC (Newey-West) t-stat for the MEAN of `x`. Overlapping forward-return
     windows serially-correlate a signal's per-date stats, so a plain t-stat
     overstates significance; the Bartlett-weighted long-run variance corrects it.
-    Returns mean, HAC se, t, and a two-sided p (normal approx — large-sample)."""
+    Returns mean, HAC se, t, and a two-sided p (normal approx — large-sample).
+
+    `lags` is the REQUESTED truncation lag; the lag actually applied is clamped to
+    ``min(lags, n - 1)`` because a Bartlett kernel cannot weight an autocovariance the
+    sample does not contain. Both are reported — ``lags`` is the EFFECTIVE lag, echoed so
+    a caller (and any artifact it publishes) can never advertise a correction the series
+    was too short to receive; ``lags_requested`` keeps the ask visible beside it. A
+    requested 21 on n=10 corrects only 9 lags, and printing the 21 is how an
+    under-corrected t reads as a fully-corrected one (2026-08-03 experiments audit)."""
     import math
     a = np.asarray(pd.Series(x).dropna(), float)
     n = len(a)
     if n < 8:
-        return {"mean": None, "se": None, "t": None, "p": None, "n": n}
+        return {"mean": None, "se": None, "t": None, "p": None, "n": n,
+                "lags": None, "lags_requested": int(lags)}
     mean = float(a.mean())
     d = a - mean
     var = float(np.dot(d, d) / n)                       # gamma_0
@@ -700,7 +709,8 @@ def newey_west_tstat(x, lags: int = 4) -> dict:
     se = math.sqrt(max(var, 1e-18) / n)
     t = mean / se if se else float("nan")
     return {"mean": round(mean, 5), "se": round(se, 5), "t": round(t, 3),
-            "p": round(2.0 * (1.0 - _norm_cdf(abs(t))), 4), "n": n}
+            "p": round(2.0 * (1.0 - _norm_cdf(abs(t))), 4), "n": n,
+            "lags": L, "lags_requested": int(lags)}
 
 
 def ic_summary(ics, periods_per_year: int = 4, hac_lags: int | None = None) -> dict:
@@ -715,7 +725,14 @@ def ic_summary(ics, periods_per_year: int = 4, hac_lags: int | None = None) -> d
     cross-sections against a 21-day forward return overlap 21 deep, and Bartlett-weighting
     only 6 of those lags understates the long-run variance and inflates t. Pass the measured
     overlap (forward horizon ÷ sampling step, in the same units) whenever the caller knows
-    its own cadence; the lag actually used is echoed back as ``hac_lags``.
+    its own cadence.
+
+    ``hac_lags`` in the RESULT is the EFFECTIVE lag — newey_west_tstat clamps to
+    ``min(lags, n - 1)``, so a requested 21 on a 10-point IC series applies 9. Echoing the
+    request there published a correction the series never received (subsector rotation shipped
+    ``hac_lags: 21`` on ``n: 10``; 2026-08-03 experiments audit). The ask is still visible as
+    ``hac_lags_requested``: when the two differ, the series was too short to carry the
+    correction its own cadence demands and the t is under-corrected, not honest.
     """
     import math
     s = pd.Series(ics).dropna()
@@ -736,7 +753,11 @@ def ic_summary(ics, periods_per_year: int = 4, hac_lags: int | None = None) -> d
     return {"mean_ic": round(mean, 4), "ic_vol": round(sd, 4), "ic_ir": round(icir, 3),
             "ic_ir_ann": round(icir * math.sqrt(periods_per_year), 3),
             "t_hac": nw["t"], "p_hac": nw["p"], "hit": round(float((s > 0).mean()), 3), "n": n,
-            "hac_lags": lags}
+            # EFFECTIVE lag (clamped to n-1), not the ask — see the docstring note. The
+            # fallback covers 6 <= n < 8, where newey_west_tstat short-circuits without
+            # computing: the honest effective lag is still the clamp, never the request.
+            "hac_lags": nw["lags"] if nw.get("lags") is not None else min(lags, max(n - 1, 1)),
+            "hac_lags_requested": lags}
 
 
 def benjamini_hochberg(pvals: dict, alpha: float = 0.10) -> dict:

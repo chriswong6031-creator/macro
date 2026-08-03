@@ -796,10 +796,18 @@ def grade_claim(claim: dict, root: Path | str | None = None,
 # --------------------------------------------------------------------------- #
 def wilson_ci_low(hits: int, n: int, z: float = 1.96) -> float | None:
     """Lower bound of the Wilson score interval for a binomial proportion.
-    None when n == 0. The promotion gate (§3) reads this lower bound vs 0.
+    None when n == 0. The promotion gate (§3) reads this lower bound vs the coin-flip
+    null, ``PROMOTION_MIN_CI_LOW`` = 0.5 — NOT vs 0.
+
+    The return is a PROPORTION in [0, 1], never a signed edge. Comparing it to 0 was
+    therefore vacuous: wilson_ci_low(1, 27) > 0, so any family with a single hit cleared
+    the bar. It opened radar@5d on 2026-07-28 at a 51.0% hit rate whose CI [0.340, 0.693]
+    brackets 0.5 outright, with mean excess NEGATIVE (-0.26%) — a live alert fired off a
+    gate that could not fail (2026-08-03 experiments audit). The honest null for "does
+    this call the direction better than a coin" is 0.5, so the lower bound must clear 0.5.
 
     Wilson is used (not normal-approx) because n is small and p can be near 0/1;
-    the lower bound is the honest floor the gate requires to exceed 0.
+    the lower bound is the honest floor the gate requires to exceed.
     """
     if n <= 0:
         return None
@@ -1040,6 +1048,11 @@ _RUNG_IDX = {r: i for i, r in enumerate(LADDER_RUNGS)}
 
 # Block-bootstrap: minimum number of distinct date clusters required to pass §3.
 PROMOTION_MIN_DATES = GRADED_MIN_DATES   # 25 — same constant, aliased for clarity
+# §3 criterion 2 floor. wilson_ci_low returns a HIT-RATE PROPORTION in [0, 1], so the old
+# `> 0` test was satisfied by any nonzero hit count — a gate that could not fail. 0.5 is the
+# coin-flip null: the honest question is whether the family calls direction better than
+# chance, not whether it ever hits at all (2026-08-03 experiments audit).
+PROMOTION_MIN_CI_LOW = 0.5
 
 
 class PromotionResult:
@@ -1087,10 +1100,11 @@ def promotion_check(claim_family: str, horizon: int,
 
     §3 gate (SHADOW → CONFIRMER):
       1. n_dates >= 25 (independent date clusters, the honest n [P1])
-      2. Wilson-CI lower bound of excess hit-rate vs matched control > 0 at the
+      2. Wilson-CI lower bound of excess hit-rate vs matched control > 0.5 at the
          claim's horizon (not vs SPY — vs control; SPY excess is the headline,
-         control excess is the gate)
-      3. Rolling check: if wilson_ci_low <= 0 on the trailing window → demote.
+         control excess is the gate). The bound is a PROPORTION, so 0.5 — the
+         coin-flip null — is the bar; the old `> 0` was cleared by a single hit.
+      3. Rolling check: if wilson_ci_low <= 0.5 on the trailing window → demote.
 
     The block-bootstrap stability check (§3: "across date clusters") and the
     incremental-information check ("incremental over price+VIX baseline") are
@@ -1178,7 +1192,7 @@ def promotion_check(claim_family: str, horizon: int,
             current_state=current_state,
         )
 
-    # §3 gate criterion 2: wilson_ci_low > 0
+    # §3 gate criterion 2: wilson_ci_low > PROMOTION_MIN_CI_LOW (the coin-flip null)
     if ci_low is None:
         return PromotionResult(
             eligible=False,
@@ -1190,19 +1204,22 @@ def promotion_check(claim_family: str, horizon: int,
             current_state=current_state,
         )
 
-    # Auto-demote check: CI <= 0 on a family that was previously above the bar
-    demote = ci_low <= 0.0
+    # Auto-demote check: CI bracketing (or below) the coin-flip null on a family that was
+    # previously above the bar. A hit-rate CI whose lower bound sits at or under 0.5 is
+    # consistent with no directional skill at all — that is not a rung, it is a coin.
+    demote = ci_low <= PROMOTION_MIN_CI_LOW
     pinned_reason = ""
     if demote:
         pinned_reason = (
             f"claim_family={claim_family!r} horizon={horizon}d: "
-            f"rolling Wilson CI lower bound={ci_low:.4f} <= 0 at "
-            f"n_dates={n_dates}. Auto-demote one rung. "
+            f"rolling Wilson CI lower bound={ci_low:.4f} <= {PROMOTION_MIN_CI_LOW} "
+            f"(coin-flip null) at n_dates={n_dates}. Auto-demote one rung. "
             f"Pinned as of {_now_iso()[:10]} (narrative_regime precedent)."
         )
         return PromotionResult(
             eligible=False,
-            reason=f"Wilson CI lower bound {ci_low:.4f} <= 0 — AUTO-DEMOTE warranted. "
+            reason=f"Wilson CI lower bound {ci_low:.4f} <= {PROMOTION_MIN_CI_LOW} — the "
+                   f"hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. "
                    f"{pinned_reason}",
             n_dates=n_dates, ci_low=ci_low,
             current_state=current_state,
@@ -1214,7 +1231,7 @@ def promotion_check(claim_family: str, horizon: int,
         eligible=True,
         reason=(f"§3 gate PASS at horizon={horizon}d: "
                 f"n_dates={n_dates} >= {PROMOTION_MIN_DATES}, "
-                f"Wilson CI lower bound={ci_low:.4f} > 0. "
+                f"Wilson CI lower bound={ci_low:.4f} > {PROMOTION_MIN_CI_LOW}. "
                 f"Block-bootstrap stability and incremental-information checks "
                 f"(price+VIX baseline) are delegated to the W6 composite validator."),
         n_dates=n_dates, ci_low=ci_low,

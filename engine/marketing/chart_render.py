@@ -4448,12 +4448,39 @@ def _break_chip_label(source_name: str, tier_label: str) -> str:
     the generic "Newswire", and a chip reading "Newswire · AGGREGATOR" spends two
     words on one fact. A real publication name still earns its place beside the
     tier, because "Federal Reserve · OFFICIAL SOURCE" is two facts.
+
+    Either half may now be absent, so the separator is only ever printed BETWEEN
+    two present facts. The aggregator tier went label-less by operator order
+    2026-08-03 ("get rid of the 'aggregator' string from illustrations", see
+    _break_tier_style), which is one day NEWER than the de-handling law and wins
+    where the two disagree. Composing them:
+
+      * real name + badge word  → "Federal Reserve · OFFICIAL SOURCE" (two facts)
+      * generic name + badge    → the badge alone (de-handling: one fact, one word)
+      * real name, no badge     → the name alone, never a dangling "Reuters · "
+      * generic name, no badge  → the name alone
+
+    That last case is the one the two laws collide on, and attribution wins: a
+    label-less aggregator relay would otherwise render an EMPTY signature chip,
+    which drops the source line entirely and leaves the card's closing seal blank.
+    "Newswire" is the display name de-handling itself created for relays — it is
+    the source's own line, not our internal grade, so printing it breaks neither
+    law. The tier is still carried by the chip's weight, fill, stroke, rail and
+    its `bc-tier-aggregator` class, so nothing launders up by showing it.
     """
     name = str(source_name or "").strip()
-    if not name or name.lower() in _BC_GENERIC_SOURCE_NAMES:
-        return tier_label
-    label = f"{name} · {tier_label}"
-    return label if len(label) <= 44 else (label[:43] + "…")
+    label_word = str(tier_label or "").strip()
+
+    def _fit(text: str) -> str:
+        return text if len(text) <= 44 else (text[:43] + "…")
+
+    if not name:
+        return label_word
+    if not label_word:
+        return _fit(name)
+    if name.lower() in _BC_GENERIC_SOURCE_NAMES:
+        return label_word
+    return _fit(f"{name} · {label_word}")
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
@@ -4486,9 +4513,25 @@ def _break_tier_style(tier: str) -> dict[str, str]:
             "stroke": _BREAK_AMBER,
             "rail": _BREAK_AMBER, "rail_opacity": "0.5",
         }
-    # Aggregator (and any unknown tier): visibly lighter grey outline.
+    # Aggregator (and any unknown tier): visibly lighter grey outline, and NO
+    # BADGE WORD (operator 2026-08-03: "should get rid of the 'aggregator'
+    # string from illustrations").
+    #
+    # THE TIER IS UNCHANGED — only its caption is. `key`, the grey fill/ink/
+    # stroke and the faint rail all still say aggregator, the `bc-tier-aggregator`
+    # class is still stamped on the chip, and an unknown tier still routes HERE
+    # rather than laundering up. What goes away is a piece of our own source-
+    # taxonomy vocabulary printed at a reader who never asked for it: "AGGREGATOR"
+    # is an internal grade, and the doctrine's glance tier bans internal state
+    # names and untranslated jargon on the face of a card. The reader already has
+    # the thing that matters — the source's own name, which the chip still shows.
+    #
+    # The POSITIVE badges stay ("OFFICIAL SOURCE", "WIRE SERVICE"): those earn a
+    # reader something. Absence of a badge is now the aggregator signal, which is
+    # the honest direction — a card must be able to claim MORE trust only by
+    # showing more, never by showing less.
     return {
-        "key": "aggregator", "label": "AGGREGATOR",
+        "key": "aggregator", "label": "",
         "fill": _BREAK_GREY, "fill_opacity": "0.08", "ink": _BREAK_GREY,
         "stroke": _BREAK_GREY,
         "rail": _BREAK_GREY, "rail_opacity": "0.55",

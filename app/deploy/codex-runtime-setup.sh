@@ -4,12 +4,13 @@
 #
 #   CODEX_HOME=/var/lib/macro-codex codex login --device-auth
 #   CODEX_HOME=/var/lib/macro-codex-2 codex login --device-auth
+#   CODEX_HOME=/var/lib/macro-codex-3 codex login --device-auth
 #
 # once per account on the VPS so each receives its own refreshable session.
 set -euo pipefail
 
 CODEX_CLI_VERSION="${CODEX_CLI_VERSION:-0.145.0}"
-CODEX_STATE_DIRS="${CODEX_STATE_DIRS:-${CODEX_STATE_DIR:-/var/lib/macro-codex:/var/lib/macro-codex-2}}"
+CODEX_STATE_DIRS="${CODEX_STATE_DIRS:-${CODEX_STATE_DIR:-/var/lib/macro-codex:/var/lib/macro-codex-2:/var/lib/macro-codex-3}}"
 QUIET=0
 [ "${1:-}" = "--quiet" ] && QUIET=1
 

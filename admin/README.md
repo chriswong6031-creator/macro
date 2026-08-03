@@ -69,8 +69,8 @@ GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
 
 `deploy-api-secrets.yml` delivers the existing `SUPABASE_OPERATOR_USER_ID`
 repository secret to the VPS admin environment without exposing its value.
-The service also shares the VPS-local Codex session at
-`/var/lib/macro-codex/auth.json` with `macro-api`; see
+The service shares the root-only VPS Codex account stores under
+`/var/lib/macro-codex*` with `macro-api`; see
 [`app/deploy/README.md`](../app/deploy/README.md#attach-codex-to-the-production-provider-pool)
 for the one-time device-login procedure. The credential never belongs in either
 environment file.

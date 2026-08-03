@@ -339,12 +339,37 @@ def _build_standouts_by_ticker(standouts: dict) -> dict[str, dict]:
 
 
 def _build_knife_by_ticker(standouts: dict) -> dict[str, bool]:
-    """Derive knife_risk from standouts.  'laggards' cohort = deep losers = knife risk."""
+    """Derive knife_risk — the deepest trailing-3M-return quintile of the HK universe.
+
+    POPULATION SEMANTICS, UNCHANGED AND NOW ACTUALLY IMPLEMENTED (2026-08-03).  This
+    book has always meant ONE thing by a knife: a deep 3-month loser, the H4 phase-0
+    class (reports/h4-phase0.md — the deepest quintile keeps falling, it does not
+    rebound).  It used to read ``standouts['laggards']`` for that, which was a fair
+    proxy only while laggards were ordered by a composite that momentum dominated.
+    The HK board's G5 fix re-keyed laggards to the SELECTION axis (weakest edge), so
+    that lane stopped being a momentum population entirely — a name can now be the
+    weakest edge on the board in the middle of a +44% run.  Reading it here would
+    have quietly re-pointed ``knife_risk`` at "weak selection edge" while every
+    downstream book, chip and inverse-book still said "falling knife".
+
+    The criterion is therefore read from the board's own H4 machinery instead:
+    ``knife_risk`` is stamped on every enriched row by
+    ``scripts/build_hk_library._falling_knife_demote`` against the 20th percentile of
+    the trailing-3M-return z over the WHOLE board universe.  ``knife_demoted`` is the
+    same cut seen on the entry candidates it pushed to the watch strip, so it is a
+    legitimate second read for an artifact that predates the ``knife_risk`` stamp;
+    an artifact carrying neither yields an EMPTY map (unknown, never assumed).
+    """
     result: dict[str, bool] = {}
-    for item in (standouts.get("laggards") or []):
-        ticker = item.get("ticker", "")
-        if ticker:
-            result[ticker] = True
+    for cohort_key in ("buy", "watch", "laggards"):
+        for item in (standouts.get(cohort_key) or []):
+            if not isinstance(item, dict):
+                continue
+            ticker = item.get("ticker", "")
+            if not ticker:
+                continue
+            if item.get("knife_risk") is True or item.get("knife_demoted") is True:
+                result[ticker] = True
     return result
 
 

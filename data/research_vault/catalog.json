@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T12:20:46.841026+00:00",
-  "count": 663,
+  "generated_at": "2026-08-03T14:05:52.251764+00:00",
+  "count": 668,
   "institutions": [
     "Alger",
     "Amova",
@@ -40,12 +40,52 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "Week Ahead",
     "Weekly Preview",
     "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-zonnzrvd3vn-004fec",
+      "title": "THIS AINT MARADONA CENTRAL BANKING",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T12:14:09Z",
+      "summary_points": [
+        "**Fed's Guidance Contradiction**: Warsh's \"market as signal\" stance clashes with Fed's \"Maradona central banking\" (no action), risking market substitution of policy and undermining credibility as rising yields signal hikes but Fed holds steady.",
+        "**Dotplot-Driven Expectation Gap**: Persistent divergence between market-implied (blue) and realized (red) 2-year rates since Dotplot's 2013 introduction, with implied rates now consistently higher, signaling markets price forward guidance beyond historical outcomes.",
+        "**Market Policy Substitution Risk**: Rising yields push for rate hikes, yet Fed's no-change decision implies market is doing Fed's work; contradiction threatens policy coherence and increases volatility as market summarizes collective bets on Fed's *will* do, not *should* do."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z1i4guo3cne-b3896e",
+      "title": "EMR July 2026 Performance Review",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:09:06Z",
+      "summary_points": [
+        "**Geopolitical Oil Surge**: US-Iran escalation and Strait of Hormuz disruptions drove Brent (+23.6%) and WTI (+21.8%) to 50% YTD gains, with wheat (+10.1%) and corn (+6.8%) surging on supply fears.",
+        "**AI/Sec Semiconductor Reversal**: Chinese competition fears triggered KOSPI (-22.2%) and Philly Semiconductor index (-20.6%) drops, offsetting Mag-7 earnings amid AI trade volatility.",
+        "**KOSPI & Brent Outperformance**: KOSPI and Brent Oil recorded highest YTD returns in local currency and USD terms, signaling strong domestic sentiment and energy demand dynamics.",
+        "**EM Equity Surge**: MSCI Emerging Market equities surged 16.3% in Q1, driven by China’s policy tailwinds, Latin American growth, and reduced risk aversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zmun1pxghor-c0a3c8",
       "title": "MS Latin America's Unfinished Business",
@@ -64,6 +104,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-we83r0jgu1z-f07611",
+      "title": "MS El Niño's Back",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:03:01Z",
+      "summary_points": [
+        "**El Niño Sovereign Credit Risk**: 47% of EMBI-D index negatively exposed; 11% highest-risk bucket (Ecuador, Mozambique, Zambia, Colombia, Costa Rica, Peru) with avg sovereign risk score 5.9 for HY names vs.",
+        "8 for moderate risks.",
+        "**Risk Framework Channels**: Sovereigns scored on physical (40%: hydropower/agriculture exposure), fiscal (40%: 2026 deficit, EMBI spreads), and macro (20%: food CPI, FDI) channels; direct physical impacts drive upfront credit stress.",
+        "**Regional Exposure Disparity**: Africa/Asia face highest negative exposure; LatAm (Argentina, Chile, Mexico, Uruguay) potential beneficiaries if rainfall supports agriculture; Peru/Costa Rica highest sovereign risk in LatAm.",
+        "**HY Credit Vulnerability**: Lower-quality HY names (Ecuador, Mozambique, Zambia) exhibit elevated sovereign risk scores (avg 5.9) and underperform during El Niño peaks, with spreads peaking near physical impact dates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
       "language": "en",
       "needs_metadata": false
     },
@@ -121,6 +182,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4axyr6wffzv-83a7c8",
+      "title": "Weekly US Earnings Estimates 3rd 7th August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:18Z",
+      "summary_points": [
+        "**GILD Earnings Deterioration**: GILD's negative Qtrly Exp.",
+        "EPS (-7.26) and Current FY Exp.",
+        "EPS (-0.75) signal severe earnings deterioration, creating critical fundamental risk for portfolio managers.",
+        "**Nasdaq 100 Sector Divergence**: AMGN shows robust EPS growth (5.62 → 5.78) and positive FY trends (22.36 → 23.42), while GILD faces quarterly pressure (-7.26) despite recovery signals (Next Qtr EPS 2.20), highlighting sector volatility.",
+        "**Aggregate Revenue-Earnings Mismatch**: Next FY Exp."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olxnsycycqd-97c98d",
+      "title": "August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:17Z",
+      "summary_points": [
+        "Document Missing**: Source document not provided for extraction; critical data unavailable for analysis **Fundamentals Gap**: No fundamental data (earnings, revenue, margins) included to assess company/sector health **Risk Factor Omission**: Key risk factors (geopolitical, policy shifts, flow data) absent from input list"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },

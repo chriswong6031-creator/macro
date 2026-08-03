@@ -1798,6 +1798,7 @@ on:
       # this line is the half that test_site_access_boundary derives from the
       # job's own `run:` steps, so a PR editing only this suite still runs it.
       - "tests/test_etfs_gate.py"
+      - "tests/test_public_dashboard_preview.py"
       # OEU M-FIX wiring (2026-07-25): flow-leaders / market-structure /
       # options-screener suites + the neural-web support-map suite — previously
       # run by ZERO workflows (see the options-estate-guards job). Engine
@@ -2070,7 +2071,7 @@ on:
       - "tests/test_committee_template.py"
       - "tests/test_confluence_screener_page.py"
       - "tests/test_contagion_card_render.py"
-      - "tests/test_flow_leaders_render_markers.py"
+      - "tests/test_options_estate_redirect_stubs.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
       # product-nav-icons.css is the icon authority test_nav_submenu_icons.py now

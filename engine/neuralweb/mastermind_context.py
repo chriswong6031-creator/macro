@@ -70,6 +70,7 @@ from engine.government_revenue.freshness import effective_freshness
 from engine.neuralweb.options_plane import (
     options_structure_block as _options_structure_block,
 )
+from engine.seasonality.contracts import ContractError, validate_neuralweb_state
 
 log = logging.getLogger(__name__)
 
@@ -2122,6 +2123,116 @@ def _load_government_revenue_map(
     return out
 
 
+_SEASONALITY_FILE_SCHEMA = "neuralweb.biopharma_seasonality_state.file.v1"
+
+
+def _load_seasonality_map(
+    repo: Path,
+    gap_notes: list[str],
+    now: datetime | None = None,
+) -> dict[str, dict]:
+    """Load the Lane 6 shadow lobe into a sparse {ticker: {...}} projection.
+
+    Three refusals, each of which is the point of the lobe rather than a
+    defensive extra:
+
+    * a state that does NOT pass ``validate_neuralweb_state`` is skipped — the
+      contract is what pins the all-false authority ceiling, so a state that
+      has not passed it is not a weaker context block, it is an unbounded one;
+    * an EXPIRED state is skipped. Calendar context expires by design (48h);
+      carrying a dead read forward is the failure mode the TTL exists to stop;
+    * an ABSTAINING state is skipped. An abstention is the lobe declining to
+      speak, and rendering it as context would turn "we don't know" into a
+      block on the row.
+
+    The returned map is attached only to tickers an existing candidate universe
+    already admitted, so seasonality can never originate a candidate.
+    """
+    path = repo / "data" / "neuralweb" / "biopharma_seasonality_state.json"
+    payload = _read_json(path)
+    if not isinstance(payload, dict):
+        gap_notes.append(
+            "candidate_context.seasonality: state file absent — block omitted"
+        )
+        return {}
+    if payload.get("schema") != _SEASONALITY_FILE_SCHEMA:
+        gap_notes.append(
+            "candidate_context.seasonality: state file schema mismatch — block omitted"
+        )
+        return {}
+
+    reference = now or datetime.now(timezone.utc)
+    states = payload.get("states")
+    if not isinstance(states, dict):
+        # _build_candidate_context is NOT try/except-wrapped by build_context, so
+        # a shape surprise here would take the whole bridge artifact down.
+        gap_notes.append(
+            "candidate_context.seasonality: state file carries no states map — block omitted"
+        )
+        return {}
+
+    out: dict[str, dict] = {}
+    n_invalid = 0
+    n_expired = 0
+    for symbol, state in states.items():
+        if not isinstance(state, dict):
+            n_invalid += 1
+            continue
+        try:
+            state = validate_neuralweb_state(state)
+        except ContractError:
+            n_invalid += 1
+            continue
+        try:
+            expires = datetime.fromisoformat(
+                str(state.get("expires_at")).replace("Z", "+00:00")
+            )
+        except ValueError:
+            n_invalid += 1
+            continue
+        if expires <= reference:
+            n_expired += 1
+            continue
+        if (state.get("uncertainty") or {}).get("abstain"):
+            continue
+
+        clock = state.get("clock") or {}
+        forecast = state.get("forecast") or {}
+        evidence = state.get("evidence") or {}
+        block = _sparse({
+            "as_of": state.get("asof"),
+            "phase": clock.get("phase"),
+            "start_doy": clock.get("start_doy"),
+            "end_doy": clock.get("end_doy"),
+            "occurrence_end_date": clock.get("occurrence_end_date"),
+            "p": forecast.get("p"),
+            "p_baseline": forecast.get("p_baseline"),
+            "edge": forecast.get("edge"),
+            "n_years": evidence.get("n_independent"),
+            "live_n": evidence.get("live_n"),
+            # The full flag list, never a filtered one: the flags ARE the
+            # honesty of this block, and a trimmed list would read as a
+            # cleaner finding than the lobe actually has.
+            "flags": (state.get("uncertainty") or {}).get("flags") or [],
+            "expires_at": state.get("expires_at"),
+            "allowed_behavior": "annotate_only",
+        })
+        if block:
+            out[str(symbol).upper()] = block
+
+    if n_invalid:
+        gap_notes.append(
+            f"candidate_context.seasonality: {n_invalid} state(s) failed the "
+            "context contract — skipped"
+        )
+    if n_expired:
+        gap_notes.append(
+            f"candidate_context.seasonality: {n_expired} expired state(s) skipped "
+            "— context expires by design"
+        )
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Candidate context sub-block helpers (pure projections — no scoring)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2257,6 +2368,9 @@ def _build_candidate_context(
              leverage/structural/dilution (from bottom_sensors extended fields),
              earnings_ctx (from earnings.parquet + bottom_sensors),
              visibility (from edgar/rpo.parquet),
+             analyst (from analyst/targets.parquet),
+             government_revenue (from government_revenue/latest.json),
+             seasonality (from the Lane 6 shadow lobe — expiring calendar context),
              graph_conflicts (contradiction records mentioning ticker/sector),
              kernel caveat, allowed_behavior='annotate_only'.
 
@@ -2272,6 +2386,8 @@ def _build_candidate_context(
     analyst_map = _load_analyst_map(repo, gap_notes)
     # Government Revenue Foresight — official procurement context, no candidate creation.
     government_revenue_map = _load_government_revenue_map(repo, gap_notes, now=asof)
+    # Lane 6 seasonality shadow lobe — expiring calendar context, no candidate creation.
+    seasonality_map = _load_seasonality_map(repo, gap_notes, now=asof)
     # --- Standouts tickers ---
     standouts_path = repo / "site" / "factordata" / "us_standouts.json"
     standouts_tickers: set[str] = set()
@@ -2503,6 +2619,14 @@ def _build_candidate_context(
         government_revenue = government_revenue_map.get(str(ticker).upper())
         if government_revenue:
             row["government_revenue"] = government_revenue
+
+        # Lane 6 calendar context, same rule: a ticker that exists ONLY in the
+        # seasonality map is never reached by this loop, because the loop walks
+        # candidate_universe. Positive seasonality can annotate a name the board
+        # already carries; it can never put a name on the board.
+        seasonality = seasonality_map.get(str(ticker).upper())
+        if seasonality:
+            row["seasonality"] = seasonality
 
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:
@@ -2742,6 +2866,7 @@ def build_context(
         "data/analyst/targets.parquet",
         "data/chronicle/events.jsonl",
         "data/government_revenue/latest.json",
+        "data/neuralweb/biopharma_seasonality_state.json",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────

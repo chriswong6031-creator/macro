@@ -764,27 +764,19 @@ def main() -> int:
     site = config.ROOT / "site"
     site.mkdir(parents=True, exist_ok=True)
 
-    from engine.i18n import td, tr
+    # OIP W1.6-B: options_screener.html is a redirect stub into the workspace's
+    # Scanner mode. The rows payload below is untouched and is now this builder's
+    # ONLY product that anything reads — site/screenerdata/rows.json is what
+    # Scanner mode fetches. The stub takes no context, so the row serialisation
+    # and the i18n/zip/len env globals retire with the page they fed; `rows` and
+    # `coverage` stay because write_rows_export still needs both.
     env = Environment(
         loader=FileSystemLoader(str(config.ROOT / "templates")),
         autoescape=True,
     )
-    env.globals.update(
-        td=td, tr=tr, zip=zip, len=len,
-        options_screener_enabled=os_cfg.get("enabled", True),
-    )
-
-    rows_json = json.dumps(rows, ensure_ascii=False, default=str).replace("</", r"<\/")
-
-    html = env.get_template("options_screener.html.j2").render(
-        coverage=coverage,
-        rows_json=rows_json,
-        n_rows=len(rows),
-        built=coverage["built"],
-    )
     out = site / "options_screener.html"
-    write_page(out, html)
-    log.info("wrote %s (%d KB, %d rows)", out, len(html) // 1024, len(rows))
+    write_page(out, env.get_template("options_screener.html.j2").render())
+    log.info("wrote %s (redirect stub; %d rows exported)", out, len(rows))
 
     # M-XP(c): Scanner-mode rows export. Additive + fenced — a failure writing the payload
     # must NEVER cost us the page (same guard the darkpool pane writer uses).

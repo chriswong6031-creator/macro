@@ -10,8 +10,8 @@ updated: 2026-07-25
 related:
   lessons: [options/gamma-regimes]
   live:
-    - {href: /gex.html, label: "GEX levels map — flip, call wall, put wall"}
-cta: {href: /gex.html, label: "See the live GEX levels map: flip, call wall, and put wall"}
+    - {href: /options.html#ticker, label: "The levels map — flip, call wall, put wall"}
+cta: {href: /options.html#ticker, label: "See the levels map: flip, call wall, and put wall"}
 ---
 <div class="callout lead">
 <span class="co-h">Learning objective</span>
