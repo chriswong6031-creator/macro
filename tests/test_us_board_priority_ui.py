@@ -721,16 +721,19 @@ def test_stage_heading_tips_disclose_priority_order_not_a_forecast():
 
 
 # --------------------------------------------------------------------------- #
-# M1 — the runway leg is dead, and the surface that advertises its weight says so
+# M1 — when the runway leg is dead, the surface that advertises its weight says so
 #
-# Measured 2026-08-02: the runway leg contributes 0 on 0 of 71 rows, because the
-# extension reading it scores (ext_z) is absent everywhere.  The formula is printed
-# in exactly two places — the board footnote and the card's Priority tooltip — and
-# a weight advertised while its input is dark is an overclaim in both.
+# The runway leg contributed 0 on 71 of 71 rows of the 07-31 board because the
+# extension reading it scores (ext_z) never reached a row: the builder handed
+# `extension_signals` one close panel mixing the equity and 24/7 crypto calendars, so
+# on any non-session build date every equity read NaN.  A weight advertised while its
+# input is dark is an overclaim, and it is printed in exactly two places — the board
+# footnote and the card's Priority tooltip.
 #
-# The claim is COUNTED FROM THE ARTIFACT (`ranking.component_coverage`), never a
-# literal, so the night the evidence is wired the note switches itself off; a
-# hardcoded sentence would outlive the null it discloses.
+# Both states are tested here against SYNTHETIC coverage, so this suite is era-neutral:
+# the claim is COUNTED FROM THE ARTIFACT (`ranking.component_coverage`), never a
+# literal, and the night the evidence is wired the note switches itself off (see the
+# kill-switch test below).  A hardcoded sentence would outlive the null it discloses.
 # --------------------------------------------------------------------------- #
 
 _RW_EN = "Runway currently contributes 0 for "
