@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/dealer-hedging-mechanics]
   live:
-    - {href: /gex.html, label: "GEX & dealer positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — per-name dealer positioning"}
 cta: {href: /learn/options/dealer-hedging-mechanics.html, label: "Next lesson: how dealer hedging becomes real order flow"}
 ---
 <div class="callout lead">

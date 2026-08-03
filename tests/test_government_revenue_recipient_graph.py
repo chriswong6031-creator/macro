@@ -22,6 +22,7 @@ from scripts.curate_government_revenue_recipient_graph import curate_graph
 
 CONTRACTS = Path(__file__).parents[1] / "contracts" / "government_revenue"
 ROOT = Path(__file__).parents[1]
+EVIDENCE_SHA = "a" * 64
 
 
 def _schema(name: str) -> dict:
@@ -42,14 +43,24 @@ def _temporal(**values):
 def _graph():
     return {
         "contract": "government_recipient_entity_graph.v1",
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "graph_id": "recipient-graph:unit:2026-06-30",
         "graph_known_at": "2026-06-30T12:00:00+00:00",
         "graph_effective_at": "2026-06-30T12:00:00+00:00",
         "evidence": [
             {
                 "evidence_id": "evidence:primary",
-                "source_ref": "official:entity-filing:123",
+                "source_ref": f"recipient-evidence:sha256:{EVIDENCE_SHA}",
+                "publisher": "SEC",
+                "evidence_class": "official_filing",
+                "record_id": "0000000000-25-000001",
+                "url": "https://www.sec.gov/Archives/edgar/data/1/test.htm",
+                "content_sha256": EVIDENCE_SHA,
+                "byte_length": 100,
+                "retrieved_at": "2025-01-01T00:00:00+00:00",
+                "claim_scopes": [
+                    "public_company", "legal_entity", "exact_identifier", "ownership", "review_action",
+                ],
                 "known_at": "2025-01-01T00:00:00+00:00",
                 "valid_from": "2020-01-01T00:00:00+00:00",
                 "valid_to": None,
@@ -76,7 +87,7 @@ def _graph():
                 "identifier_id": "identifier:abc-uei",
                 "entity_id": "legal:abc-services",
                 "namespace": "sam_uei",
-                "value": "UEI-ABC-123",
+                "value": "ABC123DEF456",
                 "verification_state": "reviewed",
                 **_temporal(),
             }
@@ -102,7 +113,7 @@ def _record(**changes):
     row = {
         "source_award_key": "award:abc-1",
         "recipient_name": "ABC Services LLC",
-        "recipient_uei": "UEI-ABC-123",
+        "recipient_uei": "ABC123DEF456",
         "effective_at": "2026-06-15T00:00:00+00:00",
         "known_at": "2026-06-16T00:00:00+00:00",
         "amount": 100.0,
@@ -161,6 +172,37 @@ def test_loader_rejects_missing_evidence_future_claims_unknown_issuers_and_unfun
     assert error_code in loaded["error_codes"]
 
 
+@pytest.mark.parametrize(
+    ("mutate", "error_code"),
+    [
+        (
+            lambda graph: graph["evidence"][0].update({"content_sha256": "b" * 64}),
+            "evidence_source_ref_digest_mismatch",
+        ),
+        (
+            lambda graph: graph["evidence"][0].update(
+                {"url": "https://api.usaspending.gov/api/v2/awards/example/"}
+            ),
+            "evidence_url_publisher_mismatch",
+        ),
+        (
+            lambda graph: graph["evidence"][0].update(
+                {"claim_scopes": ["public_company", "legal_entity"]}
+            ),
+            "evidence_scope_missing_exact_identifier",
+        ),
+    ],
+)
+def test_loader_rejects_tampered_or_semantically_unbound_evidence_receipts(mutate, error_code):
+    graph = _graph()
+    mutate(graph)
+
+    loaded = _load(graph)
+
+    assert loaded["status"] == "invalid"
+    assert error_code in loaded["error_codes"]
+
+
 def test_loader_rejects_ownership_cycles_and_ambiguous_exact_paths():
     cycle = _graph()
     cycle["legal_entities"].append(
@@ -200,7 +242,7 @@ def test_loader_rejects_ownership_cycles_and_ambiguous_exact_paths():
             "identifier_id": "identifier:duplicate-uei",
             "entity_id": "legal:other",
             "namespace": "sam_uei",
-            "value": "UEI-ABC-123",
+            "value": "ABC123DEF456",
             "verification_state": "reviewed",
             **_temporal(),
         }
@@ -215,7 +257,7 @@ def test_reviewed_blocks_conflicts_and_overrides_are_explicit_and_fail_closed():
             "block_id": "block:abc-uei",
             "scope": "identifier",
             "namespace": "sam_uei",
-            "value": "UEI-ABC-123",
+            "value": "ABC123DEF456",
             "reason_code": "official_identifier_retired",
             "reviewer_state": "reviewed",
             **_temporal(),
@@ -248,7 +290,7 @@ def test_reviewed_blocks_conflicts_and_overrides_are_explicit_and_fail_closed():
             "conflict_id": "conflict:abc-uei",
             "scope": "identifier",
             "namespace": "sam_uei",
-            "value": "UEI-ABC-123",
+            "value": "ABC123DEF456",
             "reason_code": "official_sources_disagree",
             "reviewer_state": "reviewed",
             **_temporal(),
@@ -403,7 +445,7 @@ def test_new_graph_and_coverage_contracts_validate_with_existing_entity_coverage
     ).validate(coverage)
 
 
-def test_canonical_empty_first_graph_is_strict_and_reports_zero_real_rail_coverage():
+def test_canonical_first_reviewed_graph_is_strict_and_keeps_absent_event_coverage_empty():
     graph = json.loads(
         (
             ROOT
@@ -416,20 +458,32 @@ def test_canonical_empty_first_graph_is_strict_and_reports_zero_real_rail_covera
         _schema("government_recipient_entity_graph.v1.schema.json"),
         format_checker=FormatChecker(),
     ).validate(graph)
-    assert all(
-        graph[field] == []
-        for field in (
-            "evidence", "companies", "legal_entities", "identifiers",
-            "ownership_edges", "blocks", "conflicts", "overrides",
-        )
-    )
-    loaded = load_recipient_entity_graph(graph, as_of="2026-08-02")
+    assert len(graph["evidence"]) == 4
+    assert len(graph["companies"]) == 1
+    assert len(graph["legal_entities"]) == 2
+    assert len(graph["identifiers"]) == 2
+    assert len(graph["ownership_edges"]) == 2
+    assert [edge["relationship"] for edge in graph["ownership_edges"]] == [
+        "issuer_legal_entity",
+        "wholly_owned",
+    ]
+    assert graph["blocks"] == graph["conflicts"] == graph["overrides"] == []
+    loaded = load_recipient_entity_graph(graph, as_of="2026-08-03")
     assert loaded["status"] == "ready"
+    assert resolve_recipient(
+        _record(
+            recipient_uei="HNN4F9JZWDY8",
+            effective_at="2026-08-03T13:19:22+00:00",
+            known_at="2026-08-03T13:19:22+00:00",
+        ),
+        loaded,
+        as_of="2026-08-03",
+    )["issuer"] == {"company_id": "central:PLTR", "ticker": "PLTR"}
     coverage = build_recipient_resolution_coverage(
         [],
         [],
         loaded,
-        as_of="2026-08-02",
+        as_of="2026-08-03",
         snapshot_amount_field="total_obligation",
         action_amount_field="federal_action_obligation",
     )

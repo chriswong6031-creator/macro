@@ -652,6 +652,51 @@ capabilities:
       CODEX_ACCOUNT_HOMES. The standard VPS path is /var/lib/macro-codex-2.
       No credential value enters application memory or a git artifact.
 
+  - capability_id: codex_account_3
+    kind: llm_subscription
+    secret_ref: CODEX_ACCESS_TOKEN_3
+    scope: >
+      Third isolated Codex/ChatGPT account in the same subscription-provider
+      waterfall. It has its own CODEX_HOME auth cache, cooling state, rate-limit
+      telemetry, and usage identity; requests fail over among all Codex accounts
+      before reaching metered providers.
+    storage_locus: self-hosted-runner-auth-cache
+    allowed_lanes:
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
+      - brain-fast
+      - brain-pro
+      - marketing-copywriter
+      - marketing-breaking
+      - marketing-copy-review
+      - marketing-critic
+      - hot-tape-wire
+      - reply-voice
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      Production selects this account from the third path in
+      CODEX_ACCOUNT_HOMES. The standard VPS path is /var/lib/macro-codex-3.
+      No credential value enters application memory or a git artifact.
+
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 
   - capability_id: github_token

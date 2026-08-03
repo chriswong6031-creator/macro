@@ -59,6 +59,19 @@ def _annotation_head(node: ast.expr) -> str | None:
     return None
 
 
+def _looks_annotationish(blob: bytes) -> bool:
+    """True when a string literal anywhere in the file OPENS with '::'.
+
+    Keyed on the literal's opening quote, not the call paren: the earlier
+    ``("::`` family required the annotation to sit on the call's own line, so
+    ``log.warning(\\n    "::warning ...")`` was never parsed at all
+    (mutation-confirmed miss, 2026-08-02).  Matching ``"::`` / ``'::`` also
+    covers f-/r-prefixed literals and keeps this a strict superset of what the
+    AST matcher below can flag; the ~40 extra files it admits cost ~0.1s.
+    """
+    return b'"::' in blob or b"'::" in blob
+
+
 def _candidates() -> list[Path]:
     """Files worth parsing — cheap byte prefilter keeps the whole guard ~1s."""
     out = []
@@ -68,7 +81,7 @@ def _candidates() -> list[Path]:
                 blob = p.read_bytes()
             except OSError:
                 continue
-            if b'("::' in blob or b"('::" in blob or b'(f"::' in blob or b"(f'::" in blob:
+            if _looks_annotationish(blob):
                 out.append(p)
     return out
 
@@ -136,6 +149,7 @@ def test_guard_catches_a_planted_offender(tmp_path):
         'log.error(f"::error::{1}")\n'
         'print("::notice::this one is fine")\n'
     )
+    assert _looks_annotationish(src.encode())
     tree = ast.parse(src)
     hits = [
         n.lineno for n in ast.walk(tree)
@@ -144,3 +158,33 @@ def test_guard_catches_a_planted_offender(tmp_path):
         and _annotation_head(n.args[0]) is not None
     ]
     assert hits == [3, 4], f"matcher missed a planted offender: {hits}"
+
+
+def test_prefilter_admits_a_call_split_across_lines():
+    """The prefilter must be a superset of the matcher, and the matcher must fire.
+
+    ``log.warning(`` followed by the annotation on its own line contains none of
+    the old ``("::`` byte shapes, so the guard skipped the file before the AST
+    matcher ever saw the call — an offender the guard reviews as covered but
+    cannot flag (the same silent-drop class it exists to catch).
+    """
+    src = (
+        'import logging\n'
+        'log = logging.getLogger("x")\n'
+        'log.warning(\n'
+        '    "::warning title=t::split across lines")\n'
+        'log.error(\n'
+        "    f'::error title=u::{1}')\n"
+    )
+    blob = src.encode()
+    assert not (b'("::' in blob or b"('::" in blob
+                or b'(f"::' in blob or b"(f'::" in blob), \
+        "fixture no longer reproduces the shape the old prefilter missed"
+    assert _looks_annotationish(blob)
+    hits = [
+        n.lineno for n in ast.walk(ast.parse(src))
+        if isinstance(n, ast.Call) and n.args
+        and isinstance(n.func, ast.Attribute) and n.func.attr in LEVELS
+        and _annotation_head(n.args[0]) is not None
+    ]
+    assert hits == [3, 5], f"matcher missed the split offenders: {hits}"

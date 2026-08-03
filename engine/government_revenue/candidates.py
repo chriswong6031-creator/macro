@@ -169,6 +169,54 @@ def _as_rows(value: Any) -> list[Mapping[str, Any]]:
     return [row for row in value if isinstance(row, Mapping)] if isinstance(value, list) else []
 
 
+def _reviewed_exact_graph_tickers(
+    loaded: Mapping[str, Any], *, analysis_as_of: datetime
+) -> set[str]:
+    """Return tickers reached by at least one active exact identifier path."""
+    if loaded.get("status") != "ready":
+        return set()
+    record_fields = {
+        "sam_uei": "recipient_uei",
+        "cage": "recipient_cage",
+        "usaspending_recipient_id": "usaspending_recipient_id",
+    }
+    tickers: set[str] = set()
+    for ordinal, identifier in enumerate(_as_rows(_source_graph(loaded).get("identifiers"))):
+        namespace = _text(identifier.get("namespace"))
+        value = _text(identifier.get("value"))
+        field = record_fields.get(namespace or "")
+        if field is None or value is None:
+            continue
+        resolution = entity_resolution.resolve_recipient(
+            {
+                "source_record_key": f"graph-coverage:{ordinal}",
+                "source_record_identity_stable": True,
+                field: value,
+                "effective_at": analysis_as_of.isoformat(),
+                "known_at": analysis_as_of.isoformat(),
+            },
+            loaded,
+            as_of=analysis_as_of,
+        )
+        issuer = _as_mapping(resolution.get("issuer")) or {}
+        ticker = _text(issuer.get("ticker"))
+        if resolution.get("resolution_state") in {"confirmed", "reviewed"} and ticker:
+            tickers.add(ticker)
+    return tickers
+
+
+def _graph_evidence_content_ids(
+    loaded: Mapping[str, Any], evidence_refs: Sequence[str]
+) -> set[str]:
+    wanted = set(evidence_refs)
+    return {
+        digest
+        for row in _as_rows(_source_graph(loaded).get("evidence"))
+        if _text(row.get("evidence_id")) in wanted
+        and (digest := _text(row.get("content_sha256"))) is not None
+    }
+
+
 def _row_active(row: Mapping[str, Any], *, effective_at: datetime, analysis_as_of: datetime) -> bool:
     """The graph contract requires evidence refs, which are strings rather than rows."""
     known_at = _instant(row.get("known_at"))
@@ -643,9 +691,13 @@ def _candidate_from_event(
             "issuer_company_id": impact["issuer_company_id"],
             "event_id": source_event["event_id"],
         })
+        graph_evidence_ids = _graph_evidence_content_ids(
+            loaded, impact["evidence_refs"]
+        )
         artifact_content_ids = sorted({
             source_event["source_content_id"],
             *(receipt["content_sha256"] for receipt in receipts),
+            *graph_evidence_ids,
             _graph_content_id(loaded),
         })
         availability_known_at = max(
@@ -815,11 +867,9 @@ def build_mapping_backlog(
     if analysis_as_of is None or known_at is None:
         return []
     loaded = load_recipient_entity_graph(recipient_graph, as_of=analysis_as_of)
-    graph_companies = {
-        (_text(row.get("ticker")), _text(row.get("company_id")))
-        for row in _as_rows(_source_graph(loaded).get("companies"))
-    } if loaded.get("status") == "ready" else set()
-    graph_tickers = {ticker for ticker, _company_id in graph_companies if ticker}
+    graph_tickers = _reviewed_exact_graph_tickers(
+        loaded, analysis_as_of=analysis_as_of
+    )
     source_content_ids = sorted({
         _workspace_content_id(latest_payload),
         _graph_content_id(loaded),
@@ -829,17 +879,24 @@ def build_mapping_backlog(
     for company in _as_rows(latest_payload.get("companies")):
         ticker = _text(company.get("ticker"))
         company_name = _text(company.get("name"))
-        if not ticker or _TICKER.fullmatch(ticker) is None or not company_name or ticker in graph_tickers:
+        if not ticker or _TICKER.fullmatch(ticker) is None or not company_name:
             continue
         entity_match = _as_mapping(company.get("entity_match")) or {}
-        reason_codes = ["exact_identifier_mapping_required"]
+        mapping_state = (
+            "partial_identifier_coverage" if ticker in graph_tickers else "mapping_needed"
+        )
+        reason_codes = (
+            ["partial_identifier_coverage"]
+            if ticker in graph_tickers
+            else ["exact_identifier_mapping_required"]
+        )
         if not graph_tickers:
             reason_codes.append("recipient_graph_no_reviewed_issuer")
         rows.append({
             "backlog_id": _digest("grmb1", {"ticker": ticker, "company_name": company_name, "graph_digest": loaded.get("graph_digest")}),
             "ticker": ticker,
             "company_name": company_name,
-            "mapping_state": "mapping_needed",
+            "mapping_state": mapping_state,
             "reason_codes": reason_codes,
             "source_association_method": _text(entity_match.get("method")),
             "issuer_attribution": "not_asserted",
@@ -847,7 +904,11 @@ def build_mapping_backlog(
             "source_artifact_content_ids": source_content_ids,
             "limitations": [
                 "Discovery-name association is retained only as mapping backlog and is not issuer attribution.",
-                "An exact identifier and time-valid reviewed ownership path are required before a listed-company candidate can be emitted.",
+                (
+                    "At least one exact recipient path is reviewed, but the discovery scope is not complete."
+                    if mapping_state == "partial_identifier_coverage"
+                    else "An exact identifier and time-valid reviewed ownership path are required before a listed-company candidate can be emitted."
+                ),
             ],
         })
     return sorted(rows, key=lambda row: (row["ticker"], row["backlog_id"]))
@@ -892,6 +953,9 @@ def build_candidate_queue(
     else:
         reason = "No receipt-bound award-change event generation is currently available; mapping backlog remains visible."
     workspace = _workspace(latest_payload)
+    reviewed_tickers = sorted(
+        _reviewed_exact_graph_tickers(loaded, analysis_as_of=analysis_as_of)
+    )
     candidates = sorted(candidates, key=lambda row: row["candidate_id"])
     candidates.sort(key=lambda row: row["known_at"], reverse=True)
     queue = {
@@ -920,7 +984,8 @@ def build_candidate_queue(
         },
         "coverage": {
             "company_coverage_count": len(_as_rows(latest_payload.get("companies"))),
-            "reviewed_issuer_company_count": len(_as_rows(_source_graph(loaded).get("companies"))) if loaded.get("status") == "ready" else 0,
+            "reviewed_issuer_company_count": len(reviewed_tickers),
+            "reviewed_issuer_tickers": reviewed_tickers,
             "mapping_backlog_count": len(backlog),
             "award_change_events_visible": sum(1 for event in _as_rows(workspace.get("events")) if event.get("kind") == "award_change"),
             "is_complete": False,

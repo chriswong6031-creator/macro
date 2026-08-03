@@ -89,30 +89,36 @@
    red in Chinese would invert the entire message. Colour is never the only
    carrier either: every featured card also renders a "★ Featured / 精选" chip in
    its marks row (contrast-checked below). #}
-.pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 7%,var(--panel2));
-  border-color:color-mix(in srgb,var(--pv-buy) 55%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 40%,transparent),
-             0 0 26px -4px color-mix(in srgb,var(--pv-buy) 60%,transparent),
+{# TONE CALIBRATION (operator correction 2026-08-03, live-board review): the first
+   shipped values washed the ENTIRE container green — background tints of 7%/8%
+   with 50-60%-alpha auras read as "radioactive paint", worst on light where 8%
+   green over #fff painted every featured card mint. The correction: the card BODY
+   stays the normal panel/white — featured is a thin ring + a faint outer aura +
+   the ★ chip, nothing more. Dark keeps a barely-there 2.5% lift (pure black
+   panels swallow a ring alone); light gets NO tint at all. #}
+.pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 2.5%,var(--panel2));
+  border-color:color-mix(in srgb,var(--pv-buy) 38%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 24%,transparent),
+             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 32%,transparent),
              0 10px 26px -14px rgba(0,0,0,.7)}
 {# hover must ADD the lift, not replace the aura (.pvcard:hover sets a bare shadow) #}
-.pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 70%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 50%,transparent),
-             0 0 32px -4px color-mix(in srgb,var(--pv-buy) 72%,transparent),
+.pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 48%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 30%,transparent),
+             0 0 20px -6px color-mix(in srgb,var(--pv-buy) 40%,transparent),
              0 8px 22px -8px rgba(0,0,0,.5)}
 .pvcard.pv-featured::before{background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 55%,transparent));
-  box-shadow:0 1px 14px color-mix(in srgb,var(--pvh) 85%,transparent)}
-{# Light theme: the same aura on a white card over a #f7f8fa page reads as a
-   smudge at dark-theme spread, so it tightens and the elevation drops to a
-   green-tinted neutral instead of black. #}
-html[data-theme="light"] .pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 8%,#fff);
-  border-color:color-mix(in srgb,var(--pv-buy) 50%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 32%,transparent),
-             0 0 20px -5px color-mix(in srgb,var(--pv-buy) 50%,transparent),
-             0 8px 20px -14px rgba(24,58,40,.45)}
-html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 66%,var(--line));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 44%,transparent),
-             0 0 26px -5px color-mix(in srgb,var(--pv-buy) 62%,transparent),
-             0 8px 20px -10px rgba(24,58,40,.30)}
+  box-shadow:0 1px 10px color-mix(in srgb,var(--pvh) 40%,transparent)}
+{# Light theme: NO background tint — the operator's reference is a clean white
+   card; featured reads through the ring, the whisper aura and the ★ chip. #}
+html[data-theme="light"] .pvcard.pv-featured{background:#fff;
+  border-color:color-mix(in srgb,var(--pv-buy) 30%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 16%,transparent),
+             0 0 12px -6px color-mix(in srgb,var(--pv-buy) 22%,transparent),
+             0 8px 20px -14px rgba(24,58,40,.22)}
+html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 40%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 22%,transparent),
+             0 0 16px -6px color-mix(in srgb,var(--pv-buy) 30%,transparent),
+             0 8px 20px -10px rgba(24,58,40,.18)}
 {# The ⚠ popover lives inside .pv-chart, so .pvcard{overflow:hidden} used to CLIP it:
    a 5-caution name rendered a 207px popover inside a 180px card and two whole rows —
    the sector stance and the "already moving" warning — were unreachable at any width.

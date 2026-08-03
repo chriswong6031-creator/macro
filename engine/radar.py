@@ -35,6 +35,7 @@ from engine.theme_activity import (  # re-exported primitives (shared with the f
     YOY_LAG, Z_CLAMP, robust_z,
 )
 from engine import theme_warn as _theme_warn
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -311,7 +312,13 @@ def _hypotheses(flags: list[dict], mem: dict, asof: str) -> list[dict]:
 
 def append_ledger(result: dict, root=None) -> int:
     """Append new watch-hypotheses to data/radar/theses.jsonl, idempotent by id.
-    Append-only + guarded — the accountability seed, never breaks the build."""
+    Append-only + guarded — the accountability seed, never breaks the build.
+
+    Lane-gated (house law: nightly is the sole advancer): the caller
+    (scripts/build_baskets.py) also runs on the express render lanes, which set
+    no COLLECT_LANE. Gate-first, before any arg evaluation."""
+    if not _ledger_advance_enabled():
+        return 0
     if not result or not result.get("hypotheses"):
         return 0
     try:

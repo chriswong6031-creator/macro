@@ -697,7 +697,14 @@ def compute_bottleneck(write_ledger: bool = True, data_dir=None) -> dict | None:
 def _append_ledger(payload: dict) -> None:
     """Append-only forward-grading ledger: one row per (theme, asof) where the band is
     TIGHT/SOLD_OUT or a text-only band. Graded forward against subsequent PPI acceleration
-    + basket return."""
+    + basket return.
+
+    Lane-gated 2026-08-02: the guard test used to exclude this appender on the theory
+    that the caller's write_ledger flag was the gate — but engine/run.py calls
+    compute_bottleneck() with write_ledger defaulting True on every lane, so the flag
+    gated nothing in CI. Same in-function gate as the _shadow_log_cutoffs sibling."""
+    if not _ledger_advance_enabled():
+        return
     d = config.data_dir() / "bottleneck"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"

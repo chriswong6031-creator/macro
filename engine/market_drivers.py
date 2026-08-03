@@ -33,6 +33,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 
@@ -623,7 +624,14 @@ def append_log(snap: dict, allow_write: bool = True) -> None:
     PS-R7 guard: intraday callers MUST pass allow_write=False (the nightly path is
     the sole advancer of data/ ledgers). The default allow_write=True preserves the
     existing nightly call-sites unchanged.
+
+    In-function lane gate on top of PS-R7: engine/run.py:~424 calls this bare
+    (no allow_write=False) and engine.run also runs on the express render lanes
+    and closing-bell, none of which set COLLECT_LANE — caller discipline alone
+    left this ledger advancing off-lane. Gate-first, before any arg evaluation.
     """
+    if not _ledger_advance_enabled():
+        return  # off-lane render/closing-bell: read-only
     if not allow_write:
         return  # PS-R7: intraday path must not write the parquet ledger
     try:

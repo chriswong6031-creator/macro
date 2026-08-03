@@ -12,7 +12,7 @@
   ],
   "properties": {
     "contract": {"const": "government_recipient_entity_graph.v1"},
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "1.1.0"},
     "graph_id": {"type": "string", "minLength": 1},
     "graph_known_at": {"$ref": "#/$defs/dateTime"},
     "graph_effective_at": {"$ref": "#/$defs/dateTime"},
@@ -80,10 +80,27 @@
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["evidence_id", "source_ref", "known_at", "valid_from", "valid_to"],
+      "required": [
+        "evidence_id", "source_ref", "publisher", "evidence_class", "record_id",
+        "url", "content_sha256", "byte_length", "retrieved_at", "claim_scopes",
+        "known_at", "valid_from", "valid_to"
+      ],
       "properties": {
         "evidence_id": {"type": "string", "minLength": 1},
-        "source_ref": {"type": "string", "minLength": 1},
+        "source_ref": {"type": "string", "pattern": "^recipient-evidence:sha256:[a-f0-9]{64}$"},
+        "publisher": {"enum": ["SEC", "USAspending.gov", "Palantir Technologies"]},
+        "evidence_class": {"enum": ["official_filing", "official_award", "issuer_disclosure"]},
+        "record_id": {"type": "string", "minLength": 1, "maxLength": 500},
+        "url": {"type": "string", "format": "uri", "pattern": "^https://", "maxLength": 2000},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "retrieved_at": {"$ref": "#/$defs/dateTime"},
+        "claim_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["public_company", "legal_entity", "exact_identifier", "ownership", "review_action"]}
+        },
         "known_at": {"$ref": "#/$defs/dateTime"},
         "valid_from": {"$ref": "#/$defs/dateTime"},
         "valid_to": {"$ref": "#/$defs/nullableDateTime"}
@@ -145,6 +162,14 @@
             "valid_to": {"$ref": "#/$defs/nullableDateTime"},
             "evidence_refs": {"$ref": "#/$defs/evidenceRefs"}
           }
+        },
+        {
+          "if": {"properties": {"namespace": {"const": "sam_uei"}}, "required": ["namespace"]},
+          "then": {"properties": {"value": {"pattern": "^[A-HJ-NP-Z0-9]{12}$"}}}
+        },
+        {
+          "if": {"properties": {"namespace": {"const": "cage"}}, "required": ["namespace"]},
+          "then": {"properties": {"value": {"pattern": "^[A-Z0-9]{5}$"}}}
         }
       ]
     },
@@ -160,7 +185,7 @@
             "child_entity_id": {"type": "string", "minLength": 1},
             "parent_entity_id": {"type": "string", "minLength": 1},
             "parent_company_id": {"type": "string", "minLength": 1},
-            "relationship": {"enum": ["wholly_owned", "majority_owned", "partial_owned", "joint_venture"]},
+            "relationship": {"enum": ["issuer_legal_entity", "wholly_owned", "majority_owned", "partial_owned", "joint_venture"]},
             "economic_share": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
             "verification_state": {"$ref": "#/$defs/reviewState"},
             "known_at": {"$ref": "#/$defs/dateTime"},
@@ -178,6 +203,14 @@
         {
           "if": {"properties": {"relationship": {"const": "joint_venture"}}, "required": ["relationship"]},
           "then": {"properties": {"economic_share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}}
+        },
+        {
+          "if": {"properties": {"relationship": {"const": "issuer_legal_entity"}}, "required": ["relationship"]},
+          "then": {
+            "required": ["parent_company_id"],
+            "not": {"required": ["parent_entity_id"]},
+            "properties": {"economic_share": {"const": 1.0}}
+          }
         }
       ]
     },

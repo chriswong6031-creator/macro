@@ -376,8 +376,12 @@ def test_featured_glow_is_static_and_theme_aware():
     that only holds while nothing animates.  Pin both halves, plus the light override
     and the zh-safe hue (never --up, which flips to red under html[data-lang=zh])."""
     html = _priority_html()
-    assert ".pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy)" in html
-    assert 'html[data-theme="light"] .pvcard.pv-featured{background:color-mix(' in html
+    # Tone calibration (operator correction 2026-08-03): the card BODY stays plain —
+    # dark keeps a 2.5% barely-there lift, light is pure #fff with NO tint; featured
+    # reads through the thin --pv-buy ring + faint aura + the star chip.
+    assert ".pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 2.5%" in html
+    assert 'html[data-theme="light"] .pvcard.pv-featured{background:#fff' in html
+    assert 'border-color:color-mix(in srgb,var(--pv-buy) 30%,var(--line))' in html
     assert ".pvcard.pv-featured:hover{" in html          # hover ADDS lift, never replaces the aura
     assert 'html[data-theme="light"] .pvcard.pv-featured:hover{' in html
     glow = html[html.find(".pvcard.pv-featured{"):html.find(".pv-chart{")]

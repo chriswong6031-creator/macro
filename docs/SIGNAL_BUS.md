@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | XSR | 1 |
 | active-build-map | 1 |
 | agentic_media | 4 |
-| biopharma-seasonality-intelligence | 4 |
+| biopharma-seasonality-intelligence | 6 |
 | btc-vector | 6 |
 | capital-structure-intelligence | 20 |
 | causal-hypothesis-factory | 9 |
@@ -110,13 +110,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 364 |
 | infrastructure | 139 |
 | scored | 4 |
-| shadow | 79 |
+| shadow | 81 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 554 |
+| git | 556 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -148,10 +148,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-stock-seasonality-entity | `site/seasonalitydata/entities/<SYM>.json` | json | daily-engine | display | 1 | 1 |
+| site-stock-seasonality-index | `site/seasonalitydata/index.json` | json | daily-engine | display | 1 | 1 |
+| data-neuralweb-biopharma-seasonality-state | `data/neuralweb/biopharma_seasonality_state.json` | json | daily-engine | shadow | 1 | 0 |
 | data-stock-seasonality-selection-cache | `data/seasonality/selection/<SYM>.json` | json | daily-engine | infrastructure | 1 | 0 |
 | site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | daily-engine | display | 0 | 1 |
-| site-stock-seasonality-entity | `site/seasonalitydata/entities/<SYM>.json` | json | daily-engine | display | 0 | 1 |
-| site-stock-seasonality-index | `site/seasonalitydata/index.json` | json | daily-engine | display | 0 | 1 |
+| data-seasonality-nw-forward-ledger | `data/seasonality/nw_forward_ledger.jsonl` | jsonl | daily-engine | shadow | 0 | 0 |
 
 ### btc-vector
 
@@ -1933,6 +1935,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/trial_ledger.py`
 - **extra writers:**
   - scripts/intl_phase0.py — appends family='intl_bridge' entries
+
+### us-board-ledger-retro-grades
+
+- **path:** `data/us_board_ledger/retro_grades.parquet`
+- **declared producer:** `scripts/grade_us_board.py`
+- **extra writers:**
+  - scripts/stamp_options_state.py — nightly options-state + tape-flow stamp pass (runs after grade_us_board in daily.yml): schema-unions and fills the nullable opt_* columns from engine/options_stamp.STAMP_COLS (incl. W-OVC keys opt_vanna_relief, opt_front7_charm_share, opt_root_class; registered 2026-08-02 after the six-week silent-null repair) + engine/tape_flow_stamp.TAPE_FLOW_STAMP_COLS; no-overwrite per family, never touches grading columns (A9)
 
 ### world-state
 

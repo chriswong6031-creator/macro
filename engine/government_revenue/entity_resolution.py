@@ -29,6 +29,7 @@ import math
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
+from urllib.parse import urlparse
 
 
 RESOLUTION_CONTRACT = "government_recipient_resolution.v1"
@@ -36,6 +37,7 @@ COVERAGE_CONTRACT = "government_entity_coverage.v1"
 RECIPIENT_GRAPH_CONTRACT = "government_recipient_entity_graph.v1"
 RECIPIENT_RESOLUTION_COVERAGE_CONTRACT = "government_recipient_resolution_coverage.v1"
 SCHEMA_VERSION = "1.0.0"
+RECIPIENT_GRAPH_SCHEMA_VERSION = "1.1.0"
 
 # A strict graph is loaded into this small wrapper before it is permitted to
 # affect issuer attribution.  The raw resolver remains backward compatible for
@@ -62,7 +64,11 @@ _GRAPH_TOP_LEVEL_FIELDS = {
 }
 _GRAPH_TEMPORAL_FIELDS = {"known_at", "valid_from", "valid_to", "evidence_refs"}
 _GRAPH_ROW_FIELDS = {
-    "evidence": {"evidence_id", "source_ref", "known_at", "valid_from", "valid_to"},
+    "evidence": {
+        "evidence_id", "source_ref", "publisher", "evidence_class", "record_id",
+        "url", "content_sha256", "byte_length", "retrieved_at", "claim_scopes",
+        "known_at", "valid_from", "valid_to",
+    },
     "company": {"company_id", "ticker", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
     "legal_entity": {"entity_id", "canonical_name", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
     "identifier": {"identifier_id", "entity_id", "namespace", "value", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
@@ -85,7 +91,11 @@ _GRAPH_ROW_FIELDS = {
     },
 }
 _GRAPH_ROW_REQUIRED = {
-    "evidence": {"evidence_id", "source_ref", "known_at", "valid_from", "valid_to"},
+    "evidence": {
+        "evidence_id", "source_ref", "publisher", "evidence_class", "record_id",
+        "url", "content_sha256", "byte_length", "retrieved_at", "claim_scopes",
+        "known_at", "valid_from", "valid_to",
+    },
     "company": {"company_id", "ticker", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
     "legal_entity": {"entity_id", "canonical_name", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
     "identifier": {"identifier_id", "entity_id", "namespace", "value", "verification_state", *_GRAPH_TEMPORAL_FIELDS},
@@ -97,10 +107,22 @@ _GRAPH_ROW_REQUIRED = {
 _REVIEWED_GRAPH_STATES = {"confirmed", "reviewed", "analyst_approved"}
 _GRAPH_IDENTIFIER_NAMESPACES = {"sam_uei", "cage", "usaspending_recipient_id"}
 _GRAPH_EDGE_RELATIONSHIPS = {
+    "issuer_legal_entity",
     "wholly_owned",
     "majority_owned",
     "partial_owned",
     "joint_venture",
+}
+_GRAPH_EVIDENCE_CLASSES = {"official_filing", "official_award", "issuer_disclosure"}
+_GRAPH_EVIDENCE_SCOPES = {
+    "public_company", "legal_entity", "exact_identifier", "ownership", "review_action",
+}
+_GRAPH_EVIDENCE_PUBLISHER_HOSTS = {
+    "SEC": {"www.sec.gov", "sec.gov"},
+    "USAspending.gov": {"api.usaspending.gov", "www.usaspending.gov", "usaspending.gov"},
+    "Palantir Technologies": {
+        "investors.palantir.com", "palantir2020ipo.q4web.com", "www.palantir.com", "palantir.com",
+    },
 }
 _GRAPH_OVERRIDE_ACTIONS = {
     "assert_identifier",
@@ -151,7 +173,7 @@ _BLOCK_ACTIONS = {"block", "block_identifier", "reject_identifier"}
 _ASSERT_IDENTIFIER_ACTIONS = {"assert_identifier", "assert_mapping"}
 _ASSERT_OWNERSHIP_ACTIONS = {"assert_ownership"}
 _BLOCK_OWNERSHIP_ACTIONS = {"block_ownership", "retire_edge"}
-_FULL_OWNERSHIP_RELATIONSHIPS = {"wholly_owned"}
+_FULL_OWNERSHIP_RELATIONSHIPS = {"issuer_legal_entity", "wholly_owned"}
 _ATTRIBUTED_STATES = {"confirmed", "reviewed"}
 _ALL_STATES = (
     "confirmed",
@@ -332,6 +354,82 @@ def _graph_temporal_claim(
             evidence_known_at > analysis_as_of or evidence_valid_from > analysis_as_of
         ):
             _graph_error(errors, "future_evidence_at_analysis_asof")
+
+
+def _validate_graph_evidence_receipt(
+    row: Mapping[str, Any],
+    *,
+    errors: list[str],
+    graph_known_at: datetime | None,
+    analysis_as_of: datetime | None,
+) -> None:
+    """Require one hash-bound, publisher-scoped external evidence receipt."""
+    digest = (_text(row.get("content_sha256")) or "").lower()
+    source_ref = _text(row.get("source_ref"))
+    if re.fullmatch(r"[a-f0-9]{64}", digest) is None:
+        _graph_error(errors, "invalid_evidence_content_sha256")
+    if source_ref != f"recipient-evidence:sha256:{digest}":
+        _graph_error(errors, "evidence_source_ref_digest_mismatch")
+    publisher = _text(row.get("publisher"))
+    evidence_class = _text(row.get("evidence_class"))
+    record_id = _text(row.get("record_id"))
+    url = _text(row.get("url"))
+    scopes = row.get("claim_scopes")
+    byte_length = row.get("byte_length")
+    if publisher not in _GRAPH_EVIDENCE_PUBLISHER_HOSTS:
+        _graph_error(errors, "invalid_evidence_publisher")
+    if evidence_class not in _GRAPH_EVIDENCE_CLASSES:
+        _graph_error(errors, "invalid_evidence_class")
+    if record_id is None:
+        _graph_error(errors, "missing_evidence_record_id")
+    if not isinstance(byte_length, int) or isinstance(byte_length, bool) or byte_length <= 0:
+        _graph_error(errors, "invalid_evidence_byte_length")
+    if (
+        not isinstance(scopes, list)
+        or not scopes
+        or len(scopes) != len(set(scopes))
+        or any(scope not in _GRAPH_EVIDENCE_SCOPES for scope in scopes)
+    ):
+        _graph_error(errors, "invalid_evidence_claim_scopes")
+    try:
+        parsed = urlparse(url or "")
+        host = (parsed.hostname or "").lower()
+    except (TypeError, ValueError):
+        parsed = None
+        host = ""
+    if (
+        parsed is None
+        or parsed.scheme != "https"
+        or publisher not in _GRAPH_EVIDENCE_PUBLISHER_HOSTS
+        or host not in _GRAPH_EVIDENCE_PUBLISHER_HOSTS.get(publisher, set())
+    ):
+        _graph_error(errors, "evidence_url_publisher_mismatch")
+    retrieved_at = _strict_datetime(row.get("retrieved_at"))
+    known_at = _strict_datetime(row.get("known_at"))
+    if retrieved_at is None:
+        _graph_error(errors, "invalid_evidence_retrieved_at")
+    elif known_at is not None and retrieved_at > known_at:
+        _graph_error(errors, "evidence_retrieved_after_known_at")
+    if retrieved_at is not None and graph_known_at is not None and retrieved_at > graph_known_at:
+        _graph_error(errors, "future_retrieved_evidence")
+    if retrieved_at is not None and analysis_as_of is not None and retrieved_at > analysis_as_of:
+        _graph_error(errors, "future_retrieved_evidence_at_analysis_asof")
+
+
+def _require_graph_claim_scope(
+    row: Mapping[str, Any],
+    scope: str,
+    *,
+    evidence: Mapping[str, Mapping[str, Any]],
+    errors: list[str],
+) -> None:
+    refs = _evidence_refs(row)
+    if refs and not any(
+        scope in source.get("claim_scopes", [])
+        for ref in refs
+        if (source := evidence.get(ref)) is not None
+    ):
+        _graph_error(errors, f"evidence_scope_missing_{scope}")
 
 
 def _intervals_overlap(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
@@ -604,7 +702,7 @@ def load_recipient_entity_graph(
         _graph_error(errors, "graph_shape_invalid")
     if raw.get("contract") != RECIPIENT_GRAPH_CONTRACT:
         _graph_error(errors, "graph_contract_invalid")
-    if raw.get("schema_version") != SCHEMA_VERSION:
+    if raw.get("schema_version") != RECIPIENT_GRAPH_SCHEMA_VERSION:
         _graph_error(errors, "graph_schema_version_invalid")
     graph_id = _text(raw.get("graph_id"))
     if graph_id is None:
@@ -660,6 +758,12 @@ def load_recipient_entity_graph(
             analysis_as_of=analysis_as_of,
             require_evidence=False,
         )
+        _validate_graph_evidence_receipt(
+            row,
+            errors=errors,
+            graph_known_at=graph_known_at,
+            analysis_as_of=analysis_as_of,
+        )
     for row in company_rows:
         _assert_graph_row_shape(row, "company", errors)
         if _text(row.get("ticker")) is None or _TICKER.fullmatch(_text(row.get("ticker")) or "") is None:
@@ -670,6 +774,9 @@ def load_recipient_entity_graph(
             row, errors=errors, evidence=evidence_by_id,
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
+        )
+        _require_graph_claim_scope(
+            row, "public_company", evidence=evidence_by_id, errors=errors
         )
     for row in entity_rows:
         _assert_graph_row_shape(row, "legal_entity", errors)
@@ -682,10 +789,15 @@ def load_recipient_entity_graph(
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
         )
+        _require_graph_claim_scope(
+            row, "legal_entity", evidence=evidence_by_id, errors=errors
+        )
     for row in identifier_rows:
         _assert_graph_row_shape(row, "identifier", errors)
         namespace = _normal_namespace(row.get("namespace"))
-        if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not _normal_identifier(namespace or "", row.get("value")):
+        if namespace not in _GRAPH_IDENTIFIER_NAMESPACES or not _valid_graph_identifier(
+            namespace or "", row.get("value")
+        ):
             _graph_error(errors, "invalid_exact_identifier")
         if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
             _graph_error(errors, "identifier_not_reviewed")
@@ -694,22 +806,35 @@ def load_recipient_entity_graph(
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
         )
+        _require_graph_claim_scope(
+            row, "exact_identifier", evidence=evidence_by_id, errors=errors
+        )
     for row in edge_rows:
         _assert_graph_row_shape(row, "ownership_edge", errors)
         relationship = (_text(row.get("relationship")) or "").lower()
         if relationship not in _GRAPH_EDGE_RELATIONSHIPS:
             _graph_error(errors, "invalid_ownership_relationship")
+        if relationship == "issuer_legal_entity" and (
+            _text(row.get("parent_company_id")) is None
+            or _text(row.get("parent_entity_id")) is not None
+        ):
+            _graph_error(errors, "issuer_legal_entity_requires_company_terminal")
         share, share_error = _edge_share(row)
         if relationship != "wholly_owned" and (share is None or share_error):
             _graph_error(errors, "ownership_economic_share_missing")
         elif share_error:
             _graph_error(errors, "ownership_economic_share_invalid")
+        if relationship == "issuer_legal_entity" and share != 1.0:
+            _graph_error(errors, "issuer_legal_entity_share_invalid")
         if (_text(row.get("verification_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
             _graph_error(errors, "ownership_not_reviewed")
         _graph_temporal_claim(
             row, errors=errors, evidence=evidence_by_id,
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
+        )
+        _require_graph_claim_scope(
+            row, "ownership", evidence=evidence_by_id, errors=errors
         )
     for row in block_rows:
         _assert_graph_row_shape(row, "block", errors)
@@ -719,6 +844,9 @@ def load_recipient_entity_graph(
             row, errors=errors, evidence=evidence_by_id,
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
+        )
+        _require_graph_claim_scope(
+            row, "review_action", evidence=evidence_by_id, errors=errors
         )
     for row in conflict_rows:
         _assert_graph_row_shape(row, "conflict", errors)
@@ -731,6 +859,9 @@ def load_recipient_entity_graph(
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
         )
+        _require_graph_claim_scope(
+            row, "review_action", evidence=evidence_by_id, errors=errors
+        )
     for row in override_rows:
         _assert_graph_row_shape(row, "override", errors)
         if (_text(row.get("reviewer_state")) or "").lower() not in _REVIEWED_GRAPH_STATES:
@@ -739,6 +870,9 @@ def load_recipient_entity_graph(
             row, errors=errors, evidence=evidence_by_id,
             graph_known_at=graph_known_at, graph_effective_at=graph_effective_at,
             analysis_as_of=analysis_as_of,
+        )
+        _require_graph_claim_scope(
+            row, "review_action", evidence=evidence_by_id, errors=errors
         )
 
     _assert_graph_references(
@@ -800,6 +934,17 @@ def _normal_identifier(namespace: str, value: Any) -> str | None:
     # official source-recipient ID spelling because its source semantics may be
     # case-sensitive.
     return raw.upper() if namespace in {"sam_uei", "cage"} else raw
+
+
+def _valid_graph_identifier(namespace: str, value: Any) -> bool:
+    normalized = _normal_identifier(namespace, value)
+    if normalized is None:
+        return False
+    if namespace == "sam_uei":
+        return re.fullmatch(r"[A-HJ-NP-Z0-9]{12}", normalized) is not None
+    if namespace == "cage":
+        return re.fullmatch(r"[A-Z0-9]{5}", normalized) is not None
+    return len(normalized) <= 500
 
 
 def _list_of_dicts(value: Any) -> list[dict[str, Any]]:

@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from engine.bottleneck import INV_SALES, LANG_MIN_FILERS, THEME_MAP, _series, _yoy, _z
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -267,7 +268,13 @@ def compute_glut_watch(demand: dict | None = None, write_ledger: bool = True) ->
 
 def _append_ledger(payload: dict) -> None:
     """Append-only forward-grading: one row per (theme, asof) where a glut is forming —
-    graded forward against the beneficiary basket's subsequent drawdown."""
+    graded forward against the beneficiary basket's subsequent drawdown.
+
+    Lane-gated (house law: nightly is the sole advancer): engine/run.py calls
+    compute_glut_watch() with write_ledger defaulting True, and engine.run also runs
+    on the express render lanes and closing-bell with no COLLECT_LANE set."""
+    if not _ledger_advance_enabled():
+        return
     d = config.data_dir() / "glut_watch"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"

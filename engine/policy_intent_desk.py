@@ -31,6 +31,7 @@ import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 from engine import desk_ledger as _ledger_law       # run-scoped ids + immutable appends
 from engine import master_brain as _mb              # reuse the DeepSeek/Anthropic client
@@ -340,6 +341,14 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
 # append-only ledger + persist
 # --------------------------------------------------------------------------- #
 def _append_ledger(brief: dict, root) -> None:
+    # House law: nightly is the SOLE advancer of data/ forward ledgers. This module
+    # also runs on render.yml's express lane (step `policy_intent`, DEEPSEEK live,
+    # COLLECT_LANE unset) — engine-render.yml excludes it for exactly this reason.
+    # Ungated, an off-lane run minted fresh thesis ids (per-run token) into a ledger
+    # the lane never commits, so the baked page asserted accrual the committed
+    # ledger did not contain (#2598 class). Gate-first, before any arg evaluation.
+    if not _ledger_advance_enabled():
+        return
     theses = brief.get("theses") or []
     if not theses:
         return
@@ -449,7 +458,14 @@ def _read_ledger(p: Path) -> dict:
 
 def score(root=None, today=None) -> dict:
     """Resolve open leans whose check-by has passed (reusing ai_desk_scorer evaluators),
-    append scored rows, and write the rolling track record. NEVER raises."""
+    append scored rows, and write the rolling track record. NEVER raises.
+
+    Lane-gated whole: scored.jsonl is a forward ledger (nightly is the sole advancer)
+    and track_record.json is derived from it in the same pass — an off-lane render
+    scoring early would ship a track record the committed ledgers can't reproduce."""
+    if not _ledger_advance_enabled():
+        return {"schema": SCHEMA, "scored_total": 0, "open": 0,
+                "overall": {"n": 0}, "calibration_note": "off-lane: scorer not run"}
     try:
         root = Path(root) if root else config.ROOT
         today = today or date.today()

@@ -1983,3 +1983,190 @@ class TestMastermindAiLobe:
             "old mastermind_ai asof dragged the artifact as_of — it must be "
             "excluded from the freshness min()"
         )
+
+
+# ---------------------------------------------------------------------------
+# Lane 6 — the seasonality shadow lobe as annotate-only candidate context
+# ---------------------------------------------------------------------------
+
+
+def _seasonality_state(
+    ticker: str,
+    *,
+    available_at: str = "2026-07-05T00:00:00Z",
+    expires_at: str = "2026-07-07T00:00:00Z",
+    abstain: bool = False,
+) -> dict:
+    """One contract-valid shadow state, built through the real assembler."""
+    from engine.seasonality.contracts import build_neuralweb_state  # noqa: PLC0415
+
+    state = build_neuralweb_state(
+        artifact_id="data-neuralweb-biopharma-seasonality-state",
+        entity={"type": "issuer", "id": f"ticker:{ticker}", "ticker": ticker},
+        asof="2026-07-03",
+        available_at=available_at,
+        expires_at=expires_at,
+        clock={
+            "type": "calendar",
+            "phase": "pre_window",
+            "pattern_id": f"cal:{ticker}:284-344",
+            "start_doy": 284,
+            "end_doy": 344,
+            "occurrence_end_date": "2026-12-10",
+            "days_to_window_end": 158,
+            "window_source": "symbol_best",
+        },
+        forecast={
+            "target": "default_window_return_gt_0",
+            "horizon_td": 160,
+            "p": 0.72,
+            "p_baseline": 0.61,
+            "edge": 0.11,
+            "ci90": [0.55, 0.85],
+            "quantiles": {"q05": -0.04, "q50": 0.03, "q95": 0.11},
+            "baseline_basis": "same_length_all_starts_mean",
+        },
+        evidence={
+            "n_independent": 25,
+            "n_issuers": 1,
+            "n_date_clusters": 25,
+            "live_n": 0,
+            "q_by": None,
+            "p_max_t": 0.03,
+            "spa_p": None,
+        },
+        uncertainty={"abstain": abstain, "flags": ["forward_sample_thin"]},
+        provenance={
+            "model_version": "seasonality-calendar-v1",
+            "pattern_spec_hash": "sha256:" + "a" * 64,
+            "data_snapshot": "sha256:" + "b" * 64,
+        },
+    )
+    state["hooks"] = {"calendar_tailwind_vs_event_hazard": {"status": "event_clock_not_built"}}
+    return state
+
+
+def _minimal_seasonality_states(tmp_path: Path, states: dict[str, dict]) -> Path:
+    (tmp_path / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+    p = tmp_path / "data" / "neuralweb" / "biopharma_seasonality_state.json"
+    p.write_text(json.dumps({
+        "schema": "neuralweb.biopharma_seasonality_state.file.v1",
+        "as_of": "2026-07-03",
+        "universe": {"source": "site/seasonalitydata/index.json", "n_covered": len(states)},
+        "states": states,
+        "gaps": [],
+    }))
+    return p
+
+
+class TestSeasonalityShadowLobe:
+    def test_block_attaches_to_a_universe_ticker(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(tmp_path, {"FIXTURE_BUY": _seasonality_state("FIXTURE_BUY")})
+        payload = build_context(root=tmp_path, now=_NOW)
+        block = payload["candidate_context"]["FIXTURE_BUY"]["seasonality"]
+        assert block["allowed_behavior"] == "annotate_only"
+        assert block["phase"] == "pre_window"
+        assert block["p"] == 0.72 and block["p_baseline"] == 0.61
+        assert block["edge"] == 0.11
+        assert block["flags"] == ["forward_sample_thin"], "the flags ARE the honesty"
+        assert block["expires_at"] == "2026-07-07T00:00:00Z"
+        # Compact projection only — no year arrays, no cum paths, no authority echo.
+        for key in ("years", "quantiles", "authority", "provenance", "evidence"):
+            assert key not in block
+
+    def test_expired_state_is_dropped_with_a_gap_note(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(tmp_path, {
+            "FIXTURE_BUY": _seasonality_state(
+                "FIXTURE_BUY",
+                available_at="2026-07-01T00:00:00Z",
+                expires_at="2026-07-03T00:00:00Z",  # before _NOW
+            )
+        })
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+        assert any(
+            "expired state(s) skipped" in note for note in payload["gap_notes"]
+        ), payload["gap_notes"]
+
+    def test_abstaining_state_is_not_context(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(tmp_path, {
+            "FIXTURE_BUY": _seasonality_state("FIXTURE_BUY", abstain=True)
+        })
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+
+    def test_contract_violating_state_is_skipped_with_a_gap_note(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        broken = _seasonality_state("FIXTURE_BUY")
+        broken["authority"]["may_rank"] = True  # the ceiling is the point
+        _minimal_seasonality_states(tmp_path, {"FIXTURE_BUY": broken})
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "seasonality" not in payload["candidate_context"]["FIXTURE_BUY"]
+        assert any(
+            "failed the context contract" in note for note in payload["gap_notes"]
+        ), payload["gap_notes"]
+
+    def test_absent_state_file_is_a_gap_note_not_a_raise(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert any(
+            note.startswith("candidate_context.seasonality:") and "absent" in note
+            for note in payload["gap_notes"]
+        ), payload["gap_notes"]
+        assert all(
+            "seasonality" not in row for row in payload["candidate_context"].values()
+        )
+
+    def test_schema_mismatch_is_a_gap_note(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        p = _minimal_seasonality_states(tmp_path, {})
+        obj = json.loads(p.read_text())
+        obj["schema"] = "neuralweb.biopharma_seasonality_state.file.v99"
+        p.write_text(json.dumps(obj))
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert any(
+            "seasonality: state file schema mismatch" in note
+            for note in payload["gap_notes"]
+        ), payload["gap_notes"]
+
+    def test_seasonality_never_adds_a_name_to_the_candidate_universe(self, tmp_path):
+        """The constitutional line: positive seasonality cannot originate.
+
+        A symbol present ONLY in the shadow lobe — never in standouts, altdata,
+        or radar — must not appear in candidate_context at all.
+        """
+        _build_minimal_tree(tmp_path)
+        _minimal_seasonality_states(tmp_path, {
+            "FIXTURE_BUY": _seasonality_state("FIXTURE_BUY"),
+            "NOT_ON_THE_BOARD": _seasonality_state("NOT_ON_THE_BOARD"),
+        })
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert "FIXTURE_BUY" in payload["candidate_context"]
+        assert "NOT_ON_THE_BOARD" not in payload["candidate_context"], (
+            "the seasonality map contributed a ticker to the candidate universe"
+        )
+
+    def test_source_artifacts_lists_the_shadow_lobe(self, tmp_path):
+        _build_minimal_tree(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        assert (
+            "data/neuralweb/biopharma_seasonality_state.json"
+            in payload["source_artifacts"]
+        )
+
+    def test_malformed_states_map_does_not_take_the_bridge_down(self, tmp_path):
+        """_build_candidate_context is not try/except-wrapped by build_context."""
+        _build_minimal_tree(tmp_path)
+        p = _minimal_seasonality_states(tmp_path, {})
+        obj = json.loads(p.read_text())
+        obj["states"] = ["not", "a", "map"]
+        p.write_text(json.dumps(obj))
+        payload = build_context(root=tmp_path, now=_NOW)  # must not raise
+        assert payload["schema"] == SCHEMA
+        assert any(
+            "seasonality: state file carries no states map" in note
+            for note in payload["gap_notes"]
+        ), payload["gap_notes"]

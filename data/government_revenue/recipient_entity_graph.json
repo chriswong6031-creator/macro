@@ -1,14 +1,162 @@
 {
   "contract": "government_recipient_entity_graph.v1",
-  "schema_version": "1.0.0",
-  "graph_id": "recipient-graph:reviewed-empty:2026-08-02",
-  "graph_known_at": "2026-08-02T00:00:00+00:00",
-  "graph_effective_at": "2026-08-02T00:00:00+00:00",
-  "evidence": [],
-  "companies": [],
-  "legal_entities": [],
-  "identifiers": [],
-  "ownership_edges": [],
+  "schema_version": "1.1.0",
+  "graph_id": "recipient-graph:reviewed:2026-08-03:pltr-v1",
+  "graph_known_at": "2026-08-03T13:19:22+00:00",
+  "graph_effective_at": "2026-08-03T13:19:22+00:00",
+  "evidence": [
+    {
+      "evidence_id": "evidence:pltr-sec-2025-10k",
+      "source_ref": "recipient-evidence:sha256:a4fef9542c4d1a99a9265df88948e5a115223940db01a0bd01f1d8b6c00acd46",
+      "publisher": "SEC",
+      "evidence_class": "official_filing",
+      "record_id": "sec:1321655:000132165526000011:pltr-20251231.htm",
+      "url": "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000011/pltr-20251231.htm",
+      "content_sha256": "a4fef9542c4d1a99a9265df88948e5a115223940db01a0bd01f1d8b6c00acd46",
+      "byte_length": 2192014,
+      "retrieved_at": "2026-08-03T13:19:22+00:00",
+      "claim_scopes": ["public_company", "legal_entity", "ownership"],
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null
+    },
+    {
+      "evidence_id": "evidence:pltr-sec-2025-ex21",
+      "source_ref": "recipient-evidence:sha256:a139ad357b80c8de1e9f092332da698ed966213722b83ec202e3ceeeeb693cc1",
+      "publisher": "SEC",
+      "evidence_class": "official_filing",
+      "record_id": "sec:1321655:000132165526000011:a2025fyexhibit211.htm",
+      "url": "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000011/a2025fyexhibit211.htm",
+      "content_sha256": "a139ad357b80c8de1e9f092332da698ed966213722b83ec202e3ceeeeb693cc1",
+      "byte_length": 27169,
+      "retrieved_at": "2026-08-03T13:19:22+00:00",
+      "claim_scopes": ["legal_entity", "ownership"],
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null
+    },
+    {
+      "evidence_id": "evidence:pltr-issuer-2024-titan",
+      "source_ref": "recipient-evidence:sha256:010e5931863c7e44254f1cbce8f9186464021bbd2986376d33cd16ce0d4b3d40",
+      "publisher": "Palantir Technologies",
+      "evidence_class": "issuer_disclosure",
+      "record_id": "issuer-release:pltr:2024-03-06:titan",
+      "url": "https://palantir2020ipo.q4web.com/news-details/2024/Army-Selects-Palantir-to-Deliver-TITAN-Next-Generation-Deep-Sensing-Capability-in-Prototype-Maturation-Phase/default.aspx",
+      "content_sha256": "010e5931863c7e44254f1cbce8f9186464021bbd2986376d33cd16ce0d4b3d40",
+      "byte_length": 57154,
+      "retrieved_at": "2026-08-03T13:19:22+00:00",
+      "claim_scopes": ["ownership"],
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2024-03-06T00:00:00+00:00",
+      "valid_to": null
+    },
+    {
+      "evidence_id": "evidence:pltr-usaspending-w9128z26fa001",
+      "source_ref": "recipient-evidence:sha256:6af09d1104faf7e5e656f0236d1a03bef15df4375d867386f10944d5f3a0cb91",
+      "publisher": "USAspending.gov",
+      "evidence_class": "official_award",
+      "record_id": "CONT_AWD_W9128Z26FA001_9700_W519TC25D0039_9700",
+      "url": "https://api.usaspending.gov/api/v2/awards/CONT_AWD_W9128Z26FA001_9700_W519TC25D0039_9700/",
+      "content_sha256": "6af09d1104faf7e5e656f0236d1a03bef15df4375d867386f10944d5f3a0cb91",
+      "byte_length": 6603,
+      "retrieved_at": "2026-08-03T13:19:22+00:00",
+      "claim_scopes": ["legal_entity", "exact_identifier", "ownership"],
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-10-15T00:00:00+00:00",
+      "valid_to": null
+    }
+  ],
+  "companies": [
+    {
+      "company_id": "central:PLTR",
+      "ticker": "PLTR",
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": ["evidence:pltr-sec-2025-10k"]
+    }
+  ],
+  "legal_entities": [
+    {
+      "entity_id": "legal:pltr-technologies-inc",
+      "canonical_name": "Palantir Technologies Inc.",
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": [
+        "evidence:pltr-sec-2025-10k",
+        "evidence:pltr-usaspending-w9128z26fa001"
+      ]
+    },
+    {
+      "entity_id": "legal:pltr-usg-inc",
+      "canonical_name": "Palantir USG, Inc.",
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": [
+        "evidence:pltr-sec-2025-ex21",
+        "evidence:pltr-usaspending-w9128z26fa001"
+      ]
+    }
+  ],
+  "identifiers": [
+    {
+      "identifier_id": "identifier:pltr-technologies-uei-fsy4lvsbgwb7",
+      "entity_id": "legal:pltr-technologies-inc",
+      "namespace": "sam_uei",
+      "value": "FSY4LVSBGWB7",
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": ["evidence:pltr-usaspending-w9128z26fa001"]
+    },
+    {
+      "identifier_id": "identifier:pltr-usg-uei-hnn4f9jzwdy8",
+      "entity_id": "legal:pltr-usg-inc",
+      "namespace": "sam_uei",
+      "value": "HNN4F9JZWDY8",
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": ["evidence:pltr-usaspending-w9128z26fa001"]
+    }
+  ],
+  "ownership_edges": [
+    {
+      "edge_id": "issuer-identity:pltr-technologies-to-pltr",
+      "child_entity_id": "legal:pltr-technologies-inc",
+      "parent_company_id": "central:PLTR",
+      "relationship": "issuer_legal_entity",
+      "economic_share": 1.0,
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": ["evidence:pltr-sec-2025-10k"]
+    },
+    {
+      "edge_id": "ownership:pltr-usg-to-pltr-technologies",
+      "child_entity_id": "legal:pltr-usg-inc",
+      "parent_entity_id": "legal:pltr-technologies-inc",
+      "relationship": "wholly_owned",
+      "economic_share": 1.0,
+      "verification_state": "reviewed",
+      "known_at": "2026-08-03T13:19:22+00:00",
+      "valid_from": "2025-12-31T00:00:00+00:00",
+      "valid_to": null,
+      "evidence_refs": [
+        "evidence:pltr-sec-2025-ex21",
+        "evidence:pltr-issuer-2024-titan",
+        "evidence:pltr-usaspending-w9128z26fa001"
+      ]
+    }
+  ],
   "blocks": [],
   "conflicts": [],
   "overrides": []

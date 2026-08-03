@@ -90,7 +90,7 @@ def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path
     if recipient_activation:
         graph = {
             "contract": "government_recipient_entity_graph.v1",
-            "schema_version": "1.0.0",
+            "schema_version": "1.1.0",
             "graph_id": "recipient-graph:projection-empty",
             "graph_known_at": "2026-08-02T00:00:00Z",
             "graph_effective_at": "2026-08-02T00:00:00Z",

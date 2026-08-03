@@ -446,9 +446,26 @@ def test_writer_graceful_absent_tape_flow_store(tmp_path, monkeypatch):
     for col in STAMP_COLS:
         assert col in out.columns
 
-    # All stamp cols null (no coverage from either store)
+    # Every store-derived stamp col is null (no coverage from either store).
+    #
+    # opt_root_class is the ONE deliberate exception (W-OVC, 2026-08-02): it is ticker
+    # taxonomy from engine.options_entry_state._root_class, not options coverage, so it
+    # is non-null for every ticker on every date — the same "needs no data store" class
+    # as opt_opex_days, and excluded from STAMP_COVERAGE_COLS for exactly that reason.
+    #
+    # The exception is named LITERALLY here rather than imported from STAMP_COVERAGE_COLS
+    # on purpose: mirroring the production constant would let any future exclusion added
+    # there silently drop out of this assertion. A new store-independent column must fail
+    # this test until someone justifies it in this comment.
+    _STORE_INDEPENDENT = {"opt_root_class"}
     for col in ALL_STAMP_COLS:
+        if col in _STORE_INDEPENDENT:
+            continue
         assert out[col].isna().all(), f"{col} should be null for absent stores"
 
-    # No rows counted as stamped (all-null → not applied)
+    # ...and the exception carries its real taxonomy value, not a placeholder.
+    assert out["opt_root_class"].tolist() == ["single_name", "single_name"]
+
+    # No rows counted as stamped — the retry gate reads STAMP_COVERAGE_COLS, so a row
+    # carrying only store-independent columns stays fully retryable when coverage lands.
     assert n_newly == 0
