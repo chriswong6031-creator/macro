@@ -1,13 +1,13 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-02",
-  "generated_at": "2026-08-02T09:59:25.402113+00:00",
+  "as_of": "2026-08-03",
+  "generated_at": "2026-08-03T11:18:33.296195+00:00",
   "is_context_only": true,
-  "n_snapshots": 2302,
+  "n_snapshots": 2392,
   "horizons": {
     "5": {
-      "n_matured": 227,
-      "opportunity_ic_pooled": 0.1659,
+      "n_matured": 258,
+      "opportunity_ic_pooled": 0.1807,
       "opportunity_ic_daily": {
         "mean_ic": -0.0056,
         "ic_vol": 0.4361,
@@ -20,7 +20,7 @@
         "hac_lags": 5
       },
       "opportunity_ic": -0.0056,
-      "edge_ic_pooled": 0.1494,
+      "edge_ic_pooled": 0.166,
       "by_stage": {
         "consensus": {
           "n": 5,
@@ -28,14 +28,14 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 84,
-          "mean_fwd_rel": -0.0039,
-          "hit_rate": 0.512
+          "n": 94,
+          "mean_fwd_rel": -0.0028,
+          "hit_rate": 0.5
         },
         "exhausted": {
-          "n": 20,
-          "mean_fwd_rel": -0.031,
-          "hit_rate": 0.65
+          "n": 24,
+          "mean_fwd_rel": -0.0202,
+          "hit_rate": 0.583
         },
         "faltering": {
           "n": 19,
@@ -43,13 +43,13 @@
           "hit_rate": null
         },
         "early": {
-          "n": 92,
-          "mean_fwd_rel": 0.013,
-          "hit_rate": 0.62
+          "n": 104,
+          "mean_fwd_rel": 0.015,
+          "hit_rate": 0.654
         },
         "quiet": {
-          "n": 7,
-          "mean_fwd_rel": 0.0315,
+          "n": 12,
+          "mean_fwd_rel": 0.0254,
           "hit_rate": null
         }
       },
@@ -57,50 +57,50 @@
       "by_regime": {}
     },
     "10": {
-      "n_matured": 172,
-      "opportunity_ic_pooled": 0.4759,
+      "n_matured": 205,
+      "opportunity_ic_pooled": 0.4828,
       "opportunity_ic_daily": {
-        "mean_ic": 0.4575,
-        "ic_vol": 0.3009,
-        "ic_ir": 1.521,
-        "ic_ir_ann": 6.801,
-        "t_hac": 11.809,
+        "mean_ic": 0.4024,
+        "ic_vol": 0.3484,
+        "ic_ir": 1.155,
+        "ic_ir_ann": 5.166,
+        "t_hac": 6.894,
         "p_hac": 0.0,
-        "hit": 0.9,
-        "n": 10,
+        "hit": 0.833,
+        "n": 12,
         "hac_lags": 10
       },
-      "opportunity_ic": 0.4575,
-      "edge_ic_pooled": 0.4077,
+      "opportunity_ic": 0.4024,
+      "edge_ic_pooled": 0.4072,
       "by_stage": {
         "consensus": {
-          "n": 4,
-          "mean_fwd_rel": -0.1098,
+          "n": 5,
+          "mean_fwd_rel": -0.0791,
           "hit_rate": null
         },
         "distribution": {
-          "n": 61,
-          "mean_fwd_rel": -0.0217,
-          "hit_rate": 0.59
+          "n": 70,
+          "mean_fwd_rel": -0.0195,
+          "hit_rate": 0.571
         },
         "exhausted": {
-          "n": 12,
-          "mean_fwd_rel": -0.1122,
-          "hit_rate": 1.0
+          "n": 18,
+          "mean_fwd_rel": -0.0972,
+          "hit_rate": 0.944
         },
         "faltering": {
-          "n": 14,
-          "mean_fwd_rel": 0.0459,
+          "n": 17,
+          "mean_fwd_rel": 0.0287,
           "hit_rate": null
         },
         "early": {
-          "n": 80,
-          "mean_fwd_rel": 0.0235,
-          "hit_rate": 0.75
+          "n": 90,
+          "mean_fwd_rel": 0.0256,
+          "hit_rate": 0.778
         },
         "quiet": {
-          "n": 1,
-          "mean_fwd_rel": 0.0411,
+          "n": 5,
+          "mean_fwd_rel": 0.0389,
           "hit_rate": null
         }
       },
@@ -108,13 +108,13 @@
       "by_regime": {}
     },
     "21": {
-      "n_matured": 35,
-      "opportunity_ic_pooled": 0.4629,
+      "n_matured": 77,
+      "opportunity_ic_pooled": 0.6099,
       "opportunity_ic_daily": {
-        "n_days": 2
+        "n_days": 4
       },
       "opportunity_ic": null,
-      "edge_ic_pooled": 0.6289,
+      "edge_ic_pooled": 0.673,
       "by_stage": {
         "consensus": {
           "n": 3,
@@ -122,9 +122,9 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 9,
-          "mean_fwd_rel": -0.1527,
-          "hit_rate": 0.889
+          "n": 18,
+          "mean_fwd_rel": -0.1739,
+          "hit_rate": 0.944
         },
         "exhausted": {
           "n": 2,
@@ -132,14 +132,14 @@
           "hit_rate": 1.0
         },
         "faltering": {
-          "n": 5,
-          "mean_fwd_rel": 0.0985,
+          "n": 7,
+          "mean_fwd_rel": 0.1017,
           "hit_rate": null
         },
         "early": {
-          "n": 16,
-          "mean_fwd_rel": 0.071,
-          "hit_rate": 0.812
+          "n": 47,
+          "mean_fwd_rel": 0.0717,
+          "hit_rate": 0.83
         }
       },
       "by_source": {},
@@ -159,7 +159,7 @@
     }
   },
   "lead_time_d": 10,
-  "peak_opportunity_ic": 0.4575,
+  "peak_opportunity_ic": 0.4024,
   "proven": {
     "5": false,
     "10": true,
@@ -169,5 +169,5 @@
   "any_matured": true,
   "note": "Opportunity IC peaks at the 10d horizon (measured). Context-only.",
   "benchmark": "CSI300",
-  "disclaimer": "A falsifiable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized CSI300-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
+  "disclaimer": "An accountable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized CSI300-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
 }
