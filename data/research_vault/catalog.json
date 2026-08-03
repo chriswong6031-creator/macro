@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T08:20:04.233882+00:00",
-  "count": 651,
+  "generated_at": "2026-08-03T08:35:08.874638+00:00",
+  "count": 652,
   "institutions": [
     "Alger",
     "Amova",
@@ -886,6 +886,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3ty04t9tqv8-c282e6",
+      "title": "ING Think polands inflation up in july amid end of fuel price support",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:00:01Z",
+      "summary_points": [
+        "**Fuel-Driven Inflation Surge**: CPI rose to 3.0% YoY (July) due to 13.9% MoM fuel price spike post-support end, with 23% VAT reinstatement adding 0.5-0.6 ppts; food prices fell (-0.8% MoM), contrasting eurozone.",
+        "**NBP Rate Hold Confirmed**: No rate hikes expected in 2024 despite inflation above target; policy shift to higher fuel VAT and scrapped price caps signals contained price pressure, not broad-based inflation.",
+        "**Core Inflation Misleading**: Core inflation (ex-food/energy) at 3.1% YoY driven by geopolitical oil shocks, not general pressure; inflation ex-fuel remains low at 2.2% YoY due to falling food prices.",
+        "**Geopolitical Fuel Shock Risk**: Key risk is prolonged Middle East conflict causing persistent fuel price shocks, potentially disrupting the current inflation trajectory despite limited spillover."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
