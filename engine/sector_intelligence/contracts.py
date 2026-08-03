@@ -1236,24 +1236,11 @@ def _biocatalyst_launch_slo_manifest_issues(
             stage_successes = result.get("stage_successes")
             stage_counts_valid = isinstance(stage_successes, Mapping)
             if isinstance(stage_successes, Mapping):
+                prior_stage_count: int | None = None
                 for stage in stage_names:
                     count = stage_successes.get(stage)
                     valid_count = isinstance(count, int) and not isinstance(count, bool)
                     stage_counts_valid = stage_counts_valid and valid_count
-                    if (
-                        valid_count
-                        and isinstance(successful, int)
-                        and not isinstance(successful, bool)
-                        and count != successful
-                    ):
-                        stage_counts_valid = False
-                        issues.append(
-                            ValidationIssue(
-                                f"$.soak.source_results[{index}].stage_successes.{stage}",
-                                "launch_slo.stage_reconciliation",
-                                "every required stage success count must reconcile to the end-to-end successful opportunities",
-                            )
-                        )
                     if (
                         valid_count
                         and isinstance(denominator, int)
@@ -1268,6 +1255,37 @@ def _biocatalyst_launch_slo_manifest_issues(
                                 "a stage success count cannot exceed the opportunity denominator",
                             )
                         )
+                    if (
+                        valid_count
+                        and prior_stage_count is not None
+                        and count > prior_stage_count
+                    ):
+                        stage_counts_valid = False
+                        issues.append(
+                            ValidationIssue(
+                                f"$.soak.source_results[{index}].stage_successes.{stage}",
+                                "launch_slo.stage_reconciliation",
+                                "stage success counts must be non-increasing in pipeline order",
+                            )
+                        )
+                    if valid_count:
+                        prior_stage_count = count
+                terminal_count = stage_successes.get("watermark_or_pointer")
+                if (
+                    isinstance(terminal_count, int)
+                    and not isinstance(terminal_count, bool)
+                    and isinstance(successful, int)
+                    and not isinstance(successful, bool)
+                    and terminal_count != successful
+                ):
+                    stage_counts_valid = False
+                    issues.append(
+                        ValidationIssue(
+                            f"$.soak.source_results[{index}].stage_successes.watermark_or_pointer",
+                            "launch_slo.stage_reconciliation",
+                            "the terminal watermark-or-pointer count must equal end-to-end successful opportunities",
+                        )
+                    )
 
             max_misses_observed = result.get("maximum_consecutive_misses_observed")
             miss_run_valid = bool(

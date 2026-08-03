@@ -3098,6 +3098,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_sector_intelligence_contracts.py
+          tests/test_launch_slo_evidence_verifier.py
           tests/test_sector_intelligence_ownership.py -q
 
   biocatalyst-deploy-integration:

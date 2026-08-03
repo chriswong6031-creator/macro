@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_launch_slo_evidence_artifact.v1.schema.json",
+  "title": "BioCatalyst offline launch-SLO evidence artifact v1",
+  "description": "Typed, immutable JSON evidence consumed only by the BC-O2 offline verifier. This schema is an evidence shape, not source activation, a beta decision, or a public projection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "kind",
+    "generation_id",
+    "scheduled_manifest_id",
+    "scheduled_manifest_content_sha256",
+    "source_id",
+    "window_start",
+    "window_end",
+    "captured_at"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_launch_slo_evidence_artifact.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "kind": {
+      "enum": [
+        "telemetry_generation",
+        "raw_telemetry",
+        "correction_replay",
+        "rollback_restore",
+        "ci_validation"
+      ]
+    },
+    "generation_id": {"type": "string", "pattern": "^biocatalyst_soak_generation_[a-f0-9]{24}$"},
+    "scheduled_manifest_id": {"type": "string", "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"},
+    "scheduled_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+    "source_id": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"}
+      ]
+    },
+    "window_start": {"$ref": "#/$defs/utcTimestamp"},
+    "window_end": {"$ref": "#/$defs/utcTimestamp"},
+    "captured_at": {"$ref": "#/$defs/utcTimestamp"},
+    "raw_telemetry_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceDigestRef"}
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/opportunityObservation"}
+    },
+    "drill_id": {"type": "string", "pattern": "^biocatalyst_(?:correction_replay|rollback_restore)_[a-f0-9]{24}$"},
+    "procedure_version": {"type": "string", "pattern": "^biocatalyst_(?:correction_replay|rollback_restore)_procedure\\.v[1-9][0-9]*$"},
+    "started_at": {"$ref": "#/$defs/utcTimestamp"},
+    "completed_at": {"$ref": "#/$defs/utcTimestamp"},
+    "input_evidence": {"$ref": "#/$defs/evidenceDigestRef"},
+    "target_evidence": {"$ref": "#/$defs/evidenceDigestRef"},
+    "expected_result_sha256": {"$ref": "#/$defs/sha256"},
+    "observed_result_sha256": {"$ref": "#/$defs/sha256"},
+    "verification_checks": {"$ref": "#/$defs/recoveryChecks"},
+    "result": {"enum": ["passed", "failed"]},
+    "run_id": {"type": "string", "pattern": "^biocatalyst_launch_slo_verify_[a-f0-9]{24}$"},
+    "commit_oid": {"type": "string", "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$"},
+    "hash_algorithm": {"enum": ["git-sha1", "git-sha256"]},
+    "workflow_id": {"const": "biocatalyst_launch_slo_offline_verifier.v1"},
+    "check_outcomes": {"$ref": "#/$defs/ciCheckOutcomes"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "telemetry_generation"}}, "required": ["kind"]},
+      "then": {
+        "properties": {
+          "source_id": {"type": "null"},
+          "observations": false,
+          "drill_id": false,
+          "procedure_version": false,
+          "started_at": false,
+          "completed_at": false,
+          "input_evidence": false,
+          "target_evidence": false,
+          "expected_result_sha256": false,
+          "observed_result_sha256": false,
+          "verification_checks": false,
+          "result": false,
+          "run_id": false,
+          "commit_oid": false,
+          "hash_algorithm": false,
+          "workflow_id": false,
+          "check_outcomes": false
+        },
+        "required": ["raw_telemetry_refs"]
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"const": "raw_telemetry"}}, "required": ["kind"]},
+      "then": {
+        "properties": {
+          "source_id": {"type": "string"},
+          "raw_telemetry_refs": false,
+          "drill_id": false,
+          "procedure_version": false,
+          "started_at": false,
+          "completed_at": false,
+          "input_evidence": false,
+          "target_evidence": false,
+          "expected_result_sha256": false,
+          "observed_result_sha256": false,
+          "verification_checks": false,
+          "result": false,
+          "run_id": false,
+          "commit_oid": false,
+          "hash_algorithm": false,
+          "workflow_id": false,
+          "check_outcomes": false
+        },
+        "required": ["observations"]
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"enum": ["correction_replay", "rollback_restore"]}}, "required": ["kind"]},
+      "then": {
+        "properties": {
+          "source_id": {"type": "string"},
+          "raw_telemetry_refs": false,
+          "observations": false,
+          "run_id": false,
+          "commit_oid": false,
+          "hash_algorithm": false,
+          "workflow_id": false,
+          "check_outcomes": false
+        },
+        "required": [
+          "drill_id",
+          "procedure_version",
+          "started_at",
+          "completed_at",
+          "input_evidence",
+          "target_evidence",
+          "expected_result_sha256",
+          "observed_result_sha256",
+          "verification_checks",
+          "result"
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"const": "correction_replay"}}, "required": ["kind"]},
+      "then": {"properties": {"drill_id": {"pattern": "^biocatalyst_correction_replay_[a-f0-9]{24}$"}}}
+    },
+    {
+      "if": {"properties": {"kind": {"const": "rollback_restore"}}, "required": ["kind"]},
+      "then": {"properties": {"drill_id": {"pattern": "^biocatalyst_rollback_restore_[a-f0-9]{24}$"}}}
+    },
+    {
+      "if": {"properties": {"kind": {"const": "ci_validation"}}, "required": ["kind"]},
+      "then": {
+        "properties": {
+          "source_id": {"type": "null"},
+          "raw_telemetry_refs": false,
+          "observations": false,
+          "drill_id": false,
+          "procedure_version": false,
+          "input_evidence": false,
+          "target_evidence": false,
+          "expected_result_sha256": false,
+          "observed_result_sha256": false,
+          "verification_checks": false
+        },
+        "required": [
+          "result",
+          "run_id",
+          "commit_oid",
+          "hash_algorithm",
+          "workflow_id",
+          "started_at",
+          "completed_at",
+          "check_outcomes"
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"hash_algorithm": {"const": "git-sha1"}}, "required": ["hash_algorithm"]},
+      "then": {"properties": {"commit_oid": {"pattern": "^[a-f0-9]{40}$"}}}
+    },
+    {
+      "if": {"properties": {"hash_algorithm": {"const": "git-sha256"}}, "required": ["hash_algorithm"]},
+      "then": {"properties": {"commit_oid": {"pattern": "^[a-f0-9]{64}$"}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "sourceDigestRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "content_sha256"],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "evidenceDigestRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_ref", "content_sha256"],
+      "properties": {
+        "object_ref": {"type": "string", "pattern": "^r2://biocatalyst-soak/[A-Za-z0-9_./-]{1,480}$"},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "recoveryChecks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_bound", "target_bound", "operation_applied", "readback_verified"],
+      "properties": {
+        "input_bound": {"type": "boolean"},
+        "target_bound": {"type": "boolean"},
+        "operation_applied": {"type": "boolean"},
+        "readback_verified": {"type": "boolean"}
+      }
+    },
+    "ciCheckOutcomes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_validation", "evidence_integrity", "source_recomputation"],
+      "properties": {
+        "contract_validation": {"type": "boolean"},
+        "evidence_integrity": {"type": "boolean"},
+        "source_recomputation": {"type": "boolean"}
+      }
+    },
+    "stageResults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fetch",
+        "parse",
+        "contract_validation",
+        "completeness_reconciliation",
+        "publication",
+        "watermark_or_pointer"
+      ],
+      "properties": {
+        "fetch": {"type": "boolean"},
+        "parse": {"type": "boolean"},
+        "contract_validation": {"type": "boolean"},
+        "completeness_reconciliation": {"type": "boolean"},
+        "publication": {"type": "boolean"},
+        "watermark_or_pointer": {"type": "boolean"}
+      }
+    },
+    "opportunityObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opportunity_at",
+        "attempted_at",
+        "completed_at",
+        "outcome",
+        "stage_results",
+        "freshness_seconds",
+        "completeness_ratio",
+        "prior_scope_ratio",
+        "upstream_unavailable",
+        "critical_failure_types"
+      ],
+      "properties": {
+        "opportunity_at": {"$ref": "#/$defs/utcTimestamp"},
+        "attempted_at": {"$ref": "#/$defs/utcTimestamp"},
+        "completed_at": {"$ref": "#/$defs/utcTimestamp"},
+        "outcome": {"enum": ["success", "miss"]},
+        "stage_results": {"$ref": "#/$defs/stageResults"},
+        "freshness_seconds": {"type": ["number", "null"], "minimum": 0, "maximum": 31536000},
+        "completeness_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "prior_scope_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "upstream_unavailable": {"type": "boolean"},
+        "critical_failure_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["integrity_failure", "rights_failure", "privacy_failure", "cross_tenant_failure"]}
+        }
+      }
+    }
+  }
+}

@@ -1868,6 +1868,31 @@ def test_launch_slo_rejects_manufactured_denominators_and_stage_passes(
         validate_contract(payload, repo_root=ROOT)
 
 
+def test_launch_slo_stage_counts_allow_true_prefix_losses_but_never_late_revival() -> None:
+    payload = _completed_launch_slo_manifest()
+    result = payload["soak"]["source_results"][0]
+    result["stage_successes"] = {
+        "fetch": 336,
+        "parse": 335,
+        "contract_validation": 335,
+        "completeness_reconciliation": 335,
+        "publication": 335,
+        "watermark_or_pointer": 335,
+    }
+    payload = _rebind_launch_slo_manifest(payload)
+    assert {
+        issue.code
+        for issue in ContractRegistry(ROOT).issues(payload["contract_id"], payload)
+    } == {"launch_slo.trusted_evidence_verifier_unavailable"}
+
+    payload["soak"]["source_results"][0]["stage_successes"][
+        "contract_validation"
+    ] = 336
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.stage_reconciliation"):
+        validate_contract(payload, repo_root=ROOT)
+
+
 def test_launch_slo_rejects_non_content_addressed_evidence() -> None:
     payload = _completed_launch_slo_manifest()
     payload["soak"]["raw_telemetry_refs"] = ["fake:raw"]

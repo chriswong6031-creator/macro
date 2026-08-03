@@ -585,6 +585,7 @@ on:
       # start the pack that executes it.
       - "engine/biocatalyst/**"
       - "engine/sector_intelligence/contracts.py"
+      - "engine/sector_intelligence/launch_slo_verifier.py"
       - "collectors/biocatalyst/**"
       - "app/biocatalyst.py"
       - "app/main.py"
@@ -612,11 +613,13 @@ on:
       - "app/deploy/biocatalyst-requirements.txt"
       - "app/deploy/update.sh"
       - "docs/biocatalyst_operations_runbook.md"
+      - "docs/BIOCATALYST_LAUNCH_SLO_OFFLINE_VERIFIER.md"
       - "tests/test_biocatalyst_*.py"
       - "tests/test_clinicaltrials_biocatalyst.py"
       - "tests/test_clinicaltrials_history.py"
       - "tests/test_sector_intelligence_contracts.py"
       - "tests/test_sector_intelligence_ownership.py"
+      - "tests/test_launch_slo_evidence_verifier.py"
       - "tests/test_deploy_update_self_heal.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
