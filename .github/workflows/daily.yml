@@ -2062,6 +2062,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort: the OAuth pool can be fully rate-limited at
+          # nightly time (all six keys 429'd 2026-08-03) and ANTHROPIC_API_KEY
+          # is not a configured repo secret — without DeepSeek this lane has no
+          # working rung and the ledger never accrues.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.narrative_brain > "$RUNNER_TEMP/nbrain.log" 2>&1; rc=$?
@@ -2086,6 +2091,8 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.risk_brain > "$RUNNER_TEMP/rbrain.log" 2>&1; rc=$?
@@ -2317,6 +2324,10 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          # Without it this gated re-run OVERWRITES a DeepSeek-served brain.json
+          # from the build_alt_data step with a degraded one (2026-08-03).
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.altdata_brain > "$RUNNER_TEMP/altbrain.log" 2>&1; rc=$?
