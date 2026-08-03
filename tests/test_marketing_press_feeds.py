@@ -604,6 +604,16 @@ class TestConfigAndGitignore:
             if s["key"] == "bls_news"
         )
         assert bls["url"] == "https://www.bls.gov/feed/bls_latest.rss"
+        # Operator order 2026-08-03: the billed X lane ships OFF, and the free
+        # publisher-RSS replacements ship IN. Both halves pinned together — a
+        # future edit that re-arms the spend or drops the free coverage must
+        # touch this test and say why.
+        assert cfg["x_follow"]["enabled"] is False
+        free_keys = {s["key"]: s for s in marketing_cfg["breaking"]["sources"]}
+        for key in ("zerohedge_feed", "forexlive_news", "investing_news",
+                    "coindesk_rss", "cointelegraph_rss"):
+            assert key in free_keys, f"free wire replacement {key} missing"
+            assert free_keys[key]["tier"] == "wire"
         # x_follow register: the exact v1 handle set + tiers.
         handles = {h["handle"]: h["tier"] for h in cfg["x_follow"]["handles"]}
         for h in ("DeItaone", "FirstSquawk", "financialjuice", "zerohedge", "WHPressPool"):
@@ -621,14 +631,34 @@ class TestConfigAndGitignore:
         names = {type(p).__name__ for p in provs}
         assert "TrumpstruthProvider" in names
         assert "CnnTruthBackfillProvider" in names
-        assert "TwitterApiIoProvider" in names
         assert "AlpacaNewsProvider" in names
+        # Operator order 2026-08-03: the billed twitterapi.io lane is OFF in the
+        # shipped register (x_follow.enabled: false) — $56.66 billed in the first
+        # two days of August for pages the endpoint re-bills on every poll. The
+        # free lanes above are the wire now; re-arming is a deliberate config
+        # edit, and this assertion is what makes it deliberate.
+        assert "TwitterApiIoProvider" not in names
 
     def test_build_providers_omits_alpaca_when_disabled(self):
         """`enabled: false` must not even construct the lane."""
         provs = build_providers({"alpaca": {"enabled": False,
                                             "key_env": "ALPACA_API_KEY_ID"}})
         assert [type(p).__name__ for p in provs] == []
+
+    def test_build_providers_x_follow_enabled_flag(self):
+        """The x_relay lane is billed, so CONSTRUCTION is the arming decision:
+        `enabled: false` must not construct it even with handles present, and an
+        ABSENT flag stays true (back-compat — every synthetic cfg in this suite
+        predates the key)."""
+        armed = {"x_follow": {"handles": [{"handle": "DeItaone", "tier": "fast"}]}}
+        assert "TwitterApiIoProvider" in {
+            type(p).__name__ for p in build_providers(armed)
+        }
+        disarmed = {"x_follow": {"enabled": False,
+                                 "handles": [{"handle": "DeItaone", "tier": "fast"}]}}
+        assert "TwitterApiIoProvider" not in {
+            type(p).__name__ for p in build_providers(disarmed)
+        }
 
     def test_press_dir_in_gitignore(self):
         content = (ROOT / ".gitignore").read_text(encoding="utf-8")
