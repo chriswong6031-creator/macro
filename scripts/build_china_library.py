@@ -824,6 +824,96 @@ _CN_HORIZON = 10
 # tests/test_track_ledger_emitters.py and by the nightly's log line.
 _CN_LAST_LEDGER: dict = {"doc": None}
 
+# --------------------------------------------------------------------------- #
+# Board-definition ERAS (Prophet Learning Loop §3 / G5)
+# --------------------------------------------------------------------------- #
+# The CN board's definition changed on 2026-07-30 and the ledger filtered to the new
+# `cn_prophet_v2` stamp, so a record built over ~1,082 graded rows collapsed to the 15
+# rows carrying the new stamp and the desk's visible history went to zero overnight.
+#
+# The fix is NOT to drop the filter. Pooling a pre-change and a post-change board into
+# one number is the era-pooling trap: the two samples were selected by different rules,
+# so their union measures neither (memory `us-board-definition-change-2026-06-25`). The
+# fix is to grade BOTH eras with the SAME scorer, the SAME three rules and the SAME exit
+# rule, and publish them as two clearly labelled records that are never added together.
+#
+# The prior era is closed: no future row can carry a null stamp, so its numbers are
+# frozen and only ever need re-grading if the price history is revised.
+_CN_PRIOR_ERA_ID = "cn_standout_v1"
+
+#: Stamp values that mean "written before the definition was versioned".
+_CN_LEGACY_STAMPS = frozenset({"", "nan", "none", "null", "legacy", "<na>"})
+
+#: Newest-first cap on the prior era's row list. Read from engine.track_ledger at use
+#: time so the two records can never end up with different caps.
+
+
+def _cn_is_legacy_stamp(value) -> bool:
+    """True when a board_definition cell predates versioning (null / '' / 'legacy')."""
+    if value is None:
+        return True
+    try:
+        if pd.isna(value):
+            return True
+    except (TypeError, ValueError):
+        pass
+    return str(value).strip().lower() in _CN_LEGACY_STAMPS
+
+
+def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]:
+    """Bilingual era label from the era's own date span.
+
+    Derived rather than hard-coded so the label cannot drift away from the rows it
+    describes if the store is ever backfilled.
+    """
+    def _parts(d):
+        try:
+            ts = pd.Timestamp(d)
+        except (TypeError, ValueError):
+            return None
+        # pd.Timestamp(None) yields NaT rather than raising, and NaT.strftime raises.
+        return None if pd.isna(ts) else ts
+    a, b = _parts(date_from), _parts(date_to)
+    if a is None or b is None:
+        return ("previous board definition", "上一版选股口径")
+    # Month names are built from a fixed table rather than strftime: `%-d` is a
+    # platform-specific extension, and a locale-sensitive `%b` would make the emitted
+    # artifact depend on the runner's environment.
+    mon = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    en = (f"previous board definition · {mon[a.month - 1]} {a.day} – "
+          f"{mon[b.month - 1]} {b.day} {b.year}")
+    zh = (f"上一版选股口径 · {a.year}年{a.month}月{a.day}日–"
+          f"{b.month}月{b.day}日")
+    return (en, zh)
+
+
+def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
+    """Grade ONE era's slice of the board store into rows + summary + survivorship.
+
+    Extracted so the live record and the prior record run the identical path: same
+    episode builder, same T+1 fill, same locked-limit exclusion, same forced horizon,
+    same CSI300-excess metric, same date-blocked CI. If these two ever diverge the
+    comparison the panel invites a reader to make becomes meaningless, so there is
+    exactly one implementation and both eras call it.
+    """
+    from engine import track_scoring as _ts
+
+    rows_out, n_locked, scored, n_inflight, n_skipped = \
+        _cn_ledger_rows(bdf, bench_ser, look, _cst)
+    summary = _ts.summarize(scored, metric="excess", n_inflight=n_inflight,
+                            n_skipped=n_skipped, horizon=_CN_HORIZON)
+    summary["n_logged"] = len(rows_out)
+    summary["n_locked_excluded"] = n_locked
+    return {
+        "rows": rows_out,
+        "summary": summary,
+        "n_locked": n_locked,
+        "n_inflight": n_inflight,
+        "n_skipped": n_skipped,
+        "state": _ts.publish_state(summary),
+    }
+
 
 def _cn_track_state(bt: dict | None) -> str:
     """Mirror the template's 3-state selector for the CN track panel:
@@ -984,6 +1074,23 @@ def emit_cn_track_ledger(
     changed from the board_day × ticker version and why, and engine/track_scoring.py
     for the three rules that make the number honest.
 
+    TWO ERAS, TWO RECORDS, NEVER ONE NUMBER
+    ---------------------------------------
+    The store spans a board-definition change (2026-07-30). This function grades it in
+    two disjoint cohorts and emits them side by side:
+
+      * the LIVE record — rows stamped with `board_definition` — stays exactly where
+        every existing consumer expects it (`summary`, `rows`, `meta.board_definition`);
+      * `prior_record` carries the pre-version rows (null / '' / 'legacy' stamps) with
+        its own summary, its own rows, its own publish state and a bilingual era label.
+
+    Both go through `_cn_grade_era`, so the scorer, horizon, fill, locked-limit rule and
+    CI method are identical and a reader may legitimately compare them. They are never
+    summed. Filtering to the live stamp alone is what erased the desk's history on
+    2026-07-30 (348 matured episodes at 66.7% became n=0 `accruing` overnight); pooling
+    the two would have been the opposite error, since the boards selected their names by
+    different rules and their union measures neither.
+
     A-share specifics preserved (these are real market differences, not style):
       • T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill — CN can trade the open; the US
         desk fills at the next close.
@@ -1007,10 +1114,14 @@ def emit_cn_track_ledger(
     from engine import china_standout_track as _cst
 
     bench_dict = {"code": "510300.SS", "en": "CSI 300", "zh": "沪深300"}
-    rows_out: list[dict] = []
-    scored: list[dict] = []
-    n_locked = n_inflight = n_skipped = 0
-    state = "accruing"
+    # The live record starts as a graded EMPTY era rather than as loose counters, so the
+    # "store missing / era empty" path and the "era graded" path build their summary
+    # through the same call and cannot drift apart.
+    live: dict = {
+        "rows": [], "n_locked": 0, "n_inflight": 0, "n_skipped": 0, "state": "accruing",
+        "summary": _ts.summarize([], metric="excess", n_inflight=0, n_skipped=0,
+                                 horizon=_CN_HORIZON),
+    }
     if not board_definition:
         board_definition = next(
             (
@@ -1051,21 +1162,35 @@ def emit_cn_track_ledger(
         if tk:
             look[str(tk)] = {"nm": r.get("name"), "sec": r.get("sector")}
 
+    prior: dict | None = None
     store_path = _cst._store_path()  # noqa: SLF001 — read-only path accessor
     if store_path.exists():
         try:
-            bdf = pd.read_parquet(store_path)
+            bdf_all = pd.read_parquet(store_path)
         except Exception:  # noqa: BLE001
-            bdf = pd.DataFrame()
-        if not bdf.empty:
-            if board_definition and "board_definition" in bdf.columns:
-                bdf = bdf[
-                    bdf["board_definition"].astype(str) == str(board_definition)
-                ].copy()
-            elif board_definition and str(board_definition) != "legacy":
-                # Never publish a pre-version ledger under a new board label.
+            bdf_all = pd.DataFrame()
+
+        # ── split the store into eras BEFORE grading anything ──────────────────
+        # `bdf` is the live record's slice (unchanged behaviour and unchanged output);
+        # `bdf_prior` is everything written before the definition was versioned. The
+        # two masks are disjoint by construction and neither row set ever enters the
+        # other's summary — that separation IS the fix (see the era note above).
+        bdf, bdf_prior = bdf_all, pd.DataFrame()
+        if not bdf_all.empty:
+            has_col = "board_definition" in bdf_all.columns
+            legacy_current = _cn_is_legacy_stamp(board_definition)
+            if board_definition and has_col:
+                stamps = bdf_all["board_definition"]
+                bdf = bdf_all[stamps.astype(str) == str(board_definition)].copy()
+                if not legacy_current:
+                    bdf_prior = bdf_all[stamps.map(_cn_is_legacy_stamp)].copy()
+            elif board_definition and not legacy_current:
+                # Never publish a pre-version ledger under a new board label. The rows
+                # are not lost — with no stamp column at all, every row IS the prior era.
                 bdf = pd.DataFrame()
-        if not bdf.empty:
+                bdf_prior = bdf_all.copy()
+
+        if not bdf.empty or not bdf_prior.empty:
             bench_ser = _cst._bench_close()  # noqa: SLF001 — single read, reused below
             _pf_orig = _cst._price_frame
             _pf_memo: dict[str, pd.DataFrame | None] = {}
@@ -1075,10 +1200,14 @@ def emit_cn_track_ledger(
                     _pf_memo[tk] = _pf_orig(tk)
                 return _pf_memo[tk]
 
+            # One memo across BOTH eras: the same names appear either side of the
+            # definition change, and the store reads are uncached (render budget).
             _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
             try:
-                rows_out, n_locked, scored, n_inflight, n_skipped = \
-                    _cn_ledger_rows(bdf, bench_ser, look, _cst)
+                if not bdf.empty:
+                    live = _cn_grade_era(bdf, bench_ser, look, _cst)
+                if not bdf_prior.empty:
+                    prior = _cn_grade_era(bdf_prior, bench_ser, look, _cst)
             finally:
                 _cst._price_frame = _pf_orig  # noqa: SLF001
                 _pf_memo.clear()
@@ -1088,11 +1217,10 @@ def emit_cn_track_ledger(
     # night share the market's move and the ranker's state, so they are one bet. The
     # Wilson-on-raw-n this replaces reported 50.5–57.3% off 840 overlapping board-day
     # rows spanning 15 nights; that interval could not have been right.
-    summary = _ts.summarize(scored, metric="excess", n_inflight=n_inflight,
-                            n_skipped=n_skipped, horizon=_CN_HORIZON)
+    rows_out = live["rows"]
+    n_locked, n_skipped = live["n_locked"], live["n_skipped"]
+    summary = live["summary"]
     summary["board_definition"] = board_definition
-    summary["n_logged"] = len(rows_out)
-    summary["n_locked_excluded"] = n_locked
     state = _ts.publish_state(summary)
 
     as_of = asof
@@ -1109,6 +1237,50 @@ def emit_cn_track_ledger(
                          "no oscillator target (3D thresholds not yet refit for A-shares)",
         },
     )
+
+    # ── the prior-definition record, alongside and NEVER pooled ────────────────
+    if prior and prior["rows"]:
+        p_rows = sorted(prior["rows"], key=lambda r: (r.get("d") or ""), reverse=True)
+        p_dates = [r["d"] for r in p_rows if r.get("d")]
+        d_from, d_to = (min(p_dates), max(p_dates)) if p_dates else (None, None)
+        label_en, label_zh = _cn_era_label(d_from, d_to)
+        n_total = len(p_rows)
+        capped = p_rows[:_tl.MAX_ROWS]
+        p_summary = dict(prior["summary"])
+        p_summary["board_definition"] = _CN_PRIOR_ERA_ID
+        doc["prior_record"] = _tl.pyify({
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "board_definition": _CN_PRIOR_ERA_ID,
+            "date_from": d_from,
+            "date_to": d_to,
+            "state": prior["state"],
+            "summary": p_summary,
+            "rows": capped,
+            "meta": {
+                "n_total": n_total,
+                "truncated": max(0, n_total - len(capped)),
+                "grain": "episode",
+                "closed": True,
+                "survivorship": {
+                    "n_locked_excluded": prior["n_locked"],
+                    "n_skipped_no_price": prior["n_skipped"],
+                    "note": ("locked-limit T+1 rows are unfillable — flagged, "
+                             "excluded from stats"),
+                },
+                "exit_rule": (f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
+                              "no oscillator target (3D thresholds not yet refit for "
+                              "A-shares)"),
+                "pooling_note_en": ("Graded with the same scorer, horizon and exit rule "
+                                    "as the current record, and reported separately. The "
+                                    "two eras selected their boards by different rules, "
+                                    "so they must never be added together."),
+                "pooling_note_zh": ("与当前记录采用完全相同的评分方法、持有期与退出规则，"
+                                    "但单独统计。两个时期的选股口径不同，"
+                                    "因此绝不可合并计算。"),
+            },
+        })
+
     _CN_LAST_LEDGER["doc"] = doc
     return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)
 

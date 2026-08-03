@@ -1,0 +1,252 @@
+"""CN track-record ERA CONTINUITY (Prophet Learning Loop §3 / gate G5).
+
+The CN board's definition changed on 2026-07-30. `emit_cn_track_ledger` filtered
+episodes to the live `board_definition`, so a record built over ~1,082 graded board rows
+collapsed to the 15 rows carrying the new stamp and the desk's visible history went to
+zero — the last pre-change publish showed 348 matured episodes at 66.7%, the next showed
+n=0 `accruing`.
+
+The fix these tests pin has two halves, and BOTH have to hold:
+
+  1. the prior era is graded again and published as `prior_record` — same scorer, same
+     horizon, same exit rule, so the two records are comparable;
+  2. no row is ever pooled across the boundary. The two boards selected their names by
+     different rules, so a union measures neither
+     (memory `us-board-definition-change-2026-06-25`).
+
+The era-split arithmetic runs against the REAL committed parquet — no price data
+needed, so it cannot be skipped into vacuity — while the emit-shape assertions run on
+synthetic prices so they are deterministic and fast.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts import build_china_library as bcl  # noqa: E402
+
+BOARD_PARQUET = ROOT / "data" / "china_standout_track" / "board.parquet"
+
+
+# ===========================================================================
+# 1. era split arithmetic — against the real committed store
+# ===========================================================================
+@pytest.fixture(scope="module")
+def board():
+    return pd.read_parquet(BOARD_PARQUET)
+
+
+@pytest.mark.skipif(not BOARD_PARQUET.exists(), reason="CN board store not present")
+class TestRealStoreEraSplit:
+    def test_the_store_still_holds_the_pre_change_history(self, board):
+        """The rows the reset hid are still on disk — this was never a data loss."""
+        assert len(board) > 1000
+        assert "board_definition" in board.columns
+
+    def test_the_two_masks_partition_the_store_exactly(self, board):
+        stamps = board["board_definition"]
+        prior = stamps.map(bcl._cn_is_legacy_stamp)
+        current = stamps.astype(str) == "cn_prophet_v2"
+        assert not (prior & current).any(), "a row landed in BOTH eras"
+        assert int(prior.sum()) + int(current.sum()) == len(board), \
+            "a row landed in NEITHER era"
+        assert int(current.sum()) > 0 and int(prior.sum()) > int(current.sum())
+
+    def test_the_eras_do_not_overlap_in_time(self, board):
+        stamps = board["board_definition"]
+        prior_dates = board.loc[stamps.map(bcl._cn_is_legacy_stamp), "date"].astype(str)
+        cur_dates = board.loc[stamps.astype(str) == "cn_prophet_v2", "date"].astype(str)
+        assert prior_dates.max() < cur_dates.min()
+
+    def test_legacy_stamp_recognises_every_pre_version_spelling(self):
+        for value in (None, float("nan"), "", "  ", "legacy", "NaN", "None", "<NA>"):
+            assert bcl._cn_is_legacy_stamp(value) is True, value
+        for value in ("cn_prophet_v2", "cn_prophet_v3", "v1"):
+            assert bcl._cn_is_legacy_stamp(value) is False, value
+
+
+# ===========================================================================
+# 2. emit shape — synthetic prices, deterministic
+# ===========================================================================
+def _ohlc(idx, closes):
+    """High/low straddle the close so _t1_fill never reads a locked-limit bar."""
+    return pd.DataFrame(
+        {"open": list(closes), "high": [c * 1.01 for c in closes],
+         "low": [c * 0.99 for c in closes], "close": list(closes)},
+        index=idx,
+    )
+
+
+_JUNE = pd.to_datetime([f"2026-06-{d:02d}" for d in range(1, 30)])
+_JULY = pd.to_datetime([f"2026-07-{d:02d}" for d in range(20, 32)])
+
+
+def _price_frame(ticker: str):
+    if ticker == "600519.SS":                      # prior era, rises
+        return _ohlc(_JUNE, [100.0 + i * 2 for i in range(len(_JUNE))])
+    if ticker == "300750.SZ":                      # prior era, falls
+        return _ohlc(_JUNE, [200.0 - i * 1.5 for i in range(len(_JUNE))])
+    if ticker == "601318.SS":                      # current era, still early
+        return _ohlc(_JULY, [40.0 + i * 0.1 for i in range(len(_JULY))])
+    return None
+
+
+def _bench():
+    idx = _JUNE.append(_JULY)
+    return pd.Series([3000.0 + i for i in range(len(idx))], index=idx)
+
+
+def _store(tmp_path: Path) -> Path:
+    d = tmp_path / "china_standout_track"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "board.parquet"
+    pd.DataFrame([
+        {"date": "2026-06-01", "ticker": "600519.SS", "board_rank": 1, "tier": "T1",
+         "board_definition": None},
+        {"date": "2026-06-01", "ticker": "300750.SZ", "board_rank": 2, "tier": "T2",
+         "board_definition": "legacy"},
+        {"date": "2026-07-20", "ticker": "601318.SS", "board_rank": 1, "tier": "T1",
+         "board_definition": "cn_prophet_v2"},
+    ]).to_parquet(p, index=False)
+    return p
+
+
+@pytest.fixture()
+def emitted(monkeypatch, tmp_path):
+    from engine import china_standout_track as cst
+    p = _store(tmp_path)
+    monkeypatch.setattr(cst, "_store_path", lambda: p)
+    monkeypatch.setattr(cst, "_price_frame", _price_frame)
+    monkeypatch.setattr(cst, "_bench_close", _bench)
+    site = tmp_path / "site"
+    (site / "factordata").mkdir(parents=True)
+    assert bcl.emit_cn_track_ledger(site, None, [],
+                                    board_definition="cn_prophet_v2",
+                                    asof="2026-07-31") is True
+    return json.loads((site / "factordata" / "cn_track_ledger.json").read_text())
+
+
+class TestEmitTwoEras:
+    def test_the_current_block_is_unchanged_for_existing_consumers(self, emitted):
+        # The template reads meta.board_definition; the popup reads schema/summary/rows.
+        assert emitted["schema"] == "track_ledger/v1"
+        assert emitted["market"] == "CN"
+        assert emitted["meta"]["grain"] == "episode"
+        assert emitted["meta"]["board_definition"] == "cn_prophet_v2"
+        assert emitted["summary"]["board_definition"] == "cn_prophet_v2"
+        assert {r["t"] for r in emitted["rows"]} == {"601318.SS"}
+
+    def test_prior_record_is_present_and_labelled_in_both_languages(self, emitted):
+        pr = emitted["prior_record"]
+        assert pr["board_definition"] == bcl._CN_PRIOR_ERA_ID != "cn_prophet_v2"
+        assert pr["label_en"] and pr["label_zh"]
+        assert pr["label_en"] != pr["label_zh"]
+        assert "previous board definition" in pr["label_en"]
+        assert "上一版" in pr["label_zh"]
+        assert (pr["date_from"], pr["date_to"]) == ("2026-06-01", "2026-06-01")
+
+    def test_both_legacy_spellings_land_in_the_prior_era(self, emitted):
+        # null AND the literal string 'legacy' are the same era.
+        assert {r["t"] for r in emitted["prior_record"]["rows"]} == \
+            {"600519.SS", "300750.SZ"}
+
+    def test_no_row_is_pooled_across_the_boundary(self, emitted):
+        cur = {(r["t"], r["d"]) for r in emitted["rows"]}
+        prior = {(r["t"], r["d"]) for r in emitted["prior_record"]["rows"]}
+        assert cur and prior
+        assert cur & prior == set()
+
+    def test_the_prior_era_carries_a_matured_summary(self, emitted):
+        s = emitted["prior_record"]["summary"]
+        assert s["n_matured"] > 0
+        assert s["metric"] == "excess"
+        assert s["horizon"] == bcl._CN_HORIZON
+        assert s["win_pct"] is not None
+
+    def test_the_two_summaries_use_the_same_scorer_settings(self, emitted):
+        cur, prior = emitted["summary"], emitted["prior_record"]["summary"]
+        assert cur["metric"] == prior["metric"]
+        assert cur["horizon"] == prior["horizon"]
+        assert emitted["meta"]["exit_rule"] == emitted["prior_record"]["meta"]["exit_rule"]
+
+    def test_prior_rows_use_the_same_row_shape(self, emitted):
+        from engine import track_ledger as tl
+        for r in emitted["prior_record"]["rows"]:
+            assert set(r) == set(emitted["rows"][0])
+            assert r["st"] in tl.STATUS_VOCAB
+            assert set(r["fl"]).issubset(set(tl.FLAG_VOCAB))
+
+    def test_prior_rows_are_newest_first_and_capped_like_the_live_block(self, emitted):
+        from engine import track_ledger as tl
+        pr = emitted["prior_record"]
+        dates = [r["d"] for r in pr["rows"]]
+        assert dates == sorted(dates, reverse=True)
+        assert len(pr["rows"]) <= tl.MAX_ROWS
+        assert pr["meta"]["truncated"] == max(0, pr["meta"]["n_total"] - len(pr["rows"]))
+
+    def test_the_pooling_ban_is_written_into_the_artifact(self, emitted):
+        meta = emitted["prior_record"]["meta"]
+        assert "never be added together" in meta["pooling_note_en"]
+        assert meta["pooling_note_zh"] and meta["pooling_note_zh"] != meta["pooling_note_en"]
+        assert meta["closed"] is True
+
+    def test_prior_state_comes_from_its_own_sample(self, emitted):
+        # 2 matured episodes on 1 board day cannot carry a headline.
+        assert emitted["prior_record"]["state"] == "accruing"
+
+    def test_no_prior_block_when_the_store_has_only_current_rows(
+        self, monkeypatch, tmp_path
+    ):
+        from engine import china_standout_track as cst
+        p = _store(tmp_path)
+        board = pd.read_parquet(p)
+        board["board_definition"] = "cn_prophet_v2"
+        board.to_parquet(p, index=False)
+        monkeypatch.setattr(cst, "_store_path", lambda: p)
+        monkeypatch.setattr(cst, "_price_frame", _price_frame)
+        monkeypatch.setattr(cst, "_bench_close", _bench)
+        site = tmp_path / "site2"
+        (site / "factordata").mkdir(parents=True)
+        assert bcl.emit_cn_track_ledger(site, None, [],
+                                        board_definition="cn_prophet_v2") is True
+        doc = json.loads((site / "factordata" / "cn_track_ledger.json").read_text())
+        assert "prior_record" not in doc
+
+    def test_a_legacy_current_definition_never_double_counts(
+        self, monkeypatch, tmp_path
+    ):
+        """With no versioned board yet, every row is the CURRENT record and there is no
+        prior era — emitting one would publish the same episodes twice."""
+        from engine import china_standout_track as cst
+        p = _store(tmp_path)
+        board = pd.read_parquet(p)
+        board["board_definition"] = None
+        board.to_parquet(p, index=False)
+        monkeypatch.setattr(cst, "_store_path", lambda: p)
+        monkeypatch.setattr(cst, "_price_frame", _price_frame)
+        monkeypatch.setattr(cst, "_bench_close", _bench)
+        site = tmp_path / "site3"
+        (site / "factordata").mkdir(parents=True)
+        assert bcl.emit_cn_track_ledger(site, None, [],
+                                        board_definition="legacy") is True
+        doc = json.loads((site / "factordata" / "cn_track_ledger.json").read_text())
+        assert "prior_record" not in doc
+
+
+class TestEraLabel:
+    def test_label_is_derived_from_the_span_not_hard_coded(self):
+        en, zh = bcl._cn_era_label("2026-06-30", "2026-07-29")
+        assert en == "previous board definition · Jun 30 – Jul 29 2026"
+        assert zh == "上一版选股口径 · 2026年6月30日–7月29日"
+
+    def test_label_degrades_without_dates(self):
+        en, zh = bcl._cn_era_label(None, None)
+        assert en and zh and en != zh

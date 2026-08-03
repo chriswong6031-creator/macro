@@ -10,6 +10,7 @@ Structure mirrors the orchestrator_panel() pattern in neural_web.py:
   audit_state      — trigger state from standout_audit state files
   postmortems      — newest 3 cohort postmortem digests
   pick_autopsies   — newest 5 pick autopsy digests (ticker + mitigation + lesson)
+  learning_loop    — digest of data/prophet_postmortem/summary.json (Learning Loop §2)
   track_record     — summary from site/factordata/us_track_history.json
   fable_spend      — today's deliberation-model token spend vs budget cap
   settings         — echo of config.yml `prophet:` block
@@ -38,6 +39,7 @@ _AUDIT_STATE_CN_REL   = Path("data/standout_audit/cn_audit_state.json")
 _POSTMORTEMS_DIR_REL  = Path("data/standout_audit/postmortems")
 _AUTOPSIES_DIR_REL    = Path("data/standout_audit/pick_autopsies")
 _TRACK_HISTORY_REL    = Path("site/factordata/us_track_history.json")
+_LEARNING_LOOP_REL    = Path("data/prophet_postmortem/summary.json")
 
 # Deliberation model prefix — spend for any model containing "fable" or
 # matching llm_models.deliberation in config.yml.
@@ -182,6 +184,73 @@ def _track_record(repo: Path) -> dict | None:
     }
 
 
+def _learning_loop(repo: Path) -> dict | None:
+    """Digest of the Prophet Learning Loop postmortem artifact.
+
+    A POINTER, not a recomputation: the panel reads the committed
+    data/prophet_postmortem/summary.json and forwards the aggregations. Re-deriving any
+    of these here would give the admin a second implementation of the taxonomy that
+    could quietly disagree with the artifact and the report.
+
+    The veto table is forwarded WITH its winners-forfeited column. Shipping
+    losses-avoided alone would turn a symmetric counterfactual into an argument for a
+    veto — which is the exact reading the artifact exists to prevent.
+
+    Fail-soft: returns None when the artifact has not been written yet (the panel then
+    shows an honest accruing note). See docs/PROPHET_POSTMORTEM_PROTOCOL.md.
+    """
+    data = _read_json(repo / _LEARNING_LOOP_REL)
+    if not isinstance(data, dict):
+        return None
+    summary = data.get("summary") or {}
+    cohorts = summary.get("cohorts") or {}
+    return {
+        "as_of":        data.get("as_of"),
+        "schema":       data.get("schema"),
+        "artifact":     str(_LEARNING_LOOP_REL),
+        "report":       f"reports/prophet_postmortem_{data.get('as_of')}.md",
+        "protocol":     "docs/PROPHET_POSTMORTEM_PROTOCOL.md",
+        "horizon":      (data.get("method") or {}).get("horizon"),
+        "llm_used":     (data.get("method") or {}).get("llm_used"),
+        "n_episodes":   summary.get("n_episodes"),
+        "n_matured":    summary.get("n_matured"),
+        "n_in_flight":  summary.get("n_in_flight"),
+        "n_board_dates": summary.get("n_board_dates"),
+        "n_losers":     cohorts.get("n_losers"),
+        "n_winners":    cohorts.get("n_winners"),
+        "labels": [
+            {
+                "label":            f.get("label"),
+                "en":               f.get("en"),
+                "zh":               f.get("zh"),
+                "visible_at_entry": f.get("visible_at_entry"),
+                "n_losers":         f.get("n_losers"),
+                "loser_share_pct":  f.get("loser_share_pct"),
+                "n_winners":        f.get("n_winners"),
+                "winner_share_pct": f.get("winner_share_pct"),
+                "n_null_disclosed": f.get("n_null_disclosed"),
+            }
+            for f in (summary.get("label_frequency") or [])
+        ],
+        "veto_cost": [
+            {
+                "label":                 v.get("label"),
+                "en":                    v.get("en"),
+                "zh":                    v.get("zh"),
+                "n_flagged":             v.get("n_flagged"),
+                "n_universe":            v.get("n_universe"),
+                "n_losers_avoided":      v.get("n_losers_avoided"),
+                "loss_avoided_pct":      v.get("loss_avoided_pct"),
+                "n_winners_forfeited":   v.get("n_winners_forfeited"),
+                "winners_forfeited_pct": v.get("winners_forfeited_pct"),
+                "net_pct_if_vetoed":     v.get("net_pct_if_vetoed"),
+            }
+            for v in (summary.get("veto_cost") or [])
+        ],
+        "caveats": [c.get("en") for c in (data.get("caveats") or []) if c.get("en")],
+    }
+
+
 def _fable_spend(repo: Path, cap: int) -> dict:
     """Today's deliberation token spend vs the daily cap.
 
@@ -254,6 +323,7 @@ def panel(root=None) -> dict:
     pm     = _postmortems(repo)
     ap     = _pick_autopsies(repo)
     tr     = _track_record(repo)
+    ll     = _learning_loop(repo)
     cfg    = _settings(repo)
     cap    = int((cfg.get("deliberation_daily_token_cap") or 2_000_000))
     spend  = _fable_spend(repo, cap)
@@ -261,6 +331,10 @@ def panel(root=None) -> dict:
     # Honest absence notes
     pm_note  = None if pm else "cohort postmortems not yet written (accruing)"
     ap_note  = None if ap else "pick autopsies not yet written (accruing)"
+    ll_note  = None if ll else (
+        "learning-loop postmortem not yet written — run "
+        "`python -m scripts.prophet_postmortem` (docs/PROPHET_POSTMORTEM_PROTOCOL.md)"
+    )
 
     return {
         "ok": True,
@@ -273,6 +347,8 @@ def panel(root=None) -> dict:
         "pick_autopsies": ap,
         "pick_autopsies_note": ap_note,
         "track_record": tr,
+        "learning_loop": ll,
+        "learning_loop_note": ll_note,
         "fable_spend": spend,
         "settings": cfg,
     }

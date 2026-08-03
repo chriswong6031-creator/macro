@@ -3667,6 +3667,7 @@ RENDER.prophet = async () => {
   const pm   = d.postmortems      || [];
   const ap   = d.pick_autopsies   || [];
   const tr   = d.track_record;
+  const ll   = d.learning_loop;
   const sp   = d.fable_spend      || {};
   const cfg  = d.settings         || {};
   const tmSummary = (tm && tm.summary) || {};
@@ -3791,6 +3792,42 @@ RENDER.prophet = async () => {
        </div>`
     : `<div class="section">Track record (US)</div><div class="sub muted">us_track_history.json not yet written.</div>`;
 
+  /* --- Learning-loop postmortem (read-only pointer at the committed artifact) ---
+     Both columns of the veto counterfactual ship together on purpose: losses avoided
+     WITHOUT winners forfeited reads as an argument for a veto, which is exactly the
+     reading the artifact exists to prevent. Nothing here is recomputed in the browser. */
+  const llHtml = ll
+    ? `<div class="section">Learning loop — postmortem <span class="cnt">${esc(ll.as_of || "—")}</span></div>
+       <div class="card">
+         <div class="sub">${Number(ll.n_episodes || 0)} episodes · ${Number(ll.n_matured || 0)} matured across ${Number(ll.n_board_dates || 0)} board dates · ${Number(ll.n_in_flight || 0)} in flight (counted in no rate) · <b>${Number(ll.n_losers || 0)}</b> losers · <b>${Number(ll.n_winners || 0)}</b> winners · H=${esc(String(ll.horizon ?? "—"))}${ll.llm_used === false ? " · no LLM in the classification path" : ""}</div>
+         <div class="tbl-scroll" style="margin-top:8px"><table><thead><tr><th>Failure label</th><th>Visible at entry</th><th>Losers</th><th>share</th><th>Winners</th><th>share</th><th>nulls</th></tr></thead><tbody>
+         ${(ll.labels || []).map(f => `<tr>
+           <td>${esc(f.en || f.label || "—")} <span class="sub muted mono">${esc(f.label || "")}</span></td>
+           <td class="sub">${f.visible_at_entry ? "yes" : "no"}</td>
+           <td class="mono">${Number(f.n_losers || 0)}</td>
+           <td class="sub mono">${f.loser_share_pct == null ? "—" : Number(f.loser_share_pct) + "%"}</td>
+           <td class="mono">${Number(f.n_winners || 0)}</td>
+           <td class="sub mono">${f.winner_share_pct == null ? "—" : Number(f.winner_share_pct) + "%"}</td>
+           <td class="sub mono">${Number(f.n_null_disclosed || 0)}</td>
+         </tr>`).join("")}
+         </tbody></table></div>
+         <div class="note muted" style="margin-top:4px">Shares are over the episodes where the label could be decided; <code>nulls</code> counts matured episodes whose entry state was never recorded, excluded from that label's denominator rather than counted as clean.</div>
+         <div class="section" style="margin-top:10px">What a veto would have cost — both sides</div>
+         <div class="tbl-scroll"><table><thead><tr><th>Would-be veto</th><th>Flagged</th><th>Losers avoided</th><th>Loss avoided</th><th>Winners forfeited</th><th>Gains forfeited</th><th>Net</th></tr></thead><tbody>
+         ${(ll.veto_cost || []).map(v => `<tr>
+           <td>${esc(v.en || v.label || "—")}</td>
+           <td class="sub mono">${Number(v.n_flagged || 0)} / ${Number(v.n_universe || 0)}</td>
+           <td class="mono">${Number(v.n_losers_avoided || 0)}</td>
+           <td class="mono s-ok">${Number(v.loss_avoided_pct || 0).toFixed(2)}pp</td>
+           <td class="mono"><b>${Number(v.n_winners_forfeited || 0)}</b></td>
+           <td class="mono s-bad"><b>${Number(v.winners_forfeited_pct || 0).toFixed(2)}pp</b></td>
+           <td class="mono">${Number(v.net_pct_if_vetoed || 0) >= 0 ? "+" : ""}${Number(v.net_pct_if_vetoed || 0).toFixed(2)}pp</td>
+         </tr>`).join("")}
+         </tbody></table></div>
+         <div class="note muted" style="margin-top:4px">Equal-weight arithmetic counterfactual, not a backtest — it ignores sizing and the overlap between episodes surfaced on one board night. Measurement tier: no rule here is live. Artifact <code>${esc(ll.artifact || "")}</code> · report <code>${esc(ll.report || "")}</code> · protocol <code>${esc(ll.protocol || "")}</code>.</div>
+       </div>`
+    : `<div class="section">Learning loop — postmortem</div><div class="sub muted">${esc(d.learning_loop_note || "not yet written.")}</div>`;
+
   /* --- Fable spend meter --- */
   const spendPct = sp.budget_pct != null ? sp.budget_pct : 0;
   const spendHtml = `<div class="section">Deliberation spend today <span class="cnt">${esc(sp.deliberation_model || "—")}</span></div>
@@ -3862,7 +3899,7 @@ RENDER.prophet = async () => {
     <div class="row"><div class="lab" style="min-width:220px">Daily token cap</div>${numInputP("deliberation_daily_token_cap", cfg.deliberation_daily_token_cap, 0, 5000000)}
       <div class="note">Daily deliberation token budget. When exhausted, lanes fall back to claude-opus-4-8. Range 0–5,000,000. <code class="muted">prophet.deliberation_daily_token_cap</code></div></div>`;
 
-  v.innerHTML = tradeMemoryHtml + mktCardsHtml + integrityHtml + suggestionsHtml + autopsiesHtml + pmHtml + fitHtml + trHtml + spendHtml + settingsHtml;
+  v.innerHTML = tradeMemoryHtml + mktCardsHtml + integrityHtml + suggestionsHtml + autopsiesHtml + pmHtml + llHtml + fitHtml + trHtml + spendHtml + settingsHtml;
 
   /* Wire up settings inputs */
   const meta2 = (SUMMARY && SUMMARY.meta) || {};
