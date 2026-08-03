@@ -20,15 +20,23 @@ Three US-specific departures from the CN module are deliberate and evidenced:
    ``clip01((pctile − 0.25) / 0.75)`` so the bottom quartile of alpha earns nothing.
 2. ``runway`` (10 pts) reads the own-history extension z (``ext_z``) rather than CN's
    fuel/extension blend, because that is the extension evidence the US builder
-   attaches to a board row.  **MEASURED 2026-08-02: that evidence reaches ZERO board
-   rows — ``ext_z`` is absent on 0/71 of the live 07-31 buy lane, so the leg scores 0
-   on every row without exception.**  It is not "rare", it is dead: the 10 points are
-   deducted from every row identically, which leaves the ORDER untouched but means the
-   score's usable range is 0–90, not 0–100.  Printed, never hidden — every ``ranking``
-   block carries :func:`component_coverage`, computed from the rows actually scored, so
-   a reader sees ``{"runway": {"nonzero": 0, "n": 71}}`` rather than inferring health
-   from a weight table.  No formula change: a null is a fact to disclose, not a reason
-   to re-tune (house epistemics — the gauntlet gates PROMOTION, not building).
+   attaches to a board row.  **This leg read 0 on every row of the 07-31 board, and
+   that was a BUILDER WIRING defect, not a property of the leg.**
+   ``build_stock_library`` fed :func:`engine.extension.extension_signals` one close
+   panel holding both 5-sessions-a-week equities and 24/7 crypto; that panel is indexed
+   on the union of the two calendars, and ``extension_signals`` reads a single global
+   ``.iloc[-1]``.  So on any build whose newest date was not an equity session — every
+   weekend, every market holiday — the last row was crypto-only, every equity's
+   ``ext_z`` came back NaN, and no board row carried the leg's input.  Splitting that
+   panel by calendar restores it (68/71 of the same buy lane score non-zero, and the
+   attainable range returns to 0–100 from the 0–90 the dead leg imposed).
+
+   Do not re-freeze a number here.  Every ``ranking`` block carries
+   :func:`component_coverage`, computed from the rows actually scored, so the LIVE
+   receipt — not this docstring — is what tells a reader whether the leg is carrying
+   information on a given board.  No formula change was made in either era: a null is a
+   fact to disclose, not a reason to re-tune (house epistemics — the gauntlet gates
+   PROMOTION, not building).
 3. Timing decides **grouping** (the stage bucket), never the within-bucket order —
    the same measurement found the timing leg net-negative to sort by (§3, Study 2).
 
@@ -307,14 +315,17 @@ def runway_value(row: Mapping[str, Any]) -> float:
     treated as fully extended.  **Unknown extension evidence earns 0**, never the
     best case — CN's fail-closed rule.
 
-    MEASURED 2026-08-02: this leg is DEAD, not merely sparse.  ``ext_z`` is absent on
-    0/71 rows of the live 07-31 buy lane — the US builder never attaches it to a board
-    row — so ``runway`` is exactly 0 on every row, always.  That costs each row the
-    same 10 points and therefore cannot distort the ORDER, but it does cap the score
-    at 90 and it means the leg contributes no information at all.  The null is
-    published rather than patched: :func:`component_coverage` recomputes the nonzero
-    count from the rows actually scored on every build, so the disclosure can never go
-    stale the way this docstring's earlier "very few board rows" wording did.
+    HISTORY: this leg read 0 on 71/71 rows of the 07-31 board.  That was a builder
+    wiring defect — ``build_stock_library`` mixed the equity and 24/7 crypto calendars
+    in the single close panel it handed ``extension_signals``, so on any non-session
+    build date every equity's ``ext_z`` was NaN and the input never reached a row (see
+    the module docstring).  With the panel split by calendar the same lane scores 68/71.
+
+    Do not restate a coverage number here, in either direction:
+    :func:`component_coverage` recomputes the nonzero count from the rows actually
+    scored on every build, so the live receipt is the disclosure and cannot go stale
+    the way this docstring's successive "very few board rows" and "this leg is DEAD"
+    wordings both did.
     """
     if row.get("antichase_shadow_blocked") is True:
         return 0.0
@@ -647,10 +658,12 @@ def component_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, dict[str,
 
     A leg with ``nonzero == 0`` is dead: it subtracts the same points from every row,
     so it cannot change the ORDER, but it also carries no information and it caps the
-    attainable score below 100.  Measured 2026-08-02 on the live 07-31 board:
-    ``runway`` is ``{"nonzero": 0, "n": 71}`` because ``ext_z`` never reaches a US
-    board row.  Printed rather than hidden, and printed as a NUMBER rather than a
-    hedge — display-tier disclosure is exactly what the epistemics law asks of a null.
+    attainable score below 100.  ``runway`` read ``{"nonzero": 0, "n": 71}`` on the
+    07-31 board because a builder wiring defect kept ``ext_z`` off every row (module
+    docstring §2); the same lane reads ``{"nonzero": 68, "n": 71}`` once the extension
+    panel is split by calendar.  Printed rather than hidden, and printed as a NUMBER
+    rather than a hedge — display-tier disclosure is exactly what the epistemics law
+    asks of a null, and recomputing it is what keeps the claim true in both eras.
 
     Every leg in :data:`SCORE_WEIGHTS` is reported, present or not: a bucket missing
     from this dict would read as "not measured", which is a different claim from
@@ -691,8 +704,8 @@ def ranking_block(
     Everything a reader needs to reproduce the order is printed here: the weights,
     what each leg reads, the featured requirements, the explicit list of inputs that
     carry no score authority at all — and ``component_coverage``, the measured nonzero
-    count per leg, so a leg that is dead on this board (``runway``, 0/71) is visible
-    in the artifact instead of inferable only from the weight table.
+    count per leg, so a leg that is dead on this board is visible in the artifact
+    instead of inferable only from the weight table.
     """
     scored = list(rows)
     counts = stage_counts(scored)
@@ -718,9 +731,11 @@ def ranking_block(
              "reads": "coiled / washout context",
              "basis": "coiled star 1.0 · coiled 0.8 · washout context 0.4"},
         ],
-        # Measured nonzero coverage per leg, recomputed from `scored` every build.
-        # `runway` reads {"nonzero": 0, "n": <board size>} on the live board — the
-        # honest receipt for a leg whose input (ext_z) never arrives.
+        # Measured nonzero coverage per leg, recomputed from `scored` every build —
+        # never a frozen number. `runway` read {"nonzero": 0, "n": 71} while the
+        # builder's extension panel mixed the equity and crypto calendars, and
+        # {"nonzero": 68, "n": 71} on the same lane once it was split; the receipt
+        # tracked both without an edit here, which is the whole point of recomputing it.
         "component_coverage": component_coverage(scored),
         "sort_key": "stage bucket, then priority score desc, then ticker",
         "stage_order": list(STAGE_ORDER),
