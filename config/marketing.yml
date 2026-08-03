@@ -66,6 +66,81 @@ radar:
   t1_always: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, PLTR, COIN, HOOD, MSTR, SMCI, GME, AMC]
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Supply — candidate-pool breadth and selection-diversity knobs.
+#
+# ONE OWNER (masterplan §3 PR-B.4). This block is defined and read by
+# engine/marketing/attention_source.py (`supply_config` + the typed accessors
+# beside it); the SELECTOR that acts on the diversity numbers is PR-C's
+# content_studio work and is deliberately not wired yet. Defining the knobs
+# here first is what stops PR-C from inventing a second, disagreeing copy of
+# them somewhere in the selection path — the per-lane kwarg drift the recon
+# found at nine chart call sites is the same failure one file earlier.
+#
+# Every value below is also hard-coded as a default in `_SUPPLY_DEFAULTS`, so
+# deleting this block degrades to the same numbers rather than to zero. The
+# accessors are the only sanctioned reader: an actuator must never carry its
+# own fallback copy of a cap (the sentinel block above states the same law).
+# ─────────────────────────────────────────────────────────────────────────────
+supply:
+  # How many candidates each read-only pool may return. These are POOL sizes,
+  # not post counts — the selector draws from them under its own cadence caps.
+  pool_caps:
+    dollar_volume: 120          # nightly ADV pack, by its own dollar-volume rank
+    options_volume: 80          # data/options_flow latest-session contract volume
+    retail_attention: 80        # WSB mentions ∪ Wikipedia attention z
+    earnings_this_week: 60      # earnings.parquet next_date ≤ 5 sessions
+    stage2_leaders: 60          # Weinstein stage 2, USA, by SATA
+    stage_transitions: 40       # stage_flag changed vs the prior snapshot
+
+  # §0 gate 6 long tail: a rotation that only ever revisits the hot ~20 names
+  # is a narrower desk than the corpus we are matching (~5 brand-new long-tail
+  # names per day). A shortfall must print a ::warning, never silently narrow.
+  long_tail_quota:
+    min_fresh_per_day: 3        # names not posted inside the window below
+    not_posted_within_days: 30
+
+  # §0 gate 6 concentration cap. A live story legitimately gets several posts a
+  # day; three CHART posts on one ticker in one day is where it stops reading
+  # as coverage and starts reading as a hobby horse.
+  per_ticker_day:
+    max_chart_posts: 3
+
+  # Freshness beats coverage. A pool whose source lags by more than this many
+  # trading sessions returns [] and says so in an annotation, rather than
+  # letting a two-week-old attention rank pose as today's.
+  freshness:
+    max_stale_sessions: 3
+    # Per-pool budgets, EMPTY on purpose — every pool is judged by the single
+    # number above until an operator decides otherwise. Measured on 2026-08-02,
+    # two sources do not refresh daily and are therefore refused most days:
+    # data/earnings/earnings.parquet swept 2026-06-19 and 2026-07-28 (two
+    # stamps, weeks apart) and the Weinstein stage backfill is a weekly
+    # artifact stuck at 2026-07-17. Both are genuinely stale — the collectors
+    # are the fix, not the gate — so this lever stays un-pulled and the empty
+    # pools keep printing their annotations. Example, if ever wanted:
+    #   per_pool: {earnings_this_week: 10, stage2_leaders: 10}
+    per_pool: {}
+
+  tiers:
+    # ADV floor a name from the nightly liquid-market ADV pack
+    # (data/marketing/) must clear to enter the cashtag-tier universe. Matches
+    # that pack's own construction filter, so today this admits every name it
+    # ships and exists to be raisable, not to bite.
+    #
+    # NAMING, deliberate and load-bearing: this key and the two comments above
+    # do NOT spell the intraday attention program's module name, and neither
+    # does this sentence. THIS FILE is one of six the program's safety-stack
+    # guard holds read-only to it (TestSafetyStack, in that program's radar
+    # suite under tests/), and unlike the five source files it lists, the
+    # config file's invariant is ABSOLUTE — no sanctioned-token exception
+    # exists for it, and the guard is right that a config knob is exactly the
+    # shape of reach it defends against. Widening the exception to fit this
+    # block would have traded a real guard for a comment. A reader who wants
+    # the artifact path finds it in engine/marketing/attention_source.py,
+    # which is not on that list and names it freely.
+    pack_min_adv_dollars: 25000000
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Sentinel — trust_office W1 plan-level policy gate (engine/marketing/sentinel.py)
 #
 # D02 actuator LAW: read ALL caps from this block — NEVER hardcode constants
