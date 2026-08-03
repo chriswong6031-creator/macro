@@ -417,7 +417,7 @@ def _render_w1c_w2b(setups: dict) -> str:
         2026-07-21).  The real template imports the partial at file top, which is
         outside the snippet, so mirror the import and register the partial.
     """
-    from jinja2 import DictLoader, Environment
+    from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
     start = SRC.index("{# ── W-FCT: shelf partitions hoisted above the panel")
     end = SRC.index("{# ── BOARD TRACK RECORD")
@@ -439,15 +439,22 @@ def _render_w1c_w2b(setups: dict) -> str:
         '<span class="l-zh">{{ zh }}</span>'
         "{%- endmacro -%}\n"
     )
-    full = '{% import "_prophet_card.html.j2" as pv %}\n' + macros + snippet
+    # Mirror the imports china.html.j2 carries at file top — they sit OUTSIDE
+    # every snippet sliced here, so without them {{ lens.lens(...) }} renders
+    # against Undefined. The FileSystemLoader fallback resolves the real
+    # partials, so a future {% import %} never breaks this harness again.
+    full = (
+        '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
+    ) + macros + snippet
 
     SECZH = {"Technology": "科技", "Healthcare": "医疗保健"}
     env = Environment(
-        loader=DictLoader({
-            "blk": full,
-            "_prophet_card.html.j2": (
-                ROOT / "templates" / "_prophet_card.html.j2").read_text(),
-        }),
+        loader=ChoiceLoader([
+            DictLoader({"blk": full}),
+            FileSystemLoader(str(ROOT / "templates")),
+        ]),
         autoescape=False,
     )
     env.globals["SECZH"] = SECZH
