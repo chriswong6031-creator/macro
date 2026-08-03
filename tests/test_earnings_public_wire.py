@@ -476,7 +476,8 @@ def test_wire_article_has_one_localized_breadcrumb_and_source_language() -> None
 
     assert "{% block breadcrumb %}{% endblock %}" in article
     assert article.count('<nav class="ewa-crumb"') == 1
-    assert "aria-label=\"{{ t('Breadcrumb', '面包屑导航') }}\"" in article
+    assert 'aria-label="Breadcrumb"' in article
+    assert 'aria-label="{{ t(' not in article
     assert 'aria-current="page"' in article
     assert '<blockquote lang="en">' in article
     assert '<blockquote lang="en">' in index
