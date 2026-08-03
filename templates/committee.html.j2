@@ -488,7 +488,7 @@ html{ scroll-behavior:smooth; }
 <div id="cm_content">
 
   <!-- Chapter tabs — jump to any part of the brain (sticky segmented control) -->
-  <nav class="nw-subnav" aria-label="{{ t('Neural Web sections', '智脑分区') | striptags }}">
+  <nav class="nw-subnav" aria-label="Neural Web sections">
     <div class="nw-subnav-inner" id="nw_subnav">
       <a class="nw-tab" href="#cm_hero_section"><span class="tdot" style="--accent:var(--lobe-us)"></span><span class="l-en">Now</span><span class="l-zh">此刻</span></a>
       <a class="nw-tab" href="#cm_graph_section"><span class="tdot" style="--accent:var(--lobe-core)"></span><span class="l-en">Brain map</span><span class="l-zh">大脑地图</span></a>
@@ -673,7 +673,7 @@ html{ scroll-behavior:smooth; }
     </div>
     <div class="cm-loading" id="graph_loading">{{ t('Loading synapse map…', '加载突触地图中…') }}</div>
     <div class="graph-wrap" id="graph_wrap">
-      <canvas id="graph_canvas" aria-label="{{ t('Synapse map — Neural Web confluence graph', '突触地图 — 智脑汇聚图') | striptags }}"></canvas>
+      <canvas id="graph_canvas" aria-label="Synapse map — Neural Web confluence graph"></canvas>
       <div class="graph-controls">
         <button class="gc-btn" id="gc_plus" aria-label="Zoom in">+</button>
         <button class="gc-btn" id="gc_minus" aria-label="Zoom out">−</button>
