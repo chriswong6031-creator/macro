@@ -35,6 +35,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 
@@ -448,7 +449,15 @@ def history(n: int = 20) -> list[dict]:
 def append_log(snap: dict) -> None:
     """Append today's verdict to an append-only log (keep-first per date) so the
     attribution can be GRADED later. Best-effort — never read back into a score,
-    never breaks the build. Mirrors engine/market_drivers.append_log()."""
+    never breaks the build. Mirrors engine/market_drivers.append_log().
+
+    ASIA lane gate, NOT nightly: this log's sole advancing lane is asia-close.yml's
+    build_china spine step (CN_LANE=asia, no COLLECT_LANE — verified via git log on
+    data/china_regime/china_market_drivers_log.parquet: every advancing commit is
+    "engine: asia dashboards"). A nightly gate here would close the ledger forever;
+    the express render lanes (cl_china) set neither env and must stay read-only."""
+    if not _ledger_advance_enabled():
+        return
     try:
         if not snap or snap.get("verdict") in (None, "unknown") or not snap.get("asof"):
             return
