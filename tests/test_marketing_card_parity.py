@@ -6,7 +6,7 @@ independent causes:
   1. The publish path rastered a SEPARATE hand-drawn PIL lookalike of the older
      v1 line chart while the Content Studio preview showed the v2 candlestick
      SVG. The two drifted until the account posted a bare line chart with no
-     mastermind-x.com footer and no "Start free 14-day trial" CTA, while the
+     mastermind-x.com footer and no "Try Pro free for 7 days" CTA, while the
      mockup promised the full card.
   2. The weekend_levels lane attached NO media at all — every flagship weekend
      post shipped as bare text.
@@ -98,7 +98,7 @@ def test_v2_card_carries_the_url_and_trial_cta():
         c, [x + 1 for x in c], [x - 1 for x in c], c, [1e6] * n,
     )
     assert "mastermind-x.com" in svg
-    assert "Start free 14-day trial" in svg
+    assert "Try Pro free for 7 days" in svg
 
 
 def test_logo_overlay_is_a_watermark_not_a_sticker():

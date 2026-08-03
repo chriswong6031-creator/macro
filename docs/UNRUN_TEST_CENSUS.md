@@ -668,6 +668,70 @@ trap above, and they sharpen it: **neither suite imports its subject.** One read
   this is a doctrine question about what the card tells the user, not test rot. The suite no
   longer asserts prose that ships nowhere.
 
+## The 2026-08-03 P1/P3 re-drain — one week of leak, seven batch PRs
+
+A week after the P4/P5 sweep, the census read **966 unrun of 1,860** (P1 28, P3 39,
+P4 440, P5 459) — the priority tiers had refilled from empty: ~100 new suites arrived
+unwired in seven days, confirming again that this is a standing leak, not a backlog.
+This pass re-drained P1 and P3 in seven themed batch PRs, **one batch per PR so one bad
+suite cannot red the world**, each batch staged serially in the exact CI-minimal venv
+before wiring, with sibling PRs inserted at distant anchors so they merge cleanly in any
+order:
+
+| batch | PR | lane | suites |
+|---|---|---|---|
+| B1 government-revenue | #4383 | new `unrun-government-revenue` | 11 (7 P1 + 4 P3) |
+| B2 register-honesty | #4384 | new `unrun-register-honesty` | 6 |
+| B3 nav-chrome | #4385 | new `unrun-nav-chrome` | 11 |
+| B4 page-guards | #4386 | new `unrun-page-guards` | 11 |
+| B5 market/release planes | #4388 | steps in `unrun-vector-dsr` / `unrun-market-plumbing` / `unrun-release-forecast` | 11 |
+| B6 ops/workers/live-plane | #4389 | new `unrun-ops-workers` | 9 |
+| B7 marketing-desk + prophet-live | (this PR) | new `unrun-marketing-desk` + step in `unrun-site-surfaces` | 6 |
+
+**65 of the 66 candidates staged green.** The measurement notes that mattered:
+
+- **A fail-closed validator converts a missing dep into 20 plausible assertion reds.**
+  `engine/government_revenue/workspace.py::is_valid_procurement_workspace` ends in
+  `except Exception: return False`, so without `jsonschema` every payload "fails
+  validation" and the builder raises — which staged as 8 + 12 real-looking failures
+  across two suites until diagnosed. The lane declares `jsonschema fastapi` on top of
+  the shared install (the `unrun-brain-gateway` shape: one extra venv per pack).
+- **A compressible fixture put a size assertion on filesystem noise.**
+  `test_render_checkout_bound` seeded 1 MiB of `"x"` that zlib-packed to ~1 KiB, so the
+  bytes its `new_git_kib < old_git_kib` measures — the blob the metadata replay drops —
+  did not exist, and both stores tied at du(1) block granularity (132 == 132). The
+  payload is now incompressible random hex; the assertion has a multi-MiB margin on any
+  filesystem. Same family as the platform-dependent byte-identity contract above:
+  a size/equality assertion over an artifact store needs the artifact to actually weigh
+  something.
+- **Path-covered is not run.** `tests/test_check_site_asset_refs.py` sat in
+  `on.pull_request.paths` TWICE (one copy under an `# unrun-dead-reference-guard`
+  comment with no matching job) while no `run:` step named it — triggerable-and-unrun,
+  the exact P1 shape, wearing a wired costume. B6 added only the run line.
+- **Comments still mislead grep even though the census is immune.** A naive
+  `grep -c` duplicate check flagged `test_flow_desk.py` at 4 mentions; two are prose
+  comments in `render.yml`/`engine-render.yml`. The census's YAML-parsed blob ignores
+  them. Check *where* a mention lives before calling it duplicate wiring.
+
+**Deliberately not wired by this pass:**
+
+- `tests/test_compile_capital_structure_registration_lifecycles.py` — green with
+  `jsonschema` installed; its owning lane (`capital-structure-intelligence`) is being
+  reshaped by #4375, which adds exactly that wheel to the lane's install line. Append it
+  there after #4375 lands rather than colliding with an in-flight edit.
+- `tests/test_public_dashboard_preview.py` — owned by #4374 (in flight).
+- The prophet-board review family (`tests/test_htf_super_tiers.py`,
+  `tests/test_china_board_rank.py`, `tests/test_prophet_stage_fusion.py`,
+  `tests/test_china_prophet_shadow.py`, and #4331's own new suites) — #4331 rewrites
+  parts of that estate, so staging them against pre-merge `main` proves nothing; the
+  #4331 follow-up staging lane owns them. `test_china_board_watch_lane.py` (pre-existing,
+  wired in B6) is also touched by #4331: expect its first post-merge run through the new
+  lane to be that PR's evidence, not this pass's.
+
+P4 (~436) and P5 (~455) remain the deliberate backlog. Wire in blast-radius order, batch
+per PR, stage serially first — and re-run `audit_unrun_tests.py` for current numbers
+rather than trusting this snapshot; the leak reopens weekly.
+
 ## Why the existing meta-guard did not catch this
 
 `scripts/check_house_law_registry.py` censuses `scripts/check_*.py` and requires each to

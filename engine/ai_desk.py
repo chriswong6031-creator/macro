@@ -52,6 +52,7 @@ from pathlib import Path
 import pandas as pd
 
 from lib import config
+from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine import master_brain as _mb          # reuse the DeepSeek/Anthropic client
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser
 
@@ -335,10 +336,13 @@ def _check_by(asof, horizon: int) -> str | None:
         return None
 
 
-def _build_thesis(t: dict, i: int, asof, cfg: dict) -> dict | None:
+def _build_thesis(t: dict, i: int, asof, cfg: dict, run_token: str = "") -> dict | None:
     """Validate one model-authored thesis and attach the engine-derived falsifier.
     Returns None for malformed / non-directional entries (accountability is mandatory:
-    every kept thesis carries a falsifier)."""
+    every kept thesis carries a falsifier). `run_token` scopes the id to THIS run —
+    without it a stale state_asof re-briefed on a later run day collides with the prior
+    run's ids and the scorers' last-wins dedupe silently discards rows (2026-08-03
+    audit: 73 of 124 ledger rows dropped; see engine.desk_ledger)."""
     if not isinstance(t, dict):
         return None
     subject = str(t.get("subject") or "").strip()
@@ -354,7 +358,7 @@ def _build_thesis(t: dict, i: int, asof, cfg: dict) -> dict | None:
     if conv not in _CONVICTIONS:
         conv = "low"
     return {
-        "id": f"{asof}-{i + 1}",
+        "id": f"{asof}-{run_token}-{i + 1}" if run_token else f"{asof}-{i + 1}",
         "subject": subject,
         "lean": lean,
         "conviction": conv,
@@ -588,8 +592,9 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     brief["confidence"] = conf if conf in _CONVICTIONS else "low"
     raw_theses = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
     theses = []
+    token = _ledger_law.run_token(brief["generated_at"])
     for i, t in enumerate(raw_theses[: int(cfg.get("max_theses", 3))]):
-        th = _build_thesis(t, len(theses), asof, cfg)
+        th = _build_thesis(t, len(theses), asof, cfg, run_token=token)
         if th is not None:
             theses.append(th)
     brief["theses"] = theses
@@ -623,18 +628,23 @@ def _append_ledger(brief: dict, root) -> None:
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
         regime = _regime_label(root)
+        rows = []
+        for t in theses:
+            check = (t.get("falsifier") or {}).get("check") or {}
+            rows.append({
+                "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
+                "subject": t["subject"], "lean": t["lean"],
+                "conviction": t["conviction"], "horizon_d": t["horizon_d"],
+                "falsifier": t["falsifier"], "check_by": t["check_by"],
+                "entry_levels": _entry_levels(check, asof, root),
+                "regime": regime,            # macro regime at log time → by_regime track record
+                "status": "open", "scored_at": None, "outcome": None, "realized": None,
+            })
+        # Immutability gate: a logged thesis is pre-registered — an id already in the
+        # ledger is refused loudly, never rewritten (engine.desk_ledger).
+        rows = _ledger_law.reject_existing_ids(d / "theses.jsonl", rows, "ai_desk")
         with open(d / "theses.jsonl", "a") as fh:
-            for t in theses:
-                check = (t.get("falsifier") or {}).get("check") or {}
-                row = {
-                    "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
-                    "subject": t["subject"], "lean": t["lean"],
-                    "conviction": t["conviction"], "horizon_d": t["horizon_d"],
-                    "falsifier": t["falsifier"], "check_by": t["check_by"],
-                    "entry_levels": _entry_levels(check, asof, root),
-                    "regime": regime,            # macro regime at log time → by_regime track record
-                    "status": "open", "scored_at": None, "outcome": None, "realized": None,
-                }
+            for row in rows:
                 fh.write(json.dumps(row, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
         log.warning("ai_desk ledger append failed: %s", e)
