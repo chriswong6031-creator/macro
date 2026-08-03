@@ -1634,6 +1634,14 @@ on:
       # engine/** covers indicators_m2.py — so this list needs no new entry.
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
+      # TrendSpider-hardening PR-A: the annotation-grammar suite runs in the
+      # SAME paired lanes (thin proves the imports stay lazy, fat executes the
+      # three loader/profile tests). Its committed SVG samples are inputs to it,
+      # so a fixture-only edit must reach the lanes too — a stale golden that no
+      # job re-renders is the dead-suite trap one layer down.
+      - "tests/test_chart_render_grammar.py"
+      - "tests/fixtures/chart_render/**"
+      - "scripts/dev_render_chart_grammar_pngs.py"
       - "tests/test_marketing_card_parity.py"
       # Hot Tape P1 — the intraday attention radar (jobs: marketing-engine for the
       # two thin suites, marketing-data for the pandas-heavy nightly pack suite).

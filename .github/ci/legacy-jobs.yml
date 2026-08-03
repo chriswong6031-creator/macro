@@ -3707,7 +3707,7 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: chart_render SVG suites
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q
 
   chart-render-data:
     if: ${{ false }}
@@ -3754,7 +3754,7 @@ jobs:
       - name: prove the data-dependent modules are present
         run: python -c "import pandas, pyarrow, numpy"
       - name: chart_render SVG suites (data-dependent tests execute here)
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q -rs
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q -rs
 
   portfolio-ctx:
     if: ${{ false }}
