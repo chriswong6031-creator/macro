@@ -418,6 +418,73 @@ def test_wire_filter_hidden_state_wins_over_card_layout() -> None:
     assert ".ew-card[hidden]{display:none!important}" in committed_css
 
 
+def test_wire_header_cta_keeps_contrast_against_estate_link_rule() -> None:
+    """The estate-wide anchor color must not turn the blue header CTA text blue."""
+    repo = Path(__file__).resolve().parents[1]
+    rule = ".earnings-wire .public-nav-cta,.earnings-wire .public-nav-cta:hover{color:#fff}"
+    template_css = (repo / "templates" / "earnings_wire" / "earnings-wire.css").read_text(encoding="utf-8")
+    committed_css = (repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.css").read_text(
+        encoding="utf-8"
+    )
+    assert rule in template_css
+    assert rule in committed_css
+
+
+def test_wire_light_theme_status_text_meets_normal_text_contrast() -> None:
+    """Tiny provenance labels must remain legible on both light surfaces."""
+    repo = Path(__file__).resolve().parents[1]
+
+    def luminance(hex_color: str) -> float:
+        channels = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        linear = [
+            channel / 12.92 if channel <= 0.04045
+            else ((channel + 0.055) / 1.055) ** 2.4
+            for channel in channels
+        ]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    def contrast(a: str, b: str) -> float:
+        lighter, darker = sorted((luminance(a), luminance(b)), reverse=True)
+        return (lighter + 0.05) / (darker + 0.05)
+
+    for relative in (
+        "templates/earnings_wire/earnings-wire.css",
+        "site/stocks/earnings/assets/earnings-wire.css",
+    ):
+        css = (repo / relative).read_text(encoding="utf-8")
+        override = re.search(
+            r'html\[data-theme="light"\] \.earnings-wire\{([^}]+)\}',
+            css,
+        )
+        assert override, relative
+        colors = dict(re.findall(r"--([\w-]+):(#(?:[0-9a-fA-F]{6}))", override.group(1)))
+        for token in ("ew-accent", "ew-hot", "ew-warm", "ew-quiet"):
+            assert token in colors, (relative, token)
+            assert contrast(colors[token], "#ffffff") >= 4.5, (relative, token)
+            assert contrast(colors[token], "#f6f7fa") >= 4.5, (relative, token)
+
+
+def test_wire_article_has_one_localized_breadcrumb_and_source_language() -> None:
+    repo = Path(__file__).resolve().parents[1]
+    article = (repo / "templates/earnings_wire/earnings_wire_article.html.j2").read_text(
+        encoding="utf-8"
+    )
+    index = (repo / "templates/earnings_wire/earnings_wire_index.html.j2").read_text(
+        encoding="utf-8"
+    )
+    css = (repo / "templates/earnings_wire/earnings-wire.css").read_text(encoding="utf-8")
+
+    assert "{% block breadcrumb %}{% endblock %}" in article
+    assert article.count('<nav class="ewa-crumb"') == 1
+    assert 'aria-label="Breadcrumb"' in article
+    assert 'aria-label="{{ t(' not in article
+    assert 'aria-current="page"' in article
+    assert '<blockquote lang="en">' in article
+    assert '<blockquote lang="en">' in index
+    assert "overflow-x:auto" in css
+    assert "justify-content:flex-start" in css
+
+
 def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None:
     repo = Path(__file__).resolve().parents[1]
     workflow = (repo / ".github" / "workflows" / "earnings-public-wire.yml").read_text(encoding="utf-8")
@@ -433,6 +500,14 @@ def test_public_wire_workflow_has_upstream_trigger_and_hourly_backstop() -> None
     assert 'push_on_main_ok' in workflow
     assert 'push_retry_init "earnings public wire"' in workflow
     assert "while push_attempt" in workflow
+    assert "push_fetch_main_for_rebase" in workflow
+    assert "git reset --hard origin/main" in workflow
+    assert "git clean -fd -- site/stocks/earnings" in workflow
+    assert "push_staged_clean site/stocks/earnings" in workflow
+    assert workflow.index("while push_attempt") < workflow.index("python -m scripts.build_earnings_public_wire")
+    assert workflow.index("git reset --hard origin/main") < workflow.index("python -m scripts.build_earnings_public_wire")
+    assert "git pull --rebase" not in workflow
+    assert "push_abort_rebase" not in workflow
     assert "push_do origin HEAD:main" in workflow
     assert "push_backoff" in workflow
     assert "Sitemap: https://www.mastermind-x.com/stocks/earnings/sitemap.xml" in robots

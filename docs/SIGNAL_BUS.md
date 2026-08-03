@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 4 |
 | btc-vector | 6 |
-| capital-structure-intelligence | 12 |
+| capital-structure-intelligence | 16 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -107,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 360 |
-| infrastructure | 129 |
+| infrastructure | 133 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 544 |
+| git | 548 |
 | git+r2 | 2 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -168,6 +168,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| capital-structure-companyfacts-coverage | `data/capital_structure/companyfacts/generations/*/coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 1 | 0 |
+| capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
@@ -177,6 +180,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-retrieval-queue-receipt | `data/capital_structure/retrieval_queue_receipt.json` | json | collect | infrastructure | 1 | 0 |
 | capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 1 | 0 |
+| capital-structure-companyfacts-current-pointer | `data/capital_structure/companyfacts/coverage_receipt.json` | json | collect | infrastructure | 0 | 0 |
 | capital-structure-document-term-observations | `data/capital_structure/document_term_observations.parquet` | parquet | collect | infrastructure | 0 | 0 |
 | site-capital-structure-projection | `site/capital-structure-data/latest.json` | json | collect | display | 0 | 0 |
 

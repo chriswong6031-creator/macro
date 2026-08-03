@@ -9,6 +9,7 @@ import pytest
 
 from engine.research_vault import r2_store as store_mod
 from engine.research_vault.r2_store import (
+    BoundedStrictReadStore,
     LocalStore,
     R2Store,
     Store,
@@ -22,6 +23,7 @@ class _Body:
         self.payload = payload
         self.offset = 0
         self.read_sizes: list[int | None] = []
+        self.read_limits = self.read_sizes
         self.closed = False
 
     def read(self, maximum: int | None = None) -> bytes:
@@ -136,12 +138,16 @@ def test_strict_read_protocol_preserves_legacy_store_runtime_compatibility(tmp_p
 
     assert isinstance(legacy, Store)
     assert not isinstance(legacy, StrictReadStore)
+    assert not isinstance(legacy, BoundedStrictReadStore)
+    assert not isinstance(legacy, StrictBoundedReadStore)
     assert isinstance(local, Store)
     assert isinstance(local, StrictReadStore)
     assert isinstance(local, StrictBoundedReadStore)
+    assert isinstance(local, BoundedStrictReadStore)
     assert isinstance(remote, Store)
     assert isinstance(remote, StrictReadStore)
     assert isinstance(remote, StrictBoundedReadStore)
+    assert isinstance(remote, BoundedStrictReadStore)
 
 
 def test_local_strict_read_returns_bytes_or_authoritative_missing(tmp_path):
@@ -346,3 +352,163 @@ def test_r2_strict_bounded_read_softens_only_authoritative_not_found(monkeypatch
         R2Store("research", client=_FakeS3(ClientError("AccessDenied"))).get_bytes_strict_bounded(
             "snapshots/forbidden.bin", 16
         )
+def test_local_bounded_read_rejects_giant_object_before_read(tmp_path, monkeypatch):
+    store = LocalStore(tmp_path / "store")
+    store.put_bytes("objects/giant.bin", b"x" * 1024)
+    reads = []
+    original = store_mod.os.read
+
+    def observed_read(descriptor, amount):
+        reads.append((descriptor, amount))
+        return original(descriptor, amount)
+
+    monkeypatch.setattr(store_mod.os, "read", observed_read)
+    with pytest.raises(RuntimeError, match="exceeds maximum"):
+        store.get_bytes_strict_bounded(
+            "objects/giant.bin", expected_byte_length=1, max_byte_length=1,
+        )
+    assert reads == []
+
+
+def test_local_bounded_read_rejects_leaf_and_parent_symlinks(tmp_path):
+    store = LocalStore(tmp_path / "store")
+    outside = tmp_path / "outside.bin"
+    outside.write_bytes(b"safe")
+    leaf = store.root / "leaf.bin"
+    leaf.symlink_to(outside)
+    with pytest.raises(RuntimeError):
+        store.get_bytes_strict_bounded(
+            "leaf.bin", expected_byte_length=4, max_byte_length=4,
+        )
+
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    (outside_dir / "object.bin").write_bytes(b"safe")
+    (store.root / "linked").symlink_to(outside_dir, target_is_directory=True)
+    with pytest.raises(RuntimeError):
+        store.get_bytes_strict_bounded(
+            "linked/object.bin", expected_byte_length=4, max_byte_length=4,
+        )
+
+
+def test_local_bounded_read_detects_growth_after_fstat(tmp_path, monkeypatch):
+    store = LocalStore(tmp_path / "store")
+    path = store.root / "object.bin"
+    path.write_bytes(b"safe")
+    original = store_mod.os.read
+    grown = False
+
+    def grow_then_read(descriptor, amount):
+        nonlocal grown
+        if not grown:
+            grown = True
+            with path.open("ab") as handle:
+                handle.write(b"!")
+        return original(descriptor, amount)
+
+    monkeypatch.setattr(store_mod.os, "read", grow_then_read)
+    with pytest.raises(RuntimeError, match="changed during read"):
+        store.get_bytes_strict_bounded(
+            "object.bin", expected_byte_length=4, max_byte_length=4,
+        )
+
+
+class _BoundedS3:
+    def __init__(self, *, head, get):
+        self.head = head
+        self.get = get
+        self.head_calls = []
+        self.get_calls = []
+
+    def head_object(self, **kwargs):
+        self.head_calls.append(kwargs)
+        if isinstance(self.head, Exception):
+            raise self.head
+        return self.head
+
+    def get_object(self, **kwargs):
+        self.get_calls.append(kwargs)
+        if isinstance(self.get, Exception):
+            raise self.get
+        return self.get
+
+
+def test_r2_bounded_read_preflights_head_and_binds_range_to_etag():
+    body = _Body(b"safe")
+    client = _BoundedS3(
+        head={"ContentLength": 4, "ETag": '"etag-1"'},
+        get={"ContentLength": 4, "ETag": '"etag-1"', "Body": body},
+    )
+    store = R2Store("evidence", client=client)
+    assert store.get_bytes_strict_bounded(
+        "object", expected_byte_length=4, max_byte_length=4,
+    ) == b"safe"
+    assert client.get_calls == [{
+        "Bucket": "evidence", "Key": "object", "Range": "bytes=0-4",
+        "IfMatch": '"etag-1"',
+    }]
+    assert body.read_limits == [5, 1] and body.closed
+
+    mismatch = _BoundedS3(
+        head={"ContentLength": 5, "ETag": '"etag-2"'}, get=AssertionError("must not GET"),
+    )
+    with pytest.raises(RuntimeError, match="exceeds maximum"):
+        R2Store("evidence", client=mismatch).get_bytes_strict_bounded(
+            "object", expected_byte_length=4, max_byte_length=4,
+        )
+    assert mismatch.get_calls == []
+
+    for missing_etag in ({"ContentLength": 4}, {"ContentLength": 4, "ETag": ""}):
+        unbound = _BoundedS3(head=missing_etag, get=AssertionError("must not GET"))
+        with pytest.raises(RuntimeError, match="HEAD lacks a valid ETag"):
+            R2Store("evidence", client=unbound).get_bytes_strict_bounded(
+                "object", expected_byte_length=4, max_byte_length=4,
+            )
+        assert unbound.get_calls == []
+
+    for get_etag in (None, '"other"'):
+        rebound_body = _Body(b"safe")
+        get_response = {"ContentLength": 4, "Body": rebound_body}
+        if get_etag is not None:
+            get_response["ETag"] = get_etag
+        rebound = _BoundedS3(
+            head={"ContentLength": 4, "ETag": '"expected"'}, get=get_response,
+        )
+        with pytest.raises(RuntimeError, match="GET/HEAD ETag mismatch"):
+            R2Store("evidence", client=rebound).get_bytes_strict_bounded(
+                "object", expected_byte_length=4, max_byte_length=4,
+            )
+        assert rebound_body.closed
+
+
+def test_r2_bounded_read_closes_extra_byte_body_and_propagates_failures(monkeypatch):
+    extra = _Body(b"extra")
+    client = _BoundedS3(
+        head={"ContentLength": 4, "ETag": '"etag"'},
+        get={"ContentLength": 5, "ETag": '"etag"', "Body": extra},
+    )
+    with pytest.raises(RuntimeError, match="body length mismatch"):
+        R2Store("evidence", client=client).get_bytes_strict_bounded(
+            "object", expected_byte_length=4, max_byte_length=5,
+        )
+    assert extra.closed and extra.read_limits == [5]
+
+    ClientError = _install_fake_botocore(monkeypatch)
+    not_found = _BoundedS3(head=ClientError("404"), get=AssertionError("must not GET"))
+    assert R2Store("evidence", client=not_found).get_bytes_strict_bounded(
+        "object", expected_byte_length=4, max_byte_length=4,
+    ) is None
+    for failure in (ClientError("AccessDenied"), TimeoutError("head timeout")):
+        with pytest.raises(type(failure)):
+            R2Store(
+                "evidence", client=_BoundedS3(head=failure, get=AssertionError("must not GET")),
+            ).get_bytes_strict_bounded(
+                "object", expected_byte_length=4, max_byte_length=4,
+            )
+    for failure in (ClientError("PreconditionFailed"), TimeoutError("get timeout")):
+        with pytest.raises(type(failure)):
+            R2Store("evidence", client=_BoundedS3(
+                head={"ContentLength": 4, "ETag": '"etag"'}, get=failure,
+            )).get_bytes_strict_bounded(
+                "object", expected_byte_length=4, max_byte_length=4,
+            )

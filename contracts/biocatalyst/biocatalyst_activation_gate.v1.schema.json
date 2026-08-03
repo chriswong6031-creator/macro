@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_activation_gate.v1.schema.json",
+  "title": "BioCatalyst R2 Activation Gate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "activation_id", "state", "issued_at", "valid_until", "preflight_id", "preflight_payload_sha256", "target_binding_sha256", "receipt_key", "receipt_sha256", "activation", "hash_scope", "gate_payload_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_activation_gate.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "activation_id": {"type": "string", "pattern": "^r2_activation_[a-f0-9]{24}$"},
+    "state": {"const": "ready"},
+    "issued_at": {"type": "string", "format": "date-time"},
+    "valid_until": {"type": "string", "format": "date-time"},
+    "preflight_id": {"type": "string", "pattern": "^r2_preflight_[a-f0-9]{24}$"},
+    "preflight_payload_sha256": {"$ref": "#/$defs/sha256"},
+    "target_binding_sha256": {"$ref": "#/$defs/sha256"},
+    "receipt_key": {"type": "string", "pattern": "^biocatalyst/activation-preflight/r2_preflight_[a-f0-9]{24}\\.json$"},
+    "receipt_sha256": {"$ref": "#/$defs/sha256"},
+    "activation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_collection", "ledger_accrual", "public_pointer_advanced"],
+      "properties": {
+        "source_collection": {"const": false},
+        "ledger_accrual": {"const": false},
+        "public_pointer_advanced": {"const": false}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_gate_payload_sha256"},
+    "gate_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

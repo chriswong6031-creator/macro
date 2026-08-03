@@ -126,6 +126,26 @@ html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px
 .site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
 .site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
 .site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+/* The two rules above are theme.css copies, and this partial loads AFTER
+   navigation-refresh.css — at an identical (0,2,0) they silently outranked the
+   wide-menu anchors that file owns. A .nav-market-dd/.nav-mega-dd left
+   `position:relative` makes the pill the offset parent, so the mega's `right:0`
+   pinned a 1276px panel to the RIGHT EDGE OF ITS TRIGGER and hung the other
+   ~950px off the left of the viewport (that is the split-panel artifact on
+   special_situations.html and the other 58 vector-family pages). Restoring
+   static also restores navigation-refresh's `content:none`: on a static parent
+   the ::after bridge stops being a 9px strip under the pill and becomes one
+   spanning the whole header, which keeps panels alive on any downward exit.
+   Re-asserted here verbatim, under the SAME media gates as the source, so the
+   family matches a theme.css page exactly. */
+@media (min-width: 701px){
+  .site-nav .nav-mega-dd{position:static}
+  .site-nav .nav-mega-dd::after{content:none}
+}
+@media (min-width: 901px){
+  .site-nav .nav-market-dd{position:static}
+  .site-nav .nav-market-dd::after{content:none}
+}
 /* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
    self-contained family can't load), themed with the vector palette. Dual-targets
    BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,

@@ -340,7 +340,21 @@ def test_hand_authored_pages_carry_charset_in_prescan_window():
 _RAW_HTML_WRITE = re.compile(r"""\.html['")\] ]*\.write_text\(""")
 # files that legitimately call write_text on page paths (the sweeps themselves).
 # Page builders NEVER belong here — they belong on write_page.
-_ALLOW = {"scripts/inject_data_base.py", "scripts/inject_wh_banner.py"}
+# scripts/sync_chat_nav.py writes the plain-copy chat.html PAIR, where write_page
+# is the wrong call in both directions: it would inject generated markup into a
+# SOURCE file (templates/chat.html), and it would make the two copies differ,
+# breaking the byte-match law that defines a plain-copy page. It is the same raw
+# write scripts/optimize_assets.py already makes on this pair — that one evades
+# this scan structurally (its paths come from a generator, so no .html literal is
+# visible to the AST), which is a blind spot, not a policy. The exemption is not
+# a silencing: that script asserts the data-base shim tag count is unchanged
+# across the splice and refuses to write otherwise, which is the property this
+# guard exists to protect.
+_ALLOW = {
+    "scripts/inject_data_base.py",
+    "scripts/inject_wh_banner.py",
+    "scripts/sync_chat_nav.py",
+}
 
 # Throwaway-directory factories. A page written under one of these is a headless
 # render wrapper or a selftest fixture, never a shipped site page — make_favicon,

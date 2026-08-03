@@ -571,7 +571,7 @@ def build(refresh: bool = True) -> str:
         preview_rows = newest
         locked_rows = [r for r in all_rows if id(r) not in preview_ids]
         gate = {
-            "tier": "insider",
+            "tier": "essential",
             "payload": PAYLOAD_URL,
             "preview": len(preview_rows),
             "locked": len(locked_rows),

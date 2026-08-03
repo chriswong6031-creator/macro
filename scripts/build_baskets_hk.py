@@ -162,7 +162,10 @@ def main() -> int:
 
     fdir = site / "hkbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
-    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # baskets.json is written AFTER the sector_pulse block below — the merge adds the pulse_*
+    # velocity/heat keys to theme_intel IN PLACE, so a write here froze a pre-merge snapshot on
+    # disk while the rendered page (which inlines the same dict later) looked fine. Same defect
+    # class already fixed for US in scripts/build_baskets.py and for China.
     # SECTOR PULSE — compact per-theme rotation data product. Also merges velocity/heat keys
     # into theme_intel for the rotation-scorecard page enhancements. Additive — never breaks build.
     try:
@@ -173,6 +176,13 @@ def main() -> int:
             _sp.write_score_snapshot(data["theme_intel"], "hk")   # accrues the baskets_hk velocity stream
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_pulse hk hook failed: %s", e)
+
+    # Post-pulse-merge so the artifact carries the pulse_* keys its DISK consumers read
+    # (engine.conviction_accrual, the Mastermind brain_gateway ticker grounding), and
+    # pre-chart-pop so they get BASKETS + CHART from one file — engine.sector_legs_hk reads
+    # the chart matrix straight out of it. Unconditional and outside the block above — a pulse
+    # failure is already caught there, so today's artifact always ships.
+    (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
     if emergence:
         (fdir / "narrative_emergence.json").write_text(
             json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))

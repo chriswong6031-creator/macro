@@ -41,6 +41,7 @@ from engine.codex_lane.runner import resolve_codex_bin, run_codex
 
 CODEX_CAPABILITY_ID = "codex_account"
 CODEX_ENV_ID = "CODEX_ACCOUNT_ATTACHED"
+CODEX_ACCOUNT_HOMES_ENV = "CODEX_ACCOUNT_HOMES"
 
 SOL_MODEL = "gpt-5.6-sol"
 TERRA_MODEL = "gpt-5.6-terra"
@@ -71,11 +72,75 @@ def provider_enabled() -> bool:
     return os.environ.get("CODEX_PROVIDER_ENABLED", "auto").strip().lower() not in _FALSE_VALUES
 
 
-def auth_file_path() -> Path:
+def auth_file_path(codex_home: str | Path | None = None) -> Path:
     """Return the active Codex credential-cache path without opening it."""
-    configured_home = os.environ.get("CODEX_HOME", "").strip()
-    codex_home = Path(configured_home).expanduser() if configured_home else Path("~/.codex").expanduser()
-    return codex_home / "auth.json"
+    if codex_home is not None:
+        home = Path(codex_home).expanduser()
+    else:
+        configured_home = os.environ.get("CODEX_HOME", "").strip()
+        home = (Path(configured_home).expanduser()
+                if configured_home else Path("~/.codex").expanduser())
+    return home / "auth.json"
+
+
+def account_homes() -> list[Path]:
+    """Return configured isolated Codex homes, primary first.
+
+    ``CODEX_ACCOUNT_HOMES`` is an ``os.pathsep``-separated list.  Keeping the
+    auth caches in different homes is the credential boundary: a second
+    ``codex login`` can never replace the first account's refresh token.
+    ``CODEX_HOME`` remains the single-account backwards-compatible default.
+    """
+    raw = os.environ.get(CODEX_ACCOUNT_HOMES_ENV, "").strip()
+    values = raw.split(os.pathsep) if raw else [
+        os.environ.get("CODEX_HOME", "").strip() or str(Path("~/.codex").expanduser())
+    ]
+    homes: list[Path] = []
+    seen: set[str] = set()
+    for value in values:
+        if not str(value).strip():
+            continue
+        home = Path(str(value).strip()).expanduser()
+        marker = str(home)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        homes.append(home)
+    return homes
+
+
+def capability_id_for_account(index: int) -> str:
+    """Stable Model Desk identity for a zero-based attached-account slot."""
+    return CODEX_CAPABILITY_ID if index == 0 else f"{CODEX_CAPABILITY_ID}_{index + 1}"
+
+
+def available_accounts() -> list[tuple[str, Path | None]]:
+    """Return usable ``(capability_id, CODEX_HOME)`` account slots.
+
+    This is a presence check only: auth files are never opened.  Environment
+    access-token/API-key auth stays supported as one legacy slot when there is
+    no file-backed login.
+    """
+    if not provider_enabled():
+        return []
+    binary = resolve_codex_bin()
+    binary_present = bool(
+        (binary != "codex" and Path(binary).is_file())
+        or shutil.which(binary)
+    )
+    if not binary_present:
+        return []
+
+    attached = [
+        (capability_id_for_account(index), home)
+        for index, home in enumerate(account_homes())
+        if auth_file_path(home).is_file()
+    ]
+    if attached:
+        return attached
+    if any(bool(os.environ.get(name)) for name in ("CODEX_ACCESS_TOKEN", "CODEX_API_KEY")):
+        return [(CODEX_CAPABILITY_ID, None)]
+    return []
 
 
 def is_available() -> bool:
@@ -84,26 +149,7 @@ def is_available() -> bool:
     This is a presence check only.  It never opens the credential file or reads
     an environment credential value.
     """
-    if not provider_enabled():
-        return False
-
-    binary = resolve_codex_bin()
-    binary_present = bool(
-        (binary != "codex" and Path(binary).is_file())
-        or shutil.which(binary)
-    )
-    if not binary_present:
-        return False
-
-    env_auth_present = any(
-        bool(os.environ.get(name))
-        for name in ("CODEX_ACCESS_TOKEN", "CODEX_API_KEY")
-    )
-    file_auth_present = auth_file_path().is_file()
-
-    # An explicit enable still requires a real credential source; it must not
-    # turn a missing login into a provider that fails every request.
-    return env_auth_present or file_auth_present
+    return bool(available_accounts())
 
 
 def translate_model(requested_model: str | None) -> str:
@@ -439,7 +485,11 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     return None
 
 
-def _record_rate_limits(rate_limits: Any, status_code: int) -> None:
+def _record_rate_limits(
+    rate_limits: Any,
+    status_code: int,
+    capability_id: str = CODEX_CAPABILITY_ID,
+) -> None:
     """Project Codex quota telemetry into the shared admin header ledger."""
     if not isinstance(rate_limits, dict):
         return
@@ -457,15 +507,23 @@ def _record_rate_limits(rate_limits: Any, status_code: int) -> None:
     try:
         from engine.neuralweb.key_pool import record_usage_headers
 
-        record_usage_headers(CODEX_CAPABILITY_ID, headers, status_code)
+        record_usage_headers(capability_id, headers, status_code)
     except Exception:
         pass
 
 
-def _message_from_result(result: dict[str, Any], tools: Any) -> _Message:
+def _message_from_result(
+    result: dict[str, Any],
+    tools: Any,
+    capability_id: str = CODEX_CAPABILITY_ID,
+) -> _Message:
     rate_limits = result.get("rate_limits")
     if not result.get("ok"):
-        _record_rate_limits(rate_limits, 429 if result.get("error_kind") == "usage_limit" else 500)
+        _record_rate_limits(
+            rate_limits,
+            429 if result.get("error_kind") == "usage_limit" else 500,
+            capability_id,
+        )
         kind = str(result.get("error_kind") or "error")
         if kind == "usage_limit":
             raise CodexProviderError("429 Codex usage limit reached")
@@ -493,7 +551,7 @@ def _message_from_result(result: dict[str, Any], tools: Any) -> _Message:
             f"Codex provider error ({kind}) — no output captured; the CLI wrote "
             f"nothing this run")
 
-    _record_rate_limits(rate_limits, 200)
+    _record_rate_limits(rate_limits, 200, capability_id)
     final = str(result.get("final_message") or "").strip()
     if not final:
         raise CodexProviderError("Codex provider returned an empty response")
@@ -562,9 +620,13 @@ class _Messages:
         timeout_s: int,
         cwd: str | None,
         reasoning_effort: str | None,
+        codex_home: str | Path | None,
+        capability_id: str,
     ) -> None:
         self.timeout_s = timeout_s
         self.cwd = cwd
+        self.codex_home = Path(codex_home).expanduser() if codex_home else None
+        self.capability_id = capability_id
         effort = str(reasoning_effort or "").strip().lower()
         self.reasoning_effort = effort if effort in {
             "none", "minimal", "low", "medium", "high", "xhigh", "max",
@@ -601,6 +663,9 @@ class _Messages:
                     "-c",
                     f'model_reasoning_effort="{self.reasoning_effort}"',
                 ])
+            process_env = os.environ.copy()
+            if self.codex_home is not None:
+                process_env["CODEX_HOME"] = str(self.codex_home)
             result = run_codex(
                 prompt,
                 cwd=vision_dir or self.cwd or tempfile.gettempdir(),
@@ -609,8 +674,13 @@ class _Messages:
                 sandbox="read-only",
                 network=False,
                 extra_args=extra_args,
+                env=process_env,
             )
-            return _message_from_result(result, kwargs.get("tools"))
+            return _message_from_result(
+                result,
+                kwargs.get("tools"),
+                self.capability_id,
+            )
         finally:
             if vision_dir:
                 shutil.rmtree(vision_dir, ignore_errors=True)
@@ -628,9 +698,13 @@ class CodexClient:
         timeout_s: int = 180,
         cwd: str | None = None,
         reasoning_effort: str | None = None,
+        codex_home: str | Path | None = None,
+        capability_id: str = CODEX_CAPABILITY_ID,
     ) -> None:
         self.messages = _Messages(
             timeout_s=max(1, int(timeout_s)),
             cwd=cwd,
             reasoning_effort=reasoning_effort,
+            codex_home=codex_home,
+            capability_id=capability_id,
         )
