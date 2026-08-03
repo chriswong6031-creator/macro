@@ -1192,6 +1192,258 @@ def test_trial_screen_invalid_queries_fail_before_any_public_read(
     _assert_private_headers(response)
 
 
+def test_trial_screen_facets_canonicalizes_filters_and_binds_one_public_cut(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [_screen_snapshot("NCT00000010")]
+    projection = _screen_projection(snapshots)
+    read_count = 0
+    observed: dict[str, Any] = {}
+
+    def read_once() -> tuple[object, dict[str, Any]]:
+        nonlocal read_count
+        read_count += 1
+        return projection, _milestone_operational()
+
+    class FacetsError(ValueError):
+        pass
+
+    def canonicalize(raw: dict[str, str | None]) -> dict[str, str | None]:
+        observed["raw_filters"] = dict(raw)
+        return {
+            "sponsor": "northstar bio",
+            "intervention": "nx one",
+            "study_type": "interventional",
+            "phase": "phase2",
+            "status": "recruiting",
+            "condition": "glioma",
+            "primary_completion_from": "2026-01-01",
+            "primary_completion_to": "2026-12-31",
+        }
+
+    def build_facets(**kwargs: Any) -> dict[str, Any]:
+        observed["build_args"] = kwargs
+        return {
+            "contract_id": "trial_screen_facets_read_model.v1",
+            "schema_version": "1.0.0",
+            "query": kwargs["filters"],
+            "facets": {"phase": []},
+        }
+
+    monkeypatch.setattr(biocatalyst_api, "_read_bundle", read_once)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_trial_screen_runtime",
+        lambda: (FacetsError, canonicalize, lambda **_kwargs: {}, build_facets),
+    )
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen/facets",
+        params={
+            "sponsor": "  NORTHSTAR   Bio ",
+            "intervention": " NX   ONE ",
+            "study_type": "Interventional",
+            "phase": "Phase2",
+            "status": "Recruiting",
+            "condition": "Glioma",
+            "primary_completion_from": "2026-01-01",
+            "primary_completion_to": "2026-12-31",
+        },
+    )
+
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    assert read_count == 1
+    assert observed["raw_filters"] == {
+        "sponsor": "NORTHSTAR   Bio",
+        "intervention": "NX   ONE",
+        "study_type": "Interventional",
+        "phase": "Phase2",
+        "status": "Recruiting",
+        "condition": "Glioma",
+        "primary_completion_from": "2026-01-01",
+        "primary_completion_to": "2026-12-31",
+    }
+    assert observed["build_args"] == {
+        "trial_snapshots": projection.trials,
+        "publication_context": {
+            "as_of": "2026-08-03T12:00:00Z",
+            "last_success_at": "2026-08-03T12:00:00Z",
+            "source_dataset_timestamp_raw": "2026-08-01T09:00:00",
+            "configured_nct_count": 1,
+            "observed_nct_count": 1,
+        },
+        "filters": response.json()["query"],
+    }
+    assert response.json()["contract_id"] == "trial_screen_facets_read_model.v1"
+
+
+def test_trial_screen_facets_serves_one_atomic_public_aggregate(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _screen_snapshot("NCT00000010", phases=["PHASE2"], status="RECRUITING"),
+        _screen_snapshot("NCT00000011", phases=["PHASE3"], status="COMPLETED"),
+    ]
+    projection = _screen_projection(snapshots)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen/facets",
+        params={"sponsor": " NORTHSTAR  biopharma "},
+    )
+
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["contract_id"] == "trial_screen_facets_read_model.v1"
+    assert payload["schema_version"] == "1.0.0"
+    assert payload["query"]["sponsor"] == "northstar biopharma"
+    assert payload["source"] == {
+        "name": "ClinicalTrials.gov",
+        "dataset_timestamp_raw": "2026-08-01T09:00:00",
+    }
+    assert payload["coverage"] == {
+        "class": "current_only",
+        "configured": 2,
+        "observed": 2,
+        "matched": 2,
+    }
+    assert [facet["dimension"] for facet in payload["facets"]] == [
+        "phase",
+        "status",
+        "study_type",
+    ]
+    assert "pagination" not in payload
+    assert "rows" not in payload
+    for key in _walk_keys(payload):
+        lowered = key.casefold()
+        assert not any(fragment in lowered for fragment in _FORBIDDEN_KEY_FRAGMENTS), key
+    encoded = json.dumps(payload, sort_keys=True)
+    for forbidden in (
+        "test-secret",
+        "biocatalyst/raw/",
+        "biocatalyst/receipts/",
+        "biocatalyst/source_snapshots/",
+        "canonical_study",
+    ):
+        assert forbidden not in encoded
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    (
+        "sponsor=%20%20%20",
+        "sponsor=" + "x" * 241,
+        "intervention=" + "x" * 241,
+        "study_type=" + "x" * 81,
+        "phase=" + "x" * 81,
+        "status=" + "x" * 81,
+        "primary_completion_from=2026-03",
+        "primary_completion_to=2026-02-30",
+        "primary_completion_from=2026-03-02&primary_completion_to=2026-03-01",
+        "cursor=not-accepted-here",
+        "limit=1",
+        "unknown=1",
+        "phase=phase2&phase=phase3",
+        "condition=glioma",
+    ),
+)
+def test_trial_screen_facets_rejects_invalid_or_unknown_queries_before_read(
+    entitled_client, monkeypatch, suffix: str
+) -> None:
+    class FacetsError(ValueError):
+        pass
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid facets query reached the public reader")
+        ),
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_trial_screen_runtime",
+        lambda: (
+            FacetsError,
+            lambda _raw: (_ for _ in ()).throw(FacetsError("invalid")),
+            lambda **_kwargs: {},
+            lambda **_kwargs: {},
+        ),
+    )
+    response = entitled_client.get(
+        f"/api/biocatalyst/v1/trials:screen/facets?{suffix}"
+    )
+    assert response.status_code == 400
+    _assert_private_headers(response)
+
+
+def test_trial_screen_facets_authenticates_before_any_projection_read(monkeypatch) -> None:
+    def must_not_read() -> tuple[object, dict[str, Any]]:
+        raise AssertionError("anonymous facets request reached the public reader")
+
+    def deny() -> dict[str, Any]:
+        raise HTTPException(
+            401,
+            "missing credentials",
+            headers={
+                **biocatalyst_api._PRIVATE_HEADERS,
+                "WWW-Authenticate": "Bearer realm=mastermind",
+            },
+        )
+
+    monkeypatch.setattr(biocatalyst_api, "_read_bundle", must_not_read)
+    app = FastAPI()
+    app.include_router(biocatalyst_api.router)
+    app.dependency_overrides[biocatalyst_api.require_site_full_user] = deny
+    with TestClient(app) as client:
+        response = client.get("/api/biocatalyst/v1/trials:screen/facets")
+
+    assert response.status_code == 401
+    _assert_private_headers(response)
+    assert response.headers["www-authenticate"] == "Bearer realm=mastermind"
+    assert response.json() == {"detail": "missing credentials"}
+    assert "public reader" not in response.text
+
+
+def test_trial_screen_facets_engine_failure_is_coarse_private_503(
+    entitled_client, monkeypatch
+) -> None:
+    class FacetsError(ValueError):
+        pass
+
+    read_count = 0
+
+    def read_once() -> tuple[object, dict[str, Any]]:
+        nonlocal read_count
+        read_count += 1
+        return (
+            _screen_projection([_screen_snapshot("NCT00000010")]),
+            _milestone_operational(),
+        )
+
+    def fail_facets(**_kwargs: Any) -> dict[str, Any]:
+        raise FacetsError("sensitive raw object key must not escape")
+
+    monkeypatch.setattr(biocatalyst_api, "_read_bundle", read_once)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_trial_screen_runtime",
+        lambda: (FacetsError, lambda raw: raw, lambda **_kwargs: {}, fail_facets),
+    )
+    response = entitled_client.get("/api/biocatalyst/v1/trials:screen/facets")
+
+    assert read_count == 1
+    assert response.status_code == 503
+    _assert_private_headers(response)
+    assert response.json() == {"detail": "trial intelligence temporarily unavailable"}
+    assert "sensitive raw object key" not in response.text
+
+
 def test_explicit_trial_peer_set_reads_only_public_protocol_projection(entitled_client) -> None:
     response = entitled_client.post(
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
@@ -3154,6 +3406,7 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
         entitled_client.get("/api/biocatalyst/v1/health").json(),
         entitled_client.get("/api/biocatalyst/v1/trials").json(),
         entitled_client.get("/api/biocatalyst/v1/trials:screen").json(),
+        entitled_client.get("/api/biocatalyst/v1/trials:screen/facets").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/milestones").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/changes").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001").json(),
@@ -3289,6 +3542,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials:screen",
+        "/api/biocatalyst/v1/trials:screen/facets",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
@@ -3304,6 +3558,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
         "/api/biocatalyst/v1/trials:screen",
+        "/api/biocatalyst/v1/trials:screen/facets",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",

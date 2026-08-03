@@ -9,10 +9,14 @@ import pytest
 
 import engine.biocatalyst.trial_screen as trial_screen
 from engine.biocatalyst.trial_screen import (
+    MAX_FACET_BUCKETS,
+    MAX_FACETS_RESPONSE_BYTES,
     MAX_INPUT_SNAPSHOTS,
     TrialScreenError,
+    build_trial_screen_facets_read_model,
     build_trial_screen_read_model,
     canonicalize_trial_screen_filters,
+    validate_trial_screen_facets_read_model,
     validate_trial_screen_read_model,
 )
 from engine.sector_intelligence import canonical_json_sha256, validate_contract
@@ -136,6 +140,16 @@ def _build(
         offset=offset,
         limit=limit,
         next_cursor_factory=_cursor,
+    )
+
+
+def _build_facets(
+    snapshots: list[dict], *, filters: dict | None = None, context: dict | None = None
+) -> dict:
+    return build_trial_screen_facets_read_model(
+        trial_snapshots=snapshots,
+        publication_context=context or _context(len(snapshots)),
+        filters=filters,
     )
 
 
@@ -479,3 +493,233 @@ def test_sanitized_row_scan_and_response_byte_ceilings_fail_atomically(
             publication_context=_context(1),
             next_cursor_factory=_cursor,
         )
+
+
+def test_facets_are_atomic_self_excluding_and_compose_all_other_filters() -> None:
+    phase_two = _snapshot(
+        "NCT00000101", sponsor="Northstar", condition="Glioma", phase="PHASE2"
+    )
+    phase_three = _snapshot(
+        "NCT00000102", sponsor="Northstar", condition="Glioma", phase="PHASE3"
+    )
+    wrong_condition = _snapshot(
+        "NCT00000103", sponsor="Northstar", condition="Lung cancer", phase="PHASE4"
+    )
+    wrong_sponsor = _snapshot(
+        "NCT00000104", sponsor="Southstar", condition="Glioma", phase="PHASE1"
+    )
+    result = _build_facets(
+        [phase_two, phase_three, wrong_condition, wrong_sponsor],
+        filters={"sponsor": " NORTHSTAR ", "condition": " glioma ", "phase": "phase2"},
+    )
+
+    assert result["scope"] == "current_configured_snapshot_generation"
+    assert result["coverage"] == {
+        "class": "current_only", "configured": 4, "observed": 4, "matched": 1
+    }
+    assert result["facet_semantics"] == {
+        "filter_composition": "literal_and_self_excluding_dimension",
+        "counting_unit": "unique_trial",
+        "selector_normalization": "whitespace_collapse_then_casefold",
+        "bucket_order": "normalized_token_ascending",
+        "partial_results": False,
+    }
+    phase, status, study_type = result["facets"]
+    # Phase removes only the phase selector: sponsor and condition still
+    # compose literally, so neither wrong-condition nor wrong-sponsor leaks in.
+    assert phase["base_matched"] == 2
+    assert phase["additivity"] == "non_additive"
+    assert phase["buckets"] == [
+        {"token": "phase2", "count": 1},
+        {"token": "phase3", "count": 1},
+    ]
+    # The other facets retain the requested phase filter and therefore see only
+    # the final one-trial AND intersection.
+    assert status["base_matched"] == study_type["base_matched"] == 1
+    assert status["buckets"] == [{"token": "recruiting", "count": 1}]
+    assert study_type["buckets"] == [{"token": "interventional", "count": 1}]
+    assert "pagination" not in result and "cursor" not in json.dumps(result)
+    validate_contract(result, repo_root=ROOT)
+    assert validate_trial_screen_facets_read_model(
+        result,
+        trial_snapshots=[phase_two, phase_three, wrong_condition, wrong_sponsor],
+        publication_context=_context(4),
+        filters={"sponsor": " NORTHSTAR ", "condition": " glioma ", "phase": "phase2"},
+    ) == result
+
+
+def test_facets_dedupe_multiphase_ncts_and_preserve_missingness_unselectable() -> None:
+    multi_phase = _snapshot("NCT00000111", phase="PHASE2")
+    multi_phase["facts"]["phases"]["value"] = [
+        "Phase  2",
+        " phase 2 ",
+        "PHASE3",
+    ]
+    _rehash_snapshot(multi_phase)
+    validate_contract(multi_phase, repo_root=ROOT)
+    unselectable_phase = _snapshot("NCT00000112", phase=" ")
+    missing_phase = _snapshot("NCT00000113", phase="PHASE1")
+    missing_phase["facts"]["phases"] = {
+        "state": "source_missing",
+        "value": None,
+        "source_json_path": "/protocolSection/designModule/phases",
+    }
+    _rehash_snapshot(missing_phase)
+    validate_contract(missing_phase, repo_root=ROOT)
+
+    result = _build_facets([multi_phase, unselectable_phase, missing_phase])
+    phase = result["facets"][0]
+    assert phase["base_matched"] == 3
+    assert phase["buckets"] == [
+        {"token": "phase 2", "count": 1},
+        {"token": "phase3", "count": 1},
+    ]
+    # One NCT has two different selectable phase tokens, so phase is explicitly
+    # non-additive; repeated normalized values cannot increment its NCT count.
+    assert sum(bucket["count"] for bucket in phase["buckets"]) == 2
+    assert phase["missingness"] == {
+        "observed": 2,
+        "observed_selectable": 1,
+        "observed_unselectable": 1,
+        "source_null": 0,
+        "source_missing": 1,
+        "not_applicable": 0,
+        "parser_degraded": 0,
+        "license_restricted": 0,
+    }
+    assert sum(phase["missingness"][state] for state in (
+        "observed", "source_null", "source_missing", "not_applicable",
+        "parser_degraded", "license_restricted",
+    )) == phase["base_matched"]
+
+    long_status = _snapshot("NCT00000114", status="X" * 81)
+    status = _build_facets([long_status])["facets"][1]
+    assert status["buckets"] == []
+    assert status["missingness"]["observed_unselectable"] == 1
+    assert status["missingness"]["observed_selectable"] == 0
+
+
+def test_facets_binding_and_contract_semantics_reject_forged_aggregate() -> None:
+    first = _snapshot("NCT00000121", phase="PHASE2", status="Recruiting")
+    second = _snapshot("NCT00000122", phase="PHASE3", status="Active, not recruiting")
+    result = _build_facets([first, second])
+    assert result["as_of"] == "2026-08-03T12:00:00Z"
+    assert result["source"] == {
+        "name": "ClinicalTrials.gov", "dataset_timestamp_raw": "2026-08-01T09:00:00"
+    }
+
+    forged = deepcopy(result)
+    forged["facets"][0]["buckets"] = list(reversed(forged["facets"][0]["buckets"]))
+    with pytest.raises(ContractValidationError, match="bucket_order"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][1]["buckets"][0]["count"] = 2
+    with pytest.raises(ContractValidationError, match="additivity"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][2]["missingness"]["source_missing"] = 1
+    with pytest.raises(ContractValidationError, match="missingness"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["coverage"]["matched"] = 3
+    with pytest.raises(ContractValidationError, match="coverage"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["capacity"]["max_buckets_per_dimension"] = 65
+    with pytest.raises(ContractValidationError, match="capacity"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facet_semantics"]["counting_unit"] = "source_value"
+    with pytest.raises(ContractValidationError, match="semantics"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][0]["base_matched"] = 1
+    forged["facets"][0]["missingness"]["observed"] = 1
+    forged["facets"][0]["missingness"]["observed_selectable"] = 1
+    forged["facets"][0]["buckets"] = [{"token": "phase2", "count": 1}]
+    with pytest.raises(ContractValidationError, match="coverage"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][0]["buckets"][0]["count"] = (
+        forged["facets"][0]["base_matched"] + 1
+    )
+    with pytest.raises(ContractValidationError, match="bucket_count"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][0]["missingness"]["observed_selectable"] = 0
+    forged["facets"][0]["missingness"]["observed_unselectable"] = 2
+    with pytest.raises(ContractValidationError, match="bucket_count"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][0]["missingness"]["observed_selectable"] = 1
+    forged["facets"][0]["missingness"]["observed_unselectable"] = 1
+    forged["facets"][0]["buckets"] = [{"token": "phase2", "count": 2}]
+    with pytest.raises(ContractValidationError, match="bucket_count"):
+        validate_contract(forged, repo_root=ROOT)
+    selected = _build_facets(
+        [first, _snapshot("NCT00000123", sponsor="Other Sponsor")],
+        filters={"sponsor": "northstar"},
+    )
+    forged = deepcopy(selected)
+    forged["facets"][1]["base_matched"] = 2
+    forged["facets"][1]["missingness"]["observed"] = 2
+    forged["facets"][1]["missingness"]["observed_selectable"] = 2
+    forged["facets"][1]["buckets"][0]["count"] = 2
+    with pytest.raises(ContractValidationError, match="self_exclusion"):
+        validate_contract(forged, repo_root=ROOT)
+    forged = deepcopy(result)
+    forged["facets"][0]["buckets"][0]["count"] = 2
+    with pytest.raises(TrialScreenError, match="input_binding_mismatch"):
+        validate_trial_screen_facets_read_model(
+            forged,
+            trial_snapshots=[first, second],
+            publication_context=_context(2),
+        )
+
+    for context in (
+        {**_context(2), "last_success_at": "2026-08-03T12:00:01Z"},
+        {**_context(2), "source_dataset_timestamp_raw": "2026-08-01T09:00:01"},
+        {**_context(2), "observed_nct_count": 1},
+    ):
+        with pytest.raises(TrialScreenError):
+            _build_facets([first, second], context=context)
+
+
+def test_facets_caps_fail_whole_response_and_expose_no_forbidden_enumerations(
+    monkeypatch,
+) -> None:
+    snapshots = [
+        _snapshot(f"NCT{index:08d}", status=f"STATUS {index:02d}")
+        for index in range(1, MAX_FACET_BUCKETS + 2)
+    ]
+    with pytest.raises(TrialScreenError, match="bucket_limit_exceeded"):
+        _build_facets(snapshots)
+
+    ordinary = _snapshot("NCT00000191")
+    result = _build_facets([ordinary])
+    serialized = json.dumps(result, sort_keys=True)
+    for forbidden in (
+        "nct_id",
+        "brief_title",
+        "official_title",
+        "country",
+        "enrollment",
+        "primary_completion_date",
+        "top_",
+        "rows",
+    ):
+        assert forbidden not in serialized
+
+    with pytest.raises(TrialScreenError, match="input_snapshot_limit"):
+        build_trial_screen_facets_read_model(
+            trial_snapshots=[ordinary] * (MAX_INPUT_SNAPSHOTS + 1),
+            publication_context=_context(MAX_INPUT_SNAPSHOTS + 1),
+        )
+    monkeypatch.setattr(trial_screen, "MAX_SANITIZED_SCAN_BYTES", 1)
+    with pytest.raises(TrialScreenError, match="sanitized_scan_too_large"):
+        _build_facets([ordinary])
+    monkeypatch.setattr(trial_screen, "MAX_SANITIZED_SCAN_BYTES", 32 * 1024 * 1024)
+    monkeypatch.setattr(trial_screen, "MAX_FACETS_RESPONSE_BYTES", 1)
+    with pytest.raises(TrialScreenError, match="facets_response_too_large"):
+        _build_facets([ordinary])
+    assert MAX_FACETS_RESPONSE_BYTES == 256 * 1024

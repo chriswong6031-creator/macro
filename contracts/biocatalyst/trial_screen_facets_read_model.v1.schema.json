@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_screen_facets_read_model.v1.schema.json",
+  "title": "BioCatalyst Trial Screen Facets Read Model v1",
+  "description": "A bounded, atomic aggregate over the current configured ClinicalTrials.gov snapshot generation. It emits only phase, status, and study-type selector tokens and aggregate counts; it has no pagination, NCT enumeration, free-text enumeration, scoring, identity resolution, forecast, alert, or decision authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "scope", "as_of", "query", "source",
+    "coverage", "facet_semantics", "facets", "authority", "capacity"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_screen_facets_read_model.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "scope": {"const": "current_configured_snapshot_generation"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "query": {"$ref": "#/$defs/query"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "dataset_timestamp_raw"],
+      "properties": {
+        "name": {"const": "ClinicalTrials.gov"},
+        "dataset_timestamp_raw": {"$ref": "#/$defs/sourceDataTimestamp"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "configured", "observed", "matched"],
+      "properties": {
+        "class": {"const": "current_only"},
+        "configured": {"type": "integer", "minimum": 0, "maximum": 10000000},
+        "observed": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "matched": {"type": "integer", "minimum": 0, "maximum": 10000}
+      }
+    },
+    "facet_semantics": {"$ref": "#/$defs/facetSemantics"},
+    "facets": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/facet"}, {"properties": {"dimension": {"const": "phase"}, "additivity": {"const": "non_additive"}}}]},
+        {"allOf": [{"$ref": "#/$defs/facet"}, {"properties": {"dimension": {"const": "status"}, "additivity": {"const": "additive"}}}]},
+        {"allOf": [{"$ref": "#/$defs/facet"}, {"properties": {"dimension": {"const": "study_type"}, "additivity": {"const": "additive"}}}]}
+      ],
+      "items": false
+    },
+    "authority": {"$ref": "#/$defs/authority"},
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_input_snapshots", "max_sanitized_row_bytes",
+        "max_sanitized_scan_bytes", "max_buckets_per_dimension",
+        "max_response_bytes", "overflow_behavior"
+      ],
+      "properties": {
+        "max_input_snapshots": {"const": 10000},
+        "max_sanitized_row_bytes": {"const": 131072},
+        "max_sanitized_scan_bytes": {"const": 33554432},
+        "max_buckets_per_dimension": {"const": 64},
+        "max_response_bytes": {"const": 262144},
+        "overflow_behavior": {"const": "reject_no_partial_facets"}
+      }
+    }
+  },
+  "$defs": {
+    "sourceDataTimestamp": {
+      "type": "string",
+      "format": "ctgov-data-timestamp",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"
+    },
+    "queryText": {"type": ["string", "null"], "maxLength": 240},
+    "queryDate": {"type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "facetSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "filter_composition", "counting_unit", "selector_normalization",
+        "bucket_order", "partial_results"
+      ],
+      "properties": {
+        "filter_composition": {"const": "literal_and_self_excluding_dimension"},
+        "counting_unit": {"const": "unique_trial"},
+        "selector_normalization": {"const": "whitespace_collapse_then_casefold"},
+        "bucket_order": {"const": "normalized_token_ascending"},
+        "partial_results": {"const": false}
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sponsor", "condition", "intervention", "phase", "status", "study_type",
+        "primary_completion_from", "primary_completion_to", "filter_composition",
+        "lexical_matching", "exact_matching", "primary_completion_matching"
+      ],
+      "properties": {
+        "sponsor": {"$ref": "#/$defs/queryText"},
+        "condition": {"$ref": "#/$defs/queryText"},
+        "intervention": {"$ref": "#/$defs/queryText"},
+        "phase": {"$ref": "#/$defs/queryText"},
+        "status": {"$ref": "#/$defs/queryText"},
+        "study_type": {"$ref": "#/$defs/queryText"},
+        "primary_completion_from": {"$ref": "#/$defs/queryDate"},
+        "primary_completion_to": {"$ref": "#/$defs/queryDate"},
+        "filter_composition": {"const": "literal_and"},
+        "lexical_matching": {"const": "sponsor_condition_intervention_name_or_other_names_normalized_substring"},
+        "exact_matching": {"const": "phase_status_study_type_normalized_exact"},
+        "primary_completion_matching": {"const": "full_interval_containment"}
+      }
+    },
+    "missingness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed", "observed_selectable", "observed_unselectable", "source_null",
+        "source_missing", "not_applicable", "parser_degraded", "license_restricted"
+      ],
+      "properties": {
+        "observed": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "observed_selectable": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "observed_unselectable": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "source_null": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "source_missing": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "not_applicable": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "parser_degraded": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "license_restricted": {"type": "integer", "minimum": 0, "maximum": 10000}
+      }
+    },
+    "bucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "count"],
+      "properties": {
+        "token": {"type": "string", "minLength": 1, "maxLength": 80},
+        "count": {"type": "integer", "minimum": 1, "maximum": 10000}
+      }
+    },
+    "facet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "base_matched", "additivity", "missingness", "buckets"],
+      "properties": {
+        "dimension": {"enum": ["phase", "status", "study_type"]},
+        "base_matched": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "additivity": {"enum": ["additive", "non_additive"]},
+        "missingness": {"$ref": "#/$defs/missingness"},
+        "buckets": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/bucket"}}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "source_fact_screen"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "sponsor_resolution", "trial_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "forecast_outcome", "assess_materiality", "deliver_alert", "raise_authority"]}
+      }
+    }
+  }
+}
