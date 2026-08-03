@@ -61,8 +61,10 @@
 </head>
 <body>
 
+
+
 <nav class="site-nav">
-    
+
 
 
     <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
@@ -101,15 +103,9 @@
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
-            <a href="baskets.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
-            <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
-          </div>
-        </div>
+        
+        <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
+        <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
@@ -287,13 +283,14 @@
   <script src="live_config.js?v=52943e92" defer></script>
   <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
-    <span class="mag">🔎</span>
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
@@ -1503,44 +1500,44 @@
           <span class="badge"><span class="l-en">top</span><span class="l-zh">前</span> 25</span></h3>
         <table>
           
-          <tr><td><a href="stock.html#WHR"><b>WHR</b></a></td>
-            <td class="muted sm">Whirlpool Corporat</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#ADAM"><b>ADAM</b></a></td>
-            <td class="muted sm">Adamas Trust, Inc.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#SNEX"><b>SNEX</b></a></td>
-            <td class="muted sm">StoneX Group Inc.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
           <tr><td><a href="stock.html#OI"><b>OI</b></a></td>
             <td class="muted sm">O-I Glass, Inc.</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#MIR"><b>MIR</b></a></td>
-            <td class="muted sm">Mirion Technologie</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#SABR"><b>SABR</b></a></td>
-            <td class="muted sm">Sabre</td>
+          <tr><td><a href="stock.html#ABR"><b>ABR</b></a></td>
+            <td class="muted sm">Arbor Realty Trust</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a></td>
             <td class="muted sm">Booking Holdings</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#FG"><b>FG</b></a></td>
-            <td class="muted sm">F&amp;G Annuities &amp; Li</td>
+          <tr><td><a href="stock.html#SNEX"><b>SNEX</b></a></td>
+            <td class="muted sm">StoneX Group Inc.</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#FBRT"><b>FBRT</b></a></td>
-            <td class="muted sm">Franklin BSP Realt</td>
+          <tr><td><a href="stock.html#WHR"><b>WHR</b></a></td>
+            <td class="muted sm">Whirlpool Corporat</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#EFOR"><b>EFOR</b></a></td>
-            <td class="muted sm">Everforth Inc.</td>
+          <tr><td><a href="stock.html#GPI"><b>GPI</b></a></td>
+            <td class="muted sm">Group 1 Automotive</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#KMPR"><b>KMPR</b></a></td>
+            <td class="muted sm">Kemper Corporation</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#KSS"><b>KSS</b></a></td>
+            <td class="muted sm">Kohl&#39;s Corp.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ADAM"><b>ADAM</b></a></td>
+            <td class="muted sm">Adamas Trust, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#MAN"><b>MAN</b></a></td>
+            <td class="muted sm">ManpowerGroup</td>
             <td class="r zpos">+3.00</td></tr>
           
         </table>
@@ -1554,44 +1551,44 @@
           <span class="badge"><span class="l-en">top</span><span class="l-zh">前</span> 25</span></h3>
         <table>
           
-          <tr><td><a href="stock.html#VRSN"><b>VRSN</b></a></td>
-            <td class="muted sm">Verisign</td>
-            <td class="r zpos">+3.00</td></tr>
-          
           <tr><td><a href="stock.html#DAVE"><b>DAVE</b></a></td>
             <td class="muted sm">Dave, Inc.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#VRSK"><b>VRSK</b></a></td>
-            <td class="muted sm">Verisk Analytics</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#AGX"><b>AGX</b></a></td>
-            <td class="muted sm">Argan, Inc.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#RSI"><b>RSI</b></a></td>
-            <td class="muted sm">Rush Street Intera</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#NTNX"><b>NTNX</b></a></td>
-            <td class="muted sm">Nutanix</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#PTON"><b>PTON</b></a></td>
             <td class="muted sm">Peloton Interactiv</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
-            <td class="muted sm">Enova Internationa</td>
+          <tr><td><a href="stock.html#SEZL"><b>SEZL</b></a></td>
+            <td class="muted sm">Sezzle</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#LUMN"><b>LUMN</b></a></td>
+            <td class="muted sm">Lumen Technologies</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#NTNX"><b>NTNX</b></a></td>
+            <td class="muted sm">Nutanix</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#ETSY"><b>ETSY</b></a></td>
             <td class="muted sm">Etsy</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#SEZL"><b>SEZL</b></a></td>
-            <td class="muted sm">Sezzle</td>
+          <tr><td><a href="stock.html#AGX"><b>AGX</b></a></td>
+            <td class="muted sm">Argan, Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
+            <td class="muted sm">Enova Internationa</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#RSI"><b>RSI</b></a></td>
+            <td class="muted sm">Rush Street Intera</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#STEP"><b>STEP</b></a></td>
+            <td class="muted sm">StepStone Group</td>
             <td class="r zpos">+3.00</td></tr>
           
         </table>
@@ -1609,14 +1606,6 @@
             <td class="muted sm">Chewy</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#CARG"><b>CARG</b></a></td>
-            <td class="muted sm">CarGurus</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#INSP"><b>INSP</b></a></td>
-            <td class="muted sm">Inspire Medical Sy</td>
-            <td class="r zpos">+3.00</td></tr>
-          
           <tr><td><a href="stock.html#LZ"><b>LZ</b></a></td>
             <td class="muted sm">LegalZoom.com, Inc</td>
             <td class="r zpos">+3.00</td></tr>
@@ -1625,8 +1614,16 @@
             <td class="muted sm">Domino&#39;s</td>
             <td class="r zpos">+3.00</td></tr>
           
+          <tr><td><a href="stock.html#INSP"><b>INSP</b></a></td>
+            <td class="muted sm">Inspire Medical Sy</td>
+            <td class="r zpos">+3.00</td></tr>
+          
           <tr><td><a href="stock.html#YETI"><b>YETI</b></a></td>
             <td class="muted sm">Yeti Holdings</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#CARG"><b>CARG</b></a></td>
+            <td class="muted sm">CarGurus</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#RNG"><b>RNG</b></a></td>
@@ -1707,44 +1704,44 @@
           <span class="badge"><span class="l-en">top</span><span class="l-zh">前</span> 25</span></h3>
         <table>
           
+          <tr><td><a href="stock.html#GNL"><b>GNL</b></a></td>
+            <td class="muted sm">Global Net Lease, </td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#NAVI"><b>NAVI</b></a></td>
+            <td class="muted sm">Navient</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#KBH"><b>KBH</b></a></td>
+            <td class="muted sm">KB Home</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#MIR"><b>MIR</b></a></td>
+            <td class="muted sm">Mirion Technologie</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#JBGS"><b>JBGS</b></a></td>
+            <td class="muted sm">JBG Smith</td>
+            <td class="r zpos">+3.00</td></tr>
+          
           <tr><td><a href="stock.html#AIG"><b>AIG</b></a></td>
             <td class="muted sm">American Internati</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#VRRM"><b>VRRM</b></a></td>
-            <td class="muted sm">Verra Mobility Cor</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#RWT"><b>RWT</b></a></td>
-            <td class="muted sm">RWT</td>
+          <tr><td><a href="stock.html#IT"><b>IT</b></a></td>
+            <td class="muted sm">Gartner</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#ARR"><b>ARR</b></a></td>
             <td class="muted sm">Armour Residential</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#OXM"><b>OXM</b></a></td>
-            <td class="muted sm">OXM</td>
+          <tr><td><a href="stock.html#EIG"><b>EIG</b></a></td>
+            <td class="muted sm">Employers Holdings</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#PMT"><b>PMT</b></a></td>
-            <td class="muted sm">PennyMac Mortgage </td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#SPNT"><b>SPNT</b></a></td>
-            <td class="muted sm">SiriusPoint Ltd.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#SCHL"><b>SCHL</b></a></td>
-            <td class="muted sm">Scholastic Corpora</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#DAN"><b>DAN</b></a></td>
-            <td class="muted sm">Dana Incorporated</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#BXMT"><b>BXMT</b></a></td>
-            <td class="muted sm">Blackstone Mortgag</td>
+          <tr><td><a href="stock.html#EMBC"><b>EMBC</b></a></td>
+            <td class="muted sm">EMBC</td>
             <td class="r zpos">+3.00</td></tr>
           
         </table>
@@ -1809,32 +1806,32 @@
           <span class="badge"><span class="l-en">top</span><span class="l-zh">前</span> 25</span></h3>
         <table>
           
-          <tr><td><a href="stock.html#ADP"><b>ADP</b></a></td>
-            <td class="muted sm">Automatic Data Pro</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#MSCI"><b>MSCI</b></a></td>
-            <td class="muted sm">MSCI Inc.</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#IESC"><b>IESC</b></a></td>
-            <td class="muted sm">IES Holdings</td>
+          <tr><td><a href="stock.html#AMZN"><b>AMZN</b></a></td>
+            <td class="muted sm">Amazon</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#HWM"><b>HWM</b></a></td>
             <td class="muted sm">Howmet Aerospace</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#AMZN"><b>AMZN</b></a></td>
-            <td class="muted sm">Amazon</td>
+          <tr><td><a href="stock.html#ADP"><b>ADP</b></a></td>
+            <td class="muted sm">Automatic Data Pro</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#BCPC"><b>BCPC</b></a></td>
             <td class="muted sm">Balchem Corporatio</td>
             <td class="r zpos">+3.00</td></tr>
           
+          <tr><td><a href="stock.html#MSCI"><b>MSCI</b></a></td>
+            <td class="muted sm">MSCI Inc.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
           <tr><td><a href="stock.html#CW"><b>CW</b></a></td>
             <td class="muted sm">Curtiss-Wright</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#IESC"><b>IESC</b></a></td>
+            <td class="muted sm">IES Holdings</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#STRL"><b>STRL</b></a></td>
@@ -1911,40 +1908,40 @@
           <span class="badge"><span class="l-en">top</span><span class="l-zh">前</span> 25</span></h3>
         <table>
           
-          <tr><td><a href="stock.html#ECHO"><b>ECHO</b></a></td>
-            <td class="muted sm">EchoStar</td>
+          <tr><td><a href="stock.html#RNG"><b>RNG</b></a></td>
+            <td class="muted sm">RingCentral, Inc.</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#ENOV"><b>ENOV</b></a></td>
-            <td class="muted sm">Enovis</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#RAL"><b>RAL</b></a></td>
-            <td class="muted sm">Ralliant Corp</td>
-            <td class="r zpos">+3.00</td></tr>
-          
-          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
-            <td class="muted sm">Enova Internationa</td>
+          <tr><td><a href="stock.html#PGNY"><b>PGNY</b></a></td>
+            <td class="muted sm">Progyny, Inc.</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#AGX"><b>AGX</b></a></td>
             <td class="muted sm">Argan, Inc.</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#AGNT"><b>AGNT</b></a></td>
-            <td class="muted sm">eXp World Holdings</td>
+          <tr><td><a href="stock.html#ENVA"><b>ENVA</b></a></td>
+            <td class="muted sm">Enova Internationa</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#PTGX"><b>PTGX</b></a></td>
-            <td class="muted sm">Protagonist Therap</td>
+          <tr><td><a href="stock.html#RAL"><b>RAL</b></a></td>
+            <td class="muted sm">Ralliant Corp</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#FOXF"><b>FOXF</b></a></td>
-            <td class="muted sm">Fox Factory</td>
+          <tr><td><a href="stock.html#ENOV"><b>ENOV</b></a></td>
+            <td class="muted sm">Enovis</td>
             <td class="r zpos">+3.00</td></tr>
           
-          <tr><td><a href="stock.html#FTRE"><b>FTRE</b></a></td>
-            <td class="muted sm">Fortrea</td>
+          <tr><td><a href="stock.html#NOG"><b>NOG</b></a></td>
+            <td class="muted sm">Northern Oil and G</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#NGVT"><b>NGVT</b></a></td>
+            <td class="muted sm">Ingevity, Corp.</td>
+            <td class="r zpos">+3.00</td></tr>
+          
+          <tr><td><a href="stock.html#ECHO"><b>ECHO</b></a></td>
+            <td class="muted sm">EchoStar</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#RSI"><b>RSI</b></a></td>
@@ -4425,8 +4422,8 @@
     
   </div>
   <div class="panel">
-    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL &#39;frames&#39; API (free, keyless) for FY2025 fundamentals, joined to the S&amp;P 1500 price universe; 1505 names with a full composite as of 2026-07-31. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL &#39;frames&#39; API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-31 有 1505 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-02 19:32 UTC</p>
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL &#39;frames&#39; API (free, keyless) for FY2025 fundamentals, joined to the S&amp;P 1500 price universe; 1505 names with a full composite as of 2026-07-31. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/the methodology page.</span><span class="l-zh">来源：SEC EDGAR XBRL &#39;frames&#39; API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-31 有 1505 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-03 01:15 UTC</p>
   </div>
   </section>
   
@@ -4707,15 +4704,15 @@
   
   
   Object.assign(_fx("value"), {
-    names: ["WHR", "ADAM", "SNEX", "OI", "MIR", "SABR", "BKNG", "FG", "FBRT", "EFOR"] });
+    names: ["OI", "ABR", "BKNG", "SNEX", "WHR", "GPI", "KMPR", "KSS", "ADAM", "MAN"] });
   if(!_fx("value").label) _fx("value").label = "Value";
   
   Object.assign(_fx("quality"), {
-    names: ["VRSN", "DAVE", "VRSK", "AGX", "RSI", "NTNX", "PTON", "ENVA", "ETSY", "SEZL"] });
+    names: ["DAVE", "PTON", "SEZL", "LUMN", "NTNX", "ETSY", "AGX", "ENVA", "RSI", "STEP"] });
   if(!_fx("quality").label) _fx("quality").label = "Quality";
   
   Object.assign(_fx("profitability"), {
-    names: ["CHWY", "CARG", "INSP", "LZ", "DPZ", "YETI", "RNG", "ACI", "INDV", "SFM"] });
+    names: ["CHWY", "LZ", "DPZ", "INSP", "YETI", "CARG", "RNG", "ACI", "INDV", "SFM"] });
   if(!_fx("profitability").label) _fx("profitability").label = "Profitability";
   
   Object.assign(_fx("investment"), {
@@ -4723,7 +4720,7 @@
   if(!_fx("investment").label) _fx("investment").label = "Investment";
   
   Object.assign(_fx("payout"), {
-    names: ["AIG", "VRRM", "RWT", "ARR", "OXM", "PMT", "SPNT", "SCHL", "DAN", "BXMT"] });
+    names: ["GNL", "NAVI", "KBH", "MIR", "JBGS", "AIG", "IT", "ARR", "EIG", "EMBC"] });
   if(!_fx("payout").label) _fx("payout").label = "Shareholder yield";
   
   Object.assign(_fx("low_vol"), {
@@ -4731,7 +4728,7 @@
   if(!_fx("low_vol").label) _fx("low_vol").label = "Low volatility";
   
   Object.assign(_fx("sue"), {
-    names: ["ADP", "MSCI", "IESC", "HWM", "AMZN", "BCPC", "CW", "STRL", "FN", "ENSG"] });
+    names: ["AMZN", "HWM", "ADP", "BCPC", "MSCI", "CW", "IESC", "STRL", "FN", "ENSG"] });
   if(!_fx("sue").label) _fx("sue").label = "Earnings momentum (SUE)";
   
   Object.assign(_fx("low_beta"), {
@@ -4739,7 +4736,7 @@
   if(!_fx("low_beta").label) _fx("low_beta").label = "Low beta (BAB)";
   
   Object.assign(_fx("accruals"), {
-    names: ["ECHO", "ENOV", "RAL", "ENVA", "AGX", "AGNT", "PTGX", "FOXF", "FTRE", "RSI"] });
+    names: ["RNG", "PGNY", "AGX", "ENVA", "RAL", "ENOV", "NOG", "NGVT", "ECHO", "RSI"] });
   if(!_fx("accruals").label) _fx("accruals").label = "Low accruals";
   
   Object.assign(_fx("short_interest"), {
@@ -4870,5 +4867,6 @@
   })();
   </script>
   <script src="theme.js?v=402a51a2" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

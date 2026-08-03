@@ -209,7 +209,7 @@ def test_macro_api_can_read_only_the_public_projection_and_cannot_see_worker_sta
 def test_macro_api_declares_projection_validation_dependencies():
     requirements = _text(API_REQUIREMENTS_PATH)
 
-    assert re.search(r"^jsonschema>=4\.23,<5\.0$", requirements, re.MULTILINE)
+    assert re.search(r"^jsonschema==4\.26\.0$", requirements, re.MULTILINE)
     assert re.search(r"^referencing>=0\.30,<1\.0$", requirements, re.MULTILINE)
 
 

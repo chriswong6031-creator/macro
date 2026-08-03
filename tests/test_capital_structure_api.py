@@ -9,8 +9,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import re
+import subprocess
+import sys
 
 import pytest
 
@@ -34,9 +37,52 @@ def _bundle() -> dict:
 
 def test_clean_serving_requirements_include_the_projection_validator() -> None:
     requirements = (ROOT / "app" / "requirements.txt").read_text(encoding="utf-8")
-    assert re.search(r"(?m)^jsonschema>=4\.23,<5\.0$", requirements), (
-        "the serving venv installs only app/requirements.txt; omitting jsonschema "
-        "turns every strict projection validation into a caught 503"
+    assert re.search(r"(?m)^jsonschema==4\.26\.0$", requirements), (
+        "the serving venv installs only app/requirements.txt; drifting or omitting "
+        "jsonschema invalidates the sealed authority runtime"
+    )
+
+
+def test_unknown_parser_runtime_does_not_silently_unmount_serving_router() -> None:
+    probe = """
+import sys
+
+sys.implementation.cache_tag = "unsupported-cpython-312-api-mount-probe"
+import app.main as serving
+import engine.capital_structure.document_terms as document_terms
+
+paths = set(serving.app.openapi()["paths"])
+required = {
+    "/api/capital-structure/v1/coverage",
+    "/api/capital-structure/v1/overview",
+}
+if not required.issubset(paths):
+    raise SystemExit(f"CAPITAL_STRUCTURE_ROUTER_UNMOUNTED:{sorted(paths)}")
+try:
+    document_terms._registered_parser(document_terms.PARSER_VERSION)
+except ValueError as exc:
+    if "runtime fingerprint is not released" not in str(exc):
+        raise
+    print("UNKNOWN_RUNTIME_ROUTER_MOUNTED_PARSER_REJECTED")
+else:
+    raise SystemExit("UNKNOWN_RUNTIME_PARSER_AUTHORITY_MINTED")
+"""
+    result = subprocess.run(
+        [sys.executable, "-B", "-c", probe],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "MACRO_REPO": str(ROOT),
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": str(ROOT),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == (
+        "UNKNOWN_RUNTIME_ROUTER_MOUNTED_PARSER_REJECTED"
     )
 
 

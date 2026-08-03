@@ -58,8 +58,10 @@
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
 <body>
+
+
 <nav class="site-nav">
-  
+
 
 
     <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
@@ -98,15 +100,9 @@
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
-            <a href="baskets.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
-            <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
-          </div>
-        </div>
+        
+        <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
+        <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
@@ -283,14 +279,23 @@
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
   <script src="live.js?v=e19f6af3" defer></script>
+  <div class="nav-search">
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
     <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
     </div>
   </div>
 </nav>
@@ -312,22 +317,7 @@
 
 <div class="sec"><h2>🟢 <span class="l-en">Just igniting — entry still open</span><span class="l-zh">刚刚点火 — 入场窗口仍开</span></h2><span class="cnt">21</span></div>
 <p class="sub"><span class="l-en">Acceleration turning up NOW with volume confirming, and the move has not yet run (small 20-day gain, not stretched above its averages). Ranked by impulse score; “NEW today” = the acceleration first fired this session.</span><span class="l-zh">加速度此刻转向上行、成交量确认，且涨势尚未展开（20日涨幅小、未明显高于均线）。按冲量分排序；“今日新”= 本交易日首次点火。</span></p>
-<div class="grid"><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=MSA">
-  <div class="ic-top">
-    <span class="ic-tk">MSA</span>
-    <span class="ic-score" style="--sc:100">100</span>
-  </div>
-  <div class="ic-name">MSA Safety · <span class="ic-sec">Industrials</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,26.2 5.3,27.5 10.7,31.5 16.0,33.9 21.3,33.7 26.7,32.6 32.0,35.3 37.3,35.5 42.7,37.6 48.0,36.0 53.3,40.0 58.7,37.1 64.0,36.8 69.3,34.5 74.7,34.4 80.0,36.5 85.3,32.7 90.7,33.1 96.0,34.3 101.3,31.9 106.7,29.9 112.0,27.3 117.3,25.9 122.7,23.6 128.0,27.5 133.3,26.4 138.7,25.8 144.0,27.4 149.3,30.0 154.7,29.7 160.0,27.2 165.3,29.0 170.7,29.7 176.0,28.6 181.3,24.7 186.7,26.8 192.0,26.7 197.3,27.7 202.7,26.1 208.0,24.1 213.3,23.6 218.7,22.7 224.0,19.0 229.3,22.5 234.7,23.8 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.2 5.3,27.5 10.7,31.5 16.0,33.9 21.3,33.7 26.7,32.6 32.0,35.3 37.3,35.5 42.7,37.6 48.0,36.0 53.3,40.0 58.7,37.1 64.0,36.8 69.3,34.5 74.7,34.4 80.0,36.5 85.3,32.7 90.7,33.1 96.0,34.3 101.3,31.9 106.7,29.9 112.0,27.3 117.3,25.9 122.7,23.6 128.0,27.5 133.3,26.4 138.7,25.8 144.0,27.4 149.3,30.0 154.7,29.7 160.0,27.2 165.3,29.0 170.7,29.7 176.0,28.6 181.3,24.7 186.7,26.8 192.0,26.7 197.3,27.7 202.7,26.1 208.0,24.1 213.3,23.6 218.7,22.7 224.0,19.0 229.3,22.5 234.7,23.8 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.8</span>
-    <span class="chip vol">📊 +45%</span>
-    <span class="chip run">+11%/20d</span>
-    <span class="chip ext">+13% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.8, volume +45%, only +11% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.8，量+45%，20日仅 +11%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=DLB">
+<div class="grid"><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=DLB">
   <div class="ic-top">
     <span class="ic-tk">DLB</span>
     <span class="ic-score" style="--sc:100">100</span>
@@ -357,21 +347,6 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.5, volume +92%, only +12% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.5，量+92%，20日仅 +12%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=IDCC">
-  <div class="ic-top">
-    <span class="ic-tk">IDCC</span>
-    <span class="ic-score" style="--sc:100">100</span>
-  </div>
-  <div class="ic-name">InterDigital · <span class="ic-sec">Information Technology</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,39.0 5.3,40.0 10.7,39.2 16.0,35.7 21.3,35.4 26.7,36.7 32.0,34.2 37.3,34.4 42.7,37.3 48.0,36.8 53.3,38.6 58.7,25.8 64.0,21.9 69.3,19.0 74.7,19.9 80.0,20.5 85.3,15.0 90.7,14.0 96.0,24.4 101.3,27.3 106.7,27.8 112.0,26.3 117.3,25.6 122.7,22.2 128.0,22.7 133.3,23.2 138.7,22.3 144.0,26.2 149.3,30.4 154.7,31.3 160.0,32.1 165.3,33.9 170.7,31.7 176.0,29.1 181.3,31.7 186.7,34.5 192.0,35.8 197.3,32.3 202.7,35.3 208.0,37.0 213.3,35.8 218.7,35.2 224.0,34.7 229.3,34.2 234.7,10.4 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.0 5.3,40.0 10.7,39.2 16.0,35.7 21.3,35.4 26.7,36.7 32.0,34.2 37.3,34.4 42.7,37.3 48.0,36.8 53.3,38.6 58.7,25.8 64.0,21.9 69.3,19.0 74.7,19.9 80.0,20.5 85.3,15.0 90.7,14.0 96.0,24.4 101.3,27.3 106.7,27.8 112.0,26.3 117.3,25.6 122.7,22.2 128.0,22.7 133.3,23.2 138.7,22.3 144.0,26.2 149.3,30.4 154.7,31.3 160.0,32.1 165.3,33.9 170.7,31.7 176.0,29.1 181.3,31.7 186.7,34.5 192.0,35.8 197.3,32.3 202.7,35.3 208.0,37.0 213.3,35.8 218.7,35.2 224.0,34.7 229.3,34.2 234.7,10.4 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.6</span>
-    <span class="chip vol">📊 +71%</span>
-    <span class="chip run">+9%/20d</span>
-    <span class="chip ext">+13% vs 50d</span>
-    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +71%, only +9% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+71%，20日仅 +9%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=AMZN">
   <div class="ic-top">
     <span class="ic-tk">AMZN</span>
@@ -387,6 +362,36 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +1.1, volume +102%, only +12% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +1.1，量+102%，20日仅 +12%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=MSA">
+  <div class="ic-top">
+    <span class="ic-tk">MSA</span>
+    <span class="ic-score" style="--sc:100">100</span>
+  </div>
+  <div class="ic-name">MSA Safety · <span class="ic-sec">Industrials</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,26.2 5.3,27.5 10.7,31.5 16.0,33.9 21.3,33.7 26.7,32.6 32.0,35.3 37.3,35.5 42.7,37.6 48.0,36.0 53.3,40.0 58.7,37.1 64.0,36.8 69.3,34.5 74.7,34.4 80.0,36.5 85.3,32.7 90.7,33.1 96.0,34.3 101.3,31.9 106.7,29.9 112.0,27.3 117.3,25.9 122.7,23.6 128.0,27.5 133.3,26.4 138.7,25.8 144.0,27.4 149.3,30.0 154.7,29.7 160.0,27.2 165.3,29.0 170.7,29.7 176.0,28.6 181.3,24.7 186.7,26.8 192.0,26.7 197.3,27.7 202.7,26.1 208.0,24.1 213.3,23.6 218.7,22.7 224.0,19.0 229.3,22.5 234.7,23.8 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.2 5.3,27.5 10.7,31.5 16.0,33.9 21.3,33.7 26.7,32.6 32.0,35.3 37.3,35.5 42.7,37.6 48.0,36.0 53.3,40.0 58.7,37.1 64.0,36.8 69.3,34.5 74.7,34.4 80.0,36.5 85.3,32.7 90.7,33.1 96.0,34.3 101.3,31.9 106.7,29.9 112.0,27.3 117.3,25.9 122.7,23.6 128.0,27.5 133.3,26.4 138.7,25.8 144.0,27.4 149.3,30.0 154.7,29.7 160.0,27.2 165.3,29.0 170.7,29.7 176.0,28.6 181.3,24.7 186.7,26.8 192.0,26.7 197.3,27.7 202.7,26.1 208.0,24.1 213.3,23.6 218.7,22.7 224.0,19.0 229.3,22.5 234.7,23.8 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.8</span>
+    <span class="chip vol">📊 +45%</span>
+    <span class="chip run">+11%/20d</span>
+    <span class="chip ext">+13% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.8, volume +45%, only +11% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.8，量+45%，20日仅 +11%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=IDCC">
+  <div class="ic-top">
+    <span class="ic-tk">IDCC</span>
+    <span class="ic-score" style="--sc:100">100</span>
+  </div>
+  <div class="ic-name">InterDigital · <span class="ic-sec">Information Technology</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,39.0 5.3,40.0 10.7,39.2 16.0,35.7 21.3,35.4 26.7,36.7 32.0,34.2 37.3,34.4 42.7,37.3 48.0,36.8 53.3,38.6 58.7,25.8 64.0,21.9 69.3,19.0 74.7,19.9 80.0,20.5 85.3,15.0 90.7,14.0 96.0,24.4 101.3,27.3 106.7,27.8 112.0,26.3 117.3,25.6 122.7,22.2 128.0,22.7 133.3,23.2 138.7,22.3 144.0,26.2 149.3,30.4 154.7,31.3 160.0,32.1 165.3,33.9 170.7,31.7 176.0,29.1 181.3,31.7 186.7,34.5 192.0,35.8 197.3,32.3 202.7,35.3 208.0,37.0 213.3,35.8 218.7,35.2 224.0,34.7 229.3,34.2 234.7,10.4 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.0 5.3,40.0 10.7,39.2 16.0,35.7 21.3,35.4 26.7,36.7 32.0,34.2 37.3,34.4 42.7,37.3 48.0,36.8 53.3,38.6 58.7,25.8 64.0,21.9 69.3,19.0 74.7,19.9 80.0,20.5 85.3,15.0 90.7,14.0 96.0,24.4 101.3,27.3 106.7,27.8 112.0,26.3 117.3,25.6 122.7,22.2 128.0,22.7 133.3,23.2 138.7,22.3 144.0,26.2 149.3,30.4 154.7,31.3 160.0,32.1 165.3,33.9 170.7,31.7 176.0,29.1 181.3,31.7 186.7,34.5 192.0,35.8 197.3,32.3 202.7,35.3 208.0,37.0 213.3,35.8 218.7,35.2 224.0,34.7 229.3,34.2 234.7,10.4 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.6</span>
+    <span class="chip vol">📊 +71%</span>
+    <span class="chip run">+9%/20d</span>
+    <span class="chip ext">+13% vs 50d</span>
+    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +71%, only +9% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+71%，20日仅 +9%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=PI">
   <div class="ic-top">
     <span class="ic-tk">PI</span>
@@ -402,36 +407,6 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +109%, only +7% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+109%，20日仅 +7%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=BDC">
-  <div class="ic-top">
-    <span class="ic-tk">BDC</span>
-    <span class="ic-score" style="--sc:99">99</span>
-  </div>
-  <div class="ic-name">Belden Inc. · <span class="ic-sec">Information Technology</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,30.2 5.3,32.7 10.7,33.2 16.0,35.4 21.3,27.8 26.7,26.3 32.0,26.2 37.3,31.8 42.7,29.4 48.0,26.9 53.3,32.2 58.7,24.4 64.0,20.8 69.3,21.2 74.7,16.6 80.0,14.6 85.3,10.6 90.7,12.6 96.0,16.6 101.3,16.5 106.7,13.0 112.0,15.2 117.3,16.3 122.7,14.7 128.0,18.5 133.3,20.3 138.7,23.0 144.0,30.2 149.3,32.2 154.7,29.5 160.0,30.8 165.3,36.6 170.7,33.5 176.0,37.5 181.3,37.9 186.7,37.7 192.0,40.0 197.3,36.9 202.7,32.5 208.0,35.7 213.3,36.0 218.7,32.2 224.0,33.3 229.3,36.9 234.7,18.2 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.2 5.3,32.7 10.7,33.2 16.0,35.4 21.3,27.8 26.7,26.3 32.0,26.2 37.3,31.8 42.7,29.4 48.0,26.9 53.3,32.2 58.7,24.4 64.0,20.8 69.3,21.2 74.7,16.6 80.0,14.6 85.3,10.6 90.7,12.6 96.0,16.6 101.3,16.5 106.7,13.0 112.0,15.2 117.3,16.3 122.7,14.7 128.0,18.5 133.3,20.3 138.7,23.0 144.0,30.2 149.3,32.2 154.7,29.5 160.0,30.8 165.3,36.6 170.7,33.5 176.0,37.5 181.3,37.9 186.7,37.7 192.0,40.0 197.3,36.9 202.7,32.5 208.0,35.7 213.3,36.0 218.7,32.2 224.0,33.3 229.3,36.9 234.7,18.2 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.8</span>
-    <span class="chip vol">📊 +34%</span>
-    <span class="chip run">+7%/20d</span>
-    <span class="chip ext">+13% vs 50d</span>
-    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.8, volume +34%, only +7% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.8，量+34%，20日仅 +7%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=MPWR">
-  <div class="ic-top">
-    <span class="ic-tk">MPWR</span>
-    <span class="ic-score" style="--sc:99">99</span>
-  </div>
-  <div class="ic-name">Monolithic Power Systems · <span class="ic-sec">Information Technology</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,14.3 5.3,13.4 10.7,18.0 16.0,19.8 21.3,14.1 26.7,9.6 32.0,12.2 37.3,24.1 42.7,18.6 48.0,20.5 53.3,24.6 58.7,16.5 64.0,17.4 69.3,12.2 74.7,22.8 80.0,26.3 85.3,18.3 90.7,20.1 96.0,28.0 101.3,27.2 106.7,27.0 112.0,35.7 117.3,35.7 122.7,30.7 128.0,34.2 133.3,37.3 138.7,33.3 144.0,38.3 149.3,35.4 154.7,31.3 160.0,32.8 165.3,37.0 170.7,31.2 176.0,32.8 181.3,36.1 186.7,35.6 192.0,34.5 197.3,30.7 202.7,29.6 208.0,29.7 213.3,34.1 218.7,33.7 224.0,37.7 229.3,40.0 234.7,35.3 240.0,27.7 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.3 5.3,13.4 10.7,18.0 16.0,19.8 21.3,14.1 26.7,9.6 32.0,12.2 37.3,24.1 42.7,18.6 48.0,20.5 53.3,24.6 58.7,16.5 64.0,17.4 69.3,12.2 74.7,22.8 80.0,26.3 85.3,18.3 90.7,20.1 96.0,28.0 101.3,27.2 106.7,27.0 112.0,35.7 117.3,35.7 122.7,30.7 128.0,34.2 133.3,37.3 138.7,33.3 144.0,38.3 149.3,35.4 154.7,31.3 160.0,32.8 165.3,37.0 170.7,31.2 176.0,32.8 181.3,36.1 186.7,35.6 192.0,34.5 197.3,30.7 202.7,29.6 208.0,29.7 213.3,34.1 218.7,33.7 224.0,37.7 229.3,40.0 234.7,35.3 240.0,27.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.7" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.6</span>
-    <span class="chip vol">📊 +58%</span>
-    <span class="chip run">+11%/20d</span>
-    <span class="chip ext">-1% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +58%, only +11% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+58%，20日仅 +11%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=SFM">
   <div class="ic-top">
     <span class="ic-tk">SFM</span>
@@ -447,6 +422,36 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +52%, only -3% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+52%，20日仅 -3%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=MPWR">
+  <div class="ic-top">
+    <span class="ic-tk">MPWR</span>
+    <span class="ic-score" style="--sc:99">99</span>
+  </div>
+  <div class="ic-name">Monolithic Power Systems · <span class="ic-sec">Information Technology</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,14.3 5.3,13.4 10.7,18.0 16.0,19.8 21.3,14.1 26.7,9.6 32.0,12.2 37.3,24.1 42.7,18.6 48.0,20.5 53.3,24.6 58.7,16.5 64.0,17.4 69.3,12.2 74.7,22.8 80.0,26.3 85.3,18.3 90.7,20.1 96.0,28.0 101.3,27.2 106.7,27.0 112.0,35.7 117.3,35.7 122.7,30.7 128.0,34.2 133.3,37.3 138.7,33.3 144.0,38.3 149.3,35.4 154.7,31.3 160.0,32.8 165.3,37.0 170.7,31.2 176.0,32.8 181.3,36.1 186.7,35.6 192.0,34.5 197.3,30.7 202.7,29.6 208.0,29.7 213.3,34.1 218.7,33.7 224.0,37.7 229.3,40.0 234.7,35.3 240.0,27.7 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.3 5.3,13.4 10.7,18.0 16.0,19.8 21.3,14.1 26.7,9.6 32.0,12.2 37.3,24.1 42.7,18.6 48.0,20.5 53.3,24.6 58.7,16.5 64.0,17.4 69.3,12.2 74.7,22.8 80.0,26.3 85.3,18.3 90.7,20.1 96.0,28.0 101.3,27.2 106.7,27.0 112.0,35.7 117.3,35.7 122.7,30.7 128.0,34.2 133.3,37.3 138.7,33.3 144.0,38.3 149.3,35.4 154.7,31.3 160.0,32.8 165.3,37.0 170.7,31.2 176.0,32.8 181.3,36.1 186.7,35.6 192.0,34.5 197.3,30.7 202.7,29.6 208.0,29.7 213.3,34.1 218.7,33.7 224.0,37.7 229.3,40.0 234.7,35.3 240.0,27.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.7" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.6</span>
+    <span class="chip vol">📊 +58%</span>
+    <span class="chip run">+11%/20d</span>
+    <span class="chip ext">-1% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +58%, only +11% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+58%，20日仅 +11%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=BDC">
+  <div class="ic-top">
+    <span class="ic-tk">BDC</span>
+    <span class="ic-score" style="--sc:99">99</span>
+  </div>
+  <div class="ic-name">Belden Inc. · <span class="ic-sec">Information Technology</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,30.2 5.3,32.7 10.7,33.2 16.0,35.4 21.3,27.8 26.7,26.3 32.0,26.2 37.3,31.8 42.7,29.4 48.0,26.9 53.3,32.2 58.7,24.4 64.0,20.8 69.3,21.2 74.7,16.6 80.0,14.6 85.3,10.6 90.7,12.6 96.0,16.6 101.3,16.5 106.7,13.0 112.0,15.2 117.3,16.3 122.7,14.7 128.0,18.5 133.3,20.3 138.7,23.0 144.0,30.2 149.3,32.2 154.7,29.5 160.0,30.8 165.3,36.6 170.7,33.5 176.0,37.5 181.3,37.9 186.7,37.7 192.0,40.0 197.3,36.9 202.7,32.5 208.0,35.7 213.3,36.0 218.7,32.2 224.0,33.3 229.3,36.9 234.7,18.2 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.2 5.3,32.7 10.7,33.2 16.0,35.4 21.3,27.8 26.7,26.3 32.0,26.2 37.3,31.8 42.7,29.4 48.0,26.9 53.3,32.2 58.7,24.4 64.0,20.8 69.3,21.2 74.7,16.6 80.0,14.6 85.3,10.6 90.7,12.6 96.0,16.6 101.3,16.5 106.7,13.0 112.0,15.2 117.3,16.3 122.7,14.7 128.0,18.5 133.3,20.3 138.7,23.0 144.0,30.2 149.3,32.2 154.7,29.5 160.0,30.8 165.3,36.6 170.7,33.5 176.0,37.5 181.3,37.9 186.7,37.7 192.0,40.0 197.3,36.9 202.7,32.5 208.0,35.7 213.3,36.0 218.7,32.2 224.0,33.3 229.3,36.9 234.7,18.2 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.8</span>
+    <span class="chip vol">📊 +34%</span>
+    <span class="chip run">+7%/20d</span>
+    <span class="chip ext">+13% vs 50d</span>
+    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.8, volume +34%, only +7% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.8，量+34%，20日仅 +7%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=LFUS">
   <div class="ic-top">
     <span class="ic-tk">LFUS</span>
@@ -462,21 +467,6 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.5, volume +37%, only +6% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.5，量+37%，20日仅 +6%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=KWR">
-  <div class="ic-top">
-    <span class="ic-tk">KWR</span>
-    <span class="ic-score" style="--sc:97">97</span>
-  </div>
-  <div class="ic-name">Quaker Chemical Corporation · <span class="ic-sec">Materials</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,26.6 5.3,27.0 10.7,31.3 16.0,32.6 21.3,30.4 26.7,33.1 32.0,34.9 37.3,34.9 42.7,31.7 48.0,32.1 53.3,40.0 58.7,31.4 64.0,30.2 69.3,26.6 74.7,24.6 80.0,25.5 85.3,23.6 90.7,23.5 96.0,28.2 101.3,19.2 106.7,15.5 112.0,10.4 117.3,15.4 122.7,12.6 128.0,9.6 133.3,9.7 138.7,11.9 144.0,19.5 149.3,26.9 154.7,27.2 160.0,26.1 165.3,26.3 170.7,23.8 176.0,21.3 181.3,17.8 186.7,22.4 192.0,25.6 197.3,22.0 202.7,20.4 208.0,24.6 213.3,21.3 218.7,21.1 224.0,18.1 229.3,24.7 234.7,16.9 240.0,9.9 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.6 5.3,27.0 10.7,31.3 16.0,32.6 21.3,30.4 26.7,33.1 32.0,34.9 37.3,34.9 42.7,31.7 48.0,32.1 53.3,40.0 58.7,31.4 64.0,30.2 69.3,26.6 74.7,24.6 80.0,25.5 85.3,23.6 90.7,23.5 96.0,28.2 101.3,19.2 106.7,15.5 112.0,10.4 117.3,15.4 122.7,12.6 128.0,9.6 133.3,9.7 138.7,11.9 144.0,19.5 149.3,26.9 154.7,27.2 160.0,26.1 165.3,26.3 170.7,23.8 176.0,21.3 181.3,17.8 186.7,22.4 192.0,25.6 197.3,22.0 202.7,20.4 208.0,24.6 213.3,21.3 218.7,21.1 224.0,18.1 229.3,24.7 234.7,16.9 240.0,9.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.9" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.5</span>
-    <span class="chip vol">📊 +49%</span>
-    <span class="chip run">-0%/20d</span>
-    <span class="chip ext">+8% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.5, volume +49%, only -0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.5，量+49%，20日仅 -0%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=JCI">
   <div class="ic-top">
     <span class="ic-tk">JCI</span>
@@ -492,6 +482,21 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +46%, only +4% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+46%，20日仅 +4%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=KWR">
+  <div class="ic-top">
+    <span class="ic-tk">KWR</span>
+    <span class="ic-score" style="--sc:97">97</span>
+  </div>
+  <div class="ic-name">Quaker Chemical Corporation · <span class="ic-sec">Materials</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,26.6 5.3,27.0 10.7,31.3 16.0,32.6 21.3,30.4 26.7,33.1 32.0,34.9 37.3,34.9 42.7,31.7 48.0,32.1 53.3,40.0 58.7,31.4 64.0,30.2 69.3,26.6 74.7,24.6 80.0,25.5 85.3,23.6 90.7,23.5 96.0,28.2 101.3,19.2 106.7,15.5 112.0,10.4 117.3,15.4 122.7,12.6 128.0,9.6 133.3,9.7 138.7,11.9 144.0,19.5 149.3,26.9 154.7,27.2 160.0,26.1 165.3,26.3 170.7,23.8 176.0,21.3 181.3,17.8 186.7,22.4 192.0,25.6 197.3,22.0 202.7,20.4 208.0,24.6 213.3,21.3 218.7,21.1 224.0,18.1 229.3,24.7 234.7,16.9 240.0,9.9 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.6 5.3,27.0 10.7,31.3 16.0,32.6 21.3,30.4 26.7,33.1 32.0,34.9 37.3,34.9 42.7,31.7 48.0,32.1 53.3,40.0 58.7,31.4 64.0,30.2 69.3,26.6 74.7,24.6 80.0,25.5 85.3,23.6 90.7,23.5 96.0,28.2 101.3,19.2 106.7,15.5 112.0,10.4 117.3,15.4 122.7,12.6 128.0,9.6 133.3,9.7 138.7,11.9 144.0,19.5 149.3,26.9 154.7,27.2 160.0,26.1 165.3,26.3 170.7,23.8 176.0,21.3 181.3,17.8 186.7,22.4 192.0,25.6 197.3,22.0 202.7,20.4 208.0,24.6 213.3,21.3 218.7,21.1 224.0,18.1 229.3,24.7 234.7,16.9 240.0,9.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.9" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.5</span>
+    <span class="chip vol">📊 +49%</span>
+    <span class="chip run">-0%/20d</span>
+    <span class="chip ext">+8% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.5, volume +49%, only -0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.5，量+49%，20日仅 -0%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=PWR">
   <div class="ic-top">
     <span class="ic-tk">PWR</span>
@@ -507,21 +512,6 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.5, volume +102%, only -0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.5，量+102%，20日仅 -0%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=BBT">
-  <div class="ic-top">
-    <span class="ic-tk">BBT</span>
-    <span class="ic-score" style="--sc:96">96</span>
-  </div>
-  <div class="ic-name">Beacon Financial Corp. · <span class="ic-sec">Financials</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,32.9 5.3,32.4 10.7,32.2 16.0,36.8 21.3,31.9 26.7,40.0 32.0,36.7 37.3,34.6 42.7,31.7 48.0,29.6 53.3,26.8 58.7,22.7 64.0,19.5 69.3,25.6 74.7,24.6 80.0,29.4 85.3,27.4 90.7,26.0 96.0,21.5 101.3,18.1 106.7,15.9 112.0,11.3 117.3,15.2 122.7,19.5 128.0,15.7 133.3,21.6 138.7,21.4 144.0,21.5 149.3,27.6 154.7,23.4 160.0,21.9 165.3,21.9 170.7,22.8 176.0,21.1 181.3,12.9 186.7,16.7 192.0,19.1 197.3,18.7 202.7,22.0 208.0,23.8 213.3,22.4 218.7,27.0 224.0,24.1 229.3,25.2 234.7,17.8 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,32.9 5.3,32.4 10.7,32.2 16.0,36.8 21.3,31.9 26.7,40.0 32.0,36.7 37.3,34.6 42.7,31.7 48.0,29.6 53.3,26.8 58.7,22.7 64.0,19.5 69.3,25.6 74.7,24.6 80.0,29.4 85.3,27.4 90.7,26.0 96.0,21.5 101.3,18.1 106.7,15.9 112.0,11.3 117.3,15.2 122.7,19.5 128.0,15.7 133.3,21.6 138.7,21.4 144.0,21.5 149.3,27.6 154.7,23.4 160.0,21.9 165.3,21.9 170.7,22.8 176.0,21.1 181.3,12.9 186.7,16.7 192.0,19.1 197.3,18.7 202.7,22.0 208.0,23.8 213.3,22.4 218.7,27.0 224.0,24.1 229.3,25.2 234.7,17.8 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.7</span>
-    <span class="chip vol">📊 +42%</span>
-    <span class="chip run">+4%/20d</span>
-    <span class="chip ext">+5% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +42%, only +4% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+42%，20日仅 +4%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=ETN">
   <div class="ic-top">
     <span class="ic-tk">ETN</span>
@@ -552,6 +542,21 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +50%, only +5% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+50%，20日仅 +5%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=BBT">
+  <div class="ic-top">
+    <span class="ic-tk">BBT</span>
+    <span class="ic-score" style="--sc:96">96</span>
+  </div>
+  <div class="ic-name">Beacon Financial Corp. · <span class="ic-sec">Financials</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,32.9 5.3,32.4 10.7,32.2 16.0,36.8 21.3,31.9 26.7,40.0 32.0,36.7 37.3,34.6 42.7,31.7 48.0,29.6 53.3,26.8 58.7,22.7 64.0,19.5 69.3,25.6 74.7,24.6 80.0,29.4 85.3,27.4 90.7,26.0 96.0,21.5 101.3,18.1 106.7,15.9 112.0,11.3 117.3,15.2 122.7,19.5 128.0,15.7 133.3,21.6 138.7,21.4 144.0,21.5 149.3,27.6 154.7,23.4 160.0,21.9 165.3,21.9 170.7,22.8 176.0,21.1 181.3,12.9 186.7,16.7 192.0,19.1 197.3,18.7 202.7,22.0 208.0,23.8 213.3,22.4 218.7,27.0 224.0,24.1 229.3,25.2 234.7,17.8 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,32.9 5.3,32.4 10.7,32.2 16.0,36.8 21.3,31.9 26.7,40.0 32.0,36.7 37.3,34.6 42.7,31.7 48.0,29.6 53.3,26.8 58.7,22.7 64.0,19.5 69.3,25.6 74.7,24.6 80.0,29.4 85.3,27.4 90.7,26.0 96.0,21.5 101.3,18.1 106.7,15.9 112.0,11.3 117.3,15.2 122.7,19.5 128.0,15.7 133.3,21.6 138.7,21.4 144.0,21.5 149.3,27.6 154.7,23.4 160.0,21.9 165.3,21.9 170.7,22.8 176.0,21.1 181.3,12.9 186.7,16.7 192.0,19.1 197.3,18.7 202.7,22.0 208.0,23.8 213.3,22.4 218.7,27.0 224.0,24.1 229.3,25.2 234.7,17.8 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.7</span>
+    <span class="chip vol">📊 +42%</span>
+    <span class="chip run">+4%/20d</span>
+    <span class="chip ext">+5% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +42%, only +4% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+42%，20日仅 +4%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=ADAM">
   <div class="ic-top">
     <span class="ic-tk">ADAM</span>
@@ -567,36 +572,6 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +60%, only -1% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+60%，20日仅 -1%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=GOOG">
-  <div class="ic-top">
-    <span class="ic-tk">GOOG</span>
-    <span class="ic-score" style="--sc:93">93</span>
-  </div>
-  <div class="ic-name">Alphabet Inc. (Class C) · <span class="ic-sec">Communication Services</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,10.2 5.3,9.6 10.7,14.0 16.0,15.7 21.3,22.1 26.7,23.3 32.0,17.2 37.3,18.8 42.7,20.7 48.0,20.2 53.3,24.3 58.7,22.8 64.0,22.1 69.3,18.1 74.7,16.3 80.0,20.3 85.3,17.9 90.7,26.3 96.0,27.5 101.3,28.0 106.7,29.3 112.0,32.6 117.3,25.2 122.7,24.3 128.0,22.2 133.3,23.0 138.7,19.0 144.0,19.6 149.3,21.8 154.7,22.9 160.0,23.5 165.3,25.4 170.7,22.5 176.0,16.7 181.3,24.0 186.7,27.5 192.0,25.1 197.3,27.5 202.7,29.4 208.0,40.0 213.3,39.7 218.7,36.3 224.0,33.6 229.3,32.2 234.7,33.1 240.0,22.8 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.2 5.3,9.6 10.7,14.0 16.0,15.7 21.3,22.1 26.7,23.3 32.0,17.2 37.3,18.8 42.7,20.7 48.0,20.2 53.3,24.3 58.7,22.8 64.0,22.1 69.3,18.1 74.7,16.3 80.0,20.3 85.3,17.9 90.7,26.3 96.0,27.5 101.3,28.0 106.7,29.3 112.0,32.6 117.3,25.2 122.7,24.3 128.0,22.2 133.3,23.0 138.7,19.0 144.0,19.6 149.3,21.8 154.7,22.9 160.0,23.5 165.3,25.4 170.7,22.5 176.0,16.7 181.3,24.0 186.7,27.5 192.0,25.1 197.3,27.5 202.7,29.4 208.0,40.0 213.3,39.7 218.7,36.3 224.0,33.6 229.3,32.2 234.7,33.1 240.0,22.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.8" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.7</span>
-    <span class="chip vol">📊 +12%</span>
-    <span class="chip run">+0%/20d</span>
-    <span class="chip ext">+0% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +12%, only +0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+12%，20日仅 +0%。入场窗口仍开。</span></div>
-</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=GOOGL">
-  <div class="ic-top">
-    <span class="ic-tk">GOOGL</span>
-    <span class="ic-score" style="--sc:93">93</span>
-  </div>
-  <div class="ic-name">Alphabet Inc. (Class A) · <span class="ic-sec">Communication Services</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,10.1 5.3,9.6 10.7,13.7 16.0,15.4 21.3,21.5 26.7,22.7 32.0,17.1 37.3,18.7 42.7,20.8 48.0,20.4 53.3,23.7 58.7,23.1 64.0,22.3 69.3,18.3 74.7,16.6 80.0,20.6 85.3,18.8 90.7,26.5 96.0,28.0 101.3,28.4 106.7,29.0 112.0,31.7 117.3,24.9 122.7,23.3 128.0,21.7 133.3,22.2 138.7,19.5 144.0,19.2 149.3,21.4 154.7,22.7 160.0,23.4 165.3,25.3 170.7,22.4 176.0,17.6 181.3,24.5 186.7,27.8 192.0,25.6 197.3,27.6 202.7,29.7 208.0,40.0 213.3,39.1 218.7,36.3 224.0,33.3 229.3,32.0 234.7,33.3 240.0,23.8 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.1 5.3,9.6 10.7,13.7 16.0,15.4 21.3,21.5 26.7,22.7 32.0,17.1 37.3,18.7 42.7,20.8 48.0,20.4 53.3,23.7 58.7,23.1 64.0,22.3 69.3,18.3 74.7,16.6 80.0,20.6 85.3,18.8 90.7,26.5 96.0,28.0 101.3,28.4 106.7,29.0 112.0,31.7 117.3,24.9 122.7,23.3 128.0,21.7 133.3,22.2 138.7,19.5 144.0,19.2 149.3,21.4 154.7,22.7 160.0,23.4 165.3,25.3 170.7,22.4 176.0,17.6 181.3,24.5 186.7,27.8 192.0,25.6 197.3,27.6 202.7,29.7 208.0,40.0 213.3,39.1 218.7,36.3 224.0,33.3 229.3,32.0 234.7,33.3 240.0,23.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.8" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.7</span>
-    <span class="chip vol">📊 +16%</span>
-    <span class="chip run">-1%/20d</span>
-    <span class="chip ext">-1% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +16%, only -1% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+16%，20日仅 -1%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=RES">
   <div class="ic-top">
     <span class="ic-tk">RES</span>
@@ -612,6 +587,36 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Igniting now — accel z +0.6, volume +31%, only +0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.6，量+31%，20日仅 +0%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=GOOGL">
+  <div class="ic-top">
+    <span class="ic-tk">GOOGL</span>
+    <span class="ic-score" style="--sc:93">93</span>
+  </div>
+  <div class="ic-name">Alphabet Inc. (Class A) · <span class="ic-sec">Communication Services</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,10.1 5.3,9.6 10.7,13.7 16.0,15.4 21.3,21.5 26.7,22.7 32.0,17.1 37.3,18.7 42.7,20.8 48.0,20.4 53.3,23.7 58.7,23.1 64.0,22.3 69.3,18.3 74.7,16.6 80.0,20.6 85.3,18.8 90.7,26.5 96.0,28.0 101.3,28.4 106.7,29.0 112.0,31.7 117.3,24.9 122.7,23.3 128.0,21.7 133.3,22.2 138.7,19.5 144.0,19.2 149.3,21.4 154.7,22.7 160.0,23.4 165.3,25.3 170.7,22.4 176.0,17.6 181.3,24.5 186.7,27.8 192.0,25.6 197.3,27.6 202.7,29.7 208.0,40.0 213.3,39.1 218.7,36.3 224.0,33.3 229.3,32.0 234.7,33.3 240.0,23.8 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.1 5.3,9.6 10.7,13.7 16.0,15.4 21.3,21.5 26.7,22.7 32.0,17.1 37.3,18.7 42.7,20.8 48.0,20.4 53.3,23.7 58.7,23.1 64.0,22.3 69.3,18.3 74.7,16.6 80.0,20.6 85.3,18.8 90.7,26.5 96.0,28.0 101.3,28.4 106.7,29.0 112.0,31.7 117.3,24.9 122.7,23.3 128.0,21.7 133.3,22.2 138.7,19.5 144.0,19.2 149.3,21.4 154.7,22.7 160.0,23.4 165.3,25.3 170.7,22.4 176.0,17.6 181.3,24.5 186.7,27.8 192.0,25.6 197.3,27.6 202.7,29.7 208.0,40.0 213.3,39.1 218.7,36.3 224.0,33.3 229.3,32.0 234.7,33.3 240.0,23.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.8" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.7</span>
+    <span class="chip vol">📊 +16%</span>
+    <span class="chip run">-1%/20d</span>
+    <span class="chip ext">-1% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +16%, only -1% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+16%，20日仅 -1%。入场窗口仍开。</span></div>
+</a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=GOOG">
+  <div class="ic-top">
+    <span class="ic-tk">GOOG</span>
+    <span class="ic-score" style="--sc:93">93</span>
+  </div>
+  <div class="ic-name">Alphabet Inc. (Class C) · <span class="ic-sec">Communication Services</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,10.2 5.3,9.6 10.7,14.0 16.0,15.7 21.3,22.1 26.7,23.3 32.0,17.2 37.3,18.8 42.7,20.7 48.0,20.2 53.3,24.3 58.7,22.8 64.0,22.1 69.3,18.1 74.7,16.3 80.0,20.3 85.3,17.9 90.7,26.3 96.0,27.5 101.3,28.0 106.7,29.3 112.0,32.6 117.3,25.2 122.7,24.3 128.0,22.2 133.3,23.0 138.7,19.0 144.0,19.6 149.3,21.8 154.7,22.9 160.0,23.5 165.3,25.4 170.7,22.5 176.0,16.7 181.3,24.0 186.7,27.5 192.0,25.1 197.3,27.5 202.7,29.4 208.0,40.0 213.3,39.7 218.7,36.3 224.0,33.6 229.3,32.2 234.7,33.1 240.0,22.8 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.2 5.3,9.6 10.7,14.0 16.0,15.7 21.3,22.1 26.7,23.3 32.0,17.2 37.3,18.8 42.7,20.7 48.0,20.2 53.3,24.3 58.7,22.8 64.0,22.1 69.3,18.1 74.7,16.3 80.0,20.3 85.3,17.9 90.7,26.3 96.0,27.5 101.3,28.0 106.7,29.3 112.0,32.6 117.3,25.2 122.7,24.3 128.0,22.2 133.3,23.0 138.7,19.0 144.0,19.6 149.3,21.8 154.7,22.9 160.0,23.5 165.3,25.4 170.7,22.5 176.0,16.7 181.3,24.0 186.7,27.5 192.0,25.1 197.3,27.5 202.7,29.4 208.0,40.0 213.3,39.7 218.7,36.3 224.0,33.6 229.3,32.2 234.7,33.1 240.0,22.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.8" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.7</span>
+    <span class="chip vol">📊 +12%</span>
+    <span class="chip run">+0%/20d</span>
+    <span class="chip ext">+0% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Igniting now — accel z +0.7, volume +12%, only +0% over 20d. Entry still open.</span><span class="l-zh">刚刚点火 — 加速度 z +0.7，量+12%，20日仅 +0%。入场窗口仍开。</span></div>
 </a><a class="ic-card" data-lane="buy" data-state="EARLY_IGNITION" href="stock.html?t=FSLR">
   <div class="ic-top">
     <span class="ic-tk">FSLR</span>
@@ -633,22 +638,7 @@
 
 <div class="sec"><h2>🟩 <span class="l-en">Accelerating — momentum building</span><span class="l-zh">加速中 — 动能积累</span></h2><span class="cnt">7</span></div>
 <p class="sub"><span class="l-en">Still accelerating, but already up enough that the freshest entry has passed. Trail / wait for a pullback.</span><span class="l-zh">仍在加速，但已上涨到错过最佳入场点。可跟踪或等回调。</span></p>
-<div class="grid"><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=REGN">
-  <div class="ic-top">
-    <span class="ic-tk">REGN</span>
-    <span class="ic-score" style="--sc:100">100</span>
-  </div>
-  <div class="ic-name">Regeneron Pharmaceuticals · <span class="ic-sec">Health Care</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,34.9 5.3,36.1 10.7,37.3 16.0,40.0 21.3,39.6 26.7,36.6 32.0,34.7 37.3,33.5 42.7,38.0 48.0,37.1 53.3,39.8 58.7,38.0 64.0,37.8 69.3,37.3 74.7,37.4 80.0,38.6 85.3,38.3 90.7,37.8 96.0,36.7 101.3,35.7 106.7,36.3 112.0,33.9 117.3,34.2 122.7,35.7 128.0,35.5 133.3,29.9 138.7,30.8 144.0,25.8 149.3,28.3 154.7,27.4 160.0,28.0 165.3,28.3 170.7,29.6 176.0,28.0 181.3,25.3 186.7,25.7 192.0,26.6 197.3,26.0 202.7,30.5 208.0,30.4 213.3,29.6 218.7,27.5 224.0,22.3 229.3,22.2 234.7,14.2 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.9 5.3,36.1 10.7,37.3 16.0,40.0 21.3,39.6 26.7,36.6 32.0,34.7 37.3,33.5 42.7,38.0 48.0,37.1 53.3,39.8 58.7,38.0 64.0,37.8 69.3,37.3 74.7,37.4 80.0,38.6 85.3,38.3 90.7,37.8 96.0,36.7 101.3,35.7 106.7,36.3 112.0,33.9 117.3,34.2 122.7,35.7 128.0,35.5 133.3,29.9 138.7,30.8 144.0,25.8 149.3,28.3 154.7,27.4 160.0,28.0 165.3,28.3 170.7,29.6 176.0,28.0 181.3,25.3 186.7,25.7 192.0,26.6 197.3,26.0 202.7,30.5 208.0,30.4 213.3,29.6 218.7,27.5 224.0,22.3 229.3,22.2 234.7,14.2 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.8</span>
-    <span class="chip vol">📊 +55%</span>
-    <span class="chip run">+17%/20d</span>
-    <span class="chip ext">+18% vs 50d</span>
-    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
-  </div>
-  <div class="ic-note"><span class="l-en">Accelerating — accel z +0.8. Up +17% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.8。20日 +17%；已过最佳入场点。</span></div>
-</a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=MSFT">
+<div class="grid"><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=MSFT">
   <div class="ic-top">
     <span class="ic-tk">MSFT</span>
     <span class="ic-score" style="--sc:100">100</span>
@@ -663,6 +653,21 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Accelerating — accel z +0.8. Up +19% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.8。20日 +19%；已过最佳入场点。</span></div>
+</a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=REGN">
+  <div class="ic-top">
+    <span class="ic-tk">REGN</span>
+    <span class="ic-score" style="--sc:100">100</span>
+  </div>
+  <div class="ic-name">Regeneron Pharmaceuticals · <span class="ic-sec">Health Care</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,34.9 5.3,36.1 10.7,37.3 16.0,40.0 21.3,39.6 26.7,36.6 32.0,34.7 37.3,33.5 42.7,38.0 48.0,37.1 53.3,39.8 58.7,38.0 64.0,37.8 69.3,37.3 74.7,37.4 80.0,38.6 85.3,38.3 90.7,37.8 96.0,36.7 101.3,35.7 106.7,36.3 112.0,33.9 117.3,34.2 122.7,35.7 128.0,35.5 133.3,29.9 138.7,30.8 144.0,25.8 149.3,28.3 154.7,27.4 160.0,28.0 165.3,28.3 170.7,29.6 176.0,28.0 181.3,25.3 186.7,25.7 192.0,26.6 197.3,26.0 202.7,30.5 208.0,30.4 213.3,29.6 218.7,27.5 224.0,22.3 229.3,22.2 234.7,14.2 240.0,9.6 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.9 5.3,36.1 10.7,37.3 16.0,40.0 21.3,39.6 26.7,36.6 32.0,34.7 37.3,33.5 42.7,38.0 48.0,37.1 53.3,39.8 58.7,38.0 64.0,37.8 69.3,37.3 74.7,37.4 80.0,38.6 85.3,38.3 90.7,37.8 96.0,36.7 101.3,35.7 106.7,36.3 112.0,33.9 117.3,34.2 122.7,35.7 128.0,35.5 133.3,29.9 138.7,30.8 144.0,25.8 149.3,28.3 154.7,27.4 160.0,28.0 165.3,28.3 170.7,29.6 176.0,28.0 181.3,25.3 186.7,25.7 192.0,26.6 197.3,26.0 202.7,30.5 208.0,30.4 213.3,29.6 218.7,27.5 224.0,22.3 229.3,22.2 234.7,14.2 240.0,9.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="9.6" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.8</span>
+    <span class="chip vol">📊 +55%</span>
+    <span class="chip run">+17%/20d</span>
+    <span class="chip ext">+18% vs 50d</span>
+    <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
+  </div>
+  <div class="ic-note"><span class="l-en">Accelerating — accel z +0.8. Up +17% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.8。20日 +17%；已过最佳入场点。</span></div>
 </a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=INVX">
   <div class="ic-top">
     <span class="ic-tk">INVX</span>
@@ -693,21 +698,6 @@
     <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
   </div>
   <div class="ic-note"><span class="l-en">Accelerating — accel z +0.8. Up +17% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.8。20日 +17%；已过最佳入场点。</span></div>
-</a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=PTEN">
-  <div class="ic-top">
-    <span class="ic-tk">PTEN</span>
-    <span class="ic-score" style="--sc:86">86</span>
-  </div>
-  <div class="ic-name">Patterson-UTI Energy, Inc. · <span class="ic-sec">Energy</span></div>
-  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,16.9 5.3,18.4 10.7,19.1 16.0,15.7 21.3,14.0 26.7,11.7 32.0,9.6 37.3,15.8 42.7,12.6 48.0,15.2 53.3,11.6 58.7,16.0 64.0,16.0 69.3,22.8 74.7,25.3 80.0,25.7 85.3,27.9 90.7,26.6 96.0,27.6 101.3,32.1 106.7,30.1 112.0,31.6 117.3,31.9 122.7,34.9 128.0,39.9 133.3,39.2 138.7,40.0 144.0,35.2 149.3,30.7 154.7,33.1 160.0,33.2 165.3,30.8 170.7,29.3 176.0,29.5 181.3,31.2 186.7,28.0 192.0,27.4 197.3,23.9 202.7,22.3 208.0,25.4 213.3,26.6 218.7,33.0 224.0,35.0 229.3,33.7 234.7,29.4 240.0,24.3 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,16.9 5.3,18.4 10.7,19.1 16.0,15.7 21.3,14.0 26.7,11.7 32.0,9.6 37.3,15.8 42.7,12.6 48.0,15.2 53.3,11.6 58.7,16.0 64.0,16.0 69.3,22.8 74.7,25.3 80.0,25.7 85.3,27.9 90.7,26.6 96.0,27.6 101.3,32.1 106.7,30.1 112.0,31.6 117.3,31.9 122.7,34.9 128.0,39.9 133.3,39.2 138.7,40.0 144.0,35.2 149.3,30.7 154.7,33.1 160.0,33.2 165.3,30.8 170.7,29.3 176.0,29.5 181.3,31.2 186.7,28.0 192.0,27.4 197.3,23.9 202.7,22.3 208.0,25.4 213.3,26.6 218.7,33.0 224.0,35.0 229.3,33.7 234.7,29.4 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg></div>
-  <div class="ic-chips">
-    <span class="chip accel">⚡ +0.6</span>
-    <span class="chip vol">📊 +32%</span>
-    <span class="chip run">+21%/20d</span>
-    <span class="chip ext">+0% vs 50d</span>
-    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
-  </div>
-  <div class="ic-note"><span class="l-en">Accelerating — accel z +0.6. Up +21% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.6。20日 +21%；已过最佳入场点。</span></div>
 </a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=ORCL">
   <div class="ic-top">
     <span class="ic-tk">ORCL</span>
@@ -723,6 +713,21 @@
     <span class="chip fresh"><span class="l-en">day</span><span class="l-zh">第</span> 2</span>
   </div>
   <div class="ic-note"><span class="l-en">Accelerating — accel z +0.5. Up -7% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.5。20日 -7%；已过最佳入场点。</span></div>
+</a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=PTEN">
+  <div class="ic-top">
+    <span class="ic-tk">PTEN</span>
+    <span class="ic-score" style="--sc:86">86</span>
+  </div>
+  <div class="ic-name">Patterson-UTI Energy, Inc. · <span class="ic-sec">Energy</span></div>
+  <div class="ic-spark"><svg class="nch" viewBox="0 0 240 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,16.9 5.3,18.4 10.7,19.1 16.0,15.7 21.3,14.0 26.7,11.7 32.0,9.6 37.3,15.8 42.7,12.6 48.0,15.2 53.3,11.6 58.7,16.0 64.0,16.0 69.3,22.8 74.7,25.3 80.0,25.7 85.3,27.9 90.7,26.6 96.0,27.6 101.3,32.1 106.7,30.1 112.0,31.6 117.3,31.9 122.7,34.9 128.0,39.9 133.3,39.2 138.7,40.0 144.0,35.2 149.3,30.7 154.7,33.1 160.0,33.2 165.3,30.8 170.7,29.3 176.0,29.5 181.3,31.2 186.7,28.0 192.0,27.4 197.3,23.9 202.7,22.3 208.0,25.4 213.3,26.6 218.7,33.0 224.0,35.0 229.3,33.7 234.7,29.4 240.0,24.3 240,40" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,16.9 5.3,18.4 10.7,19.1 16.0,15.7 21.3,14.0 26.7,11.7 32.0,9.6 37.3,15.8 42.7,12.6 48.0,15.2 53.3,11.6 58.7,16.0 64.0,16.0 69.3,22.8 74.7,25.3 80.0,25.7 85.3,27.9 90.7,26.6 96.0,27.6 101.3,32.1 106.7,30.1 112.0,31.6 117.3,31.9 122.7,34.9 128.0,39.9 133.3,39.2 138.7,40.0 144.0,35.2 149.3,30.7 154.7,33.1 160.0,33.2 165.3,30.8 170.7,29.3 176.0,29.5 181.3,31.2 186.7,28.0 192.0,27.4 197.3,23.9 202.7,22.3 208.0,25.4 213.3,26.6 218.7,33.0 224.0,35.0 229.3,33.7 234.7,29.4 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg></div>
+  <div class="ic-chips">
+    <span class="chip accel">⚡ +0.6</span>
+    <span class="chip vol">📊 +32%</span>
+    <span class="chip run">+21%/20d</span>
+    <span class="chip ext">+0% vs 50d</span>
+    <span class="chip fresh new"><span class="l-en">NEW today</span><span class="l-zh">今日新</span></span>
+  </div>
+  <div class="ic-note"><span class="l-en">Accelerating — accel z +0.6. Up +21% in 20d; past the freshest entry.</span><span class="l-zh">加速中 — 加速度 z +0.6。20日 +21%；已过最佳入场点。</span></div>
 </a><a class="ic-card" data-lane="igniting" data-state="IGNITING" href="stock.html?t=CGNX">
   <div class="ic-top">
     <span class="ic-tk">CGNX</span>
@@ -1350,5 +1355,6 @@
 <footer class="site-footer" style="margin-top:18px;color:var(--muted);font-size:12px">
   © 2026 Mastermind Inc
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

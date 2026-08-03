@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOCKUP — baskets_china anonymous tier-preview (W1b)</title>
+<!--
+  W1b REFERENCE MOCKUP — the ANONYMOUS (walled) state of baskets_china.html.
+  Spec: research/seo_supercharge/W1B_BASKETS_CHINA_PREVIEW_SPEC.md
+
+  This file is a design reference, NOT shipping code. It is self-contained so it
+  opens with no build step: the :root block below is copied from templates/theme.css
+  (dark) so the colours match the real page exactly. The real implementation
+  inherits those tokens from theme.css and must NOT redefine them.
+
+  Toggle the language with the EN/中文 control (mirrors the real .l-en/.l-zh idiom).
+  Everything with class .gh is a content-free skeleton: the paid rows are NOT in
+  this document, exactly as they will not be in the shipped shell.
+-->
+<style>
+/* ── tokens: copied verbatim from templates/theme.css :root (dark) ───────────── */
+:root{
+  --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+  --muted:#8b93a1; --line:#2a2f3a;
+  --warn:#e0a030; --act:#e05555; --ok:#3da564;
+  --up:#45b873; --down:#e06464;
+  --info:#5b9bf0; --link:#7aa7e0;
+  --font-ui:-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;
+}
+html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }   /* 红涨绿跌 — theme.css:138 */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui);margin:0;padding:18px}
+@media(min-width:1100px){body{padding:24px max(34px,calc((100vw - 1240px)/2))}}
+a{text-decoration:none;color:inherit}
+h1{font-size:21px;margin:0}
+h2{font-size:15px;margin:30px 0 4px;display:flex;align-items:center;gap:9px}
+h2 .idx{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--muted);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.sub{color:var(--muted);font-size:12.5px;margin:2px 0 12px;max-width:70ch}
+.asof{color:var(--muted);font-size:12px}
+.tagline{color:var(--muted);font-size:12.5px;margin:8px 0 0;max-width:78ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.mock-banner{background:color-mix(in srgb,var(--warn) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 34%,transparent);color:var(--warn);
+  border-radius:10px;padding:8px 13px;font-size:11.5px;font-weight:700;margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.lang-btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:5px 12px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+
+/* ── free strip: sleeve chip + macro backdrop (market context, stays free) ──── */
+.freestrip{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px}
+.sleeve-chip{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:11px;
+  background:var(--panel);border:1px solid var(--line);font-size:12.5px}
+.sleeve-chip b{font-weight:700}
+.sleeve-chip .cap{color:var(--muted);font-size:11px}
+.mctx{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding:9px 14px;border-radius:11px;
+  background:var(--panel);border:1px solid var(--line);font-size:12px}
+.mctx .k{color:var(--muted);font-size:11px;margin-right:2px}
+.mctx .v{font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ── tier gate — TRANSLITERATED from templates/special_situations.html.j2 ─────
+   Component names are unchanged (.gh, .gate-note, .tier-wall, .tw-*, .gated) so
+   the idiom stays one idiom. Only the colour TOKENS are swapped to this page's
+   vocabulary: --card→--panel, --grid→--line, --ink→--text, --faint→--muted,
+   --blue→--link, and --surface/--surface-brd/--surface-shadow re-derived. */
+@keyframes gh-pulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.gh{border-radius:6px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 45%,transparent));
+  animation:gh-pulse 2.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.gh{animation:none}}
+.gate-pill{margin-left:2px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  color:#8b5cf6;background:color-mix(in srgb,#8b5cf6 13%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 34%,transparent)}
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:14px 0 12px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+.gated{opacity:.42;pointer-events:none;user-select:none}
+
+.tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
+.tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tw-ghost{border:1px solid var(--line);border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 55%,transparent);padding:18px 20px}
+.tw-ghost .gh-tkr{width:64px;height:14px;margin-bottom:11px}
+.tw-ghost .gh-line{width:70%;height:10px;margin-bottom:8px}
+.tw-ghost .gh-line.short{width:38%;margin-bottom:0}
+.tw-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94%);text-align:center;
+  padding:30px 30px 26px;border-radius:20px;
+  background:color-mix(in srgb,var(--panel) 80%,transparent);
+  border:1px solid color-mix(in srgb,var(--text) 13%,transparent);
+  box-shadow:0 20px 52px -22px rgba(3,7,18,.66),0 6px 18px -10px rgba(3,7,18,.44),inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.tw-lock{width:28px;height:28px;color:#8b5cf6;margin-bottom:12px}
+.tw-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--text);line-height:1.25;margin-bottom:9px}
+.tw-p{font-size:13px;line-height:1.6;color:var(--muted);max-width:440px;margin:0 auto 18px}
+.tw-acts{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 26px;border-radius:12px;
+  font-size:13.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--link),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent);transition:transform .16s ease,box-shadow .2s}
+.tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
+.tw-note{font-size:11px;color:color-mix(in srgb,var(--muted) 78%,transparent)}
+.tw-signed{margin-top:12px;font-size:12px}
+.tw-signed a{color:var(--link);border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+@media(max-width:640px){
+  .tw-ghosts{display:none}
+  .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
+}
+
+/* ── desk skeletons ─────────────────────────────────────────────────────────── */
+.desk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:10px}
+.tcard-ghost{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px 18px}
+.tcard-ghost .gh-tkr{width:104px;height:13px;margin-bottom:12px}
+.tcard-ghost .gh-row{display:flex;gap:6px;margin-bottom:11px}
+.tcard-ghost .gh-chip{width:58px;height:18px;border-radius:999px}
+.tcard-ghost .gh-line{width:82%;height:9px;margin-bottom:7px}
+.tcard-ghost .gh-line.short{width:46%;margin-bottom:0}
+.listghost{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px}
+.listghost .lg-h{font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:11px}
+.listghost .gh-line{width:88%;height:9px;margin-bottom:9px}
+.listghost .gh-line:last-child{width:60%;margin-bottom:0}
+.cols4{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+
+/* breadth card — REAL numbers, free */
+.breadth{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:8px;margin-bottom:10px}
+.bx{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+.bx .k{font-size:10.5px;color:var(--muted);letter-spacing:.03em}
+.bx .v{font-size:17px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* ── §01 table ──────────────────────────────────────────────────────────────── */
+.ts{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 10px;text-align:left;white-space:nowrap}
+th{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.04em;border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+tbody tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.bname{font-weight:600}
+.catrow td{background:color-mix(in srgb,var(--panel2) 70%,transparent);font-size:10.5px;
+  font-weight:800;letter-spacing:.07em;color:var(--muted);text-transform:uppercase}
+.pos{color:var(--up)} .neg{color:var(--down)} .zero{color:var(--muted)}
+.bench td{font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
+.chartbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tabs button{background:var(--panel);border:0;border-right:1px solid var(--line);color:var(--muted);
+  font:inherit;font-size:11.5px;font-weight:600;padding:6px 12px;cursor:pointer}
+.tabs button:last-child{border-right:0}
+.tabs button.on{background:var(--panel2);color:var(--text)}
+.finder input{width:100%;max-width:340px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel);color:var(--text);font:inherit;font-size:13px}
+.chart-note{color:var(--muted);font-size:11.5px;margin:0 0 10px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.pad{padding:14px 16px}
+</style>
+</head>
+<body>
+
+<div class="mock-banner">
+  <span>MOCKUP — anonymous / walled state of <code>baskets_china.html</code> · W1b design spec reference · not shipping code</span>
+  <button class="lang-btn" id="lang">中文</button>
+</div>
+
+<!-- ═══ header — free ═══════════════════════════════════════════════════════ -->
+<header>
+  <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
+    <h1>🧺 <span class="l-en">China thematic baskets</span><span class="l-zh">A股主题篮子</span></h1>
+    <span class="asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-31</span>
+  </div>
+  <p class="tagline">
+    <span class="l-en">Equal-weight A-share theme baskets measured against CSI 300. Use them to see which China themes are leading or fading.</span>
+    <span class="l-zh">等权重 A 股主题篮子，对标沪深 300。用于观察哪些中国主题在走强或走弱。</span>
+  </p>
+</header>
+
+<!-- ═══ free market-context strip ═══════════════════════════════════════════ -->
+<div class="freestrip">
+  <div class="sleeve-chip">
+    <span class="dot" style="background:var(--warn)"></span>
+    <span><b><span class="l-en">Drawdown radar — elevated</span><span class="l-zh">回撤雷达 — 偏高</span></b>
+      <span class="cap"> · <span class="l-en">Drawdown-control sizing; not a return forecast.</span><span class="l-zh">回撤控制仓位；并非收益预测。</span></span></span>
+  </div>
+  <div class="mctx">
+    <span class="k"><span class="l-en">Macro backdrop</span><span class="l-zh">宏观背景</span></span>
+    <span><span class="k"><span class="l-en">cycle</span><span class="l-zh">周期</span></span><span class="v"><span class="l-en">Late</span><span class="l-zh">后期</span></span></span>
+    <span><span class="k">PBoC</span><span class="v"><span class="l-en">Easing</span><span class="l-zh">宽松</span></span></span>
+    <span><span class="k">USD</span><span class="v"><span class="l-en">Soft</span><span class="l-zh">走弱</span></span></span>
+  </div>
+</div>
+
+<!-- ═══ desk region — WALLED (headings + free breadth stay) ══════════════════ -->
+<h2 style="margin-top:26px">
+  <span class="l-en">Theme Rotation Desk</span><span class="l-zh">主题轮动台</span>
+  <span class="gate-pill">Essential</span></h2>
+<p class="sub"><span class="l-en">scored · labeled · actionable</span><span class="l-zh">评分 · 标注 · 可执行</span></p>
+
+<div class="gate-note">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  <span class="l-en">The desk scores and ranks all 22 baskets and says what to do about each one. Members see it in full — the macro backdrop and market breadth stay open to everyone.</span>
+  <span class="l-zh">交易台对全部 22 个篮子评分排名，并给出每个篮子的操作建议。会员可查看完整内容 —— 宏观背景与市场宽度对所有人开放。</span>
+</div>
+
+<div class="desk-grid" aria-hidden="true">
+  <div class="tcard-ghost"><div class="gh gh-tkr"></div>
+    <div class="gh-row"><div class="gh gh-chip"></div><div class="gh gh-chip"></div></div>
+    <div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+  <div class="tcard-ghost"><div class="gh gh-tkr"></div>
+    <div class="gh-row"><div class="gh gh-chip"></div><div class="gh gh-chip"></div></div>
+    <div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+  <div class="tcard-ghost"><div class="gh gh-tkr"></div>
+    <div class="gh-row"><div class="gh gh-chip"></div><div class="gh gh-chip"></div></div>
+    <div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+</div>
+
+<h2>
+  <span class="l-en">Market concentration &amp; theme leadership</span><span class="l-zh">市场集中度与主题领导力</span></h2>
+<p class="sub"><span class="l-en">who owns the advance vs the decline</span><span class="l-zh">谁主导上涨 vs 谁在下跌</span></p>
+
+<!-- breadth summary: REAL numbers, free (market context, no names) -->
+<div class="breadth">
+  <div class="bx"><div class="k"><span class="l-en">Advancers / decliners</span><span class="l-zh">上涨 / 下跌</span></div><div class="v">1.42<span style="font-size:12px;color:var(--muted)">×</span></div></div>
+  <div class="bx"><div class="k"><span class="l-en">Above 50-day</span><span class="l-zh">高于50日线</span></div><div class="v">58%</div></div>
+  <div class="bx"><div class="k"><span class="l-en">Above 200-day</span><span class="l-zh">高于200日线</span></div><div class="v">41%</div></div>
+  <div class="bx"><div class="k"><span class="l-en">New highs / lows</span><span class="l-zh">创新高 / 新低</span></div><div class="v">37 / 12</div></div>
+</div>
+
+<!-- the four NAMED lists are walled -->
+<div class="cols4" aria-hidden="true">
+  <div class="listghost"><div class="lg-h"><span class="l-en">Owns the advance</span><span class="l-zh">主导上涨</span></div>
+    <div class="gh gh-line"></div><div class="gh gh-line"></div><div class="gh gh-line"></div></div>
+  <div class="listghost"><div class="lg-h"><span class="l-en">In the decline</span><span class="l-zh">处于下跌</span></div>
+    <div class="gh gh-line"></div><div class="gh gh-line"></div><div class="gh gh-line"></div></div>
+  <div class="listghost"><div class="lg-h"><span class="l-en">Clean entries (emerging)</span><span class="l-zh">干净入场（新兴）</span></div>
+    <div class="gh gh-line"></div><div class="gh gh-line"></div><div class="gh gh-line"></div></div>
+  <div class="listghost"><div class="lg-h"><span class="l-en">Roll-over watch</span><span class="l-zh">回落观察</span></div>
+    <div class="gh gh-line"></div><div class="gh gh-line"></div><div class="gh gh-line"></div></div>
+</div>
+
+<!-- ═══ finder — inert ══════════════════════════════════════════════════════ -->
+<div class="finder gated" style="margin-top:26px">
+  <span class="l-en"><input type="search" disabled placeholder="Search concept, category, member or ticker..."></span>
+  <span class="l-zh"><input type="search" disabled placeholder="搜索概念、类别、成分或代码..."></span>
+</div>
+
+<!-- ═══ §01 performance table — FREE, 14 of 22 ══════════════════════════════ -->
+<h2 id="table-section"><span class="idx">01</span>
+  <span class="l-en">Performance table</span><span class="l-zh">表现一览</span></h2>
+<p class="sub">
+  <span class="l-en">Sortable snapshot of every basket. Toggle between raw return and return versus CSI 300. Click a basket to see members.</span>
+  <span class="l-zh">所有篮子的可排序快照。可在原始回报与相对沪深 300 回报之间切换。点击篮子查看成分。</span>
+</p>
+
+<div class="gate-note">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  <span class="l-en">Showing 14 of 22 baskets — the first two in each category. Members see all 22, each basket's score and stance, and search, sorting and filters across every name.</span>
+  <span class="l-zh">显示 22 个篮子中的 14 个 —— 每个类别的前两个。会员可查看全部 22 个篮子、每个篮子的评分与操作倾向，以及覆盖全部标的的搜索、排序与筛选。</span>
+</div>
+
+<div class="chartbar gated">
+  <span class="tabs"><button class="on"><span class="l-en">Return</span><span class="l-zh">回报</span></button><button><span class="l-en">vs CSI 300</span><span class="l-zh">对比沪深300</span></button></span>
+</div>
+
+<div class="panel"><div class="ts"><table>
+<thead><tr>
+  <th><span class="l-en">Basket</span><span class="l-zh">篮子</span></th>
+  <th class="num">1d</th><th class="num">5d</th><th class="num">20d</th>
+  <th class="num">60d</th><th class="num">MTD</th><th class="num">YTD</th>
+</tr></thead>
+<tbody>
+  <tr class="catrow"><td colspan="7"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">高端制造</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Defense &amp; Aerospace</span><span class="l-zh">军工航天</span></td>
+    <td class="num pos">+1.8%</td><td class="num neg">−0.3%</td><td class="num neg">−12.2%</td><td class="num neg">−16.4%</td><td class="num neg">−10.3%</td><td class="num neg">−9.6%</td></tr>
+  <tr><td class="bname"><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span></td>
+    <td class="num pos">+7.4%</td><td class="num pos">+1.6%</td><td class="num neg">−25.4%</td><td class="num neg">−2.9%</td><td class="num neg">−19.5%</td><td class="num pos">+0.1%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">Consumer &amp; Brands</span><span class="l-zh">核心消费</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span></td>
+    <td class="num pos">+0.3%</td><td class="num pos">+8.7%</td><td class="num pos">+16.2%</td><td class="num neg">−6.8%</td><td class="num pos">+17.2%</td><td class="num neg">−20.2%</td></tr>
+  <tr><td class="bname"><span class="l-en">Food &amp; Beverage</span><span class="l-zh">食品饮料</span></td>
+    <td class="num neg">−0.3%</td><td class="num pos">+5.4%</td><td class="num pos">+9.5%</td><td class="num neg">−0.9%</td><td class="num pos">+11.6%</td><td class="num pos">+0.3%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">周期与资源</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Coal</span><span class="l-zh">煤炭</span></td>
+    <td class="num neg">−0.1%</td><td class="num pos">+1.2%</td><td class="num pos">+7.8%</td><td class="num neg">−4.7%</td><td class="num pos">+12.2%</td><td class="num pos">+19.6%</td></tr>
+  <tr><td class="bname"><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span></td>
+    <td class="num pos">+3.0%</td><td class="num pos">+6.8%</td><td class="num pos">+12.0%</td><td class="num neg">−14.7%</td><td class="num pos">+26.9%</td><td class="num pos">+1.1%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">Financials &amp; Value</span><span class="l-zh">金融与价值</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Banks</span><span class="l-zh">银行</span></td>
+    <td class="num neg">−1.3%</td><td class="num pos">+2.9%</td><td class="num pos">+11.3%</td><td class="num pos">+4.1%</td><td class="num pos">+13.0%</td><td class="num pos">+0.1%</td></tr>
+  <tr><td class="bname"><span class="l-en">Brokers &amp; Securities</span><span class="l-zh">券商</span></td>
+    <td class="num zero">−0.1%</td><td class="num zero">−0.0%</td><td class="num neg">−5.1%</td><td class="num pos">+2.3%</td><td class="num neg">−2.6%</td><td class="num neg">−8.6%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">Healthcare</span><span class="l-zh">医药健康</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Innovative Pharma &amp; CXO</span><span class="l-zh">创新药与CXO</span></td>
+    <td class="num pos">+0.8%</td><td class="num neg">−1.1%</td><td class="num neg">−3.0%</td><td class="num pos">+8.2%</td><td class="num pos">+4.9%</td><td class="num pos">+17.7%</td></tr>
+  <tr><td class="bname"><span class="l-en">Medical Devices &amp; TCM</span><span class="l-zh">医疗器械与中药</span></td>
+    <td class="num pos">+0.4%</td><td class="num pos">+4.8%</td><td class="num pos">+8.0%</td><td class="num neg">−1.0%</td><td class="num pos">+12.5%</td><td class="num neg">−8.5%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">新能源与汽车</span></td></tr>
+  <tr><td class="bname"><span class="l-en">Autos &amp; NEV Makers</span><span class="l-zh">汽车整车</span></td>
+    <td class="num pos">+1.9%</td><td class="num pos">+7.5%</td><td class="num pos">+2.8%</td><td class="num neg">−15.8%</td><td class="num pos">+7.8%</td><td class="num neg">−16.2%</td></tr>
+  <tr><td class="bname"><span class="l-en">Battery &amp; Lithium</span><span class="l-zh">锂电池</span></td>
+    <td class="num pos">+0.1%</td><td class="num pos">+2.6%</td><td class="num neg">−11.7%</td><td class="num neg">−28.7%</td><td class="num neg">−12.0%</td><td class="num neg">−9.7%</td></tr>
+
+  <tr class="catrow"><td colspan="7"><span class="l-en">Technology &amp; AI</span><span class="l-zh">科技与AI</span></td></tr>
+  <tr><td class="bname"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span></td>
+    <td class="num pos">+5.6%</td><td class="num neg">−12.2%</td><td class="num neg">−18.4%</td><td class="num neg">−13.8%</td><td class="num neg">−28.0%</td><td class="num pos">+28.6%</td></tr>
+  <tr><td class="bname"><span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子</span></td>
+    <td class="num pos">+2.5%</td><td class="num neg">−3.2%</td><td class="num neg">−21.6%</td><td class="num neg">−2.1%</td><td class="num neg">−24.3%</td><td class="num pos">+16.2%</td></tr>
+
+  <tr class="bench"><td>CSI 300</td>
+    <td class="num pos">+0.6%</td><td class="num pos">+1.1%</td><td class="num pos">+3.4%</td><td class="num neg">−1.9%</td><td class="num pos">+2.7%</td><td class="num pos">+4.8%</td></tr>
+</tbody>
+</table></div></div>
+
+<!-- ═══ §02 chart — FREE, 14 series, 1-year window ══════════════════════════ -->
+<h2 id="chart-section"><span class="idx">02</span>
+  <span class="l-en">Performance</span><span class="l-zh">走势对比</span></h2>
+<p class="sub">
+  <span class="l-en">Lines are rebased to 0% at the start of the window. Toggle baskets from the legend.</span>
+  <span class="l-zh">曲线在窗口起点重设为 0%。可在图例中开关篮子。</span>
+</p>
+<div class="chartbar gated">
+  <span class="tabs"><button class="on"><span class="l-en">vs CSI 300</span><span class="l-zh">对比沪深300</span></button><button><span class="l-en">Absolute</span><span class="l-zh">绝对</span></button></span>
+  <span class="tabs"><button>60d</button><button>120d</button><button class="on">1Y</button></span>
+</div>
+<p class="chart-note">
+  <span class="l-en">Showing the last year for the 14 baskets above. Members get the full history back to 2021 and the category-average view.</span>
+  <span class="l-zh">显示上述 14 个篮子的近一年走势。会员可查看回溯至 2021 年的完整历史与类别均值视图。</span>
+</p>
+<div class="panel pad">
+  <svg viewBox="0 0 900 240" style="width:100%;height:auto;display:block" role="img" aria-label="Rebased performance lines for the 14 preview baskets">
+    <line x1="0" y1="120" x2="900" y2="120" stroke="var(--line)" stroke-width="1"/>
+    <line x1="0" y1="40" x2="900" y2="40" stroke="var(--line)" stroke-width=".5" stroke-dasharray="3 5"/>
+    <line x1="0" y1="200" x2="900" y2="200" stroke="var(--line)" stroke-width=".5" stroke-dasharray="3 5"/>
+    <path d="M0 120 C 120 96, 210 150, 300 128 S 500 62, 620 80 S 800 34, 900 46" fill="none" stroke="#7aa7e0" stroke-width="1.7"/>
+    <path d="M0 120 C 130 140, 240 104, 340 118 S 540 168, 660 150 S 820 186, 900 176" fill="none" stroke="#e0a23c" stroke-width="1.7"/>
+    <path d="M0 120 C 110 112, 230 132, 330 108 S 520 88, 640 112 S 810 92, 900 100" fill="none" stroke="#3da564" stroke-width="1.7"/>
+    <path d="M0 120 C 140 158, 260 142, 360 166 S 560 196, 690 178 S 830 208, 900 198" fill="none" stroke="#e06464" stroke-width="1.7"/>
+    <path d="M0 120 C 100 106, 220 118, 320 96 S 530 118, 650 92 S 820 76, 900 84" fill="none" stroke="#8b5cf6" stroke-width="1.7"/>
+    <path d="M0 120 C 150 126, 250 114, 370 130 S 570 110, 700 126 S 840 114, 900 122" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="5 4"/>
+  </svg>
+  <div class="legend">
+    <span><span class="dot" style="background:#7aa7e0"></span><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span></span>
+    <span><span class="dot" style="background:#e0a23c"></span><span class="l-en">Battery &amp; Lithium</span><span class="l-zh">锂电池</span></span>
+    <span><span class="dot" style="background:#3da564"></span><span class="l-en">Banks</span><span class="l-zh">银行</span></span>
+    <span><span class="dot" style="background:#e06464"></span><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span></span>
+    <span><span class="dot" style="background:#8b5cf6"></span><span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span></span>
+    <span><span class="dot" style="background:var(--muted)"></span>CSI 300</span>
+  </div>
+</div>
+
+<!-- ═══ §03 category cards + member detail — WALLED, the single CTA ═════════ -->
+<h2 id="categories"><span class="idx">03</span>
+  <span class="l-en">Baskets by category</span><span class="l-zh">按类别分组</span>
+  <span class="gate-pill">Essential</span></h2>
+<p class="sub">
+  <span class="l-en">Every basket's holdings, why each name is in it, and what we'd do about the basket.</span>
+  <span class="l-zh">每个篮子的成分股、每只个股的纳入理由，以及我们对该篮子的操作倾向。</span>
+</p>
+
+<div class="tier-wall">
+  <div class="tw-ghosts" aria-hidden="true">
+    <div class="tw-ghost"><div class="gh gh-tkr"></div><div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+    <div class="tw-ghost"><div class="gh gh-tkr"></div><div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+    <div class="tw-ghost"><div class="gh gh-tkr"></div><div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+  </div>
+  <div class="tw-card">
+    <svg class="tw-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <div class="tw-h">
+      <span class="l-en">8 more baskets, and 285 holdings, are open to members</span>
+      <span class="l-zh">另有 8 个篮子、285 只成分股向会员开放</span>
+    </div>
+    <div class="tw-p">
+      <span class="l-en">You're reading 14 of 22 baskets and how each one has traded. Members also get every basket's holdings, our score and stance for each one, the rotation desk, and the entry radar.</span>
+      <span class="l-zh">你正在查看 22 个篮子中的 14 个及其走势。会员还可看到每个篮子的成分股、我们给出的评分与操作倾向、主题轮动台，以及入场雷达。</span>
+    </div>
+    <div class="tw-acts">
+      <a class="tw-btn" href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a>
+      <span class="tw-note"><span class="l-en">7-day Pro trial · cancel anytime</span><span class="l-zh">Pro 7 天试用 · 随时取消</span></span>
+    </div>
+    <div class="tw-signed">
+      <a href="#"><span class="l-en">Already a member? Sign in</span><span class="l-zh">已是会员？登录</span></a>
+    </div>
+  </div>
+</div>
+
+<p class="sub" style="margin-top:28px;font-size:11.5px">
+  <span class="l-en">Baskets are equal-weighted and rebalanced on a published schedule; returns are price-only and exclude dividends, financing and trading costs. Research, not investment advice.</span>
+  <span class="l-zh">篮子等权重并按公开的时间表再平衡；回报仅计价格，不含股息、融资与交易成本。研究内容，非投资建议。</span>
+</p>
+
+<script>
+document.getElementById('lang').addEventListener('click', function(){
+  var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+  document.documentElement.setAttribute('data-lang', zh ? '' : 'zh');
+  this.textContent = zh ? '中文' : 'EN';
+});
+</script>
+</body>
+</html>

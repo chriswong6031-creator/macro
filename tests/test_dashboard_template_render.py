@@ -27,6 +27,7 @@ the markup.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import jinja2
@@ -694,3 +695,52 @@ def test_leaders_strip_renders_without_top_setups():
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert _LEADERS_WRAPPER in html
     assert '<div class="topsetups">' not in html   # the trigger sub-board is gone
+
+
+# --------------------------------------------------------------------------- #
+# §17 mobile (2026-08-02) — the prophet-panel strip tables must fit a 390px
+# panel without x-scroll: at ≤680px the tertiary columns are hidden, keyed by
+# per-column c-* classes.  The contract has two halves:
+#   1. every <th> in BOTH strip tables carries a c-* class — a classless column
+#      would silently sit outside the mobile budget and re-widen the table;
+#   2. each class is either in the mobile KEEP set (identity, edge, stance) or
+#      named in the 680px hide rule.
+# Adding a column therefore forces an explicit mobile decision here.
+# --------------------------------------------------------------------------- #
+
+_MOBILE_KEEP = {"c-stock", "c-edge", "c-buy", "c-entry"}
+
+
+def _strip_thead_class_sets(html: str) -> list[set[str]]:
+    """Per strip table (document order), the union of c-* classes on its header
+    cells — failing if any <th> carries none."""
+    sets = []
+    for thead in re.findall(r'<table class="ts-tbl">\s*<thead>(.*?)</thead>', html, re.S):
+        classes: set[str] = set()
+        for attrs in re.findall(r"<th\b([^>]*)>", thead):
+            m = re.search(r'class="([^"]*)"', attrs)
+            c_marks = {c for c in (m.group(1).split() if m else []) if c.startswith("c-")}
+            assert c_marks, f"strip <th{attrs}> has no c-* mobile class"
+            classes |= c_marks
+        sets.append(classes)
+    return sets
+
+
+def test_strip_tables_mobile_column_contract():
+    vm = _vm_with_leaders([_leader_row()])
+    vm["top_setups"] = {"buy": [_setup_row()]}   # ZORB — residual, so the trigger table renders
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+
+    per_table = _strip_thead_class_sets(html)
+    assert len(per_table) == 2, "expected exactly the trigger + leaders strip tables"
+    trigger, leaders = per_table
+    assert trigger == {"c-stock", "c-sector", "c-edge", "c-rank", "c-buy",
+                       "c-cycle", "c-trend", "c-factor", "c-setup"}
+    assert leaders == {"c-stock", "c-sector", "c-edge", "c-offhigh", "c-state",
+                       "c-entry"}
+
+    # Half 2: the ≤680px rule hides exactly every non-keep column of both
+    # tables.  `.topsetups .ts-tbl .c-*` selectors exist ONLY in that rule, so
+    # scraping them from the page IS reading the hide list.
+    hidden = set(re.findall(r"\.topsetups \.ts-tbl \.(c-[a-z]+)", html))
+    assert hidden == (trigger | leaders) - _MOBILE_KEEP

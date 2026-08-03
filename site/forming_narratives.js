@@ -12,6 +12,21 @@
   const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const pct = x => x == null ? '—' : (x >= 0 ? '+' : '') + (x).toFixed(1) + '%';
 
+  /* Display de-registration (operator ruling 2026-07-27, #3821): the AI scout's watch text
+     is LLM prose printed verbatim, and used to arrive framed as "Kill criterion: <cond>".
+     engine/narrative_emergence.py::_watch_register now rewrites the LABEL at build time —
+     this repeats it here because the regional narrative_emergence.json files are rebuilt on
+     DIFFERENT lanes (asia-close vs nightly), so an old-vintage payload can sit next to a new
+     one for up to a day. Idempotent: a payload already in the watching register is unchanged.
+     The condition text itself is never touched. */
+  const WATCH_LABEL = /\bkill[\s\-_]?criteri(?:on|a)\s*[:：]\s*|\bkill\s*[:：]\s*/gi;
+  const WATCH_NOUN = /\bkill[\s\-_]?criteri(?:on|a)\b/gi;
+  const watchEn = s => (s == null ? '' : String(s))
+    .replace(WATCH_LABEL, 'Watching for: ').replace(WATCH_NOUN, 'watch condition');
+  // the scout writes one EN string (no zh field on the payload), so the ZH span keeps the
+  // condition in English and translates only the label — never machine-translate the read.
+  const watchZh = s => watchEn(s).replace(/Watching for:\s*/g, '关注条件：');
+
   // entry grade → chip color role. GREEN = clean entry (good place to look), RED = chase.
   const GRADE_COLOR = { intrend: 'var(--up)', steady: 'var(--up)', na: 'var(--muted)',
                         stretched: 'var(--warn,#f59e0b)', parabolic: 'var(--down)' };
@@ -133,7 +148,7 @@
     let html = '';
     if (d.ai_watch && d.ai_watch.text) {
       const conf = d.ai_watch.confidence ? ` <small>(${esc(d.ai_watch.confidence)} ${L('confidence', '信心')})</small>` : '';
-      html += `<div class="ne-watch">🧭 <b>${L('AI scout watch', 'AI 侦察观察')}</b>${conf}: ${L(esc(d.ai_watch.text), esc(d.ai_watch.text))}</div>`;
+      html += `<div class="ne-watch">🧭 <b>${L('AI scout watch', 'AI 侦察观察')}</b>${conf}: ${L(esc(watchEn(d.ai_watch.text)), esc(watchZh(d.ai_watch.text)))}</div>`;
     }
     if (d.attention && (d.attention.dominant || []).length) {
       const tags = d.attention.dominant.map(t =>

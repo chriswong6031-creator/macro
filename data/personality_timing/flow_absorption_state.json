@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-02",
+  "as_of": "2026-08-03",
   "authority": {
     "may_alert": false,
     "may_auto_promote": false,
@@ -39,7 +39,7 @@
   "family": "pss_af1_finra_absorption_witness_prospective",
   "finra_prefix_sha256": "4d7165ff3346c7bdaaf28e0b4064f1eda4311a1600f3df33509e8d03d183bbf6",
   "gate_open": true,
-  "generated_utc": "2026-08-02T01:22:50.136890+00:00",
+  "generated_utc": "2026-08-03T01:05:05.558783+00:00",
   "ledger": {
     "advanced_today": 0,
     "appended_today": 0,

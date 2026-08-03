@@ -1079,6 +1079,128 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Nightly stage snapshot → the overview parquet (marketing stage feed advancer)
+# ---------------------------------------------------------------------------
+# data/stage_analysis/backfill/equitydesk_overview.parquet started life as the
+# one-shot W5 vendor seed (as_of 2026-07-17) and never had a refresh lane — the
+# vendor pull is a guest-session export, explicitly not a durable dependency.
+# Yet it is the single stage feed marketing reads (radar_internal._feed_stage,
+# attention_source stage pools), so a frozen file meant those consumers served
+# a dead snapshot forever. This appender makes OUR nightly Weinstein engine the
+# advancer: seed rows stay immutable (calibration yardstick + the EU/ASIA seed
+# board source), engine rows carry source="stage_engine" and only the newest
+# SNAPSHOT_KEEP engine as_of_dates are retained — two snapshots make stage
+# transitions derivable without unbounded growth.
+
+#: Provenance stamp for engine-written snapshot rows. Everything else in the
+#: file (no column, or any other value) is treated as immutable seed data.
+SNAPSHOT_SOURCE = "stage_engine"
+SEED_SOURCE = "equitydesk_backfill"
+#: Engine as_of_dates retained (two → stage transitions are derivable).
+SNAPSHOT_KEEP = 2
+#: Refuse to advance the snapshot off a degenerate universe: a near-empty
+#: "fresh" snapshot would pass every downstream freshness gate while gutting
+#: the pools it feeds. The live universe is ~1.5k+ names.
+SNAPSHOT_MIN_ROWS = 50
+
+
+def append_stage_snapshot(recs: list[dict], asof: str,
+                          root: Path | None = None, *,
+                          min_rows: int = SNAPSHOT_MIN_ROWS) -> int:
+    """Append tonight's live US stage rows to the overview parquet.
+
+    Same-as_of re-runs replace (idempotent). Rows are ordered newest-as_of
+    first because two brain_gateway readers take the first matching ticker row.
+    Fail-open: any error prints ::warning:: and returns 0 without raising.
+    Returns the number of engine rows written for *asof*.
+    """
+    try:
+        import pandas as pd  # noqa: PLC0415
+
+        asof = str(asof or "")[:10]
+        if not asof:
+            print("::warning title=stage-snapshot::no asof date — "
+                  "stage snapshot not advanced", flush=True)
+            return 0
+        rows: list[dict] = []
+        for r in recs or []:
+            tk = str(r.get("ticker") or "").strip().upper()
+            if not tk or r.get("stage") is None:
+                continue
+            rows.append({
+                "ticker": tk,
+                "region": "USA",
+                "name_ui": r.get("company"),
+                "gics_sector": r.get("sector"),
+                "gics_industry": r.get("industry"),
+                "gics_sub_industry": r.get("sub_industry"),
+                "sata_score": r.get("sata_score"),
+                "sata_change_1w": r.get("sata_change_1w"),
+                "stage_flag": int(r["stage"]),
+                "stage_detailed": r.get("stage_detailed"),
+                "weeks_in_stage": int(r.get("weeks_in_stage") or 0),
+                "mansfield_rs": r.get("mansfield_rs"),
+                "mansfield_rs_change": r.get("mansfield_rs_change"),
+                "atr_14w": r.get("atr_14w"),
+                "atr_ext": r.get("atr_ext"),
+                "industry_percentile": r.get("industry_percentile"),
+                "stage_date": r.get("stage_source_asof"),
+                "as_of_date": asof,
+                "source": SNAPSHOT_SOURCE,
+            })
+        if len(rows) < min_rows:
+            print(f"::warning title=stage-snapshot::only {len(rows)} classified "
+                  f"rows (floor {min_rows}) — stage snapshot not advanced, "
+                  "prior snapshot stands", flush=True)
+            return 0
+
+        dr = _data_root(root)
+        path = dr / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+        old = None
+        if path.exists():
+            try:
+                old = pd.read_parquet(path)
+            except Exception as e:  # noqa: BLE001 — unreadable ≠ overwrite license
+                print(f"::warning title=stage-snapshot::existing overview parquet "
+                      f"unreadable ({e}) — refusing to overwrite it", flush=True)
+                return 0
+
+        new_df = pd.DataFrame(rows)
+        if old is not None and len(old):
+            if "source" not in old.columns:
+                old = old.assign(source=SEED_SOURCE)
+            else:
+                old["source"] = old["source"].fillna(SEED_SOURCE)
+            # Same-night idempotence: tonight's engine rows replace tonight's.
+            old = old[~((old["source"] == SNAPSHOT_SOURCE)
+                        & (old["as_of_date"].astype(str).str[:10] == asof))]
+            allf = pd.concat([new_df, old], ignore_index=True)
+        else:
+            allf = new_df
+
+        # Retention: seed rows always; engine rows only for the newest
+        # SNAPSHOT_KEEP as_of_dates.
+        eng = allf["source"] == SNAPSHOT_SOURCE
+        eng_asofs = sorted({str(x)[:10] for x in
+                            allf.loc[eng, "as_of_date"].dropna()}, reverse=True)
+        keep = set(eng_asofs[:SNAPSHOT_KEEP])
+        allf = allf[(~eng) | (allf["as_of_date"].astype(str).str[:10].isin(keep))]
+        # Newest snapshot first (stable within a snapshot) — first-row readers
+        # must land on the freshest as_of.
+        allf = allf.sort_values("as_of_date", ascending=False,
+                                kind="stable").reset_index(drop=True)
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        allf.to_parquet(tmp, index=False)
+        os.replace(tmp, path)
+        return len(rows)
+    except Exception as e:  # noqa: BLE001 — snapshot append must never break a build
+        print(f"::warning:: stage snapshot append failed ({e})", flush=True)
+        return 0
+
+
+# ---------------------------------------------------------------------------
 # SGA-2 screener / stage-board projection (surface A + B, masterplan §1)
 # ---------------------------------------------------------------------------
 # UI stage labels (masterplan §1): the two flagship Stage-2 chips.
@@ -1812,6 +1934,13 @@ def build_context_feed(root: Path | None = None,
                 compact=True)
         except Exception as e:  # noqa: BLE001
             print(f"::warning:: stage_analysis: failed to write {fname} ({e})", flush=True)
+
+    # Advance the overview parquet with tonight's live US snapshot (the
+    # marketing stage feeds' sole freshness source). Runs only in the daily
+    # lane (this engine is dag-declared daily-only); fail-open inside.
+    n_snap = append_stage_snapshot(recs, asof, root)
+    if n_snap:
+        log.info("stage snapshot: %d engine rows appended for %s", n_snap, asof)
 
     return contract
 

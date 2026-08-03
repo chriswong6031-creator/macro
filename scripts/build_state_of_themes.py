@@ -1,4 +1,9 @@
-"""scripts/build_state_of_themes.py — TIL W4 State of Themes renderer.
+"""scripts/build_state_of_themes.py — TIL W4 Theme Tracker renderer.
+
+DISPLAY NAME vs SLUG: the page is called "Theme Tracker / 主题追踪" everywhere a user
+can read it (matching the nav entry in templates/_navlinks.html.j2). The SLUG, the
+module name, the artifact keys and the ledger ids all stay `state_of_themes` /
+`theme_lanes` — they are stable identifiers, never user-facing copy. Do not rename them.
 
 Reads the four site/neuralwebdata theme artifacts (tolerant: missing artifact
 → honest empty-state, never crash) and renders templates/state_of_themes.html.j2
@@ -1378,27 +1383,96 @@ def render(root: Path, ctx: dict[str, Any] | None = None) -> str:
     return tpl.render(**ctx)
 
 
+def load_primary_basket_ids(root: Path) -> dict[str, str]:
+    """config/theme_crosswalk.yml → {theme_id: primary_basket_id}, nulls dropped.
+
+    `primary_basket_id` (crosswalk v2) is the ONE basket that IS the theme. It is
+    deliberately NOT `basket_ids`: that list answers "which baskets give this theme a
+    price surface" and legitimately includes supply-chain and proxy baskets, which do
+    not survive being read backwards (managed_care is the medical_devices theme's
+    closest healthcare proxy, but a managed_care holder does not own that theme).
+    Themes the crosswalk marks null are simply absent here — an honest no-basket.
+
+    Fail-open in BOTH failure modes — a crosswalk problem must never break the page
+    render — but they are not the same event and are not reported the same way:
+      * registry ABSENT → expected (sandboxed roots, a region without one). Silent {}.
+      * registry PRESENT but unreadable (parse error, or no PyYAML in a thin lane) →
+        a DEFECT wearing a fail-open's clothes. It still returns {}, but it announces
+        itself: the projection collapsing to empty is otherwise invisible until some
+        downstream assertion fails with a number nobody can trace back to here (PR
+        #4300 shipped red as a baffling "0 > 7" for exactly this reason).
+    """
+    path = root / "config" / "theme_crosswalk.yml"
+    if not path.exists():
+        return {}
+    try:
+        import yaml  # local: the crosswalk is the only YAML this builder reads
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        out: dict[str, str] = {}
+        for row in (data or {}).get("themes", []) or []:
+            tid, bid = row.get("id"), row.get("primary_basket_id")
+            if tid and isinstance(bid, str) and bid:
+                out[str(tid)] = bid
+        return out
+    except Exception as exc:  # noqa: BLE001
+        # Bare print + flush, NOT log.warning: this builder's log format prefixes the
+        # line, and GitHub silently drops an annotation that does not START the line.
+        print(f"::warning title=theme-crosswalk-unreadable::{path} is present but its "
+              f"primary_basket_id map failed to load ({exc}); basket_lanes ships EMPTY "
+              f"and the Portfolio lane join falls back to the same-id subset",
+              flush=True)
+        log.warning("theme_crosswalk primary_basket_id load failed (%s); "
+                    "basket_lanes will be empty", exc)
+        return {}
+
+
 def write_theme_lanes(ctx: dict[str, Any], root: Path) -> Path | None:
     """Write the theme_lanes.v1 side-artifact from an already-composed ctx.
 
-    {"schema","asof","lanes":{theme_id: lane}} → site/basketdata/theme_lanes.json.
+    → site/basketdata/theme_lanes.json:
+        {"schema","asof",
+         "lanes":         {theme_id:  lane},   # story-id keyed (unchanged, v1 contract)
+         "basket_lanes":  {basket_id: lane},   # basket-id keyed (added: the aligned join)
+         "theme_baskets": {theme_id:  basket_id|null}}   # the crosswalk projection, audit
+
     Uses the SAME lane already computed for each theme on the page (ctx["themes"]),
     so it never re-derives a lane and cannot drift from the rendered board. Every
-    lane value is one of _LANE_ORDER. Never raises — a failure here must not break
-    the page render (the artifact is fail-open on the consumer side). Returns the
-    written path, or None on failure.
+    lane value is one of _LANE_ORDER.
+
+    Why `basket_lanes` exists: consumers hold BASKET ids (a ticker's membership), while
+    the ledger keys are STORY ids, and only 7 of 18 happen to be spelled the same. The
+    same-id join therefore dropped the lane for every theme whose basket is spelled
+    differently (power_grid, obesity_glp1, payments_fintech, defense, …). Story ids are
+    ledger keys and are NEVER renamed; this map is the additive fix. `theme_baskets`
+    ships the projection itself — including its nulls — so the join is auditable from
+    the artifact alone.
+
+    Never raises — a failure here must not break the page render (the artifact is
+    fail-open on the consumer side). Returns the written path, or None on failure.
     """
     try:
+        primary = load_primary_basket_ids(root)
         lanes: dict[str, str] = {}
+        basket_lanes: dict[str, str] = {}
+        theme_baskets: dict[str, str | None] = {}
         for th in ctx.get("themes", []) or []:
             tid = th.get("theme_id")
             lane = th.get("lane")
-            if tid and lane in _LANE_ORDER:
-                lanes[str(tid)] = lane
+            if not tid:
+                continue
+            tid = str(tid)
+            bid = primary.get(tid)
+            theme_baskets[tid] = bid  # None → honest "no basket counterpart"
+            if lane in _LANE_ORDER:
+                lanes[tid] = lane
+                if bid:
+                    basket_lanes[bid] = lane
         payload = {
             "schema": THEME_LANES_SCHEMA,
             "asof": ctx.get("as_of", "—"),
             "lanes": lanes,
+            "basket_lanes": basket_lanes,
+            "theme_baskets": theme_baskets,
         }
         out = root / "site" / "basketdata" / "theme_lanes.json"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -1406,7 +1480,9 @@ def write_theme_lanes(ctx: dict[str, Any], root: Path) -> Path | None:
             json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
             encoding="utf-8",
         )
-        log.info("wrote %s (%d theme lanes)", out, len(lanes))
+        log.info("wrote %s (%d theme lanes, %d basket lanes, %d/%d themes with a basket)",
+                 out, len(lanes), len(basket_lanes),
+                 sum(1 for v in theme_baskets.values() if v), len(theme_baskets))
         return out
     except Exception as exc:  # noqa: BLE001
         log.warning("theme_lanes side-write failed (%s); skipped", exc)

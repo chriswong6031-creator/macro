@@ -214,7 +214,7 @@
 	# Protected HTML navigations: IP gate -> registration -> paid feature gate.
 	@reg_html {
 		path *.html
-		not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+		not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 	}
 
 	handle @reg_html {
@@ -261,7 +261,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /factordata/tech_lab.json /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -299,7 +299,7 @@
 
 	@gate_html {
 		# Public funnel only — IP gate retains its fail-open availability contract.
-		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+		path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 	}
 
 	handle @gate_html {
@@ -333,7 +333,7 @@
 		# Protected documents fail CLOSED on gate-upstream failure.
 		@reg_html_err {
 			path *.html
-			not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+			not path /api/* /ws/tape /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 		}
 		handle @reg_html_err {
 			header Cache-Control "no-store"
@@ -356,7 +356,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /factordata/tech_lab.json /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /factordata/tech_lab.json /stock_seasonality.css /stock_seasonality.html /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -367,7 +367,7 @@
 
 		# Public funnel only: retain fail-open availability if the IP gate is down.
 		@gate_html_err {
-			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
+			path / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /stock_seasonality.html /about.html /special_situations.html /china_special_situations.html /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /stocks/* /products/* /tools/* /learn/* /blog/* /research/*
 		}
 		handle @gate_html_err {
 			header Cache-Control "no-store"
@@ -401,7 +401,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /assets/css/* /assets/js/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /seasonalitydata/methodology.json /seasonalitydata/index.json /seasonalitydata/entities/SPY.json /stock_seasonality.css /stock_seasonality.js /assets/css/* /assets/js/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"

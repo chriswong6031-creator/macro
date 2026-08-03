@@ -30,10 +30,22 @@ start-of-line ``::warning``, so the operator sees the intent AND the fact that
 it is not in force. Enabling the desk is what arms the route — exactly one flip,
 in ``desk_network``, where every other arming decision already lives.
 
+SPILL IS ROUTING TOO (W4d). When the account a class routes to has spent its
+daily wire budget, the surplus may move to ANOTHER wire desk rather than being
+dropped — but only to a desk the operator has already declared a wire owner.
+``spill_pool`` answers that question from the SAME config and the SAME liveness
+read as ``route``, so there is exactly one answer to "may this desk carry a wire
+relay". It deliberately does NOT return every enabled account in
+``desk_network``: the persona desks (meagan/sophia/kelly/cici/founder) are
+authored voices, and the charter is explicit that wire accounts RELAY and never
+take a stance (masterplan §4 safety rails). Handing a persona a raw press relay
+would be a voice violation dressed up as a volume fix.
+
 Public API:
     route(event_class, *, cfg, root=None)  -> str          (the account id)
     routing_table(cfg, *, root=None)       -> dict         (class -> account, resolved)
     default_account(cfg)                   -> str
+    spill_pool(cfg, *, root=None)          -> list[str]    (live wire-owning desks)
 """
 from __future__ import annotations
 
@@ -140,6 +152,58 @@ def routing_table(cfg: dict | None, *, root: Path | str | None = None) -> dict[s
         # dark account. Only a POSITIVE membership check arms a route.
         out[str(klass)] = acct if (live is not None and acct in live) else fallback
     return out
+
+
+def spill_pool(cfg: dict | None, *, root: Path | str | None = None) -> list[str]:
+    """LIVE accounts that may carry a wire relay, deterministically ordered.
+
+    The roster is DECLARED, never inferred from ``desk_network`` membership:
+
+        wire_routing.spill_accounts: [flagship, mastermind_news]   # explicit
+        (absent) -> {wire_routing.default} | set(wire_routing.classes.values())
+
+    The implicit form is the useful default — an account an operator has already
+    pointed a wire class at is, by that act, a declared wire owner. The explicit
+    key exists so a desk can be made spill-eligible WITHOUT owning a class
+    outright (the wire desk that takes overflow but is not the primary for
+    anything).
+
+    WHY NOT "every enabled account". Because ``desk_network`` also holds the
+    persona desks, and §4's safety rails say wire accounts never take stances.
+    A press relay routed to a persona is a voice violation, and it would arrive
+    through the one lane whose whole contract is verbatim-with-attribution.
+    Volume is not a reason to break the charter, so the pool stays declarative.
+
+    LIVENESS IS THE SAME READ ``route`` USES. Unknown liveness (the accounts
+    model could not be consulted) returns ONLY the default — the pre-W4d
+    behaviour, and the same fail-closed answer ``route`` gives — because an
+    import failure is not evidence that a desk is armed. A dark account is never
+    in the returned list.
+
+    The default account always sorts FIRST when it is live (it is the historical
+    owner of every class); the rest follow in sorted order so a spill choice is
+    reproducible across runs rather than dict-order roulette.
+    """
+    fallback = default_account(cfg)
+    live = _enabled_accounts(cfg, root)
+    if live is None:
+        return [fallback]
+
+    block = _block(cfg)
+    declared: list[str] = []
+    raw = block.get("spill_accounts")
+    if isinstance(raw, (list, tuple)):
+        declared = [str(a or "").strip() for a in raw]
+    else:
+        classes = block.get("classes")
+        if isinstance(classes, dict):
+            declared = [str(a or "").strip() for a in classes.values()]
+        declared.append(fallback)
+
+    pool = {a for a in declared if a and a in live}
+    ordered = [fallback] if fallback in pool else []
+    ordered.extend(sorted(a for a in pool if a != fallback))
+    return ordered
 
 
 def route(

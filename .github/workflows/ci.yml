@@ -401,6 +401,13 @@ on:
       # and an explicit "templates/baskets.html.j2" above — so only the test file
       # needs a new entry here; both halves do trigger the job (#3488).
       - "tests/test_group_flow.py"
+      # #theme-<id> deep-link contract + Sector Intelligence consolidation invariants
+      # (unrun-suite wiring, 2026-08-02): both suites read baskets/sector_central
+      # templates (covered by "templates/**") and pin engine/alert_triage.py's themes
+      # page (listed above); the test files need explicit entries so a test-only
+      # re-pin still re-runs the engine-render-guards job that carries them (#3488).
+      - "tests/test_theme_hash_deeplink.py"
+      - "tests/test_sector_intelligence_page.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
@@ -588,6 +595,8 @@ on:
       - "scripts/build_site.py"
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
+      - "config/biocatalyst_launch_slo_manifest.yml"
+      - "config/sector_intelligence_ownership.yml"
       - "config/site_access.yml"
       - "contracts/biocatalyst/**"
       - "data/biocatalyst/fixtures/**"
@@ -1489,6 +1498,24 @@ on:
       # still runs the guard.
       - "tests/test_marketing_cadence_ramp_coherence.py"
       - ".github/workflows/marketing-publish.yml"
+      # X Growth W4a/W4b/W4c (2026-08-02): the nightly ladder collapses to ONE
+      # day, the per-account rung count is sized to that desk's D08 ramp cap, a
+      # format the tier forbids gets zero allocation, and the cooldown drop
+      # counter reaches the plan artifact. Subject module is
+      # engine/marketing/content_studio.py (matched by engine/marketing/**
+      # above); the suite is named so a TEST-ONLY edit still reaches the lane
+      # that runs it — and so it is not a guard that never executes.
+      - "tests/test_marketing_ladder_collapse.py"
+      # The other four W4 suites, added 2026-08-02 for the same reason and in the
+      # same breath: W4d press-wire headroom (press_lane/hot_tape/wire_routing),
+      # W4e copy-lane yield (copywriter), W4f the mastermind_news arming
+      # (config/marketing.yml), W4g the breaking-card geometry (chart_render/
+      # breaking_summary). All four shipped their guards WITHOUT a lane entry —
+      # they ran green on the author's laptop and would never have executed here.
+      - "tests/test_marketing_wire_headroom.py"
+      - "tests/test_marketing_copy_yield.py"
+      - "tests/test_marketing_news_arming.py"
+      - "tests/test_marketing_breaking_card_geometry.py"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are
@@ -1607,6 +1634,14 @@ on:
       # engine/** covers indicators_m2.py — so this list needs no new entry.
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
+      # TrendSpider-hardening PR-A: the annotation-grammar suite runs in the
+      # SAME paired lanes (thin proves the imports stay lazy, fat executes the
+      # three loader/profile tests). Its committed SVG samples are inputs to it,
+      # so a fixture-only edit must reach the lanes too — a stale golden that no
+      # job re-renders is the dead-suite trap one layer down.
+      - "tests/test_chart_render_grammar.py"
+      - "tests/fixtures/chart_render/**"
+      - "scripts/dev_render_chart_grammar_pngs.py"
       - "tests/test_marketing_card_parity.py"
       # Hot Tape P1 — the intraday attention radar (jobs: marketing-engine for the
       # two thin suites, marketing-data for the pandas-heavy nightly pack suite).
@@ -1620,6 +1655,16 @@ on:
       - "tests/test_marketing_hot_tape_radar.py"
       - "scripts/hot_tape_radar.py"
       - "config/hot_tape.yml"
+      # TrendSpider hardening PR-B — the supply widening (job: marketing-data).
+      # Same OTHER-half reason as the block above: engine/marketing/** and
+      # config/marketing.yml already reach the subjects, so these three entries
+      # exist so a PR editing ONLY a suite still reaches the lane that runs it.
+      # test_movers_source and test_marketing_radar were named by no path filter
+      # AND no job before this PR — they are the only regression guards the tier
+      # ladder and the mover board have, and they ran nowhere.
+      - "tests/test_marketing_supply_feeds.py"
+      - "tests/test_movers_source.py"
+      - "tests/test_marketing_radar.py"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
@@ -1790,6 +1835,7 @@ on:
       # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces
       - "tests/test_backfill_china_communiques.py"
       - "tests/test_baskets_china_intel.py"
+      - "tests/test_baskets_china_ths.py"
       - "tests/test_canada_branch_b.py"
       - "tests/test_china_analogs.py"
       - "tests/test_china_fx_context_render.py"
@@ -1800,6 +1846,7 @@ on:
       - "tests/test_w0_5_10_8.py"
       - "scripts/backfill_china_communiques.py"
       - "scripts/build_baskets_china.py"
+      - "scripts/build_baskets_china_ths.py"
       - "scripts/build_canada_library.py"
       - "scripts/build_china_analogs.py"
       - "scripts/build_china_library.py"
@@ -2289,8 +2336,12 @@ on:
       - "tests/test_index_gex_history.py"
       # MSC R2.4 level-grade scorecards (2026-08-01), wired into unrun-market-plumbing.
       # scripts/*.py is already path-covered; this entry is the OTHER half so a
-      # suite-only edit still starts ci.yml (two-halves law).
+      # suite-only edit still starts ci.yml (two-halves law). R2.4b (2026-08-02)
+      # adds the nulls/index-lane suite + the two back-wired WP-C1 grader suites.
       - "tests/test_level_grades_summary.py"
+      - "tests/test_levels_grade_nulls.py"
+      - "tests/test_levels_grade.py"
+      - "tests/test_levels_track_record_rebase.py"
       # MSC R3.2/R3.3 gex_state index aggregator (2026-08-02), wired into
       # unrun-market-plumbing. lib/*.py + scripts/*.py are path-covered; this is the
       # OTHER half so a suite-only edit still starts ci.yml (two-halves law).

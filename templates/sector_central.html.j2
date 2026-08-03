@@ -1460,6 +1460,10 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <div id="rotation-app" class="sr-scope"></div>
     <div id="desk-watch-mount"></div>
     <div id="tm-mount"></div>
+    {# What's forming NEXT — coherent, tightening groups of names not yet in a basket.
+       Ends MOVEMENT deliberately: the funnel descends gated lanes → map → whole-market
+       motion → what is forming next. Display-only; self-hides when the JSON is absent. #}
+    {% include "_forming_narratives.html.j2" %}
   </section>
 
   <span id="si-money"></span>
@@ -1754,7 +1758,17 @@ function renderStory(){
 
 // ── V1 Theme Rotation Desk fork removed (Sector Intelligence consolidation 2026-08).
 // The live twin serving the intl pages is templates/baskets_desk.js; US uses the rvx layer.
-function openTheme(id){ location.href='basket/'+encodeURIComponent(id)+'.html'; }
+// Inbound #theme-<id> deep links (alerts-board rows; legacy baskets.html bookmarks arrive
+// via that stub's hash forward) resolve to the theme's own page — this page renders no
+// #theme-<id> elements, so scrolling is not an option. replace() rather than href keeps
+// the redirect out of history: Back returns to the alert that sent the visitor here
+// instead of bouncing forward through the hash again (#4254 semantics, kept across #4237).
+function resolveThemeHash(){
+  let id=location.hash.slice(7);          // '#theme-'.length
+  try{ id=decodeURIComponent(id); }catch(e){}
+  if(!id||!themeById(id)) return;         // unknown id → stay put rather than 404
+  location.replace('basket/'+encodeURIComponent(id)+'.html');
+}
 
 // ---- Money flow: ETF style/risk tone + vol pill (Op 2) ----
 // Fetched once each; fail-silent on any error.
@@ -2074,7 +2088,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; localStorage.setItem('fw-brange',String(n)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   initChartDefaults();
   renderBTable(); renderChart();
-  if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
+  if(location.hash.startsWith('#theme-')) resolveThemeHash();
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });

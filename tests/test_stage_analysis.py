@@ -839,3 +839,121 @@ def test_fixture_is_schema_valid():
     for it in fx["changes"]["items"]:
         assert it["kind"] in {
             "entered_stage2", "left_stage2", "breakout", "topping", "entered_stage4"}
+
+
+# ---------------------------------------------------------------------------
+# append_stage_snapshot — nightly advancer of the overview parquet
+# ---------------------------------------------------------------------------
+
+_SNAP_PARQUET = ("stage_analysis", "backfill", "equitydesk_overview.parquet")
+
+
+def _snap_path(dr: Path) -> Path:
+    p = dr
+    for part in _SNAP_PARQUET:
+        p = p / part
+    return p
+
+
+def _snap_recs(n: int = 3, stage: int = 2) -> list[dict]:
+    return [
+        {
+            "ticker": f"SNP{i}",
+            "company": f"Snap Co {i}",
+            "sector": "Information Technology",
+            "stage": stage,
+            "stage_detailed": "2X_fallback_bullish",
+            "weeks_in_stage": 4 + i,
+            "sata_score": 80 - i,
+            "sata_change_1w": 1,
+            "mansfield_rs": 5.0,
+            "stage_source_asof": "2026-07-31",
+        }
+        for i in range(n)
+    ]
+
+
+def _seed_frame() -> pd.DataFrame:
+    """A minimal vendor-seed slice — deliberately WITHOUT a source column."""
+    return pd.DataFrame({
+        "ticker": ["AAA", "EEE"],
+        "region": ["USA", "EUROPE"],
+        "name_ui": ["Aaa Inc", "Eee SA"],
+        "gics_sector": ["Industrials", "Industrials"],
+        "stage_flag": [2, 3],
+        "stage_detailed": ["2X_fallback_bullish", "3A_sideways_exhaustion"],
+        "sata_score": [70, 40],
+        "weeks_in_stage": [9, 2],
+        "as_of_date": ["2026-07-17", "2026-07-17"],
+    })
+
+
+def test_snapshot_append_preserves_seed_and_orders_newest_first(tmp_path):
+    dr = tmp_path / "data"
+    p = _snap_path(dr)
+    p.parent.mkdir(parents=True)
+    _seed_frame().to_parquet(p, index=False)
+
+    n = sa.append_stage_snapshot(_snap_recs(3), "2026-08-03", root=dr, min_rows=1)
+    assert n == 3
+
+    df = pd.read_parquet(p)
+    # Seed rows intact, source backfilled on them.
+    seed = df[df["as_of_date"] == "2026-07-17"]
+    assert len(seed) == 2
+    assert set(seed["source"]) == {"equitydesk_backfill"}
+    assert set(seed["ticker"]) == {"AAA", "EEE"}
+    # Engine rows stamped and FIRST (newest as_of first — iloc[0] readers).
+    assert df.iloc[0]["as_of_date"] == "2026-08-03"
+    eng = df[df["source"] == "stage_engine"]
+    assert len(eng) == 3
+    assert set(eng["region"]) == {"USA"}
+
+
+def test_snapshot_same_asof_rerun_is_idempotent(tmp_path):
+    dr = tmp_path / "data"
+    sa.append_stage_snapshot(_snap_recs(3), "2026-08-03", root=dr, min_rows=1)
+    n2 = sa.append_stage_snapshot(_snap_recs(3), "2026-08-03", root=dr, min_rows=1)
+    assert n2 == 3
+    df = pd.read_parquet(_snap_path(dr))
+    assert len(df) == 3  # replaced, not duplicated
+
+
+def test_snapshot_retains_two_engine_asofs_plus_seed(tmp_path):
+    dr = tmp_path / "data"
+    p = _snap_path(dr)
+    p.parent.mkdir(parents=True)
+    _seed_frame().to_parquet(p, index=False)
+
+    for asof in ("2026-08-01", "2026-08-02", "2026-08-03"):
+        sa.append_stage_snapshot(_snap_recs(2), asof, root=dr, min_rows=1)
+
+    df = pd.read_parquet(p)
+    eng_asofs = sorted(set(df.loc[df["source"] == "stage_engine", "as_of_date"]))
+    assert eng_asofs == ["2026-08-02", "2026-08-03"]  # oldest engine as_of rotated out
+    assert (df["as_of_date"] == "2026-07-17").sum() == 2  # seed never rotates
+    # Ordering: newest snapshot first, seed last.
+    assert list(df["as_of_date"]) == sorted(df["as_of_date"], reverse=True)
+
+
+def test_snapshot_floor_refuses_degenerate_universe(tmp_path, capsys):
+    dr = tmp_path / "data"
+    n = sa.append_stage_snapshot(_snap_recs(2), "2026-08-03", root=dr, min_rows=5)
+    assert n == 0
+    assert not _snap_path(dr).exists()
+    out = capsys.readouterr().out
+    warn_lines = [l for l in out.splitlines() if "stage snapshot not advanced" in l]
+    assert warn_lines and warn_lines[0].startswith("::warning")
+
+
+def test_snapshot_unreadable_existing_file_refuses_overwrite(tmp_path, capsys):
+    dr = tmp_path / "data"
+    p = _snap_path(dr)
+    p.parent.mkdir(parents=True)
+    p.write_bytes(b"not a parquet file")
+    n = sa.append_stage_snapshot(_snap_recs(3), "2026-08-03", root=dr, min_rows=1)
+    assert n == 0
+    assert p.read_bytes() == b"not a parquet file"
+    out = capsys.readouterr().out
+    warn_lines = [l for l in out.splitlines() if "refusing to overwrite" in l]
+    assert warn_lines and warn_lines[0].startswith("::warning")

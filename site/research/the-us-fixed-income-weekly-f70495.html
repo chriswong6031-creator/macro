@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The US Fixed Income Weekly — Bank of America · Aug 1, 2026 | MastermindX Research Vault</title>
+<meta name="description" content="Bank of America institutional research · Aug 1, 2026. July FOMC &amp; Geopolitical Inflation Risk: Fed holds rates but faces 3 hikes by September (BofA…">
+<!-- noarchive blocks cache read-around of the public excerpt; max-snippet lets Google MATCH the full excerpt but only DISPLAY a bounded snippet. -->
+<meta name="robots" content="noarchive, max-snippet:280, max-image-preview:large">
+<link rel="canonical" href="https://www.mastermind-x.com/research/the-us-fixed-income-weekly-f70495.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="The US Fixed Income Weekly — Bank of America">
+<meta property="og:description" content="Bank of America institutional research · Aug 1, 2026. July FOMC &amp; Geopolitical Inflation Risk: Fed holds rates but faces 3 hikes by September (BofA…">
+<meta property="og:url" content="https://www.mastermind-x.com/research/the-us-fixed-income-weekly-f70495.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The US Fixed Income Weekly — Bank of America">
+<meta name="twitter:description" content="Bank of America institutional research · Aug 1, 2026. July FOMC &amp; Geopolitical Inflation Risk: Fed holds rates but faces 3 hikes by September (BofA…">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The US Fixed Income Weekly", "author": {"@type": "Organization", "name": "Bank of America"}, "publisher": {"@type": "Organization", "name": "MastermindX", "logo": {"@type": "ImageObject", "url": "https://www.mastermind-x.com/apple-touch-icon.png"}}, "description": "Bank of America institutional research · Aug 1, 2026. July FOMC & Geopolitical Inflation Risk: Fed holds rates but faces 3 hikes by September (BofA…", "url": "https://www.mastermind-x.com/research/the-us-fixed-income-weekly-f70495.html", "isAccessibleForFree": false, "hasPart": {"@type": "WebPageElement", "isAccessibleForFree": false, "cssSelector": ".rr-gate"}, "datePublished": "2026-08-01T22:07:52Z"}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../theme.css?v=8d7800c8">
+<link rel="stylesheet" href="../assets/css/0c9ad01e.css?v=0c9ad01e">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="../navigation-refresh.css?v=073377a0">
+</head>
+<body>
+<nav class="site-nav">
+    <link rel="stylesheet" href="../navigation-refresh.css?v=073377a0">
+    <div class="nav-links">
+    <a class="nav-brand" href="../start.html" aria-label="MASTERMINDX — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMINDX</span>
+    </a>
+    <div class="nav-dd">
+      <a class="nav-link" href="../macro.html"><span class="menu-icon menu-icon-flag menu-icon-us" aria-hidden="true"></span><span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../macro.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="../us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        <a href="../movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        <a href="../stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
+        <a href="../sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
+        <a href="../subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+        <a href="../strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="../alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
+            <a href="../gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
+<a href="../intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a><a href="../darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>            <a href="../market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
+          </div>
+        </div>
+<a href="../leader_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../china.html"><span class="menu-icon menu-icon-flag menu-icon-cn" aria-hidden="true"></span><span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="../china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../sector_central_china.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="../baskets_china.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="../subsector_rotation_china.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="../subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="../china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="../china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../china_intel.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../china_intel.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="../china_mechanics.html"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="../baskets_china_ths.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="../flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="../china_altdata.html"><span class="submenu-icon submenu-icon-altdata" aria-hidden="true"></span><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="../china_policy_watch.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="../china_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="../china_special_situations.html"><span class="submenu-icon submenu-icon-event" aria-hidden="true"></span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="../narrative_radar.html"><span class="submenu-icon submenu-icon-narrative" aria-hidden="true"></span><span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../hk.html"><span class="menu-icon menu-icon-flag menu-icon-hk" aria-hidden="true"></span><span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../hk.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="../hk_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet HK · alpha</span><span class="l-zh">先知港股 · 阿尔法</span></span></a>
+        <a href="../hk_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="../flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="../baskets_hk.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="../allocation_hk.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../canada.html"><span class="menu-icon menu-icon-flag menu-icon-ca" aria-hidden="true"></span><span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../canada.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="../canada_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet TSX · sectors · alpha</span><span class="l-zh">先知TSX · 板块 · 阿尔法</span></span></a>
+        <a href="../canada_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="../baskets_canada.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="../allocation_canada.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="../south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="../euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="../united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="../india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
+        <a href="../intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
+        <a href="../baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../commodities.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="../commodity_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="../spr.html"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="../forex.html"><span class="submenu-icon submenu-icon-forex" aria-hidden="true"></span><span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="../bonds.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="../intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="../intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="../reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="../research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="../fundamental_forensics.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M9 6h24l6 6v28H9z"/><path d="M7 4h24l6 6v23H7zM31 4v7h6"/><path d="M13 15h16M13 21h12M13 27h8"/><circle class="soft-fill" cx="31" cy="31" r="8"/><circle cx="29" cy="29" r="7"/><path class="accent" d="m34 34 7 7M25 29h8M29 25v8"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Filing Forensics</span><span class="l-zh">财报取证</span></span><span class="item-desc d"><span class="l-en">Find the accounting changes worth reviewing</span><span class="l-zh">发现值得复核的会计变化</span></span></span></a>
+              <a class="mega-item nm-feat" href="../neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+            </div>
+          </section>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="../foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+            </div>
+          </section>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="../smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="../macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+            </div>
+          </section>
+        </div>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="../policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="../government_revenue.html"><span><span class="l-en">Government Revenue</span><span class="l-zh">政府收入前瞻</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="../alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="../special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="../biocatalyst.html"><span><span class="l-en">BioCatalyst Intelligence</span><span class="l-zh">生物医药催化剂智能</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="../capital_structure.html"><span><span class="l-en">Capital Structure</span><span class="l-zh">资本结构</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <div class="nav-drill" data-nav-drill>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
+            </button>
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
+              <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
+              <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
+              <a class="nav-mega-item" href="../markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
+              <a class="nav-mega-item" href="../country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
+              <a class="nav-mega-item" href="../sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
+              <a class="nav-mega-item" href="../sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
+              <a class="nav-mega-item" href="../cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
+              <a class="nav-mega-item" href="../macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
+            </div>
+          </div>
+          <a class="rail-link nav-rail-item" href="../intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  <script src="../logo_config.js?v=b37d33d3" defer></script>
+  <script src="../stock-logos.js?v=cc29be53" defer></script>
+  <script src="../live_config.js?v=52943e92" defer></script>
+  <script src="../live.js?v=e19f6af3" defer></script>  <div class="nav-search">
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav><div class="rr-aurora" aria-hidden="true"></div>
+
+<main class="rr-wrap">
+  <nav class="rr-crumb" aria-label="Breadcrumb">
+    <a href="../research_vault.html"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></a>
+    <span class="sep">/</span><span>Bank of America</span>
+  </nav>
+
+  <article class="rr">
+    <div class="rr-top">
+      <span class="rr-logo">BO</span>
+      <span class="rr-inst">Bank of America</span>
+      <span class="stamp sell"><span class="dt"></span>SELL</span>
+    </div>
+
+    <h1>The US Fixed Income Weekly</h1>
+
+    <div class="rr-meta">
+<span class="m-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Aug 1, 2026</span><span class="m-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>41 <span class="l-en">pages</span><span class="l-zh">页</span></span>    </div>
+
+    <p class="rr-teaser"><span class="lead"><span class="l-en">From the report</span><span class="l-zh">报告摘录</span></span>July FOMC &amp; Geopolitical Inflation Risk: Fed holds rates but faces 3 hikes by September (BofA forecast); Brent oil near $100 signals Iran escalation risk, driving persistent inflation concerns and front-end yield…</p>
+
+    <section class="rr-x" aria-label="First pages of the report">
+      <div class="rr-x-head">
+        <span class="rr-x-eyebrow"><span class="l-en">Inside the report</span><span class="l-zh">报告内文</span></span>
+        <span class="rr-x-src"><span class="l-en">Verbatim from the original PDF — first pages</span><span class="l-zh">原版 PDF 开篇原文 · 逐字摘录</span></span>
+      </div>
+      <div class="rr-x-body">
+<p>US Fixed Income Strategy The US Fixed Income Weekly</p><p>Economics – July FOMC preview: It’s Warsh’s call 27 July 2026</p><p>Rising oil prices has made the July Fed decision a close call. We expect a hold, but Warsh Fixed Income Strategy has enough votes either way. We forecast -0.05% &amp; 0.16% for Jun headline &amp; core PCE. United States Soft headline inflation should support robust real spending growth. We expect 2Q GDP Cross Product growth of 1.7% q/q saar but consumer spending should rebound to a robust 2.5%. Fixed Income Research Rates – July limbo dance BofAS Chris Flanagan July hike uncertainty is highly unusual, we have greater conviction on degree of hikes FI/MBS/CLO Strategist getting priced further; stay paid 2y rates. A hawkish Fed, heavy IG supply, and investors BofAS with room to cut duration and credit risk all argue for higher yields.</p><p>The Flow Show – Bonds bringing the heat Mark Cabana, CFA Rates Strategist FCI hotter than EPS this summer...risk-off &amp; long US$ until Fed hikes. Blue collar semis BofAS say long defensives, dividends, duration, short banks, brokers, tech, industrials.</p><p>Securitized Products –Defensive Carry Now, Duration Later Neha Khoda Credit Strategist On deteriorating geopolitics, seasonal risk weakness may be starting as HY and Agency BofAS MBS spreads widen. Stay defensive with high-quality floaters (CLO, SASB, CMO) and ABS while oil and rate volatility pressures build. A bond rally may emerge later if higher Alvin Fung rates ultimately slow growth and risk appetite; for now, keep duration short ABS Strategist BofAS Investment Grade – Hedge the Iran risks Brent oil back near the $100/bbl level suggests the risk of an escalation in Iran have See Team Page for List of Analysts increased materially. The earlier widening in IG cyclical sectors has by now fully re- traced. That suggests hedging Iran risks is cheap. Long US and Energy over European Table of Contents Yankees, underweight the cyclical Leisure, Yankee banks, Transportation, Autos. The CIO Summary 2 High Yield – The Credit race tightens: HY, Loans &gt; IG, PC Economics 17 Rates 18 LevFin remains resilient as supportive technicals offset macro headwinds &amp; growing AI- Front end 19 related supply. HY is expected to outperform while loans and private credit face more Technicals 20 headwinds &amp; higher credit risk. In optimistic scenario, productivity gains &amp; real growth Securitized Products 21 could broaden the credit rally benefitting Loans. Agency MBS 22 Non-agency MBS 23 Municipals – Reading the muni tea leaves CMBS 24 The 10s30s Treasury slope remained well under 60bp; 10s30s muni AAA flattening ABS 27 continued amid oil-driven rising yields. Negative muni new money issuance growth and CLOs 26 Investment Grade Credit 27 flat population growth hint at more economic imbalance than labor market suggests. High Yield Credit 28 Municipals 29 The Flow Show 30 Forecasts 31</p><p>See additional abbreviations on page 24</p><p>Trading ideas and investment strategies discussed herein may give rise to significant risk and are not suitable for all investors. Investors should have experience in relevant markets and the financial resources to absorb any losses arising from applying these ideas or strategies. This document is intended for BofA Securities institutional investors only. It may not be distributed to financial advisors, retail clients or retail prospects. BofA Securities does and seeks to do business with issuers covered in its research reports. As a result, investors should be aware that the firm may have a conflict of interest that could affect the objectivity of this report. Investors should consider this report as only a single factor in making their investment decision. Refer to important disclosures on page 42 to 44.</p><p>The CIO Summary Chris Flanagan BofAS</p><p>The market backdrop has shifted meaningfully over the past several weeks. Rising oil prices, heightened geopolitical tensions in the Middle East, and renewed concerns about inflation persistence have pushed investors to reprice the path of monetary policy. While economic growth remains resilient, labor markets are stable, and risk assets continue to benefit from strong liquidity and AI-related investment, markets…</p>        <div class="rr-x-fade" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <div class="rr-gate">
+      <svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <h2><span class="l-en">Read the full report + PDF</span><span class="l-zh">阅读全文与 PDF</span></h2>
+      <p>
+        <span class="l-en">The full summary (5 key points) and the original Bank of America PDF are for MastermindX Pro members.</span>
+        <span class="l-zh">完整摘要（5 个要点）与 Bank of America 原始 PDF 为 MastermindX Pro 会员专享。</span>
+      </p>
+      <a class="rr-cta" href="../research_vault.html?doc=marketdesk-lvoxa46ccvs-f70495">
+        <span class="l-en">Read on MastermindX</span><span class="l-zh">前往 MastermindX 阅读</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </article>
+
+  <section class="rr-rel">
+    <h3><span class="l-en">Related institutional research</span><span class="l-zh">相关机构研报</span></h3>
+    <ul>
+      <li><a href="the-flow-show-credibility-intervention-liquidation-598550.html"><span class="r-inst">Bank of America</span><span class="r-title">The Flow Show Credibility, Intervention &amp; Liquidation</span></a></li>
+      <li><a href="lending-pulse-loans-aren-t-the-problem-funding-them-is-8d3284.html"><span class="r-inst">Bank of America</span><span class="r-title">Lending Pulse Loans Aren&#39;t the Problem, Funding Them Is</span></a></li>
+      <li><a href="credit-analysis-summer-bummer-for-bonds-b22974.html"><span class="r-inst">Bank of America</span><span class="r-title">Credit Analysis Summer bummer for bonds</span></a></li>
+      <li><a href="us-weighed-on-equities-despite-broad-earnings-support-ae5416.html"><span class="r-inst">Bank of America</span><span class="r-title">US weighed on equities despite broad earnings support</span></a></li>
+    </ul>
+  </section>
+
+  <p class="rr-foot">
+    <span class="l-en"><b>Not investment advice.</b> MastermindX hosts third-party institutional research for reference and education; ratings and views are the authors', not ours. <a href="../research_vault.html">Browse the full Research Vault →</a></span>
+    <span class="l-zh"><b>非投资建议。</b>MastermindX 仅收录第三方机构研究，供参考与学习；其中评级与观点均属作者本人。<a href="../research_vault.html">浏览完整研报库 →</a></span>
+  </p>
+</main>
+<script src="../theme.js?v=402a51a2" defer></script>
+<script defer data-whb data-root="../" src="../wh_banner.js?v=2d5f957e"></script>
+</body>
+</html>

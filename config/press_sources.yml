@@ -310,7 +310,27 @@ alpaca:
 # the daemon's LOCAL state (data/marketing/press/, never the repo).
 # ─────────────────────────────────────────────────────────────────────────────
 wire:
-  flagship_top_k_per_day: 3
+  # Daily wire emissions PER WIRE DESK (W4d, 2026-08-02). Was 3, and 3 was never
+  # measured; 10 is, by replaying 438 real polled items (six breaking.sources RSS
+  # feeds + the two free Truth mirrors) through press_lane.run_press_tick in
+  # hourly ticks. Full derivation lives with the code default in
+  # engine/marketing/press_lane.py::_DEFAULT_FLAGSHIP_TOP_K — the short version:
+  #
+  #   * the number is bounded ABOVE by flagship's own ramp cap (20/day in
+  #     marketing.yml sentinel.ramp.account_overrides), halved so the nightly
+  #     ladder and the publish-time lanes still have a desk to post to;
+  #   * bounded BELOW by measured supply — the busiest replayed day cleared 6
+  #     items above the salience floor off a PARTIAL 43-candidate day, so 3 was
+  #     dropping half of them into a `continue` nothing counted;
+  #   * NOT a quality gate. `flagship_salience_floor` below, the market-nexus
+  #     test, the corroboration gate and breaking.salience_threshold decide WHICH
+  #     items go out and none of them moved. On most days SUPPLY binds first
+  #     (~45% of the ingest is a mirror duplicate and nearly all the rest scores
+  #     under the floor), so this is headroom for the busy day, not a firehose.
+  #
+  # marketing.yml `breaking.flagship_top_k_per_day` OVERRIDES this key when it is
+  # present — the volume decision may sit beside the desk roster it governs.
+  flagship_top_k_per_day: 10
   # THE FLOOR WAS EXACTLY THE CEILING OF ONE CLASS, AND THAT IS WHY THIS WIRE
   # ONLY EVER POSTED BEA PRINTS (2026-07-31).
   #
@@ -339,11 +359,13 @@ wire:
   # band. Actual scores run well under the class bases (recency/keyword decay),
   # which is why calibrating against the taxonomy alone would have been wrong.
   #
-  # VOLUME IS NOT WHAT THIS KNOB PROTECTS — `flagship_top_k_per_day: 3` above is,
-  # and it is unchanged. Lowering the floor cannot flood the account; it can only
-  # change WHICH three items a day compete for the three slots. That is the whole
-  # point: the competition should be between the day's best stories, not between
-  # one class and nothing.
+  # VOLUME IS NOT WHAT THIS KNOB PROTECTS — `flagship_top_k_per_day` above is
+  # (3 when this note was written, 10 since W4d), and THIS FLOOR IS UNCHANGED by
+  # that raise. Lowering the floor cannot flood a desk; it can only change WHICH
+  # items compete for the day's slots. That is the whole point: the competition
+  # should be between the day's best stories, not between one class and nothing.
+  # The same separation runs the other way — raising the per-desk budget changes
+  # HOW MANY of the items already above this floor may go out, and never which.
   flagship_salience_floor: 30.0
   # Corroboration window for hearsay-class items: two independent sources must
   # arrive within this window for a hearsay item to clear to instant-publish.
