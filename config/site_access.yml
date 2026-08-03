@@ -13,6 +13,12 @@ public:
   exact:
     - /
     - /index.html
+    # Entity page (SEO_SUPERCHARGE_MASTERPLAN §0.10). Public for the same
+    # structural reason the legal pages are: a page whose whole job is to tell a
+    # stranger — and a crawler that has never had a session — who we are cannot
+    # sit behind a wall that asks them to prove who THEY are first. No signals,
+    # no customer data, no write surface.
+    - /about.html
     - /plans.html
     # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
     # rows are omitted server-side and render only counts + the trial CTA, so
