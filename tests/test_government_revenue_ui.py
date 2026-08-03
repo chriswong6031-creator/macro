@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "templates" / "government_revenue.html.j2").read_text(encoding="utf-8")
 BRIEFCASE = (ROOT / "templates" / "government-revenue-briefcase.js").read_text(encoding="utf-8")
 BRIEFCASE_UI = (ROOT / "templates" / "government-revenue-briefcase-ui.js").read_text(encoding="utf-8")
+CANDIDATE_RADAR = (ROOT / "templates" / "government-revenue-candidate-radar.js").read_text(encoding="utf-8")
+CANDIDATE_RADAR_SITE = (ROOT / "site" / "government-revenue-candidate-radar.js").read_text(encoding="utf-8")
 SITE_PATH = ROOT / "site" / "government_revenue.html"
 SITE = SITE_PATH.read_text(encoding="utf-8")
 WORKSPACE_PATH = ROOT / "site" / "government-revenue-data" / "workspace.json"
@@ -31,7 +33,17 @@ def _page_runtime_js() -> str:
     return runtime
 
 
-def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: int) -> dict:
+def _run_runtime(
+    tmp_path: Path,
+    payload: dict,
+    full_workspace: dict,
+    now_ms: int,
+    candidate_rows: list[dict] | None = None,
+    mapping_backlog_total: int = 0,
+    mapping_backlog_tickers: list[str] | None = None,
+    ticker_routes: list[str] | None = None,
+    location_search: str = "",
+) -> dict:
     """Run the page's real IIFE against a deliberately tiny browser DOM stub."""
     page_runtime = _page_runtime_js()
     script = textwrap.dedent(
@@ -39,6 +51,11 @@ def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: in
         var PAYLOAD = %(payload)s;
         var FULL_WORKSPACE = %(full_workspace)s;
         var NOW_MS = %(now_ms)s;
+        var CANDIDATE_ROWS = %(candidate_rows)s;
+        var CANDIDATE_BACKLOG = %(candidate_backlog)s;
+        var CANDIDATE_BACKLOG_TICKERS = %(candidate_backlog_tickers)s;
+        var TICKER_ROUTES = %(ticker_routes)s;
+        var LOCATION_SEARCH = %(location_search)s;
         var fetchCalls = 0;
         function makeElement(){
           var listeners = {};
@@ -65,10 +82,14 @@ def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: in
           getElementById:node, querySelectorAll:function(){return[]},
           addEventListener:function(){}, dispatchEvent:function(){return true}
         };
-        var location = {href:'https://example.test/government_revenue.html', pathname:'/government_revenue.html', search:'', hash:''};
+        var location = {href:'https://example.test/government_revenue.html'+LOCATION_SEARCH, pathname:'/government_revenue.html', search:LOCATION_SEARCH, hash:''};
         var history = {replaceState:function(){}};
         var navigator = {clipboard:null};
         var window = {location:location, history:history, navigator:navigator, innerWidth:1440};
+        if(CANDIDATE_ROWS!==null)window.createGovernmentRevenueCandidateRadar=function(api){return {
+          load:function(){api.onRows(CANDIDATE_ROWS,{status:'ok',total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS});return Promise.resolve(CANDIDATE_ROWS)},
+          refresh:function(){return this.load()}, render:function(){}, invalidate:function(){}, state:function(){return 'ok'}, crosschecks:function(){return ''}
+        }};
         var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:true,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
         function CustomEvent(name, init){this.type=name;this.detail=init&&init.detail}
         %(page_runtime)s
@@ -79,11 +100,14 @@ def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: in
           setTimeout(function(){
             var runtime = window.__governmentRevenueRuntime;
             var freshness = runtime.effectiveFreshnessState(PAYLOAD, PAYLOAD.procurement_workspace, NOW_MS);
+            var tickerStates=TICKER_ROUTES===null?null:TICKER_ROUTES.map(function(ticker){return runtime.tickerRailState(ticker)});
+            var tickerRoutes=TICKER_ROUTES===null?null:TICKER_ROUTES.map(function(ticker){return runtime.openTickerFilmstrip(ticker)});
             process.stdout.write(JSON.stringify({initial:initial, afterRetry:{hidden:node('workspaceDegraded').hidden,
               copy:node('workspaceDegradedCopy').textContent, retryHidden:node('workspaceRetry').hidden},
               fetchCalls:fetchCalls, freshness:freshness,
               bundlesMatch:runtime.workspaceBundleMatches(PAYLOAD.procurement_workspace, FULL_WORKSPACE),
-              rows:runtime.workspaceRows(), inspectorHtml:node('inspector').innerHTML}));
+              rows:runtime.workspaceRows(), tickerStates:tickerStates, tickerRoutes:tickerRoutes,
+              selection:runtime.currentSelection(), inspectorHtml:node('inspector').innerHTML}));
           }, 8);
         }, 8);
         """
@@ -91,6 +115,11 @@ def _run_runtime(tmp_path: Path, payload: dict, full_workspace: dict, now_ms: in
         "payload": json.dumps(payload),
         "full_workspace": json.dumps(full_workspace),
         "now_ms": now_ms,
+        "candidate_rows": json.dumps(candidate_rows) if candidate_rows is not None else "null",
+        "candidate_backlog": json.dumps(mapping_backlog_total),
+        "candidate_backlog_tickers": json.dumps(mapping_backlog_tickers or []),
+        "ticker_routes": json.dumps(ticker_routes) if ticker_routes is not None else "null",
+        "location_search": json.dumps(location_search),
         "page_runtime": page_runtime,
     }
     path = tmp_path / "government_revenue_runtime.js"
@@ -130,6 +159,98 @@ def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert "Funding-stage firewall" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
     assert "Request evidence is upstream—not funded revenue" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
     assert "No budget source observation timestamp is available." in TEMPLATE
+
+
+def test_candidate_radar_requires_exact_receipt_bound_candidates_and_keeps_company_coverage_separate() -> None:
+    implementation = TEMPLATE + CANDIDATE_RADAR
+    for marker in (
+        'data-mode="candidates"',
+        'id="countCandidates"',
+        "Candidate Radar",
+        "No exact-linked changes yet",
+        "Company coverage is live; issuer mapping is still being verified.",
+        "Discovery-scope history · mapping needed",
+        "Issuer mapping needed",
+        'government-revenue-candidate-radar.js',
+        "createGovernmentRevenueCandidateRadar",
+        "/api/government-revenue/candidates",
+        "/api/government-revenue/mapping-backlog",
+        "government_revenue_candidate_queue.v1",
+        "government_revenue_candidate.v1",
+        "government_recipient_resolution.v1",
+        "counts.total",
+        "mapping_backlog",
+        "Exact issuer path",
+        "Possible statement channel",
+        "Other Mastermind evidence",
+        "Research context only. It cannot rank a company",
+    ):
+        assert marker in implementation
+
+    assert "DATA.companies" not in CANDIDATE_RADAR
+    assert "candidate_scope!=='government_revenue_research'" in CANDIDATE_RADAR
+    assert "is_neuralweb_trade_candidate!==false" in CANDIDATE_RADAR
+    assert "fetchPages" in CANDIDATE_RADAR
+    assert "candidate_mapping_generation_drift" in CANDIDATE_RADAR
+    assert CANDIDATE_RADAR_SITE == CANDIDATE_RADAR
+    assert 'src="government-revenue-candidate-radar.js"' in TEMPLATE
+
+
+@needs_node
+def test_candidate_radar_loads_every_candidate_and_mapping_page(tmp_path: Path) -> None:
+    script = textwrap.dedent(
+        """
+        var window={};
+        var calls=[];
+        var authority={tier:'display',context_only:true,can_rank:false,can_size:false,can_gate:false,can_originate_signal:false,can_add_candidates:false,can_escalate:false};
+        function candidate(){return {contract:'government_revenue_candidate.v1',schema_version:'1.0.0',candidate_id:'grc1-'+('a'.repeat(24)),candidate_scope:'government_revenue_research',is_neuralweb_trade_candidate:false,candidate_family:'new_award',candidate_state:'awaiting_crosscheck',ticker:'NOC',issuer_company_id:'issuer:noc',issuer:{company_name:'Northrop Grumman',ticker:'NOC'},issuer_resolution_ref:{contract:'government_recipient_resolution.v1',graph_id:'graph:test',evidence_refs:['evidence:1']},known_at:'2026-08-02T00:00:00Z',effective_at:'2026-08-01T00:00:00Z',transmission_direction:'possible_positive',event_refs:['event:1'],source_receipt_refs:[{ref_id:'receipt:1'}],ownership_path_refs:['edge:1'],authority:authority};}
+        function envelope(items,total,next){return {contract:'government_revenue_candidate_queue.v1',schema_version:'1.0.0',content_id:'grcq1-'+('b'.repeat(24)),authority:authority,items:items,total:total,next_cursor:next,mapping_backlog_total:2,known_at:'2026-08-02T00:00:00Z',as_of:'2026-08-03T00:00:00Z',freshness:{},limitations:[]};}
+        window.fetch=function(url){calls.push(url);var mapping=url.indexOf('/mapping-backlog')>-1,cursor=new URL('https://example.test'+url).searchParams.get('cursor');if(mapping)return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope([{backlog_id:'grmb1-'+('c'.repeat(24)),mapping_state:'mapping_needed',issuer_attribution:'not_asserted',ticker:'LMT'},{backlog_id:'grmb1-'+('d'.repeat(24)),mapping_state:'mapping_needed',issuer_attribution:'not_asserted',ticker:'RTX'}],2,null))}});var count=cursor?50:100;return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope(Array.from({length:count},candidate),150,cursor?null:'candidate-page-2'))}})};
+        %(candidate_source)s
+        var published=null;
+        var radar=window.createGovernmentRevenueCandidateRadar({obj:function(x){return !!x&&typeof x==='object'&&!Array.isArray(x)},arr:function(x){return Array.isArray(x)?x:[]},esc:String,text:function(x,f){return x==null?f:String(x)},n:function(x){var v=Number(x);return Number.isFinite(v)?v:null},money:String,date:String,tr:function(en){return en},safeUrl:function(){return''},host:function(){return null},onRows:function(rows,meta){published={rows:rows.length,meta:meta}}});
+        radar.load().then(function(){process.stdout.write(JSON.stringify({calls:calls,published:published}))});
+        """
+    ) % {"candidate_source": CANDIDATE_RADAR}
+    path = tmp_path / "candidate_pages.js"
+    path.write_text(script, encoding="utf-8")
+
+    result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert len(payload["calls"]) == 3
+    assert payload["published"]["rows"] == 150
+    assert payload["published"]["meta"]["total"] == 150
+    assert payload["published"]["meta"]["mapping_backlog_tickers"] == ["LMT", "RTX"]
+
+
+def test_company_ticker_filmstrip_stays_honest_and_routes_to_the_right_dossier() -> None:
+    for marker in (
+        'class="company-filmstrip"',
+        'id="companyFilmstrip"',
+        'role="list"',
+        'data-filmstrip-ticker',
+        'type="button" class="company-ticker',
+        'aria-label="',  # buttons receive a full ticker, state, and destination label at render.
+        'Evidence linked',
+        'Link pending',
+        'Company file',
+        'overflow-x:auto',
+        'max-width:100%',
+        '.company-ticker:focus-visible',
+        'renderTickerFilmstrip();',
+        'openTickerFilmstrip(button.dataset.filmstripTicker)',
+    ):
+        assert marker in TEMPLATE
+
+    assert 'DATA.companies' in TEMPLATE
+    assert 'rowsByMode.candidates.some' in TEMPLATE
+    assert 'candidateMeta.mapping_backlog_tickers' in TEMPLATE
+    assert ".company-filmstrip{display:block" in TEMPLATE
+    assert "state.mode=stateName==='candidate'?'candidates':'companies'" in TEMPLATE
+    assert "state.q='';state.agency='';state.truth='all'" in TEMPLATE
+    assert "state.ticker=ticker" in TEMPLATE
+    assert "renderTickerFilmstrip();syncCounts();populateFilters()" in TEMPLATE
 
 
 def test_truth_layers_and_investor_inspector_do_not_overclaim() -> None:
@@ -277,6 +398,163 @@ def test_generated_shell_and_workspace_share_a_fail_closed_bundle_id() -> None:
 
 def test_generated_html_stays_inside_the_raw_edge_budget() -> None:
     assert SITE_PATH.stat().st_size <= build_government_revenue.RAW_HTML_BUDGET_BYTES
+
+
+@needs_node
+def test_runtime_company_filmstrip_only_promotes_receipt_linked_tickers(tmp_path: Path) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v1",
+        "bundle_id": "grw1-" + "a" * 24,
+        "total": 0,
+        "next_cursor": None,
+        "events": [],
+        "coverage": {},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [
+            {"ticker": "EXACT", "name": "Exact Link Co."},
+            {"ticker": "MAPPING", "name": "Pending Link Co."},
+            {"ticker": "QUIET", "name": "Coverage Co."},
+        ],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+    candidate_rows = [{
+        "id": "candidate:exact",
+        "kind": "candidate",
+        "tickers": ["EXACT"],
+        "title": "EXACT · Exact Link Co.",
+        "subtitle": "Receipt-bound procurement change",
+        "date": "2026-08-01T00:00:00Z",
+        "candidate": {},
+    }]
+
+    all_backlog = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=candidate_rows,
+        mapping_backlog_total=2,
+        mapping_backlog_tickers=["MAPPING", "QUIET"],
+        ticker_routes=["EXACT", "MAPPING"],
+    )
+    assert all_backlog["tickerStates"] == ["candidate", "mapping"]
+    assert all_backlog["tickerRoutes"] == [
+        {"mode": "candidates", "ticker": "EXACT", "selected": "candidate:exact"},
+        {"mode": "companies", "ticker": "MAPPING", "selected": "company:MAPPING"},
+    ]
+
+    partial_backlog = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=candidate_rows,
+        mapping_backlog_total=1,
+        mapping_backlog_tickers=["MAPPING"],
+        ticker_routes=["MAPPING", "QUIET"],
+    )
+    assert partial_backlog["tickerStates"] == ["mapping", "coverage"]
+    assert partial_backlog["tickerRoutes"] == [
+        {"mode": "companies", "ticker": "MAPPING", "selected": "company:MAPPING"},
+        {"mode": "companies", "ticker": "QUIET", "selected": "company:QUIET"},
+    ]
+
+
+@needs_node
+def test_runtime_restores_async_candidate_deep_link_selection(tmp_path: Path) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v1",
+        "bundle_id": "grw1-" + "a" * 24,
+        "total": 0,
+        "next_cursor": None,
+        "events": [],
+        "coverage": {},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [
+            {"ticker": "ONE", "name": "One Co."},
+            {"ticker": "TWO", "name": "Two Co."},
+        ],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+    candidates = [
+        {"id": "candidate:one", "kind": "candidate", "tickers": ["ONE"], "title": "ONE · One Co.", "subtitle": "First", "candidate": {}},
+        {"id": "candidate:two", "kind": "candidate", "tickers": ["TWO"], "title": "TWO · Two Co.", "subtitle": "Second", "candidate": {}},
+    ]
+
+    result = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=candidates,
+        location_search="?mode=candidates&item=candidate%3Atwo",
+    )
+
+    assert result["selection"] == {
+        "mode": "candidates",
+        "ticker": "",
+        "selected": "candidate:two",
+        "pending": "",
+    }
+
+
+@needs_node
+def test_runtime_does_not_substitute_a_stale_candidate_deep_link(tmp_path: Path) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v1",
+        "bundle_id": "grw1-" + "a" * 24,
+        "total": 0,
+        "next_cursor": None,
+        "events": [],
+        "coverage": {},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "ONE", "name": "One Co."}],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+    candidates = [{
+        "id": "candidate:one",
+        "kind": "candidate",
+        "tickers": ["ONE"],
+        "title": "ONE · One Co.",
+        "subtitle": "Current candidate",
+        "candidate": {},
+    }]
+
+    result = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=candidates,
+        location_search="?mode=candidates&item=candidate%3Agone",
+    )
+
+    assert result["selection"] == {
+        "mode": "candidates",
+        "ticker": "",
+        "selected": "",
+        "pending": "",
+    }
+    assert "Candidate no longer available" in result["inspectorHtml"]
+    assert "candidate:one" not in result["inspectorHtml"]
 
 
 @needs_node
