@@ -2,20 +2,20 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-08-03",
-  "generated_utc": "2026-08-03T04:01:21+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-08-03T11:06:13+00:00",
+  "freshness": "ok",
   "entities": [
     {
       "slug": "alibaba",
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": -0.637,
+      "attention_shock_z": -0.107,
       "tone_pctile": null,
       "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-07-31",
+      "as_of_date": "2026-08-03",
       "no_data_reason": null,
       "state_en": "quiet",
       "state_zh": "\u5e73\u9759"
@@ -55,15 +55,15 @@
       "ticker": "1810.HK",
       "name_en": "Xiaomi",
       "name_zh": "\u5c0f\u7c73",
-      "attention_shock_z": null,
+      "attention_shock_z": -0.799,
       "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "young series: 0 < 20 obs",
-      "state_en": null,
-      "state_zh": null
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-08-03",
+      "no_data_reason": null,
+      "state_en": "quiet",
+      "state_zh": "\u5e73\u9759"
     },
     {
       "slug": "baidu",
@@ -100,15 +100,15 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": -0.585,
+      "attention_shock_z": null,
       "tone_pctile": null,
-      "narrative_state": "quiet",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-07-30",
-      "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
+      "narrative_state": null,
+      "young": true,
+      "n_obs": 0,
+      "as_of_date": null,
+      "no_data_reason": "young series: 0 < 20 obs",
+      "state_en": null,
+      "state_zh": null
     },
     {
       "slug": "smic",
@@ -135,12 +135,12 @@
       "ticker": "9988.HK",
       "name_en": "Alibaba",
       "name_zh": "\u963f\u91cc\u5df4\u5df4",
-      "attention_shock_z": -0.637,
+      "attention_shock_z": -0.107,
       "tone_pctile": null,
       "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-07-31",
+      "as_of_date": "2026-08-03",
       "no_data_reason": null,
       "state_en": "quiet",
       "state_zh": "\u5e73\u9759"
@@ -161,6 +161,21 @@
       "state_zh": "\u65b0\u95fb\u70ed\u5ea6"
     },
     {
+      "slug": "xiaomi",
+      "ticker": "1810.HK",
+      "name_en": "Xiaomi",
+      "name_zh": "\u5c0f\u7c73",
+      "attention_shock_z": -0.799,
+      "tone_pctile": null,
+      "narrative_state": "quiet",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-08-03",
+      "no_data_reason": null,
+      "state_en": "quiet",
+      "state_zh": "\u5e73\u9759"
+    },
+    {
       "slug": "baidu",
       "ticker": "9888.HK",
       "name_en": "Baidu",
@@ -174,25 +189,10 @@
       "no_data_reason": null,
       "state_en": "tone improving",
       "state_zh": "\u8206\u60c5\u8f6c\u6696"
-    },
-    {
-      "slug": "kuaishou",
-      "ticker": "1024.HK",
-      "name_en": "Kuaishou",
-      "name_zh": "\u5feb\u624b",
-      "attention_shock_z": -0.585,
-      "tone_pctile": null,
-      "narrative_state": "quiet",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-07-30",
-      "no_data_reason": null,
-      "state_en": "quiet",
-      "state_zh": "\u5e73\u9759"
     }
   ],
   "n_watched": 8,
   "n_live": 4,
   "warming_up": false,
-  "is_stale": true
+  "is_stale": false
 }

@@ -69,6 +69,7 @@ PROXIES = [
     "GDX",    # VanEck Gold Miners — direct reference for the gold_miners basket
     "KWEB",   # KraneShares CSI China Internet — proxy for 0700/3690/1810/1024 in hk_adr_bridge
     "FXI",    # iShares China Large-Cap — proxy for 0981 (SMIC) in hk_adr_bridge + intl/cycle scripts
+    "TCOM",   # Trip.com Group ADR — direct twin for 9961.HK in hk_adr_bridge (identity fix 2026-08-03)
 ]
 
 
