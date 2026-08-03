@@ -713,6 +713,27 @@ class TestAttentionSupply:
             seen += sum(1 for i in items if i.ticker == "ONE")
         assert seen == 2, f"the network cap leaked: {seen} posts on ONE"
 
+    def test_a_supply_sourced_item_is_still_chartable(self):
+        """THE TRAP THE FIRST CUT OF THIS FIX FELL INTO.
+
+        The featured-chart loop refuses to chart a ticker with no postable
+        Prophet plan, as defence-in-depth against charting a stale SIGNAL. A
+        supply-sourced watchlist name has no plan BY CONSTRUCTION, so the first
+        cut produced ticker-bearing posts with no ``chart_id`` — and a
+        ticker-bearing post with no chart DEFERS FOREVER at publish under the
+        ticker-post-carries-a-chart law. It shipped a lane that could not post.
+
+        Caught end to end by tests/test_marketing_chart_coverage.py; pinned here
+        on the source so the reason survives the next edit of that gate.
+        """
+        src = Path(CS.__file__).read_text(encoding="utf-8")
+        assert 'if item_type == "signal" or not item_dict.get("supply_pool"):' in src, (
+            "the no-plan branch of the featured-chart loop no longer admits a "
+            "supply-sourced item; watchlist posts will ship uncharted and defer")
+        # And the two plan_match dereferences below it must stay None-safe.
+        assert 'if variant == "signal" and plan_match is not None:' in src
+        assert '(plan_match or {}).get("_signal_date", "")' in src
+
     def test_no_supply_leaves_the_historic_behaviour_exactly(self):
         acct = {"id": "flagship", "voice": "authoritative desk"}
         before = CS.plan_account(acct, [], n_days=1, per_day=12,

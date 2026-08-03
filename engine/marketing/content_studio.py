@@ -3706,7 +3706,23 @@ def content_plan(
                     None,
                 )
                 if plan_match is None:
-                    continue
+                    # A SUPPLY-SOURCED ITEM HAS NO PROPHET PLAN BY CONSTRUCTION
+                    # (TrendSpider PR-C §3). This gate is defence-in-depth
+                    # against charting a stale or invalidated SIGNAL, and that
+                    # reasoning is entirely about items whose ticker came out of
+                    # the plan pool. A `watchlist` name drawn from the attention
+                    # pools makes no entry claim, has no signal to invalidate,
+                    # and renders TAPE.
+                    #
+                    # Skipping it here is not a missing decoration: a
+                    # ticker-bearing post with no chart_id DEFERS FOREVER at
+                    # publish under the ticker-post-carries-a-chart law, so the
+                    # first cut of the selection fix produced watchlist posts
+                    # that could never ship (caught by
+                    # tests/test_marketing_chart_coverage.py
+                    # ::test_every_ticker_bearing_type_can_carry_a_chart).
+                    if item_type == "signal" or not item_dict.get("supply_pool"):
+                        continue
 
                 closes_result = closes_loader(ticker)
                 if closes_result is None:
@@ -3739,7 +3755,7 @@ def content_plan(
                 # from an item that was still typed `signal`, and the post that
                 # eventually shipped was an uncharted watchlist. Downgrade the
                 # variant here; never `continue`.
-                if variant == "signal":
+                if variant == "signal" and plan_match is not None:
                     try:
                         from engine.marketing.copywriter import verify_signal_live as _vsl
                         _ok_live, _ = _vsl(plan_match, closes_result, today=today)
@@ -3747,6 +3763,11 @@ def content_plan(
                         _ok_live = True  # fail-open only if the gate itself is broken
                     if not _ok_live:
                         variant = "tape"
+                elif plan_match is None:
+                    # No plan, no entry claim, no marker. A supply-sourced item
+                    # is TAPE by construction and can never reach the signal
+                    # variant — `item_type == "signal"` was refused above.
+                    variant = "tape"
 
                 # Reuse before the cap: a second post on an already-rendered
                 # ticker costs nothing and must never be starved by the budget.
@@ -3762,7 +3783,8 @@ def content_plan(
                 # Neutral marker_source tokens only (no indicator vocabulary).
                 marker_source = "latest"
                 marker_index = len(closes) - 1
-                signal_date = str(plan_match.get("_signal_date", ""))[:10]
+                signal_date = str(
+                    (plan_match or {}).get("_signal_date", ""))[:10]
                 if signal_date and signal_date in dates:
                     marker_index = dates.index(signal_date)
                     marker_source = "signal_date"
