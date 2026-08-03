@@ -113,17 +113,28 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
         }
         if has_null:
             # equidistant-mirror null: the same close-side hold test on the strike
-            # mirrored across the board spot — distance information, zero positioning
+            # mirrored across the board spot — distance information, zero positioning.
+            # Two honesty constraints on the verdict:
+            #   (1) the null's rate carries its OWN sampling error, so the gate is
+            #       interval separation — real Wilson LOWER must clear the null's
+            #       Wilson UPPER (comparing the lower bound to the null's raw rate
+            #       would let a lucky small-n null hand out spurious edges);
+            #   (2) the mirror sits on the OPPOSITE side of spot and is touched on
+            #       different sessions, so this is a between-sample comparison that
+            #       also absorbs up/down asymmetry — the side-matched null is the
+            #       prior-day extreme (boards.prevday_null). The payload's `null`
+            #       string discloses both.
             nn = r[r["null_held"].notna()]
             n_null = int(len(nn))
             null_held_k = int((nn["null_held"] == True).sum())  # noqa: E712
             p_null = (null_held_k / n_null) if n_null else None
+            nci = wilson_ci(null_held_k, n_null)
             entry["null_equidistant"] = {
                 "scored": n_null, "held": null_held_k, "p_hold": _r4(p_null),
+                "ci95": [_r4(nci[0]), _r4(nci[1])] if nci else None,
             }
-            # a claim vs THIS null needs the real lower bound clear of the null's rate
             entry["beats_equidistant_null"] = (
-                bool(ci and ci[0] > p_null) if (n_scored and p_null is not None) else None
+                bool(ci and nci and ci[0] > nci[1]) if (n_scored and n_null) else None
             )
         if has_pierce:
             pp = pd.to_numeric(touched["pierce_pct"], errors="coerce").dropna()
@@ -183,7 +194,10 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
         "null": "coin-flip 0.5 on the two-sided hold definition; where the store carries "
                 "them (R2.4b), each role also reports the equidistant-mirror null and each "
                 "board the prior-day-extreme null — a level only earns a claim by beating "
-                "its null, never by its rate alone",
+                "its null, never by its rate alone. beats_equidistant_null is interval "
+                "separation (real Wilson lower > null Wilson upper). The mirror null is "
+                "measured on opposite-side touches (different sessions), so it also absorbs "
+                "up/down asymmetry — the side-matched null is the prior-day extreme",
         "coverage_note": None if root else
             "Aggregate across every graded root. A consumer showing this for a root "
             "without its own card must label it as universe context, not that "
