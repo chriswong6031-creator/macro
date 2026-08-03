@@ -1491,7 +1491,7 @@
     return subset.every(function (value) { return allowed.has(value); });
   }
 
-  function validatedReceiptRoot(value) {
+  function checkedReceiptRoot(value) {
     if (!hasExactReceiptKeys(value, [
       'root_cell_id', 'selected_leaf_occurrence_ids', 'eligible_leaf_occurrence_ids',
       'attested_occurrence_ids', 'status'
@@ -1517,7 +1517,7 @@
     };
   }
 
-  function validatedReceiptAuthority(value) {
+  function checkedReceiptAuthority(value) {
     if (!hasExactReceiptKeys(value, [
       'positive_claim', 'coverage_scope', 'claim_basis', 'source_reverified_at_read',
       'match_body_replayed_at_read', 'nonclaims'
@@ -1534,15 +1534,15 @@
   }
 
   function sameReceiptAuthority(left, right) {
-    var leftAuthority = validatedReceiptAuthority(left);
-    var rightAuthority = validatedReceiptAuthority(right);
+    var leftAuthority = checkedReceiptAuthority(left);
+    var rightAuthority = checkedReceiptAuthority(right);
     if (!leftAuthority || !rightAuthority) return false;
     var leftKeys = Object.keys(leftAuthority.nonclaims).sort();
     var rightKeys = Object.keys(rightAuthority.nonclaims).sort();
     return receiptArraysEqual(leftKeys, rightKeys);
   }
 
-  function validatedReceiptIdentity(value) {
+  function checkedReceiptIdentity(value) {
     if (!isReceiptObject(value) || !isSnapshotId(value.snapshot_id) ||
         !isBaseSnapshotId(value.base_snapshot_id) || !/^[a-f0-9]{64}$/.test(String(value.query_hash || '')) ||
         receiptUtcOrderKey(value.published_at) === null) return null;
@@ -1555,14 +1555,14 @@
   }
 
   function sameReceiptIdentity(value, expected) {
-    var actual = validatedReceiptIdentity(value);
-    var wanted = validatedReceiptIdentity(expected);
+    var actual = checkedReceiptIdentity(value);
+    var wanted = checkedReceiptIdentity(expected);
     return !!actual && !!wanted && actual.snapshot_id === wanted.snapshot_id &&
       actual.base_snapshot_id === wanted.base_snapshot_id && actual.query_hash === wanted.query_hash &&
       actual.published_at === wanted.published_at;
   }
 
-  function validatedSnapshotClocks(value, publishedAt) {
+  function checkedSnapshotClocks(value, publishedAt) {
     var keys = [
       'query_source_snapshot_at', 'query_recorded_at', 'query_computed_at', 'query_published_at',
       'operator_verification_observed_at', 'published_at'
@@ -1582,7 +1582,7 @@
     return value;
   }
 
-  function validatedCoverageSummary(value) {
+  function checkedCoverageSummary(value) {
     var countKeys = ['root_cell_count', 'all_leaves_attested', 'partially_attested', 'not_attested', 'not_evaluable'];
     if (!hasExactReceiptKeys(value, ['coverage_scope', 'positive_label'].concat(countKeys)) ||
         value.coverage_scope !== 'selected_raw_fact_leaves_only' ||
@@ -1592,7 +1592,7 @@
     return value.root_cell_count === statusTotal && value.root_cell_count <= 100000 ? value : null;
   }
 
-  function validatedConversionReceipt(value) {
+  function checkedConversionReceipt(value) {
     var keys = [
       'receipt_id', 'schema', 'adapter_version', 'capture_id', 'manifest_id', 'cik', 'clocks',
       'availability', 'occurrence_count', 'output_occurrence_count', 'pit_eligible_count'
@@ -1615,20 +1615,20 @@
     return value;
   }
 
-  function validatedLatestReceipt(value) {
+  function checkedLatestReceipt(value) {
     var keys = [
       'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'policy', 'clocks',
       'coverage_summary', 'companyfacts_conversion_receipt', 'authority'
     ];
-    var identity = validatedReceiptIdentity(value);
+    var identity = checkedReceiptIdentity(value);
     if (!hasExactReceiptKeys(value, keys) || !identity ||
         !hasExactReceiptKeys(value.policy, ['version', 'fingerprint']) ||
         value.policy.version !== 'ffqsv2_exact_join/v1' ||
         value.policy.fingerprint !== '6e4ba04cf9c775ac280ba1426985246ffbdf730222b4521c4b26a41f5623871a' ||
-        !validatedSnapshotClocks(value.clocks, value.published_at) ||
-        !validatedCoverageSummary(value.coverage_summary) ||
-        !validatedConversionReceipt(value.companyfacts_conversion_receipt) ||
-        !validatedReceiptAuthority(value.authority)) return null;
+        !checkedSnapshotClocks(value.clocks, value.published_at) ||
+        !checkedCoverageSummary(value.coverage_summary) ||
+        !checkedConversionReceipt(value.companyfacts_conversion_receipt) ||
+        !checkedReceiptAuthority(value.authority)) return null;
     return value;
   }
 
@@ -1680,7 +1680,7 @@
   }
 
   function compactReceiptRoot(value) {
-    var root = validatedReceiptRoot(value);
+    var root = checkedReceiptRoot(value);
     if (!root) return null;
     return {
       root_cell_id: root.root_cell_id,
@@ -1695,10 +1695,10 @@
   }
 
   function receiptReadyPayload(value) {
-    return !!validatedLatestReceipt(value);
+    return !!checkedLatestReceipt(value);
   }
 
-  function validatedReceiptPagePayload(value, latest, requestedCursor, pageIndex, previousTotal) {
+  function checkedReceiptPagePayload(value, latest, requestedCursor, pageIndex, previousTotal) {
     var keys = [
       'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'authority', 'page', 'roots'
     ];
@@ -1717,7 +1717,7 @@
     var leafReferences = 0;
     var previousRootId = expectedCursor;
     for (var index = 0; index < value.roots.length; index += 1) {
-      var root = validatedReceiptRoot(value.roots[index]);
+      var root = checkedReceiptRoot(value.roots[index]);
       if (!root || (previousRootId !== null && root.root_cell_id <= previousRootId)) return null;
       leafReferences += root.selected_leaf_occurrence_ids.length + root.eligible_leaf_occurrence_ids.length +
         root.attested_occurrence_ids.length;
@@ -1746,7 +1746,7 @@
       /^-?(?:0|[1-9]\d*)(?:\.\d*[1-9])?$/.test(value);
   }
 
-  function validatedReceiptWaterfallRow(value, occurrenceId, eligible, attested, latest) {
+  function checkedReceiptWaterfallRow(value, occurrenceId, eligible, attested, latest) {
     if (!isReceiptObject(value) || value.occurrence_id !== occurrenceId ||
         value.eligible !== eligible || value.attested !== attested) return null;
     if (!attested) {
@@ -1787,14 +1787,14 @@
     return value;
   }
 
-  function validatedReceiptDetailPayload(value, latest, rootCellId, cachedRoot) {
+  function checkedReceiptDetailPayload(value, latest, rootCellId, cachedRoot) {
     var keys = [
       'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'authority', 'root', 'waterfall'
     ];
     if (!hasExactReceiptKeys(value, keys) || !sameReceiptIdentity(value, latest) ||
         !sameReceiptAuthority(value.authority, latest.authority) || !Array.isArray(value.waterfall) ||
         value.waterfall.length > 1024) return null;
-    var root = validatedReceiptRoot(value.root);
+    var root = checkedReceiptRoot(value.root);
     if (!root || root.root_cell_id !== rootCellId || !cachedRoot ||
         root.status !== cachedRoot.status ||
         !receiptArraysEqual(root.selected_leaf_occurrence_ids, cachedRoot.selected_leaf_occurrence_ids) ||
@@ -1807,7 +1807,7 @@
     var waterfall = [];
     for (var index = 0; index < root.selected_leaf_occurrence_ids.length; index += 1) {
       var occurrenceId = root.selected_leaf_occurrence_ids[index];
-      var row = validatedReceiptWaterfallRow(
+      var row = checkedReceiptWaterfallRow(
         value.waterfall[index], occurrenceId, eligible.has(occurrenceId), attested.has(occurrenceId), latest
       );
       if (!row) return null;
@@ -1955,7 +1955,7 @@
     historyRequest(suffix)
       .then(function (payload) {
         if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
-        var page = validatedReceiptPagePayload(payload, latest, cursor || null, pageIndex, previousTotal);
+        var page = checkedReceiptPagePayload(payload, latest, cursor || null, pageIndex, previousTotal);
         if (!page) throw new Error('Receipt page is malformed');
         receipt.page = page;
         receipt.pageIndex = pageIndex;
@@ -2004,7 +2004,7 @@
     historyRequest('/snapshots/' + encodeURIComponent(latest.snapshot_id) + '/roots/' + encodeURIComponent(rootCellId))
       .then(function (payload) {
         if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
-        var detail = validatedReceiptDetailPayload(payload, latest, rootCellId, cachedRoot);
+        var detail = checkedReceiptDetailPayload(payload, latest, rootCellId, cachedRoot);
         if (!detail) throw new Error('Receipt detail is malformed');
         receipt.detail = detail;
         receipt.detailPhase = 'ready';
@@ -2971,10 +2971,10 @@
   if (window.__FF_RECEIPT_CONTRACT_TEST__ === true) {
     window.__FF_RECEIPT_CONTRACT_TEST__ = Object.freeze({
       normalizedCik: normalizedCik,
-      validatedLatestReceipt: validatedLatestReceipt,
-      validatedReceiptRoot: validatedReceiptRoot,
-      validatedReceiptPagePayload: validatedReceiptPagePayload,
-      validatedReceiptDetailPayload: validatedReceiptDetailPayload
+      checkedLatestReceipt: checkedLatestReceipt,
+      checkedReceiptRoot: checkedReceiptRoot,
+      checkedReceiptPagePayload: checkedReceiptPagePayload,
+      checkedReceiptDetailPayload: checkedReceiptDetailPayload
     });
   }
 

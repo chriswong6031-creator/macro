@@ -171,7 +171,7 @@ test('strict CIK normalization refuses lossy issuer spoofing', () => {
 });
 
 test('latest receipt validates the fixed identity, authority, clocks, and counts', () => {
-  assert.ok(contract.validatedLatestReceipt(latest()));
+  assert.ok(contract.checkedLatestReceipt(latest()));
   const mutations = [
     (value) => { value.companyfacts_conversion_receipt.cik = 'evil0000320193'; },
     (value) => { value.policy.version = 'future-unreviewed'; },
@@ -190,26 +190,26 @@ test('latest receipt validates the fixed identity, authority, clocks, and counts
   for (const mutate of mutations) {
     const hostile = latest();
     mutate(hostile);
-    assert.equal(contract.validatedLatestReceipt(hostile), null);
+    assert.equal(contract.checkedLatestReceipt(hostile), null);
   }
 });
 
 test('coverage roots enforce sorted unique membership and derived status', () => {
-  for (const value of roots()) assert.ok(contract.validatedReceiptRoot(value));
+  for (const value of roots()) assert.ok(contract.checkedReceiptRoot(value));
   const badSubset = roots()[1];
   badSubset.attested_occurrence_ids = [occurrenceId('3')];
-  assert.equal(contract.validatedReceiptRoot(badSubset), null);
+  assert.equal(contract.checkedReceiptRoot(badSubset), null);
   const badStatus = roots()[2];
   badStatus.status = 'all_leaves_attested';
-  assert.equal(contract.validatedReceiptRoot(badStatus), null);
+  assert.equal(contract.checkedReceiptRoot(badStatus), null);
   const duplicate = roots()[0];
   duplicate.selected_leaf_occurrence_ids.push(occurrenceId('1'));
-  assert.equal(contract.validatedReceiptRoot(duplicate), null);
+  assert.equal(contract.checkedReceiptRoot(duplicate), null);
 });
 
 test('root pages enforce identity, cursor, totals, ordering, and keyset continuity', () => {
   const receipt = latest();
-  assert.ok(contract.validatedReceiptPagePayload(page(receipt), receipt, null, 0, null));
+  assert.ok(contract.checkedReceiptPagePayload(page(receipt), receipt, null, 0, null));
   for (const mutate of [
     (value) => { value.page.returned += 1; },
     (value) => { value.page.total += 1; },
@@ -219,7 +219,7 @@ test('root pages enforce identity, cursor, totals, ordering, and keyset continui
   ]) {
     const hostile = page(receipt);
     mutate(hostile);
-    assert.equal(contract.validatedReceiptPagePayload(hostile, receipt, null, 0, null), null);
+    assert.equal(contract.checkedReceiptPagePayload(hostile, receipt, null, 0, null), null);
   }
 
   const pagedReceipt = latest();
@@ -244,20 +244,20 @@ test('root pages enforce identity, cursor, totals, ordering, and keyset continui
   const first = page(pagedReceipt, allRows.slice(0, 25));
   first.page.total = 30;
   first.page.next_cursor = first.roots.at(-1).root_cell_id;
-  const firstValidated = contract.validatedReceiptPagePayload(first, pagedReceipt, null, 0, null);
-  assert.ok(firstValidated);
+  const firstChecked = contract.checkedReceiptPagePayload(first, pagedReceipt, null, 0, null);
+  assert.ok(firstChecked);
   const second = page(pagedReceipt, allRows.slice(25));
   second.page.cursor = first.page.next_cursor;
   second.page.total = 30;
-  assert.ok(contract.validatedReceiptPagePayload(second, pagedReceipt, first.page.next_cursor, 1, 30));
+  assert.ok(contract.checkedReceiptPagePayload(second, pagedReceipt, first.page.next_cursor, 1, 30));
   first.page.next_cursor = rootId('f');
-  assert.equal(contract.validatedReceiptPagePayload(first, pagedReceipt, null, 0, null), null);
+  assert.equal(contract.checkedReceiptPagePayload(first, pagedReceipt, null, 0, null), null);
 });
 
 test('detail waterfall must exactly bind the cached root and B3 projection', () => {
   const receipt = latest();
-  const cached = contract.validatedReceiptPagePayload(page(receipt), receipt, null, 0, null).rows[2];
-  assert.ok(contract.validatedReceiptDetailPayload(detail(receipt), receipt, rootId('3'), cached));
+  const cached = contract.checkedReceiptPagePayload(page(receipt), receipt, null, 0, null).rows[2];
+  assert.ok(contract.checkedReceiptDetailPayload(detail(receipt), receipt, rootId('3'), cached));
   for (const mutate of [
     (value) => { delete value.waterfall[0].companyfacts; },
     (value) => { value.waterfall[0].companyfacts.cik = '0000000001'; },
@@ -271,25 +271,25 @@ test('detail waterfall must exactly bind the cached root and B3 projection', () 
   ]) {
     const hostile = detail(receipt);
     mutate(hostile);
-    assert.equal(contract.validatedReceiptDetailPayload(hostile, receipt, rootId('3'), cached), null);
+    assert.equal(contract.checkedReceiptDetailPayload(hostile, receipt, rootId('3'), cached), null);
   }
   const drifted = clone(cached);
   drifted.status = 'not_attested';
-  assert.equal(contract.validatedReceiptDetailPayload(detail(receipt), receipt, rootId('3'), drifted), null);
+  assert.equal(contract.checkedReceiptDetailPayload(detail(receipt), receipt, rootId('3'), drifted), null);
 
   const earlyCalendar = detail(receipt);
   earlyCalendar.waterfall[0].companyfacts.period = { start: '0001-01-01', end: '0001-12-31' };
-  assert.ok(contract.validatedReceiptDetailPayload(earlyCalendar, receipt, rootId('3'), cached));
+  assert.ok(contract.checkedReceiptDetailPayload(earlyCalendar, receipt, rootId('3'), cached));
 
   const duplicatePair = detail(receipt);
   duplicatePair.root.attested_occurrence_ids.push(occurrenceId('4'));
   duplicatePair.root.status = 'all_leaves_attested';
   duplicatePair.waterfall[1] = clone(duplicatePair.waterfall[0]);
   duplicatePair.waterfall[1].occurrence_id = occurrenceId('4');
-  const duplicateCached = contract.validatedReceiptRoot(duplicatePair.root);
+  const duplicateCached = contract.checkedReceiptRoot(duplicatePair.root);
   assert.ok(duplicateCached);
   assert.equal(
-    contract.validatedReceiptDetailPayload(duplicatePair, receipt, rootId('3'), duplicateCached),
+    contract.checkedReceiptDetailPayload(duplicatePair, receipt, rootId('3'), duplicateCached),
     null,
   );
 });
