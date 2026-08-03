@@ -1000,14 +1000,56 @@ story_lock:
 # now: changing it is an edit here, never a code change.
 #
 # LIVENESS IS NOT ROUTING. A class routed to an account that is not enabled in
-# desk_network falls back to `default` with a ::warning, so intent and reality
-# are both visible. mastermind_news was wired-but-dark for exactly that reason
-# and the routes below were inert; the desk_network flip on 2026-08-02 (W4f) is
-# what armed them, and re-disabling that desk silently returns every class here
-# to flagship — with the ::warning, but with no config edit to show for it.
+# desk_network is handled by `dark_desk:` below, with a ::warning either way, so
+# intent and reality are both visible. mastermind_news was wired-but-dark for
+# exactly that reason and the routes below were inert; the desk_network flip on
+# 2026-08-02 (W4f) is what armed them.
+#
+# THE LAST SENTENCE OF THIS PARAGRAPH USED TO READ: "re-disabling that desk
+# silently returns every class here to flagship — with the ::warning, but with
+# no config edit to show for it." That was an accurate description of a defect,
+# written as if it were a design. W5 (2026-08-03) makes the default PARK, so
+# re-disabling the desk no longer donates its firehose to the brand account.
 # ─────────────────────────────────────────────────────────────────────────────
 wire_routing:
   default: flagship
+
+  # ── WHAT HAPPENS TO A DARK DESK'S ITEMS (W5, 2026-08-03) ──────────────────
+  # The paragraph above describes the OLD answer: "falls back to `default` with
+  # a ::warning". That was written for a lane emitting a handful of items a day
+  # and it is the wrong shape for a firehose. A wire desk carries relay volume
+  # by construction, so "falls back to default" means THE BRAND ACCOUNT SILENTLY
+  # INHERITS THE WHOLE WIRE the moment one switch is flipped — and the operator
+  # saw exactly that on 2026-08-02/03: 11 kind=breaking items on @mastermindx001
+  # in one day, four of them from a single John Williams appearance inside an
+  # hour (2, 2, 2 and 1 views).
+  #
+  # park (DEFAULT): the item keeps the address of the desk that OWNS it. It is
+  #   counted (engine/marketing/wire_routing.park_census), announced once per
+  #   desk with a start-of-line ::warning, and parks at dispatch with reason
+  #   account_disabled — where the admin already surfaces quarantines. Nothing
+  #   is deleted and no other desk inherits the volume.
+  # redirect: the pre-W5 behaviour, wholesale. Costs nothing to switch back to
+  #   and is the honest way to ask for it; what is NOT acceptable is getting it
+  #   without asking.
+  #
+  # A typo here reads as `park` with a ::warning rather than being coerced: a
+  # mistyped value that silently resolved to `redirect` would re-open this hole
+  # invisibly, which is the whole failure mode.
+  dark_desk:
+    policy: park
+    # THE NARROW EXCEPTION, DELIBERATELY OFF. One genuinely huge single event may
+    # still be moved onto a live desk rather than parked. Both halves are
+    # required: `enabled: true` AND a severity clearing `min_severity`, and a
+    # caller that passes no severity at all (the press wire does not) can never
+    # reach it by accident. This is an EVENT hatch, never a volume hatch — the
+    # floor is high on purpose, and raising the traffic through it is what the
+    # `policy` key above is for.
+    severity_exception:
+      enabled: false
+      min_severity: 90      # 0-100 event severity; the intraday flagship mirror floor is 85
+      to: flagship          # empty = wire_routing.default
+
   # SPLIT 2026-08-02, when mastermind_news armed (masterplan §8.2 W4f). The split
   # rule is the charter's, not a volume calculation: a WIRE ACCOUNT RELAYS AND
   # NEVER TAKES A STANCE (§4 safety rails), so the stance-free relay classes move
@@ -2123,6 +2165,71 @@ house_picks:
   us_only: true
 
 # ─────────────────────────────────────────────────────────────────────────────
+# WIRE VOLUME (W5, 2026-08-03) — engine/marketing/wire_routing.py
+#
+# HOW MANY kind=breaking ITEMS ONE ACCOUNT MAY TAKE, independent of routing.
+# Routing answers "whose item is this"; it structurally cannot answer "how many
+# of these may one desk carry", and until W5 nothing did. `breaking.
+# flagship_top_k_per_day` is a per-LANE counter in daemon state (see the note
+# beside it) — this is a per-ACCOUNT ceiling measured from the outbox itself,
+# so every lane that emits kind=breaking is inside it and a lost cursors.json
+# cannot reset it.
+#
+# WHY IT EXISTS, in the operator's words: four posts on @mastermindx001 inside
+# one hour, all from one John Williams appearance (2, 2, 2 and 1 views), plus
+# two Switzerland CPI sub-prints and a Germany retail-sales print in the same
+# batch. Story clustering (the D1 lane) stops the four-from-one-speech shape at
+# the source; this is the BACKSTOP that bounds the day even when clustering
+# mis-fires or a genuinely busy tape produces that much unrelated news.
+#
+# ROLLING, NOT CALENDAR-DAILY. A calendar day resets at midnight, so a tape that
+# fires at 23:00 can spend a full day's budget and then spend another one an
+# hour later — which is precisely the burst shape being fixed.
+#
+# PRODUCED, NOT POSTED. An item that was rendered, phrased and enqueued has
+# already spent a Chrome raster and an LLM call. Counting only what survived to
+# X would let a lane over-produce without limit as long as the graves were
+# downstream.
+#
+# WHAT HAPPENS AT THE CEILING: the surplus goes to another DECLARED wire desk
+# with headroom (wire_routing.spill_pool, which is ceiling-aware, so a persona
+# desk can never be picked). When no wire desk has headroom the items are held
+# and a ::warning names the account, the count, the cap and the window — a cap
+# that binds must name itself.
+# ─────────────────────────────────────────────────────────────────────────────
+wire_volume:
+  breaking:
+    window_hours: 24
+    # Network default for a desk with no row below. 8 is the wire desk's working
+    # number: mastermind_news's own ramp tier allows 14 posts/day and the wire
+    # must not be able to eat the whole allowance, because the nightly ladder
+    # and the publish-time lanes draw from the same tier.
+    default_per_window: 8
+    accounts:
+      # THE BRAND ACCOUNT SITS BELOW THE NETWORK DEFAULT, on purpose. @mastermindx001
+      # is the desk a reader judges the product by, and a relay whose whole
+      # content is a restated headline is the least valuable thing it can post.
+      # 6 is under the 11 that shipped on 2026-08-03 (so it BINDS on the day
+      # that caused this) and under `breaking.flagship_top_k_per_day: 10` (so it
+      # is the stricter of the two and the one that decides). Raise it only with
+      # a reason better than "the tape was busy".
+      flagship: 6
+      # The publication wire IS this content's home. It gets the network default
+      # explicitly rather than by omission, so an operator reading this block
+      # sees the split rather than inferring it.
+      mastermind_news: 8
+      # A persona/employee desk may never carry a wire relay at all (charter §4
+      # safety rails — wire accounts relay and never take a stance), and
+      # wire_routing.spill_pool already refuses to select one. This 0 is the
+      # belt: if a future lane ever addresses one directly, the ceiling is zero
+      # rather than the network default.
+      founder: 0
+      meagan: 0
+      sophia: 0
+      kelly: 0
+      cici: 0
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Breaking news ingestion (D05 W0)
 # engine/marketing/breaking_feed.py reads `breaking.sources`
 # engine/marketing/breaking_relevance.py reads `breaking.salience_threshold`
@@ -2180,6 +2287,20 @@ breaking:
   # the press_sources one, because the higher-precedence home silently throttling
   # the lane it was added to widen is the only way this split can hurt.
   flagship_top_k_per_day: 10
+
+  # ── WHY THIS NUMBER DID NOT HOLD, AND WHAT DOES NOW (W5) ────────────────────
+  # It is a PER-LANE, PER-HOST, CALENDAR-DAY counter kept in press_lane's daemon
+  # state (`wire_day_counts` in cursors.json). Three holes follow from that
+  # sentence and all three were live on 2026-08-02/03:
+  #   * it counts only the press lane — the intraday tape lane, fastlane and
+  #     the earnings call lane all emit kind=breaking and charge nothing here;
+  #   * it lives in state, so a fresh checkout or a reset cursor starts at zero;
+  #   * it is calendar-daily, so a 23:00 burst can spend a full day and then
+  #     spend another one an hour later.
+  # The measured result: 11 kind=breaking items on `flagship` on 2026-08-03,
+  # against this cap of 10, every one of them event_class=macro_print — i.e.
+  # correctly routed, never redirected, and still a print ticker on the brand
+  # account. `wire_volume:` below is the bound that closes all three.
 
   sources:
     - key: fed_press
