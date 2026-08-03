@@ -455,6 +455,24 @@
       "at": "2026-07-31T23:17:00.306510+00:00",
       "activated": false,
       "importance": 25
+    },
+    "https://www.whitehouse.gov/?p=47496": {
+      "id": "wh-2026-08-03-establishing-the-presidents-military-spouse-commission-af64",
+      "at": "2026-08-03T19:57:02.518645+00:00",
+      "activated": false,
+      "importance": 15
+    },
+    "https://www.whitehouse.gov/?p=47493": {
+      "id": "wh-2026-08-03-fact-sheet-president-donald-j-trump-establishes-the-presidents-military-spouse-c",
+      "at": "2026-08-03T19:57:04.192819+00:00",
+      "activated": false,
+      "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=47489": {
+      "id": "wh-2026-08-03-establishing-the-presidents-military-spouse-commission",
+      "at": "2026-08-03T19:57:05.908039+00:00",
+      "activated": false,
+      "importance": 5
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

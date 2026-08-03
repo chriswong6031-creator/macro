@@ -1,10 +1,29 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-03T18:04:17.560909+00:00",
-  "posts_seen": 7,
-  "seen_total": 76,
-  "evaluated": 0,
+  "as_of": "2026-08-03T19:57:05.911259+00:00",
+  "posts_seen": 10,
+  "seen_total": 79,
+  "evaluated": 3,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-08-03-establishing-the-presidents-military-spouse-commission-af64",
+      "importance": 15,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-08-03-fact-sheet-president-donald-j-trump-establishes-the-presidents-military-spouse-c",
+      "importance": 10,
+      "activated": false,
+      "degraded_reason": null
+    },
+    {
+      "id": "wh-2026-08-03-establishing-the-presidents-military-spouse-commission",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": null
+    }
+  ]
 }
