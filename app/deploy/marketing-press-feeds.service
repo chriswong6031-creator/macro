@@ -24,9 +24,9 @@ EnvironmentFile=-/etc/macro-live.env
 # Same idiom as macro-api.service: independently attached subscriptions shared
 # by the API, admin console and this daemon, with each refreshable login in a
 # root-only state directory so no unit's ProtectHome can block it. The API owns
-# the StateDirectory= entries that create both stores; this unit only reads them.
+# the StateDirectory= entries that create all account stores; this unit only reads them.
 Environment=CODEX_HOME=/var/lib/macro-codex
-Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
+Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2:/var/lib/macro-codex-3
 Environment=CODEX_PROVIDER_ENABLED=1
 # --interval 75 keeps the mirror hot-poll inside its 60-90 s window; per-source
 # politeness floors + the twitterapi.io per-tier intervals throttle each provider.

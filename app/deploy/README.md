@@ -71,7 +71,7 @@ variable `VPS_LIVE_PRIMARY=true` until the timers have passed a full-session soa
 `api-setup.sh` and `macro-update` install the pinned official Codex CLI through
 `codex-runtime-setup.sh`. Authentication is machine-local state, not a repository
 secret. Each ChatGPT account gets its own root-only `CODEX_HOME`; authorize the
-primary and second accounts independently:
+three accounts independently:
 
 ```bash
 ssh -tt -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
@@ -79,6 +79,9 @@ ssh -tt -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
 
 ssh -tt -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
   'CODEX_HOME=/var/lib/macro-codex-2 codex login --device-auth'
+
+ssh -tt -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
+  'CODEX_HOME=/var/lib/macro-codex-3 codex login --device-auth'
 ```
 
 Complete the one-time code at `https://auth.openai.com/codex/device`, then verify:
@@ -86,12 +89,14 @@ Complete the one-time code at `https://auth.openai.com/codex/device`, then verif
 ```bash
 ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
   'CODEX_HOME=/var/lib/macro-codex codex login status && \
-   CODEX_HOME=/var/lib/macro-codex-2 codex login status'
+   CODEX_HOME=/var/lib/macro-codex-2 codex login status && \
+   CODEX_HOME=/var/lib/macro-codex-3 codex login status'
 ```
 
-The deployed services expose both stores through `CODEX_ACCOUNT_HOMES`. Model
-Desk reports them as `codex_account` and `codex_account_2`, and the provider
-router prefers the healthy account with the lower observed quota-window load.
+The deployed services expose all three stores through `CODEX_ACCOUNT_HOMES`.
+Model Desk reports them as `codex_account`, `codex_account_2`, and
+`codex_account_3`; the provider router prefers the healthy account with the
+lower observed quota-window load.
 Their Claude OAuth credentials remain in their respective root-only environment
 files; no login cache or refresh token is copied from the Mac or into Git.
 

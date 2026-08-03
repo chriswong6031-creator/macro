@@ -24,7 +24,10 @@ def test_codex_runtime_setup_has_valid_shell_syntax():
     assert '@openai/codex@$CODEX_CLI_VERSION' in text
     assert "CODEX_STATE_DIRS" in text
     assert '$state_dir/auth.json' in text
-    assert "/var/lib/macro-codex:/var/lib/macro-codex-2" in text
+    assert (
+        "/var/lib/macro-codex:/var/lib/macro-codex-2:"
+        "/var/lib/macro-codex-3"
+    ) in text
 
 
 def test_live_setup_installs_press_scoring_backend():
@@ -42,10 +45,11 @@ def test_deployed_services_share_root_only_codex_state():
         assert "Environment=CODEX_HOME=/var/lib/macro-codex" in unit
         assert (
             "Environment=CODEX_ACCOUNT_HOMES="
-            "/var/lib/macro-codex:/var/lib/macro-codex-2"
+            "/var/lib/macro-codex:/var/lib/macro-codex-2:"
+            "/var/lib/macro-codex-3"
         ) in unit
         assert "Environment=CODEX_PROVIDER_ENABLED=1" in unit
-        assert "StateDirectory=macro-codex macro-codex-2" in unit
+        assert "StateDirectory=macro-codex macro-codex-2 macro-codex-3" in unit
         assert "StateDirectoryMode=0700" in unit
 
 
