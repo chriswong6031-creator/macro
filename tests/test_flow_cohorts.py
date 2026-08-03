@@ -18,6 +18,8 @@ Covers:
 from __future__ import annotations
 
 import json
+import re
+import subprocess
 import tempfile
 from datetime import date, timedelta
 from pathlib import Path
@@ -950,22 +952,61 @@ class TestZeroCoverageEmitsNoStance:
 
 
 class TestZeroCoverageRendersNoStanceWord:
-    """flow_desk.html.j2 must not print a tilt word for a cohort with no data."""
+    """A cohort with no observations must not be given a tilt word.
+
+    WHERE THIS PANEL LIVES NOW (OIP W1.6-B). It used to render
+    flow_desk.html.j2's Theme-groups panel through Jinja. flow_desk.html.j2 is a
+    redirect stub and the panel moved into the workspace's Flow mode, as
+    `flThemePanel()` in templates/options.html.j2 — so the law is re-pointed
+    there rather than retired with the template. Retiring it would have taken
+    the "no data, therefore no stance" rule dark: nothing in
+    tests/test_build_options_command.py covers this panel.
+
+    The panel is JS now, so it is DRIVEN (node) rather than rendered — which
+    also makes the check stronger than the Jinja one it replaces: it exercises
+    the real coverage predicate, not a template branch.
+
+    The wording and class names travelled with it:
+        coh-tile                -> oew-fl-tile
+        "No theme-group data yet"
+                                -> "No theme-group data for this close."
+    """
+
+    _NULL_EN = "No theme-group data for this close."
+    _NULL_ZH = "本次收盘没有主题组合数据。"
 
     @staticmethod
-    def _panel(html: str) -> str:
-        """Slice out the Theme groups panel (stance words legitimately appear elsewhere)."""
-        i = html.find("Theme groups")
-        j = html.find("Biggest bets today")
-        assert i >= 0 and j > i, "Theme groups panel not found in rendered page"
-        return html[i:j]
-
-    @staticmethod
-    def _render(cohorts: list[dict]) -> str:
-        from jinja2 import Environment, FileSystemLoader
+    def _panel(cohorts: list[dict]) -> str:
+        """Run the REAL flThemePanel() over a cohort list and return its markup."""
         root = Path(__file__).resolve().parent.parent
-        env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=False)
-        return env.get_template("flow_desk.html.j2").render(flow_desk={"cohorts": cohorts})
+        src = (root / "templates" / "options.html.j2").read_text(encoding="utf-8")
+
+        def block(opener: str, closer: str = "\n}") -> str:
+            start = src.index(opener)
+            return src[start: src.index(closer, start) + len(closer)]
+
+        harness = "\n".join([
+            block("function esc(s){"),
+            re.search(r"^function bi\(en, zh\).*$", src, re.M).group(0),
+            re.search(r"^function num\(v\).*$", src, re.M).group(0),
+            block("function money(mn){"),
+            re.search(r"^function smoney\(mn\).*$", src, re.M).group(0),
+            re.search(r"^function flSoft\(mn\).*$", src, re.M).group(0),
+            block("function flThemePanel(desk, cohorts){"),
+            "process.stdout.write(flThemePanel(null, { cohorts: "
+            + json.dumps(cohorts) + " }));",
+        ])
+        res = subprocess.run(["node", "-e", harness], capture_output=True,
+                             text=True, timeout=30)
+        assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}"
+        assert "Theme groups" in res.stdout, "did not render the Theme groups panel"
+        # Body only. The panel HEAD carries a `?` help tip that legitimately
+        # explains what the net buy/sell mark means — sweeping that as if it
+        # were a stance chip would fail the panel for its own documentation.
+        # (The original Jinja version sliced the page for the same reason.)
+        marker = '<div class="oew-pbody">'
+        assert marker in res.stdout, "panel body marker missing — the slice would be vacuous"
+        return res.stdout.split(marker, 1)[1]
 
     @staticmethod
     def _row(**over) -> dict:
@@ -981,30 +1022,34 @@ class TestZeroCoverageRendersNoStanceWord:
         return base
 
     def test_no_stance_word_when_nothing_covered(self):
-        panel = self._panel(self._render([self._row()]))
+        panel = self._panel([self._row()])
         assert "balanced" not in panel, "printed a tilt for a cohort with no observations"
         assert "均衡" not in panel, "printed a tilt (ZH) for a cohort with no observations"
-        assert "net buy~" not in panel and "净买~" not in panel
-        assert "flat~" not in panel and "持平~" not in panel
+        assert "net buy" not in panel and "净买" not in panel
+        assert "flat ~" not in panel and "持平 ~" not in panel
 
     def test_whole_panel_null_states_it_plainly(self):
         """Plain-word disclosure in both languages, not four tiles of dashes."""
-        panel = self._panel(self._render([self._row()]))
-        assert "No theme-group data yet" in panel
-        assert "暂无主题群组数据" in panel
-        assert 'class="coh-tile"' not in panel, "dead tiles shipped instead of the null line"
+        panel = self._panel([self._row()])
+        assert self._NULL_EN in panel
+        assert self._NULL_ZH in panel
+        assert 'class="oew-fl-tile"' not in panel, "dead tiles shipped instead of the null line"
 
     def test_covered_cohort_still_renders_its_chip(self):
         """Control — a real day keeps its tilt chip and its tile."""
-        panel = self._panel(self._render([self._row(
+        panel = self._panel([self._row(
             gross_premium_mn=4893.9, net_premium_mn=304.1, pc_ratio=0.674,
             zerodte_share=0.514, n_members_covered=7, pc_tone="call-tilted",
             net_tone="pos~", coverage_label="7 of 7 members covered",
-        )]))
-        assert 'class="coh-tile"' in panel
+        )])
+        assert 'class="oew-fl-tile"' in panel
         assert "偏看涨" in panel and "calls" in panel
-        assert "$4.9B" in panel
-        assert "No theme-group data yet" not in panel
+        assert self._NULL_EN not in panel
+        # The tile's headline figure. flow_desk's tile showed GROSS premium
+        # ($4.9B); the workspace's shows NET, softened — the "~" is the
+        # approximate-direction mark the panel foot explains, and it must stay
+        # attached to a signed number rather than being dropped as decoration.
+        assert "~+$304M" in panel, f"net-premium figure not rendered as expected: {panel}"
 
     def test_partial_coverage_keeps_the_strip(self):
         """One covered group among four nulls still shows the strip, not the null line."""
@@ -1015,8 +1060,26 @@ class TestZeroCoverageRendersNoStanceWord:
                       n_members=17, n_members_covered=17, pc_tone="call-tilted",
                       net_tone="pos~"),
         ]
-        panel = self._panel(self._render(rows))
-        assert "No theme-group data yet" not in panel
-        assert 'class="coh-tile"' in panel
-        # the uncovered group says so in words and carries no tilt
+        panel = self._panel(rows)
+        assert self._NULL_EN not in panel
+        assert 'class="oew-fl-tile"' in panel
+        # the uncovered group says so in words…
         assert "no data today" in panel or "今日无数据" in panel
+
+        # …AND carries no tilt. This half was in the docstring but never asserted
+        # — on either this panel or the flow_desk one it moved from — so a change
+        # that gave every cohort a chip regardless of coverage passed. The
+        # whole-panel null case cannot catch it: that branch returns before any
+        # tile is built, so the chip code only ever runs on a MIXED payload.
+        tiles = panel.split('<div class="oew-fl-tile">')[1:]
+        assert len(tiles) == 2, f"expected both cohorts to render a tile, got {len(tiles)}"
+        uncovered = next(t for t in tiles if "Mag 7" in t)
+        covered = next(t for t in tiles if "Software" in t)
+        assert 'class="tone' not in uncovered, (
+            f"uncovered cohort was given a stance chip:\n{uncovered}"
+        )
+        for word in ("balanced", "均衡", "net buy", "净买", "flat ~", "持平 ~"):
+            assert word not in uncovered, f"uncovered cohort printed a tilt word: {word!r}"
+        assert 'class="tone' in covered, (
+            "the covered cohort lost its chip — this control must stay non-vacuous"
+        )

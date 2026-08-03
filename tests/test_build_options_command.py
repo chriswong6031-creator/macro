@@ -978,24 +978,17 @@ def test_lex_carries_the_full_doctrine_six():
         assert LEX[stance] and LEX[stance] != stance
 
 
-@pytest.mark.parametrize("template,mode", [
-    ("gex.html.j2", "ticker"),
-    ("options_screener.html.j2", "scanner"),
-    ("flow_desk.html.j2", "brief"),
-    ("flow_leaders.html.j2", "leaders"),
-])
-def test_absorbed_pages_point_at_their_workspace_mode(template, mode):
-    src = (REPO / "templates" / template).read_text(encoding="utf-8")
-    assert '_options_workspace_banner.html.j2' in src, f"{template} lost its banner"
-    assert f"set oew_mode = '{mode}'" in src, f"{template} points at the wrong mode"
-
-
-def test_legacy_banner_is_bilingual_and_dismiss_free():
-    src = (REPO / "templates" / "_options_workspace_banner.html.j2").read_text(encoding="utf-8")
-    assert "options.html#" in src
-    assert "本面板已并入期权工作台" in src
-    for token in ("localStorage", "dismiss", "onclick"):
-        assert token not in src, f"the banner must stay dismiss-free (found {token})"
+# The two tests that stood here — test_absorbed_pages_point_at_their_workspace_mode
+# and test_legacy_banner_is_bilingual_and_dismiss_free — pinned the W1 ribbon
+# banner (_options_workspace_banner.html.j2) that each of the four legacy options
+# pages carried while they were still full pages. W1.6-B retired the banner with
+# the pages: all four templates are redirect stubs now, so there is no page left
+# to put a ribbon on. The same mode mapping they asserted (gex→ticker,
+# screener→scanner, flow_desk→flow, flow_leaders→leaders) is pinned at the stub
+# level, against the redirect that actually fires, by
+# tests/test_options_estate_redirect_stubs.py. Note flow_desk moved brief→flow:
+# the banner predated the workspace's own Flow mode (W1.6-A) and pointed at the
+# Daily Brief for want of anywhere better.
 
 
 def test_sitemap_priority_is_pinned_for_the_workspace():
@@ -1431,25 +1424,24 @@ def _leaders_row_b(ticker: str, inflect: bool) -> dict:
     }
 
 
-def _render_flow_leaders_page(payload: dict) -> str:
-    from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
-    env = Environment(loader=FileSystemLoader(str(REPO / "templates")), autoescape=False)
-    return env.get_template("flow_leaders.html.j2").render(flow_leaders=payload)
-
-
 @_needs_node
-def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page):
+def test_leaders_denominator_equals_the_rows_the_panel_actually_admits(page):
     """MAJOR-1's own required regression: the stated denominator must equal the
-    row count the LINKED surface (site/flow_leaders.html) actually renders, not
-    a re-derivation of the same formula on both sides. Board A ships 15 rows
-    (>12, so the panel's own top-12 display slice truncates something real);
-    board B ships 15 rows, 9 of which pass B5_flow_inflect (the corrected #3496
-    admission rule both surfaces apply identically) and 6 of which do not.
+    rows actually rendered, not a re-derivation of the same formula twice.
 
-    Renders BOTH surfaces from the exact same payload — flow_leaders.html.j2
-    via Jinja (the real linked page) and renderLeaders() via node (this
-    panel's own JS) — and cross-checks the row counts, not just the numbers
-    each side independently computes."""
+    HOW THIS CHANGED IN W1.6-B. It used to render flow_leaders.html.j2 from the
+    same payload and cross-check the two surfaces' row counts, because the
+    denominator could drift on either side independently. That template is a
+    redirect stub now — the Leaders board exists ONCE, here — so there is no
+    second implementation left to disagree with, and the cross-surface half of
+    this test is not weakened but obsolete. What remains is still an independent
+    check, because the FIXTURE knows the answer by construction rather than by
+    running the same formula: board A ships 15 rows (>12, so the panel's own
+    top-12 display slice truncates something real); board B ships 15 rows, of
+    which exactly 9 carry B5_flow_inflect=True (the corrected #3496 admission
+    rule) and 6 do not. The panel applies that filter itself and must arrive at
+    9 without being told."""
+    A_ROWS, B_ROWS_ADMITTED = 15, 9
     board_a = [_leaders_row_a(f"AT{i:02d}") for i in range(15)]
     board_b = ([_leaders_row_b(f"BT{i:02d}", True) for i in range(9)]
                + [_leaders_row_b(f"BX{i:02d}", False) for i in range(6)])
@@ -1471,17 +1463,17 @@ def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page
         "cold_start_detail": {"n_sessions": 134, "required_for_recurrence": 20, "message": None},
     }
 
-    # 1) The real linked page, rendered from the SAME payload.
-    fl_html = _render_flow_leaders_page(payload)
-    a_start = fl_html.index("Where money keeps landing")
-    b_start = fl_html.index("Turning up from a beating")
-    a_section, b_section = fl_html[a_start:b_start], fl_html[b_start:]
-    a_rendered = len(re.findall(r'<div class="fl-row', a_section))
-    b_rendered = len(re.findall(r'<div class="fl-row', b_section))
-    assert a_rendered == 15, "flow_leaders.html board A row count drifted from the fixture"
-    assert b_rendered == 9, "flow_leaders.html board B row count drifted from the B5_flow_inflect filter"
+    # 1) Fixture sanity — the reference the panel is measured against must itself
+    #    be what this test claims, or every assertion below is graded against a
+    #    number this file invented twice.
+    assert len(payload["board_a"]) == A_ROWS
+    assert sum(1 for r in payload["board_b"] if r["B5_flow_inflect"]) == B_ROWS_ADMITTED
+    assert len(payload["board_b"]) != B_ROWS_ADMITTED, (
+        "board B's fixture must contain rows the admission rule REJECTS, or the "
+        "filter is never exercised"
+    )
 
-    # 2) This panel's own JS, from the SAME payload.
+    # 2) This panel's own JS, from that payload.
     driver = (_DOM_STUB + _extract_workspace_script(page) + """
     var host = { innerHTML: '' };
     renderLeaders(host, """ + _json.dumps(payload) + """);
@@ -1495,9 +1487,10 @@ def test_leaders_denominator_equals_the_row_count_flow_leaders_html_renders(page
     b_sub = re.search(r"top 12 of (\d+), most recent first", out)
     assert a_sub and b_sub, f"declared-cap sentence not found in renderLeaders output: {out!r}"
 
-    # 3) Cross-surface parity — the whole point of this regression.
-    assert int(a_sub.group(1)) == a_rendered == 15
-    assert int(b_sub.group(1)) == b_rendered == 9
+    # 3) The denominators must be the rows the panel ADMITS, not the rows it was
+    #    handed — board B's 6 rejected rows must not be counted.
+    assert int(a_sub.group(1)) == A_ROWS
+    assert int(b_sub.group(1)) == B_ROWS_ADMITTED
     # Board A's derived denominator now AGREES with the payload's own total (the
     # uncapped builder's invariant); board B's deliberately does NOT, because the
     # payload total is unfiltered. Both are asserted so a future "simplification"
@@ -1610,23 +1603,28 @@ def test_ticker_manifest_omits_fields_the_search_never_reads(page):
     assert row == {"key": "SPY", "en": "SPY name", "zh": "SPY 名称"}
 
 
+# The match predicate Ticker-mode search was ported from, VERBATIM, as it stood
+# in site/gex.js's setupSearch() filter (~line 290) on the day it was ported.
+#
+# It is a literal here rather than a regex over that file because W1.6-B deleted
+# site/gex.js: gex.html is a redirect stub, so nothing loaded it any more. The
+# law this test carries is unchanged — the search must be that exact predicate,
+# never a paraphrase, because "starts-with OR contains OR name-contains" is a
+# three-clause ordering that a rewrite silently gets subtly wrong — but the
+# COMPARISON SOURCE had to move into the test when the file it read went away.
+# Only the quote style differs from gex.js's own bytes (that file used "").
+_GEXJS_MATCH_PREDICATE = (
+    "return !q || m.key.indexOf(q) === 0 || m.key.indexOf(q) >= 0 "
+    "|| (m.en || '').toUpperCase().indexOf(q) >= 0;"
+)
+
+
 def test_search_match_predicate_is_structurally_identical_to_gexjs(page):
-    """gex.js's setupSearch() filter (site/gex.js ~line 290) — the new search
-    must reproduce it EXACTLY, not a paraphrase. Compares the two predicates
-    with only cosmetic differences (quote style, variable name m vs m) removed."""
-    gexjs = (REPO / "site" / "gex.js").read_text(encoding="utf-8")
-    gex_pred = re.search(
-        r'return !q \|\| m\.key\.indexOf\(q\) === 0 \|\| m\.key\.indexOf\(q\) >= 0 '
-        r'\|\| \(m\.en \|\| ""\)\.toUpperCase\(\)\.indexOf\(q\) >= 0;',
-        gexjs,
+    """The ported predicate must survive verbatim, not as a paraphrase."""
+    assert _GEXJS_MATCH_PREDICATE in page, (
+        "Ticker-mode search predicate has drifted from the one it was ported "
+        f"from. Expected verbatim:\n  {_GEXJS_MATCH_PREDICATE}"
     )
-    assert gex_pred, "gex.js's own match predicate moved — update this pin"
-    ticker_pred = re.search(
-        r"return !q \|\| m\.key\.indexOf\(q\) === 0 \|\| m\.key\.indexOf\(q\) >= 0 "
-        r"\|\| \(m\.en \|\| ''\)\.toUpperCase\(\)\.indexOf\(q\) >= 0;",
-        page,
-    )
-    assert ticker_pred, "Ticker-mode search predicate not found or has drifted from gex.js's"
 
 
 def test_search_result_cap_is_12(page):

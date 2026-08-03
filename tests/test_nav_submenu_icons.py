@@ -55,8 +55,18 @@ EXPECTED_ICON_FAMILIES = {
 # least one other user in this menu, so no FAMILY leaves the set — only the
 # per-span count moves. If a family ever does drop out, the families assertion
 # above fails first and this comment is the place to say why.
+# OIP W1.6-B "One Door" (nav 56 -> 55): the options flyout's gex.html "Options
+# Desk" row is deleted — the workspace absorbed that page, which is a redirect
+# stub now — removing exactly one submenu-icon span. The Intraday Flow Tracker
+# row MOVED (flyout -> United States group) and kept its icon, so it is net
+# zero. Counted off the diff of the real _navlinks.html.j2, not by hand.
+# EXPECTED_EMITTED_ICON_FAMILIES is unchanged on purpose: the deleted row used
+# submenu-icon-dashboard, which the Macro Dashboard and the relocated Intraday
+# Flow rows both still use, so no FAMILY leaves the set — only the per-span
+# count moves. If a family ever does drop out, the families assertion fires
+# first and this comment is the place to say why.
 EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-EXPECTED_EMITTED_ICON_COUNT = 56
+EXPECTED_EMITTED_ICON_COUNT = 55
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
