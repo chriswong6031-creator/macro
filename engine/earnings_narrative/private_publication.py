@@ -12,6 +12,7 @@ server-side Research Vault credentials and enforces ``site_full`` first.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from hashlib import sha256
 import json
@@ -45,6 +46,7 @@ MAX_CONTEXT_MANIFEST_BYTES = 8 * 1024 * 1024
 MAX_CONTEXT_PACKET_BYTES = 512 * 1024
 MAX_RECORDS = 10_000
 MAX_CONTEXT_PACKETS = 10_000
+IDEMPOTENT_READ_WORKERS = 8
 
 _SLUG_RE = re.compile(r"\A[a-z0-9][a-z0-9-]{0,120}\Z")
 _TICKER_RE = re.compile(r"\A[A-Z0-9.\-]{1,16}\Z")
@@ -521,6 +523,109 @@ def validate_private_pointer(value: object) -> dict[str, Any]:
     return dict(pointer)
 
 
+def _validated_prepared_payloads(
+    prepared: PreparedPrivatePublication,
+) -> tuple[tuple[PrivateArtifact, bytes], ...]:
+    """Return the frozen payloads after rechecking their immutable receipts.
+
+    ``PreparedPrivatePublication`` is normally only made by
+    :func:`prepare_private_publication`, but publication is a security boundary
+    and must not trust a caller-provided dataclass merely because it has the
+    right type.  The same validation feeds both the normal promotion path and
+    the idempotent replay path below.
+    """
+    verified: list[tuple[PrivateArtifact, bytes]] = []
+    for artifact in prepared.artifacts:
+        body = prepared.payloads.get(artifact.object_key)
+        if not isinstance(body, bytes):
+            raise EarningsPrivatePublicationError("prepared private payload is missing")
+        if len(body) != artifact.byte_length or sha256(body).hexdigest() != artifact.sha256:
+            raise EarningsPrivatePublicationError("prepared private payload receipt mismatch")
+        verified.append((artifact, body))
+    return tuple(verified)
+
+
+def _bounded_artifact_read(store: Store, artifact: PrivateArtifact) -> bytes | None:
+    """One immutable-object replay read, kept separate for ordered executor.map."""
+    return _bounded_read(store, artifact.object_key, maximum=artifact.maximum_bytes)
+
+
+def _existing_exact_publication(
+    store: Store,
+    prepared: PreparedPrivatePublication,
+    *,
+    verified_payloads: tuple[tuple[PrivateArtifact, bytes], ...],
+) -> dict[str, Any] | None:
+    """Prove that *prepared* is already the complete current generation.
+
+    A matching pointer is intentionally insufficient: it can reference a
+    partial or corrupt immutable closure after an interrupted operator run.
+    The fast path therefore requires canonical exact bytes for the pointer and
+    manifest, a complete bounded read of every immutable artifact, and a final
+    pointer reread to catch a concurrent promotion.  ``None`` means an object
+    is authoritatively absent and permits the normal pointer-last repair path;
+    a mismatched immutable byte string fails closed rather than overwriting it.
+    """
+    expected_pointer = _pointer_for(prepared)
+    expected_pointer_bytes = canonical_json_bytes(expected_pointer)
+    pointer_body = _bounded_read(store, POINTER_KEY, maximum=MAX_POINTER_BYTES)
+    if pointer_body is None:
+        return None
+    pointer = validate_private_pointer(
+        _json_object(pointer_body, maximum=MAX_POINTER_BYTES, name="prior private pointer")
+    )
+    if pointer["generation_id"] != prepared.generation_id:
+        return None
+    if pointer_body != expected_pointer_bytes or pointer != expected_pointer:
+        raise EarningsPrivatePublicationError("private pointer disagrees with generation")
+
+    manifest_body = _bounded_read(store, prepared.manifest_key, maximum=MAX_MANIFEST_BYTES)
+    if manifest_body is None:
+        return None
+    if manifest_body != prepared.manifest_bytes:
+        raise EarningsPrivatePublicationError("immutable private earnings manifest differs")
+    manifest = validate_private_manifest(
+        _json_object(manifest_body, maximum=MAX_MANIFEST_BYTES, name="private earnings manifest")
+    )
+    if manifest != dict(prepared.manifest):
+        raise EarningsPrivatePublicationError("private earnings manifest replay mismatch")
+
+    # Content addressing makes identical payloads share a key.  Read each key
+    # only once while still requiring that every artifact advertised by this
+    # generation is present and exact.  ``executor.map`` yields ordered
+    # results, so a missing/mismatched receipt remains deterministic while the
+    # remote IO is conservatively capped rather than serializing ~900 GETs.
+    checked_keys: set[str] = set()
+    unique_payloads: list[tuple[PrivateArtifact, bytes]] = []
+    for artifact, expected_body in verified_payloads:
+        if artifact.object_key in checked_keys:
+            continue
+        checked_keys.add(artifact.object_key)
+        unique_payloads.append((artifact, expected_body))
+    remote_bodies: tuple[bytes | None, ...] = ()
+    if unique_payloads:
+        worker_count = min(IDEMPOTENT_READ_WORKERS, len(unique_payloads))
+        with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="earnings-private-read") as pool:
+            remote_bodies = tuple(
+                pool.map(
+                    _bounded_artifact_read,
+                    (store for _artifact, _body in unique_payloads),
+                    (artifact for artifact, _body in unique_payloads),
+                )
+            )
+    for (_artifact, expected_body), remote_body in zip(unique_payloads, remote_bodies, strict=True):
+        if remote_body is None:
+            return None
+        if remote_body != expected_body:
+            raise EarningsPrivatePublicationError("immutable private earnings object differs")
+
+    # The local mutex does not coordinate another runner/process.  A second
+    # exact bounded read prevents a stale snapshot from being reported ready.
+    if _bounded_read(store, POINTER_KEY, maximum=MAX_POINTER_BYTES) != expected_pointer_bytes:
+        raise EarningsPrivatePublicationError("private pointer changed during idempotent replay")
+    return expected_pointer
+
+
 def publish_private_publication(
     store: Store,
     prepared: PreparedPrivatePublication,
@@ -531,12 +636,15 @@ def publish_private_publication(
     if not isinstance(store, Store) or not isinstance(store, StrictBoundedReadStore):
         raise EarningsPrivatePublicationError("private earnings publication requires a strict store")
     with _PUBLISH_LOCK:
-        for artifact in prepared.artifacts:
-            body = prepared.payloads.get(artifact.object_key)
-            if not isinstance(body, bytes):
-                raise EarningsPrivatePublicationError("prepared private payload is missing")
-            if len(body) != artifact.byte_length or sha256(body).hexdigest() != artifact.sha256:
-                raise EarningsPrivatePublicationError("prepared private payload receipt mismatch")
+        verified_payloads = _validated_prepared_payloads(prepared)
+        ready = _existing_exact_publication(
+            store,
+            prepared,
+            verified_payloads=verified_payloads,
+        )
+        if ready is not None:
+            return ready
+        for artifact, body in verified_payloads:
             _put_verified(
                 store,
                 key=artifact.object_key,

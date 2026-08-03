@@ -3,7 +3,9 @@
 The shim (templates/data_base.js) reroutes the heavy per-ticker OHLC + search-library
 fetches to R2 when window.DATA_BASE is set; empty -> no-op. It must load FIRST, before
 any page runs a data fetch, so — unlike the wh_banner (deferred, before </body>) — it
-goes at the TOP of <head>, non-deferred. Depth-aware (prefix so sub-dir pages resolve
+goes at the TOP of <head>, non-deferred (after an early <meta charset>, which must
+stay inside the browser's 1024-byte pre-scan window and can never run a fetch —
+see lib.pages). Depth-aware (prefix so sub-dir pages resolve
 data_base.js) + idempotent (the data-dbase marker skips already-injected / re-run
 pages). Also guarantees site/data_base.js exists (copied from the template) so the tag
 never 404s. Modeled on scripts/inject_wh_banner.py; never raises.
