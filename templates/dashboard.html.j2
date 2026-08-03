@@ -1302,6 +1302,13 @@
   .ts-tbl th { text-align: left; font-weight: 700; color: var(--muted); font-size: 10px;
                text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px;
                border-bottom: 1px solid var(--line); }
+  /* The α headers are SYMBOLS, and uppercase folds α to Greek capital Alpha — which
+     renders as a plain Latin "A", so "edge (α)" and "α (tiebreak)" ship as
+     "EDGE (A)" / "A (TIEBREAK)" and stop naming the thing they hold. A wrong label
+     is a wrong number wearing words. Only this header opts out of the case
+     transform; the rest of the row keeps the uppercase idiom. Caught on the HK port
+     of this table (templates/hk.html.j2), which carries the same one-line fix. */
+  .ts-tbl th.c-edge { text-transform: none; }
   /* left by default to sit under the left-aligned headers (else the page-global th,td{right}
      right-shifts the text columns); .r columns stay right on both header + body (rule below). */
   .ts-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }

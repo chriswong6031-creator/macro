@@ -193,6 +193,14 @@ _SCHEMA = [
     # Inclusion-gate versioning: allows Q4/W7 grading to split pre/post gate-swap samples.
     # "cascade_v1" = confluence cascade (signal_gate T1-T4, HK ratified 2026-07-16); None = prior.
     "gate_ver",
+    # BOARD-DEFINITION versioning — the ERA FENCE (CN pattern, china_standout_track
+    # ._latest_definition_frame). `board_pos` is a rank inside ONE selection
+    # instrument; when the instrument changes, position 3 stops meaning what it
+    # meant, and pooling the two eras manufactures sample size for a rank-IC that
+    # is then uninterpretable. NULLABLE on purpose: every row written before this
+    # column existed reads as legacy, and a market that never stamps it (CA today)
+    # keeps its historical all-row behaviour byte for byte.
+    "board_definition",
     *_US_STAMP_COLS,
     *_SPINE_COLS,
 ]
@@ -214,6 +222,7 @@ _GATE_STAMPS = ("placement_flag",)
 _OBJECT_COLS = (
     "primary_rejection_reason", "block_reason", "knife_demoted",
     "species_id", "archetype", "own_market_regime", "own_market_regime_note", "gate_ver",
+    "board_definition",
     "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
     "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
     "vector_asof",
@@ -319,6 +328,9 @@ def append_board(
                         or the placement store was degraded that render)
         hold_basing   — CA2 close-only port stamp (bool, optional; None if omitted)
         dt_compress   — CA2 close-only port stamp (bool, optional; None if omitted)
+        board_definition — the selection instrument that produced this board_pos
+                        (str, optional; None = legacy/unversioned). HK stamps
+                        'hk_prophet_v1'; see _latest_definition and scorecard().
 
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
@@ -393,6 +405,9 @@ def append_board(
             # provenance stamp so W7/Q4 grading splits pre/post-swap samples. CN/CA
             # callers don't stamp it yet — their rows stay None (back-compatible).
             "gate_ver": (str(c.get("gate_ver")) if c.get("gate_ver") else None),
+            # Era fence (see _SCHEMA). Absent → None → the row pools with legacy.
+            "board_definition": (str(c.get("board_definition"))
+                                 if c.get("board_definition") else None),
             # W0 Stage B-c: species/archetype — always null (documented; no registry binding)
             "species_id": None,
             "archetype": None,
@@ -438,15 +453,70 @@ def append_board(
 
 
 # ---------------------------------------------------------------------------
+# Era fence — board-definition versioning (ported from
+# engine/china_standout_track._latest_definition_frame, CN G5 pattern)
+# ---------------------------------------------------------------------------
+# Every way a null survives a parquet round-trip as a STRING. `<NA>` is the one that
+# bites: a nullable dtype stringifies pd.NA to it, and a list missing it would read
+# "<NA>" as a real board definition and fence every other row out of the sample.
+_NULLISH_STR = ("", "nan", "NaN", "None", "NaT", "<NA>", "NA", "null")
+
+
+def _latest_definition(df: pd.DataFrame) -> str | None:
+    """The board definition of the NEWEST stamped cohort, or None for a legacy pool.
+
+    A board definition names the selection instrument that assigned ``board_pos``.
+    When the instrument changes — HK's 2026-08-02 buy-lane re-sort under
+    ``hk_prophet_v1`` is exactly this — a position stops meaning what it meant, so
+    pooling the eras manufactures sample size for a rank-IC nobody can read.
+
+    Returns None when NOTHING in the frame is stamped: a ledger with no definition
+    column, or a market that never stamps one (CA today), keeps its historical
+    all-row behaviour untouched.  Ties on the newest date resolve to the LAST
+    appended row, because ``append_board`` concatenates prior rows first — sorting
+    by ``board_pos`` would pick the wider legacy cohort merely for having a larger
+    final rank.
+    """
+    if df.empty or "board_definition" not in df.columns:
+        return None
+    stamped = df[
+        df["board_definition"].notna()
+        & ~df["board_definition"].astype(str).isin(_NULLISH_STR)
+    ]
+    if stamped.empty:
+        return None
+    dated = stamped.assign(_d=pd.to_datetime(stamped["date"], errors="coerce"))
+    newest = dated["_d"].max()
+    newest_rows = dated[dated["_d"] == newest]
+    if newest_rows.empty:            # malformed legacy dates: append order is the fallback
+        newest_rows = dated
+    return str(newest_rows.iloc[-1]["board_definition"])
+
+
+# ---------------------------------------------------------------------------
 # Close-series loaders (market-specific; pure reads)
 # ---------------------------------------------------------------------------
-def _hk_close(ticker: str) -> pd.Series | None:
-    """Per-ticker close for HK names (store group 'hk_stocks')."""
+def _hk_close(ticker: str, _cache: dict | None = None) -> pd.Series | None:
+    """Per-ticker close for HK names (store group 'hk_stocks').
+
+    Memoised on the per-``grade()`` cache for the same reason ``_ca_close`` is: the
+    HK ledger logs the same tickers on every session, so a 347-row store re-read the
+    same ~15 parquet files dozens of times per run.  The cache lives for one
+    ``grade()`` call, so freshness is unchanged.
+    """
+    if _cache is not None:
+        hit = _cache.get(("hk", ticker), False)
+        if hit is not False:
+            return hit
     df = store.read("hk_stocks", ticker)
     if df is None or "close" not in df.columns:
-        return None
-    s = pd.to_numeric(df["close"], errors="coerce").dropna().sort_index()
-    return s if not s.empty else None
+        s = None
+    else:
+        s = pd.to_numeric(df["close"], errors="coerce").dropna().sort_index()
+        s = s if not s.empty else None
+    if _cache is not None:
+        _cache[("hk", ticker)] = s
+    return s
 
 
 def _ca_close(ticker: str, _cache: dict | None = None) -> pd.Series | None:
@@ -492,10 +562,14 @@ def _bench_close(market: str) -> pd.Series | None:
 
 
 def _name_close(market: str, ticker: str, ca_cache: dict | None = None) -> pd.Series | None:
-    """Dispatch to the right close loader by market."""
+    """Dispatch to the right close loader by market.
+
+    ``ca_cache`` is the per-``grade()``-run read cache; both markets use it now (the
+    name is kept for callers), so a ticker logged on 40 sessions costs ONE read.
+    """
     m = market.upper()
     if m == "HK":
-        return _hk_close(ticker)
+        return _hk_close(ticker, _cache=ca_cache)
     if m == "CA":
         return _ca_close(ticker, _cache=ca_cache)
     return None
@@ -546,8 +620,13 @@ def grade(market: str) -> dict:
 
     Returns a dict with keys:
         market, n_calls, n_graded, n_suspended, n_unstamped, survivorship,
-        by_horizon: {h: [{date, ticker, board_pos, group, edge_z, fwd_ret, bench_ret,
-                          excess_ret, suspended}, ...]}
+        board_definition (the newest stamped era, None for a legacy pool),
+        by_horizon: {h: [{date, ticker, board_pos, group, edge_z, board_definition,
+                          fwd_ret, bench_ret, excess_ret, suspended}, ...]}
+
+    GRADING IS NOT SCOPED BY DEFINITION — every matured row is still graded and
+    returned, so the historical pool stays available under its own definition.  The
+    era fence is applied where it matters, in :func:`scorecard`'s rank statistics.
     """
     m = market.upper()
     p = _store_path(m)
@@ -583,6 +662,7 @@ def grade(market: str) -> dict:
         "survivorship": "no_dead_name_store",  # no ex-HK/CA dead-name store — losses on
         # delisted names that disappear from the live store are NOT captured; this is the
         # honest survivorship BOUND, not a stamp.
+        "board_definition": _latest_definition(df),
         "by_horizon": {f"{h}d": [] for h in _HORIZONS_D},
     }
 
@@ -612,6 +692,7 @@ def grade(market: str) -> dict:
                     "board_pos": int(row.get("board_pos") or 0),
                     "group": row.get("group"),
                     "edge_z": _float_or_none(row.get("edge_z")),
+                    "board_definition": _definition_or_none(row.get("board_definition")),
                     "fwd_ret": None,
                     "bench_ret": None,
                     "excess_ret": None,
@@ -636,6 +717,7 @@ def grade(market: str) -> dict:
                 "board_pos": int(row.get("board_pos") or 0),
                 "group": row.get("group"),
                 "edge_z": _float_or_none(row.get("edge_z")),
+                "board_definition": _definition_or_none(row.get("board_definition")),
                 "fwd_ret": name_ret,
                 "bench_ret": bench_ret,
                 "excess_ret": excess,
@@ -783,10 +865,23 @@ def scorecard(market: str) -> dict:
         'setting_up' groups with positive 21d excess.
       * Both computed ONLY on non-suspended rows.
 
+    ERA FENCE (CN G5 pattern, ported 2026-08-03).  ``rank_ic`` and the IC-eligible
+    date count are computed ONLY over rows carrying the ledger's newest
+    ``board_definition``.  ``board_pos`` is a rank inside one selection instrument;
+    HK's hk_prophet_v1 buy-lane re-sort changed the instrument mid-ledger, so an IC
+    pooled across the two eras would be measuring two different boards at once.
+    A ledger where nothing is stamped (CA today, and every HK row written before
+    the stamp existed) has definition None and pools exactly as it always did.
+    The group-level statistics — ``n``, ``n_buy``, ``hit_rate_21d``, ``by_group`` —
+    are NOT scoped: they key on ``group``, not on ``board_pos``, so the definition
+    change does not make them incommensurable, and the historical pool stays
+    readable.  ``n_scoped`` prints how many rows the fence kept.
+
     Returns dict with:
-        market, status ('accruing'|'scored')
+        market, status ('accruing'|'scored'), board_definition
         first_read_est     — estimated date for stable read (first_write + 21td from today)
-        by_horizon: {h: {n, n_ic_dates, rank_ic, n_buy, hit_rate_21d, by_group: {...}}}
+        by_horizon: {h: {n, n_scoped, n_ic_dates, rank_ic, n_buy, hit_rate_21d,
+                         by_group: {...}}}
         note               — human-readable status summary
     """
     m = market.upper()
@@ -794,20 +889,27 @@ def scorecard(market: str) -> dict:
     if not g.get("available"):
         return {"market": m, "status": "accruing",
                 "note": g.get("note", "no data yet"),
+                "board_definition": None,
                 "first_read_est": _est_first_read()}
 
+    definition = g.get("board_definition")
     by_h: dict = {}
     for h in _HORIZONS_D:
         key = f"{h}d"
         rows = [r for r in g["by_horizon"].get(key, []) if not r.get("suspended", True)]
         if not rows:
-            by_h[key] = {"n": 0, "n_ic_dates": 0, "rank_ic": None,
+            by_h[key] = {"n": 0, "n_scoped": 0, "n_ic_dates": 0, "rank_ic": None,
                          "n_buy": 0, "hit_rate_21d": None, "by_group": {}}
             continue
 
         gf = pd.DataFrame(rows)
+        # ERA FENCE: the rank statistics see one definition only (see docstring).
+        if definition is not None:
+            ic_frame = gf[gf["board_definition"] == definition]
+        else:
+            ic_frame = gf
         # count matured dates with enough names for IC
-        date_counts = gf[gf["excess_ret"].notna()].groupby("date")["ticker"].count()
+        date_counts = ic_frame[ic_frame["excess_ret"].notna()].groupby("date")["ticker"].count()
         ic_eligible_dates = date_counts[date_counts >= MIN_NAMES_PER_DATE].index.tolist()
         n_ic_dates = len(ic_eligible_dates)
 
@@ -816,7 +918,7 @@ def scorecard(market: str) -> dict:
         if n_ic_dates >= MIN_IC_DATES:
             ics = []
             for d in ic_eligible_dates:
-                sub = gf[(gf["date"] == d) & gf["excess_ret"].notna()]
+                sub = ic_frame[(ic_frame["date"] == d) & ic_frame["excess_ret"].notna()]
                 if len(sub) >= MIN_NAMES_PER_DATE:
                     try:
                         # Spearman IC = Pearson of ranks (both sides already ranked).
@@ -853,6 +955,7 @@ def scorecard(market: str) -> dict:
 
         by_h[key] = {
             "n": int(len(rows)),
+            "n_scoped": int(len(ic_frame)),
             "n_ic_dates": n_ic_dates,
             "rank_ic": rank_ic,
             "n_buy": n_buy,
@@ -872,12 +975,15 @@ def scorecard(market: str) -> dict:
         f"n_unstamped={n_unstamped}",
         f"21d_ic_dates={by_h.get('21d', {}).get('n_ic_dates', 0)}/{MIN_IC_DATES}",
     ]
+    if definition:
+        note_parts.append(f"board_definition={definition}")
     if status == "accruing":
         note_parts.append(f"first_stable_read≈{_est_first_read()}")
 
     return {
         "market": m,
         "status": status,
+        "board_definition": definition,
         "n_calls": g["n_calls"],
         "n_graded": g["n_graded"],
         "n_suspended": g["n_suspended"],
@@ -915,6 +1021,24 @@ def _taxonomy_or_none(reason, ticker: str):
                 "dropped to null (Appendix A is a CLOSED set; §8 row required "
                 "to extend)", ticker, r)
     return None
+
+
+def _definition_or_none(v) -> str | None:
+    """Normalise a stored board_definition cell to a string or None.
+
+    Parquet round-trips an all-null object column as float NaN, and a NaN would
+    never equal the live definition string — so an un-normalised read would silently
+    scope EVERY row out of the fence rather than into the legacy pool.
+    """
+    if v is None:
+        return None
+    try:
+        if v != v:                                   # float NaN
+            return None
+    except Exception:  # noqa: BLE001 — pd.NA comparisons raise; the string test covers it
+        pass
+    s = str(v).strip()
+    return s if s and s not in _NULLISH_STR else None
 
 
 def _bool_or_none(v) -> bool | None:

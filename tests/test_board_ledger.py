@@ -1085,3 +1085,201 @@ class TestGateVerStamp:
                           "edge_z": 1.0}], market="HK", asof="2026-07-16")
         row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
         assert pd.isna(row["gate_ver"])
+
+
+class TestBoardDefinitionEraFence:
+    """The CN G5 era fence, ported (HK board resurrection review, 2026-08-03).
+
+    `board_pos` is a rank inside ONE selection instrument.  hk_prophet_v1 re-sorted
+    the HK buy lane mid-ledger, so a rank-IC pooled across the two eras measures two
+    different boards at once.  scorecard() therefore scopes rank_ic and the
+    IC-eligible date count to the NEWEST stamped definition; everything unstamped
+    (CA today, and every HK row written before the stamp existed) keeps its exact
+    historical pooled behaviour.
+    """
+
+    def _ledger(self, tmp_path, monkeypatch, *, legacy_dates, v1_dates,
+                n_names=None, start="2026-05-01"):
+        """Write `legacy_dates` unstamped sessions then `v1_dates` stamped ones."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n_names = n_names if n_names is not None else bl.MIN_NAMES_PER_DATE + 2
+        tickers = [f"T{i:03d}.HK" for i in range(n_names)]
+        dates = pd.bdate_range(start=start, periods=legacy_dates + v1_dates)
+        for i, d in enumerate(dates):
+            stamped = i >= legacy_dates
+            calls = []
+            for j, t in enumerate(tickers):
+                call = {"ticker": t, "group": "entry_open", "edge_z": float(j),
+                        "close_asof": 100.0}
+                if stamped:
+                    call["board_definition"] = "hk_prophet_v1"
+                calls.append(call)
+            bl.append_board(calls, "HK", asof=str(d.date()))
+
+        steps = {t: (i + 1) * 0.5 for i, t in enumerate(tickers)}
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close(
+                                start, 140, step=steps.get(t, 1.0)))
+        monkeypatch.setattr(bl, "_bench_close",
+                            lambda m: _make_bench(start, 140, step=0.0))
+        return tickers
+
+    # ---- the column itself -------------------------------------------------
+    def test_definition_passes_through_append(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.0,
+                          "board_definition": "hk_prophet_v1"}],
+                        market="HK", asof="2026-08-03")
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert row["board_definition"] == "hk_prophet_v1"
+
+    def test_absent_definition_is_null_not_a_default(self, tmp_path, monkeypatch):
+        """A market that never stamps (CA) must read as legacy, never as an era."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "SHOP.TO", "group": "entry_open", "edge_z": 1.0}],
+                        market="CA", asof="2026-08-03")
+        row = pd.read_parquet(tmp_path / "ca_board.parquet").iloc[0]
+        assert pd.isna(row["board_definition"])
+
+    def test_latest_definition_reads_the_newest_date(self):
+        df = pd.DataFrame({
+            "date": ["2026-07-01", "2026-08-01", "2026-08-01"],
+            "board_definition": [None, "hk_prophet_v1", "hk_prophet_v1"],
+        })
+        assert bl._latest_definition(df) == "hk_prophet_v1"
+
+    def test_an_all_legacy_frame_has_no_definition(self):
+        df = pd.DataFrame({"date": ["2026-07-01"], "board_definition": [None]})
+        assert bl._latest_definition(df) is None
+        assert bl._latest_definition(pd.DataFrame({"date": ["2026-07-01"]})) is None
+
+    def test_a_nan_cell_reads_as_legacy_not_as_a_definition(self):
+        """Parquet types an all-null object column as float NaN on the way back."""
+        assert bl._definition_or_none(float("nan")) is None
+        assert bl._definition_or_none("nan") is None
+        assert bl._definition_or_none("") is None
+        assert bl._definition_or_none("hk_prophet_v1") == "hk_prophet_v1"
+
+    # ---- the scoping -------------------------------------------------------
+    def test_legacy_rows_do_not_pollute_the_v1_ic(self, tmp_path, monkeypatch):
+        """The fence: 20 legacy sessions must not buy the v1 board an IC read."""
+        self._ledger(tmp_path, monkeypatch,
+                     legacy_dates=20, v1_dates=bl.MIN_IC_DATES - 1)
+        sc = bl.scorecard("HK")
+        assert sc["board_definition"] == "hk_prophet_v1"
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n_ic_dates"] == bl.MIN_IC_DATES - 1, (
+            "IC dates must count the v1 era only, not the pooled ledger")
+        assert h21["rank_ic"] is None
+        assert sc["status"] == "accruing"
+        # the pooled sample is still THERE — it is scoped out of the rank read,
+        # not deleted (historical stats stay available under their own definition)
+        assert h21["n"] > h21["n_scoped"]
+
+    def test_the_v1_era_scores_on_its_own_dates(self, tmp_path, monkeypatch):
+        self._ledger(tmp_path, monkeypatch,
+                     legacy_dates=8, v1_dates=bl.MIN_IC_DATES)
+        sc = bl.scorecard("HK")
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n_ic_dates"] == bl.MIN_IC_DATES
+        assert h21["rank_ic"] is not None and np.isfinite(h21["rank_ic"])
+        assert sc["status"] == "scored"
+
+    def test_without_the_fence_the_legacy_rows_would_have_scored_it(
+            self, tmp_path, monkeypatch):
+        """MUTATION: prove the scoping is what changes the answer.
+
+        Same ledger, but every row stamped with the SAME definition — i.e. the
+        pooled world the fence exists to prevent.  It scores; the fenced version of
+        the identical sample (test above) does not.  Without this the scoping test
+        could be passing because the sample is small, not because of the fence.
+        """
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        tickers = [f"T{i:03d}.HK" for i in range(bl.MIN_NAMES_PER_DATE + 2)]
+        dates = pd.bdate_range(start="2026-05-01",
+                               periods=20 + bl.MIN_IC_DATES - 1)
+        for d in dates:
+            bl.append_board(
+                [{"ticker": t, "group": "entry_open", "edge_z": float(j),
+                  "close_asof": 100.0, "board_definition": "hk_prophet_v1"}
+                 for j, t in enumerate(tickers)],
+                "HK", asof=str(d.date()))
+        steps = {t: (i + 1) * 0.5 for i, t in enumerate(tickers)}
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close(
+                                "2026-05-01", 140, step=steps.get(t, 1.0)))
+        monkeypatch.setattr(bl, "_bench_close",
+                            lambda m: _make_bench("2026-05-01", 140, step=0.0))
+        sc = bl.scorecard("HK")
+        assert sc["by_horizon"]["21d"]["n_ic_dates"] >= bl.MIN_IC_DATES
+        assert sc["status"] == "scored", (
+            "the pooled sample DOES score — so the fenced result above is the fence")
+
+    def test_group_statistics_are_not_scoped(self, tmp_path, monkeypatch):
+        """hit_rate/by_group key on `group`, not on board_pos — they stay pooled."""
+        self._ledger(tmp_path, monkeypatch,
+                     legacy_dates=8, v1_dates=bl.MIN_IC_DATES)
+        sc = bl.scorecard("HK")
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n_buy"] == h21["n"], (
+            "the buy hit-rate reads the whole graded pool, as it always did")
+        assert h21["hit_rate_21d"] is not None
+
+    def test_an_unstamped_ledger_behaves_exactly_as_before(self, tmp_path,
+                                                           monkeypatch):
+        """CA and pre-stamp HK: definition None → all rows, existing code path."""
+        self._ledger(tmp_path, monkeypatch,
+                     legacy_dates=bl.MIN_IC_DATES, v1_dates=0)
+        sc = bl.scorecard("HK")
+        assert sc["board_definition"] is None
+        h21 = sc["by_horizon"]["21d"]
+        assert h21["n_scoped"] == h21["n"]
+        assert h21["n_ic_dates"] == bl.MIN_IC_DATES
+        assert sc["status"] == "scored"
+
+    def test_grade_returns_every_era_it_graded(self, tmp_path, monkeypatch):
+        """The fence lives in scorecard; grade() still grades the whole ledger."""
+        self._ledger(tmp_path, monkeypatch, legacy_dates=6, v1_dates=6)
+        g = bl.grade("HK")
+        defs = {r.get("board_definition") for r in g["by_horizon"]["21d"]}
+        assert defs == {None, "hk_prophet_v1"}, defs
+        assert g["board_definition"] == "hk_prophet_v1"
+
+
+class TestNCallsCountsOnlyWhatWasLogged:
+    """The dialog's "N calls logged" reads scorecard()['n_calls'].
+
+    It is `len(df)` — every row in the store — so any cohort appended alongside the
+    graded board inflates the number a user reads as "how many calls this board has
+    made".  The HK display lanes used to add ~30 rows a session to a 13-row board.
+    They no longer write at all (scripts/build_hk_library._board_ledger_calls); this
+    pins the arithmetic that made it matter, so the two facts stay connected.
+    """
+
+    def _sc(self, tmp_path, monkeypatch, calls):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board(calls, "HK", asof="2026-07-31")
+        monkeypatch.setattr(bl, "_name_close",
+                            lambda m, t, ca_cache=None: _make_close("2026-07-31", 60))
+        monkeypatch.setattr(bl, "_bench_close",
+                            lambda m: _make_bench("2026-07-31", 60))
+        return bl.scorecard("HK")
+
+    def test_n_calls_is_the_row_count(self, tmp_path, monkeypatch):
+        graded = [{"ticker": f"T{i:03d}.HK", "group": "entry_open", "edge_z": 1.0,
+                   "board_definition": "hk_prophet_v1"} for i in range(13)]
+        assert self._sc(tmp_path, monkeypatch, graded)["n_calls"] == 13
+
+    def test_a_display_lane_cohort_would_inflate_it(self, tmp_path, monkeypatch):
+        """MUTATION: the number a reader sees moves when a non-graded lane is logged."""
+        graded = [{"ticker": f"T{i:03d}.HK", "group": "entry_open", "edge_z": 1.0,
+                   "board_definition": "hk_prophet_v1"} for i in range(13)]
+        lanes = [{"ticker": f"L{i:03d}.HK", "group": "leaders",
+                  "board_definition": "hk_prophet_v1"} for i in range(30)]
+        assert self._sc(tmp_path, monkeypatch, graded + lanes)["n_calls"] == 43, (
+            "43 rows on a 13-call board is exactly the misreport B1(a) removes")

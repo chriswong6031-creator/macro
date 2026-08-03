@@ -691,6 +691,55 @@ class TestEnrichmentHelpers:
         assert _build_adr_by_ticker({}) == {}
         assert _build_adr_by_ticker({"names": []}) == {}
 
+    def test_knife_population_is_the_momentum_class_not_the_laggards_lane(self):
+        """B2(a): knife_risk means DEEP 3-MONTH LOSER, and nothing else.
+
+        The derivation used to read `standouts['laggards']` wholesale. That was a
+        fair proxy only while laggards were composite-ordered; the board's G5 fix
+        re-keyed that lane to the SELECTION axis (weakest stock-picking edge), so a
+        name can now be the weakest edge on the board in the middle of a +44% run.
+        Reading it here would have silently re-pointed every downstream knife chip
+        and inverse book at a different population under the same name.
+
+        The Meituan-shaped row is the whole test: strong 3-month return, weak edge —
+        a laggard under the new key, and NOT a knife. The mirror case is a deep 3M
+        loser with a fine edge: a knife, and not a laggard.
+        """
+        from scripts.build_hk_pick_lab import _build_knife_by_ticker
+
+        standouts = {
+            "buy": [{"ticker": "0001.HK", "knife_risk": False}],
+            "watch": [{"ticker": "9992.HK", "knife_risk": True,   # deep 3M loser,
+                       "knife_demoted": True, "edge_z": 0.9}],    # fine edge
+            "laggards": [
+                {"ticker": "3690.HK", "knife_risk": False,        # Meituan-shaped
+                 "edge_z": -1.4, "alpha": 1.05},
+                {"ticker": "0884.HK", "knife_risk": True,         # weak on both
+                 "edge_z": -2.12, "alpha": -2.38},
+            ],
+        }
+        knives = _build_knife_by_ticker(standouts)
+        assert knives.get("3690.HK") is not True, (
+            "a laggard with strong 3-month momentum is NOT a falling knife")
+        assert knives.get("9992.HK") is True, (
+            "a deep 3M loser is a knife even though it never touched the laggards lane")
+        assert knives.get("0884.HK") is True
+        assert knives.get("0001.HK") is not True
+
+    def test_laggards_membership_alone_never_marks_a_knife(self):
+        """MUTATION guard: the old rule would mark every laggard."""
+        from scripts.build_hk_pick_lab import _build_knife_by_ticker
+
+        standouts = {"laggards": [{"ticker": "3690.HK"}, {"ticker": "0019.HK"}]}
+        assert _build_knife_by_ticker(standouts) == {}, (
+            "an artifact with no knife stamp yields UNKNOWN, never 'all laggards'")
+
+    def test_the_demote_flag_stands_in_for_a_pre_stamp_artifact(self):
+        from scripts.build_hk_pick_lab import _build_knife_by_ticker
+
+        standouts = {"watch": [{"ticker": "1810.HK", "knife_demoted": True}]}
+        assert _build_knife_by_ticker(standouts) == {"1810.HK": True}
+
     def test_build_cbbc_by_ticker(self):
         """_build_cbbc_by_ticker extracts leverage_state per ticker, skipping index entries."""
         from scripts.build_hk_pick_lab import _build_cbbc_by_ticker
@@ -871,16 +920,21 @@ class TestEnrichmentHelpers:
         assert result["700.HK"]["sfc_short_pressure_q"] == 2
 
     def test_build_knife_by_ticker(self):
-        """_build_knife_by_ticker marks laggards as knife_risk=True."""
+        """_build_knife_by_ticker marks the STAMPED deep-3M-loser class.
+
+        Was "marks laggards as knife_risk=True" — the lane read this book replaced
+        on 2026-08-03 (see the population test above). The stamp is the criterion
+        now, and it can sit on any cohort the board emits.
+        """
         from scripts.build_hk_pick_lab import _build_knife_by_ticker
 
         standouts = {
             "laggards": [
-                {"ticker": "1111.HK"},
-                {"ticker": "2222.HK"},
+                {"ticker": "1111.HK", "knife_risk": True},
+                {"ticker": "2222.HK", "knife_risk": True},
             ],
             "buy": [
-                {"ticker": "3333.HK"},  # NOT a knife
+                {"ticker": "3333.HK", "knife_risk": False},  # NOT a knife
             ],
         }
         result = _build_knife_by_ticker(standouts)
