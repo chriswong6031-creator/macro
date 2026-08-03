@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T15:36:06.795829+00:00",
-  "count": 672,
+  "generated_at": "2026-08-03T15:51:08.297452+00:00",
+  "count": 673,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -228,6 +228,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9ocok7dgl5z-dfa88d",
+      "title": "South Korea Stronger than Expected July Exports on Further Tech Gains",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:24:37Z",
+      "summary_points": [
+        "**Semiconductor Export Surge**: Semiconductor exports rose 5.5% mom sa, offsetting non-tech declines (6.8% drop), driving 62.8% yoy export growth vs.",
+        "forecasts (60.4%/60.6%).",
+        "**Trade Surplus Narrowing**: Surplus fell to $30.3bn (from $36.1bn) due to 6.8% non-tech export drop (petroleum down 8.5%) despite semiconductor gains.",
+        "**Geopolitical Export Shifts**: 70% of headline export losses linked to US/ASEAN (down 8.6%/9.6%), while EU/China exports rose 17.4%/3.7%—signaling supply chain realignment risks.",
+        "**Import Vulnerability**: Year-on-year import growth (26.5% yoy) below forecasts, with energy imports up 1.9%—indicating near-term trade balance pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
