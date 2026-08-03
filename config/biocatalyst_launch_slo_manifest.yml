@@ -1,13 +1,13 @@
 contract_id: biocatalyst_launch_slo_manifest.v1
 schema_version: 1.0.0
-manifest_id: biocatalyst_launch_slo_eaafe8653a655683633b44e0
+manifest_id: biocatalyst_launch_slo_097bc893fbae64257cd7687e
 state: pre_soak_unarmed
-effective_at: "2026-08-03T18:38:36Z"
-supersedes_manifest_id: biocatalyst_launch_slo_34e8a73de5007847681d98c2
-supersedes_manifest_content_sha256: 34e8a73de5007847681d98c25026220458661ef2ac0eefc4d6dc1e9847fbce17
+effective_at: "2026-08-03T20:39:20Z"
+supersedes_manifest_id: biocatalyst_launch_slo_eaafe8653a655683633b44e0
+supersedes_manifest_content_sha256: eaafe8653a655683633b44e0a832f881276969cc4cd99a76466a990b61c0b504
 owner: biocatalyst
 source_registry_ref: config/biocatalyst_sources.yml
-source_registry_sha256: c52440125cc4fef967b7d1baf6fc1add7969b953d7815178fdb71ac454000858
+source_registry_sha256: 6accf3fde4fa721783916c4d58cfe88a4a540f2be338f5a11ade817e7ff53a82
 
 sources:
   - source_id: clinicaltrials_gov_v2
@@ -110,4 +110,4 @@ authority:
   authorizes_prophet_behavior: false
 
 hash_scope: canonical_payload_excluding_manifest_id_and_content_sha256
-content_sha256: eaafe8653a655683633b44e0a832f881276969cc4cd99a76466a990b61c0b504
+content_sha256: 097bc893fbae64257cd7687e019eacf4ea69c336e9e0d0dd133f71edaa140950

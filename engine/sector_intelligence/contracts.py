@@ -63,6 +63,7 @@ _TRIAL_SCREEN_FACETS_READ_MODEL_CONTRACT_ID = "trial_screen_facets_read_model.v1
 _CTGOV_DISCOVERY_SCOPE_CONTRACT_ID = "ctgov_discovery_scope.v1"
 _CTGOV_DISCOVERY_RUN_CONTRACT_ID = "ctgov_discovery_run.v1"
 _CTGOV_DISCOVERY_COVERAGE_CONTRACT_ID = "ctgov_discovery_coverage_epoch.v1"
+_CTGOV_FIXED_COHORT_CONTRACT_ID = "ctgov_fixed_cohort.v1"
 _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
     "trial_endpoint_alignment_candidate.v1"
 )
@@ -3790,6 +3791,13 @@ def _contract_semantic_issues(
         if contract_id == _CTGOV_DISCOVERY_RUN_CONTRACT_ID:
             return discovery_run_contract_semantic_issues(document)
         return discovery_coverage_epoch_contract_semantic_issues(document)
+    if contract_id == _CTGOV_FIXED_COHORT_CONTRACT_ID:
+        # The fixed-cohort owner validates an inert, finite declaration only.
+        # Keep this import lazy so generic schema discovery opens no transport,
+        # worker, store, publication, or activation path.
+        from engine.biocatalyst.fixed_cohort import fixed_cohort_contract_semantic_issues
+
+        return fixed_cohort_contract_semantic_issues(document, repo_root=repo_root)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID:
         return _endpoint_alignment_candidate_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:
