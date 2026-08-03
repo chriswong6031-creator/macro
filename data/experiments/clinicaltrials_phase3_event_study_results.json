@@ -1,0 +1,64 @@
+{
+  "prereg": null,
+  "study_class": "EXPLORATORY",
+  "study_class_note": "No prereg exists for clinicaltrials/phase-3. Design chosen after seeing the data. Per house epistemics this study INFORMS a gate and cannot open one; it corroborates the pre-existing 2026-07-19 house null rather than standing alone.",
+  "run_date": "2026-08-03",
+  "corroborates": "data/special_situations/event_priors/clinicaltrials.json (2026-07-19, is_context_only=true, BH q=0.6614 reject=false)",
+  "date_semantics": "event_date = first_post = ClinicalTrials.gov StudyFirstPostDate = FIRST public availability (verified: collectors/clinicaltrials.py:63 studyFirstPostDateStruct)",
+  "event_counts": {
+    "uniq_nct": 1593,
+    "ticker_date_cells": 1461,
+    "usable_with_price": 1197,
+    "full_window": 1156,
+    "tickers_mapped": 19,
+    "tickers_with_price": 17,
+    "tickers_missing_price": ["NVS", "SNY"]
+  },
+  "primary_horizon": 20,
+  "exploratory_trials": {
+    "phase3_start_vs_XLV": {
+      "car_0_20": 0.00589,
+      "ticker_cluster_t": 2.302,
+      "n": 1156,
+      "car_0_0": -0.00009,
+      "car_0_0_t": -0.169,
+      "placebo_mean": 0.00413,
+      "placebo_ci90": [0.00084, 0.00734],
+      "empirical_p_vs_placebo": 0.186,
+      "verdict": "NULL — placebo-explained"
+    },
+    "phase3_start_vs_SPY": {
+      "car_0_20": 0.00065,
+      "ticker_cluster_t": 0.28,
+      "n": 1156,
+      "car_0_0": -0.00031,
+      "car_0_0_t": -0.803,
+      "placebo_mean": -0.0011,
+      "empirical_p_vs_placebo": 0.194,
+      "verdict": "NULL"
+    },
+    "calendar_time_XLV_hold20": {"ann_abnormal_pct": 5.839, "newey_west_t": 0.86, "newey_west_p": 0.39, "n_days": 3681},
+    "calendar_time_SPY_hold20": {"ann_abnormal_pct": 2.817, "newey_west_t": 0.374, "newey_west_p": 0.708, "n_days": 3681}
+  },
+  "lead_time_read": {
+    "day0_abnormal_return": -0.00009,
+    "pct_of_caar_accruing_pre_event": 36.0,
+    "verdict": "NO tradable lead-time. Zero day-0 response; 36% of CAAR is pre-event drift; [0,20] significance is benchmark-composition artifact (vanishes vs SPY, reproduced by random-date placebo)."
+  },
+  "known_biases": {
+    "collector_truncation": "pageSize=100, no pagination, sort=LastUpdatePostDate:desc (collectors/clinicaltrials.py:78-82). 7/19 tickers at >=100 NCTs. Pre-2019 events are look-ahead-selected on trial continuation. Events by year 2004-2012=32 vs 2019-2026=994.",
+    "cluster_count": "19 sponsor tickers = at most 19 independent clusters, all mega-cap pharma, heavily time-overlapping.",
+    "overlap": "Event windows overlap within ticker; naive iid t is invalid and is reported only to show inflation (e.g. +2.90 vs cluster +2.30 vs calendar-time +0.86)."
+  },
+  "halt_channel": {
+    "feasible": false,
+    "reason": "No halt-onset date. is_halt is CURRENT overallStatus at pull time; last_update is the last update of any kind (median 1608d after first_post). Already excluded in scripts/backtest_event_priors.py:411-427 (M5).",
+    "unblocked_by": "ClinicalTrials.gov Record History (BioCatalyst lane; ACTIVE_BUILD_MAP #4218)"
+  },
+  "verdicts": {
+    "phase3_start_scored_catalyst_leg": "KILL — construction closed (lead-time claim); DNR row added 2026-08-03. Feed keeps accruing display-tier.",
+    "phase3_start_display_context": "KEEP",
+    "halt_caution_flag": "BLOCKED — no halt-onset date"
+  },
+  "wiring_finding": "engine/altdata_models.py:135 CHANNEL_WEIGHTS['clinical_phase3_start']=0.35 SCORES into weighted_score (line 715 -> altdata.py:1115 board rank, altdata_emit.py:138 conviction, altdata_brain.py:340 ACCUMULATE) while ungauntleted. Peers activist_13d/special_situation were capped to 0.20 after negative gates. event_priors/*.json has ZERO consumers, so the 2026-07-19 null could not demote it. Cap commissioned 2026-08-03 (de-escalation PR)."
+}

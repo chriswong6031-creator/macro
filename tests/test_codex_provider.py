@@ -115,7 +115,10 @@ def test_create_runs_locked_text_only_codex_turn(monkeypatch):
     joined_args = " ".join(captured["extra_args"])
     assert "features.shell_tool=false" in joined_args
     assert 'web_search="disabled"' in joined_args
-    assert "agents.enabled=false" in joined_args
+    # `multi_agent.enabled`, never `agents.enabled` — codex-cli >= 0.144 parses
+    # `agents` as a map of agent-role structs and dies at config load on it.
+    assert "multi_agent.enabled=false" in joined_args
+    assert "agents.enabled" not in joined_args
 
 
 def test_client_pins_its_isolated_home_in_the_child_only(monkeypatch, tmp_path):

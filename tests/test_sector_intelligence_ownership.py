@@ -260,6 +260,10 @@ def test_f0_read_adapter_slots_are_exact_and_only_trial_facts_are_eligible() -> 
     assert trial["route_prefix"] == "/api/biocatalyst/v1"
     assert trial["point_in_time_scope"] == "committed_current_public_generation"
     assert "no_model_or_signal_authority" in trial["limitations"]
+    assert {
+        "trial_protocol_projection.v1",
+        "trial_peer_set.v1",
+    } <= set(trial["output_contracts"])
     assert set(trial["output_contracts"]) <= set(ContractRegistry(ROOT).contract_ids)
 
     # This is the sole eligible adapter. Import only its deliberately light

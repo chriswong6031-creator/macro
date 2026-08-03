@@ -12,6 +12,7 @@
       "routes": [
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/prospective-changes",
@@ -20,6 +21,8 @@
       "input_identity": "source_native_nct_id",
       "output_contracts": [
         "trial_snapshot.v1",
+        "trial_protocol_projection.v1",
+        "trial_peer_set.v1",
         "trial_history_read_model.v1",
         "trial_prospective_change_read_model.v1"
       ],

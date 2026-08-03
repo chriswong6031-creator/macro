@@ -498,6 +498,64 @@ def test_originate_plans_passes_validate_trade_plan(tmp_path):
         assert errs == [], f"Plan {plan['id']} failed validation: {errs}"
 
 
+def test_exact_earnings_evidence_only_annotates_after_prophet_selection(tmp_path):
+    """Evidence presence cannot change candidate identity, order, or plan geometry."""
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(_make_standouts(
+        gate_go=False,
+        buys=[
+            _make_buy("MSFT", score=80, act_level=3, spot=420.0, hold_invalidation=395.0),
+            _make_buy("AAPL", score=70, act_level=3, spot=150.0, hold_invalidation=141.0),
+        ],
+    )))
+    with patch("engine.prophet_bridge._load_earnings_evidence_context", return_value={}):
+        baseline = originate_plans(standouts_path, "2026-07-02", set(), None)
+    evidence = {
+        "AAPL": {
+            "available": True,
+            "authority": "context_only",
+            "event": {"ticker": "AAPL", "date": "2026-06-30", "period": "Q2 FY2026"},
+            "categories": ["guidance", "demand"],
+            "facts": [{"claim_id": "claim_abc", "quote": {"text": "Demand remains strong."}}],
+            "receipts": {"context_id": "earnctx_test", "source_sha256": "a" * 64},
+            "links": {"record": "/stocks/earnings/aapl-test.html"},
+            "permissions": {
+                "class": "context_only", "may_add_candidate": False, "may_rank": False,
+                "may_size": False, "may_gate": False, "may_escalate": False,
+                "prophet_authority": False,
+            },
+        }
+    }
+    with patch("engine.prophet_bridge._load_earnings_evidence_context", return_value=evidence):
+        enriched = originate_plans(standouts_path, "2026-07-02", set(), None)
+
+    invariant = (
+        "id", "asset", "direction", "trigger", "entry", "invalidation", "targets",
+        "horizon_days", "min_hold_days", "tranche", "option_contract", "stage_tilt",
+        "_conviction_score", "_act_level", "_r_unit", "_gate_go",
+    )
+    assert [{key: row.get(key) for key in invariant} for row in enriched] == [
+        {key: row.get(key) for key in invariant} for row in baseline
+    ]
+    by_asset = {row["asset"]: row for row in enriched}
+    assert "earnings_evidence_context" not in by_asset["MSFT"]
+    annotation = by_asset["AAPL"]["earnings_evidence_context"]
+    assert annotation["authority"] == "context_only"
+    assert annotation["permissions"]["prophet_authority"] is False
+    assert "earnings_evidence_spine" in by_asset["AAPL"]["context_engines"]
+
+
+def test_prophet_passes_sole_asof_anchor_to_earnings_context_reader(tmp_path):
+    """A backfill may never annotate a plan from the reader's current latest packet."""
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(_make_standouts()))
+    with patch(
+        "engine.prophet_bridge._load_earnings_evidence_context", return_value={},
+    ) as loader:
+        originate_plans(standouts_path, "2026-07-02", set(), None)
+    assert loader.call_args.kwargs["asof"] == "2026-07-02"
+
+
 # ---------------------------------------------------------------------------
 # 22. PIT (no future price rows used)
 # ---------------------------------------------------------------------------

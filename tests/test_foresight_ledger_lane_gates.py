@@ -19,6 +19,14 @@ Contract pinned here (mirrors tests/test_build_leader_radar.py's HOUSE-U5 gate):
 3. The RENDER_NO_DRIP sentinel and the analyst ledger-replay loader behave as
    the express lanes assume.
 
+2026-08-02 sweep — the same contract now pins six more forward-ledger writers that
+shipped ungated: the US + China sector-central graders, vol_shock_scorecard,
+froth_fragility, event_risk, and regime_snap_veto. One exception is deliberate: the
+China grader gates on asia_advance_enabled() (CN_LANE=asia), because its sole
+advancing lane is asia-close.yml band 2, which sets no COLLECT_LANE — a nightly gate
+there would be permanently closed. froth_fragility._parab_history is gated on the
+PERSIST half only (legitimate off-lane read intent), so it is tested separately.
+
 Hermetic: all writes go to tmp_path; no repo data/ or site/ artifact is touched
 (pytest-writes-live-artifacts trap).
 """
@@ -48,29 +56,60 @@ APPENDERS = [
     ("engine.foresight_divergence", "_append_divergence_ledger", ([{"theme": "t"}],)),
     ("engine.foresight_shadow", "compute_shadow_stages", (None, None, None, None)),
     ("engine.foresight_shadow", "compute_heat_shadow", (None, None)),
+    # 2026-08-02 sweep. Every arg tuple below is REACHING: ungated, execution gets to
+    # config.data_dir(), so deleting a gate fails its case rather than passing vacuously.
+    ("engine.sector_central_grader", "append_central_log",
+     ({"as_of": "2026-08-02", "sectors": [], "baskets": [{"id": "b-x", "kind": "basket"}]},)),
+    ("engine.china_sector_central_grader", "append_central_log",
+     ({"as_of": "2026-08-02", "sectors": [], "baskets": [{"id": "b-x", "kind": "basket"}]},)),
+    ("engine.vol_shock_scorecard", "append_log",
+     ({"score": 50, "asof": "2026-08-02", "band": "elevated"},)),
+    ("engine.vol_shock_scorecard", "resolve", ({"2026-08-02": 100.0},)),
+    ("engine.vol_shock_scorecard", "resolve_from_store", ()),
+    ("engine.froth_fragility", "append_log", ({"asof": "2026-08-02", "headline": "x"},)),
+    ("engine.froth_fragility", "resolve", ({"2026-08-02": 100.0},)),
+    ("engine.froth_fragility", "resolve_from_store", ()),
+    ("engine.event_risk", "append_log",
+     ({"show": True, "days_to": 0, "asof": "2026-08-02", "type": "CPI"},)),
+    ("engine.event_risk", "resolve", ({"2026-08-02": 100.0},)),
+    ("engine.regime_snap_veto", "_append_log", ({}, {})),
 ]
 
 _IDS = [f"{m.rsplit('.', 1)[1]}.{f}" for m, f, _ in APPENDERS]
+
+# The probe must NOT be an Exception: most of the pinned writers are fail-soft
+# (`except Exception` bodies), so an AssertionError raised inside them is SWALLOWED
+# and the off-lane test passes vacuously on ungated code. A BaseException travels
+# through those wrappers and makes the breach visible. Strictly stronger for the
+# original 12 entries too — gated first, they never reach the probe.
+class _LaneBreach(BaseException):
+    pass
 
 
 def _off_lane(monkeypatch):
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     monkeypatch.delenv("US_LANE", raising=False)
+    monkeypatch.delenv("CN_LANE", raising=False)
+
+
+def _probe(monkeypatch, label: str):
+    """Patch config.data_dir() to a tripwire — any filesystem intent surfaces."""
+    import lib.config as cfg
+
+    def _boom(*a, **k):  # noqa: ANN002, ANN003
+        raise _LaneBreach(
+            f"{label} reached config.data_dir() off-lane — "
+            f"the ledger-advance gate must be the first statement"
+        )
+
+    monkeypatch.setattr(cfg, "data_dir", _boom)
 
 
 @pytest.mark.parametrize("mod_name,fn_name,args", APPENDERS, ids=_IDS)
 def test_appender_short_circuits_off_lane(monkeypatch, mod_name, fn_name, args):
     """Off-lane, the gate must fire before ANY filesystem intent."""
     _off_lane(monkeypatch)
-    import lib.config as cfg
-
-    def _boom(*a, **k):  # noqa: ANN002, ANN003
-        raise AssertionError(
-            f"{mod_name}.{fn_name} reached config.data_dir() with COLLECT_LANE unset — "
-            f"the nightly-advance gate must be the first statement"
-        )
-
-    monkeypatch.setattr(cfg, "data_dir", _boom)
+    _probe(monkeypatch, f"{mod_name}.{fn_name}")
     mod = importlib.import_module(mod_name)
     getattr(mod, fn_name)(*args)  # must return silently (None or 0), no raise
 
@@ -90,6 +129,133 @@ def test_gate_opens_on_nightly_lane(monkeypatch, tmp_path):
 
     foresight_health._append_health_log({"overall": "OK"})
     assert (tmp_path / "foresight" / "health_log.jsonl").exists()
+
+
+# --------------------------------------------------------------------------- #
+# Cross-lane asymmetry — the US-nightly and asia-close families never cross-arm.
+# --------------------------------------------------------------------------- #
+_CN_GRADER = "engine.china_sector_central_grader"
+_CENTRAL_DATA = {"as_of": "2026-08-02", "sectors": [],
+                 "baskets": [{"id": "b-x", "kind": "basket"}]}
+_NIGHTLY_APPENDERS = [e for e in APPENDERS if e[0] != _CN_GRADER]
+_NIGHTLY_IDS = [f"{m.rsplit('.', 1)[1]}.{f}" for m, f, _ in _NIGHTLY_APPENDERS]
+
+
+def test_china_grader_refuses_on_us_nightly_lane(monkeypatch):
+    """COLLECT_LANE=nightly must NOT open the asia gate."""
+    _off_lane(monkeypatch)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _probe(monkeypatch, f"{_CN_GRADER}.append_central_log")
+    from engine import china_sector_central_grader as ccg
+
+    assert ccg.append_central_log(_CENTRAL_DATA) == 0
+
+
+@pytest.mark.parametrize("mod_name,fn_name,args", _NIGHTLY_APPENDERS, ids=_NIGHTLY_IDS)
+def test_nightly_appender_refuses_on_asia_lane(monkeypatch, mod_name, fn_name, args):
+    """CN_LANE=asia must NOT open any nightly gate."""
+    _off_lane(monkeypatch)
+    monkeypatch.setenv("CN_LANE", "asia")
+    _probe(monkeypatch, f"{mod_name}.{fn_name}")
+    mod = importlib.import_module(mod_name)
+    getattr(mod, fn_name)(*args)
+
+
+# --------------------------------------------------------------------------- #
+# On-lane coverage for the 2026-08-02 sweep — a gate that is always closed is the
+# other half of the defect, and silently stops the nightly's forward accrual.
+# --------------------------------------------------------------------------- #
+def test_sector_central_grader_appends_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import sector_central_grader as scg
+
+    rec = {"id": "b-x", "kind": "basket", "name": "X",
+           "conviction": {"score": 70, "label_en": "Accumulate", "dir": "up",
+                          "confluence": {"agree": 2}},
+           "forward": {"trend_pass": True, "ret_12m": 0.1},
+           "components": {"gate_factor": 0.6}}
+    assert scg.append_central_log({**_CENTRAL_DATA, "baskets": [rec]}) == 1
+    assert (tmp_path / "sector_central" / "calls.parquet").exists()
+
+
+def test_china_sector_central_grader_appends_on_asia_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import china_sector_central_grader as ccg
+
+    rec = {"id": "b-x", "kind": "basket", "basket_id": "x", "name": "X",
+           "conviction": {"score": 70, "label_en": "Accumulate", "dir": "up",
+                          "confluence": {"agree": 2}},
+           "forward": {"cond_rate": 0.6, "lift": 0.1},
+           "components": {"gate_factor": 0.6}}
+    assert ccg.append_central_log({**_CENTRAL_DATA, "baskets": [rec]}) == 1
+    assert (tmp_path / "china_sector_central" / "calls.parquet").exists()
+
+
+def test_forward_log_appenders_open_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import event_risk, froth_fragility, vol_shock_scorecard
+
+    assert vol_shock_scorecard.append_log(
+        {"score": 50, "asof": "2026-08-02", "band": "elevated"}, {},
+        path=tmp_path / "vol_shock.jsonl") is True
+    assert froth_fragility.append_log(
+        {"asof": "2026-08-02", "headline": 72.0}, {},
+        path=tmp_path / "froth.jsonl") is True
+    assert event_risk.append_log(
+        {"show": True, "days_to": 0, "asof": "2026-08-02", "type": "CPI"},
+        path=tmp_path / "event.jsonl") is True
+
+
+def test_regime_snap_veto_log_is_once_per_utc_date(monkeypatch, tmp_path):
+    """Keep-FIRST per UTC date: build_site runs on every render lane, and before this
+    gate one firing day accrued a row per render."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import regime_snap_veto as veto
+
+    bundle = {"snap": {"status": "firing"}, "recent_headlines": []}
+    veto._append_log({"generated_at": "2026-08-02T01:05:00+00:00",
+                      "lean": "durable", "confidence": "high"}, bundle)
+    veto._append_log({"generated_at": "2026-08-02T19:30:00+00:00",
+                      "lean": "fragile", "confidence": "low"}, bundle)
+
+    lines = [x for x in (tmp_path / "regime_snap" / "veto_log.jsonl")
+             .read_text().splitlines() if x.strip()]
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert row["date"] == "2026-08-02"
+    assert row["lean"] == "durable"          # keep-FIRST, not last-writer-wins
+
+
+def test_parab_history_persists_only_on_nightly_lane(monkeypatch, tmp_path):
+    """_parab_history has legitimate off-lane READ intent — the returned series must be
+    identical in both lanes so an off-lane snapshot renders the same — so only its
+    PERSIST half is gated, and it cannot join the gate-first APPENDERS enumeration."""
+    import pandas as pd
+
+    from engine import froth_fragility as ff
+
+    p = tmp_path / "parab_history.parquet"
+    monkeypatch.setattr(ff, "_parab_path", lambda: p)
+    monkeypatch.setattr(ff, "_backcompute_parab_history",
+                        lambda *a, **k: pd.Series(dtype=float))
+
+    _off_lane(monkeypatch)
+    off = ff._parab_history(pd.DataFrame(), None, "2026-08-02", 42.0)
+    assert float(off.loc[pd.Timestamp("2026-08-02")]) == 42.0
+    assert not p.exists()
+
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    on = ff._parab_history(pd.DataFrame(), None, "2026-08-02", 42.0)
+    assert float(on.loc[pd.Timestamp("2026-08-02")]) == 42.0
+    assert p.exists()
 
 
 def test_nightly_advance_enabled_matrix(monkeypatch):

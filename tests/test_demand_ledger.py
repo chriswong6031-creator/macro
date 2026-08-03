@@ -103,3 +103,43 @@ def test_score_hit_when_subject_outperforms(tmp_path):
     assert tr["overall"]["n"] == 1 and tr["overall"]["hits"] == 1   # +15% rel → hit
     scored = [json.loads(x) for x in (d / "scored.jsonl").read_text().splitlines()]
     assert scored[0]["outcome"] == "hit" and scored[0]["realized"] > 0.1
+
+
+# --------------------------------------------------------------------------- #
+# append-time id immutability (docs/DESK_LEDGER_ID_MIGRATION.md, claim-keyed
+# section). The id is {asof}-{chain}-{tkr} while the vintage also carries
+# fy + divergence, so a SAME-DAY re-run after a divergence flip passes the
+# vintage dedupe with the SAME id — without the gate the flipped predicate
+# would shadow the logged row under the scorers' last-wins dedupe.
+# --------------------------------------------------------------------------- #
+def test_emit_refuses_same_day_divergence_flip_under_live_id(tmp_path, monkeypatch, capsys):
+    d = tmp_path / "data" / "demand_chain"
+    d.mkdir(parents=True)
+    first = dl._thesis_for("NVDA", _read("NVDA", ahead=True), "2026-06-19", 100.0, 750.0)
+    (d / "theses.jsonl").write_text(json.dumps(first) + "\n")
+    flipped = dl._thesis_for("NVDA", _read("NVDA", ahead=False), "2026-06-19", 101.0, 751.0)
+    assert flipped["id"] == first["id"] and flipped["vintage"] != first["vintage"]
+    monkeypatch.setattr(dl, "build_theses", lambda root=None, today=None: [flipped])
+    fresh = dl.emit(root=tmp_path, today=date(2026, 6, 19))
+    assert fresh == []                                   # refused, not silently shadowed
+    lines = (d / "theses.jsonl").read_text().strip().splitlines()
+    assert len(lines) == 1                               # ledger row count unchanged
+    row = json.loads(lines[0])                           # ...and the row is the ORIGINAL
+    assert row["lean"] == "outperform"
+    assert row["falsifier"]["check"]["op"] == "<"
+    # rejection is LOUD: a ::warning annotation at line start (the GH-annotation law)
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning") for line in out.splitlines())
+
+
+def test_emit_next_day_flip_logs_under_new_id(tmp_path, monkeypatch):
+    d = tmp_path / "data" / "demand_chain"
+    d.mkdir(parents=True)
+    first = dl._thesis_for("NVDA", _read("NVDA", ahead=True), "2026-06-19", 100.0, 750.0)
+    (d / "theses.jsonl").write_text(json.dumps(first) + "\n")
+    flipped = dl._thesis_for("NVDA", _read("NVDA", ahead=False), "2026-06-22", 99.0, 749.0)
+    monkeypatch.setattr(dl, "build_theses", lambda root=None, today=None: [flipped])
+    fresh = dl.emit(root=tmp_path, today=date(2026, 6, 22))
+    assert [t["id"] for t in fresh] == ["2026-06-22-ai_datacenter-NVDA"]
+    lines = (d / "theses.jsonl").read_text().strip().splitlines()
+    assert len(lines) == 2                               # both predicates live, disjoint ids

@@ -241,6 +241,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_stage_analysis",
     # Verified public R2 earnings/event context reader (no local fallback)
     "read_company_intelligence",
+    # Exact receipt-bound transcript evidence (member context plane; local, fail-closed)
+    "read_earnings_evidence",
 })
 
 # Thematic Intelligence trigger terms (TIL W5 NW citizenship).
@@ -2039,6 +2041,12 @@ def _tool_read_company_intelligence(root: Path, params: dict) -> dict:
     return read_company_intelligence(params)
 
 
+def _tool_read_earnings_evidence(root: Path, params: dict) -> dict:
+    """Read bounded exact transcript facts with line-level source receipts."""
+    from engine.neuralweb.earnings_context_reader import read_earnings_evidence  # noqa: PLC0415
+    return read_earnings_evidence(params, root=root)
+
+
 def _read_tool_schemas() -> list[dict]:
     """Return read-tool schemas (write tools excluded structurally).
 
@@ -2321,6 +2329,8 @@ def _dispatch_read_tool_raw(tool_name: str, tool_params: dict, root: Path) -> di
         return _tool_read_stage_analysis(root, tool_params)
     elif tool_name == "read_company_intelligence":
         return _tool_read_company_intelligence(root, tool_params)
+    elif tool_name == "read_earnings_evidence":
+        return _tool_read_earnings_evidence(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

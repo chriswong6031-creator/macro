@@ -40,6 +40,35 @@ meta:
 # ============================================================
 artifacts:
 
+  earnings-evidence-context-latest:
+    path: site/premiumdata/earnings/context/latest.json
+    format: json
+    producer: scripts/build_earnings_public_wire.py
+    known_extra_writers: []
+    owner_program: earnings-evidence-spine
+    cadence: intraday
+    storage: git
+    asof_field: knowledge_cutoff
+    freshness_sla_hours: 48
+    schema: earnings.context_manifest/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/earnings_context_reader.py
+      - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/brain_gateway.py
+    external_consumers:
+      - mastermind-x:terminal-company-intelligence
+    qual_ladder_ref: null
+    notes: >
+      Edge-protected receipt catalog for bounded per-ticker exact transcript
+      evidence. Every packet is context_only with explicit false add/rank/size/
+      gate/escalate/Prophet permissions. It may ground explanations and later
+      annotate already-selected plans, but it cannot originate or alter signals.
+
   fundamental-forensics-sec-source-snapshot:
     path: fundamental_forensics/sec-source/v1/latest.json
     format: json
@@ -16412,7 +16441,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    consumers:
+      - collectors/sec_capital_structure_companyfacts.py
+      - scripts/materialize_capital_structure_share_counts.py
     external_consumers: []
     notes: >
       Generation-named immutable manifest for byte-verified SEC Company Facts responses,
@@ -16437,7 +16468,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    consumers:
+      - collectors/sec_capital_structure_companyfacts.py
+      - scripts/materialize_capital_structure_share_counts.py
     external_consumers: []
     notes: >
       Generation-contained append-only bounded Company Facts queue outcomes. It records only current
@@ -16460,7 +16493,10 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/capital_structure/share_count_publication.py
+      - engine/capital_structure/share_count_retention.py
+      - scripts/materialize_capital_structure_share_counts.py
     external_consumers: []
     notes: >
       Tiny atomically replaced pointer to one immutable, exact-byte-authenticated
@@ -16484,12 +16520,125 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    consumers:
+      - collectors/sec_capital_structure_companyfacts.py
+      - scripts/materialize_capital_structure_share_counts.py
     external_consumers: []
     notes: >
       Immutable sequence-numbered Company Facts receipts. Each binds the filing-anchor,
       source-manifest, and coverage ordered prefixes plus exact generation-file bytes
       and its predecessor receipt reference. Only the current pointer may select one.
+
+  capital-structure-share-count-ledger:
+    path: capital_structure/share_counts/v2/generations/*/ledger.json
+    format: json
+    producer: scripts/materialize_capital_structure_share_counts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: materialized_at
+    freshness_sla_hours: 30
+    schema: capital_structure.share_count_ledger.v2
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/capital_structure/share_count_publication.py
+      - engine/capital_structure/share_count_retention.py
+      - scripts/materialize_capital_structure_share_counts.py
+    external_consumers: []
+    notes: >
+      PRE-PRODUCTION/default-off immutable R2 generation containing direct SEC
+      Company Facts share-count and public-float observations. Each source snapshot
+      is bound to the authenticated Company Facts manifest prefix and exact retained
+      bytes. Deployment alone is not coverage or freshness. It does not choose a
+      current share basis, estimate fully diluted supply, calculate capacity, score
+      financing risk, or carry ranking, sizing, entry, trade, or Prophet authority.
+
+  capital-structure-share-count-current-pointer:
+    path: data/capital_structure/share_counts/v2/current_receipt.json
+    format: json
+    producer: scripts/materialize_capital_structure_share_counts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: gitignored-local
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: capital_structure.share_count_current_pointer/v2
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/capital_structure/share_count_publication.py
+      - scripts/materialize_capital_structure_share_counts.py
+    external_consumers: []
+    notes: >
+      PRE-PRODUCTION/default-off runner-local recovery cache for one immutable signed
+      materialization receipt. It is not a selector or history authority. Consumers
+      must authenticate the external head and exact selected receipt/generation bytes;
+      a surviving local high-water additionally requires a logarithmic ancestry proof.
+      Absence or mismatch is unavailable, never zero outstanding shares.
+
+  capital-structure-share-count-materialization-receipts:
+    path: capital_structure/share_counts/v2/receipts/*.json
+    format: json
+    producer: scripts/materialize_capital_structure_share_counts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: capital_structure.share_count_materialization_receipt/v2
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/capital_structure/share_count_publication.py
+      - engine/capital_structure/share_count_retention.py
+      - scripts/materialize_capital_structure_share_counts.py
+      - scripts/retain_capital_structure_share_counts.py
+    external_consumers: []
+    notes: >
+      PRE-PRODUCTION/default-off immutable authenticated share-count publication
+      receipts. Each binds its exact Company Facts input prefix, output ledger bytes,
+      inner ledger head, full predecessor reference, binary-lifting ancestry, and
+      all-false decision authority. Receipts remain retained when old full ledger
+      generations are safely reclaimed. Deployment alone is not coverage or freshness.
+
+  capital-structure-share-count-external-head:
+    path: capital_structure/share_counts/v2/current_head.json
+    format: json
+    producer: scripts/materialize_capital_structure_share_counts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: capital_structure.share_count_head_witness/v2
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/capital_structure/share_count_publication.py
+      - engine/capital_structure/share_count_retention.py
+      - scripts/materialize_capital_structure_share_counts.py
+      - scripts/retain_capital_structure_share_counts.py
+    external_consumers: []
+    notes: >
+      PRE-PRODUCTION/default-off mutable HMAC-authenticated compare-and-swap selector
+      for exactly one immutable receipt and ledger generation. A clean runner validates
+      the selected state but cannot detect credential-level restoration of an older
+      otherwise valid head; a separate monotonic witness would be required for global
+      rollback detection. It grants no fact, denominator, risk, rank, sizing, entry,
+      trade, or Prophet authority, and deployment alone is not coverage or freshness.
 
   capital-structure-document-term-observations:
     path: data/capital_structure/document_term_observations.parquet

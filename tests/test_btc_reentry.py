@@ -355,8 +355,13 @@ def test_build_status_pre_window_mvrv_owner_alert() -> None:
     assert st["pre_window_mvrv_fire"] == "2026-08-01"
 
 
-def test_dat_staleness_flag(tmp_path) -> None:
+def test_dat_staleness_flag(tmp_path, monkeypatch) -> None:
     from engine import btc_dat
+    # #4106 retired the live chip (vector.btc_dat.enabled: false until a
+    # maintained source is commissioned); force-enable so this exercises the
+    # staleness logic, not the flag — test_crypto_wave3 pins the flag itself.
+    monkeypatch.setattr(btc_dat.config, "load",
+                        lambda: {"vector": {"btc_dat": {"enabled": True}}})
     old = {"asof": (pd.Timestamp.now() - pd.Timedelta(days=30)).strftime("%Y-%m-%d"),
            "btc_held": 226500, "shares_out": 263000000, "avg_cost_usd": 36798.0,
            "price_usd": 59000.0}
@@ -483,8 +488,12 @@ def test_replay_2014_uses_legacy_release(real_replay) -> None:
 def test_2026_dry_run_arms_correctly(real_replay) -> None:
     res, vcfg = real_replay
     last = res.index[-1]
-    assert pd.Timestamp("2026-07-01") <= last < pd.Timestamp("2026-10-01"), \
-        "dry-run assertion is written for the pre-window period"
+    if not (pd.Timestamp("2026-07-01") <= last < pd.Timestamp("2026-10-01")):
+        # The signals store advances daily; once it enters the 2026 window the
+        # arming preconditions below no longer hold. The 2018/2022 replays
+        # above stay the acceptance gate for the spine itself.
+        pytest.skip("dry-run arming is written for the pre-window period; "
+                    f"store now ends {last.date()}")
     assert res.loc[last, "override_release_frac"] == 0.0
     assert res.loc[last, "override_active"] == 1
     assert (res.loc["2026-01-01":last, "reentry_trigger"] == "").all()

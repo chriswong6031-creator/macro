@@ -270,10 +270,12 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us",
             "timeline": basket_history.change_timeline(bid, region=region),
             "as_of": ti.get("as_of") or b.get("created"),
             "market_concentration": ti.get("market_concentration") or {},
-            # US hub merged into Sector Intelligence (sector_central.html, 2026-08);
-            # intl regions keep their Theme Rotation Desk hubs + label.
+            # US hub merged into Sector Intelligence (sector_central.html, 2026-08) and the
+            # China hub into China Sector Intelligence (sector_central_china.html, 2026-08);
+            # hk/canada/intl keep their Theme Rotation Desk hubs + label.
             "stock_base": stock_base,
             "back": ("../sector_central.html#actnow-section" if region == "us"
+                     else "../sector_central_china.html#si-explore" if region == "china"
                      else f"../baskets_{region}.html"),
             "region": region,                          # for the cross-market narrative chip lookup
             "bench_label": ti.get("bench_label", "S&P 500"),       # regional benchmark for the "vs <bench>" labels
@@ -283,8 +285,11 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us",
                            basket_name=b.get("name", bid), generated_utc=built,
                            back_href=detail["back"],
                            back_label_en=("Sector Intelligence" if region == "us"
+                                          else "China Sector Intelligence" if region == "china"
                                           else "Theme Rotation Desk"),
-                           back_label_zh=("行业智慧" if region == "us" else "主题轮动台"))
+                           back_label_zh=("行业智慧" if region == "us"
+                                          else "中国行业智慧" if region == "china"
+                                          else "主题轮动台"))
         write_page(out_dir / (bid + ".html"), html)
         n += 1
     log.info("[%s] wrote %d theme detail pages -> site/%s/", region, n, out_name)

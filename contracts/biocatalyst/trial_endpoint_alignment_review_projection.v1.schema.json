@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_endpoint_alignment_review_projection.v1.schema.json",
+  "title": "BioCatalyst Trial Endpoint Alignment Review Projection v1",
+  "description": "A complete, bounded, private projection for exactly one adjacent historical source-version pair. It is projection-only and cannot be a canonical review queue.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "projection_id", "nct_id", "diff_ref",
+    "before_source_snapshot_ref", "after_source_snapshot_ref", "before_source_version", "after_source_version",
+    "before_source_record_ref", "after_source_record_ref", "before_content_sha256", "after_content_sha256",
+    "available", "unavailable_reason", "persistence_state", "canonical_queue", "candidate_order",
+    "capacity", "candidate_count", "candidates", "semantic_method", "source_fact",
+    "protocol_change_asserted", "materiality_assessed", "authority", "generated_at", "hash_scope",
+    "projection_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_endpoint_alignment_review_projection.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "projection_id": {"type": "string", "pattern": "^trial_endpoint_alignment_review_projection_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "diff_ref": {"type": "string", "pattern": "^trial_history_diff_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "before_source_snapshot_ref": {"type": "string", "pattern": "^ctgov_history_snapshot_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "after_source_snapshot_ref": {"type": "string", "pattern": "^ctgov_history_snapshot_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "before_source_version": {"type": "integer", "minimum": 0},
+    "after_source_version": {"type": "integer", "minimum": 1},
+    "before_source_record_ref": {"type": "string", "pattern": "^src:ctgov-history:NCT[0-9]{8}:version:[0-9]+:sha256:[a-f0-9]{64}$"},
+    "after_source_record_ref": {"type": "string", "pattern": "^src:ctgov-history:NCT[0-9]{8}:version:[0-9]+:sha256:[a-f0-9]{64}$"},
+    "before_content_sha256": {"$ref": "#/$defs/sha256"},
+    "after_content_sha256": {"$ref": "#/$defs/sha256"},
+    "available": {"type": "boolean"},
+    "unavailable_reason": {"type": ["string", "null"], "enum": ["source_before_row_limit_exceeded", "source_after_row_limit_exceeded", "endpoint_text_limit_exceeded", "endpoint_byte_limit_exceeded", "endpoint_complexity_limit_exceeded", "endpoint_nesting_limit_exceeded", "residual_before_limit_exceeded", "residual_after_limit_exceeded", "comparison_limit_exceeded", "candidate_limit_exceeded", "candidate_byte_limit_exceeded", "projection_byte_limit_exceeded", null]},
+    "persistence_state": {"const": "projection_only"},
+    "canonical_queue": {"const": false},
+    "candidate_order": {"const": "source_locator_ascending"},
+    "capacity": {"$ref": "#/$defs/capacity"},
+    "candidate_count": {"type": "integer", "minimum": 0, "maximum": 64},
+    "candidates": {
+      "type": "array", "maxItems": 64,
+      "items": {"$ref": "https://mastermind-x.com/contracts/biocatalyst/trial_endpoint_alignment_candidate.v1.schema.json"}
+    },
+    "semantic_method": {"const": "deterministic_endpoint_alignment_candidate.v1"},
+    "source_fact": {"const": false},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "hash_scope": {"const": "canonical_payload_excluding_projection_payload_sha256"},
+    "projection_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"available": {"const": true}}},
+      "then": {"properties": {"unavailable_reason": {"const": null}}}
+    },
+    {
+      "if": {"properties": {"available": {"const": false}}},
+      "then": {"properties": {"unavailable_reason": {"type": "string"}, "candidate_count": {"const": 0}, "candidates": {"maxItems": 0}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "capacity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_residual_rows_per_side", "max_comparisons", "max_candidates", "max_candidate_bytes", "max_projection_bytes", "max_endpoint_text_bytes", "max_endpoint_bytes", "max_endpoint_nodes", "max_endpoint_nesting_depth", "max_source_outcome_rows_per_side", "source_before_count", "source_after_count", "residual_before_count", "residual_after_count", "comparison_count"],
+      "properties": {
+        "max_residual_rows_per_side": {"const": 64},
+        "max_comparisons": {"const": 4096},
+        "max_candidates": {"const": 64},
+        "max_candidate_bytes": {"const": 49152},
+        "max_projection_bytes": {"const": 524288},
+        "max_endpoint_text_bytes": {"const": 16384},
+        "max_endpoint_bytes": {"const": 24576},
+        "max_endpoint_nodes": {"const": 1024},
+        "max_endpoint_nesting_depth": {"const": 64},
+        "max_source_outcome_rows_per_side": {"const": 256},
+        "source_before_count": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "source_after_count": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "residual_before_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "residual_after_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "comparison_count": {"type": "integer", "minimum": 0, "maximum": 1000000000000}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "semantic_candidate"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A2_ATTEND"},
+        "allowed_uses": {"const": ["display", "context", "explain", "attend"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "raise_authority"]}
+      }
+    }
+  }
+}
