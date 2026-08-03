@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly Earnings Intelligence — 2026-07-27 — MastermindX</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Cross-call earnings intelligence built from exact, receipt-bound transcript evidence.">
+<link rel="canonical" href="https://www.mastermind-x.com/stocks/earnings/weekly/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="Weekly Earnings Intelligence — 2026-07-27">
+<meta property="og:description" content="Cross-call earnings intelligence built from exact, receipt-bound transcript evidence.">
+<meta property="og:url" content="https://www.mastermind-x.com/stocks/earnings/weekly/index.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Weekly Earnings Intelligence — 2026-07-27">
+<meta name="twitter:description" content="Cross-call earnings intelligence built from exact, receipt-bound transcript evidence.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png"><link rel="stylesheet" href="../../../theme.css?v=8d7800c8"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/index.html"},{"@type":"ListItem","position":2,"name":"Earnings call records","item":"https://www.mastermind-x.com/stocks/earnings/index.html"},{"@type":"ListItem","position":3,"name":"Weekly intelligence"}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Weekly Earnings Intelligence — 2026-07-27","description":"A deterministic cross-call brief built from exact, receipt-bound earnings transcript excerpts.","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.mastermind-x.com/stocks/earnings/weekly/index.html"},"datePublished":"2026-08-02","dateModified":"2026-08-02T00:08:49Z","author":{"@type":"Organization","name":"MastermindX"},"publisher":{"@type":"Organization","name":"MastermindX"},"isAccessibleForFree":true}</script>
+<link rel="stylesheet" href="../../../assets/css/55bc728a.css?v=55bc728a">
+<link rel="stylesheet" href="../../../assets/css/17c15c21.css?v=17c15c21"><link rel="stylesheet" href="../assets/earnings-wire.css?v=b0f10851">
+<link rel="preload" as="style" href="../../../product-nav-icons.css?v=093ad1ea">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="../feed.xml">
+</head>
+<body class="estate public-page earnings-wire earnings-weekly">
+
+<nav class="public-nav" aria-label="Main">
+  <div class="public-nav-in">
+    <a class="public-brand" href="../../../index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="public-nav-toggle" id="public-nav-toggle" type="button" aria-expanded="false"
+            aria-controls="public-primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="public-nav-links" id="public-primary-navigation">
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-platform-trigger" type="button" aria-expanded="false" aria-controls="public-platform-panel">
+          <span class="l-en">Platform</span><span class="l-zh">平台</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel" id="public-platform-panel" aria-labelledby="public-platform-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">CONNECTED RESEARCH DESK</span><span class="l-zh">互联研究工作台</span></span><strong><span class="l-en">Move from market state to the underlying evidence</span><span class="l-zh">从市场状态一路深入到底层证据</span></strong></div>
+            <a href="../../../products/index.html"><span class="l-en">Platform overview →</span><span class="l-zh">平台概览 →</span></a>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="../../../products/market-terminal.html"><i>01</i><span><strong><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></strong><small><span class="l-en">Browser charting, watchlists and stock research context.</span><span class="l-zh">浏览器图表、观察列表与股票研究背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../../products/mastermind-ai.html"><i>02</i><span><strong>Mastermind AI</strong><small><span class="l-en">A market research assistant grounded in the page and its sources.</span><span class="l-zh">结合当前页面与来源的市场研究助手。</span></small></span></a>
+            <a class="public-nav-card" href="../../../products/market-dashboards.html"><i>03</i><span><strong><span class="l-en">Market Dashboards</span><span class="l-zh">市场仪表盘</span></strong><small><span class="l-en">Macro, cycle, sector rotation and cross-asset context.</span><span class="l-zh">宏观、周期、行业轮动与跨资产背景。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-research-trigger" type="button" aria-expanded="false" aria-controls="public-research-panel">
+          <span class="l-en">Research</span><span class="l-zh">研究</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-research" id="public-research-panel" aria-labelledby="public-research-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">PUBLIC RESEARCH SURFACES</span><span class="l-zh">公开研究界面</span></span><strong><span class="l-en">From report excerpts to ticker-level dossiers</span><span class="l-zh">从报告节选到逐股档案</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid">
+            <a class="public-nav-card" href="https://www.mastermind-x.com/research_vault.html"><i>R</i><span><strong><span class="l-en">Institutional Research</span><span class="l-zh">机构研报</span></strong><small><span class="l-en">Preview the latest three report summaries; full research and PDFs are available with Pro.</span><span class="l-zh">预览最新三篇研报摘要；完整研报与 PDF 为 Pro 专享。</span></small></span></a>
+            <a class="public-nav-card" href="../../../stocks/index.html"><i>S</i><span><strong><span class="l-en">Stock Dossiers</span><span class="l-zh">股票档案</span></strong><small><span class="l-en">Ticker pages for technical, fundamental, ownership and options context.</span><span class="l-zh">按股票整理的技术面、基本面、持仓与期权背景。</span></small></span></a>
+            <a class="public-nav-card" href="../../../stocks/earnings/index.html"><i>E</i><span><strong><span class="l-en">Earnings Intelligence</span><span class="l-zh">财报情报</span></strong><small><span class="l-en">Receipt-bound call records that lead directly into the ticker dossier.</span><span class="l-zh">可追溯的电话会记录，并可直接进入个股档案。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-group">
+        <button class="public-nav-trigger" id="public-resources-trigger" type="button" aria-expanded="false" aria-controls="public-resources-panel">
+          <span class="l-en">Resources</span><span class="l-zh">资源</span> <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="public-nav-panel public-nav-panel-resources" id="public-resources-panel" aria-labelledby="public-resources-trigger" hidden>
+          <div class="public-nav-panel-head">
+            <div><span><span class="l-en">USEFUL BEFORE SIGNUP</span><span class="l-zh">无需账户即可使用</span></span><strong><span class="l-en">Start by solving one real problem</span><span class="l-zh">先解决一个真实问题</span></strong></div>
+          </div>
+          <div class="public-nav-card-grid two">
+            <a class="public-nav-card" href="../../../tools/index.html"><i>T</i><span><strong><span class="l-en">Free Tools</span><span class="l-zh">免费工具</span></strong><small><span class="l-en">Calculators for sizing, risk, returns and portfolios.</span><span class="l-zh">仓位、风险、回报与投资组合计算器。</span></small></span></a>
+            <a class="public-nav-card" href="../../../learn/index.html"><i>L</i><span><strong><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></strong><small><span class="l-en">Lessons on technicals, risk, options and filings.</span><span class="l-zh">技术分析、风险、期权与申报文件课程。</span></small></span></a>
+            <a class="public-nav-card" href="../../../blog/index.html"><i>B</i><span><strong><span class="l-en">Blog</span><span class="l-zh">博客</span></strong><small><span class="l-en">Plain-English articles on trading math and market mechanics.</span><span class="l-zh">关于交易数学与市场机制的朴素文章。</span></small></span></a>
+            <a class="public-nav-card" href="../../../support.html"><i>?</i><span><strong><span class="l-en">Support</span><span class="l-zh">支持</span></strong><small><span class="l-en">Help with account, product and access questions.</span><span class="l-zh">账户、产品与访问问题的帮助入口。</span></small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="public-nav-direct"><a href="../../../plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a></li>
+    </ul>
+    <div class="public-nav-right">
+      <a id="nav-login" class="public-nav-login" href="https://app.mastermind-x.com/terminal?signin=1"><span class="l-en">Log in</span><span class="l-zh">登录</span></a>
+      <a id="nav-cta" class="public-nav-cta" href="https://app.mastermind-x.com/terminal?signup=1"><span class="l-en">Start free</span><span class="l-zh">免费开始</span></a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker"><span class="l-en">Settings</span><span class="l-zh">设置</span></p>
+          <div class="gp-lang">
+            <span class="gp-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="../../../start.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t"><span class="l-en">Account</span><span class="l-zh">账户</span></p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d"><span class="l-en">Sign in to sync your watchlists, alerts and settings across devices.</span><span class="l-zh">登录以在所有设备同步自选、提醒与设置。</span></p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+                <button type="button" class="gp-abtn solid" id="gp-signup"><span class="l-en">Create account</span><span class="l-zh">创建账户</span></button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub"><span class="l-en">Manage account & sync ›</span><span class="l-zh">管理账户与同步 ›</span></span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout"><span class="l-en">Sign out</span><span class="l-zh">退出登录</span></button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+<article class="eww">
+  <header class="eww-hero">
+    <div class="ew-wrap">
+      <nav class="ewa-crumb" aria-label="Breadcrumb"><a href="../index.html"><span class="l-en">Earnings wire</span><span class="l-zh">财报情报线</span></a><span aria-hidden="true">/</span><a href="index.html"><span class="l-en">Weekly intelligence</span><span class="l-zh">每周情报</span></a><span aria-hidden="true">/</span><span aria-current="page">2026-07-27</span></nav>
+      <div class="eww-grid">
+        <div>
+          <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span><span class="l-en">Weekly earnings intelligence</span><span class="l-zh">每周财报情报</span></div>
+          <h1><span class="l-en">The week in management language.</span><span class="l-zh">管理层表述中的这一周。</span></h1>
+          <p><span class="l-en">A deterministic cross-call brief built from exact, receipt-bound transcript excerpts. Category movement is a count of admitted evidence—not sentiment, opportunity rank, or a generated market call.</span><span class="l-zh">基于精确、可追溯电话会摘录构建的确定性跨电话会简报。类别变化是准入证据的计数——不是情绪、机会排名或生成式市场判断。</span></p>
+        </div>
+        <aside class="eww-window"><span><span class="l-en">Evidence window</span><span class="l-zh">证据窗口</span></span><strong>2026-07-27 → 2026-08-02</strong><p><span class="l-en">Knowledge cutoff</span><span class="l-zh">知识截止</span> · 2026-08-02</p></aside>
+      </div>
+      <div class="eww-stats">
+        <span><b>205</b><span class="l-en"> call records</span><span class="l-zh"> 份电话会记录</span></span>
+        <span><b>205</b><span class="l-en"> tickers</span><span class="l-zh"> 个代码</span></span>
+        <span><b>2460</b><span class="l-en"> exact facts</span><span class="l-zh"> 条精确事实</span></span>
+        <span><b>4602</b><span class="l-en"> numeric receipts</span><span class="l-zh"> 个数值回执</span></span>
+        <span><b>0</b><span class="l-en"> model calls</span><span class="l-zh"> 次模型调用</span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="ew-wrap eww-body">
+    <main>
+      <section class="eww-section" aria-labelledby="category-pulse-title">
+        <div class="eww-section-head"><div><span><span class="l-en">Cross-call pulse</span><span class="l-zh">跨电话会脉冲</span></span><h2 id="category-pulse-title"><span class="l-en">What management discussed most.</span><span class="l-zh">管理层讨论最多的内容。</span></h2></div><p><span class="l-en">Counts use exact fact tags from admitted records. Week-over-week deltas compare each category’s share of all exact facts.</span><span class="l-zh">计数使用准入记录中的精确事实标签。周环比变化比较各类别在全部精确事实中的占比。</span></p></div>
+        <div class="eww-pulse-list">
+          <div class="eww-pulse-row">
+            <div><strong>q and a</strong><span>1846 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 184 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="75.0 percent of weekly facts"><i style="--share:75.04%"></i></div>
+            <div class="eww-delta up">+15.0 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>performance</strong><span>1034 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 205 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="42.0 percent of weekly facts"><i style="--share:42.03%"></i></div>
+            <div class="eww-delta up">+1.9 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>demand</strong><span>838 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 202 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="34.1 percent of weekly facts"><i style="--share:34.06%"></i></div>
+            <div class="eww-delta up">+4.9 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>guidance</strong><span>583 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 203 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="23.7 percent of weekly facts"><i style="--share:23.7%"></i></div>
+            <div class="eww-delta up">+0.1 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>margins</strong><span>513 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 170 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="20.9 percent of weekly facts"><i style="--share:20.85%"></i></div>
+            <div class="eww-delta up">+1.0 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>capital allocation</strong><span>501 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 178 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="20.4 percent of weekly facts"><i style="--share:20.37%"></i></div>
+            <div class="eww-delta down">-2.3 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>risks</strong><span>438 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 163 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="17.8 percent of weekly facts"><i style="--share:17.8%"></i></div>
+            <div class="eww-delta down">-1.4 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>segment changes</strong><span>381 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 149 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="15.5 percent of weekly facts"><i style="--share:15.49%"></i></div>
+            <div class="eww-delta up">+1.4 pp</div>
+          </div>
+          <div class="eww-pulse-row">
+            <div><strong>management commitments</strong><span>99 <span class="l-en">facts across</span><span class="l-zh">条事实，覆盖</span> 74 <span class="l-en">tickers</span><span class="l-zh">个代码</span></span></div>
+            <div class="eww-bar" aria-label="4.0 percent of weekly facts"><i style="--share:4.02%"></i></div>
+            <div class="eww-delta down">-0.8 pp</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="eww-section" aria-labelledby="notable-records-title">
+        <div class="eww-section-head"><div><span><span class="l-en">Evidence desk</span><span class="l-zh">证据台</span></span><h2 id="notable-records-title"><span class="l-en">Calls worth opening.</span><span class="l-zh">值得打开的电话会。</span></h2></div><p><span class="l-en">Editorial relevance favors evidence breadth and numeric density. It does not rank investment opportunity.</span><span class="l-zh">编辑相关性偏向证据广度和数值密度，不对投资机会进行排名。</span></p></div>
+        <div class="eww-records">
+          <article class="eww-record">
+            <div class="eww-record-top"><span>SNDL</span><time datetime="2026-07-28">2026-07-28</time></div>
+            <h3><a href="/stocks/earnings/sndl-2026q2-call-record.html">SNDL · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>demand</span><span>guidance</span></div>
+            <blockquote lang="en">“Net revenue declined 3.7% year-over-year to CAD 235.8 million, reflecting persistent demand softness and broader market headwinds.”</blockquote>
+            <div class="eww-record-foot"><span>Zach George</span><code>claim_8491bf2ae93f00e2ffcfc3af5d04135a</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>HURN</span><time datetime="2026-07-28">2026-07-28</time></div>
+            <h3><a href="/stocks/earnings/hurn-2026q2-call-record.html">HURON CONSULTING · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>demand</span><span>guidance</span><span>margins</span></div>
+            <blockquote lang="en">“In the second quarter of 2026, we saw an acceleration of our growth rate as the Education segment RBR grew 8% compared to the second quarter of 2025, driven by strong demand for our digital and managed services offerings.”</blockquote>
+            <div class="eww-record-foot"><span>Mark Hussey</span><code>claim_530cc03106bea743769005dcc9cfe139</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>WERN</span><time datetime="2026-07-28">2026-07-28</time></div>
+            <h3><a href="/stocks/earnings/wern-2026q2-call-record.html">Werner Enterprises · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>demand</span><span>guidance</span><span>margins</span></div>
+            <blockquote lang="en">“Bruce, just as a reminder, we&#39;ve talked about the $18 million of synergy target over 18 months, and that would equate to a 300 basis point margin expansion for FirstFleet, which would bridge the gap between the FirstFleet adjusted operating income margins compared to our organic Dedicated fleet.”</blockquote>
+            <div class="eww-record-foot"><span>Chris Wikoff</span><code>claim_928b5e44be0fbb9fdc5c858bbcdc5624</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>XYL</span><time datetime="2026-07-28">2026-07-28</time></div>
+            <h3><a href="/stocks/earnings/xyl-2026q2-call-record.html">Xylem Inc. · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>demand</span><span>guidance</span></div>
+            <blockquote lang="en">“Our strong first half performance, along with the benefits from share repurchases and higher margins, more than offset the revenue headwind from electric metering delays and gives us confidence to raise the EPS range from $5.35-$5.60 to $5.55-$5.70.”</blockquote>
+            <div class="eww-record-foot"><span>Bill Grogan</span><code>claim_b16208e915a903bda28ceccc88c9bd02</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>GNRC</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/gnrc-2026q2-call-record.html">Generac · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>guidance</span><span>margins</span><span>performance</span></div>
+            <blockquote lang="en">“Looking at our updated gross margin expectations for full year 2026, excluding the tariff recovery impact, we now expect gross margins to be near the low end of our previous guidance range of 38.5%-39.5%, given the higher sales mix of C&amp;I segment sales in our forecast.”</blockquote>
+            <div class="eww-record-foot"><span>York Ragen</span><code>claim_7993331aadc40dc6057f0a9724764ac7</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>HAYW</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/hayw-2026q2-call-record.html">Hayward Holdings, Inc. · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>guidance</span><span>management commitments</span></div>
+            <blockquote lang="en">“This outlook includes net interest expense of approximately $45 million, a normalized effective tax rate of around 24%, and increased CapEx of approximately $40 million as we continue to invest in upgrading our operational capabilities.”</blockquote>
+            <div class="eww-record-foot"><span>Eifion Jones</span><code>claim_2fad767654cbe4832948b693057ce770</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>AMT</span><time datetime="2026-07-28">2026-07-28</time></div>
+            <h3><a href="/stocks/earnings/amt-2026q2-call-record.html">American Tower · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>demand</span><span>guidance</span><span>performance</span></div>
+            <blockquote lang="en">“We are reiterating organic growth assumptions across all regions continue to expect organic tenant billings growth of approximately 1%, or approximately 4% when excluding DISH churn, and data center growth of approximately 15% year-over-year, which represents a significant acceleration versus our prior outlook of 13% growth.”</blockquote>
+            <div class="eww-record-foot"><span>Rod Smith</span><code>claim_88159547ea89669c73ebd2d51b471228</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>AON</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/aon-2026q2-call-record.html">Aon plc · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>guidance</span><span>margins</span></div>
+            <blockquote lang="en">“As a result, we are reaffirming our 2026 full year guidance, including mid-single digit or greater organic revenue growth, 70-80 basis points of margin expansion, strong adjusted earnings growth, and double-digit free cash flow growth.”</blockquote>
+            <div class="eww-record-foot"><span>Edmund Reese</span><code>claim_01b74f2f9eade8460e4adb5c43140d36</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>CSTM</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/cstm-2026q2-call-record.html">CONSTELLIUM SE · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>guidance</span><span>margins</span></div>
+            <blockquote lang="en">“We expect cash interest of approximately $125 million, in line with prior guidance, and cash taxes of approximately $105 million, up from prior guidance mainly due to increased profitability.”</blockquote>
+            <div class="eww-record-foot"><span>Jack Guo</span><code>claim_f818ebd73db375ee204f70bec05b7314</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>GEHC</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/gehc-2026q2-call-record.html">GE HealthCare · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>capital allocation</span><span>demand</span><span>guidance</span></div>
+            <blockquote lang="en">“You&#39;re leaving Pete, you&#39;re leaving your successor, and you&#39;re leaving us with the medium-term 2026, 2028 outlook goals and targets, the mid-single digit organic growth, high teens to 20% adjusted EBIT margin, high single digits to low double-digit EPS growth, 90% free cash flow conversion.”</blockquote>
+            <div class="eww-record-foot"><span>Rick Wise</span><code>claim_c546708226230306cda80d9e46a5230a</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>COUR</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/cour-2026q2-call-record.html">COURSERA · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>guidance</span><span>margins</span><span>performance</span></div>
+            <blockquote lang="en">“This year, with the combined impact of our structural gross margin expansion, cost discipline, and accelerated synergy realization, we are confident in increasing our full-year adjusted EBITDA margin target by another 100 basis points versus our June outlook to approximately 14%.”</blockquote>
+            <div class="eww-record-foot"><span>Greg Hart</span><code>claim_f40100fe378464bc1ed8fc0c836741df</code></div>
+          </article>
+          <article class="eww-record">
+            <div class="eww-record-top"><span>CR</span><time datetime="2026-07-29">2026-07-29</time></div>
+            <h3><a href="/stocks/earnings/cr-2026q2-call-record.html">Crane · Q2 FY2026 <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags"><span>demand</span><span>guidance</span><span>margins</span></div>
+            <blockquote lang="en">“Given our strong first half performance, record backlog levels, and continued confidence in both our core and acquired businesses, we are raising our full year adjusted EPS outlook by $0.20 at the midpoint to a range of $6.85-$7.05 per share.”</blockquote>
+            <div class="eww-record-foot"><span>Alex Alcala</span><code>claim_0fde2045c5bfd4ae06038e07b01cbe53</code></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <aside class="eww-side">
+      <section><span><span class="l-en">Archive</span><span class="l-zh">档案</span></span><h2><span class="l-en">Recent weeks</span><span class="l-zh">最近几周</span></h2><nav><a href="2026-07-27.html" aria-current="page"><span>2026-07-27</span><b>205 calls</b></a><a href="2026-07-20.html"><span>2026-07-20</span><b>231 calls</b></a></nav></section>
+      <section class="eww-honesty"><span><span class="l-en">Evidence boundary</span><span class="l-zh">证据边界</span></span><h2><span class="l-en">Useful, but not complete.</span><span class="l-zh">有用，但并不完整。</span></h2><p><span class="l-en">This weekly view covers admitted transcript records only. Releases, filings, slides, consensus, price reaction and non-admitted calls are not silently inferred.</span><span class="l-zh">本周视图仅覆盖准入电话会文本记录。新闻稿、申报文件、演示材料、一致预期、股价反应和未准入电话会不会被静默推断。</span></p><a href="../index.html"><span class="l-en">Browse every admitted record</span><span class="l-zh">浏览全部准入记录</span> →</a></section>
+    </aside>
+  </div>
+</article>
+</main>
+
+<footer class="public-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p><span class="l-en">Platform</span><span class="l-zh">平台</span></p>
+          <a href="../../../products/index.html"><span class="l-en">Platform overview</span><span class="l-zh">平台概览</span></a>
+          <a href="../../../products/market-terminal.html"><span class="l-en">Market Terminal</span><span class="l-zh">市场终端</span></a>
+          <a href="../../../products/mastermind-ai.html">Mastermind AI</a>
+          <a href="../../../products/market-dashboards.html"><span class="l-en">Market dashboards</span><span class="l-zh">市场仪表盘</span></a>
+          <a href="../../../plans.html"><span class="l-en">Plans &amp; pricing</span><span class="l-zh">方案与定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Research</span><span class="l-zh">研究</span></p>
+          <a href="../../../research/index.html"><span class="l-en">Institutional research</span><span class="l-zh">机构研报</span></a>
+          <a href="../../../stocks/index.html"><span class="l-en">Stock dossiers</span><span class="l-zh">股票档案</span></a>
+          <a href="../../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
+          <a href="../../../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+          <a href="../../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+          <a href="../../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+          <a href="../../../support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+          <a href="../../../about.html"><span class="l-en">About MastermindX</span><span class="l-zh">关于 MastermindX</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Legal</span><span class="l-zh">法律</span></p>
+          <a href="../../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a>
+          <a href="../../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a>
+          <a href="../../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="../../../privacy.html"><span class="l-en">Privacy</span><span class="l-zh">隐私政策</span></a> · <a href="../../../terms.html"><span class="l-en">Terms</span><span class="l-zh">服务条款</span></a> · <a href="../../../disclaimer.html"><span class="l-en">Disclaimer</span><span class="l-zh">免责声明</span></a></span>
+    </div>
+  </div>
+</footer>
+<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
+<script src="../../../supabase.js?v=8596965f" defer></script>
+<script src="../../../account.js?v=f888381f" defer></script>
+<script src="../../../mm_brain.js?v=b93132d7" defer></script>
+<script src="../../../theme.js?v=402a51a2" defer></script>
+<script>
+(function(){
+  var nav=document.querySelector('.public-nav');
+  if(nav){
+    var raf=false;
+    var update=function(){nav.classList.toggle('sc',window.scrollY>10);raf=false;};
+    window.addEventListener('scroll',function(){
+      if(!raf){raf=true;window.requestAnimationFrame(update);}
+    },{passive:true});
+    update();
+  }
+
+  var drawer=document.getElementById('public-primary-navigation');
+  var drawerBtn=document.getElementById('public-nav-toggle');
+  var triggers=Array.prototype.slice.call(document.querySelectorAll('.public-nav-trigger'));
+  var mq=window.matchMedia('(max-width:900px)');
+  var panelFor=function(trigger){return document.getElementById(trigger.getAttribute('aria-controls'));};
+  var closePanels=function(focus){
+    var focused=null;
+    triggers.forEach(function(trigger){
+      if(trigger.getAttribute('aria-expanded')==='true')focused=trigger;
+      trigger.setAttribute('aria-expanded','false');
+      var panel=panelFor(trigger);if(panel)panel.hidden=true;
+    });
+    if(focus&&focused)focused.focus();
+  };
+  var closeDrawer=function(focus){
+    if(!drawer||!drawerBtn)return;
+    drawer.classList.remove('open');
+    drawerBtn.setAttribute('aria-expanded','false');
+    drawerBtn.setAttribute('aria-label','Open navigation');
+    if(focus)drawerBtn.focus();
+  };
+  triggers.forEach(function(trigger){
+    trigger.addEventListener('click',function(e){
+      e.stopPropagation();
+      var wasOpen=trigger.getAttribute('aria-expanded')==='true';
+      closePanels(false);
+      if(!wasOpen){
+        trigger.setAttribute('aria-expanded','true');
+        var panel=panelFor(trigger);if(panel)panel.hidden=false;
+      }
+    });
+    trigger.addEventListener('keydown',function(e){
+      if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+      e.preventDefault();
+      closePanels(false);
+      trigger.setAttribute('aria-expanded','true');
+      var panel=panelFor(trigger);
+      if(!panel)return;
+      panel.hidden=false;
+      var links=panel.querySelectorAll('a[href]');
+      var target=e.key==='ArrowUp'?links[links.length-1]:links[0];
+      if(target)target.focus();
+    });
+    var group=trigger.closest('.public-nav-group');
+    if(group)group.addEventListener('focusout',function(e){
+      if(mq.matches||group.contains(e.relatedTarget))return;
+      closePanels(false);
+    });
+  });
+  if(drawer&&drawerBtn){
+    drawerBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var opening=drawerBtn.getAttribute('aria-expanded')!=='true';
+      if(opening){
+        drawer.classList.add('open');
+        drawerBtn.setAttribute('aria-expanded','true');
+        drawerBtn.setAttribute('aria-label','Close navigation');
+      }else{
+        closePanels(false);closeDrawer(false);
+      }
+    });
+    drawer.querySelectorAll('a[href]').forEach(function(link){
+      link.addEventListener('click',function(){closePanels(false);closeDrawer(false);});
+    });
+    var reset=function(){closePanels(false);closeDrawer(false);};
+    if(mq.addEventListener)mq.addEventListener('change',reset);else mq.addListener(reset);
+  }
+
+  var btn=document.getElementById('gear-btn');
+  var pop=document.getElementById('gear-pop');
+  document.addEventListener('pointerdown',function(e){
+    if(nav&&!nav.contains(e.target)){closePanels(false);closeDrawer(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    var open=triggers.some(function(trigger){return trigger.getAttribute('aria-expanded')==='true';});
+    if(open){e.preventDefault();closePanels(true);return;}
+    if(drawerBtn&&drawerBtn.getAttribute('aria-expanded')==='true'){e.preventDefault();closeDrawer(true);}
+  });
+  if(!btn||!pop)return;
+  var segs=Array.prototype.slice.call(pop.querySelectorAll('.gp-seg-b'));
+  var current=function(){return document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';};
+  var close=function(){pop.classList.remove('open');btn.setAttribute('aria-expanded','false');};
+  var sync=function(){var lang=current();segs.forEach(function(s){s.classList.toggle('on',s.getAttribute('data-set-lang')===lang);});};
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    closePanels(false);
+    var opening=!pop.classList.contains('open');
+    pop.classList.toggle('open',opening);
+    btn.setAttribute('aria-expanded',opening?'true':'false');
+  });
+  segs.forEach(function(s){
+    s.addEventListener('click',function(e){
+      e.stopPropagation();
+      var lang=s.getAttribute('data-set-lang')==='zh'?'zh':'en';
+      document.documentElement.setAttribute('data-lang',lang);
+      document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+      try{localStorage.setItem('lang',lang);}catch(ignore){}
+      try{document.dispatchEvent(new CustomEvent('langchange',{detail:{lang:lang}}));}catch(ignore){}
+      sync();
+    });
+  });
+  document.addEventListener('click',function(e){if(!pop.contains(e.target)&&e.target!==btn)close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&pop.classList.contains('open')){close();btn.focus();}
+  });
+  sync();
+})();
+</script><script src="../../../onboard.js?v=923aa5a2" defer></script>
+</body>
+</html>

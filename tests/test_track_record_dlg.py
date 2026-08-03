@@ -189,6 +189,28 @@ def test_accruing_drops_second_segment_when_n_calls_missing():
     assert "building" in html and "calls logged" not in html      # graceful drop
 
 
+def test_cohort_rail_ships_hidden_and_prior_gated():
+    """The Current/Previous era rail (2026-08-03 CN ledger restore).
+
+    The prior_record digest below the table shows a 25-row window; a specific
+    receipt (the operator's 600547.SS +7.44% beat) can sit outside it. The era
+    chips flip the WHOLE filterable table to the prior era's own rows so any of
+    them is searchable. The rail container ships hidden — the JS reveals it only
+    when the fetched ledger carries a non-empty prior_record, so every ledger
+    without one (US/HK/CA, older artifacts) renders exactly as before.
+    """
+    for trd in (_interim_trd(), _scored_trd(), _accruing_trd()):
+        html = _render_partial(trd)
+        assert ('<div class="trd-chips" id="trd-cohort-chips" '
+                'style="display:none"></div>') in html
+        # bilingual chip labels + the era source-switch live in the shared JS
+        assert "cohortCur:'Current board'" in html
+        assert "cohortLegacy:'Previous board'" in html
+        assert "cohortCur:'现行榜单'" in html and "cohortLegacy:'上一版榜单'" in html
+        assert "DATA.prior_record.rows" in html
+        assert "DATA.prior_record && (DATA.prior_record.rows || []).length" in html
+
+
 # --------------------------------------------------------------------------- #
 # Zone B′ — the PRIOR board definition's closed record (trd.prior, CN continuity G5)
 # --------------------------------------------------------------------------- #
