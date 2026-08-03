@@ -341,7 +341,12 @@ class TestCorroboration:
                 "event_class": "company_news", "source_name": "@StockMKTNewz"}
         d = corroboration_decision(item, corroborated_sources=1, window_ok=False)
         assert d["gate"] == "attributed"
-        assert "reporting" in d["attribution"]
+        # The admission survives; the ACCOUNT does not (operator de-handling law
+        # 2026-08-02 — this used to be "{source_name} reporting", which shipped
+        # "-- @FirstSquawk reporting" to the flagship). Full coverage of the
+        # credit lives in tests/test_marketing_wire_dehandle.py.
+        assert d["attribution"] == "wire reports"
+        assert "@StockMKTNewz" not in d["attribution"]
 
     def test_strict_corroboration_no_confirmation_digest(self):
         item = {"corroboration_class": "hearsay", "source_tier": "x_relay",

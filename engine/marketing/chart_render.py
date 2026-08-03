@@ -3472,6 +3472,55 @@ def derive_card_headline(text: str, max_chars: int = _BREAK_HEADLINE_MAX_CHARS) 
     Deterministic and side-effect free; safe on None/empty/degenerate input.
     """
     return _break_compress(text, max_chars)
+_BREAK_RULE = "#232A3D"        # hairline
+
+#: Square is the default canvas (X + Meta feeds, mobile-native); 4:5 is the
+#: allowed tall variant when the content warrants it. Operator order 2026-08-02;
+#: governing law research/AD_MASTER_PAPER.md §4.1.
+_BREAK_W = 1080
+_BREAK_H = 1080
+
+#: Headline leading as a multiple of the type size. Tight, because at 90-130px
+#: display scale generous leading reads as drift, not air.
+_BC_HL_LEADING = 1.14
+
+#: Headline type ladder in 1080-space, largest first (AD_MASTER_PAPER §0 AG-3:
+#: >=84px on a 1080 canvas, 76px the absolute floor for a phrase that cannot
+#: break). The fitter walks it down only as far as the copy forces.
+_BC_HL_LADDER = (132.0, 118.0, 106.0, 96.0, 88.0, 84.0, 78.0)
+
+#: Sub-floor continuation rungs, used ONLY when a sentence-bounded hero
+#: overflows the box at the AG-3 floor. The two same-day 2026-08-02 operator
+#: laws meet here: the AG-3 floor ("text too small") and the W4g no-ellipsis
+#: law ("title header is too long and gets cut off"). When they conflict — a
+#: single long sentence that cannot fit whole at 78px — completeness wins:
+#: derive_card_headline has already bounded the text to whole sentences within
+#: _BREAK_HEADLINE_MAX_CHARS, so the worst case is finite and 46px (still ~1.8×
+#: the pre-W4g 26px body) always places it without an ellipsis. Ordinary wire
+#: flashes never reach these rungs.
+_BC_HL_EXTENDED = (68.0, 60.0, 52.0, 46.0)
+
+#: Display names that describe a source CLASS rather than a publication. When
+#: the name is one of these the chip shows the tier label alone — "Newswire ·
+#: AGGREGATOR" says one thing twice. Lower-cased for comparison.
+_BC_GENERIC_SOURCE_NAMES = frozenset({
+    "newswire", "wire", "news wire", "newswires", "unknown", "unknown source",
+})
+
+
+def _break_chip_label(source_name: str, tier_label: str) -> str:
+    """The slug-chip text: '<publication> · <TIER>', or the tier alone.
+
+    De-handling (operator law 2026-08-02) turned every X-relay display name into
+    the generic "Newswire", and a chip reading "Newswire · AGGREGATOR" spends two
+    words on one fact. A real publication name still earns its place beside the
+    tier, because "Federal Reserve · OFFICIAL SOURCE" is two facts.
+    """
+    name = str(source_name or "").strip()
+    if not name or name.lower() in _BC_GENERIC_SOURCE_NAMES:
+        return tier_label
+    label = f"{name} · {tier_label}"
+    return label if len(label) <= 44 else (label[:43] + "…")
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
@@ -3535,6 +3584,127 @@ def _break_fmt_ts(published_at: str) -> str:
         return raw[:24] if raw else "TIME UNKNOWN"
 
 
+#: Per-character advance widths as a fraction of the font size, for the bold
+#: sans-serif the card family renders in. A flat per-char guess is what let the
+#: old char-count wrapper undersize ALL-CAPS wire headlines (caps run ~20% wider
+#: than lowercase), so the estimate is class-aware. Deterministic — no font
+#: metrics, no measurement pass, identical on every host.
+#: CALIBRATED 2026-08-02 against real headless-Chrome renders (17 probe strings
+#: across the card's actual sizes/weights, measured by pixel scan). The first
+#: pass guessed 0.63em for bold caps and under-predicted ALL-CAPS wire headlines
+#: by up to 14% — which is how the tier chip's text came to spill out of its own
+#: pill. Caps are 0.72em, lowercase 0.575em, and a 3% margin rides on top,
+#: because every consumer of this function fails UNSAFE when it under-predicts.
+_BC_W_NARROW = frozenset("iltfjrI1.,:;!|'’()[]/\\")
+_BC_W_WIDE = frozenset("mwMW@")
+_BC_W_SAFETY = 1.03
+
+
+def _bc_text_w(text: str, size: float, *, bold: bool = True) -> float:
+    """Estimate the rendered width of *text* at *size* px. Deterministic.
+
+    Overestimates on purpose: the failure this guards is text spilling past the
+    content column or out of a pill, so erring wide keeps copy inside the card
+    and costs only an occasional early line break.
+    """
+    em = 0.0
+    for ch in str(text or ""):
+        o = ord(ch)
+        if ch == " ":
+            em += 0.28
+        elif ch in _BC_W_NARROW:
+            em += 0.31
+        elif ch in _BC_W_WIDE:
+            em += 0.90
+        elif ch == "%":
+            em += 0.80
+        elif ch.isupper() or ch.isdigit() or ch == "$":
+            em += 0.72
+        elif ch.islower():
+            em += 0.575
+        elif 0x1F1E6 <= o <= 0x1F1FF:
+            # Regional-indicator pair renders as ONE flag glyph (~1.1em total).
+            em += 0.55
+        elif o > 0x2FFF:
+            # CJK / emoji / symbols: full-width box.
+            em += 1.0
+        else:
+            em += 0.575
+    if not bold:
+        em *= 0.97
+    return em * float(size) * _BC_W_SAFETY
+
+
+def _bc_wrap_w(
+    text: str, size: float, max_w: float, max_lines: int, *, bold: bool = True
+) -> tuple[list[str], bool]:
+    """Greedy word-wrap by MEASURED width. Returns (lines, overflowed).
+
+    `overflowed` is True when words remained unplaced after *max_lines*; the
+    caller either steps the type down a rung or accepts the ellipsis clip. A
+    single word wider than the column is never dropped — it takes its own line
+    and is clipped there, so a runaway token cannot blow the layout.
+    """
+    words = str(text or "").split()
+    if not words:
+        return [""], False
+    lines: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(words) and len(lines) < max_lines:
+        w = words[i]
+        cand = w if not cur else f"{cur} {w}"
+        if not cur or _bc_text_w(cand, size, bold=bold) <= max_w:
+            cur = cand
+            i += 1
+        else:
+            # Break the line and RETRY this word on the next one.
+            lines.append(cur)
+            cur = ""
+    if cur and len(lines) < max_lines:
+        lines.append(cur)
+        cur = ""
+    # Unplaced words mean overflow. The `bool(cur)` arm is unreachable under the
+    # loop invariant above (the guard stops before a line can be held with
+    # nowhere to go) and is kept as insurance on that invariant, not as live
+    # logic — an earlier for/else form DID drop a held tail silently while
+    # reporting a clean fit, and re-introducing that guard condition must not
+    # re-introduce the silent drop. The CONTRACT is pinned as a property:
+    # tests/test_marketing_card_earns_pixels.py::test_wrap_never_silently_loses_a_word.
+    overflowed = i < len(words) or bool(cur)
+    if overflowed and lines:
+        # Hard-clip the final line, trimming characters until the ellipsis fits.
+        last = lines[-1]
+        while last and _bc_text_w(last + "…", size, bold=bold) > max_w:
+            last = last[:-1].rstrip()
+        lines[-1] = (last + "…") if last else "…"
+    return lines[:max_lines], overflowed
+
+
+def _bc_fit_headline(
+    text: str, max_w: float, max_h: float, ladder: tuple[float, ...], hard_lines: int
+) -> tuple[float, list[str]]:
+    """Pick the LARGEST size on *ladder* whose wrap fits the column and the box.
+
+    This is the mobile-legibility engine (AD_MASTER_PAPER §0 AG-3): the headline
+    is sized by what actually fits, not by a character-count bucket, so a short
+    flash gets poster-scale type and a long one steps down only as far as it
+    must. The last rung is the floor — below it the copy is clipped instead,
+    because unreadable-but-complete is not a trade this card makes.
+    """
+    for size in ladder:
+        lh = size * _BC_HL_LEADING
+        cap = min(hard_lines, max(1, int(max_h // lh)))
+        lines, overflowed = _bc_wrap_w(text, size, max_w, cap)
+        if not overflowed:
+            return size, lines
+    size = ladder[-1]
+    lh = size * _BC_HL_LEADING
+    cap = min(hard_lines, max(1, int(max_h // lh)))
+    lines, _ = _bc_wrap_w(text, size, max_w, cap)
+    return size, lines
+
+
 def _break_fallback_svg(width: int, height: int) -> str:
     """Minimal valid fallback card — used when rendering raises internally."""
     return (
@@ -3560,8 +3730,8 @@ def render_breaking_card(
     event_class: "str | None" = None,
     eyebrow: str = "BREAKING",
     logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
-    width: int = 1000,
-    height: int = 560,
+    width: int = _BREAK_W,
+    height: int = _BREAK_H,
     cta: bool = True,
 ) -> str:
     """Render a branded breaking-news card SVG in the Mastermind card family.
@@ -3573,6 +3743,18 @@ def render_breaking_card(
     muted grey outline), so an aggregator can never be laundered as an official
     print (docket D05 trap — this is law). The model behind this card only
     summarizes-with-citation; the card adds no interpretation.
+
+    LAYOUT (rebuilt 2026-08-02 — the 1000×560 landscape card was illegible in a
+    phone feed and carried a void where the copy ran out). The canvas is square
+    by default and the composition is a wire slip read top to bottom: masthead,
+    amber dateline rule, desk eyebrow, THE NEWS at poster scale, the summary as
+    an indented second voice, then the provenance slug (tier chip + timestamp)
+    sitting where a wire service puts its source line — under the copy, not in
+    front of it. The headline is width-FITTED against a type ladder rather than
+    bucketed by character count, so it is as large as the words allow and never
+    below the AG-3 legibility floor unless it is clipped instead. Vertical slack
+    is distributed around the copy block (optically centred, biased high), which
+    is what removes the dead space rather than hiding it.
 
     Args:
         headline: The breaking headline (hero). ANY length is safe: it is first
@@ -3600,7 +3782,11 @@ def render_breaking_card(
             backward compatibility; deterministic derivative lanes may supply
             a truthful sibling label such as ``EARNINGS CALL``.
         logo_root: Reserved for future logomark use; text cashtags are used now.
-        width, height: Card dimensions (family default 1000×560).
+        width, height: Card dimensions. Default 1080×1080 (square — the
+            universal feed canvas); pass 1080×1350 for the tall 4:5 variant when
+            the content warrants the extra room. Both are AD_MASTER_PAPER §4.1
+            canvases; every dimension below is expressed in 1080-space and
+            scaled, so an off-size caller degrades in proportion.
 
     Returns:
         Self-contained SVG string. No <script>. All source/user text _xesc'd.
@@ -3608,60 +3794,97 @@ def render_breaking_card(
         SVG (fail-soft, stderr note) — never raises.
     """
     try:
-        center_x = width / 2  # noqa: F841 — kept for layout symmetry with siblings
         # Deterministic id suffix (zlib.crc32: PYTHONHASHSEED-stable).
         bc_uid = str(zlib.crc32(((headline or "") + "bc").encode("utf-8")) & 0xFFFFFFFF)
 
-        # ── Brand lockup (top-left) — identical family treatment ──────────────
-        bc_logo_tile = 30.0
-        logo_cx = 14 + bc_logo_tile / 2
-        logo_cy = 14 + bc_logo_tile / 2
+        # Everything below is authored in 1080-space and scaled, so the square
+        # master, the 4:5 tall variant and any off-size caller stay in proportion.
+        k = width / float(_BREAK_W)
+
+        def u(v: float) -> float:
+            """A 1080-space measurement in this card's units."""
+            return v * k
+
+        pad_l = u(72)                      # the content column's left margin
+        col_w = width - pad_l * 2
+
+        # ── Masthead band ─────────────────────────────────────────────────────
+        # Bookends the footer. Clamped against short canvases so a caller passing
+        # an odd height can never end up with more chrome than content.
+        mast_h = min(u(112), height * 0.14)
+        rule_h = max(3.0, u(7))
+        logo_tile = mast_h * 0.535
+        logo_cx = pad_l + logo_tile / 2
+        logo_cy = mast_h / 2
         bc_logo_defs, bc_logo_group = _favicon_logomark(
-            logo_cx, logo_cy, size=bc_logo_tile, uid=bc_uid
+            logo_cx, logo_cy, size=logo_tile, uid=bc_uid
         )
-        wordmark_x = logo_cx + bc_logo_tile / 2 + 8
-        wordmark_y = logo_cy + 7
+        wordmark_size = mast_h * 0.30
         wordmark_svg = (
-            f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" '
-            f'fill="#ffffff" font-size="17" font-weight="900" '
+            f'<text x="{logo_cx + logo_tile / 2 + u(16):.1f}" '
+            f'y="{logo_cy + wordmark_size * 0.36:.1f}" '
+            f'fill="#ffffff" font-size="{wordmark_size:.1f}" font-weight="900" '
             f'font-family="sans-serif" letter-spacing="0.07em">MASTERMIND</text>'
         )
-        # "RADAR" desk tag, right of the header — signals the intelligence lane.
+        # "RADAR" desk tag, right of the masthead — names the intelligence lane.
+        desk_size = mast_h * 0.19
         desk_svg = (
-            f'<text x="{width - 14}" y="{logo_cy + 5:.1f}" fill="{_BREAK_GREY}" '
-            f'font-size="12.5" text-anchor="end" font-family="sans-serif" '
-            f'letter-spacing="2">RADAR</text>'
+            f'<text x="{width - pad_l:.1f}" y="{logo_cy + desk_size * 0.36:.1f}" '
+            f'fill="{_BREAK_GREY}" font-size="{desk_size:.1f}" text-anchor="end" '
+            f'font-family="sans-serif" letter-spacing="{u(4):.1f}">RADAR</text>'
         )
-        header_h = 60
         header_bg = (
-            f'<rect x="0" y="0" width="{width}" height="{header_h}" '
+            f'<rect x="0" y="0" width="{width}" height="{mast_h:.1f}" '
             f'fill="#0A1020" opacity="0.92"/>'
         )
-        # Thin amber urgency rule directly under the header band (the "dateline").
+        # The amber dateline rule — the card's one structural accent.
         break_rule = (
-            f'<rect x="0" y="{header_h}" width="{width}" height="3" '
+            f'<rect x="0" y="{mast_h:.1f}" width="{width}" height="{rule_h:.1f}" '
             f'fill="{_BREAK_AMBER}"/>'
         )
 
-        pad_l = 46
-        content_top = header_h + 40
+        # ── Footer band ───────────────────────────────────────────────────────
+        # _brand_bar is SHARED family chrome (price charts, earnings, watchlist)
+        # and is deliberately not touched here: it lays its contents out on fixed
+        # horizontal advances scaled off band_h, which stops fitting a 1080-wide
+        # bar somewhere above band_h≈86. So the fit is bought with its EXISTING
+        # parameters instead — the tagline is dropped (identity is already stated
+        # twice in the masthead, and the footer's job on a news card is
+        # destination + one action) and the copyright is reworded, because the
+        # old "cited source above" stopped being true when the provenance slug
+        # moved below the copy.
+        band_h = int(min(u(84), height * 0.11))
+        if suppress_cta:
+            # Sentinel tone rule: no trial pitch on human-tragedy items. The
+            # brand bar keeps only the sober attribution — no URL, no button.
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                descriptor="MASTERMIND · Market Intelligence",
+                show_url=False, show_button=False, band_h=band_h,
+            )
+        else:
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                tagline=None,
+                copyright_text="© 2026 Mastermind · source cited",
+                show_button=cta, band_h=band_h,
+            )
 
-        # ── Desk eyebrow (left) + tier chip + timestamp (dateline row) ────────
-        eyebrow_y = content_top
-        # A small amber square + plain-word desk label — restrained, not a siren.
+        # ── Desk eyebrow — one clean line, then the news ──────────────────────
+        eb_size = u(33)
+        eyebrow_base = mast_h + rule_h + u(78)
         eyebrow_text = _xesc(str(eyebrow or "BREAKING").strip().upper()[:24])
-        eyebrow_size = 16.0
-        eyebrow_track = 3.5
-        eyebrow_x = pad_l + 20
+        mark = u(26)
         eyebrow_svg = (
-            f'<rect x="{pad_l}" y="{eyebrow_y - 13:.1f}" width="12" height="12" '
-            f'rx="2" fill="{_BREAK_AMBER}"/>'
-            f'<text x="{eyebrow_x}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
-            f'font-size="{eyebrow_size:g}" font-weight="900" font-family="sans-serif" '
-            f'letter-spacing="{eyebrow_track:g}">{eyebrow_text}</text>'
+            f'<rect x="{pad_l:.1f}" y="{eyebrow_base - mark * 0.86:.1f}" '
+            f'width="{mark:.1f}" height="{mark:.1f}" rx="{u(4):.1f}" '
+            f'fill="{_BREAK_AMBER}"/>'
+            f'<text x="{pad_l + mark + u(18):.1f}" y="{eyebrow_base:.1f}" '
+            f'fill="{_BREAK_AMBER}" font-size="{eb_size:.1f}" font-weight="900" '
+            f'font-family="sans-serif" letter-spacing="{u(7):.1f}">{eyebrow_text}</text>'
         )
-        # Plain-word event-class kicker — quiet grey, subordinate to the tier
-        # chip (the signature). Unknown/none keys are omitted, never echoed raw.
+        # Plain-word event-class kicker — quiet grey, subordinate to the eyebrow.
+        # Unknown/none keys are omitted, never echoed raw.
         _KICKER_WORDS = {
             "macro_print": "MACRO PRINT",
             "policy": "POLICY",
@@ -3670,227 +3893,197 @@ def render_breaking_card(
         }
         kicker = _KICKER_WORDS.get(str(event_class or "").strip().lower(), "")
         if kicker:
-            # Measured, not a fixed 152px guess: a longer eyebrow (EARNINGS CALL)
-            # used to run straight under the kicker dot.
-            eyebrow_w = _break_text_w(
-                eyebrow_text, eyebrow_size, bold=True,
-            ) + eyebrow_track * len(eyebrow_text)
-            dot_cx = eyebrow_x + eyebrow_w + 12
+            # Placed off the MEASURED eyebrow width — a fixed offset collided
+            # with a longer desk label ("EARNINGS CALL"). Tracking is counted on
+            # every glyph (SVG letter-spacing trails the last one too) with a
+            # margin for the 900-weight caps the estimator runs light on.
+            eb_w = (
+                _bc_text_w(eyebrow_text, eb_size) * 1.07
+                + u(7) * len(eyebrow_text)
+            )
+            kx = pad_l + mark + u(18) + eb_w + u(30)
+            k_size = u(25)
             eyebrow_svg += (
-                f'<circle cx="{dot_cx:.0f}" cy="{eyebrow_y - 6:.1f}" r="2" '
-                f'fill="{_BREAK_GREY}"/>'
-                f'<text x="{dot_cx + 12:.0f}" y="{eyebrow_y - 1:.1f}" '
-                f'fill="{_BREAK_GREY}" font-size="13.5" font-weight="700" '
-                f'font-family="sans-serif" letter-spacing="2.5" '
+                f'<circle cx="{kx:.1f}" cy="{eyebrow_base - eb_size * 0.32:.1f}" '
+                f'r="{u(4):.1f}" fill="{_BREAK_GREY}"/>'
+                f'<text x="{kx + u(20):.1f}" y="{eyebrow_base:.1f}" '
+                f'fill="{_BREAK_GREY}" font-size="{k_size:.1f}" font-weight="700" '
+                f'font-family="sans-serif" letter-spacing="{u(5):.1f}" '
                 f'class="bc-kicker">{_xesc(kicker)}</text>'
             )
 
-        # Tier chip — the signature. Weight encodes trust; anti-laundering law.
+        # ── Provenance slug (tier chip + dateline) — the closing seal ─────────
+        # The tier chip is the card's signature and the anti-laundering law: the
+        # tier actually used is encoded in the chip's WEIGHT, so an aggregator can
+        # never look like an official print. It sits under the copy because that
+        # is where a wire slip puts its source line — the reader gets the news
+        # first and the provenance as the sign-off, and on a square canvas it
+        # keeps three lines of chrome from pushing the headline off the top.
         ts_str = _break_fmt_ts(published_at)
         tier = _break_tier_style(source_tier)
-        chip_label = f"{source_name} · {tier['label']}"
-        if len(chip_label) > 48:
-            chip_label = chip_label[:47] + "…"
+        chip_label = _break_chip_label(source_name, tier["label"])
         chip_text = _xesc(chip_label)
-        # Measured width (Helvetica advances + tracking) — the old estimate was a
-        # per-character caps/lowercase guess that under- or over-shot by up to a
-        # dozen px depending on the label.
-        chip_fs = 15.0
-        chip_tw = _break_text_w(chip_label, chip_fs, bold=True) + 0.4 * len(chip_label)
-        chip_w = 30 + int(chip_tw) + 18
-        chip_h = 34
-        chip_x = pad_l
-        chip_y = eyebrow_y + 14
-        # A leading dot in the chip echoes the tier ink — a tiny "seal".
-        chip_svg = (
-            f'<rect x="{chip_x}" y="{chip_y}" width="{chip_w}" height="{chip_h}" '
-            f'rx="7" fill="{tier["fill"]}" fill-opacity="{tier["fill_opacity"]}" '
-            f'stroke="{tier["stroke"]}" stroke-width="1.5" '
-            f'class="bc-tier bc-tier-{tier["key"]}"/>'
-            f'<circle cx="{chip_x + 17:.0f}" cy="{chip_y + chip_h / 2:.0f}" r="4.5" '
-            f'fill="{tier["ink"]}"/>'
-            f'<text x="{chip_x + 30:.0f}" y="{chip_y + chip_h / 2 + 5:.0f}" '
-            f'fill="{tier["ink"]}" font-size="{chip_fs:g}" font-weight="bold" '
-            f'font-family="sans-serif" letter-spacing="0.4">{chip_text}</text>'
+        chip_size = u(28)
+        chip_h = u(62)
+        chip_pad = u(30)
+        dot_r = u(8)
+        chip_track = u(0.4)
+        chip_w = (
+            chip_pad + dot_r * 2 + u(14)
+            + _bc_text_w(chip_label, chip_size) + chip_track * len(chip_label)
+            + chip_pad
         )
-        # Timestamp dateline, to the right of the chip.
-        ts_svg = (
-            f'<text x="{chip_x + chip_w + 16:.0f}" '
-            f'y="{chip_y + chip_h / 2 + 5:.0f}" fill="{_BREAK_GREY}" '
-            f'font-size="14" font-family="sans-serif" letter-spacing="0.5">'
-            f'{_xesc(ts_str)}</text>'
+        ts_size = u(27)
+
+        # ── Related-ticker strip (cap 4) — omitted entirely when empty ────────
+        rows = tickers if isinstance(tickers, list) else []
+        rows = rows[:4]
+        # One row for a pair, a 2x2 grid beyond it: four cashtags across a 1080
+        # canvas leaves ~230px a cell, which is where the price line starts
+        # colliding with its neighbour.
+        tick_rows = 0 if not rows else (1 if len(rows) <= 2 else 2)
+        tick_row_h = u(84)
+        tick_block_h = 0.0 if not rows else (u(34) + tick_rows * tick_row_h)
+
+        # ── Vertical composition ──────────────────────────────────────────────
+        # The slug and the ticker strip are bottom-anchored above the footer; the
+        # copy block floats in what remains, optically centred (biased high — a
+        # geometrically centred block reads low). This is the structural fix for
+        # the void: slack is DISTRIBUTED, never dumped under the last line.
+        foot_top = height - band_h
+        slug_bottom = foot_top - u(52) - tick_block_h
+        slug_top = slug_bottom - chip_h
+        copy_top_limit = eyebrow_base + u(56)
+        copy_bottom_limit = slug_top - u(56)
+        copy_box_h = max(u(120), copy_bottom_limit - copy_top_limit)
+
+        # W4g: the hero is sentence-BOUNDED before fitting — the wire's
+        # headline field can be an entire 814-char post, and an ellipsized
+        # hero is the exact operator complaint this closes. The derived form
+        # is the source's own leading whole sentences, never rewritten.
+        hl = derive_card_headline(str(headline or "").strip())
+        sm = (summary or "").strip() if summary is not None else ""
+        # The BOX decides how many lines the headline gets; this is only a sanity
+        # ceiling. Capping at 5 made the fitter clip a wire flash ("...on the
+        # Strait…") while leaving room below it — and a truncated sentence is a
+        # worse failure than a sixth line, since the reader loses the fact. The
+        # ladder floor still guards legibility: below it we clip rather than
+        # shrink.
+        hard_lines = 8 if height > width * 1.15 else 7
+        sm_size = u(41)
+        sm_lh = sm_size * 1.42
+        sm_gap = u(48)
+        sm_indent = u(30)
+        # THE NEWS WINS THE BOX. The headline is fitted first, against the box
+        # minus a two-line reservation for the summary — so a note can shave the
+        # hero by at most one rung, never clip it while restating it underneath
+        # (the exact shape of the shipped gold card). The summary then wraps into
+        # whatever actually remains, and is dropped outright if nothing does.
+        sm_reserve = (sm_gap + 2 * sm_lh) if sm else 0.0
+        hl_size, hl_lines = _bc_fit_headline(
+            hl, col_w, max(u(120), copy_box_h - sm_reserve),
+            _BC_HL_LADDER + _BC_HL_EXTENDED, hard_lines,
         )
+        hl_lh = hl_size * _BC_HL_LEADING
+        hl_block_h = len(hl_lines) * hl_lh
 
-        # ── Hero typesetting — MEASURED fit, top-anchored, never clipped ──────
-        # Two rules replaced the old char-count size table:
-        #   1. the headline is bounded to whole sentences BEFORE it is wrapped,
-        #      so the wrap never has to ellipsize (belt-and-braces: the same
-        #      bound is applied upstream in breaking_summary.build_breaking_payload,
-        #      and again here so a direct caller — earnings_call_lane — is safe);
-        #   2. sizes come from a ladder searched BODY-FIRST: the largest summary
-        #      size that leaves room for a headline wins, because the body is the
-        #      type the reader actually has to read on a phone.
-        # Top-anchored, not centred: the old `v_offset` centring is what produced
-        # the dead field the operator saw.
-        rows_present = bool(tickers if isinstance(tickers, list) else [])
-        text_w = width - pad_l * 2                      # 908 on the family default
-        sm_rail_inset = 20.0
-        sm_w = text_w - sm_rail_inset
-        box_top = chip_y + chip_h + 30
-        # Bottom of the text column: above the ticker divider, else above the
-        # brand bar. Both keep a visible breathing gap — tight, not touching.
-        box_bottom = (height - 122 - 20) if rows_present else (height - 46 - 16)
-        avail = max(80.0, box_bottom - box_top)
+        sm_lines: list[str] = []
+        if sm:
+            sm_room = copy_box_h - hl_block_h - sm_gap
+            sm_cap = min(3, int(sm_room // sm_lh))
+            if sm_cap >= 1:
+                sm_lines, _ = _bc_wrap_w(
+                    sm, sm_size, col_w - sm_indent, sm_cap, bold=False
+                )
+        sm_block_h = (sm_gap + len(sm_lines) * sm_lh) if sm_lines else 0.0
+        block_h = hl_block_h + sm_block_h
 
-        hl = derive_card_headline(headline)
-        sm_full = " ".join(str(summary or "").split())
-
-        # (size, max_lines). Headline descends far enough that a 180-char bound
-        # always fits horizontally; the summary floor is the legibility floor.
-        # The ladders reach UP as well as down: a sparse card (a six-word
-        # headline and one sentence) is the other half of the whitespace
-        # complaint — the answer there is bigger type, not more air.
-        _HL_LADDER = ((68.0, 2), (60.0, 2), (52.0, 2), (46.0, 3),
-                      (40.0, 4), (36.0, 4), (32.0, 5), (28.0, 6))
-        _SM_LADDER = ((38.0, 2), (34.0, 2), (32.0, 3), (30.0, 3), (28.0, 4),
-                      (_BREAK_BODY_MIN, 4), (_BREAK_BODY_MIN, 5))
-
-        def _hl_lh(s: float) -> float:
-            return round(s * 1.14, 1)
-
-        def _sm_lh(s: float) -> float:
-            return round(s * 1.32, 1)
-
-        def _block_h(hs: float, hn: int, ss: float, sn: int) -> float:
-            h = (hn - 1) * _hl_lh(hs) + hs
-            if sn:
-                h += round(ss * 1.05, 1) + (sn - 1) * _sm_lh(ss) + ss
-            return h
-
-        def _search(sm_text: str, min_ratio: float):
-            """First (summary-size, headline-size) pair that fits. Body-first.
-
-            *min_ratio* keeps the hero visibly senior to the body; the caller
-            relaxes it before it ever compresses the source text, because losing
-            a sentence costs more than a muddier size step.
-            """
-            cands = _SM_LADDER if sm_text else ((_BREAK_BODY_MIN, 0),)
-            for ss, s_cap in cands:
-                if sm_text:
-                    s_lines, s_over = _break_fit(sm_text, sm_w, ss, s_cap)
-                    if s_over:
-                        continue
-                else:
-                    s_lines = []
-                for hs, h_cap in _HL_LADDER:
-                    if s_lines and hs < ss * min_ratio:
-                        continue
-                    h_lines, h_over = _break_fit(
-                        hl, text_w, hs, h_cap, bold=True, tracking_em=-0.01
-                    )
-                    if h_over:
-                        continue
-                    if _block_h(hs, len(h_lines), ss, len(s_lines)) <= avail:
-                        return hs, h_lines, ss, s_lines
-            return None
-
-        # Pass A: full source text, hero visibly senior to the body.
-        # Pass B: full source text, hierarchy relaxed — keep every sentence.
-        # Pass C: only now is the summary compressed to whole sentences that fit.
-        sm_budget = (_BREAK_SUMMARY_MAX_CHARS_STRIP if rows_present
-                     else _BREAK_SUMMARY_MAX_CHARS)
-        sm = sm_full
-        found = _search(sm_full, 1.30) or _search(sm_full, 0.0)
-        if found is None:
-            sm = _break_compress(sm_full, sm_budget)
-            found = _search(sm, 0.0)
-        if found is not None:
-            hl_size, hl_lines, sm_size, sm_lines = found
-        else:
-            # Terminal rung (unreachable for bounded input; kept so a hostile
-            # direct caller still gets a card). The HEADLINE keeps every line it
-            # needs — the elaboration yields, never the fact.
-            hl_size = _HL_LADDER[-1][0]
-            hl_lines, _ = _break_fit(hl, text_w, hl_size, 8, bold=True, tracking_em=-0.01)
-            sm_size = _BREAK_BODY_MIN
-            used = (len(hl_lines) - 1) * _hl_lh(hl_size) + hl_size + round(sm_size * 1.05, 1)
-            room = int((avail - used - sm_size) // _sm_lh(sm_size)) + 1
-            sm_lines = (_break_fit(sm, sm_w, sm_size, max(0, room))[0]
-                        if (sm and room > 0) else [])
-            sm_lines = [ln for ln in sm_lines if ln]
-
-        hl_lh = _hl_lh(hl_size)
-        sm_lh = _sm_lh(sm_size)
-        # Leftover height is spent on RHYTHM, not on a dead field: most of it
-        # opens the headline→summary gap, a little of it drops the whole block
-        # off the dateline. Both are bounded, so this can never drift back into
-        # the old free-centring that left a void mid-card.
-        slack = max(0.0, avail - _block_h(hl_size, len(hl_lines), sm_size, len(sm_lines)))
-        gap_extra = min(slack * 0.45, sm_size * 1.6) if sm_lines else 0.0
-        # A headline-only card has nothing to open a gap WITH, so its slack goes
-        # into optical centring instead — the one case where centring is right.
-        top_nudge = (min((slack - gap_extra) * 0.40, 40.0) if sm_lines
-                     else min(slack * 0.45, 120.0))
-        hl_top = box_top + top_nudge + hl_size * 0.78          # first baseline
+        # Optical centring: 42% of the slack above, 58% below.
+        slack = max(0.0, copy_box_h - block_h)
+        hl_top = copy_top_limit + slack * 0.42
         hl_tspans = "".join(
-            f'<text x="{pad_l}" y="{hl_top + i * hl_lh:.1f}" fill="#ffffff" '
-            f'font-size="{hl_size:g}" font-weight="800" font-family="sans-serif" '
-            f'letter-spacing="-0.01em">{_xesc(ln)}</text>'
+            f'<text x="{pad_l:.1f}" y="{hl_top + hl_size * 0.82 + i * hl_lh:.1f}" '
+            f'fill="#ffffff" font-size="{hl_size:.1f}" font-weight="800" '
+            f'font-family="sans-serif" letter-spacing="-0.015em">{_xesc(ln)}</text>'
             for i, ln in enumerate(hl_lines)
         )
-        hl_bottom = hl_top + (len(hl_lines) - 1) * hl_lh
+        hl_bottom = hl_top + len(hl_lines) * hl_lh
 
-        # ── Summary block (the source's account) — omit cleanly when None ─────
-        # The 3px rail at its left edge is tier-inked: the same trust grade the
-        # chip encodes, repeated exactly where the eye lands on the content, so
-        # an aggregator's account can never be read as an official one (the same
-        # anti-laundering law the chip serves — D05).
+        # ── Summary block — indented behind a quiet rule so it reads as the
+        #    card's second voice rather than a restatement of the headline.
         summary_svg = ""
-        summary_bottom = hl_bottom
         if sm_lines:
-            sm_top = hl_bottom + round(sm_size * 1.05, 1) + gap_extra + sm_size * 0.78
-            rail_top = sm_top - sm_size * 0.86
-            rail_h = (len(sm_lines) - 1) * sm_lh + sm_size * 1.12
+            sm_top = hl_bottom + sm_gap
+            sm_h = len(sm_lines) * sm_lh
             summary_svg = (
-                f'<rect x="{pad_l}" y="{rail_top:.1f}" width="3" '
-                f'height="{rail_h:.1f}" rx="1.5" fill="{tier["rail"]}" '
+                f'<rect x="{pad_l:.1f}" y="{sm_top:.1f}" width="{u(5):.1f}" '
+                f'height="{sm_h:.1f}" rx="{u(2.5):.1f}" fill="{tier["rail"]}" '
                 f'fill-opacity="{tier["rail_opacity"]}" '
                 f'class="bc-rail bc-rail-{tier["key"]}"/>'
             )
             summary_svg += "".join(
-                f'<text x="{pad_l + sm_rail_inset:.0f}" y="{sm_top + i * sm_lh:.1f}" '
-                f'fill="{_BREAK_BODY}" font-size="{sm_size:g}" '
+                f'<text x="{pad_l + sm_indent:.1f}" '
+                f'y="{sm_top + sm_size * 0.86 + i * sm_lh:.1f}" '
+                f'fill="{_BREAK_BODY}" font-size="{sm_size:.1f}" '
                 f'font-family="sans-serif">{_xesc(ln)}</text>'
                 for i, ln in enumerate(sm_lines)
             )
-            summary_bottom = sm_top + (len(sm_lines) - 1) * sm_lh
 
-        # ── Related-ticker mini strip (cap 4) — omit entirely when empty ──────
+        # A leading dot in the chip echoes the tier ink — a tiny "seal".
+        chip_svg = (
+            f'<rect x="{pad_l:.1f}" y="{slug_top:.1f}" width="{chip_w:.1f}" '
+            f'height="{chip_h:.1f}" rx="{u(12):.1f}" fill="{tier["fill"]}" '
+            f'fill-opacity="{tier["fill_opacity"]}" stroke="{tier["stroke"]}" '
+            f'stroke-width="{u(3):.1f}" class="bc-tier bc-tier-{tier["key"]}"/>'
+            f'<circle cx="{pad_l + chip_pad + dot_r:.1f}" '
+            f'cy="{slug_top + chip_h / 2:.1f}" r="{dot_r:.1f}" fill="{tier["ink"]}"/>'
+            f'<text x="{pad_l + chip_pad + dot_r * 2 + u(14):.1f}" '
+            f'y="{slug_top + chip_h / 2 + chip_size * 0.35:.1f}" fill="{tier["ink"]}" '
+            f'font-size="{chip_size:.1f}" font-weight="bold" '
+            f'font-family="sans-serif" letter-spacing="{u(0.4):.2f}">{chip_text}</text>'
+        )
+        # Timestamp dateline, riding the chip's baseline.
+        ts_svg = (
+            f'<text x="{pad_l + chip_w + u(26):.1f}" '
+            f'y="{slug_top + chip_h / 2 + ts_size * 0.35:.1f}" fill="{_BREAK_GREY}" '
+            f'font-size="{ts_size:.1f}" font-family="sans-serif" '
+            f'letter-spacing="{u(0.5):.2f}">{_xesc(ts_str)}</text>'
+        )
+
         strip_svg = ""
-        rows = tickers if isinstance(tickers, list) else []
-        rows = rows[:4]
         if rows:
-            strip_y = height - 90
-            # Faint divider above the strip (box_bottom is derived from this).
+            strip_top = slug_bottom + u(34)
             strip_svg += (
-                f'<line x1="{pad_l}" y1="{height - 122:.0f}" '
-                f'x2="{width - pad_l}" y2="{height - 122:.0f}" '
-                f'stroke="#232A3D" stroke-width="1"/>'
+                f'<line x1="{pad_l:.1f}" y1="{strip_top:.1f}" '
+                f'x2="{width - pad_l:.1f}" y2="{strip_top:.1f}" '
+                f'stroke="{_BREAK_RULE}" stroke-width="{max(1.0, u(2)):.1f}"/>'
             )
-            cell_w = (width - pad_l * 2) / len(rows)
+            per_row = 2 if tick_rows == 2 else len(rows)
+            cell_w = col_w / per_row
+            cash_size = u(37)
+            pct_size = u(32)
+            price_size = u(27)
             for i, row in enumerate(rows):
-                cx0 = pad_l + i * cell_w
+                cx0 = pad_l + (i % per_row) * cell_w
+                cy0 = strip_top + u(58) + (i // per_row) * tick_row_h
                 cashtag = ("$" + str(row.get("ticker", "") or "").upper())[:8]
                 # Missing numbers render as a clean cashtag-only chip — never
-                # placeholder dashes (a "—" row reads as broken, not honest).
+                # placeholder dashes (a "—" row reads as broken, not honest) and
+                # never a stringified NaN. float('nan') passes the cast that None
+                # and '' fail, so it shipped "$nan" / "▼ nan%" onto the card until
+                # a mutation test went looking for it (2026-08-02); a non-finite
+                # quote is missing data and renders as the cashtag-only chip.
                 try:
-                    price_s = f"${float(row.get('price')):,.2f}"
+                    _p = float(row.get("price"))
+                    price_s = f"${_p:,.2f}" if math.isfinite(_p) else ""
                 except (TypeError, ValueError):
                     price_s = ""
                 pct_s = ""
                 pcol = _BREAK_GREY
                 try:
                     pct = float(row.get("pct"))
+                    if not math.isfinite(pct):
+                        raise ValueError("non-finite pct")
                     up = pct >= 0
                     pcol = _BREAK_UP if up else _BREAK_DOWN
                     arrow = "▲" if up else "▼"
@@ -3898,46 +4091,26 @@ def render_breaking_card(
                     pct_s = f"{arrow} {sign}{pct:.1f}%"
                 except (TypeError, ValueError):
                     pass
-                # Cashtag (white) and pct (colored) share line 1; the pct x is
-                # MEASURED off the cashtag so it can never reach the card's right
-                # edge (the old `len(cashtag) * 11` guess drifted with the size).
-                pct_x = cx0 + _break_text_w(cashtag, 22.0, bold=True) + 14
+                # The pct x is MEASURED off the cashtag so it can never reach the
+                # next cell (fixed offsets overflow on a wide cell).
+                pct_x = cx0 + _bc_text_w(cashtag, cash_size) + u(18)
                 strip_svg += (
-                    f'<text x="{cx0:.0f}" y="{strip_y:.0f}" fill="#e2e8f0" '
-                    f'font-size="22" font-weight="bold" font-family="sans-serif">'
-                    f'{_xesc(cashtag)}</text>'
+                    f'<text x="{cx0:.1f}" y="{cy0:.1f}" fill="#e2e8f0" '
+                    f'font-size="{cash_size:.1f}" font-weight="bold" '
+                    f'font-family="sans-serif">{_xesc(cashtag)}</text>'
                 )
                 if pct_s:
                     strip_svg += (
-                        f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
-                        f'font-size="19" font-weight="bold" font-family="sans-serif">'
-                        f'{_xesc(pct_s)}</text>'
+                        f'<text x="{pct_x:.1f}" y="{cy0:.1f}" fill="{pcol}" '
+                        f'font-size="{pct_size:.1f}" font-weight="bold" '
+                        f'font-family="sans-serif">{_xesc(pct_s)}</text>'
                     )
                 if price_s:
                     strip_svg += (
-                        f'<text x="{cx0:.0f}" y="{strip_y + 26:.0f}" fill="{_BREAK_GREY}" '
-                        f'font-size="16" font-family="sans-serif">{_xesc(price_s)}</text>'
+                        f'<text x="{cx0:.1f}" y="{cy0 + u(36):.1f}" '
+                        f'fill="{_BREAK_GREY}" font-size="{price_size:.1f}" '
+                        f'font-family="sans-serif">{_xesc(price_s)}</text>'
                     )
-
-        # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
-        if suppress_cta:
-            # Sentinel tone rule: no trial pitch on human-tragedy items. The
-            # brand bar keeps only the sober attribution — no URL, no button.
-            bc_bar_defs, footer_svg = _brand_bar(
-                width, height, bc_uid,
-                descriptor="MASTERMIND · Market Intelligence",
-                show_url=False, show_button=False,
-            )
-        else:
-            bc_bar_defs, footer_svg = _brand_bar(
-                width, height, bc_uid,
-                copyright_text="© 2026 Mastermind · cited source above",
-                show_button=cta,
-            )
-
-        # summary_bottom documents where the summary block ends; the ticker strip
-        # is pinned to the card bottom so there is no overlap by construction.
-        _ = summary_bottom
 
         svg = (
             f'<svg viewBox="0 0 {width} {height}" '
@@ -3946,17 +4119,18 @@ def render_breaking_card(
             f'  <defs>{bc_logo_defs}{bc_bar_defs}</defs>\n'
             f'  <!-- background -->\n'
             f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
-            f'  <!-- breaking eyebrow + tier chip + timestamp -->\n'
+            f'  <!-- desk eyebrow -->\n'
             f'  {eyebrow_svg}\n'
-            f'  {chip_svg}\n'
-            f'  {ts_svg}\n'
             f'  <!-- headline hero -->\n'
             f'  {hl_tspans}\n'
             f'  <!-- summary -->\n'
             f'  {summary_svg}\n'
+            f'  <!-- source slug: tier chip + dateline -->\n'
+            f'  {chip_svg}\n'
+            f'  {ts_svg}\n'
             f'  <!-- related-ticker strip -->\n'
             f'  {strip_svg}\n'
-            f'  <!-- header band (on top) -->\n'
+            f'  <!-- masthead band (on top) -->\n'
             f'  {header_bg}\n'
             f'  {break_rule}\n'
             f'  {bc_logo_group}\n'

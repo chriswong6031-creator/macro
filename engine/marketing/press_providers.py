@@ -13,6 +13,9 @@ few provider-specific keys that downstream relevance/summary ignore):
     AlpacaNewsProvider         source_tier="wire",     keys via env ALPACA_API_KEY_ID
                                                        + ALPACA_API_SECRET_KEY
 
+Public helper:
+    display_source_name(name) -> str   generic display name, never an @handle
+
 Design contract (mirrors earnings_feed / breaking_feed):
     - Pure parse_* functions are network-free and fixture-tested directly.
     - fetch() is the ONLY network path; never called in tests.
@@ -77,6 +80,49 @@ _ALPACA_BACKOFF_CAP_S = 900       # 15 min ceiling on the 429 ladder
 #: Preflight notices already emitted BY THIS PROCESS. A keyless host has to say
 #: so ONCE — not once per 75 s tick for the life of the daemon.
 _PREFLIGHT_NOTICED: set[str] = set()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE-ACCOUNT DE-HANDLING (operator law 2026-08-02)
+#
+# We reword and republish news; we NEVER tag or brand the original account. Live
+# posts on @mastermindx001 on 2026-08-02/03 shipped "-- @FirstSquawk reporting",
+# "-- @financialjuice reporting" and a "@BRICSinfo · AGGREGATOR" card chip. That
+# is an X flag risk (unsolicited mentions of accounts we relay) and it reads as
+# low-quality scraping, so the DISPLAY name of an X relay item is generic.
+#
+# THE `x_handle` FIELD STAYS. It is the independence key
+# (story_spine.independence_key keys on it first), so de-handling it would
+# silently collapse two relays of one claim onto one source and kill the
+# >=2-independent-sources instant path. Only the human-visible name changes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The public display name every X-relay item carries instead of "@handle".
+GENERIC_RELAY_DISPLAY = "Newswire"
+
+#: A token indistinguishable from a bare X handle: no whitespace, no dot, only
+#: [A-Za-z0-9_], within X's 15-character handle limit.
+_HANDLE_SHAPED_RE = re.compile(r"^[A-Za-z0-9_]{1,15}$")
+
+
+def display_source_name(name: str) -> str:
+    """Public display name for a source — never an @handle (operator law 2026-08-02).
+
+    Returns :data:`GENERIC_RELAY_DISPLAY` for anything empty, anything starting
+    with ``@``, and any bare handle-shaped token; otherwise the name, stripped.
+
+    FAIL-CLOSED, and it costs something. A single-word publisher name
+    ("Reuters") is shape-identical to an X handle, so a config that supplies one
+    on THIS lane also collapses to the generic display. That trade is
+    deliberate: the false positive costs a generic word in one post, while the
+    false negative is a live @mention of an account we relay — the defect this
+    function exists to make unreachable. Multi-word / dotted names
+    ("Truth Social (via CNN archive)", "cnbc.com") are not handle-shaped and
+    pass through untouched, which is every non-relay caller.
+    """
+    text = str(name or "").strip()
+    if not text or text.startswith("@") or _HANDLE_SHAPED_RE.match(text):
+        return GENERIC_RELAY_DISPLAY
+    return text
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -442,12 +488,21 @@ class TwitterApiIoProvider:
                 max_id_int = tid_int
 
             snippet = _snippet(text)
-            headline = snippet[:120] if snippet else f"@{handle} post"
+            # De-handled headline fallback (operator law 2026-08-02): a text-less
+            # tweet used to yield "@FirstSquawk post", which is a source tag on
+            # the one surface that goes straight into a post body.
+            headline = snippet[:120] if snippet else "Wire flash"
             item_id = _make_id(f"x:{handle}", tid)
             results.append(FeedItem(
                 id=item_id,
                 source=f"x_{handle}",
-                source_name=f"@{handle}",
+                # DISPLAY name only — generic by law. `source` and `x_handle`
+                # below still carry the handle, which is what corroboration and
+                # the independence key read. The old value ("@{handle}") is
+                # passed through the normalizer rather than dropped, so the
+                # @-prefixed branch catches it whatever the config supplied —
+                # including a handle longer than X's own 15-character limit.
+                source_name=display_source_name(f"@{handle}"),
                 source_tier=self.source_tier,
                 url=f"https://twitter.com/{handle}/status/{tid}" if handle else "",
                 published_at=_parse_pub_date(created),

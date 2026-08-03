@@ -387,6 +387,22 @@ def test_kicker_omitted_for_none_and_unknown(cls):
     assert "bc-kicker" not in svg
 
 
+def _rendered_text(svg: str) -> str:
+    """Every text node the reader actually SEES, lower-cased and joined.
+
+    The NaN screen below used to scan the whole SVG source with "sans-serif"
+    replaced out, which also read comments, class names and attribute values —
+    so an innocent word containing the substring (pro-nan-ce...) failed a card
+    that renders nothing wrong. Screening the text nodes is what the guard
+    always meant, and it is strictly tighter: a NaN wrapped in markup still
+    trips it, while prose about the card cannot.
+    """
+    return " ".join(
+        (el.text or "") for el in _parse(svg).iter()
+        if el.tag.endswith("text") or el.tag.endswith("tspan")
+    ).lower()
+
+
 def test_cashtag_only_row_no_dashes():
     svg = render_breaking_card(
         _CPI, "CNBC", "wire", "2026-07-14T12:31:00Z",
@@ -395,7 +411,23 @@ def test_cashtag_only_row_no_dashes():
     _parse(svg)
     assert "$SPY" in svg
     assert "—" not in svg  # a dash row reads as broken, not honest
-    assert "nan" not in svg.lower().replace("sans-serif", "")
+    assert "nan" not in _rendered_text(svg)
+
+
+def test_nan_price_never_reaches_rendered_text():
+    """Mutation guard for the screen above: a real NaN must still be caught.
+
+    float('nan') survives the float() cast that None/'' fail, so it is the one
+    input that can reach a formatted price string. If this card ever renders it,
+    the screen must fail — that is what makes the tightened scan a pin and not
+    a formality.
+    """
+    svg = render_breaking_card(
+        _CPI, "CNBC", "wire", "2026-07-14T12:31:00Z",
+        tickers=[{"ticker": "SPY", "price": float("nan"), "pct": float("nan")}],
+    )
+    _parse(svg)
+    assert "nan" not in _rendered_text(svg)
 
 
 def test_price_only_row_renders_price_no_pct_arrows():
