@@ -599,6 +599,18 @@ jobs:
       # every other guard already passes is not a guard.
       - name: group-flow display-only detector + baskets.html.j2 money-flow render guard
         run: python -m pytest tests/test_group_flow.py -q
+      # Wired 2026-08-02: neither tests/test_theme_hash_deeplink.py nor
+      # tests/test_sector_intelligence_page.py was named by any job in any workflow,
+      # so both sat dark while the Sector Intelligence consolidation (#4237) turned
+      # baskets.html.j2 into a redirect stub that ATE inbound #theme-<id> hashes —
+      # the exact silent deep-link failure the deeplink suite was written against
+      # (#4254), invisible because the suite never ran. Both are stdlib text guards
+      # over templates this job already covers. Ordered before the sweep below for
+      # the same reason as the group-flow step above: a trailing guard is
+      # unreachable whenever anything in the ~100-file sweep is red. Path-gated in
+      # ci.yml on the test files; templates are covered by "templates/**" (#3488).
+      - name: theme deep-link contract + sector-intelligence consolidation invariants
+        run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
