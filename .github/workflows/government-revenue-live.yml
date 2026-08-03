@@ -86,18 +86,19 @@ on:
       - "collectors/usaspending_idv_graph.py"
       - "collectors/dod_budget.py"
       - "engine/government_revenue/**"
-      - "contracts/government_revenue/**"
       - "config/government_revenue/budget_program_reviewed_edges.v1.json"
       - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
       - "scripts/ci/validate_government_revenue_award_event_bundle.py"
       - "scripts/build_government_revenue.py"
+      - "scripts/build_government_revenue_candidates.py"
       - "scripts/collect.py"
       - "templates/_interfonts.html.j2"
       - "templates/_navlinks.html.j2"
       - "templates/_seo_head.html.j2"
       - "templates/_site_nav.html.j2"
       - "templates/data_base.js"
+      - "templates/government-revenue-candidate-radar.js"
       - "templates/government_revenue.html.j2"
 
 permissions:
@@ -351,7 +352,7 @@ jobs:
 
       - name: build Government Revenue projection
         if: ${{ steps.gate.outputs.publish == 'yes' }}
-        run: python -m scripts.build_government_revenue
+        run: python -m scripts.build_government_revenue --live-materialization
 
       # Checkout is pinned to main, every collector-owned source bundle is
       # verified and kept clean, and only governed source/output paths may be
@@ -603,6 +604,19 @@ jobs:
             fi
           }
 
+          assert_candidate_twins() {
+            local canonical=data/government_revenue/candidate_queue.json
+            local public=site/government-revenue-data/candidates.json
+            if [ ! -f "$canonical" ] || [ ! -f "$public" ]; then
+              echo "::error title=candidate queue twin missing::the live build must publish both canonical and public candidate queue bytes"
+              return 1
+            fi
+            if ! cmp -s "$canonical" "$public"; then
+              echo "::error title=candidate queue twin mismatch::canonical and public candidate queue bytes differ"
+              return 1
+            fi
+          }
+
           assert_optional_budget_graph_twins() {
             local canonical=data/government_revenue/budget_program_graph.json
             local public=site/government-revenue-data/budget-program.json
@@ -643,6 +657,7 @@ jobs:
           assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
           assert_idv_dossier_twins
+          assert_candidate_twins
           assert_optional_budget_graph_twins
 
           stage_candidates=(
@@ -658,12 +673,17 @@ jobs:
             data/government_revenue/idv_dossiers.json
             data/government_revenue/budget_program_graph.json
             data/government_revenue/recipient_resolution_coverage.json
+            data/government_revenue/candidate_ledger.jsonl
+            data/government_revenue/candidate_queue.json
+            data/government_revenue/candidate_projection_state.json
+            data/government_revenue/candidate_projection_status.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
             site/government-revenue-data/dossiers.json
             site/government-revenue-data/subaward-dossiers.json
             site/government-revenue-data/idv-dossiers.json
             site/government-revenue-data/budget-program.json
+            site/government-revenue-data/candidates.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -696,12 +716,17 @@ jobs:
             data/government_revenue/idv_dossiers.json \
             data/government_revenue/budget_program_graph.json \
             data/government_revenue/recipient_resolution_coverage.json \
+            data/government_revenue/candidate_ledger.jsonl \
+            data/government_revenue/candidate_queue.json \
+            data/government_revenue/candidate_projection_state.json \
+            data/government_revenue/candidate_projection_status.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
             site/government-revenue-data/dossiers.json \
             site/government-revenue-data/subaward-dossiers.json \
             site/government-revenue-data/idv-dossiers.json \
             site/government-revenue-data/budget-program.json \
+            site/government-revenue-data/candidates.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
@@ -725,8 +750,9 @@ jobs:
               assert_dod_budget_bundle
               assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
-              python -m scripts.build_government_revenue
+              python -m scripts.build_government_revenue --live-materialization
               assert_idv_dossier_twins
+              assert_candidate_twins
               assert_optional_budget_graph_twins
               git add \
                 data/government_revenue/latest.json \
@@ -735,11 +761,16 @@ jobs:
                 data/government_revenue/subaward_dossiers.json \
                 data/government_revenue/idv_dossiers.json \
                 data/government_revenue/recipient_resolution_coverage.json \
+                data/government_revenue/candidate_ledger.jsonl \
+                data/government_revenue/candidate_queue.json \
+                data/government_revenue/candidate_projection_state.json \
+                data/government_revenue/candidate_projection_status.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
                 site/government-revenue-data/idv-dossiers.json \
+                site/government-revenue-data/candidates.json \
                 site/government_revenue.html
               if [ -f data/government_revenue/budget_program_graph.json ]; then
                 git add -- \
@@ -757,12 +788,17 @@ jobs:
                 data/government_revenue/idv_dossiers.json \
                 data/government_revenue/budget_program_graph.json \
                 data/government_revenue/recipient_resolution_coverage.json \
+                data/government_revenue/candidate_ledger.jsonl \
+                data/government_revenue/candidate_queue.json \
+                data/government_revenue/candidate_projection_state.json \
+                data/government_revenue/candidate_projection_status.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
                 site/government-revenue-data/idv-dossiers.json \
                 site/government-revenue-data/budget-program.json \
+                site/government-revenue-data/candidates.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

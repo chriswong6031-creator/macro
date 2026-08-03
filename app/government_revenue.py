@@ -39,6 +39,15 @@ from engine.government_revenue.idv_dossiers import (
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.candidates import (
+    CONTRACT as CANDIDATE_CONTRACT,
+    QUEUE_CONTRACT as CANDIDATE_QUEUE_CONTRACT,
+    candidate_latest_semantic_sha256,
+    candidate_queue_content_id,
+    is_valid_candidate_payload,
+    is_valid_candidate_queue,
+)
+from engine.government_revenue.entity_resolution import load_recipient_entity_graph
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
 router = APIRouter()
@@ -64,18 +73,32 @@ _IDV_DOSSIER_PATHS = (
     _REPO / "data" / "government_revenue" / "idv_dossiers.json",
     _REPO / "site" / "government-revenue-data" / "idv-dossiers.json",
 )
+_CANDIDATE_QUEUE_PATHS = (
+    _REPO / "data" / "government_revenue" / "candidate_queue.json",
+    _REPO / "site" / "government-revenue-data" / "candidates.json",
+)
+_CANDIDATE_LEDGER_PATH = _REPO / "data" / "government_revenue" / "candidate_ledger.jsonl"
+_CANDIDATE_STATE_PATH = _REPO / "data" / "government_revenue" / "candidate_projection_state.json"
+_CANDIDATE_STATUS_PATH = _REPO / "data" / "government_revenue" / "candidate_projection_status.json"
+_CANDIDATE_SOURCE_PATHS = (
+    _REPO / "data" / "government_revenue" / "latest.json",
+    _REPO / "data" / "government_revenue" / "workspace.json",
+    _REPO / "data" / "government_revenue" / "recipient_entity_graph.json",
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 _NOTICE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _AWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
 _SUBAWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
 _BUDGET_LINE_KEY = re.compile(r"^dod:[a-z0-9:_-]{8,600}$")
 _BUDGET_PROGRAM_KEY = re.compile(r"^dod-program:[a-z0-9:_-]{8,600}$")
+_CANDIDATE_ID = re.compile(r"^grc1-[a-f0-9]{24}$")
 _LOCK = threading.RLock()
 _CACHE: dict = {"path": None, "mtime_ns": None, "payload": None}
 _DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _BUDGET_PROGRAM_CACHE: dict = {"state": None, "payload": None}
 _IDV_DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_CANDIDATE_CACHE: dict = {"state": None, "payload": None}
 _DOD_BUDGET_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 _SENSITIVE_KEY = re.compile(
     r"(?:^private|api[_-]?key|authorization|(?:^|_)(?:secret|token|password|credential)s?(?:$|_)|"
@@ -465,6 +488,319 @@ def _load_idv_dossiers() -> dict:
         return payload
 
 
+def _candidate_authority_is_display_only(value: object) -> bool:
+    return value == {
+        "tier": "display",
+        "context_only": True,
+        "can_rank": False,
+        "can_size": False,
+        "can_gate": False,
+        "can_originate_signal": False,
+        "can_add_candidates": False,
+        "can_escalate": False,
+    }
+
+
+def _candidate_projection_state(paths: tuple[Path, ...]) -> tuple:
+    try:
+        stats = [path.stat() for path in paths]
+    except OSError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="government revenue candidate projection unavailable",
+        ) from exc
+    return tuple(
+        value
+        for stat in stats
+        for value in (stat.st_mtime_ns, stat.st_size)
+    )
+
+
+def _candidate_projection_json(path: Path, *, label: str) -> tuple[bytes, dict]:
+    try:
+        raw = path.read_bytes()
+        payload = json.loads(raw)
+    except (OSError, ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"government revenue candidate {label} unreadable",
+        ) from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(
+            status_code=503,
+            detail=f"government revenue candidate {label} malformed",
+        )
+    return raw, payload
+
+
+def _candidate_ledger_rows(raw: bytes) -> list[dict]:
+    if not raw:
+        return []
+    if raw and not raw.endswith(b"\n"):
+        raise HTTPException(
+            status_code=503,
+            detail="government revenue candidate ledger is not append-safe",
+        )
+    if b"\r" in raw:
+        raise HTTPException(
+            status_code=503,
+            detail="government revenue candidate ledger is not canonical",
+        )
+    lines = raw[:-1].split(b"\n")
+    if not lines or any(not line for line in lines):
+        raise HTTPException(
+            status_code=503,
+            detail="government revenue candidate ledger is not canonical",
+        )
+    rows: list[dict] = []
+    observation_ids: set[str] = set()
+    for line in lines:
+        try:
+            row = json.loads(line.decode("utf-8"))
+            canonical = json.dumps(
+                row,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        except (UnicodeDecodeError, ValueError, TypeError) as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger unreadable",
+            ) from exc
+        if (
+            not isinstance(row, dict)
+            or row.get("contract") != CANDIDATE_CONTRACT
+            or not is_valid_candidate_payload(row)
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger schema mismatch",
+            )
+        if line != canonical:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger is not canonical",
+            )
+        observation_id = row.get("observation_id")
+        if observation_id in observation_ids:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger contains duplicate observations",
+            )
+        observation_ids.add(observation_id)
+        rows.append(row)
+    return rows
+
+
+def _load_candidate_projection() -> dict:
+    """Load one fully bound queue/ledger generation or fail closed.
+
+    A legitimate zero-candidate projection is a normal success.  Missing twins,
+    mixed publication generations, ledger mutation, or a trusted content-ID
+    mismatch is unavailable rather than an invented empty result.
+    """
+    canonical, public = _CANDIDATE_QUEUE_PATHS
+    paths = (
+        canonical,
+        public,
+        _CANDIDATE_LEDGER_PATH,
+        _CANDIDATE_STATE_PATH,
+        _CANDIDATE_STATUS_PATH,
+        *_CANDIDATE_SOURCE_PATHS,
+    )
+    state_key = _candidate_projection_state(paths)
+    with _LOCK:
+        if _CANDIDATE_CACHE["payload"] is not None and _CANDIDATE_CACHE["state"] == state_key:
+            return _CANDIDATE_CACHE["payload"]
+
+        canonical_raw, queue = _candidate_projection_json(canonical, label="queue")
+        public_raw, _public_queue = _candidate_projection_json(public, label="public twin")
+        _state_raw, projection_state = _candidate_projection_json(
+            _CANDIDATE_STATE_PATH,
+            label="projection state",
+        )
+        _status_raw, projection_status = _candidate_projection_json(
+            _CANDIDATE_STATUS_PATH,
+            label="projection status",
+        )
+        _latest_raw, latest = _candidate_projection_json(
+            _CANDIDATE_SOURCE_PATHS[0],
+            label="source latest",
+        )
+        _workspace_raw, workspace = _candidate_projection_json(
+            _CANDIDATE_SOURCE_PATHS[1],
+            label="source workspace",
+        )
+        _graph_raw, recipient_graph = _candidate_projection_json(
+            _CANDIDATE_SOURCE_PATHS[2],
+            label="recipient graph",
+        )
+        try:
+            ledger_raw = _CANDIDATE_LEDGER_PATH.read_bytes()
+        except OSError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate ledger unavailable",
+            ) from exc
+
+        if canonical_raw != public_raw:
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate queue twin mismatch",
+            )
+        if (
+            queue.get("contract") != CANDIDATE_QUEUE_CONTRACT
+            or not is_valid_candidate_queue(queue)
+            or candidate_queue_content_id(queue) != queue.get("content_id")
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate queue schema mismatch",
+            )
+
+        rows = _candidate_ledger_rows(ledger_raw)
+        ledger_sha256 = hashlib.sha256(ledger_raw).hexdigest()
+        ledger_binding = projection_state.get("ledger")
+        if (
+            projection_state.get("contract") != "government_revenue.candidate_projection_state.v1"
+            or projection_state.get("schema_version") != "1.0.0"
+            or not isinstance(ledger_binding, dict)
+            or ledger_binding.get("sha256") != ledger_sha256
+            or ledger_binding.get("byte_count") != len(ledger_raw)
+            or ledger_binding.get("line_count") != len(rows)
+            or projection_state.get("queue_content_id") != queue.get("content_id")
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate projection state mismatch",
+            )
+        if (
+            projection_status.get("contract") != "government_revenue.candidate_projection_status.v1"
+            or projection_status.get("schema_version") != "1.0.0"
+            or projection_status.get("status") != "ok"
+            or projection_status.get("queue_content_id") != queue.get("content_id")
+            or projection_status.get("ledger_sha256") != ledger_sha256
+            or projection_status.get("ledger_byte_count") != len(ledger_raw)
+            or projection_status.get("ledger_line_count") != len(rows)
+            or projection_status.get("candidate_count") != len(queue.get("candidates") or [])
+            or projection_status.get("mapping_backlog_count") != len(queue.get("mapping_backlog") or [])
+            or projection_status.get("latest_sha256") != projection_state.get("latest_sha256")
+            or not _candidate_authority_is_display_only(projection_status.get("authority"))
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate projection status mismatch",
+            )
+        for clock in ("as_of", "known_at", "generated_at"):
+            if (
+                projection_state.get(clock) != queue.get(clock)
+                or projection_status.get(clock) != queue.get(clock)
+            ):
+                raise HTTPException(
+                    status_code=503,
+                    detail="government revenue candidate projection clock mismatch",
+                )
+
+        embedded_workspace = latest.get("procurement_workspace")
+        workspace_semantic = {
+            key: value for key, value in workspace.items() if key != "generated_at"
+        }
+        workspace_sha256 = hashlib.sha256(
+            json.dumps(
+                workspace_semantic,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                default=str,
+            ).encode("utf-8")
+        ).hexdigest()
+        latest_sha256 = candidate_latest_semantic_sha256(latest)
+        loaded_graph = load_recipient_entity_graph(
+            recipient_graph,
+            as_of=queue.get("as_of"),
+        )
+        if (
+            not isinstance(embedded_workspace, dict)
+            or json.dumps(embedded_workspace, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            != json.dumps(workspace, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            or projection_state.get("workspace_bundle_id") != workspace.get("bundle_id")
+            or projection_status.get("workspace_bundle_id") != workspace.get("bundle_id")
+            or projection_state.get("workspace_sha256") != workspace_sha256
+            or projection_state.get("latest_sha256") != latest_sha256
+            or loaded_graph.get("status") != "ready"
+            or projection_state.get("recipient_graph_id") != loaded_graph.get("graph_id")
+            or projection_status.get("recipient_graph_id") != loaded_graph.get("graph_id")
+            or projection_state.get("recipient_graph_digest") != loaded_graph.get("graph_digest")
+            or projection_status.get("recipient_graph_digest") != loaded_graph.get("graph_digest")
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate source generation mismatch",
+            )
+
+        ledger_observations = {row["observation_id"]: row for row in rows}
+        projected = list(queue.get("candidates") or []) + list(queue.get("recently_matured") or [])
+        required_source_content_ids = {
+            f"latest-sha256:{latest_sha256}",
+            f"graph-sha256:{loaded_graph.get('graph_digest')}",
+            workspace.get("bundle_id"),
+        }
+        if any(
+            row.get("observation_id") not in ledger_observations
+            or json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            != json.dumps(
+                ledger_observations[row.get("observation_id")],
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
+            or not isinstance(row.get("issuer_resolution_ref"), dict)
+            or row["issuer_resolution_ref"].get("graph_id") != loaded_graph.get("graph_id")
+            or row["issuer_resolution_ref"].get("graph_digest") != loaded_graph.get("graph_digest")
+            or f"graph-sha256:{loaded_graph.get('graph_digest')}" not in (row.get("artifact_content_ids") or [])
+            for row in projected
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate queue is not ledger bound",
+            )
+        if (
+            not isinstance(queue.get("source_content_ids"), list)
+            or not required_source_content_ids.issubset(set(queue["source_content_ids"]))
+            or any(
+                not isinstance(row, dict)
+                or f"latest-sha256:{latest_sha256}" not in (row.get("source_artifact_content_ids") or [])
+                or f"graph-sha256:{loaded_graph.get('graph_digest')}" not in (row.get("source_artifact_content_ids") or [])
+                for row in queue.get("mapping_backlog") or []
+            )
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate queue source binding mismatch",
+            )
+        counts = queue.get("counts") if isinstance(queue.get("counts"), dict) else {}
+        if (
+            counts.get("total") != len(queue.get("candidates") or [])
+            or counts.get("exact_linked") != len(queue.get("candidates") or [])
+            or counts.get("mapping_needed") != len(queue.get("mapping_backlog") or [])
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail="government revenue candidate queue count mismatch",
+            )
+
+        loaded = {
+            "queue": queue,
+            "ledger": rows,
+            "projection_state": projection_state,
+            "projection_status": projection_status,
+        }
+        _CANDIDATE_CACHE.update(state=state_key, payload=loaded)
+        return loaded
+
+
 def _load() -> dict:
     path = _artifact_path()
     if path is None:
@@ -706,6 +1042,91 @@ def _decode_subaward_cursor(
     ):
         raise HTTPException(status_code=400, detail="invalid subaward cursor")
     return value
+
+
+def _validated_candidate_id(value: str) -> str:
+    if not _CANDIDATE_ID.fullmatch(value):
+        raise HTTPException(status_code=400, detail="invalid candidate id")
+    return value
+
+
+def _encode_candidate_cursor(offset: int, *, content_id: str, binding: str) -> str:
+    if offset < 0 or offset > 50_000:
+        raise ValueError("invalid candidate cursor offset")
+    raw = f"cq1:{content_id}:{binding}:{offset}"
+    return base64.urlsafe_b64encode(raw.encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_candidate_cursor(
+    cursor: str | None,
+    *,
+    content_id: str,
+    binding: str,
+) -> int:
+    if not cursor:
+        return 0
+    if len(cursor) > 200 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid candidate cursor")
+    try:
+        padded = cursor + "=" * (-len(cursor) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("ascii")).decode("ascii")
+        version, cursor_content, cursor_binding, offset = raw.split(":", 3)
+        value = int(offset)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid candidate cursor") from exc
+    if (
+        version != "cq1"
+        or cursor_content != content_id
+        or cursor_binding != binding
+        or value < 0
+        or value > 50_000
+    ):
+        raise HTTPException(status_code=400, detail="invalid candidate cursor")
+    return value
+
+
+def _public_candidate(row: dict) -> dict:
+    """Expose the complete bounded research record plus plain UI summaries."""
+    public = _scrub_public(row)
+    if not isinstance(public, dict):
+        raise HTTPException(status_code=503, detail="government revenue candidate malformed")
+    mechanism = row.get("mechanism") if isinstance(row.get("mechanism"), dict) else {}
+    public["observed_change"] = _scrub_public(mechanism.get("observed_change"))
+    return public
+
+
+def _candidate_envelope(
+    queue: dict,
+    *,
+    items: list[dict],
+    total: int,
+    next_cursor: str | None,
+) -> dict:
+    return _scrub_public({
+        "contract": queue.get("contract"),
+        "schema_version": queue.get("schema_version"),
+        "content_id": queue.get("content_id"),
+        "as_of": queue.get("as_of"),
+        "known_at": queue.get("known_at"),
+        "generated_at": queue.get("generated_at"),
+        "total": total,
+        "items": items,
+        "next_cursor": next_cursor,
+        "mapping_backlog_total": len(queue.get("mapping_backlog") or []),
+        "counts": queue.get("counts"),
+        "coverage": queue.get("coverage"),
+        "freshness": queue.get("freshness"),
+        "display_sort": queue.get("display_sort"),
+        "authority": queue.get("authority"),
+        "limitations": queue.get("limitations"),
+    })
+
+
+def _candidate_rows_for_queue(queue: dict) -> list[dict]:
+    rows = [row for row in queue.get("candidates") or [] if isinstance(row, dict)]
+    rows.sort(key=lambda row: str(row.get("candidate_id") or ""))
+    rows.sort(key=lambda row: str(row.get("known_at") or ""), reverse=True)
+    return rows
 
 
 def _dossier_company_map(payload: dict) -> dict[str, dict]:
@@ -988,6 +1409,241 @@ def latest(limit: int = Query(default=100, ge=1, le=250)) -> dict:
             )
             if key in workspace
         },
+    })
+
+
+@router.get("/api/government-revenue/candidates")
+def candidates(
+    ticker: str | None = Query(default=None),
+    family: str | None = Query(
+        default=None,
+        pattern=r"^(award_obligation_change|award_ceiling_change|option_exercise|new_award)$",
+    ),
+    state: str | None = Query(
+        default=None,
+        pattern=r"^(detected|awaiting_crosscheck|active|matured|superseded|withdrawn|blocked)$",
+    ),
+    direction: str | None = Query(
+        default=None,
+        pattern=r"^(possible_positive|possible_negative|mixed|unknown)$",
+    ),
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> dict:
+    """Page exact, receipt-bound research candidates in evidence-recency order."""
+    ticker = _validated_ticker(ticker)
+    projection = _load_candidate_projection()
+    queue = projection["queue"]
+    rows = [
+        row
+        for row in _candidate_rows_for_queue(queue)
+        if (ticker is None or row.get("ticker") == ticker)
+        and (family is None or row.get("candidate_family") == family)
+        and (state is None or row.get("candidate_state") == state)
+        and (direction is None or row.get("transmission_direction") == direction)
+    ]
+    binding = _dossier_cursor_binding({
+        "route": "candidates",
+        "ticker": ticker,
+        "family": family,
+        "state": state,
+        "direction": direction,
+    })
+    offset = _decode_candidate_cursor(
+        cursor,
+        content_id=queue["content_id"],
+        binding=binding,
+    )
+    page = rows[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _candidate_envelope(
+        queue,
+        items=[_public_candidate(row) for row in page],
+        total=len(rows),
+        next_cursor=(
+            _encode_candidate_cursor(
+                next_offset,
+                content_id=queue["content_id"],
+                binding=binding,
+            )
+            if next_offset < len(rows)
+            else None
+        ),
+    )
+
+
+@router.get("/api/government-revenue/candidate/{candidate_id}/history")
+def candidate_history(
+    candidate_id: str,
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> dict:
+    """Return immutable observations for one research hypothesis."""
+    candidate_id = _validated_candidate_id(candidate_id)
+    projection = _load_candidate_projection()
+    queue = projection["queue"]
+    rows = [
+        row
+        for row in projection["ledger"]
+        if row.get("candidate_id") == candidate_id
+    ]
+    if not rows:
+        raise HTTPException(status_code=404, detail="candidate not covered")
+    rows.sort(key=lambda row: str(row.get("observation_id") or ""))
+    rows.sort(key=lambda row: str(row.get("known_at") or ""), reverse=True)
+    binding = _dossier_cursor_binding({
+        "route": "candidate_history",
+        "candidate_id": candidate_id,
+    })
+    offset = _decode_candidate_cursor(
+        cursor,
+        content_id=queue["content_id"],
+        binding=binding,
+    )
+    page = rows[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _candidate_envelope(
+        queue,
+        items=[_public_candidate(row) for row in page],
+        total=len(rows),
+        next_cursor=(
+            _encode_candidate_cursor(
+                next_offset,
+                content_id=queue["content_id"],
+                binding=binding,
+            )
+            if next_offset < len(rows)
+            else None
+        ),
+    )
+
+
+@router.get("/api/government-revenue/candidate/{candidate_id}")
+def candidate(candidate_id: str) -> dict:
+    """Return the latest exact observation for one candidate identity."""
+    candidate_id = _validated_candidate_id(candidate_id)
+    projection = _load_candidate_projection()
+    queue = projection["queue"]
+    rows = [
+        row
+        for row in projection["ledger"]
+        if row.get("candidate_id") == candidate_id
+    ]
+    if not rows:
+        raise HTTPException(status_code=404, detail="candidate not covered")
+    rows.sort(
+        key=lambda row: (str(row.get("known_at") or ""), str(row.get("observation_id") or "")),
+        reverse=True,
+    )
+    return _scrub_public({
+        "contract": queue.get("contract"),
+        "schema_version": queue.get("schema_version"),
+        "content_id": queue.get("content_id"),
+        "as_of": queue.get("as_of"),
+        "known_at": queue.get("known_at"),
+        "generated_at": queue.get("generated_at"),
+        "candidate": _public_candidate(rows[0]),
+        "history_count": len(rows),
+        "freshness": queue.get("freshness"),
+        "authority": queue.get("authority"),
+        "limitations": queue.get("limitations"),
+    })
+
+
+@router.get("/api/government-revenue/company/{ticker}/candidates")
+def company_candidates(
+    ticker: str,
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> dict:
+    """Page exact candidates for a covered ticker without discovery fallback."""
+    ticker = _validated_ticker(ticker)
+    projection = _load_candidate_projection()
+    queue = projection["queue"]
+    covered_tickers = {
+        row.get("ticker")
+        for row in list(queue.get("candidates") or []) + list(queue.get("mapping_backlog") or [])
+        if isinstance(row, dict)
+    }
+    if ticker not in covered_tickers:
+        raise HTTPException(status_code=404, detail="company not covered")
+    rows = [row for row in _candidate_rows_for_queue(queue) if row.get("ticker") == ticker]
+    binding = _dossier_cursor_binding({
+        "route": "company_candidates",
+        "ticker": ticker,
+    })
+    offset = _decode_candidate_cursor(
+        cursor,
+        content_id=queue["content_id"],
+        binding=binding,
+    )
+    page = rows[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _candidate_envelope(
+        queue,
+        items=[_public_candidate(row) for row in page],
+        total=len(rows),
+        next_cursor=(
+            _encode_candidate_cursor(
+                next_offset,
+                content_id=queue["content_id"],
+                binding=binding,
+            )
+            if next_offset < len(rows)
+            else None
+        ),
+    )
+
+
+@router.get("/api/government-revenue/mapping-backlog")
+def mapping_backlog(
+    ticker: str | None = Query(default=None),
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> dict:
+    """Page discovery-scope companies still requiring exact issuer proof."""
+    ticker = _validated_ticker(ticker)
+    projection = _load_candidate_projection()
+    queue = projection["queue"]
+    rows = [
+        row
+        for row in queue.get("mapping_backlog") or []
+        if isinstance(row, dict) and (ticker is None or row.get("ticker") == ticker)
+    ]
+    rows.sort(key=lambda row: (str(row.get("ticker") or ""), str(row.get("backlog_id") or "")))
+    binding = _dossier_cursor_binding({
+        "route": "mapping_backlog",
+        "ticker": ticker,
+    })
+    offset = _decode_candidate_cursor(
+        cursor,
+        content_id=queue["content_id"],
+        binding=binding,
+    )
+    page = rows[offset:offset + limit]
+    next_offset = offset + len(page)
+    return _scrub_public({
+        "contract": queue.get("contract"),
+        "schema_version": queue.get("schema_version"),
+        "content_id": queue.get("content_id"),
+        "as_of": queue.get("as_of"),
+        "known_at": queue.get("known_at"),
+        "generated_at": queue.get("generated_at"),
+        "total": len(rows),
+        "items": page,
+        "next_cursor": (
+            _encode_candidate_cursor(
+                next_offset,
+                content_id=queue["content_id"],
+                binding=binding,
+            )
+            if next_offset < len(rows)
+            else None
+        ),
+        "freshness": queue.get("freshness"),
+        "coverage": queue.get("coverage"),
+        "authority": queue.get("authority"),
+        "limitations": queue.get("limitations"),
     })
 
 
