@@ -108,9 +108,40 @@ def test_theme_hover_card_prioritizes_score_breadth_risk_and_leaders():
 
 
 def test_decision_card_shell_is_viewport_safe_and_uses_dedicated_variant():
-    css = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
-    assert '<style id="action-card-css">' in css
+    """The card shell now lives in the shared partial, not page-local on the US board.
+
+    Before 2026-08-02 this CSS sat inline in dashboard.html.j2 and China / HK
+    rendered an unrelated label:value grid; Canada rendered no hover at all. The
+    shell moved to templates/_decision_card.html.j2 so all four boards render one
+    component — so this test pins the partial AND its four consumers, which a
+    dashboard-only assertion could never catch drifting apart.
+    """
+    css = (ROOT / "templates" / "_decision_card.html.j2").read_text(encoding="utf-8")
+    assert '<style id="decision-card-css">' in css
     assert ".row-pop:has(> .row-pop-decision){" in css
     assert "max-height:calc(100dvh - 20px)" in css
     assert "grid-template-columns:repeat(auto-fit,minmax(82px,1fr))" in css
     assert "z-index:2147483001" in css
+    for page in ("dashboard.html.j2", "china.html.j2", "hk.html.j2", "canada.html.j2"):
+        src = (ROOT / "templates" / page).read_text(encoding="utf-8")
+        assert '{% import "_decision_card.html.j2" as dc %}' in src, f"{page} does not import the shared card"
+        assert "dc.dc_css()" in src, f"{page} never emits the shared card CSS"
+        assert "dc.dc_card(" in src, f"{page} never renders the shared card"
+
+
+def test_score_caption_sits_outside_the_ring():
+    """The score caption must not live inside the conic disc.
+
+    A 7.5px label centred in the 62px disc rendered fine at the authored size and
+    ran straight through the ring stroke for any reader whose browser enforces a
+    minimum font size (12-16px is a common accessibility setting) — the label's
+    width is set by the clamped font, not by the design. Keeping the caption a
+    SIBLING of the disc makes the collision impossible at any font size.
+    """
+    css = (ROOT / "templates" / "_decision_card.html.j2").read_text(encoding="utf-8")
+    ring = css[css.index(".row-pop-score-ring{"):css.index(".row-pop-trust{")]
+    assert "row-pop-score-cap" in css, "score caption class missing"
+    assert ".row-pop-score-ring small" not in ring, (
+        "caption is back inside the ring — a clamped font size will cross the stroke"
+    )
+    assert ".row-pop-score{" in css, "ring/caption wrapper missing"

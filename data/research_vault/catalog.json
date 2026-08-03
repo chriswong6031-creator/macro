@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T13:51:10.184008+00:00",
-  "count": 667,
+  "generated_at": "2026-08-03T14:20:54.550862+00:00",
+  "count": 669,
   "institutions": [
+    "Academy Securities",
     "Alger",
     "Amova",
     "Apollo",
@@ -48,6 +49,25 @@
   ],
   "items": [
     {
+      "id": "marketdesk-zonnzrvd3vn-004fec",
+      "title": "THIS AINT MARADONA CENTRAL BANKING",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T12:14:09Z",
+      "summary_points": [
+        "**Fed's Guidance Contradiction**: Warsh's \"market as signal\" stance clashes with Fed's \"Maradona central banking\" (no action), risking market substitution of policy and undermining credibility as rising yields signal hikes but Fed holds steady.",
+        "**Dotplot-Driven Expectation Gap**: Persistent divergence between market-implied (blue) and realized (red) 2-year rates since Dotplot's 2013 introduction, with implied rates now consistently higher, signaling markets price forward guidance beyond historical outcomes.",
+        "**Market Policy Substitution Risk**: Rising yields push for rate hikes, yet Fed's no-change decision implies market is doing Fed's work; contradiction threatens policy coherence and increases volatility as market summarizes collective bets on Fed's *will* do, not *should* do."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-z1i4guo3cne-b3896e",
       "title": "EMR July 2026 Performance Review",
       "institution": "Deutsche Bank",
@@ -64,6 +84,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6zpbvfbc2y9-d5d2b0",
+      "title": "Trying Not To Use It But...Situational Unawareness",
+      "institution": "Academy Securities",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:05:33Z",
+      "summary_points": [
+        "**SPR Risk**: US economic punishment (including SPR release) as critical market risk amid Iran tensions; SPR drawdown could significantly shift narrative.",
+        "**AI Fund Hedging Imperative**: Leverage, illiquid private stakes in AI funds face severe volatility; prioritize hedging liquid positions (e.g., short MSFT/AMZN, long AAPL) over illiquid assets.",
+        "**Volatility & Earnings Disruption**: SOXX 10-day volatility spiked to ~80 (vs avg 20s), IPO delays, and massive earnings swings (MSFT +$500B, AMZN +$400B, AAPL -$400B) signal structural inefficiency from passive investing.",
+        "**Geopolitical Rate Hike Skepticism**: Iran conflict prolonging inflation narrative, making rate hikes unlikely (4.5% 10y yield less probable than 5% due to bond supply/demand favoring buyers)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },

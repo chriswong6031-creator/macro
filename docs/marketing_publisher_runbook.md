@@ -548,6 +548,121 @@ and wire lanes keep running. Raise `spend.twitterapiio_monthly_cap_usd` to lift 
 
 ---
 
+## 15. WIRE VOLUME — dark-desk parking, the per-account ceiling, and what arming `mastermind_news` takes
+
+*(W5, 2026-08-03. Written after the operator found four posts from one John
+Williams appearance inside an hour on @mastermindx001 — 2, 2, 2 and 1 views —
+plus two Switzerland CPI sub-prints and a Germany retail-sales print in the same
+batch. Measured from `data/marketing/outbox/items.jsonl`: **11** `kind="breaking"`
+items on `flagship` on 2026-08-03, every one `event_class=macro_print`.)*
+
+### 15a. A dark desk PARKS. It does not donate its volume.
+
+`engine/marketing/wire_routing.py` used to send a class routed onto a
+**disabled** desk to `wire_routing.default` instead — and the default is the
+brand account. That is a reasonable rescue for a lane emitting a few items a
+day and a product failure for a firehose: one `desk_network` switch made
+@mastermindx001 the destination for the whole wire.
+
+Today the default is **park**:
+
+| `wire_routing.dark_desk.policy` | what happens to a dark desk's item |
+|---|---|
+| `park` *(default)* | keeps the owning desk's address; counted in `wire_routing.park_census()`; one `::warning title=wire-routing-parked::` per desk per process; quarantined at dispatch with reason `account_disabled` (visible in **Admin → Marketing → Publisher** and in `status_ledger.jsonl`) |
+| `redirect` | the pre-W5 behaviour, wholesale — an explicit choice, not an inherited one |
+
+`wire_routing.dark_desk.severity_exception` is the narrow way back for a single
+huge event: `enabled: false` by default, with a `min_severity` floor (90) and a
+`to:` desk. Both halves are required, and a lane that passes no severity — the
+press wire does not — can never reach it by accident.
+
+**What to expect after this change.** A desk you switch off stops posting AND
+stops donating; its items accumulate as `account_disabled` quarantines. That is
+the intended cost. If you would rather another desk carried them, set
+`policy: redirect` — do not switch the desk back on just to stop the graves.
+
+### 15b. The per-account breaking ceiling
+
+`breaking.flagship_top_k_per_day` was never a per-account bound. It is a
+per-LANE, per-HOST, calendar-day counter in press_lane's daemon state
+(`wire_day_counts` in `cursors.json`), so:
+
+- it counts only the press lane — the intraday tape lane, fastlane and the
+  earnings call lane all emit `kind="breaking"` and charge nothing to it;
+- it lives in state, so a fresh checkout or a reset cursor starts at zero;
+- it is calendar-daily, so a 23:00 burst can spend a full day and then spend
+  another one an hour later.
+
+11 items shipped against a cap of 10. `wire_volume.breaking` in
+`config/marketing.yml` is the bound that closes all three — a **rolling**
+per-ACCOUNT ceiling counted from the outbox itself (what the network *produced*,
+not what survived to X, because a produced item has already spent a Chrome
+raster and an LLM call).
+
+```yaml
+wire_volume:
+  breaking:
+    window_hours: 24
+    default_per_window: 8
+    accounts:
+      flagship: 6          # BELOW the network default: the brand desk
+      mastermind_news: 8
+      founder: 0           # persona desks may not carry a relay at all
+```
+
+At the ceiling the surplus goes to another **declared** wire desk with headroom
+(`wire_routing.spill_pool`, which is ceiling-aware, so a persona desk can never
+be picked). When no wire desk has headroom, items are held and one
+`::warning title=wire-volume-exhausted::` names the account, the count, the cap
+and the window. `-1` means unlimited; `0` is a real zero, so you can stop a desk
+deliberately.
+
+**Where it binds.** `wire_routing.route` / `route_verdict` (every wire lane and
+the admin approve path), `wire_routing.spill_pool` (press-lane overflow), and
+`hot_tape.live_account` / `live_desk_verdict` (the tape lane's booking seam).
+
+### 15c. Arming `mastermind_news` — what exists, what is missing
+
+**It is already armed.** `desk_network.accounts[mastermind_news].enabled: true`
+since 2026-08-02 (masterplan §8.2 W4f). A brief describing it as
+`enabled: false` is reading a state that no longer exists on `main`, and the 11
+flagship items above were **not** a dark-desk redirect — `macro_print` and
+`policy` are routed to `flagship` on purpose (they are the two classes whose
+product is the house read). Volume, not routing, was the fault.
+
+Evidence for each thing arming needs:
+
+| Requirement | State | Evidence |
+|---|---|---|
+| X account exists | ✅ | `handle: mastermindnews1` |
+| Buffer channel bound | ✅ | `publish.channels.mastermind_news: 6a6823a74b2d03035f53147b`, discovered by the buffer-channels workflow and bound 2026-07-28 |
+| `desk_network` enabled | ✅ | `enabled: true`, `created: "2026-08-02"` |
+| No operator override switching it off | ✅ | `data/marketing/account_overrides.json` holds only `receipts`, `theme_desk`, `research_{a,b,c}` |
+| Cadence spec | ✅ | `config/personas/mastermind_news.yml`; `cadence_resolver.enabled: true` since 2026-07-28 |
+| Ramp tier | ✅ | `sentinel.resolve_ramp` as of 2026-08-03 → `weeks_1_2`, 14 posts/day; `weeks_3_4` (18) from 2026-08-07, graduating 2026-08-23 |
+| Wire classes routed to it | ✅ | `geopolitical`, `company_news`, `earnings`, `none` |
+| `copywriter.personas` block | ❌ **by design** | its register is the house wire voice (`engine/marketing/wire_voice.py`); a wire account relays and never takes a stance (charter §4). Do not add one. |
+| `publish.links_allowed` entry | ❌ absent (= false) | matches the founder precedent: links from a freshly wired account are a named X spam trigger. Flip after ~2 weeks if wanted. |
+
+**What breaks if a desk is enabled with no channel** (the failure mode to know,
+even though it does not apply here): nothing posts, and the queue rots quietly.
+`scripts/marketing_publisher._channel_id_for` returns `""`, the item is counted
+in `skipped_no_channel` with a `log.warning` (**not** a `::warning` — it will not
+appear in the Actions summary), it is re-skipped every sweep, and only after
+**3 days** does `--live` quarantine it with note `expired_no_channel`. The
+auto-approve pass skips it earlier with `no channel id configured`. So the
+symptom is an approved backlog that never drains and never errors — check
+**Admin → Marketing → Publisher** for `skipped_no_channel` in the run tally.
+
+**If the operator wants the wire OFF the brand account entirely**, that is a
+`wire_routing.classes` edit, not a `desk_network` flip: move `macro_print` and
+`policy` to `mastermind_news`. Both currently sit on `flagship` deliberately
+(the market-nexus gate and the attributive register are editorial judgments that
+belong to the desk that owns a view), so this is an operator decision with a
+real product trade, not a cleanup.
+
+---
+
 ### Where to look when something is off
 
 - **Admin → Marketing → Publisher** — arm state, status counts, recent posts +

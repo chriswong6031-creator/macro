@@ -8967,7 +8967,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_seasonality_shadow_state.py
     external_consumers:
       - public-stock-seasonality-page
     notes: >
@@ -8997,7 +8998,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_seasonality_shadow_state.py
     external_consumers:
       - public-stock-seasonality-page
     notes: >
@@ -9017,6 +9019,68 @@ artifacts:
       no score, no rank, no Neural Web state, no Prophet write path. The BY
       q-values inside family.registered_panel are a labelled sensitivity figure,
       never the verdict.
+
+  # --- Lane 6: the Neural Web shadow lobe and its forward outcome ledger ---
+  data-neuralweb-biopharma-seasonality-state:
+    path: data/neuralweb/biopharma_seasonality_state.json
+    format: json
+    producer: scripts/build_seasonality_shadow_state.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.biopharma_seasonality_state.file.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers: []
+    notes: >
+      Lane 6 shadow lobe — per-symbol expiring context states built by the
+      fail-closed contracts.build_neuralweb_state, one per covered Health Care
+      symbol in site/seasonalitydata/index.json (MEASURED from the index sector
+      labels, never a hand-listed roster). Authority ceiling is all-false: the
+      states never boost, rank, gate, size, or originate anything, and each one
+      carries a 48h expires_at so a stale read is dropped rather than carried
+      forward. Symbols whose entity artifact is absent, unreadable, or
+      shape-shifted appear as structured gaps rather than as missing keys.
+      RUL-P10 path b (git-committed, single writer = the producer, staged by the
+      nightly blanket git add data/). Consumed ONLY by mastermind
+      candidate_context as an annotate-only sparse map attached to names that
+      universe already admitted.
+
+  data-seasonality-nw-forward-ledger:
+    path: data/seasonality/nw_forward_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_seasonality_shadow_state.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: registered_asof
+    freshness_sla_hours: 30
+    schema: seasonality.nw_forward_ledger.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only forward outcome ledger for the Lane 6 shadow lobe: one register
+      row per (symbol, window occurrence) for every forecast the state map shows,
+      graded at horizon from the data/yahoo adjusted closes (the same close column
+      the year panel is folded from, so the realized number and the panel number
+      are one measurement). Rows are appended, never rewritten, reordered, or
+      re-dated; a matured occurrence whose prices have not arrived stays pending
+      and is closed out as ungradable_missing_prices only after 30 days. The
+      NIGHTLY IS THE SOLE ADVANCER — intraday lanes discard data/ writes.
+      RUL-P10 path b. Expected-NULL at birth: the first grades land a horizon
+      after the first registrations.
 
   data-stock-seasonality-selection-cache:
     path: data/seasonality/selection/<SYM>.json

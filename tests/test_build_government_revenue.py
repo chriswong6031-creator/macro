@@ -41,7 +41,7 @@ def _payload() -> dict:
 def _empty_graph() -> dict:
     return {
         "contract": "government_recipient_entity_graph.v1",
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "graph_id": "recipient-graph:builder-empty",
         "graph_known_at": "2026-08-01T00:00:00Z",
         "graph_effective_at": "2026-08-01T00:00:00Z",
