@@ -1,5 +1,6 @@
 """Build the 同花顺 (THS) thematic-baskets page -> site/baskets_china_ths.html
-(+ chinabasketdata/baskets_ths.json).
+(+ chinabasketdata/baskets_ths.json and the chinabasketdata/baskets_ths_hydrate.json side-car
+the page fetches for its member rows + per-basket level history).
 
 The machine-maintained sibling of scripts/build_baskets_china.py. Reads
 data/baskets_china_ths/membership.json (seeded by scripts.seed_china_ths_baskets from THS concept
@@ -69,6 +70,38 @@ def snapshot_membership() -> int:
     return 0
 
 
+HYDRATE_REL = "chinabasketdata/baskets_ths_hydrate.json"
+
+
+def split_for_page(data: dict, chart: dict) -> tuple[dict, dict, dict]:
+    """Page-weight split (SEO audit 2026-08-03): heavy planes -> out-of-line payload.
+
+    Returns (slim_data, slim_chart, hydrate). Never mutates its inputs. Row-preserving:
+    every member row and every chart series lands in `hydrate`, keyed by basket id.
+    The payload ships beside baskets_ths.json under site/chinabasketdata/, which is
+    deliberately UNDECLARED in config/site_access.yml -> it inherits the same
+    default-premium (regwalled) class as the page itself; do not add it to any
+    public/free list.
+    """
+    slim_data = {k: v for k, v in data.items() if k != "baskets"}
+    slim_data["baskets"] = [
+        {k: v for k, v in b.items() if k != "members"} for b in data.get("baskets", [])
+    ]
+    slim_data["hydrate"] = HYDRATE_REL
+    slim_chart = {
+        "dates": chart.get("dates", []),
+        "bench": chart.get("bench", []),
+        "baskets": {},
+    }
+    hydrate = {
+        "schema": "ths_hydrate.v1",
+        "as_of": data.get("as_of"),
+        "members": {b["id"]: b.get("members", []) for b in data.get("baskets", [])},
+        "chart_baskets": chart.get("baskets", {}),
+    }
+    return slim_data, slim_chart, hydrate
+
+
 def main() -> int:
     if "--snapshot" in sys.argv[1:]:
         return snapshot_membership()
@@ -113,11 +146,21 @@ def main() -> int:
     (fdir / "baskets_ths.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
 
     chart = data.pop("chart")
+    # Page-weight split (SEO audit 2026-08-03): the inline document keeps the summary planes for
+    # first paint; member rows + per-basket level history move to a fetched same-plane payload.
+    # split_for_page does not mutate data/chart, so the freeze / latest.json / turn-annotation
+    # blocks below still see the full objects.
+    slim_data, slim_chart, hydrate = split_for_page(data, chart)
+    hydrate_txt = json.dumps(hydrate, separators=(",", ":"), ensure_ascii=False, default=str)
+    # written BEFORE the page so a payload failure fails the run rather than shipping a slim
+    # page whose data never arrives.
+    (site / HYDRATE_REL).write_text(hydrate_txt)
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("baskets_china.html.j2").render(
-        baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
-        chart_json=json.dumps(chart, separators=(",", ":")),
+        baskets_json=json.dumps(slim_data, separators=(",", ":"), ensure_ascii=False),
+        chart_json=json.dumps(slim_chart, separators=(",", ":")),
         lite=True, basket_base="",
         bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
@@ -127,8 +170,11 @@ def main() -> int:
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
     if lwc.exists():
         (site / "lightweight-charts.js").write_text(lwc.read_text())
-    log.info("wrote %s/baskets_china_ths.html (%d baskets, %d categories, %d KB)",
-             site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
+    log.info("wrote %s/baskets_china_ths.html (%d baskets, %d categories, %d KB) "
+             "+ %s (%d KB: %d member rows, %d chart series)",
+             site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024,
+             HYDRATE_REL, len(hydrate_txt.encode("utf-8")) // 1024,
+             sum(len(v) for v in hydrate["members"].values()), len(hydrate["chart_baskets"]))
 
     # W3.8 — FREEZE China THS basket levels + membership hashes (append-only, PIT).
     # chart was popped from data above and is still in scope.

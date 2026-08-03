@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-01",
-  "generated_at": "2026-08-02T03:27:57.001150+00:00",
+  "as_of": "2026-08-02",
+  "generated_at": "2026-08-03T03:14:54.499414+00:00",
   "is_context_only": true,
-  "n_snapshots": 155673,
+  "n_snapshots": 158714,
   "horizons": {
     "5": {
       "n_matured": 15727,
@@ -240,5 +240,5 @@
   "any_matured": true,
   "note": "Measuring \u2014 accruing forward observations; the hub's edge is not yet statistically proven. Early numbers are provisional, context-only.",
   "benchmark": "SPY",
-  "disclaimer": "A falsifiable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized SPY-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
+  "disclaimer": "An accountable scorecard of the hub's own claims \u2014 opportunity rank and lifecycle stage graded against realized SPY-relative forward returns. Until a signal matures and clears a Newey-West significance bar it is 'measuring', never trusted. Nothing here sizes a position."
 }

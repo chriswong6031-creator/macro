@@ -574,6 +574,36 @@ def config(
     )
 
 
+def _rewrite_current_generation_as_v13(cfg: worker.WorkerConfig) -> None:
+    """Model the real pre-T1a public shape while preserving private evidence."""
+
+    pointer_path = cfg.public_root / "current.json"
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    generation = cfg.public_root / "generations" / pointer["generation_id"]
+    protocol_path = generation / "protocols" / "NCT00000001.json"
+    assert protocol_path.is_file()
+    protocol_path.unlink()
+    protocol_path.parent.rmdir()
+
+    manifest_path = generation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = "1.3.0"
+    manifest["artifacts"] = [
+        artifact
+        for artifact in manifest["artifacts"]
+        if not artifact["name"].startswith("protocols/")
+    ]
+    manifest.pop("manifest_sha256")
+    manifest["manifest_sha256"] = canonical_json_sha256(manifest)
+    manifest_path.write_bytes(canonical_json_bytes(manifest) + b"\n")
+
+    pointer["manifest_sha256"] = manifest["manifest_sha256"]
+    pointer_path.write_bytes(canonical_json_bytes(pointer) + b"\n")
+    prior = PublicGenerationPublisher(cfg.public_root).read_committed()
+    assert prior is not None
+    assert prior.schema_version == "1.3.0"
+
+
 def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_generation(tmp_path):
     cfg = config(tmp_path)
     collector = FakeCollectorFactory()
@@ -602,6 +632,7 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
         "health.json",
         "trials/NCT00000001.json",
         "trial_snapshots/NCT00000001.json",
+        "protocols/NCT00000001.json",
         "history/NCT00000001.json",
         "prospective/NCT00000001.json",
     }
@@ -609,6 +640,11 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
     assert projection is not None
     assert projection.generation == committed
     assert projection.trials[0]["facts"]["brief_title"]["value"] == "Synthetic Phase 2 Study"
+    assert projection.protocols_by_nct["NCT00000001"]["facts"]["arm_groups"] == {
+        "state": "source_missing",
+        "value": None,
+        "source_json_path": "/protocolSection/armsInterventionsModule/armGroups",
+    }
     assert projection.trials[0]["authority"]["decision_authority"] is False
     assert projection.history_models_by_nct["NCT00000001"]["available"] is False
     assert projection.history_models_by_nct["NCT00000001"]["unavailable_reason"] == "disabled"
@@ -667,7 +703,7 @@ def test_prospective_first_success_is_a_private_baseline_with_zero_public_change
         assert forbidden not in public_text
 
 
-def test_prospective_default_off_publishes_v12_without_private_or_public_ledger(tmp_path):
+def test_prospective_default_off_publishes_v14_without_private_or_public_ledger(tmp_path):
     cfg = config(tmp_path, prospective_enabled=False)
     store = MemoryStore()
 
@@ -682,7 +718,7 @@ def test_prospective_default_off_publishes_v12_without_private_or_public_ledger(
     publisher = PublicGenerationPublisher(cfg.public_root)
     committed = publisher.read_committed()
     assert committed is not None
-    assert committed.schema_version == "1.2.0"
+    assert committed.schema_version == "1.4.0"
     generation = cfg.public_root / "generations" / committed.generation_id
     assert not (generation / "prospective").exists()
     projection = publisher.read_trial_projection()
@@ -696,7 +732,7 @@ def test_prospective_default_off_publishes_v12_without_private_or_public_ledger(
     assert not any("/prospective/" in key for key in store.objects)
 
 
-def test_disabling_prospective_after_v13_fails_before_collection_or_downgrade(tmp_path):
+def test_disabling_prospective_after_v15_fails_before_collection_or_downgrade(tmp_path):
     enabled_cfg = config(tmp_path)
     store = MemoryStore()
     first = worker.run_once(
@@ -728,6 +764,75 @@ def test_disabling_prospective_after_v13_fails_before_collection_or_downgrade(tm
     )
     assert health["state"] == "quarantined"
     assert health["last_error_code"] == "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN"
+
+
+def test_disabling_prospective_after_v13_fails_before_collection_or_downgrade(tmp_path):
+    enabled_cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        enabled_cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    _rewrite_current_generation_as_v13(enabled_cfg)
+    pointer_before = (enabled_cfg.public_root / "current.json").read_bytes()
+    disabled_cfg = config(tmp_path, prospective_enabled=False)
+    calls = {"collector": 0, "store": 0}
+
+    result = worker.run_once(
+        disabled_cfg,
+        collector_factory=lambda **_: calls.__setitem__(
+            "collector", calls["collector"] + 1
+        ),
+        store_factory=lambda _: calls.__setitem__("store", calls["store"] + 1),
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
+    )
+
+    assert result.status == "failed"
+    assert result.error_code == "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN"
+    assert calls == {"collector": 0, "store": 0}
+    assert (enabled_cfg.public_root / "current.json").read_bytes() == pointer_before
+
+
+def test_v13_prior_prospective_generation_replays_into_v15_accrual(tmp_path):
+    cfg = config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    first_projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert first_projection is not None
+    first_model = first_projection.prospective_models_by_nct["NCT00000001"]
+    _rewrite_current_generation_as_v13(cfg)
+
+    def mutate(study: dict) -> None:
+        study["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+
+    second = worker.run_once(
+        cfg,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+            study_mutator=mutate,
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=1, minutes=58),
+    )
+
+    assert second.status == "success", second
+    projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
+    assert projection is not None
+    assert projection.generation.schema_version == "1.5.0"
+    model = projection.prospective_models_by_nct["NCT00000001"]
+    assert model["coverage_epoch_id"] == first_model["coverage_epoch_id"]
+    assert model["observation_count"] == 2
+    assert len(model["events"]) == 1
 
 
 def test_prospective_second_changed_poll_emits_bounded_event_and_private_exact_diff(tmp_path):

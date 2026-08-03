@@ -8,6 +8,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_REGISTRY = ROOT / "config" / "biocatalyst_sources.yml"
 OUTCOME_POLICY = ROOT / "config" / "biocatalyst_outcomes.yml"
+LAUNCH_SLO_MANIFEST = ROOT / "config" / "biocatalyst_launch_slo_manifest.yml"
 
 
 def _load_yaml(path: Path) -> dict:
@@ -83,6 +84,26 @@ def test_canary_is_disabled_and_empty_by_default() -> None:
     assert canary["default_enabled"] is False
     assert canary["production_enable_env"] == "BIOCATALYST_ENABLED"
     assert canary["allowlist_config_env"] == "BIOCATALYST_CANARY_NCTS"
+
+
+def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> None:
+    registry = _load_yaml(SOURCE_REGISTRY)
+    manifest = _load_yaml(LAUNCH_SLO_MANIFEST)
+    critical = {
+        source_id
+        for source_id, source in registry["sources"].items()
+        if source["launch_critical"] is True
+    }
+
+    assert critical == {"clinicaltrials_gov_v2"}
+    assert {row["source_id"] for row in manifest["sources"]} == critical
+    assert manifest["state"] == "pre_soak_unarmed"
+    assert manifest["sources"][0]["activation_state"] == "dark_unarmed"
+    assert registry["b0a_canary"]["default_enabled"] is False
+    assert manifest["soak"]["window_start"] is None
+    assert manifest["soak"]["source_results"] == []
+    assert manifest["soak"]["aggregate_passed"] is False
+    assert all(value is False for value in manifest["authority"].values())
 
 
 def test_record_history_canary_is_separate_bounded_and_dark_by_default() -> None:

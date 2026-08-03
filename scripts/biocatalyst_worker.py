@@ -1325,6 +1325,7 @@ _PRIOR_PRIVATE_EXTRA_ROOTS = (
     "biocatalyst/derived/clinicaltrials/history",
     "biocatalyst/derived/clinicaltrials/prospective",
 )
+_PROSPECTIVE_GENERATION_SCHEMAS = frozenset(("1.3.0", "1.5.0"))
 
 
 def _write_private_prospective_immutable(
@@ -1533,9 +1534,9 @@ def _load_prior_prospective_state(
     publisher: PublicGenerationPublisher,
     store: BinaryObjectStore,
 ) -> PriorProspectiveState:
-    """Replay the prior run and bind its private observation to public v1.3."""
+    """Replay a prior prospective generation through its private evidence."""
 
-    if prior.schema_version != "1.3.0":
+    if prior.schema_version not in _PROSPECTIVE_GENERATION_SCHEMAS:
         raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")
     projection = publisher.read_trial_projection()
     if projection is None or projection.generation != prior:
@@ -2585,7 +2586,7 @@ def run_once(
             prior = publisher.read_committed()
             if (
                 prior is not None
-                and prior.schema_version == "1.3.0"
+                and prior.schema_version in _PROSPECTIVE_GENERATION_SCHEMAS
                 and not config.prospective_enabled
             ):
                 raise PublicationError("BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN")
@@ -2659,13 +2660,16 @@ def run_once(
             ) = None
             if config.prospective_enabled:
                 # B4D accrues only across successive successful official-API
-                # observations in the same explicit NCT scope.  A legacy
-                # generation or a scope change deliberately starts a fresh
-                # epoch; a same-scope v1.3 generation must have its exact
-                # prior private source evidence present and replayable or the
-                # run quarantines.
+                # observations in the same explicit NCT scope.  A generation
+                # without prospective artifacts or a scope change deliberately
+                # starts a fresh epoch; a same-scope v1.3/v1.5 prospective
+                # generation must have its exact prior private source evidence
+                # present and replayable or the run quarantines.
                 prior_prospective_state: PriorProspectiveState | None = None
-                if prior is not None and prior.schema_version == "1.3.0":
+                if (
+                    prior is not None
+                    and prior.schema_version in _PROSPECTIVE_GENERATION_SCHEMAS
+                ):
                     prior_projection = publisher.read_trial_projection()
                     if prior_projection is None:
                         raise PublicationError("PROSPECTIVE_PRIOR_EVIDENCE_MISSING")

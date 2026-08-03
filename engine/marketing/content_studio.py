@@ -347,6 +347,34 @@ _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
 }
 
 
+def _drafts_nightly_copy(cfg: dict | None, account_id: str) -> bool:
+    """Does this desk draft nightly PERSONA copy, or is it a wire relay?
+
+    A desk earns a nightly queue by having a `copywriter.personas.<id>` block —
+    an authored voice. A desk without one is a WIRE desk: it relays in the house
+    wire voice (engine/marketing/wire_voice.py) and never editorializes (charter,
+    masterplan §4), and its volume arrives through the wire lanes, which never
+    touch content_plan.
+
+    THE PERSONA BLOCK IS THE RIGHT KEY, not `kind`. `kind: branded` covers the
+    flagship and the founder, both of which absolutely do draft. The presence of
+    an authored voice is the thing that actually differs, and it is the same fact
+    `_get_copy` needs: a persona-less desk has no template bank of its own, so
+    drafting for it can only borrow another desk's and collide with it under the
+    cross-account near-dup guard.
+
+    Fails OPEN (returns True) when the personas block is missing or unreadable —
+    a config we cannot parse must not silently mute every desk in the network.
+    """
+    try:
+        personas = ((cfg or {}).get("copywriter") or {}).get("personas") or {}
+        if not isinstance(personas, dict) or not personas:
+            return True
+        return str(account_id) in personas
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def _get_copy(type_id: str, voice: str) -> tuple[str, str]:
     """Get headline/body templates for (type_id, voice), with fallback."""
     key = (type_id, voice)
@@ -1309,6 +1337,48 @@ def _alarm_on_a_planless_night(
               f"Most likely: {remedy}.", flush=True)
 
 
+#: Share of ALLOCATED rungs the cross-day cooldown may swallow before the night
+#: is reported as starved rather than picky. A quarter of the ladder going
+#: unfilled means the postable-signal pool is smaller than the plan it is being
+#: asked to fill — that is a SUPPLY fact the operator needs, not a bug in the
+#: cooldown, and the remedy is more event-driven supply (press wire, hot tape),
+#: never a shorter cooldown.
+_COOLDOWN_DROP_ALARM_SHARE = 0.25
+
+
+def _alarm_on_cooldown_starvation(sel_report: dict) -> None:
+    """Say out loud when the cooldown emptied a material share of the ladder.
+
+    W4c. `dropped_cooldown` is the largest volume sink in the allocator and it
+    lived only in a caller-supplied dict — countable in principle, invisible in
+    practice, which is precisely how the movers desk shipped nothing for twelve
+    nights while every counter it owned read zero. The count is now persisted
+    (plan `summary` + `content.selection`, by account), and a material share
+    also gets an annotation, because a number nobody reads is a number nobody
+    reads.
+
+    BARE `print`, LINE-START, `flush=True` — never through `log`: this module's
+    logger prefixes the level, GitHub drops any annotation that does not start
+    the line, and stdout is block-buffered when piped in Actions.
+    """
+    offered = int(sel_report.get("slots_offered") or 0)
+    dropped = int(sel_report.get("dropped_cooldown") or 0)
+    if offered <= 0 or dropped <= 0:
+        return
+    share = dropped / offered
+    if share < _COOLDOWN_DROP_ALARM_SHARE:
+        return
+    by_acct = sel_report.get("dropped_cooldown_by_account") or {}
+    worst = sorted(by_acct.items(), key=lambda kv: (-int(kv[1]), str(kv[0])))[:3]
+    detail = ", ".join(f"{a}:{n}" for a, n in worst) or "no per-account detail"
+    print(f"::warning title=marketing-plan-cooldown-starved::"
+          f"the cross-day cooldown emptied {dropped} of {offered} planned rungs "
+          f"({share * 100:.0f}%) — every eligible name for those kinds is inside "
+          f"its cooldown. Worst desks: {detail}. Supply-honest volume means the "
+          f"rung stays empty, so the remedy is MORE event-driven supply (press "
+          f"wire top-K, hot tape), never a shorter cooldown.", flush=True)
+
+
 def _chart_quality_census(featured_charts: list[dict]) -> dict:
     """How many posted images are the REAL card, and how many are the fallback.
 
@@ -1972,14 +2042,33 @@ def _largest_remainder(weights: dict[str, float], total_slots: int) -> dict[str,
     for i in range(remainder):
         floors[fracs[i % len(fracs)]] += 1
 
-    # Ensure every type gets at least 1 if we have enough slots
-    for t in type_ids:
-        if floors[t] == 0 and sum(floors.values()) < total_slots:
-            # Give 1 slot, take from the type with the most
-            max_t = max((tt for tt in type_ids if floors[tt] > 1), default=None, key=lambda tt: floors[tt])
-            if max_t is not None:
-                floors[max_t] -= 1
-                floors[t] = 1
+    # Every type with weight > 0 gets at least one slot when the ladder is long
+    # enough to hold one of each.
+    #
+    # THIS USED TO BE DEAD CODE. The remainder pass above always lands
+    # `sum(floors) == total_slots`, so the `< total_slots` condition it was
+    # guarded by could never be true: the guarantee this docstring makes was
+    # carried entirely by the allocation being 196 slots wide, where every
+    # weight ≥ 0.03 floors to 1 on its own. Collapsing the ladder to ONE day
+    # (W4a) made a 20-rung allocation the normal case, and a 0.05-weight kind
+    # rounds to zero there — a whole content family silently leaving the plan.
+    #
+    # ZERO-WEIGHT TYPES ARE NOT RESURRECTED. 0.00 means OFF, not "rare":
+    # education sits at 0.00 by operator ruling (2026-07-30, see _DEFAULT_TILT),
+    # and handing it a slot here would reopen a family the operator closed.
+    positive = [t for t in type_ids if weights.get(t, 0) > 0]
+    if len(positive) <= total_slots:
+        for t in positive:
+            if floors[t] > 0:
+                continue
+            # Take from the fattest donor, ties broken by name so the allocation
+            # stays deterministic (re-planning a night must reproduce it).
+            donor = max((tt for tt in positive if floors[tt] > 1),
+                        default=None, key=lambda tt: (floors[tt], tt))
+            if donor is None:
+                break
+            floors[donor] -= 1
+            floors[t] = 1
 
     return floors
 
@@ -2008,6 +2097,191 @@ def _slot_labels(n_days: int, per_day: int) -> list[str]:
         for i in range(per_day):
             labels.append(f"D{day}-{_LADDER_SLOTS[i % len(_LADDER_SLOTS)]}")
     return labels
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ladder SHAPE — how many forward days, and how many rungs on each (W4a)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Forward ladder days the planner books. ONE, because nothing reads a previous
+#: plan: `content_plan` rebuilds the whole ladder every night from
+#: `plan_account`, and `outbox.emit_from_content_plan` takes only `D1-` slots
+#: (outbox.py:2199 — its own comment says D2..D7 "are supposed to be skipped").
+#: The 7-day ladder therefore threw away 6/7 of everything it produced BY
+#: CONSTRUCTION, and it did not throw it away evenly: the cross-day cooldown
+#: pool below is applied to the EMITTED day only, so an empty cooled pool
+#: dropped a D1 rung while the never-published days kept filling from the
+#: uncooled pool. Measured 2026-08-02: 1,176 items planned, 168 on D1.
+#: (masterplan §8.1 V1 / §8.2 W4a)
+_DEFAULT_FORWARD_DAYS = 1
+
+#: `per_day` is sized to the account's own ramp cap times this factor, not to a
+#: flat 28. The headroom exists because the gates BELOW the allocator (fact-reuse
+#: budget, filler budget, the writer) reject some of what is planned — measured
+#: 2026-08-02, ~65% of planned D1 rungs survive the reuse budget — so a desk
+#: capped at 10 posts/day needs ~20 rungs offered to fill its day. Above 2.0 the
+#: extra rungs are mostly eaten by the reuse budget rather than reaching a post
+#: (measured: headroom 2.0 → 128 items planned / 81 D1 survivors; 2.8 → 168 /
+#: 89), which is the "generating 28 to publish 10" waste in miniature.
+_DEFAULT_PER_DAY_HEADROOM = 2.0
+
+#: STRUCTURAL floor on the rung count, independent of any cap: the allocator
+#: cannot express a nine-kind tilt in fewer than nine rungs, and below it whole
+#: content families leave the plan silently (`_largest_remainder`'s ≥1
+#: guarantee needs one rung per positive-weight kind).
+#:
+#: It exists because the in-code sentinel default is 2/day — a LAUNCH FLOOR, not
+#: a working cadence — so any caller without a `sentinel:` block (a test, an
+#: admin preview, a fixture config) would otherwise be handed a 4-rung plan
+#: carrying four of the nine kinds. Against the shipped config this floor never
+#: binds: the tiers are 10/14/20, so `cap × headroom` is 20 or 28 everywhere.
+_MIN_LADDER_RUNGS = len(_TYPE_IDS)
+
+
+def forward_days(cfg: dict | None) -> int:
+    """``content_plan.forward_days`` — ladder days to book. Floor 1, default 1.
+
+    Read defensively so this works with OR without the config key present: a
+    missing/unparseable/absurd value takes the code default rather than
+    reintroducing the 7-day ladder by accident.
+    """
+    raw = ((cfg or {}).get("content_plan") or {}).get(
+        "forward_days", _DEFAULT_FORWARD_DAYS)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_FORWARD_DAYS
+    return n if n >= 1 else _DEFAULT_FORWARD_DAYS
+
+
+def per_day_headroom(cfg: dict | None) -> float:
+    """``content_plan.per_day_headroom`` — ramp-cap multiplier. Floor 1.0."""
+    raw = ((cfg or {}).get("content_plan") or {}).get(
+        "per_day_headroom", _DEFAULT_PER_DAY_HEADROOM)
+    try:
+        h = float(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_PER_DAY_HEADROOM
+    return h if h >= 1.0 else _DEFAULT_PER_DAY_HEADROOM
+
+
+def ladder_shape_for(
+    cfg: dict | None,
+    account_id: str,
+    as_of: str,
+    *,
+    root: Path | str | None = None,
+    ramp: dict | None = None,
+) -> dict[str, int]:
+    """``{"n_days", "per_day"}`` for ONE account's slice of the ladder.
+
+    ``per_day`` = ceil(that account's D08 ramp cap × ``per_day_headroom``),
+    floored at `_MIN_LADDER_RUNGS` and clamped to the 28-rung ladder. An
+    UNLIMITED cap (-1, which is what the base sentinel block carries) means the
+    ladder length itself — there is no cap to size against, so nothing is
+    trimmed.
+
+    Pass ``ramp`` (a ``sentinel.resolve_ramp`` result) when calling this in a
+    loop; otherwise every account re-resolves the tier table. Fail-soft: any
+    resolution error falls back to the full ladder, which is the pre-W4a
+    behaviour and never silently shrinks a desk's day.
+
+    NOTE ON SPACING. Trimming ``per_day`` packs the EARLIEST rungs (see
+    `_slot_labels`), and that costs no coverage: the Sentinel's
+    `cadence_cap_daily` scan is first-come-first-kept in queue order, so the
+    rungs that survive to post were already rungs 1..cap. A per_day at or above
+    the cap therefore leaves the posting window byte-identical.
+    """
+    n_days = forward_days(cfg)
+    ladder = len(_LADDER_SLOTS)
+    try:
+        from engine.marketing.outbox import effective_cap_for  # noqa: PLC0415
+        cap = effective_cap_for(cfg or {}, str(account_id), str(as_of),
+                                root=root, ramp=ramp)
+    except Exception as exc:  # noqa: BLE001 — sizing must never break a plan
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.ladder_shape_for(%r): %s — full ladder", account_id, exc)
+        return {"n_days": n_days, "per_day": ladder}
+    if cap is None or cap < 0:
+        return {"n_days": n_days, "per_day": ladder}
+    per_day = min(ladder, max(_MIN_LADDER_RUNGS,
+                              math.ceil(cap * per_day_headroom(cfg))))
+    return {"n_days": n_days, "per_day": per_day}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ramp FORMAT permissions — which kinds this account's tier may ship (W4b)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: content kind -> the ramp-tier boolean that decides whether the account may
+#: ship that FORMAT AT ALL. A kind listed here gets ZERO allocation on a tier
+#: that forbids it, instead of an allocation that dies at the gate.
+#:
+#: WHY THIS IS THE WHOLE LIST (audited 2026-08-02 against sentinel.gate_plan and
+#: sentinel._base_caps; do not add a knob here without a gate that kills the
+#: format):
+#:   * `theme_list_allowed` → `ramp_theme_list` (sentinel.py:1383) quarantines
+#:     the format outright on a cold tier. Kelly's ONE D1 at-bat on 2026-08-02
+#:     was a theme_list on a `weeks_1_2` tier — spent on a banned format.
+#:   * `links_allowed` → gates a LINK, not a kind. `links.attach_links` writes
+#:     `item["link"]` as a FIELD, sentinel's link rule (sentinel.py:1347) reads
+#:     headline+body only, and `emit_from_content_plan` never copies the field
+#:     onto the outbox item (verified: 0 of the ledger's items carry `link`).
+#:     No planned kind is unshippable because links are off.
+#:   * `max_cashtags_per_post` → theme_list is EXEMPT from the breadth count by
+#:     construction (sentinel.py:1365: the format requires ≥4 member cashtags,
+#:     so counting them would quarantine the format itself), and no other kind
+#:     emits more than one cashtag. Breadth bans no kind.
+#:   * `max_posts_/max_media_posts_/max_same_cashtag_per_account_per_day`,
+#:     `min_minutes_between_posts`, `max_replies_/max_new_follows_` → VOLUME
+#:     caps, not format permissions. `ladder_shape_for` above sizes against the
+#:     first one; the rest bound cadence, never a kind.
+_RAMP_KIND_PERMISSION: dict[str, str] = {"theme_list": "theme_list_allowed"}
+
+
+def ramp_banned_kinds(caps: dict | None) -> frozenset[str]:
+    """Content kinds this resolved cap set forbids OUTRIGHT.
+
+    Strict read: only an explicit ``False`` bans. A missing key is "no opinion"
+    (a pre-ramp config), never a ban — inventing a ban from an absent key would
+    silently delete a format network-wide.
+    """
+    if not isinstance(caps, dict) or not caps:
+        return frozenset()
+    return frozenset(
+        kind for kind, flag in _RAMP_KIND_PERMISSION.items()
+        if caps.get(flag) is False
+    )
+
+
+def ramp_banned_kinds_for(
+    cfg: dict | None,
+    account_id: str,
+    as_of: str,
+    *,
+    root: Path | str | None = None,
+    ramp: dict | None = None,
+) -> frozenset[str]:
+    """`ramp_banned_kinds` for ONE account, resolving its tier if needed.
+
+    Fail-soft to "nothing banned" — the pre-W4b behaviour. Failing CLOSED here
+    would delete a whole format from every desk on any resolution hiccup, which
+    is a bigger, quieter change than the one this guard exists to make.
+    """
+    try:
+        if ramp is None:
+            from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+            ramp = resolve_ramp(cfg or {}, as_of, root=root, announce=False)
+        entry = (ramp.get("accounts") or {}).get(str(account_id))
+        caps = entry.get("caps") if entry else (ramp.get("fallback") or {})
+    except Exception as exc:  # noqa: BLE001 — never break a plan on a tier read
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.ramp_banned_kinds_for(%r): %s — nothing banned",
+            account_id, exc)
+        return frozenset()
+    return ramp_banned_kinds(caps)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2071,11 +2345,12 @@ def plan_account(
     account: dict,
     plans: list[dict],
     *,
-    n_days: int = 7,
+    n_days: int = _DEFAULT_FORWARD_DAYS,
     per_day: int = 28,   # 28-slot 30-min Pacific ladder (was 19 = 45-min)
     seed: int = 0,
     tilt: dict[str, float] | None = None,
     drop_types: set[str] | None = None,
+    banned_kinds: frozenset[str] | set[str] | None = None,
     cooled_watch: frozenset[str] | set[str] | None = None,
     cooled_signal: frozenset[str] | set[str] | None = None,
     emit_day_prefix: str = "D1",
@@ -2085,6 +2360,13 @@ def plan_account(
 
     account: {id, voice, kind, ...}
     plans:   list of Prophet plan dicts
+    n_days:  forward ladder days. ONE by default (W4a) — see `forward_days` and
+                `_DEFAULT_FORWARD_DAYS`: nothing reads a previous plan, and the
+                outbox takes only `D1-` slots, so every extra day is generated
+                and discarded. The caller threads `content_plan.forward_days`.
+    per_day: rungs booked on each day. `ladder_shape_for` sizes this to the
+                account's own ramp cap × headroom; a caller that passes a flat
+                number gets exactly that.
     tilt:    per-type weights (all types, sum ~1.0); falls back to _DEFAULT_TILT
     seed:    additional integer offset (account-hash provides per-account variation)
     drop_types: type ids to remove from the tilt BEFORE allocation (weight → 0, no
@@ -2093,20 +2375,37 @@ def plan_account(
                 (publish_time_content.generate_read_item) owns that post instead,
                 so leaving it nightly too would double-post. Applied AFTER the
                 _DEFAULT_TILT merge so it wins even for the default (no-tilt) path.
+    banned_kinds: type ids this account's D08 ramp tier forbids OUTRIGHT
+                (`ramp_banned_kinds_for`). Removed from the tilt exactly like
+                `drop_types`, and for the same reason stated the other way round:
+                an allocation to a banned format is not a post, it is a slot the
+                Sentinel will quarantine (`ramp_theme_list`) after the writer has
+                been paid for it. Kelly's ONE D1 at-bat on 2026-08-02 was a
+                `theme_list` on a `weeks_1_2` tier — the account has never posted
+                once, ever, and the planner spent her only rung on a format she
+                is banned from using (masterplan §8.1 V2). The weight is
+                RENORMALISED into the kinds she may ship, so the ban costs the
+                desk no volume — it moves the at-bat, it does not delete it.
     cooled_watch / cooled_signal: tickers inside the cross-day cooldown (see
                 `cooled_tickers`) for coverage kinds and for signal kinds
                 respectively — the LKFN/GPI/CBOE fix (masterplan §5.1). A slot
                 whose type needs a ticker and finds NO eligible plan is DROPPED,
                 not filled: supply-honest volume means an empty rung stays empty
                 (§5.5), and a ticker-less "signal" post renders empty tokens.
+                THE EMPTY POOL NEVER FALLS BACK to the uncooled pool: doing so
+                would publish exactly the repetition the cooldown exists to stop.
     emit_day_prefix: the ONLY day the cooldown is applied to. Only `D1` slots are
                 ever emitted (outbox.emit_from_content_plan defaults to D1 and the
-                governor takes the default), so cooling D2-D7 would delete posts
-                nothing was going to send and would hollow out the 7-day plan the
-                admin reviews for no gain.
-    report:     optional mutable counter sink (`dropped_cooldown`) so the plan
-                report can print the funnel without this function changing its
-                return type.
+                governor takes the default), so cooling a forward day would delete
+                posts nothing was going to send. At the default `n_days=1` EVERY
+                slot is an emit slot, so the cooldown applies uniformly and the
+                asymmetry that used to decimate D1 alone cannot arise.
+    report:     optional mutable counter sink so the plan report can print the
+                funnel without this function changing its return type. Keys:
+                `dropped_cooldown` (+ `dropped_cooldown_by_account`),
+                `slots_offered`, `ramp_banned_kinds`. content_plan persists all
+                of them into the artifact — a drop counter that dies in a local
+                dict is the defect class that hid 12 nights of lost posts.
     """
     account_id = account.get("id", "unknown")
     voice = account.get("voice", "authoritative desk")
@@ -2120,6 +2419,36 @@ def plan_account(
     if drop_types:
         for k in drop_types:
             effective_tilt.pop(k, None)
+
+    # ── W4b: a format this tier forbids gets ZERO allocation ─────────────────
+    # Applied AFTER drop_types and BEFORE the normalisation below, so the banned
+    # kind's weight is redistributed across the kinds this desk may actually
+    # ship rather than being burned.
+    _banned = {str(k) for k in (banned_kinds or ())}
+    _banned_hit = sorted(k for k in _banned if k in effective_tilt)
+    if _banned_hit:
+        _kept = {k: v for k, v in effective_tilt.items() if k not in _banned}
+        if _kept:
+            _weight = round(sum(effective_tilt[k] for k in _banned_hit), 4)
+            effective_tilt = _kept
+            if report is not None:
+                report.setdefault("ramp_banned_kinds", {})[account_id] = {
+                    "kinds": _banned_hit,
+                    "weight_reallocated": _weight,
+                }
+        else:
+            # A tier that permits NOTHING is a config defect, not a plan of zero
+            # posts. Refuse the ban, keep the tilt, and say so out loud — a
+            # silently empty desk is the failure mode this whole lane exists to
+            # end.
+            print(f"::warning title=marketing-ramp-bans-every-kind::"
+                  f"{account_id}: the resolved ramp tier forbids EVERY content "
+                  f"kind in this desk's tilt ({', '.join(_banned_hit)}). The ban "
+                  f"is IGNORED for this plan — fix sentinel.ramp in "
+                  f"config/marketing.yml.", flush=True)
+            if report is not None:
+                report["ramp_ban_refused"] = report.get("ramp_ban_refused", 0) + 1
+
     # Normalize
     total_w = sum(effective_tilt.values()) or 1.0
     effective_tilt = {k: v / total_w for k, v in effective_tilt.items()}
@@ -2163,6 +2492,13 @@ def plan_account(
     plan_cursor = ah % max(len(plan_pool), 1)
     counter = 0
 
+    # The denominator the drop counters are a share OF. Without it a
+    # `dropped_cooldown` of 40 is unreadable — 40 out of 60 is an outage, 40 out
+    # of 1,176 is a quiet night.
+    if report is not None:
+        report["slots_offered"] = report.get("slots_offered", 0) + min(
+            len(seq), len(slots))
+
     for slot_idx, (type_id, slot) in enumerate(zip(seq, slots)):
         # Pick a plan for signal/chart posts
         plan = None
@@ -2174,8 +2510,17 @@ def plan_account(
                 pool = signal_pool if type_id == "signal" else watch_pool
             if not pool:
                 # Nothing fresh to say about any name tonight for this kind.
+                # NO FALLBACK TO `plan_pool`: an empty cooled pool means every
+                # eligible name is inside its cross-day cooldown, and reaching
+                # past it would publish the repetition the cooldown exists to
+                # stop. The rung stays empty (supply-honest volume, §5.5) and
+                # the drop is COUNTED — by account, because "the network lost
+                # 40 rungs" and "kelly lost all 20 of hers" are different
+                # nights and the second one is invisible in a network total.
                 if report is not None:
                     report["dropped_cooldown"] = report.get("dropped_cooldown", 0) + 1
+                    _by_acct = report.setdefault("dropped_cooldown_by_account", {})
+                    _by_acct[account_id] = _by_acct.get(account_id, 0) + 1
                 continue
             plan_idx = (plan_cursor + slot_idx * (ah % 7 + 1)) % len(pool)
             plan = pool[plan_idx]
@@ -2693,6 +3038,26 @@ def content_plan(
         [p for p in _supply_pool
          if str(p.get("asset", "")).upper() not in _cooled_watch])
 
+    # ── LADDER SHAPE + RAMP FORMAT PERMISSIONS (W4a/W4b) ─────────────────────
+    # Resolve the D08 ramp table ONCE for the whole plan: both the per-account
+    # rung count (`ladder_shape_for`) and the per-account banned formats
+    # (`ramp_banned_kinds_for`) read it, and re-resolving per account would
+    # re-read the override file 13 times and re-emit its annotations.
+    # Fail-soft: an unresolvable ramp leaves _ramp None, which sizes every desk
+    # to the full ladder and bans nothing — the pre-W4 behaviour.
+    _ramp: dict | None = None
+    try:
+        from engine.marketing.sentinel import resolve_ramp as _resolve_ramp
+        _ramp = _resolve_ramp(cfg or {}, today, root=root, announce=False)
+    except Exception as exc:  # noqa: BLE001 — a tier read must never break a plan
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio: ramp resolve failed (%s) — full ladder, no format bans",
+            exc)
+    _sel_report["forward_days"] = forward_days(cfg)
+    _sel_report["per_day_headroom"] = per_day_headroom(cfg)
+    _sel_report["ladder_shape"] = {}
+
     # Collect per-account items
     all_items: list[ContentItem] = []
     account_rows: list[dict] = []
@@ -2729,14 +3094,58 @@ def content_plan(
             })
             continue
 
+        # A WIRE DESK DRAFTS NOTHING HERE (W4f, 2026-08-02). A desk with no
+        # `copywriter.personas` block has no authored voice by design — it relays
+        # in the house wire voice (engine/marketing/wire_voice.py), and the
+        # charter is explicit that a wire account RELAYS AND NEVER EDITORIALIZES
+        # (masterplan §1, §4 safety rails). Its volume comes from the wire lanes,
+        # which bypass content_plan entirely: hot tape (~18 items/day on the
+        # 07-30/07-31 tape) and the `wire_routing.classes` it owns.
+        #
+        # WHY THIS IS A REAL GATE AND NOT TIDINESS. `_get_copy` is keyed by
+        # (type, voice) and FALLS BACK to the "authoritative desk" bank on an
+        # unknown voice, so a persona-less desk cannot draft nightly copy in any
+        # voice of its own — it can only wear another desk's. Arming
+        # mastermind_news (voice "fast, reactive", founder's key) would have had
+        # it drafting FOUNDER's deterministic templates: near-identical bodies
+        # that the cross-account near-dup guard quarantines on whichever desk it
+        # reaches second. That is precisely how meagan shipped 0 posts and sophia
+        # 1 on 2026-07-28 (tests/test_marketing_chart_coverage.py
+        # ::test_every_enabled_desk_has_its_own_template_bank), and it would have
+        # armed the news desk straight into the silence this wave exists to end.
+        #
+        # Renaming its `voice` would NOT fix it: an unrecognised string falls back
+        # to flagship's bank, so the collision merely becomes invisible to a guard
+        # that only compares voice strings. The desk is listed with its tilt (the
+        # admin still shows the intended mix) and an empty nightly queue.
+        if not _drafts_nightly_copy(cfg, acct_id):
+            account_rows.append({
+                "id": acct_id,
+                "name": acct_cfg.get("beat", acct_id),
+                "kind": kind,
+                "voice": voice,
+                "tilt": eff_tilt,
+                "mix_observed": {},
+                "queue": [],
+                "status": "wire",
+            })
+            continue
+
+        # ONE day of rungs, sized to THIS desk's ramp cap (W4a), drawn only from
+        # the formats THIS desk's tier permits (W4b).
+        _shape = ladder_shape_for(cfg, acct_id, today, root=root, ramp=_ramp)
+        _banned = ramp_banned_kinds_for(cfg, acct_id, today, root=root, ramp=_ramp)
+        _sel_report["ladder_shape"][acct_id] = dict(_shape)
+
         items = plan_account(
             account=acct_cfg,
             plans=plans,
-            n_days=7,
-            per_day=len(_LADDER_SLOTS),
+            n_days=_shape["n_days"],
+            per_day=_shape["per_day"],
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
             drop_types=drop_types,
+            banned_kinds=_banned,
             cooled_watch=_cooled_watch,
             cooled_signal=_cooled_signal,
             report=_sel_report,
@@ -5002,6 +5411,7 @@ def content_plan(
     n_charts = len(featured_charts)
     _alarm_on_a_planless_night(total_posts, _copy_dropped, n_charts, _sel_report,
                                _copy_drop_reasons)
+    _alarm_on_cooldown_starvation(_sel_report)
     n_plans = len(plans)
     n_with_charts = len(set(fc["ticker"] for fc in featured_charts))
 
@@ -5030,6 +5440,20 @@ def content_plan(
             "signal_posts": signal_posts,
             "charts": n_charts,
             "accounts": len(account_rows),
+            # THE PLANNER'S OWN FUNNEL, at the top of the artifact (W4c).
+            # `dropped_cooldown` is the largest volume sink in the allocator and
+            # it used to exist only inside a caller-supplied dict — the same
+            # defect class as the mover bug that hid 12 nights of lost posts.
+            # `slots_offered` is its denominator; without it the count cannot be
+            # read as healthy or broken. `forward_days` records the ladder shape
+            # this plan was built at, so a future postmortem can tell a 1-day
+            # plan from a 7-day one without re-deriving it from slot labels.
+            "forward_days": _sel_report.get("forward_days", forward_days(cfg)),
+            "slots_offered": _sel_report.get("slots_offered", 0),
+            "dropped_cooldown": _sel_report.get("dropped_cooldown", 0),
+            "dropped_cooldown_by_account": dict(
+                _sel_report.get("dropped_cooldown_by_account", {})),
+            "ramp_banned_kinds": dict(_sel_report.get("ramp_banned_kinds", {})),
         },
         "content": {
             "movers": _movers_summary,
@@ -5102,6 +5526,17 @@ def content_plan(
                 "cooled_signal_tickers": _sel_report.get("cooled_signal_tickers", 0),
                 "cooldown_overrides": _sel_report.get("cooldown_overrides", 0),
                 "dropped_cooldown": _sel_report.get("dropped_cooldown", 0),
+                # BY ACCOUNT (W4c): a network total of 40 hides "kelly lost
+                # every rung she had", which is exactly the shape of the night
+                # this lane was opened to explain.
+                "dropped_cooldown_by_account": dict(
+                    _sel_report.get("dropped_cooldown_by_account", {})),
+                "slots_offered": _sel_report.get("slots_offered", 0),
+                "forward_days": _sel_report.get("forward_days", 0),
+                "per_day_headroom": _sel_report.get("per_day_headroom", 0),
+                "ladder_shape": dict(_sel_report.get("ladder_shape", {})),
+                "ramp_banned_kinds": dict(_sel_report.get("ramp_banned_kinds", {})),
+                "ramp_ban_refused": _sel_report.get("ramp_ban_refused", 0),
                 "dropped_ticker_budget": _sel_report.get("dropped_ticker_budget", 0),
                 "dropped_signal_budget": _sel_report.get("dropped_signal_budget", 0),
                 "degenerate_stats_dropped": _degenerate_dropped,

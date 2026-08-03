@@ -16,7 +16,7 @@ PyYAML>=6.0,<7.0
 # BioCatalyst's serving router re-validates the pointer-bound public projection
 # through the shared sector contracts before returning any record. These are
 # hard API startup dependencies, not worker-only packages.
-jsonschema>=4.23,<5.0
+jsonschema==4.26.0
 referencing>=0.30,<1.0
 # Capital Structure uses the same validator for its canonical observed-filing
 # projection, so this single pin is a hard serving dependency for both desks.

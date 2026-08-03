@@ -46,14 +46,45 @@ def _success_projection() -> dict:
             "positive_highlights": ["Revenue grew 10% year over year."],
             "negative_highlights": ["Foreign exchange remained a headwind."],
             "tags": ["revenue_growth"],
-            "metrics": {"revenue_growth_pct": 10.0, "secret_metric": 99},
+            "metrics": {
+                "revenue_growth_pct": 10.0,
+                "eps_growth_pct": 12.5,
+                "gross_margin_pct": 45.0,
+                "questions_count": 18,
+                "sentiment": 0.8,
+                "performance": 0.7,
+                "confidence": 0.9,
+                "combined": 0.8,
+                "call_positivity": 0.75,
+                "management_confidence": 0.82,
+                "analyst_criticism": 0.12,
+                "future_outlook": 0.73,
+                "analysts_count": 22,
+                "secret_metric": 99,
+            },
             "field_lineage": {
                 "summary": "earnings_history",
-                "metrics": {"revenue_growth_pct": "earnings_history", "secret_metric": "raw"},
+                "metrics": {
+                    "revenue_growth_pct": "earnings_history",
+                    "eps_growth_pct": "earnings_history",
+                    "gross_margin_pct": "earnings_history",
+                    "questions_count": "earnings_history",
+                    "sentiment": "score_overlay",
+                    "combined": "score_overlay",
+                    "secret_metric": "raw",
+                },
                 "tags": {"revenue_growth": "earnings_history", "secret_tag": "raw"},
                 "internal": "must not leak",
             },
-            "previous_event_deltas": {"revenue_growth_pct": 2.0, "secret_metric": 999},
+            "previous_event_deltas": {
+                "revenue_growth_pct": 2.0,
+                "eps_growth_pct": 1.5,
+                "gross_margin_pct": 0.5,
+                "questions_count": -2,
+                "sentiment": 0.2,
+                "combined": 0.1,
+                "secret_metric": 999,
+            },
             "sources": [
                 {
                     "source_ref": "transcript",
@@ -112,7 +143,18 @@ def test_company_intelligence_is_a_one_event_cacheable_teaser(client, monkeypatc
     payload = response.json()
     assert payload["ticker"] == "AAPL"
     assert payload["latest_event"]["event_id"] == "AAPL:2026Q2"
-    assert payload["latest_event"]["metrics"] == {"revenue_growth_pct": 10.0}
+    assert payload["latest_event"]["metrics"] == {
+        "revenue_growth_pct": 10.0,
+        "eps_growth_pct": 12.5,
+        "gross_margin_pct": 45.0,
+        "questions_count": 18,
+    }
+    assert payload["latest_event"]["previous_event_deltas"] == {
+        "revenue_growth_pct": 2.0,
+        "eps_growth_pct": 1.5,
+        "gross_margin_pct": 0.5,
+        "questions_count": -2,
+    }
     assert payload["latest_event"]["sources"] == [{
         "kind": "transcript", "status": "present", "citation_precision": "document",
     }]
@@ -145,7 +187,12 @@ def test_company_intelligence_recursively_withholds_transport_and_internal_field
     }
     assert payload["latest_event"]["field_lineage"] == {
         "summary": "earnings_history",
-        "metrics": {"revenue_growth_pct": "earnings_history"},
+        "metrics": {
+            "revenue_growth_pct": "earnings_history",
+            "eps_growth_pct": "earnings_history",
+            "gross_margin_pct": "earnings_history",
+            "questions_count": "earnings_history",
+        },
         "tags": {"revenue_growth": "earnings_history"},
     }
     serialized = json.dumps(payload, sort_keys=True)
@@ -166,6 +213,15 @@ def test_company_intelligence_recursively_withholds_transport_and_internal_field
         "source_ref",
         "raw_context",
         "secret_metric",
+        "sentiment",
+        "performance",
+        "confidence",
+        "combined",
+        "call_positivity",
+        "management_confidence",
+        "analyst_criticism",
+        "future_outlook",
+        "analysts_count",
     ):
         assert forbidden not in serialized
 

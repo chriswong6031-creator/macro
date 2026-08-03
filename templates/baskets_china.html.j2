@@ -389,6 +389,7 @@
         data-ph-zh="搜索同花顺概念、类别、成分或代码...">
       <span class="count" id="basket-count"></span>
     </div>
+    <p class="chart-note" id="hydrate-note" hidden></p>
 
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
@@ -474,6 +475,31 @@
 const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
 const THEME   = BASKETS.theme_intel || null;
+
+// Page-weight split (SEO audit 2026-08-03): member rows + per-basket level history
+// hydrate from a same-plane payload named by BASKETS.hydrate; the inline document
+// keeps the summary planes for first paint. No-op when the key is absent (curated page).
+let HYDRATED = !BASKETS.hydrate, HYD_ERR = false;
+function syncHydrateNote(){
+  const el = document.getElementById('hydrate-note'); if(!el) return;
+  if(HYDRATED){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = HYD_ERR
+    ? _bl('Couldn’t load the full history — refresh to try again.', '未能加载完整数据 — 请刷新重试。')
+    : _bl('Loading full history and member rows…', '正在加载完整历史与成分数据…');
+}
+if(BASKETS.hydrate){
+  fetch(BASKETS.hydrate, {credentials:'same-origin'})
+    .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(p => {
+      (BASKETS.baskets||[]).forEach(b => { const m = p.members && p.members[b.id]; if(m) b.members = m; });
+      if(p.chart_baskets) CHART.baskets = p.chart_baskets;
+      HYDRATED = true;
+      if(window.__thsBooted) renderAll();
+      syncHydrateNote();
+    })
+    .catch(() => { HYD_ERR = true; syncHydrateNote(); });
+}
 window.BASKET_BASE = '{{ basket_base }}';
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
@@ -824,7 +850,9 @@ function renderCards(){
     const memberW = LANG()==='zh'?'只 · ':' members · ';
     const baskets=filteredBaskets().filter(b=>b.category===cat);
     const cards=sortedCards(baskets)
-      .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
+      {# ||[] — the level series may not have hydrated yet (see BASKETS.hydrate); sparkline
+         degrades to empty for that paint instead of throwing out of boot(). #}
+      .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]||[]));
         const ref=b.reference?` · ${LANG()==='zh'?'对标':'tracks'} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
         // tiny cross-market confirmer badge on AI-supply baskets (context only, not a signal)
         const sx=b.ai_semis_confirmer;
@@ -974,6 +1002,7 @@ function renderSemisChip(){
 function renderAll(){ renderStory(); renderModeTabs(); renderTblCatFilter(); renderBTable(); renderChartCats(); renderChart(); renderCardSortTabs(); renderCards(); renderDetails(); renderEntryRadar(); updateCount(); }
 
 function boot(){
+  syncHydrateNote();   // safe here: boot runs after the full script parses (_bl is initialised)
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
   const search=document.getElementById('basket-search');
   if(search){
@@ -999,6 +1028,7 @@ function boot(){
   {% if not lite %}if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);{% endif %}
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderTblCatFilter(); renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  window.__thsBooted = true;
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>

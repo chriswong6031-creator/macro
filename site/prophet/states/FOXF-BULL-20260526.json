@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FOXF-BULL-20260526",
-  "asof": "2026-08-01",
+  "asof": "2026-08-02",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 40.0,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 99.1,
     "progress": 0.0,
-    "pace": 0.7,
+    "pace": 0.0,
     "retention": 0.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.993,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 148.9,
+    "horizon_pct_used": 151.1,
     "p1": -0.0045,
     "p2": -0.0022,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 67,
-  "tau": 1.4889
+  "days_elapsed": 68,
+  "tau": 1.5111
 }

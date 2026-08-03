@@ -230,3 +230,21 @@ accounts:
   founder:
     beats: ["macro", "markets", "building", "research"]
     authors: []
+
+  # ── Mastermind News — the publication wire ────────────────────────────────
+  # PERMANENTLY EMPTY, and for a different reason than the founder's block.
+  # This is not a curation that has not happened yet: a WIRE ACCOUNT RELAYS AND
+  # NEVER TAKES A STANCE (masterplan §4 safety rails), and a reply IS a stance —
+  # it is our desk entering someone else's conversation with a view. The desk's
+  # own D08 ramp says the same thing in numbers
+  # (max_replies_per_account_per_day: 0 at every tier it will reach).
+  #
+  # The block exists at all because the register must cover every LIVE desk (a
+  # desk missing from it is indistinguishable from a desk whose curation was
+  # forgotten), and mastermind_news went live on 2026-08-02 with the W4f arming.
+  # DO NOT ADD HANDLES HERE. If the publication ever earns a conversational
+  # register, that is an operator editorial decision and it needs its own
+  # ruling — the same bar §14.2 sets for every other entry in this file.
+  mastermind_news:
+    beats: ["markets", "macro", "companies", "earnings", "geopolitics"]
+    authors: []

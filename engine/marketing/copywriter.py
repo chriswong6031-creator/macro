@@ -5672,7 +5672,8 @@ def _anti_exemplar_block() -> str:
 # their parent's name because that is how they appear in the JSON the model
 # reads.
 V2_PAYLOAD_CONTRACT_KEYS: tuple[str, ...] = (
-    "account", "persona", "kind", "shape", "shape_contract", "angle",
+    "account", "persona", "kind", "shape", "shape_contract", "number_budget",
+    "angle",
     "cashtag", "cashtags", "facts", "entry", "t1", "t2", "invalidation",
     "win_rate", "numbers_whitelist", "pack", "lead_with", "sibling_texts",
     "franchise", "codex",
@@ -5693,6 +5694,14 @@ _V2_PAYLOAD_CONTRACT_BLOCK = (
     "earnings, wire...). It sets what the post is FOR.\n"
     "- shape / shape_contract: the form, assigned. Write exactly that form; the "
     "contract text is repeated in the item so you cannot miss it.\n"
+    "- number_budget: the most DISTINCT numbers this post may carry, computed "
+    "for THIS item's kind and shape, and the exact count a validator will "
+    "apply to what you write. It is a ceiling, never a target: most posts want "
+    "fewer, and one number with a reaction that costs you beats four numbers "
+    "and no stance. Every number after the first has to be what the one before "
+    "it is measured against, not a new claim. shape_contract quotes the SHAPE "
+    "half of this figure and is never higher than it, so where the two differ, "
+    "this is the one that counts.\n"
     "- angle: the job this post does. Write that job.\n"
     "- cashtag / cashtags: the tickers this post is about. If a cashtag is "
     "present it must appear in the post, spelled exactly as given.\n"
@@ -5891,8 +5900,17 @@ _V2_SYSTEM_PROMPT_BASE = (
     "- Risk never attaches to your ego: 'I'm wrong below 33.8', 'proves me "
     "wrong', 'my trigger' are banned. Compliance caveats are banned too: "
     "'historical, not a guarantee', 'past performance', 'size appropriately'.\n"
-    "- ONE number per post. Motto cadence (two short symmetrical clauses) and "
-    "numbered lists of your own process are banned.\n"
+    # THIS LINE USED TO SAY "ONE number per post" (W4e, 2026-08-02). It was a
+    # blanket house rule sitting in the same prompt as a per-shape contract that
+    # orders up to six, and above a validator (`number_budget_for`) that has
+    # never once returned 1 — so on all 154 items of the 08-02 plan the model
+    # was told a cap that no post could satisfy and that no gate enforced. Same
+    # self-cancelling shape as the HEDGES autopsy: an instruction whose
+    # compliance is a rejection teaches the model that the instructions are
+    # noise. The cap is unchanged; the model is now told the real one, per item.
+    "- Numbers are capped at your item's number_budget, and no post is obliged "
+    "to spend it. Motto cadence (two short symmetrical clauses) and numbered "
+    "lists of your own process are banned.\n"
     "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
     "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
     "everywhere, kickers like 'without the noise'.\n\n"
@@ -6144,6 +6162,14 @@ _V2_STAT_KEYS = (
     # of both, and a night where `provider_failovers` tracks `items` is a rung
     # that is down and should be pulled from the order.
     "provider_retries", "provider_failovers",
+    # THE CLASS THAT HID INSIDE "provider returned no text" (W4e, 2026-08-02).
+    # `unreadable_replies` counts turns where a provider ANSWERED and the reply
+    # was not the contracted object; `unreadable_reasks` counts the one extra
+    # ask each of those buys; `provider_recovered` counts items that came back
+    # alive from either recovery path. A night where `unreadable_replies`
+    # tracks `items` is a PROMPT/model-shape problem and pulling a rung will not
+    # touch it, which is the opposite of what the legacy reason string implied.
+    "unreadable_replies", "unreadable_reasks", "provider_recovered",
 )
 _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 #: The writer runs items in parallel and every worker bumps these. ``d[k] += 1``
@@ -6219,6 +6245,16 @@ def _v2_item_payload(
         "kind": ctx.get("type"),
         "shape": shape,
         "shape_contract": SHAPE_CONTRACT.get(shape, ""),
+        # THE NUMBER THE VALIDATOR WILL ACTUALLY COUNT (W4e, 2026-08-02).
+        # `shape_contract` quotes the SHAPE half of the budget and the system
+        # prompt used to state a flat "ONE number per post" on top of it, so on
+        # every one of the 154 items in the 08-02 plan the model was handed two
+        # different caps and neither was the enforced one (a receipt or an
+        # earnings post is allowed four whatever its shape says). The gate does
+        # not move — `number_budget_for` is unchanged and is the single source
+        # of truth for BOTH sides now. The writer is simply told what it is.
+        "number_budget": number_budget_for(kind=str(ctx.get("type") or ""),
+                                           shape=shape),
         "angle": ctx.get("angle") or None,
         "cashtag": ctx.get("cashtag") or None,
         "cashtags": ctx.get("cashtags") or None,
@@ -6318,6 +6354,22 @@ def _dashless(s: str) -> str:
     return out
 
 
+#: Appended to the ONE re-ask an `unreadable_reply` buys, and to nothing else.
+#:
+#: The first turn already carried the output law in the system prompt and the
+#: model wrapped its post in something else anyway, so restating the law IS the
+#: repair — the same move the editorial repair turn makes (name exactly what was
+#: wrong and nothing else). It relaxes nothing: every validator still runs on
+#: whatever comes back, and the sentence about the post being unchanged is there
+#: so a model does not read "try again" as "write something easier".
+_OUTPUT_SHAPE_REMINDER = (
+    "\n\nYOUR PREVIOUS REPLY COULD NOT BE READ. Answer with ONE JSON object and "
+    "nothing else: {\"text\": \"<the post>\"}. No code fence, no preamble, no "
+    "commentary before or after it, no other keys. This changes NOTHING about "
+    "the post: same laws, same shape, same numbers, same item."
+)
+
+
 def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
                      critic_reasons: list[str] | None = None) -> str:
     """The user turn: the item, and on a repair, exactly what was wrong.
@@ -6341,6 +6393,77 @@ def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
             + "\n".join(f"- {_dashless(r)}" for r in critic_reasons[:6])
         )
     return out
+
+
+#: THE FLOOR THE 08-02 OUTAGE WALKED UNDER.
+#:
+#: content_studio's outage breaker keys on the provider share of the WHOLE plan
+#: and trips above 50%. On 2026-08-02 the provider stage lost 32 of 79 attempted
+#: posts (41% of the lane, 28% of the reason census) and the breaker stayed
+#: silent, so a quarter of the day's supply vanished through a green run. A
+#: quarter of a day is not a rounding error on a network that publishes three
+#: posts per account: at ~3/day/account, a 10% provider loss is one account's
+#: whole day every third night.
+#:
+#: This is deliberately a SEPARATE alarm from the gate-5 drop-rate warning below
+#: and it is louder: gate 5 is "the writer is being picky tonight" (a copy
+#: problem, and the copy laws are supposed to bite), this is "the writer never
+#: got an answer" (nothing was judged at all, and the supply is simply gone).
+_PROVIDER_FAULT_ALARM_SHARE = 0.10
+#: ...and a floor in ITEMS, because this lane is called once per desk and a
+#: four-item desk losing one post is not an outage. Three provider-stage drops
+#: is the smallest count that cannot be one unlucky item.
+_PROVIDER_FAULT_ALARM_MIN = 3
+
+
+def _provider_fault_alarm(results: list[dict], dropped: list[dict]) -> None:
+    """One line-start ``::error`` when provider faults are eating this desk.
+
+    Bare print at line start with flush: a ``::error`` behind this module's
+    prefixing logger is not a line start and GitHub drops it silently, which is
+    the defect class ``tests/test_gh_annotation_line_start.py`` exists for.
+
+    NEVER RAISES and never changes an outcome — an alarm that can break the
+    writer is worse than the silence it replaces.
+    """
+    try:
+        total = len(results or [])
+        prov = [r for r in (dropped or []) if str(r.get("stage") or "") == "provider"]
+        n = len(prov)
+        if not total or n < _PROVIDER_FAULT_ALARM_MIN:
+            return
+        share = n / total
+        if share <= _PROVIDER_FAULT_ALARM_SHARE:
+            return
+        census: dict[str, int] = {}
+        for r in prov:
+            for reason in (r.get("reasons") or ["unrecorded"]):
+                # The family, not the whole string: `unreadable_reply:codex` and
+                # `unreadable_reply:codex+oauth` are one fault to an operator.
+                fam = str(reason).split(":", 1)[0] or "unrecorded"
+                census[fam] = census.get(fam, 0) + 1
+        top = ", ".join(f"{k}={v}" for k, v in
+                        sorted(census.items(), key=lambda kv: -kv[1])[:4])
+        unreadable = sum(v for k, v in census.items()
+                         if k in ("unreadable_reply", "repair_unanswered"))
+        steer = ("MOST OF THESE ARE UNREADABLE REPLIES: the providers ANSWERED "
+                 "and the writer could not parse what came back, so this is a "
+                 "model output-shape problem and pulling a rung from "
+                 "copywriter.llm.provider_order will not touch it."
+                 if unreadable * 2 >= n else
+                 "Check the named rungs in copywriter.llm.provider_order: each "
+                 "item already spent its same-provider retry and its one "
+                 "failover rung before it died.")
+        print(f"::error title=marketing_copy_provider_faults::The copy lane's "
+              f"PROVIDER stage lost {n} of {total} attempted posts "
+              f"({share:.0%}; alarm floor {_PROVIDER_FAULT_ALARM_SHARE:.0%} and "
+              f"{_PROVIDER_FAULT_ALARM_MIN} items). These posts were never "
+              f"judged by any validator, so this is LOST SUPPLY, not stricter "
+              f"copy, and dropped posts are never templated. Reasons: {top}. "
+              f"{steer}", flush=True)
+    except Exception as exc:  # noqa: BLE001 — an alarm never breaks the writer
+        log.warning("copywriter v2: provider-fault alarm failed (%s: %s)",
+                    type(exc).__name__, exc)
 
 
 def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> list[dict]:
@@ -6595,6 +6718,9 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
         recent_acc.setdefault(acct_i, []).append(
             {"text": text_i, "date": ctx_i.get("as_of")})
 
+    dropped = [r for r in results if r.get("mode") == "dropped"]
+    _provider_fault_alarm(results, dropped)
+
     # Masterplan §0 gate 5: "drop-rate >30% of a night's plan raises a
     # ::warning". Emitted HERE rather than from the plan report, because the
     # writer is the only place that cannot forget: any caller of this lane gets
@@ -6602,7 +6728,6 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
     # annotation above, and two alarms for one cause trains the reader to ignore
     # both. Bare print at line start with flush (a "::" behind a logger prefix
     # is not a line start and GitHub drops it silently).
-    dropped = [r for r in results if r.get("mode") == "dropped"]
     if dropped and len(dropped) / len(results) > 0.30:
         by_stage: dict[str, int] = {}
         for r in dropped:
@@ -6832,6 +6957,68 @@ def _v2_write_one(
 
         return _do_call
 
+    def _one_more_rung(user_msg: str, *, served: str | None, family: str) -> str:
+        """ONE more attempt for an item the waterfall left empty-handed. "" on failure.
+
+        Shared by both provider-fault classes because the recovery is the same
+        shape and the per-item ceiling is the same number; only the diagnosis
+        differs, and `family` carries it into the drop reason.
+
+        `provider_no_text` — the rung answered with no text block at all. The
+        rung is the suspect, so the retry goes DOWN the ladder and never back to
+        the rung that just served nothing.
+
+        `unreadable_reply` — the rung answered WITH a body that is not the
+        contracted object (see `_v2_extract_text`). The model's output shape is
+        the suspect, not the credential, so when there is no rung below the one
+        that answered the SAME rung is worth one more ask with the output
+        contract restated. A dead rung never earns that second ask; a model that
+        wrapped its post in prose does.
+        """
+        tried = [str(served or "unknown")]
+        candidate = llm_auth.first_usable(
+            llm_auth.providers_after(providers, served))
+        same_rung = False
+        if candidate is None and family == "unreadable_reply":
+            candidate = llm_auth.first_usable(
+                [p for p in providers if p.get("name") == served])
+            same_rung = candidate is not None
+        if candidate is not None:
+            if family == "unreadable_reply":
+                _bump("unreadable_reasks")
+                msg = user_msg + _OUTPUT_SHAPE_REMINDER
+            else:
+                _bump("provider_failovers")
+                msg = user_msg
+            log.warning("copywriter v2: provider '%s' returned nothing usable "
+                        "(%s) — %s '%s' for this item", served, family,
+                        "re-asking" if same_rung else "failing over to",
+                        candidate.get("name"))
+            try:
+                raw2, _reason2, served2 = llm_auth.make_call(
+                    [candidate],
+                    _do_call_factory(msg, same_provider_retry=False),
+                    context="marketing_copy_v2_failover")
+            except Exception as exc:  # noqa: BLE001 — the failover is best effort
+                log.warning("copywriter v2: failover provider '%s' failed "
+                            "(%s: %s)", candidate.get("name"),
+                            type(exc).__name__, exc)
+                raw2, served2 = None, str(candidate.get("name") or "")
+            # THE SECOND REPLY IS PARSED, NOT TRUSTED. The pre-fix code returned
+            # `_v2_extract_text(raw2)` straight out of here, so an unreadable
+            # SECOND reply produced "" with `fault` never set and the item died
+            # under the legacy string — the exact laundering this function
+            # exists to stop, reintroduced one line deeper.
+            if raw2:
+                text2 = _v2_extract_text(raw2)
+                if text2:
+                    _bump("provider_recovered")
+                    return text2
+            tried.append(str(served2 or candidate.get("name") or "unknown"))
+
+        fault["reason"] = f"{family}:" + "+".join(tried)
+        return ""
+
     def _call(user_msg: str) -> str:
         """One writer turn across the waterfall. "" on every provider fault.
 
@@ -6844,6 +7031,18 @@ def _v2_write_one(
         one-rung failover here, in the caller, where the per-item budget is
         known — make_call itself must keep treating a served response as served,
         because every other consumer depends on that.
+
+        AND THE OTHER HALF OF IT (2026-08-02, W4e). A reply that arrives and
+        cannot be PARSED used to leave through `return _v2_extract_text(raw)`
+        with `fault` still empty, so the item was dropped under the legacy
+        string "provider returned no text" — with no retry, no failover, and a
+        remedy table that sends the reader to check credentials. On the 08-02
+        plan every one of the 32 provider-stage drops carried that legacy
+        string, which is only reachable from this branch: the provider ANSWERED
+        32 times and the writer threw all 32 replies away in silence. It is
+        still a provider-stage fault (we have no post), it is emphatically NOT
+        an editorial one (no validator ever saw a draft), and it now buys the
+        same one bounded attempt the textless class buys.
         """
         fault.clear()
         try:
@@ -6861,7 +7060,17 @@ def _v2_write_one(
                         type(exc).__name__, exc)
             return ""
         if raw:
-            return _v2_extract_text(raw)
+            text = _v2_extract_text(raw)
+            if text:
+                return text
+            _bump("unreadable_replies")
+            log.warning(
+                "copywriter v2: %s answered with a body the writer could not "
+                "read (%d chars, no contracted {\"text\": ...} object) — this "
+                "is a model output-shape fault, NOT a credential fault",
+                served, len(str(raw)))
+            return _one_more_rung(user_msg, served=served,
+                                  family="unreadable_reply")
 
         if reason == "stop_refusal":
             # THE MODEL LOOKED AT THIS ITEM AND DECLINED. That is an editorial
@@ -6880,36 +7089,13 @@ def _v2_write_one(
         # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
         # rather than re-deriving it: that order carries key-pool balancing and
         # cross-process cooling, and a freshly guessed order throws both away.
-        candidate = llm_auth.first_usable(
-            llm_auth.providers_after(providers, served))
         # NAME EVERY RUNG THAT SERVED NOTHING, not just the last one. The
         # breaker downstream turns this into "provider: X", and an operator who
         # pulls X from provider_order when X AND the rung under it were both
         # silent gets a second dark night — two silent rungs is a prompt/budget
         # diagnosis, one silent rung is a provider diagnosis, and the census is
         # the only place that distinction survives.
-        tried = [str(served or "unknown")]
-        if candidate is not None:
-            _bump("provider_failovers")
-            log.warning("copywriter v2: provider '%s' served no text — failing "
-                        "over to '%s' for this item",
-                        served, candidate.get("name"))
-            try:
-                raw2, _reason2, served2 = llm_auth.make_call(
-                    [candidate],
-                    _do_call_factory(user_msg, same_provider_retry=False),
-                    context="marketing_copy_v2_failover")
-            except Exception as exc:  # noqa: BLE001 — the failover is best effort
-                log.warning("copywriter v2: failover provider '%s' failed "
-                            "(%s: %s)", candidate.get("name"),
-                            type(exc).__name__, exc)
-                raw2, served2 = None, str(candidate.get("name") or "")
-            if raw2:
-                return _v2_extract_text(raw2)
-            tried.append(str(served2 or candidate.get("name") or "unknown"))
-
-        fault["reason"] = "provider_no_text:" + "+".join(tried)
-        return ""
+        return _one_more_rung(user_msg, served=served, family="provider_no_text")
 
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
@@ -6957,6 +7143,19 @@ def _v2_write_one(
         retry = _call(_v2_user_message(payload, violations=violations))
         if retry:
             shaped, hl, bd, violations = _shape_and_check(retry)
+        elif fault.get("reason"):
+            # THE REPAIR TURN ITSELF FAULTED, AND THE CENSUS USED TO CALL THAT
+            # AN EDITORIAL DROP. Falling through here re-reported the FIRST
+            # round's violations at stage=validate, so an item whose second
+            # draft never arrived was counted as "the copy laws refused it" —
+            # a provider fault laundered into the voice census, on the one
+            # stage split the outage breaker reads. The reason names both
+            # halves: the fault that ended the item, then what the first draft
+            # was being repaired for.
+            _bump("dropped_provider")
+            return {"mode": "dropped", "stage": "provider",
+                    "reasons": [f"repair_unanswered:{fault['reason']}",
+                                *list(violations)[:3]]}
         if violations:
             _bump("dropped_validate")
             return {"mode": "dropped", "reasons": violations, "stage": "validate"}
@@ -6969,8 +7168,14 @@ def _v2_write_one(
             payload, critic_reasons=list(verdict.get("reasons") or [])))
         if not retry:
             _bump("dropped_critic")
+            # NAME THE FAULT, not just its shape. "repair_empty" said the second
+            # draft never arrived and nothing about WHY, so a critic-stage spike
+            # driven by a dead rung read as a copy problem. The stage stays
+            # `critic` on purpose: the critic is what condemned the first draft,
+            # and that judgement stands whatever happened to the repair turn.
             return {"mode": "dropped",
-                    "reasons": list(verdict.get("reasons") or []) + ["repair_empty"],
+                    "reasons": list(verdict.get("reasons") or [])
+                    + [f"repair_empty:{fault.get('reason') or 'unrecorded'}"],
                     "stage": "critic"}
         shaped, hl, bd, violations = _shape_and_check(retry)
         if violations:

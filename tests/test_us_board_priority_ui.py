@@ -676,7 +676,7 @@ def test_watch_lane_is_not_chipped_on_the_priority_path():
 def test_leaders_table_gains_a_theme_column_only_when_rows_carry_themes():
     vm = _priority_vm()
     html = _render(vm)
-    assert '<th data-tip-en="The in-favour basket this name belongs to' in html
+    assert '<th class="c-theme" data-tip-en="The in-favour basket this name belongs to' in html
     assert '<span class="l-en">theme</span><span class="l-zh">主题</span>' in html
     assert '<span class="pv-mk-i pv-mk-warm"' in html    # the theme_confirmed leader
 
@@ -686,7 +686,7 @@ def test_leaders_table_gains_a_theme_column_only_when_rows_carry_themes():
         row.pop("theme_confirmed", None)
     vm["us_standouts"] = dict(vm["us_standouts"], leaders=plain)
     html2 = _render(vm)
-    assert '<th data-tip-en="The in-favour basket this name belongs to' not in html2
+    assert '<th class="c-theme" data-tip-en="The in-favour basket this name belongs to' not in html2
     assert '<span class="ts-tk">NOW</span>' in html2     # the table itself still ships
 
 

@@ -14,7 +14,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>International Economies — {{ latest.date }}</title>
+<title>{{ 'International Stock Boards' if mode == 'stocks' else 'International Economies' }} — {{ latest.date }}</title>
 {%- if mode == 'stocks' %}
 {% set seo_title = "International Stock Boards — Mastermind" %}{% set seo_desc = "Stock boards for major non-US markets — trend and regime context by country. Updated weekly." %}{% set seo_path = "intl_stocks.html" %}
 {%- else %}

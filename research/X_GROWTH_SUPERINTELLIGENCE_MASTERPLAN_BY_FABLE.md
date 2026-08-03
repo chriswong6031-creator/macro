@@ -384,3 +384,125 @@ Charter-conflict adjudications (Fable, 2026-07-31):
 - The 56 distilled per-persona example lines are CANDIDATES for the spec YMLs'
   example corpora — the language layer is provenance-frozen, so wiring them in
   needs an operator blessing (W2c ships the delivery mechanism regardless).
+
+---
+
+## §8 W4 — VOLUME RESTORATION (adjudicated by Fable, 2026-08-02)
+
+Operator complaint (2026-08-02): "We're not getting any posts out today. Only one post
+went out on flagship 17 hours ago… the several girl accounts are posting nothing.
+Mastermind News account is posting nothing."
+
+### §8.0 ACCEPTANCE GATES (binding — a lane is NOT DONE without these)
+
+1. **≥3 posts/day/account** for flagship, founder, meagan, sophia, kelly — measured
+   over a simulated week AND proven on one real nightly + its sweeps. Report actual
+   numbers per account, never an assertion that it should work.
+2. **ZERO quality-gate weakening.** No threshold relaxed, no check disabled, no gate
+   bypassed to hit volume. Prove it: the approval desk's verdict distribution and each
+   validator's rejection reasons, before vs after. A *volume cap* (top-K, slot count,
+   forward-day count) is NOT a quality gate and may be changed on evidence; a
+   *threshold* (salience, near-dup Jaccard, number budget, payload, tape freshness) is,
+   and may not.
+3. Every account expected to post HAS posted in live verification, or is named in plain
+   words with the reason it did not.
+4. Every fix ships a test that FAILS on pre-fix code. Mutation-check the load-bearing
+   ones and report which mutation caught which test.
+5. `pytest tests/ -k marketing` green.
+
+### §8.1 MEASURED DIAGNOSIS (7-lane census, 2026-08-02 — all numbers from
+`outbox.fold_state`, never the frozen `items.jsonl.status`)
+
+All-time outbox: **posted 58 (23%), quarantined 188 (74%)** of 253 items.
+Network emitted/day: 07-30→15, 07-31→0, 08-01→6 then 3, 08-02→4.
+7-day posted per account: flagship 22, founder 6, sophia 5, cici 5, meagan 3,
+**kelly 0 (never posted once, ever)**, mastermind_news 0.
+
+**V1 — The nightly ladder discards 97% of what it plans, and starves the one day that
+ships.** `plan_account(n_days=7, per_day=28)` (content_studio.py:2735) books a 7-day
+forward ladder; `emit_from_content_plan` takes only `D1-` (outbox.py:2199). Nothing
+reads a previous plan — tomorrow regenerates the whole week — so D2–D7 are discarded by
+construction (the code says so at outbox.py:2205). Tonight: 154 planned, **5 on D1**,
+flagship 0 and sophia 0.
+The imbalance is NOT random. At content_studio.py:2170-2179 the cross-day cooldown pool
+is applied **only** to `emit_day_prefix` slots; D2–D7 draw from the full uncooled pool.
+When the cooled pool empties, the D1 slot is dropped entirely while the never-published
+days fill. D1 runs ~5x under the other days. The stated rationale ("cooling D2-D7 would
+delete posts nothing was going to send") is exactly inverted in effect.
+
+**V2 — The planner spends an account's only at-bat on a format that account is banned
+from using.** Kelly's sole D1 item on 08-02 was a `theme_list`; `sentinel.ramp.
+weeks_1_2.theme_list_allowed: false` kills it at plan-build. The per-account tilt is
+never intersected with the ramp tier's permitted formats before slot assignment.
+
+**V3 — The largest volume sink in the planner has a counter that goes nowhere.**
+`report["dropped_cooldown"]` (content_studio.py:2177) is written into a caller-supplied
+dict that is never persisted to `content_plan.json.summary` nor to `activity.jsonl`.
+Same defect class as the mover bug that hid for 12 nights.
+
+**V4 — The copy lane drops 113 of ~120 attempts; the top cause is a provider fault
+below the alarm floor.** Tonight: `provider returned no text` 32, `number soup` 19,
+format violations 22 → **7 posts written network-wide**. W1i's circuit breaker trips at
+>50% provider-stage drops; 32/113 = 28% degrades in silence. Provider-stage faults are
+DROPPED, not retried down the `provider_order` ladder.
+
+**V5 — The healthiest lane is the most throttled.** Press wire converts ~90-100
+candidate facts/weekday into **≤3** emitted (`_DEFAULT_FLAGSHIP_TOP_K = 3`,
+press_lane.py:132 — a code default with NO config override) and posts **89%** of what
+it emits (8/9). It is event-driven, never stale, and it is the cheapest volume in the
+system. `salience_threshold: 60` is the quality gate and does not move.
+
+**V6 — mastermind_news is dark by config, and its dispatch losses are already fixed.**
+`enabled: false / disabled: true` (marketing.yml:1263). Buffer channel IS bound
+(marketing.yml:623, `@mastermindnews1`); `BUFFER_TOKEN` exists (rotated 2026-07-24).
+The 33 `account_disabled` quarantines are all dated 07-30/07-31, BEFORE
+`hot_tape.live_account()` landed (PR #4154) — that fix now rescues dark-target items to
+flagship, so arming is a volume ADD, not a leak repair. No `created:` key → `resolve_ramp`
+fails closed to `weeks_1_2` (10/day), which is the safe tier for a cold account.
+`wire_routing.classes` still point every class at flagship — a deliberate second step.
+
+**V7 — The breaking card.** `render_breaking_card` (chart_render.py:3345). Body text is
+**15.5px** on a 1000×560 canvas — the smallest type on the card except 12.5px metadata,
+yet it carries the primary content. Headline is wrap-then-clip: `_break_wrap` fills
+`max_lines` then slices the last line and appends `…` (chart_render.py:3322-3328); the
+size table bottoms out at `>150 chars → 26px/56/3 lines ≈ 168 chars displayed` with no
+further downscale. The live Iran item's `headline` is a **~1,140-character verbatim
+press quote** — `build_breaking_payload` (breaking_summary.py:695) passes it through with
+NO length gate, so ~156 of 1,140 chars render before the ellipsis. Whitespace comes from
+the centering block (`v_offset ≤ 56`, chart_render.py:3530-3536).
+BLAST RADIUS: `earnings_call_lane.py:399` calls `render_breaking_card` directly — same
+function, not a copy. No existing test pins any geometry value.
+
+### §8.2 THE RULING
+
+The nightly ladder is the worst supply source in the system (23% post rate,
+staleness-prone, 97% discarded) and it carries nearly all the load. The event-driven
+lanes are the best (press wire 89% post rate, never stale) and are throttled by code
+defaults. **Rebalance toward event-driven supply, and stop the ladder from throwing away
+the day it is supposed to publish.** No threshold moves.
+
+- **W4a — collapse the ladder to one day.** `forward_days` config knob, default **1**.
+  Every slot becomes an emit slot, so the cooldown applies uniformly and honestly
+  instead of decimating D1 alone. `per_day` sized to the account's ramp cap × a small
+  headroom factor rather than a flat 28 — generating 28 to publish 10 is the same waste
+  in miniature. When the cooled pool is empty the slot still drops (supply-honest
+  volume, §5.5) — it must NOT fall back to the uncooled pool, which would publish the
+  repetition the cooldown exists to stop.
+- **W4b — intersect tilt with ramp-permitted formats** before slot assignment, so a cold
+  account never spends an at-bat on a banned kind.
+- **W4c — persist `dropped_cooldown`** into the plan summary and the activity row, with
+  a bare line-start `::warning`.
+- **W4d — press-wire headroom.** `flagship_top_k_per_day` becomes config-driven and
+  rises; surplus routes ACROSS accounts rather than piling onto flagship.
+  `salience_threshold` unchanged.
+- **W4e — copy-lane yield.** Provider-stage faults RETRY down `provider_order` instead
+  of being dropped; the outage alarm fires well below 50%. Reconcile the blanket "ONE
+  number per post" prompt line with the per-shape budget the validator enforces — the
+  budget itself does not move; the writer is simply told what it is.
+- **W4f — arm mastermind_news**: `enabled: true`, add `created:` so the ramp tier is
+  explicit rather than fail-closed, route wire classes per the charter (relay, never
+  editorialize — F6 sentence-case compression stands).
+- **W4g — redesign the breaking card**: body type materially larger, whitespace reduced,
+  and a headline of ANY length renders without truncation-by-ellipsis (upstream length
+  gate + downscale/wrap, never clip). Proven with committed before/after PNGs at mobile
+  and desktop scale, with the 1,140-char Iran headline as the explicit fixture.

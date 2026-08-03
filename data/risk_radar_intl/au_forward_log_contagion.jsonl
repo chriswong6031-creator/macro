@@ -11,3 +11,4 @@
 {"asof":"2026-07-30","market":"au","state":"watch","incumbent_state":"watch","pressure_pct":0.8968,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
 {"asof":"2026-07-31","market":"au","state":"caution","incumbent_state":"caution","pressure_pct":0.879,"escalated":false,"top_score":null,"dominant_scare":"incumbent:caution","graded":null,"bench_path":null}
 {"asof":"2026-08-01","market":"au","state":"watch","incumbent_state":"watch","pressure_pct":0.8234,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
+{"asof":"2026-08-02","market":"au","state":"watch","incumbent_state":"watch","pressure_pct":0.8234,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}

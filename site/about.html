@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<!-- MastermindX About — the entity page (research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md
+     §0.10). PAIRED plain template: templates/about.html must byte-match site/about.html
+     (scripts/check_template_site_sync), which is why it ships without a render.
+
+     CHROME: landing-native chapter of index.html — the nav, gear popover, footer and
+     chrome JS below are copied BYTE-EXACT from templates/index.html (depth 0) and from
+     the hand-authored product pages, per CLAUDE.md §Navigation source-of-truth. This is
+     the second sanctioned family, not a third header: when the landing chrome changes,
+     re-sync these blocks. Regenerate with the recipe in the PR body rather than editing
+     the chrome here by hand.
+
+     COPY: bilingual via the landing's [data-zh] contract (the LANG applier at the foot
+     swaps innerHTML). No translated text in title= attributes — house/CI law. -->
+<html lang="en" data-lang="en">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* language boot — respects the site-wide localStorage['lang'] (so a visitor who
+   picked 中文 in the app sees 中文 here); else follows the browser. Runs in
+   <head> to set data-lang before paint and avoid a flash of the wrong language. */
+(function(){try{var q=(location.search.match(/[?&]lang=(zh|en)/)||[])[1];
+  var l=q||localStorage.getItem('lang');
+  if(l!=='en'&&l!=='zh')l=(navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en';
+  document.documentElement.setAttribute('data-lang',l);
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
+</script>
+<title>About MastermindX — AI Market Intelligence Platform</title>
+<meta name="description" content="MastermindX is an AI-powered market intelligence platform for active investors. What it covers, how the nightly research is built, and what it is not.">
+<link rel="canonical" href="https://www.mastermind-x.com/about.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MastermindX">
+<meta property="og:title" content="About MastermindX — AI Market Intelligence Platform">
+<meta property="og:description" content="MastermindX is an AI-powered market intelligence platform for active investors. What it covers, how the nightly research is built, and what it is not.">
+<meta property="og:url" content="https://www.mastermind-x.com/about.html">
+<meta property="og:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MastermindX market intelligence platform with connected dashboards, research and AI analysis.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About MastermindX — AI Market Intelligence Platform">
+<meta name="twitter:description" content="MastermindX is an AI-powered market intelligence platform for active investors. What it covers, how the nightly research is built, and what it is not.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- ENTITY GRAPH (SEO_SUPERCHARGE_MASTERPLAN §0.9/§0.10). The Organization node
+     repeats the homepage's node VERBATIM, under the same @id, so a crawler reading
+     either page resolves one entity rather than two similarly-named ones. `sameAs`
+     carries only the profile verifiable in repo config as ours (config/marketing.yml
+     flagship desk / app/mailer.py _X_HANDLES). No legalName, no address, no founder:
+     unknown facts are omitted, never invented. Key order mirrors the homepage's
+     node exactly (`name` adjacent to `@type`) so the two read as one record. -->
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"AboutPage","@id":"https://www.mastermind-x.com/about.html#webpage","url":"https://www.mastermind-x.com/about.html","name":"About MastermindX","description":"MastermindX is an AI-powered market intelligence platform for active investors. What it covers, how the nightly research is built, and what it is not.","inLanguage":["en","zh"],"isPartOf":{"@id":"https://www.mastermind-x.com/#website"},"about":{"@id":"https://www.mastermind-x.com/#organization"}},{"@type":"Organization","name":"MastermindX","@id":"https://www.mastermind-x.com/#organization","alternateName":["Mastermind X","Mastermind-X"],"url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png","description":"MastermindX is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro regime dashboards, deep research and an AI analyst, rebuilt nightly.","sameAs":["https://x.com/mastermindx001"]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"About"}]}]}</script>
+<link rel="stylesheet" href="onboard.css?v=69e6ab81">
+<link rel="stylesheet" href="landing.css?v=944df4a7">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   ABOUT — a landing-native chapter of index.html ("Neural Cover" family).
+   landing.css is linked above and owns every token: no new hex, no new face,
+   no motion. The page has exactly ONE device of its own — the DEFINITION
+   TABLE: a mono label rail against a plain sentence, hairline between rows.
+   It is the entity package made readable, and it is deliberately the only
+   panel on the page, so the eye lands on the definition and nowhere else.
+   The hero gradient stays where it belongs: on the landing, once.
+   ══════════════════════════════════════════════════════════════════════════ */
+.ab-crumb{max-width:var(--maxw);margin:18px auto 0;padding-inline:var(--gutter);font-size:.78rem;color:var(--faint)}
+.ab-crumb ol{list-style:none;display:flex;gap:8px;margin:0;padding:0}
+.ab-crumb a{color:var(--muted)} .ab-crumb a:hover{color:var(--ink)}
+.ab-crumb .sep{color:var(--hair-2)}
+
+.ab-main{padding-bottom:clamp(64px,8vw,104px)}
+.ab-sec{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+
+/* — masthead — */
+.ab-mast{padding-top:clamp(30px,5vw,54px)}
+.ab-mast h1{font-family:var(--display);font-weight:800;letter-spacing:-.025em;line-height:1;
+  font-size:clamp(2.5rem,6.4vw,4rem);margin:12px 0 0;color:var(--ink)}
+.ab-lede{margin:20px 0 0;max-width:60ch;font-size:clamp(1.04rem,1.35vw,1.2rem);line-height:1.58;color:var(--ink-soft)}
+.ab-lede b{font-weight:700;color:var(--ink)}
+
+/* — the definition table (the one panel) — */
+.ab-def{margin:clamp(34px,4.4vw,52px) 0 0;max-width:78ch;background:var(--panel);
+  border:1px solid var(--hair);border-radius:var(--r,14px);box-shadow:var(--sh-lift);overflow:hidden}
+.ab-row{display:grid;grid-template-columns:minmax(150px,.24fr) 1fr;gap:0 26px;
+  padding:18px clamp(18px,2.2vw,26px);border-top:1px solid var(--hair-weak)}
+.ab-row:first-child{border-top:0}
+.ab-row dt{align-self:start;padding-top:2px;color:var(--faint)}
+.ab-row dd{margin:0;color:var(--ink-soft);font-size:.98rem;line-height:1.58}
+.ab-row.is-not dd{color:var(--ink)}
+.ab-row.is-not dt{color:var(--muted)}
+
+/* — section heads — */
+.ab-h2{font-family:var(--display);font-weight:800;letter-spacing:-.018em;line-height:1.08;
+  font-size:clamp(1.5rem,2.4vw,2rem);margin:0;color:var(--ink)}
+.ab-block{margin-top:clamp(52px,6vw,80px);padding-top:clamp(30px,3.4vw,40px);border-top:1px solid var(--hair)}
+.ab-p{margin:16px 0 0;color:var(--muted);font-size:1rem;line-height:1.72;max-width:68ch}
+.ab-p b{color:var(--ink);font-weight:600}
+
+/* — what's inside: an index, not a card wall — */
+.ab-list{margin:22px 0 0;display:grid;gap:0;max-width:80ch}
+.ab-item{display:grid;grid-template-columns:minmax(190px,.3fr) 1fr;gap:4px 26px;
+  padding:16px 0;border-top:1px solid var(--hair-weak)}
+.ab-item:first-child{border-top:0}
+.ab-item .n{font-family:var(--display);font-weight:700;font-size:1rem;color:var(--ink);align-self:start}
+.ab-item .d{margin:0;color:var(--muted);font-size:.95rem;line-height:1.6}
+/* The destination gets its own line on every row: inline it wrapped for some
+   entries and not others, which reads as six different rows rather than one list. */
+.ab-item .d a{display:block;margin-top:4px;font-weight:600}
+
+/* — the two closing moves — */
+.ab-next{margin:24px 0 0;display:flex;flex-wrap:wrap;gap:10px 28px}
+.ab-next a{font-weight:600;font-size:.98rem}
+.ab-note{margin:26px 0 0;color:var(--faint);font-size:.86rem;line-height:1.6}
+
+@media (max-width:640px){
+  .ab-row,.ab-item{grid-template-columns:1fr;gap:6px}
+  .ab-row dt{padding-top:0}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="index.html" aria-label="MastermindX home"><span class="m">M</span> MASTERMINDX</a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open navigation">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <ul class="nav-links" id="primary-navigation">
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-platform-trigger" type="button" aria-expanded="false" aria-controls="nav-platform-panel">
+          <span data-zh="平台">Platform</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-platform" id="nav-platform-panel" aria-labelledby="nav-platform-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="互联研究工作台">CONNECTED RESEARCH DESK</span><strong data-zh="从市场状态一路深入到底层证据">Move from market state to the underlying evidence</strong></div>
+            <a href="products/index.html" data-zh="平台概览 →">Platform overview →</a>
+          </div>
+          <div class="nav-card-grid">
+            <a class="nav-card" href="products/market-terminal.html"><span class="nav-card-mark">01</span><span><strong data-zh="市场终端">Market Terminal</strong><small data-zh="浏览器图表、观察列表与股票研究背景。">Browser charting, watchlists and stock research context.</small></span></a>
+            <a class="nav-card" href="products/mastermind-ai.html"><span class="nav-card-mark">02</span><span><strong>Mastermind AI</strong><small data-zh="结合当前页面与来源的市场研究助手。">A market research assistant grounded in the page and its sources.</small></span></a>
+            <a class="nav-card" href="products/market-dashboards.html"><span class="nav-card-mark">03</span><span><strong data-zh="市场仪表盘">Market Dashboards</strong><small data-zh="宏观、周期、行业轮动与跨资产背景。">Macro, cycle, sector rotation and cross-asset context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-research-trigger" type="button" aria-expanded="false" aria-controls="nav-research-panel">
+          <span data-zh="研究">Research</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-research" id="nav-research-panel" aria-labelledby="nav-research-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="公开研究界面">PUBLIC RESEARCH SURFACES</span><strong data-zh="从报告节选到逐股档案">From report excerpts to ticker-level dossiers</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="https://www.mastermind-x.com/research_vault.html"><span class="nav-card-mark">R</span><span><strong data-zh="机构研报">Institutional Research</strong><small data-zh="预览最新三篇研报摘要；完整研报与 PDF 为 Pro 专享。">Preview the latest three report summaries; full research and PDFs are available with Pro.</small></span></a>
+            <a class="nav-card" href="stocks/index.html"><span class="nav-card-mark">S</span><span><strong data-zh="股票档案">Stock Dossiers</strong><small data-zh="按股票整理的技术面、基本面、持仓与期权背景。">Ticker pages for technical, fundamental, ownership and options context.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-group">
+        <button class="nav-trigger" id="nav-resources-trigger" type="button" aria-expanded="false" aria-controls="nav-resources-panel">
+          <span data-zh="资源">Resources</span><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5"/></svg>
+        </button>
+        <div class="nav-panel nav-panel-resources" id="nav-resources-panel" aria-labelledby="nav-resources-trigger" hidden>
+          <div class="nav-panel-head">
+            <div><span class="nav-panel-k" data-zh="无需账户即可使用">USEFUL BEFORE SIGNUP</span><strong data-zh="先解决一个真实问题">Start by solving one real problem</strong></div>
+          </div>
+          <div class="nav-card-grid two">
+            <a class="nav-card" href="tools/index.html"><span class="nav-card-mark">T</span><span><strong data-zh="免费工具">Free Tools</strong><small data-zh="仓位、风险、回报与投资组合计算器。">Calculators for sizing, risk, returns and portfolios.</small></span></a>
+            <a class="nav-card" href="learn/index.html"><span class="nav-card-mark">L</span><span><strong data-zh="学习中心">Learning Center</strong><small data-zh="技术分析、风险、期权与申报文件课程。">Lessons on technicals, risk, options and filings.</small></span></a>
+            <a class="nav-card" href="blog/index.html"><span class="nav-card-mark">B</span><span><strong data-zh="博客">Blog</strong><small data-zh="关于交易数学与市场机制的朴素文章。">Plain-English articles on trading math and market mechanics.</small></span></a>
+            <a class="nav-card" href="support.html"><span class="nav-card-mark">?</span><span><strong data-zh="支持">Support</strong><small data-zh="账户、产品与访问问题的帮助入口。">Help with account, product and access questions.</small></span></a>
+          </div>
+        </div>
+      </li>
+      <li class="nav-direct"><a href="plans.html" data-zh="定价">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <span class="gear-wrap">
+        <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
+          <p class="gp-kicker" data-zh="设置">SETTINGS</p>
+          <div class="gp-lang">
+            <span class="gp-lbl" data-zh="语言">Language</span>
+            <span class="gp-seg" role="group" aria-label="Language">
+              <button type="button" class="gp-seg-b" data-set-lang="en">EN</button>
+              <button type="button" class="gp-seg-b" data-set-lang="zh">中文</button>
+            </span>
+          </div>
+          <div class="gp-div"></div>
+          <a class="gp-link" role="menuitem" href="start.html" data-zh="打开仪表盘">Open the dashboard</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<nav class="ab-crumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="index.html" data-zh="首页">Home</a></li>
+    <li class="sep" aria-hidden="true">/</li>
+    <li aria-current="page" data-zh="关于">About</li>
+  </ol>
+</nav>
+
+<main class="ab-main">
+
+  <header class="ab-sec ab-mast">
+    <p class="kicker" data-zh="关于">ABOUT</p>
+    <h1>MastermindX</h1>
+    <!-- The entity sentence, word for word as it appears in the homepage hero and in
+         the Organization.description above: one entity, one sentence, everywhere. -->
+    <p class="ab-lede" data-zh="<b>MastermindX</b> 是一个面向主动型投资者的 AI 市场情报平台：分级个股信号、期权流向、宏观状态仪表盘、深度研究，以及一位 AI 分析师，每晚重建。"><b>MastermindX</b> is an AI-powered market intelligence platform for active investors — graded stock signals, options flow, macro regime dashboards, deep research and an AI analyst, rebuilt nightly.</p>
+
+    <dl class="ab-def">
+      <div class="ab-row">
+        <dt class="mk" data-zh="是什么">WHAT IT IS</dt>
+        <dd data-zh="一个市场情报平台。仪表盘、分级个股信号、期权流向与完整研报——每晚重建，中英双语发布。">A market intelligence platform. Dashboards, graded stock signals, options flow and full-length research — rebuilt every night and published in English and Chinese.</dd>
+      </div>
+      <div class="ab-row">
+        <dt class="mk" data-zh="适合谁">WHO IT'S FOR</dt>
+        <dd data-zh="希望看清数字背后逻辑的主动型投资者与交易者，而不只是拿到一个数字。">Active investors and traders who want the reasoning behind a number, not just the number.</dd>
+      </div>
+      <div class="ab-row">
+        <dt class="mk" data-zh="覆盖市场">MARKETS</dt>
+        <dd data-zh="美国、中国内地、香港、加拿大与国际股市；并以利率、汇率、商品与加密货币作为背景参照。">US, China, Hong Kong, Canada and international equities, plus rates, currencies, commodities and crypto for context.</dd>
+      </div>
+      <div class="ab-row">
+        <dt class="mk" data-zh="更新频率">UPDATED</dt>
+        <dd data-zh="每晚更新。引擎重新运行、互相校验产出，并在下一个交易日开盘前重新发布。">Every night. The engines re-run, check each other's output, and republish before the next session opens.</dd>
+      </div>
+      <div class="ab-row is-not">
+        <dt class="mk" data-zh="不是什么">WHAT IT IS NOT</dt>
+        <dd data-zh="是市场研究与数据，<b>不是个性化投资建议</b>。我们不了解你的具体情况，也不会告诉你该买什么。">Market research and data — <b>not personalized investment advice</b>. We do not know your circumstances and we never tell you what to buy.</dd>
+      </div>
+    </dl>
+  </header>
+
+  <section class="ab-sec ab-block">
+    <h2 class="ab-h2" data-zh="平台里有什么">What's inside</h2>
+    <div class="ab-list">
+      <div class="ab-item">
+        <span class="n" data-zh="宏观与市场状态仪表盘">Macro &amp; regime dashboards</span>
+        <p class="d" data-zh="当前处在周期的哪个位置、什么在领涨，以及这意味着该偏向什么。<a href='macro.html'>打开宏观页 →</a>">Where the cycle stands, what is leading, and what that argues for. <a href="macro.html">Open the macro desk →</a></p>
+      </div>
+      <div class="ab-item">
+        <span class="n" data-zh="分级个股信号">Graded stock signals</span>
+        <p class="d" data-zh="美股、A股与港股看板：哪些正在成型、哪些已经启动、哪些应当回避。<a href='us_stocks.html'>打开美股看板 →</a>">US, China and Hong Kong boards: what is setting up, what is already moving, and what to leave alone. <a href="us_stocks.html">Open the US board →</a></p>
+      </div>
+      <div class="ab-item">
+        <span class="n" data-zh="期权流向情报">Options flow intelligence</span>
+        <p class="d" data-zh="真正的大单在哪里成交，以及这些持仓对盘面意味着什么。<a href='products/market-dashboards.html'>查看仪表盘 →</a>">Where size is actually trading, and what that positioning implies for the tape. <a href="products/market-dashboards.html">See the dashboards →</a></p>
+      </div>
+      <div class="ab-item">
+        <span class="n" data-zh="研究库">Research library</span>
+        <p class="d" data-zh="针对引擎反复标记的主题撰写的完整研报。<a href='research_vault.html'>阅读最新一期 →</a>">Full-length reports on the themes the engines keep flagging. <a href="research_vault.html">Read the latest →</a></p>
+      </div>
+      <div class="ab-item">
+        <span class="n" data-zh="Mastermind AI">Mastermind AI</span>
+        <p class="d" data-zh="一位读得懂你当前页面的分析师：会标明它用到的数据来源，并展示推理过程。<a href='products/mastermind-ai.html'>了解它如何工作 →</a>">An analyst that reads the page you are on, cites the desks it used, and shows its work. <a href="products/mastermind-ai.html">How it works →</a></p>
+      </div>
+      <div class="ab-item">
+        <span class="n" data-zh="市场终端">Market Terminal</span>
+        <p class="d" data-zh="浏览器端图表、自选列表与提醒；每一个代码都附带同样的研究背景。<a href='products/market-terminal.html'>查看终端 →</a>">Browser charting, watchlists and alerts, with the same research context attached to every ticker. <a href="products/market-terminal.html">See the terminal →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ab-sec ab-block">
+    <h2 class="ab-h2" data-zh="研究是怎么做出来的">How the research is built</h2>
+    <p class="ab-p" data-zh="每晚，一连串引擎会重建全部图景——价格、市场宽度、资金流向、公司公告与宏观数据——并且每一环都会校验上一环。没有通过校验的结果会在页面上标注出来，而不是被悄悄丢弃。">Every night a chain of engines rebuilds the whole picture — prices, breadth, flows, filings and macro releases — and each stage checks the stage before it. A result that does not survive the check is marked on the page rather than quietly dropped.</p>
+    <p class="ab-p" data-zh="AI 负责撰写解释、回答提问。它<b>不产生</b>信号或评分——那些来自引擎，AI 只能描述引擎给出的结果。">AI writes the explanations and answers your questions. It <b>does not create</b> signals or scores — those come from the engines, and the AI may only describe what the engines produced.</p>
+    <p class="ab-next"><a href="methodology.html" data-zh="阅读方法论 →">Read the methodology →</a></p>
+  </section>
+
+  <section class="ab-sec ab-block">
+    <h2 class="ab-h2" data-zh="MastermindX 不是什么">What MastermindX is not</h2>
+    <p class="ab-p" data-zh="MastermindX 提供市场研究、数据与工具。我们不是券商，不代客管理资金；站内内容也<b>不构成个性化投资建议</b>——我们并不了解你的处境、投资期限或风险承受能力。如何使用这些研究，由你自己决定。">MastermindX publishes market research, data and tools. It is not a broker, it does not manage money, and nothing on the site is <b>personalized investment advice</b>: we do not know your circumstances, your time horizon or your tolerance for loss. What you do with the research is your decision.</p>
+    <p class="ab-next"><a href="disclaimer.html" data-zh="阅读完整免责声明 →">Read the full disclaimer →</a></p>
+  </section>
+
+  <section class="ab-sec ab-block">
+    <h2 class="ab-h2" data-zh="联系我们">Questions</h2>
+    <p class="ab-p" data-zh="账户、访问权限或账单问题，请联系支持；想知道哪些免费、哪些付费，请看方案与定价。">Account, access or billing questions go to the support desk. If you want to know what is free and what is paid, the plans page lists both.</p>
+    <p class="ab-next">
+      <a href="support.html" data-zh="联系支持 →">Contact support →</a>
+      <a href="plans.html" data-zh="查看方案与定价 →">See plans &amp; pricing →</a>
+    </p>
+    <p class="ab-note" data-zh="本站以英文和简体中文发布。用页首右上角的设置齿轮可随时切换语言。">This site is published in English and 简体中文. Switch language with the settings gear at the top right of any page.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMINDX</span></div>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p data-zh="平台">Platform</p>
+          <a href="products/index.html" data-zh="平台概览">Platform overview</a>
+          <a href="products/market-terminal.html">Market Terminal</a>
+          <a href="products/mastermind-ai.html">Mastermind AI</a>
+          <a href="products/market-dashboards.html" data-zh="市场仪表盘">Market dashboards</a>
+          <a href="plans.html" data-zh="方案与定价">Plans &amp; pricing</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="研究">Research</p>
+          <a href="research/index.html" data-zh="机构研报">Institutional research</a>
+          <a href="stocks/index.html" data-zh="股票档案">Stock dossiers</a>
+          <a href="about-research.html" data-zh="关于研究">About the research</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="资源">Resources</p>
+          <a href="tools/index.html" data-zh="工具">Tools</a>
+          <a href="learn/index.html" data-zh="学习">Learn</a>
+          <a href="blog/index.html" data-zh="博客">Blog</a>
+          <a href="support.html" data-zh="支持">Support</a>
+          <a href="about.html" data-zh="关于 MastermindX">About MastermindX</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="法律">Legal</p>
+          <a href="privacy.html" data-zh="隐私政策">Privacy</a>
+          <a href="terms.html" data-zh="服务条款">Terms</a>
+          <a href="disclaimer.html" data-zh="免责声明">Disclaimer</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 MastermindX · mastermind-x.com</span>
+      <span class="f-legal"><a href="privacy.html" data-zh="隐私政策">Privacy</a> · <a href="terms.html" data-zh="服务条款">Terms</a> · <a href="disclaimer.html" data-zh="免责声明">Disclaimer</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* capture hook for visual QA (see .still CSS) */
+if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
+})();
+
+/* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
+   (data-lang on <html>, label shows the OTHER language, fires 'langchange').
+   Static prose swaps via [data-zh]; live components subscribe to LANG.onChange. */
+const LANG = (() => {
+  const subs = [];
+  const cur = () => document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+  function apply(l){
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-zh]').forEach(el => {
+      if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
+      el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
+    });
+    try { localStorage.setItem('lang', l); } catch(e){}
+    subs.forEach(fn => { try { fn(l); } catch(e){} });
+  }
+  return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
+})();
+
+/* ───── primary navigation: click disclosures + mobile accordion ───── */
+const MMX_NAV = (() => {
+  const nav = document.querySelector('.nav');
+  const list = document.getElementById('primary-navigation');
+  const mobile = document.getElementById('nav-toggle');
+  const triggers = [...document.querySelectorAll('.nav-trigger')];
+  const mq = matchMedia('(max-width: 900px)');
+  if (!nav || !list || !mobile) return { closeAll(){} };
+  const panelFor = trigger => document.getElementById(trigger.getAttribute('aria-controls'));
+  const openTrigger = () => triggers.find(trigger => trigger.getAttribute('aria-expanded') === 'true');
+  function syncMobileLabel(){
+    const isOpen = mobile.getAttribute('aria-expanded') === 'true';
+    mobile.setAttribute('aria-label', LANG.cur() === 'zh'
+      ? (isOpen ? '关闭导航' : '打开导航')
+      : (isOpen ? 'Close navigation' : 'Open navigation'));
+  }
+  function closePanels(focusTrigger){
+    const active = openTrigger();
+    triggers.forEach(trigger => {
+      const panel = panelFor(trigger);
+      trigger.setAttribute('aria-expanded','false');
+      if (panel) panel.hidden = true;
+    });
+    if (focusTrigger && active) active.focus();
+  }
+  function closeDrawer(focusToggle){
+    list.classList.remove('open');
+    nav.classList.remove('nav-open');
+    mobile.setAttribute('aria-expanded','false');
+    syncMobileLabel();
+    if (focusToggle) mobile.focus();
+  }
+  function closeAll(focusControl){
+    closePanels(Boolean(focusControl && openTrigger()));
+    closeDrawer(Boolean(focusControl && !openTrigger()));
+  }
+  function closeSettings(){
+    const pop = document.getElementById('gear-pop');
+    const btn = document.getElementById('gear-btn');
+    if (pop) pop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded','false');
+  }
+  function openPanel(trigger, focusLast){
+    closePanels(false);
+    closeSettings();
+    const panel = panelFor(trigger);
+    if (!panel) return;
+    trigger.setAttribute('aria-expanded','true');
+    panel.hidden = false;
+    if (focusLast !== undefined) {
+      const links = [...panel.querySelectorAll('a[href]')];
+      const target = focusLast ? links[links.length - 1] : links[0];
+      if (target) target.focus();
+    }
+  }
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      if (wasOpen) closePanels(false); else openPanel(trigger);
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openPanel(trigger, event.key === 'ArrowUp');
+      }
+    });
+    trigger.closest('.nav-group').addEventListener('focusout', event => {
+      if (mq.matches || event.currentTarget.contains(event.relatedTarget)) return;
+      if (trigger.getAttribute('aria-expanded') === 'true') closePanels(false);
+    });
+  });
+  mobile.addEventListener('click', event => {
+    event.stopPropagation();
+    const willOpen = mobile.getAttribute('aria-expanded') !== 'true';
+    closeSettings();
+    if (willOpen) {
+      list.classList.add('open');
+      nav.classList.add('nav-open');
+      mobile.setAttribute('aria-expanded','true');
+      syncMobileLabel();
+    } else {
+      closePanels(false);
+      closeDrawer(false);
+    }
+  });
+  list.querySelectorAll('a[href]').forEach(link => link.addEventListener('click', () => closeAll(false)));
+  document.addEventListener('pointerdown', event => {
+    if (!nav.contains(event.target)) closeAll(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (openTrigger()) {
+      event.preventDefault();
+      closePanels(true);
+    } else if (mobile.getAttribute('aria-expanded') === 'true') {
+      event.preventDefault();
+      closeDrawer(true);
+    }
+  });
+  const reset = () => closeAll(false);
+  if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+  LANG.onChange(syncMobileLabel);
+  syncMobileLabel();
+  return { closeAll };
+})();
+
+/* ───── nav settings popover ───── */
+(function(){
+  const btn = document.getElementById('gear-btn');
+  const pop = document.getElementById('gear-pop');
+  if (!btn || !pop) return;
+  const segs = [...pop.querySelectorAll('.gp-seg-b')];
+  const open = () => { MMX_NAV.closeAll(false); pop.classList.add('open'); btn.setAttribute('aria-expanded','true'); };
+  const close = () => { pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); };
+  const toggle = () => pop.classList.contains('open') ? close() : open();
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  segs.forEach(s => s.addEventListener('click', e => { e.stopPropagation(); LANG.apply(s.dataset.setLang); }));
+  const syncSeg = () => segs.forEach(s => s.classList.toggle('on', s.dataset.setLang === LANG.cur()));
+  syncSeg(); LANG.onChange(syncSeg);
+  document.addEventListener('click', e => { if (!pop.contains(e.target) && e.target !== btn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
+})();
+
+/* ───── reveal on scroll ───── */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
+   the product chrome carries no live wiring, so it runs here: swap static [data-zh]
+   prose into the boot language captured by the <head> lang snippet. ───── */
+LANG.apply(LANG.cur());
+</script>
+<script src="onboard.js?v=dc7d4d5b" defer></script>
+</body>
+</html>

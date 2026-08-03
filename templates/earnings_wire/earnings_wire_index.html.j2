@@ -53,7 +53,7 @@
         <div class="ew-card-top"><span class="ew-ticker">{{ item.event.ticker }}</span><span class="ew-date mono">{{ item.event.date }}</span></div>
         <h3><a href="{{ item.href }}">{{ item.company_label }} · {{ item.event.period }} {{ t('call record', '电话会记录') }} <span aria-hidden="true">↗</span></a></h3>
         <div class="ew-tags">{% for category in item.display_categories %}<span>{{ category }}</span>{% endfor %}</div>
-        <blockquote>“{{ item.preview_quote }}”</blockquote>
+        <blockquote lang="en">“{{ item.preview_quote }}”</blockquote>
         <div class="ew-card-foot"><span>{{ item.preview_speaker or t('Management', '管理层') }}</span><span>{{ item.fact_count }} {{ t('receipted excerpts', '条可追溯摘录') }}</span></div>
       </article>
       {% endfor %}

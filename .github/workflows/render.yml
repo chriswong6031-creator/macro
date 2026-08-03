@@ -169,6 +169,7 @@ on:
       - "scripts/build_research_vault.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_seasonality.py"
+      - "scripts/build_stock_seasonality_page.py"
       - "scripts/build_sector_central.py"
       - "scripts/build_sector_cycles.py"
       - "scripts/build_site.py"
@@ -859,6 +860,7 @@ jobs:
             }
             cl_misc() {
               brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+              brun stock_seasonality_page "stock seasonality page (build_stock_seasonality_page)" scripts.build_stock_seasonality_page
               brun reports       "research reports section (build_reports)"     scripts.build_reports
               # RV SEO (#3392 heal): vault page + per-report /research/ landing pages re-render
               # from the COMMITTED catalog (research-ingest commits it). Was daily-engine-only,
@@ -898,7 +900,7 @@ jobs:
             # fail silently in the very lanes it added (its own /research/ SEO pages
             # going dark again with no annotation). Band membership without ORDER
             # membership is a builder that runs unwatched.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality stock_seasonality_page reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue

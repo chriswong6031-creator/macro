@@ -164,6 +164,13 @@ _EXPLICIT: dict[str, tuple[str, float]] = {
     # priority here means the chartered 0.6 lands the moment the boundary moves,
     # instead of silently riding _DEFAULT.
     "options":          ("daily",   0.6),
+    # The entity page (SEO_SUPERCHARGE_MASTERPLAN §0.10). Discovery already picks
+    # it up the moment the boundary opens; this pins the two honest facts the
+    # default gets wrong. Cadence is MONTHLY — it is prose about who we are, not a
+    # desk that reprints nightly, and claiming "daily" on a page that does not
+    # change is the kind of small lie a crawler learns to discount. Priority 0.8
+    # because for a brand query it is the second-most-useful page on the site.
+    "about":            ("monthly", 0.8),
     "methodology":      ("monthly", 0.6),
     "reports":          ("weekly",  0.6),
 }

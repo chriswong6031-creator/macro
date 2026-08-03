@@ -2334,13 +2334,24 @@ def live_account(
     """``candidate`` if desk_network has it armed, else the first armed fallback.
 
     THE GRAVE THIS CLOSES. ``emit.account`` defaults to ``mastermind_news``,
-    which is wired-but-DARK on purpose (``desk_network`` disabled) — and
-    :func:`severity_account` routes every sub-85 event there, i.e. most of the
-    lane's volume. Each of those items was rendered (a Chrome raster), phrased
-    (an LLM call), uploaded to R2, and enqueued — and then quarantined at
-    dispatch with reason ``account_disabled``, 19 of them on 2026-07-31 alone.
-    The whole pipeline ran, paid, and posted nothing. ``wire_routing`` was
-    built precisely to stop this, and the hot-tape lane never called it.
+    and :func:`severity_account` routes every sub-85 event there — i.e. most of
+    the lane's volume. While that desk was dark, each of those items was
+    rendered (a Chrome raster), phrased (an LLM call), uploaded to R2, and
+    enqueued — and then quarantined at dispatch with reason ``account_disabled``.
+    The whole pipeline ran, paid, and posted nothing. Measured from
+    ``outbox.fold_state`` on 2026-08-02: **29** such quarantines, every one of
+    them ``mastermind_news`` on the ``hot_tape`` lane, 11 on 07-30 and 18 on
+    07-31 — against 5 hot-tape items that posted in the same window, all 5 to
+    ``flagship``. ``wire_routing`` was built precisely to stop this, and the
+    hot-tape lane never called it.
+
+    ``mastermind_news`` ARMED 2026-08-02 (masterplan §8.2 W4f), so on today's
+    config this function is a no-op for that desk. That is not a reason to
+    remove it and it is not a reason to weaken its test: the rescue is a
+    property of the LANE (any target, any day), not a patch for one account's
+    switch position, and the switch can go back. Its guard therefore pins the
+    BEHAVIOUR against a config whose target is dark rather than pinning the
+    account by name — see tests/test_marketing_wire_headroom.py.
 
     Resolution uses ``wire_routing._enabled_accounts`` — the SAME liveness read
     the press wire uses, deliberately not a second implementation, because two

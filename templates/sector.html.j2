@@ -117,7 +117,12 @@
 </head>
 <body>
 {# NOTE: sector pages render under site/sectors/, one level deep — every nav link
-   MUST be ../-prefixed (like ../theme.css above), or it 404s as /sectors/<page>. #}
+   MUST be ../-prefixed (like ../theme.css above), or it 404s as /sectors/<page>.
+   The set line below is what delivers that: _site_nav/_navlinks read nav_prefix from
+   the including context. #4228's 12-variants→1 conversion dropped it here (alone among
+   the four subdir templates), which broke all ~85 nav links on the 11 sector pages and
+   wedged render.yml's dead-reference guard (run 30766686540, 2026-08-02). #}
+{% set nav_prefix = '../' %}
 {% include "_site_nav.html.j2" %}
 {# ---- Policy-Shock de-escalation banner (PS-R3: display de-escalation only — no reordering, no sizing) ---- #}
 {% if shock_state is defined and shock_state and shock_state.get('active') %}

@@ -6,12 +6,13 @@
 <link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
 {% endblock %}
 {% block jsonld %}<script type="application/ld+json">{{ jsonld|safe }}</script>{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block main %}
 <article class="ewa">
   <header class="ewa-head">
     <div class="ew-wrap">
-      <div class="ewa-crumb"><a href="index.html">{{ t('Earnings wire', '财报情报线') }}</a><span>/</span><span class="mono">{{ article.event.ticker }}</span><span>/</span><span>{{ article.company_label }}</span></div>
+      <nav class="ewa-crumb" aria-label="Breadcrumb"><a href="index.html">{{ t('Earnings wire', '财报情报线') }}</a><span aria-hidden="true">/</span><span class="mono">{{ article.event.ticker }}</span><span aria-hidden="true">/</span><span aria-current="page">{{ article.company_label }}</span></nav>
       <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span>{{ t('Verified call record', '已核验电话会记录') }} <span>·</span> <time class="mono" datetime="{{ article.event.date }}">{{ article.event.date }}</time></div>
       <div class="ewa-title-row">
         <div><h1><span class="mono">{{ article.event.ticker }}</span> · {{ article.company_label }} {{ article.event.period }} {{ t('earnings call record', '财报电话会记录') }}</h1>
@@ -52,7 +53,7 @@
         {% for fact in article.facts %}
         <article class="ewa-fact">
           <div class="ewa-fact-meta"><div class="ew-tags">{% for category in fact.categories %}<span>{{ category }}</span>{% endfor %}</div><span class="mono">{{ fact.quote.receipt.segment_index }}</span></div>
-          <blockquote>“{{ fact.quote.text }}”</blockquote>
+          <blockquote lang="en">“{{ fact.quote.text }}”</blockquote>
           <div class="ewa-attribution"><span>{{ fact.speaker or t('Management', '管理层') }}{% if fact.role %} · {{ fact.role }}{% endif %}</span><code>{{ fact.claim_id }}</code></div>
           {% if fact.numeric %}
           <div class="ewa-numerics"><span>{{ t('Exact numeric spans', '精确数值片段') }}</span>{% for numeric in fact.numeric %}<code title="{{ numeric.claim_id }}">{{ numeric.text }}</code>{% endfor %}</div>

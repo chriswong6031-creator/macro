@@ -647,6 +647,11 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
 # adding a line here is the review checkpoint, which is the whole point of pinning
 # the set rather than diffing against a moving branch.
 PUBLIC_EXACT = frozenset({
+    # /about.html — the entity page (SEO_SUPERCHARGE_MASTERPLAN §0.10). Reviewed
+    # public: it is prose about who we are, ships no signals, no customer data and
+    # no write surface, and a crawler that has never had a session is exactly the
+    # reader it exists for.
+    "/about.html",
     "/", "/index.html", "/plans.html", "/macro.html", "/start.html",
     "/us_stocks.html", "/confluence_screener.html", "/research_vault.html",
     "/research_vault_app.js", "/support.html", "/unsubscribe.html",
@@ -658,6 +663,14 @@ PUBLIC_EXACT = frozenset({
     # fetchable — that fetch IS the ownership check. No signals, no user data.
     "/88bb90b05303e3cf469878ebc4dc7543.txt",
     "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    # Stock Seasonality calendar clock (2026-08). Reviewed public deliberately:
+    # it is a marketing/SEO surface whose page, stylesheet and script carry only
+    # the seasonality sample view — no account state, no gated signal payload
+    # (the data itself is served from /seasonalitydata/, gated separately).
+    # Ratified here rather than only in config/site_access.yml, which is the
+    # whole point of this frozen set: widening the public boundary is an
+    # explicit, reviewed act, never a side effect of shipping a page.
+    "/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

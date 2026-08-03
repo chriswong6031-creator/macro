@@ -66,6 +66,81 @@ radar:
   t1_always: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, PLTR, COIN, HOOD, MSTR, SMCI, GME, AMC]
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Supply — candidate-pool breadth and selection-diversity knobs.
+#
+# ONE OWNER (masterplan §3 PR-B.4). This block is defined and read by
+# engine/marketing/attention_source.py (`supply_config` + the typed accessors
+# beside it); the SELECTOR that acts on the diversity numbers is PR-C's
+# content_studio work and is deliberately not wired yet. Defining the knobs
+# here first is what stops PR-C from inventing a second, disagreeing copy of
+# them somewhere in the selection path — the per-lane kwarg drift the recon
+# found at nine chart call sites is the same failure one file earlier.
+#
+# Every value below is also hard-coded as a default in `_SUPPLY_DEFAULTS`, so
+# deleting this block degrades to the same numbers rather than to zero. The
+# accessors are the only sanctioned reader: an actuator must never carry its
+# own fallback copy of a cap (the sentinel block above states the same law).
+# ─────────────────────────────────────────────────────────────────────────────
+supply:
+  # How many candidates each read-only pool may return. These are POOL sizes,
+  # not post counts — the selector draws from them under its own cadence caps.
+  pool_caps:
+    dollar_volume: 120          # nightly ADV pack, by its own dollar-volume rank
+    options_volume: 80          # data/options_flow latest-session contract volume
+    retail_attention: 80        # WSB mentions ∪ Wikipedia attention z
+    earnings_this_week: 60      # earnings.parquet next_date ≤ 5 sessions
+    stage2_leaders: 60          # Weinstein stage 2, USA, by SATA
+    stage_transitions: 40       # stage_flag changed vs the prior snapshot
+
+  # §0 gate 6 long tail: a rotation that only ever revisits the hot ~20 names
+  # is a narrower desk than the corpus we are matching (~5 brand-new long-tail
+  # names per day). A shortfall must print a ::warning, never silently narrow.
+  long_tail_quota:
+    min_fresh_per_day: 3        # names not posted inside the window below
+    not_posted_within_days: 30
+
+  # §0 gate 6 concentration cap. A live story legitimately gets several posts a
+  # day; three CHART posts on one ticker in one day is where it stops reading
+  # as coverage and starts reading as a hobby horse.
+  per_ticker_day:
+    max_chart_posts: 3
+
+  # Freshness beats coverage. A pool whose source lags by more than this many
+  # trading sessions returns [] and says so in an annotation, rather than
+  # letting a two-week-old attention rank pose as today's.
+  freshness:
+    max_stale_sessions: 3
+    # Per-pool budgets, EMPTY on purpose — every pool is judged by the single
+    # number above until an operator decides otherwise. Measured on 2026-08-02,
+    # two sources do not refresh daily and are therefore refused most days:
+    # data/earnings/earnings.parquet swept 2026-06-19 and 2026-07-28 (two
+    # stamps, weeks apart) and the Weinstein stage backfill is a weekly
+    # artifact stuck at 2026-07-17. Both are genuinely stale — the collectors
+    # are the fix, not the gate — so this lever stays un-pulled and the empty
+    # pools keep printing their annotations. Example, if ever wanted:
+    #   per_pool: {earnings_this_week: 10, stage2_leaders: 10}
+    per_pool: {}
+
+  tiers:
+    # ADV floor a name from the nightly liquid-market ADV pack
+    # (data/marketing/) must clear to enter the cashtag-tier universe. Matches
+    # that pack's own construction filter, so today this admits every name it
+    # ships and exists to be raisable, not to bite.
+    #
+    # NAMING, deliberate and load-bearing: this key and the two comments above
+    # do NOT spell the intraday attention program's module name, and neither
+    # does this sentence. THIS FILE is one of six the program's safety-stack
+    # guard holds read-only to it (TestSafetyStack, in that program's radar
+    # suite under tests/), and unlike the five source files it lists, the
+    # config file's invariant is ABSOLUTE — no sanctioned-token exception
+    # exists for it, and the guard is right that a config knob is exactly the
+    # shape of reach it defends against. Widening the exception to fit this
+    # block would have traded a real guard for a comment. A reader who wants
+    # the artifact path finds it in engine/marketing/attention_source.py,
+    # which is not on that list and names it freely.
+    pack_min_adv_dollars: 25000000
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Sentinel — trust_office W1 plan-level policy gate (engine/marketing/sentinel.py)
 #
 # D02 actuator LAW: read ALL caps from this block — NEVER hardcode constants
@@ -615,12 +690,12 @@ publish:
     # workflow and bound 2026-07-28 (XG-W1). All seven live Buffer channels are
     # now addressable; a channel id is the POSTING address, not an arming
     # decision — desk_network.enabled is what decides whether an account
-    # generates at all, and mastermind_news is deliberately disabled there.
+    # generates at all. As of 2026-08-02 (W4f) all seven ARE armed there.
     meagan: "6a681b5e4b2d03035f52d4fc"          # @meagmastermind (twitter)
     sophia: "6a6810824b2d03035f52ac24"          # @sophmastermind (twitter)
     kelly: "6a681b4d4b2d03035f52d3ec"           # @mastermindkelly (twitter)
     cici: "6a6822f94b2d03035f5312a5"            # @mastermindcici (twitter)
-    mastermind_news: "6a6823a74b2d03035f53147b" # @mastermindnews1 (twitter) — channel bound, account DARK until the XG-W2 cadence resolver
+    mastermind_news: "6a6823a74b2d03035f53147b" # @mastermindnews1 (twitter) — the publication wire; ARMED in desk_network 2026-08-02 (W4f)
 
   # Per-account link policy at POST time. flagship = true: the operator wants
   # links to their own site (mastermind-x.com). This is the publisher-tier gate;
@@ -778,6 +853,50 @@ cadence_resolver:
     full: 1.0
 
 # ─────────────────────────────────────────────────────────────────────────────
+# NIGHTLY LADDER SHAPE (W4a) — engine/marketing/content_studio.py
+#   forward_days      -> content_studio.forward_days()
+#   per_day_headroom  -> content_studio.per_day_headroom()
+#   both surfaced back in content_plan.json `summary` + `content.selection`.
+#
+# THESE ARE VOLUME CAPS, NOT QUALITY GATES. Nothing here decides whether a post
+# is good enough to ship; the cross-day cooldown, the fact-reuse budget, the
+# filler budget, the near-dup radar, the sentinel caps and the writer's own
+# validators all run afterwards and none of them moved. A rung whose cooled pool
+# is empty still DROPS (supply-honest volume, masterplan §5.5) — it must never
+# fall back to the uncooled pool, which would publish the repetition the cooldown
+# exists to stop.
+#
+# WHY forward_days IS 1. The planner booked a SEVEN-day ladder and
+# `outbox.emit_from_content_plan` takes only `D1-` slots, and nothing anywhere
+# reads a previous plan — tomorrow rebuilds the whole week — so D2..D7 were
+# discarded BY CONSTRUCTION. Worse, they were not discarded evenly: the cross-day
+# cooldown pool was applied to the emitted day ALONE, so when the cooled pool ran
+# dry the D1 rung was dropped while the never-published days kept filling from
+# the uncooled pool. Measured on the 2026-08-02 plan committed to
+# data/marketing/content_plan.json: 154 items planned, FIVE on D1 (flagship 0,
+# sophia 0) — 3.2% of the night's work reached the only day that ships. At 1 every
+# rung is an emit rung, so the cooldown applies uniformly and honestly.
+# (masterplan §8.1 V1 / §8.2 W4a)
+#
+# WHY per_day_headroom IS 2.0. `per_day` becomes ceil(the account's own D08 ramp
+# cap x this factor), clamped to the 28-rung ladder, instead of a flat 28 for
+# everyone — generating 28 to publish 10 is the same waste in miniature. The
+# headroom is there because the gates BELOW the allocator legitimately reject
+# some of what is planned (~65% of D1 rungs survive the reuse budget, measured
+# 2026-08-02), so a desk capped at 10/day needs ~20 rungs offered. Above 2.0 the
+# extra rungs are eaten by the reuse budget rather than reaching a post (measured:
+# 2.0 -> 128 planned / 81 D1 survivors; 2.8 -> 168 / 89). It cannot compensate for
+# a broken writer — a 94%-drop copy lane is W4e's problem, and inflating this to
+# cover it would be exactly the waste the ruling names.
+#
+# Both keys are read defensively (missing/junk -> the same code default), so this
+# block is the operator's lever, never a load-bearing dependency.
+# ─────────────────────────────────────────────────────────────────────────────
+content_plan:
+  forward_days: 1
+  per_day_headroom: 2.0
+
+# ─────────────────────────────────────────────────────────────────────────────
 # One conversation, one owner (XG-W2) — engine/marketing/story_lock.py
 # Charter §2 amendment 6: a cross-account same-story lock at emission time, a
 # hard lock and not an editorial preference. Two of our accounts covering one
@@ -803,23 +922,66 @@ story_lock:
 #
 # LIVENESS IS NOT ROUTING. A class routed to an account that is not enabled in
 # desk_network falls back to `default` with a ::warning, so intent and reality
-# are both visible. mastermind_news is wired-but-dark on purpose; enabling that
-# desk is the single flip that arms its routes.
+# are both visible. mastermind_news was wired-but-dark for exactly that reason
+# and the routes below were inert; the desk_network flip on 2026-08-02 (W4f) is
+# what armed them, and re-disabling that desk silently returns every class here
+# to flagship — with the ::warning, but with no config edit to show for it.
 # ─────────────────────────────────────────────────────────────────────────────
 wire_routing:
   default: flagship
+  # SPLIT 2026-08-02, when mastermind_news armed (masterplan §8.2 W4f). The split
+  # rule is the charter's, not a volume calculation: a WIRE ACCOUNT RELAYS AND
+  # NEVER TAKES A STANCE (§4 safety rails), so the stance-free relay classes move
+  # to the publication wire and anything whose value to the reader is the HOUSE
+  # READ stays on the flagship. F6 (2026-07-31) still binds the copy either way —
+  # front-loaded sentence-case compression, never the ALL-CAPS siren costume.
+  #
+  # A class here names the OWNER, never the ceiling: each desk draws its own
+  # stricter-of(breaking.flagship_top_k_per_day, its ramp cap) daily budget, and
+  # surplus spills to the other declared wire desk rather than being dropped
+  # (engine/marketing/wire_routing.spill_pool). The spill pool is DERIVED from
+  # this table plus `default` — {flagship, mastermind_news} as written — so a
+  # class moved here also makes its owner spill-eligible. Add an explicit
+  # `spill_accounts: [...]` only to make a desk take overflow WITHOUT owning a
+  # class; a persona desk must never appear in either (a raw press relay in an
+  # authored voice is a charter violation dressed up as a volume fix).
   classes:
+    # ── flagship: the two classes whose product IS the house read ────────────
+    # macro_print — a CPI/NFP/GDP print is only half the post; the half our
+    # readers come for is what it does to the path, and that is a house view by
+    # definition. It is also the only class this lane has ever actually posted
+    # (both of its first booked items were BEA prints), so moving it would zero
+    # the flagship's wire on the same night we are trying to raise volume.
     macro_print: flagship
+    # policy — Fed/White House/tariffs. Two reasons it stays. (1) The register is
+    # ATTRIBUTIVE (wire_voice's TRUMP/White-House opener pools), and mis-attribution
+    # here is the exact defect that shipped a fabricated "White House, minutes ago:"
+    # dateline on a MarketWatch story (§1.4). (2) press_lane's `_no_market_nexus`
+    # gate is scoped to this class and geopolitical — deciding "is this about
+    # markets or is it a political grievance" is an editorial judgment, and the
+    # desk that makes it should be the one that owns a view.
     policy: flagship
-    geopolitical: flagship
-    company_news: flagship
-    earnings: flagship
-    none: flagship
-    # When mastermind_news arms, the wire classes that belong to the publication
-    # move here — e.g.
-    #   macro_print: mastermind_news
-    #   company_news: mastermind_news
-    # and nothing in engine/ changes.
+
+    # ── mastermind_news: the stance-free relay classes ───────────────────────
+    # geopolitical — reporting that an event happened needs no house view, and
+    # taking one on a conflict is precisely what §4 bans. The register already
+    # runs graver here (no siren emoji, no CTA energy, tragedy-tone law), which
+    # is the wire register, not the desk register.
+    geopolitical: mastermind_news
+    # company_news — a corporate action relayed with its source is a fact with a
+    # timestamp. Our edge on a single name is the chart plus the read, and that
+    # is the nightly/hot-tape lane's job, not the wire's.
+    company_news: mastermind_news
+    # earnings — engine/marketing/earnings_call_lane.py (EVENT_CLASS = "earnings")
+    # and fastlane. A beat/miss is arithmetic off a filing, deduped one item per
+    # ticker+quarter: relay by construction.
+    earnings: mastermind_news
+    # none — unclassified wire flashes. By definition they carry no thesis the
+    # house could have, so spending the flagship's voice on them is backwards.
+    # NOTE: `default: flagship` above is unchanged, so flagship keeps "none" for
+    # desk_feed's beat-fit filter (desk_feed.py reads `default` as owning "none")
+    # and every UNMAPPED class still falls back to it.
+    none: mastermind_news
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Desk feeds + franchises + persona memory (XG-W3)
@@ -1236,32 +1398,59 @@ desk_network:
       beat: "the Mastermind News publication wire (mastermindx.ai)"
       voice: "fast, reactive"
       handle: "mastermindnews1"   # Buffer channel wired in publish.channels
-      # WIRED BUT DARK. The account and its Buffer channel exist; the property's
-      # whole job is the wire/news cadence, and that is blocked on the XG-W2
-      # cadence resolver — do not enable before it. Enabling this account before
-      # the resolver lands would put a wire-cadence property on the decorative
-      # -1/unlimited live cap. There is deliberately no copywriter.personas block
-      # for it either: its register is the house wire voice
-      # (engine/marketing/wire_voice.py), not a desk persona.
+      # ARMED 2026-08-02 (masterplan §8.2 W4f). It was WIRED BUT DARK, blocked on
+      # the XG-W2 cadence resolver: enabling before the resolver landed would have
+      # put a wire-cadence property on the decorative -1/unlimited live cap. The
+      # resolver ARMED 2026-07-28 (cadence_resolver.enabled: true above, guarded by
+      # tests/test_marketing_cadence_ramp_coherence.py), so the stated blocker is
+      # cleared and this is the flip it was waiting for.
       #
-      # BOTH keys, deliberately. `enabled: false` is the account model's intent
-      # key; `disabled: true` is the legacy per-account kill-switch that some
-      # older call sites read directly. The publish-time lanes used to filter on
-      # `disabled` ALONE, so this entry plus its channel id made a dark property
-      # postable — fixed in engine/marketing/publish_time_content.py, and carried
-      # here too so no surviving `disabled`-only reader anywhere can revive it.
-      # Enforced at DISPATCH as well: scripts/marketing_publisher.py parks
-      # (quarantines, reason account_disabled, ::warning in the Actions summary)
-      # any item addressed to a desk that is not effective-enabled here —
-      # operator "post now" included — so this desk's bound channel id in
-      # publish.channels is not on its own enough to post the property. Arming
-      # stays this one flip (or an account_overrides.json entry). ONE path
-      # remains open by design: if the accounts model cannot be read at all
-      # (unreadable config, no desk_network roster) the publisher fails OPEN
-      # rather than parking all seven live desks, and says so with a loud
-      # ::warning — so keep this block parseable, not merely correct.
-      enabled: false
-      disabled: true
+      # THERE IS STILL DELIBERATELY NO copywriter.personas BLOCK FOR IT. Its
+      # register is the house wire voice (engine/marketing/wire_voice.py), not a
+      # desk persona — a wire account RELAYS and never takes a stance (masterplan
+      # §4 safety rails, and the F6 adjudication of 2026-07-31: we take the wire's
+      # front-loaded label compression, NOT its ALL-CAPS siren costume). Do not
+      # add one to "give it a voice"; that would be the editorializing the charter
+      # bans. Its wire-class routing is in `wire_routing.classes` below.
+      #
+      # THE LEGACY `disabled: true` IS GONE, NOT FLIPPED. `enabled` is the account
+      # model's intent key and it already WINS in engine/marketing/accounts.py
+      # `_config_enabled` (explicit `enabled` first, legacy `disabled` only as a
+      # fallback), so `enabled: true` next to `disabled: true` would resolve
+      # ENABLED while reading to a human as dark — two keys allowed to disagree.
+      # The reason both were carried is spent: publish_time_content once filtered
+      # on `disabled` ALONE (which made this dark property postable off its channel
+      # id), that was fixed there, and a repo-wide sweep finds no surviving
+      # account-level `disabled`-only reader — accounts.py:54 is the only one, and
+      # `enabled` outranks it. Deleting the key is what keeps the file honest.
+      #
+      # WHAT ARMING TURNS ON, in the order an operator will see it: the desk's
+      # bound channel id in publish.channels becomes postable (dispatch no longer
+      # parks its items with reason account_disabled — 33 ledger rows across 29
+      # items on 07-30/07-31 did exactly that); the tape radar's `live_account`
+      # rescue stops redirecting its sub-85-severity events onto flagship, so
+      # that volume moves HERE (~18 items/day on the 07-30/07-31 tape, measured
+      # from the radar's own fired ledger); and the wire classes routed to it
+      # below start resolving to it instead of falling back to flagship with a
+      # ::warning.  (The radar's own knobs live in config/hot-tape.yml — this
+      # file deliberately carries no block for them; a second home would be a
+      # split brain, and tests/test_marketing_news_arming.py pins its absence.)
+      #
+      # ONE path remains open by design: if the accounts model cannot be read at
+      # all (unreadable config, no desk_network roster) the publisher fails OPEN
+      # rather than parking every live desk, and says so with a loud ::warning —
+      # so keep this block parseable, not merely correct.
+      enabled: true
+      # DELIBERATE COLD START, not a guess. `created:` drives sentinel.resolve_ramp,
+      # and with no key at all the tier FAILED CLOSED to weeks_1_2 with a
+      # ::warning — the right tier for the wrong reason, and invisible to anyone
+      # reading the file. This is the ARMING date rather than the (unknown) X
+      # registration date or the 2026-07-28 Buffer-bind date, for the reason the
+      # flagship entry states above: reading YOUNGER is the safe direction, and
+      # this desk has never posted once, so its posting history genuinely starts
+      # today. Resolves to weeks_1_2 (10 posts/day, 30-min spacing, theme_list
+      # banned, max 2 cashtags/post) until 2026-08-16, then weeks_3_4.
+      created: "2026-08-02"
       tilt:
         signal: 0.28
         event: 0.24
@@ -1843,11 +2032,59 @@ house_picks:
 # engine/marketing/breaking_feed.py reads `breaking.sources`
 # engine/marketing/breaking_relevance.py reads `breaking.salience_threshold`
 # engine/marketing/breaking_summary.py reads `breaking.llm`
+# engine/marketing/press_lane.py    reads `breaking.flagship_top_k_per_day`
 # ─────────────────────────────────────────────────────────────────────────────
 breaking:
   poll_interval_s: 300
   user_agent: "MastermindBreakingBot/1.0 (+https://mastermind-x.com)"
   salience_threshold: 60
+
+  # ── PRESS-WIRE DAILY HEADROOM (W4d) ─────────────────────────────────────────
+  # Wire emissions allowed PER WIRE DESK PER DAY. Read by press_lane._resolve_top_k.
+  #
+  # A VOLUME CAP, NOT A QUALITY GATE — and the distinction is load-bearing here
+  # because the knob sits one line under a threshold it is repeatedly confused
+  # with. WHICH item may go out is decided by `salience_threshold: 60` above
+  # (UNCHANGED), press_sources.yml `wire.flagship_salience_floor: 30.0`
+  # (UNCHANGED), the market-nexus test, the corroboration gate and the garbage
+  # gate. None of them moved. This number only bounds HOW MANY of the items that
+  # already cleared all of them may ship in a day.
+  #
+  # 3 -> 10, and 3 was never measured. The press wire is the healthiest lane in
+  # the system — it converts ~90-100 candidate facts per weekday (measured from
+  # data/marketing/press_wire/seen_ring.jsonl: 99 on 07-30, 87 on 07-31) into <=3
+  # emitted, and then POSTS 89% of what it emits (8 of 9 items in the outbox, vs
+  # 12% for the hot-tape lane and 23% network-wide). Throttling the one
+  # event-driven lane that never goes stale, while the nightly ladder carried the
+  # network at a 23% post rate, is the inversion masterplan §8.2 exists to end.
+  #
+  # WHY 10 AND NOT MORE. Bounded from above by flagship's own ramp cap
+  # (`sentinel.ramp.account_overrides.flagship.max_posts_per_account_per_day: 20`):
+  # the wire must not be able to eat a desk's entire day, because the nightly
+  # ladder and the publish-time lanes draw from that same 20. Half is the
+  # operator-legible split. It is also exactly the cold tier's
+  # `weeks_1_2.max_posts_per_account_per_day`, so on the newly-armed
+  # mastermind_news desk the wire alone can never exceed the tier this arming
+  # deliberately chose — press items ship `scheduled_at: immediate` and an
+  # immediate item is EXEMPT from the per-account daily cap downstream (standing
+  # operator ruling 2026-07-27, "breaking has no limits"), so the ramp reaches
+  # them ONLY where press_lane applies it as a per-desk ceiling.
+  #
+  # RAISING THIS DOES NOT MANUFACTURE VOLUME. On most days the binding constraint
+  # is supply, not this counter (~45% of daily ingest is a mirror duplicate and
+  # most of the rest scores under the floor). It binds on the busy days, and on
+  # those days the pre-W4d code dropped the surplus into a `continue` that counted
+  # nothing.
+  #
+  # TWO HOMES, ONE ORDER. press_sources.yml `wire.flagship_top_k_per_day` is the
+  # historical home and still works; THIS key outranks it (press_lane._resolve_top_k
+  # precedence: breaking -> wire -> code default). The volume decision belongs
+  # beside the desk roster and the routing table that spend it. Keep the two in
+  # step: tests/test_marketing_news_arming.py refuses a marketing.yml value BELOW
+  # the press_sources one, because the higher-precedence home silently throttling
+  # the lane it was added to widen is the only way this split can hurt.
+  flagship_top_k_per_day: 10
+
   sources:
     - key: fed_press
       kind: rss
