@@ -9,16 +9,16 @@ packet binding, write its completed run/manifest, and then call
 attestation; it never fills in an authority or a reference on the caller's
 behalf.
 
-``compile_sector_packet`` consumes only immutable preparation bytes and
-revalidates both the generic packet contract and N0a's stricter facts-only
-carrier invariants.  The extra final check makes an imported private seal
-insufficient to smuggle a rehashed generic packet through compilation.  The
-boundary validator uses the repository's existing contract registry before
-construction. Current ``trial_snapshot.v1`` has neither an independently
-attested claim allowlist nor claim-pair/resolution references. N0a therefore
-emits empty evidence/current-fact lanes, and any contradiction state other than
-``none_known`` fails closed rather than being flattened into an empty packet
-contradiction list.
+``compile_sector_packet`` consumes immutable packet bytes plus the exact
+bounded canonical context captured during preparation. It revalidates that
+context, reconstructs the packet and binding, requires byte equality, and then
+rechecks both the generic packet contract and N0a's stricter facts-only carrier
+invariants. The boundary validator uses the repository's existing contract
+registry before construction. Current ``trial_snapshot.v1`` has neither an
+independently attested claim allowlist nor claim-pair/resolution references.
+N0a therefore emits empty evidence/current-fact lanes, and any contradiction
+state other than ``none_known`` fails closed rather than being flattened into
+an empty packet contradiction list.
 """
 from __future__ import annotations
 
@@ -67,6 +67,7 @@ _MAX_GOVERNANCE_DOCUMENT_BYTES = 256 * 1024
 _MAX_JSON_NODES = 20_000
 _MAX_JSON_DEPTH = 32
 _MAX_JSON_CONTAINER_ITEMS = 4_096
+_MAX_TIMESTAMP_CHARS = 64
 # The active ClinicalTrials.gov source row in
 # config/biocatalyst_launch_slo_manifest.yml pins maximum_seconds to 7200.
 # N0a treats the public health DTO's copy as an attestation to that frozen SLO,
@@ -119,10 +120,27 @@ class SectorPacketBinding:
 
 @dataclass(frozen=True)
 class _ValidatedSectorPacketInputs:
-    """Private canonical bytes minted only by the checked preparation boundary."""
+    """Immutable canonical material minted by the preparation boundary."""
 
     packet_bytes: bytes
+    trial_projection_bytes: tuple[bytes, ...]
+    operational_health_bytes: bytes
+    lobe_run_bytes: bytes
+    authority_manifest_bytes: bytes
+    evaluated_at: str
     _seal: object | None = None
+
+
+@dataclass(frozen=True)
+class _PreparedSectorPacketMaterial:
+    """Canonical output plus the exact normalized context that produced it."""
+
+    packet_bytes: bytes
+    trial_projection_bytes: tuple[bytes, ...]
+    operational_health_bytes: bytes
+    lobe_run_bytes: bytes
+    authority_manifest_bytes: bytes
+    evaluated_at: str
 
 
 def _reject(code: str) -> None:
@@ -224,6 +242,31 @@ def _preflight_raw_json_bytes(payload: bytes, *, code: str) -> None:
         _reject(code)
 
 
+def _decode_canonical_json_object_bytes(
+    payload: Any, *, code: str, max_bytes: int
+) -> tuple[dict[str, Any], int]:
+    """Decode one bounded canonical object without trusting recursive parsing."""
+
+    if not isinstance(payload, bytes) or len(payload) > max_bytes:
+        _reject(code)
+    _preflight_raw_json_bytes(payload, code=code)
+    try:
+        normalized = json.loads(payload)
+    except (TypeError, ValueError, RecursionError, MemoryError):
+        _reject(code)
+    if not isinstance(normalized, dict):
+        _reject(code)
+    preflight_bytes = _preflight_json_object(
+        normalized, code=code, max_bytes=max_bytes
+    )
+    try:
+        if canonical_json_bytes(normalized) != payload:
+            _reject(code)
+    except (ContractError, TypeError, ValueError, RecursionError, MemoryError):
+        _reject(code)
+    return normalized, preflight_bytes
+
+
 def _ordered_actions(actions: Sequence[str]) -> tuple[str, ...]:
     return tuple(sorted(actions, key=_ACTION_ORDER.__getitem__))
 
@@ -254,7 +297,11 @@ def _canonical_json_object_bytes(
 
 
 def _utc(value: Any, *, code: str) -> datetime:
-    if not isinstance(value, str) or not value.endswith("Z"):
+    if (
+        not isinstance(value, str)
+        or len(value) > _MAX_TIMESTAMP_CHARS
+        or not value.endswith("Z")
+    ):
         _reject(code)
     try:
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
@@ -665,7 +712,7 @@ def _prepare(
     lobe_run: Mapping[str, Any],
     authority_manifest: Mapping[str, Any],
     require_binding: bool,
-) -> tuple[dict[str, Any], SectorPacketBinding]:
+) -> _PreparedSectorPacketMaterial:
     evaluated = _utc(evaluated_at, code="evaluated_at_unavailable")
     lobe, manifest, allowed_actions = _validate_governance(
         lobe_run, authority_manifest, evaluated_at=evaluated
@@ -693,7 +740,29 @@ def _prepare(
     if require_binding:
         _validate_lobe_input_hashes(lobe, projections, health)
         _validate_lobe_binding(lobe, manifest, binding)
-    return payload, binding
+    packet = dict(payload)
+    packet["packet_hash"] = binding.packet_hash
+    try:
+        validate_contract("sector_intelligence_packet.v1", packet)
+        packet_bytes = canonical_json_bytes(packet)
+        projection_bytes = tuple(
+            canonical_json_bytes(projection) for projection in projections
+        )
+        health_bytes = canonical_json_bytes(health)
+        lobe_bytes = canonical_json_bytes(lobe)
+        manifest_bytes = canonical_json_bytes(manifest)
+    except (ContractError, TypeError, ValueError, RecursionError, MemoryError):
+        _reject("packet_contract_unavailable")
+    if len(packet_bytes) > _MAX_PACKET_BYTES:
+        _reject("packet_size_unavailable")
+    return _PreparedSectorPacketMaterial(
+        packet_bytes=packet_bytes,
+        trial_projection_bytes=projection_bytes,
+        operational_health_bytes=health_bytes,
+        lobe_run_bytes=lobe_bytes,
+        authority_manifest_bytes=manifest_bytes,
+        evaluated_at=evaluated_at,
+    )
 
 
 def plan_sector_packet_binding(
@@ -765,9 +834,9 @@ def prepare_sector_packet_inputs(
     lobe_run: Mapping[str, Any],
     authority_manifest: Mapping[str, Any],
 ) -> _ValidatedSectorPacketInputs:
-    """Validate all external inputs and return immutable compiler input bytes."""
+    """Validate inputs and retain their exact immutable normalized context."""
 
-    payload, binding = _prepare(
+    material = _prepare(
         trial_projections=trial_projections,
         operational_health=operational_health,
         evaluated_at=evaluated_at,
@@ -775,15 +844,14 @@ def prepare_sector_packet_inputs(
         authority_manifest=authority_manifest,
         require_binding=True,
     )
-    packet = dict(payload)
-    packet["packet_hash"] = binding.packet_hash
-    try:
-        validate_contract("sector_intelligence_packet.v1", packet)
-        packet_bytes = canonical_json_bytes(packet)
-    except (ContractError, TypeError, ValueError):
-        _reject("packet_contract_unavailable")
     return _ValidatedSectorPacketInputs(
-        packet_bytes=packet_bytes, _seal=_PREPARATION_SEAL
+        packet_bytes=material.packet_bytes,
+        trial_projection_bytes=material.trial_projection_bytes,
+        operational_health_bytes=material.operational_health_bytes,
+        lobe_run_bytes=material.lobe_run_bytes,
+        authority_manifest_bytes=material.authority_manifest_bytes,
+        evaluated_at=material.evaluated_at,
+        _seal=_PREPARATION_SEAL,
     )
 
 
@@ -968,13 +1036,24 @@ def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes)
 
 
 def compile_sector_packet(inputs: _ValidatedSectorPacketInputs) -> dict[str, Any]:
-    """Materialize one deterministic packet with no external side effects."""
+    """Reconstruct and materialize one deterministic packet without side effects."""
 
     if (
         not isinstance(inputs, _ValidatedSectorPacketInputs)
         or inputs._seal is not _PREPARATION_SEAL
         or not isinstance(inputs.packet_bytes, bytes)
         or len(inputs.packet_bytes) > _MAX_PACKET_BYTES
+        or not isinstance(inputs.trial_projection_bytes, tuple)
+        or not inputs.trial_projection_bytes
+        or len(inputs.trial_projection_bytes) > _MAX_TRIAL_PROJECTIONS
+        or not isinstance(inputs.operational_health_bytes, bytes)
+        or len(inputs.operational_health_bytes) > _MAX_OPERATIONAL_HEALTH_BYTES
+        or not isinstance(inputs.lobe_run_bytes, bytes)
+        or len(inputs.lobe_run_bytes) > _MAX_GOVERNANCE_DOCUMENT_BYTES
+        or not isinstance(inputs.authority_manifest_bytes, bytes)
+        or len(inputs.authority_manifest_bytes) > _MAX_GOVERNANCE_DOCUMENT_BYTES
+        or not isinstance(inputs.evaluated_at, str)
+        or len(inputs.evaluated_at) > _MAX_TIMESTAMP_CHARS
     ):
         _reject("validated_inputs_required")
     _preflight_raw_json_bytes(inputs.packet_bytes, code="validated_inputs_required")
@@ -1006,6 +1085,58 @@ def compile_sector_packet(inputs: _ValidatedSectorPacketInputs) -> dict[str, Any
     if not hash_matches:
         _reject("validated_inputs_required")
     _validate_compiled_packet(packet, packet_bytes=inputs.packet_bytes)
+
+    context_code = "validated_context_required"
+    projections: list[dict[str, Any]] = []
+    aggregate_bytes = 0
+    aggregate_preflight_bytes = 0
+    for projection_bytes in inputs.trial_projection_bytes:
+        projection, preflight_bytes = _decode_canonical_json_object_bytes(
+            projection_bytes,
+            code=context_code,
+            max_bytes=_MAX_TRIAL_PROJECTION_BYTES,
+        )
+        aggregate_bytes += len(projection_bytes)
+        aggregate_preflight_bytes += preflight_bytes
+        if (
+            aggregate_bytes > _MAX_AGGREGATE_PROJECTION_BYTES
+            or aggregate_preflight_bytes > _MAX_AGGREGATE_PROJECTION_BYTES
+        ):
+            _reject(context_code)
+        projections.append(projection)
+    health, _ = _decode_canonical_json_object_bytes(
+        inputs.operational_health_bytes,
+        code=context_code,
+        max_bytes=_MAX_OPERATIONAL_HEALTH_BYTES,
+    )
+    lobe, _ = _decode_canonical_json_object_bytes(
+        inputs.lobe_run_bytes,
+        code=context_code,
+        max_bytes=_MAX_GOVERNANCE_DOCUMENT_BYTES,
+    )
+    manifest, _ = _decode_canonical_json_object_bytes(
+        inputs.authority_manifest_bytes,
+        code=context_code,
+        max_bytes=_MAX_GOVERNANCE_DOCUMENT_BYTES,
+    )
+    _utc(inputs.evaluated_at, code=context_code)
+    reconstructed = _prepare(
+        trial_projections=projections,
+        operational_health=health,
+        evaluated_at=inputs.evaluated_at,
+        lobe_run=lobe,
+        authority_manifest=manifest,
+        require_binding=True,
+    )
+    if (
+        reconstructed.packet_bytes != inputs.packet_bytes
+        or reconstructed.trial_projection_bytes != inputs.trial_projection_bytes
+        or reconstructed.operational_health_bytes != inputs.operational_health_bytes
+        or reconstructed.lobe_run_bytes != inputs.lobe_run_bytes
+        or reconstructed.authority_manifest_bytes != inputs.authority_manifest_bytes
+        or reconstructed.evaluated_at != inputs.evaluated_at
+    ):
+        _reject("validated_inputs_required")
     return packet
 
 

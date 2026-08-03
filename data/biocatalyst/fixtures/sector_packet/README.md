@@ -25,6 +25,11 @@ packet. Health is capped at 16 KiB; each injected governance document at
 256 KiB; all JSON inputs are additionally bounded by 20,000 nodes, depth 32,
 and 4,096 items per container before canonical serialization. Final carrier
 bytes also receive a quote-aware lexical nesting scan before JSON decoding.
+Preparation retains each normalized projection as separate canonical bytes,
+plus bounded canonical health, lobe-run, and authority-manifest bytes. Final
+materialization decodes those immutable copies under the same limits, reruns
+the complete binding validation, reconstructs the packet, and requires exact
+canonical byte equality before returning it.
 
 There is intentionally no committed lobe-run or authority-manifest fixture for
 the final compiler path.  Those references are governance-owned runtime inputs,

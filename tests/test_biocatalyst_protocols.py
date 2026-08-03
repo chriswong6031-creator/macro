@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
 import json
 from pathlib import Path
 
@@ -232,7 +233,8 @@ def _forged_prepared(packet: dict, prepared: object) -> object:
     packet["packet_hash"] = canonical_json_sha256(
         {key: value for key, value in packet.items() if key != "packet_hash"}
     )
-    return type(prepared)(
+    return replace(
+        prepared,
         packet_bytes=canonical_json_bytes(packet),
         _seal=sector_packet_module._PREPARATION_SEAL,
     )
@@ -1079,12 +1081,119 @@ def test_n0a_sector_packet_rejects_extreme_raw_nesting_before_decode() -> None:
         authority_manifest=manifest,
     )
     nested = b'{"carrier":' + b"[" * 2_000 + b"0" + b"]" * 2_000 + b"}"
-    forged_nested = type(prepared)(
+    forged_nested = replace(
+        prepared,
         packet_bytes=nested,
         _seal=sector_packet_module._PREPARATION_SEAL,
     )
     with pytest.raises(SectorPacketError, match="validated_inputs_required"):
         compile_sector_packet(forged_nested)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        (
+            "source_record_refs",
+            [f"src:ctgov:NCT00000001:sha256:{'f' * 64}"],
+        ),
+        ("lobe_run_ref", "run:forged:20260801T150100Z"),
+        ("authority_manifest_ref", "authority:forged:v1"),
+    ),
+)
+def test_n0a_sector_packet_rejects_rehashed_provenance_with_retained_context(
+    field: str, value: object
+) -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    tampered = compile_sector_packet(prepared)
+    tampered[field] = value
+    forged = _forged_prepared(tampered, prepared)
+    validate_contract("sector_intelligence_packet.v1", tampered, repo_root=ROOT)
+
+    with pytest.raises(SectorPacketError, match="validated_inputs_required"):
+        compile_sector_packet(forged)
+
+
+def test_n0a_sector_packet_retains_normalized_context_without_mutation_window() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    expected = compile_sector_packet(prepared)
+
+    projection["nct_id"] = "NCT99999999"
+    health["source_dataset_timestamp_raw"] = "2001-01-01T00:00:00Z"
+    lobe["run_id"] = "run:mutated"
+    manifest["manifest_id"] = "authority:mutated:v1"
+
+    assert compile_sector_packet(prepared) == expected
+    assert isinstance(prepared.trial_projection_bytes, tuple)
+    assert all(isinstance(value, bytes) for value in prepared.trial_projection_bytes)
+    assert isinstance(prepared.operational_health_bytes, bytes)
+    assert isinstance(prepared.lobe_run_bytes, bytes)
+    assert isinstance(prepared.authority_manifest_bytes, bytes)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected"),
+    (
+        (
+            lambda prepared: replace(
+                prepared, operational_health_bytes=b'{"state":'
+            ),
+            "validated_context_required",
+        ),
+        (
+            lambda prepared: replace(
+                prepared,
+                lobe_run_bytes=b"x"
+                * (sector_packet_module._MAX_GOVERNANCE_DOCUMENT_BYTES + 1),
+            ),
+            "validated_inputs_required",
+        ),
+        (
+            lambda prepared: replace(
+                prepared,
+                trial_projection_bytes=(
+                    b'{"projection":'
+                    + b"[" * 2_000
+                    + b"0"
+                    + b"]" * 2_000
+                    + b"}",
+                ),
+            ),
+            "validated_context_required",
+        ),
+    ),
+)
+def test_n0a_sector_packet_rejects_invalid_retained_context_deterministically(
+    mutate, expected: str
+) -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+
+    with pytest.raises(SectorPacketError, match=expected):
+        compile_sector_packet(mutate(prepared))
 
 
 def test_n0a_sector_packet_marks_naive_ctgov_version_clock_unknown() -> None:
