@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T00:49:05.695915+00:00",
-  "count": 629,
+  "generated_at": "2026-08-03T01:04:13.350469+00:00",
+  "count": 630,
   "institutions": [
     "Amova",
     "Apollo",
@@ -184,6 +184,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k6q3j9iq1md-2988bd",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T15:14:01Z",
+      "summary_points": [
+        "**Amazon AWS Acceleration & Capex Surge**: AWS growth at 37% (vs.",
+        "34% consensus), $169bn annualized run rate, $496bn backlog; capex surged to $54.2bn (above $49.4bn consensus) driven by AWS and generative AI, signaling infrastructure investment momentum.",
+        "**Apple Supply Constraints & Margin Pressure**: iPhone/Mac revenue growth (+22%/+29%) driven by strong demand, but supply constraints (advanced-node silicon, memory costs) cause margin compression despite demand strength, with management citing capacity limitations as primary issue.",
+        "**AI Enterprise Monetization Acceleration**: Positive enterprise adoption of AI-enabled Macs/iPhones (financial services, media, education), private AI focus, and Siri AI feedback driving fundamental revenue growth beyond consumer apps.",
+        "**Amazon Technical Momentum**: Sustained price above $200 since mid-2024 (up from ~$150 in Oct 2023 to ~$250 in Jul 2026), indicating strong institutional interest in AI infrastructure plays with consolidation near $250 suggesting potential breakout."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
