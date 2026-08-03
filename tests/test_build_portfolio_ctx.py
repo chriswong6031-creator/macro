@@ -584,6 +584,43 @@ def test_theme_lane_join_missing_is_null():
     assert p2["tickers"]["NVDA"]["themes"][0]["lane"] is None
 
 
+# ── 13b. basket-keyed lane join (PR-A1) ───────────────────────────────────────
+# Story ids key the ledgers, basket ids key membership, and only 7 of 18 are spelled
+# the same — the same-id join read null for the rest. `basket_lanes` is the explicit
+# crosswalk projection; the same-id lookup stays as the fallback.
+
+def test_basket_lane_join_resolves_a_differently_spelled_story():
+    """A basket whose story id differs (the 11-of-18 case) now resolves its lane."""
+    src = _full_sources()
+    # story `some_story` owns basket `ai_soft`; the same-id map cannot see it.
+    src["theme_lanes"] = {"some_story": "early"}
+    src["basket_lanes"] = {"ai_soft": "early"}
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["themes"][0]["lane"] == "early"
+
+
+def test_basket_lane_join_is_a_strict_superset():
+    """basket_lanes absent/empty → the legacy same-id join still resolves (no regression)."""
+    src = _full_sources()
+    src["theme_lanes"] = {"ai_soft": "working"}
+    for empty in ({}, None):
+        src["basket_lanes"] = empty
+        p = build_ctx(src, ["NVDA"], ASOF)
+        assert p["tickers"]["NVDA"]["themes"][0]["lane"] == "working"
+
+
+def test_basket_lane_join_fabricates_nothing():
+    """A basket in neither map stays None; a non-string value is not passed through."""
+    src = _full_sources()
+    src["theme_lanes"] = {}
+    src["basket_lanes"] = {"other_basket": "caution"}
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["themes"][0]["lane"] is None
+    src["basket_lanes"] = {"ai_soft": {"lane": "working"}}   # malformed
+    p2 = build_ctx(src, ["NVDA"], ASOF)
+    assert p2["tickers"]["NVDA"]["themes"][0]["lane"] is None
+
+
 # ── 14. full-universe determinism ────────────────────────────────────────────
 
 def test_full_universe_determinism():

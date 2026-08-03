@@ -6,6 +6,16 @@
 # Rules:
 #   • Every foresight theme MUST appear exactly once as a canonical id.
 #   • basket_ids reference data/baskets/membership.json keys (47 baskets total).
+#   • primary_basket_id (v2) — the ONE basket that IS this theme, or null. It is the
+#     only mapping that is sound in the REVERSE direction (basket → theme): basket_ids
+#     answers "which baskets give this theme a price surface", which legitimately
+#     includes supply-chain and proxy baskets (ai_infra for ai_semiconductors,
+#     uranium_miners for nuclear_power, managed_care for medical_devices). Reading
+#     those backwards would tell a managed_care holder they own the medical-devices
+#     theme. Each primary is TRANSCRIBED from the row's own note — a note asserting a
+#     direct identity ("direct match" / "maps directly" / "Basket is named X") sets it;
+#     a note disclaiming one ("No dedicated ... basket exists") leaves it null, even
+#     where basket_ids lists a "closest" proxy. 13 set, 5 honest nulls.
 #   • subsector_keys reference site/marketdata/subsector_rotation.json themes[].theme strings.
 #   • Baskets not mapped to any canonical theme are listed in unmapped_baskets below.
 #   • citrini_basket_ids: always [] in this PR (CITR-2 deferred per §7.4 OPEN-OPERATOR).
@@ -14,8 +24,11 @@
 #
 # Derivation: programmatic token-overlap candidates, then curated by foresight rationale.
 # Version: 1 (2026-07-09, TIL W0 PR-A)
+#          2 (2026-08-02, SI follow-ups PR-A1) — added primary_basket_id. Additive
+#            only: basket_ids / subsector_keys / citrini_basket_ids are byte-unchanged,
+#            so every existing consumer keeps its current behaviour.
 
-version: 1
+version: 2
 date: "2026-07-09"
 note: >
   Canonical theme crosswalk. All 18 foresight themes are mapped. Baskets not covered
@@ -27,6 +40,7 @@ themes:
     name_en: "AI Semiconductors"
     name_zh: "AI半导体"
     foresight_id: ai_semiconductors
+    primary_basket_id: ai_semiconductors
     basket_ids:
       - ai_semiconductors
       - ai_infra
@@ -42,6 +56,7 @@ themes:
     name_en: "Memory, HBM & Storage"
     name_zh: "存储与HBM"
     foresight_id: memory_storage
+    primary_basket_id: memory_storage
     basket_ids:
       - memory_storage
     subsector_keys:
@@ -55,6 +70,7 @@ themes:
     name_en: "Semiconductor Equipment (WFE)"
     name_zh: "半导体设备（WFE）"
     foresight_id: semicap_equipment
+    primary_basket_id: semicap_equipment
     basket_ids:
       - semicap_equipment
     subsector_keys:
@@ -67,6 +83,7 @@ themes:
     name_en: "Data Center Power & Cooling"
     name_zh: "数据中心电力与冷却"
     foresight_id: data_center_power
+    primary_basket_id: data_center_power
     basket_ids:
       - data_center_power
       - ai_neoclouds
@@ -82,6 +99,7 @@ themes:
     name_en: "Nuclear & SMR Power"
     name_zh: "核能与小型模块堆"
     foresight_id: nuclear_power
+    primary_basket_id: nuclear_power
     basket_ids:
       - nuclear_power
       - uranium_miners
@@ -97,6 +115,7 @@ themes:
     name_en: "Grid & Electrification"
     name_zh: "电网与电气化"
     foresight_id: grid_electrification
+    primary_basket_id: power_grid
     basket_ids:
       - power_grid
     subsector_keys:
@@ -110,6 +129,7 @@ themes:
     name_en: "Cybersecurity"
     name_zh: "网络安全"
     foresight_id: cybersecurity
+    primary_basket_id: cybersecurity
     basket_ids:
       - cybersecurity
     subsector_keys:
@@ -122,6 +142,7 @@ themes:
     name_en: "Defense & Aerospace"
     name_zh: "国防与航空航天"
     foresight_id: defense_aerospace
+    primary_basket_id: defense
     basket_ids:
       - defense
     subsector_keys:
@@ -134,6 +155,7 @@ themes:
     name_en: "Robotics & Automation"
     name_zh: "机器人与自动化"
     foresight_id: robotics_automation
+    primary_basket_id: robotics_automation
     basket_ids:
       - robotics_automation
     subsector_keys:
@@ -149,6 +171,7 @@ themes:
     name_en: "GLP-1 / Obesity"
     name_zh: "GLP-1与肥胖"
     foresight_id: glp1_obesity
+    primary_basket_id: obesity_glp1
     basket_ids:
       - obesity_glp1
     subsector_keys:
@@ -162,6 +185,7 @@ themes:
     name_en: "Fintech & Payments"
     name_zh: "金融科技与支付"
     foresight_id: fintech_payments
+    primary_basket_id: payments_fintech
     basket_ids:
       - payments_fintech
     subsector_keys:
@@ -174,6 +198,7 @@ themes:
     name_en: "Space & Satellites"
     name_zh: "太空与卫星"
     foresight_id: space_satellite
+    primary_basket_id: space_economy
     basket_ids:
       - space_economy
     subsector_keys:
@@ -187,6 +212,7 @@ themes:
     name_en: "Rare Earth & Critical Minerals"
     name_zh: "稀土与关键矿产"
     foresight_id: rare_earth_critical_min
+    primary_basket_id: critical_minerals
     basket_ids:
       - critical_minerals
     subsector_keys:
@@ -200,6 +226,7 @@ themes:
     name_en: "Copper, Steel & Electrification"
     name_zh: "铜、钢铁与电气化"
     foresight_id: copper_steel_electrify
+    primary_basket_id: null
     basket_ids:
       - reshoring
     subsector_keys:
@@ -214,6 +241,7 @@ themes:
     name_en: "Agriculture & Fertilizer"
     name_zh: "农业与化肥"
     foresight_id: ag_fertilizer
+    primary_basket_id: null
     basket_ids: []
     subsector_keys:
       - "Agriculture & FoodTech"
@@ -228,6 +256,7 @@ themes:
     name_en: "Medical Devices"
     name_zh: "医疗器械"
     foresight_id: medical_devices
+    primary_basket_id: null
     basket_ids:
       - managed_care
     subsector_keys:
@@ -241,6 +270,7 @@ themes:
     name_en: "Diagnostics & Life-Science Tools"
     name_zh: "诊断与生命科学工具"
     foresight_id: diagnostics_lifesci
+    primary_basket_id: null
     basket_ids: []
     subsector_keys:
       - "Healthcare & Biotech"
@@ -253,6 +283,7 @@ themes:
     name_en: "Solar"
     name_zh: "太阳能"
     foresight_id: solar
+    primary_basket_id: null
     basket_ids: []
     subsector_keys:
       - "Energy Renewable"

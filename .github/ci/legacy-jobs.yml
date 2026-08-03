@@ -3775,7 +3775,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
+        # pyyaml is load-bearing here, not incidental: the theme_lanes side-write reads
+        # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
+        # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
+        # projection silently collapses to empty (PR #4300 shipped red on exactly that).
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
