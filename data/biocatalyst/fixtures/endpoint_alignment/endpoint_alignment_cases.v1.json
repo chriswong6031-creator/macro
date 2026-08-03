@@ -26,6 +26,14 @@
         "description": "Café   response endpoint"
       }
     },
+    "missing_corroborating_fields": {
+      "before": {
+        "measure": "Tumor response rate"
+      },
+      "after": {
+        "measure": "Tumour response rate"
+      }
+    },
     "tied_before": [
       {"measure": "Tumor response rate A", "timeFrame": "12 weeks", "description": "Independent review endpoint"},
       {"measure": "Tumor response rate B", "timeFrame": "12 weeks", "description": "Independent review endpoint"}

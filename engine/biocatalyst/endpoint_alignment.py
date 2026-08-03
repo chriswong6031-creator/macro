@@ -5,6 +5,11 @@ immutable B2 Record History snapshots and their replay-validated exact diff.
 It does not write a review queue, classify a protocol change, or resolve an
 issuer, security, asset, or clinical meaning.  Its only output is a bounded
 ``needs_review`` projection of possible same-registry-endpoint candidates.
+
+Complete B2 inputs are refused before copying or replay when their canonical
+JSON size or shape exceeds the fixed preflight envelope.  That refusal is the
+safe fail-empty boundary: no projection can truthfully cite snapshot/diff
+headers whose evidence hashes were too large to replay-validate.
 """
 from __future__ import annotations
 
@@ -49,6 +54,10 @@ _MAX_ENDPOINT_BYTES = 24 * 1024
 _MAX_ENDPOINT_NODES = 1024
 _MAX_ENDPOINT_NESTING_DEPTH = 64
 _MAX_SOURCE_OUTCOME_ROWS_PER_SIDE = 256
+_MAX_HISTORY_INPUT_CANONICAL_BYTES = 2 * 1024 * 1024
+_MAX_HISTORY_INPUT_NODES = 65_536
+_MAX_HISTORY_INPUT_NESTING_DEPTH = 128
+_MAX_HISTORY_INPUT_CONTAINER_ITEMS = 16_384
 _AUTHORITY = {
     "classification": "semantic_candidate",
     "decision_authority": False,
@@ -68,6 +77,182 @@ _AUTHORITY = {
         "raise_authority",
     ],
 }
+
+
+def _canonical_string_byte_length(value: str, limit: int) -> int | None:
+    """Return exact canonical JSON string bytes, or ``None`` if not encodable.
+
+    ``canonical_json_bytes`` uses ``ensure_ascii=False``.  Counting here keeps
+    the preflight allocation-free even for a multi-megabyte hostile string.
+    A result greater than ``limit`` is an early size signal, not an allocation.
+    """
+
+    total = 2
+    for character in value:
+        codepoint = ord(character)
+        if 0xD800 <= codepoint <= 0xDFFF:
+            return None
+        if character in {'"', "\\"} or character in {"\b", "\f", "\n", "\r", "\t"}:
+            total += 2
+        elif codepoint < 0x20:
+            total += 6
+        else:
+            total += 1 if codepoint <= 0x7F else 2 if codepoint <= 0x7FF else 3 if codepoint <= 0xFFFF else 4
+        if total > limit:
+            return total
+    return total
+
+
+def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
+    """Iteratively preflight and freeze one complete B2 JSON document.
+
+    Keys are visited in canonical order so the refusal reason cannot depend on
+    caller insertion order. The node budget counts both object keys and JSON
+    values. Container contents are captured only into bounded local arrays; the
+    returned plain JSON tree is the sole value later replayed.
+    """
+
+    root: list[Any] = [None]
+    total = 0
+    nodes = 0
+    stack: list[tuple[Any, int, list[Any] | dict[str, Any], int | str]] = [
+        (value, 0, root, 0)
+    ]
+    while stack:
+        current, depth, parent, slot = stack.pop()
+        nodes += 1
+        if nodes > _MAX_HISTORY_INPUT_NODES:
+            return None, "node_limit_exceeded"
+        if depth > _MAX_HISTORY_INPUT_NESTING_DEPTH:
+            return None, "nesting_limit_exceeded"
+
+        current_type = type(current)
+        if current_type is str:
+            rendered_size = _canonical_string_byte_length(
+                current, _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+            )
+            if rendered_size is None:
+                return None, "must_be_canonical_json"
+            total += rendered_size
+            frozen: Any = current
+        elif current_type is dict:
+            items: list[tuple[Any, Any]] = []
+            try:
+                for key, child in current.items():
+                    if len(items) >= _MAX_HISTORY_INPUT_CONTAINER_ITEMS:
+                        return None, "container_limit_exceeded"
+                    items.append((key, child))
+            except RuntimeError:
+                return None, "must_be_canonical_json"
+            if len(items) != len(current):
+                return None, "must_be_canonical_json"
+            if any(type(key) is not str for key, _child in items):
+                return None, "must_be_canonical_json"
+            item_count = len(items)
+            pending_nodes = 2 * item_count
+            if nodes + len(stack) + pending_nodes > _MAX_HISTORY_INPUT_NODES:
+                return None, "node_limit_exceeded"
+            if item_count and depth + 1 > _MAX_HISTORY_INPUT_NESTING_DEPTH:
+                return None, "nesting_limit_exceeded"
+            total += 2 + max(0, item_count - 1) + item_count
+            nodes += item_count
+            if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+                return None, "canonical_byte_limit_exceeded"
+            invalid_key = False
+            for key, _child in items:
+                rendered_size = _canonical_string_byte_length(
+                    key, _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+                )
+                if rendered_size is None:
+                    invalid_key = True
+                    continue
+                total += rendered_size
+                if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+                    return None, "canonical_byte_limit_exceeded"
+            if invalid_key:
+                return None, "must_be_canonical_json"
+            # Sorting is safe only after the aggregate key encoding is inside
+            # the same 2MiB budget as the complete canonical document.
+            items.sort(key=lambda item: item[0])
+            frozen = {}
+            for key, child in reversed(items):
+                stack.append((child, depth + 1, frozen, key))
+        elif current_type is list:
+            item_count = len(current)
+            if item_count > _MAX_HISTORY_INPUT_CONTAINER_ITEMS:
+                return None, "container_limit_exceeded"
+            items_list: list[Any] = []
+            try:
+                for index in range(item_count):
+                    items_list.append(current[index])
+            except IndexError:
+                return None, "must_be_canonical_json"
+            if len(current) != item_count:
+                return None, "must_be_canonical_json"
+            if nodes + len(stack) + item_count > _MAX_HISTORY_INPUT_NODES:
+                return None, "node_limit_exceeded"
+            total += 2 + max(0, item_count - 1)
+            frozen = [None] * item_count
+            for index in range(item_count - 1, -1, -1):
+                stack.append((items_list[index], depth + 1, frozen, index))
+        elif current is None:
+            total += 4
+            frozen = None
+        elif current_type is bool:
+            total += 4 if current else 5
+            frozen = current
+        elif current_type is int:
+            # Avoid asking Python to render a hostile arbitrary-precision
+            # integer that cannot fit inside the remaining byte budget.
+            remaining = _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+            if current.bit_length() > max(1, remaining) * 4:
+                return None, "canonical_byte_limit_exceeded"
+            try:
+                total += len(str(current))
+            except ValueError:
+                return None, "must_be_canonical_json"
+            frozen = current
+        elif current_type is float:
+            try:
+                rendered = json.dumps(current, allow_nan=False, separators=(",", ":"))
+            except (TypeError, ValueError):
+                return None, "must_be_canonical_json"
+            total += len(rendered)
+            frozen = current
+        else:
+            return None, "must_be_canonical_json"
+
+        if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+            return None, "canonical_byte_limit_exceeded"
+        parent[slot] = frozen
+    return root[0], None
+
+
+def _preflight_history_inputs(
+    before_snapshot: Any, after_snapshot: Any, diff: Any
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Refuse unsafe evidence before copying it or invoking exact B2 replay.
+
+    No unavailable projection is minted here.  Doing so would publish
+    unvalidated source references and hashes from the very inputs that could
+    not be safely replayed.
+    """
+
+    frozen_documents: list[dict[str, Any]] = []
+    for label, document in (
+        ("before_snapshot", before_snapshot),
+        ("after_snapshot", after_snapshot),
+        ("diff", diff),
+    ):
+        if type(document) is not dict:
+            raise EndpointAlignmentError("endpoint_alignment_history_inputs_must_be_objects")
+        frozen, reason = _freeze_history_input(document)
+        if reason is not None:
+            raise EndpointAlignmentError(f"endpoint_alignment_{label}_{reason}")
+        if type(frozen) is not dict:
+            raise EndpointAlignmentError("endpoint_alignment_history_inputs_must_be_objects")
+        frozen_documents.append(frozen)
+    return frozen_documents[0], frozen_documents[1], frozen_documents[2]
 
 
 def _json_copy(value: Any) -> Any:
@@ -280,10 +465,10 @@ def _bigram_dice_bps(before: object, after: object) -> int:
 
     left = unicodedata.normalize("NFC", _text(before))
     right = unicodedata.normalize("NFC", _text(after))
-    if left == right:
-        return 10_000
     if not left or not right:
         return 0
+    if left == right:
+        return 10_000
     left_units = [left] if len(left) == 1 else [left[index : index + 2] for index in range(len(left) - 1)]
     right_units = [right] if len(right) == 1 else [right[index : index + 2] for index in range(len(right) - 1)]
     common = sum((Counter(left_units) & Counter(right_units)).values())
@@ -399,6 +584,8 @@ def _make_candidate(
         "lexical_features": features,
         "candidate_relation": _RELATION,
         "review_state": _REVIEW_STATE,
+        "persistence_state": "projection_only",
+        "canonical_queue": False,
         "semantic_method": _METHOD,
         "source_fact": False,
         "protocol_change_asserted": False,
@@ -602,11 +789,9 @@ def build_trial_endpoint_alignment_review_projection(
 ) -> dict[str, Any]:
     """Build a bounded, deterministic private projection for one version pair."""
 
-    before = _json_copy(before_snapshot)
-    after = _json_copy(after_snapshot)
-    exact_diff = _json_copy(diff)
-    if not isinstance(before, dict) or not isinstance(after, dict) or not isinstance(exact_diff, dict):
-        raise EndpointAlignmentError("endpoint_alignment_history_inputs_must_be_objects")
+    before, after, exact_diff = _preflight_history_inputs(
+        before_snapshot, after_snapshot, diff
+    )
     validate_trial_history_diff_against_snapshots(exact_diff, before, after)
     projection = _projection_payload(before, after, exact_diff)
     validate_trial_endpoint_alignment_review_projection_against_history(
@@ -625,13 +810,16 @@ def validate_trial_endpoint_alignment_candidate_against_history(
 ) -> None:
     """Replay one candidate against immutable snapshots and the exact diff."""
 
+    before, after, exact_diff = _preflight_history_inputs(
+        before_snapshot, after_snapshot, diff
+    )
     validate_trial_history_diff_against_snapshots(
-        diff, before_snapshot, after_snapshot, repo_root=repo_root
+        exact_diff, before, after, repo_root=repo_root
     )
     registry = ContractRegistry(repo_root)
     registry.validate(_CANDIDATE_CONTRACT_ID, candidate)
     expected, _capacity_state, unavailable_reason = _derive_candidates(
-        before_snapshot, after_snapshot, diff
+        before, after, exact_diff
     )
     expected_by_id = {item["candidate_id"]: item for item in expected}
     actual_id = candidate.get("candidate_id")
@@ -658,12 +846,15 @@ def validate_trial_endpoint_alignment_review_projection_against_history(
 ) -> None:
     """Replay a projection completely; omitted or fabricated rows fail closed."""
 
+    before, after, exact_diff = _preflight_history_inputs(
+        before_snapshot, after_snapshot, diff
+    )
     validate_trial_history_diff_against_snapshots(
-        diff, before_snapshot, after_snapshot, repo_root=repo_root
+        exact_diff, before, after, repo_root=repo_root
     )
     registry = ContractRegistry(repo_root)
     registry.validate(_PROJECTION_CONTRACT_ID, projection)
-    expected = _projection_payload(before_snapshot, after_snapshot, diff)
+    expected = _projection_payload(before, after, exact_diff)
     if expected != projection:
         raise ContractValidationError(
             _PROJECTION_CONTRACT_ID,

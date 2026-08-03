@@ -8,7 +8,8 @@
   "required": [
     "contract_id", "schema_version", "candidate_id", "nct_id", "diff_ref", "before", "after",
     "supporting_exact_op_sha256", "lexical_features", "candidate_relation", "review_state",
-    "semantic_method", "source_fact", "protocol_change_asserted", "materiality_assessed", "authority", "hash_scope",
+    "persistence_state", "canonical_queue", "semantic_method", "source_fact",
+    "protocol_change_asserted", "materiality_assessed", "authority", "hash_scope",
     "candidate_payload_sha256"
   ],
   "properties": {
@@ -26,6 +27,8 @@
     "lexical_features": {"$ref": "#/$defs/lexicalFeatures"},
     "candidate_relation": {"const": "possible_same_registry_endpoint"},
     "review_state": {"const": "needs_review"},
+    "persistence_state": {"const": "projection_only"},
+    "canonical_queue": {"const": false},
     "semantic_method": {"const": "deterministic_endpoint_alignment_candidate.v1"},
     "source_fact": {"const": false},
     "protocol_change_asserted": {"const": false},

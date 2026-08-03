@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
+import engine.biocatalyst.endpoint_alignment as endpoint_alignment
 from engine.biocatalyst.endpoint_alignment import (
+    EndpointAlignmentError,
     build_trial_endpoint_alignment_review_projection,
 )
 from engine.biocatalyst.history import build_history_exact_diff
@@ -120,6 +122,8 @@ def test_spelling_correction_is_a2_needs_review_candidate_only() -> None:
     candidate = projection["candidates"][0]
     assert candidate["candidate_relation"] == "possible_same_registry_endpoint"
     assert candidate["review_state"] == "needs_review"
+    assert candidate["persistence_state"] == "projection_only"
+    assert candidate["canonical_queue"] is False
     assert candidate["source_fact"] is False
     assert candidate["protocol_change_asserted"] is False
     assert candidate["materiality_assessed"] is False
@@ -149,6 +153,17 @@ def test_spelling_correction_is_a2_needs_review_candidate_only() -> None:
     validate_trial_endpoint_alignment_candidate_against_history(
         candidate, snapshots[0], snapshots[1], diff
     )
+
+
+def test_missing_timeframe_and_description_are_zero_not_perfect_corroboration() -> None:
+    missing = FIXTURE["missing_corroborating_fields"]
+    _snapshots, _diff, projection = _projection(
+        _study(outcomes=[missing["before"]]), _study(outcomes=[missing["after"]])
+    )
+
+    assert projection["available"] is True
+    assert projection["candidate_count"] == 0
+    assert projection["candidates"] == []
 
 
 def test_tied_residuals_emit_every_eligible_cross_pair_in_source_locator_order() -> None:
@@ -274,6 +289,211 @@ def test_closed_schemas_forbid_decisions_identity_prophet_raw_store_and_extra_pr
     projection_extra["canonical_review_queue"] = True
     with pytest.raises(ContractValidationError):
         validate_contract(projection_extra)
+
+    for field in ("persistence_state", "canonical_queue"):
+        altered = deepcopy(candidate)
+        altered.pop(field)
+        _rehash(altered, "candidate_payload_sha256")
+        with pytest.raises(ContractValidationError):
+            validate_contract(altered)
+
+    canonical_candidate = deepcopy(candidate)
+    canonical_candidate["persistence_state"] = "canonical"
+    canonical_candidate["canonical_queue"] = True
+    _rehash(canonical_candidate, "candidate_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        validate_contract(canonical_candidate)
+
+    candidate_schema = json.loads(
+        (
+            ROOT
+            / "contracts"
+            / "biocatalyst"
+            / "trial_endpoint_alignment_candidate.v1.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert candidate_schema["properties"]["persistence_state"] == {
+        "const": "projection_only"
+    }
+    assert candidate_schema["properties"]["canonical_queue"] == {"const": False}
+    assert {"persistence_state", "canonical_queue"}.issubset(candidate_schema["required"])
+
+
+@pytest.mark.parametrize(
+    ("target_index", "target_label"),
+    [(0, "before_snapshot"), (1, "after_snapshot"), (2, "diff")],
+)
+def test_complete_history_input_byte_preflight_refuses_before_copy_replay_or_candidate(
+    monkeypatch: pytest.MonkeyPatch, target_index: int, target_label: str
+) -> None:
+    snapshots, diff, _projection_document = _candidate_projection()
+    inputs = [deepcopy(snapshots[0]), deepcopy(snapshots[1]), deepcopy(diff)]
+    hostile_value = "x" * (2 * 1024 * 1024 + 1)
+    if target_index < 2:
+        inputs[target_index]["canonical_study"]["hostileUnrelatedModule"] = hostile_value
+    else:
+        inputs[target_index]["hostile_unrelated_field"] = hostile_value
+    reached = {"copy": 0, "replay": 0, "candidate": 0}
+
+    def forbidden(stage: str):
+        def fail(*_args: object, **_kwargs: object) -> None:
+            reached[stage] += 1
+            raise AssertionError(f"{stage} must not run before full-input preflight")
+
+        return fail
+
+    monkeypatch.setattr(endpoint_alignment, "_json_copy", forbidden("copy"))
+    monkeypatch.setattr(
+        endpoint_alignment,
+        "validate_trial_history_diff_against_snapshots",
+        forbidden("replay"),
+    )
+    monkeypatch.setattr(endpoint_alignment, "_make_candidate", forbidden("candidate"))
+
+    artifact = None
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_{target_label}_canonical_byte_limit_exceeded$",
+    ):
+        artifact = build_trial_endpoint_alignment_review_projection(*inputs)
+
+    assert artifact is None
+    assert reached == {"copy": 0, "replay": 0, "candidate": 0}
+
+
+@pytest.mark.parametrize(
+    ("hostile_value", "reason"),
+    [
+        (list(range(16_385)), "container_limit_exceeded"),
+        ([[None] * 700 for _ in range(100)], "node_limit_exceeded"),
+    ],
+)
+def test_complete_history_input_container_and_node_preflight_refuse_without_artifact(
+    monkeypatch: pytest.MonkeyPatch, hostile_value: object, reason: str
+) -> None:
+    snapshots, diff, _projection_document = _candidate_projection()
+    before = deepcopy(snapshots[0])
+    before["canonical_study"]["hostile_unrelated_module"] = hostile_value
+    reached = {"copy": 0, "replay": 0}
+
+    def forbidden(stage: str):
+        def fail(*_args: object, **_kwargs: object) -> None:
+            reached[stage] += 1
+            raise AssertionError(f"{stage} must not run before full-input preflight")
+
+        return fail
+
+    monkeypatch.setattr(endpoint_alignment, "_json_copy", forbidden("copy"))
+    monkeypatch.setattr(
+        endpoint_alignment,
+        "validate_trial_history_diff_against_snapshots",
+        forbidden("replay"),
+    )
+
+    artifact = None
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_before_snapshot_{reason}$",
+    ):
+        artifact = build_trial_endpoint_alignment_review_projection(before, snapshots[1], diff)
+
+    assert artifact is None
+    assert reached == {"copy": 0, "replay": 0}
+
+
+def test_complete_history_input_depth_preflight_is_iterative_and_refuses_without_artifact(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshots, diff, _projection_document = _candidate_projection()
+    before = deepcopy(snapshots[0])
+    nested: object = "leaf"
+    for _ in range(129):
+        nested = [nested]
+    before["canonical_study"]["hostile_unrelated_module"] = nested
+    reached = {"copy": 0, "replay": 0}
+
+    def forbidden(stage: str):
+        def fail(*_args: object, **_kwargs: object) -> None:
+            reached[stage] += 1
+            raise AssertionError(f"{stage} must not run before full-input preflight")
+
+        return fail
+
+    monkeypatch.setattr(endpoint_alignment, "_json_copy", forbidden("copy"))
+    monkeypatch.setattr(
+        endpoint_alignment,
+        "validate_trial_history_diff_against_snapshots",
+        forbidden("replay"),
+    )
+
+    artifact = None
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=r"^endpoint_alignment_before_snapshot_nesting_limit_exceeded$",
+    ):
+        artifact = build_trial_endpoint_alignment_review_projection(before, snapshots[1], diff)
+
+    assert artifact is None
+    assert reached == {"copy": 0, "replay": 0}
+
+
+def test_full_input_refusal_reason_is_independent_of_object_insertion_order() -> None:
+    snapshots, diff, _projection_document = _candidate_projection()
+    oversized = "x" * (2 * 1024 * 1024 + 1)
+    too_deep: object = "leaf"
+    for _ in range(129):
+        too_deep = [too_deep]
+
+    errors: list[str] = []
+    for ordered_items in (
+        (("a_oversized", oversized), ("z_too_deep", too_deep)),
+        (("z_too_deep", too_deep), ("a_oversized", oversized)),
+    ):
+        before = deepcopy(snapshots[0])
+        before["canonical_study"]["hostileUnrelatedModule"] = dict(ordered_items)
+        with pytest.raises(EndpointAlignmentError) as exc_info:
+            build_trial_endpoint_alignment_review_projection(before, snapshots[1], diff)
+        errors.append(str(exc_info.value))
+
+    assert errors == [
+        "endpoint_alignment_before_snapshot_canonical_byte_limit_exceeded",
+        "endpoint_alignment_before_snapshot_canonical_byte_limit_exceeded",
+    ]
+
+
+@pytest.mark.parametrize("validator_kind", ["candidate", "projection"])
+def test_replay_validators_preflight_and_freeze_complete_inputs_before_exact_replay(
+    monkeypatch: pytest.MonkeyPatch, validator_kind: str
+) -> None:
+    snapshots, diff, projection = _candidate_projection()
+    before = deepcopy(snapshots[0])
+    before["canonical_study"]["hostileUnrelatedModule"] = list(range(16_385))
+    replay_calls = 0
+
+    def forbidden_replay(*_args: object, **_kwargs: object) -> None:
+        nonlocal replay_calls
+        replay_calls += 1
+        raise AssertionError("exact replay must not run before full-input preflight")
+
+    monkeypatch.setattr(
+        endpoint_alignment,
+        "validate_trial_history_diff_against_snapshots",
+        forbidden_replay,
+    )
+    validator = (
+        validate_trial_endpoint_alignment_candidate_against_history
+        if validator_kind == "candidate"
+        else validate_trial_endpoint_alignment_review_projection_against_history
+    )
+    artifact = projection["candidates"][0] if validator_kind == "candidate" else projection
+
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=r"^endpoint_alignment_before_snapshot_container_limit_exceeded$",
+    ):
+        validator(artifact, before, snapshots[1], diff)
+
+    assert replay_calls == 0
 
 
 def test_input_text_and_residual_capacity_breaches_are_explicit_and_fail_empty() -> None:

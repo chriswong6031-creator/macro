@@ -6266,6 +6266,17 @@ def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[
 
 def _endpoint_alignment_candidate_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    if (
+        document.get("persistence_state") != "projection_only"
+        or document.get("canonical_queue") is not False
+    ):
+        issues.append(
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_candidate.noncanonical_projection",
+                "candidate must remain projection-only and outside every canonical queue",
+            )
+        )
     hash_issue = _content_hash_issue(
         document,
         hash_field="candidate_payload_sha256",
@@ -6420,6 +6431,17 @@ def _endpoint_alignment_review_projection_issues(
         for item in candidates:
             if not isinstance(item, Mapping):
                 continue
+            if (
+                item.get("persistence_state") != "projection_only"
+                or item.get("canonical_queue") is not False
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.candidates",
+                        "endpoint_alignment_projection.candidate_noncanonical",
+                        "every candidate must machine-encode projection-only nonqueue status",
+                    )
+                )
             before = item.get("before")
             after = item.get("after")
             if not isinstance(before, Mapping) or not isinstance(after, Mapping):
