@@ -986,6 +986,23 @@ class ShareCountPublicationResult:
         return int(self.receipt["sequence"])
 
 
+@dataclass(frozen=True)
+class _LocalReceiptSelection:
+    """Authenticated local pointer and signed receipt, without ledger bytes."""
+
+    receipt: Mapping[str, Any]
+    receipt_body: bytes
+    pointer: Mapping[str, Any]
+
+    @property
+    def receipt_id(self) -> str:
+        return str(self.receipt["receipt_id"])
+
+    @property
+    def sequence(self) -> int:
+        return int(self.receipt["sequence"])
+
+
 def _storage_root() -> Path:
     """Production root is fixed to the repository data directory's parent."""
     from lib import config
@@ -1834,12 +1851,13 @@ def _local_pointer_body(lane: _PublicationLane) -> bytes | None:
     )
 
 
-def _read_local_result(
+def _read_local_selector(
     lane: _PublicationLane,
     *,
     signer: ShareCountSigner,
     witness: Mapping[str, Any] | None,
-) -> ShareCountPublicationResult | None:
+) -> _LocalReceiptSelection | None:
+    """Authenticate the local pointer and signed receipt without opening its ledger."""
     lane.assert_bound(label="local selector read")
     pointer_body = _local_pointer_body(lane)
     if pointer_body is None:
@@ -1863,12 +1881,26 @@ def _read_local_result(
     receipt = _validate_receipt(_parse_canonical_json(receipt_body, label="immutable receipt", max_bytes=MAX_RECEIPT_BYTES), signer=signer)
     lane.operation.check("immutable receipt validation")
     _verify_receipt_matches_witness(receipt, receipt_body, witness) if witness is not None else None
-    if (
-        receipt["sequence"] != pointer["sequence"]
-        or receipt["receipt_id"] != pointer["receipt_id"]
-        or receipt["generation"]["generation_id"] != pointer["generation_id"]
-    ):
+    if pointer != _pointer_for(receipt=receipt, receipt_body=receipt_body):
         raise ShareCountPublicationError("share-count current receipt is detached from pointer")
+    lane.assert_bound(label="local selector verification")
+    return _LocalReceiptSelection(
+        receipt=receipt,
+        receipt_body=receipt_body,
+        pointer=pointer,
+    )
+
+
+def _load_local_result(
+    lane: _PublicationLane,
+    *,
+    selection: _LocalReceiptSelection,
+    published: bool = False,
+    recovered: bool = False,
+) -> ShareCountPublicationResult:
+    """Open and validate the one ledger chosen by an authenticated local selector."""
+    receipt = selection.receipt
+    pointer = selection.pointer
     generation_name = _id_digest(
         pointer["generation_id"], prefix=_GENERATION_PREFIX, label="pointer generation",
     )
@@ -1890,11 +1922,11 @@ def _read_local_result(
         raise ShareCountPublicationError("share-count immutable ledger is detached from receipt")
     _parse_canonical_json(ledger, label="immutable ledger", max_bytes=MAX_LEDGER_BYTES)
     lane.operation.check("immutable ledger validation")
-    lane.assert_bound(label="local selector verification")
+    lane.assert_bound(label="local ledger verification")
     ledger_path = _local_base(lane.root_path) / "generations" / generation_name / "ledger.json"
     return ShareCountPublicationResult(
         receipt=receipt, pointer=pointer, ledger_path=ledger_path, ledger_bytes=ledger,
-        published=False, recovered=False,
+        published=published, recovered=recovered,
     )
 
 
@@ -1935,14 +1967,14 @@ def _guard_call(
     return result
 
 
-def _external_bundle(
+def _read_selected_external_receipt(
     lane: _PublicationLane,
     head: Mapping[str, Any],
     *,
     guard: ShareCountHeadGuard,
     signer: ShareCountSigner,
-) -> tuple[dict[str, Any], bytes, bytes]:
-    """Fetch only the externally selected receipt and ledger (O(1))."""
+) -> tuple[dict[str, Any], bytes]:
+    """Authenticate the externally selected receipt without opening its ledger."""
     _validate_head_witness(head, signer=signer)
     lane.operation.check("external head validation")
     body = _guard_call(
@@ -1962,17 +1994,36 @@ def _external_bundle(
     )
     lane.operation.check("external receipt validation")
     _verify_receipt_matches_witness(latest, body, head)
+    return latest, body
+
+
+def _read_selected_external_ledger(
+    lane: _PublicationLane,
+    head: Mapping[str, Any],
+    *,
+    receipt: Mapping[str, Any],
+    receipt_body: bytes,
+    guard: ShareCountHeadGuard,
+    signer: ShareCountSigner,
+) -> bytes:
+    """Read the selected external ledger after all selector proofs have passed."""
+    head = _validate_head_witness(head, signer=signer)
+    receipt = _validate_receipt(receipt, signer=signer)
+    if receipt_body != _canonical_bytes(dict(receipt)) + b"\n":
+        raise ShareCountPublicationError("share-count selected external receipt body is detached")
+    _verify_receipt_matches_witness(receipt, receipt_body, head)
+    lane.operation.check("selected external ledger preflight")
     ledger = _guard_call(
         lane,
         label="external ledger read",
         call=guard.read_artifact,
         kwargs={"key": head["ledger_object_key"], "max_bytes": MAX_LEDGER_BYTES},
     )
-    if _sha(ledger) != latest["generation"]["ledger_sha256"] or len(ledger) != latest["generation"]["ledger_byte_length"]:
+    if _sha(ledger) != receipt["generation"]["ledger_sha256"] or len(ledger) != receipt["generation"]["ledger_byte_length"]:
         raise ShareCountPublicationError("share-count external ledger bytes mismatch")
     _parse_canonical_json(ledger, label="external ledger", max_bytes=MAX_LEDGER_BYTES)
     lane.operation.check("external ledger validation")
-    return latest, body, ledger
+    return ledger
 
 
 def _read_external_receipt_ref(
@@ -2075,7 +2126,7 @@ def _build_ancestor_refs(
 
 
 def _assert_local_high_water(
-    local: ShareCountPublicationResult | None,
+    local: _LocalReceiptSelection | ShareCountPublicationResult | None,
     head: Mapping[str, Any] | None,
 ) -> None:
     """Never replace an authenticated retained selector with a replay/fork."""
@@ -2096,7 +2147,11 @@ def _assert_local_high_water(
             raise ShareCountPublicationError(
                 "share-count external head forks authenticated local high-water",
             )
-        local_receipt_body = _canonical_bytes(dict(local.receipt)) + b"\n"
+        local_receipt_body = (
+            local.receipt_body
+            if isinstance(local, _LocalReceiptSelection)
+            else _canonical_bytes(dict(local.receipt)) + b"\n"
+        )
         _verify_receipt_matches_witness(local.receipt, local_receipt_body, head)
         return
 
@@ -2104,7 +2159,7 @@ def _assert_local_high_water(
 def _prove_local_high_water(
     lane: _PublicationLane,
     *,
-    local: ShareCountPublicationResult | None,
+    local: _LocalReceiptSelection | ShareCountPublicationResult | None,
     head: Mapping[str, Any],
     head_receipt: Mapping[str, Any],
     head_receipt_body: bytes,
@@ -2567,7 +2622,7 @@ def _recover_locked(
     # Read and authenticate the retained selector before processing any marker
     # that could install external bytes.  This selector and its signed receipt
     # form the local high-water; a replayed signed head may not erase it.
-    local = _read_local_result(lane, signer=signer, witness=None)
+    local = _read_local_selector(lane, signer=signer, witness=None)
     _assert_local_high_water(local, head)
     expected_pointer = None if local is None else _canonical_bytes(dict(local.pointer)) + b"\n"
     marker_loaded = _read_signed_record(
@@ -2579,6 +2634,8 @@ def _recover_locked(
     capsule_expected_high_water: Mapping[str, Any] | None = None
     capsule_required_high_water: Mapping[str, Any] | None = None
     orphan_capsule_body: bytes | None = None
+    prepared_marker_body: bytes | None = None
+    prepared_capsule_body: bytes | None = None
     if marker_loaded is not None:
         marker, marker_body = marker_loaded
         marker = _validate_marker(marker, signer=signer)
@@ -2593,12 +2650,11 @@ def _recover_locked(
             raise ShareCountPublishIndeterminate("share-count pending recovery capsule is detached")
         if head == expected and marker.get("phase") == "prepared":
             # A testable/process-visible failure before the committed "cas_started"
-            # marker is provably pre-CAS and may be abandoned safely.
-            _clear_pending_recovery_records(
-                lane,
-                marker_body=marker_body,
-                capsule_body=capsule_body,
-            )
+            # marker is provably pre-CAS.  Retain both exact signed records until
+            # the selected ledger has also passed its delayed validation; losing
+            # them first would erase the only restart evidence on ledger failure.
+            prepared_marker_body = marker_body
+            prepared_capsule_body = capsule_body
         elif head == expected:
             # ``cas_started`` is a durable commit intent, not evidence that a
             # network call happened.  A hard crash in the tiny window before
@@ -2620,7 +2676,7 @@ def _recover_locked(
             # A distinct authenticated successor makes this candidate's CAS
             # token permanently stale.  It cannot land later, so converge to
             # the selected external head rather than pinning a losing writer.
-            receipt, receipt_body, ledger = _external_bundle(
+            receipt, receipt_body = _read_selected_external_receipt(
                 lane, head, guard=guard, signer=signer,
             )
             if expected is not None:
@@ -2639,6 +2695,14 @@ def _recover_locked(
                 head=head,
                 head_receipt=receipt,
                 head_receipt_body=receipt_body,
+                guard=guard,
+                signer=signer,
+            )
+            ledger = _read_selected_external_ledger(
+                lane,
+                head,
+                receipt=receipt,
+                receipt_body=receipt_body,
                 guard=guard,
                 signer=signer,
             )
@@ -2684,7 +2748,13 @@ def _recover_locked(
             raise ShareCountPublicationError(
                 "share-count external head is below authenticated recovery high-water",
             )
-        if orphan_capsule_body is not None:
+        if prepared_marker_body is not None:
+            _clear_pending_recovery_records(
+                lane,
+                marker_body=prepared_marker_body,
+                capsule_body=prepared_capsule_body,
+            )
+        elif orphan_capsule_body is not None:
             _clear_pending_recovery_records(
                 lane,
                 marker_body=None,
@@ -2699,19 +2769,26 @@ def _recover_locked(
                 expected=capsule_required_high_water,
                 head=head,
                 head_receipt=local.receipt,
-                head_receipt_body=_canonical_bytes(dict(local.receipt)) + b"\n",
+                head_receipt_body=local.receipt_body,
                 guard=guard,
                 signer=signer,
             )
-        if orphan_capsule_body is not None:
+        result = _load_local_result(lane, selection=local)
+        if prepared_marker_body is not None:
+            _clear_pending_recovery_records(
+                lane,
+                marker_body=prepared_marker_body,
+                capsule_body=prepared_capsule_body,
+            )
+        elif orphan_capsule_body is not None:
             _clear_pending_recovery_records(
                 lane,
                 marker_body=None,
                 capsule_body=orphan_capsule_body,
             )
         lane.assert_bound(label="local recovery completion")
-        return local
-    receipt, receipt_body, ledger = _external_bundle(
+        return result
+    receipt, receipt_body = _read_selected_external_receipt(
         lane, head, guard=guard, signer=signer,
     )
     if capsule_required_high_water is not None:
@@ -2733,6 +2810,14 @@ def _recover_locked(
         guard=guard,
         signer=signer,
     )
+    ledger = _read_selected_external_ledger(
+        lane,
+        head,
+        receipt=receipt,
+        receipt_body=receipt_body,
+        guard=guard,
+        signer=signer,
+    )
     # A clean workspace intentionally has no global rollback memory.  It can
     # authenticate the selected receipt and ledger but cannot detect a
     # credential-level restore of the single mutable external head.
@@ -2744,7 +2829,13 @@ def _recover_locked(
         ledger=ledger,
         expected_pointer=expected_pointer,
     )
-    if orphan_capsule_body is not None:
+    if prepared_marker_body is not None:
+        _clear_pending_recovery_records(
+            lane,
+            marker_body=prepared_marker_body,
+            capsule_body=prepared_capsule_body,
+        )
+    elif orphan_capsule_body is not None:
         _clear_pending_recovery_records(
             lane,
             marker_body=None,
@@ -3112,9 +3203,18 @@ def _publish_share_count_materialization_for_test(
                 label="current pointer",
                 operation=lane.operation,
             )
-            confirmed = _read_local_result(lane, signer=signer, witness=witness)
-            if confirmed is None:
+            confirmed_selector = _read_local_selector(
+                lane,
+                signer=signer,
+                witness=witness,
+            )
+            if confirmed_selector is None:
                 raise ShareCountPublicationError("share-count local pointer disappeared after commit")
+            confirmed = _load_local_result(
+                lane,
+                selection=confirmed_selector,
+                published=True,
+            )
             _clear_pending_recovery_records(
                 lane,
                 marker_body=marker_body,

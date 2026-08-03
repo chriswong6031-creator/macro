@@ -103,11 +103,16 @@ the local pointer is replaced afterward. A clean runner authenticates the signed
 head plus exactly its selected receipt and ledger in O(1) remote artifact reads.
 A runner retaining a prior authenticated local high-water accepts a later head
 only after an O(log delta) binary-lifting proof lands on that exact prior receipt.
-Exact replay is a no-op. Tamper, fork, rollback below a retained local high-water,
-store rebinding, missing source, oversize input, split-brain, or an indeterminate
-post-CAS result fails closed. A clean runner has no independent monotonic witness
-and therefore cannot detect credential-level restoration of an older otherwise
-valid signed head; global rollback protection requires a separate durable witness
+Local pointer/receipt authentication and external selected-receipt authentication
+now precede every local or external ledger open. A rejected rollback, fork, or
+divergent ancestry proof opens no ledger; a valid external convergence fetches
+exactly one selected external ledger after the proof, then exact-readbacks the
+same bytes while installing the immutable local mirror. Exact replay is a no-op.
+Tamper, fork, rollback below a retained local high-water, store rebinding,
+missing source, oversize input, split-brain, or an indeterminate post-CAS result
+fails closed. A clean runner has no independent monotonic witness and therefore
+cannot detect credential-level restoration of an older, otherwise valid signed
+head; global rollback protection requires a separate durable witness
 or signer domain. The current two-record local recovery journal has the same
 boundary: if its marker and retained local pointer are both lost while only the
 signed capsule survives, it cannot distinguish a pre-marker competing successor
@@ -145,9 +150,9 @@ credential lookup or remote I/O. Release requires all three of: a live isolated
 proof that the provider offers atomic conditional delete, a shared external fence
 covering publisher staging through head CAS and each retention delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
-Publication activation also requires the unambiguous single-journal recovery
-change above and a selector/receipt-only high-water read so ancestry checks do not
-load a retained ledger of up to 128 MiB. One 15-minute in-process deadline is
+The selector/receipt-only high-water split is implemented and CI-pinned; it does
+not activate publication. Publication activation still requires the unambiguous
+single-journal recovery change above. One 15-minute in-process deadline is
 propagated through recovery, authenticated source reading, and publication, and
 the nightly command has a process-level timeout backstop for a blocking storage
 SDK call.
