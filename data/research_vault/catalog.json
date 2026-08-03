@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T00:04:01.081353+00:00",
-  "count": 627,
+  "generated_at": "2026-08-03T00:19:04.086910+00:00",
+  "count": 628,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1626,6 +1626,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ubwbb0kk77s-774cab",
+      "title": "Yen it to win",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:33Z",
+      "summary_points": [
+        "**JPY Intervention Risk**: Dovish Fed, NYK correction, and bearish yen sentiment could trigger intervention before 155 level, with long JPY exposure at stake.",
+        "**Fed Credibility vs Market Tightening**: USD reacts bearish to market-driven tightening; Fed’s dovish stance post-FOMC weakens USD (DXY fell 1.4%, 2Y yield down 5bp).",
+        "**AUD/NZD Trade**: Sell via 3m AUDNZD 1x1.5 put spread (strikes 1.1960/1.1850) as NZD shorts near 5-year lows and RBNZ hikes contrast RBA’s dovish stance.",
+        "**¥155 Technical Threshold**: Sustained move below ¥155 triggers stop-loss selling in USD/JPY; holding above maintains it as a floor for short positions.",
+        "**Critical Data Releases**: US payrolls (Fri), ISM surveys (Mon/Wed), NZ/CA labour data (Tue/Fri), Switzerland/Sweden CPI (Mon/Thu) drive near-term FX volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
