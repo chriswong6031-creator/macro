@@ -14,7 +14,10 @@ the port depends on `engine/us_board_rank.py`. Siblings: `research/PROPHET_BOARD
 
 - Board state: universe 156 → eligible 5 → buy 3 (ZTE, Galaxy Ent, Zhejiang Shibao — zero
   mega-caps). `board_track: null`; the board's OWN health leg reports the ledger write failed.
-- The seven witnesses (0700/9988/9618/1810/3690/1024 + 9961.HK as PDD's HK twin) all bottomed
+- The seven witnesses (0700/9988/9618/1810/3690/1024 + 9961.HK — Trip.com Group, TCOM's HK
+  twin; identity corrected 2026-08-03: this doc originally called 9961.HK "PDD's HK twin", but
+  PDD Holdings has no HK listing — the measured numbers below are for the tickers as listed,
+  so they stand; the seventh witness was Trip.com, not PDD) all bottomed
   2026-06-26 (HSI YTD low, index-wide washout) and ran +8.7%…+44.0% by 07-31; six of seven beat
   HSI (+14.2%). Across the 25-session leg each was buy-eligible for a 2–6 session cameo
   (Kuaishou 2/25 … Meituan 6/25); on most days ZERO of the seven were eligible simultaneously.
@@ -61,8 +64,11 @@ the port depends on `engine/us_board_rank.py`. Siblings: `research/PROPHET_BOARD
   leg green); the 126-session beta-gate universe gap gets a fallback (name admitted with
   beta=null context rather than silently dropped) or a disclosed exclusion count.
 - **G8 — PDD question answered.** Determine why PDD (NASDAQ, NDX constituent) is absent from
-  all US lanes and either admit it to the US universe properly or document the exclusion;
-  9961.HK carries the HK-side exposure either way.
+  all US lanes and either admit it to the US universe properly or document the exclusion.
+  (Premise corrected 2026-08-03: PDD Holdings has NO HK listing — 9961.HK is Trip.com Group,
+  TCOM's twin, not PDD's — so there is no HK-side PDD exposure to fall back on; the US lane
+  is the ONLY channel, which raises this gate's weight. HK-side PDD exposure exists only
+  diffusely via KWEB's holdings.)
 - **G9 — Ship discipline.** Same PR chain; screenshots light/dark/EN/ZH; fail-soft on pre-v1
   artifacts; forward cohorts wired into the HK grader; no "validated" language.
 

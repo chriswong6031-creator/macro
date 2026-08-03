@@ -90,12 +90,44 @@ def _stub_all_hk(tmp_path: Path) -> None:
 
 class TestMappingCorrectness:
     def test_all_direct_pairs_present(self):
-        """BABA/BIDU/JD/PDD must all appear as direct ADR pairs."""
+        """BABA/BIDU/JD/TCOM must all appear as direct ADR pairs."""
         direct_adrs = {p.adr_ticker for p in BRIDGE._DIRECT_PAIRS}
         assert "BABA" in direct_adrs
         assert "BIDU" in direct_adrs
         assert "JD"   in direct_adrs
-        assert "PDD"  in direct_adrs
+        assert "TCOM" in direct_adrs
+
+    def test_9961_is_tripcom_not_pdd(self):
+        """9961.HK is Trip.com Group (HKEX: "TRIP.COM GROUP LTD. - S", dual-listed
+        2021-04-19 with its NASDAQ ADR TCOM). Until 2026-08-03 the bridge paired it
+        to PDD/拼多多 — a wrong identity on a Tier-1 surface. PDD Holdings has NO
+        Hong Kong listing, so it can never be any HK pair's twin."""
+        pair = next(p for p in BRIDGE.ALL_PAIRS if p.hk_ticker == "9961.HK")
+        assert pair.adr_ticker == "TCOM"
+        assert pair.hk_name_en == "Trip.com"
+        assert pair.hk_name_zh == "携程"
+        assert pair.adr_source == "direct"
+        for p in BRIDGE.ALL_PAIRS:
+            assert p.adr_ticker != "PDD", \
+                f"{p.hk_ticker} paired to PDD — PDD Holdings has no HK listing"
+            assert p.hk_name_en != "PDD"
+            assert "拼多多" not in p.hk_name_zh
+
+    def test_zh_names_agree_with_heatmap(self):
+        """Cross-module identity guard: for every bridge ticker the heatmap also
+        labels, the bridge's short zh name must be contained in the heatmap's zh
+        name (e.g. 京东 ⊂ 京东集团). This is the check that would have caught
+        9961.HK reading 拼多多 in the bridge while the heatmap said 携程集团."""
+        from engine.market_heatmap import HK_NAME_ZH
+        overlap = [p for p in BRIDGE.ALL_PAIRS if p.hk_ticker in HK_NAME_ZH]
+        assert len(overlap) >= 5, \
+            "bridge/heatmap ticker overlap collapsed — cross-check went vacuous"
+        for p in overlap:
+            full = HK_NAME_ZH[p.hk_ticker]
+            assert p.hk_name_zh in full, (
+                f"{p.hk_ticker}: bridge says {p.hk_name_zh!r}, heatmap says {full!r} — "
+                "two modules disagree on this ticker's identity"
+            )
 
     def test_direct_source_label(self):
         for p in BRIDGE._DIRECT_PAIRS:
@@ -536,6 +568,93 @@ class TestLedgerRoundtrip:
                 assert isinstance(obj, dict), f"Line {i} is not a JSON object"
 
 
+class TestStalePairLedgerExclusion:
+    """Identity fix 2026-08-03: 9961.HK ledger rows stamped before the fix carry
+    adr_ticker=PDD, i.e. PDD's US move graded against Trip.com's HK open — two
+    unrelated companies. Those rows must stay in the file (append-only audit
+    trail) but must never be graded and never count in the follow-rate."""
+
+    @pytest.fixture(autouse=True)
+    def _enable_ledger_lane(self, monkeypatch):
+        monkeypatch.setenv("CN_LANE", "asia")
+
+    @staticmethod
+    def _row(fire_date: str, name: str, name_en: str, name_zh: str,
+             adr_ticker: str, **grade_fields) -> dict:
+        base = {
+            "fire_id": f"hk_adr_bridge:{fire_date}:{name}",
+            "organ": "hk_adr_bridge",
+            "hk_session_date": fire_date,
+            "adr_date": fire_date,
+            "name": name, "name_en": name_en, "name_zh": name_zh,
+            "adr_ticker": adr_ticker, "adr_source": "direct",
+            "implied_open_gap_pct": 1.5, "adr_move_pct": 1.5,
+            "gap_context": "up", "disconnect_flag": False,
+            "asof_freshness": {}, "episode_id": 1,
+            "actual_open_gap_pct": None, "followed": None, "graded_at": None,
+        }
+        base.update(grade_fields)
+        return base
+
+    def test_stale_pair_rows_quarantined(self, tmp_path):
+        # Ungraded stale row — WITH gradeable HK data present, so that if the
+        # quarantine were removed, grade() WOULD fill it and this test fails.
+        stale_ungraded = self._row("2026-07-10", "9961.HK", "PDD", "拼多多", "PDD")
+        # Graded stale row — pre-fix grading noise that must leave the stats.
+        stale_graded = self._row("2026-07-13", "9961.HK", "PDD", "拼多多", "PDD",
+                                 fire_id="hk_adr_bridge:2026-07-13:9961.HK",
+                                 actual_open_gap_pct=2.0, followed=True,
+                                 graded_at="2026-07-14T09:00:00")
+        # Current-pair graded row — the only row the stats may count.
+        current_graded = self._row("2026-07-10", "9988.HK", "Alibaba", "阿里巴巴",
+                                   "BABA", actual_open_gap_pct=0.5, followed=True,
+                                   graded_at="2026-07-11T09:00:00")
+        BRIDGE._write_ledger([stale_ungraded, stale_graded, current_graded], tmp_path)
+
+        # 9961.HK price data exists across the grade window: without the
+        # quarantine this row is gradeable (close on 07-10, open on 07-13).
+        _make_hk_parquet(tmp_path, "9961.HK",
+                          closes={"2026-07-09": 100.0, "2026-07-10": 101.0,
+                                  "2026-07-13": 102.0, "2026-07-14": 103.0},
+                          opens= {"2026-07-09": 100.0, "2026-07-10": 100.5,
+                                  "2026-07-13": 102.0, "2026-07-14": 102.5})
+
+        result = BRIDGE.grade(data_root=tmp_path)
+        assert result["ok"] is True
+        assert result["n_excluded_stale_pair"] == 2
+        # follow-rate aggregates ONLY current-pair rows
+        assert result["n_graded_total"] == 1
+        assert result["follow_rate"] == 1.0
+
+        rows = BRIDGE.load_ledger(tmp_path)
+        by_id = {r["fire_id"]: r for r in rows}
+        # audit trail intact — nothing deleted
+        assert len(rows) == 3
+        # the gradeable stale row was NOT graded
+        assert by_id["hk_adr_bridge:2026-07-10:9961.HK"]["actual_open_gap_pct"] is None
+        assert by_id["hk_adr_bridge:2026-07-10:9961.HK"]["graded_at"] is None
+
+    def test_current_pairs_all_pass_pair_is_current(self, tmp_path):
+        """Rows stamped from the live map must never be excluded — the quarantine
+        only bites rows whose recorded pairing has since been corrected."""
+        for pair in BRIDGE._DIRECT_PAIRS + BRIDGE._PROXY_PAIRS:
+            _make_adr_parquet(tmp_path, pair.adr_ticker,
+                              {"2026-07-06": 100.0, "2026-07-07": 105.0})
+        _stub_all_hk(tmp_path)
+        snap = BRIDGE.snapshot(
+            hk_session_date=date(2026, 7, 7),
+            data_root=tmp_path,
+            now=datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc),
+        )
+        BRIDGE.stamp(snap, data_root=tmp_path)
+        rows = BRIDGE.load_ledger(tmp_path)
+        assert rows, "stamp produced no rows — fixture broken"
+        for r in rows:
+            assert BRIDGE._pair_is_current(r), f"live-stamped row excluded: {r['fire_id']}"
+        result = BRIDGE.grade(data_root=tmp_path)
+        assert result["n_excluded_stale_pair"] == 0
+
+
 # ---------------------------------------------------------------------------
 # (f) Gap context labeling
 # ---------------------------------------------------------------------------
@@ -567,9 +686,9 @@ class TestGapContext:
 class TestComposite:
     def test_composite_uses_direct_pairs_when_available(self, tmp_path):
         """Composite = average of direct pair gaps when all are present."""
-        # BABA +10%, BIDU +20%, JD +10%, PDD +20% → composite = 15%
+        # BABA +10%, BIDU +20%, JD +10%, TCOM +20% → composite = 15%
         prices = {"BABA": (100, 110), "BIDU": (100, 120),
-                  "JD": (100, 110), "PDD": (100, 120)}
+                  "JD": (100, 110), "TCOM": (100, 120)}
         for ticker, (prev, curr) in prices.items():
             _make_adr_parquet(tmp_path, ticker, {
                 "2026-07-06": float(prev),
