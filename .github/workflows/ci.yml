@@ -2160,7 +2160,9 @@ on:
       - "scripts/check_synapse_registry.py"
       # unrun-vector-baskets
       - "tests/test_basket_turn_watch.py"
+      - "tests/test_btc_deferred_legs.py"
       - "tests/test_btc_overrides.py"
+      - "tests/test_btc_reentry.py"
       - "tests/test_build_basket_pulse.py"
       - "tests/test_signal_surface_bugfixes.py"
       - "tests/test_spvector_page.py"
