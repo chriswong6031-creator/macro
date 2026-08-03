@@ -51,6 +51,54 @@ def _mock_reply(monkeypatch, obj_or_text):
     monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
 
 
+def test_openai_compat_disables_thinking_for_qwen3_only(monkeypatch):
+    payloads: list[dict] = []
+
+    class _Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"choices": [{"message": {"content": "{}"}}]}
+
+    class _Requests:
+        @staticmethod
+        def post(_url, *, headers, json, timeout):
+            assert headers["Content-Type"] == "application/json"
+            assert timeout == (5.0, 120.0)
+            payloads.append(json)
+            return _Response()
+
+    monkeypatch.setitem(sys.modules, "requests", _Requests)
+    for model in ("qwen3:14b", "registry.local/Qwen3-14B"):
+        text, reason = eq._call_openai_compat(
+            "system",
+            "return json",
+            {"base_url": "http://127.0.0.1:11435/v1", "model": model},
+            max_tokens=32,
+        )
+        assert text == "{}" and reason is None
+        assert payloads[-1]["messages"][1]["content"].endswith("\n\n/no_think")
+        assert payloads[-1]["reasoning_effort"] == "none"
+
+    eq._call_openai_compat(
+        "system",
+        "return json /no_think",
+        {"base_url": "http://127.0.0.1:11435/v1", "model": "qwen3:14b"},
+        max_tokens=32,
+    )
+    assert payloads[-1]["messages"][1]["content"].count("/no_think") == 1
+
+    eq._call_openai_compat(
+        "system",
+        "return json",
+        {"base_url": "http://127.0.0.1:11435/v1", "model": "other-model"},
+        max_tokens=32,
+    )
+    assert payloads[-1]["messages"][1]["content"] == "return json"
+    assert "reasoning_effort" not in payloads[-1]
+
+
 # --------------------------------------------------------------------------- #
 # 1. score_text output schema
 # --------------------------------------------------------------------------- #

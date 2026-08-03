@@ -26,10 +26,12 @@ from .sec_document_spine import (
     FilingManifestError,
     HARD_MAX_ARCHIVE_DOCUMENT_BYTES,
     HARD_MAX_ARCHIVE_INDEX_MEMBERS,
+    HARD_MAX_FILING_MANIFEST_BYTES,
     HARD_MAX_HTTP_METADATA_BYTES,
     archive_document_url,
     archive_index_url,
     canonical_cik,
+    manifest_from_json_bytes,
     parse_json_int64,
     validate_manifest,
 )
@@ -149,6 +151,23 @@ _MISSING_RECEIPT_FIELDS = frozenset(
 
 class FilingPackageError(ValueError):
     """A filing package cannot make its claimed offline attestation."""
+
+
+@dataclass(frozen=True)
+class PinnedFilingPackageDescriptor:
+    """Explicit source binding needed to materialize one offline package.
+
+    The descriptor carries no discovery or ``latest`` semantics.  ``cik``,
+    ``accession`` and ``manifest_id`` select one immutable manifest path; the
+    remaining fields describe the already-observed index and the complete
+    policy/retrieval outcome for every member named by that index.
+    """
+
+    cik: str
+    accession: str
+    manifest_id: str
+    archive_index_document: Mapping[str, Any]
+    member_states: Mapping[str, Any] | Sequence[Mapping[str, Any]]
 
 
 def _strict_object(value: Any, *, field: str, required: frozenset[str]) -> dict[str, Any]:
@@ -1047,6 +1066,253 @@ def build_filing_package(
     return FilingPackage.from_dict(record)
 
 
+def materialize_filing_package_from_pinned_source(
+    descriptor: PinnedFilingPackageDescriptor,
+    *,
+    authority: Any,
+    assembled_at: str | datetime,
+    policy_profile: str,
+    policy_version: str,
+) -> FilingPackage:
+    """Build one package from an exact pinned ``ffsecsrc_`` source snapshot.
+
+    This is the strict offline adapter around :func:`build_filing_package`.
+    It derives the manifest path from an explicit filing identity, re-loads
+    the concrete pinned authority, reads the canonical manifest and receipted
+    index with hard byte ceilings, validates a complete member-state set, and
+    verifies every ``stored`` member's receipt/object bytes.  Non-byte states
+    remain explicit evidence: the archive collector intentionally persists no
+    object for an observed 404, an unrequested member, or a policy rejection.
+
+    The function performs no discovery, mutable-latest lookup, network access,
+    or wall-clock sampling.  Its assembly clock and policy are caller inputs.
+    """
+    if type(descriptor) is not PinnedFilingPackageDescriptor:
+        raise FilingPackageError(
+            "materialization requires an exact PinnedFilingPackageDescriptor"
+        )
+    try:
+        cik = canonical_cik(descriptor.cik)
+        accession = _text(descriptor.accession, field="filing descriptor accession")
+        archive_index_url(cik, accession)
+    except (FilingManifestError, TypeError, ValueError) as exc:
+        raise FilingPackageError("filing descriptor identity is invalid") from exc
+    if descriptor.cik != cik:
+        raise FilingPackageError("filing descriptor CIK must be canonical")
+    manifest_id = _text(
+        descriptor.manifest_id,
+        field="filing descriptor manifest_id",
+        maximum=128,
+    )
+    if not re.fullmatch(r"ffsec_manifest_[a-f0-9]{64}", manifest_id):
+        raise FilingPackageError("filing descriptor manifest_id is invalid")
+
+    # Normalize all caller-owned mappings before any snapshot object reads.
+    # This also makes the selected index receipt/path fully explicit.
+    index_document = _archive_index_document(
+        descriptor.archive_index_document,
+        cik=cik,
+        accession=accession,
+    )
+    evidence_by_name = _member_inputs(descriptor.member_states)
+
+    # Imported lazily to avoid the filing_attestation -> filing_package module
+    # cycle.  An exact concrete adapter is mandatory: a structural lookalike
+    # cannot assert that its bytes came from a pinned source snapshot.
+    from .filing_attestation import PinnedSourceAuthority, gzip_stored_byte_ceiling
+
+    if type(authority) is not PinnedSourceAuthority:
+        raise FilingPackageError(
+            "materialization requires an exact PinnedSourceAuthority"
+        )
+    try:
+        authority = PinnedSourceAuthority(
+            store=authority._store,
+            snapshot_id=authority.snapshot_id,
+        )
+    except Exception as exc:
+        raise FilingPackageError(
+            "materialization cannot reload exact pinned source authority"
+        ) from exc
+    snapshot_id = getattr(authority, "snapshot_id", None)
+    if not isinstance(snapshot_id, str) or not re.fullmatch(
+        r"ffsecsrc_[a-f0-9]{64}", snapshot_id
+    ):
+        raise FilingPackageError(
+            "materialization source authority is not pinned to a source snapshot"
+        )
+
+    manifest_key = f"manifests/{cik}/{accession}/{manifest_id}.json"
+    try:
+        manifest_read = authority.read_file(
+            kind="archive",
+            relative_path=manifest_key,
+            maximum_bytes=HARD_MAX_FILING_MANIFEST_BYTES,
+        )
+    except Exception as exc:
+        raise FilingPackageError("pinned filing manifest source read failed") from exc
+    try:
+        source_manifest = manifest_from_json_bytes(manifest_read.content)
+        manifest, filing = _filing_binding(source_manifest)
+    except (FilingManifestError, FilingPackageError) as exc:
+        raise FilingPackageError("pinned filing manifest is invalid") from exc
+    if (
+        filing["cik"] != cik
+        or filing["accession"] != accession
+        or filing["manifest_id"] != manifest_id
+    ):
+        raise FilingPackageError("pinned filing manifest is crosswired to descriptor")
+    # Keep the collector's storage-key contract authoritative rather than
+    # reproducing its path grammar in this adapter.
+    from collectors.sec_document_spine import manifest_storage_key
+
+    try:
+        actual_manifest_key = manifest_storage_key(manifest)
+    except Exception as exc:
+        raise FilingPackageError("pinned filing manifest storage binding is invalid") from exc
+    if actual_manifest_key != manifest_key:
+        raise FilingPackageError(
+            "pinned filing manifest storage path does not bind source manifest"
+        )
+    snapshot_at = _clock(
+        getattr(authority, "snapshot_at", None),
+        field="pinned source snapshot_at",
+    )
+    snapshot_clock = parse_utc(snapshot_at, field="pinned source snapshot_at")
+    assembled_clock = parse_utc(
+        _clock(assembled_at, field="assembled_at"),
+        field="assembled_at",
+    )
+    if snapshot_clock < parse_utc(
+        manifest["clocks"]["recorded_at"],
+        field="filing manifest recorded_at",
+    ):
+        raise FilingPackageError("pinned source snapshot predates filing manifest recording")
+    if assembled_clock < snapshot_clock:
+        raise FilingPackageError(
+            "filing package assembly cannot predate pinned source snapshot"
+        )
+
+    if parse_utc(
+        index_document["retrieval"]["retrieved_at"],
+        field="archive index retrieved_at",
+    ) > snapshot_clock:
+        raise FilingPackageError(
+            "archive index receipt cannot postdate pinned source snapshot"
+        )
+    try:
+        index_read = authority.read_archive_document(
+            storage_key=index_document["storage_key"],
+            expected_receipt=index_document["retrieval"],
+            maximum_bytes=index_document["byte_length"],
+            maximum_stored_bytes=gzip_stored_byte_ceiling(
+                index_document["byte_length"]
+            ),
+        )
+    except Exception as exc:
+        raise FilingPackageError("pinned archive index source read failed") from exc
+    payload, _payload_bytes = _archive_index_from_bytes(
+        index_read.content,
+        document=index_document,
+    )
+    names = _inventory_names(payload)
+    if set(evidence_by_name) != set(names):
+        raise FilingPackageError(
+            "member states must account for exactly the archive index inventory"
+        )
+
+    normalized_states: dict[str, dict[str, Any]] = {}
+    retained_bytes = 0
+    for name in names:
+        inventory = _inventory_item(
+            evidence=evidence_by_name[name],
+            manifest=manifest,
+            cik=cik,
+            accession=accession,
+            name=name,
+            final=False,
+        )
+        normalized_states[name] = {
+            key: inventory[key]
+            for key in _EVIDENCE_FIELDS
+        }
+        retrieval = inventory["retrieval"]
+        if retrieval is not None and parse_utc(
+            retrieval["retrieved_at"],
+            field=f"inventory {name} retrieved_at",
+        ) > snapshot_clock:
+            raise FilingPackageError(
+                f"archive member receipt cannot postdate pinned source snapshot: {name}"
+            )
+        if inventory["state"] == "stored":
+            retained_bytes += inventory["byte_length"]
+            if retained_bytes > HARD_MAX_RETAINED_MEMBER_BYTES:
+                raise FilingPackageError(
+                    "filing package retained-byte total exceeds safety limit"
+                )
+
+    # Only after every member has been normalized, causally checked, and the
+    # aggregate retained-byte ceiling has passed may any member object be
+    # inflated.  This prevents a many-member gzip fanout from doing hundreds of
+    # GiB of work before the package's existing coverage check rejects it.
+    from collectors.sec_document_spine import (
+        HARD_MAX_ARCHIVE_RECEIPT_BYTES,
+        missing_receipt_from_json_bytes,
+        missing_receipt_json_bytes,
+        missing_receipt_storage_key,
+    )
+
+    for name in names:
+        inventory = normalized_states[name]
+        if inventory["state"] == "missing":
+            receipt = inventory["retrieval"]
+            try:
+                receipt_content = authority.read_file(
+                    kind="archive",
+                    relative_path=missing_receipt_storage_key(receipt),
+                    maximum_bytes=HARD_MAX_ARCHIVE_RECEIPT_BYTES,
+                ).content
+                if (
+                    receipt_content != missing_receipt_json_bytes(receipt)
+                    or missing_receipt_from_json_bytes(receipt_content) != receipt
+                ):
+                    raise FilingPackageError(
+                        "pinned missing archive receipt differs from member evidence"
+                    )
+            except FilingPackageError:
+                raise
+            except Exception as exc:
+                raise FilingPackageError(
+                    f"pinned missing archive receipt source read failed: {name}"
+                ) from exc
+            continue
+        if inventory["state"] != "stored":
+            continue
+        try:
+            authority.read_archive_document(
+                storage_key=inventory["storage_key"],
+                expected_receipt=inventory["retrieval"],
+                maximum_bytes=inventory["byte_length"],
+                maximum_stored_bytes=gzip_stored_byte_ceiling(
+                    inventory["byte_length"]
+                ),
+            )
+        except Exception as exc:
+            raise FilingPackageError(
+                f"pinned archive member source read failed: {name}"
+            ) from exc
+
+    return build_filing_package(
+        manifest,
+        index_document,
+        index_read.content,
+        normalized_states,
+        assembled_at=assembled_at,
+        policy_profile=policy_profile,
+        policy_version=policy_version,
+    )
+
+
 def filing_package_json_bytes(value: FilingPackage | Mapping[str, Any]) -> bytes:
     """Validate and encode a package in its sole canonical JSON representation."""
     if isinstance(value, FilingPackage):
@@ -1100,9 +1366,11 @@ __all__ = [
     "HARD_MAX_FILING_PACKAGE_BYTES",
     "FilingPackage",
     "FilingPackageError",
+    "PinnedFilingPackageDescriptor",
     "build_filing_package",
     "filing_package_from_json_bytes",
     "filing_package_id_for",
     "filing_package_json_bytes",
+    "materialize_filing_package_from_pinned_source",
     "validate_filing_package",
 ]

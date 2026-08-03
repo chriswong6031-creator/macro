@@ -19,6 +19,7 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from hashlib import sha256
 import base64
+import errno
 import fcntl
 import hmac
 import io
@@ -1654,6 +1655,111 @@ def _companyfacts_publish_lease(root: Path) -> Iterator[_CompanyFactsLane]:
                     os.close(generations_fd)
                 fcntl.flock(lock_fd, fcntl.LOCK_UN)
         finally:
+            if lock_fd is not None:
+                os.close(lock_fd)
+            os.close(root_fd)
+
+
+@contextmanager
+def open_companyfacts_authenticated_read_lane(
+    root: Path, *, deadline: float,
+    monotonic: Callable[[], float] = time.monotonic,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> Iterator[_CompanyFactsLane]:
+    """Hold the safe lane under a deadline-aware nonblocking read lease.
+
+    Publication deliberately retains its blocking lease. Authenticated request
+    reads use short nonblocking polls so lock contention consumes the same hard
+    wall-clock budget as trust and artifact validation.
+    """
+    if not root.is_absolute() or root.name in {"", ".", ".."}:
+        raise CompanyFactsIntakeError("Company Facts lane root must be an absolute child path")
+    _require_deadline(deadline, monotonic, label="authenticated read lease acquisition")
+    with _open_absolute_directory(root.parent, create=True) as parent_fd:
+        _require_deadline(deadline, monotonic, label="authenticated read lease acquisition")
+        root_fd = _open_verified_directory_component(
+            parent_fd, root.name, create=True, label=str(root),
+        )
+        lock_fd: int | None = None
+        generations_fd: int | None = None
+        receipts_fd: int | None = None
+        locked = False
+        try:
+            _require_deadline(deadline, monotonic, label="authenticated read lease acquisition")
+            try:
+                lock_fd = os.open(
+                    ".companyfacts_publish.lock",
+                    os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                    dir_fd=root_fd,
+                )
+            except OSError as exc:
+                raise CompanyFactsIntakeError(
+                    "Company Facts authenticated read lease cannot follow a symlink"
+                ) from exc
+            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                raise CompanyFactsIntakeError(
+                    "Company Facts authenticated read lease must be a regular file"
+                )
+            while not locked:
+                _require_deadline(
+                    deadline, monotonic, label="authenticated read lease acquisition",
+                )
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    locked = True
+                except OSError as exc:
+                    if exc.errno not in {errno.EACCES, errno.EAGAIN}:
+                        raise CompanyFactsIntakeError(
+                            "Company Facts authenticated read lease acquisition failed"
+                        ) from exc
+                    before = monotonic()
+                    remaining = deadline - before
+                    if remaining <= 0:
+                        _require_deadline(
+                            deadline, monotonic,
+                            label="authenticated read lease acquisition",
+                        )
+                    sleeper(min(0.05, remaining))
+                    if monotonic() <= before:
+                        raise CompanyFactsRunBudgetExceeded(
+                            "Company Facts authenticated read lease sleeper did not advance the deadline clock"
+                        )
+            _require_deadline(deadline, monotonic, label="authenticated read lease acquisition")
+            generations_fd = _open_verified_directory_component(
+                root_fd, "generations", create=True, label=f"{root}/generations",
+            )
+            receipts_fd = _open_verified_directory_component(
+                root_fd, "receipts", create=True, label=f"{root}/receipts",
+            )
+            _require_deadline(deadline, monotonic, label="authenticated read lease acquisition")
+            parent_stat = os.fstat(parent_fd)
+            root_stat = os.fstat(root_fd)
+            generations_stat = os.fstat(generations_fd)
+            receipts_stat = os.fstat(receipts_fd)
+            lane = _CompanyFactsLane(
+                root=root, parent_fd=parent_fd, root_fd=root_fd,
+                parent_device=parent_stat.st_dev, parent_inode=parent_stat.st_ino,
+                root_device=root_stat.st_dev, root_inode=root_stat.st_ino,
+                generations_fd=generations_fd,
+                generations_device=generations_stat.st_dev,
+                generations_inode=generations_stat.st_ino,
+                receipts_fd=receipts_fd,
+                receipts_device=receipts_stat.st_dev,
+                receipts_inode=receipts_stat.st_ino,
+            )
+            _assert_lane_path_identity(lane)
+            try:
+                yield lane
+            finally:
+                _assert_lane_path_identity(lane)
+        finally:
+            if receipts_fd is not None:
+                os.close(receipts_fd)
+            if generations_fd is not None:
+                os.close(generations_fd)
+            if locked and lock_fd is not None:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
             if lock_fd is not None:
                 os.close(lock_fd)
             os.close(root_fd)
@@ -3992,8 +4098,18 @@ def _load_receipt_generation(
         root, receipt["generation"], lane=lane, deadline=deadline,
         monotonic=monotonic, read_budget=read_budget,
     )
-    source_records = _records(_read_ledger_bytes(source_body, _SOURCE_MANIFEST_COLUMNS, label="committed source manifest"))
-    coverage_records = _records(_read_ledger_bytes(coverage_body, _COVERAGE_COLUMNS, label="committed coverage"))
+    source_records = _records(_read_ledger_bytes(
+        source_body, _SOURCE_MANIFEST_COLUMNS, label="committed source manifest",
+    ))
+    _require_deadline(
+        deadline, monotonic, label="committed source manifest parquet decode",
+    )
+    coverage_records = _records(_read_ledger_bytes(
+        coverage_body, _COVERAGE_COLUMNS, label="committed coverage",
+    ))
+    _require_deadline(
+        deadline, monotonic, label="committed coverage parquet decode",
+    )
     if _ledger_receipt(source_records) != receipt["companyfacts_manifest_ledger"]:
         raise CompanyFactsIntakeError("receipt/source manifest ordered-prefix mismatch")
     if _ledger_receipt(coverage_records) != receipt["coverage_ledger"]:
@@ -4280,9 +4396,32 @@ def _read_current_pointer_body(
     deadline: float | None = None,
     monotonic: Callable[[], float] = time.monotonic,
 ) -> bytes | None:
+    snapshot = read_companyfacts_authenticated_current_pointer_snapshot(
+        root, lane=lane, deadline=deadline, monotonic=monotonic,
+    )
+    return None if snapshot is None else snapshot[0]
+
+
+def read_companyfacts_authenticated_current_pointer(
+    root: Path, *, lane: _CompanyFactsLane,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> bytes | None:
+    """Read the bounded selector through an authenticated-reader lane lease."""
+    return _read_current_pointer_body(
+        root, lane=lane, deadline=deadline, monotonic=monotonic,
+    )
+
+
+def read_companyfacts_authenticated_current_pointer_snapshot(
+    root: Path, *, lane: _CompanyFactsLane,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> tuple[bytes, tuple[Any, ...]] | None:
+    """Read the pointer plus its secure inode/metadata continuity fingerprint."""
     try:
         with _open_companyfacts_directory(root, lane=lane) as root_fd:
-            body = _read_regular_bytes_at(
+            snapshot = _read_regular_snapshot_at(
                 root_fd, "coverage_receipt.json", label="current pointer",
                 max_bytes=MAX_POINTER_BYTES, missing_ok=True,
                 deadline=deadline, monotonic=monotonic,
@@ -4290,7 +4429,7 @@ def _read_current_pointer_body(
         _require_publish_deadline(
             deadline, monotonic, label="current pointer read completion",
         )
-        return body
+        return snapshot
     except CompanyFactsRunBudgetExceeded as exc:
         raise CompanyFactsPublishIndeterminate(
             "Company Facts current pointer read exceeded publication deadline"

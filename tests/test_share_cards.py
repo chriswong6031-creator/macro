@@ -228,7 +228,7 @@ _USER_FACING_COPY = [
     "entries since", "stocks match today",
     "Historical win rate - not a guarantee.",
     "© 2026 Mastermind", "mastermind-x.com",
-    "Daily signals · free 14-day trial",
+    "Daily signals · try Pro free for 7 days",
 ]
 
 

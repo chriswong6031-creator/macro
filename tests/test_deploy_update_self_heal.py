@@ -182,7 +182,9 @@ MUST_RESTART = [
     "engine/capital_structure/__init__.py",
     "engine/capital_structure/event_spine.py",
     "engine/capital_structure/projection.py",
-    # Government Revenue subaward serving is imported by app/government_revenue.py.
+    # Government Revenue serving modules are imported by app/government_revenue.py.
+    "engine/government_revenue/budget_program.py",
+    "engine/government_revenue/idv_dossiers.py",
     "engine/government_revenue/subaward_dossiers.py",
     # The public Company Intelligence API imports the reader plus this
     # non-inert package at process startup (contracts, health, and views).
@@ -196,6 +198,7 @@ MUST_RESTART = [
     "engine/neuralweb/chat_plain_words.py",
     "engine/neuralweb/brain_gateway.py",
     "engine/neuralweb/cortex.py",
+    "engine/neuralweb/earnings_context_reader.py",
     "engine/neuralweb/chart_perception.py",
     "engine/neuralweb/doctrine.py",
     "engine/neuralweb/envelope.py",
@@ -205,6 +208,18 @@ MUST_RESTART = [
     "engine/llm_auth.py",
     "engine/portfolio_brief.py",
     "engine/tushare_freshness.py",
+    # Exact earnings evidence validator closure, lazily reached by Brain.
+    "engine/earnings_narrative/__init__.py",
+    "engine/earnings_narrative/context_packets.py",
+    "engine/earnings_narrative/contracts.py",
+    "engine/earnings_narrative/digest.py",
+    "engine/earnings_narrative/private_publication.py",
+    "engine/earnings_narrative/promotion.py",
+    "engine/earnings_narrative/public_wire.py",
+    "engine/earnings_narrative/story.py",
+    "engine/earnings_narrative/story_packets.py",
+    "engine/press/__init__.py",
+    "engine/press/earnings_adapter.py",
     # CXI packet build reached from brain_gateway (+ its module-level siblings)
     "engine/context_index/packet.py",
     "engine/context_index/fusion.py",

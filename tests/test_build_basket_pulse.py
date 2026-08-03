@@ -982,15 +982,24 @@ class TestHKMarket:
         assert by_id["hk_a"]["bar_date"] == "2026-07-10"
         assert by_id["hk_b"]["live_ew_chg_pct"] is None  # honest null (levels absent)
 
-    def test_eod_levels_real_parquet_shape(self, tmp_path, monkeypatch):
-        """_eod_basket_chg_levels against a real (synthetic) parquet file."""
+    @staticmethod
+    def _write_levels(tmp_path, anchors):
+        """Two frozen rows for hk_a; `anchors` is the `hk_a__anchor` column (None = pre-v2)."""
         import pandas as pd
 
         levels_dir = tmp_path / "basket_levels"
-        levels_dir.mkdir(parents=True)
+        levels_dir.mkdir(parents=True, exist_ok=True)
         idx = pd.to_datetime(["2026-07-09", "2026-07-10"])
-        pd.DataFrame({"hk_a__level_price": [100.0, 102.0]}, index=idx).to_parquet(
-            levels_dir / "hk.parquet")
+        cols = {"hk_a__level_price": [100.0, 102.0]}
+        if anchors is not None:
+            cols["hk_a__anchor"] = anchors
+        pd.DataFrame(cols, index=idx).to_parquet(levels_dir / "hk.parquet")
+
+    def test_eod_levels_real_parquet_shape(self, tmp_path, monkeypatch):
+        """_eod_basket_chg_levels against a real (synthetic) parquet file."""
+        # chained: the newer row's anchor already covers the older row's date, so the
+        # two levels sit on ONE base and their ratio is a real 1d return.
+        self._write_levels(tmp_path, [None, "2026-07-09"])
 
         from lib import config
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
@@ -1000,3 +1009,40 @@ class TestHKMarket:
         assert bar_date == "2026-07-10"
         # absent column → honest null
         assert bp._eod_basket_chg_levels("hk_missing", "hk") == (None, None)
+
+    def test_eod_levels_legacy_store_is_honest_null(self, tmp_path, monkeypatch):
+        """A pre-v2 store (no anchor column) must NOT be divided into a 1d return.
+
+        Each legacy row was frozen on its own night's rolling-window base, so the
+        ratio carries the EW return of the day that dropped out of the window front —
+        an error the size of the number itself. Null, not a plausible-looking print.
+        """
+        self._write_levels(tmp_path, None)
+
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+
+        assert bp._eod_basket_chg_levels("hk_a", "hk") == (None, None)
+
+    def test_eod_levels_chain_break_is_honest_null(self, tmp_path, monkeypatch):
+        """A chain that RESTARTED on the newer row is not divisible either."""
+        self._write_levels(tmp_path, ["2026-07-09", "2026-07-10"])
+
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+
+        assert bp._eod_basket_chg_levels("hk_a", "hk") == (None, None)
+
+    def test_cum_2d_requires_a_spanning_chain(self, tmp_path, monkeypatch):
+        """_cum_2d reads the same two rows and needs the same chain gate."""
+        from lib import config
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+
+        self._write_levels(tmp_path, [None, "2026-07-09"])       # chained
+        assert bp._cum_2d("hk_a", 0.5, market="hk") == pytest.approx(2.5, abs=0.001)
+
+        self._write_levels(tmp_path, None)                        # legacy → null
+        assert bp._cum_2d("hk_a", 0.5, market="hk") is None
+
+        self._write_levels(tmp_path, ["2026-07-09", "2026-07-10"])  # break → null
+        assert bp._cum_2d("hk_a", 0.5, market="hk") is None

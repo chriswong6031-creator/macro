@@ -1,0 +1,46 @@
+{
+  "fixture_id": "endpoint_alignment_cases.v1",
+  "nct_id": "NCT01234567",
+  "cases": {
+    "spelling_correction": {
+      "before": {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "Independent central review"
+      },
+      "after": {
+        "measure": "Tumour response rate",
+        "timeFrame": "12 weeks",
+        "description": "Independent central review"
+      }
+    },
+    "unicode_whitespace_equivalent": {
+      "before": {
+        "measure": "Tumor response",
+        "timeFrame": "12 weeks",
+        "description": "Café response endpoint"
+      },
+      "after": {
+        "measure": "  tumor   RESPONSE  ",
+        "timeFrame": "12\tweeks",
+        "description": "Café   response endpoint"
+      }
+    },
+    "missing_corroborating_fields": {
+      "before": {
+        "measure": "Tumor response rate"
+      },
+      "after": {
+        "measure": "Tumour response rate"
+      }
+    },
+    "tied_before": [
+      {"measure": "Tumor response rate A", "timeFrame": "12 weeks", "description": "Independent review endpoint"},
+      {"measure": "Tumor response rate B", "timeFrame": "12 weeks", "description": "Independent review endpoint"}
+    ],
+    "tied_after": [
+      {"measure": "Tumour response rate C", "timeFrame": "12 weeks", "description": "Independent review endpoint"},
+      {"measure": "Tumour response rate D", "timeFrame": "12 weeks", "description": "Independent review endpoint"}
+    ]
+  }
+}

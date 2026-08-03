@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_launch_slo_recovery_object.v1.schema.json",
+  "title": "BioCatalyst launch-SLO recovery input/readback object v1",
+  "description": "Offline, content-addressed recovery evidence resolved by the BC-O2 verifier. It is not a source writer or an authority receipt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "role",
+    "source_id",
+    "generation_id",
+    "operation_kind",
+    "operation_id",
+    "captured_at"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_launch_slo_recovery_object.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "role": {"enum": ["input", "readback"]},
+    "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+    "generation_id": {"type": "string", "pattern": "^biocatalyst_soak_generation_[a-f0-9]{24}$"},
+    "operation_kind": {"enum": ["correction_replay", "rollback_restore"]},
+    "operation_id": {"type": "string", "pattern": "^biocatalyst_(?:correction_replay|rollback_restore)_[a-f0-9]{24}$"},
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "expected_result_sha256": {"$ref": "#/$defs/sha256"},
+    "input_content_sha256": {"$ref": "#/$defs/sha256"},
+    "observed_result_sha256": {"$ref": "#/$defs/sha256"},
+    "readback_verified": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"role": {"const": "input"}}, "required": ["role"]},
+      "then": {
+        "required": ["expected_result_sha256"],
+        "properties": {
+          "input_content_sha256": false,
+          "observed_result_sha256": false,
+          "readback_verified": false
+        }
+      }
+    },
+    {
+      "if": {"properties": {"role": {"const": "readback"}}, "required": ["role"]},
+      "then": {
+        "required": ["input_content_sha256", "observed_result_sha256", "readback_verified"],
+        "properties": {"expected_result_sha256": false}
+      }
+    },
+    {
+      "if": {"properties": {"operation_kind": {"const": "correction_replay"}}, "required": ["operation_kind"]},
+      "then": {"properties": {"operation_id": {"pattern": "^biocatalyst_correction_replay_[a-f0-9]{24}$"}}}
+    },
+    {
+      "if": {"properties": {"operation_kind": {"const": "rollback_restore"}}, "required": ["operation_kind"]},
+      "then": {"properties": {"operation_id": {"pattern": "^biocatalyst_rollback_restore_[a-f0-9]{24}$"}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

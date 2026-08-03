@@ -44,6 +44,17 @@ _STREAM_CHUNK_BYTES = 64 * 1024
 HARD_MAX_DOCUMENT_BYTES = HARD_MAX_ARCHIVE_DOCUMENT_BYTES
 DEFAULT_MAX_DOCUMENT_BYTES = 16 * 1024 * 1024
 HARD_MAX_ARCHIVE_RECEIPT_BYTES = 64 * 1024
+_MISSING_RECEIPT_FIELDS = frozenset(
+    {
+        "schema",
+        "status",
+        "document_id",
+        "archive_url",
+        "retrieved_at",
+        "http_status",
+        "reason",
+    }
+)
 _MANIFEST_STORAGE_KEY_RE = re.compile(
     r"^manifests/[0-9]{10}/[0-9]{10}-[0-9]{2}-[0-9]{6}/"
     r"ffsec_manifest_[a-f0-9]{64}\.json$"
@@ -219,6 +230,181 @@ def receipt_storage_key(receipt_id: str) -> str:
     if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
         raise ArchiveStoreError("invalid archive receipt id")
     return f"receipts/sha256/{digest[:2]}/{digest}.json"
+
+
+def _normalise_missing_receipt(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact non-byte SEC 404 receipt representation.
+
+    Missing receipts intentionally have no synthetic ``receipt_id``: their
+    canonical JSON bytes are the identity and are addressed by their SHA-256
+    in the private archive.  Keep this representation aligned with the filing
+    manifest's existing missing-retrieval contract.
+    """
+    if not isinstance(value, Mapping):
+        raise ArchiveStoreError("missing archive receipt must be an object")
+    try:
+        iterator = iter(value.items())
+    except Exception as exc:  # noqa: BLE001 - hostile Mapping boundary.
+        raise ArchiveStoreError("missing archive receipt cannot be iterated") from exc
+    receipt: dict[str, Any] = {}
+    for index in range(len(_MISSING_RECEIPT_FIELDS) + 1):
+        try:
+            pair = next(iterator)
+        except StopIteration:
+            break
+        except Exception as exc:  # noqa: BLE001 - hostile Mapping boundary.
+            raise ArchiveStoreError("missing archive receipt iterator failed") from exc
+        if index == len(_MISSING_RECEIPT_FIELDS):
+            raise ArchiveStoreError("missing archive receipt shape is invalid")
+        if not isinstance(pair, tuple) or len(pair) != 2:
+            raise ArchiveStoreError("missing archive receipt iterator yielded an invalid entry")
+        key, item = pair
+        if not isinstance(key, str) or key not in _MISSING_RECEIPT_FIELDS or key in receipt:
+            raise ArchiveStoreError("missing archive receipt shape is invalid")
+        receipt[key] = item
+    if len(receipt) != len(_MISSING_RECEIPT_FIELDS):
+        raise ArchiveStoreError("missing archive receipt shape is invalid")
+    if receipt["schema"] != ARCHIVE_RECEIPT_SCHEMA or receipt["status"] != "missing":
+        raise ArchiveStoreError("unsupported missing archive receipt")
+    document_id = receipt["document_id"]
+    archive_url = receipt["archive_url"]
+    if not isinstance(document_id, str) or not document_id:
+        raise ArchiveStoreError("missing archive receipt document_id is invalid")
+    if not isinstance(archive_url, str) or not archive_url.startswith(
+        "https://www.sec.gov/Archives/"
+    ):
+        raise ArchiveStoreError("missing archive receipt archive_url is invalid")
+    for field, text in (("document_id", document_id), ("archive_url", archive_url)):
+        if len(text) > HARD_MAX_ARCHIVE_RECEIPT_BYTES:
+            raise ArchiveStoreError(f"missing archive receipt {field} exceeds byte safety limit")
+        try:
+            if len(text.encode("utf-8")) > HARD_MAX_ARCHIVE_RECEIPT_BYTES:
+                raise ArchiveStoreError(
+                    f"missing archive receipt {field} exceeds byte safety limit"
+                )
+        except UnicodeError as exc:
+            raise ArchiveStoreError(
+                f"missing archive receipt {field} is not valid UTF-8"
+            ) from exc
+    if (
+        isinstance(receipt["retrieved_at"], str)
+        and len(receipt["retrieved_at"]) > HARD_MAX_ARCHIVE_RECEIPT_BYTES
+    ):
+        raise ArchiveStoreError("missing archive receipt retrieved_at exceeds byte safety limit")
+    retrieved_at = _utc_text(receipt["retrieved_at"], field="retrieved_at")
+    if receipt["retrieved_at"] != retrieved_at:
+        raise ArchiveStoreError("missing archive receipt retrieved_at is not UTC-normalized")
+    if type(receipt["http_status"]) is not int or receipt["http_status"] != 404:
+        raise ArchiveStoreError("missing archive receipt must record the observed SEC 404")
+    if receipt["reason"] != "sec_archive_document_missing":
+        raise ArchiveStoreError("missing archive receipt reason is invalid")
+    return {
+        "schema": ARCHIVE_RECEIPT_SCHEMA,
+        "status": "missing",
+        "document_id": document_id,
+        "archive_url": archive_url,
+        "retrieved_at": retrieved_at,
+        "http_status": 404,
+        "reason": "sec_archive_document_missing",
+    }
+
+
+def _missing_receipt_bytes(value: Mapping[str, Any]) -> tuple[dict[str, Any], bytes]:
+    receipt = _normalise_missing_receipt(value)
+    content = canonical_json(receipt).encode("utf-8")
+    if len(content) > HARD_MAX_ARCHIVE_RECEIPT_BYTES:
+        raise ArchiveStoreError("missing archive receipt exceeds byte safety limit")
+    return receipt, content
+
+
+def missing_receipt_json_bytes(receipt: Mapping[str, Any]) -> bytes:
+    """Return the sole canonical JSON representation of one exact SEC 404 receipt."""
+    _, content = _missing_receipt_bytes(receipt)
+    return content
+
+
+def missing_receipt_storage_key(receipt: Mapping[str, Any]) -> str:
+    """Return the sole content-addressed storage key for one exact SEC 404 receipt."""
+    _, content = _missing_receipt_bytes(receipt)
+    digest = hashlib.sha256(content).hexdigest()
+    return f"missing-receipts/sha256/{digest[:2]}/{digest}.json"
+
+
+def missing_receipt_from_json_bytes(content: bytes) -> dict[str, Any]:
+    """Restore only canonical UTF-8 JSON for one persisted SEC 404 receipt."""
+    if not isinstance(content, bytes) or len(content) > HARD_MAX_ARCHIVE_RECEIPT_BYTES:
+        raise ArchiveStoreError("missing archive receipt exceeds byte safety limit")
+
+    def reject_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in output:
+                raise ArchiveStoreError(f"duplicate missing archive receipt JSON key: {key}")
+            output[key] = item
+        return output
+
+    try:
+        value = json.loads(
+            content.decode("utf-8"),
+            object_pairs_hook=reject_pairs,
+            parse_int=parse_json_int64,
+        )
+    except ArchiveStoreError:
+        raise
+    except (UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        raise ArchiveStoreError("missing archive receipt is not UTF-8 JSON") from exc
+    if not isinstance(value, dict):
+        raise ArchiveStoreError("missing archive receipt must be an object")
+    receipt, expected = _missing_receipt_bytes(value)
+    if content != expected:
+        raise ArchiveStoreError("missing archive receipt is not canonically encoded")
+    return receipt
+
+
+def read_missing_document_receipt(
+    cache_root: Path, receipt: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Read the exact persisted SEC 404 sidecar selected by its canonical bytes."""
+    expected, expected_content = _missing_receipt_bytes(receipt)
+    key = missing_receipt_storage_key(expected)
+    try:
+        content = _read_bounded_file(
+            Path(cache_root) / key,
+            maximum=HARD_MAX_ARCHIVE_RECEIPT_BYTES,
+            label="missing archive receipt",
+        )
+    except ArchiveStoreError:
+        raise
+    except OSError as exc:
+        raise ArchiveStoreError(f"missing persisted archive receipt: {key}") from exc
+    actual = missing_receipt_from_json_bytes(content)
+    if content != expected_content or actual != expected:
+        raise ArchiveStoreError("persisted missing archive receipt differs from expected receipt")
+    return actual
+
+
+def persist_missing_document_receipt(
+    cache_root: Path, receipt: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Persist and read back one content-addressed SEC 404 receipt sidecar.
+
+    The receipt bytes are deterministic and contain no body-object reference.
+    A corrupt same-key sidecar is atomically repaired from the just-observed
+    receipt, mirroring the retrieved-document persistence contract.
+    """
+    expected, content = _missing_receipt_bytes(receipt)
+    key = missing_receipt_storage_key(expected)
+    target = Path(cache_root) / key
+    try:
+        same = read_missing_document_receipt(cache_root, expected) == expected
+    except (OSError, ArchiveStoreError):
+        same = False
+    if not same:
+        _atomic_write(target, content)
+    persisted = read_missing_document_receipt(cache_root, expected)
+    if persisted != expected:  # pragma: no cover - read helper already proves this.
+        raise ArchiveStoreError("failed to verify missing archive receipt persistence")
+    return persisted
 
 
 def manifest_storage_key(manifest: Mapping[str, Any]) -> str:
@@ -591,15 +777,15 @@ def missing_document_receipt(
     archive_url = document.get("archive_url")
     if not isinstance(document_id, str) or not isinstance(archive_url, str):
         raise ArchiveStoreError("document metadata is incomplete")
-    return {
+    return _normalise_missing_receipt({
         "schema": ARCHIVE_RECEIPT_SCHEMA,
         "status": "missing",
         "document_id": document_id,
         "archive_url": archive_url,
         "retrieved_at": _utc_text(retrieved_at, field="retrieved_at"),
-        "http_status": int(http_status),
+        "http_status": http_status,
         "reason": "sec_archive_document_missing",
-    }
+    })
 
 
 class SecFilingArchiveCollector:
@@ -691,6 +877,8 @@ class SecFilingArchiveCollector:
                             document, retrieved_at=stamp, http_status=status
                         )
                         content = None
+                        etag = None
+                        last_modified = None
                     else:
                         if status in {429, 500, 502, 503, 504}:
                             raise requests.HTTPError(f"SEC transient HTTP {status}")
@@ -698,8 +886,8 @@ class SecFilingArchiveCollector:
                         _reject_declared_oversize(response.headers, limit, url=url)
                         content = _stream_response_bytes(response, limit, url=url)
                         missing = None
-                    etag = _response_header(response.headers, "ETag")
-                    last_modified = _response_header(response.headers, "Last-Modified")
+                        etag = _response_header(response.headers, "ETag")
+                        last_modified = _response_header(response.headers, "Last-Modified")
                 except BaseException:
                     # Preserve the causal transport/size error; a secondary
                     # close failure cannot turn an oversize response into a
@@ -710,7 +898,7 @@ class SecFilingArchiveCollector:
                 if close_error is not None:
                     raise close_error
                 if missing is not None:
-                    return missing
+                    return persist_missing_document_receipt(self.cache_root, missing)
                 if content is None:  # pragma: no cover - status branches are exhaustive
                     raise ArchiveStoreError("SEC archive response has no body")
                 return persist_archive_document(
@@ -774,11 +962,16 @@ __all__ = [
     "document_with_retrieval",
     "manifest_storage_key",
     "missing_document_receipt",
+    "missing_receipt_from_json_bytes",
+    "missing_receipt_json_bytes",
+    "missing_receipt_storage_key",
     "persist_archive_document",
     "persist_filing_manifest",
+    "persist_missing_document_receipt",
     "read_archive_document",
     "read_archive_object_bytes",
     "read_primary_document",
     "read_filing_manifest",
+    "read_missing_document_receipt",
     "receipt_storage_key",
 ]
