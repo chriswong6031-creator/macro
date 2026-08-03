@@ -96,6 +96,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
+
 log = logging.getLogger(__name__)
 
 # W4 re-entry event-token vocabulary (also the reentry ledger `trigger` values).
@@ -509,7 +511,13 @@ def sync_ledger(sig: pd.DataFrame, vector_cfg: dict, path: str | Path | None = N
     """Append NEW re-entry events to data/vector/reentry_ledger.jsonl
     (idempotent — keyed on ts/override_id/event/trigger).  Returns rows added.
     Never raises.  NOT data/vector/override_ledger.jsonl — that file is W5's
-    per-date sub-claim grading surface and gets rewritten by its scorer."""
+    per-date sub-claim grading surface and gets rewritten by its scorer.
+
+    Lane-gated (house law: nightly is the sole advancer): the caller
+    (scripts/build_vector.py) also runs via the render lanes' hub() with no
+    COLLECT_LANE set. Gate-first, before any arg evaluation."""
+    if not _ledger_advance_enabled():
+        return 0
     try:
         if path is None:
             from lib import config

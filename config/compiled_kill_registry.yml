@@ -84,9 +84,9 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
-  - topic: 'Fused per-position composite risk number (any grain) in watchlist/portfolio surfaces'
-    verdict: 'FORBIDDEN — aggregates are printed lane counts + named role ladders only. (PRD-R1 placement exclusivity struck by operator override 2026-07-18, PRD Amendment 1 — user-facing display-tier watchlist+portfolio surface now allowed in this repo under UWP rulings)'
-    source: 'PRD-R2 + Amendment 1, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7, `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md`'
+  - topic: 'Fused composite risk/health number in ANY scored path, board ordering, ranker, sizing, NW artifact, or alert escalation — and any user-facing composite that violates the PSI §3.1.2 construction law (hidden inputs, fitted/unversioned weights, LLM legs, no coverage abstention, no forward grading)'
+    verdict: 'FORBIDDEN — the authority half of PRD-R2 stands in full. **Amendment 2 (operator override 2026-08-03)**: the user-facing DISPLAY-TIER composite (Portfolio Health Score + sub-scores) on watchlist/portfolio surfaces + digest emails is now ALLOWED under `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md` §3.1.2 (transparent printed legs, v0-equal weights, abstention, day-one grading; dissent on record). (History: PRD-R1 placement struck 2026-07-18 Amendment 1; PRD-R2 display half struck 2026-08-03 Amendment 2)'
+    source: 'PRD-R2 + Amendments 1–2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` §13; PSI §3.1, `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7'
     section: 1
     section_name: forbidden_by_ruling
 

@@ -1177,8 +1177,14 @@ def build_providers(press_cfg: dict) -> list:
         if cls is not None:
             providers.append(cls(src))
 
+    # The twitterapi.io lane additionally honors an explicit `enabled: false`
+    # (operator order 2026-08-03): unlike every free lane, CONSTRUCTION here is
+    # the arming decision — fetch() bills real money per returned tweet and the
+    # endpoint has no server-side since-id, so a hot loop re-bills the full page
+    # every poll. The handle register stays in config as documentation; the flag
+    # (default true, back-compat) is what says whether it may cost anything.
     x_follow = press_cfg.get("x_follow") or {}
-    if x_follow.get("handles"):
+    if x_follow.get("enabled", True) and x_follow.get("handles"):
         spend_cap = float(
             (press_cfg.get("spend") or {}).get("twitterapiio_monthly_cap_usd", 75.0)
         )

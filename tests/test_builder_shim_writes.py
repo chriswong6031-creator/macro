@@ -10,11 +10,12 @@ This file closes that gap the way #3635 proved build_leader_radar: point the rea
 entry point at a fixture root with the repo's templates/ symlinked in, then read
 the page it wrote back off disk.
 
-Why the assertion is the MARKER, not "window.DATA_BASE": flow_desk.html.j2 and
-intraday_flow.html.j2 reference window.DATA_BASE in their own page JS (4 and 2
-times) to build per-ticker fetch URLs. Before the fix those pages contained the
-string while carrying nothing that DEFINED it — the read was live, the definition
-was missing. Only `<script data-dbase>` separates a working page from that one.
+Why the assertion is the MARKER, not "window.DATA_BASE": intraday_flow.html.j2
+references window.DATA_BASE in its own page JS to build per-ticker fetch URLs
+(flow_desk.html.j2 did too, until W1.6-B turned it into a redirect stub — see the
+CASES note below). Before the fix those pages contained the string while carrying
+nothing that DEFINED it — the read was live, the definition was missing. Only
+`<script data-dbase>` separates a working page from that one.
 
 Run: .venv/bin/python -m pytest tests/test_builder_shim_writes.py -q
 """
@@ -70,20 +71,19 @@ def _mod(name: str):
     return importlib.import_module(f"scripts.{name}")
 
 
+# WHY THE OPTIONS ESTATE'S FOUR PAGES ARE ABSENT (OIP W1.6-B): gex.html,
+# options_screener.html, flow_desk.html and flow_leaders.html are redirect stubs
+# now — self-contained interstitials that load no assets and run no per-ticker
+# fetch, so there is nothing on them for the data-base shim to reroute. Their
+# builders still write through write_page (tests/test_site_shim.py's source guard
+# keeps that true), so the shim is still injected; it is the CLAIM that would go
+# vacuous, not the tag. What those pages must be instead is pinned by
+# tests/test_options_estate_redirect_stubs.py. build_options_command (options.html,
+# the page that ABSORBED all four) stays below — it is the surface that actually
+# fetches per-ticker data now.
+#
 # (id, needs content/, invoke(fixture_root, monkeypatch), page relative to site/)
 CASES = [
-    (
-        "build_flow_desk",
-        False,
-        lambda f, mp: _mod("build_flow_desk")._render_html({}, f / "site"),
-        "flow_desk.html",
-    ),
-    (
-        "build_flow_leaders",
-        False,
-        lambda f, mp: _mod("build_flow_leaders").build(f / "data", f / "site", ROOT / "templates"),
-        "flow_leaders.html",
-    ),
     (
         "build_intraday_flow",
         False,

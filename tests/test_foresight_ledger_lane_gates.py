@@ -27,6 +27,18 @@ advancing lane is asia-close.yml band 2, which sets no COLLECT_LANE — a nightl
 there would be permanently closed. froth_fragility._parab_history is gated on the
 PERSIST half only (legitimate off-lane read intent), so it is tested separately.
 
+2026-08-02 sweep, wave 2 — thirteen more render-lane-reachable writers gated and
+pinned (policy_intent desk+scorer, mag7_regime, US/China/HK market drivers,
+dislocation state log, theme_revisions, glut_watch, guidance_gap, bottleneck, radar,
+eightk_magnitude, btc reentry, canada score_log). Two are ASIA-lane writers like the
+China grader: the China/HK market-driver logs advance only in asia-close.yml
+(CN_LANE=asia, verified via git log — every advancing commit is "engine: asia
+dashboards"), so they gate on asia_advance_enabled(). build_canada's score_log gate
+used to test CANADA_FAST_RENDER, an env no CI lane sets — the append is now
+extracted (_append_ms_score_log) behind the real nightly gate. bottleneck's old
+exclusion from this enumeration is REVOKED: its write_ledger caller flag defaulted
+True in engine/run.py on every lane, so the flag gated nothing in CI.
+
 Hermetic: all writes go to tmp_path; no repo data/ or site/ artifact is touched
 (pytest-writes-live-artifacts trap).
 """
@@ -37,12 +49,33 @@ import json
 
 import pytest
 
+# The probe must NOT be an Exception: most of the pinned writers are fail-soft
+# (`except Exception` bodies), so an AssertionError raised inside them is SWALLOWED
+# and the off-lane test passes vacuously on ungated code. A BaseException travels
+# through those wrappers and makes the breach visible. Strictly stronger for the
+# original 12 entries too — gated first, they never reach the probe.
+#
+# Defined HERE, above _TripRoot, because _TripRoot.__fspath__ raises it.
+class _LaneBreach(BaseException):
+    pass
+
+
+class _TripRoot:
+    """Junk `root` arg for appenders that build paths from a caller-supplied root
+    instead of config.data_dir() (policy_intent_desk): Path(root) calls __fspath__,
+    so off-lane path construction trips the same BaseException probe."""
+
+    def __fspath__(self):
+        raise _LaneBreach(
+            "appender reached Path(root) off-lane — the ledger-advance gate "
+            "must be the first statement"
+        )
+
+
+_TRIP_ROOT = _TripRoot()
+
 # (module, function, junk args) — gate-first appenders: off-lane these must
 # return without evaluating args or touching config.data_dir().
-# bottleneck._append_ledger is absent by design: it sits behind the caller's
-# write_ledger flag (threaded by the same 2026-07-25 change), and engine.run's
-# engine-artifact writes are the engine-render lane's separate, pre-existing
-# discard contract.
 APPENDERS = [
     ("engine.foresight_cascade", "_append_ledger", ({},)),
     ("engine.theme_emergence", "_append_ledger", ({},)),
@@ -73,17 +106,33 @@ APPENDERS = [
      ({"show": True, "days_to": 0, "asof": "2026-08-02", "type": "CPI"},)),
     ("engine.event_risk", "resolve", ({"2026-08-02": 100.0},)),
     ("engine.regime_snap_veto", "_append_log", ({}, {})),
+    # 2026-08-02 sweep, wave 2. Args REACHING as above: ungated, execution gets to
+    # config.data_dir() (or Path(_TRIP_ROOT) for the policy_intent pair, which
+    # builds paths from a caller-supplied root instead).
+    ("engine.policy_intent_desk", "_append_ledger",
+     ({"theses": [{"id": "t-x"}], "generated_at": "T", "state_asof": "2026-08-02"},
+      _TRIP_ROOT)),
+    ("engine.policy_intent_desk", "score", (_TRIP_ROOT,)),
+    ("engine.mag7_regime", "_append_ledger", ({"date": "2026-08-02"},)),
+    ("engine.market_drivers", "append_log",
+     ({"verdict": "fed_repricing", "asof": "2026-08-02"},)),
+    ("engine.china_market_drivers", "append_log",         # ASIA lane (CN_LANE=asia)
+     ({"verdict": "policy_repricing", "asof": "2026-08-02"},)),
+    ("engine.hk_market_drivers", "append_log",            # ASIA lane (CN_LANE=asia)
+     ({"verdict": "policy_repricing", "asof": "2026-08-02"},)),
+    ("engine.dislocation", "append_state_log", ({"asof": "2026-08-02", "verdict": "calm"},)),
+    ("engine.theme_revisions", "_append_ledger", ({"asof": "2026-08-02", "themes": {}},)),
+    ("engine.glut_watch", "_append_ledger", ({"asof": "2026-08-02", "themes": {}},)),
+    ("engine.guidance_gap", "_append_ledger", ({"asof": "2026-08-02", "themes": {}},)),
+    ("engine.bottleneck", "_append_ledger", ({"asof": "2026-08-02", "themes": {}},)),
+    ("engine.radar", "append_ledger", ({"hypotheses": [{"id": "h-x"}]},)),
+    ("engine.eightk_magnitude", "_append_ledger", ({"asof": "2026-08-02", "themes": {}},)),
+    ("engine.btc_overrides", "sync_ledger", (None, {})),
+    ("scripts.build_canada", "_append_ms_score_log",
+     ("2026-08-02", {"score": 50, "verdict": "x", "color": "g"})),
 ]
 
 _IDS = [f"{m.rsplit('.', 1)[1]}.{f}" for m, f, _ in APPENDERS]
-
-# The probe must NOT be an Exception: most of the pinned writers are fail-soft
-# (`except Exception` bodies), so an AssertionError raised inside them is SWALLOWED
-# and the off-lane test passes vacuously on ungated code. A BaseException travels
-# through those wrappers and makes the breach visible. Strictly stronger for the
-# original 12 entries too — gated first, they never reach the probe.
-class _LaneBreach(BaseException):
-    pass
 
 
 def _off_lane(monkeypatch):
@@ -134,18 +183,34 @@ def test_gate_opens_on_nightly_lane(monkeypatch, tmp_path):
 # --------------------------------------------------------------------------- #
 # Cross-lane asymmetry — the US-nightly and asia-close families never cross-arm.
 # --------------------------------------------------------------------------- #
-_CN_GRADER = "engine.china_sector_central_grader"
+_ASIA_MODULES = {
+    "engine.china_sector_central_grader",
+    "engine.china_market_drivers",
+    "engine.hk_market_drivers",
+}
 _CENTRAL_DATA = {"as_of": "2026-08-02", "sectors": [],
                  "baskets": [{"id": "b-x", "kind": "basket"}]}
-_NIGHTLY_APPENDERS = [e for e in APPENDERS if e[0] != _CN_GRADER]
+_NIGHTLY_APPENDERS = [e for e in APPENDERS if e[0] not in _ASIA_MODULES]
 _NIGHTLY_IDS = [f"{m.rsplit('.', 1)[1]}.{f}" for m, f, _ in _NIGHTLY_APPENDERS]
+_ASIA_APPENDERS = [e for e in APPENDERS if e[0] in _ASIA_MODULES]
+_ASIA_IDS = [f"{m.rsplit('.', 1)[1]}.{f}" for m, f, _ in _ASIA_APPENDERS]
+
+
+@pytest.mark.parametrize("mod_name,fn_name,args", _ASIA_APPENDERS, ids=_ASIA_IDS)
+def test_asia_appender_refuses_on_us_nightly_lane(monkeypatch, mod_name, fn_name, args):
+    """COLLECT_LANE=nightly must NOT open any asia gate."""
+    _off_lane(monkeypatch)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _probe(monkeypatch, f"{mod_name}.{fn_name}")
+    mod = importlib.import_module(mod_name)
+    getattr(mod, fn_name)(*args)
 
 
 def test_china_grader_refuses_on_us_nightly_lane(monkeypatch):
-    """COLLECT_LANE=nightly must NOT open the asia gate."""
+    """COLLECT_LANE=nightly must NOT open the asia gate (return-value pin)."""
     _off_lane(monkeypatch)
     monkeypatch.setenv("COLLECT_LANE", "nightly")
-    _probe(monkeypatch, f"{_CN_GRADER}.append_central_log")
+    _probe(monkeypatch, "engine.china_sector_central_grader.append_central_log")
     from engine import china_sector_central_grader as ccg
 
     assert ccg.append_central_log(_CENTRAL_DATA) == 0
@@ -256,6 +321,121 @@ def test_parab_history_persists_only_on_nightly_lane(monkeypatch, tmp_path):
     on = ff._parab_history(pd.DataFrame(), None, "2026-08-02", 42.0)
     assert float(on.loc[pd.Timestamp("2026-08-02")]) == 42.0
     assert p.exists()
+
+
+# --------------------------------------------------------------------------- #
+# On-lane coverage for wave 2 — a gate that is always closed is the other half
+# of the defect, and silently stops the advancing lane's forward accrual.
+# --------------------------------------------------------------------------- #
+def test_market_drivers_log_appends_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    import pandas as pd
+
+    from engine import market_drivers as md
+
+    md.append_log({"verdict": "fed_repricing", "asof": "2026-08-02",
+                   "primary": "rates", "evidence": ["x"]})
+    p = tmp_path / "regime" / "market_drivers_log.parquet"
+    assert p.exists()
+    assert str(pd.read_parquet(p)["asof"].iloc[0]) == "2026-08-02"
+
+
+def test_market_driver_asia_siblings_append_on_asia_lane(monkeypatch, tmp_path):
+    _off_lane(monkeypatch)
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import china_market_drivers as cmd
+    from engine import hk_market_drivers as hmd
+
+    cmd.append_log({"verdict": "policy_repricing", "asof": "2026-08-02"})
+    hmd.append_log({"verdict": "policy_repricing", "asof": "2026-08-02"})
+    assert (tmp_path / "china_regime" / "china_market_drivers_log.parquet").exists()
+    assert (tmp_path / "hk_regime" / "hk_market_drivers_log.parquet").exists()
+
+
+def test_mag7_and_dislocation_append_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import dislocation, mag7_regime
+
+    mag7_regime._append_ledger({"date": "2026-08-02", "trend_state": "up"})
+    led = tmp_path / "mag7_regime" / "ledger.jsonl"
+    assert json.loads(led.read_text().splitlines()[0])["date"] == "2026-08-02"
+
+    row = dislocation.append_state_log({"asof": "2026-08-02", "verdict": "calm"})
+    assert row is not None and row["date"] == "2026-08-02"
+    assert (tmp_path / "dislocation" / "state_log.parquet").exists()
+
+
+def test_theme_ledgers_append_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    from engine import bottleneck, eightk_magnitude, glut_watch, guidance_gap, theme_revisions
+
+    theme_revisions._append_ledger({"asof": "2026-08-02", "themes": {
+        "power": {"breadth": 0.5, "breadth_accel": 0.1, "broadening_state": "BROADENING",
+                  "est_drift_90d": 0.02, "n_covered": 9}}})
+    assert (tmp_path / "themes" / "revisions_log.jsonl").exists()
+
+    glut_watch._append_ledger({"asof": "2026-08-02", "themes": {
+        "power": {"band": "GLUT", "glut_score": 0.9, "regime": "late"}}})
+    assert (tmp_path / "glut_watch" / "log.jsonl").exists()
+
+    guidance_gap._append_ledger({"asof": "2026-08-02", "themes": {
+        "power": {"guidance_band": "RAISING", "n_raisers": 2, "n_cutters": 0, "net": 2}}})
+    assert (tmp_path / "guidance_gap" / "log.jsonl").exists()
+
+    bottleneck._append_ledger({"asof": "2026-08-02", "themes": {
+        "power": {"band": "TIGHT", "tightness": 0.8, "regime": "late", "legs": {}}}})
+    assert (tmp_path / "bottleneck" / "log.jsonl").exists()
+
+    eightk_magnitude._append_ledger({"asof": "2026-08-02", "themes": {
+        "power": {"contract_dollar_z": 1.2, "pre_drift": True, "n_extraction_ok": 1}}})
+    assert (tmp_path / "eightk_magnitude" / "log.jsonl").exists()
+
+
+def test_policy_intent_ledger_and_scorer_open_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    from engine import policy_intent_desk as pid
+
+    brief = {"generated_at": "2026-08-02T00:00:00+00:00", "state_asof": "2026-08-02",
+             "theses": [{"id": "t-x", "subject": "s", "lean": "hawkish",
+                         "conviction": "low", "horizon_d": 5,
+                         "falsifier": {"check": {}}, "check_by": "2026-08-09"}]}
+    pid._append_ledger(brief, tmp_path)
+    led = tmp_path / "data" / "policy_intent" / "theses.jsonl"
+    assert json.loads(led.read_text().splitlines()[0])["id"] == "t-x"
+
+    pid.score(root=tmp_path)
+    assert (tmp_path / "data" / "policy_intent" / "track_record.json").exists()
+
+
+def test_radar_btc_canada_append_on_nightly_lane(monkeypatch, tmp_path):
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    import pandas as pd
+
+    from engine import btc_overrides, radar
+    import scripts.build_canada as bc
+
+    n = radar.append_ledger({"hypotheses": [{"id": "h-x", "subject": "b"}]}, root=tmp_path)
+    assert n == 1
+    assert (tmp_path / "data" / "radar" / "theses.jsonl").exists()
+
+    monkeypatch.setattr(btc_overrides, "ledger_events",
+                        lambda sig, vcfg: [{"ts": "2026-08-02", "override_id": "o1",
+                                            "event": "tranche_fill", "trigger": "t1"}])
+    assert btc_overrides.sync_ledger(None, {}, path=tmp_path / "reentry.jsonl") == 1
+
+    bc._append_ms_score_log("2026-08-02", {"score": 55, "verdict": "OK", "color": "green"})
+    p = tmp_path / "canada_market_state" / "score_log.parquet"
+    assert int(pd.read_parquet(p)["score"].iloc[0]) == 55
 
 
 def test_nightly_advance_enabled_matrix(monkeypatch):

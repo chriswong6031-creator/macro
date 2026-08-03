@@ -271,23 +271,23 @@ def test_builder_smoke(tmp_path, monkeypatch):
     assert "html" in captured, "write_page was never called — builder produced no output"
 
     html = captured["html"]
-    # young badge is expected (5 and 8 days << 252)
-    assert "young" in html
-    # headline
-    assert "Options Screener" in html
-    # honest-box provenance text
-    assert "IV-rank" in html or "IV分位" in html
-    # embedded JSON payload should have our fixtures
-    assert "AAPL" in html
-    assert "NVDA" in html
+    # W1.6-B: the page is a redirect stub into the workspace's Scanner mode, so
+    # the smoke moved off the HTML and onto site/screenerdata/rows.json — the
+    # artifact Scanner actually fetches, and now this builder's only product a
+    # reader ever sees. (The stub's own shape is pinned by
+    # tests/test_options_estate_redirect_stubs.py.)
+    assert "options.html#scanner" in html, "the page must redirect into Scanner mode"
 
-    # Verify embedded ROWS payload is valid JSON (regression: autoescape used to HTML-encode it)
-    import re as _re
-    m = _re.search(r'<script[^>]+id="os-rows"[^>]*>(.*?)</script>', html, _re.DOTALL)
-    assert m, "os-rows script tag not found in page"
-    rows_parsed = json.loads(m.group(1))
+    payload = json.loads((site_dir / "rows.json").read_text(encoding="utf-8"))
+    rows_parsed = payload["rows"]
     tickers = {r["ticker"] for r in rows_parsed}
     assert "AAPL" in tickers
+    assert "NVDA" in tickers
+    # young badge is expected (5 and 8 days << 252)
+    assert any(r.get("iv_rank_young") for r in rows_parsed), (
+        "no row flagged young — the 252-day threshold is not being applied"
+    )
+    assert payload["coverage"]["n_young"] > 0
     assert "NVDA" in tickers
 
 
@@ -354,19 +354,19 @@ def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
 
     html = written_html["content"]
 
-    # nav-mega check: must carry the Research mega-menu
-    assert "nav-mega" in html, "options_screener.html missing nav-mega (stale nav)"
-
-    # Exactly one shared site-nav
-    assert html.count('<nav class="site-nav">') == 1, \
-        "options_screener.html should render exactly one shared nav"
-
-    # Page-level integrity
-    assert "Options Screener" in html, "options_screener.html missing page title"
-    assert "honest-box" in html, "options_screener.html missing data-provenance honest-box"
-
-    # Padding check: body tag must carry padding (nav-gap guard)
-    assert "padding:" in html, "options_screener.html body appears to have no top padding (nav-gap risk)"
+    # W1.6-B INVERTS THIS TEST. It used to require the shared nav (nav-mega,
+    # exactly one <nav class="site-nav">, body padding so the fixed nav does not
+    # overlap the page) because a stale hand-copied header was the standing
+    # failure mode on this page. The page is a redirect stub now, and a stub that
+    # rendered the nav would be the defect: it would paint a full header for the
+    # fraction of a second before location.replace() fires, and it would give a
+    # crawler a second copy of the estate's link graph on a noindex page. So the
+    # assertions flip — the nav must be ABSENT, and the redirect present.
+    assert "nav-mega" not in html, "the stub must not render the mega-menu"
+    assert '<nav class="site-nav">' not in html, "the stub must not render the shared nav"
+    assert "options.html#scanner" in html, "the stub lost its redirect target"
+    # …and there is consequently no nav to gap against.
+    assert "nav-gap" not in html
 
 
 # ---------------------------------------------------------------------------
@@ -428,6 +428,9 @@ def test_rows_export_survives_non_json_native_values(tmp_path):
 #    (c) median_depth_days copy says "sessions observed", not "calendar days"
 # ---------------------------------------------------------------------------
 
+_MFIX_N_ROWS = 5
+
+
 def _write_mfix_gex_fixture(gex_dir: pathlib.Path, ticker: str, gamma_regime_last):
     """GEX fixture with a wide spot/max_pain gap so the denominator is unambiguous.
 
@@ -440,7 +443,7 @@ def _write_mfix_gex_fixture(gex_dir: pathlib.Path, ticker: str, gamma_regime_las
     _load_gex_summary (#F3-17) would otherwise drop the fixture's own last row and
     silently shift `gamma_regime_last` onto the wrong row.
     """
-    n_rows = 5
+    n_rows = _MFIX_N_ROWS
     dates = pd.date_range("2026-06-08", periods=n_rows, freq="D")
     df = pd.DataFrame(
         {
@@ -501,12 +504,16 @@ def _run_mfix_builder(tmp_path, monkeypatch, gamma_regime_last):
         lambda rows, coverage, out_path=None: _real_export(rows, coverage, site_dir / "rows.json"))
 
     assert bos.main() == 0
-    html = captured["html"]
 
-    import re as _re
-    m = _re.search(r'<script[^>]+id="os-rows"[^>]*>(.*?)</script>', html, _re.DOTALL)
-    assert m, "os-rows script tag not found"
-    return json.loads(m.group(1)), html
+    # W1.6-B: the rows used to be read back out of the page's own <script
+    # id="os-rows"> block. options_screener.html is a redirect stub now, so the
+    # payload is read from site/screenerdata/rows.json — which is not a weaker
+    # source but the CANONICAL one: it is the file the workspace's Scanner mode
+    # actually fetches, where the page's embedded copy never was.
+    export = site_dir / "rows.json"
+    assert export.exists(), "main() did not write the rows export"
+    raw = export.read_text(encoding="utf-8")
+    return json.loads(raw)["rows"], raw
 
 
 class TestSafeStr:
@@ -563,10 +570,12 @@ def test_pain_dist_pct_matches_wall_distance_denominator(tmp_path, monkeypatch):
 
 def test_nan_gamma_regime_is_nulled_not_stringified(tmp_path, monkeypatch):
     """A NaN regime cell must reach the payload as null, never as "nan"."""
-    rows, html = _run_mfix_builder(tmp_path, monkeypatch, float("nan"))
+    rows, raw = _run_mfix_builder(tmp_path, monkeypatch, float("nan"))
     row = next(r for r in rows if r["ticker"] == "TSTM")
     assert row["gamma_regime"] is None, f"got {row['gamma_regime']!r}"
-    assert '"gamma_regime":"nan"' not in html.replace(" ", "")
+    # Serialised form too: a `"nan"` that round-trips through json.loads as the
+    # string would satisfy the assertion above only if it were also None.
+    assert '"gamma_regime":"nan"' not in raw.replace(" ", "")
 
 
 def test_real_gamma_regime_still_passes_through(tmp_path, monkeypatch):
@@ -576,21 +585,36 @@ def test_real_gamma_regime_still_passes_through(tmp_path, monkeypatch):
     assert row["gamma_regime"] == "short"
 
 
-def test_coverage_stamp_says_sessions_observed(tmp_path, monkeypatch):
-    """median_depth_days counts observation rows — the copy must say so.
+def test_coverage_stamp_median_depth_is_still_an_observation_count(tmp_path, monkeypatch):
+    """median_depth_days counts observation ROWS, not a calendar span.
 
-    Scoped to the coverage stamp: "calendar days" elsewhere on the page (the
-    252-day young-IV threshold) IS a true calendar span and must stay.
+    W1.6-B RETIRED THE COPY, NOT THE FACT. This used to assert the rendered
+    page's `.cov-stamp` said "sessions observed" / "已观测交易日" and never
+    "calendar days". options_screener.html is a redirect stub now and the
+    workspace's Scanner mode does not surface median depth at all, so there is
+    no user-facing string left to hold to that wording — the disclosure did not
+    move, it simply has no surface. What survives, and is what this now pins, is
+    the FIELD's meaning in the payload Scanner does read: the fixture writes 8
+    observation rows over a wider calendar span, and median_depth_days must
+    report the row count.
+
+    If Scanner mode ever puts median depth back on screen, the wording law comes
+    back with it — and belongs next to that copy, not here.
+
+    HONEST LIMIT of what remains: this fixture's rows are consecutive weekdays,
+    so its row count and its calendar span are the SAME number. That makes this
+    a field-presence-and-value pin, not a discriminating one — it would not
+    catch a switch to a calendar derivation. It is kept because the field still
+    reaching the payload with the right value is worth holding; the assertion
+    that could tell the two derivations apart was the retired COPY check.
     """
-    import re as _re
-    _, html = _run_mfix_builder(tmp_path, monkeypatch, "long")
-    m = _re.search(r'<div class="cov-stamp">(.*?)</div>', html, _re.DOTALL)
-    assert m, "coverage stamp not found in rendered page"
-    stamp = m.group(1)
-    assert "sessions observed" in stamp
-    assert "已观测交易日" in stamp
-    assert "calendar days" not in stamp, "median depth is an observation count, not a calendar span"
-    assert "个日历日" not in stamp
+    rows, raw = _run_mfix_builder(tmp_path, monkeypatch, "long")
+    coverage = json.loads(raw)["coverage"]
+    assert "median_depth_days" in coverage, "coverage lost its median-depth field"
+    assert coverage["median_depth_days"] == _MFIX_N_ROWS, (
+        f"median_depth_days is {coverage['median_depth_days']}, expected the "
+        f"{_MFIX_N_ROWS} observation rows the fixture wrote"
+    )
 
 
 # ---------------------------------------------------------------------------

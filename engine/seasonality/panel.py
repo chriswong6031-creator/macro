@@ -76,6 +76,35 @@ def slots_for(index: pd.DatetimeIndex) -> np.ndarray:
     return _MONTH_OFFSET[month - 1] + day - 1
 
 
+def slot_for_date(day: date) -> int:
+    """Map ONE calendar date onto its 0..364 slot — the scalar :func:`slots_for`.
+
+    Same table, same Feb-29 fold, so a consumer that holds a single ``date``
+    (a window's occurrence end, "which slot is today") never has to build a
+    ``DatetimeIndex`` just to ask, and — more to the point — never has to
+    re-derive the fold.  ``tests/test_seasonality_shadow_state.py`` pins this
+    against ``slots_for`` across every day of a leap year, so the two cannot
+    drift apart.
+    """
+    day_of_month = 28 if (day.month == 2 and day.day == 29) else day.day
+    return int(_MONTH_OFFSET[day.month - 1]) + day_of_month - 1
+
+
+def date_for_slot(slot: int, year: int) -> date:
+    """The calendar date that slot ``0..364`` names in ``year``.
+
+    The inverse of :func:`slot_for_date` on the slot's own label, not on an
+    ordinal day count: slot 59 is ``03-01`` in EVERY year, including a leap
+    year where it is the 61st day.  Counting days from Jan 1 instead would
+    shift every post-February slot by one real day in leap years and silently
+    move a published window's dates.
+    """
+    if not 0 <= slot < N_SLOTS:
+        raise ValueError(f"slot must be 0..{N_SLOTS - 1}, got {slot!r}")
+    month, day = slot_labels()[slot].split("-")
+    return date(year, int(month), int(day))
+
+
 # --- loading ----------------------------------------------------------------
 
 
