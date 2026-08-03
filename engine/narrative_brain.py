@@ -137,8 +137,15 @@ def _make_call(cfg: dict):
     max_tokens = int(cfg.get("max_tokens", 6000))
 
     def call(model: str, system: str, user: str):
-        # Override the model id in each provider for this specific call
-        call_providers = [{**p, "model": model} for p in providers]
+        # Override the model id ONLY on Claude-endpoint providers (oauth /
+        # anthropic). deepseek and codex serve their own ids from
+        # build_providers (deepseek-v4-pro / the translated Codex tier);
+        # clobbering those with a Claude id 404s the fallback rung — the very
+        # rung that has to serve when the OAuth pool is rate-limited.
+        call_providers = [
+            {**p, "model": model} if p.get("name") in ("oauth", "anthropic") else p
+            for p in providers
+        ]
 
         def _do_call(client, _model: str):
             resp = client.messages.create(

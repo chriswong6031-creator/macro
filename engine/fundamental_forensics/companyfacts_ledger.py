@@ -26,6 +26,7 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from hashlib import sha256
 import heapq
+import json
 import re
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping, Sequence
@@ -97,6 +98,183 @@ class CompanyFactsLedgerError(ValueError):
 
 class CompanyFactsLedgerInputTooLarge(CompanyFactsLedgerError):
     """A decoded source object or occurrence inventory exceeded an explicit cap."""
+
+
+@dataclass(frozen=True)
+class CompanyFactsLedgerConversionConfig:
+    """Explicit bounds for one pinned-source ledger conversion.
+
+    This is deliberately the same small set of limits accepted by
+    :func:`convert_companyfacts_to_raw_ledger`.  The pinned loader applies the
+    per-payload and aggregate limits while it reads evidence, then passes the
+    exact values through to the pure conversion boundary.
+    """
+
+    max_occurrences: int = DEFAULT_MAX_OCCURRENCES
+    max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES
+    max_total_input_bytes: int = DEFAULT_MAX_TOTAL_INPUT_BYTES
+    max_submission_rows: int = DEFAULT_MAX_SUBMISSION_ROWS
+    max_older_submissions_files: int = DEFAULT_MAX_OLDER_SUBMISSIONS_FILES
+    max_revision_evidence: int = DEFAULT_MAX_REVISION_EVIDENCE
+    max_revision_evidence_bytes: int = DEFAULT_MAX_REVISION_EVIDENCE_BYTES
+
+    def __post_init__(self) -> None:
+        _positive_limit(
+            self.max_occurrences,
+            field="max_occurrences",
+            ceiling=HARD_MAX_OCCURRENCES,
+        )
+        _positive_limit(
+            self.max_payload_bytes,
+            field="max_payload_bytes",
+            ceiling=HARD_MAX_PAYLOAD_BYTES,
+        )
+        _positive_limit(
+            self.max_total_input_bytes,
+            field="max_total_input_bytes",
+            ceiling=HARD_MAX_TOTAL_INPUT_BYTES,
+        )
+        _positive_limit(
+            self.max_submission_rows,
+            field="max_submission_rows",
+            ceiling=HARD_MAX_SUBMISSION_ROWS,
+        )
+        _positive_limit(
+            self.max_older_submissions_files,
+            field="max_older_submissions_files",
+            ceiling=HARD_MAX_OLDER_SUBMISSIONS_FILES,
+        )
+        _positive_limit(
+            self.max_revision_evidence,
+            field="max_revision_evidence",
+            ceiling=HARD_MAX_REVISION_EVIDENCE,
+        )
+        _positive_limit(
+            self.max_revision_evidence_bytes,
+            field="max_revision_evidence_bytes",
+            ceiling=HARD_MAX_REVISION_EVIDENCE_BYTES,
+        )
+
+    def conversion_kwargs(self) -> dict[str, int]:
+        """Return only the public conversion-limit keyword arguments."""
+        return {
+            "max_occurrences": self.max_occurrences,
+            "max_payload_bytes": self.max_payload_bytes,
+            "max_total_input_bytes": self.max_total_input_bytes,
+            "max_submission_rows": self.max_submission_rows,
+            "max_older_submissions_files": self.max_older_submissions_files,
+            "max_revision_evidence": self.max_revision_evidence,
+            "max_revision_evidence_bytes": self.max_revision_evidence_bytes,
+        }
+
+
+@dataclass(frozen=True)
+class PinnedSubmissionsSource:
+    """One named immutable SEC Submissions receipt/object pair.
+
+    ``receipt_path`` must name the content-addressed ``.receipt.json`` sidecar,
+    never the mutable ``latest.json`` convenience pointer.  ``object_path`` is
+    separately supplied so a caller cannot make the loader silently follow a
+    newly repointed or guessed object location.
+    """
+
+    source_name: str
+    receipt_path: str
+    object_path: str
+    is_older: bool
+
+    def __post_init__(self) -> None:
+        source_name = _required_text(self.source_name, field="Submissions source_name")
+        if not isinstance(self.is_older, bool):
+            raise TypeError("Submissions is_older must be a boolean")
+        if self.is_older:
+            if _OLDER_SUBMISSIONS_NAME_RE.fullmatch(source_name) is None:
+                raise CompanyFactsLedgerError(
+                    "older Submissions source_name must be a canonical SEC filename"
+                )
+        elif source_name != "recent":
+            raise CompanyFactsLedgerError(
+                "the non-older Submissions source must be named recent"
+            )
+        receipt_path = _pinned_source_path(
+            self.receipt_path, field="Submissions receipt_path"
+        )
+        object_path = _pinned_source_path(
+            self.object_path, field="Submissions object_path"
+        )
+        if receipt_path.endswith("/latest.json") or receipt_path == "latest.json":
+            raise CompanyFactsLedgerError(
+                "Submissions receipt_path cannot use a mutable latest pointer"
+            )
+        object.__setattr__(self, "source_name", source_name)
+        object.__setattr__(self, "receipt_path", receipt_path)
+        object.__setattr__(self, "object_path", object_path)
+
+
+@dataclass(frozen=True)
+class CompanyFactsConversionSourceBundle:
+    """All exact pinned-source paths needed for one issuer conversion.
+
+    No source path is inferred from a CIK.  In particular, a current
+    Submissions receipt and every historical file declared by it must be named
+    by the caller before the loader performs a source read.
+    """
+
+    cik: str
+    companyfacts_manifest_path: str
+    companyfacts_capture_path: str
+    companyfacts_response_path: str
+    recent_submissions: PinnedSubmissionsSource
+    older_submissions: tuple[PinnedSubmissionsSource, ...] = ()
+
+    def __post_init__(self) -> None:
+        cik = _cik(self.cik, field="source bundle cik")
+        for field in (
+            "companyfacts_manifest_path",
+            "companyfacts_capture_path",
+            "companyfacts_response_path",
+        ):
+            object.__setattr__(
+                self,
+                field,
+                _pinned_source_path(getattr(self, field), field=field),
+            )
+        if type(self.recent_submissions) is not PinnedSubmissionsSource:
+            raise CompanyFactsLedgerError(
+                "recent_submissions must be an exact PinnedSubmissionsSource"
+            )
+        if self.recent_submissions.is_older:
+            raise CompanyFactsLedgerError("recent_submissions must not be historical")
+        if not isinstance(self.older_submissions, tuple):
+            raise TypeError("older_submissions must be a tuple")
+        names: set[str] = set()
+        paths: set[str] = {
+            self.companyfacts_manifest_path,
+            self.companyfacts_capture_path,
+            self.companyfacts_response_path,
+            self.recent_submissions.receipt_path,
+            self.recent_submissions.object_path,
+        }
+        for source in self.older_submissions:
+            if type(source) is not PinnedSubmissionsSource:
+                raise CompanyFactsLedgerError(
+                    "older_submissions entries must be exact PinnedSubmissionsSource values"
+                )
+            match = _OLDER_SUBMISSIONS_NAME_RE.fullmatch(source.source_name)
+            if not source.is_older or match is None or match.group(1) != cik:
+                raise CompanyFactsLedgerError(
+                    "older Submissions source does not bind the bundle CIK"
+                )
+            if source.source_name in names:
+                raise CompanyFactsLedgerError("older_submissions contains duplicate names")
+            if source.receipt_path in paths or source.object_path in paths:
+                raise CompanyFactsLedgerError("source bundle paths must be unique")
+            names.add(source.source_name)
+            paths.add(source.receipt_path)
+            paths.add(source.object_path)
+        if len(paths) != 5 + (2 * len(self.older_submissions)):
+            raise CompanyFactsLedgerError("source bundle paths must be unique")
+        object.__setattr__(self, "cik", cik)
 
 
 @dataclass(frozen=True)
@@ -1773,6 +1951,586 @@ def convert_companyfacts_to_raw_ledger(
     )
 
 
+def _pinned_source_path(value: Any, *, field: str) -> str:
+    """Use the source-sync path policy without accepting an authority shortcut."""
+    try:
+        from .source_sync import canonical_source_relative_path
+
+        return canonical_source_relative_path(value)
+    except Exception as exc:  # source-sync owns the exact path grammar.
+        raise CompanyFactsLedgerError(f"{field} is not a canonical source path") from exc
+
+
+def _strict_source_json_object(
+    content: Any, *, label: str, maximum_bytes: int
+) -> dict[str, Any]:
+    """Decode one bounded SEC sidecar/body without duplicate or nonfinite JSON."""
+    if type(content) is not bytes:
+        raise CompanyFactsLedgerError(f"{label} source content must be bytes")
+    if len(content) > maximum_bytes:
+        raise CompanyFactsLedgerInputTooLarge(
+            f"{label} exceeds bounded payload input limit"
+        )
+
+    def reject_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in output:
+                raise CompanyFactsLedgerError(
+                    f"{label} contains duplicate JSON key: {key}"
+                )
+            output[key] = item
+        return output
+
+    def reject_constant(value: str) -> None:
+        raise CompanyFactsLedgerError(
+            f"{label} contains non-finite JSON constant: {value}"
+        )
+
+    try:
+        decoded = json.loads(
+            content.decode("utf-8"),
+            object_pairs_hook=reject_pairs,
+            parse_constant=reject_constant,
+            parse_float=Decimal,
+        )
+    except CompanyFactsLedgerError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        raise CompanyFactsLedgerError(f"{label} is not UTF-8 JSON") from exc
+    if type(decoded) is not dict:
+        raise CompanyFactsLedgerError(f"{label} must be a JSON object")
+    return decoded
+
+
+@dataclass
+class _PinnedReadBudget:
+    """One aggregate source-read budget; bytes are charged only after a read."""
+
+    maximum: int
+    consumed: int = 0
+
+    def ensure_room(self, amount: int, *, label: str) -> None:
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+            raise CompanyFactsLedgerError(f"{label} source length is invalid")
+        if amount > self.maximum or self.consumed + amount > self.maximum:
+            raise CompanyFactsLedgerInputTooLarge(
+                "combined pinned Company Facts/Submissions source inputs exceed bounded limit"
+            )
+
+    def charge(self, content: Any, *, label: str) -> bytes:
+        if type(content) is not bytes:
+            raise CompanyFactsLedgerError(f"{label} source content must be bytes")
+        self.ensure_room(len(content), label=label)
+        self.consumed += len(content)
+        return content
+
+
+def _read_pinned_file(
+    authority: Any,
+    *,
+    kind: str,
+    relative_path: str,
+    label: str,
+    maximum_bytes: int,
+    budget: _PinnedReadBudget,
+) -> bytes:
+    remaining = budget.maximum - budget.consumed
+    if remaining < 1:
+        raise CompanyFactsLedgerInputTooLarge(
+            "combined pinned Company Facts/Submissions source inputs exceed bounded limit"
+        )
+    try:
+        read = authority.read_file(
+            kind=kind,
+            relative_path=relative_path,
+            maximum_bytes=min(maximum_bytes, remaining),
+        )
+        return budget.charge(read.content, label=label)
+    except CompanyFactsLedgerError:
+        raise
+    except Exception as exc:
+        raise CompanyFactsLedgerError(f"{label} pinned source read failed") from exc
+
+
+def _read_pinned_gzip_file(
+    authority: Any,
+    *,
+    relative_path: str,
+    expected_sha256: str,
+    expected_length: int,
+    label: str,
+    maximum_bytes: int,
+    budget: _PinnedReadBudget,
+) -> bytes:
+    # Bound the compressed outer object independently of the trusted raw
+    # length.  A content-addressed gzip may otherwise carry arbitrary trailing
+    # bytes that the decoder ignores, causing a small raw payload to trigger a
+    # much larger source read.  This conservative zlib-style bound covers the
+    # collector's deterministic gzip output plus wrapper overhead.
+    from .filing_attestation import (
+        HARD_MAX_COMPANYFACTS_RESPONSE_BYTES,
+        gzip_stored_byte_ceiling,
+    )
+
+    budget.ensure_room(expected_length, label=label)
+    remaining_for_stored = budget.maximum - budget.consumed - expected_length
+    if remaining_for_stored < 1:
+        raise CompanyFactsLedgerInputTooLarge(
+            "combined pinned Company Facts/Submissions source inputs exceed bounded limit"
+        )
+    stored_limit = min(
+        gzip_stored_byte_ceiling(expected_length),
+        remaining_for_stored,
+        HARD_MAX_COMPANYFACTS_RESPONSE_BYTES,
+    )
+    try:
+        read = authority.read_gzip_file(
+            kind="raw",
+            relative_path=relative_path,
+            expected_sha256=expected_sha256,
+            expected_length=expected_length,
+            maximum_bytes=maximum_bytes,
+            maximum_stored_bytes=stored_limit,
+        )
+        budget.charge(read.object_read.content, label=f"{label} compressed object")
+        return budget.charge(read.content, label=label)
+    except CompanyFactsLedgerError:
+        raise
+    except Exception as exc:
+        raise CompanyFactsLedgerError(f"{label} pinned gzip source read failed") from exc
+
+
+def _pinned_authority(value: Any) -> Any:
+    """Rehydrate the exact source authority before every materialization."""
+    try:
+        from .filing_attestation import PinnedSourceAuthority
+    except Exception as exc:  # pragma: no cover - import failure is environmental.
+        raise CompanyFactsLedgerError("pinned source authority is unavailable") from exc
+    if type(value) is not PinnedSourceAuthority:
+        raise CompanyFactsLedgerError(
+            "authority must be an exact PinnedSourceAuthority"
+        )
+    try:
+        # The caller's nominal could have had its private store attributes
+        # mutated after construction.  Re-opening by the sealed snapshot ID
+        # makes the boundary use source-sync's strict manifest validation.
+        return PinnedSourceAuthority(store=value._store, snapshot_id=value.snapshot_id)
+    except Exception as exc:
+        raise CompanyFactsLedgerError("pinned source authority cannot be reopened") from exc
+
+
+def _require_exact_retrieval_receipt(
+    receipt: Mapping[str, Any],
+    content: bytes,
+    *,
+    source: PinnedSubmissionsSource,
+    cik: str,
+) -> tuple[str, int, datetime]:
+    """Validate one immutable SEC retrieval sidecar and its explicit locations."""
+    required = {
+        "schema",
+        "cik",
+        "endpoint",
+        "url",
+        "retrieved_at",
+        "sha256",
+        "bytes",
+        "object_path",
+        "http_etag",
+        "http_last_modified",
+    }
+    if set(receipt) != required:
+        raise CompanyFactsLedgerError("Submissions receipt shape is invalid")
+    if receipt.get("schema") != "fundamental_forensics_retrieval.v1":
+        raise CompanyFactsLedgerError("Submissions receipt schema is invalid")
+    if receipt.get("endpoint") != "submissions":
+        raise CompanyFactsLedgerError("Submissions receipt endpoint is invalid")
+    try:
+        receipt_cik = _cik(receipt.get("cik"), field="Submissions receipt CIK")
+    except CompanyFactsLedgerError:
+        raise CompanyFactsLedgerError("Submissions receipt CIK is invalid") from None
+    if receipt_cik != cik:
+        raise CompanyFactsLedgerError("Submissions receipt CIK does not bind source bundle")
+    expected_url = (
+        f"https://data.sec.gov/submissions/CIK{cik}.json"
+        if not source.is_older
+        else f"https://data.sec.gov/submissions/{source.source_name}"
+    )
+    if receipt.get("url") != expected_url:
+        raise CompanyFactsLedgerError("Submissions receipt URL does not bind source name")
+    retrieved_at, _ = _required_utc(
+        receipt.get("retrieved_at"), field="Submissions receipt retrieved_at"
+    )
+    digest = receipt.get("sha256")
+    length = receipt.get("bytes")
+    if not isinstance(digest, str) or _SHA256_RE.fullmatch(digest) is None:
+        raise CompanyFactsLedgerError("Submissions receipt SHA-256 is invalid")
+    if isinstance(length, bool) or not isinstance(length, int) or length < 1:
+        raise CompanyFactsLedgerError("Submissions receipt byte length is invalid")
+    expected_object_path = f"{cik}/submissions/{digest}.json.gz"
+    expected_receipt_path = f"{cik}/submissions/{digest}.json.receipt.json"
+    if (
+        source.object_path != expected_object_path
+        or receipt.get("object_path") != expected_object_path
+        or source.receipt_path != expected_receipt_path
+    ):
+        raise CompanyFactsLedgerError(
+            "Submissions receipt/object paths do not bind immutable source identity"
+        )
+    if any(
+        value is not None and not isinstance(value, str)
+        for value in (receipt.get("http_etag"), receipt.get("http_last_modified"))
+    ):
+        raise CompanyFactsLedgerError("Submissions receipt HTTP metadata is invalid")
+    try:
+        expected_receipt_bytes = (
+            json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            + b"\n"
+        )
+    except (TypeError, ValueError) as exc:
+        raise CompanyFactsLedgerError("Submissions receipt cannot be canonically encoded") from exc
+    if content != expected_receipt_bytes:
+        raise CompanyFactsLedgerError("Submissions receipt is not canonically encoded")
+    return digest, length, retrieved_at
+
+
+def _load_pinned_submissions_source(
+    authority: Any,
+    *,
+    source: PinnedSubmissionsSource,
+    cik: str,
+    config: CompanyFactsLedgerConversionConfig,
+    submissions_recorded_at: datetime,
+    source_snapshot_at: datetime,
+    budget: _PinnedReadBudget,
+) -> dict[str, Any]:
+    receipt_content = _read_pinned_file(
+        authority,
+        kind="raw",
+        relative_path=source.receipt_path,
+        label=f"Submissions {source.source_name} receipt",
+        maximum_bytes=config.max_payload_bytes,
+        budget=budget,
+    )
+    receipt = _strict_source_json_object(
+        receipt_content,
+        label=f"Submissions {source.source_name} receipt",
+        maximum_bytes=config.max_payload_bytes,
+    )
+    digest, length, retrieved_at = _require_exact_retrieval_receipt(
+        receipt,
+        receipt_content,
+        source=source,
+        cik=cik,
+    )
+    if length > config.max_payload_bytes:
+        raise CompanyFactsLedgerInputTooLarge(
+            f"Submissions {source.source_name} exceeds bounded payload input limit"
+        )
+    if retrieved_at > submissions_recorded_at:
+        raise CompanyFactsLedgerError(
+            "Submissions receipt retrieved_at cannot be after submissions_recorded_at"
+        )
+    if retrieved_at > source_snapshot_at:
+        raise CompanyFactsLedgerError(
+            "Submissions receipt retrieved_at cannot be after pinned source snapshot_at"
+        )
+    content = _read_pinned_gzip_file(
+        authority,
+        relative_path=source.object_path,
+        expected_sha256=digest,
+        expected_length=length,
+        label=f"Submissions {source.source_name} response",
+        maximum_bytes=config.max_payload_bytes,
+        budget=budget,
+    )
+    payload = _strict_source_json_object(
+        content,
+        label=f"Submissions {source.source_name} response",
+        maximum_bytes=config.max_payload_bytes,
+    )
+    response_cik = payload.get("cik")
+    if not source.is_older and response_cik is None:
+        raise CompanyFactsLedgerError("recent Submissions response must declare a CIK")
+    if response_cik is not None:
+        try:
+            if _cik(response_cik, field="Submissions response CIK") != cik:
+                raise CompanyFactsLedgerError(
+                    "Submissions response CIK does not bind source bundle"
+                )
+        except CompanyFactsLedgerError:
+            raise CompanyFactsLedgerError(
+                "Submissions response CIK does not bind source bundle"
+            ) from None
+    return payload
+
+
+def load_companyfacts_ledger_from_pinned_source(
+    *,
+    authority: Any,
+    source_bundle: CompanyFactsConversionSourceBundle,
+    submissions_recorded_at: datetime | str,
+    config: CompanyFactsLedgerConversionConfig = CompanyFactsLedgerConversionConfig(),
+    revision_evidence: Mapping[str, Mapping[str, Any] | RevisionEvidence]
+    | Iterable[RevisionEvidence | Mapping[str, Any]]
+    | None = None,
+) -> CompanyFactsLedgerConversion:
+    """Materialize one ledger only from named members of an ``ffsecsrc_`` snapshot.
+
+    The caller selects the issuer-specific source paths and retention clock.
+    The loader never performs network I/O, examines a mutable ``latest``
+    pointer, reads an ambient filesystem source, derives a missing path, or
+    consults the wall clock.  Every older SEC Submissions file declared by the
+    selected recent response must have one matching explicit source member.
+    """
+    if type(source_bundle) is not CompanyFactsConversionSourceBundle:
+        raise CompanyFactsLedgerError(
+            "source_bundle must be an exact CompanyFactsConversionSourceBundle"
+        )
+    if type(config) is not CompanyFactsLedgerConversionConfig:
+        raise CompanyFactsLedgerError(
+            "config must be an exact CompanyFactsLedgerConversionConfig"
+        )
+    # Reconstruct every caller-owned frozen nominal before the first source
+    # read.  ``frozen=True`` prevents ordinary mutation, not low-level
+    # ``object.__setattr__`` changes, and nested source values need their own
+    # exact-type/path validation rather than nominal trust.
+    try:
+        config = CompanyFactsLedgerConversionConfig(
+            max_occurrences=config.max_occurrences,
+            max_payload_bytes=config.max_payload_bytes,
+            max_total_input_bytes=config.max_total_input_bytes,
+            max_submission_rows=config.max_submission_rows,
+            max_older_submissions_files=config.max_older_submissions_files,
+            max_revision_evidence=config.max_revision_evidence,
+            max_revision_evidence_bytes=config.max_revision_evidence_bytes,
+        )
+        raw_older = source_bundle.older_submissions
+        if type(raw_older) is not tuple:
+            raise CompanyFactsLedgerError("older_submissions must be an immutable tuple")
+        if len(raw_older) > config.max_older_submissions_files:
+            raise CompanyFactsLedgerInputTooLarge(
+                "older Submissions source count exceeds bounded limit"
+            )
+
+        def exact_source(value: Any) -> PinnedSubmissionsSource:
+            if type(value) is not PinnedSubmissionsSource:
+                raise CompanyFactsLedgerError(
+                    "Submissions sources must be exact PinnedSubmissionsSource values"
+                )
+            return PinnedSubmissionsSource(
+                source_name=value.source_name,
+                receipt_path=value.receipt_path,
+                object_path=value.object_path,
+                is_older=value.is_older,
+            )
+
+        source_bundle = CompanyFactsConversionSourceBundle(
+            cik=source_bundle.cik,
+            companyfacts_manifest_path=source_bundle.companyfacts_manifest_path,
+            companyfacts_capture_path=source_bundle.companyfacts_capture_path,
+            companyfacts_response_path=source_bundle.companyfacts_response_path,
+            recent_submissions=exact_source(source_bundle.recent_submissions),
+            older_submissions=tuple(exact_source(item) for item in raw_older),
+        )
+    except CompanyFactsLedgerError:
+        raise
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise CompanyFactsLedgerError(
+            "pinned Company Facts conversion configuration is invalid"
+        ) from exc
+    submissions_recorded_dt, _ = _required_utc(
+        submissions_recorded_at, field="submissions_recorded_at"
+    )
+    sealed_authority = _pinned_authority(authority)
+    source_snapshot_dt, _ = _required_utc(
+        getattr(sealed_authority, "snapshot_at", None),
+        field="pinned source snapshot_at",
+    )
+    if submissions_recorded_dt > source_snapshot_dt:
+        raise CompanyFactsLedgerError(
+            "submissions_recorded_at cannot be after pinned source snapshot_at"
+        )
+    budget = _PinnedReadBudget(maximum=config.max_total_input_bytes)
+    try:
+        from collectors.fundamental_forensics_companyfacts import (
+            companyfacts_capture_from_json_bytes,
+            companyfacts_capture_storage_key,
+            companyfacts_manifest_storage_key,
+            parse_companyfacts_response_exact_numbers,
+            validate_companyfacts_manifest,
+            validate_companyfacts_response_bytes,
+        )
+
+        manifest_content = _read_pinned_file(
+            sealed_authority,
+            kind="archive",
+            relative_path=source_bundle.companyfacts_manifest_path,
+            label="Company Facts manifest",
+            maximum_bytes=config.max_payload_bytes,
+            budget=budget,
+        )
+        capture_content = _read_pinned_file(
+            sealed_authority,
+            kind="raw",
+            relative_path=source_bundle.companyfacts_capture_path,
+            label="Company Facts capture",
+            maximum_bytes=config.max_payload_bytes,
+            budget=budget,
+        )
+        manifest = _strict_source_json_object(
+            manifest_content,
+            label="Company Facts manifest",
+            maximum_bytes=config.max_payload_bytes,
+        )
+        try:
+            validate_companyfacts_manifest(manifest)
+        except Exception as exc:  # collector owns this source contract.
+            raise CompanyFactsLedgerError("Company Facts manifest is invalid") from exc
+        if source_canonical_json(manifest).encode("utf-8") != manifest_content:
+            raise CompanyFactsLedgerError("Company Facts manifest is not canonical")
+        for clock_name, clock_value in manifest["clocks"].items():
+            clock_dt, _ = _required_utc(
+                clock_value,
+                field=f"Company Facts manifest {clock_name}",
+            )
+            if clock_dt > source_snapshot_dt:
+                raise CompanyFactsLedgerError(
+                    "Company Facts manifest clock cannot be after pinned source snapshot_at"
+                )
+        if (
+            companyfacts_manifest_storage_key(manifest)
+            != source_bundle.companyfacts_manifest_path
+            or manifest["issuer"]["cik"] != source_bundle.cik
+        ):
+            raise CompanyFactsLedgerError(
+                "Company Facts manifest does not bind source bundle CIK/path"
+            )
+        try:
+            capture = companyfacts_capture_from_json_bytes(capture_content)
+        except Exception as exc:  # collector owns this source contract.
+            raise CompanyFactsLedgerError("Company Facts capture is invalid") from exc
+        if companyfacts_capture_storage_key(capture.cik, capture.capture_id) != source_bundle.companyfacts_capture_path:
+            raise CompanyFactsLedgerError(
+                "Company Facts capture path does not bind identity"
+            )
+        if capture.cik != source_bundle.cik or manifest["source"]["capture_id"] != capture.capture_id:
+            raise CompanyFactsLedgerError("Company Facts manifest/capture chain is inconsistent")
+        if dict(capture.clocks) != manifest["clocks"]:
+            raise CompanyFactsLedgerError(
+                "Company Facts manifest clocks differ from capture receipt"
+            )
+        if (
+            manifest["source"]["response_sha256"] != capture.response["sha256"]
+            or manifest["source"]["response_bytes"] != capture.response["bytes"]
+        ):
+            raise CompanyFactsLedgerError(
+                "Company Facts manifest/capture response chain is inconsistent"
+            )
+        if capture.response["object_path"] != source_bundle.companyfacts_response_path:
+            raise CompanyFactsLedgerError(
+                "Company Facts response path does not bind capture"
+            )
+        response_length = capture.response["bytes"]
+        if response_length > config.max_payload_bytes:
+            raise CompanyFactsLedgerInputTooLarge(
+                "Company Facts response exceeds bounded payload input limit"
+            )
+        response_content = _read_pinned_gzip_file(
+            sealed_authority,
+            relative_path=source_bundle.companyfacts_response_path,
+            expected_sha256=capture.response["sha256"],
+            expected_length=response_length,
+            label="Company Facts response",
+            maximum_bytes=config.max_payload_bytes,
+            budget=budget,
+        )
+        try:
+            _, logical, occurrence_count, occurrence_sha = validate_companyfacts_response_bytes(
+                response_content,
+                expected_cik=source_bundle.cik,
+            )
+        except Exception as exc:  # collector owns exact Company Facts decoding.
+            raise CompanyFactsLedgerError("Company Facts response is invalid") from exc
+        logical_sha = _sha256(logical)
+        if (
+            logical_sha != manifest["source"]["logical_sha256"]
+            or len(logical) != manifest["source"]["logical_bytes"]
+            or occurrence_count != manifest["source"]["fact_occurrence_count"]
+            or occurrence_sha != manifest["source"]["fact_occurrence_sha256"]
+            or logical_sha != capture.logical["sha256"]
+            or len(logical) != capture.logical["bytes"]
+            or occurrence_count != capture.logical["fact_occurrence_count"]
+            or occurrence_sha != capture.logical["fact_occurrence_sha256"]
+        ):
+            raise CompanyFactsLedgerError("Company Facts logical source chain is inconsistent")
+        try:
+            companyfacts = parse_companyfacts_response_exact_numbers(
+                response_content,
+                expected_cik=source_bundle.cik,
+            )
+        except Exception as exc:  # collector owns exact number parsing.
+            raise CompanyFactsLedgerError(
+                "Company Facts exact-number projection is invalid"
+            ) from exc
+
+        submissions = _load_pinned_submissions_source(
+            sealed_authority,
+            source=source_bundle.recent_submissions,
+            cik=source_bundle.cik,
+            config=config,
+            submissions_recorded_at=submissions_recorded_dt,
+            source_snapshot_at=source_snapshot_dt,
+            budget=budget,
+        )
+        declared_older = _declared_older_files(
+            submissions,
+            cik=source_bundle.cik,
+        )
+        supplied_older = tuple(
+            sorted(source.source_name for source in source_bundle.older_submissions)
+        )
+        if supplied_older != declared_older:
+            raise CompanyFactsLedgerError(
+                "declared older Submissions files must exactly match supplied pinned sources"
+            )
+        older_payloads = {
+            source.source_name: _load_pinned_submissions_source(
+                sealed_authority,
+                source=source,
+                cik=source_bundle.cik,
+                config=config,
+                submissions_recorded_at=submissions_recorded_dt,
+                source_snapshot_at=source_snapshot_dt,
+                budget=budget,
+            )
+            for source in source_bundle.older_submissions
+        }
+    except CompanyFactsLedgerError:
+        raise
+    except Exception as exc:
+        raise CompanyFactsLedgerError(
+            "pinned Company Facts conversion inputs are invalid"
+        ) from exc
+    return convert_companyfacts_to_raw_ledger(
+        companyfacts=companyfacts,
+        capture_manifest=manifest,
+        submissions=submissions,
+        submissions_recorded_at=submissions_recorded_at,
+        older_submissions_files=older_payloads,
+        revision_evidence=revision_evidence,
+        **config.conversion_kwargs(),
+    )
+
+
+# This name keeps adjacent source-materialization callers from needing to know
+# the raw-ledger implementation detail while preserving the strict same API.
+materialize_companyfacts_ledger_from_pinned_source = (
+    load_companyfacts_ledger_from_pinned_source
+)
+
+
 # Intent-revealing aliases for adjacent ingestion/query lanes.  They all use
 # the same strict contract and avoid a second source adapter vocabulary.
 convert_verified_companyfacts_to_raw_ledger = convert_companyfacts_to_raw_ledger
@@ -1799,15 +2557,20 @@ __all__ = [
     "HARD_MAX_SUBMISSION_ROWS",
     "HARD_MAX_TOTAL_INPUT_BYTES",
     "SUBMISSIONS_CLOCK_SCOPE",
+    "CompanyFactsConversionSourceBundle",
     "CompanyFactsLedgerConversion",
+    "CompanyFactsLedgerConversionConfig",
     "CompanyFactsLedgerError",
     "CompanyFactsLedgerInputTooLarge",
     "CompanyFactsLedgerOccurrence",
     "CompanyFactsLedgerReceipt",
+    "PinnedSubmissionsSource",
     "RevisionEvidence",
     "SubmissionSourceWitness",
     "build_companyfacts_ledger",
     "convert_companyfacts_to_raw_ledger",
     "convert_verified_companyfacts_to_raw_ledger",
     "ingest_companyfacts_to_raw_ledger",
+    "load_companyfacts_ledger_from_pinned_source",
+    "materialize_companyfacts_ledger_from_pinned_source",
 ]

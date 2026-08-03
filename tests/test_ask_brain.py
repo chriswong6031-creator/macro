@@ -218,10 +218,12 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_stage_analysis" in names
     # Verified immutable earnings/event context reader must also be present
     assert "read_company_intelligence" in names
+    # Exact receipt-bound earnings evidence reader must also be present
+    assert "read_earnings_evidence" in names
     # China flows tool (committed Tushare plane) must also be present
     assert "read_china_flows" in names
-    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 1 china-flows + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis + 1 Company Intelligence = 29 total read tools (see _ASK_READ_TOOLS)
-    assert len(names) == 29
+    # Existing 29 read tools + 1 exact earnings-evidence reader.
+    assert len(names) == 30
 
 
 def test_dispatch_refuses_write_tools():
@@ -1493,11 +1495,13 @@ def test_read_tool_schemas_count_and_options_tools_present():
     assert "read_stage_analysis" in names
     # Verified immutable earnings/event reader present
     assert "read_company_intelligence" in names
+    # Exact receipt-bound earnings evidence reader present
+    assert "read_earnings_evidence" in names
     # China flows read tool present (committed Tushare plane)
     assert "read_china_flows" in names
-    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 1 china-flows + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis + 1 Company Intelligence = 29
-    assert len(schemas) == 29, (
-        f"Expected 29 read tools, got {len(schemas)}: {sorted(names)}"
+    # Existing 29 read tools + 1 exact earnings-evidence reader.
+    assert len(schemas) == 30, (
+        f"Expected 30 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):

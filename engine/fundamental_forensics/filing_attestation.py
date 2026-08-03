@@ -91,6 +91,27 @@ class FilingAttestationError(ValueError):
     """An attestation input cannot safely make the narrow ``ffatt_`` claim."""
 
 
+def gzip_stored_byte_ceiling(expected_raw_bytes: int) -> int:
+    """Return a conservative stored-gzip ceiling for one bounded raw object."""
+    if (
+        isinstance(expected_raw_bytes, bool)
+        or not isinstance(expected_raw_bytes, int)
+        or expected_raw_bytes < 0
+        or expected_raw_bytes > HARD_MAX_COMPANYFACTS_RESPONSE_BYTES
+    ):
+        raise FilingAttestationError(
+            "expected gzip raw byte length is outside bounded range"
+        )
+    return min(
+        HARD_MAX_COMPANYFACTS_RESPONSE_BYTES,
+        expected_raw_bytes
+        + (expected_raw_bytes >> 12)
+        + (expected_raw_bytes >> 14)
+        + (expected_raw_bytes >> 25)
+        + 64,
+    )
+
+
 def _text(value: Any, *, field: str, maximum: int = MAX_TEXT_BYTES) -> str:
     if not isinstance(value, str) or not value or value != value.strip():
         raise FilingAttestationError(f"{field} must be non-empty normalized text")
@@ -303,6 +324,7 @@ class SourceAuthority(Protocol):
         expected_sha256: str,
         expected_length: int,
         maximum_bytes: int,
+        maximum_stored_bytes: int | None = None,
     ) -> ArchiveDocumentRead: ...
 
     def read_archive_document(
@@ -311,6 +333,7 @@ class SourceAuthority(Protocol):
         storage_key: str,
         expected_receipt: Mapping[str, Any],
         maximum_bytes: int,
+        maximum_stored_bytes: int | None = None,
     ) -> ArchiveDocumentRead: ...
 
 
@@ -383,8 +406,27 @@ class PinnedSourceAuthority:
         expected_sha256: str,
         expected_length: int,
         maximum_bytes: int,
+        maximum_stored_bytes: int | None = None,
     ) -> ArchiveDocumentRead:
-        obj = self._read(kind=kind, relative_path=relative_path, maximum_bytes=HARD_MAX_COMPANYFACTS_RESPONSE_BYTES)
+        stored_limit = (
+            HARD_MAX_COMPANYFACTS_RESPONSE_BYTES
+            if maximum_stored_bytes is None
+            else maximum_stored_bytes
+        )
+        if (
+            isinstance(stored_limit, bool)
+            or not isinstance(stored_limit, int)
+            or stored_limit < 1
+            or stored_limit > HARD_MAX_COMPANYFACTS_RESPONSE_BYTES
+        ):
+            raise FilingAttestationError(
+                "source gzip stored-byte limit is outside bounded range"
+            )
+        obj = self._read(
+            kind=kind,
+            relative_path=relative_path,
+            maximum_bytes=stored_limit,
+        )
         raw = self._inflate(obj.content, expected_sha256=expected_sha256, expected_length=expected_length, maximum_bytes=maximum_bytes)
         # CF gzip files deliberately have no SEC archive-receipt sidecar.
         return ArchiveDocumentRead(
@@ -400,6 +442,7 @@ class PinnedSourceAuthority:
         storage_key: str,
         expected_receipt: Mapping[str, Any],
         maximum_bytes: int,
+        maximum_stored_bytes: int | None = None,
     ) -> ArchiveDocumentRead:
         expected = _copy_json(expected_receipt, field="expected archive receipt", budget=[10_000])
         if not isinstance(expected, dict):
@@ -426,7 +469,25 @@ class PinnedSourceAuthority:
             raise FilingAttestationError("source archive receipt sidecar differs from package receipt")
         if decoded.storage_key != storage_key or decoded.byte_length > maximum_bytes:
             raise FilingAttestationError("source archive receipt does not bind requested bounded object")
-        obj = self._read(kind="archive", relative_path=storage_key, maximum_bytes=HARD_MAX_COMPANYFACTS_RESPONSE_BYTES)
+        stored_limit = (
+            HARD_MAX_COMPANYFACTS_RESPONSE_BYTES
+            if maximum_stored_bytes is None
+            else maximum_stored_bytes
+        )
+        if (
+            isinstance(stored_limit, bool)
+            or not isinstance(stored_limit, int)
+            or stored_limit < 1
+            or stored_limit > HARD_MAX_COMPANYFACTS_RESPONSE_BYTES
+        ):
+            raise FilingAttestationError(
+                "source archive stored-byte limit is outside bounded range"
+            )
+        obj = self._read(
+            kind="archive",
+            relative_path=storage_key,
+            maximum_bytes=stored_limit,
+        )
         try:
             raw = read_archive_object_bytes(obj.content, decoded)
         except Exception as exc:  # collector owns exact bounded gzip replay.
@@ -1269,5 +1330,5 @@ __all__ = [
     "FILING_ATTESTATION_ID_PREFIX", "FILING_ATTESTATION_SCHEMA", "FilingAttestation",
     "FilingAttestationError", "HARD_MAX_FILING_ATTESTATION_BYTES", "PinnedSourceAuthority",
     "SourceAuthority", "SourceFileRead", "SourceWitness", "build_filing_attestation",
-    "filing_attestation_from_json_bytes", "filing_attestation_json_bytes", "validate_filing_attestation", "verify_filing_attestation_source",
+    "filing_attestation_from_json_bytes", "filing_attestation_json_bytes", "gzip_stored_byte_ceiling", "validate_filing_attestation", "verify_filing_attestation_source",
 ]

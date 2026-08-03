@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_source_snapshot_v2.schema.json",
+  "title": "Authenticated Company Facts source snapshot v2",
+  "description": "One immutable authenticated Company Facts manifest snapshot and its receipt-bound fact views. The full bridge receipt is separately closed by its own contract and validator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source_snapshot_id", "bridge_receipt_id", "source_manifest_id", "bridge_receipt", "snapshot_fact_observations", "fact_links", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_source_snapshot.v2"},
+    "source_snapshot_id": {"type": "string", "pattern": "^companyfacts-snapshot-v2:cs:[a-f0-9]{24}$"},
+    "bridge_receipt_id": {"type": "string", "pattern": "^companyfacts-bridge:cs:[a-f0-9]{24}$"},
+    "source_manifest_id": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"},
+    "bridge_receipt": {"type": "object"},
+    "snapshot_fact_observations": {"type": "array", "maxItems": 250000, "items": {"type": "object"}},
+    "fact_links": {"type": "array", "maxItems": 250000, "items": {"$ref": "#/$defs/fact_link"}},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "fact_link": {"type": "object", "additionalProperties": false, "required": ["logical_observation_id", "snapshot_fact_observation_id"], "properties": {"logical_observation_id": {"type": "string", "pattern": "^share-count-slot-v2:cs:[a-f0-9]{24}$"}, "snapshot_fact_observation_id": {"type": "string", "pattern": "^share-count-snapshot-fact-v2:cs:[a-f0-9]{24}$"}}},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"], "properties": {"is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}}}
+  }
+}

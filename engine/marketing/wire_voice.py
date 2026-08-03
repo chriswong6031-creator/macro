@@ -38,6 +38,7 @@ Public API:
     ai_tell_lexicon(root=None, cfg=None) -> list[str]   # strict: raises
     resolve_llm_tier(item, *, cfg) -> str      # "flagship" | "volume"
     resolve_model_key(item, *, cfg) -> str
+    strip_wire_opener(body) -> str
     compose_post(*, opener, summary, attribution, tape_stamp="") -> str
 """
 from __future__ import annotations
@@ -584,6 +585,66 @@ def resolve_model_key(item: dict, *, cfg: dict | None = None) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Double-opener strip — the wire's own hook, in front of ours
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The openers a wire writes into its OWN body text. Anchored at the head of the
+#: body only, and the separator is required — an item that merely opens with the
+#: word "Breaking" (no colon/dash) is prose, not a hook.
+_WIRE_OPENERS_RE = re.compile(
+    r"^\s*(?:JUST\s*IN|BREAKING|URGENT|ALERT|DEVELOPING|NEWS|FLASH|UPDATE)"
+    r"\s*[:\-–—]+\s*",
+    re.IGNORECASE,
+)
+
+
+def _split_leading_non_letters(text: str) -> tuple[str, str]:
+    """Split off the run of leading NON-LETTER characters (emoji, flags, space)."""
+    idx = next((i for i, ch in enumerate(text) if ch.isalpha()), len(text))
+    return text[:idx], text[idx:]
+
+
+def strip_wire_opener(body: str) -> str:
+    """Remove an embedded wire opener ('JUST IN:', 'BREAKING:') from the head of *body*.
+
+    Live defect 2026-08-02: "Now crossing. JUST IN: 🇺🇸🇮🇷 US CENTCOM says ..." —
+    our rotating opener prepended to a body that already carried the wire's own.
+    Two hooks in a row read as a scrape, and the second one is not ours to make.
+
+    Behaviour:
+      * ANCHORED. Only a hook at the head of the body is removed; a
+        mid-sentence "breaking" ("the story is breaking: ...") is prose and is
+        left alone.
+      * STACKED hooks collapse ("BREAKING: JUST IN: text" -> "text"): the loop
+        runs until nothing more matches.
+      * LEADING NON-LETTERS ARE PRESERVED, IN PLACE. Real posts carry flags and
+        sirens on either side of the hook. "JUST IN: 🇺🇸🇮🇷 US CENTCOM..." keeps
+        its flags (they sit after the hook and simply become the new head);
+        "🚨 BREAKING: text" -> "🚨 text" (they sit before it and are carried
+        forward). Either way the emoji survive and their order relative to the
+        surviving words is unchanged — the hook is the only thing removed.
+      * NEVER EMPTIES A BODY. A body that is nothing but a hook is returned
+        unchanged; deleting it would hand the composer a bald opener with no
+        sentence behind it, which is worse than the doubled hook.
+    """
+    text = str(body or "")
+    prefix = ""
+    rest = text
+    while True:
+        lead, rest = _split_leading_non_letters(rest)
+        prefix += lead
+        stripped = _WIRE_OPENERS_RE.sub("", rest, count=1)
+        if stripped == rest:
+            break
+        rest = stripped
+
+    out = prefix + rest
+    if text.strip() and not out.strip():
+        return text
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Post composition — opener + body + attribution + tape stamp
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -611,6 +672,13 @@ def compose_post(
     """
     opener = str(opener or "").strip()
     body = str(summary or "").strip()
+    # DOUBLE-OPENER STRIP (2026-08-02). The wire's body can already lead with the
+    # wire's OWN hook ("JUST IN: ..."), and prepending ours in front of it shipped
+    # "Now crossing. JUST IN: 🇺🇸🇮🇷 US CENTCOM says ...". Only when WE are adding
+    # a hook: with no opener of our own the wire's is the only one there is, and
+    # removing it would leave the post opening on a bald fragment.
+    if opener:
+        body = strip_wire_opener(body).strip()
     # An opener joins the body with a single space ("🚨 TRUMP: <body>",
     # "Now crossing. <body>"); the pool phrases already carry their own trailing
     # colon/period punctuation. An empty opener leaves the body to lead on its own.

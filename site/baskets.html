@@ -60,7 +60,9 @@
 <p>The 47 equal-weight theme baskets — the action lanes, the rotation map and the performance explorer — merged into one page with the sector cycle map and the whole-market rotation desk.</p>
 <p><a href="sector_central.html#actnow-section">Open Sector Intelligence →</a></p>
 </main>
-<script>location.replace("sector_central.html#actnow-section")</script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
+<script>
+if(location.hash&&location.hash.startsWith('#theme-')){location.replace('sector_central.html'+location.hash)}
+else{location.replace("sector_central.html#actnow-section")}
+</script>
 </body>
 </html>

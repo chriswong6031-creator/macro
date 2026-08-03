@@ -1,0 +1,40 @@
+{
+  "contract": "government_revenue.idv_discovery_config.v1",
+  "schema_version": "1.0.0",
+  "enabled": true,
+  "reviewed_at": "2026-08-02T23:45:00+00:00",
+  "max_idvs": 24,
+  "collection_scope_tickers": [
+    "BA",
+    "GD",
+    "HII",
+    "LMT",
+    "NOC",
+    "RTX"
+  ],
+  "filters": {
+    "recipient_search_text": [
+      "GENERAL DYNAMICS",
+      "HUNTINGTON INGALLS",
+      "LOCKHEED MARTIN",
+      "NORTHROP GRUMMAN",
+      "RAYTHEON",
+      "THE BOEING COMPANY"
+    ],
+    "award_type_codes": [
+      "IDV_A",
+      "IDV_B",
+      "IDV_B_A",
+      "IDV_B_B",
+      "IDV_B_C",
+      "IDV_C",
+      "IDV_D",
+      "IDV_E"
+    ]
+  },
+  "limitations": [
+    "Recipient search terms define bounded collection scope only; they do not establish issuer attribution, subsidiary ownership, vehicle participation, or beneficiary status.",
+    "Discovery is sorted by source-reported award amount and capped before activity collection; omission is not evidence that an IDV does not exist.",
+    "Every published relationship must still be observed on the official USAspending IDV activity endpoint and bridge to a definitive award only by exact generated ID."
+  ]
+}

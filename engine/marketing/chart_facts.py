@@ -70,7 +70,8 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import datetime
+import re
+from datetime import date as _date, datetime, timedelta as _timedelta
 
 log = logging.getLogger(__name__)
 
@@ -1110,3 +1111,838 @@ def compute_facts(
                 numbers_whitelist.append(num)
 
     return {"facts": facts, "numbers_whitelist": numbers_whitelist}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# TrendSpider hardening PR-C — timeframe, stage and attention facts
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# THE FORMING-BAR LAW (PR-A handoff, masterplan §3 PR-C.2).
+#
+# ``chart_render.resample_bars`` deliberately KEEPS the forming weekly/monthly
+# bucket: a chart that hid the current week would hide "you are here", which is
+# the whole point of the annotation grammar. ``engine/weinstein_stage.py``
+# deliberately DROPS it: a signal computed from a partial bar is a signal about
+# a week that has not finished happening.
+#
+# Facts live on the weinstein side of that split, and nothing in the repo said
+# so until now. On a Wednesday, a name's forming week is two days old; if the
+# fact layer consumed it, a two-day dip would mint "worst week since 2022" and
+# the caption would ship over a chart whose last bar is a stub. By Friday the
+# same week can close green. So EVERY fact below is computed on
+# ``resample_completed`` output — the resampled series MINUS the forming bucket
+# — while the chart the director builds still plots the live bar. The two
+# series differ by exactly one bar, on purpose, and the director maps fact
+# anchors to chart bars BY DATE so the off-by-one can never silently shift a
+# spotlight onto the wrong candle (chart_director._index_of_date).
+#
+# THE WINDOW CONTRACT (masterplan §0 gate 2, the claim-window law). Every fact
+# emitted here carries:
+#
+#   window_start   ISO date of the OLDEST bar the claim depends on. "Four red
+#                  weeks" depends on four weeks; "longest red run in 3 years"
+#                  depends on everything back three years, and those are
+#                  different windows for the same streak.
+#   window_bars    how many bars of the fact's OWN timeframe that window spans.
+#   timeframe      DAILY | WEEKLY | MONTHLY — the bars the fact was measured on.
+#   claim_kind     which row of the director's doctrine table this fact selects.
+#   anchor_dates   bars the chart should point at (touches, record bars, prior
+#                  instances) as DATES, never indices.
+#
+# The director refuses to attach a fact whose ``window_start`` falls outside the
+# plotted axis (widen the chart, rescope, or drop the fact). A fact with no
+# ``window_start`` is treated as UNBOUNDED and refused outright for superlative
+# claim kinds — absent metadata must never read as "the window is fine".
+
+#: Claim kinds — the director's doctrine table is keyed on these.
+CLAIM_KINDS: tuple[str, ...] = (
+    "level_touch", "streak", "superlative", "analog", "volume_event",
+    "breakout", "stage_read", "post_event_drift", "valuation", "context",
+)
+
+#: Minimum COMPLETED bars a timeframe fact needs before it may speak at all.
+#: PIT law (§0 gate 3): a short history SUPPRESSES the fact — there is no
+#: snapshot to fall back to, and 12 weekly bars are not "three years of weekly
+#: bars with some missing".
+_MIN_TF_BARS: dict[str, int] = {"WEEKLY": 60, "MONTHLY": 36}
+
+#: Plain-word names for the PR-B pools. NO indicator vocabulary, no artifact
+#: names, no internal slugs — these strings reach a reader (banned-vocab law).
+_ATTENTION_WORDS: dict[str, str] = {
+    "retail_attention": "most-talked-about",
+    "options_volume": "busiest options tape",
+    "dollar_volume": "most-traded",
+}
+
+#: Stage flag → (plain-word copy phrase, chart-label idiom). The asymmetry is
+#: the law: the COPY says "marking up", the CHART LABEL may say "Stage 2".
+_STAGE_WORDS: dict[int, tuple[str, str]] = {
+    1: ("building a base", "Stage 1"),
+    2: ("marking up", "Stage 2"),
+    3: ("stalling out", "Stage 3"),
+    4: ("under distribution", "Stage 4"),
+}
+
+_STAGE_WHY_RE = re.compile(r"stage\s+(\d)", re.I)
+
+#: Per-process memo for the PR-B pools, keyed by (pool, root, as_of).
+#:
+#: WHY THIS IS NOT A NICETY. The pool functions are ticker-agnostic — each one
+#: reads a whole artifact and ranks it — but the fact functions below are called
+#: PER TICKER. ``data/options_flow`` is 383 separate parquet files; charting
+#: thirty names a night without this memo re-reads that tree thirty times, three
+#: pools deep, on a render budget that is law (~67 min, 4-core-bound). The
+#: nightly builds one plan in one process, so the memo lives exactly as long as
+#: the answer stays true, and the key carries ``as_of`` so a caller that walks
+#: two dates gets two answers rather than the first one twice.
+_POOL_CACHE: dict[tuple, list[dict]] = {}
+
+
+def reset_pool_cache() -> None:
+    """Drop the pool memo. For tests that mutate an artifact between calls."""
+    _POOL_CACHE.clear()
+
+
+def _cached_pool(name: str, fn, root: object, as_of: object) -> list[dict]:
+    """One pool read per (pool, root, as_of) per process. [] on any failure."""
+    key = (name, str(root), str(as_of))
+    if key not in _POOL_CACHE:
+        try:
+            _POOL_CACHE[key] = list(fn(root, as_of=as_of) or [])
+        except Exception:  # noqa: BLE001
+            _POOL_CACHE[key] = []
+    return _POOL_CACHE[key]
+
+
+def _packet(facts: list[dict]) -> dict:
+    """Sort, dedupe by id, and build the numbers whitelist. The packet shape."""
+    facts = sorted(facts, key=lambda f: (-int(f.get("salience", 0)), str(f.get("id"))))
+    seen: set[str] = set()
+    kept: list[dict] = []
+    for f in facts:
+        fid = str(f.get("id"))
+        if fid in seen:
+            continue
+        seen.add(fid)
+        kept.append(f)
+    whitelist: list[str] = []
+    seen_nums: set[str] = set()
+    for f in kept:
+        for num in f.get("numbers", []):
+            if num and num not in seen_nums:
+                seen_nums.add(num)
+                whitelist.append(num)
+    return {"facts": kept, "numbers_whitelist": whitelist}
+
+
+def merge_packets(*packets: dict) -> dict:
+    """Merge fact packets, keeping the first fact for any repeated id."""
+    facts: list[dict] = []
+    for p in packets:
+        if isinstance(p, dict):
+            facts.extend(p.get("facts") or [])
+    return _packet(facts)
+
+
+def _tf_label(timeframe: str) -> tuple[str, str]:
+    """('week', 'weeks') / ('month', 'months') for a normalised timeframe."""
+    return ("month", "months") if timeframe == "MONTHLY" else ("week", "weeks")
+
+
+def _years_phrase(bars: int, timeframe: str) -> str:
+    """Plain-word span for a bar count on a resampled series.
+
+    Years/months so the sentence reads cold. The only numeral it can produce is
+    the year count, and every caller whitelists that token explicitly — a span
+    phrase that reaches copy with an unlicensed number is the same defect as
+    the "first time since a while" placeholder above.
+    """
+    per_year = 52 if timeframe == "WEEKLY" else 12
+    years = bars / per_year
+    if years >= 1.9:
+        return f"{int(years)} years"
+    if years >= 0.92:
+        return "a year"
+    months = max(1, round(bars / (per_year / 12.0)))
+    return "a month" if months == 1 else f"{months} months"
+
+
+def _span_numbers(span: str) -> list[str]:
+    """The numeric tokens inside a ``_years_phrase`` result, for the whitelist."""
+    return [tok for tok in span.split() if tok.isdigit()]
+
+
+def _years_adj(bars: int, timeframe: str) -> str:
+    """``_years_phrase`` in ADJECTIVE form — "12-year", "one-year", "6-month".
+
+    "its 12 years high" is not a sentence a person writes, and the cold-read law
+    says a line that only parses because you know what you meant gets rewritten.
+    Same window, same whitelist tokens (the hyphenated form still tokenises to
+    the bare digits), different grammar.
+    """
+    span = _years_phrase(bars, timeframe)
+    if span == "a year":
+        return "one-year"
+    if span == "a month":
+        return "one-month"
+    return span.replace(" years", "-year").replace(" months", "-month")
+
+
+def bucket_end(iso_date: str, timeframe: str) -> str:
+    """The bucket LABEL a daily date resamples into ('' when unparseable).
+
+    Mirrors ``chart_render._bucket_label`` exactly — W-FRI weeks are labelled by
+    their Friday, months by their last calendar day — so a fact bucket and a
+    chart bucket are the same object. Reimplemented rather than imported
+    because this module has no other reason to import the renderer; the two are
+    pinned together by tests/test_chart_director.py.
+    """
+    try:
+        d = datetime.strptime(str(iso_date)[:10], "%Y-%m-%d").date()
+    except Exception:  # noqa: BLE001
+        return ""
+    tf = str(timeframe or "DAILY").upper()
+    if tf == "WEEKLY":
+        return (d + _timedelta(days=(4 - d.weekday()) % 7)).isoformat()
+    if tf == "MONTHLY":
+        nxt = _date(d.year + (d.month == 12), (d.month % 12) + 1, 1)
+        return (nxt - _timedelta(days=1)).isoformat()
+    return str(iso_date)[:10]
+
+
+def resample_completed(
+    dates: list[str],
+    o: list[float],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    v: list[float],
+    timeframe: str,
+) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]]:
+    """Daily OHLCV → COMPLETED weekly/monthly bars. The fact layer's series.
+
+    ``chart_render.resample_bars`` with the forming bucket removed. The test is
+    exact rather than calendar-guessed: the final bucket is complete only when
+    the last DAILY bar in the input reaches that bucket's own end label (its
+    Friday, or the month's last day). A Wednesday input therefore drops the week
+    it is standing in, which is the point — a Friday-partial week must not mint
+    a "worst week" fact.
+
+    Holiday weeks: a week whose Friday is a market holiday ends on Thursday and
+    its bucket label is still that Friday, so this drops it as forming. That is
+    a one-bar lag on a handful of weeks a year, in the safe direction — a fact
+    that arrives a week late is a far smaller defect than a fact minted from a
+    bar that has not finished. DAILY passes through untouched.
+    """
+    from engine.marketing.chart_render import normalize_timeframe, resample_bars
+
+    tf = normalize_timeframe(timeframe)
+    res = resample_bars(dates, o, h, l, c, v, tf)
+    if tf == "DAILY" or not res[0] or not dates:
+        return res
+    last_daily = str(dates[-1])[:10]
+    last_bucket = str(res[0][-1])[:10]
+    if last_daily < last_bucket:
+        return tuple(col[:-1] for col in res)  # type: ignore[return-value]
+    return res
+
+
+def _ordinal(n: int) -> str:
+    """'3rd' — plain ordinal for a touch count."""
+    if 10 <= n % 100 <= 20:
+        return f"{n}th"
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }".replace(" ", "")
+
+
+def _fact_tf_streak(
+    ticker: str,
+    dates: list[str],
+    o: list[float],
+    c: list[float],
+    timeframe: str,
+) -> dict | None:
+    """Consecutive same-direction COMPLETED bars, plus a scoped rarity clause.
+
+    TWO WINDOWS, ONE STREAK, and keeping them apart is the whole §0.2 lesson.
+    The bare count ("four red weeks in a row") is evidenced by the streak
+    itself, so ``window_start`` is the streak's first bar. The rarity clause
+    ("its longest run in 3 years") is evidenced by every bar the search covered,
+    so when that clause fires ``window_start`` jumps back to the start of the
+    search. Conflating them is exactly the failure mode the corpus study caught:
+    a 3-year chart carrying a claim measured over 12.
+    """
+    n = len(c)
+    if n < 8:
+        return None
+    _sing, plur = _tf_label(timeframe)
+
+    up = 0
+    for i in range(n - 1, -1, -1):
+        if c[i] > o[i]:
+            up += 1
+        else:
+            break
+    dn = 0
+    for i in range(n - 1, -1, -1):
+        if c[i] < o[i]:
+            dn += 1
+        else:
+            break
+    streak, direction = (up, "up") if up >= dn else (dn, "down")
+    if streak < 3:
+        return None
+
+    start_idx = n - streak
+    count_str = str(streak)
+    word = "green" if direction == "up" else "red"
+    text = f"{ticker} has closed {word} {count_str} {plur} in a row"
+    numbers = [count_str]
+    window_start = str(dates[start_idx])[:10]
+    window_bars = streak
+    salience = 6
+    claim_kind = "streak"
+
+    # Rarity clause — was a run this long seen anywhere earlier in the series?
+    prior_max = 0
+    run = 0
+    for i in range(0, start_idx):
+        matched = (c[i] > o[i]) if direction == "up" else (c[i] < o[i])
+        run = run + 1 if matched else 0
+        prior_max = max(prior_max, run)
+    if streak > prior_max and start_idx >= 8:
+        span = _years_phrase(start_idx, timeframe)
+        text = f"{text}, its longest run in {span}"
+        numbers.extend(_span_numbers(span))
+        window_start = str(dates[0])[:10]
+        window_bars = n
+        salience = 8
+        claim_kind = "superlative"
+
+    return {
+        "id": f"tf_streak_{direction}",
+        "text": text,
+        "salience": salience,
+        "basis": "close",
+        "numbers": numbers,
+        "timeframe": timeframe,
+        "claim_kind": claim_kind,
+        "window_start": window_start,
+        "window_bars": window_bars,
+        "anchor_dates": [str(d)[:10] for d in dates[start_idx:]],
+        "streak_len": streak,
+        "streak_direction": direction,
+        "callout": f"{streak} {word} {plur} in a row",
+    }
+
+
+def _fact_tf_record(
+    ticker: str,
+    dates: list[str],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    timeframe: str,
+) -> dict | None:
+    """A COMPLETED bar that closed at the highest/lowest close of the series.
+
+    CLOSE BASIS ONLY. The intraday ladder ``_fact_52w_high_low`` runs is right
+    for daily bars a reader can check against a quote page; on a weekly bar the
+    intraday extreme belongs to one unnamed session inside the week, and
+    "traded up to X" would point at a bar the chart does not draw separately.
+    """
+    n = len(c)
+    if n < 20:
+        return None
+    prior_c = c[: n - 1]
+    if not prior_c:
+        return None
+    last = c[-1]
+    sing, _plur = _tf_label(timeframe)
+    span = _years_phrase(n, timeframe)
+    numbers = [_fmt_price(last)] + _span_numbers(span)
+
+    if last > max(prior_c):
+        text = (f"{ticker} closed the {sing} at its highest level in {span} "
+                f"({_fmt_price(last)})")
+        fid = "tf_record_high"
+        anchor = _last_set_at(prior_c, max(prior_c))
+        callout = f"Highest {sing}ly close in {span}"
+    elif last < min(prior_c):
+        text = (f"{ticker} closed the {sing} at its lowest level in {span} "
+                f"({_fmt_price(last)})")
+        fid = "tf_record_low"
+        anchor = _last_set_at(prior_c, min(prior_c))
+        callout = f"Lowest {sing}ly close in {span}"
+    else:
+        return None
+
+    anchors = [str(dates[-1])[:10]]
+    # The PRIOR record only counts as a second disc when it is far enough back
+    # to read as a separate event. A record broken two bars ago produces two
+    # overlapping circles and says nothing (measured on the 2026-08 AMZN/KO/JPM
+    # monthly proofs — same trap as the analog gap rule above).
+    if anchor >= 0 and (len(prior_c) - anchor) >= _MIN_ANALOG_GAP_BARS:
+        anchors.insert(0, str(dates[anchor])[:10])
+    return {
+        "id": fid,
+        "text": text,
+        "salience": 9,
+        "basis": "close",
+        "numbers": numbers,
+        "timeframe": timeframe,
+        "claim_kind": "superlative",
+        "window_start": str(dates[0])[:10],
+        "window_bars": n,
+        "anchor_dates": anchors,
+        "level": round(float(last), 4),
+        "callout": callout,
+    }
+
+
+def _fact_tf_volume_record(
+    ticker: str,
+    dates: list[str],
+    v: list[float],
+    timeframe: str,
+) -> dict | None:
+    """Heaviest COMPLETED weekly/monthly volume of the series (volume event)."""
+    n = len(v)
+    if n < 20:
+        return None
+    prior = v[: n - 1]
+    if not prior or max(prior) <= 0 or v[-1] <= max(prior):
+        return None
+    sing, _plur = _tf_label(timeframe)
+    span = _years_phrase(n, timeframe)
+    return {
+        "id": "tf_volume_record",
+        "text": f"{ticker} traded its heaviest {sing} of volume in {span}",
+        "salience": 9,
+        "numbers": _span_numbers(span),
+        "timeframe": timeframe,
+        "claim_kind": "volume_event",
+        "window_start": str(dates[0])[:10],
+        "window_bars": n,
+        "anchor_dates": [str(dates[-1])[:10]],
+        # SCOPED TO THE WINDOW THE FACT MEASURED — "in 3 years", never "ever"
+        # (masterplan §1.3, the superlative-wider-than-the-axis failure).
+        "callout": f"Heaviest {sing} of volume in {span}",
+    }
+
+
+#: How close a bar has to come to a moving average to count as a TOUCH — 1.5%
+#: of the average's own value. Tight enough that a bar merely in the
+#: neighbourhood is not counted, loose enough that a gap-and-reclaim is.
+_MA_TOUCH_TOL = 0.012
+
+#: Bars within which two tags of the average are ONE visit.
+_MA_TOUCH_MERGE_BARS = 5
+
+#: Bars a prior instance must sit BEHIND the last bar to count as a PRECEDENT
+#: rather than as part of the event happening right now.
+_MIN_ANALOG_GAP_BARS = 8
+
+#: Most touches an "Nth touch" claim may carry — see the gate in
+#: :func:`_fact_ma_touches` for why the ceiling matters more than the floor.
+_MA_TOUCH_MAX = 6
+
+
+def _fact_ma_touches(
+    ticker: str,
+    dates: list[str],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    period: int,
+    label: str,
+    timeframe: str,
+    *,
+    lookback: int,
+) -> dict | None:
+    """Count touches of ONE moving average inside an EXPLICIT window.
+
+    THE WINDOW IS AN ARGUMENT, NOT A BY-PRODUCT. "Third touch of the 200-day"
+    is only true relative to a stated stretch of tape, and the version of this
+    claim that counts over "however many bars the caller happened to load" is
+    the one the corpus study caught asserting a base rate its own chart could
+    not show. ``lookback`` IS the window, ``window_start`` reports it, and the
+    director refuses the fact when that start is off the plotted axis.
+
+    Touch = the bar's LOW came within tolerance of the average while its close
+    stayed above (support), or the mirror image for resistance. The discs the
+    director draws sit on exactly those bars, so the count and the picture are
+    the same object — an in-frame base rate the reader can recount.
+    """
+    n = len(c)
+    if n < period + 10:
+        return None
+    sma = _sma(c, period)
+    if sma[-1] is None or float(sma[-1]) <= 0:
+        return None
+    start = max(period - 1, n - lookback)
+    if n - start < 10:
+        return None
+
+    above = c[-1] > float(sma[-1])
+    touches: list[int] = []
+    for i in range(start, n):
+        avg = sma[i]
+        if avg is None or avg <= 0:
+            continue
+        if above:
+            if abs(l[i] - avg) / avg <= _MA_TOUCH_TOL and c[i] >= avg:
+                touches.append(i)
+        elif abs(h[i] - avg) / avg <= _MA_TOUCH_TOL and c[i] <= avg:
+            touches.append(i)
+    # Collapse NEARBY bars — a week spent sitting ON the average is ONE visit,
+    # and counting it as five is how a "fifth touch" claim inflates itself into
+    # a number the chart cannot show. The window is _MA_TOUCH_MERGE_BARS wide,
+    # not "adjacent", because price rarely tags an average on consecutive bars:
+    # it tags, pops, and comes back two days later, which is one visit to a
+    # reader looking at the picture.
+    merged: list[int] = []
+    for i in touches:
+        if merged and i - merged[-1] <= _MA_TOUCH_MERGE_BARS:
+            merged[-1] = i
+            continue
+        merged.append(i)
+    # The claim is about NOW: the newest touch has to be the current bar or
+    # essentially it. An old cluster of touches is history, not a post.
+    if len(merged) < 2 or merged[-1] < n - 3:
+        return None
+    # AND AN UPPER BOUND, which matters more than the lower one. Past ~6 the
+    # "Nth touch" framing stops being a base rate and becomes a description of
+    # a name that simply lives on its average: AAPL prints an 8th touch of the
+    # 50-day, META a 14th, AMD a 13th, and a chart carrying fourteen discs is
+    # the clutter the grammar exists to refuse (§1.1). The honest post for
+    # those names is a different fact, not a weaker version of this one.
+    if len(merged) > _MA_TOUCH_MAX:
+        return None
+
+    count_str = str(len(merged))
+    avg_str = _fmt_price(float(sma[-1]))
+    side = "found buyers at" if above else "was turned away at"
+    span = (_years_adj(n - start, timeframe) + " stretch" if timeframe != "DAILY"
+            else "past " + _window_label(n - start))
+    text = (f"{ticker} {side} its {label} ({avg_str}) for the "
+            f"{_ordinal(len(merged))} time in the {span}")
+    return {
+        "id": f"ma_touch_{period}",
+        "text": text,
+        "salience": 8,
+        "basis": "intraday",
+        "numbers": [count_str, avg_str] + _span_numbers(span),
+        "timeframe": timeframe,
+        "claim_kind": "level_touch",
+        "window_start": str(dates[start])[:10],
+        "window_bars": n - start,
+        "anchor_dates": [str(dates[i])[:10] for i in merged],
+        "ma": {"kind": "sma", "length": period},
+        "level": round(float(sma[-1]), 4),
+        # 2-6 words, in the disc's own colour (§1.1 callout budget). The
+        # average itself is inline-labelled by the renderer, so the disc says
+        # what is happening AT it, not what it is.
+        "callout": f"{_ordinal(len(merged))} visit",
+    }
+
+
+def _fact_multi_year_level(
+    ticker: str,
+    dates: list[str],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    timeframe: str,
+) -> dict | None:
+    """Price within 4% of a multi-year high/low set on COMPLETED bars.
+
+    The ANALOG row of the doctrine table: the reader is being shown "we have
+    stood here before", and the prior instances are the anchors the director
+    spotlights in blue-grey with a gold disc on now.
+    """
+    n = len(c)
+    if n < 40:
+        return None
+    prior_h = h[: n - 1]
+    prior_l = l[: n - 1]
+    if not prior_h or not prior_l:
+        return None
+    last = c[-1]
+    span = _years_phrase(n, timeframe)
+
+    for level, kind in ((max(prior_h), "high"), (min(prior_l), "low")):
+        if level <= 0:
+            continue
+        dist = abs(last - level) / level * 100.0
+        if dist > 4.0:
+            continue
+        series = prior_h if kind == "high" else prior_l
+        hits = [i for i in range(len(series))
+                if series[i] > 0 and abs(series[i] - level) / level <= 0.02]
+        # SEPARATE INSTANCES, not adjacent bars. A three-week stall at the high
+        # is ONE prior visit; drawn as three discs it is one smudge and a count
+        # the reader cannot recount, which is the opposite of what the discs are
+        # for. Same merge rule as the moving-average touches above.
+        spread: list[int] = []
+        for i in hits:
+            if spread and i - spread[-1] <= _MA_TOUCH_MERGE_BARS:
+                spread[-1] = i
+                continue
+            spread.append(i)
+        # AN ANALOG NEEDS A PRECEDENT, and a precedent has to be OLD enough to
+        # read as history at the chart's own scale. AMZN's 12-year monthly high
+        # was set three bars ago: "we have stood here before" is true of last
+        # quarter, which is not the sentence the chart would be making, and the
+        # two discs literally overlapped in the 2026-08 proof render. So the
+        # claim kind is decided by whether separated PRIOR instances survive:
+        # two or more and this is an analog with spotlights on each; fewer and
+        # it is an ordinary level-proximity fact with one gold disc and a tag.
+        prior = [i for i in spread if i <= len(series) - 1 - _MIN_ANALOG_GAP_BARS]
+        anchors = [str(dates[i])[:10] for i in prior]
+        # SPOTLIGHT BUDGET (§1.1): the two oldest instances plus the most
+        # recent tell the story; nine discs are clutter.
+        if len(anchors) > 3:
+            anchors = anchors[:2] + anchors[-1:]
+        claim_kind = "analog" if len(anchors) >= 2 else "level_touch"
+        dist_str = f"{dist:.1f}%"
+        lvl_str = _fmt_price(level)
+        adj = _years_adj(n, timeframe)
+        return {
+            "id": f"multi_year_{kind}",
+            "text": f"{ticker} is {dist_str} from {lvl_str}, its {adj} {kind}",
+            "salience": 8,
+            "basis": "intraday",
+            "numbers": [dist_str, lvl_str] + _span_numbers(span),
+            "timeframe": timeframe,
+            "claim_kind": claim_kind,
+            "window_start": str(dates[0])[:10],
+            "window_bars": n,
+            "anchor_dates": anchors + [str(dates[-1])[:10]],
+            "level": round(float(level), 4),
+            "callout": f"{adj} {kind}",
+        }
+    return None
+
+
+def compute_timeframe_facts(
+    ticker: str,
+    dates: list[str],
+    o: list[float],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    v: list[float],
+    *,
+    timeframe: str = "WEEKLY",
+) -> dict:
+    """Weekly/monthly facts from DAILY bars, computed on COMPLETED buckets only.
+
+    Takes the same daily split-adjusted series the chart plots (§0 gate 3) and
+    resamples it HERE rather than accepting pre-resampled input, so no caller
+    can hand this function a series whose forming bar has already been baked in.
+
+    Returns the standard packet with every fact carrying the window contract
+    documented at the top of this section. Returns an EMPTY packet on short
+    history: PIT law, no snapshot fallback.
+    """
+    from engine.marketing.chart_render import normalize_timeframe
+
+    tf = normalize_timeframe(timeframe)
+    if tf == "DAILY":
+        return {"facts": [], "numbers_whitelist": []}
+    rd, ro, rh, rl, rc, rv = resample_completed(dates, o, h, l, c, v, tf)
+    if len(rc) < _MIN_TF_BARS[tf]:
+        return {"facts": [], "numbers_whitelist": []}
+
+    candidates = [
+        _fact_tf_streak(ticker, rd, ro, rc, tf),
+        _fact_tf_record(ticker, rd, rh, rl, rc, tf),
+        _fact_tf_volume_record(ticker, rd, rv, tf),
+        _fact_multi_year_level(ticker, rd, rh, rl, rc, tf),
+    ]
+    if tf == "WEEKLY":
+        # The 30-week average is the stage classifier's own line, so a weekly
+        # touch fact and a stage read draw the SAME curve (§3 stage read row).
+        candidates.append(
+            _fact_ma_touches(ticker, rd, rh, rl, rc, 30, "30-week average", tf,
+                             lookback=min(len(rc), 156)))
+    return _packet([f for f in candidates if f])
+
+
+def compute_daily_level_facts(
+    ticker: str,
+    dates: list[str],
+    o: list[float],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    v: list[float],
+    *,
+    lookback: int = 252,
+) -> dict:
+    """Daily MA-touch counts, window-scoped. The level-touch doctrine row.
+
+    Returns AT MOST ONE fact. Two MA facts on one chart is the two-average
+    chart the grammar forbids, arriving through the fact layer instead of
+    through the renderer — so the tie is broken here rather than left for the
+    director to notice.
+    """
+    out: list[dict] = []
+    for period, label in ((50, "50-day average"), (200, "200-day average")):
+        f = _fact_ma_touches(ticker, dates, h, l, c, period, label, "DAILY",
+                             lookback=lookback)
+        if f:
+            out.append(f)
+    out.sort(key=lambda f: (-int(f["salience"]), -int(f["ma"]["length"])))
+    return _packet(out[:1])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage + attention context (PR-B pools ONLY)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# STAGE READS COME FROM THE POOLS, NEVER FROM ``radar_internal._feed_stage``.
+# Both read the same backfill parquet; only the pool has the freshness gate.
+# The backfill is a WEEKLY artifact and was stuck at 2026-07-17 when this
+# shipped, so ``stage2_leaders()`` legitimately returns [] most days and a
+# separate collector fix is in flight. That empty list IS the gate working:
+# this module then emits no stage fact and NEVER reconstructs one from the
+# ungated read. A stage label is a claim about what a name is doing right now,
+# and a month-old snapshot cannot make it.
+#
+# PLAIN WORDS IN THE COPY, the public idiom on the CHART: the fact text says
+# "marking up" / "under distribution", while the director puts "Stage 2" in the
+# chart callout, where indicator vocabulary is allowed (§0 gate 5).
+
+
+def _stage_flag_from_why(why: str) -> int | None:
+    """The stage number a pool row's ``why`` sentence states, or None.
+
+    The pools are the contract, and their ``why`` is a sentence, so this reads
+    that instead of reaching back into the parquet for a column the pool
+    already summarised. ``stage2_leaders`` rows are stage 2 by construction;
+    ``stage_transitions`` rows spell "stage 3 to 2", and the LAST match is the
+    current one.
+    """
+    matches = _STAGE_WHY_RE.findall(str(why or ""))
+    if not matches:
+        return None
+    try:
+        flag = int(matches[-1])
+    except (TypeError, ValueError):
+        return None
+    return flag if flag in _STAGE_WORDS else None
+
+
+def compute_stage_facts(ticker: str, root: object, *, as_of: object = None) -> dict:
+    """Weinstein stage context for ONE ticker, via the PR-B pools only.
+
+    Returns an EMPTY packet — not a guess, not a stale read — when the pools are
+    empty or the ticker is not in them. Never raises.
+    """
+    tkr = str(ticker or "").upper()
+    if not tkr:
+        return {"facts": [], "numbers_whitelist": []}
+    try:
+        from engine.marketing import attention_source as _asrc
+    except Exception:  # noqa: BLE001
+        return {"facts": [], "numbers_whitelist": []}
+
+    row: dict | None = None
+    transition = False
+    try:
+        for r in _cached_pool("stage_transitions", _asrc.stage_transitions, root, as_of):
+            if str(r.get("ticker") or "").upper() == tkr:
+                row, transition = r, True
+                break
+        if row is None:
+            for r in _cached_pool("stage2_leaders", _asrc.stage2_leaders, root, as_of):
+                if str(r.get("ticker") or "").upper() == tkr:
+                    row = r
+                    break
+    except Exception:  # noqa: BLE001
+        return {"facts": [], "numbers_whitelist": []}
+    if row is None:
+        return {"facts": [], "numbers_whitelist": []}
+
+    flag = _stage_flag_from_why(row.get("why", ""))
+    if flag is None and not transition:
+        flag = 2  # stage2_leaders rows are stage 2 by construction
+    if flag is None:
+        return {"facts": [], "numbers_whitelist": []}
+    plain, chart_label = _STAGE_WORDS[flag]
+    verb = "has moved into" if transition else "has been"
+    fact = {
+        "id": "stage_read",
+        "text": f"{tkr} {verb} {plain} on the weekly chart",
+        "salience": 7,
+        "numbers": [],
+        "timeframe": "WEEKLY",
+        "claim_kind": "stage_read",
+        # A stage read is a claim about the last 30 WEEKS of tape (the
+        # classifier's own average), so the chart has to show them. There is no
+        # dated evidence bar to point at, so the window is expressed in bars and
+        # the director widens the axis to cover them or drops the fact.
+        "window_start": "",
+        "window_bars": 30,
+        "anchor_dates": [],
+        "callout": chart_label,
+        "ma": {"kind": "sma", "length": 30},
+        "asof": str(row.get("asof") or "")[:10],
+        "why": str(row.get("why") or ""),
+        "source": str(row.get("source") or "stage_analysis"),
+    }
+    return _packet([fact])
+
+
+def compute_attention_facts(ticker: str, root: object, *, as_of: object = None) -> dict:
+    """Where a name sits in tonight's attention/options pools. Display tier.
+
+    CONTEXT, never a claim about price. These facts exist so a caption can say
+    why a name is on the desk tonight without the writer inventing a reason;
+    they carry ``claim_kind="context"`` and the director never builds a chart
+    AROUND one. Fail-soft and pool-gated: an empty pool yields no fact.
+    """
+    tkr = str(ticker or "").upper()
+    if not tkr:
+        return {"facts": [], "numbers_whitelist": []}
+    try:
+        from engine.marketing import attention_source as _asrc
+    except Exception:  # noqa: BLE001
+        return {"facts": [], "numbers_whitelist": []}
+
+    out: list[dict] = []
+    lanes = (
+        ("retail_attention", _asrc.retail_attention, 4),
+        ("options_volume", _asrc.top_by_options_volume, 3),
+        ("dollar_volume", _asrc.top_by_dollar_volume, 2),
+    )
+    for fid, fn, salience in lanes:
+        rows = _cached_pool(fid, fn, root, as_of)
+        for r in rows:
+            if str(r.get("ticker") or "").upper() != tkr:
+                continue
+            try:
+                rank_i = int(r.get("rank"))
+            except (TypeError, ValueError):
+                break
+            asof = str(r.get("asof") or "")[:10]
+            out.append({
+                "id": f"attention_{fid}",
+                "text": f"{tkr} is #{rank_i} on our {_ATTENTION_WORDS[fid]} list today",
+                "salience": salience,
+                # Ranks under 100 are bare 1-2 digit integers, which the copy
+                # validator already exempts; whitelisting only the wider ones
+                # keeps the list free of tokens nothing needed licensing for.
+                "numbers": [str(rank_i)] if rank_i >= 100 else [],
+                "timeframe": "DAILY",
+                "claim_kind": "context",
+                "window_start": asof,
+                "window_bars": 1,
+                "anchor_dates": [],
+                "asof": asof,
+                "why": str(r.get("why") or ""),
+                "source": str(r.get("source") or ""),
+            })
+            break
+    return _packet(out)

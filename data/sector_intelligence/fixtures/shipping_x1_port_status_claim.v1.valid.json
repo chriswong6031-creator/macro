@@ -1,0 +1,46 @@
+{
+  "contract_id": "evidence_claim.v1",
+  "schema_version": "1.0.0",
+  "claim_id": "claim:shipping:SYN-P01:reported-status",
+  "sector": "shipping_trade",
+  "subject_ref": "port:SYN-P01",
+  "predicate": "port.reported_congestion_status",
+  "object": {
+    "kind": "string",
+    "value": "congested",
+    "unit": null,
+    "vocabulary": "synthetic_shipping_port_status_v1",
+    "code": "congested"
+  },
+  "evidence_class": "primary_source_observation",
+  "assertion_scope": "source_says",
+  "source_record_refs": [
+    "src:synthetic-port:SYN-P01"
+  ],
+  "source_locator": {
+    "json_path": "$.status",
+    "span_start": null,
+    "span_end": null,
+    "quote_sha256": null
+  },
+  "source_published_at": "2026-08-01T09:30:00Z",
+  "source_effective_at": "2026-08-01T09:30:00Z",
+  "retrieved_at": "2026-08-01T09:40:00Z",
+  "first_seen_at": "2026-08-01T09:40:00Z",
+  "valid_from": "2026-08-01T09:30:00Z",
+  "valid_to": null,
+  "transaction_from": "2026-08-01T09:40:01Z",
+  "transaction_to": null,
+  "parser_or_model_version": "synthetic_shipping_fixture_parser.v1",
+  "license_class": "public_domain",
+  "confidence": {
+    "value": null,
+    "method": "not_scored_source_report",
+    "calibrated": false
+  },
+  "contradiction_state": "none_known",
+  "contradicts_claim_ids": [],
+  "analyst_review_state": "machine_checked",
+  "authority_manifest_ref": "authority:synthetic-shipping-display:v1",
+  "correction_of_claim_id": null
+}
