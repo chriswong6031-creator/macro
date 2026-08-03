@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T02:19:22.390061+00:00",
-  "count": 634,
+  "generated_at": "2026-08-03T02:49:23.829381+00:00",
+  "count": 635,
   "institutions": [
     "Amova",
     "Apollo",
@@ -362,6 +362,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zcedaloqolt-b8ef16",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:57:06Z",
+      "summary_points": [
+        "**Fitch AA Watch Negative**: Fitch placed Qatar’s AA rating on credit watch negative due to security uncertainty, prolonged conflict risks, and energy infrastructure threats (Ras Laffan attack), triggering deteriorating outlook for sovereign, banks, and Ooredoo.",
+        "**LNG Export Capacity Drop**: 17% decline in LNG export capacity from Ras Laffan attack; IMF revised 2026 GDP forecast to 8.6% (from 9.5%), reflecting hydrocarbon dependency risks and North Field expansion delays.",
+        "**Bank Dividend Suspensions**: Key banks (QCB, QNB) suspended dividends amid cost pressures, deposit competition, and geopolitical risks; QCB announced liquidity facility/loan deferral despite solid capitalization (avg CET1 16.1%).",
+        "**Geopolitical-Driven Profit Declines**: Banks reported mixed results (e.g., CBQ net profit down 19.6% y/y, QNB net profit +3% y/y but pressured by conflict), with Ooredoo net profit down 16.1% q/q due to legal provisions and conflict.",
+        "**Critical Rating Alignment**: S&P/Moody's/Fitch ratings (AAA to D) and credit quality tiers (BBB- = lowest Investment Grade, BB+ = highest Speculative Grade) are essential for EM bond risk stratification and portfolio allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
