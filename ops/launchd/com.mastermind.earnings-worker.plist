@@ -12,7 +12,7 @@
   All paths are outside ~/Documents for launchd/TCC safety.
 
   Secrets are NOT stored here. run_with_env.sh sources the already-existing
-  /Users/chriswong/flow-ops-wt/.env before launching the runner.
+  /Users/chriswong/hub-ops-wt/.env before launching the runner.
 -->
 <plist version="1.0">
 <dict>
@@ -22,12 +22,25 @@
   <key>ProgramArguments</key>
   <array>
     <string>/Users/chriswong/earnings-ops-wt/ops/launchd/run_with_env.sh</string>
-    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/Users/chriswong/hub-ops-wt/.env</string>
     <string>/Users/chriswong/earnings-ops-wt/ops/launchd/run_earnings_worker.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
   <string>/Users/chriswong/earnings-ops-wt</string>
+
+  <!--
+    The PC opens a restricted reverse-SSH bridge onto Mac loopback only.
+    run_earnings_worker.sh detects this complete pair and selects
+    openai_compat,deepseek so Qwen is primary and DeepSeek is the fallback.
+  -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>EARNINGS_LLM_BASE_URL</key>
+    <string>http://127.0.0.1:11435/v1</string>
+    <key>EARNINGS_LLM_MODEL</key>
+    <string>qwen3:14b</string>
+  </dict>
 
   <key>StartCalendarInterval</key>
   <array>

@@ -598,6 +598,12 @@ data/mastermind/*.json.tmp
 # load-bearing: cumulative ledgers must never become Git objects or public site data.
 data/capital_structure/share_counts/
 
+# Earnings Wire member continuations and exact-evidence context belong to the
+# private Research Vault object store.  The builder now refuses repository-local
+# private output, and this exact legacy path is ignored as a second containment
+# wall so an old local render can never be swept into the public Git history.
+/site/premiumdata/earnings/
+
 # Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
 # under these paths; they are checkouts, never content, and must never be committed.
 # `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,

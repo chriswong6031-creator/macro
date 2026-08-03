@@ -28,6 +28,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | crypto-cockpit | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
+| earnings-evidence-spine | 1 |
 | engine-fix | 18 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 7 |
@@ -106,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 360 |
+| display | 361 |
 | infrastructure | 137 |
 | scored | 4 |
 | shadow | 79 |
@@ -115,7 +116,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 548 |
+| git | 549 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -321,6 +322,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 0 | 0 |
+
+### earnings-evidence-spine
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| earnings-evidence-context-latest | `site/premiumdata/earnings/context/latest.json` | json | intraday | display | 4 | 1 |
 
 ### engine-fix
 

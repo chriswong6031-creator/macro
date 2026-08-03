@@ -29,6 +29,7 @@ openai_compat:
   base_url: "http://localhost:8000/v1"   # placeholder; PC worker overrides
   model: "qwen3-14b"                       # LM Studio / llama.cpp model id
   api_key_env: "LOCAL_LLM_API_KEY"        # optional; most local servers ignore it
+  connect_timeout_s: 5                     # fail over quickly when the LAN host is down
   timeout_s: 120
   max_tokens: 1200
 

@@ -1,0 +1,70 @@
+{% extends "seo_base.html.j2" %}
+{% block body_class %}earnings-wire earnings-weekly{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="../assets/earnings-wire.css">
+<link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="../feed.xml">
+{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ jsonld|safe }}</script>{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% block main %}
+<article class="eww">
+  <header class="eww-hero">
+    <div class="ew-wrap">
+      <nav class="ewa-crumb" aria-label="Breadcrumb"><a href="../index.html">{{ t('Earnings wire', '财报情报线') }}</a><span aria-hidden="true">/</span><a href="index.html">{{ t('Weekly intelligence', '每周情报') }}</a><span aria-hidden="true">/</span><span aria-current="page">{{ weekly.week_start }}</span></nav>
+      <div class="eww-grid">
+        <div>
+          <div class="ewa-kicker"><span class="ew-pulse" aria-hidden="true"></span>{{ t('Weekly earnings intelligence', '每周财报情报') }}</div>
+          <h1>{{ t('The week in management language.', '管理层表述中的这一周。') }}</h1>
+          <p>{{ t('A deterministic cross-call brief built from exact, receipt-bound transcript excerpts. Category movement is a count of admitted evidence—not sentiment, opportunity rank, or a generated market call.', '基于精确、可追溯电话会摘录构建的确定性跨电话会简报。类别变化是准入证据的计数——不是情绪、机会排名或生成式市场判断。') }}</p>
+        </div>
+        <aside class="eww-window"><span>{{ t('Evidence window', '证据窗口') }}</span><strong>{{ weekly.week_start }} → {{ weekly.week_end }}</strong><p>{{ t('Knowledge cutoff', '知识截止') }} · {{ weekly.knowledge_cutoff[:10] }}</p></aside>
+      </div>
+      <div class="eww-stats">
+        <span><b>{{ weekly.coverage.call_records }}</b>{{ t(' call records', ' 份电话会记录') }}</span>
+        <span><b>{{ weekly.coverage.tickers }}</b>{{ t(' tickers', ' 个代码') }}</span>
+        <span><b>{{ weekly.coverage.exact_facts }}</b>{{ t(' exact facts', ' 条精确事实') }}</span>
+        <span><b>{{ weekly.coverage.numeric_receipts }}</b>{{ t(' numeric receipts', ' 个数值回执') }}</span>
+        <span><b>0</b>{{ t(' model calls', ' 次模型调用') }}</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="ew-wrap eww-body">
+    <main>
+      <section class="eww-section" aria-labelledby="category-pulse-title">
+        <div class="eww-section-head"><div><span>{{ t('Cross-call pulse', '跨电话会脉冲') }}</span><h2 id="category-pulse-title">{{ t('What management discussed most.', '管理层讨论最多的内容。') }}</h2></div><p>{{ t('Counts use exact fact tags from admitted records. Week-over-week deltas compare each category’s share of all exact facts.', '计数使用准入记录中的精确事实标签。周环比变化比较各类别在全部精确事实中的占比。') }}</p></div>
+        <div class="eww-pulse-list">
+          {% for pulse in weekly.category_pulse[:10] %}
+          <div class="eww-pulse-row">
+            <div><strong>{{ pulse.category|replace('_', ' ') }}</strong><span>{{ pulse.fact_count }} {{ t('facts across', '条事实，覆盖') }} {{ pulse.ticker_count }} {{ t('tickers', '个代码') }}</span></div>
+            <div class="eww-bar" aria-label="{{ (pulse.share_of_week_facts * 100)|round(1) }} percent of weekly facts"><i style="--share:{{ (pulse.share_of_week_facts * 100)|round(2) }}%"></i></div>
+            <div class="eww-delta {% if pulse.share_change_vs_prior_week is not none and pulse.share_change_vs_prior_week > 0 %}up{% elif pulse.share_change_vs_prior_week is not none and pulse.share_change_vs_prior_week < 0 %}down{% endif %}">{% if pulse.share_change_vs_prior_week is none %}{{ t('first observed week', '首个观测周') }}{% else %}{{ '%+.1f'|format(pulse.share_change_vs_prior_week * 100) }} pp{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="eww-section" aria-labelledby="notable-records-title">
+        <div class="eww-section-head"><div><span>{{ t('Evidence desk', '证据台') }}</span><h2 id="notable-records-title">{{ t('Calls worth opening.', '值得打开的电话会。') }}</h2></div><p>{{ t('Editorial relevance favors evidence breadth and numeric density. It does not rank investment opportunity.', '编辑相关性偏向证据广度和数值密度，不对投资机会进行排名。') }}</p></div>
+        <div class="eww-records">
+          {% for record in weekly.notable_records %}
+          <article class="eww-record">
+            <div class="eww-record-top"><span>{{ record.event.ticker }}</span><time datetime="{{ record.event.date }}">{{ record.event.date }}</time></div>
+            <h3><a href="{{ record.links.record }}">{{ record.company_label }} · {{ record.event.period }} <span aria-hidden="true">↗</span></a></h3>
+            <div class="ew-tags">{% for category in record.categories[:3] %}<span>{{ category|replace('_', ' ') }}</span>{% endfor %}</div>
+            <blockquote lang="en">“{{ record.facts[0].quote.text }}”</blockquote>
+            <div class="eww-record-foot"><span>{{ record.facts[0].speaker or t('Management', '管理层') }}</span><code>{{ record.facts[0].claim_id }}</code></div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <aside class="eww-side">
+      <section><span>{{ t('Archive', '档案') }}</span><h2>{{ t('Recent weeks', '最近几周') }}</h2><nav>{% for item in archive[:12] %}<a href="{{ item.href }}"{% if item.current %} aria-current="page"{% endif %}><span>{{ item.week_start }}</span><b>{{ item.call_records }} calls</b></a>{% endfor %}</nav></section>
+      <section class="eww-honesty"><span>{{ t('Evidence boundary', '证据边界') }}</span><h2>{{ t('Useful, but not complete.', '有用，但并不完整。') }}</h2><p>{{ t('This weekly view covers admitted transcript records only. Releases, filings, slides, consensus, price reaction and non-admitted calls are not silently inferred.', '本周视图仅覆盖准入电话会文本记录。新闻稿、申报文件、演示材料、一致预期、股价反应和未准入电话会不会被静默推断。') }}</p><a href="../index.html">{{ t('Browse every admitted record', '浏览全部准入记录') }} →</a></section>
+    </aside>
+  </div>
+</article>
+{% endblock %}

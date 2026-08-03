@@ -51,6 +51,12 @@ from engine.earnings_narrative.public_wire import (  # noqa: E402
     source_manifest_sha256,
     verify_public_wire_manifest,
 )
+from engine.earnings_narrative.context_packets import (  # noqa: E402
+    build_context_generation,
+    build_weekly_intelligence,
+    canonical_json_bytes as context_json_bytes,
+    select_public_facts,
+)
 from engine.earnings_narrative.story_packets import (  # noqa: E402
     validate_story_packet,
     validate_story_packet_manifest,
@@ -70,6 +76,11 @@ FEED_FILENAME = "feed.xml"
 WIRE_SITEMAP_FILENAME = "sitemap.xml"
 ASSET_DIRNAME = "assets"
 ASSET_NAMES = ("earnings-wire.css", "earnings-wire.js")
+ARTICLE_PUBLIC_FACT_LIMIT = 2
+PREMIUM_PAYLOAD_SCHEMA = "earnings.tier_payload/v1"
+PRIVATE_RECORDS_DIRNAME = "records"
+PRIVATE_CONTEXT_DIRNAME = "context"
+CONTEXT_FILENAME = "latest.json"
 FEED_LIMIT = 100
 INDEX_PAGE_SIZE = 96
 # This lane is intentionally memory-bound while it hydrates a generation.  The
@@ -518,6 +529,78 @@ def _copy_assets(out_dir: Path) -> None:
         _atomic_write(asset_dir / name, source.read_bytes())
 
 
+def _template_environment() -> Environment:
+    env = Environment(
+        loader=FileSystemLoader(str(_REPO / "templates")), autoescape=True,
+        undefined=StrictUndefined, trim_blocks=True, lstrip_blocks=True,
+    )
+    # ``seo_base`` owns the bilingual macro. Nested fragments also call ``t``
+    # when rendered into a protected payload, so keep their deterministic
+    # English fallback available outside a full-page render.
+    env.globals["t"] = lambda en, zh="": en
+    return env
+
+
+def _private_output_dir(private_out_dir: Path) -> Path:
+    """Require member bytes to stage outside the public repository checkout."""
+    candidate = Path(private_out_dir).expanduser().resolve()
+    repository = _REPO.resolve()
+    if candidate == repository or repository in candidate.parents:
+        raise PublicWireBuildError(
+            "earnings member output must be outside the public repository"
+        )
+    return candidate
+
+
+def _write_premium_payloads(
+    views: list[Mapping[str, Any]], *, private_out_dir: Path,
+) -> None:
+    """Stage member continuations off-repo for private object-store publish."""
+    premium_dir = _private_output_dir(private_out_dir) / PRIVATE_RECORDS_DIRNAME
+    premium_dir.mkdir(parents=True, exist_ok=True)
+    env = _template_environment()
+    facts_template = env.get_template("earnings_wire/_facts.html.j2")
+    receipts_template = env.get_template("earnings_wire/_receipt_rows.html.j2")
+    expected: set[Path] = set()
+    for view in views:
+        if not view["locked_facts"]:
+            continue
+        slug = str(view["event"]["slug"])
+        destination = premium_dir / f"{slug}.json"
+        expected.add(destination)
+        payload = {
+            "schema": PREMIUM_PAYLOAD_SCHEMA,
+            "page": "earnings_wire_article",
+            "slug": slug,
+            "required_tier": "essential",
+            "public_facts": int(view["public_fact_count"]),
+            "locked_facts": int(view["locked_fact_count"]),
+            "facts_html": facts_template.render(facts=view["locked_facts"]),
+            "receipt_rows_html": receipts_template.render(spans=view["locked_spans"]),
+        }
+        _atomic_write(destination, _canonical_json(payload))
+    for candidate in premium_dir.glob("*.json"):
+        if candidate not in expected:
+            candidate.unlink()
+
+
+def _write_context_manifest(
+    manifest: Mapping[str, Any], *, private_out_dir: Path,
+) -> None:
+    context_dir = _private_output_dir(private_out_dir) / PRIVATE_CONTEXT_DIRNAME
+    context_dir.mkdir(parents=True, exist_ok=True)
+    catalog, packets = build_context_generation(manifest)
+    expected = {context_dir / CONTEXT_FILENAME}
+    for ticker, packet in packets.items():
+        destination = context_dir / str(catalog["objects"][ticker]["path"])
+        expected.add(destination)
+        _atomic_write(destination, context_json_bytes(packet))
+    _atomic_write(context_dir / CONTEXT_FILENAME, context_json_bytes(catalog))
+    for candidate in context_dir.glob("*.json"):
+        if candidate not in expected:
+            candidate.unlink()
+
+
 def _rfc822(value: str) -> str:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -526,44 +609,6 @@ def _rfc822(value: str) -> str:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return email.utils.format_datetime(parsed.astimezone(timezone.utc), usegmt=True)
-
-
-_BOILERPLATE_PREVIEW = re.compile(
-    r"\b(safe\s+harbor|forward[- ]looking|operator|replay|webcast|good\s+morning|thank\s+you)\b",
-    re.IGNORECASE,
-)
-_MATERIAL_PREVIEW = re.compile(
-    r"\b(revenue|margin|guidance|demand|backlog|growth|profit|cash|bookings|outlook|expect)\b",
-    re.IGNORECASE,
-)
-_NUMBER_PREVIEW = re.compile(r"(?:\$?\d[\d,.]*%?|\b\d+(?:\.\d+)?\s*(?:bps|million|billion|percent)\b)", re.IGNORECASE)
-
-
-def _preview_score(fact: Mapping[str, Any]) -> int:
-    """Rank visible record previews without generating or changing a claim."""
-    quote = fact.get("quote") if isinstance(fact.get("quote"), Mapping) else {}
-    text = str(quote.get("text") or "")
-    score = 0
-    role = str(fact.get("role") or "").lower()
-    if role in {"executive", "management"}:
-        score += 18
-    if role == "analyst":
-        score -= 30
-    score += 14 * len(set(str(item) for item in fact.get("categories", []) if str(item) in {
-        "performance", "guidance", "demand", "margins", "risks",
-    }))
-    if fact.get("numeric"):
-        score += 12
-    if _NUMBER_PREVIEW.search(text):
-        score += 8
-    if _MATERIAL_PREVIEW.search(text):
-        score += 10
-    if _BOILERPLATE_PREVIEW.search(text):
-        score -= 45
-    # Prefer an informative complete sentence, without letting length swamp
-    # relevance or elevate a long analyst question.
-    score += min(len(text) // 80, 5)
-    return score
 
 
 def _view_article(article: Mapping[str, Any], *, alignment: Mapping[str, Any]) -> dict[str, Any]:
@@ -579,7 +624,17 @@ def _view_article(article: Mapping[str, Any], *, alignment: Mapping[str, Any]) -
     for fact in facts:
         categories.extend(str(item) for item in fact["categories"])
     unique_categories = list(dict.fromkeys(categories))
-    preview = max(enumerate(facts), key=lambda row: (_preview_score(row[1]), -row[0]))[1]
+    public_facts = list(select_public_facts(facts, limit=ARTICLE_PUBLIC_FACT_LIMIT))
+    public_claim_ids = {str(fact["claim_id"]) for fact in public_facts}
+    locked_facts = [fact for fact in facts if str(fact["claim_id"]) not in public_claim_ids]
+    preview = public_facts[0]
+    public_claims = {
+        str(item["claim_id"])
+        for fact in public_facts
+        for item in [fact["quote"], *fact["numeric"]]
+    }
+    public_spans = [span for span in spans if str(span["claim_id"]) in public_claims]
+    locked_spans = [span for span in spans if str(span["claim_id"]) not in public_claims]
     ticker = str(article["event"]["ticker"])
     company_name = str(alignment.get("company_name") or ticker).strip() or ticker
     company_label = company_name if company_name.upper() != ticker else ticker
@@ -592,7 +647,13 @@ def _view_article(article: Mapping[str, Any], *, alignment: Mapping[str, Any]) -
         **article,
         "facts": facts,
         "spans": spans,
+        "public_facts": public_facts,
+        "locked_facts": locked_facts,
+        "public_spans": public_spans,
+        "locked_spans": locked_spans,
         "fact_count": len(facts),
+        "public_fact_count": len(public_facts),
+        "locked_fact_count": len(locked_facts),
         "numeric_count": sum(len(fact["numeric"]) for fact in facts),
         "display_categories": [item.replace("_", " ") for item in unique_categories[:3]],
         "category_search": " ".join(unique_categories).lower(),
@@ -603,6 +664,14 @@ def _view_article(article: Mapping[str, Any], *, alignment: Mapping[str, Any]) -
         "company_name": company_name,
         "company_label": company_label,
         "dossier_available": alignment.get("dossier_available") is True,
+        "gate": ({
+            "schema": "earnings.member_gate/v1",
+            "payload": f"/api/earnings/v1/records/{article['event']['slug']}",
+            "slug": str(article["event"]["slug"]),
+            "required_tier": "essential",
+            "preview": len(public_facts),
+            "locked": len(locked_facts),
+        } if locked_facts else None),
     }
 
 
@@ -638,6 +707,21 @@ def _article_jsonld(article: Mapping[str, Any]) -> str:
     })
 
 
+def _weekly_jsonld(weekly: Mapping[str, Any], *, route: str) -> str:
+    return _safe_jsonld({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": f"Weekly Earnings Intelligence — {weekly['week_start']}",
+        "description": "A deterministic cross-call brief built from exact, receipt-bound earnings transcript excerpts.",
+        "mainEntityOfPage": {"@type": "WebPage", "@id": page_url(route)},
+        "datePublished": weekly["week_end"],
+        "dateModified": weekly["knowledge_cutoff"],
+        "author": {"@type": "Organization", "name": BRAND_NAME},
+        "publisher": {"@type": "Organization", "name": BRAND_NAME},
+        "isAccessibleForFree": True,
+    })
+
+
 def _feed(views: list[Mapping[str, Any]]) -> bytes:
     rows = views[:FEED_LIMIT]
     items = []
@@ -666,7 +750,7 @@ def _feed(views: list[Mapping[str, Any]]) -> bytes:
     ).encode("utf-8")
 
 
-def _wire_sitemap(manifest: Mapping[str, Any]) -> bytes:
+def _wire_sitemap(manifest: Mapping[str, Any], *, weekly: list[Mapping[str, Any]] | None = None) -> bytes:
     """Build the wire-owned sitemap; the nightly remains sole root owner."""
     routes = list(manifest["routes"])
     latest = max((str(route["lastmod"]) for route in routes), default="")
@@ -685,6 +769,20 @@ def _wire_sitemap(manifest: Mapping[str, Any]) -> bytes:
         + "</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>"
         for route in routes
     )
+    weeks = weekly or []
+    if weeks:
+        rows.append(
+            "  <url><loc>" + html.escape(page_url("stocks/earnings/weekly/index.html"), quote=False)
+            + "</loc><lastmod>" + html.escape(str(weeks[0]["knowledge_cutoff"]), quote=False)
+            + "</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>"
+        )
+        rows.extend(
+            "  <url><loc>"
+            + html.escape(page_url(f"stocks/earnings/weekly/{row['week_start']}.html"), quote=False)
+            + "</loc><lastmod>" + html.escape(str(row["knowledge_cutoff"]), quote=False)
+            + "</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>"
+            for row in weeks
+        )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -840,14 +938,24 @@ def _probe_company_generation(
 
 def _render_pages(
     manifest: Mapping[str, Any], *, out_dir: Path, alignment: Mapping[str, Mapping[str, Any]],
-) -> tuple[dict[Path, str], list[dict[str, Any]]]:
-    templates = _REPO / "templates"
-    env = Environment(
-        loader=FileSystemLoader(str(templates)), autoescape=True, undefined=StrictUndefined,
-        trim_blocks=True, lstrip_blocks=True,
-    )
-    env.globals["t"] = lambda en, zh="": en  # seo_base defines its own bilingual macro; only nested fallback calls use this.
+) -> tuple[dict[Path, str], list[dict[str, Any]], list[dict[str, Any]]]:
+    env = _template_environment()
     views = [_view_article(article, alignment=alignment.get(str(article["article_id"]), {})) for article in manifest["articles"]]
+    view_by_article = {str(view["article_id"]): view for view in views}
+    weekly_contracts = build_weekly_intelligence(manifest)
+    weekly_views: list[dict[str, Any]] = []
+    for weekly in weekly_contracts:
+        row = dict(weekly)
+        row["notable_records"] = [
+            {
+                **record,
+                "company_label": view_by_article.get(
+                    str(record["identities"]["article_id"]), {}
+                ).get("company_label", str(record["event"]["ticker"])),
+            }
+            for record in weekly["notable_records"]
+        ]
+        weekly_views.append(row)
     summary = {
         "article_count": len(views),
         "ticker_count": len({str(view["event"]["ticker"]) for view in views}),
@@ -887,6 +995,7 @@ def _render_pages(
             site=site,
             items=items,
             summary=summary,
+            latest_week=weekly_views[0] if weekly_views else None,
             pagination={
                 "number": page_number,
                 "count": page_count,
@@ -915,7 +1024,37 @@ def _render_pages(
         rendered[out_dir / f"{view['event']['slug']}.html"] = article_template.render(
             page=page, rel="../../", site=site, article=view, jsonld=_article_jsonld(view),
         )
-    return rendered, views
+    if weekly_views:
+        weekly_template = env.get_template("earnings_wire/earnings_weekly.html.j2")
+        archive = [
+            {
+                "week_start": row["week_start"], "call_records": row["coverage"]["call_records"],
+                "href": f"{row['week_start']}.html",
+            }
+            for row in weekly_views
+        ]
+        render_targets = [("index.html", weekly_views[0]), *[
+            (f"{row['week_start']}.html", row) for row in weekly_views
+        ]]
+        for filename, weekly in render_targets:
+            route = f"stocks/earnings/weekly/{filename}"
+            page = {
+                "title": f"Weekly Earnings Intelligence — {weekly['week_start']}",
+                "description": "Cross-call earnings intelligence built from exact, receipt-bound transcript evidence.",
+                "canonical": page_url(route),
+                "url_path": "/" + route,
+                "breadcrumbs": [
+                    {"label": "Home", "href": "/index.html"},
+                    {"label": "Earnings call records", "href": "/stocks/earnings/index.html"},
+                    {"label": "Weekly intelligence", "href": None},
+                ],
+            }
+            rendered[out_dir / "weekly" / filename] = weekly_template.render(
+                page=page, rel="../../../", site=site, weekly=weekly,
+                archive=[{**item, "current": item["week_start"] == weekly["week_start"]} for item in archive],
+                jsonld=_weekly_jsonld(weekly, route=route),
+            )
+    return rendered, views, weekly_contracts
 
 
 def _prior_page_paths(out_dir: Path, state: Mapping[str, Any] | None) -> set[Path]:
@@ -947,6 +1086,7 @@ def _route_path(out_dir: Path, route: Mapping[str, Any]) -> Path:
 
 def publish_public_wire(
     manifest: Mapping[str, Any], *, out_dir: Path,
+    private_out_dir: Path | None = None,
     prior_state: Mapping[str, Any] | None = None,
     company_reader: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
     now: datetime | None = None,
@@ -958,19 +1098,30 @@ def publish_public_wire(
     alignment, company_generation_id = _company_alignment_snapshot(
         manifest, out_dir=out_dir, company_reader=company_reader,
     )
-    rendered, views = _render_pages(manifest, out_dir=out_dir, alignment=alignment)
+    rendered, views, weekly = _render_pages(manifest, out_dir=out_dir, alignment=alignment)
     for destination, markup in rendered.items():
         # All static HTML goes through the shared injection path so this family
         # retains the same data-base bootstrap and future page hygiene as the
         # rest of the public estate.
+        destination.parent.mkdir(parents=True, exist_ok=True)
         write_page(destination, markup, encoding="utf-8")
     current_index_pages = {path for path in rendered if path.name == "index.html" or path.name.startswith("page-")}
     for stale_index in out_dir.glob("page-*.html"):
         if stale_index not in current_index_pages:
             stale_index.unlink(missing_ok=True)
+    current_weekly_pages = {path for path in rendered if path.parent == out_dir / "weekly"}
+    weekly_dir = out_dir / "weekly"
+    if weekly_dir.is_dir():
+        for stale_week in weekly_dir.glob("*.html"):
+            if stale_week not in current_weekly_pages:
+                stale_week.unlink(missing_ok=True)
     _copy_assets(out_dir)
+    if private_out_dir is not None:
+        private_destination = _private_output_dir(private_out_dir)
+        _write_premium_payloads(views, private_out_dir=private_destination)
+        _write_context_manifest(manifest, private_out_dir=private_destination)
     _atomic_write(out_dir / FEED_FILENAME, _feed(views))
-    _atomic_write(out_dir / WIRE_SITEMAP_FILENAME, _wire_sitemap(manifest))
+    _atomic_write(out_dir / WIRE_SITEMAP_FILENAME, _wire_sitemap(manifest, weekly=weekly))
     verified_at = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     _atomic_write(
         out_dir / ROUTE_CATALOG_FILENAME,
@@ -990,6 +1141,7 @@ def publish_public_wire(
 
 def build(
     *, out_dir: Path | None = None, source_base: str = DEFAULT_SOURCE_BASE,
+    private_out_dir: Path | None = None,
     offline: bool = False, force: bool = False, workers: int = 12, timeout: float = 30.0,
     fetch: Callable[[str], bytes] | None = None,
     company_reader: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
@@ -1042,7 +1194,7 @@ def build(
         ):
             raise PublicWireBuildError("mutable story packet marker does not equal immutable generation manifest")
         _validate_remote_manifest(immutable)
-        if not force and state is not None and (
+        if not force and private_out_dir is None and state is not None and (
             state["source_generation_id"] == generation_id
             and state["source_manifest_sha256"] == marker_sha
             and state["renderer_version"] == _renderer_version()
@@ -1065,6 +1217,7 @@ def build(
     result = publish_public_wire(
         manifest,
         out_dir=destination,
+        private_out_dir=private_out_dir,
         prior_state=state,
         company_reader=company_reader,
         now=now,
@@ -1075,6 +1228,12 @@ def build(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build receipt-bound public earnings-call records.")
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument(
+        "--private-out-dir",
+        type=Path,
+        default=None,
+        help="Off-repository staging root for member records and context; never written under site/.",
+    )
     parser.add_argument("--source-base", default=DEFAULT_SOURCE_BASE)
     parser.add_argument("--offline", action="store_true", help="Validate and retain a recent existing publication without fetching.")
     parser.add_argument(
@@ -1088,6 +1247,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = build(
             out_dir=args.out_dir,
+            private_out_dir=args.private_out_dir,
             source_base=args.source_base, offline=args.offline, force=args.force,
             workers=args.workers, timeout=args.timeout,
         )
