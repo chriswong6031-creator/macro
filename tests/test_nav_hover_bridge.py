@@ -12,6 +12,8 @@ TEMPLATE_THEME_JS = (ROOT / "templates" / "theme.js").read_text(encoding="utf-8"
 SITE_THEME_JS = (ROOT / "site" / "theme.js").read_text(encoding="utf-8")
 TEMPLATE_ACCOUNT_JS = (ROOT / "templates" / "account.js").read_text(encoding="utf-8")
 SITE_ACCOUNT_JS = (ROOT / "site" / "account.js").read_text(encoding="utf-8")
+START_HTML = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
+MACRO_HTML = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
 
 
 def test_top_market_menus_keep_hover_bridge_while_folded_countries_click() -> None:
@@ -103,6 +105,44 @@ def test_hover_gap_assets_remain_byte_identical() -> None:
     assert TEMPLATE_CSS == SITE_CSS
     assert TEMPLATE_JS == SITE_JS
     assert TEMPLATE_ACCOUNT_JS == SITE_ACCOUNT_JS
+
+
+def test_earnings_wire_runtime_bridge_backfills_only_stale_core_research_menus() -> None:
+    bridge = TEMPLATE_JS.split("function ensureEarningsWireCard(menu)", 1)[1].split(
+        "function enhanceResearchMenu(links)", 1
+    )[0]
+    enhance = TEMPLATE_JS.split("function enhanceResearchMenu(links)", 1)[1].split(
+        "/* ---- preference", 1
+    )[0]
+
+    # The static template remains authoritative; the runtime only fills the
+    # deployment gap for old rendered pages and then sees the static card.
+    assert "menu.querySelector('[data-nav-file=\"earnings_wire\"]')" in bridge
+    assert "/(?:Core Research|核心研究)/" in bridge
+    assert "data-nav-file', 'earnings_wire'" in bridge
+    assert "mega-item nm-feat" in bridge
+    assert "icon-drawing nm-ic cyan" in bridge
+    assert "MOCKUP_ICON_PATHS.earnings_wire" in bridge
+    assert "Earnings Wire" in bridge
+    assert "财报情报线" in bridge
+    assert "Verified calls, weekly intelligence and company context" in bridge
+    assert "已核验电话会、每周情报与公司语境" in bridge
+    assert "prefixOf(dropdown) : '') + 'stocks/earnings/index.html'" in bridge
+    assert "fileOf(cards[j]) === 'fundamental_forensics.html'" in bridge
+
+    # Backfill runs before the one-time mockup normalization guard, so repeated
+    # calls remain safe while a newer static render simply skips the insertion.
+    assert enhance.index("ensureEarningsWireCard(menu);") < enhance.index(
+        "data-mockup-exact"
+    )
+
+
+def test_primary_public_dashboards_ship_the_static_earnings_wire_card() -> None:
+    marker = 'data-nav-file="earnings_wire" href="stocks/earnings/index.html"'
+    for html in (START_HTML, MACRO_HTML):
+        assert html.count(marker) == 1
+        assert "Earnings Wire" in html
+        assert "财报情报线" in html
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
