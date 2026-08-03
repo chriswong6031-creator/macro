@@ -168,6 +168,29 @@ read_adapters:
 # Company identity, a complete security master, Corporate documents, and Capital
 # Structure remain explicit dependencies rather than BioCatalyst fallbacks.
 registrations:
+  clinicaltrials_discovery_control:
+    canonical_owner: biocatalyst
+    implementation_state: dark_contract_and_hermetic_harness_only
+    writer: null
+    modules:
+      transport_harness: collectors.biocatalyst.clinicaltrials_discovery
+      contract_replay: engine.biocatalyst.discovery
+    contracts:
+      - ctgov_discovery_scope.v1
+      - ctgov_discovery_run.v1
+      - ctgov_discovery_coverage_epoch.v1
+    cadence: none_dark_no_scheduler
+    retry_replay_policy: none_no_io_or_state
+    consumers: []
+    prohibited_uses:
+      - live_network_collection
+      - worker_or_timer_activation
+      - storage_or_publication
+      - product_api_or_read_adapter
+      - issuer_company_security_or_sponsor_identity
+      - model_rank_signal_prophet_or_neural_web_authority
+    operational_owner: mastermindx_platform_ops
+
   clinicaltrials_source_record:
     canonical_owner: biocatalyst
     implementation_state: frozen_for_b0a
