@@ -1,0 +1,76 @@
+name: integration-baseline
+# Fast source-main circuit breaker for the merge train.
+#
+# ci.yml proves each PR head, but a busy main can still become red through a
+# missed path trigger, generated sibling drift, or a direct source/control-plane
+# push. The six-hourly ci-main-heartbeat discovers that class too late: by then
+# dozens of unrelated PRs may have inherited the same failure. This workflow
+# publishes one cheap, deterministic verdict after every SOURCE/CONTROL change
+# on main. merge-on-green reads the latest run and pauses ordinary merges while
+# it is pending or red. Only an explicitly labelled `main-red-repair` PR may
+# cross a red baseline, and it must still carry fully green PR checks.
+#
+# Data/site-only publisher commits deliberately do not retrigger this lane. The
+# latest successful source verdict remains valid for those descendants; render
+# and live-data health keep their existing dedicated guards.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/ci/**"
+      - ".github/workflows/**"
+      - "admin/**"
+      - "app/**"
+      - "collectors/**"
+      - "config/**"
+      - "engine/**"
+      - "lib/**"
+      - "scripts/**"
+      - "templates/**"
+      - "tests/**"
+      - "**/*.py"
+      - "**/*.j2"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "config.yml"
+      - "pyproject.toml"
+      - "requirements*.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Only the newest source descendant matters. A later source push supersedes
+  # the proof for an older one; data-only pushes do not enter this group.
+  group: integration-baseline-main
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: integration-baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install control-plane dependencies
+        # Every command below is static/manifest analysis; none imports the
+        # product data stack. Keep the circuit breaker cheap enough to run after
+        # every source merge instead of recreating the full CI bottleneck here.
+        run: pip install pytest pyyaml
+      - name: workflow grammar selftest
+        run: python scripts/check_workflow_yaml.py --selftest
+      - name: every workflow must parse
+        run: python scripts/check_workflow_yaml.py .github/workflows
+      - name: hosted-runner packing and merge-train contracts
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+      - name: skip-only detector selftest
+        run: python scripts/check_skip_only_suites.py --selftest
+      - name: no named suite may skip in every owning job
+        run: python scripts/check_skip_only_suites.py
