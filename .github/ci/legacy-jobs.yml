@@ -765,10 +765,11 @@ jobs:
 
   capital-structure-intelligence:
     if: ${{ false }}
-    # W0-W2B is an evidence/event/precision-term contract, not merely a collector.
+    # W0-W3A is an evidence/event/precision/candidate-term contract, not merely a collector.
     # This dedicated offline job keeps schemas, PIT/correction behavior, R2 wrapper,
     # graph linkage, exact fee-table spans, legacy boundary, and SEC fixtures in one
-    # hard gate. Document terms are direct transcriptions, never capacity/risk math.
+    # hard gate. Document and candidate terms remain pre-instrument transcriptions,
+    # never capacity/risk math.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -777,13 +778,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: install capital-structure test deps
-        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml jinja2 fastapi httpx
+        run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
         run: >
           python -m pytest
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py
+          tests/test_capital_structure_instrument_candidates.py
           tests/test_capital_structure_event_spine.py
           tests/test_capital_structure_graph.py
           tests/test_capital_structure_legacy_compat.py
