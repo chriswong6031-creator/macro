@@ -45,10 +45,564 @@
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=8d7800c8"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/index.html"},{"@type":"ListItem","position":2,"name":"Earnings call records","item":"https://www.mastermind-x.com/stocks/earnings/index.html"},{"@type":"ListItem","position":3,"name":"FCNCA"}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"FCNCA — FIRST CITIZENS-A Q2 FY2026 earnings call record","description":"Receipt-bound excerpts from FIRST CITIZENS-A's earnings-call transcript. Transcript-only source record; not investment advice.","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.mastermind-x.com/stocks/earnings/fcnca-2026q2-call-record.html"},"dateCreated":"2026-08-02T00:08:49Z","dateModified":"2026-08-02T00:08:49Z","temporalCoverage":"2026-07-23","author":{"@type":"Organization","name":"MastermindX"},"publisher":{"@type":"Organization","name":"MastermindX"},"isBasedOn":"https://app.mastermind-x.com/terminal?sym=FCNCA&pane=transcripts&tx=2026Q2&from=macro"}</script>
-<link rel="stylesheet" href="../../assets/css/55bc728a.css?v=55bc728a">
-<link rel="stylesheet" href="../../assets/css/17c15c21.css?v=17c15c21"><link rel="stylesheet" href="assets/earnings-wire.css?v=60c93a24">
-<link rel="preload" as="style" href="../../product-nav-icons.css?v=093ad1ea">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/index.html"},{"@type":"ListItem","position":2,"name":"Earnings call records","item":"https://www.mastermind-x.com/stocks/earnings/index.html"},{"@type":"ListItem","position":3,"name":"FCNCA"}]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"FCNCA — FIRST CITIZENS-A Q2 FY2026 earnings call record","description":"Receipt-bound excerpts from FIRST CITIZENS-A's earnings-call transcript. Transcript-only source record; not investment advice.","mainEntityOfPage":{"@type":"WebPage","@id":"https://www.mastermind-x.com/stocks/earnings/fcnca-2026q2-call-record.html"},"dateCreated":"2026-08-02T00:08:49Z","dateModified":"2026-08-02T00:08:49Z","temporalCoverage":"2026-07-23","author":{"@type":"Organization","name":"MastermindX"},"publisher":{"@type":"Organization","name":"MastermindX"},"isBasedOn":"https://app.mastermind-x.com/terminal?sym=FCNCA&pane=transcripts&tx=2026Q2&from=macro"}</script>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* --font-ui local definition (#2647 tripwire pattern, commodities.html.j2
+   precedent): theme.css defines the same token, and this local definition keeps
+   the estate off Times even if that stylesheet ever fails to load. The actual
+   Inter faces come only from theme.css, whose font URLs resolve relative to the
+   root stylesheet at every estate depth. */
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+}
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── Signal-Ink teaching diagram (.sig-fig) — the lesson-body figure idiom ─────
+   One hand-authored SVG per lesson explains a mechanic. Same terminal line-art
+   language as .egl: hairline furniture in --ink-3, the signed options duality in
+   --up (stabilising / calls / long-gamma / dealer-buys) vs --down (accelerating /
+   puts / short-gamma / dealer-sells), and the single --link accent for the pivot
+   the lesson turns on (the flip / zero / break-even). SVG carries paths + shapes
+   ONLY; every label is a positioned HTML <span> (inherits Inter/mono + theme/ZH
+   swap, never an svg <text>). The shared dashed zero-line is the motif that
+   threads all seven diagrams — in options, the zero-line is where meaning inverts.
+   Static by design (reduced-motion-safe, deterministic render). */
+.est-prose figure.sig-fig{margin:22px 0; max-width:var(--measure);}
+.sig-stage{position:relative; width:100%; border:1px solid var(--hair-strong);
+  border-left:3px solid var(--rail); border-radius:var(--r-md); background:
+    linear-gradient(180deg, color-mix(in srgb,var(--link) 4%,transparent), transparent 60%),
+    var(--tile); box-shadow:var(--ms); padding:16px 18px; overflow:hidden;}
+.sig-stage svg{display:block; width:100%; height:auto; color:var(--ink-3);
+  overflow:visible;}
+/* stroke roles — mirror the .egl vocabulary so both line-art families read as one */
+.sig-stage svg [class^="sg-"], .sig-stage svg [class*=" sg-"]{
+  fill:none; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.sig-stage .sg-axis{stroke:var(--ink-3); stroke-width:1.3; opacity:.62;}
+.sig-stage .sg-grid{stroke:var(--ink-3); stroke-width:1; opacity:.24;}
+.sig-stage .sg-zero{stroke:var(--ink-3); stroke-width:1.3; opacity:.7; stroke-dasharray:4 4;}
+.sig-stage .sg-line{stroke:var(--ink-2); stroke-width:1.6;}
+.sig-stage .sg-up{stroke:var(--up); stroke-width:1.9;}
+.sig-stage .sg-down{stroke:var(--down); stroke-width:1.9;}
+.sig-stage .sg-pivot{stroke:var(--link); stroke-width:1.7;}
+.sig-stage .sg-pivot-dash{stroke:var(--link); stroke-width:1.5; stroke-dasharray:5 4;}
+.sig-stage .fill-up{fill:color-mix(in srgb,var(--up) 17%,transparent); stroke:none;}
+.sig-stage .fill-down{fill:color-mix(in srgb,var(--down) 17%,transparent); stroke:none;}
+.sig-stage .fill-mut{fill:color-mix(in srgb,var(--ink-3) 20%,transparent); stroke:none;}
+.sig-stage .fill-pivot{fill:color-mix(in srgb,var(--link) 16%,transparent); stroke:none;}
+.sig-stage .dot-up{fill:var(--up); stroke:none;}
+.sig-stage .dot-down{fill:var(--down); stroke:none;}
+.sig-stage .dot-pivot{fill:var(--link); stroke:none;}
+.sig-stage .dot-mut{fill:var(--ink-3); stroke:none;}
+/* HTML labels positioned over the stage (percent coords set inline per diagram) */
+.sig-stage .sig-lbl{position:absolute; transform:translate(-50%,-50%);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:10.5px;
+  line-height:1.15; letter-spacing:.02em; color:var(--ink-2); text-align:center;
+  white-space:nowrap; pointer-events:none;
+  /* faint theme-aware halo so labels stay legible where they sit over strokes */
+  text-shadow:0 0 3px var(--tile), 0 0 3px var(--tile), 0 0 5px var(--tile);}
+.sig-stage .sig-lbl.up{color:var(--up);} .sig-stage .sig-lbl.down{color:var(--down);}
+.sig-stage .sig-lbl.pivot{color:var(--link);}
+.sig-stage .sig-lbl.big{font-size:12.5px; font-weight:700; letter-spacing:0;}
+.sig-stage .sig-lbl.axis{color:var(--ink-3); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;}
+.sig-stage .sig-lbl.lead{text-align:left; transform:translate(0,-50%);}
+.sig-fig figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3);
+  margin-top:9px; line-height:1.5;}
+/* two-up split stage (e.g. long-gamma vs short-gamma) shares one zero-line motif */
+.sig-stage .sg-split{stroke:var(--hair-strong); stroke-width:1;}
+@media (max-width:600px){
+  .sig-stage{padding:12px 12px;}
+  .sig-stage .sig-lbl{font-size:9.5px;}
+  .sig-stage .sig-lbl.big{font-size:11px;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+</style>
+<style data-public-chrome>
+body.public-page{padding-top:0}
+
+/* ── public header — landing-page chrome ───────────────────────────────── */
+.public-nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid #e2e6ec;transition:box-shadow .25s ease,background .25s ease;
+  color:#1c2430;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif}
+.public-nav.sc{background:rgba(247,248,250,.95);box-shadow:0 10px 30px -18px rgba(18,26,45,.25)}
+.public-nav-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px);height:64px;
+  display:flex;align-items:center;gap:24px}
+.public-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;
+  color:#1c2430;text-decoration:none;white-space:nowrap}
+.public-brand:hover{color:#1c2430;text-decoration:none}
+.public-brand .m{width:27px;height:27px;border-radius:7px;background:#1c2430;display:grid;
+  place-items:center;color:#fff;font-weight:800;font-size:14px}
+.public-nav-links{display:flex;align-items:center;gap:4px;margin:0;padding:0;list-style:none;
+  font-size:14px;font-weight:500}
+.public-nav-group{position:relative}
+.public-nav-trigger,.public-nav-direct>a{display:flex;align-items:center;gap:6px;min-height:40px;
+  padding:8px 12px;border:0;border-radius:10px;background:transparent;color:#5d6b7e;
+  font:inherit;text-decoration:none;white-space:nowrap;cursor:pointer}
+.public-nav-trigger:hover,.public-nav-trigger[aria-expanded="true"],.public-nav-direct>a:hover{
+  color:#1c2430;background:rgba(40,95,255,.07);text-decoration:none}
+.public-nav-trigger svg{width:10px;height:7px;fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .18s}
+.public-nav-trigger[aria-expanded="true"] svg{transform:rotate(180deg)}
+.public-nav-panel{position:absolute;top:calc(100% + 12px);left:-12px;width:min(650px,calc(100vw - 40px));
+  padding:20px;background:#fff;border:1px solid #d2d8e1;border-radius:16px;
+  box-shadow:0 24px 70px -30px rgba(18,26,45,.45),0 14px 34px -14px rgba(18,26,45,.28);z-index:97}
+.public-nav-panel[hidden]{display:none}
+.public-nav-panel-research{width:min(650px,calc(100vw - 40px))}
+.public-nav-panel-resources{left:auto;right:-80px;width:min(610px,calc(100vw - 40px))}
+.public-nav-panel-head{display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:2px 2px 16px;border-bottom:1px solid #e2e6ec}
+.public-nav-panel-head>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.public-nav-panel-head>div>span{font-size:9px;font-weight:700;letter-spacing:.13em;color:#285fff}
+.public-nav-panel-head strong{font-size:15px;line-height:1.35;color:#1c2430}
+.public-nav-panel-head>a{flex:none;color:#285fff;font-size:12.5px;font-weight:600;text-decoration:none}
+.public-nav-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:12px}
+.public-nav-card-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.public-nav-card{display:flex;gap:12px;min-width:0;border:1px solid transparent;border-radius:12px;
+  padding:12px;color:#34404f;text-decoration:none;transition:background .16s,border-color .16s,transform .16s}
+.public-nav-card:hover{color:#1c2430;background:#f1f3f7;border-color:#e2e6ec;
+  transform:translateY(-1px);text-decoration:none}
+.public-nav-card>i{flex:none;width:27px;height:27px;border-radius:8px;background:#eef2ff;color:#285fff;
+  display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:800}
+.public-nav-card>span{min-width:0}.public-nav-card strong{display:block;font-size:13px;line-height:1.3;color:#1c2430}
+.public-nav-card small{display:block;margin-top:4px;color:#5d6b7e;font-size:11.5px;font-weight:400;line-height:1.45}
+.public-nav-toggle{display:none;width:40px;height:40px;border:1px solid #d2d8e1;border-radius:10px;
+  background:#fff;padding:10px;flex-direction:column;justify-content:center;gap:4px;cursor:pointer}
+.public-nav-toggle span{display:block;width:100%;height:1.5px;border-radius:2px;background:#1c2430;
+  transition:transform .18s,opacity .18s}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.public-nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+.public-nav-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:14px}
+.public-nav-login{color:#5d6b7e;text-decoration:none;white-space:nowrap}
+.public-nav-login:hover{color:#1c2430;text-decoration:none}
+.public-nav-cta{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;
+  padding:8px 15px;font-weight:600;font-size:13.5px;border:1px solid #285fff;
+  background:#285fff;color:#fff;text-decoration:none;box-shadow:0 2px 8px rgba(18,26,45,.08);
+  transition:transform .16s,box-shadow .16s,background .16s;white-space:nowrap}
+.public-nav-cta:hover{transform:translateY(-1px);box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  background:#1c47cc;color:#fff;text-decoration:none}
+
+/* settings popover — same controls and account affordance as index.html */
+.public-nav .gear-wrap{position:relative;display:inline-flex}
+.public-nav .gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid #d2d8e1;
+  background:#fff;box-shadow:0 2px 8px rgba(18,26,45,.08);display:grid;place-items:center;
+  color:#5d6b7e;transition:transform .16s,box-shadow .16s,color .16s;cursor:pointer;padding:0}
+.public-nav .gearbtn:hover{color:#1c2430;transform:translateY(-1px);
+  box-shadow:0 14px 34px -14px rgba(18,26,45,.28)}
+.public-nav .gearbtn[aria-expanded="true"]{color:#1c2430;border-color:#8a95a4}
+.public-nav .gearbtn svg{width:17px;height:17px}
+.public-nav .gear-pop{position:absolute;right:0;top:calc(100% + 10px);width:236px;background:#fff;
+  border:1px solid #d2d8e1;border-radius:14px;box-shadow:0 14px 34px -14px rgba(18,26,45,.28);
+  padding:8px;z-index:95;opacity:0;visibility:hidden;transform:translateY(6px);
+  transition:opacity .18s ease,transform .18s ease,visibility 0s .18s;color:#1c2430}
+.public-nav .gear-pop.open{opacity:1;visibility:visible;transform:none;
+  transition:opacity .18s ease,transform .18s ease}
+.public-nav .gear-pop p{padding:0;border:0}
+.public-nav .gp-kicker,.public-nav .gp-acct-t{font-weight:700;font-size:9px;letter-spacing:.16em;
+  color:#8a95a4;margin:4px 8px 8px;text-transform:uppercase}
+.public-nav .gp-acct-t{margin:2px 8px 8px}
+.public-nav .gp-lang{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:4px 8px 8px;min-width:0}
+.public-nav .gp-lbl{font-size:13px;color:#34404f;font-weight:500;min-width:0}
+.public-nav .gp-seg{display:inline-flex;border:1px solid #d2d8e1;border-radius:8px;padding:2px;
+  background:#f1f3f7;flex:none}
+.public-nav .gp-seg-b{border:0;background:transparent;font-family:inherit;font-weight:700;
+  font-size:11px;line-height:1;color:#5d6b7e;
+  border-radius:6px;padding:4px 9px;transition:color .14s,background .14s;cursor:pointer}
+.public-nav .gp-seg-b.on{background:#285fff;color:#fff}
+.public-nav .gp-div{height:1px;background:#e2e6ec;margin:4px 4px 6px}
+.public-nav .gp-link{display:block;font-size:13px;color:#34404f;border-radius:8px;padding:8px;
+  font-weight:500;text-decoration:none;transition:background .14s,color .14s}
+.public-nav .gp-link:hover{background:#f1f3f7;color:#1c2430;text-decoration:none}
+.public-nav .gp-acct-d{font-size:12px;line-height:1.5;color:#5d6b7e;margin:0 8px 10px}
+.public-nav .gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.public-nav .gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;
+  transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-abtn.ghost{border:1px solid #d2d8e1;background:#fff;color:#34404f}
+.public-nav .gp-abtn.ghost:hover{background:#eef2ff;color:#1c47cc;border-color:#285fff}
+.public-nav .gp-abtn.solid{background:#285fff;border:1px solid #285fff;color:#fff;
+  box-shadow:0 2px 8px rgba(18,26,45,.08)}
+.public-nav .gp-abtn.solid:hover{background:#1c47cc;border-color:#1c47cc}
+.public-nav .gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+  cursor:pointer;min-width:0;transition:background .14s}
+.public-nav .gp-acct-card:hover{background:#f1f3f7}
+.public-nav .gp-acct-card:focus-visible{outline:2px solid #285fff;outline-offset:2px}
+.public-nav .gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;background:#285fff}
+.public-nav .gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.public-nav .gp-acct-email{font-size:12.5px;font-weight:600;color:#1c2430;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.public-nav .gp-acct-sub{font-size:11px;color:#5d6b7e}
+.public-nav .gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;
+  border:1px solid #d2d8e1;border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;
+  color:#34404f;background:#fff;transition:background .14s,color .14s,border-color .14s;cursor:pointer}
+.public-nav .gp-signout:hover{background:#f1f3f7;color:#1c2430}
+
+/* ── public footer — exact landing-page information architecture ───────── */
+.public-footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;
+  color:#7a8496;font:13px/1.5 -apple-system,"SF Pro Display",Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.public-footer a{text-decoration:none}
+.public-footer .f-in{max-width:1280px;margin:0 auto;padding:0 clamp(20px,4.5vw,60px)}
+.public-footer .f-grid{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:30px;flex-wrap:wrap}
+.public-footer .f-brand .fb-row{display:flex;align-items:center;gap:9px}
+.public-footer .f-brand .fm{width:26px;height:26px;border-radius:7px;
+  background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;
+  font-weight:800;font-size:14px;color:#fff}
+.public-footer .f-brand .fn{font-weight:800;font-size:13px;letter-spacing:.08em;color:#dfe6f2}
+.public-footer .f-brand .ft{margin:10px 0 0;color:#5f6b7e;font-size:12.5px}
+.public-footer .f-cols{display:flex;gap:clamp(30px,6vw,84px)}
+.public-footer .f-col p{margin:0 0 8px;font-weight:700;font-size:9px;letter-spacing:.14em;
+  color:#46536a;text-transform:uppercase}
+.public-footer .f-col a{display:block;color:#8e99ad;padding:4.5px 0;font-size:13px}
+.public-footer .f-col a:hover{color:#dfe6f2;text-decoration:none}
+.public-footer .f-bot{display:flex;justify-content:space-between;align-items:center;gap:12px 18px;
+  flex-wrap:wrap;border-top:1px solid #10161f;margin-top:36px;padding-top:20px;
+  font-size:12px;color:#8e99ad}
+.public-footer .f-bot a{color:#8e99ad}
+.public-footer .f-bot a:hover{color:#dfe6f2}
+
+@media(max-width:900px){
+  .public-nav-in{position:relative;gap:12px}
+  .public-nav-toggle{display:flex}
+  .public-nav-links{display:none;position:absolute;top:calc(100% + 1px);left:20px;right:20px;
+    max-height:calc(100dvh - 76px);overflow-y:auto;align-items:stretch;flex-direction:column;gap:3px;
+    padding:10px;background:rgba(255,255,255,.98);border:1px solid #d2d8e1;border-radius:0 0 16px 16px;
+    box-shadow:0 24px 60px -30px rgba(18,26,45,.5);z-index:96}
+  .public-nav-links.open{display:flex}
+  .public-nav-group,.public-nav-direct{width:100%}
+  .public-nav-trigger,.public-nav-direct>a{width:100%;min-height:44px;justify-content:space-between;padding:10px 12px}
+  .public-nav-panel,.public-nav-panel-research,.public-nav-panel-resources{position:static;width:auto;
+    margin:2px 0 7px;padding:10px;box-shadow:none;border-radius:12px;background:#f1f3f7}
+  .public-nav-panel-head{align-items:flex-start;padding:2px 3px 11px}
+  .public-nav-panel-head>a{padding-top:2px}
+  .public-nav-card-grid,.public-nav-card-grid.two{grid-template-columns:1fr;gap:3px}
+  .public-nav-card{min-height:58px;padding:10px;background:#fff;border-color:#e2e6ec}
+  .public-nav-login{display:none}
+  .public-nav-right{gap:10px}
+  .public-footer .f-cols{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:28px 36px}
+}
+@media(max-width:420px){
+  .public-nav-in{gap:12px}
+  .public-brand{font-size:13px;gap:8px}
+  .public-nav-cta{padding:8px 11px}
+}
+</style><link rel="stylesheet" href="assets/earnings-wire.css">
 <link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
 </head>
 <body class="estate public-page earnings-wire earnings-wire-article">
@@ -320,10 +874,10 @@
   </div>
 </footer>
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="../../supabase.js?v=8596965f" defer></script>
-<script src="../../account.js?v=f888381f" defer></script>
-<script src="../../mm_brain.js?v=b93132d7" defer></script>
-<script src="../../theme.js?v=402a51a2" defer></script>
+<script src="../../supabase.js"></script>
+<script src="../../account.js"></script>
+<script src="../../mm_brain.js"></script>
+<script src="../../theme.js"></script>
 <script>
 (function(){
   var nav=document.querySelector('.public-nav');
@@ -444,7 +998,6 @@
   });
   sync();
 })();
-</script><script src="../../onboard.js?v=dc7d4d5b" defer></script>
-<script defer data-whb data-root="../../" src="../../wh_banner.js?v=2d5f957e"></script>
+</script><script src="../../onboard.js" defer></script>
 </body>
 </html>
